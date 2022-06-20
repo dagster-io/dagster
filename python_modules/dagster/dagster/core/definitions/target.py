@@ -1,11 +1,17 @@
 from typing import List, NamedTuple, Optional, Union
 
+from typing_extensions import TypeAlias
+
 import dagster._check as check
 
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+
+ExecutableDefinition: TypeAlias = Union[
+    PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition
+]
 
 
 class RepoRelativeTarget(NamedTuple):
@@ -21,7 +27,7 @@ class RepoRelativeTarget(NamedTuple):
 class DirectTarget(
     NamedTuple(
         "_DirectTarget",
-        [("target", Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition])],
+        [("target", ExecutableDefinition)],
     )
 ):
     """

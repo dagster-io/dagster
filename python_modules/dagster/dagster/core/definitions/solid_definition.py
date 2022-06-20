@@ -261,7 +261,7 @@ class SolidDefinition(NodeDefinition):
                 unresolveable_input_defs.append(input_def)
         return unresolveable_input_defs
 
-    def input_has_default(self, input_name: str) -> InputDefinition:
+    def input_has_default(self, input_name: str) -> bool:
         return self.input_def_named(input_name).has_default_value
 
     def default_value_for_input(self, input_name: str) -> InputDefinition:
@@ -475,8 +475,8 @@ class CompositeSolidDefinition(GraphDefinition):
 
 def _check_io_managers_on_composite_solid(
     name: str,
-    input_mappings: Optional[List[InputMapping]],
-    output_mappings: Optional[List[OutputMapping]],
+    input_mappings: Optional[Sequence[InputMapping]],
+    output_mappings: Optional[Sequence[OutputMapping]],
 ):
     # Ban root_manager_key on composite solids
     if input_mappings:

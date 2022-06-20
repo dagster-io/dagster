@@ -9,6 +9,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Union,
@@ -67,15 +68,10 @@ if TYPE_CHECKING:
     from .solid_definition import SolidDefinition
 
 
-def _check_node_defs_arg(graph_name: str, node_defs: Optional[List[NodeDefinition]]):
+def _check_node_defs_arg(graph_name: str, node_defs: Optional[Sequence[NodeDefinition]]):
     node_defs = node_defs or []
 
-    if not isinstance(node_defs, list):
-        raise DagsterInvalidDefinitionError(
-            '"nodes" arg to "{name}" is not a list. Got {val}.'.format(
-                name=graph_name, val=repr(node_defs)
-            )
-        )
+    check.sequence_param(node_defs, "node_defs")
     for node_def in node_defs:
         if isinstance(node_def, NodeDefinition):
             continue
@@ -99,12 +95,12 @@ def _check_node_defs_arg(graph_name: str, node_defs: Optional[List[NodeDefinitio
 def _create_adjacency_lists(
     solids: List[Node],
     dep_structure: DependencyStructure,
-) -> Tuple[Dict[str, Set[Node]], Dict[str, Set[Node]]]:
+) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]]]:
     visit_dict = {s.name: False for s in solids}
-    forward_edges: Dict[str, Set[Node]] = {s.name: set() for s in solids}
-    backward_edges: Dict[str, Set[Node]] = {s.name: set() for s in solids}
+    forward_edges: Dict[str, Set[str]] = {s.name: set() for s in solids}
+    backward_edges: Dict[str, Set[str]] = {s.name: set() for s in solids}
 
-    def visit(solid_name):
+    def visit(solid_name: str) -> None:
         if visit_dict[solid_name]:
             return
 
@@ -182,12 +178,12 @@ class GraphDefinition(NodeDefinition):
         self,
         name: str,
         description: Optional[str] = None,
-        node_defs: Optional[List[NodeDefinition]] = None,
+        node_defs: Optional[Sequence[NodeDefinition]] = None,
         dependencies: Optional[
             Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]
         ] = None,
-        input_mappings: Optional[List[InputMapping]] = None,
-        output_mappings: Optional[List[OutputMapping]] = None,
+        input_mappings: Optional[Sequence[InputMapping]] = None,
+        output_mappings: Optional[Sequence[OutputMapping]] = None,
         config: Optional[ConfigMapping] = None,
         tags: Optional[Mapping[str, Any]] = None,
         **kwargs,

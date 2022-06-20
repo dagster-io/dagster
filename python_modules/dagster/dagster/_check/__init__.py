@@ -697,7 +697,7 @@ def list_param(
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> List:
+) -> List[Any]:
     from dagster.utils import frozenlist
 
     if not isinstance(obj, (frozenlist, list)):
@@ -716,7 +716,7 @@ def opt_list_param(
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> List:
+) -> List[Any]:
     """Ensures argument obj is a list or None; in the latter case, instantiates an empty list
     and returns it.
 

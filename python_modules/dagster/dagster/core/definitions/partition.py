@@ -7,8 +7,10 @@ from typing import Any, Callable, Dict, Generic, List, NamedTuple, Optional, Typ
 
 import pendulum
 from dateutil.relativedelta import relativedelta
+from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster.core.definitions.target import ExecutableDefinition
 from dagster.serdes import whitelist_for_serdes
 
 from ...seven.compat.pendulum import PendulumDateTime, to_timezone
@@ -30,10 +32,27 @@ from .schedule_definition import (
     DefaultScheduleStatus,
     ScheduleDefinition,
     ScheduleEvaluationContext,
+    ScheduleExecutionFunction,
+    ScheduleRunConfigFunction,
+    ScheduleShouldExecuteFunction,
+    ScheduleTagsFunction,
 )
 from .utils import check_valid_name, validate_tags
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
+
+RawPartitionFunction: TypeAlias = Union[
+    Callable[[Optional[datetime]], List[Union[str, "Partition[Any]"]]],
+    Callable[[], List[Union[str, "Partition"]]],
+]
+
+PartitionFunction: TypeAlias = Callable[[Optional[datetime]], List["Partition[Any]"]]
+PartitionTagsFunction: TypeAlias = Callable[["Partition"], Dict[str, str]]
+PartitionScheduleFunction: TypeAlias = Callable[[datetime], Dict[str, Any]]
+PartitionSelectorFunction: TypeAlias = Callable[
+    [ScheduleEvaluationContext, "PartitionSetDefinition"],
+    Union["Partition", List["Partition"], SkipReason],
+]
 
 T = TypeVar("T")
 
@@ -225,8 +244,8 @@ class ScheduleTimeBasedPartitionsDefinition(
             ("execution_day", Optional[int]),
             ("end", Optional[datetime]),
             ("fmt", str),
-            ("timezone", Optional[str]),
-            ("offset", Optional[int]),
+            ("timezone", str),
+            ("offset", int),
         ],
     ),
 ):
@@ -282,7 +301,7 @@ class ScheduleTimeBasedPartitionsDefinition(
                 "execution_day",
             ),
             check.opt_inst_param(end, "end", datetime),
-            cast(str, check.opt_str_param(fmt, "fmt", default=DEFAULT_DATE_FORMAT)),
+            check.opt_str_param(fmt, "fmt", default=DEFAULT_DATE_FORMAT),
             check.opt_str_param(timezone, "timezone", default="UTC"),
             check.opt_int_param(offset, "offset", default=1),
         )
@@ -384,14 +403,25 @@ class PartitionSetDefinition(Generic[T]):
             of valid partition objects.
     """
 
+    _name: str
+    _pipeline_name: Optional[str]
+    _job_name: Optional[str]
+    _solid_selection: Optional[List[str]]
+    _mode: Optional[str]
+    _user_defined_run_config_fn_for_partition: Callable[[Partition], Dict[str, Any]]
+    _user_defined_tags_fn_for_partition: Callable[[Partition], Optional[Dict[str, str]]]
+    _partitions_def: PartitionsDefinition
+
     def __init__(
         self,
         name: str,
         pipeline_name: Optional[str] = None,
-        partition_fn: Optional[Callable[..., Union[List[Partition[T]], List[str]]]] = None,
+        partition_fn: Optional[RawPartitionFunction] = None,
         solid_selection: Optional[List[str]] = None,
         mode: Optional[str] = None,
-        run_config_fn_for_partition: Callable[[Partition[T]], Any] = lambda _partition: {},
+        run_config_fn_for_partition: Callable[
+            [Partition[T]], Dict[str, Any]
+        ] = lambda _partition: {},
         tags_fn_for_partition: Callable[
             [Partition[T]], Optional[Dict[str, str]]
         ] = lambda _partition: {},
@@ -401,10 +431,6 @@ class PartitionSetDefinition(Generic[T]):
         job_name: Optional[str] = None,
     ):
         check.invariant(
-            partition_fn is not None or partitions_def is not None,
-            "One of `partition_fn` or `partitions_def` must be supplied.",
-        )
-        check.invariant(
             not (partition_fn and partitions_def),
             "Only one of `partition_fn` or `partitions_def` must be supplied.",
         )
@@ -413,68 +439,72 @@ class PartitionSetDefinition(Generic[T]):
             "Exactly one one of `job_name` and `pipeline_name` must be supplied.",
         )
 
-        _wrap_partition_fn = None
-
-        if partition_fn is not None:
-            partition_fn_param_count = len(inspect.signature(partition_fn).parameters)
-
-            def _wrap_partition(x: Union[str, Partition]) -> Partition:
-                if isinstance(x, Partition):
-                    return x
-                if isinstance(x, str):
-                    return Partition(x)
-                raise DagsterInvalidDefinitionError(
-                    "Expected <Partition> | <str>, received {type}".format(type=type(x))
-                )
-
-            def _wrap_partition_fn(current_time=None) -> List[Partition]:
-                if not current_time:
-                    current_time = pendulum.now("UTC")
-
-                check.callable_param(partition_fn, "partition_fn")  # type: ignore
-
-                if partition_fn_param_count == 1:
-                    obj_list = cast(
-                        Callable[..., List[Union[Partition[T], str]]],
-                        partition_fn,
-                    )(current_time)
-                else:
-                    obj_list = partition_fn()  # type: ignore
-
-                return [_wrap_partition(obj) for obj in obj_list]
-
         self._name = check_valid_name(name)
         self._pipeline_name = check.opt_str_param(pipeline_name, "pipeline_name")
         self._job_name = check.opt_str_param(job_name, "job_name")
-        self._partition_fn = _wrap_partition_fn
         self._solid_selection = check.opt_nullable_list_param(
             solid_selection, "solid_selection", of_type=str
         )
         self._mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
-        self._user_defined_run_config_fn_for_partition = check.callable_param(
+        # Type ignores workaround for mypy bug "cannot assign to a method"
+        self._user_defined_run_config_fn_for_partition = check.callable_param(  # type: ignore
             run_config_fn_for_partition, "run_config_fn_for_partition"
         )
-        self._user_defined_tags_fn_for_partition = check.callable_param(
+        self._user_defined_tags_fn_for_partition = check.callable_param(  # type: ignore
             tags_fn_for_partition, "tags_fn_for_partition"
         )
-        check.opt_inst_param(partitions_def, "partitions_def", PartitionsDefinition)
         if partitions_def is not None:
-            self._partitions_def = partitions_def
+            self._partitions_def = check.inst_param(
+                partitions_def, "partitions_def", PartitionsDefinition
+            )
+        elif partition_fn is not None:
+            _wrapped = self._wrap_partition_fn(partition_fn)
+            self._partitions_def = DynamicPartitionsDefinition(partition_fn=_wrapped)
         else:
-            if partition_fn is None:
-                check.failed("One of `partition_fn` or `partitions_def` must be supplied.")
-            self._partitions_def = DynamicPartitionsDefinition(partition_fn=_wrap_partition_fn)
+            check.failed(
+                "One of `partition_fn` or `partitions_def` must be supplied.",
+            )
+
+    def _wrap_partition_fn(self, partition_fn: RawPartitionFunction) -> PartitionFunction:
+        partition_fn_param_count = len(inspect.signature(partition_fn).parameters)
+
+        def wrap_partition(x: Union[str, Partition]) -> Partition:
+            if isinstance(x, Partition):
+                return x
+            if isinstance(x, str):
+                return Partition(x)
+            raise DagsterInvalidDefinitionError(
+                "Expected <Partition> | <str>, received {type}".format(type=type(x))
+            )
+
+        def wrapper(current_time: Optional[datetime] = None) -> List[Partition]:
+            if not current_time:
+                current_time = pendulum.now("UTC")
+
+            check.callable_param(partition_fn, "partition_fn")  # type: ignore
+
+            if partition_fn_param_count == 1:
+                obj_list = cast(
+                    Callable[..., List[Union[Partition[T], str]]],
+                    partition_fn,
+                )(current_time)
+            else:
+                obj_list = partition_fn()  # type: ignore
+
+            return [wrap_partition(obj) for obj in obj_list]
+
+        return wrapper
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def pipeline_name(self):
+    def pipeline_name(self) -> Optional[str]:
         return self._pipeline_name
 
     @property
-    def job_name(self):
+    def job_name(self) -> Optional[str]:
         return self._job_name
 
     @property
@@ -483,19 +513,19 @@ class PartitionSetDefinition(Generic[T]):
         return cast(str, self._pipeline_name or self._job_name)
 
     @property
-    def solid_selection(self):
+    def solid_selection(self) -> Optional[List[str]]:
         return self._solid_selection
 
     @property
-    def mode(self):
+    def mode(self) -> Optional[str]:
         return self._mode
 
     def run_config_for_partition(self, partition: Partition[T]) -> Dict[str, Any]:
-        return copy.deepcopy(self._user_defined_run_config_fn_for_partition(partition))
+        return copy.deepcopy(self._user_defined_run_config_fn_for_partition(partition))  # type: ignore
 
     def tags_for_partition(self, partition: Partition[T]) -> Dict[str, str]:
         user_tags = validate_tags(
-            self._user_defined_tags_fn_for_partition(partition), allow_reserved_tags=False
+            self._user_defined_tags_fn_for_partition(partition), allow_reserved_tags=False  # type: ignore
         )
         tags = merge_dicts(user_tags, PipelineRun.tags_for_partition_set(self, partition))
 
@@ -523,23 +553,23 @@ class PartitionSetDefinition(Generic[T]):
 
     def create_schedule_definition(
         self,
-        schedule_name,
-        cron_schedule,
-        partition_selector,
-        should_execute=None,
-        environment_vars=None,
-        execution_timezone=None,
-        description=None,
-        decorated_fn=None,
-        job=None,
+        schedule_name: str,
+        cron_schedule: str,
+        partition_selector: PartitionSelectorFunction,
+        should_execute: Optional[Callable[..., bool]] = None,
+        environment_vars: Optional[Dict[str, str]] = None,
+        execution_timezone: Optional[str] = None,
+        description: Optional[str] = None,
+        decorated_fn: Optional[PartitionScheduleFunction] = None,
+        job: Optional[ExecutableDefinition] = None,
         default_status=DefaultScheduleStatus.STOPPED,
-    ):
+    ) -> "PartitionScheduleDefinition":
         """Create a ScheduleDefinition from a PartitionSetDefinition.
 
         Arguments:
             schedule_name (str): The name of the schedule.
             cron_schedule (str): A valid cron string for the schedule
-            partition_selector (Callable[ScheduleEvaluationContext, PartitionSetDefinition], Union[Partition, List[Partition]]):
+            partition_selector (Callable[[ScheduleEvaluationContext, PartitionSetDefinition], Union[Partition, List[Partition]]]):
                 Function that determines the partition to use at a given execution time. Can return
                 either a single Partition or a list of Partitions. For time-based partition sets,
                 will likely be either `identity_partition_selector` or a selector returned by
@@ -663,22 +693,22 @@ class PartitionScheduleDefinition(ScheduleDefinition):
 
     def __init__(
         self,
-        name,
-        cron_schedule,
-        pipeline_name,
-        tags_fn,
-        solid_selection,
-        mode,
-        should_execute,
-        environment_vars,
-        partition_set,
-        run_config_fn=None,
-        execution_timezone=None,
-        execution_fn=None,
-        description=None,
-        decorated_fn=None,
-        job=None,
-        default_status=DefaultScheduleStatus.STOPPED,
+        name: str,
+        cron_schedule: str,
+        pipeline_name: Optional[str],
+        tags_fn: Optional[ScheduleTagsFunction],
+        solid_selection: Optional[List[str]],
+        mode: Optional[str],
+        should_execute: Optional[ScheduleShouldExecuteFunction],
+        partition_set: PartitionSetDefinition,
+        environment_vars: Optional[Dict[str, str]] = None,
+        run_config_fn: Optional[ScheduleRunConfigFunction] = None,
+        execution_timezone: Optional[str] = None,
+        execution_fn: Optional[ScheduleExecutionFunction] = None,
+        description: Optional[str] = None,
+        decorated_fn: Optional[PartitionScheduleFunction] = None,
+        job: Optional[ExecutableDefinition] = None,
+        default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
     ):
         super(PartitionScheduleDefinition, self).__init__(
             name=check_valid_name(name),
@@ -701,7 +731,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
         )
         self._decorated_fn = check.opt_callable_param(decorated_fn, "decorated_fn")
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> Dict[str, Any]:
         if not self._decorated_fn:
             raise DagsterInvalidInvocationError(
                 "Only partition schedules created using one of the partition schedule decorators "
@@ -731,7 +761,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
 
         return self._decorated_fn(date)
 
-    def get_partition_set(self):
+    def get_partition_set(self) -> PartitionSetDefinition:
         return self._partition_set
 
 
@@ -825,10 +855,10 @@ def static_partitioned_config(
     def inner(fn: Callable[[str], Dict[str, Any]]) -> PartitionedConfig:
         check.callable_param(fn, "fn")
 
-        def _run_config_wrapper(partition: Partition[T]) -> Dict[str, Any]:
+        def _run_config_wrapper(partition: Partition) -> Dict[str, Any]:
             return fn(partition.name)
 
-        def _tag_wrapper(partition: Partition[T]) -> Dict[str, str]:
+        def _tag_wrapper(partition: Partition) -> Dict[str, str]:
             return tags_for_partition_fn(partition.name) if tags_for_partition_fn else {}
 
         return PartitionedConfig(
@@ -865,10 +895,10 @@ def dynamic_partitioned_config(
     check.callable_param(partition_fn, "partition_fn")
 
     def inner(fn: Callable[[str], Dict[str, Any]]) -> PartitionedConfig:
-        def _run_config_wrapper(partition: Partition[T]) -> Dict[str, Any]:
+        def _run_config_wrapper(partition: Partition) -> Dict[str, Any]:
             return fn(partition.name)
 
-        def _tag_wrapper(partition: Partition[T]) -> Dict[str, str]:
+        def _tag_wrapper(partition: Partition) -> Dict[str, str]:
             return tags_for_partition_fn(partition.name) if tags_for_partition_fn else {}
 
         return PartitionedConfig(

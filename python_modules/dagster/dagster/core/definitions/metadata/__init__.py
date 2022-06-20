@@ -34,10 +34,10 @@ if TYPE_CHECKING:
 
 RawMetadataValue = Union[
     "MetadataValue",
-    dict,
+    Dict[Any, Any],
     float,
     int,
-    list,
+    List[Any],
     str,
 ]
 

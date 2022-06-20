@@ -47,11 +47,11 @@ class NoValueSentinel:
     """Sentinel value to distinguish unset from None"""
 
 
-def has_valid_name_chars(name):
+def has_valid_name_chars(name: str) -> bool:
     return bool(VALID_NAME_REGEX.match(name))
 
 
-def check_valid_name(name: str):
+def check_valid_name(name: str) -> str:
     check.str_param(name, "name")
     if name in DISALLOWED_NAMES:
         raise DagsterInvalidDefinitionError(
@@ -71,17 +71,17 @@ def check_valid_chars(name: str):
         )
 
 
-def is_valid_name(name):
+def is_valid_name(name: str) -> bool:
     check.str_param(name, "name")
 
     return name not in DISALLOWED_NAMES and has_valid_name_chars(name)
 
 
-def _kv_str(key, value):
-    return '{key}="{value}"'.format(key=key, value=repr(value))
+def _kv_str(key: object, value: object) -> str:
+    return f'{key}="{repr(value)}"'
 
 
-def struct_to_string(name, **kwargs):
+def struct_to_string(name: str, **kwargs: object) -> str:
     # Sort the kwargs to ensure consistent representations across Python versions
     props_str = ", ".join([_kv_str(key, value) for key, value in sorted(kwargs.items())])
     return "{name}({props_str})".format(name=name, props_str=props_str)

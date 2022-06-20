@@ -108,6 +108,15 @@ class Node:
     Node invocation within a graph. Identified by its name inside the graph.
     """
 
+    name: str
+    definition: "NodeDefinition"
+    graph_definition: "GraphDefinition"
+    _additional_tags: Dict[str, str]
+    _hook_defs: AbstractSet[HookDefinition]
+    _retry_policy: Optional[RetryPolicy]
+    _input_handles: Dict[str, "SolidInputHandle"]
+    _output_handles: Dict[str, "SolidOutputHandle"]
+
     def __init__(
         self,
         name: str,
@@ -501,8 +510,12 @@ class SolidInputHandle(
     def __hash__(self):
         return hash((self.solid.name, self.input_def.name))
 
-    def __eq__(self, other):
-        return self.solid.name == other.solid.name and self.input_def.name == other.input_def.name
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, SolidInputHandle)
+            and self.solid.name == other.solid.name
+            and self.input_def.name == other.input_def.name
+        )
 
     @property
     def solid_name(self) -> str:

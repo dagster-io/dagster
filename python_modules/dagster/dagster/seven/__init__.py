@@ -11,6 +11,7 @@ import time
 from contextlib import contextmanager
 from datetime import timezone
 from types import ModuleType
+from typing import Any, Type
 
 import pendulum
 
@@ -170,7 +171,7 @@ def nullcontext():
     yield
 
 
-def is_subclass(child_type, parent_type):
+def is_subclass(child_type: Type[Any], parent_type: Type[Any]):
     """Due to some pathological interactions betwen bugs in the Python typing library
     (https://github.com/python/cpython/issues/88459 and
     https://github.com/python/cpython/issues/89010), some types (list[str] in Python 3.9, for

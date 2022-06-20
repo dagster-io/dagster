@@ -295,8 +295,9 @@ def get_input_manager_input_field(
 
 
 def get_type_loader_input_field(solid: Node, input_name: str, input_def: InputDefinition) -> Field:
+    loader = check.not_none(input_def.dagster_type.loader)
     return Field(
-        input_def.dagster_type.loader.schema_type,
+        loader.schema_type,
         is_required=(
             not solid.definition.input_has_default(input_name) and not input_def.root_manager_key
         ),

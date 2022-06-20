@@ -316,8 +316,6 @@ def resource(
     required_resource_keys: Optional[AbstractSet[str]] = None,
     version: Optional[str] = None,
 ) -> Union[Callable[[ResourceFunction], "ResourceDefinition"], "ResourceDefinition"]:
-    Callable[[ResourceFunction], "ResourceDefinition"], "ResourceDefinition"
-]:
     """Define a resource.
 
     The decorated function should accept an :py:class:`InitResourceContext` and return an instance of

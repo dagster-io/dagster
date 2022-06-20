@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Dict, Iterable, List, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence
 
 import dagster._check as check
 from dagster.core.definitions.configurable import NamedConfigurableDefinition
@@ -20,24 +20,14 @@ if TYPE_CHECKING:
 # base class for SolidDefinition and GraphDefinition
 # represents that this is embedable within a graph
 class NodeDefinition(NamedConfigurableDefinition):
-
-    _name: str
-    _description: Optional[str]
-    _tags: Mapping[str, str]
-    _input_dict: Mapping[str, "InputDefinition"]
-    _input_defs: Sequence["InputDefinition"]
-    _output_dict: Mapping[str, "OutputDefinition"]
-    _output_defs: Sequence["OutputDefinition"]
-    _positional_inputs = Sequence[str]
-
     def __init__(
         self,
-        name: str,
-        input_defs: Iterable[InputDefinition],
-        output_defs: Iterable[OutputDefinition],
-        description: Optional[str] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        positional_inputs: Optional[Sequence[str]] = None,
+        name,
+        input_defs,
+        output_defs,
+        description=None,
+        tags=None,
+        positional_inputs=None,
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
@@ -59,7 +49,7 @@ class NodeDefinition(NamedConfigurableDefinition):
 
     @property
     @abstractmethod
-    def node_type_str(self) -> str:
+    def node_type_str(self):
         ...
 
     @property
@@ -67,23 +57,27 @@ class NodeDefinition(NamedConfigurableDefinition):
     def is_graph_job_op_node(self) -> bool:
         ...
 
+    @abstractmethod
+    def all_dagster_types(self):
+        ...
+
     @property
-    def name(self) -> str:
+    def name(self):
         return self._name
 
-    def describe_node(self) -> str:
+    def describe_node(self):
         return f"{self.node_type_str} '{self.name}'"
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self):
         return self._description
 
     @property
-    def tags(self) -> Mapping[str, str]:
+    def tags(self):
         return self._tags
 
     @property
-    def positional_inputs(self) -> Sequence[str]:
+    def positional_inputs(self):
         return self._positional_inputs
 
     @property
@@ -137,27 +131,27 @@ class NodeDefinition(NamedConfigurableDefinition):
 
     @abstractmethod
     def iterate_node_defs(self):
-        raise NotImplementedError()
+        ...
 
     @abstractmethod
     def iterate_solid_defs(self):
-        raise NotImplementedError()
+        ...
 
     @abstractmethod
     def resolve_output_to_origin(self, output_name, handle):
-        raise NotImplementedError()
+        ...
 
     @abstractmethod
     def input_has_default(self, input_name):
-        raise NotImplementedError()
+        ...
 
     @abstractmethod
     def default_value_for_input(self, input_name):
-        raise NotImplementedError()
+        ...
 
     @abstractmethod
     def input_supports_dynamic_output_dep(self, input_name):
-        raise NotImplementedError()
+        ...
 
     def all_input_output_types(self):
         for input_def in self._input_defs:
@@ -247,4 +241,4 @@ class NodeDefinition(NamedConfigurableDefinition):
     def get_inputs_must_be_resolved_top_level(
         self, asset_layer: "AssetLayer", handle: Optional["NodeHandle"] = None
     ) -> List["InputDefinition"]:
-        raise NotImplementedError()
+        ...

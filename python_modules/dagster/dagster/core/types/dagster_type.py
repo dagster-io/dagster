@@ -14,6 +14,7 @@ from dagster.config.config_type import Array, ConfigType
 from dagster.config.config_type import Noneable as ConfigNoneable
 from dagster.core.definitions.events import DynamicOutput, Output, TypeCheck
 from dagster.core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
+from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.serdes import whitelist_for_serdes
 from dagster.seven import is_subclass
@@ -840,12 +841,12 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     from .transform_typing import transform_typing_type
 
     check.invariant(
-        not is_subclass(dagster_type, ConfigType),
+        not (isinstance(dagster_type, type) and is_subclass(dagster_type, ConfigType)),
         "Cannot resolve a config type to a runtime type",
     )
 
     check.invariant(
-        not is_subclass(dagster_type, DagsterType),
+        not (isinstance(dagster_type, type) and is_subclass(dagster_type, DagsterType)),
         "Do not pass runtime type classes. Got {}".format(dagster_type),
     )
 
@@ -912,12 +913,12 @@ def is_dynamic_output_annotation(dagster_type: object) -> bool:
     from dagster.seven.typing import get_args, get_origin
 
     check.invariant(
-        not is_subclass(dagster_type, ConfigType),
+        not (isinstance(dagster_type, type) and is_subclass(dagster_type, ConfigType)),
         "Cannot resolve a config type to a runtime type",
     )
 
     check.invariant(
-        not is_subclass(dagster_type, DagsterType),
+        not (isinstance(dagster_type, type) and is_subclass(dagster_type, ConfigType)),
         "Do not pass runtime type classes. Got {}".format(dagster_type),
     )
 

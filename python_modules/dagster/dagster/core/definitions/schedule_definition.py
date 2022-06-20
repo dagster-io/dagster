@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Any, Callable, Dict, Iterator, List, NamedTuple, Optional, TypeVar, Union, cast
 
 import pendulum
-from typing_extensions import TypeGuard
+from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
 
@@ -27,11 +27,37 @@ from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
 from .run_request import RunRequest, SkipReason
-from .target import DirectTarget, RepoRelativeTarget
+from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name, validate_tags
 
 T = TypeVar("T")
+
+# Preserve ScheduleExecutionContext for backcompat so type annotations don't break.
+ScheduleExecutionContext: TypeAlias = "ScheduleEvaluationContext"
+
+RunConfig: TypeAlias = Dict[str, Any]
+RunRequestIterator: TypeAlias = Iterator[Union[RunRequest, SkipReason]]
+
+ScheduleEvaluationFunctionReturn: TypeAlias = Union[
+    RunRequest, SkipReason, RunConfig, RunRequestIterator, List[RunRequest]
+]
+RawScheduleEvaluationFunction: TypeAlias = Union[
+    Callable[["ScheduleEvaluationContext"], ScheduleEvaluationFunctionReturn],
+    Callable[[], ScheduleEvaluationFunctionReturn],
+]
+
+ScheduleRunConfigFunction: TypeAlias = Union[
+    Callable[["ScheduleEvaluationContext"], RunConfig],
+    Callable[[], RunConfig],
+]
+
+ScheduleTagsFunction: TypeAlias = Callable[["ScheduleEvaluationContext"], Dict[str, str]]
+ScheduleShouldExecuteFunction: TypeAlias = Callable[["ScheduleEvaluationContext"], bool]
+ScheduleExecutionFunction: TypeAlias = Union[
+    Callable[["ScheduleEvaluationContext"], Any],
+    "DecoratedScheduleFunction",
+]
 
 
 @whitelist_for_serdes
@@ -92,26 +118,6 @@ class ScheduleEvaluationContext:
     @property
     def scheduled_execution_time(self) -> Optional[datetime]:
         return self._scheduled_execution_time
-
-
-# Preserve ScheduleExecutionContext for backcompat so type annotations don't break.
-ScheduleExecutionContext = ScheduleEvaluationContext
-
-RunConfig = Dict[str, Any]
-RunRequestIterator = Iterator[Union[RunRequest, SkipReason]]
-
-ScheduleEvaluationFunctionReturn = Union[
-    RunRequest, SkipReason, RunConfig, RunRequestIterator, List[RunRequest]
-]
-RawScheduleEvaluationFunction = Union[
-    Callable[[ScheduleEvaluationContext], ScheduleEvaluationFunctionReturn],
-    Callable[[], ScheduleEvaluationFunctionReturn],
-]
-
-RunConfigEvaluationFunction = Union[
-    Callable[[ScheduleEvaluationContext], RunConfig],
-    Callable[[], RunConfig],
-]
 
 
 class DecoratedScheduleFunction(NamedTuple):
@@ -219,21 +225,17 @@ class ScheduleDefinition:
         cron_schedule: Optional[str] = None,
         pipeline_name: Optional[str] = None,
         run_config: Optional[Any] = None,
-        run_config_fn: Optional[RunConfigEvaluationFunction] = None,
+        run_config_fn: Optional[ScheduleRunConfigFunction] = None,
         tags: Optional[Dict[str, str]] = None,
-        tags_fn: Optional[Callable[..., Optional[Dict[str, str]]]] = None,
+        tags_fn: Optional[ScheduleTagsFunction] = None,
         solid_selection: Optional[List[Any]] = None,
-        mode: Optional[str] = "default",
-        should_execute: Optional[Callable[..., bool]] = None,
+        mode: Optional[str] = None,
+        should_execute: Optional[ScheduleShouldExecuteFunction] = None,
         environment_vars: Optional[Dict[str, str]] = None,
         execution_timezone: Optional[str] = None,
-        execution_fn: Optional[
-            Union[Callable[[ScheduleEvaluationContext], Any], DecoratedScheduleFunction]
-        ] = None,
+        execution_fn: Optional[ScheduleExecutionFunction] = None,
         description: Optional[str] = None,
-        job: Optional[
-            Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition]
-        ] = None,
+        job: Optional[ExecutableDefinition] = None,
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
     ):
 
@@ -307,22 +309,24 @@ class ScheduleDefinition:
                 )
             elif tags:
                 tags = validate_tags(tags, allow_reserved_tags=False)
-                tags_fn = lambda _context: tags
+                tags_fn = lambda _context: tags  # type: ignore
             else:
                 tags_fn = check.opt_callable_param(
                     tags_fn, "tags_fn", default=lambda _context: cast(Dict[str, str], {})
                 )
 
-            should_execute = check.opt_callable_param(
+            _should_execute: ScheduleShouldExecuteFunction = check.opt_callable_param(
                 should_execute, "should_execute", default=lambda _context: True
             )
 
-            def _execution_fn(context):
+            # Several type-ignores are present in this function to work around bugs in mypy
+            # inference.
+            def _execution_fn(context: ScheduleEvaluationContext) -> RunRequestIterator:
                 with user_code_error_boundary(
                     ScheduleExecutionError,
                     lambda: f"Error occurred during the execution of should_execute for schedule {name}",
                 ):
-                    if not should_execute(context):
+                    if not _should_execute(context):
                         yield SkipReason(
                             "should_execute function for {schedule_name} returned false.".format(
                                 schedule_name=name
@@ -334,10 +338,10 @@ class ScheduleDefinition:
                     ScheduleExecutionError,
                     lambda: f"Error occurred during the execution of run_config_fn for schedule {name}",
                 ):
-                    run_config_fn = check.not_none(self._run_config_fn)
+                    _run_config_fn = check.not_none(self._run_config_fn)
                     evaluated_run_config = copy.deepcopy(
-                        run_config_fn(context)
-                        if is_context_provided(run_config_fn)
+                        _run_config_fn(context)
+                        if is_context_provided(_run_config_fn)  # type: ignore
                         else run_config_fn()  # type: ignore
                     )
 
@@ -345,11 +349,11 @@ class ScheduleDefinition:
                     ScheduleExecutionError,
                     lambda: f"Error occurred during the execution of tags_fn for schedule {name}",
                 ):
-                    evaluated_tags = validate_tags(tags_fn(context), allow_reserved_tags=False)
+                    evaluated_tags = validate_tags(tags_fn(context), allow_reserved_tags=False)  # type: ignore
 
                 yield RunRequest(
                     run_key=None,
-                    run_config=evaluated_run_config,
+                    run_config=evaluated_run_config,  # type: ignore
                     tags=evaluated_tags,
                 )
 
