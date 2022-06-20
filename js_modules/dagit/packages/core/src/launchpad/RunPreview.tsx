@@ -386,7 +386,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
           </Section>
           <Section>
             <SectionTitle>Config actions:</SectionTitle>
-            <Box flex={{direction: 'column', gap: 8}} padding={{top: 4}}>
+            <Box flex={{direction: 'column', gap: 8}} padding={{top: 4, bottom: 20}}>
               <ScaffoldConfigButton
                 onScaffoldMissingConfig={onScaffoldMissingConfig}
                 missingNodes={missingNodes}
