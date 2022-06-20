@@ -1,6 +1,6 @@
 import os
 import warnings
-from typing import TYPE_CHECKING, Dict, Optional, cast
+from typing import TYPE_CHECKING, Dict, Optional
 
 from dagster import Array, Bool
 from dagster import _check as check
@@ -144,22 +144,22 @@ def python_logs_config_schema():
 
 DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT = 60
 
-def get_default_settings_for_tick_retention() -> Dict["InstigatorType", Dict["TickStatus", int]]:
+def get_default_tick_retention_settings(instigator_type: "InstigatorType") -> Dict["TickStatus", int]:
     from dagster.core.definitions.run_request import InstigatorType
     from dagster.core.scheduler.instigation import TickStatus
-    return {
-        InstigatorType.SCHEDULE: {
+    if instigator_type == InstigatorType.SCHEDULE:
+        return {
             TickStatus.STARTED: -1,
             TickStatus.SKIPPED: -1,
             TickStatus.SUCCESS: -1,
             TickStatus.FAILURE: -1,
-        },
-        InstigatorType.SENSOR: {
-            TickStatus.STARTED: -1,
-            TickStatus.SKIPPED: 7,
-            TickStatus.SUCCESS: -1,
-            TickStatus.FAILURE: -1,
-        },
+        }
+    # for sensor
+    return {
+        TickStatus.STARTED: -1,
+        TickStatus.SKIPPED: 7,
+        TickStatus.SUCCESS: -1,
+        TickStatus.FAILURE: -1,
     }
 
 
@@ -190,45 +190,26 @@ def tick_retention_config_schema():
     )
 
 
-def get_tick_retention_settings_for_type(
+def get_tick_retention_settings(
     settings: Optional[Dict],
-    instigator_type: "InstigatorType",
-    default_settings: Optional[Dict] = None,
+    default_retention_settings: Dict["TickStatus", int],
 ) -> Dict["TickStatus", int]:
-    from dagster.core.definitions.run_request import InstigatorType
-    from dagster.core.scheduler.instigation import TickStatus
+    if not settings or not settings.get("purge_after_days"):
+        return default_retention_settings
 
-    if not default_settings:
-        default_settings = get_default_settings_for_tick_retention()
-
-    default_value_by_status = cast(
-        Dict[TickStatus, int], default_settings.get(instigator_type)
-    )
-
-    if not settings:
-        return default_value_by_status
-
-    value = (
-        settings.get("schedule")
-        if instigator_type == InstigatorType.SCHEDULE
-        else settings.get("sensor")
-    )
-    if not value or not value.get("purge_after_days"):
-        return default_value_by_status
-
-    purge_value = value["purge_after_days"]
+    purge_value = settings["purge_after_days"]
     if isinstance(purge_value, int):
         # set a number of days retention value for all tick types
-        return {status: purge_value for status, _ in default_value_by_status.items()}
+        return {status: purge_value for status, _ in default_retention_settings.items()}
 
     elif isinstance(purge_value, dict):
         return {
             # override the number of days retention value for tick types that are specified
             status: purge_value.get(status.value.lower(), default_value)
-            for status, default_value in default_value_by_status.items()
+            for status, default_value in default_retention_settings.items()
         }
     else:
-        return default_value_by_status
+        return default_retention_settings
 
 
 def dagster_instance_config_schema():

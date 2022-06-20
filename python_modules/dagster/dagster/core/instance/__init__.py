@@ -66,7 +66,8 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 from .config import (
     DAGSTER_CONFIG_YAML_FILENAME,
     DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
-    get_tick_retention_settings_for_type,
+    get_default_tick_retention_settings,
+    get_tick_retention_settings,
     is_dagster_home_set,
 )
 from .ref import InstanceRef
@@ -2075,8 +2076,15 @@ class DagsterInstance:
     def get_tick_retention_settings(
         self, instigator_type: "InstigatorType"
     ) -> Dict["TickStatus", int]:
+        from dagster.core.definitions.run_request import InstigatorType
         settings = self.get_settings("tick_retention")
-        return get_tick_retention_settings_for_type(settings, instigator_type)
+        value = (
+            settings.get("schedule")
+            if instigator_type == InstigatorType.SCHEDULE
+            else settings.get("sensor")
+        )
+        default_settings = get_default_tick_retention_settings(instigator_type)
+        return get_tick_retention_settings(value, default_settings)
 
 
 def is_dagit_telemetry_enabled(instance):
