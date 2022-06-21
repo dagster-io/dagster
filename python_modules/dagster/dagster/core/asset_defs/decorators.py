@@ -379,7 +379,9 @@ def multi_asset(
         can_subset (bool): If this asset's computation can emit a subset of the asset
             keys based on the context.selected_assets argument. Defaults to False.
         resource_defs (Optional[Mapping[str, ResourceDefinition]]):
-            A mapping of resource keys to resource definitions. These resources will be initialized during execution, and can be accessed from the context within the body of the function.
+            A mapping of resource keys to resource definitions. These resources
+            will be initialized during execution, and can be accessed from the
+            context within the body of the function.
     """
     asset_deps = check.opt_dict_param(
         internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
