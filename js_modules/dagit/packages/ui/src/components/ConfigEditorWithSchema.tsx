@@ -1,17 +1,18 @@
-import {Box, SplitPanelContainer, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {createGlobalStyle} from 'styled-components/macro';
 
-import {ConfigEditorHelp} from '../launchpad/ConfigEditorHelp';
-
-import {ConfigEditor} from './ConfigEditor';
-import {ConfigEditorHelpContext} from './ConfigEditorHelpContext';
-import {isHelpContextEqual} from './isHelpContextEqual';
+import {Box} from './Box';
+import {ConfigEditor, ConfigSchema} from './ConfigEditor';
+import {Spinner} from './Spinner';
+import {SplitPanelContainer} from './SplitPanelContainer';
+import {ConfigEditorHelp} from './configeditor/ConfigEditorHelp';
+import {isHelpContextEqual} from './configeditor/isHelpContextEqual';
+import {ConfigEditorHelpContext} from './configeditor/types/ConfigEditorHelpContext';
 
 interface Props {
   onConfigChange: (config: string) => void;
-  config: string | undefined;
-  configSchema: any | undefined;
+  config?: string;
+  configSchema?: ConfigSchema | null;
   isLoading: boolean;
   identifier: string;
 }
@@ -60,7 +61,7 @@ export const ConfigEditorWithSchema: React.FC<Props> = ({
               checkConfig={async (_j) => {
                 return {isValid: true};
               }}
-              runConfigSchema={configSchema}
+              configSchema={configSchema}
             />
           ) : (
             <Box style={{height: '100%'}} flex={{alignItems: 'center', justifyContent: 'center'}}>

@@ -15,6 +15,12 @@ export interface AssetNodeFragment_configField_configType_ArrayConfigType_recurs
   typeParamKeys: string[];
 }
 
+export interface AssetNodeFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -22,6 +28,7 @@ export interface AssetNodeFragment_configField_configType_ArrayConfigType_recurs
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -81,12 +88,24 @@ export interface AssetNodeFragment_configField_configType_ArrayConfigType {
   recursiveConfigTypes: AssetNodeFragment_configField_configType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface AssetNodeFragment_configField_configType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeFragment_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface AssetNodeFragment_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface AssetNodeFragment_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -96,6 +115,7 @@ export interface AssetNodeFragment_configField_configType_EnumConfigType_recursi
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeFragment_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeFragment_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -153,6 +173,7 @@ export interface AssetNodeFragment_configField_configType_EnumConfigType {
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeFragment_configField_configType_EnumConfigType_values[];
   recursiveConfigTypes: AssetNodeFragment_configField_configType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -164,6 +185,12 @@ export interface AssetNodeFragment_configField_configType_RegularConfigType_recu
   typeParamKeys: string[];
 }
 
+export interface AssetNodeFragment_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeFragment_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -171,6 +198,7 @@ export interface AssetNodeFragment_configField_configType_RegularConfigType_recu
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeFragment_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeFragment_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -248,6 +276,12 @@ export interface AssetNodeFragment_configField_configType_CompositeConfigType_re
   typeParamKeys: string[];
 }
 
+export interface AssetNodeFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -255,6 +289,7 @@ export interface AssetNodeFragment_configField_configType_CompositeConfigType_re
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeFragment_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -323,6 +358,12 @@ export interface AssetNodeFragment_configField_configType_ScalarUnionConfigType_
   typeParamKeys: string[];
 }
 
+export interface AssetNodeFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -330,6 +371,7 @@ export interface AssetNodeFragment_configField_configType_ScalarUnionConfigType_
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeFragment_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -399,6 +441,12 @@ export interface AssetNodeFragment_configField_configType_MapConfigType_recursiv
   typeParamKeys: string[];
 }
 
+export interface AssetNodeFragment_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface AssetNodeFragment_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -406,6 +454,7 @@ export interface AssetNodeFragment_configField_configType_MapConfigType_recursiv
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: AssetNodeFragment_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface AssetNodeFragment_configField_configType_MapConfigType_recursiveConfigTypes_RegularConfigType {

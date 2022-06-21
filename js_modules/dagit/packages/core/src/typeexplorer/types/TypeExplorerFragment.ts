@@ -173,6 +173,12 @@ export interface TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveC
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -180,6 +186,7 @@ export interface TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveC
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -239,12 +246,24 @@ export interface TypeExplorerFragment_inputSchemaType_ArrayConfigType {
   recursiveConfigTypes: TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -254,6 +273,7 @@ export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveCo
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -311,6 +331,7 @@ export interface TypeExplorerFragment_inputSchemaType_EnumConfigType {
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerFragment_inputSchemaType_EnumConfigType_values[];
   recursiveConfigTypes: TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -322,6 +343,12 @@ export interface TypeExplorerFragment_inputSchemaType_RegularConfigType_recursiv
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerFragment_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerFragment_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -329,6 +356,7 @@ export interface TypeExplorerFragment_inputSchemaType_RegularConfigType_recursiv
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerFragment_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerFragment_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -406,6 +434,12 @@ export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_recurs
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -413,6 +447,7 @@ export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_recurs
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -481,6 +516,12 @@ export interface TypeExplorerFragment_inputSchemaType_ScalarUnionConfigType_recu
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerFragment_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerFragment_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -488,6 +529,7 @@ export interface TypeExplorerFragment_inputSchemaType_ScalarUnionConfigType_recu
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerFragment_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerFragment_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -557,6 +599,12 @@ export interface TypeExplorerFragment_inputSchemaType_MapConfigType_recursiveCon
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerFragment_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerFragment_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -564,6 +612,7 @@ export interface TypeExplorerFragment_inputSchemaType_MapConfigType_recursiveCon
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerFragment_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerFragment_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
@@ -634,6 +683,12 @@ export interface TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursive
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -641,6 +696,7 @@ export interface TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursive
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -700,12 +756,24 @@ export interface TypeExplorerFragment_outputSchemaType_ArrayConfigType {
   recursiveConfigTypes: TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -715,6 +783,7 @@ export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveC
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -772,6 +841,7 @@ export interface TypeExplorerFragment_outputSchemaType_EnumConfigType {
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerFragment_outputSchemaType_EnumConfigType_values[];
   recursiveConfigTypes: TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -783,6 +853,12 @@ export interface TypeExplorerFragment_outputSchemaType_RegularConfigType_recursi
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerFragment_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerFragment_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -790,6 +866,7 @@ export interface TypeExplorerFragment_outputSchemaType_RegularConfigType_recursi
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerFragment_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerFragment_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -867,6 +944,12 @@ export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_recur
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -874,6 +957,7 @@ export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_recur
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -942,6 +1026,12 @@ export interface TypeExplorerFragment_outputSchemaType_ScalarUnionConfigType_rec
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerFragment_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerFragment_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -949,6 +1039,7 @@ export interface TypeExplorerFragment_outputSchemaType_ScalarUnionConfigType_rec
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerFragment_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerFragment_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1018,6 +1109,12 @@ export interface TypeExplorerFragment_outputSchemaType_MapConfigType_recursiveCo
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerFragment_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerFragment_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1025,6 +1122,7 @@ export interface TypeExplorerFragment_outputSchemaType_MapConfigType_recursiveCo
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerFragment_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerFragment_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {

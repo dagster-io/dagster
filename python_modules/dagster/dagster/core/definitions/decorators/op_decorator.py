@@ -23,7 +23,6 @@ from ..inference import InferredOutputProps, infer_output_props
 from ..input import In, InputDefinition
 from ..output import Out, OutputDefinition
 from ..policy import RetryPolicy
-from ..solid_definition import SolidDefinition
 from .solid_decorator import (
     DecoratedSolidFunction,
     NoContextDecoratedSolidFunction,
@@ -182,7 +181,7 @@ def _resolve_output_defs_from_outs(
 
 
 @overload
-def op(name: Callable[..., Any]) -> SolidDefinition:
+def op(name: Callable[..., Any]) -> "OpDefinition":
     ...
 
 
@@ -215,7 +214,7 @@ def op(
     retry_policy: Optional[RetryPolicy] = None,
     input_defs: Optional[List[InputDefinition]] = None,
     output_defs: Optional[List[OutputDefinition]] = None,
-) -> Union[SolidDefinition, _Op]:
+) -> Union["OpDefinition", _Op]:
     """
     Create an op with the specified parameters from the decorated function.
 

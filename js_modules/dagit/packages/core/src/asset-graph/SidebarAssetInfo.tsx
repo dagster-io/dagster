@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, Icon, Spinner} from '@dagster-io/ui';
+import {Box, Colors, ConfigTypeSchema, Icon, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -20,7 +20,6 @@ import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
 import {pluginForMetadata} from '../plugins';
-import {ConfigTypeSchema} from '../typeexplorer/ConfigTypeSchema';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {LiveDataForNode, displayNameForAssetKey} from './Utils';

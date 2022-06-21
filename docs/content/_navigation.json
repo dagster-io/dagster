@@ -407,11 +407,15 @@
     "path": "/guides",
     "children": [
       {
+        "title": "Upgrading to Software-Defined Assets",
+        "path": "/guides/dagster/enriching-with-software-defined-assets"
+      },
+      {
         "title": "Versioning and Memoization (Experimental)",
         "path": "/guides/dagster/memoization"
       },
       {
-        "title": "Software-Defined Assets with Pandas and PySpark (Experimental)",
+        "title": "Software-Defined Assets with Pandas and PySpark",
         "path": "/guides/dagster/software-defined-assets"
       },
       {

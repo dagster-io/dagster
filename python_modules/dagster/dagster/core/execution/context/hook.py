@@ -1,5 +1,5 @@
 import warnings
-from typing import AbstractSet, Any, Dict, Optional, Set, Union
+from typing import AbstractSet, Any, Dict, Mapping, Optional, Set, Union
 
 import dagster._check as check
 
@@ -190,7 +190,7 @@ class HookContext:
 class UnboundHookContext(HookContext):
     def __init__(
         self,
-        resources: Dict[str, Any],
+        resources: Mapping[str, Any],
         mode_def: Optional[ModeDefinition],
         op: Optional[Union[SolidDefinition, PendingNodeInvocation]],
         run_id: Optional[str],

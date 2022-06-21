@@ -68,7 +68,7 @@ class JobDefinition(PipelineDefinition):
     def __init__(
         self,
         graph_def: GraphDefinition,
-        resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
         config_mapping: Optional[ConfigMapping] = None,
@@ -490,7 +490,7 @@ class JobDefinition(PipelineDefinition):
         return self._input_values[input_name]
 
 
-def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: PipelineDefinition):
+def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: PipelineDefinition):
     """
     Used to create the user facing experience of the default io_manager
     switching to in-memory when using execute_in_process.

@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, Colors, Icon, Caption, Subheading, Mono} from '@dagster-io/ui';
+import {Box, Colors, Icon, Caption, Subheading, Mono, ConfigTypeSchema} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -15,7 +15,6 @@ import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {Description} from '../pipelines/Description';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {ConfigTypeSchema} from '../typeexplorer/ConfigTypeSchema';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -210,7 +209,7 @@ const OpNamesDisplay = (props: {
   repoAddress: RepoAddress;
 }) => {
   const {assetNode, repoAddress} = props;
-  const {assetKey, graphName, opNames} = assetNode;
+  const {assetKey, graphName, opNames, jobNames} = assetNode;
   const opCount = opNames.length;
 
   if (!opCount) {
@@ -233,16 +232,18 @@ const OpNamesDisplay = (props: {
     );
   }
 
-  const graphPath = workspacePathFromAddress(
-    repoAddress,
-    `/graphs/${__ASSET_JOB_PREFIX}/${graphName}/`,
-  );
+  if (!jobNames.length) {
+    return null;
+  }
 
   return (
     <Box flex={{gap: 4, alignItems: 'center'}}>
       <Icon name="schema" size={16} />
       <Mono>
-        <Link to={graphPath}>{graphName}</Link> ({opCount === 1 ? '1 op' : `${opCount} ops`})
+        <Link to={workspacePathFromAddress(repoAddress, `/graphs/${jobNames[0]}/${graphName}/`)}>
+          {graphName}
+        </Link>
+        {` (${opCount === 1 ? '1 op' : `${opCount} ops`})`}
       </Mono>
     </Box>
   );

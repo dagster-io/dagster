@@ -1,6 +1,7 @@
 import warnings
 from datetime import datetime
 from enum import Enum
+from inspect import Parameter
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -528,6 +529,23 @@ class RunsFilterSerializer(DefaultNamedTupleSerializer):
         # For backcompat, we store:
         # job_name as pipeline_name
         return replace_storage_keys(storage, {"job_name": "pipeline_name"})
+
+    @classmethod
+    def value_from_storage_dict(
+        cls,
+        storage_dict: Dict[str, Any],
+        klass: Type,
+        args_for_class: Mapping[str, Parameter],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> NamedTuple:
+        # We store empty run ids as [] but only accept None
+        if "run_ids" in storage_dict and storage_dict["run_ids"] == []:
+            storage_dict["run_ids"] = None
+
+        return super().value_from_storage_dict(
+            storage_dict, klass, args_for_class, whitelist_map, descent_path
+        )
 
 
 @whitelist_for_serdes(serializer=RunsFilterSerializer)

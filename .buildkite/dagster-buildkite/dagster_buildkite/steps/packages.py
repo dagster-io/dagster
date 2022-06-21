@@ -335,6 +335,13 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
+        "examples/dbt_python_assets",
+        unsupported_python_versions=[
+            # dependency on dagster-dbt
+            AvailablePythonVersion.V3_6,
+        ],
+    ),
+    PackageSpec(
         "examples/deploy_docker",
         pytest_extra_cmds=deploy_docker_example_extra_cmds,
     ),

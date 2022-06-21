@@ -27,21 +27,32 @@ const overwriteMerge = (destination: any[], source: any[]) => source;
 
 interface Props extends Tooltip2Props {
   display?: React.CSSProperties['display'];
+  canShow?: boolean;
 }
 
-export const Tooltip: React.FC<Props> = (props) => (
-  <StyledTooltip
-    {...props}
-    minimal
-    $display={props.display}
-    popoverClassName={`dagit-tooltip ${props.popoverClassName}`}
-    modifiers={deepmerge(
-      {offset: {enabled: true, options: {offset: [0, 8]}}},
-      props.modifiers || {},
-      {arrayMerge: overwriteMerge},
-    )}
-  />
-);
+export const Tooltip: React.FC<Props> = (props) => {
+  const {children, display, canShow = true, ...rest} = props;
+
+  if (!canShow) {
+    return <>{children}</>;
+  }
+
+  return (
+    <StyledTooltip
+      {...rest}
+      minimal
+      $display={display}
+      popoverClassName={`dagit-tooltip ${props.popoverClassName}`}
+      modifiers={deepmerge(
+        {offset: {enabled: true, options: {offset: [0, 8]}}},
+        props.modifiers || {},
+        {arrayMerge: overwriteMerge},
+      )}
+    >
+      {children}
+    </StyledTooltip>
+  );
+};
 
 interface StyledTooltipProps {
   $display: React.CSSProperties['display'];

@@ -44,7 +44,7 @@ The core API for defining Dagster types is <PyObject module="dagster" object="Da
 ```python file=/concepts/types/types.py startafter=start_basic_even_type endbefore=end_basic_even_type
 EvenDagsterType = DagsterType(
     name="EvenDagsterType",
-    type_check_fn=lambda _, value: isinstance(value, int) and value % 2 is 0,
+    type_check_fn=lambda _, value: isinstance(value, int) and value % 2 == 0,
 )
 ```
 

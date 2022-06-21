@@ -13,7 +13,6 @@ import {
 import reject from 'lodash/reject';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
-import * as yaml from 'yaml';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
@@ -194,7 +193,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       }
 
       const tags = [...partition.tagsOrError.results];
-      const runConfigData = yaml.parse(partition.runConfigOrError.yaml || '') || {};
+      const runConfigData = partition.runConfigOrError.yaml || '';
 
       const result = await launchWithTelemetry(
         {

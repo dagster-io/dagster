@@ -1,9 +1,11 @@
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {Button} from './Button';
+import {Button, JoinedButtons} from './Button';
 import {Group} from './Group';
 import {Icon} from './Icon';
+import {Menu, MenuItem} from './Menu';
+import {Popover} from './Popover';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -123,6 +125,48 @@ export const Truncation = () => {
       <Button style={{maxWidth: '250px'}}>
         Four score and seven years ago our fathers brought forth on this continent
       </Button>
+    </Group>
+  );
+};
+
+export const Joined = () => {
+  return (
+    <Group direction="column" spacing={8}>
+      <JoinedButtons>
+        <Button>Main Action</Button>
+        <Popover
+          position="bottom-left"
+          content={
+            <Menu>
+              <MenuItem icon="layers" text="Act fast" />
+              <MenuItem icon="history" text="Act slow" />
+              <MenuItem icon="delete" intent="danger" text="Delete it all" />
+            </Menu>
+          }
+        >
+          <Button icon={<Icon name="expand_more" />}></Button>
+        </Popover>
+      </JoinedButtons>
+      <JoinedButtons>
+        <Button>Left</Button>
+        <Button>Center</Button>
+        <Button>Right</Button>
+      </JoinedButtons>
+      <JoinedButtons>
+        <Button icon={<Icon name="star" />}>Left</Button>
+        <Button icon={<Icon name="star" />}>Center</Button>
+        <Button icon={<Icon name="star" />}>Right</Button>
+      </JoinedButtons>
+      <JoinedButtons>
+        <Button rightIcon={<Icon name="wysiwyg" />}>Left</Button>
+        <Button rightIcon={<Icon name="wysiwyg" />}>Center</Button>
+        <Button rightIcon={<Icon name="wysiwyg" />}>Right</Button>
+      </JoinedButtons>
+      <JoinedButtons>
+        <Button icon={<Icon name="cached" />}></Button>
+        <Button icon={<Icon name="wysiwyg" />}></Button>
+        <Button icon={<Icon name="close" />}></Button>
+      </JoinedButtons>
     </Group>
   );
 };

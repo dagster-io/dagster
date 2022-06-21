@@ -5,7 +5,7 @@ description: Resources enable you to separate graph logic from environment, and 
 
 # Resources
 
-Resources are objects that are shared across the implementations of multiple [assets](/concepts/assets/software-defined-assets) and [ops](/concepts/ops-jobs-graphs/ops) and that can be plugged in after defining those ops and assets.
+Resources are objects that are shared across the implementations of multiple [software-defined assets](/concepts/assets/software-defined-assets) and [ops](/concepts/ops-jobs-graphs/ops) and that can be plugged in after defining those ops and assets.
 
 Resources typically model external components that assets and ops interact with. For example, a resource might be a connection to a data warehouse like Snowflake or a service like Slack.
 
@@ -26,7 +26,7 @@ So, why use resources?
 | <PyObject object="InitResourceContext"/>         | The context object provided to a resource during initialization. This object contains required resource, config, and other run information.                                                                                 |
 | <PyObject object="build_init_resource_context"/> | Function for building an <PyObject object="InitResourceContext"/> outside of execution, intended to be used when testing a resource.                                                                                        |
 | <PyObject object="build_resources"/>             | Function for initializing a set of resources outside of the context of a job's execution.                                                                                                                                   |
-| <PyObject object="with_resources"/>              | Function for providing resources to assets and source assets.                                                                                                                                                               |
+| <PyObject object="with_resources"/>              | Function for providing resources to software-defined assets and source assets.                                                                                                                                              |
 
 ---
 
@@ -53,11 +53,11 @@ def cereal_fetcher(init_context):
 ## Accessing resources
 
 - [In ops](#in-ops)
-- [In assets](#in-assets)
+- [In software-defined assets](#in-software-defined-assets)
 
-### In assets
+### In software-defined assets
 
-Assets use resource keys to access resources:
+Software-defined assets use resource keys to access resources:
 
 ```python file=/concepts/assets/asset_config.py startafter=start_example endbefore=end_example
 @asset(config_schema={"api_endpoint": str})
@@ -86,12 +86,12 @@ def op_requires_resources(context):
 
 ## Providing resources
 
-- [To assets](#to-assets)
+- [To software-defined assets](#to-software-defined-assets)
 - [To jobs](#to-jobs)
 
-### To assets
+### To software-defined assets
 
-Resources can be provided to assets using the <PyObject object="with_resources" /> function. This function takes in a sequence of assets and returns transformed versions of those assets with the provided resources specified:
+Resources can be provided to software-defined assets using the <PyObject object="with_resources" /> function. This function takes in a sequence of assets and returns transformed versions of those assets with the provided resources specified:
 
 ```python file=/concepts/resources/resources.py startafter=start_with_resources_example endbefore=end_with_resources_example
 from dagster import with_resources, asset, resource

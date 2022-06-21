@@ -29,7 +29,7 @@ from .solid_definition import NodeDefinition, SolidDefinition
 
 
 def define_resource_dictionary_cls(
-    resource_defs: Dict[str, ResourceDefinition],
+    resource_defs: Mapping[str, ResourceDefinition],
     required_resources: Set[str],
 ) -> Shape:
     fields = {}
@@ -185,7 +185,7 @@ def get_inputs_field(
     solid: Node,
     handle: NodeHandle,
     dependency_structure: DependencyStructure,
-    resource_defs: Dict[str, ResourceDefinition],
+    resource_defs: Mapping[str, ResourceDefinition],
     solid_ignored: bool,
     asset_layer: AssetLayer,
     is_using_graph_job_op_apis: bool,
@@ -236,7 +236,7 @@ def input_has_upstream(
 def get_input_manager_input_field(
     solid: Node,
     input_def: InputDefinition,
-    resource_defs: Dict[str, ResourceDefinition],
+    resource_defs: Mapping[str, ResourceDefinition],
 ) -> Optional[Field]:
     if input_def.root_manager_key not in resource_defs:
         raise DagsterInvalidDefinitionError(
@@ -271,7 +271,7 @@ def get_type_loader_input_field(solid: Node, input_name: str, input_def: InputDe
 
 def get_outputs_field(
     solid: Node,
-    resource_defs: Dict[str, ResourceDefinition],
+    resource_defs: Mapping[str, ResourceDefinition],
 ) -> Optional[Field]:
 
     # if any outputs have configurable output managers, use those for the schema and ignore all type
@@ -301,7 +301,7 @@ def get_outputs_field(
 
 
 def get_output_manager_output_field(
-    solid: Node, output_def: OutputDefinition, resource_defs: Dict[str, ResourceDefinition]
+    solid: Node, output_def: OutputDefinition, resource_defs: Mapping[str, ResourceDefinition]
 ) -> Optional[ConfigType]:
     if output_def.io_manager_key not in resource_defs:
         raise DagsterInvalidDefinitionError(
@@ -358,7 +358,7 @@ def construct_leaf_solid_config(
     handle: NodeHandle,
     dependency_structure: DependencyStructure,
     config_schema: Optional[IDefinitionConfigSchema],
-    resource_defs: Dict[str, ResourceDefinition],
+    resource_defs: Mapping[str, ResourceDefinition],
     ignored: bool,
     is_using_graph_job_op_apis: bool,
     asset_layer: AssetLayer,
@@ -386,7 +386,7 @@ def define_isolid_field(
     solid: Node,
     handle: NodeHandle,
     dependency_structure: DependencyStructure,
-    resource_defs: Dict[str, ResourceDefinition],
+    resource_defs: Mapping[str, ResourceDefinition],
     ignored: bool,
     is_using_graph_job_op_apis: bool,
     asset_layer: AssetLayer,
@@ -470,7 +470,7 @@ def define_solid_dictionary_cls(
     solids: List[Node],
     ignored_solids: Optional[List[Node]],
     dependency_structure: DependencyStructure,
-    resource_defs: Dict[str, ResourceDefinition],
+    resource_defs: Mapping[str, ResourceDefinition],
     is_using_graph_job_op_apis: bool,
     asset_layer: AssetLayer,
     parent_handle: Optional[NodeHandle] = None,
