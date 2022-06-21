@@ -47,6 +47,7 @@ export interface AssetViewParams {
   view?: 'activity' | 'definition' | 'lineage';
   lineageScope?: AssetLineageScope;
   lineageShowSecondaryEdges?: boolean;
+  lineageDepth?: number;
   partition?: string;
   time?: string;
   asOf?: string;
@@ -71,12 +72,17 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     : null;
 
   const token = tokenForAssetKey(assetKey);
-  const {assetGraphData, graphAssetKeys} = useAssetGraphData(
+
+  const defaultDepth = params.lineageScope === 'neighbors' ? 2 : 5;
+  const requestedDepth = Number(params.lineageDepth) || defaultDepth;
+  const depthStr = '+'.repeat(requestedDepth);
+
+  const {assetGraphData, graphAssetKeys, graphQueryItems} = useAssetGraphData(
     params.view === 'lineage' && params.lineageScope === 'upstream'
-      ? `*"${token}"`
+      ? `${depthStr}"${token}"`
       : params.view === 'lineage' && params.lineageScope === 'downstream'
-      ? `"${token}"*`
-      : `++"${token}"++`,
+      ? `"${token}"${depthStr}`
+      : `${depthStr}"${token}"${depthStr}`,
     {hideEdgesToNodesOutsideQuery: !params.lineageShowSecondaryEdges},
   );
 
@@ -203,6 +209,8 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
                 assetNode={definition}
                 liveDataByNode={liveDataByNode}
                 assetGraphData={assetGraphData}
+                requestedDepth={requestedDepth}
+                graphQueryItems={graphQueryItems}
               />
             ) : (
               <Box style={{flex: 1}} flex={{alignItems: 'center', justifyContent: 'center'}}>
