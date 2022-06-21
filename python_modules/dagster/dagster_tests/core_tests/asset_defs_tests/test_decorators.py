@@ -13,8 +13,9 @@ from dagster import (
     String,
 )
 from dagster import _check as check
-from dagster import build_op_context
+from dagster import build_op_context, io_manager, resource
 from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset, build_assets_job, multi_asset
+from dagster.core.definitions.resource_requirement import ensure_requirements_satisfied
 
 
 @pytest.fixture(autouse=True)
@@ -461,3 +462,31 @@ def test_kwargs():
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
     assert AssetKey("upstream") in my_asset.keys_by_input_name.values()
+
+
+def test_multi_asset_resource_defs():
+    @resource
+    def baz_resource():
+        pass
+
+    @io_manager(required_resource_keys={"baz"})
+    def foo_manager():
+        pass
+
+    @io_manager
+    def bar_manager():
+        pass
+
+    @multi_asset(
+        outs={
+            "key1": Out(asset_key=AssetKey("key1"), io_manager_key="foo"),
+            "key2": Out(asset_key=AssetKey("key2"), io_manager_key="bar"),
+        },
+        resource_defs={"foo": foo_manager, "bar": bar_manager, "baz": baz_resource},
+    )
+    def my_asset():
+        pass
+
+    ensure_requirements_satisfied(
+        my_asset.resource_defs, list(my_asset.get_resource_requirements())
+    )
