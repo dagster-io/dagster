@@ -187,6 +187,11 @@ export const TopNavLink = styled(Link)`
     color: ${Colors.White};
     text-decoration: none;
   }
+
+  :focus {
+    outline: none !important;
+    color: ${Colors.White};
+  }
 `;
 
 export const AppTopNavContainer = styled.div`
