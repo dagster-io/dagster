@@ -448,12 +448,14 @@ def multi_or_in_process_executor(init_context: "InitExecutorContext") -> "Execut
 
     When using the multiprocess mode, ``max_concurrent`` and ``retries`` can also be configured.
 
+    .. code-block:: yaml
 
-          multiprocess:
-            config:
+        execution:
+          config:
+            multiprocess:
               max_concurrent: 4
               retries:
-                enabled:
+              enabled:
 
     The ``max_concurrent`` arg is optional and tells the execution engine how many processes may run
     concurrently. By default, or if you set ``max_concurrent`` to be 0, this is the return value of
