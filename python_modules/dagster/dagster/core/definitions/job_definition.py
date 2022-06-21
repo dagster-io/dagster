@@ -49,7 +49,7 @@ from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
-from .metadata import RawMetadataValue
+from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue
 from .mode import ModeDefinition
 from .partition import PartitionSetDefinition, PartitionedConfig, PartitionsDefinition
 from .pipeline_definition import PipelineDefinition
@@ -85,6 +85,8 @@ class JobDefinition(PipelineDefinition):
         _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]] = None,
         asset_layer: Optional[AssetLayer] = None,
         _input_values: Optional[Mapping[str, object]] = None,
+        _metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        _executor_def_specified: bool = False,
     ):
 
         # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
@@ -96,6 +98,7 @@ class JobDefinition(PipelineDefinition):
             _partitioned_config=partitioned_config,
         )
 
+        self._executor_def_specified = _executor_def_specified
         self._cached_partition_set: Optional["PartitionSetDefinition"] = None
         self._subset_selection_data = check.opt_inst_param(
             _subset_selection_data,
@@ -119,6 +122,7 @@ class JobDefinition(PipelineDefinition):
             preset_defs=preset_defs,
             tags=tags,
             metadata=metadata,
+            metadata_entries=_metadata_entries,
             hook_defs=hook_defs,
             solid_retry_policy=op_retry_policy,
             graph_def=graph_def,
@@ -235,6 +239,7 @@ class JobDefinition(PipelineDefinition):
             version_strategy=self.version_strategy,
             asset_layer=self.asset_layer,
             _input_values=input_values,
+            _executor_def_specified=self._executor_def_specified,
         )
 
         ephemeral_job = ephemeral_job.get_job_def_for_subset_selection(
@@ -376,6 +381,7 @@ class JobDefinition(PipelineDefinition):
                 op_retry_policy=self._solid_retry_policy,
                 graph_def=sub_graph,
                 version_strategy=self.version_strategy,
+                _executor_def_specified=self._executor_def_specified,
                 _subset_selection_data=OpSelectionData(
                     op_selection=op_selection,
                     resolved_op_selection=set(
@@ -466,6 +472,7 @@ class JobDefinition(PipelineDefinition):
             op_retry_policy=self._solid_retry_policy,
             asset_layer=self.asset_layer,
             _subset_selection_data=self._subset_selection_data,
+            _executor_def_specified=self._executor_def_specified,
         )
 
         update_wrapper(job_def, self, updated=())
@@ -489,6 +496,28 @@ class JobDefinition(PipelineDefinition):
                 f"On job '{self.name}', attempted to retrieve input value for input named '{input_name}', but no value was provided. Provided input values: {sorted(list(self._input_values.keys()))}"
             )
         return self._input_values[input_name]
+
+    def with_executor_def(self, executor_def: ExecutorDefinition) -> "JobDefinition":
+        return JobDefinition(
+            graph_def=self.graph,
+            resource_defs=dict(self.resource_defs),
+            executor_def=executor_def,
+            logger_defs=dict(self.loggers),
+            config_mapping=self.config_mapping,
+            partitioned_config=self.partitioned_config,
+            name=self.name,
+            description=self.description,
+            preset_defs=self.preset_defs,
+            tags=self.tags,
+            _metadata_entries=self.metadata,
+            hook_defs=self.hook_defs,
+            op_retry_policy=self._solid_retry_policy,
+            version_strategy=self.version_strategy,
+            _subset_selection_data=self._subset_selection_data,
+            asset_layer=self.asset_layer,
+            _input_values=self._input_values,
+            _executor_def_specified=True,
+        )
 
 
 def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: PipelineDefinition):

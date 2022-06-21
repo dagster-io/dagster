@@ -505,6 +505,7 @@ class GraphDefinition(NodeDefinition):
         asset_layer: Optional["AssetLayer"] = None,
         input_values: Optional[Mapping[str, object]] = None,
         _asset_selection_data: Optional[AssetSelectionData] = None,
+        _executor_def_specified: bool = False,
     ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -572,6 +573,7 @@ class GraphDefinition(NodeDefinition):
         job_name = check_valid_name(name or self.name)
 
         tags = check.opt_dict_param(tags, "tags", key_type=str)
+        executor_def_specified = executor_def is not None
         executor_def = check.opt_inst_param(
             executor_def, "executor_def", ExecutorDefinition, default=multi_or_in_process_executor
         )
@@ -636,6 +638,7 @@ class GraphDefinition(NodeDefinition):
             asset_layer=asset_layer,
             _input_values=input_values,
             _subset_selection_data=_asset_selection_data,
+            _executor_def_specified=executor_def_specified,
         ).get_job_def_for_subset_selection(op_selection)
 
     def coerce_to_job(self):

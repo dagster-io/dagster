@@ -145,6 +145,7 @@ from dagster.core.definitions import (
     make_values_resource,
     monthly_partitioned_config,
     monthly_schedule,
+    multi_or_in_process_executor,
     multiple_process_executor_requirements,
     multiprocess_executor,
     op,
