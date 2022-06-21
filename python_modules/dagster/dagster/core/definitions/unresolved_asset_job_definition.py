@@ -3,19 +3,21 @@ from functools import reduce
 from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
-from dagster.core.definitions.asset_layer import build_asset_selection_job
-from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.run_request import RunRequest
 from dagster.core.selector.subset_selector import parse_clause
 
+from .asset_layer import build_asset_selection_job
+from .config import ConfigMapping
+
 if TYPE_CHECKING:
     from dagster.core.definitions import (
+        AssetSelection,
+        AssetsDefinition,
         JobDefinition,
-        PartitionSetDefinition,
         PartitionedConfig,
         PartitionsDefinition,
+        SourceAsset,
     )
-    from dagster.core.definitions import AssetSelection, AssetsDefinition, SourceAsset
 
 
 class UnresolvedAssetJobDefinition(
@@ -40,8 +42,7 @@ class UnresolvedAssetJobDefinition(
         tags: Optional[Dict[str, Any]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
     ):
-        from dagster.core.definitions import PartitionsDefinition
-        from dagster.core.definitions import AssetSelection
+        from dagster.core.definitions import AssetSelection, PartitionsDefinition
 
         return super(UnresolvedAssetJobDefinition, cls).__new__(
             cls,

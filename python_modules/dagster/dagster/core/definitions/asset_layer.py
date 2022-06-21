@@ -19,13 +19,13 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster.core.definitions.events import AssetKey
 from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.utils.backcompat import ExperimentalWarning
 
 from ..errors import DagsterInvalidSubsetError
 from .config import ConfigMapping
 from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle, SolidOutputHandle
+from .events import AssetKey
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
 from .node_definition import NodeDefinition

@@ -3,6 +3,10 @@ from typing import Any, Mapping, Optional, Sequence, Set, Union
 import dagster._check as check
 from dagster.utils import merge_dicts
 
+from .assets import AssetsDefinition
+from .assets_job import build_assets_job
+from .source_asset import SourceAsset
+
 from ..errors import DagsterInvariantViolationError
 from ..execution.build_resources import wrap_resources_for_execution
 from ..execution.execute_in_process_result import ExecuteInProcessResult
