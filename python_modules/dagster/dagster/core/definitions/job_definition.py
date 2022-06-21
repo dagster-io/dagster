@@ -71,7 +71,7 @@ class JobDefinition(PipelineDefinition):
         graph_def: GraphDefinition,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
-        logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
+        logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         config_mapping: Optional[ConfigMapping] = None,
         partitioned_config: Optional[PartitionedConfig] = None,
         name: Optional[str] = None,
