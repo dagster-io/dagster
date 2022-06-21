@@ -70,13 +70,14 @@ const MatchingSchedule: React.FC<{
   repoAddress: RepoAddress;
   showSwitch: boolean;
 }> = ({schedule, repoAddress, showSwitch}) => {
-  const running = schedule.scheduleState.status === 'RUNNING';
+  const {cronSchedule, executionTimezone, scheduleState} = schedule;
+  const running = scheduleState.status === 'RUNNING';
   const tag = (
     <Tag intent={running ? 'primary' : 'none'} icon="schedule">
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
         Schedule:
         <Link to={workspacePathFromAddress(repoAddress, `/schedules/${schedule.name}`)}>
-          {humanCronString(schedule.cronSchedule)}
+          {humanCronString(cronSchedule, executionTimezone || 'UTC')}
         </Link>
         {showSwitch ? (
           <ScheduleSwitch size="small" repoAddress={repoAddress} schedule={schedule} />
@@ -98,6 +99,9 @@ const MatchingSchedule: React.FC<{
             <span style={{fontFamily: FontFamily.monospace, marginLeft: '4px'}}>
               ({schedule.cronSchedule})
             </span>
+          </div>
+          <div>
+            Timezone: <strong>{schedule.executionTimezone || 'UTC'}</strong>
           </div>
         </Box>
       }
