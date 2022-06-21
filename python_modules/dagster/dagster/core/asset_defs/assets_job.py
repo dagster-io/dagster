@@ -1,17 +1,5 @@
 from collections import defaultdict
-from typing import (
-    AbstractSet,
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from toposort import CircularDependencyError, toposort
 
@@ -39,6 +27,7 @@ from dagster.utils import merge_dicts
 from dagster.utils.backcompat import experimental
 
 from .assets import AssetsDefinition
+from .resolved_asset_deps import ResolvedAssetDependencies
 from .source_asset import SourceAsset
 
 
@@ -103,22 +92,24 @@ def build_assets_job(
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
     resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs)
 
-    conformed_source_assets = [
-        source_asset
-        for asset in source_assets
-        for source_asset in (
-            [asset] if isinstance(asset, SourceAsset) else asset.to_source_assets()
-        )
-    ]
-    deps, assets_defs_by_node_handle, asset_keys_by_input_handle = build_node_deps(
-        assets, conformed_source_assets
+    # turn any AssetsDefinitions into SourceAssets
+    resolved_source_assets: List[SourceAsset] = []
+    for asset in source_assets or []:
+        if isinstance(asset, AssetsDefinition):
+            resolved_source_assets += asset.to_source_assets()
+        elif isinstance(asset, SourceAsset):
+            resolved_source_assets.append(asset)
+
+    resolved_asset_deps = ResolvedAssetDependencies(assets, resolved_source_assets)
+    deps, assets_defs_by_node_handle = build_node_deps(
+        assets, resolved_source_assets, resolved_asset_deps
     )
 
     # attempt to resolve cycles using multi-asset subsetting
     if _has_cycles(deps):
         assets = _attempt_resolve_cycles(assets)
         deps, assets_defs_by_node_handle, asset_keys_by_input_handle = build_node_deps(
-            assets, conformed_source_assets
+            assets, resolved_source_assets
         )
 
     graph = GraphDefinition(
@@ -131,16 +122,8 @@ def build_assets_job(
         config=None,
     )
 
-    # turn any AssetsDefinitions into SourceAssets
-    resolved_source_assets: List[SourceAsset] = []
-    for asset in source_assets or []:
-        if isinstance(asset, AssetsDefinition):
-            resolved_source_assets += asset.to_source_assets()
-        elif isinstance(asset, SourceAsset):
-            resolved_source_assets.append(asset)
-
     asset_layer = AssetLayer.from_graph_and_assets_node_mapping(
-        graph, assets_defs_by_node_handle, resolved_source_assets, asset_keys_by_input_handle
+        graph, assets_defs_by_node_handle, resolved_source_assets, resolved_asset_deps
     )
 
     all_resource_defs = get_all_resource_defs(assets, resolved_source_assets, resource_defs)
@@ -178,63 +161,13 @@ def build_job_partitions_from_assets(
     return first_assets_with_partitions_def.partitions_def
 
 
-def resolve_assets_def_deps(
-    assets_defs: Iterable[AssetsDefinition], source_assets: Iterable[SourceAsset]
-) -> Sequence[Tuple[AssetsDefinition, Mapping[str, AssetKey]]]:
-    """
-    For each AssetsDefinition, resolves its inputs to upstream asset keys. Matches based on either
-    of two criteria:
-    - The input asset key exactly matches an asset key.
-    - The input asset key has one component, that component matches the final component of an asset
-        key, and they're both in the same asset group.
-    """
-    asset_keys_by_group_and_name: Dict[Tuple[str, str], AssetKey] = {}
-    for assets_def in assets_defs:
-        for key in assets_def.keys:
-            asset_keys_by_group_and_name[(assets_def.group_names_by_key[key], key.path[-1])] = key
-    for source_asset in source_assets:
-        asset_keys_by_group_and_name[
-            (source_asset.group_name, source_asset.key.path[-1])
-        ] = source_asset.key
-
-    asset_keys = set(asset_keys_by_group_and_name.values())
-
-    result: List[Tuple[AssetsDefinition, AbstractSet[AssetKey]]] = []
-    for assets_def in assets_defs:
-        group = (
-            next(iter(assets_def.group_names_by_key.values()))
-            if len(assets_def.group_names_by_key) == 1
-            else None
-        )
-
-        dep_keys_by_input_name: Dict[str, AssetKey] = {}
-        for input_name, upstream_asset_key in assets_def.keys_by_input_name.items():
-            group_and_upstream_name = (group, upstream_asset_key.path[-1])
-            if upstream_asset_key in asset_keys:
-                dep_keys_by_input_name[input_name] = upstream_asset_key
-            elif group is not None and group_and_upstream_name in asset_keys_by_group_and_name:
-                dep_keys_by_input_name[input_name] = asset_keys_by_group_and_name[
-                    group_and_upstream_name
-                ]
-            else:
-                raise DagsterInvalidDefinitionError(
-                    f"Input asset '{upstream_asset_key.to_string()}' for asset "
-                    f"'{next(iter(assets_def.keys)).to_string()}' is not "
-                    "produced by any of the provided asset ops and is not one of the provided "
-                    "sources"
-                )
-
-        result.append((assets_def, dep_keys_by_input_name))
-
-    return result
-
-
 def build_node_deps(
-    assets_defs: Iterable[AssetsDefinition], source_assets: Iterable[SourceAsset]
+    assets_defs: Iterable[AssetsDefinition],
+    source_assets: Iterable[SourceAsset],
+    resolved_asset_deps: ResolvedAssetDependencies,
 ) -> Tuple[
     Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]],
     Mapping[NodeHandle, AssetsDefinition],
-    Mapping[NodeInputHandle, AssetKey],
 ]:
     # sort so that nodes get a consistent name
     assets_defs = sorted(assets_defs, key=lambda ad: (sorted((ak for ak in ad.keys))))
@@ -259,13 +192,7 @@ def build_node_deps(
         for output_name, key in assets_def.keys_by_output_name.items():
             node_alias_and_output_by_asset_key[key] = (node_alias, output_name)
 
-    dep_keys_by_input_name_by_assets_def_id = {
-        id(assets_def): dep_keys
-        for assets_def, dep_keys in resolve_assets_def_deps(assets_defs, source_assets)
-    }
-
     deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
-    asset_keys_by_input_handle: Dict[NodeInputHandle, AssetKey] = {}
     for node_handle, assets_def in assets_defs_by_node_handle.items():
         # the key that we'll use to reference the node inside this AssetsDefinition
         node_def_name = assets_def.node_def.name
@@ -276,9 +203,10 @@ def build_node_deps(
         deps[node_key] = {}
 
         # connect each input of this AssetsDefinition to the proper upstream node
-        for input_name, upstream_asset_key in dep_keys_by_input_name_by_assets_def_id[
-            id(assets_def)
-        ].items():
+        for input_name in assets_def.input_names:
+            upstream_asset_key = resolved_asset_deps.get_resolved_asset_key_for_input(
+                assets_def, input_name
+            )
             if upstream_asset_key in node_alias_and_output_by_asset_key:
                 upstream_node_alias, upstream_output_name = node_alias_and_output_by_asset_key[
                     upstream_asset_key
@@ -287,11 +215,7 @@ def build_node_deps(
                     upstream_node_alias, upstream_output_name
                 )
 
-            asset_keys_by_input_handle[
-                NodeInputHandle(node_handle, input_name)
-            ] = upstream_asset_key
-
-    return deps, assets_defs_by_node_handle, asset_keys_by_input_handle
+    return deps, assets_defs_by_node_handle
 
 
 def _has_cycles(deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]) -> bool:

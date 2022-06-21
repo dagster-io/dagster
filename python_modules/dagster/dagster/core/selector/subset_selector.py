@@ -100,6 +100,10 @@ class AssetSelectionData(
 
 
 def generate_asset_dep_graph(assets_defs: Iterable["AssetsDefinition"]) -> DependencyGraph:
+    from dagster.core.asset_defs.resolved_asset_deps import ResolvedAssetDependencies
+
+    resolved_asset_deps = ResolvedAssetDependencies(assets_defs, [])
+
     upstream: Dict[str, Set[str]] = {}
     downstream: Dict[str, Set[str]] = {}
     for assets_def in assets_defs:
@@ -108,7 +112,9 @@ def generate_asset_dep_graph(assets_defs: Iterable["AssetsDefinition"]) -> Depen
             upstream[asset_name] = set()
             downstream[asset_name] = downstream.get(asset_name, set())
             # for each asset upstream of this one, set that as upstream, and this downstream of it
-            upstream_asset_keys = assets_def.asset_deps[asset_key]
+            upstream_asset_keys = resolved_asset_deps.get_resolved_upstream_asset_keys(
+                assets_def, asset_key
+            )
             for upstream_key in upstream_asset_keys:
                 upstream_name = upstream_key.to_user_string()
                 upstream[asset_name].add(upstream_name)
@@ -485,7 +491,6 @@ def parse_asset_selection(
         FrozenSet[str]: a frozenset of qualified deduplicated asset keys, empty if no qualified
             subset selected.
     """
-
     check.list_param(asset_selection, "asset_selection", of_type=str)
 
     # special case: select *

@@ -33,8 +33,8 @@ from .node_definition import NodeDefinition
 from .resource_definition import ResourceDefinition
 
 if TYPE_CHECKING:
-    from dagster.core.asset_defs import AssetGroup, AssetsDefinition, SourceAsset
-    from dagster.core.asset_defs.source_asset import SourceAsset
+    from dagster.core.asset_defs import AssetsDefinition, SourceAsset
+    from dagster.core.asset_defs.resolved_asset_defs import ResolvedAssetDependencies
     from dagster.core.execution.context.output import OutputContext
 
     from .job_definition import JobDefinition
@@ -476,7 +476,7 @@ class AssetLayer:
         graph_def: GraphDefinition,
         assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
         source_assets: Sequence[Union["SourceAsset"]],
-        asset_keys_by_input_handle: Mapping[NodeInputHandle, AssetKey],
+        resolved_asset_deps: "ResolvedAssetDependencies",
     ) -> "AssetLayer":
         """
         Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the
@@ -502,9 +502,11 @@ class AssetLayer:
         for node_handle, assets_def in assets_defs_by_node_handle.items():
             asset_deps.update(assets_def.asset_deps)
 
-            for input_name, asset_key in assets_def.node_keys_by_input_name.items():
+            for input_name in assets_def.node_keys_by_input_name.keys():
                 node_input_handle = NodeInputHandle(node_handle, input_name)
-                resolved_asset_key = asset_keys_by_input_handle[node_input_handle]
+                resolved_asset_key = resolved_asset_deps.get_resolved_asset_key_for_input(
+                    assets_def, input_name
+                )
                 asset_key_by_input[node_input_handle] = resolved_asset_key
                 # resolve graph input to list of op inputs that consume it
                 node_input_handles = _resolve_input_to_destinations(
