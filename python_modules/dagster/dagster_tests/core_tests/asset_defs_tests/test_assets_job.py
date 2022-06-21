@@ -789,7 +789,7 @@ def test_graph_asset_group_name():
         group_name="group1",
     )
 
-    # The asset key is the graph name when there is one output
+    # The asset key is the function name when there is only one output
     assert assets_def.group_names_by_key[AssetKey("my_graph")] == "group1"
 
 
