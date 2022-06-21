@@ -234,6 +234,7 @@ class K8sStepHandler(StepHandler):
         self._batch_api.create_namespaced_job(body=job, namespace=container_context.namespace)
 
     def check_step_health(self, step_handler_context: StepHandlerContext) -> CheckStepHealthResult:
+        raise Exception("what happens when this raises")
         step_keys_to_execute = cast(
             List[str], step_handler_context.execute_step_args.step_keys_to_execute
         )
