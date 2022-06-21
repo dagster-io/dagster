@@ -36,7 +36,7 @@ def nabisco_cereals(cereals):
 
 We've defined our new asset, `nabisco_cereals`, with an argument, `cereals`.
 
-Dagster offers a few ways of specifying asset dependencies, but the easiest is to include an upstream asset name as an argument to the decorated function. When it's time to materialize the contents of the `sugariest_cereal` asset, the contents of `cereals` asset are provided as the value for the `cereals` argument to its compute function.
+Dagster offers a few ways of specifying asset dependencies, but the easiest is to include an upstream asset name as an argument to the decorated function. When it's time to materialize the contents of the `nabisco_cereals` asset, the contents of `cereals` asset are provided as the value for the `cereals` argument to its compute function.
 
 So:
 
