@@ -281,5 +281,8 @@ def repository(
         return _Repository()(name)
 
     return _Repository(
-        name=name, description=description, default_executor_def=default_executor_def
+        name=name,
+        description=description,
+        default_executor_def=default_executor_def,
+        default_logger_defs=default_logger_defs,
     )

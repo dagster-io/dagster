@@ -1485,10 +1485,9 @@ def test_default_loggers_assets_repo():
     def the_repo():
         return [no_logger_provided, the_asset]
 
-    # pylint: disable=comparison-with-callable
     assert the_repo.get_job("__ASSET_JOB").loggers == {"foo": basic}
 
-    assert the_repo.get_job("no_loggers_provided").loggers == {"foo": basic}
+    assert the_repo.get_job("no_logger_provided").loggers == {"foo": basic}
 
 
 def test_default_loggers_jobs_and_pipelines():
@@ -1514,7 +1513,7 @@ def test_default_loggers_jobs_and_pipelines():
     def op_job_no_loggers():
         pass
 
-    @job(logger_defs=default_loggers)
+    @job(logger_defs=default_loggers())
     def job_explicitly_specifies_default_loggers():
         pass
 
@@ -1526,11 +1525,11 @@ def test_default_loggers_jobs_and_pipelines():
     def the_repo():
         return [
             the_asset,
-            op_job_with_executor,
-            op_job_no_executor,
+            op_job_with_loggers,
+            op_job_no_loggers,
             unresolved_job,
             the_pipeline,
-            job_explicitly_defines_default_loggers,
+            job_explicitly_specifies_default_loggers,
         ]
 
     assert the_repo.get_pipeline("the_pipeline").mode_definitions[0].loggers == default_loggers()
@@ -1539,8 +1538,6 @@ def test_default_loggers_jobs_and_pipelines():
 
     assert the_repo.get_job("op_job_with_loggers").loggers == {"foo": custom_logger}
 
-    assert the_repo.get_job("op_job_no_executor").loggers == {"foo": other_custom_logger}
+    assert the_repo.get_job("op_job_no_loggers").loggers == {"foo": other_custom_logger}
 
-    assert (
-        the_repo.get_job("job_explicitly_specifies_default_executor").loggers == default_loggers()
-    )
+    assert the_repo.get_job("job_explicitly_specifies_default_loggers").loggers == default_loggers()
