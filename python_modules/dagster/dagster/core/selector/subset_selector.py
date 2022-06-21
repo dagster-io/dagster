@@ -26,7 +26,7 @@ from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvali
 from dagster.utils import check
 
 if TYPE_CHECKING:
-    from dagster.core.asset_defs import AssetsDefinition
+    from dagster.core.asset_defs import AssetsDefinition, SourceAsset
     from dagster.core.definitions.job_definition import JobDefinition
     from dagster.core.definitions.pipeline_definition import PipelineDefinition
 
@@ -99,10 +99,12 @@ class AssetSelectionData(
         )
 
 
-def generate_asset_dep_graph(assets_defs: Iterable["AssetsDefinition"]) -> DependencyGraph:
+def generate_asset_dep_graph(
+    assets_defs: Iterable["AssetsDefinition"], source_assets: Iterable["SourceAsset"]
+) -> DependencyGraph:
     from dagster.core.asset_defs.resolved_asset_deps import ResolvedAssetDependencies
 
-    resolved_asset_deps = ResolvedAssetDependencies(assets_defs, [])
+    resolved_asset_deps = ResolvedAssetDependencies(assets_defs, source_assets)
 
     upstream: Dict[str, Set[str]] = {}
     downstream: Dict[str, Set[str]] = {}
@@ -478,7 +480,9 @@ def parse_step_selection(
 
 
 def parse_asset_selection(
-    assets_defs: Sequence["AssetsDefinition"], asset_selection: Sequence[str]
+    assets_defs: Sequence["AssetsDefinition"],
+    source_assets: Sequence["SourceAsset"],
+    asset_selection: Sequence[str],
 ) -> FrozenSet["AssetKey"]:
     """Find assets that match the given selection query
 
@@ -497,7 +501,7 @@ def parse_asset_selection(
     if len(asset_selection) == 1 and asset_selection[0] == "*":
         return frozenset(set().union(*(ad.keys for ad in assets_defs)))
 
-    graph = generate_asset_dep_graph(assets_defs)
+    graph = generate_asset_dep_graph(assets_defs, source_assets)
     assets_set: Set[str] = set()
 
     # loop over clauses

@@ -500,14 +500,16 @@ class AssetLayer:
             source_asset.key: source_asset.get_io_manager_key() for source_asset in source_assets
         }
         for node_handle, assets_def in assets_defs_by_node_handle.items():
-            asset_deps.update(assets_def.asset_deps)
+            for key in assets_def.keys:
+                asset_deps[key] = resolved_asset_deps.get_resolved_upstream_asset_keys(
+                    assets_def, key
+                )
 
             for input_name in assets_def.node_keys_by_input_name.keys():
-                node_input_handle = NodeInputHandle(node_handle, input_name)
                 resolved_asset_key = resolved_asset_deps.get_resolved_asset_key_for_input(
                     assets_def, input_name
                 )
-                asset_key_by_input[node_input_handle] = resolved_asset_key
+                asset_key_by_input[NodeInputHandle(node_handle, input_name)] = resolved_asset_key
                 # resolve graph input to list of op inputs that consume it
                 node_input_handles = _resolve_input_to_destinations(
                     input_name, assets_def.node_def, node_handle

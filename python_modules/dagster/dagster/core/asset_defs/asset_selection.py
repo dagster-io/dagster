@@ -1,10 +1,11 @@
 import operator
 from abc import ABC
 from functools import reduce
-from typing import AbstractSet, FrozenSet, Optional, Sequence
+from typing import AbstractSet, FrozenSet, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster.core.asset_defs.assets import AssetsDefinition
+from dagster.core.asset_defs.source_asset import SourceAsset
 from dagster.core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.selector.subset_selector import (
@@ -49,8 +50,10 @@ class AssetSelection(ABC):
         check.inst_param(other, "other", AssetSelection)
         return AndAssetSelection(self, other)
 
-    def resolve(self, all_assets: Sequence[AssetsDefinition]) -> FrozenSet[AssetKey]:
-        check.sequence_param(all_assets, "all_assets", AssetsDefinition)
+    def resolve(
+        self, all_assets: Sequence[Union[AssetsDefinition, SourceAsset]]
+    ) -> FrozenSet[AssetKey]:
+        check.sequence_param(all_assets, "all_assets", (AssetsDefinition, SourceAsset))
         return Resolver(all_assets).resolve(self)
 
 
@@ -96,10 +99,20 @@ class UpstreamAssetSelection(AssetSelection):
 
 
 class Resolver:
-    def __init__(self, all_assets: Sequence[AssetsDefinition]):
-        self.all_assets = all_assets
-        self.asset_dep_graph = generate_asset_dep_graph(list(all_assets))
-        self.all_assets_by_name = generate_asset_name_to_definition_map(all_assets)
+    def __init__(self, all_assets: Sequence[Union[AssetsDefinition, SourceAsset]]):
+        assets_defs = []
+        source_assets = []
+        for asset in all_assets:
+            if isinstance(asset, SourceAsset):
+                source_assets.append(asset)
+            elif isinstance(asset, AssetsDefinition):
+                assets_defs.append(asset)
+            else:
+                check.failed(f"Expected SourceAsset or AssetsDefinition, got {type(asset)}")
+
+        self.assets_defs = assets_defs
+        self.asset_dep_graph = generate_asset_dep_graph(assets_defs, source_assets)
+        self.all_assets_by_name = generate_asset_name_to_definition_map(assets_defs)
 
     def resolve(self, root_node: AssetSelection) -> FrozenSet[AssetKey]:
         return frozenset(
@@ -130,7 +143,7 @@ class Resolver:
         elif isinstance(node, GroupsAssetSelection):
             return reduce(
                 operator.or_,
-                [_match_groups(assets_def, set(node.children)) for assets_def in self.all_assets],
+                [_match_groups(assets_def, set(node.children)) for assets_def in self.assets_defs],
             )
         elif isinstance(node, KeysAssetSelection):
             specified_keys = set([child.to_user_string() for child in node.children])

@@ -121,6 +121,14 @@ class ExperimentalWarning(Warning):
     pass
 
 
+def experimental_warning(message: str, stacklevel: int = 3) -> None:
+    warnings.warn(
+        f"{message}. {EXPERIMENTAL_WARNING_HELP}",
+        ExperimentalWarning,
+        stacklevel=stacklevel,
+    )
+
+
 def experimental_fn_warning(name: str, stacklevel: int = 3) -> None:
     """Utility for warning that a function is experimental"""
     warnings.warn(

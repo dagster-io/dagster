@@ -19,6 +19,7 @@ from dagster import (
     StaticPartitionsDefinition,
     graph,
     io_manager,
+    materialize_to_memory,
     multi_asset,
     op,
     resource,
@@ -1682,12 +1683,11 @@ def test_resolve_dependency_in_group():
         del asset1
         assert context.asset_key_for_input("asset1") == AssetKey(["abc", "asset1"])
 
-    the_job = build_assets_job(name="test", assets=[asset1, asset2])
-    assert the_job.execute_in_process().success
+    assert materialize_to_memory([asset1, asset2]).success
 
 
-def test_resolve_dependency_multi_asset_different_groups():
-    @asset(key_prefix="abc")
+def test_resolve_dependency_fail_across_groups():
+    @asset(key_prefix="abc", group_name="other")
     def asset1():
         ...
 
@@ -1697,6 +1697,29 @@ def test_resolve_dependency_multi_asset_different_groups():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="resource with key 'foo' required by resource with key 'my_source_asset__io_manager' was not provided.",
+        match="is not produced by any of the provided asset ops and is not one of the provided sources",
     ):
-        build_assets_job(name="test", assets=[asset1, asset2])
+        materialize_to_memory([asset1, asset2])
+
+
+def test_resolve_dependency_multi_asset_different_groups():
+    @asset(key_prefix="abc", group_name="a")
+    def upstream():
+        ...
+
+    @op(out={"ns1": Out(), "ns2": Out()})
+    def op1(upstream):
+        del upstream
+
+    assets = AssetsDefinition(
+        keys_by_input_name={"upstream": AssetKey("upstream")},
+        keys_by_output_name={"ns1": AssetKey("ns1"), "ns2": AssetKey("ns2")},
+        node_def=op1,
+        group_names_by_key={AssetKey("ns1"): "a", AssetKey("ns2"): "b"},
+    )
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="is not produced by any of the provided asset ops and is not one of the provided sources",
+    ):
+        materialize_to_memory([upstream, assets])

@@ -10,7 +10,6 @@ from dagster.core.definitions.dependency import (
     DependencyDefinition,
     IDependencyDefinition,
     NodeHandle,
-    NodeInputHandle,
     NodeInvocation,
 )
 from dagster.core.definitions.events import AssetKey
@@ -101,16 +100,14 @@ def build_assets_job(
             resolved_source_assets.append(asset)
 
     resolved_asset_deps = ResolvedAssetDependencies(assets, resolved_source_assets)
-    deps, assets_defs_by_node_handle = build_node_deps(
-        assets, resolved_source_assets, resolved_asset_deps
-    )
+    deps, assets_defs_by_node_handle = build_node_deps(assets, resolved_asset_deps)
 
     # attempt to resolve cycles using multi-asset subsetting
     if _has_cycles(deps):
-        assets = _attempt_resolve_cycles(assets)
-        deps, assets_defs_by_node_handle, asset_keys_by_input_handle = build_node_deps(
-            assets, resolved_source_assets
-        )
+        assets = _attempt_resolve_cycles(assets, resolved_source_assets)
+        resolved_asset_deps = ResolvedAssetDependencies(assets, resolved_source_assets)
+
+        deps, assets_defs_by_node_handle = build_node_deps(assets, resolved_asset_deps)
 
     graph = GraphDefinition(
         name=name,
@@ -163,7 +160,6 @@ def build_job_partitions_from_assets(
 
 def build_node_deps(
     assets_defs: Iterable[AssetsDefinition],
-    source_assets: Iterable[SourceAsset],
     resolved_asset_deps: ResolvedAssetDependencies,
 ) -> Tuple[
     Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]],
@@ -238,7 +234,7 @@ def _has_cycles(deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefi
 
 
 def _attempt_resolve_cycles(
-    assets_defs: Iterable["AssetsDefinition"],
+    assets_defs: Iterable["AssetsDefinition"], source_assets: Iterable["SourceAsset"]
 ) -> Sequence["AssetsDefinition"]:
     """
     DFS starting at root nodes to color the asset dependency graph. Each time you leave your
@@ -257,7 +253,7 @@ def _attempt_resolve_cycles(
     from dagster.core.selector.subset_selector import generate_asset_dep_graph
 
     # get asset dependencies
-    asset_deps = generate_asset_dep_graph(assets_defs)
+    asset_deps = generate_asset_dep_graph(assets_defs, source_assets)
 
     # index AssetsDefinitions by their asset names
     assets_defs_by_asset_name = {}

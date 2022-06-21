@@ -295,7 +295,7 @@ class AssetsDefinition(ResourceAddable):
 
     @property
     def input_names(self) -> Iterable[str]:
-        return self._keys_by_input_name.keys()
+        return self.keys_by_input_name.keys()
 
     @property
     def key(self) -> AssetKey:

@@ -189,10 +189,12 @@ class AssetGroup:
 
         selected_asset_keys: FrozenSet[AssetKey] = frozenset()
         if isinstance(selection, str):
-            selected_asset_keys = parse_asset_selection(self.assets, [selection])
+            selected_asset_keys = parse_asset_selection(
+                self.assets, self.source_assets, [selection]
+            )
         elif isinstance(selection, list):
             selection = check.opt_list_param(selection, "selection", of_type=str)
-            selected_asset_keys = parse_asset_selection(self.assets, selection)
+            selected_asset_keys = parse_asset_selection(self.assets, self.source_assets, selection)
         elif isinstance(selection, FrozenSet):
             check.opt_set_param(selection, "selection", of_type=AssetKey)
             selected_asset_keys = selection
