@@ -257,6 +257,7 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     graphName
     opNames
     jobNames
+    partitionDefinition
     repository {
       id
       name
