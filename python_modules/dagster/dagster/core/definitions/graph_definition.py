@@ -53,6 +53,7 @@ from .output import OutputDefinition, OutputMapping
 from .preset import PresetDefinition
 from .resource_requirement import ResourceRequirement
 from .solid_container import create_execution_structure, validate_dependency_dict
+from .utils import DEFAULT_IO_MANAGER_KEY
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
@@ -576,11 +577,11 @@ class GraphDefinition(NodeDefinition):
         )
         input_values = check.opt_mapping_param(input_values, "input_values")
 
-        if resource_defs and "io_manager" in resource_defs:
+        if resource_defs and DEFAULT_IO_MANAGER_KEY in resource_defs:
             resource_defs_with_defaults = resource_defs
         else:
             resource_defs_with_defaults = merge_dicts(
-                {"io_manager": default_job_io_manager}, resource_defs or {}
+                {DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs or {}
             )
 
         hooks = check.opt_set_param(hooks, "hooks", of_type=HookDefinition)
