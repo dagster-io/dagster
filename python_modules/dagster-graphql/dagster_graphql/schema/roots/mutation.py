@@ -263,6 +263,9 @@ class GrapheneRequestBulkRunTermination(graphene.Mutation):
 
     ok = graphene.NonNull(graphene.Boolean)
 
+    class Meta:
+        name = "RequestBulkRunTerminationMutation"
+
     class Arguments:
         runsFilter = graphene.NonNull(GrapheneRunsFilter)
 
