@@ -771,6 +771,56 @@ def test_graph_asset_decorator_no_args():
     assert assets_def.keys_by_output_name["result"] == AssetKey("my_graph")
 
 
+def test_graph_asset_group_name():
+    @op
+    def my_op1(x):  # pylint: disable=unused-argument
+        return x
+
+    @op
+    def my_op2(y):
+        return y
+
+    @graph
+    def my_graph(x):
+        return my_op2(my_op1(x))
+
+    assets_def = AssetsDefinition.from_graph(
+        graph_def=my_graph,
+        group_name="group1",
+    )
+
+    # The asset key is the function name when there is only one output
+    assert assets_def.group_names_by_key[AssetKey("my_graph")] == "group1"
+
+
+def test_graph_asset_group_name_for_multiple_assets():
+    @op(out={"first_output": Out(), "second_output": Out()})
+    def two_outputs():
+        return 1, 2
+
+    @graph(out={"first_asset": GraphOut(), "second_asset": GraphOut()})
+    def two_assets_graph():
+        one, two = two_outputs()
+        return {"first_asset": one, "second_asset": two}
+
+    two_assets = AssetsDefinition.from_graph(two_assets_graph, group_name="group2")
+    # same as above but using keys_by_output_name to assign AssetKey to each output
+    two_assets_with_keys = AssetsDefinition.from_graph(
+        two_assets_graph,
+        keys_by_output_name={
+            "first_asset": AssetKey("first_asset_key"),
+            "second_asset": AssetKey("second_asset_key"),
+        },
+        group_name="group3",
+    )
+
+    assert two_assets.group_names_by_key[AssetKey("first_asset")] == "group2"
+    assert two_assets.group_names_by_key[AssetKey("second_asset")] == "group2"
+
+    assert two_assets_with_keys.group_names_by_key[AssetKey("first_asset_key")] == "group3"
+    assert two_assets_with_keys.group_names_by_key[AssetKey("second_asset_key")] == "group3"
+
+
 def test_execute_graph_asset():
     @op(out={"x": Out(), "y": Out()})
     def x_op(context):
