@@ -982,6 +982,14 @@ snapshots['test_query_all_solids 1'] = {
                         'solidHandle': {
                             'handleID': 'hanging_graph.my_op'
                         }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'memoization_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'my_op'
+                        }
                     }
                 ]
             },
