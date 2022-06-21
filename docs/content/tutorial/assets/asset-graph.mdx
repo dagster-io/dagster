@@ -49,11 +49,13 @@ Let's visualize these assets in Dagit:
 dagit -f serial_asset_graph.py
 ```
 
-Navigate to <http://127.0.0.1:3000>:
+Navigate to <http://127.0.0.1:3000>. From the **Assets** page, click an asset and then the **Lineage** tab:
 
 <img src="/images/guides/asset-tutorial/serial_asset_graph.png" />
 
 <br />
+
+To materialize the assets, click **Materialize all**.
 
 ---
 
@@ -65,7 +67,7 @@ Here, we're interested in which of Nabisco's cereals has the most protein. We de
 
 - The `cereals` and `nabisco_cereals` assets, same as above
 - A `cereal_protein_fractions` asset, which records each cereal's protein content as a fraction of its total mass
-- A `highest_protein_nabisco_cereal`, which is the name of the nabisco cereal that has the highest protein content
+- A `highest_protein_nabisco_cereal`, which is the name of the Nabisco cereal that has the highest protein content
 
 ```python file=/guides/dagster/asset_tutorial/complex_asset_graph.py
 import csv
@@ -117,6 +119,8 @@ Let's visualize these assets in Dagit:
 ```bash
 dagit -f complex_asset_graph.py
 ```
+
+Navigate to <http://127.0.0.1:3000>. From the **Assets** page, click an asset and then the **Lineage** tab:
 
 <img src="/images/guides/asset-tutorial/complex_asset_graph.png" />
 
