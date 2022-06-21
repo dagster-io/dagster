@@ -16,6 +16,8 @@ import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKey} from '../assets/types';
 
+const MAX_ASSET_TAGS = 3;
+
 export const RunAssetKeyTags: React.FC<{
   assetKeys: AssetKey[] | null;
   clickableTags?: boolean;
@@ -26,14 +28,15 @@ export const RunAssetKeyTags: React.FC<{
     return null;
   }
 
-  const displayed = assetKeys.slice(0, 3);
-  const hidden = assetKeys.length - displayed.length;
+  const assetCount = assetKeys.length;
+  const displayed = assetCount <= MAX_ASSET_TAGS ? assetKeys : [];
+  const hidden = assetCount - displayed.length;
 
   if (clickableTags) {
     return (
       <>
-        {displayed.map((assetKey) => (
-          <Link to={assetDetailsPathForKey(assetKey)} key={tokenForAssetKey(assetKey)}>
+        {displayed.map((assetKey, ii) => (
+          <Link to={assetDetailsPathForKey(assetKey)} key={`${tokenForAssetKey(assetKey)}-${ii}`}>
             <Tag intent="none" interactive icon="asset">
               {displayNameForAssetKey(assetKey)}
             </Tag>
@@ -42,7 +45,7 @@ export const RunAssetKeyTags: React.FC<{
         {hidden > 0 && (
           <ButtonLink onClick={() => setShowMore(true)}>
             <Tag intent="none" icon="asset">
-              {` + ${hidden} more`}
+              {hidden} assets
             </Tag>
           </ButtonLink>
         )}
@@ -62,12 +65,12 @@ export const RunAssetKeyTags: React.FC<{
               <Table>
                 <thead>
                   <tr>
-                    <th>Asset Key</th>
+                    <th>Asset key</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {assetKeys.map((assetKey) => (
-                    <tr key={tokenForAssetKey(assetKey)}>
+                  {assetKeys.map((assetKey, ii) => (
+                    <tr key={`${tokenForAssetKey(assetKey)}-${ii}`}>
                       <td>
                         <Link
                           to={assetDetailsPathForKey(assetKey)}
@@ -83,7 +86,7 @@ export const RunAssetKeyTags: React.FC<{
             </Box>
           ) : null}
           <DialogFooter>
-            <Button intent="primary" autoFocus={true} onClick={() => setShowMore(false)}>
+            <Button intent="primary" autoFocus onClick={() => setShowMore(false)}>
               OK
             </Button>
           </DialogFooter>
