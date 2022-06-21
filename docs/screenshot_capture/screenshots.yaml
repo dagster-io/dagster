@@ -30,7 +30,7 @@
 
 - path: guides/asset-tutorial/defining_an_asset.png
   defs_file: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/cereal.py
-  url: http://127.0.0.1:3000/instance/asset-graph
+  url: http://127.0.0.1:3000/instance/assets/cereals?view=activity
 
 - path: guides/asset-tutorial/asset_run.png
   defs_file: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/cereal.py
@@ -47,10 +47,14 @@
 - path: guides/asset-tutorial/serial_asset_graph.png
   defs_file: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/serial_asset_graph.py
   url: http://127.0.0.1:3000/
+  steps:
+    - Click asset, navigate to Lineage tab
 
 - path: guides/asset-tutorial/complex_asset_graph.png
   defs_file: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/complex_asset_graph.py
   url: http://127.0.0.1:3000/
+  steps:
+    - Click asset, navigate to Lineage tab
 
 
 #################
