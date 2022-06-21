@@ -1,6 +1,6 @@
-from docs_snippets.deploying.gcp import gcp_job
 from dagster import JobDefinition
+from docs_snippets.deploying.gcp.gcp_job import gcs_job
 
 
-def test_gcp_job():
-    assert isinstance(gcp_job, JobDefinition)
+def test_gcs_job():
+    assert isinstance(gcs_job, JobDefinition)
