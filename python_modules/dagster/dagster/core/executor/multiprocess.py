@@ -219,14 +219,16 @@ class MultiprocessExecutor(Executor):
                             serializable_error = serializable_error_info_from_exc_info(
                                 sys.exc_info()
                             )
+                            step_context = plan_context.for_step(
+                                active_execution.get_step_by_key(key)
+                            )
                             yield DagsterEvent.engine_event(
-                                plan_context,
+                                step_context,
                                 (
                                     "Multiprocess executor: child process for step {step_key} "
                                     "unexpectedly exited with code {exit_code}"
                                 ).format(step_key=key, exit_code=crash.exit_code),
                                 EngineEventData.engine_error(serializable_error),
-                                step_handle=active_execution.get_step_by_key(key).handle,
                             )
                             step_failure_event = DagsterEvent.step_failure_event(
                                 step_context=plan_context.for_step(
@@ -318,7 +320,6 @@ def execute_step_out_of_process(
         step_context,
         "Launching subprocess for {}".format(step.key),
         EngineEventData(marker_start=DELEGATE_MARKER),
-        step_handle=step.handle,
     )
 
     for ret in execute_child_process_command(multiproc_ctx, command):
