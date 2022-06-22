@@ -106,7 +106,7 @@ def test_execute():
 
     assert any(
         [
-            "Starting execution with step handler TestStepHandler" in event
+            "Starting execution with step handler TestStepHandler" in event.message
             for event in result.event_list
         ]
     )
@@ -270,7 +270,7 @@ def test_execute_verify_step():
 
     assert any(
         [
-            "Starting execution with step handler TestStepHandler" in event
+            "Starting execution with step handler TestStepHandler" in event.message
             for event in result.event_list
         ]
     )
