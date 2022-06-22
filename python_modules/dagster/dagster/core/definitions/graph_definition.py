@@ -297,7 +297,7 @@ class GraphDefinition(NodeDefinition):
         check.str_param(name, "name")
         check.invariant(
             name in self._node_dict,
-            "{graph_name} has no solid named {name}.".format(graph_name=self._name, name=name),
+            "{graph_name} has no op named {name}.".format(graph_name=self._name, name=name),
         )
 
         return self._node_dict[name]
