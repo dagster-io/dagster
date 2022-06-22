@@ -1,8 +1,22 @@
 """Structured representations of system events."""
 import logging
 import os
+import sys
 from enum import Enum
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, NamedTuple, Optional, Union, cast
+from inspect import Parameter
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Type,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster.core.definitions import (
@@ -32,7 +46,12 @@ from dagster.core.execution.plan.objects import StepFailureData, StepRetryData, 
 from dagster.core.execution.plan.outputs import StepOutputData
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.serdes import register_serdes_tuple_fallbacks, whitelist_for_serdes
+from dagster.serdes import (
+    DefaultNamedTupleSerializer,
+    WhitelistMap,
+    register_serdes_tuple_fallbacks,
+    whitelist_for_serdes,
+)
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.utils.timing import format_duration
 
@@ -267,7 +286,49 @@ def log_resource_event(log_manager: DagsterLogManager, event: "DagsterEvent") ->
     log_manager.log_dagster_event(level=log_level, msg=event.message or "", dagster_event=event)
 
 
-@whitelist_for_serdes
+class DagsterEventSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def value_from_storage_dict(
+        cls,
+        storage_dict: Dict[str, Any],
+        klass: Type,
+        args_for_class: Mapping[str, Parameter],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> NamedTuple:
+        event_type_value = storage_dict["event_type_value"]
+        pipeline_name = storage_dict["pipeline_name"]
+        message = storage_dict.get("message")
+        step_key = storage_dict.get("step_key")
+        event_specific_data = storage_dict.get("event_specific_data")
+
+        event_type_value, event_specific_data = _handle_back_compat(
+            event_type_value, event_specific_data
+        )
+        storage_dict["event_type_value"] = event_type_value
+        storage_dict["event_specific_data"] = event_specific_data
+
+        try:
+            return super().value_from_storage_dict(
+                storage_dict, klass, args_for_class, whitelist_map, descent_path
+            )
+        except Exception:
+            new_message = (
+                f"Could not deserialize event of type {event_type_value}. This event may have been written by a newer version of Dagster."
+                + (f' Original message: "{message}"' if message else "")
+            )
+            return DagsterEvent(
+                event_type_value=DagsterEventType.ENGINE_EVENT.value,
+                pipeline_name=pipeline_name,
+                message=new_message,
+                step_key=step_key,
+                event_specific_data=EngineEventData(
+                    error=serializable_error_info_from_exc_info(sys.exc_info())
+                ),
+            )
+
+
+@whitelist_for_serdes(serializer=DagsterEventSerializer)
 class DagsterEvent(
     NamedTuple(
         "_DagsterEvent",
@@ -402,10 +463,6 @@ class DagsterEvent(
         # legacy
         step_key: Optional[str] = None,
     ):
-        event_type_value, event_specific_data = _handle_back_compat(
-            event_type_value, event_specific_data
-        )
-
         # old events may contain solid_handle but not step_handle
         if solid_handle is not None and step_handle is None:
             step_handle = StepHandle(solid_handle)
