@@ -167,7 +167,7 @@ def get_default_tick_retention_settings(
     }
 
 
-def _type_specific_tick_retention_config_schema():
+def _tick_retention_config_schema():
     return Field(
         {
             "purge_after_days": ScalarUnion(
@@ -184,11 +184,11 @@ def _type_specific_tick_retention_config_schema():
     )
 
 
-def tick_retention_config_schema():
+def retention_config_schema():
     return Field(
         {
-            "schedule": _type_specific_tick_retention_config_schema(),
-            "sensor": _type_specific_tick_retention_config_schema(),
+            "schedule": _tick_retention_config_schema(),
+            "sensor": _tick_retention_config_schema(),
         },
         is_required=False,
     )
@@ -253,5 +253,5 @@ def dagster_instance_config_schema():
         "code_servers": Field(
             {"local_startup_timeout": Field(int, is_required=False)}, is_required=False
         ),
-        "tick_retention": tick_retention_config_schema(),
+        "retention": retention_config_schema(),
     }

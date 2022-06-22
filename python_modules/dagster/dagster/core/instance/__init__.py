@@ -2078,14 +2078,14 @@ class DagsterInstance:
     ) -> Dict["TickStatus", int]:
         from dagster.core.definitions.run_request import InstigatorType
 
-        settings = self.get_settings("tick_retention")
-        value = (
-            settings.get("schedule")
+        retention_settings = self.get_settings("retention")
+        tick_settings = (
+            retention_settings.get("schedule")
             if instigator_type == InstigatorType.SCHEDULE
-            else settings.get("sensor")
+            else retention_settings.get("sensor")
         )
-        default_settings = get_default_tick_retention_settings(instigator_type)
-        return get_tick_retention_settings(value, default_settings)
+        default_tick_settings = get_default_tick_retention_settings(instigator_type)
+        return get_tick_retention_settings(tick_settings, default_tick_settings)
 
 
 def is_dagit_telemetry_enabled(instance):

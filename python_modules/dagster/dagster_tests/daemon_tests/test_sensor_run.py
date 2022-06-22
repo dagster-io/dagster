@@ -2401,7 +2401,7 @@ def test_sensor_custom_purge():
     )
     with instance_with_sensors(
         overrides={
-            "tick_retention": {"sensor": {"purge_after_days": {"skipped": 14}}},
+            "retention": {"sensor": {"purge_after_days": {"skipped": 14}}},
         },
     ) as (instance, workspace, external_repo):
         with pendulum.test(freeze_datetime):
