@@ -39,7 +39,10 @@ const CustomConfirmationContext = React.createContext<
 
 export const useConfirmation = () => React.useContext(CustomConfirmationContext);
 
+const REMOVAL_DELAY = 500;
+
 export const CustomConfirmationProvider: React.FC = ({children}) => {
+  const [mounted, setMounted] = React.useState(false);
   const [confirmationState, setConfirmationState] = React.useState<ConfirmationOptions | null>(
     null,
   );
@@ -48,6 +51,19 @@ export const CustomConfirmationProvider: React.FC = ({children}) => {
     resolve: () => void;
     reject: () => void;
   }>();
+
+  // When a confirmation is set, allow the Dialog to be mounted. When it is cleared,
+  // remove the Dialog from the tree so that its root node doesn't linger in the DOM
+  // and cause subsequent z-index bugs.
+  React.useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    if (!!confirmationState) {
+      setMounted(true);
+    } else {
+      timer = setTimeout(() => setMounted(false), REMOVAL_DELAY);
+    }
+    return () => timer && clearTimeout(timer);
+  }, [confirmationState]);
 
   const openConfirmation = (options: ConfirmationOptions) => {
     setConfirmationState(options);
@@ -77,13 +93,14 @@ export const CustomConfirmationProvider: React.FC = ({children}) => {
       <CustomConfirmationContext.Provider value={openConfirmation}>
         {children}
       </CustomConfirmationContext.Provider>
-
-      <ConfirmationDialog
-        open={Boolean(confirmationState)}
-        onSubmit={handleSubmit}
-        onClose={handleClose}
-        {...confirmationState}
-      />
+      {mounted ? (
+        <ConfirmationDialog
+          open={!!confirmationState}
+          onSubmit={handleSubmit}
+          onClose={handleClose}
+          {...confirmationState}
+        />
+      ) : null}
     </>
   );
 };
