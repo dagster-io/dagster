@@ -23,8 +23,10 @@ from dagster import (
 from dagster._check import CheckError
 from dagster.core.asset_defs import asset, multi_asset
 from dagster.core.asset_defs.load_assets_from_modules import prefix_assets
+from dagster.core.definitions.partition import StaticPartitionsDefinition, static_partitioned_config
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster.core.execution.with_resources import with_resources
+from dagster.core.storage.tags import PARTITION_NAME_TAG
 from dagster.core.test_utils import instance_for_test
 
 
@@ -565,3 +567,36 @@ def test_intersecting_partitions_on_repo_valid():
         ]
 
     assert my_repo
+
+
+def test_job_run_request():
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+    def partition_fn(partition_key: str):
+        return {"ops": {"my_asset": {"config": {"partition": partition_key}}}}
+
+    @static_partitioned_config(partition_keys=partitions_def.get_partition_keys())
+    def my_partitioned_config(partition_key: str):
+        return partition_fn(partition_key)
+
+    @asset
+    def my_asset():
+        pass
+
+    my_job = define_asset_job(
+        "my_job", "*", config=my_partitioned_config, partitions_def=partitions_def
+    )
+
+    for partition_key in ["a", "b", "c", "d"]:
+        run_request = my_job.run_request_for_partition(partition_key=partition_key, run_key=None)
+        assert run_request.run_config == partition_fn(partition_key)
+        assert run_request.tags
+        assert run_request.tags.get(PARTITION_NAME_TAG) == partition_key
+
+        run_request_with_tags = my_job.run_request_for_partition(
+            partition_key=partition_key, run_key=None, tags={"foo": "bar"}
+        )
+        assert run_request_with_tags.run_config == partition_fn(partition_key)
+        assert run_request_with_tags.tags
+        assert run_request_with_tags.tags.get(PARTITION_NAME_TAG) == partition_key
+        assert run_request_with_tags.tags.get("foo") == "bar"

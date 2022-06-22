@@ -56,16 +56,30 @@ class UnresolvedAssetJobDefinition(
             ),
         )
 
-    def get_partition_set_def(self):
-        from dagster.core.definitions import PartitionSetDefinition
+    def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
+        from dagster.core.definitions import PartitionSetDefinition, PartitionedConfig
 
         if self.partitions_def is None:
             return None
 
+        partitioned_config = self.config if isinstance(self.config, PartitionedConfig) else None
+
+        tags_fn = (
+            partitioned_config
+            and partitioned_config.tags_for_partition_fn
+            or (lambda _: cast(Dict[str, str], {}))
+        )
+        run_config_fn = (
+            partitioned_config
+            and partitioned_config.run_config_for_partition_fn
+            or (lambda _: cast(Dict[str, str], {}))
+        )
         return PartitionSetDefinition(
             job_name=self.name,
             name=f"{self.name}_partition_set",
             partitions_def=self.partitions_def,
+            run_config_fn_for_partition=run_config_fn,
+            tags_fn_for_partition=tags_fn,
         )
 
     def run_request_for_partition(

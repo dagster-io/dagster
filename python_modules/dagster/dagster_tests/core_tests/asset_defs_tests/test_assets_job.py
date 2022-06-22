@@ -3,40 +3,25 @@ import os
 import pytest
 
 from dagster import (
-    AssetGroup,
     AssetKey,
-    AssetOut,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
     DependencyDefinition,
     Field,
-    GraphIn,
-    GraphOut,
     IOManager,
-    In,
-    Out,
-    Output,
     ResourceDefinition,
-    StaticPartitionsDefinition,
-    execute_pipeline,
     graph,
-    in_process_executor,
     io_manager,
-    multi_asset,
     op,
-    resource,
 )
 from dagster.config.source import StringSource
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job
-from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.errors import DagsterInvalidSubsetError
+from dagster.core.definitions.output import GraphOut, Out
 from dagster.core.snap import DependencyStructureIndex
 from dagster.core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_icontains_solids,
 )
-from dagster.core.test_utils import instance_for_test
 from dagster.utils import safe_tempfile_path
 
 
