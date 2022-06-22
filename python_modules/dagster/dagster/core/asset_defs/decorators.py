@@ -259,6 +259,10 @@ class _Asset:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
+            required_resource_keys = set(self.required_resource_keys).union(
+                set(self.resource_defs.keys())
+            )
+
             if isinstance(self.io_manager, str):
                 io_manager_key = cast(str, self.io_manager)
             elif self.io_manager is not None:
@@ -278,13 +282,6 @@ class _Asset:
                 description=self.description,
             )
 
-            required_resource_keys = set()
-            for key in self.required_resource_keys:
-                required_resource_keys.add(key)
-            for key in self.resource_defs.keys():
-                # Ensure that io managers not available from context on op.
-                if not isinstance(self.resource_defs[key], IOManagerDefinition):
-                    required_resource_keys.add(key)
             op = _Op(
                 name="__".join(out_asset_key.path).replace("-", "_"),
                 description=self.description,
@@ -399,6 +396,8 @@ def multi_asset(
         "config_schema",
         additional_message="Only dicts are supported for asset config_schema.",
     )
+
+    required_resource_keys = set(required_resource_keys).union(set(resource_defs.keys()))
     for out in outs.values():
         if isinstance(out, Out) and not isinstance(out, AssetOut):
             deprecation_warning(
@@ -434,20 +433,12 @@ def multi_asset(
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
-            required_keys = set()
-            for key in required_resource_keys:
-                required_keys.add(key)
-            for key in resource_defs.keys():
-                if isinstance(resource_defs[key], IOManagerDefinition):
-                    continue
-                required_keys.add(key)
-
             op = _Op(
                 name=op_name,
                 description=description,
                 ins=dict(asset_ins.values()),
                 out=dict(asset_outs.values()),
-                required_resource_keys=required_keys,
+                required_resource_keys=required_resource_keys,
                 tags={
                     **({"kind": compute_kind} if compute_kind else {}),
                     **(op_tags or {}),

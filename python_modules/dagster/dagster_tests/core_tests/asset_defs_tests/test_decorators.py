@@ -487,6 +487,30 @@ def test_multi_asset_resource_defs():
     def my_asset():
         pass
 
+    assert my_asset.required_resource_keys == {"foo", "bar", "baz"}
+
     ensure_requirements_satisfied(
         my_asset.resource_defs, list(my_asset.get_resource_requirements())
     )
+
+
+def test_asset_io_manager_def():
+    @io_manager
+    def the_manager():
+        pass
+
+    @asset(io_manager_def=the_manager)
+    def the_asset():
+        pass
+
+    # If IO manager def is passed directly, then it doesn't appear as a
+    # required resource key on the underlying op.
+    assert set(the_asset.node_def.required_resource_keys) == set()
+
+    @asset(io_manager_key="blah", resource_defs={"blah": the_manager})
+    def other_asset():
+        pass
+
+    # If IO manager def is provided as a resource def, it appears in required
+    # resource keys on the underlying op.
+    assert set(other_asset.node_def.required_resource_keys) == {"blah"}

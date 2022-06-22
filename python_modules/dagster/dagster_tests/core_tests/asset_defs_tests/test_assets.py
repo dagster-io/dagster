@@ -449,6 +449,9 @@ def test_multi_asset_resources_execution():
         resource_defs={"foo": foo_manager, "bar": bar_manager, "baz": baz_resource},
     )
     def my_asset(context):
+        # Required io manager keys are available on the context, same behavoir as ops
+        assert hasattr(context.resources, "foo")
+        assert hasattr(context.resources, "bar")
         yield Output(1, "key1")
         yield Output(2, "key2")
 
