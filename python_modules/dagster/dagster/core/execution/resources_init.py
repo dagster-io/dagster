@@ -1,19 +1,7 @@
 import inspect
 from collections import deque
 from contextlib import ContextDecorator
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Deque,
-    Dict,
-    Generator,
-    Mapping,
-    Optional,
-    Set,
-    Union,
-    cast,
-)
+from typing import AbstractSet, Any, Callable, Deque, Dict, Mapping, Optional, cast
 
 import dagster._check as check
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
@@ -50,7 +38,7 @@ from .context.init import InitResourceContext
 
 def resource_initialization_manager(
     resource_defs: Mapping[str, ResourceDefinition],
-    resource_configs: Dict[str, ResourceConfig],
+    resource_configs: Mapping[str, ResourceConfig],
     log_manager: DagsterLogManager,
     execution_plan: Optional[ExecutionPlan],
     pipeline_run: Optional[PipelineRun],
@@ -125,7 +113,7 @@ def get_dependencies(resource_name: str, resource_deps: Mapping[str, AbstractSet
 
 def _core_resource_initialization_event_generator(
     resource_defs: Mapping[str, ResourceDefinition],
-    resource_configs: Dict[str, ResourceConfig],
+    resource_configs: Mapping[str, ResourceConfig],
     resource_log_manager: DagsterLogManager,
     resource_managers: Deque[EventGenerationManager],
     execution_plan: Optional[ExecutionPlan],
@@ -224,7 +212,7 @@ def _core_resource_initialization_event_generator(
 
 def resource_initialization_event_generator(
     resource_defs: Mapping[str, ResourceDefinition],
-    resource_configs: Dict[str, ResourceConfig],
+    resource_configs: Mapping[str, ResourceConfig],
     log_manager: DagsterLogManager,
     execution_plan: Optional[ExecutionPlan],
     pipeline_run: Optional[PipelineRun],

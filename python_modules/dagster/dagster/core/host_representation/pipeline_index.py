@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster.config.snap import ConfigSchemaSnapshot
@@ -16,10 +16,10 @@ class PipelineIndex:
 
     pipeline_snapshot: PipelineSnapshot
     parent_pipeline_snapshot: Optional[PipelineSnapshot]
-    _node_defs_snaps_index: Dict[str, Union[SolidDefSnap, CompositeSolidDefSnap]]
-    _dagster_type_snaps_by_name_index: Dict[str, DagsterTypeSnap]
+    _node_defs_snaps_index: Mapping[str, Union[SolidDefSnap, CompositeSolidDefSnap]]
+    _dagster_type_snaps_by_name_index: Mapping[str, DagsterTypeSnap]
     dep_structure_index: DependencyStructureIndex
-    _comp_dep_structures: Dict[str, DependencyStructureIndex]
+    _comp_dep_structures: Mapping[str, DependencyStructureIndex]
     _pipeline_snapshot_id: Optional[str]
 
     def __init__(
@@ -40,7 +40,7 @@ class PipelineIndex:
                 "Can not create PipelineIndex for pipeline_snapshot with lineage without parent_pipeline_snapshot",
             )
 
-        node_def_snaps: List[Union[SolidDefSnap, CompositeSolidDefSnap]] = [
+        node_def_snaps: Sequence[Union[SolidDefSnap, CompositeSolidDefSnap]] = [
             *pipeline_snapshot.solid_definitions_snapshot.solid_def_snaps,
             *pipeline_snapshot.solid_definitions_snapshot.composite_solid_def_snaps,
         ]
@@ -72,7 +72,7 @@ class PipelineIndex:
         return self.pipeline_snapshot.description
 
     @property
-    def tags(self) -> Dict[str, Any]:
+    def tags(self) -> Mapping[str, Any]:
         return self.pipeline_snapshot.tags
 
     @property

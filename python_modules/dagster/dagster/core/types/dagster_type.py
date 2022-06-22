@@ -2,7 +2,7 @@ import typing as t
 from abc import abstractmethod
 from enum import Enum as PythonEnum
 from functools import partial
-from typing import AbstractSet as TypingAbstractSet
+from typing import AbstractSet as TypingAbstractSet, Dict
 from typing import Iterator as TypingIterator
 from typing import Mapping
 from typing import Optional as TypingOptional
@@ -835,7 +835,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     from dagster.seven.typing import get_args
     from dagster.utils.typing_api import is_typing_type
 
-    from .python_dict import Dict, PythonDict
+    from .python_dict import Dict as DDict, PythonDict
     from .python_set import DagsterSetApi, PythonSet
     from .python_tuple import DagsterTupleApi, PythonTuple
     from .transform_typing import transform_typing_type
@@ -890,7 +890,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     if dagster_type is None:
         return Any
 
-    if dagster_type is Dict:
+    if dagster_type is DDict:
         return PythonDict
     if isinstance(dagster_type, DagsterTupleApi):
         return PythonTuple

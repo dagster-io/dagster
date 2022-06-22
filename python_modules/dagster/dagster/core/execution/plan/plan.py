@@ -7,6 +7,7 @@ from typing import (
     List,
     NamedTuple,
     Optional,
+    Sequence,
     Set,
     Union,
     cast,
@@ -255,13 +256,13 @@ class _PlanBuilder:
 
     def _build_from_sorted_solids(
         self,
-        solids: List[Node],
+        solids: Sequence[Node],
         dependency_structure: DependencyStructure,
         parent_handle: Optional[NodeHandle] = None,
         parent_step_inputs: Optional[
             List[Union[StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput]]
         ] = None,
-    ):
+    ) -> None:
         asset_layer = self.pipeline.get_definition().asset_layer
         for solid in solids:
             handle = NodeHandle(solid.name, parent_handle)

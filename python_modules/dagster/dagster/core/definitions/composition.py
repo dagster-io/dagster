@@ -283,7 +283,7 @@ class PendingNodeInvocation:
         self,
         node_def: NodeDefinition,
         given_alias: Optional[str],
-        tags: Optional[frozentags],
+        tags: Optional[Mapping[str, str]],
         hook_defs: Optional[AbstractSet[HookDefinition]],
         retry_policy: Optional[RetryPolicy],
     ):

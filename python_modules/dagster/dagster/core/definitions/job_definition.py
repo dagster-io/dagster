@@ -8,6 +8,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -66,6 +67,11 @@ if TYPE_CHECKING:
 
 
 class JobDefinition(PipelineDefinition):
+
+    _cached_partition_set: Optional["PartitionSetDefinition"]
+    _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]]
+    _input_values: Mapping[str, object]
+
     def __init__(
         self,
         graph_def: GraphDefinition,
@@ -76,9 +82,9 @@ class JobDefinition(PipelineDefinition):
         partitioned_config: Optional[PartitionedConfig] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        preset_defs: Optional[List[PresetDefinition]] = None,
-        tags: Optional[Dict[str, Any]] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        preset_defs: Optional[Sequence[PresetDefinition]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,

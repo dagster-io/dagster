@@ -7,9 +7,12 @@ from typing import (
     FrozenSet,
     Iterator,
     List,
+    Mapping,
     Optional,
+    Sequence,
     Set,
     Union,
+    cast,
 )
 
 import dagster._check as check
@@ -29,12 +32,14 @@ from dagster.utils.backcompat import experimental_class_warning
 from .asset_layer import AssetLayer
 from .dependency import (
     DependencyDefinition,
+    DependencyStructure,
     DynamicCollectDependencyDefinition,
     IDependencyDefinition,
     MultiDependencyDefinition,
     Node,
     NodeHandle,
     NodeInvocation,
+    SolidOutputHandle,
 )
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
@@ -47,13 +52,14 @@ from .utils import validate_tags
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
-    from dagster.core.definitions.partition import PartitionSetDefinition
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster.core.host_representation import PipelineIndex
     from dagster.core.instance import DagsterInstance
     from dagster.core.snap import ConfigSchemaSnapshot, PipelineSnapshot
 
+    from .partition import PartitionSetDefinition
     from .run_config_schema import RunConfigSchema
+    from .solid_definition import SolidDefinition
 
 
 class PipelineDefinition:
@@ -148,22 +154,43 @@ class PipelineDefinition:
             )
     """
 
+    _name: str
+    _graph_def: GraphDefinition
+    _description: Optional[str]
+    _tags: Mapping[str, str]
+    _metadata: Sequence[Union[MetadataEntry, PartitionMetadataEntry]]
+    _current_level_node_defs: Sequence[NodeDefinition]
+    _mode_definitions: Sequence[ModeDefinition]
+    _hook_defs: AbstractSet[HookDefinition]
+    _solid_retry_policy: Optional[RetryPolicy]
+    _preset_defs: Sequence[PresetDefinition]
+    _preset_dict: Dict[str, PresetDefinition]
+    _asset_layer: AssetLayer
+    _resource_requirements: Mapping[str, AbstractSet[str]]
+    _all_node_defs: Mapping[str, NodeDefinition]
+    _parent_pipeline_def: Optional["PipelineDefinition"]
+    _cached_run_config_schemas: Dict[str, RunConfigSchema]
+    _cached_external_pipeline: Any
+    _version_strategy: VersionStrategy
+
     def __init__(
         self,
-        solid_defs: Optional[List[NodeDefinition]] = None,
+        solid_defs: Optional[Sequence[NodeDefinition]] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         dependencies: Optional[
             Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]
         ] = None,
-        mode_defs: Optional[List[ModeDefinition]] = None,
-        preset_defs: Optional[List[PresetDefinition]] = None,
-        tags: Optional[Dict[str, Any]] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        mode_defs: Optional[Sequence[ModeDefinition]] = None,
+        preset_defs: Optional[Sequence[PresetDefinition]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         solid_retry_policy: Optional[RetryPolicy] = None,
-        graph_def=None,
-        _parent_pipeline_def=None,  # https://github.com/dagster-io/dagster/issues/2115
+        graph_def: Optional[GraphDefinition] = None,
+        _parent_pipeline_def: Optional[
+            "PipelineDefinition"
+        ] = None,  # https://github.com/dagster-io/dagster/issues/2115
         version_strategy: Optional[VersionStrategy] = None,
         asset_layer: Optional[AssetLayer] = None,
         metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
@@ -261,7 +288,7 @@ class PipelineDefinition:
         self._parent_pipeline_def = check.opt_inst_param(
             _parent_pipeline_def, "_parent_pipeline_def", PipelineDefinition
         )
-        self._cached_run_config_schemas: Dict[str, "RunConfigSchema"] = {}
+        self._cached_run_config_schemas = {}
         self._cached_external_pipeline = None
 
         self.version_strategy = check.opt_inst_param(
@@ -290,42 +317,44 @@ class PipelineDefinition:
         )
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def target_type(self):
+    def target_type(self) -> str:
         return "pipeline"
 
     @property
     def is_job(self) -> bool:
         return False
 
-    def describe_target(self):
+    def describe_target(self) -> str:
         return f"{self.target_type} '{self.name}'"
 
     @property
-    def tags(self):
+    def tags(self) -> Mapping[str, str]:
         return frozentags(**merge_dicts(self._graph_def.tags, self._tags))
 
     @property
-    def metadata(self) -> List[Union[MetadataEntry, PartitionMetadataEntry]]:
+    def metadata(self) -> Sequence[Union[MetadataEntry, PartitionMetadataEntry]]:
         return self._metadata_entries
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         return self._description
 
     @property
-    def graph(self):
+    def graph(self) -> GraphDefinition:
         return self._graph_def
 
     @property
-    def dependency_structure(self):
+    def dependency_structure(self) -> DependencyStructure:
         return self._graph_def.dependency_structure
 
     @property
-    def dependencies(self):
+    def dependencies(
+        self,
+    ) -> Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]:
         return self._graph_def.dependencies
 
     def get_run_config_schema(self, mode: Optional[str] = None) -> "RunConfigSchema":
@@ -344,11 +373,11 @@ class PipelineDefinition:
         return self._cached_run_config_schemas[mode_def.name]
 
     @property
-    def mode_definitions(self) -> List[ModeDefinition]:
+    def mode_definitions(self) -> Sequence[ModeDefinition]:
         return self._mode_definitions
 
     @property
-    def preset_defs(self) -> List[PresetDefinition]:
+    def preset_defs(self) -> Sequence[PresetDefinition]:
         return self._preset_defs
 
     def _get_mode_definition(self, mode: str) -> Optional[ModeDefinition]:
@@ -418,7 +447,7 @@ class PipelineDefinition:
         return list(self._all_node_defs.values())
 
     @property
-    def top_level_solid_defs(self) -> List[NodeDefinition]:
+    def top_level_solid_defs(self) -> Sequence[NodeDefinition]:
         return self._current_level_node_defs
 
     def solid_def_named(self, name: str) -> NodeDefinition:
@@ -538,7 +567,7 @@ class PipelineDefinition:
             FrozenSet[HookDefinition]
         """
         check.inst_param(handle, "handle", NodeHandle)
-        hook_defs: AbstractSet[HookDefinition] = set()
+        hook_defs: Set[HookDefinition] = set()
 
         current = handle
         lineage = []
@@ -554,7 +583,9 @@ class PipelineDefinition:
         # hooks on non-top-level solids
         while lineage:
             name = lineage.pop()
-            solid = solid.definition.solid_named(name)
+            # While lineage is non-empty, definition is guaranteed to be a graph
+            definition = cast(GraphDefinition, solid.definition)
+            solid = definition.solid_named(name)
             hook_defs = hook_defs.union(solid.hook_defs)
 
         # hooks applied to a pipeline definition will run on every solid
@@ -564,11 +595,12 @@ class PipelineDefinition:
 
     def get_retry_policy_for_handle(self, handle: NodeHandle) -> Optional[RetryPolicy]:
         solid = self.get_solid(handle)
+        definition = solid.definition
 
         if solid.retry_policy:
             return solid.retry_policy
-        elif solid.definition.retry_policy:
-            return solid.definition.retry_policy
+        elif isinstance(definition, "SolidDefinition") and definition.retry_policy:
+            return definition.retry_policy
 
         # could be expanded to look in composite_solid / graph containers
         else:
@@ -612,7 +644,7 @@ class PipelineDefinition:
 
 class PipelineSubsetDefinition(PipelineDefinition):
     @property
-    def solids_to_execute(self):
+    def solids_to_execute(self) -> FrozenSet[str]:
         return frozenset(self._graph_def.node_names())
 
     @property
@@ -624,17 +656,18 @@ class PipelineSubsetDefinition(PipelineDefinition):
 
     @property
     def parent_pipeline_def(self) -> PipelineDefinition:
-        return self._parent_pipeline_def
+        return check.not_none(self._parent_pipeline_def)
 
     def get_parent_pipeline_snapshot(self) -> Optional["PipelineSnapshot"]:
-        return self._parent_pipeline_def.get_pipeline_snapshot()
+        parent_pipeline = check.not_none(self.parent_pipeline_def)
+        return parent_pipeline.get_pipeline_snapshot()
 
     @property
     def is_subset_pipeline(self) -> bool:
         return True
 
     def get_pipeline_subset_def(
-        self, solids_to_execute: Optional[AbstractSet[str]]
+        self, _solids_to_execute: Optional[AbstractSet[str]]
     ) -> "PipelineSubsetDefinition":
         raise DagsterInvariantViolationError("Pipeline subsets may not be subset again.")
 
@@ -700,7 +733,10 @@ def _get_pipeline_subset_def(
                         output_name=output_handle.output_def.name,
                     )
             elif graph.dependency_structure.has_fan_in_deps(input_handle):
-                output_handles = graph.dependency_structure.get_fan_in_deps(input_handle)
+                output_handles = cast(
+                    Sequence[SolidOutputHandle],
+                    graph.dependency_structure.get_fan_in_deps(input_handle),
+                )
                 deps[_dep_key_of(solid)][input_handle.input_def.name] = MultiDependencyDefinition(
                     [
                         DependencyDefinition(
@@ -734,14 +770,14 @@ def _get_pipeline_subset_def(
         ) from exc
 
 
-def _iterate_all_nodes(root_node_dict: Dict[str, Node]) -> Iterator[Node]:
+def _iterate_all_nodes(root_node_dict: Mapping[str, Node]) -> Iterator[Node]:
     for node in root_node_dict.values():
         yield node
         if node.is_graph:
             yield from _iterate_all_nodes(node.definition.ensure_graph_def().node_dict)
 
 
-def _build_all_node_defs(node_defs: List[NodeDefinition]) -> Dict[str, NodeDefinition]:
+def _build_all_node_defs(node_defs: Sequence[NodeDefinition]) -> Dict[str, NodeDefinition]:
     all_defs: Dict[str, NodeDefinition] = {}
     for current_level_node_def in node_defs:
         for node_def in current_level_node_def.iterate_node_defs():
@@ -761,7 +797,7 @@ def _build_all_node_defs(node_defs: List[NodeDefinition]) -> Dict[str, NodeDefin
 def _create_run_config_schema(
     pipeline_def: PipelineDefinition,
     mode_definition: ModeDefinition,
-    required_resources: Set[str],
+    required_resources: AbstractSet[str],
 ) -> "RunConfigSchema":
     from .job_definition import get_direct_input_values_from_job
     from .run_config import (

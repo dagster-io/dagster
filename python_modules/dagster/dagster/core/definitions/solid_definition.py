@@ -101,6 +101,12 @@ class SolidDefinition(NodeDefinition):
             )
     """
 
+    _compute_fn: Union[Callable[..., Any], "DecoratedSolidFunction"]
+    _config_schema: IDefinitionConfigSchema
+    _required_resource_keys: AbstractSet[str]
+    _version: Optional[str]
+    _retry_policy: Optional[RetryPolicy]
+
     def __init__(
         self,
         name: str,
@@ -116,10 +122,10 @@ class SolidDefinition(NodeDefinition):
     ):
         from .decorators.solid_decorator import DecoratedSolidFunction
 
+
         if isinstance(compute_fn, DecoratedSolidFunction):
-            self._compute_fn: Union[Callable[..., Any], DecoratedSolidFunction] = compute_fn
+            self._compute_fn = compute_fn
         else:
-            compute_fn = cast(Callable[..., Any], compute_fn)
             self._compute_fn = check.callable_param(compute_fn, "compute_fn")
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
         self._required_resource_keys = frozenset(
@@ -236,9 +242,9 @@ class SolidDefinition(NodeDefinition):
         yield self
 
     def resolve_output_to_origin(
-        self, output_name: str, handle: NodeHandle
+        self, output_name: str, handle: Optional[NodeHandle]
     ) -> Tuple[OutputDefinition, NodeHandle]:
-        return self.output_def_named(output_name), handle
+        return self.output_def_named(output_name), check.not_none(handle)
 
     def get_inputs_must_be_resolved_top_level(
         self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
@@ -465,7 +471,7 @@ class CompositeSolidDefinition(GraphDefinition):
         )
 
     @property
-    def node_type_str(self):
+    def node_type_str(self) -> str:
         return "composite solid"
 
     @property
@@ -477,7 +483,7 @@ def _check_io_managers_on_composite_solid(
     name: str,
     input_mappings: Optional[Sequence[InputMapping]],
     output_mappings: Optional[Sequence[OutputMapping]],
-):
+) -> None:
     # Ban root_manager_key on composite solids
     if input_mappings:
         for input_mapping in input_mappings:

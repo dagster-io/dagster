@@ -22,8 +22,8 @@ from .context_creation_pipeline import initialize_console_manager
 
 
 def _get_mapped_resource_config(
-    resource_defs: Mapping[str, ResourceDefinition], resource_config: Dict[str, Any]
-) -> Dict[str, ResourceConfig]:
+    resource_defs: Mapping[str, ResourceDefinition], resource_config: Mapping[str, Any]
+) -> Mapping[str, ResourceConfig]:
     resource_config_schema = define_resource_dictionary_cls(
         resource_defs, set(resource_defs.keys())
     )

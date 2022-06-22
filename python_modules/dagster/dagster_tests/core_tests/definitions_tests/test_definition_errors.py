@@ -37,7 +37,7 @@ def solid_a_b_list():
 def test_create_pipeline_with_bad_solids_list():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='"nodes" arg to "a_pipeline" is not a list. Got',
+        match='"nodes" arg to "a_pipeline" is not a sequence. Got',
     ):
         PipelineDefinition(
             name="a_pipeline", solid_defs=define_stub_solid("stub", [{"a key": "a value"}])

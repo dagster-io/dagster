@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
 import dagster._check as check
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -72,8 +72,8 @@ def validate_dependency_dict(
 
 
 def create_execution_structure(
-    solid_defs: List["NodeDefinition"],
-    dependencies_dict: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]],
+    solid_defs: Sequence["NodeDefinition"],
+    dependencies_dict: Mapping[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]],
     graph_definition: "GraphDefinition",
 ) -> Tuple[DependencyStructure, Dict[str, Node]]:
     """This builder takes the dependencies dictionary specified during creation of the

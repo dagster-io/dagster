@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Mapping, NamedTuple, Optional, Union, cast
 
 import dagster._check as check
 from dagster.builtins import BuiltinEnum
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from .pipeline_definition import PipelineDefinition
 
 
-def is_callable_valid_config_arg(config: Union[Callable[..., Any], Dict[str, Any]]) -> bool:
+def is_callable_valid_config_arg(config: Union[Callable[..., Any], Mapping[str, object]]) -> bool:
     return BuiltinEnum.contains(config) or is_supported_config_python_builtin(config)
 
 

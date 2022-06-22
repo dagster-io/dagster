@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator, List, Mapping, NamedTuple, Optional, Set, Tuple, cast
+from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, NamedTuple, Optional, Set, Tuple, cast
 
 from dagster.config import Field, Permissive, Selector
 from dagster.config.config_type import ALL_CONFIG_BUILTINS, Array, ConfigType
@@ -76,7 +76,7 @@ class RunConfigSchemaCreationData(NamedTuple):
     mode_definition: ModeDefinition
     logger_defs: Mapping[str, LoggerDefinition]
     ignored_solids: List[Node]
-    required_resources: Set[str]
+    required_resources: AbstractSet[str]
     is_using_graph_job_op_apis: bool
     direct_inputs: Mapping[str, Any]
     asset_layer: AssetLayer

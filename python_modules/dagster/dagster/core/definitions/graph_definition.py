@@ -68,7 +68,7 @@ if TYPE_CHECKING:
     from .solid_definition import SolidDefinition
 
 
-def _check_node_defs_arg(graph_name: str, node_defs: Optional[Sequence[NodeDefinition]]):
+def _check_node_defs_arg(graph_name: str, node_defs: Optional[Sequence[NodeDefinition]]) -> Sequence[NodeDefinition]:
     node_defs = node_defs or []
 
     _node_defs = check.opt_sequence_param(node_defs, "node_defs")
@@ -174,6 +174,16 @@ class GraphDefinition(NodeDefinition):
             )
     """
 
+    _node_defs: Sequence[NodeDefinition]
+    _dagster_type_dict: Mapping[str, DagsterType]
+    _dependencies: Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
+    _dependency_structure: DependencyStructure
+    _node_dict: Mapping[str, Node]
+    _input_mappings: Sequence[InputMapping]
+    _output_mappings: Sequence[OutputMapping]
+    _config_mapping: Optional[ConfigMapping]
+    _solids_in_topological_order: Sequence[Node]
+
     def __init__(
         self,
         name: str,
@@ -224,10 +234,10 @@ class GraphDefinition(NodeDefinition):
 
         # must happen after base class construction as properties are assumed to be there
         # eager computation to detect cycles
-        self.solids_in_topological_order = self._solids_in_topological_order()
+        self._solids_in_topological_order = self._get_solids_in_topological_order()
         self._dagster_type_dict = construct_dagster_type_dictionary([self])
 
-    def _solids_in_topological_order(self):
+    def _get_solids_in_topological_order(self) -> List[Node]:
 
         _forward_edges, backward_edges = _create_adjacency_lists(
             self.solids, self.dependency_structure
@@ -278,12 +288,16 @@ class GraphDefinition(NodeDefinition):
         return list(set(self._node_dict.values()))
 
     @property
-    def node_dict(self) -> Dict[str, Node]:
+    def node_dict(self) -> Mapping[str, Node]:
         return self._node_dict
 
     @property
-    def node_defs(self) -> List[NodeDefinition]:
+    def node_defs(self) -> Sequence[NodeDefinition]:
         return self._node_defs
+
+    @property
+    def solids_in_topological_order(self) -> Sequence[Node]:
+        return self._solids_in_topological_order
 
     def has_solid_named(self, name: str) -> bool:
         check.str_param(name, "name")
@@ -310,7 +324,9 @@ class GraphDefinition(NodeDefinition):
         solid = self.solid_named(name)
         while lineage:
             name = lineage.pop()
-            solid = solid.definition.solid_named(name)
+            # We know that this is a current solid is a graph while ascending lineage
+            definition = cast(GraphDefinition, solid.definition)
+            solid = definition.solid_named(name)
 
         return solid
 
@@ -334,11 +350,11 @@ class GraphDefinition(NodeDefinition):
             yield cur_node_handle
 
     @property
-    def input_mappings(self) -> List[InputMapping]:
+    def input_mappings(self) -> Sequence[InputMapping]:
         return self._input_mappings
 
     @property
-    def output_mappings(self) -> List[OutputMapping]:
+    def output_mappings(self) -> Sequence[OutputMapping]:
         return self._output_mappings
 
     @property
@@ -352,11 +368,11 @@ class GraphDefinition(NodeDefinition):
     def all_dagster_types(self) -> Iterable[DagsterType]:
         return self._dagster_type_dict.values()
 
-    def has_dagster_type(self, name):
+    def has_dagster_type(self, name: str) -> bool:
         check.str_param(name, "name")
         return name in self._dagster_type_dict
 
-    def dagster_type_named(self, name):
+    def dagster_type_named(self, name: str) -> DagsterType:
         check.str_param(name, "name")
         return self._dagster_type_dict[name]
 
@@ -399,7 +415,7 @@ class GraphDefinition(NodeDefinition):
             NodeHandle(mapped_solid.name, handle),
         )
 
-    def default_value_for_input(self, input_name: str) -> Any:
+    def default_value_for_input(self, input_name: str) -> object:
         check.str_param(input_name, "input_name")
 
         # base case
@@ -824,7 +840,7 @@ def _validate_in_mappings(
     dependency_structure: DependencyStructure,
     name: str,
     class_name: str,
-) -> Tuple[List[InputMapping], Iterable[InputDefinition]]:
+) -> Tuple[List[InputMapping], List[InputDefinition]]:
     from .composition import MappedInputPlaceholder
 
     input_def_dict: Dict[str, InputDefinition] = OrderedDict()
@@ -951,7 +967,7 @@ def _validate_in_mappings(
                             )
                         )
 
-    return input_mappings, input_def_dict.values()
+    return input_mappings, list(input_def_dict.values())
 
 
 def _validate_out_mappings(

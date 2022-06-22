@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Union
 
 import dagster._check as check
 from dagster.config.config_schema import UserConfigSchema
@@ -94,7 +94,12 @@ def _get_user_code_error_str_lambda(
 
 
 class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
-    def __init__(self, parent_definition, config_schema, config_or_config_fn):
+
+    parent_def: "ConfigurableDefinition"
+    _current_field: Optional[Field]
+    _config_fn: Callable[..., object]
+
+    def __init__(self, parent_definition: "ConfigurableDefinition", config_schema: Optional[DefinitionConfigSchema], config_or_config_fn: object):
         from .configurable import ConfigurableDefinition
 
         self.parent_def = check.inst_param(
@@ -104,23 +109,24 @@ class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
 
         self._current_field = config_schema.as_field() if config_schema else None
 
+        # type-ignores for mypy "Cannot assign to a method" (pyright works)
         if not callable(config_or_config_fn):
-            self._config_fn = lambda _: config_or_config_fn
+            self._config_fn = lambda _: config_or_config_fn  # type: ignore
         else:
-            self._config_fn = config_or_config_fn
+            self._config_fn = config_or_config_fn  # type: ignore
 
     def as_field(self) -> Field:
-        return self._current_field
+        return check.not_none(self._current_field)
 
-    def _invoke_user_config_fn(self, processed_config: Dict[str, Any]) -> Dict[str, Any]:
+    def _invoke_user_config_fn(self, processed_config: Mapping[str, Any]) -> Mapping[str, object]:
         with user_code_error_boundary(
             DagsterConfigMappingFunctionError,
             _get_user_code_error_str_lambda(self.parent_def),
         ):
             return {"config": self._config_fn(processed_config.get("config", {}))}
 
-    def resolve_config(self, processed_config: Dict[str, Any]) -> EvaluateValueResult:
-        check.dict_param(processed_config, "processed_config")
+    def resolve_config(self, processed_config: Mapping[str, object]) -> EvaluateValueResult:
+        check.mapping_param(processed_config, "processed_config")
         # Validate resolved config against the inner definitions's config_schema (on self).
         config_evr = process_config(
             {"config": self.parent_def.config_field or {}},

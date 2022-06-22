@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict
+from typing import Dict, Optional
 
 import dagster._check as check
 
@@ -19,17 +19,21 @@ class TraversalType(Enum):
 class ContextData:
     __slots__ = ["_config_schema_snapshot", "_config_type_snap", "_stack"]
 
+    _config_schema_snapshot: ConfigSchemaSnapshot
+    _config_type_snap: ConfigTypeSnap
+    _stack: EvaluationStack
+
     def __init__(
         self,
         config_schema_snapshot: ConfigSchemaSnapshot,
         config_type_snap: ConfigTypeSnap,
         stack: EvaluationStack,
     ):
-        self._config_schema_snapshot = check.opt_inst_param(
+        self._config_schema_snapshot = check.inst_param(
             config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
         )
 
-        self._config_type_snap = check.opt_inst_param(
+        self._config_type_snap = check.inst_param(
             config_type_snap, "config_type_snap", ConfigTypeSnap
         )
 

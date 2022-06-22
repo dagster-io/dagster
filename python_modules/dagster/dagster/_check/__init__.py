@@ -635,6 +635,16 @@ def inst_param(
         )
     return obj
 
+@overload
+def opt_inst_param(
+    obj: Optional[T],
+    param_name: str,
+    ttype: TypeOrTupleOfTypes,
+    default: None = ...,
+    additional_message: Optional[str] = None,
+) -> Optional[T]:
+    ...
+
 
 @overload
 def opt_inst_param(
@@ -645,7 +655,6 @@ def opt_inst_param(
     additional_message: Optional[str] = None,
 ) -> T:
     ...
-
 
 @overload
 def opt_inst_param(
@@ -659,7 +668,7 @@ def opt_inst_param(
 
 
 def opt_inst_param(
-    obj: T,
+    obj: Optional[T],
     param_name: str,
     ttype: TypeOrTupleOfTypes,
     default: Optional[T] = None,

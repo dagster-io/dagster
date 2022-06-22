@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, Dict, FrozenSet, List, NamedTuple, Optional, Set, Union, cast
+from typing import AbstractSet, Any, Dict, FrozenSet, List, Mapping, NamedTuple, Optional, Sequence, Set, Union, cast
 
 from dagster import Field, Map, Permissive, Selector, Shape
 from dagster import _check as check
@@ -133,15 +133,15 @@ class PipelineSnapshot(
         [
             ("name", str),
             ("description", Optional[str]),
-            ("tags", Dict[str, Any]),
+            ("tags", Mapping[str, Any]),
             ("config_schema_snapshot", ConfigSchemaSnapshot),
             ("dagster_type_namespace_snapshot", DagsterTypeNamespaceSnapshot),
             ("solid_definitions_snapshot", SolidDefinitionsSnapshot),
             ("dep_structure_snapshot", DependencyStructureSnapshot),
-            ("mode_def_snaps", List[ModeDefSnap]),
+            ("mode_def_snaps", Sequence[ModeDefSnap]),
             ("lineage_snapshot", Optional["PipelineSnapshotLineage"]),
             ("graph_def_name", str),
-            ("metadata", List[Union[MetadataEntry, PartitionMetadataEntry]]),
+            ("metadata", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
         ],
     )
 ):
@@ -149,21 +149,21 @@ class PipelineSnapshot(
         cls,
         name: str,
         description: Optional[str],
-        tags: Optional[Dict[str, Any]],
+        tags: Optional[Mapping[str, Any]],
         config_schema_snapshot: ConfigSchemaSnapshot,
         dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
         solid_definitions_snapshot: SolidDefinitionsSnapshot,
         dep_structure_snapshot: DependencyStructureSnapshot,
-        mode_def_snaps: List[ModeDefSnap],
+        mode_def_snaps: Sequence[ModeDefSnap],
         lineage_snapshot: Optional["PipelineSnapshotLineage"],
         graph_def_name: str,
-        metadata: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]],
+        metadata: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]],
     ):
         return super(PipelineSnapshot, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             description=check.opt_str_param(description, "description"),
-            tags=check.opt_dict_param(tags, "tags"),
+            tags=check.opt_mapping_param(tags, "tags"),
             config_schema_snapshot=check.inst_param(
                 config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
             ),
@@ -178,12 +178,12 @@ class PipelineSnapshot(
             dep_structure_snapshot=check.inst_param(
                 dep_structure_snapshot, "dep_structure_snapshot", DependencyStructureSnapshot
             ),
-            mode_def_snaps=check.list_param(mode_def_snaps, "mode_def_snaps", of_type=ModeDefSnap),
+            mode_def_snaps=check.sequence_param(mode_def_snaps, "mode_def_snaps", of_type=ModeDefSnap),
             lineage_snapshot=check.opt_inst_param(
                 lineage_snapshot, "lineage_snapshot", PipelineSnapshotLineage
             ),
             graph_def_name=check.str_param(graph_def_name, "graph_def_name"),
-            metadata=check.opt_list_param(metadata, "metadata"),
+            metadata=check.opt_sequence_param(metadata, "metadata"),
         )
 
     @classmethod

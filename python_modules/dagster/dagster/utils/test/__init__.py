@@ -55,7 +55,7 @@ from ..temp_file import (
 from ..typing_api import is_typing_type
 
 if TYPE_CHECKING:
-    from dagster._core.execution.results import CompositeSolidExecutionResult, SolidExecutionResult
+    from dagster.core.execution.results import CompositeSolidExecutionResult, SolidExecutionResult
 
 
 def create_test_pipeline_execution_context(
@@ -129,7 +129,7 @@ def build_pipeline_with_input_stubs(
 
     return PipelineDefinition(
         name=pipeline_def.name + "_stubbed",
-        solid_defs=pipeline_def.top_level_solid_defs + stub_solid_defs,
+        solid_defs=[*pipeline_def.top_level_solid_defs, *stub_solid_defs],
         mode_defs=pipeline_def.mode_definitions,
         dependencies=deps,  # type: ignore
     )

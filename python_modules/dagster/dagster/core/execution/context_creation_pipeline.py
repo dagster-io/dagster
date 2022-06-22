@@ -243,7 +243,7 @@ def execution_context_event_generator(
 
     log_manager = create_log_manager(context_creation_data)
     resource_defs = pipeline_def.get_required_resource_defs_for_mode(
-        context_creation_data.resolved_run_config.mode
+        check.not_none(context_creation_data.resolved_run_config.mode)
     )
 
     resources_manager = scoped_resources_builder_cm(
