@@ -2,11 +2,13 @@ import typing as t
 from abc import abstractmethod
 from enum import Enum as PythonEnum
 from functools import partial
-from typing import AbstractSet as TypingAbstractSet, Dict
+from typing import AbstractSet as TypingAbstractSet
+from typing import Dict
 from typing import Iterator as TypingIterator
 from typing import Mapping
 from typing import Optional as TypingOptional
 from typing import Sequence, cast
+from typing_extensions import get_args, get_origin
 
 import dagster._check as check
 from dagster.builtins import BuiltinEnum
@@ -832,10 +834,10 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         is_supported_runtime_python_builtin,
         remap_python_builtin_for_runtime,
     )
-    from dagster.seven.typing import get_args
     from dagster.utils.typing_api import is_typing_type
 
-    from .python_dict import Dict as DDict, PythonDict
+    from .python_dict import Dict as DDict
+    from .python_dict import PythonDict
     from .python_set import DagsterSetApi, PythonSet
     from .python_tuple import DagsterTupleApi, PythonTuple
     from .transform_typing import transform_typing_type
@@ -934,7 +936,6 @@ def is_dynamic_output_annotation(dagster_type: object) -> bool:
 
 
 def _is_generic_output_annotation(dagster_type: object) -> bool:
-    from dagster.seven.typing import get_origin
 
     return dagster_type == Output or get_origin(dagster_type) == Output
 

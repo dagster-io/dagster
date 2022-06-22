@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import Any, Callable, Dict, List, Optional, Union, overload
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Union, overload
 
 import dagster._check as check
 from dagster.core.decorator_utils import format_docstring_for_description
@@ -11,22 +11,32 @@ from ..output import GraphOut, OutputDefinition
 
 
 class _Graph:
+
+    name: Optional[str]
+    description: Optional[str]
+    input_defs: Sequence[InputDefinition]
+    output_defs: Optional[Sequence[OutputDefinition]]
+    ins: Optional[Mapping[str, GraphIn]]
+    out: Optional[Union[GraphOut, Mapping[str, GraphOut]]]
+    tags: Optional[Mapping[str, object]]
+    config_mapping: Optional[ConfigMapping]
+
     def __init__(
         self,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        input_defs: Optional[List[InputDefinition]] = None,
-        output_defs: Optional[List[OutputDefinition]] = None,
-        ins: Optional[Dict[str, GraphIn]] = None,
-        out: Optional[Union[GraphOut, Dict[str, GraphOut]]] = None,
+        input_defs: Optional[Sequence[InputDefinition]] = None,
+        output_defs: Optional[Sequence[OutputDefinition]] = None,
+        ins: Optional[Mapping[str, GraphIn]] = None,
+        out: Optional[Union[GraphOut, Mapping[str, GraphOut]]] = None,
         tags: Optional[Dict[str, Any]] = None,
         config_mapping: Optional[ConfigMapping] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
-        self.input_defs = check.opt_list_param(input_defs, "input_defs", of_type=InputDefinition)
+        self.input_defs = check.opt_sequence_param(input_defs, "input_defs", of_type=InputDefinition)
         self.did_pass_outputs = output_defs is not None or out is not None
-        self.output_defs = check.opt_nullable_list_param(
+        self.output_defs = check.opt_nullable_sequence_param(
             output_defs, "output_defs", of_type=OutputDefinition
         )
         self.ins = ins

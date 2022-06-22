@@ -190,7 +190,7 @@ class GraphDefinition(NodeDefinition):
         description: Optional[str] = None,
         node_defs: Optional[Sequence[NodeDefinition]] = None,
         dependencies: Optional[
-            Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]
+            Mapping[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]
         ] = None,
         input_mappings: Optional[Sequence[InputMapping]] = None,
         output_mappings: Optional[Sequence[OutputMapping]] = None,

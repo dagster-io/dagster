@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 
 
 def validate_dependency_dict(
-    dependencies: Optional[Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]],
-) -> Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]:
+    dependencies: Optional[Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]],
+) -> Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]:
     prelude = (
         'The expected type for "dependencies" is Dict[Union[str, NodeInvocation], Dict[str, '
         "DependencyDefinition]]. "
@@ -165,11 +165,11 @@ def create_execution_structure(
 
 
 def _build_pipeline_solid_dict(
-    solid_defs: List["NodeDefinition"],
-    name_to_aliases: Dict[str, Set[str]],
-    alias_to_solid_instance: Dict[str, NodeInvocation],
+    solid_defs: Sequence["NodeDefinition"],
+    name_to_aliases: Mapping[str, Set[str]],
+    alias_to_solid_instance: Mapping[str, NodeInvocation],
     graph_definition,
-) -> Dict[str, Node]:
+) -> Mapping[str, Node]:
     pipeline_solids = []
     for solid_def in solid_defs:
         uses_of_solid = name_to_aliases.get(solid_def.name, {solid_def.name})
