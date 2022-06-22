@@ -14,6 +14,7 @@ from dagster import (
     GraphIn,
     GraphOut,
     IOManager,
+    In,
     Out,
     Output,
     ResourceDefinition,
@@ -698,11 +699,11 @@ def test_fail_with_get_output_asset_key():
 
 
 def test_internal_asset_deps():
-    with pytest.raises(Exception, match="output_name non_exist_output_name"):
+    @op
+    def my_op(x, y):  # pylint: disable=unused-argument
+        return x
 
-        @op
-        def my_op(x, y):  # pylint: disable=unused-argument
-            return x
+    with pytest.raises(Exception, match="output_name non_exist_output_name"):
 
         @graph(ins={"x": GraphIn()})
         def my_graph(x, y):
@@ -711,6 +712,57 @@ def test_internal_asset_deps():
         AssetsDefinition.from_graph(
             graph_def=my_graph, internal_asset_deps={"non_exist_output_name": {AssetKey("b")}}
         )
+
+    with pytest.raises(Exception, match="output_name non_exist_output_name"):
+        AssetsDefinition.from_op(
+            op_def=my_op, internal_asset_deps={"non_exist_output_name": {AssetKey("b")}}
+        )
+
+
+def test_asset_def_from_op_inputs():
+    @op(ins={"my_input": In(), "other_input": In()}, out={"out1": Out(), "out2": Out()})
+    def my_op(my_input, other_input):  # pylint: disable=unused-argument
+        pass
+
+    assets_def = AssetsDefinition.from_op(
+        op_def=my_op,
+        keys_by_input_name={"my_input": AssetKey("x_asset"), "other_input": AssetKey("y_asset")},
+    )
+
+    assert assets_def.keys_by_input_name["my_input"] == AssetKey("x_asset")
+    assert assets_def.keys_by_input_name["other_input"] == AssetKey("y_asset")
+    assert assets_def.keys_by_output_name["out1"] == AssetKey("out1")
+    assert assets_def.keys_by_output_name["out2"] == AssetKey("out2")
+
+
+def test_asset_def_from_op_outputs():
+    @op(ins={"my_input": In(), "other_input": In()}, out={"out1": Out(), "out2": Out()})
+    def x_op(my_input, other_input):  # pylint: disable=unused-argument
+        pass
+
+    assets_def = AssetsDefinition.from_op(
+        op_def=x_op,
+        keys_by_output_name={"out2": AssetKey("y_asset"), "out1": AssetKey("x_asset")},
+    )
+
+    assert assets_def.keys_by_output_name["out2"] == AssetKey("y_asset")
+    assert assets_def.keys_by_output_name["out1"] == AssetKey("x_asset")
+    assert assets_def.keys_by_input_name["my_input"] == AssetKey("my_input")
+    assert assets_def.keys_by_input_name["other_input"] == AssetKey("other_input")
+
+
+def test_asset_from_op_no_args():
+    @op
+    def my_op(x, y):  # pylint: disable=unused-argument
+        return x
+
+    assets_def = AssetsDefinition.from_op(
+        op_def=my_op,
+    )
+
+    assert assets_def.keys_by_input_name["x"] == AssetKey("x")
+    assert assets_def.keys_by_input_name["y"] == AssetKey("y")
+    assert assets_def.keys_by_output_name["result"] == AssetKey("my_op")
 
 
 def test_asset_def_from_graph_inputs():
