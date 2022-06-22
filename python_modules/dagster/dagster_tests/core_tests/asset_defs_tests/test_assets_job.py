@@ -3,12 +3,10 @@ import os
 import pytest
 
 from dagster import (
-    AssetGroup,
     AssetKey,
     AssetOut,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
     DependencyDefinition,
     Field,
     GraphIn,
@@ -19,9 +17,7 @@ from dagster import (
     Output,
     ResourceDefinition,
     StaticPartitionsDefinition,
-    execute_pipeline,
     graph,
-    in_process_executor,
     io_manager,
     multi_asset,
     op,
@@ -29,8 +25,11 @@ from dagster import (
 )
 from dagster.config.source import StringSource
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job
+from dagster.core.asset_defs.asset_group import AssetGroup
 from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.errors import DagsterInvalidSubsetError
+from dagster.core.definitions.executor_definition import in_process_executor
+from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
+from dagster.core.execution.api import execute_pipeline
 from dagster.core.snap import DependencyStructureIndex
 from dagster.core.snap.dep_snapshot import (
     OutputHandleSnap,
