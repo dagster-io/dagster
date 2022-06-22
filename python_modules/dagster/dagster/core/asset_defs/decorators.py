@@ -282,6 +282,7 @@ class _Asset:
             for key in self.required_resource_keys:
                 required_resource_keys.add(key)
             for key in self.resource_defs.keys():
+                # Ensure that io managers not available from context on op.
                 if not isinstance(self.resource_defs[key], IOManagerDefinition):
                     required_resource_keys.add(key)
             op = _Op(
