@@ -13,6 +13,7 @@ from dagster.core.errors import (
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.context.system import PlanOrchestrationContext
+from dagster.core.execution.context_creation_pipeline import create_context_free_log_manager
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import RetryMode
@@ -66,18 +67,16 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
                 known_state=self.known_state,
             )
 
-            yield instance.report_engine_event(
-                "Executing step {} in subprocess".format(self.step_key),
-                self.pipeline_run,
-                EngineEventData(
-                    [
-                        MetadataEntry("pid", value=str(os.getpid())),
-                        MetadataEntry("step_key", value=self.step_key),
-                    ],
-                    marker_end=DELEGATE_MARKER,
-                ),
-                MultiprocessExecutor,
-                self.step_key,
+            log_manager = create_context_free_log_manager(instance, self.pipeline_run)
+
+            yield DagsterEvent.step_worker_started(
+                log_manager,
+                self.pipeline_run.pipeline_name,
+                message='Executing step "{}" in subprocess.'.format(self.step_key),
+                metadata_entries=[
+                    MetadataEntry("pid", value=str(os.getpid())),
+                ],
+                step_key=self.step_key,
             )
 
             yield from execute_plan_iterator(
@@ -316,10 +315,10 @@ def execute_step_out_of_process(
         known_state=known_state,
     )
 
-    yield DagsterEvent.engine_event(
+    yield DagsterEvent.step_worker_starting(
         step_context,
-        "Launching subprocess for {}".format(step.key),
-        EngineEventData(marker_start=DELEGATE_MARKER),
+        'Launching subprocess for "{}".'.format(step.key),
+        metadata_entries=[],
     )
 
     for ret in execute_child_process_command(multiproc_ctx, command):

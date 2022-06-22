@@ -202,15 +202,12 @@ class DockerStepHandler(StepHandler):
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         step_key = step_keys_to_execute[0]
 
-        yield DagsterEvent.engine_event(
+        yield DagsterEvent.step_worker_starting(
             step_handler_context.get_step_context(step_key),
-            message="Launching step in Docker container",
-            event_specific_data=EngineEventData(
-                [
-                    MetadataEntry("Step key", value=step_key),
-                    MetadataEntry("Docker container id", value=step_container.id),
-                ],
-            ),
+            message="Launching step in Docker container.",
+            metadata_entries=[
+                MetadataEntry("Docker container id", value=step_container.id),
+            ],
         )
         step_container.start()
 
@@ -237,7 +234,7 @@ class DockerStepHandler(StepHandler):
             container_info = container.wait(timeout=0.1)
         except Exception as e:
             raise Exception(
-                f"Container status is {container.status}. Raised exception attempting to get its return code"
+                f"Container status is {container.status}. Raised exception attempting to get its return code."
             ) from e
 
         ret_code = container_info.get("StatusCode")
@@ -265,7 +262,7 @@ class DockerStepHandler(StepHandler):
 
         yield DagsterEvent.engine_event(
             step_handler_context.get_step_context(step_key),
-            message=f"Stopping Docker container {container_name} for step",
+            message=f"Stopping Docker container {container_name} for step.",
             event_specific_data=EngineEventData(),
         )
 

@@ -95,7 +95,7 @@ class StepDelegatingExecutor(Executor):
 
         DagsterEvent.engine_event(
             plan_context,
-            f"Starting execution with step handler {self._step_handler.name}",
+            f"Starting execution with step handler {self._step_handler.name}.",
             EngineEventData(),
         )
 
