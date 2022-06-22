@@ -8,7 +8,6 @@ from typing import (
     Deque,
     Dict,
     Generator,
-    Iterator,
     Mapping,
     Optional,
     Set,
