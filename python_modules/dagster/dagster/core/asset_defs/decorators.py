@@ -146,7 +146,9 @@ def asset(
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If not provided,
             the name "default" is used.
         resource_defs (Optional[Mapping[str, ResourceDefinition]]):
-            A mapping of resource keys to resource definitions. These resources will be initialized during execution, and can be accessed from the context within the body of the function.
+            A mapping of resource keys to resource definitions. These resources
+            will be initialized during execution, and can be accessed from the
+            context within the body of the function.
 
     Examples:
 
@@ -280,9 +282,8 @@ class _Asset:
             for key in self.required_resource_keys:
                 required_resource_keys.add(key)
             for key in self.resource_defs.keys():
-                if isinstance(self.resource_defs[key], IOManagerDefinition):
-                    continue
-                required_resource_keys.add(key)
+                if not isinstance(self.resource_defs[key], IOManagerDefinition):
+                    required_resource_keys.add(key)
             op = _Op(
                 name="__".join(out_asset_key.path).replace("-", "_"),
                 description=self.description,
