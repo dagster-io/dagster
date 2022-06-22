@@ -1,8 +1,22 @@
 """Structured representations of system events."""
 import logging
 import os
+import sys
 from enum import Enum
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, NamedTuple, Optional, Union, cast
+from inspect import Parameter
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Type,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster.core.definitions import (
@@ -32,7 +46,12 @@ from dagster.core.execution.plan.objects import StepFailureData, StepRetryData, 
 from dagster.core.execution.plan.outputs import StepOutputData
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.serdes import register_serdes_tuple_fallbacks, whitelist_for_serdes
+from dagster.serdes import (
+    DefaultNamedTupleSerializer,
+    WhitelistMap,
+    register_serdes_tuple_fallbacks,
+    whitelist_for_serdes,
+)
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.utils.timing import format_duration
 
@@ -71,6 +90,17 @@ class DagsterEventType(Enum):
     STEP_START = "STEP_START"
     STEP_SUCCESS = "STEP_SUCCESS"
     STEP_SKIPPED = "STEP_SKIPPED"
+
+    # The process carrying out step execution is starting/started. Shown as a
+    # marker start/end in Dagit
+    STEP_WORKER_STARTING = "STEP_WORKER_STARTING"
+    STEP_WORKER_STARTED = "STEP_WORKER_STARTED"
+
+    # Resource initialization for execution has started/succeede/failed. Shown
+    # as a marker start/end in Dagit
+    RESOURCE_INIT_STARTED = "RESOURCE_INIT_STARTED"
+    RESOURCE_INIT_SUCCESS = "RESOURCE_INIT_SUCCESS"
+    RESOURCE_INIT_FAILURE = "RESOURCE_INIT_FAILURE"
 
     STEP_UP_FOR_RETRY = "STEP_UP_FOR_RETRY"  # "failed" but want to retry
     STEP_RESTARTED = "STEP_RESTARTED"
@@ -179,6 +209,15 @@ ALERT_EVENTS = {
     DagsterEventType.ALERT_FAILURE,
 }
 
+MARKER_EVENTS = {
+    DagsterEventType.ENGINE_EVENT,
+    DagsterEventType.STEP_WORKER_STARTING,
+    DagsterEventType.STEP_WORKER_STARTED,
+    DagsterEventType.RESOURCE_INIT_STARTED,
+    DagsterEventType.RESOURCE_INIT_SUCCESS,
+    DagsterEventType.RESOURCE_INIT_FAILURE,
+}
+
 
 EVENT_TYPE_TO_PIPELINE_RUN_STATUS = {
     DagsterEventType.RUN_START: PipelineRunStatus.STARTED,
@@ -200,13 +239,16 @@ ASSET_EVENTS = {
 
 
 def _assert_type(
-    method: str, expected_type: DagsterEventType, actual_type: DagsterEventType
+    method: str,
+    expected_type: Union[DagsterEventType, List[DagsterEventType]],
+    actual_type: DagsterEventType,
 ) -> None:
+    if not isinstance(expected_type, list):
+        expected_type = [expected_type]
+
     check.invariant(
-        expected_type == actual_type,
-        (
-            "{method} only callable when event_type is {expected_type}, called on {actual_type}"
-        ).format(method=method, expected_type=expected_type, actual_type=actual_type),
+        actual_type in expected_type,
+        f"{method} only callable when event_type is {','.join([t.value for t in expected_type])}, called on {actual_type}",
     )
 
 
@@ -226,7 +268,14 @@ def _validate_event_specific_data(
         check.inst_param(event_specific_data, "event_specific_data", StepExpectationResultData)
     elif event_type == DagsterEventType.STEP_INPUT:
         check.inst_param(event_specific_data, "event_specific_data", StepInputData)
-    elif event_type == DagsterEventType.ENGINE_EVENT:
+    elif event_type in (
+        DagsterEventType.ENGINE_EVENT,
+        DagsterEventType.STEP_WORKER_STARTING,
+        DagsterEventType.STEP_WORKER_STARTED,
+        DagsterEventType.RESOURCE_INIT_STARTED,
+        DagsterEventType.RESOURCE_INIT_SUCCESS,
+        DagsterEventType.RESOURCE_INIT_FAILURE,
+    ):
         check.inst_param(event_specific_data, "event_specific_data", EngineEventData)
     elif event_type == DagsterEventType.HOOK_ERRORED:
         check.inst_param(event_specific_data, "event_specific_data", HookErroredData)
@@ -267,7 +316,49 @@ def log_resource_event(log_manager: DagsterLogManager, event: "DagsterEvent") ->
     log_manager.log_dagster_event(level=log_level, msg=event.message or "", dagster_event=event)
 
 
-@whitelist_for_serdes
+class DagsterEventSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def value_from_storage_dict(
+        cls,
+        storage_dict: Dict[str, Any],
+        klass: Type,
+        args_for_class: Mapping[str, Parameter],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> NamedTuple:
+        event_type_value = storage_dict["event_type_value"]
+        pipeline_name = storage_dict["pipeline_name"]
+        message = storage_dict.get("message")
+        step_key = storage_dict.get("step_key")
+        event_specific_data = storage_dict.get("event_specific_data")
+
+        event_type_value, event_specific_data = _handle_back_compat(
+            event_type_value, event_specific_data
+        )
+        storage_dict["event_type_value"] = event_type_value
+        storage_dict["event_specific_data"] = event_specific_data
+
+        try:
+            return super().value_from_storage_dict(
+                storage_dict, klass, args_for_class, whitelist_map, descent_path
+            )
+        except Exception:
+            new_message = (
+                f"Could not deserialize event of type {event_type_value}. This event may have been written by a newer version of Dagster."
+                + (f' Original message: "{message}"' if message else "")
+            )
+            return DagsterEvent(
+                event_type_value=DagsterEventType.ENGINE_EVENT.value,
+                pipeline_name=pipeline_name,
+                message=new_message,
+                step_key=step_key,
+                event_specific_data=EngineEventData(
+                    error=serializable_error_info_from_exc_info(sys.exc_info())
+                ),
+            )
+
+
+@whitelist_for_serdes(serializer=DagsterEventSerializer)
 class DagsterEvent(
     NamedTuple(
         "_DagsterEvent",
@@ -352,6 +443,7 @@ class DagsterEvent(
 
     @staticmethod
     def from_resource(
+        event_type: DagsterEventType,
         pipeline_name: str,
         execution_plan: "ExecutionPlan",
         log_manager: DagsterLogManager,
@@ -360,7 +452,7 @@ class DagsterEvent(
     ) -> "DagsterEvent":
 
         event = DagsterEvent(
-            DagsterEventType.ENGINE_EVENT.value,
+            event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
             pipeline_name=pipeline_name,
             message=check.opt_str_param(message, "message"),
             event_specific_data=_validate_event_specific_data(
@@ -402,10 +494,6 @@ class DagsterEvent(
         # legacy
         step_key: Optional[str] = None,
     ):
-        event_type_value, event_specific_data = _handle_back_compat(
-            event_type_value, event_specific_data
-        )
-
         # old events may contain solid_handle but not step_handle
         if solid_handle is not None and step_handle is None:
             step_handle = StepHandle(solid_handle)
@@ -614,7 +702,18 @@ class DagsterEvent(
 
     @property
     def engine_event_data(self) -> "EngineEventData":
-        _assert_type("engine_event_data", DagsterEventType.ENGINE_EVENT, self.event_type)
+        _assert_type(
+            "engine_event_data",
+            [
+                DagsterEventType.ENGINE_EVENT,
+                DagsterEventType.RESOURCE_INIT_STARTED,
+                DagsterEventType.RESOURCE_INIT_SUCCESS,
+                DagsterEventType.RESOURCE_INIT_FAILURE,
+                DagsterEventType.STEP_WORKER_STARTED,
+                DagsterEventType.STEP_WORKER_STARTING,
+            ],
+            self.event_type,
+        )
         return cast(EngineEventData, self.event_specific_data)
 
     @property
@@ -668,13 +767,18 @@ class DagsterEvent(
 
     @staticmethod
     def step_failure_event(
-        step_context: IStepContext, step_failure_data: "StepFailureData"
+        step_context: IStepContext,
+        step_failure_data: "StepFailureData",
+        message=None,
     ) -> "DagsterEvent":
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_FAILURE,
             step_context=step_context,
             event_specific_data=step_failure_data,
-            message='Execution of step "{step_key}" failed.'.format(step_key=step_context.step.key),
+            message=(
+                message
+                or 'Execution of step "{step_key}" failed.'.format(step_key=step_context.step.key)
+            ),
         )
 
     @staticmethod
@@ -878,6 +982,46 @@ class DagsterEvent(
         )
 
     @staticmethod
+    def step_worker_starting(
+        step_context: IStepContext,
+        message: str,
+        metadata_entries: List[MetadataEntry],
+    ) -> "DagsterEvent":
+        return DagsterEvent.from_step(
+            DagsterEventType.STEP_WORKER_STARTING,
+            step_context,
+            message=message,
+            event_specific_data=EngineEventData(
+                metadata_entries=metadata_entries, marker_start="step_process_start"
+            ),
+        )
+
+    @staticmethod
+    def step_worker_started(
+        log_manager: DagsterLogManager,
+        pipeline_name: str,
+        message: str,
+        metadata_entries: List[MetadataEntry],
+        step_key: Optional[str],
+    ) -> "DagsterEvent":
+        event = DagsterEvent(
+            DagsterEventType.STEP_WORKER_STARTED.value,
+            pipeline_name=pipeline_name,
+            message=message,
+            event_specific_data=EngineEventData(
+                metadata_entries=metadata_entries, marker_end="step_process_start"
+            ),
+            pid=os.getpid(),
+            step_key=step_key,
+        )
+        log_manager.log_dagster_event(
+            level=logging.DEBUG,
+            msg=message,
+            dagster_event=event,
+        )
+        return event
+
+    @staticmethod
     def resource_init_start(
         pipeline_name: str,
         execution_plan: "ExecutionPlan",
@@ -886,6 +1030,7 @@ class DagsterEvent(
     ) -> "DagsterEvent":
 
         return DagsterEvent.from_resource(
+            DagsterEventType.RESOURCE_INIT_STARTED,
             pipeline_name=pipeline_name,
             execution_plan=execution_plan,
             log_manager=log_manager,
@@ -917,6 +1062,7 @@ class DagsterEvent(
             )
 
         return DagsterEvent.from_resource(
+            DagsterEventType.RESOURCE_INIT_SUCCESS,
             pipeline_name=pipeline_name,
             execution_plan=execution_plan,
             log_manager=log_manager,
@@ -939,6 +1085,7 @@ class DagsterEvent(
     ) -> "DagsterEvent":
 
         return DagsterEvent.from_resource(
+            DagsterEventType.RESOURCE_INIT_FAILURE,
             pipeline_name=pipeline_name,
             execution_plan=execution_plan,
             log_manager=log_manager,
@@ -960,6 +1107,7 @@ class DagsterEvent(
     ) -> "DagsterEvent":
 
         return DagsterEvent.from_resource(
+            DagsterEventType.ENGINE_EVENT,
             pipeline_name=pipeline_name,
             execution_plan=execution_plan,
             log_manager=log_manager,
@@ -974,18 +1122,24 @@ class DagsterEvent(
 
     @staticmethod
     def engine_event(
-        pipeline_context: IPlanContext,
+        plan_context: IPlanContext,
         message: str,
         event_specific_data: Optional["EngineEventData"] = None,
-        step_handle: Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]] = None,
     ) -> "DagsterEvent":
-        return DagsterEvent.from_pipeline(
-            DagsterEventType.ENGINE_EVENT,
-            pipeline_context,
-            message,
-            event_specific_data=event_specific_data,
-            step_handle=step_handle,
-        )
+        if isinstance(plan_context, IStepContext):
+            return DagsterEvent.from_step(
+                DagsterEventType.ENGINE_EVENT,
+                step_context=plan_context,
+                event_specific_data=event_specific_data,
+                message=message,
+            )
+        else:
+            return DagsterEvent.from_pipeline(
+                DagsterEventType.ENGINE_EVENT,
+                plan_context,
+                message,
+                event_specific_data=event_specific_data,
+            )
 
     @staticmethod
     def object_store_operation(
@@ -1371,9 +1525,7 @@ class EngineEventData(
         )
 
     @staticmethod
-    def in_process(
-        pid: int, step_keys_to_execute: Optional[List[str]] = None, marker_end: Optional[str] = None
-    ) -> "EngineEventData":
+    def in_process(pid: int, step_keys_to_execute: Optional[List[str]] = None) -> "EngineEventData":
         return EngineEventData(
             metadata_entries=[MetadataEntry("pid", value=str(pid))]
             + (
@@ -1381,7 +1533,6 @@ class EngineEventData(
                 if step_keys_to_execute
                 else []
             ),
-            marker_end=marker_end,
         )
 
     @staticmethod

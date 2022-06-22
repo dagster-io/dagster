@@ -2,6 +2,7 @@ import mock
 from click.testing import CliRunner
 from dagster_tests.api_tests.utils import get_bar_repo_handle, get_foo_pipeline_handle
 
+from dagster import DagsterEventType
 from dagster.cli import api
 from dagster.cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
 from dagster.core.execution.plan.state import KnownExecutionState
@@ -385,7 +386,7 @@ def test_execute_step_verify_step_framework_error(mock_verify_step):
             assert result.exit_code != 0
 
             # Framework error logged to event log
-            logs = instance.all_logs(run.run_id)
+            logs = instance.all_logs(run.run_id, of_type=DagsterEventType.ENGINE_EVENT)
 
             log_entry = logs[0]
             assert (

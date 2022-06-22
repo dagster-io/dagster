@@ -82,13 +82,13 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
                         step_events = result.get()
                     except TaskRevokedError:
                         step_events = []
+                        step = active_execution.get_step_by_key(step_key)
                         yield DagsterEvent.engine_event(
-                            pipeline_context,
+                            pipeline_context.for_step(step),
                             'celery task for running step "{step_key}" was revoked.'.format(
                                 step_key=step_key,
                             ),
                             EngineEventData(marker_end=DELEGATE_MARKER),
-                            step_handle=active_execution.get_step_by_key(step_key).handle,
                         )
                     except Exception:
                         # We will want to do more to handle the exception here.. maybe subclass Task
@@ -126,12 +126,11 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
                 try:
                     queue = step.tags.get(DAGSTER_CELERY_QUEUE_TAG, task_default_queue)
                     yield DagsterEvent.engine_event(
-                        pipeline_context,
+                        pipeline_context.for_step(step),
                         'Submitting celery task for step "{step_key}" to queue "{queue}".'.format(
                             step_key=step.key, queue=queue
                         ),
                         EngineEventData(marker_start=DELEGATE_MARKER),
-                        step_handle=step.handle,
                     )
 
                     # Get the Celery priority for this step

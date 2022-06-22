@@ -25,7 +25,7 @@ from dagster.core.definitions.input import In
 from dagster.core.definitions.output import Out
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.resource_definition import ResourceDefinition
-from dagster.core.definitions.utils import NoValueSentinel
+from dagster.core.definitions.utils import DEFAULT_IO_MANAGER_KEY, NoValueSentinel
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.io_manager import IOManagerDefinition
 from dagster.core.types.dagster_type import DagsterType
@@ -265,7 +265,7 @@ class _Asset:
                 io_manager_key = f"{out_asset_resource_key}__io_manager"
                 self.resource_defs[io_manager_key] = cast(ResourceDefinition, io_manager_def)
             else:
-                io_manager_key = "io_manager"
+                io_manager_key = DEFAULT_IO_MANAGER_KEY
 
             out = Out(
                 metadata=self.metadata or {},

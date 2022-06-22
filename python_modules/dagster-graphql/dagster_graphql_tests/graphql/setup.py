@@ -54,6 +54,7 @@ from dagster import (
     ScheduleDefinition,
     ScheduleEvaluationContext,
     SolidExecutionContext,
+    SourceHashVersionStrategy,
     StaticPartitionsDefinition,
     String,
     TableColumn,
@@ -1450,6 +1451,11 @@ def hanging_graph():
 hanging_graph_asset = AssetsDefinition.from_graph(hanging_graph)
 
 
+@job(version_strategy=SourceHashVersionStrategy())
+def memoization_job():
+    my_op()
+
+
 @asset
 def downstream_asset(hanging_graph):  # pylint: disable=unused-argument
     return 1
@@ -1727,6 +1733,7 @@ def define_pipelines():
         asset_group_job,
         hanging_graph_asset_job,
         named_groups_job,
+        memoization_job,
     ]
 
 

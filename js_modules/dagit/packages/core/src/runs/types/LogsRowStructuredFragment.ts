@@ -356,6 +356,364 @@ export interface LogsRowStructuredFragment_ExecutionStepOutputEvent {
   typeCheck: LogsRowStructuredFragment_ExecutionStepOutputEvent_typeCheck;
 }
 
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_AssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_AssetMetadataEntry_assetKey;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries = LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_PathMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_JsonMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_UrlMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TextMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_MarkdownMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_PythonArtifactMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_FloatMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_IntMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_BoolMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_PipelineRunMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_AssetMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry | LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry;
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: LogsRowStructuredFragment_ResourceInitFailureEvent_error_cause | null;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitFailureEvent {
+  __typename: "ResourceInitFailureEvent" | "EngineEvent";
+  message: string;
+  eventType: DagsterEventType | null;
+  timestamp: string;
+  level: LogLevel;
+  stepKey: string | null;
+  label: string | null;
+  description: string | null;
+  metadataEntries: LogsRowStructuredFragment_ResourceInitFailureEvent_metadataEntries[];
+  markerStart: string | null;
+  markerEnd: string | null;
+  error: LogsRowStructuredFragment_ResourceInitFailureEvent_error | null;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_AssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_AssetMetadataEntry_assetKey;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries = LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_PathMetadataEntry | LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_JsonMetadataEntry | LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_UrlMetadataEntry | LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TextMetadataEntry | LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_MarkdownMetadataEntry | LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_PythonArtifactMetadataEntry | LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_FloatMetadataEntry | LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_IntMetadataEntry | LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_BoolMetadataEntry | LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_PipelineRunMetadataEntry | LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_AssetMetadataEntry | LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableMetadataEntry | LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries_TableSchemaMetadataEntry;
+
+export interface LogsRowStructuredFragment_ResourceInitStartedEvent {
+  __typename: "ResourceInitStartedEvent" | "ResourceInitSuccessEvent" | "StepWorkerStartedEvent" | "StepWorkerStartingEvent";
+  message: string;
+  eventType: DagsterEventType | null;
+  timestamp: string;
+  level: LogLevel;
+  stepKey: string | null;
+  label: string | null;
+  description: string | null;
+  metadataEntries: LogsRowStructuredFragment_ResourceInitStartedEvent_metadataEntries[];
+  markerStart: string | null;
+  markerEnd: string | null;
+}
+
 export interface LogsRowStructuredFragment_HandledOutputEvent_metadataEntries_PathMetadataEntry {
   __typename: "PathMetadataEntry";
   label: string;
@@ -1054,213 +1412,6 @@ export interface LogsRowStructuredFragment_ObservationEvent {
   assetKey: LogsRowStructuredFragment_ObservationEvent_assetKey | null;
 }
 
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_PathMetadataEntry {
-  __typename: "PathMetadataEntry";
-  label: string;
-  description: string | null;
-  path: string;
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_JsonMetadataEntry {
-  __typename: "JsonMetadataEntry";
-  label: string;
-  description: string | null;
-  jsonString: string;
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_UrlMetadataEntry {
-  __typename: "UrlMetadataEntry";
-  label: string;
-  description: string | null;
-  url: string;
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_TextMetadataEntry {
-  __typename: "TextMetadataEntry";
-  label: string;
-  description: string | null;
-  text: string;
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_MarkdownMetadataEntry {
-  __typename: "MarkdownMetadataEntry";
-  label: string;
-  description: string | null;
-  mdStr: string;
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_PythonArtifactMetadataEntry {
-  __typename: "PythonArtifactMetadataEntry";
-  label: string;
-  description: string | null;
-  module: string;
-  name: string;
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_FloatMetadataEntry {
-  __typename: "FloatMetadataEntry";
-  label: string;
-  description: string | null;
-  floatValue: number | null;
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_IntMetadataEntry {
-  __typename: "IntMetadataEntry";
-  label: string;
-  description: string | null;
-  intValue: number | null;
-  intRepr: string;
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_BoolMetadataEntry {
-  __typename: "BoolMetadataEntry";
-  label: string;
-  description: string | null;
-  boolValue: boolean | null;
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_PipelineRunMetadataEntry {
-  __typename: "PipelineRunMetadataEntry";
-  label: string;
-  description: string | null;
-  runId: string;
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_AssetMetadataEntry_assetKey {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_AssetMetadataEntry {
-  __typename: "AssetMetadataEntry";
-  label: string;
-  description: string | null;
-  assetKey: LogsRowStructuredFragment_EngineEvent_metadataEntries_AssetMetadataEntry_assetKey;
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
-  __typename: "TableColumnConstraints";
-  nullable: boolean;
-  unique: boolean;
-  other: string[];
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_columns {
-  __typename: "TableColumn";
-  name: string;
-  description: string | null;
-  type: string;
-  constraints: LogsRowStructuredFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_constraints {
-  __typename: "TableConstraints";
-  other: string[];
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema {
-  __typename: "TableSchema";
-  columns: LogsRowStructuredFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_columns[];
-  constraints: LogsRowStructuredFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_TableMetadataEntry_table {
-  __typename: "Table";
-  records: string[];
-  schema: LogsRowStructuredFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema;
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_TableMetadataEntry {
-  __typename: "TableMetadataEntry";
-  label: string;
-  description: string | null;
-  table: LogsRowStructuredFragment_EngineEvent_metadataEntries_TableMetadataEntry_table;
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
-  __typename: "TableColumnConstraints";
-  nullable: boolean;
-  unique: boolean;
-  other: string[];
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns {
-  __typename: "TableColumn";
-  name: string;
-  description: string | null;
-  type: string;
-  constraints: LogsRowStructuredFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
-  __typename: "TableConstraints";
-  other: string[];
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema {
-  __typename: "TableSchema";
-  columns: LogsRowStructuredFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
-  constraints: LogsRowStructuredFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry {
-  __typename: "TableSchemaMetadataEntry";
-  label: string;
-  description: string | null;
-  schema: LogsRowStructuredFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema;
-}
-
-export type LogsRowStructuredFragment_EngineEvent_metadataEntries = LogsRowStructuredFragment_EngineEvent_metadataEntries_PathMetadataEntry | LogsRowStructuredFragment_EngineEvent_metadataEntries_JsonMetadataEntry | LogsRowStructuredFragment_EngineEvent_metadataEntries_UrlMetadataEntry | LogsRowStructuredFragment_EngineEvent_metadataEntries_TextMetadataEntry | LogsRowStructuredFragment_EngineEvent_metadataEntries_MarkdownMetadataEntry | LogsRowStructuredFragment_EngineEvent_metadataEntries_PythonArtifactMetadataEntry | LogsRowStructuredFragment_EngineEvent_metadataEntries_FloatMetadataEntry | LogsRowStructuredFragment_EngineEvent_metadataEntries_IntMetadataEntry | LogsRowStructuredFragment_EngineEvent_metadataEntries_BoolMetadataEntry | LogsRowStructuredFragment_EngineEvent_metadataEntries_PipelineRunMetadataEntry | LogsRowStructuredFragment_EngineEvent_metadataEntries_AssetMetadataEntry | LogsRowStructuredFragment_EngineEvent_metadataEntries_TableMetadataEntry | LogsRowStructuredFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry;
-
-export interface LogsRowStructuredFragment_EngineEvent_engineError_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface LogsRowStructuredFragment_EngineEvent_engineError {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: LogsRowStructuredFragment_EngineEvent_engineError_cause | null;
-}
-
-export interface LogsRowStructuredFragment_EngineEvent {
-  __typename: "EngineEvent";
-  message: string;
-  eventType: DagsterEventType | null;
-  timestamp: string;
-  level: LogLevel;
-  stepKey: string | null;
-  label: string | null;
-  description: string | null;
-  metadataEntries: LogsRowStructuredFragment_EngineEvent_metadataEntries[];
-  engineError: LogsRowStructuredFragment_EngineEvent_engineError | null;
-}
-
-export interface LogsRowStructuredFragment_RunFailureEvent_pipelineFailureError_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface LogsRowStructuredFragment_RunFailureEvent_pipelineFailureError {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: LogsRowStructuredFragment_RunFailureEvent_pipelineFailureError_cause | null;
-}
-
-export interface LogsRowStructuredFragment_RunFailureEvent {
-  __typename: "RunFailureEvent";
-  message: string;
-  eventType: DagsterEventType | null;
-  timestamp: string;
-  level: LogLevel;
-  stepKey: string | null;
-  pipelineFailureError: LogsRowStructuredFragment_RunFailureEvent_pipelineFailureError | null;
-}
-
 export interface LogsRowStructuredFragment_ExecutionStepFailureEvent_error_cause {
   __typename: "PythonError";
   message: string;
@@ -1463,7 +1614,7 @@ export interface LogsRowStructuredFragment_ExecutionStepUpForRetryEvent_error {
 }
 
 export interface LogsRowStructuredFragment_ExecutionStepUpForRetryEvent {
-  __typename: "ExecutionStepUpForRetryEvent";
+  __typename: "ExecutionStepUpForRetryEvent" | "RunFailureEvent" | "HookErroredEvent";
   message: string;
   eventType: DagsterEventType | null;
   timestamp: string;
@@ -1999,29 +2150,6 @@ export interface LogsRowStructuredFragment_ObjectStoreOperationEvent {
   operationResult: LogsRowStructuredFragment_ObjectStoreOperationEvent_operationResult;
 }
 
-export interface LogsRowStructuredFragment_HookErroredEvent_error_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface LogsRowStructuredFragment_HookErroredEvent_error {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: LogsRowStructuredFragment_HookErroredEvent_error_cause | null;
-}
-
-export interface LogsRowStructuredFragment_HookErroredEvent {
-  __typename: "HookErroredEvent";
-  message: string;
-  eventType: DagsterEventType | null;
-  timestamp: string;
-  level: LogLevel;
-  stepKey: string | null;
-  error: LogsRowStructuredFragment_HookErroredEvent_error | null;
-}
-
 export interface LogsRowStructuredFragment_LogsCapturedEvent {
   __typename: "LogsCapturedEvent";
   message: string;
@@ -2033,4 +2161,4 @@ export interface LogsRowStructuredFragment_LogsCapturedEvent {
   stepKeys: string[] | null;
 }
 
-export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_HandledOutputEvent | LogsRowStructuredFragment_LoadedInputEvent | LogsRowStructuredFragment_MaterializationEvent | LogsRowStructuredFragment_ObservationEvent | LogsRowStructuredFragment_EngineEvent | LogsRowStructuredFragment_RunFailureEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepUpForRetryEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_StepExpectationResultEvent | LogsRowStructuredFragment_ObjectStoreOperationEvent | LogsRowStructuredFragment_HookErroredEvent | LogsRowStructuredFragment_LogsCapturedEvent;
+export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_ResourceInitFailureEvent | LogsRowStructuredFragment_ResourceInitStartedEvent | LogsRowStructuredFragment_HandledOutputEvent | LogsRowStructuredFragment_LoadedInputEvent | LogsRowStructuredFragment_MaterializationEvent | LogsRowStructuredFragment_ObservationEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepUpForRetryEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_StepExpectationResultEvent | LogsRowStructuredFragment_ObjectStoreOperationEvent | LogsRowStructuredFragment_LogsCapturedEvent;

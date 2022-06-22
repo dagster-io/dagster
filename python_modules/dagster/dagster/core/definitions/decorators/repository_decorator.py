@@ -117,7 +117,11 @@ def repository(name: Callable[..., Any]) -> RepositoryDefinition:
 
 
 @overload
-def repository(name: Optional[str] = ..., description: Optional[str] = ...) -> _Repository:
+def repository(
+    name: Optional[str] = ...,
+    description: Optional[str] = ...,
+    default_executor_def: Optional[ExecutorDefinition] = ...,
+) -> _Repository:
     ...
 
 

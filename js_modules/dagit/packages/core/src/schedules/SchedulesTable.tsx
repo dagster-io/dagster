@@ -2,7 +2,6 @@ import {Box, Button, Colors, Icon, Menu, Popover, Table, Tag, Tooltip} from '@da
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {timeZoneAbbr} from '../app/time/timestampToString';
 import {TickTag} from '../instigation/InstigationTick';
 import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -168,10 +167,7 @@ const ScheduleRow: React.FC<{
       <td>
         {cronSchedule ? (
           <Tooltip position="bottom" content={cronSchedule}>
-            <span>
-              {humanCronString(cronSchedule)}
-              {executionTimezone ? ` ${timeZoneAbbr(executionTimezone)}` : ` UTC`}
-            </span>
+            <span>{humanCronString(cronSchedule, executionTimezone || 'UTC')}</span>
           </Tooltip>
         ) : (
           <span style={{color: Colors.Gray300}}>None</span>

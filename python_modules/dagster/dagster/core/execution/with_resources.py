@@ -6,6 +6,7 @@ from dagster.utils import merge_dicts
 from ...config import Shape
 from ..definitions import ResourceDefinition
 from ..definitions.resource_requirement import ResourceAddable
+from ..definitions.utils import DEFAULT_IO_MANAGER_KEY
 from ..errors import DagsterInvalidConfigError, DagsterInvalidInvocationError
 
 T = TypeVar("T", bound=ResourceAddable)
@@ -73,7 +74,7 @@ def with_resources(
         resource_config_by_key, "resource_config_by_key"
     )
 
-    resource_defs = merge_dicts({"io_manager": fs_io_manager}, resource_defs)
+    resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: fs_io_manager}, resource_defs)
 
     for key, resource_def in resource_defs.items():
         if key in resource_config_by_key:

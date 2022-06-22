@@ -1,6 +1,7 @@
 from .config_class import ConfigurableClass, ConfigurableClassData, class_from_code_pointer
 from .serdes import (
     DefaultNamedTupleSerializer,
+    WhitelistMap,
     deserialize_as,
     deserialize_json_to_dagster_namedtuple,
     deserialize_value,

@@ -1,3 +1,4 @@
+from tokenize import group
 from typing import (
     AbstractSet,
     Dict,
@@ -51,7 +52,8 @@ class AssetsDefinition(ResourceAddable):
         can_subset: bool = False,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
-        # if adding new fields, make sure to handle them in the with_prefix_or_group method
+        # if adding new fields, make sure to handle them in the with_prefix_or_group
+        # and from_graph methods
     ):
         self._node_def = node_def
         self._keys_by_input_name = check.dict_param(
@@ -139,6 +141,7 @@ class AssetsDefinition(ResourceAddable):
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
+        group_name: Optional[str] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from a GraphDefinition.
@@ -158,9 +161,16 @@ class AssetsDefinition(ResourceAddable):
                 either used as input to the asset or produced within the graph.
             partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
                 compose the assets.
+            group_name (Optional[str]): A group name for the constructed asset. Assets without a
+                group name are assigned to a group called "default".
         """
         return AssetsDefinition._from_node(
-            graph_def, keys_by_input_name, keys_by_output_name, internal_asset_deps, partitions_def
+            graph_def,
+            keys_by_input_name,
+            keys_by_output_name,
+            internal_asset_deps,
+            partitions_def,
+            group_name,
         )
 
     @staticmethod
@@ -170,6 +180,7 @@ class AssetsDefinition(ResourceAddable):
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
+        group_name: Optional[str] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from an OpDefinition.
@@ -189,9 +200,16 @@ class AssetsDefinition(ResourceAddable):
                 either used as input to the asset or produced within the op.
             partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
                 compose the assets.
+            group_name (Optional[str]): A group name for the constructed asset. Assets without a
+                group name are assigned to a group called "default".
         """
         return AssetsDefinition._from_node(
-            op_def, keys_by_input_name, keys_by_output_name, internal_asset_deps, partitions_def
+            op_def,
+            keys_by_input_name,
+            keys_by_output_name,
+            internal_asset_deps,
+            partitions_def,
+            group_name,
         )
 
     @staticmethod
@@ -201,6 +219,7 @@ class AssetsDefinition(ResourceAddable):
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
+        group_name: Optional[str] = None,
     ) -> "AssetsDefinition":
         node_def = check.inst_param(node_def, "node_def", (GraphDefinition, OpDefinition))
         keys_by_input_name = check.opt_dict_param(
@@ -225,17 +244,30 @@ class AssetsDefinition(ResourceAddable):
                 )
                 transformed_internal_asset_deps[keys_by_output_name[output_name]] = asset_keys
 
+        keys_by_output_name = _infer_keys_by_output_names(node_def, keys_by_output_name or {})
+
+        # For graph backed assets, we assign all assets to the same group_name, if specified.
+        # To assign to different groups, use .with_prefix_or_groups.
+        group_names_by_key = (
+            {asset_key: group_name for asset_key in keys_by_output_name.values()}
+            if group_name
+            else None
+        )
+
         return AssetsDefinition(
             keys_by_input_name=_infer_keys_by_input_names(
                 node_def,
                 keys_by_input_name or {},
             ),
-            keys_by_output_name=_infer_keys_by_output_names(node_def, keys_by_output_name or {}),
+            keys_by_output_name=keys_by_output_name,
             node_def=node_def,
             asset_deps=transformed_internal_asset_deps or None,
             partitions_def=check.opt_inst_param(
-                partitions_def, "partitions_def", PartitionsDefinition
+                partitions_def,
+                "partitions_def",
+                PartitionsDefinition,
             ),
+            group_names_by_key=group_names_by_key,
         )
 
     @property

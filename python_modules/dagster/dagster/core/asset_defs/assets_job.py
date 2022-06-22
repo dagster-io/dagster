@@ -32,6 +32,7 @@ from dagster.core.definitions.output import OutputDefinition
 from dagster.core.definitions.partition import PartitionedConfig, PartitionsDefinition
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.resource_requirement import ensure_requirements_satisfied
+from dagster.core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.utils import merge_dicts
@@ -66,7 +67,7 @@ def build_assets_job(
             decorator.
         source_assets (Optional[Sequence[Union[SourceAsset, AssetsDefinition]]]): A list of
             assets that are not materialized by this job, but that assets in this job depend on.
-        resource_defs (Optional[Dict[str, ResourceDefinition]]): Resource defs to be included in
+        resource_defs (Optional[Mapping[str, ResourceDefinition]]): Resource defs to be included in
             this job.
         description (Optional[str]): A description of the job.
 
@@ -100,7 +101,7 @@ def build_assets_job(
     partitions_def = partitions_def or build_job_partitions_from_assets(assets)
 
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
-    resource_defs = merge_dicts({"io_manager": default_job_io_manager}, resource_defs)
+    resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs)
 
     source_assets_by_key = build_source_assets_by_key(source_assets)
     deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
@@ -366,7 +367,7 @@ def _ensure_resources_dont_conflict(
                 )
     for resource_key, resource_def in resource_defs.items():
         if (
-            resource_key != "io_manager"
+            resource_key != DEFAULT_IO_MANAGER_KEY
             and resource_key in resource_defs_from_assets
             and resource_defs_from_assets[resource_key] != resource_def
         ):
