@@ -351,12 +351,12 @@ def _execute_step_command_body(
         if args.step_keys_to_execute and len(args.step_keys_to_execute) == 1
         else None
     )
+    check.inst(
+        pipeline_run,
+        PipelineRun,
+        "Pipeline run with id '{}' not found for step execution".format(args.pipeline_run_id),
+    )
     try:
-        check.inst(
-            pipeline_run,
-            PipelineRun,
-            "Pipeline run with id '{}' not found for step execution".format(args.pipeline_run_id),
-        )
         check.inst(
             pipeline_run.pipeline_code_origin,
             PipelinePythonOrigin,
