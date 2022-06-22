@@ -193,6 +193,31 @@ width={2048}
 height={804}
 />
 
+### Specifying Default Loggers
+
+Default loggers can be specified on a <PyObject object="repository" decorator /> using the `default_logger_defs` argument. These loggers will be added to every job specified on the repository, and will be used for any materializatons of software-defined assets provided to the repository.
+
+Note that `default_logger_defs` are provided in addition to whatever loggers already exist on a job. For example, by default, every job has system loggers provided. Those default loggers will be used in addition to those provided by `default_logger_defs`.
+
+```python file=/concepts/logging/custom_logger.py startafter=start_default_logger_repo endbefore=end_default_logger_repo
+from dagster import repository, define_asset_job, asset
+
+
+@asset
+def some_asset():
+    ...
+
+
+the_job = define_asset_job("the_job", selection="*")
+
+
+@repository(default_logger_defs={"json_logger": json_console_logger})
+def the_repo():
+    # When loading this repository in dagit, json_logger will now be used when
+    # the_job runs, or some_asset materializes.
+    return [the_job, some_asset]
+```
+
 ### Testing Custom Loggers
 
 You can unit test the initialization method of a logger by invoking it.
@@ -211,9 +236,7 @@ from dagster import build_init_logger_context
 
 
 def test_init_json_console_logger_with_context():
-    logger_ = json_console_logger(
-        build_init_logger_context(logger_config={"name": "my_logger"})
-    )
+    logger_ = json_console_logger(build_init_logger_context(logger_config={"name": "my_logger"}))
     assert logger_.level == 20
     assert logger_.name == "my_logger"
 ```

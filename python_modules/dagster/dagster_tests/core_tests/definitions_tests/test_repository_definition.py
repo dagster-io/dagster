@@ -46,6 +46,7 @@ from dagster.core.definitions.executor_definition import (
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.loggers import default_loggers
+from dagster.utils import merge_dicts
 
 # pylint: disable=comparison-with-callable
 
@@ -1485,9 +1486,11 @@ def test_default_loggers_assets_repo():
     def the_repo():
         return [no_logger_provided, the_asset]
 
-    assert the_repo.get_job("__ASSET_JOB").loggers == {"foo": basic}
+    assert the_repo.get_job("__ASSET_JOB").loggers == merge_dicts({"foo": basic}, default_loggers())
 
-    assert the_repo.get_job("no_logger_provided").loggers == {"foo": basic}
+    assert the_repo.get_job("no_logger_provided").loggers == merge_dicts(
+        {"foo": basic}, default_loggers()
+    )
 
 
 def test_default_loggers_jobs_and_pipelines():
@@ -1505,7 +1508,7 @@ def test_default_loggers_jobs_and_pipelines():
     def other_custom_logger(_):
         pass
 
-    @job(logger_defs={"foo": custom_logger})
+    @job(logger_defs={"bar": custom_logger})
     def op_job_with_loggers():
         pass
 
@@ -1534,10 +1537,38 @@ def test_default_loggers_jobs_and_pipelines():
 
     assert the_repo.get_pipeline("the_pipeline").mode_definitions[0].loggers == default_loggers()
 
-    assert the_repo.get_job("asset_job").loggers == {"foo": other_custom_logger}
+    assert the_repo.get_job("asset_job").loggers == merge_dicts(
+        {"foo": other_custom_logger}, default_loggers()
+    )
 
-    assert the_repo.get_job("op_job_with_loggers").loggers == {"foo": custom_logger}
+    assert the_repo.get_job("op_job_with_loggers").loggers == {
+        "bar": custom_logger,
+        "foo": other_custom_logger,
+    }
 
-    assert the_repo.get_job("op_job_no_loggers").loggers == {"foo": other_custom_logger}
+    assert the_repo.get_job("op_job_no_loggers").loggers == merge_dicts(
+        {"foo": other_custom_logger}, default_loggers()
+    )
 
-    assert the_repo.get_job("job_explicitly_specifies_default_loggers").loggers == default_loggers()
+    assert the_repo.get_job("job_explicitly_specifies_default_loggers").loggers == merge_dicts(
+        {"foo": other_custom_logger}, default_loggers()
+    )
+
+
+def test_default_loggers_keys_conflict():
+    @logger
+    def some_logger():
+        pass
+
+    @job(logger_defs={"foo": some_logger})
+    def the_job():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Provided logger defs conflict with logger defs on job 'the_job'. The following logger keys conflict: \['foo'\]",
+    ):
+
+        @repository(default_logger_defs={"foo": some_logger})
+        def the_repo():
+            return [the_job]

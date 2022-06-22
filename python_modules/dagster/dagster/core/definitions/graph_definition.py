@@ -574,7 +574,6 @@ class GraphDefinition(NodeDefinition):
 
         tags = check.opt_dict_param(tags, "tags", key_type=str)
         executor_def_specified = executor_def is not None
-        logger_defs_specified = logger_defs is not None
         executor_def = check.opt_inst_param(
             executor_def, "executor_def", ExecutorDefinition, default=multi_or_in_process_executor
         )
@@ -642,7 +641,6 @@ class GraphDefinition(NodeDefinition):
             _input_values=input_values,
             _subset_selection_data=_asset_selection_data,
             _executor_def_specified=executor_def_specified,
-            _logger_defs_specified=logger_defs_specified,
         ).get_job_def_for_subset_selection(op_selection)
 
     def coerce_to_job(self):
