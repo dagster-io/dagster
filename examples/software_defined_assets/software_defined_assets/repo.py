@@ -5,4 +5,4 @@ from dagster import repository
 
 @repository
 def software_defined_assets():
-    return [spark_weather_assets]
+    return [*spark_weather_assets]
