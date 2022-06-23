@@ -115,7 +115,7 @@ class UnresolvedAssetJobDefinition(
             source_assets=source_assets,
             description=self.description,
             tags=self.tags,
-            asset_selection=self.selection.resolve(assets),
+            asset_selection=self.selection.resolve([*assets, *source_assets]),
             partitions_def=self.partitions_def,
         )
 

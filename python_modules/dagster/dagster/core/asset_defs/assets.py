@@ -294,6 +294,10 @@ class AssetsDefinition(ResourceAddable):
         return self._asset_deps
 
     @property
+    def input_names(self) -> Iterable[str]:
+        return self.keys_by_input_name.keys()
+
+    @property
     def key(self) -> AssetKey:
         check.invariant(
             len(self.keys) == 1,
