@@ -14,6 +14,7 @@ from dagster import (
     PartitionsDefinition,
     SourceAsset,
     StaticPartitionsDefinition,
+    define_asset_job,
     graph,
     op,
 )
@@ -690,3 +691,20 @@ def test_from_graph():
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     assert my_job.execute_in_process(partition_key="a").success
+
+
+def test_config_with_partitions():
+    daily_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
+
+    @asset(config_schema={"a": int}, partitions_def=daily_partitions_def)
+    def asset1(context):
+        context.log.info(context.op_config["a"])
+        context.log.info(context.partition_key)
+
+    the_job = define_asset_job(
+        "job",
+        partitions_def=daily_partitions_def,
+        config={"ops": {"asset1": {"config": {"a": 5}}}},
+    ).resolve([asset1], [])
+
+    assert the_job.execute_in_process(partition_key="2020-01-01").success
