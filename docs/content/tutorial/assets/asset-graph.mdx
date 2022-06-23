@@ -4,12 +4,14 @@ Software-defined assets can depend on other software-defined assets. An asset de
 
 Why split up code into multiple assets? There are a few reasons:
 
-- Dagster can materialize assets without re-materialize all the upstream assets. This means that, if we hit a failure, we can re-materialize just the assets that didn't materialize successfully, which often allows us to avoid re-executing expensive computation.
+- Dagster can materialize assets without re-materializing all the upstream assets. This means that, if we hit a failure, we can re-materialize just the assets that didn't materialize successfully, which often allows us to avoid re-executing expensive computation.
 - When two assets don't depend on each other, Dagster can materialize them simultaneously.
+
+---
 
 ## Let's Get Serial
 
-Having defined a data set of cereals, we'll define a downstream asset that contains only the cereals that are manufactured by Nabisco.
+Having defined a dataset of cereals, we'll define a downstream asset that contains only the cereals that are manufactured by Nabisco.
 
 ```python file=/guides/dagster/asset_tutorial/serial_asset_graph.py
 import csv
@@ -34,12 +36,12 @@ def nabisco_cereals(cereals):
 
 We've defined our new asset, `nabisco_cereals`, with an argument, `cereals`.
 
-Dagster offers a few ways of specifying asset dependencies, but the easiest is to include an upstream asset name as an argument to the decorated function. When it's time to materialize the contents of the `sugariest_cereal` asset, the contents of `cereals` asset are provided as the value for the `cereals` argument to its compute function.
+Dagster offers a few ways of specifying asset dependencies, but the easiest is to include an upstream asset name as an argument to the decorated function. When it's time to materialize the contents of the `nabisco_cereals` asset, the contents of `cereals` asset are provided as the value for the `cereals` argument to its compute function.
 
 So:
 
-- `cereals` doesn't depend on any other asset.
-- `nabisco_cereals` depends `cereals`.
+- `cereals` doesn't depend on any other asset
+- `nabisco_cereals` depends on `cereals`
 
 Let's visualize these assets in Dagit:
 
@@ -47,21 +49,25 @@ Let's visualize these assets in Dagit:
 dagit -f serial_asset_graph.py
 ```
 
-Navigate to <http://127.0.0.1:3000>:
+Navigate to <http://127.0.0.1:3000>. From the **Assets** page, click an asset and then the **Lineage** tab:
 
 <img src="/images/guides/asset-tutorial/serial_asset_graph.png" />
 
 <br />
 
+To materialize the assets, click **Materialize all**.
+
+---
+
 ## A More Complex Asset Graph
 
-Assets don't need to be wired together serially. An asset can be depend on and be depended on by any number of other assets.
+Assets don't need to be wired together serially. An asset can depend on and be depended on by any number of other assets.
 
 Here, we're interested in which of Nabisco's cereals has the most protein. We define four assets:
 
-- The `cereals` and `nabisco_cereals` assets, same as above.
-- A `cereal_protein_fractions` asset, which records each cereal's protein content as a fraction of its total mass.
-- A `highest_protein_nabisco_cereal`, which has is the name of the nabisco cereal that has the highest protein content.
+- The `cereals` and `nabisco_cereals` assets, same as above
+- A `cereal_protein_fractions` asset, which records each cereal's protein content as a fraction of its total mass
+- A `highest_protein_nabisco_cereal`, which is the name of the Nabisco cereal that has the highest protein content
 
 ```python file=/guides/dagster/asset_tutorial/complex_asset_graph.py
 import csv
@@ -113,6 +119,8 @@ Let's visualize these assets in Dagit:
 ```bash
 dagit -f complex_asset_graph.py
 ```
+
+Navigate to <http://127.0.0.1:3000>. From the **Assets** page, click an asset and then the **Lineage** tab:
 
 <img src="/images/guides/asset-tutorial/complex_asset_graph.png" />
 

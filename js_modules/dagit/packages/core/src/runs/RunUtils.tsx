@@ -159,7 +159,7 @@ export type ReExecutionStyle =
   | {type: 'selection'; selection: StepSelection};
 
 export function getReexecutionVariables(input: {
-  run: (RunFragment | RunTableRunFragment) & {runConfig: any};
+  run: (RunFragment | RunTableRunFragment) & {runConfigYaml: string};
   style: ReExecutionStyle;
   repositoryLocationName: string;
   repositoryName: string;
@@ -172,7 +172,7 @@ export function getReexecutionVariables(input: {
 
   const executionParams: ExecutionParams = {
     mode: run.mode,
-    runConfigData: run.runConfig,
+    runConfigData: run.runConfigYaml,
     executionMetadata: getBaseExecutionMetadata(run),
     selector: {
       repositoryLocationName,

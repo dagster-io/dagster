@@ -17,6 +17,8 @@ Why split up code into ops instead of splitting it up into regular Python functi
 
 Dagster jobs model a _dataflow_ graph. In data pipelines, the reason that a later step comes after an earlier step is almost always that it uses data produced by the earlier step. Dagster models these dataflow dependencies with _inputs_ and _outputs_.
 
+---
+
 ## Let's Get Serial
 
 We'll expand the job we worked with in the first section of the tutorial into two ops that:
@@ -78,6 +80,8 @@ height={946}
 
 <br />
 
+---
+
 ## A More Complex DAG
 
 Ops don't need to be wired together serially. The output of one op can be consumed by any number of other ops, and the outputs of several different ops can be consumed by a single op.
@@ -125,7 +129,7 @@ def diamond():
     )
 ```
 
-First we introduce the intermediate variable `cereals` into our job definition to represent the output of the `download_cereals` op. Then we make both `find_highest_calorie_cereal` and `find_highest_protein_cereal` consume this output. Their outputs are in turn both consumed by `display_results`.
+First, we introduce the intermediate variable `cereals` into our job definition to represent the output of the `download_cereals` op. Then we make both `find_highest_calorie_cereal` and `find_highest_protein_cereal` consume this output. Their outputs are in turn both consumed by `display_results`.
 
 Let's visualize this job in Dagit:
 

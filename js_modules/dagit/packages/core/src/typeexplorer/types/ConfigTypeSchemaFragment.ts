@@ -15,9 +15,16 @@ export interface ConfigTypeSchemaFragment_ArrayConfigType {
   typeParamKeys: string[];
 }
 
+export interface ConfigTypeSchemaFragment_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface ConfigTypeSchemaFragment_EnumConfigType {
   __typename: "EnumConfigType";
   givenName: string;
+  values: ConfigTypeSchemaFragment_EnumConfigType_values[];
   key: string;
   description: string | null;
   isSelector: boolean;

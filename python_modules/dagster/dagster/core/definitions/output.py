@@ -26,7 +26,7 @@ from dagster.utils.backcompat import experimental_arg_warning
 
 from .inference import InferredOutputProps
 from .input import NoValueSentinel
-from .utils import DEFAULT_OUTPUT, check_valid_name
+from .utils import DEFAULT_IO_MANAGER_KEY, DEFAULT_OUTPUT, check_valid_name
 
 if TYPE_CHECKING:
     from dagster.core.definitions.partition import PartitionsDefinition
@@ -91,7 +91,7 @@ class OutputDefinition:
         self._io_manager_key = check.opt_str_param(
             io_manager_key,
             "io_manager_key",
-            default="io_manager",
+            default=DEFAULT_IO_MANAGER_KEY,
         )
         self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         self._metadata_entries = check.is_list(
@@ -104,7 +104,7 @@ class OutputDefinition:
         if callable(asset_key):
             warnings.warn(
                 "Passing a function as the `asset_key` argument to `Out` or `OutputDefinition` is "
-                "deprecated behavior and will be removed in version 0.15.0."
+                "deprecated behavior and will be removed in version 0.16.0."
             )
         else:
             check.opt_inst_param(asset_key, "asset_key", AssetKey)
@@ -424,7 +424,7 @@ class Out(
             description=description,
             is_required=check.bool_param(is_required, "is_required"),
             io_manager_key=check.opt_str_param(
-                io_manager_key, "io_manager_key", default="io_manager"
+                io_manager_key, "io_manager_key", default=DEFAULT_IO_MANAGER_KEY
             ),
             metadata=metadata,
             asset_key=asset_key,

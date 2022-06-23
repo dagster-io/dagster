@@ -9,6 +9,7 @@ import {Route} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../app/GraphQueryImpl';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {OpGraph, OP_GRAPH_OP_FRAGMENT} from '../graph/OpGraph';
 import {useOpLayout} from '../graph/asyncGraphLayout';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
@@ -175,6 +176,22 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
   const parentOp = parentHandle && parentHandle.solid;
   const {layout, loading, async} = useOpLayout(queryResultOps.all, parentOp);
 
+  const breadcrumbs = React.useMemo(() => {
+    const opNames = explorerPath.opNames;
+    const breadcrumbs = opNames.map((name, idx) => ({
+      text: name,
+      onClick: () => {
+        onChangeExplorerPath({...explorerPath, opNames: opNames.slice(0, idx + 1)}, 'push');
+      },
+    }));
+    // If you're viewing a graph that is part of an asset job, we don't want to let you view
+    // the "root" graph becacuse it's not something you defined explicitly. Remove the first item.
+    if (isHiddenAssetGroupJob(explorerPath.pipelineName)) {
+      breadcrumbs.shift();
+    }
+    return breadcrumbs;
+  }, [explorerPath, onChangeExplorerPath]);
+
   return (
     <SplitPanelContainer
       identifier="explorer"
@@ -191,19 +208,9 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
                 onChange={handleQueryChange}
               />
             </QueryOverlay>
-          ) : explorerPath.opNames.length > 1 ? (
+          ) : breadcrumbs.length > 1 ? (
             <BreadcrumbsOverlay>
-              <Breadcrumbs
-                currentBreadcrumbRenderer={() => <span />}
-                items={explorerPath.opNames.map((name, idx) => ({
-                  text: name,
-                  onClick: () =>
-                    onChangeExplorerPath(
-                      {...explorerPath, opNames: explorerPath.opNames.slice(0, idx + 1)},
-                      'push',
-                    ),
-                }))}
-              />
+              <Breadcrumbs currentBreadcrumbRenderer={() => <span />} items={breadcrumbs} />
             </BreadcrumbsOverlay>
           ) : null}
 

@@ -12,11 +12,12 @@ import {Spinner} from './Spinner';
 const MAX_SUGGESTIONS = 100;
 
 export interface SuggestionProvider {
-  token: string;
+  token?: string;
   values: () => string[];
+  suggestionFilter?: (query: string, suggestion: Suggestion) => boolean;
 }
 
-interface Suggestion {
+export interface Suggestion {
   text: string;
   final: boolean;
 }
@@ -36,6 +37,7 @@ interface TokenizingFieldProps {
   maxValues?: number;
   onChange: (values: TokenizingFieldValue[]) => void;
   onChangeBeforeCommit?: boolean;
+  addOnBlur?: boolean;
   onFocus?: () => void;
 
   placeholder?: string;
@@ -43,7 +45,10 @@ interface TokenizingFieldProps {
   className?: string;
   small?: boolean;
 
+  fullwidth?: boolean;
+
   suggestionProviders: SuggestionProvider[];
+  suggestionRenderer?: (suggestion: Suggestion) => React.ReactNode;
   suggestionProvidersFilter?: (
     suggestionProvider: SuggestionProvider[],
     values: TokenizingFieldValue[],
@@ -51,7 +56,7 @@ interface TokenizingFieldProps {
 }
 
 function findProviderByToken(token: string, providers: SuggestionProvider[]) {
-  return providers.find((p) => p.token.toLowerCase() === token.toLowerCase());
+  return providers.find((p) => p.token && p.token.toLowerCase() === token.toLowerCase());
 }
 
 export const tokenizedValuesFromString = (str: string, providers: SuggestionProvider[]) => {
@@ -96,10 +101,16 @@ export const stringFromValue = (value: TokenizingFieldValue[]) =>
 const isEqual = (a: TokenizingFieldValue, b?: TokenizingFieldValue) =>
   b && a.token === b.token && a.value === b.value;
 
-/** Provides a text field with typeahead autocompletion for key value pairs,
-where the key is one of a known set of "suggestion provider tokens". Provide
-one or more SuggestionProviders to build the tree of autocompletions. The
-input also allows for freeform typing (`value` items with no token value) */
+/** Provides a text field with typeahead autocompletion.
+ *  This completion either provides a list of standalone tokens
+ *  sourced from the `tokens` param, or a set of key value pairs,
+ *  sourced from the `suggestionProviders` param. In the latter case, the
+ *  key is one of a known set of "suggestion provider tokens".
+ *
+ *  Provide one or more SuggestionProviders or a list of tokens
+ *  to build the tree of autocompletions.
+ *
+ *  The input also allows for freeform typing (`value` items with no token value) */
 export const TokenizingField: React.FC<TokenizingFieldProps> = ({
   suggestionProviders,
   suggestionProvidersFilter,
@@ -109,8 +120,11 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
   onChangeBeforeCommit,
   onFocus,
   placeholder,
+  addOnBlur,
   loading,
   className,
+  fullwidth,
+  suggestionRenderer,
 }) => {
   const [open, setOpen] = React.useState<boolean>(false);
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
@@ -140,35 +154,42 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
 
     let suggestionsArr: Suggestion[] = [];
 
-    const suggestionMatchesTypedText = (s: Suggestion) =>
-      !lastPart ||
+    const matchesTypedText = (query: string, s: Suggestion) =>
+      !query ||
       s.text
         .toLowerCase()
         .split(':')
-        .some((c) => c.includes(lastPart));
+        .some((c) => c.includes(query));
 
     const availableSuggestionsForProvider = (provider: SuggestionProvider) => {
       const suggestionNotUsed = (v: string) =>
         !values.some((e) => e.token === provider.token && e.value === v);
 
+      const suggestionFilter = provider.suggestionFilter || matchesTypedText;
+
       return provider
         .values()
         .filter(suggestionNotUsed)
-        .map((v) => ({text: `${provider.token}:${v}`, final: true}))
-        .filter(suggestionMatchesTypedText)
+        .map((v) => ({text: provider?.token ? `${provider.token}:${v}` : v, final: true}))
+        .filter((s) => suggestionFilter(lastPart, s))
         .slice(0, MAX_SUGGESTIONS); // never show too many suggestions for one provider
     };
 
     if (parts.length === 1) {
       // Suggest providers (eg: `pipeline:`) so users can discover the search space
+
       suggestionsArr = filteredSuggestionProviders
-        .map((s) => ({text: `${s.token}:`, final: false}))
-        .filter(suggestionMatchesTypedText);
+        .reduce(
+          (accum: Suggestion[], s) =>
+            s.token ? [...accum, {text: `${s.token}:`, final: false}] : accum,
+          [],
+        )
+        .filter((s) => matchesTypedText(lastPart, s));
 
       // Suggest value completions so users can type "airline_" without the "pipeline"
       // prefix and get the correct suggestion.
-      if (typed.length > 0) {
-        for (const p of filteredSuggestionProviders) {
+      for (const p of filteredSuggestionProviders) {
+        if (!p.token || typed.length > 0) {
           suggestionsArr.push(...availableSuggestionsForProvider(p));
         }
       }
@@ -329,6 +350,8 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
     }
   }, [menuRef, active]);
 
+  const renderSuggestion = suggestionRenderer || ((suggestion) => suggestion.text);
+
   return (
     <Popover
       isOpen={open && suggestions.length > 0 && !atMaxValues}
@@ -341,9 +364,9 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
                 <MenuItem
                   data-idx={idx}
                   key={suggestion.text}
-                  text={suggestion.text}
+                  text={renderSuggestion(suggestion)}
                   shouldDismissPopover={false}
-                  active={active ? active.idx === idx : false}
+                  active={active?.idx === idx}
                   onMouseDown={(e: React.MouseEvent<any>) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -384,8 +407,16 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
             setOpen(true);
             onFocus && onFocus();
           },
-          onBlur: () => setOpen(false),
+          onBlur: () => {
+            // Emulate behavior of addOnBlur for TagInput
+            // When a user clicks outside of the input, finish the current token
+            if (addOnBlur) {
+              onConfirmText(typed);
+            }
+            setOpen(false);
+          },
         }}
+        $maxWidth={fullwidth ? '100%' : undefined}
         onAdd={() => false}
         onKeyDown={onKeyDown}
         tagProps={{minimal: true}}
@@ -398,16 +429,17 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
           ) : undefined
         }
       />
+      <StyledTagInput />
     </Popover>
   );
 };
 
-export const StyledTagInput = styled(TagInput)`
+export const StyledTagInput = styled(TagInput)<{$maxWidth?: any}>`
   border: none;
   border-radius: 8px;
   box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px;
   min-width: 400px;
-  max-width: 600px;
+  max-width: ${(p) => (p.$maxWidth ? p.$maxWidth : '600px')};
   transition: box-shadow 150ms;
 
   &.bp3-active {

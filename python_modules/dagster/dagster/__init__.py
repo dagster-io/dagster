@@ -145,6 +145,7 @@ from dagster.core.definitions import (
     make_values_resource,
     monthly_partitioned_config,
     monthly_schedule,
+    multi_or_in_process_executor,
     multiple_process_executor_requirements,
     multiprocess_executor,
     op,
@@ -335,31 +336,31 @@ _DEPRECATED = {
 }
 
 _DEPRECATED_RENAMED = {
-    "EventMetadataEntry": (MetadataEntry, "0.15.0"),
-    "EventMetadata": (MetadataValue, "0.15.0"),
-    "TextMetadataEntryData": (TextMetadataValue, "0.15.0"),
-    "UrlMetadataEntryData": (UrlMetadataValue, "0.15.0"),
-    "PathMetadataEntryData": (PathMetadataValue, "0.15.0"),
-    "JsonMetadataEntryData": (JsonMetadataValue, "0.15.0"),
-    "MarkdownMetadataEntryData": (MarkdownMetadataValue, "0.15.0"),
+    "EventMetadataEntry": (MetadataEntry, "0.16.0"),
+    "EventMetadata": (MetadataValue, "0.16.0"),
+    "TextMetadataEntryData": (TextMetadataValue, "0.16.0"),
+    "UrlMetadataEntryData": (UrlMetadataValue, "0.16.0"),
+    "PathMetadataEntryData": (PathMetadataValue, "0.16.0"),
+    "JsonMetadataEntryData": (JsonMetadataValue, "0.16.0"),
+    "MarkdownMetadataEntryData": (MarkdownMetadataValue, "0.16.0"),
     "PythonArtifactMetadataEntryData": (
         PythonArtifactMetadataValue,
-        "0.15.0",
+        "0.16.0",
     ),
-    "FloatMetadataEntryData": (FloatMetadataValue, "0.15.0"),
-    "IntMetadataEntryData": (IntMetadataValue, "0.15.0"),
+    "FloatMetadataEntryData": (FloatMetadataValue, "0.16.0"),
+    "IntMetadataEntryData": (IntMetadataValue, "0.16.0"),
     "DagsterPipelineRunMetadataEntryData": (
         DagsterPipelineRunMetadataValue,
-        "0.15.0",
+        "0.16.0",
     ),
     "DagsterAssetMetadataEntryData": (
         DagsterAssetMetadataValue,
-        "0.15.0",
+        "0.16.0",
     ),
-    "TableMetadataEntryData": (TableMetadataValue, "0.15.0"),
+    "TableMetadataEntryData": (TableMetadataValue, "0.16.0"),
     "TableSchemaMetadataEntryData": (
         TableSchemaMetadataValue,
-        "0.15.0",
+        "0.16.0",
     ),
 }
 

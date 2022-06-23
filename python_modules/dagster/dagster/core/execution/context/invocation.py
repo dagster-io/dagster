@@ -298,7 +298,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
 
 
 def _validate_resource_requirements(
-    resource_defs: Dict[str, ResourceDefinition], solid_def: SolidDefinition
+    resource_defs: Mapping[str, ResourceDefinition], solid_def: SolidDefinition
 ) -> None:
     """Validate correctness of resources against required resource keys"""
 

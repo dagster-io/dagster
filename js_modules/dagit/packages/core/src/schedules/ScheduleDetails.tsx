@@ -153,7 +153,7 @@ export const ScheduleDetails: React.FC<{
             <td>
               {cronSchedule ? (
                 <Group direction="row" spacing={8}>
-                  <span>{humanCronString(cronSchedule)}</span>
+                  <span>{humanCronString(cronSchedule, executionTimezone || 'UTC')}</span>
                   <Code>({cronSchedule})</Code>
                 </Group>
               ) : (

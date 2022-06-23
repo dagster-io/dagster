@@ -26,7 +26,7 @@ interface SidebarOpContainerProps {
   showingSubgraph: boolean;
   parentOpHandleID?: string;
   getInvocations?: (definitionName: string) => {handleID: string}[];
-  onEnterSubgraph: (arg: OpNameOrPath) => void;
+  onEnterSubgraph?: (arg: OpNameOrPath) => void;
   onClickOp: (arg: OpNameOrPath) => void;
   repoAddress?: RepoAddress;
   isGraph: boolean;
@@ -108,7 +108,6 @@ export const SidebarOpContainer: React.FC<SidebarOpContainerProps> = ({
     repoAddress,
   );
   if (error) {
-    console.error(error);
     return (
       <Box padding={64} flex={{justifyContent: 'center'}}>
         <NonIdealState icon="error" title="GraphQL Error - see console for details" />
@@ -121,7 +120,6 @@ export const SidebarOpContainer: React.FC<SidebarOpContainerProps> = ({
   }
 
   if (!solidContainer) {
-    console.error('Could not load ops');
     return (
       <Box padding={{vertical: 16, horizontal: 24}} style={{color: Colors.Gray500}}>
         Could not load ops.

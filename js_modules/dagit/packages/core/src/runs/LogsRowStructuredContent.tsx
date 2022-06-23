@@ -178,38 +178,29 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
       return <DefaultContent eventType={eventType} message={node.message} eventIntent="success" />;
     case 'AlertFailureEvent':
       return <DefaultContent eventType={eventType} message={node.message} eventIntent="warning" />;
+    case 'ResourceInitFailureEvent':
     case 'RunFailureEvent':
-      if (node.pipelineFailureError) {
-        return (
-          <FailureContent
-            message={node.message}
-            error={node.pipelineFailureError}
-            eventType={eventType}
-          />
-        );
+      if (node.error) {
+        return <FailureContent message={node.message} error={node.error} eventType={eventType} />;
       }
-
       return <DefaultContent message={node.message} eventType={eventType} eventIntent="danger" />;
     case 'RunSuccessEvent':
       return <DefaultContent message={node.message} eventType={eventType} eventIntent="success" />;
-
     case 'RunStartEvent':
-      return <DefaultContent message={node.message} eventType={eventType} />;
     case 'RunEnqueuedEvent':
-      return <DefaultContent message={node.message} eventType={eventType} />;
     case 'RunDequeuedEvent':
-      return <DefaultContent message={node.message} eventType={eventType} />;
     case 'RunStartingEvent':
-      return <DefaultContent message={node.message} eventType={eventType} />;
     case 'RunCancelingEvent':
+    case 'ResourceInitStartedEvent':
+    case 'ResourceInitSuccessEvent':
+    case 'StepWorkerStartedEvent':
+    case 'StepWorkerStartingEvent':
       return <DefaultContent message={node.message} eventType={eventType} />;
     case 'RunCanceledEvent':
       return <FailureContent message={node.message} eventType={eventType} />;
     case 'EngineEvent':
-      if (node.engineError) {
-        return (
-          <FailureContent message={node.message} error={node.engineError} eventType={eventType} />
-        );
+      if (node.error) {
+        return <FailureContent message={node.message} error={node.error} eventType={eventType} />;
       }
       return (
         <DefaultContent
@@ -326,16 +317,23 @@ const FailureContent: React.FC<{
 
     // omit the outer stack for user code errors with a cause
     // as the outer stack is just framework code
-    if (!(errorSource === ErrorSource.USER_CODE_ERROR && error.cause)) {
+    if (error.stack.length && !(errorSource === ErrorSource.USER_CODE_ERROR && error.cause)) {
       errorStack = <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>;
     }
 
     if (error.cause) {
+      let errorCauseStack = null;
+      if (error.cause.stack.length) {
+        errorCauseStack = (
+          <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.cause.stack}`}</span>
+        );
+      }
+
       errorCause = (
         <>
           {`The above exception was caused by the following exception:\n`}
           <span style={{color: Colors.Red500}}>{`${error.cause.message}`}</span>
-          <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.cause.stack}`}</span>
+          {errorCauseStack}
         </>
       );
     }

@@ -5796,6 +5796,7 @@ __metadata:
     "@testing-library/user-event": ^13.5.0
     "@types/babel__core": ^7
     "@types/babel__preset-env": ^7
+    "@types/codemirror": ^5.60.5
     "@types/jest": ^27.4.0
     "@types/lru-cache": ^7
     "@types/mdx-js__react": ^1
@@ -5806,6 +5807,7 @@ __metadata:
     babel-jest: ^27.4.6
     babel-loader: ^8.2.4
     babel-plugin-macros: ^3.1.0
+    codemirror: ^5.65.2
     core-js: ^3.21.1
     deepmerge: ^4.2.2
     eslint: ^8.6.0
@@ -5813,6 +5815,7 @@ __metadata:
     jest: ^27.4.7
     nearest-color: ^0.4.4
     prettier: 2.2.1
+    react-codemirror2: ^7.2.1
     react-markdown: ^6.0.3
     react-virtualized: ^9.22.3
     regenerator-runtime: ^0.13.9
@@ -5823,6 +5826,7 @@ __metadata:
     rollup-plugin-styles: ^4.0.0
     typescript: ^4.6.4
     webpack: ^5.0.0
+    yaml: 2.0.0-10
   peerDependencies:
     "@blueprintjs/core": ^3.45.0
     "@blueprintjs/popover2": 0.10.1

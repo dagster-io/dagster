@@ -381,7 +381,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         # Post event for starting execution
         job_name = job.metadata.name
         engine_event = instance.report_engine_event(
-            "Executing step {} in Kubernetes job {}".format(step_key, job_name),
+            'Executing step "{}" in Kubernetes job {}.'.format(step_key, job_name),
             pipeline_run,
             EngineEventData(
                 [

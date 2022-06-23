@@ -14,7 +14,6 @@ export interface SVGViewportInteractor {
 interface SVGViewportProps {
   graphWidth: number;
   graphHeight: number;
-  backgroundColor?: string;
   interactor: SVGViewportInteractor;
   maxZoom: number;
   maxAutocenterZoom: number;
@@ -440,13 +439,17 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
   };
 
   render() {
-    const {children, onClick, interactor, backgroundColor} = this.props;
+    const {children, onClick, interactor} = this.props;
     const {x, y, scale} = this.state;
+    const dotsize = Math.max(14, 30 * scale);
 
     return (
       <div
         ref={this.element}
-        style={Object.assign({backgroundColor}, SVGViewportStyles)}
+        style={Object.assign({}, SVGViewportStyles, {
+          backgroundPosition: `${x}px ${y}px`,
+          backgroundSize: `${dotsize}px`,
+        })}
         onMouseDown={(e) => interactor.onMouseDown(this, e)}
         onDoubleClick={this.onDoubleClick}
         onKeyDown={this.onKeyDown}
@@ -478,6 +481,7 @@ const SVGViewportStyles: React.CSSProperties = {
   overflow: 'hidden',
   userSelect: 'none',
   outline: 'none',
+  background: `url("data:image/svg+xml;utf8,<svg width='30px' height='30px' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'><circle fill='rgba(236, 236, 236, 1)' cx='5' cy='5' r='5' /></svg>") repeat`,
 };
 
 const ZoomSliderContainer = styled.div`

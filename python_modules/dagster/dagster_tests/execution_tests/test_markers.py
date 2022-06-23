@@ -1,4 +1,5 @@
 from dagster import execute_pipeline, lambda_solid, pipeline, reconstructable
+from dagster.core.events import MARKER_EVENTS
 from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
 
 
@@ -29,7 +30,7 @@ def test_multiproc_markers():
         end_markers = {}
         for event in events:
             dagster_event = event.dagster_event
-            if dagster_event and dagster_event.is_engine_event:
+            if dagster_event and dagster_event.event_type in MARKER_EVENTS:
                 if dagster_event.engine_event_data.marker_start:
                     key = "{step}.{marker}".format(
                         step=event.step_key, marker=dagster_event.engine_event_data.marker_start
@@ -47,4 +48,4 @@ def test_multiproc_markers():
             assert end_markers[key] - start_markers[key] > 0
             seen.add(key)
 
-        assert "ping.multiprocess_subprocess_init" in end_markers
+        assert "ping.step_process_start" in end_markers

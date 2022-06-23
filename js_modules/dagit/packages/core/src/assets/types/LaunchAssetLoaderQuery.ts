@@ -40,6 +40,12 @@ export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_ArrayC
   typeParamKeys: string[];
 }
 
+export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -47,6 +53,7 @@ export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_ArrayC
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: LaunchAssetLoaderQuery_assetNodes_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -106,12 +113,24 @@ export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_ArrayC
   recursiveConfigTypes: LaunchAssetLoaderQuery_assetNodes_configField_configType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -121,6 +140,7 @@ export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_EnumCo
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: LaunchAssetLoaderQuery_assetNodes_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -178,6 +198,7 @@ export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_EnumCo
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: LaunchAssetLoaderQuery_assetNodes_configField_configType_EnumConfigType_values[];
   recursiveConfigTypes: LaunchAssetLoaderQuery_assetNodes_configField_configType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -189,6 +210,12 @@ export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_Regula
   typeParamKeys: string[];
 }
 
+export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -196,6 +223,7 @@ export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_Regula
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: LaunchAssetLoaderQuery_assetNodes_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -273,6 +301,12 @@ export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_Compos
   typeParamKeys: string[];
 }
 
+export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -280,6 +314,7 @@ export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_Compos
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: LaunchAssetLoaderQuery_assetNodes_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -348,6 +383,12 @@ export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_Scalar
   typeParamKeys: string[];
 }
 
+export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -355,6 +396,7 @@ export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_Scalar
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: LaunchAssetLoaderQuery_assetNodes_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -424,6 +466,12 @@ export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_MapCon
   typeParamKeys: string[];
 }
 
+export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -431,6 +479,7 @@ export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_MapCon
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: LaunchAssetLoaderQuery_assetNodes_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_MapConfigType_recursiveConfigTypes_RegularConfigType {

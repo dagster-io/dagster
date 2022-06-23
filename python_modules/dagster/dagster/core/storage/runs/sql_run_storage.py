@@ -174,15 +174,20 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 RunsTable.update()  # pylint: disable=no-value-for-parameter
                 .where(RunsTable.c.run_id == run_id)
                 .values(
-                    status=new_pipeline_status.value,
                     run_body=serialize_dagster_namedtuple(run.with_status(new_pipeline_status)),
+                    status=new_pipeline_status.value,
                     update_timestamp=now,
                     **kwargs,
                 )
             )
 
-    def _row_to_run(self, row: Tuple) -> PipelineRun:
-        return deserialize_as(row[0], PipelineRun)
+    def _row_to_run(self, row) -> PipelineRun:
+        run = deserialize_as(row["run_body"], PipelineRun)
+        status = DagsterRunStatus(row["status"])
+        # NOTE: the status column is more trustworthy than the status in the run body, since concurrent
+        # writes (e.g.  handle_run_event and add_tags) can cause the status in the body to be out of
+        # overriden with an old value.
+        return run.with_status(status)
 
     def _rows_to_runs(self, rows: Iterable[Tuple]) -> List[PipelineRun]:
         return list(map(self._row_to_run, rows))
@@ -276,7 +281,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         check.opt_bool_param(ascending, "ascending")
 
         if columns is None:
-            columns = ["run_body"]
+            columns = ["run_body", "status"]
 
         if bucket_by:
             if limit or cursor:
@@ -411,9 +416,11 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         """
         check.str_param(run_id, "run_id")
 
-        query = db.select([RunsTable.c.run_body]).where(RunsTable.c.run_id == run_id)
+        query = db.select([RunsTable.c.run_body, RunsTable.c.status]).where(
+            RunsTable.c.run_id == run_id
+        )
         rows = self.fetchall(query)
-        return deserialize_as(rows[0][0], PipelineRun) if len(rows) else None
+        return self._row_to_run(rows[0]) if rows else None
 
     def get_run_records(
         self,
@@ -427,7 +434,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         filters = check.opt_inst_param(filters, "filters", RunsFilter, default=RunsFilter())
         check.opt_int_param(limit, "limit")
 
-        columns = ["id", "run_body", "create_timestamp", "update_timestamp"]
+        columns = ["id", "run_body", "status", "create_timestamp", "update_timestamp"]
 
         if self.has_run_stats_index_cols():
             columns += ["start_time", "end_time"]
@@ -446,9 +453,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return [
             RunRecord(
                 storage_id=check.int_param(row["id"], "id"),
-                pipeline_run=deserialize_as(
-                    check.str_param(row["run_body"], "run_body"), PipelineRun
-                ),
+                pipeline_run=self._row_to_run(row),
                 create_timestamp=check.inst(row["create_timestamp"], datetime),
                 update_timestamp=check.inst(row["update_timestamp"], datetime),
                 start_time=check.opt_inst(row["start_time"], float)
@@ -548,7 +553,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         )
         # get run group
         run_group_query = (
-            db.select([RunsTable.c.run_body])
+            db.select([RunsTable.c.run_body, RunsTable.c.status])
             .select_from(
                 root_to_run.join(
                     RunsTable,
@@ -573,7 +578,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         # The runs that would be returned by calling RunStorage.get_runs with the same arguments
         runs = self._runs_query(
-            filters=filters, cursor=cursor, limit=limit, columns=["run_body", "run_id"]
+            filters=filters, cursor=cursor, limit=limit, columns=["run_body", "status", "run_id"]
         ).alias("runs")
 
         # Gets us the run_id and associated root_run_id for every run in storage that is a
@@ -667,6 +672,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             db.select(
                 [
                     RunsTable.c.run_body,
+                    RunsTable.c.status,
                     db.func.count(all_descendant_runs.c.id).label("child_counts"),
                 ]
             )
@@ -679,7 +685,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     isouter=True,
                 )
             )
-            .group_by(RunsTable.c.run_body)
+            .group_by(RunsTable.c.run_body, RunsTable.c.status)
             .order_by(db.desc(db.column("child_counts")))
         )
 
@@ -689,15 +695,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         # Postprocess: descendant runs get aggregated with their roots
         root_run_id_to_group: Dict[str, List[PipelineRun]] = defaultdict(list)
         root_run_id_to_count: Dict[str, int] = defaultdict(int)
-        for (run_body, count) in res:
-            row = (run_body,)
+        for row in res:
             pipeline_run = self._row_to_run(row)
             root_run_id = pipeline_run.get_root_run_id()
             if root_run_id is not None:
                 root_run_id_to_group[root_run_id].append(pipeline_run)
             else:
                 root_run_id_to_group[pipeline_run.run_id].append(pipeline_run)
-                root_run_id_to_count[pipeline_run.run_id] = count + 1
+                root_run_id_to_count[pipeline_run.run_id] = row["child_counts"] + 1
 
         return {
             root_run_id: {

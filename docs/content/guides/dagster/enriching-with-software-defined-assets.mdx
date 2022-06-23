@@ -32,13 +32,12 @@ Assets help track and define cross-job dependencies. For example, when viewing a
 
 ### Direct operation
 
-Using software-defined assets enables you to directly operate them in Dagit. On the [Assets page](/concepts/dagit/dagit#assets), you can:
+Using software-defined assets enables you to directly operate them in Dagit. On the [Asset's Details page](/concepts/dagit/dagit#asset-details), you can:
 
-- View the materialization history of an asset
+- View the materialization history of the asset
 - Check when the next materialization will occur
-- Launch a run to materialize the asset
-
-Drilling down to the [Asset Details page](/concepts/dagit/dagit#asset-details) for an individual asset shows the sensors or schedules for any jobs targeting the asset. It also includes a **(Re)Materialize** button, allowing you to launch a run that rematerializes the asset, including its ancestors or descendants.
+- Launch runs that materialize or re-materialize the asset, including its ancestors or descendants
+- View the sensors or schedules for jobs targeting the asset
 
 ### Improved code ergonomics
 
@@ -64,7 +63,7 @@ You should use software-defined assets when:
 - You’re using Dagster to produce or maintain assets, AND
 - You know what those assets will be before you launch any runs.
 
-Note that using software-defined assets in one job doesn’t mean need to be used in all your jobs. If your use case doesn't meet these criteria, you can still use graphs and ops.
+Note that using software-defined assets in one job doesn’t mean they need to be used in all your jobs. If your use case doesn't meet these criteria, you can still use graphs and ops.
 
 Still not sure? Check out these examples to see what's a good fit and what isn't:
 
