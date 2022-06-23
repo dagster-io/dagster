@@ -200,7 +200,7 @@ def test_op_resource_def():
     assert op_requires_foo(context) == "found bar"
 ```
 
-Note that when directly invoking ops, io managers specified on inputs and outputs are not used.
+Note that when directly invoking ops, IO managers specified on inputs and outputs are not used.
 
 ### Testing software-defined assets
 
@@ -266,7 +266,7 @@ def test_asset_with_service():
     ...
 ```
 
-Note that resources provided on <PyObject object="build_op_context" /> should not conflict with the resources provided directly on the asset. If a resource key is provided both to the context and the asset, an error will occur.
+Note that resources provided on <PyObject object="build_op_context" /> should not conflict with the resources provided directly on the asset. If a resource key is provided both to the context and the asset, it will result in a <PyObject object="DagsterInvalidInvocationError" />.
 
 ### Testing multiple software-defined assets together
 
