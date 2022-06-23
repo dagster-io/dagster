@@ -237,6 +237,21 @@ class Output(Generic[T]):
     def output_name(self) -> str:
         return self._output_name
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Output):
+            return False
+        metadata_entries_equal = len(self.metadata_entries) == len(other.metadata_entries) and all(
+            [
+                this_entry == other_entry
+                for this_entry, other_entry in zip(self.metadata_entries, other.metadata_entries)
+            ]
+        )
+        return (
+            self.value == other.value
+            and self.output_name == other.output_name
+            and metadata_entries_equal
+        )
+
 
 class DynamicOutput(Generic[T]):
     """
@@ -298,6 +313,22 @@ class DynamicOutput(Generic[T]):
     @property
     def output_name(self) -> str:
         return self._output_name
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, DynamicOutput):
+            return False
+        metadata_entries_equal = len(self.metadata_entries) == len(other.metadata_entries) and all(
+            [
+                this_entry == other_entry
+                for this_entry, other_entry in zip(self.metadata_entries, other.metadata_entries)
+            ]
+        )
+        return (
+            self.value == other.value
+            and self.output_name == other.output_name
+            and self.mapping_key == other.mapping_key
+            and metadata_entries_equal
+        )
 
 
 @whitelist_for_serdes
