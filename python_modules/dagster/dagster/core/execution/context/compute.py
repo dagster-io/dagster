@@ -322,6 +322,15 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         else:
             return asset_output_info.key
 
+    def asset_key_for_input(self, input_name: str) -> AssetKey:
+        key = self.pipeline_def.asset_layer.asset_key_for_input(
+            node_handle=self.op_handle, input_name=input_name
+        )
+        if key is None:
+            check.failed(f"Input '{input_name}' has no asset")
+        else:
+            return key
+
     def output_asset_partition_key(self, output_name: str = "result") -> str:
         deprecation_warning(
             "OpExecutionContext.output_asset_partition_key",
