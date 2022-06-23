@@ -16,7 +16,7 @@ The `configured` API offers a way to configure a Dagster entity at definition ti
 
 ## Overview
 
-The primary purpose of Dagster config is to provide values to ops and resources when running a job. Sometimes, however, you may find yourself with an op or configuration that requires configuration, and you might not want whoever is running the job to need to provide that configuration. I.e. you may know the values of the config you want to provide at definition time instead of runtime.
+The primary purpose of Dagster config is to provide values to ops and resources when running a job. Sometimes, however, you may find yourself with an op or resource that requires configuration, and you might not want whoever is running the job to need to provide that configuration. I.e. you may know the values of the config you want to provide at definition time instead of runtime.
 
 When is this useful? Often library authors provide very flexible and configurable ops that can be used in a wide variety of operational contexts. For example, in our dbt integration, there is an op that could allow a user to run arbitrary dbt commands on a deployed instance, and leverage our config editor to make this easier.
 

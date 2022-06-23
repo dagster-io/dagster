@@ -12,7 +12,7 @@ import dagster.seven as seven
 from dagster.core.assets import AssetDetails
 from dagster.core.definitions.events import AssetKey, AssetMaterialization
 from dagster.core.errors import DagsterEventLogInvalidForRun
-from dagster.core.events import DagsterEventType
+from dagster.core.events import MARKER_EVENTS, DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.stats import build_run_step_stats_from_events
 from dagster.serdes import (
@@ -404,8 +404,8 @@ class SqlEventLogStorage(EventLogStorage):
                         DagsterEventType.STEP_EXPECTATION_RESULT.value,
                         DagsterEventType.STEP_RESTARTED.value,
                         DagsterEventType.STEP_UP_FOR_RETRY.value,
-                        DagsterEventType.ENGINE_EVENT.value,
                     ]
+                    + [marker_event.value for marker_event in MARKER_EVENTS]
                 )
             )
             .order_by(SqlEventLogStorageTable.c.id.asc())

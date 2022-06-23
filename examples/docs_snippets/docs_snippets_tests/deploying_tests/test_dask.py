@@ -1,7 +1,5 @@
 from dagster.core.test_utils import instance_for_test
-from docs_snippets.deploying.dask_hello_world import (  # pylint: disable=import-error
-    local_dask_job,
-)
+from docs_snippets.deploying.dask_hello_world import local_dask_job
 
 
 def test_local_dask_pipeline():

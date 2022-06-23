@@ -48,6 +48,7 @@ export interface AssetQuery_assetOrError_Asset_definition_jobs_schedules {
   id: string;
   name: string;
   cronSchedule: string;
+  executionTimezone: string | null;
   scheduleState: AssetQuery_assetOrError_Asset_definition_jobs_schedules_scheduleState;
 }
 

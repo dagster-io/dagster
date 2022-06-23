@@ -21,7 +21,7 @@ event_log_storage:
       port: { port }
 
 schedule_storage:
-  module: dagster_postgres.event_log
+  module: dagster_postgres.schedule_storage
   class: PostgresScheduleStorage
   config:
     postgres_db:

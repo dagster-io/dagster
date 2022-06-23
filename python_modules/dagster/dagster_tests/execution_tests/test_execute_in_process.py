@@ -186,7 +186,7 @@ def test_output_for_node_not_found():
     ):
         result.output_value("name_doesnt_exist")
 
-    with pytest.raises(CheckError, match="basic has no solid named op_doesnt_exist"):
+    with pytest.raises(CheckError, match="basic has no op named op_doesnt_exist"):
         result.output_for_node("op_doesnt_exist")
 
 

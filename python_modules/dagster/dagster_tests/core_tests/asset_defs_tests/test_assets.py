@@ -10,7 +10,9 @@ from dagster import (
     ResourceDefinition,
     build_op_context,
     io_manager,
+    materialize_to_memory,
     op,
+    resource,
 )
 from dagster._check import CheckError
 from dagster.core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
@@ -409,3 +411,51 @@ def test_asset_invocation_resource_errors():
         match="resource with key 'foo' required by op 'required_key_not_provided' was not provided.",
     ):
         required_key_not_provided(build_op_context())
+
+
+def test_multi_asset_resources_execution():
+    class MyIOManager(IOManager):
+        def __init__(self, the_list):
+            self._the_list = the_list
+
+        def handle_output(self, _context, obj):
+            self._the_list.append(obj)
+
+        def load_input(self, _context):
+            pass
+
+    foo_list = []
+
+    @resource
+    def baz_resource():
+        return "baz"
+
+    @io_manager(required_resource_keys={"baz"})
+    def foo_manager(context):
+        assert context.resources.baz == "baz"
+        return MyIOManager(foo_list)
+
+    bar_list = []
+
+    @io_manager
+    def bar_manager():
+        return MyIOManager(bar_list)
+
+    @multi_asset(
+        outs={
+            "key1": Out(asset_key=AssetKey("key1"), io_manager_key="foo"),
+            "key2": Out(asset_key=AssetKey("key2"), io_manager_key="bar"),
+        },
+        resource_defs={"foo": foo_manager, "bar": bar_manager, "baz": baz_resource},
+    )
+    def my_asset(context):
+        # Required io manager keys are available on the context, same behavoir as ops
+        assert hasattr(context.resources, "foo")
+        assert hasattr(context.resources, "bar")
+        yield Output(1, "key1")
+        yield Output(2, "key2")
+
+    materialize_to_memory([my_asset])
+
+    assert foo_list == [1]
+    assert bar_list == [2]

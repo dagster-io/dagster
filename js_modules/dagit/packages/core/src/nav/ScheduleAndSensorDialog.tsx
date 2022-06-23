@@ -77,7 +77,9 @@ export const ScheduleAndSensorDialog = ({
                         {schedule.name}
                       </Link>
                     </td>
-                    <td>{humanCronString(schedule.cronSchedule)}</td>
+                    <td>
+                      {humanCronString(schedule.cronSchedule, schedule.executionTimezone || 'UTC')}
+                    </td>
                   </tr>
                 ))}
               </tbody>

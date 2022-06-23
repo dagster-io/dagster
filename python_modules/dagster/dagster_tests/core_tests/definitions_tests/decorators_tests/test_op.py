@@ -24,6 +24,8 @@ from dagster import (
     SolidDefinition,
     build_op_context,
     graph,
+    job,
+    mem_io_manager,
     op,
     solid,
 )
@@ -1181,3 +1183,18 @@ def test_generic_dynamic_multiple_outputs_empty():
     out1, out2 = basic()
     assert isinstance(out1, Output)
     assert isinstance(out2, list)
+
+
+def test_required_io_manager_op_access():
+    # Show that required io manager keys can be accessed from within the body
+    # of an op.
+    @op(out=Out(io_manager_key="foo"))
+    def the_op(context):
+        assert hasattr(context.resources, "foo")
+
+    @job(resource_defs={"foo": mem_io_manager})
+    def the_job():
+        the_op()
+
+    result = the_job.execute_in_process()
+    assert result.success

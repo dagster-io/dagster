@@ -16,7 +16,11 @@ if TYPE_CHECKING:
 def resource_invocation_result(
     resource_def: "ResourceDefinition", init_context: Optional["UnboundInitResourceContext"]
 ) -> Any:
-    from .resource_definition import is_context_provided
+    from ..execution.context.init import UnboundInitResourceContext
+    from .resource_definition import ResourceDefinition, is_context_provided
+
+    check.inst_param(resource_def, "resource_def", ResourceDefinition)
+    check.opt_inst_param(init_context, "init_context", UnboundInitResourceContext)
 
     if not resource_def.resource_fn:
         return None

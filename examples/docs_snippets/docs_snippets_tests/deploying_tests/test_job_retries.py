@@ -1,6 +1,5 @@
 import os
 
-from dagster import DagsterInstance
 from dagster.core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.storage.tags import MAX_RETRIES_TAG, RETRY_STRATEGY_TAG

@@ -53,6 +53,7 @@ from .output import OutputDefinition, OutputMapping
 from .preset import PresetDefinition
 from .resource_requirement import ResourceRequirement
 from .solid_container import create_execution_structure, validate_dependency_dict
+from .utils import DEFAULT_IO_MANAGER_KEY
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
@@ -296,7 +297,7 @@ class GraphDefinition(NodeDefinition):
         check.str_param(name, "name")
         check.invariant(
             name in self._node_dict,
-            "{graph_name} has no solid named {name}.".format(graph_name=self._name, name=name),
+            "{graph_name} has no op named {name}.".format(graph_name=self._name, name=name),
         )
 
         return self._node_dict[name]
@@ -490,11 +491,11 @@ class GraphDefinition(NodeDefinition):
         self,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
         tags: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, RawMetadataValue]] = None,
-        logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
+        logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
@@ -504,6 +505,7 @@ class GraphDefinition(NodeDefinition):
         asset_layer: Optional["AssetLayer"] = None,
         input_values: Optional[Mapping[str, object]] = None,
         _asset_selection_data: Optional[AssetSelectionData] = None,
+        _executor_def_specified: bool = False,
     ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -511,7 +513,7 @@ class GraphDefinition(NodeDefinition):
         Args:
             name (Optional[str]):
                 The name for the Job. Defaults to the name of the this graph.
-            resource_defs (Optional[Dict[str, ResourceDefinition]]):
+            resource_defs (Optional[Mapping [str, ResourceDefinition]]):
                 Resources that are required by this graph for execution.
                 If not defined, `io_manager` will default to filesystem.
             config:
@@ -571,16 +573,17 @@ class GraphDefinition(NodeDefinition):
         job_name = check_valid_name(name or self.name)
 
         tags = check.opt_dict_param(tags, "tags", key_type=str)
+        executor_def_specified = executor_def is not None
         executor_def = check.opt_inst_param(
             executor_def, "executor_def", ExecutorDefinition, default=multi_or_in_process_executor
         )
         input_values = check.opt_mapping_param(input_values, "input_values")
 
-        if resource_defs and "io_manager" in resource_defs:
+        if resource_defs and DEFAULT_IO_MANAGER_KEY in resource_defs:
             resource_defs_with_defaults = resource_defs
         else:
             resource_defs_with_defaults = merge_dicts(
-                {"io_manager": default_job_io_manager}, resource_defs or {}
+                {DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs or {}
             )
 
         hooks = check.opt_set_param(hooks, "hooks", of_type=HookDefinition)
@@ -635,6 +638,7 @@ class GraphDefinition(NodeDefinition):
             asset_layer=asset_layer,
             _input_values=input_values,
             _subset_selection_data=_asset_selection_data,
+            _executor_def_specified=executor_def_specified,
         ).get_job_def_for_subset_selection(op_selection)
 
     def coerce_to_job(self):
@@ -649,9 +653,9 @@ class GraphDefinition(NodeDefinition):
 
     def _get_config_schema(
         self,
-        resource_defs: Optional[Dict[str, ResourceDefinition]],
+        resource_defs: Optional[Mapping[str, ResourceDefinition]],
         executor_def: "ExecutorDefinition",
-        logger_defs: Optional[Dict[str, LoggerDefinition]],
+        logger_defs: Optional[Mapping[str, LoggerDefinition]],
     ) -> ConfigType:
         from .job_definition import JobDefinition
 

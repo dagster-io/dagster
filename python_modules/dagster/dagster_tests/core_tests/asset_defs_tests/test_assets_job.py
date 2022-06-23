@@ -3,24 +3,21 @@ import os
 import pytest
 
 from dagster import (
-    AssetGroup,
     AssetKey,
     AssetOut,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
     DependencyDefinition,
     Field,
     GraphIn,
     GraphOut,
     IOManager,
+    In,
     Out,
     Output,
     ResourceDefinition,
     StaticPartitionsDefinition,
-    execute_pipeline,
     graph,
-    in_process_executor,
     io_manager,
     multi_asset,
     op,
@@ -28,8 +25,11 @@ from dagster import (
 )
 from dagster.config.source import StringSource
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job
+from dagster.core.asset_defs.asset_group import AssetGroup
 from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.errors import DagsterInvalidSubsetError
+from dagster.core.definitions.executor_definition import in_process_executor
+from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
+from dagster.core.execution.api import execute_pipeline
 from dagster.core.snap import DependencyStructureIndex
 from dagster.core.snap.dep_snapshot import (
     OutputHandleSnap,
@@ -698,11 +698,11 @@ def test_fail_with_get_output_asset_key():
 
 
 def test_internal_asset_deps():
-    with pytest.raises(Exception, match="output_name non_exist_output_name"):
+    @op
+    def my_op(x, y):  # pylint: disable=unused-argument
+        return x
 
-        @op
-        def my_op(x, y):  # pylint: disable=unused-argument
-            return x
+    with pytest.raises(Exception, match="output_name non_exist_output_name"):
 
         @graph(ins={"x": GraphIn()})
         def my_graph(x, y):
@@ -711,6 +711,57 @@ def test_internal_asset_deps():
         AssetsDefinition.from_graph(
             graph_def=my_graph, internal_asset_deps={"non_exist_output_name": {AssetKey("b")}}
         )
+
+    with pytest.raises(Exception, match="output_name non_exist_output_name"):
+        AssetsDefinition.from_op(
+            op_def=my_op, internal_asset_deps={"non_exist_output_name": {AssetKey("b")}}
+        )
+
+
+def test_asset_def_from_op_inputs():
+    @op(ins={"my_input": In(), "other_input": In()}, out={"out1": Out(), "out2": Out()})
+    def my_op(my_input, other_input):  # pylint: disable=unused-argument
+        pass
+
+    assets_def = AssetsDefinition.from_op(
+        op_def=my_op,
+        keys_by_input_name={"my_input": AssetKey("x_asset"), "other_input": AssetKey("y_asset")},
+    )
+
+    assert assets_def.keys_by_input_name["my_input"] == AssetKey("x_asset")
+    assert assets_def.keys_by_input_name["other_input"] == AssetKey("y_asset")
+    assert assets_def.keys_by_output_name["out1"] == AssetKey("out1")
+    assert assets_def.keys_by_output_name["out2"] == AssetKey("out2")
+
+
+def test_asset_def_from_op_outputs():
+    @op(ins={"my_input": In(), "other_input": In()}, out={"out1": Out(), "out2": Out()})
+    def x_op(my_input, other_input):  # pylint: disable=unused-argument
+        pass
+
+    assets_def = AssetsDefinition.from_op(
+        op_def=x_op,
+        keys_by_output_name={"out2": AssetKey("y_asset"), "out1": AssetKey("x_asset")},
+    )
+
+    assert assets_def.keys_by_output_name["out2"] == AssetKey("y_asset")
+    assert assets_def.keys_by_output_name["out1"] == AssetKey("x_asset")
+    assert assets_def.keys_by_input_name["my_input"] == AssetKey("my_input")
+    assert assets_def.keys_by_input_name["other_input"] == AssetKey("other_input")
+
+
+def test_asset_from_op_no_args():
+    @op
+    def my_op(x, y):  # pylint: disable=unused-argument
+        return x
+
+    assets_def = AssetsDefinition.from_op(
+        op_def=my_op,
+    )
+
+    assert assets_def.keys_by_input_name["x"] == AssetKey("x")
+    assert assets_def.keys_by_input_name["y"] == AssetKey("y")
+    assert assets_def.keys_by_output_name["result"] == AssetKey("my_op")
 
 
 def test_asset_def_from_graph_inputs():
@@ -769,6 +820,56 @@ def test_graph_asset_decorator_no_args():
     assert assets_def.keys_by_input_name["x"] == AssetKey("x")
     assert assets_def.keys_by_input_name["y"] == AssetKey("y")
     assert assets_def.keys_by_output_name["result"] == AssetKey("my_graph")
+
+
+def test_graph_asset_group_name():
+    @op
+    def my_op1(x):  # pylint: disable=unused-argument
+        return x
+
+    @op
+    def my_op2(y):
+        return y
+
+    @graph
+    def my_graph(x):
+        return my_op2(my_op1(x))
+
+    assets_def = AssetsDefinition.from_graph(
+        graph_def=my_graph,
+        group_name="group1",
+    )
+
+    # The asset key is the function name when there is only one output
+    assert assets_def.group_names_by_key[AssetKey("my_graph")] == "group1"
+
+
+def test_graph_asset_group_name_for_multiple_assets():
+    @op(out={"first_output": Out(), "second_output": Out()})
+    def two_outputs():
+        return 1, 2
+
+    @graph(out={"first_asset": GraphOut(), "second_asset": GraphOut()})
+    def two_assets_graph():
+        one, two = two_outputs()
+        return {"first_asset": one, "second_asset": two}
+
+    two_assets = AssetsDefinition.from_graph(two_assets_graph, group_name="group2")
+    # same as above but using keys_by_output_name to assign AssetKey to each output
+    two_assets_with_keys = AssetsDefinition.from_graph(
+        two_assets_graph,
+        keys_by_output_name={
+            "first_asset": AssetKey("first_asset_key"),
+            "second_asset": AssetKey("second_asset_key"),
+        },
+        group_name="group3",
+    )
+
+    assert two_assets.group_names_by_key[AssetKey("first_asset")] == "group2"
+    assert two_assets.group_names_by_key[AssetKey("second_asset")] == "group2"
+
+    assert two_assets_with_keys.group_names_by_key[AssetKey("first_asset_key")] == "group3"
+    assert two_assets_with_keys.group_names_by_key[AssetKey("second_asset_key")] == "group3"
 
 
 def test_execute_graph_asset():

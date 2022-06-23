@@ -158,7 +158,7 @@ def _run_in_subprocess(
         instance.report_engine_event(
             "Started process for run (pid: {pid}).".format(pid=pid),
             pipeline_run,
-            EngineEventData.in_process(pid, marker_end="cli_api_subprocess_init"),
+            EngineEventData.in_process(pid),
         )
     )
 

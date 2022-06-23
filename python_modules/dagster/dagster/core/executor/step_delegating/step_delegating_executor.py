@@ -1,23 +1,20 @@
 import os
+import sys
 import time
 from typing import Dict, List, Optional, cast
 
 import pendulum
 
 import dagster._check as check
-from dagster.core.events import (
-    DagsterEvent,
-    DagsterEventType,
-    EngineEventData,
-    MetadataEntry,
-    log_step_event,
-)
+from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, MetadataEntry
 from dagster.core.execution.context.system import PlanOrchestrationContext
+from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.plan.step import ExecutionStep
 from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
 from dagster.grpc.types import ExecuteStepArgs
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 from ..base import Executor
 
@@ -27,6 +24,11 @@ DEFAULT_SLEEP_SECONDS = float(
 
 
 class StepDelegatingExecutor(Executor):
+    """This executor tails the event log for events from the steps that it spins up. It also
+    sometimes creates its own events - when it does, that event is automatically written to the
+    event log. But we wait until we later tail it from the event log database before yielding it,
+    to avoid yielding the same event multiple times to callsites."""
+
     def __init__(
         self,
         step_handler: StepHandler,
@@ -71,6 +73,8 @@ class StepDelegatingExecutor(Executor):
     ) -> StepHandlerContext:
         return StepHandlerContext(
             instance=plan_context.plan_data.instance,
+            plan_context=plan_context,
+            steps=steps,
             execute_step_args=ExecuteStepArgs(
                 pipeline_origin=plan_context.reconstructable_pipeline.get_python_origin(),
                 pipeline_run_id=plan_context.pipeline_run.run_id,
@@ -80,18 +84,8 @@ class StepDelegatingExecutor(Executor):
                 known_state=active_execution.get_known_state(),
                 should_verify_step=self._should_verify_step,
             ),
-            step_tags={step.key: step.tags for step in steps},
             pipeline_run=plan_context.pipeline_run,
         )
-
-    def _log_new_events(self, events, plan_context, running_steps):
-        # Note: this could lead to duplicated events if the returned events were already logged
-        # (they shouldn't be)
-        for event in events:
-            log_step_event(
-                plan_context.for_step(running_steps[event.step_key]),
-                event,
-            )
 
     def execute(self, plan_context: PlanOrchestrationContext, execution_plan: ExecutionPlan):
         check.inst_param(plan_context, "plan_context", PlanOrchestrationContext)
@@ -99,9 +93,9 @@ class StepDelegatingExecutor(Executor):
 
         self._event_cursor = -1  # pylint: disable=attribute-defined-outside-init
 
-        yield DagsterEvent.engine_event(
+        DagsterEvent.engine_event(
             plan_context,
-            f"Starting execution with step handler {self._step_handler.name}",
+            f"Starting execution with step handler {self._step_handler.name}.",
             EngineEventData(),
         )
 
@@ -109,7 +103,7 @@ class StepDelegatingExecutor(Executor):
             running_steps: Dict[str, ExecutionStep] = {}
 
             if plan_context.resume_from_failure:
-                yield DagsterEvent.engine_event(
+                DagsterEvent.engine_event(
                     plan_context,
                     "Resuming execution from failure",
                     EngineEventData(),
@@ -125,27 +119,48 @@ class StepDelegatingExecutor(Executor):
                 possibly_in_flight_steps = active_execution.rebuild_from_events(prior_events)
                 for step in possibly_in_flight_steps:
 
-                    yield DagsterEvent.engine_event(
-                        plan_context,
-                        "Checking on status of possibly launched steps",
-                        EngineEventData(),
-                        step.handle,
+                    step_handler_context = self._get_step_handler_context(
+                        plan_context, [step], active_execution
                     )
 
-                    # TODO: check if failure event included. For now, hacky assumption that
-                    # we don't log anything on successful check
-                    if self._step_handler.check_step_health(
-                        self._get_step_handler_context(plan_context, [step], active_execution)
-                    ):
+                    DagsterEvent.engine_event(
+                        step_handler_context.get_step_context(step.key),
+                        f"Checking on status of in-progress step {step.key} from previous run",
+                        EngineEventData(),
+                    )
+
+                    should_retry_step = False
+                    health_check = None
+
+                    try:
+                        health_check = self._step_handler.check_step_health(step_handler_context)
+                    except Exception:
+                        # For now we assume that an exception indicates that the step should be resumed.
+                        # This should probably be a separate should_resume_step method on the step handler.
+                        DagsterEvent.engine_event(
+                            step_handler_context.get_step_context(step.key),
+                            f"Including {step.key} in the new run since it raised an error when checking whether it was running",
+                            EngineEventData(
+                                error=serializable_error_info_from_exc_info(sys.exc_info())
+                            ),
+                        )
+                        should_retry_step = True
+                    else:
+                        if not health_check.is_healthy:
+                            DagsterEvent.engine_event(
+                                step_handler_context.get_step_context(step.key),
+                                f"Including step {step.key} in the new run since it is not currently running: {health_check.unhealthy_reason}",
+                            )
+                            should_retry_step = True
+
+                    if should_retry_step:
                         # health check failed, launch the step
-                        self._log_new_events(
+                        list(
                             self._step_handler.launch_step(
                                 self._get_step_handler_context(
                                     plan_context, [step], active_execution
                                 )
-                            ),
-                            plan_context,
-                            {step.key: step for step in possibly_in_flight_steps},
+                            )
                         )
 
                     running_steps[step.key] = step
@@ -158,26 +173,23 @@ class StepDelegatingExecutor(Executor):
             while not active_execution.is_complete:
 
                 if active_execution.check_for_interrupts():
+                    active_execution.mark_interrupted()
                     if not plan_context.instance.run_will_resume(plan_context.run_id):
-                        yield DagsterEvent.engine_event(
+                        DagsterEvent.engine_event(
                             plan_context,
                             "Executor received termination signal, forwarding to steps",
                             EngineEventData.interrupted(list(running_steps.keys())),
                         )
-                        active_execution.mark_interrupted()
                         for _, step in running_steps.items():
-                            self._log_new_events(
+                            list(
                                 self._step_handler.terminate_step(
                                     self._get_step_handler_context(
                                         plan_context, [step], active_execution
                                     )
-                                ),
-                                plan_context,
-                                running_steps,
+                                )
                             )
-
                     else:
-                        yield DagsterEvent.engine_event(
+                        DagsterEvent.engine_event(
                             plan_context,
                             "Executor received termination signal, not forwarding to steps because "
                             "run will be resumed",
@@ -189,7 +201,6 @@ class StepDelegatingExecutor(Executor):
                                 ]
                             ),
                         )
-                        active_execution.mark_interrupted()
 
                     return
 
@@ -198,24 +209,22 @@ class StepDelegatingExecutor(Executor):
                     plan_context.run_id,
                 ):  # type: ignore
 
+                    yield dagster_event
                     # STEP_SKIPPED events are only emitted by ActiveExecution, which already handles
                     # and yields them.
+
                     if dagster_event.is_step_skipped:
                         assert isinstance(dagster_event.step_key, str)
                         active_execution.verify_complete(plan_context, dagster_event.step_key)
-
                     else:
-                        yield dagster_event
                         active_execution.handle_event(dagster_event)
-
                         if dagster_event.is_step_success or dagster_event.is_step_failure:
                             assert isinstance(dagster_event.step_key, str)
                             del running_steps[dagster_event.step_key]
                             active_execution.verify_complete(plan_context, dagster_event.step_key)
 
                 # process skips from failures or uncovered inputs
-                for event in active_execution.plan_events_iterator(plan_context):
-                    yield event
+                list(active_execution.plan_events_iterator(plan_context))
 
                 curr_time = pendulum.now("UTC")
                 if (
@@ -223,15 +232,37 @@ class StepDelegatingExecutor(Executor):
                 ).total_seconds() >= self._check_step_health_interval_seconds:
                     last_check_step_health_time = curr_time
                     for _, step in running_steps.items():
-                        self._log_new_events(
-                            self._step_handler.check_step_health(
+
+                        step_context = plan_context.for_step(step)
+
+                        try:
+                            health_check_result = self._step_handler.check_step_health(
                                 self._get_step_handler_context(
                                     plan_context, [step], active_execution
                                 )
-                            ),
-                            plan_context,
-                            running_steps,
-                        )
+                            )
+                            if not health_check_result.is_healthy:
+                                DagsterEvent.step_failure_event(
+                                    step_context=step_context,
+                                    step_failure_data=StepFailureData(
+                                        error=None,
+                                        user_failure_data=None,
+                                    ),
+                                    message=f"Step {step.key} failed health check: {health_check_result.unhealthy_reason}",
+                                )
+                        except Exception:
+                            serializable_error = serializable_error_info_from_exc_info(
+                                sys.exc_info()
+                            )
+                            # Log a step failure event if there was an error during the health
+                            # check
+                            DagsterEvent.step_failure_event(
+                                step_context=plan_context.for_step(step),
+                                step_failure_data=StepFailureData(
+                                    error=serializable_error,
+                                    user_failure_data=None,
+                                ),
+                            )
 
                 if self._max_concurrent is not None:
                     max_steps_to_run = self._max_concurrent - len(running_steps)
@@ -243,12 +274,10 @@ class StepDelegatingExecutor(Executor):
 
                 for step in active_execution.get_steps_to_execute(max_steps_to_run):
                     running_steps[step.key] = step
-                    self._log_new_events(
+                    list(
                         self._step_handler.launch_step(
                             self._get_step_handler_context(plan_context, [step], active_execution)
-                        ),
-                        plan_context,
-                        running_steps,
+                        )
                     )
 
                 time.sleep(self._sleep_seconds)
