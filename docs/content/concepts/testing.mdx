@@ -9,10 +9,11 @@ Dagster enables you to build testable and maintainable data applications. It pro
 
 ## Relevant APIs
 
-| Name                                                               | Description                                                                                                 |
-| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| <PyObject object="JobDefinition" method="execute_in_process"    /> | A method to execute a job synchronously, typically for testing job execution or running standalone scripts. |
-| <PyObject object="build_op_context"  />                            | A method to construct an `OpExecutionContext`, typically to provide to the invocation of an op for testing. |
+| Name                                                               | Description                                                                                                          |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| <PyObject object="JobDefinition" method="execute_in_process"    /> | A method to execute a job synchronously, typically for testing job execution or running standalone scripts.          |
+| <PyObject object="build_op_context"  />                            | A method to construct an `OpExecutionContext`, typically to provide to the invocation of an op or asset for testing. |
+| <PyObject object="materialize_to_memory"  />                       | Ephemerally materializes a provided list of software defined assets for testing.                                     |
 
 ## Overview
 
@@ -39,7 +40,7 @@ So, unit tests should be viewed primarily as productivity and code quality tools
 
 ### Testing a Job Execution
 
-The workhouse function for unit-testing a job is the <PyObject object="JobDefinition" method="execute_in_process"/> function. Using this function you can execute a job in process and then test execution properties using the <PyObject object="ExecuteInProcessResult" /> object that it returns.
+The workhorse function for unit-testing a job is the <PyObject object="JobDefinition" method="execute_in_process"/> function. Using this function you can execute a job in process and then test execution properties using the <PyObject object="ExecuteInProcessResult" /> object that it returns.
 
 ```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_job_marker endbefore=end_test_job_marker
 def test_job():
@@ -199,7 +200,152 @@ def test_op_resource_def():
     assert op_requires_foo(context) == "found bar"
 ```
 
-### Testing job execution with configs
+Note that when directly invoking ops, IO managers specified on inputs and outputs are not used.
+
+### Testing software-defined assets
+
+Similar to ops, <PyObject object="asset" decorator />-decorated functions can be directly invoked. Doing so invokes the underlying op computation.
+
+A basic asset, with no dependencies:
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_basic_asset endbefore=end_test_basic_asset
+from dagster import asset
+
+
+@asset
+def basic_asset():
+    return 5
+
+
+# An example unit test for basic_asset.
+def test_basic_asset():
+    assert basic_asset() == 5
+```
+
+An asset with dependencies:
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_input_asset endbefore=end_test_input_asset
+from dagster import asset
+
+
+@asset
+def asset_with_inputs(x, y):
+    return x + y
+
+
+# An example unit test for asset_with_inputs.
+def test_asset_with_inputs():
+    assert asset_with_inputs(5, 6) == 11
+```
+
+Any resources defined on your asset - either directly, or using <PyObject object="with_resources" /> - will be picked up when invoking the asset. When using resources, it is required to provide a context using <PyObject object="build_op_context" />.
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_test_resource_asset endbefore=end_test_resource_asset
+from dagster import asset, resource, build_op_context, with_resources
+
+
+@asset(required_resource_keys={"service"})
+def asset_reqs_service(context):
+    service = context.resources.service
+    ...
+
+
+@resource
+def service():
+    ...
+
+
+# asset_with_service now has resource service specified.
+asset_with_service = with_resources([asset_reqs_service], {"service": service})[0]
+
+
+def test_asset_with_service():
+    # When invoking asset_with_service, service resource will
+    # automatically be used.
+    result = asset_with_service(build_op_context())
+    ...
+```
+
+Note that resources provided on <PyObject object="build_op_context" /> should not conflict with the resources provided directly on the asset. If a resource key is provided both to the context and the asset, it will result in a <PyObject object="DagsterInvalidInvocationError" />.
+
+### Testing multiple software-defined assets together
+
+You may want to test multiple assets together, to more closely mirror actual materialization. This can be done using the <PyObject object="materialize_to_memory" /> method, which loads the materialized results of assets into memory:
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_materialize_asset endbefore=end_materialize_asset
+from dagster import asset, materialize_to_memory
+
+
+@asset
+def data_source():
+    return get_data_from_source()
+
+
+@asset
+def structured_data(data_source):
+    return extract_structured_data(data_source)
+
+
+# An example unit test using materialize_to_memory
+def test_data_assets():
+    result = materialize_to_memory([data_source, structured_data])
+    assert result.success
+    # Materialized objects can be accessed in terms of the underlying op
+    materialized_data = result.output_for_node("structured_data")
+    ...
+```
+
+In addition to providing <PyObject object="AssetsDefinition" /> objects, <PyObject object="SourceAsset" /> objects can also be provided:
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_materialize_source_asset endbefore=end_materialize_source_asset
+from dagster import asset, SourceAsset, materialize_to_memory, AssetKey
+
+the_source = SourceAsset(
+    key=AssetKey("repository_a_asset"), io_manager_def=source_io_manager
+)
+
+
+@asset
+def repository_b_asset(repository_a_asset):
+    ...
+
+
+@asset
+def other_repository_b_asset(repository_a_asset):
+    ...
+
+
+def test_repository_b_assets():
+    result = materialize_to_memory(
+        [the_source, repository_b_asset, other_repository_b_asset]
+    )
+    assert result.success
+    ...
+```
+
+Mock resources can be provided directly using `materialize_to_memory`:
+
+```python file=/concepts/ops_jobs_graphs/unit_tests.py startafter=start_materialize_resources endbefore=end_materialize_resources
+from dagster import asset, resource, materialize_to_memory
+import mock
+
+
+@asset(required_resource_keys={"service"})
+def asset_requires_service(context):
+    service = context.resources.service
+    ...
+
+
+def test_asset_requires_service():
+    # Mock objects can be provided directly.
+    result = materialize_to_memory(
+        [asset_requires_service], resources={"service": mock.MagicMock()}
+    )
+    assert result.success
+    ...
+```
+
+### Testing job execution with config
 
 Sometimes, you may want to test with different configuration. You can execute job with a specified run config via the `run_config`:
 
