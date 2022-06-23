@@ -1566,7 +1566,7 @@ def test_default_loggers_keys_conflict():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Provided logger defs conflict with logger defs on job 'the_job'. The following logger keys conflict: \['foo'\]",
+        match=r"Provided logger defs conflict with logger defs on job 'the_job'. The following logger keys conflict: \['foo'\]",
     ):
 
         @repository(default_logger_defs={"foo": some_logger})
