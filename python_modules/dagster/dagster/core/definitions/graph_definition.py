@@ -595,10 +595,12 @@ class GraphDefinition(NodeDefinition):
 
         if partitions_def:
             check.inst_param(partitions_def, "partitions_def", PartitionsDefinition)
-            check.invariant(
-                config is None, "Can't supply both the 'config' and 'partitions_def' arguments"
-            )
-            partitioned_config = PartitionedConfig(partitions_def, lambda _: {})
+            if isinstance(config, (ConfigMapping, PartitionedConfig)):
+                check.failed(
+                    "Can't supply a ConfigMapping or PartitionedConfig for 'config' when 'partitions_def' is supplied."
+                )
+            hardcoded_config = config if config else {}
+            partitioned_config = PartitionedConfig(partitions_def, lambda _: hardcoded_config)
 
         if isinstance(config, ConfigMapping):
             config_mapping = config
