@@ -32,6 +32,28 @@ def write_dataframe_to_table(*_args, **_kwargs):
     pass
 
 
+pd_series_io_manager = None
+
+# start_different_input_managers
+
+
+@op
+def op_1():
+    return [1, 2, 3]
+
+
+@op(ins=In(input_manager_key="pandas_series"))
+def op_2(a):
+    return pd.concat([a, pd.Series([4, 5, 6])])
+
+
+@job(resource_defs={"pandas_series": pd_series_io_manager})
+def a_job():
+    op_2(op_1())
+
+
+# end_different_input_managers
+
 # start_plain_input_manager
 
 # in this case PandasIOManager is an existing IO Manager

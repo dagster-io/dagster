@@ -16,7 +16,7 @@ description:
 
 Ops in a job may have input definitions that don't correspond to the outputs of upstream ops. You can provide values for these inputs in a few different ways. Dagster checks each, in order, and uses the first that's available:
 
-- **Input Manager (experimental)** - If the input to a job comes from an external source, such as a table in a database, often it makes sense to define a resource that's responsible for loading it. This makes it easy to swap out implementations in different jobs and mock it in tests. A special IOManager, which can be referenced from <PyObject module="dagster" object="In" />s, can be used to loads unconnected inputs.
+- **Input Manager** - If the input to a job comes from an external source, such as a table in a database, often it makes sense to define a resource that's responsible for loading it. This makes it easy to swap out implementations in different jobs and mock it in tests. A special IOManager, which can be referenced from <PyObject module="dagster" object="In" />s, can be used to loads unconnected inputs.
 - **Dagster Type Loader** - A <PyObject module="dagster" object="DagsterTypeLoader" /> provides a way to specify how to load inputs that depends on a type. A <PyObject module="dagster" object="DagsterTypeLoader" /> can be placed on <PyObject module="dagster" object="DagsterType" />, which can be placed on <PyObject module="dagster" object="In" />.
 - **Default Values** - <PyObject module="dagster" object="In" /> accepts a `default_value` argument.
 
