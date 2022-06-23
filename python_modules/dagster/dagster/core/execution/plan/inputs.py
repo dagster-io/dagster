@@ -335,7 +335,7 @@ class FromRootInputManager(
             if solid.input_def_named(self.input_name).root_manager_key
             else solid.input_def_named(self.input_name).input_manager_key
         )
-        root_manager_key = solid.input_def_named(self.input_name).getattr(input_manager_key)
+        root_manager_key = getattr(solid.input_def_named(self.input_name), input_manager_key)
         root_manager_def = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs[
             root_manager_key
         ]

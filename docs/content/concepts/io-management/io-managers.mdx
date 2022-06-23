@@ -185,13 +185,17 @@ In this example,`first_asset` and `second_asset` will be stored using the defaul
 def first_asset():
     return [1, 2, 3]
 
+
 @asset
 def second_asset():
     return [4, 5, 6]
 
 
 @asset(
-    ins={"first_asset": AssetIn(input_manager_key="pandas_series"), "second_asset": AssetIn(input_manager_key="pandas_series")}
+    ins={
+        "first_asset": AssetIn(input_manager_key="pandas_series"),
+        "second_asset": AssetIn(input_manager_key="pandas_series"),
+    }
 )
 def third_asset(first_asset, second_asset):
     return pd.concat([first_asset, second_asset, pd.Series([7, 8])])
@@ -280,11 +284,7 @@ def op_2(a):
     return pd.concat([a, pd.Series([4, 5, 6])])
 
 
-@job(
-    resource_defs={
-        "pandas_series": pd_series_io_manager
-    }
-)
+@job(resource_defs={"pandas_series": pd_series_io_manager})
 def a_job():
     op_2(op_1())
 ```
