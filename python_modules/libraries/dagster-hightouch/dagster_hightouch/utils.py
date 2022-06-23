@@ -37,7 +37,7 @@ def parse_sync_run_details(sync_run_details) -> Type[SyncRunParsedOutput]:
 
     x.query_size = sync_run_details.get("querySize")
     x.status = sync_run_details.get("status")
-    x.completion_ratio = float(sync_run_details["completionRatio"] or 0)
+    x.completion_ratio = float(sync_run_details.get("completionRatio", 0))
     x.error = sync_run_details.get("error")
 
     return x

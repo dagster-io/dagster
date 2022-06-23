@@ -1,5 +1,4 @@
 from dagster import AssetMaterialization, Field, In, Noneable, Nothing, Out, Output, op
-
 from dagster_hightouch.utils import (
     generate_metadata_from_parsed_run,
     parse_sync_run_details,

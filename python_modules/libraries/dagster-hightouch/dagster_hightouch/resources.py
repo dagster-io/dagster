@@ -66,7 +66,7 @@ class HightouchResource:
         except PackageNotFoundError:
             __version__ = "UnknownVersion"
 
-        user_agent = f"HightouchDagsterOp/" + __version__
+        user_agent = "HightouchDagsterOp/" + __version__
         headers = {"Authorization": f"Bearer {self._api_key}", "User-Agent": user_agent}
 
         num_retries = 0
