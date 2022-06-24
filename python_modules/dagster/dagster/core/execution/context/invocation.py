@@ -25,6 +25,7 @@ from dagster.core.definitions.resource_definition import (
 from dagster.core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
+from dagster.core.definitions.utils import EPHEMERAL_RUN_ID
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidInvocationError,
@@ -62,6 +63,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         instance: Optional[DagsterInstance],
         partition_key: Optional[str],
         mapping_key: Optional[str],
+        run_id: Optional[str],
     ):  # pylint: disable=super-init-not-called
         from dagster.core.execution.api import ephemeral_instance_if_missing
         from dagster.core.execution.context_creation_pipeline import initialize_console_manager
@@ -96,6 +98,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         self._partition_key = partition_key
         self._user_events: List[UserEvent] = []
         self._output_metadata: Dict[str, Any] = {}
+        self._run_id = run_id
 
     def __enter__(self):
         self._cm_scope_entered = True
@@ -159,7 +162,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
     @property
     def run_id(self) -> str:
         """str: Hard-coded value to indicate that we are directly invoking solid."""
-        return "EPHEMERAL"
+        return self._run_id
 
     @property
     def run_config(self) -> dict:
@@ -248,6 +251,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
             user_events=self._user_events,
             output_metadata=self._output_metadata,
             mapping_key=self._mapping_key,
+            run_id=self.run_id,
         )
 
     def get_events(self) -> List[UserEvent]:
@@ -357,6 +361,7 @@ class BoundSolidExecutionContext(OpExecutionContext):
         user_events: List[UserEvent],
         output_metadata: Dict[str, Any],
         mapping_key: Optional[str],
+        run_id: Optional[str],
     ):
         self._solid_def = solid_def
         self._solid_config = solid_config
@@ -372,6 +377,7 @@ class BoundSolidExecutionContext(OpExecutionContext):
         self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
         self._output_metadata: Dict[str, Any] = output_metadata
         self._mapping_key = mapping_key
+        self._run_id = run_id
 
     @property
     def solid_config(self) -> Any:
@@ -414,7 +420,7 @@ class BoundSolidExecutionContext(OpExecutionContext):
     @property
     def run_id(self) -> str:
         """str: Hard-coded value to indicate that we are directly invoking solid."""
-        return "EPHEMERAL"
+        return self._run_id
 
     @property
     def run_config(self) -> dict:
@@ -590,6 +596,7 @@ def build_op_context(
     config: Any = None,
     partition_key: Optional[str] = None,
     mapping_key: Optional[str] = None,
+    run_id: Optional[str] = None,
 ) -> OpExecutionContext:
     """Builds op execution context from provided parameters.
 
@@ -606,6 +613,8 @@ def build_op_context(
         instance (Optional[DagsterInstance]): The dagster instance configured for the context.
             Defaults to DagsterInstance.ephemeral().
         mapping_key (Optional[str]): A key representing the mapping key from an upstream dynamic output. Can be accessed using ``context.get_mapping_key()``.
+        run_id (Optional[str]):
+            run_id string to provide to op function. This run_id will be propogated to resources that require initialization.
 
     Examples:
         .. code-block:: python
@@ -631,6 +640,7 @@ def build_op_context(
         instance=instance,
         partition_key=partition_key,
         mapping_key=mapping_key,
+        run_id=run_id,
     )
 
 
@@ -642,6 +652,7 @@ def build_solid_context(
     config: Any = None,
     partition_key: Optional[str] = None,
     mapping_key: Optional[str] = None,
+    run_id: Optional[str] = None,
 ) -> UnboundSolidExecutionContext:
     """Builds solid execution context from provided parameters.
 
@@ -686,4 +697,5 @@ def build_solid_context(
         instance=check.opt_inst_param(instance, "instance", DagsterInstance),
         partition_key=check.opt_str_param(partition_key, "partition_key"),
         mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
+        run_id=check.opt_str_param(run_id, "run_id", EPHEMERAL_RUN_ID),
     )

@@ -2,6 +2,7 @@ import pytest
 
 from dagster import Field, resource
 from dagster.core.definitions.resource_definition import IContainsGenerator
+from dagster.core.definitions.utils import EPHEMERAL_RUN_ID
 from dagster.core.errors import DagsterResourceFunctionError
 from dagster.core.execution.build_resources import build_resources
 
@@ -99,3 +100,16 @@ def test_context_manager_resource():
         assert resources.cm_resource == "foo"
 
     assert tore_down == ["yes"]
+
+
+def test_build_resources_run_id():
+    @resource
+    def the_resource_uses_default(context):
+        assert context.run_id == EPHEMERAL_RUN_ID
+
+    @resource
+    def the_resource_changes_default(context):
+        assert context.run_id == "foo"
+
+    build_resources(resources={"the_resource": the_resource_uses_default}, run_id="foo")
+    build_resources(resources={"the_resource": the_resource_changes_default})

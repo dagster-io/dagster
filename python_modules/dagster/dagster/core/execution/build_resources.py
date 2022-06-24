@@ -9,6 +9,7 @@ from dagster.core.definitions.resource_definition import (
     ScopedResourcesBuilder,
 )
 from dagster.core.definitions.run_config import define_resource_dictionary_cls
+from dagster.core.definitions.utils import EPHEMERAL_RUN_ID
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.execution.resources_init import resource_initialization_manager
 from dagster.core.instance import DagsterInstance
@@ -45,6 +46,7 @@ def build_resources(
     resource_config: Optional[Mapping[str, Any]] = None,
     pipeline_run: Optional[PipelineRun] = None,
     log_manager: Optional[DagsterLogManager] = None,
+    run_id: Optional[str] = None,
 ) -> Generator[Resources, None, None]:
     """Context manager that yields resources using provided resource definitions and run config.
 
@@ -67,6 +69,7 @@ def build_resources(
             teardown, this must be provided, or initialization will fail.
         log_manager (Optional[DagsterLogManager]): Log Manager to use during resource
             initialization. Defaults to system log manager.
+        run_id (Optional[str]): run_id string to provide to resource initialization.
 
     Examples:
 
@@ -90,6 +93,7 @@ def build_resources(
     log_manager = check.opt_inst_param(log_manager, "log_manager", DagsterLogManager)
     resource_defs = wrap_resources_for_execution(resources)
     mapped_resource_config = _get_mapped_resource_config(resource_defs, resource_config)
+    run_id = check.opt_str_param(run_id, "run_id", EPHEMERAL_RUN_ID)
 
     with ephemeral_instance_if_missing(instance) as dagster_instance:
         resources_manager = resource_initialization_manager(
@@ -102,6 +106,7 @@ def build_resources(
             instance=dagster_instance,
             emit_persistent_events=False,
             pipeline_def_for_backwards_compat=None,
+            run_id=run_id,
         )
         try:
             list(resources_manager.generate_setup_events())

@@ -86,6 +86,7 @@ def _check_invocation_requirements(
         resource_def=resource_def,
         instance=init_context.instance,
         log_manager=init_context.log,
+        run_id=init_context.run_id,
     )
 
 

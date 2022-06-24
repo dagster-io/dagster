@@ -58,6 +58,7 @@ def resource_initialization_manager(
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
     pipeline_def_for_backwards_compat: Optional[PipelineDefinition],
+    run_id: Optional[str],
 ):
     generator = resource_initialization_event_generator(
         resource_defs=resource_defs,
@@ -69,6 +70,7 @@ def resource_initialization_manager(
         instance=instance,
         emit_persistent_events=emit_persistent_events,
         pipeline_def_for_backwards_compat=pipeline_def_for_backwards_compat,
+        run_id=run_id,
     )
     return EventGenerationManager(generator, ScopedResourcesBuilder)
 
@@ -134,6 +136,7 @@ def _core_resource_initialization_event_generator(
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
     pipeline_def_for_backwards_compat: Optional[PipelineDefinition],
+    run_id: Optional[str],
 ):
 
     pipeline_name = ""  # Must be initialized to a string to satisfy typechecker
@@ -180,6 +183,7 @@ def _core_resource_initialization_event_generator(
                     resources=resources,
                     instance=instance,
                     pipeline_def_for_backwards_compat=pipeline_def_for_backwards_compat,
+                    run_id=run_id,
                 )
                 manager = single_resource_generation_manager(
                     resource_context, resource_name, resource_def
@@ -232,6 +236,7 @@ def resource_initialization_event_generator(
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
     pipeline_def_for_backwards_compat: Optional[PipelineDefinition],
+    run_id: Optional[str],
 ):
     check.inst_param(log_manager, "log_manager", DagsterLogManager)
     resource_keys_to_init = check.opt_set_param(
@@ -268,6 +273,7 @@ def resource_initialization_event_generator(
             instance=instance,
             emit_persistent_events=emit_persistent_events,
             pipeline_def_for_backwards_compat=pipeline_def_for_backwards_compat,
+            run_id=run_id,
         )
     except GeneratorExit:
         # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed

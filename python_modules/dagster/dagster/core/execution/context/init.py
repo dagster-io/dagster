@@ -7,6 +7,7 @@ from dagster.core.definitions.resource_definition import (
     ResourceDefinition,
     Resources,
 )
+from dagster.core.definitions.utils import EPHEMERAL_RUN_ID
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
@@ -44,6 +45,7 @@ class InitResourceContext:
         pipeline_run: Optional[PipelineRun] = None,
         log_manager: Optional[DagsterLogManager] = None,
         pipeline_def_for_backwards_compat: Optional[PipelineDefinition] = None,
+        run_id: Optional[str] = None,
     ):
 
         if dagster_run and pipeline_run:
@@ -51,6 +53,13 @@ class InitResourceContext:
                 "Provided both ``dagster_run`` and ``pipeline_run`` to InitResourceContext "
                 "initialization. Please provide one or the other."
             )
+        self._dagster_run = dagster_run or pipeline_run
+        if self._dagster_run and run_id:
+            raise DagsterInvariantViolationError(
+                "Provided both ``dagster_run``/``pipeline_run`` and ``run_id`` to InitResourceContext initialization. Please provide one or the other."
+            )
+        self._run_id = self._dagster_run.run_id if self._dagster_run else run_id
+
         self._resource_config = resource_config
         self._resource_def = resource_def
         self._log_manager = log_manager
@@ -58,7 +67,6 @@ class InitResourceContext:
         self._resources = resources
 
         self._pipeline_def_for_backwards_compat = pipeline_def_for_backwards_compat
-        self._dagster_run = dagster_run or pipeline_run
 
     @property
     def resource_config(self) -> Any:
@@ -99,7 +107,7 @@ class InitResourceContext:
 
     @property
     def run_id(self) -> Optional[str]:
-        return self.pipeline_run.run_id if self.pipeline_run else None
+        return self._run_id
 
     def replace_config(self, config: Any) -> "InitResourceContext":
         return InitResourceContext(
@@ -109,6 +117,7 @@ class InitResourceContext:
             resource_def=self.resource_def,
             pipeline_run=self.pipeline_run,
             log_manager=self.log,
+            run_id=self.run_id,
         )
 
 
@@ -125,6 +134,7 @@ class UnboundInitResourceContext(InitResourceContext):
     def __init__(
         self,
         resource_config: Any,
+        run_id: str,
         resources: Optional[Union[Resources, Dict[str, Any]]],
         instance: Optional[DagsterInstance],
     ):
@@ -163,6 +173,7 @@ class UnboundInitResourceContext(InitResourceContext):
             pipeline_run=None,
             log_manager=initialize_console_manager(None),
             pipeline_def_for_backwards_compat=None,
+            run_id=run_id,
         )
 
     def __enter__(self):
@@ -223,13 +234,14 @@ class UnboundInitResourceContext(InitResourceContext):
 
     @property
     def run_id(self) -> Optional[str]:
-        return None
+        return self._run_id
 
 
 def build_init_resource_context(
     config: Optional[Dict[str, Any]] = None,
     resources: Optional[Dict[str, Any]] = None,
     instance: Optional[DagsterInstance] = None,
+    run_id: Optional[str] = None,
 ) -> InitResourceContext:
     """Builds resource initialization context from provided parameters.
 
@@ -244,6 +256,7 @@ def build_init_resource_context(
         config (Optional[Any]): The resource config to provide to the context.
         instance (Optional[DagsterInstance]): The dagster instance configured for the context.
             Defaults to DagsterInstance.ephemeral().
+        run_id (Optional[str]): run_id string to provide to resource initialization.
 
     Examples:
         .. code-block:: python
@@ -261,4 +274,5 @@ def build_init_resource_context(
         resource_config=check.opt_dict_param(config, "config", key_type=str),
         instance=check.opt_inst_param(instance, "instance", DagsterInstance),
         resources=check.opt_dict_param(resources, "resources", key_type=str),
+        run_id=check.opt_str_param(run_id, "run_id", EPHEMERAL_RUN_ID),
     )

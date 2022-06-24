@@ -17,6 +17,7 @@ from dagster.utils.yaml_utils import merge_yaml_strings, merge_yamls
 DEFAULT_OUTPUT = "result"
 DEFAULT_GROUP_NAME = "default"  # asset group_name used when none is provided
 DEFAULT_IO_MANAGER_KEY = "io_manager"
+EPHEMERAL_RUN_ID = "EPHEMERAL"
 
 DISALLOWED_NAMES = set(
     [

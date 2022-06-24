@@ -3,6 +3,7 @@ from contextlib import contextmanager
 import pytest
 
 from dagster import Field, Noneable, Selector, build_init_resource_context, resource
+from dagster.core.definitions.utils import EPHEMERAL_RUN_ID
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -213,3 +214,17 @@ def test_resource_invocation_kitchen_sink_config():
     }
 
     assert kitchen_sink(build_init_resource_context(config=resource_config)) == resource_config
+
+
+def test_run_id():
+    @resource
+    def doesnt_change_default(context):
+        assert context.run_id == EPHEMERAL_RUN_ID
+
+    doesnt_change_default(None)
+
+    @resource
+    def changes_default(context):
+        assert context.run_id == "FOO"
+
+    changes_default(build_init_resource_context(run_id="FOO"))
