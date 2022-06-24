@@ -1,4 +1,5 @@
 # isort: skip_file
+# pylint: disable=reimported,unnecessary-ellipsis,unused-variable,unused-argument
 from dagster import (
     AssetMaterialization,
     DagsterEventType,
@@ -8,6 +9,8 @@ from dagster import (
     Output,
     Out,
     op,
+    io_manager,
+    IOManager,
     graph,
 )
 
@@ -203,3 +206,161 @@ def test_event_stream():
 
 
 # end_test_event_stream
+
+# start_test_basic_asset
+from dagster import asset
+
+
+@asset
+def basic_asset():
+    return 5
+
+
+# An example unit test for basic_asset.
+def test_basic_asset():
+    assert basic_asset() == 5
+
+
+# end_test_basic_asset
+
+# start_test_input_asset
+from dagster import asset
+
+
+@asset
+def asset_with_inputs(x, y):
+    return x + y
+
+
+# An example unit test for asset_with_inputs.
+def test_asset_with_inputs():
+    assert asset_with_inputs(5, 6) == 11
+
+
+# end_test_input_asset
+
+
+# start_test_resource_asset
+from dagster import asset, resource, build_op_context, with_resources
+
+
+@asset(required_resource_keys={"service"})
+def asset_reqs_service(context):
+    service = context.resources.service
+    ...
+
+
+@resource
+def service():
+    ...
+
+
+# asset_with_service now has resource service specified.
+asset_with_service = with_resources([asset_reqs_service], {"service": service})[0]
+
+
+def test_asset_with_service():
+    # When invoking asset_with_service, service resource will
+    # automatically be used.
+    result = asset_with_service(build_op_context())
+    ...
+
+
+# end_test_resource_asset
+
+
+def get_data_from_source():
+    pass
+
+
+def extract_structured_data(_):
+    pass
+
+
+# start_materialize_asset
+from dagster import asset, materialize_to_memory
+
+
+@asset
+def data_source():
+    return get_data_from_source()
+
+
+@asset
+def structured_data(data_source):
+    return extract_structured_data(data_source)
+
+
+# An example unit test using materialize_to_memory
+def test_data_assets():
+    result = materialize_to_memory([data_source, structured_data])
+    assert result.success
+    # Materialized objects can be accessed in terms of the underlying op
+    materialized_data = result.output_for_node("structured_data")
+    ...
+
+
+# end_materialize_asset
+
+
+@io_manager
+def source_io_manager():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            return "foo"
+
+    return MyIOManager()
+
+
+# start_materialize_source_asset
+from dagster import asset, SourceAsset, materialize_to_memory, AssetKey
+
+the_source = SourceAsset(
+    key=AssetKey("repository_a_asset"), io_manager_def=source_io_manager
+)
+
+
+@asset
+def repository_b_asset(repository_a_asset):
+    ...
+
+
+@asset
+def other_repository_b_asset(repository_a_asset):
+    ...
+
+
+def test_repository_b_assets():
+    result = materialize_to_memory(
+        [the_source, repository_b_asset, other_repository_b_asset]
+    )
+    assert result.success
+    ...
+
+
+# end_materialize_source_asset
+
+# start_materialize_resources
+from dagster import asset, resource, materialize_to_memory
+import mock
+
+
+@asset(required_resource_keys={"service"})
+def asset_requires_service(context):
+    service = context.resources.service
+    ...
+
+
+def test_asset_requires_service():
+    # Mock objects can be provided directly.
+    result = materialize_to_memory(
+        [asset_requires_service], resources={"service": mock.MagicMock()}
+    )
+    assert result.success
+    ...
+
+
+# end_materialize_resources

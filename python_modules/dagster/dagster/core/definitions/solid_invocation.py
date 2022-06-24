@@ -78,8 +78,8 @@ def _check_invocation_requirements(
     if solid_def.required_resource_keys and context is None:
         node_label = solid_def.node_type_str  # string "solid" for solids, "op" for ops
         raise DagsterInvalidInvocationError(
-            f'{node_label} "{solid_def.name}" has required resources, but no context was provided. Use the'
-            f"`build_{node_label}_context` function to construct a context with the required "
+            f'{node_label} "{solid_def.name}" has required resources, but no context was provided. '
+            f"Use the `build_{node_label}_context` function to construct a context with the required "
             "resources."
         )
 
@@ -88,7 +88,7 @@ def _check_invocation_requirements(
         node_label = solid_def.node_type_str  # string "solid" for solids, "op" for ops
         raise DagsterInvalidInvocationError(
             f'{node_label} "{solid_def.name}" has required config schema, but no context was provided. '
-            "Use the `build_solid_context` function to create a context with config."
+            f"Use the `build_{node_label}_context` function to create a context with config."
         )
 
 

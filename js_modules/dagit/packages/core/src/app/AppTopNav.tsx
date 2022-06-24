@@ -40,21 +40,25 @@ export const AppTopNav: React.FC<Props> = ({
             shortcutLabel="⌥1"
             shortcutFilter={(e) => e.code === 'Digit1' && e.altKey}
           >
-            <TopNavLink to="/instance/runs">Runs</TopNavLink>
+            <TopNavLink to="/instance/runs" data-cy="AppTopNav_RunsLink">
+              Runs
+            </TopNavLink>
           </ShortcutHandler>
           <ShortcutHandler
             onShortcut={() => history.push('/instance/assets')}
             shortcutLabel="⌥2"
             shortcutFilter={(e) => e.code === 'Digit2' && e.altKey}
           >
-            <TopNavLink to="/instance/assets">Assets</TopNavLink>
+            <TopNavLink to="/instance/assets" data-cy="AppTopNav_AssetsLink">
+              Assets
+            </TopNavLink>
           </ShortcutHandler>
           <ShortcutHandler
             onShortcut={() => history.push('/instance')}
             shortcutLabel="⌥3"
             shortcutFilter={(e) => e.code === 'Digit3' && e.altKey}
           >
-            <TopNavLink to="/instance">
+            <TopNavLink to="/instance" data-cy="AppTopNav_StatusLink">
               <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
                 Status
                 {showStatusWarningIcon ? <InstanceWarningIcon /> : null}
@@ -66,7 +70,7 @@ export const AppTopNav: React.FC<Props> = ({
             shortcutLabel="⌥4"
             shortcutFilter={(e) => e.code === 'Digit4' && e.altKey}
           >
-            <TopNavLink to="/workspace">
+            <TopNavLink to="/workspace" data-cy="AppTopNav_WorkspaceLink">
               <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
                 Workspace
                 <WorkspaceWarningIcon />
@@ -186,6 +190,11 @@ export const TopNavLink = styled(Link)`
   :active {
     color: ${Colors.White};
     text-decoration: none;
+  }
+
+  :focus {
+    outline: none !important;
+    color: ${Colors.White};
   }
 `;
 

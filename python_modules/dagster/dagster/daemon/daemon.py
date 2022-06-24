@@ -225,7 +225,11 @@ class SensorDaemon(DagsterDaemon):
         return "SENSOR"
 
     def core_loop(self, instance, workspace):
-        yield from execute_sensor_iteration_loop(instance, workspace, self._logger)
+        yield from execute_sensor_iteration_loop(
+            instance,
+            workspace,
+            self._logger,
+        )
 
 
 class BackfillDaemon(IntervalDaemon):

@@ -66,6 +66,8 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 from .config import (
     DAGSTER_CONFIG_YAML_FILENAME,
     DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
+    get_default_tick_retention_settings,
+    get_tick_retention_settings,
     is_dagster_home_set,
 )
 from .ref import InstanceRef
@@ -80,6 +82,7 @@ IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 
 if TYPE_CHECKING:
     from dagster.core.debug import DebugRunPayload
+    from dagster.core.definitions.run_request import InstigatorType
     from dagster.core.events import DagsterEvent, DagsterEventType
     from dagster.core.events.log import EventLogEntry
     from dagster.core.execution.plan.resume_retry import ReexecutionStrategy
@@ -1990,8 +1993,8 @@ class DagsterInstance:
     def update_tick(self, tick):
         return self._schedule_storage.update_tick(tick)
 
-    def purge_ticks(self, origin_id, selector_id, tick_status, before):
-        self._schedule_storage.purge_ticks(origin_id, selector_id, tick_status, before)
+    def purge_ticks(self, origin_id, selector_id, before, tick_statuses=None):
+        self._schedule_storage.purge_ticks(origin_id, selector_id, before, tick_statuses)
 
     def wipe_all_schedules(self):
         if self._scheduler:
@@ -2069,6 +2072,20 @@ class DagsterInstance:
         Gate on an experimental feature to start a thread that monitors for if the run should be canceled.
         """
         return False
+
+    def get_tick_retention_settings(
+        self, instigator_type: "InstigatorType"
+    ) -> Dict["TickStatus", int]:
+        from dagster.core.definitions.run_request import InstigatorType
+
+        retention_settings = self.get_settings("retention")
+        tick_settings = (
+            retention_settings.get("schedule")
+            if instigator_type == InstigatorType.SCHEDULE
+            else retention_settings.get("sensor")
+        )
+        default_tick_settings = get_default_tick_retention_settings(instigator_type)
+        return get_tick_retention_settings(tick_settings, default_tick_settings)
 
 
 def is_dagit_telemetry_enabled(instance):
