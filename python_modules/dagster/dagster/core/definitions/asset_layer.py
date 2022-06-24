@@ -667,7 +667,7 @@ def build_asset_selection_job(
     if partitions_def:
         for asset in included_assets:
             check.invariant(
-                asset.partitions_def == partitions_def,
+                asset.partitions_def == partitions_def or asset.partitions_def is None,
                 f"Assets defined for node '{asset.node_def.name}' have a partitions_def of "
                 f"{asset.partitions_def}, but job '{name}' has non-matching partitions_def of "
                 f"{partitions_def}.",
