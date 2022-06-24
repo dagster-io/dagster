@@ -644,6 +644,7 @@ class GrapheneIPipelineSnapshot(graphene.Interface):
 class GraphenePipelinePreset(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
+    runConfig = graphene.NonNull(GrapheneRunConfigData)
     runConfigYaml = graphene.NonNull(graphene.String)
     mode = graphene.NonNull(graphene.String)
     tags = non_null_list(GraphenePipelineTag)
@@ -663,6 +664,9 @@ class GraphenePipelinePreset(graphene.ObjectType):
 
     def resolve_solidSelection(self, _graphene_info):
         return self._active_preset_data.solid_selection
+
+    def resolve_runConfig(self, _graphene_info):
+        self._active_preset_data.run_config
 
     def resolve_runConfigYaml(self, _graphene_info):
         yaml_str = yaml.safe_dump(

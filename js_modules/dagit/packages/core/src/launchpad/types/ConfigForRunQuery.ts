@@ -15,7 +15,7 @@ export interface ConfigForRunQuery_runOrError_Run {
   __typename: "Run";
   id: string;
   mode: string;
-  runConfigYaml: string;
+  runConfig: any;
   solidSelection: string[] | null;
 }
 

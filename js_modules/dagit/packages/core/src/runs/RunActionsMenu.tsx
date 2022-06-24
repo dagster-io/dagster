@@ -84,7 +84,7 @@ export const RunActionsMenu: React.FC<{
 
   const pipelineRun =
     data?.pipelineRunOrError?.__typename === 'Run' ? data?.pipelineRunOrError : null;
-  const runConfigYaml = pipelineRun?.runConfigYaml;
+  const runConfigYaml = pipelineRun?.runConfig.yaml;
 
   const repoMatch = useRepositoryForRun(pipelineRun);
   const isFinished = doneStatuses.has(run.status);
@@ -137,7 +137,8 @@ export const RunActionsMenu: React.FC<{
                     if (repoMatch && runConfigYaml) {
                       const result = await reexecute({
                         variables: getReexecutionVariables({
-                          run: {...run, runConfigYaml},
+                          run,
+                          runConfigYaml,
                           style: {type: 'all'},
                           repositoryLocationName: repoMatch.match.repositoryLocation.name,
                           repositoryName: repoMatch.match.repository.name,
@@ -383,7 +384,7 @@ const PIPELINE_ENVIRONMENT_YAML_QUERY = gql`
         id
         pipelineName
         pipelineSnapshotId
-        runConfigYaml
+        runConfig
         ...RunFragmentForRepositoryMatch
       }
     }

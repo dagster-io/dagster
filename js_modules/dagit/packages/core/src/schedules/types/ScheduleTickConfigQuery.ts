@@ -22,7 +22,7 @@ export interface ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_eva
 export interface ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_runRequests {
   __typename: "RunRequest";
   runKey: string | null;
-  runConfigYaml: string;
+  runConfig: any;
   tags: ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_runRequests_tags[];
 }
 

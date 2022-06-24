@@ -18,7 +18,7 @@ export interface LaunchpadSessionPipelineFragment_presets {
   name: string;
   mode: string;
   solidSelection: string[] | null;
-  runConfigYaml: string;
+  runConfig: any;
   tags: LaunchpadSessionPipelineFragment_presets_tags[];
 }
 

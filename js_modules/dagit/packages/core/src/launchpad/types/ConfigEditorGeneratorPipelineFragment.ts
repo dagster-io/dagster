@@ -18,7 +18,7 @@ export interface ConfigEditorGeneratorPipelineFragment_presets {
   name: string;
   mode: string;
   solidSelection: string[] | null;
-  runConfigYaml: string;
+  runConfig: any;
   tags: ConfigEditorGeneratorPipelineFragment_presets_tags[];
 }
 

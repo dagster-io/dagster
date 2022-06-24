@@ -33,6 +33,7 @@ export const useJobReExecution = (run: RunFragment | undefined | null) => {
 
       const variables = getReexecutionVariables({
         run,
+        runConfigYaml: run.runConfig.yaml,
         style,
         repositoryLocationName: repoMatch.match.repositoryLocation.name,
         repositoryName: repoMatch.match.repository.name,

@@ -91,7 +91,7 @@ export interface RunRootQuery_pipelineRunOrError_Run_stepStats {
 export interface RunRootQuery_pipelineRunOrError_Run {
   __typename: "Run";
   id: string;
-  runConfigYaml: string;
+  runConfig: any;
   runId: string;
   canTerminate: boolean;
   status: RunStatus;

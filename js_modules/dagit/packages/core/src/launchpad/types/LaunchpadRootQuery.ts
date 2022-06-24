@@ -40,7 +40,7 @@ export interface LaunchpadRootQuery_pipelineOrError_Pipeline_presets {
   name: string;
   mode: string;
   solidSelection: string[] | null;
-  runConfigYaml: string;
+  runConfig: any;
   tags: LaunchpadRootQuery_pipelineOrError_Pipeline_presets_tags[];
 }
 

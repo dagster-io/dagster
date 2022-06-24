@@ -24,7 +24,7 @@ export const RunFragments = {
   RunFragment: gql`
     fragment RunFragment on Run {
       id
-      runConfigYaml
+      runConfig
       runId
       canTerminate
       status

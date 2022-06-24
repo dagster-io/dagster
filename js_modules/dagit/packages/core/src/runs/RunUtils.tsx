@@ -159,12 +159,13 @@ export type ReExecutionStyle =
   | {type: 'selection'; selection: StepSelection};
 
 export function getReexecutionVariables(input: {
-  run: (RunFragment | RunTableRunFragment) & {runConfigYaml: string};
+  run: RunFragment | RunTableRunFragment;
+  runConfigYaml: string;
   style: ReExecutionStyle;
   repositoryLocationName: string;
   repositoryName: string;
 }) {
-  const {run, style, repositoryLocationName, repositoryName} = input;
+  const {run, runConfigYaml, style, repositoryLocationName, repositoryName} = input;
 
   if (!run || !run.pipelineSnapshotId) {
     return undefined;
@@ -172,7 +173,7 @@ export function getReexecutionVariables(input: {
 
   const executionParams: ExecutionParams = {
     mode: run.mode,
-    runConfigData: run.runConfigYaml,
+    runConfigData: runConfigYaml,
     executionMetadata: getBaseExecutionMetadata(run),
     selector: {
       repositoryLocationName,

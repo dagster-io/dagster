@@ -23,7 +23,7 @@ export interface PipelineEnvironmentYamlQuery_pipelineRunOrError_Run {
   id: string;
   pipelineName: string;
   pipelineSnapshotId: string | null;
-  runConfigYaml: string;
+  runConfig: any;
   repositoryOrigin: PipelineEnvironmentYamlQuery_pipelineRunOrError_Run_repositoryOrigin | null;
 }
 

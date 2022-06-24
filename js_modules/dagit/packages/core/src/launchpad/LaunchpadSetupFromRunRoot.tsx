@@ -77,7 +77,8 @@ const LaunchpadSetupFromRunAllowedRoot: React.FC<Props> = (props) => {
       return;
     }
 
-    const {runConfigYaml, mode, solidSelection} = run;
+    const {runConfig, mode, solidSelection} = run;
+    const runConfigYaml = runConfig.yaml;
     if (runConfigYaml || mode || solidSelection) {
       // Name the session after this run ID.
       const newSession: Partial<IExecutionSession> = {name: `From run ${run.id.slice(0, 8)}`};
@@ -136,7 +137,7 @@ const CONFIG_FOR_RUN_QUERY = gql`
       ... on Run {
         id
         mode
-        runConfigYaml
+        runConfig
         solidSelection
       }
       ...PythonErrorFragment

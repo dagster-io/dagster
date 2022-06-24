@@ -26,6 +26,7 @@ from ..implementation.fetch_sensors import get_sensor_next_tick
 from ..implementation.loader import RepositoryScopedBatchLoader
 from .errors import GraphenePythonError
 from .repository_origin import GrapheneRepositoryOrigin
+from .runs import GrapheneRunConfigData
 from .tags import GraphenePipelineTag
 from .util import non_null_list
 
@@ -231,6 +232,7 @@ class GrapheneRunRequest(graphene.ObjectType):
     runKey = graphene.String()
     tags = non_null_list(GraphenePipelineTag)
     runConfigYaml = graphene.NonNull(graphene.String)
+    runConfig = graphene.NonNull(GrapheneRunConfigData)
 
     class Meta:
         name = "RunRequest"
@@ -248,6 +250,9 @@ class GrapheneRunRequest(graphene.ObjectType):
 
     def resolve_runConfigYaml(self, _graphene_info):
         return yaml.dump(self._run_request.run_config, default_flow_style=False, allow_unicode=True)
+
+    def resolve_runConfig(self, _graphene_info):
+        return self._run_request.run_config
 
 
 class GrapheneFutureInstigationTicks(graphene.ObjectType):

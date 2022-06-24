@@ -87,7 +87,7 @@ export interface RunFragment_stepStats {
 export interface RunFragment {
   __typename: "Run";
   id: string;
-  runConfigYaml: string;
+  runConfig: any;
   runId: string;
   canTerminate: boolean;
   status: RunStatus;

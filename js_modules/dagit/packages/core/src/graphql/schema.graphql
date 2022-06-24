@@ -1603,6 +1603,7 @@ type RunRequest {
   runKey: String
   tags: [PipelineTag!]!
   runConfigYaml: String!
+  runConfig: RunConfigData!
 }
 
 type PartitionSet {
@@ -1759,6 +1760,7 @@ type SensorMetadata {
 type PipelinePreset {
   name: String!
   solidSelection: [String!]
+  runConfig: RunConfigData!
   runConfigYaml: String!
   mode: String!
   tags: [PipelineTag!]!

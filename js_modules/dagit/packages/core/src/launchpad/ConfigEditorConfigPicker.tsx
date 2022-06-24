@@ -395,7 +395,7 @@ export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = gql`
       name
       mode
       solidSelection
-      runConfigYaml
+      runConfig
       tags {
         key
         value

@@ -390,7 +390,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     onSaveSession({
       base: {presetName: preset.name, tags: newBaseTags},
       name: preset.name,
-      runConfigYaml: preset.runConfigYaml || '',
+      runConfigYaml: preset.runConfig.yaml || '',
       solidSelection: preset.solidSelection,
       solidSelectionQuery: preset.solidSelection === null ? '*' : preset.solidSelection.join(','),
       mode: preset.mode,

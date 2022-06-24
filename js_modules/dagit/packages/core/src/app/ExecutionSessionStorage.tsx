@@ -235,7 +235,7 @@ export const useInitialDataForMode = (
     if (presetsForMode.length === 1 && partitionSetsForMode.length === 0) {
       return {
         base: {presetName: presetsForMode[0].name, tags: null},
-        runConfigYaml: presetsForMode[0].runConfigYaml,
+        runConfigYaml: presetsForMode[0].runConfig.yaml,
       };
     }
 

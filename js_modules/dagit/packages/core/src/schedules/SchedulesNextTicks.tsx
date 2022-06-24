@@ -247,7 +247,7 @@ const NextTickMenuItems: React.FC<{
 
   if (evaluationResult.runRequests.length === 1) {
     const runRequest = evaluationResult.runRequests[0];
-    const runConfigYaml = runRequest ? runRequest.runConfigYaml : '';
+    const runConfigYaml = runRequest ? runRequest.runConfig.yaml : '';
     return (
       <>
         <MenuItem
@@ -339,7 +339,7 @@ const NextTickDialog: React.FC<{
             <Subheading>Config</Subheading>
           </Box>
           <StyledReadOnlyCodeMirror
-            value={selectedRunRequest.runConfigYaml}
+            value={selectedRunRequest.runConfig.yaml}
             options={{lineNumbers: true, mode: 'yaml'}}
           />
         </div>
@@ -402,7 +402,7 @@ const NextTickDialog: React.FC<{
                                   schedule.pipelineName
                                 }/playground/setup?${qs.stringify({
                                   mode: schedule.mode,
-                                  config: runRequest.runConfigYaml,
+                                  config: runRequest.runConfig.yaml,
                                   solidSelection: schedule.solidSelection,
                                 })}`,
                               )}
@@ -442,7 +442,7 @@ const NextTickDialog: React.FC<{
           <Button
             autoFocus={false}
             onClick={() => {
-              copy(selectedRunRequest.runConfigYaml);
+              copy(selectedRunRequest.runConfig.yaml);
               SharedToaster.show({
                 intent: 'success',
                 icon: 'copy_to_clipboard_done',
@@ -470,7 +470,7 @@ const SCHEDULE_TICK_CONFIG_QUERY = gql`
           evaluationResult {
             runRequests {
               runKey
-              runConfigYaml
+              runConfig
               tags {
                 key
                 value
