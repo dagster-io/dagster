@@ -238,18 +238,11 @@ class Output(Generic[T]):
         return self._output_name
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Output):
-            return False
-        metadata_entries_equal = len(self.metadata_entries) == len(other.metadata_entries) and all(
-            [
-                this_entry == other_entry
-                for this_entry, other_entry in zip(self.metadata_entries, other.metadata_entries)
-            ]
-        )
         return (
-            self.value == other.value
+            isinstance(other, Output)
+            and self.value == other.value
             and self.output_name == other.output_name
-            and metadata_entries_equal
+            and self.metadata_entries == other.metadata_entries
         )
 
 
