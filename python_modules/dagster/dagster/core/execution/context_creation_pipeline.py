@@ -256,6 +256,7 @@ def execution_context_event_generator(
         instance=instance,
         emit_persistent_events=True,
         pipeline_def_for_backwards_compat=pipeline_def,
+        run_id=None,
     )
     yield from resources_manager.generate_setup_events()
     scoped_resources_builder = check.inst(resources_manager.get_object(), ScopedResourcesBuilder)

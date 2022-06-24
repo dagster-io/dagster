@@ -70,6 +70,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
 
         self._solid_config = solid_config
         self._mapping_key = mapping_key
+        self._run_id = run_id
 
         self._instance_provided = (
             check.opt_inst_param(instance, "instance", DagsterInstance) is not None
@@ -88,6 +89,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
             resources=self._resource_defs,
             instance=instance,
             resource_config=resources_config,
+            run_id=self._run_id,
         )
         self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
         self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
@@ -98,7 +100,6 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         self._partition_key = partition_key
         self._user_events: List[UserEvent] = []
         self._output_metadata: Dict[str, Any] = {}
-        self._run_id = run_id
 
     def __enter__(self):
         self._cm_scope_entered = True

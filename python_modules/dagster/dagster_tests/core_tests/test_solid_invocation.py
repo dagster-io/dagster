@@ -33,6 +33,7 @@ from dagster import (
     resource,
     solid,
 )
+from dagster.core.definitions.utils import EPHEMERAL_RUN_ID
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -1074,3 +1075,27 @@ def test_get_mapping_key():
         assert context.get_mapping_key() == "the_key"  # Ensure bound context has mapping key
 
     basic_op(context)
+
+
+def test_default_run_id_resource_init():
+    @resource
+    def resource_uses_default(context):
+        assert context.run_id == EPHEMERAL_RUN_ID
+
+    @op(required_resource_keys={"foo"})
+    def op_uses_default(context):
+        assert context.run_id == EPHEMERAL_RUN_ID
+
+    op_uses_default(build_op_context(resources={"foo": resource_uses_default}))
+
+
+def test_non_default_run_id_resource_init():
+    @resource
+    def resource_changes_default(context):
+        assert context.run_id == "bar"
+
+    @op(required_resource_keys={"foo"})
+    def op_changes_default(context):
+        assert context.run_id == "bar"
+
+    op_changes_default(build_op_context(resources={"foo": resource_changes_default}, run_id="bar"))
