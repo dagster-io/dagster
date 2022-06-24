@@ -40,19 +40,19 @@ WINDOW_SCALE_FACTOR = 1.3
 def capture_screenshot(screenshot_spec: Mapping[str, str], save_path: str) -> None:
     dagit_process = None
     try:
-        assert "defs_file" in screenshot_spec, "spec must define a \"defs_file\""
-        defs_file = screenshot_spec["defs_file"]
-        if defs_file.endswith(".py"):
-            command = ["dagit", "-f", defs_file]
-        elif defs_file.endswith(".yaml"):
-            command = ["dagit", "-w", defs_file]
-        else:
-            raise Exception("defs_file must be .py or .yaml")
+        defs_file = screenshot_spec.get("defs_file")
+        if defs_file:
+            if defs_file.endswith(".py"):
+                command = ["dagit", "-f", defs_file]
+            elif defs_file.endswith(".yaml"):
+                command = ["dagit", "-w", defs_file]
+            else:
+                raise Exception("defs_file must be .py or .yaml")
 
-        print("Running this command:")
-        print(" ".join(command))
-        dagit_process = subprocess.Popen(command)
-        sleep(6)  # Wait for the dagit server to start up
+            print("Running this command:")
+            print(" ".join(command))
+            dagit_process = subprocess.Popen(command)
+            sleep(6)  # Wait for the dagit server to start up
 
         driver = webdriver.Chrome()
         driver.set_window_size(
