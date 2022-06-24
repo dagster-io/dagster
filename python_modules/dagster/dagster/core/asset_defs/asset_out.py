@@ -5,6 +5,7 @@ from dagster.core.definitions.events import AssetKey, CoercibleToAssetKey, Coerc
 from dagster.core.definitions.input import NoValueSentinel
 from dagster.core.definitions.metadata import MetadataUserInput
 from dagster.core.definitions.output import Out
+from dagster.core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 
 
@@ -68,7 +69,7 @@ class AssetOut(
             description=check.opt_str_param(description, "description"),
             is_required=check.bool_param(is_required, "is_required"),
             io_manager_key=check.opt_str_param(
-                io_manager_key, "io_manager_key", default="io_manager"
+                io_manager_key, "io_manager_key", default=DEFAULT_IO_MANAGER_KEY
             ),
             metadata=check.opt_dict_param(metadata, "metadata", key_type=str),
         )

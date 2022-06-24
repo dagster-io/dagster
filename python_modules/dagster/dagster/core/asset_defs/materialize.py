@@ -2,6 +2,7 @@ from typing import Any, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
 
+from ..definitions.utils import DEFAULT_IO_MANAGER_KEY
 from ..execution.build_resources import wrap_resources_for_execution
 from ..execution.execute_in_process_result import ExecuteInProcessResult
 from ..execution.with_resources import with_resources
@@ -32,7 +33,7 @@ def materialize(
     """
 
     assets = check.sequence_param(assets, "assets", of_type=(AssetsDefinition, SourceAsset))
-    assets = with_resources(assets, {"io_manager": fs_io_manager})
+    assets = with_resources(assets, {DEFAULT_IO_MANAGER_KEY: fs_io_manager})
     assets_defs = [the_def for the_def in assets if isinstance(the_def, AssetsDefinition)]
     source_assets = [the_def for the_def in assets if isinstance(the_def, SourceAsset)]
     instance = check.opt_inst_param(instance, "instance", DagsterInstance)

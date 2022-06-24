@@ -20,6 +20,7 @@ from dagster import (
     daily_partitioned_config,
     daily_schedule,
     define_asset_job,
+    executor,
     graph,
     in_process_executor,
     io_manager,
@@ -34,9 +35,14 @@ from dagster import (
     solid,
 )
 from dagster._check import CheckError
-from dagster.core.definitions.executor_definition import multi_or_in_process_executor
+from dagster.core.definitions.executor_definition import (
+    default_executors,
+    multi_or_in_process_executor,
+)
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster.core.errors import DagsterInvalidSubsetError
+
+# pylint: disable=comparison-with-callable
 
 
 def create_single_node_pipeline(name, called):
@@ -1243,7 +1249,7 @@ def test_default_executor_repo():
 
 def test_default_executor_assets_repo():
     @graph
-    def doesnt_use_provided():
+    def no_executor_provided():
         pass
 
     @asset
@@ -1252,10 +1258,67 @@ def test_default_executor_assets_repo():
 
     @repository(default_executor_def=in_process_executor)
     def the_repo():
-        return [doesnt_use_provided, the_asset]
+        return [no_executor_provided, the_asset]
 
     # pylint: disable=comparison-with-callable
     assert the_repo.get_job("__ASSET_JOB").executor_def == in_process_executor
-    # The default_executor_def is currently only used on the asset job. We may
-    # want to change this behavior in the future.
-    assert the_repo.get_job("doesnt_use_provided").executor_def == multi_or_in_process_executor
+
+    assert the_repo.get_job("no_executor_provided").executor_def == in_process_executor
+
+
+def test_default_executor_jobs_and_pipelines():
+    @asset
+    def the_asset():
+        pass
+
+    unresolved_job = define_asset_job("asset_job", selection="*")
+
+    @executor
+    def custom_executor(_):
+        pass
+
+    @executor
+    def other_custom_executor(_):
+        pass
+
+    @job(executor_def=custom_executor)
+    def op_job_with_executor():
+        pass
+
+    @job
+    def op_job_no_executor():
+        pass
+
+    @job(executor_def=multi_or_in_process_executor)
+    def job_explicitly_specifies_default_executor():
+        pass
+
+    @pipeline
+    def the_pipeline():
+        pass
+
+    @repository(default_executor_def=other_custom_executor)
+    def the_repo():
+        return [
+            the_asset,
+            op_job_with_executor,
+            op_job_no_executor,
+            unresolved_job,
+            the_pipeline,
+            job_explicitly_specifies_default_executor,
+        ]
+
+    assert (
+        the_repo.get_pipeline("the_pipeline").mode_definitions[0].executor_defs == default_executors
+    )
+
+    assert the_repo.get_job("asset_job").executor_def == other_custom_executor
+
+    assert the_repo.get_job("op_job_with_executor").executor_def == custom_executor
+
+    assert the_repo.get_job("op_job_no_executor").executor_def == other_custom_executor
+
+    assert (
+        the_repo.get_job("job_explicitly_specifies_default_executor").executor_def
+        == multi_or_in_process_executor
+    )

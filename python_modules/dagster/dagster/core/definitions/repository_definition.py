@@ -788,6 +788,11 @@ class CachingRepositoryData(RepositoryData):
             else:
                 pipelines[name] = pipeline_or_job
 
+        if default_executor_def:
+            for name, job_def in jobs.items():
+                if not job_def._executor_def_specified:  # pylint: disable=protected-access
+                    jobs[name] = job_def.with_executor_def(default_executor_def)
+
         return CachingRepositoryData(
             pipelines=pipelines,
             jobs=jobs,

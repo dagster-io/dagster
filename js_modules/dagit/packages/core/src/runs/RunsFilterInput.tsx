@@ -217,7 +217,9 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
     const limitedTokens = new Set<string>(['id', 'job', 'pipeline', 'snapshotId']);
     const presentLimitedTokens = tokens.filter((token) => limitedTokens.has(token));
 
-    return suggestionProviders.filter((provider) => !presentLimitedTokens.includes(provider.token));
+    return suggestionProviders.filter(
+      (provider) => !provider.token || !presentLimitedTokens.includes(provider.token),
+    );
   };
 
   const onFocus = React.useCallback(() => performQuery(), [performQuery]);

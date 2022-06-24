@@ -1,17 +1,5 @@
 from collections import defaultdict
-from typing import (
-    AbstractSet,
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from toposort import CircularDependencyError, toposort
 
@@ -28,16 +16,17 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.executor_definition import ExecutorDefinition
 from dagster.core.definitions.graph_definition import GraphDefinition, default_job_io_manager
 from dagster.core.definitions.job_definition import JobDefinition
-from dagster.core.definitions.output import OutputDefinition
 from dagster.core.definitions.partition import PartitionedConfig, PartitionsDefinition
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.resource_requirement import ensure_requirements_satisfied
+from dagster.core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import experimental
 
 from .assets import AssetsDefinition
+from .resolved_asset_deps import ResolvedAssetDependencies
 from .source_asset import SourceAsset
 
 
@@ -66,7 +55,7 @@ def build_assets_job(
             decorator.
         source_assets (Optional[Sequence[Union[SourceAsset, AssetsDefinition]]]): A list of
             assets that are not materialized by this job, but that assets in this job depend on.
-        resource_defs (Optional[Dict[str, ResourceDefinition]]): Resource defs to be included in
+        resource_defs (Optional[Mapping[str, ResourceDefinition]]): Resource defs to be included in
             this job.
         description (Optional[str]): A description of the job.
 
@@ -100,15 +89,25 @@ def build_assets_job(
     partitions_def = partitions_def or build_job_partitions_from_assets(assets)
 
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
-    resource_defs = merge_dicts({"io_manager": default_job_io_manager}, resource_defs)
+    resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs)
 
-    source_assets_by_key = build_source_assets_by_key(source_assets)
-    deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
+    # turn any AssetsDefinitions into SourceAssets
+    resolved_source_assets: List[SourceAsset] = []
+    for asset in source_assets or []:
+        if isinstance(asset, AssetsDefinition):
+            resolved_source_assets += asset.to_source_assets()
+        elif isinstance(asset, SourceAsset):
+            resolved_source_assets.append(asset)
+
+    resolved_asset_deps = ResolvedAssetDependencies(assets, resolved_source_assets)
+    deps, assets_defs_by_node_handle = build_node_deps(assets, resolved_asset_deps)
 
     # attempt to resolve cycles using multi-asset subsetting
     if _has_cycles(deps):
-        assets = _attempt_resolve_cycles(assets)
-        deps, assets_defs_by_node_handle = build_deps(assets, source_assets_by_key.keys())
+        assets = _attempt_resolve_cycles(assets, resolved_source_assets)
+        resolved_asset_deps = ResolvedAssetDependencies(assets, resolved_source_assets)
+
+        deps, assets_defs_by_node_handle = build_node_deps(assets, resolved_asset_deps)
 
     graph = GraphDefinition(
         name=name,
@@ -120,16 +119,8 @@ def build_assets_job(
         config=None,
     )
 
-    # turn any AssetsDefinitions into SourceAssets
-    resolved_source_assets: List[SourceAsset] = []
-    for asset in source_assets or []:
-        if isinstance(asset, AssetsDefinition):
-            resolved_source_assets += asset.to_source_assets()
-        elif isinstance(asset, SourceAsset):
-            resolved_source_assets.append(asset)
-
     asset_layer = AssetLayer.from_graph_and_assets_node_mapping(
-        graph, assets_defs_by_node_handle, resolved_source_assets
+        graph, assets_defs_by_node_handle, resolved_source_assets, resolved_asset_deps
     )
 
     all_resource_defs = get_all_resource_defs(assets, resolved_source_assets, resource_defs)
@@ -167,25 +158,9 @@ def build_job_partitions_from_assets(
     return first_assets_with_partitions_def.partitions_def
 
 
-def build_source_assets_by_key(
-    source_assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]]
-) -> Mapping[AssetKey, Union[SourceAsset, OutputDefinition]]:
-    source_assets_by_key: Dict[AssetKey, Union[SourceAsset, OutputDefinition]] = {}
-    for asset_source in source_assets or []:
-        if isinstance(asset_source, SourceAsset):
-            source_assets_by_key[asset_source.key] = asset_source
-        elif isinstance(asset_source, AssetsDefinition):
-            for output_name, asset_key in asset_source.keys_by_output_name.items():
-                if asset_key:
-                    source_assets_by_key[asset_key] = asset_source.node_def.output_def_named(
-                        output_name
-                    )
-
-    return source_assets_by_key
-
-
-def build_deps(
-    assets_defs: Iterable[AssetsDefinition], source_paths: AbstractSet[AssetKey]
+def build_node_deps(
+    assets_defs: Iterable[AssetsDefinition],
+    resolved_asset_deps: ResolvedAssetDependencies,
 ) -> Tuple[
     Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]],
     Mapping[NodeHandle, AssetsDefinition],
@@ -224,7 +199,10 @@ def build_deps(
         deps[node_key] = {}
 
         # connect each input of this AssetsDefinition to the proper upstream node
-        for input_name, upstream_asset_key in assets_def.keys_by_input_name.items():
+        for input_name in assets_def.input_names:
+            upstream_asset_key = resolved_asset_deps.get_resolved_asset_key_for_input(
+                assets_def, input_name
+            )
             if upstream_asset_key in node_alias_and_output_by_asset_key:
                 upstream_node_alias, upstream_output_name = node_alias_and_output_by_asset_key[
                     upstream_asset_key
@@ -232,15 +210,6 @@ def build_deps(
                 deps[node_key][input_name] = DependencyDefinition(
                     upstream_node_alias, upstream_output_name
                 )
-            elif upstream_asset_key not in source_paths:
-                input_def = assets_def.node_def.input_def_named(input_name)
-                if not input_def.dagster_type.is_nothing:
-                    raise DagsterInvalidDefinitionError(
-                        f"Input asset '{upstream_asset_key.to_string()}' for asset "
-                        f"'{next(iter(assets_def.keys)).to_string()}' is not "
-                        "produced by any of the provided asset ops and is not one of the provided "
-                        "sources"
-                    )
 
     return deps, assets_defs_by_node_handle
 
@@ -265,7 +234,7 @@ def _has_cycles(deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefi
 
 
 def _attempt_resolve_cycles(
-    assets_defs: Iterable["AssetsDefinition"],
+    assets_defs: Iterable["AssetsDefinition"], source_assets: Iterable["SourceAsset"]
 ) -> Sequence["AssetsDefinition"]:
     """
     DFS starting at root nodes to color the asset dependency graph. Each time you leave your
@@ -284,7 +253,7 @@ def _attempt_resolve_cycles(
     from dagster.core.selector.subset_selector import generate_asset_dep_graph
 
     # get asset dependencies
-    asset_deps = generate_asset_dep_graph(assets_defs)
+    asset_deps = generate_asset_dep_graph(assets_defs, source_assets)
 
     # index AssetsDefinitions by their asset names
     assets_defs_by_asset_name = {}
@@ -366,7 +335,7 @@ def _ensure_resources_dont_conflict(
                 )
     for resource_key, resource_def in resource_defs.items():
         if (
-            resource_key != "io_manager"
+            resource_key != DEFAULT_IO_MANAGER_KEY
             and resource_key in resource_defs_from_assets
             and resource_defs_from_assets[resource_key] != resource_def
         ):

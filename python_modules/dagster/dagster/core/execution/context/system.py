@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Dict,
     Iterable,
@@ -437,7 +438,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self.step.solid_handle
 
     @property
-    def required_resource_keys(self) -> Set[str]:
+    def required_resource_keys(self) -> AbstractSet[str]:
         return self._required_resource_keys
 
     @property

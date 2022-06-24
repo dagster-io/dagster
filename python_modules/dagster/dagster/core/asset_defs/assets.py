@@ -1,4 +1,15 @@
-from typing import AbstractSet, Dict, Iterable, Iterator, Mapping, Optional, Sequence, Set, cast
+from typing import (
+    AbstractSet,
+    Dict,
+    Iterable,
+    Iterator,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster.core.decorator_utils import get_function_params
@@ -40,7 +51,8 @@ class AssetsDefinition(ResourceAddable):
         can_subset: bool = False,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
-        # if adding new fields, make sure to handle them in the with_prefix_or_group method
+        # if adding new fields, make sure to handle them in the with_prefix_or_group
+        # and from_graph methods
     ):
         self._node_def = node_def
         self._keys_by_input_name = check.dict_param(
@@ -128,6 +140,7 @@ class AssetsDefinition(ResourceAddable):
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
+        group_name: Optional[str] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from a GraphDefinition.
@@ -147,8 +160,67 @@ class AssetsDefinition(ResourceAddable):
                 either used as input to the asset or produced within the graph.
             partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
                 compose the assets.
+            group_name (Optional[str]): A group name for the constructed asset. Assets without a
+                group name are assigned to a group called "default".
         """
-        graph_def = check.inst_param(graph_def, "graph_def", GraphDefinition)
+        return AssetsDefinition._from_node(
+            graph_def,
+            keys_by_input_name,
+            keys_by_output_name,
+            internal_asset_deps,
+            partitions_def,
+            group_name,
+        )
+
+    @staticmethod
+    def from_op(
+        op_def: OpDefinition,
+        keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
+        keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
+        internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
+        partitions_def: Optional[PartitionsDefinition] = None,
+        group_name: Optional[str] = None,
+    ) -> "AssetsDefinition":
+        """
+        Constructs an AssetsDefinition from an OpDefinition.
+
+        Args:
+            op_def (OpDefinition): The OpDefinition that is an asset.
+            keys_by_input_name (Optional[Mapping[str, AssetKey]]): A mapping of the input
+                names of the decorated op to their corresponding asset keys. If not provided,
+                the input asset keys will be created from the op input names.
+            keys_by_output_name (Optional[Mapping[str, AssetKey]]): A mapping of the output
+                names of the decorated op to their corresponding asset keys. If not provided,
+                the output asset keys will be created from the op output names.
+            internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
+                that all assets produced by the op depend on all assets that are consumed by that
+                op. If this default is not correct, you pass in a map of output names to a
+                corrected set of AssetKeys that they depend on. Any AssetKeys in this list must be
+                either used as input to the asset or produced within the op.
+            partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
+                compose the assets.
+            group_name (Optional[str]): A group name for the constructed asset. Assets without a
+                group name are assigned to a group called "default".
+        """
+        return AssetsDefinition._from_node(
+            op_def,
+            keys_by_input_name,
+            keys_by_output_name,
+            internal_asset_deps,
+            partitions_def,
+            group_name,
+        )
+
+    @staticmethod
+    def _from_node(
+        node_def: Union[OpDefinition, GraphDefinition],
+        keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
+        keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
+        internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
+        partitions_def: Optional[PartitionsDefinition] = None,
+        group_name: Optional[str] = None,
+    ) -> "AssetsDefinition":
+        node_def = check.inst_param(node_def, "node_def", (GraphDefinition, OpDefinition))
         keys_by_input_name = check.opt_dict_param(
             keys_by_input_name, "keys_by_input_name", key_type=str, value_type=AssetKey
         )
@@ -171,17 +243,30 @@ class AssetsDefinition(ResourceAddable):
                 )
                 transformed_internal_asset_deps[keys_by_output_name[output_name]] = asset_keys
 
+        keys_by_output_name = _infer_keys_by_output_names(node_def, keys_by_output_name or {})
+
+        # For graph backed assets, we assign all assets to the same group_name, if specified.
+        # To assign to different groups, use .with_prefix_or_groups.
+        group_names_by_key = (
+            {asset_key: group_name for asset_key in keys_by_output_name.values()}
+            if group_name
+            else None
+        )
+
         return AssetsDefinition(
             keys_by_input_name=_infer_keys_by_input_names(
-                graph_def,
+                node_def,
                 keys_by_input_name or {},
             ),
-            keys_by_output_name=_infer_keys_by_output_names(graph_def, keys_by_output_name or {}),
-            node_def=graph_def,
+            keys_by_output_name=keys_by_output_name,
+            node_def=node_def,
             asset_deps=transformed_internal_asset_deps or None,
             partitions_def=check.opt_inst_param(
-                partitions_def, "partitions_def", PartitionsDefinition
+                partitions_def,
+                "partitions_def",
+                PartitionsDefinition,
             ),
+            group_names_by_key=group_names_by_key,
         )
 
     @property
@@ -207,6 +292,10 @@ class AssetsDefinition(ResourceAddable):
     @property
     def asset_deps(self) -> Mapping[AssetKey, AbstractSet[AssetKey]]:
         return self._asset_deps
+
+    @property
+    def input_names(self) -> Iterable[str]:
+        return self.keys_by_input_name.keys()
 
     @property
     def key(self) -> AssetKey:
@@ -472,15 +561,15 @@ class AssetsDefinition(ResourceAddable):
 
 
 def _infer_keys_by_input_names(
-    graph_def: GraphDefinition, keys_by_input_name: Mapping[str, AssetKey]
+    node_def: Union[GraphDefinition, OpDefinition], keys_by_input_name: Mapping[str, AssetKey]
 ) -> Mapping[str, AssetKey]:
-    all_input_names = {graph_input.definition.name for graph_input in graph_def.input_mappings}
+    all_input_names = [input_def.name for input_def in node_def.input_defs]
 
     if keys_by_input_name:
         check.invariant(
-            set(keys_by_input_name.keys()) == all_input_names,
+            set(keys_by_input_name.keys()) == set(all_input_names),
             "The set of input names keys specified in the keys_by_input_name argument must "
-            "equal the set of asset keys inputted by this GraphDefinition. \n"
+            f"equal the set of asset keys inputted by '{node_def.name}'. \n"
             f"keys_by_input_name keys: {set(keys_by_input_name.keys())} \n"
             f"expected keys: {all_input_names}",
         )
@@ -496,14 +585,14 @@ def _infer_keys_by_input_names(
 
 
 def _infer_keys_by_output_names(
-    graph_def: GraphDefinition, keys_by_output_name: Mapping[str, AssetKey]
+    node_def: Union[GraphDefinition, OpDefinition], keys_by_output_name: Mapping[str, AssetKey]
 ) -> Mapping[str, AssetKey]:
-    output_names = [output_def.name for output_def in graph_def.output_defs]
+    output_names = [output_def.name for output_def in node_def.output_defs]
     if keys_by_output_name:
         check.invariant(
             set(keys_by_output_name.keys()) == set(output_names),
             "The set of output names keys specified in the keys_by_output_name argument must "
-            "equal the set of asset keys outputted by this GraphDefinition. \n"
+            f"equal the set of asset keys outputted by {node_def.name}. \n"
             f"keys_by_input_name keys: {set(keys_by_output_name.keys())} \n"
             f"expected keys: {set(output_names)}",
         )
@@ -519,7 +608,7 @@ def _infer_keys_by_output_names(
     ):
         # If there is only one output and the name is the default "result", generate asset key
         # from the name of the node
-        inferred_keys_by_output_names[output_names[0]] = AssetKey([graph_def.name])
+        inferred_keys_by_output_names[output_names[0]] = AssetKey([node_def.name])
 
     for output_name in output_names:
         if output_name not in inferred_keys_by_output_names:

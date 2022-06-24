@@ -49,6 +49,7 @@ from .executor_definition import (
     default_executors,
     executor,
     in_process_executor,
+    multi_or_in_process_executor,
     multiple_process_executor_requirements,
     multiprocess_executor,
 )

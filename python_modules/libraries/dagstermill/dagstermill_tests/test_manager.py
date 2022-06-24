@@ -125,7 +125,7 @@ def test_yield_unserializable_result():
 def test_in_pipeline_manager_bad_solid():
     with pytest.raises(
         check.CheckError,
-        match=("hello_world_pipeline has no solid named foobar"),
+        match=("hello_world_pipeline has no op named foobar"),
     ):
         with in_pipeline_manager(solid_handle=NodeHandle("foobar", None)) as _manager:
             pass

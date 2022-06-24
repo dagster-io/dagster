@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional, Sequence, Uni
 import dagster._check as check
 from dagster.core.definitions.asset_layer import build_asset_selection_job
 from dagster.core.definitions.config import ConfigMapping
+from dagster.core.definitions.run_request import RunRequest
 from dagster.core.selector.subset_selector import parse_clause
 
 if TYPE_CHECKING:
@@ -55,17 +56,51 @@ class UnresolvedAssetJobDefinition(
             ),
         )
 
-    def get_partition_set_def(self):
-        from dagster.core.definitions import PartitionSetDefinition
+    def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
+        from dagster.core.definitions import PartitionSetDefinition, PartitionedConfig
 
         if self.partitions_def is None:
             return None
 
+        partitioned_config = self.config if isinstance(self.config, PartitionedConfig) else None
+
+        tags_fn = (
+            partitioned_config
+            and partitioned_config.tags_for_partition_fn
+            or (lambda _: cast(Dict[str, str], {}))
+        )
+        run_config_fn = (
+            partitioned_config
+            and partitioned_config.run_config_for_partition_fn
+            or (lambda _: cast(Dict[str, str], {}))
+        )
         return PartitionSetDefinition(
             job_name=self.name,
             name=f"{self.name}_partition_set",
             partitions_def=self.partitions_def,
+            run_config_fn_for_partition=run_config_fn,
+            tags_fn_for_partition=tags_fn,
         )
+
+    def run_request_for_partition(
+        self,
+        partition_key: str,
+        run_key: Optional[str],
+        tags: Optional[Dict[str, str]] = None,
+    ) -> RunRequest:
+        partition_set = self.get_partition_set_def()
+        if not partition_set:
+            check.failed("Called run_request_for_partition on a non-partitioned job")
+
+        partition = partition_set.get_partition(partition_key)
+        run_config = partition_set.run_config_for_partition(partition)
+        run_request_tags = (
+            {**tags, **partition_set.tags_for_partition(partition)}
+            if tags
+            else partition_set.tags_for_partition(partition)
+        )
+
+        return RunRequest(run_key=run_key, run_config=run_config, tags=run_request_tags)
 
     def resolve(
         self, assets: Sequence["AssetsDefinition"], source_assets: Sequence["SourceAsset"]
@@ -80,7 +115,7 @@ class UnresolvedAssetJobDefinition(
             source_assets=source_assets,
             description=self.description,
             tags=self.tags,
-            asset_selection=self.selection.resolve(assets),
+            asset_selection=self.selection.resolve([*assets, *source_assets]),
             partitions_def=self.partitions_def,
         )
 

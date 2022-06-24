@@ -166,6 +166,7 @@ class PipelineDefinition:
         _parent_pipeline_def=None,  # https://github.com/dagster-io/dagster/issues/2115
         version_strategy: Optional[VersionStrategy] = None,
         asset_layer: Optional[AssetLayer] = None,
+        metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
     ):
         # If a graph is specified directly use it
         if isinstance(graph_def, GraphDefinition):
@@ -196,9 +197,9 @@ class PipelineDefinition:
         self._description = check.opt_str_param(description, "description")
         self._tags = validate_tags(tags)
 
-        self._metadata = []
-        if metadata is not None:
-            self._metadata = normalize_metadata(metadata, [])
+        metadata_entries = check.opt_sequence_param(metadata_entries, "metadata_entries")
+        metadata = check.opt_mapping_param(metadata, "metadata")
+        self._metadata_entries = normalize_metadata(metadata, metadata_entries)
 
         self._current_level_node_defs = self._graph_def.node_defs
 
@@ -309,7 +310,7 @@ class PipelineDefinition:
 
     @property
     def metadata(self) -> List[Union[MetadataEntry, PartitionMetadataEntry]]:
-        return self._metadata
+        return self._metadata_entries
 
     @property
     def description(self):

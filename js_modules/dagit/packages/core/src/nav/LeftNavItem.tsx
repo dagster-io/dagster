@@ -50,13 +50,18 @@ export const LeftNavItem = React.forwardRef(
         }
 
         if (scheduleCount) {
-          return scheduleCount === 1 ? (
-            <div>
-              Schedule: <strong>{humanCronString(schedules[0].cronSchedule)}</strong>
-            </div>
-          ) : (
-            `${scheduleCount} schedules`
-          );
+          if (scheduleCount === 1) {
+            const schedule = schedules[0];
+            const {cronSchedule, executionTimezone} = schedule;
+            return (
+              <div>
+                Schedule:{' '}
+                <strong>{humanCronString(cronSchedule, executionTimezone || 'UTC')}</strong>
+              </div>
+            );
+          }
+
+          return `${scheduleCount} schedules`;
         }
 
         return sensorCount === 1 ? (

@@ -12,6 +12,7 @@ from typing import (
 )
 
 from ..errors import DagsterInvalidDefinitionError
+from .utils import DEFAULT_IO_MANAGER_KEY
 
 if TYPE_CHECKING:
     from ..types.dagster_type import DagsterType
@@ -235,5 +236,5 @@ def get_resource_key_conflicts(
     other_resource_defs: Mapping[str, "ResourceDefinition"],
 ) -> AbstractSet[str]:
     overlapping_keys = set(resource_defs.keys()).intersection(set(other_resource_defs.keys()))
-    overlapping_keys = {key for key in overlapping_keys if key != "io_manager"}
+    overlapping_keys = {key for key in overlapping_keys if key != DEFAULT_IO_MANAGER_KEY}
     return overlapping_keys
