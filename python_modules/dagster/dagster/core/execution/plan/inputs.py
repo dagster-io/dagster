@@ -335,17 +335,16 @@ class FromRootInputManager(
             if solid.input_def_named(self.input_name).root_manager_key
             else solid.input_def_named(self.input_name).input_manager_key
         )
-        root_manager_key = getattr(solid.input_def_named(self.input_name), input_manager_key)
-        root_manager_def = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs[
-            root_manager_key
-        ]
+        input_manager_def = pipeline_def.get_mode_definition(
+            resolved_run_config.mode
+        ).resource_defs[input_manager_key]
 
         solid_config = resolved_run_config.solids.get(solid.name)
         input_config = solid_config.inputs.get(self.input_name)
-        resource_config = resolved_run_config.resources.get(root_manager_key).config
+        resource_config = resolved_run_config.resources.get(input_manager_key).config
 
         version_context = ResourceVersionContext(
-            resource_def=root_manager_def,
+            resource_def=input_manager_def,
             resource_config=resource_config,
         )
 
@@ -354,13 +353,13 @@ class FromRootInputManager(
                 version_context
             )
         else:
-            root_manager_def_version = root_manager_def.version
+            root_manager_def_version = input_manager_def.version
 
         if root_manager_def_version is None:
             raise DagsterInvariantViolationError(
-                f"While using memoization, version for root input manager '{root_manager_key}' was "
+                f"While using memoization, version for input manager '{input_manager_key}' was "
                 "None. Please either provide a versioning strategy for your job, or provide a "
-                "version using the root_input_manager decorator."
+                "version using the root_input_manager or input_manager decorator."
             )
 
         check_valid_version(root_manager_def_version)
