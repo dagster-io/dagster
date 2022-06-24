@@ -141,7 +141,6 @@ class AssetsDefinition(ResourceAddable):
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from a GraphDefinition.
@@ -171,7 +170,6 @@ class AssetsDefinition(ResourceAddable):
             internal_asset_deps,
             partitions_def,
             group_name,
-            resource_defs,
         )
 
     @staticmethod
@@ -221,7 +219,6 @@ class AssetsDefinition(ResourceAddable):
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     ) -> "AssetsDefinition":
         node_def = check.inst_param(node_def, "node_def", (GraphDefinition, OpDefinition))
         keys_by_input_name = check.opt_dict_param(
