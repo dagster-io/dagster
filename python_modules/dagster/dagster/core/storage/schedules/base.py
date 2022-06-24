@@ -108,14 +108,20 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def purge_ticks(self, origin_id: str, selector_id: str, tick_status: TickStatus, before: float):
+    def purge_ticks(
+        self,
+        origin_id: str,
+        selector_id: str,
+        before: float,
+        tick_statuses: Optional[List[TickStatus]] = None,
+    ):
         """Wipe ticks for an instigator for a certain status and timestamp.
 
         Args:
             origin_id (str): The id of the instigator target to delete
             selector_id (str): The logical instigator identifier
-            tick_status (TickStatus): The tick status to wipe
             before (datetime): All ticks before this datetime will get purged
+            tick_statuses (Optional[List[TickStatus]]): The tick statuses to wipe
         """
 
     @abc.abstractmethod
