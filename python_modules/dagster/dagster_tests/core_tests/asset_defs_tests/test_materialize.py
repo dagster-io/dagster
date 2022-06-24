@@ -8,6 +8,7 @@ from dagster import (
     AssetsDefinition,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
+    DailyPartitionsDefinition,
     GraphOut,
     IOManager,
     MetadataValue,
@@ -22,7 +23,6 @@ from dagster import (
     multi_asset,
     op,
     with_resources,
-    DailyPartitionsDefinition,
 )
 from dagster.core.test_utils import instance_for_test
 

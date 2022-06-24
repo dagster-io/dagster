@@ -5,6 +5,7 @@ from dagster import (
     AssetsDefinition,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
+    DailyPartitionsDefinition,
     GraphOut,
     IOManager,
     Out,
@@ -18,7 +19,6 @@ from dagster import (
     multi_asset,
     op,
     with_resources,
-    DailyPartitionsDefinition,
 )
 
 
