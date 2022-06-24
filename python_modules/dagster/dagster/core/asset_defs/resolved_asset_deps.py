@@ -1,4 +1,5 @@
-from typing import AbstractSet, Dict, Iterable, Mapping, Tuple, cast
+from collections import defaultdict
+from typing import AbstractSet, Dict, Iterable, List, Mapping, Tuple, cast
 
 from dagster.core.definitions.events import AssetKey
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -53,22 +54,24 @@ def resolve_assets_def_deps(
     The returned dictionary only contains entries for assets definitions with group-resolved asset
     dependencies.
     """
-    asset_keys_by_group_and_name: Dict[Tuple[str, str], AssetKey] = {}
+    group_names_by_key: Dict[AssetKey, str] = {}
     for assets_def in assets_defs:
-        for key in assets_def.keys:
-            asset_keys_by_group_and_name[(assets_def.group_names_by_key[key], key.path[-1])] = key
+        group_names_by_key.update(assets_def.group_names_by_key)
     for source_asset in source_assets:
-        asset_keys_by_group_and_name[
-            (source_asset.group_name, source_asset.key.path[-1])
-        ] = source_asset.key
+        group_names_by_key[source_asset.key] = source_asset.group_name
 
-    asset_keys = set(asset_keys_by_group_and_name.values())
+    all_asset_keys = group_names_by_key.keys()
+
+    asset_keys_by_group_and_name: Dict[Tuple[str, str], List[AssetKey]] = defaultdict(list)
+
+    for key, group in group_names_by_key.items():
+        asset_keys_by_group_and_name[(group, key.path[-1])].append(key)
 
     warned = False
 
     result: Dict[int, Mapping[AssetKey, AssetKey]] = {}
     for assets_def in assets_defs:
-        group = (
+        group_name = (
             next(iter(assets_def.group_names_by_key.values()))
             if len(assets_def.group_names_by_key) == 1
             else None
@@ -76,34 +79,39 @@ def resolve_assets_def_deps(
 
         resolved_keys_by_unresolved_key: Dict[AssetKey, AssetKey] = {}
         for input_name, upstream_key in assets_def.keys_by_input_name.items():
-            if upstream_key not in asset_keys and len(upstream_key) == 1:
-                group_and_upstream_name = (group, upstream_key.path[-1])
-                if group is not None and group_and_upstream_name in asset_keys_by_group_and_name:
-                    resolved_key = asset_keys_by_group_and_name[
-                        cast(Tuple[str, str], group_and_upstream_name)
-                    ]
-                    resolved_keys_by_unresolved_key[upstream_key] = resolved_key
+            group_and_upstream_name = (group_name, upstream_key.path[-1])
+            matching_asset_keys = asset_keys_by_group_and_name.get(
+                cast(Tuple[str, str], group_and_upstream_name)
+            )
+            if (
+                group_name is not None
+                and len(upstream_key) == 1
+                and matching_asset_keys
+                and len(matching_asset_keys) == 1
+            ):
+                resolved_key = matching_asset_keys[0]
+                resolved_keys_by_unresolved_key[upstream_key] = resolved_key
 
-                    if not warned:
-                        experimental_warning(
-                            f"Asset {next(iter(assets_def.keys)).to_string()}'s dependency "
-                            f"'{upstream_key.path[-1]}' was resolved to upstream asset "
-                            f"{resolved_key.to_string()}, because the name matches and they're in the same "
-                            "group. This is experimental functionality that may change in a future "
-                            "release"
-                        )
-
-                        warned = True
-                elif (
-                    upstream_key not in asset_keys
-                    and not assets_def.node_def.input_def_named(input_name).dagster_type.is_nothing
-                ):
-                    raise DagsterInvalidDefinitionError(
-                        f"Input asset '{upstream_key.to_string()}' for asset "
-                        f"'{next(iter(assets_def.keys)).to_string()}' is not "
-                        "produced by any of the provided asset ops and is not one of the provided "
-                        "sources"
+                if not warned:
+                    experimental_warning(
+                        f"Asset {next(iter(assets_def.keys)).to_string()}'s dependency "
+                        f"'{upstream_key.path[-1]}' was resolved to upstream asset "
+                        f"{resolved_key.to_string()}, because the name matches and they're in the same "
+                        "group. This is experimental functionality that may change in a future "
+                        "release"
                     )
+
+                    warned = True
+            elif (
+                upstream_key not in all_asset_keys
+                and not assets_def.node_def.input_def_named(input_name).dagster_type.is_nothing
+            ):
+                raise DagsterInvalidDefinitionError(
+                    f"Input asset '{upstream_key.to_string()}' for asset "
+                    f"'{next(iter(assets_def.keys)).to_string()}' is not "
+                    "produced by any of the provided asset ops and is not one of the provided "
+                    "sources"
+                )
 
         if resolved_keys_by_unresolved_key:
             result[id(assets_def)] = resolved_keys_by_unresolved_key
