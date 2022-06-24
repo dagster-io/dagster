@@ -18,7 +18,7 @@ description:
 
 Ops in a job may have input definitions that don't correspond to the outputs of upstream ops. You can provide values for these inputs in a few different ways. Dagster checks each, in order, and uses the first that's available:
 
-- **Input Manager** - If the input to a job comes from an external source, such as a table in a database, often it makes sense to define a resource that's responsible for loading it. This makes it easy to swap out implementations in different jobs and mock it in tests. A special IOManager, which can be referenced from <PyObject module="dagster" object="In" />s, can be used to loads unconnected inputs.
+- **Input Manager** - If the input to a job comes from an external source, such as a table in a database, often it makes sense to define a resource that's responsible for loading it. This makes it easy to swap out implementations in different jobs and mock it in tests. A special IOManager, which can be referenced from <PyObject module="dagster" object="In" />s, can be used to load unconnected inputs.
 - **Dagster Type Loader** - A <PyObject module="dagster" object="DagsterTypeLoader" /> provides a way to specify how to load inputs that depends on a type. A <PyObject module="dagster" object="DagsterTypeLoader" /> can be placed on <PyObject module="dagster" object="DagsterType" />, which can be placed on <PyObject module="dagster" object="In" />.
 - **Default Values** - <PyObject module="dagster" object="In" /> accepts a `default_value` argument.
 
@@ -107,9 +107,9 @@ my_job.execute_in_process(
 
 When you have an op at the beginning of a job that operates on data from an external source, you might wish to separate that I/O from your op's business logic, in the same way you would with an IO manager if the op were loading from an upstream output.
 
-Dagster provides a couple ways to achieve this:
+Dagster provides a few ways to achieve this:
 
-One option is to write a function to load the input and decorate it with <PyObject module="dagster" object="input_manager" />:
+One option is to write a function to load the input and decorate it with <PyObject module="dagster" object="input_manager" decorator/>:
 
 ```python file=/concepts/io_management/input_managers.py startafter=start_load_unconnected_via_fn endbefore=end_load_unconnected_via_fn
 @input_manager
@@ -146,10 +146,23 @@ def load_table_job():
     my_op()
 ```
 
-If you want to use `Table1InputManager` to store outputs, or you want to override the `load_input` method of the IO Manager used elsewhere in the job, another option is to implement an instance of <PyObject module="dagster" object="IOManager" />:
+If you also want to use `Table1InputManager` to store outputs, or you want to override the `load_input` method of an IO Manager used elsewhere in the job, another option is to implement an instance of <PyObject module="dagster" object="IOManager" />:
 
 ```python file=/concepts/io_management/input_managers.py startafter=start_load_unconnected_io endbefore=end_load_unconnected_io
-No match for endBefore value "end_load_unconnected_io"
+# in this example, TableIOManager is defined elsewhere and we just want to override load_input
+class Table1IOManager(TableIOManager):
+    def load_input(self, context):
+        return read_dataframe_from_table(name="table_1")
+
+
+@io_manager
+def table_1_io_manager():
+    return Table1IOManager()
+
+
+@job(resource_defs={"load_input_manager": table_1_io_manager})
+def io_load_table_job():
+    my_op()
 ```
 
 In all of these examples, setting the `input_manager_key` on an `In` controls how that input is loaded.
@@ -169,6 +182,14 @@ class MyConfigurableInputLoader(InputManager):
 @input_manager(input_config_schema={"table": str})
 def my_configurable_input_loader():
     return MyConfigurableInputLoader()
+
+
+# or
+
+
+@input_manager(input_config_schema={"table": str})
+def my_other_configurable_input_loader(context):
+    return read_dataframe_from_table(name=context.config["table"])
 ```
 
 Then, when executing a job, you can pass in this per-input config.
@@ -228,7 +249,7 @@ def my_subselection_job():
     op2(op1())
 ```
 
-So far, this is set up so that `op2` always loads `table_1` even if you execute the full job. To write this so that `op2` only loads `table_1` when no input is provided from an upstream op, we can rewrite the input manager as a subclass of the IO manager used for the rest of the job as follows:
+So far, this is set up so that `op2` always loads `table_1` even if you execute the full job. This would let you debug `op2`, but if you want to write this so that `op2` only loads `table_1` when no input is provided from an upstream op, you can rewrite the input manager as a subclass of the IO manager used for the rest of the job as follows:
 
 ```python file=/concepts/io_management/input_managers.py startafter=start_better_load_input_subset endbefore=end_better_load_input_subset
 class MyNewInputLoader(MyIOManager):

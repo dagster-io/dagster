@@ -201,7 +201,7 @@ def io_load_table_job():
     my_op()
 
 
-# start_load_unconnected_io
+# end_load_unconnected_io
 
 # start_load_input_subset
 
@@ -281,6 +281,14 @@ class MyConfigurableInputLoader(InputManager):
 @input_manager(input_config_schema={"table": str})
 def my_configurable_input_loader():
     return MyConfigurableInputLoader()
+
+
+# or
+
+
+@input_manager(input_config_schema={"table": str})
+def my_other_configurable_input_loader(context):
+    return read_dataframe_from_table(name=context.config["table"])
 
 
 # end_per_input_config

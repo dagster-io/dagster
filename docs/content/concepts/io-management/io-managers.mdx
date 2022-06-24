@@ -29,7 +29,7 @@ Dagster ops have [inputs and outputs](/concepts/ops-jobs-graphs/ops#inputs-and-o
 
 The IO manager APIs make it easy to separate code that's responsible for logical data transformation from code that's responsible for reading and writing the results. Assets and ops can focus on business logic, while IO managers handle I/O. This separation makes it easier to test the business logic and run it in different environments.
 
-Not all inputs depend on upstream outputs. The [Unconnected Inputs](/concepts/io-management/unconnected-inputs) overview covers <PyObject module="dagster" object="DagsterTypeLoader" pluralize /> and writing IO managers to load inputs with no corresponding output, which let you decide how inputs at the beginning of a job are loaded.
+Not all inputs depend on upstream outputs. The [Unconnected Inputs](/concepts/io-management/unconnected-inputs) overview covers <PyObject module="dagster" object="DagsterTypeLoader" pluralize /> and writing IO managers to load inputs with no corresponding output. This lets you decide how inputs at the beginning of a job are loaded.
 
 ### Outputs and downstream inputs
 
@@ -176,7 +176,9 @@ local_assets = with_resources(
 
 ### Asset input IO managers
 
-In some cases you may need to load the input to an asset with different logic than that specified by the input asset's IO manager.
+In some cases you may need to load the input to an asset with different logic than that specified by the upstream asset's IO manager.
+
+To set an IO manager for a particular input, use the `input_manager_key` argument on <PyObject module="dagster" object="AssetIn" />.
 
 In this example,`first_asset` and `second_asset` will be stored using the default IO manager, but will be loaded as inputs to `third_asset` using the logic defined in the `pandas_series_io_manager` (in this case loading as Pandas Series rather than python lists).
 
@@ -269,7 +271,7 @@ def my_job():
 
 ### Per-input IO manager
 
-Just as with the inputs to assets, the inputs to ops can be loaded using custom logic. To set an IO manager for a particular input, use the `input_manager_key` argument on <PyObject module="dagster" object="In" />
+Just as with the inputs to assets, the inputs to ops can be loaded using custom logic. To set an IO manager for a particular input, use the `input_manager_key` argument on <PyObject module="dagster" object="In" />.
 
 In this example, the output of `op_1` will be stored using the default IO manager, but will be loaded in `op_2` using the logic defined in the `pandas_series_io_manager` (in this case loading as Pandas Series rather than python lists).
 
@@ -335,11 +337,11 @@ class MyPartitionedIOManager(IOManager):
         return read_csv(self.path_for_partition(context.asset_partition_key))
 ```
 
-### Per-input IO Manager
+### Writing a per-input IO Manager
 
 In some cases you may find that you need to load an input in a way other than the `load_input` function of the corresponding output's IO manager. For example, let's say Team A has an op that returns an output as a Pandas DataFrame and specifies an IO manager that knows how to store and load Pandas DataFrames. Your team is interested in using this output for a new op, but you are required to use PySpark to analyze the data. Unfortunately, you don't have permission to modify Team A's IO manager to support this case. Instead, you can specify an input manager on your op that will override some of the behavior of Team A's IO manager.
 
-Since the method for loading an input is directly affected by the way the corresponding output was stored, we recommend defining your input managers as subclasses of existing IO managers and just updating the `load_input` method. For example, to load an input as a NumPy array rather than a Pandas DataFrame, you could do the following
+Since the method for loading an input is directly affected by the way the corresponding output was stored, we recommend defining your input managers as subclasses of existing IO managers and just updating the `load_input` method. In this example, we load an input as a NumPy array rather than a Pandas DataFrame by writing the following:
 
 ```python file=/concepts/io_management/input_managers.py startafter=start_plain_input_manager endbefore=end_plain_input_manager
 # in this case PandasIOManager is an existing IO Manager
@@ -366,7 +368,7 @@ def my_job():
     analyze_as_numpy(df)
 ```
 
-This may quickly run into issues if the owner of `PandasIOManager` changes the path at which they store outputs. We recommend splitting out path defining logic into new methods that are called when needed.
+This may quickly run into issues if the owner of `PandasIOManager` changes the path at which they store outputs. We recommend splitting out path defining logic (or other computations shared by `handle_output` and `load_input`) into new methods that are called when needed.
 
 ```python file=/concepts/io_management/input_managers.py startafter=start_better_input_manager endbefore=end_better_input_manager
 # this IO Manager is owned by a different team
@@ -530,7 +532,7 @@ def my_io_manager(_):
     return MyIOManager()
 ```
 
-### Input managers for assets
+### Per-input loading in assets
 
 Let's say you have an asset that is set to store and load as a Pandas DataFrame, but you want to write a new asset that processes the first asset as a NumPy array. Rather than update the IO manager of the first asset to be able to load as a Pandas DataFrame and a NumPy array, you can write a new loader for the new asset.
 
