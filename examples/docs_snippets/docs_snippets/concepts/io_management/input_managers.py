@@ -3,10 +3,18 @@ import os
 import numpy as np
 import pandas as pd
 
-from dagster import IOManager, In, io_manager, job, op
+from dagster import IOManager, In, InputManager, input_manager, io_manager, job, op
 
 
 class PandasIOManager(IOManager):
+    def handle_output(self, context, obj):
+        pass
+
+    def load_input(self, context):
+        pass
+
+
+class TableIOManager(IOManager):
     def handle_output(self, context, obj):
         pass
 
@@ -135,28 +143,38 @@ def my_better_job():
 
 # end_better_input_manager
 
-# start_load_unconnected_input
+# start_load_unconnected_via_fn
 
 
-class Table1IOManager(IOManager):
-    def load_input(self, context):
-        return read_dataframe_from_table(name="table1")
-
-    def handle_output(self, context, obj):
-        # if you wish to have custom output handling logic you can put it here and also use
-        # this IO manager like any other IO Manager
-        pass
+@input_manager
+def simple_table_1_manager():
+    return read_dataframe_from_table(name="table_1")
 
 
-@io_manager
-def table_1_manager():
-    return Table1IOManager()
-
-
-@op(ins={"dataframe": In(input_manager_key="load_input_manager")})
+@op(ins={"dataframe": In(input_manager_key="simple_load_input_manager")})
 def my_op(dataframe):
     """Do some stuff"""
     dataframe.head()
+
+
+@job(resource_defs={"simple_load_input_manager": simple_table_1_manager})
+def simple_load_table_job():
+    my_op()
+
+
+# end_load_unconnected_via_fn
+
+# start_load_unconnected_input
+
+
+class Table1InputManager(InputManager):
+    def load_input(self, context):
+        return read_dataframe_from_table(name="table_1")
+
+
+@input_manager
+def table_1_manager():
+    return Table1InputManager()
 
 
 @job(resource_defs={"load_input_manager": table_1_manager})
@@ -165,6 +183,25 @@ def load_table_job():
 
 
 # end_load_unconnected_input
+
+# start_load_unconnected_io
+# in this example, TableIOManager is defined elsewhere and we just want to override load_input
+class Table1IOManager(TableIOManager):
+    def load_input(self, context):
+        return read_dataframe_from_table(name="table_1")
+
+
+@io_manager
+def table_1_io_manager():
+    return Table1IOManager()
+
+
+@job(resource_defs={"load_input_manager": table_1_io_manager})
+def io_load_table_job():
+    my_op()
+
+
+# start_load_unconnected_io
 
 # start_load_input_subset
 
@@ -183,14 +220,9 @@ def my_io_manager(_):
     return MyIOManager()
 
 
-class MyInputLoader(MyIOManager):
-    def load_input(self, context):
-        return read_dataframe_from_table(name="table_1")
-
-
-@io_manager
-def my_input_loader():
-    return MyInputLoader()
+@input_manager
+def my_subselection_input_manager():
+    return read_dataframe_from_table(name="table_1")
 
 
 @op
@@ -207,7 +239,7 @@ def op2(dataframe):
 @job(
     resource_defs={
         "io_manager": my_io_manager,
-        "my_input_manager": my_input_loader,
+        "my_input_manager": my_subselection_input_manager,
     }
 )
 def my_subselection_job():
@@ -222,6 +254,7 @@ def my_subselection_job():
 class MyNewInputLoader(MyIOManager):
     def load_input(self, context):
         if context.upstream_output is None:
+            # load input from table since there is no upstream output
             return read_dataframe_from_table(name="table_1")
         else:
             return super().load_input(context)
@@ -240,12 +273,12 @@ my_subselection_job.execute_in_process(
 # start_per_input_config
 
 
-class MyConfigurableInputLoader(MyIOManager):
+class MyConfigurableInputLoader(InputManager):
     def load_input(self, context):
         return read_dataframe_from_table(name=context.config["table"])
 
 
-@io_manager(input_config_schema={"table": str})
+@input_manager(input_config_schema={"table": str})
 def my_configurable_input_loader():
     return MyConfigurableInputLoader()
 
@@ -255,6 +288,6 @@ def my_configurable_input_loader():
 # start_per_input_config_exec
 
 load_table_job.execute_in_process(
-    run_config={"ops": {"my_op": {"inputs": {"dataframe": {"table": "table1"}}}}},
+    run_config={"ops": {"my_op": {"inputs": {"dataframe": {"table": "table_1"}}}}},
 )
 # end_per_input_config_exec

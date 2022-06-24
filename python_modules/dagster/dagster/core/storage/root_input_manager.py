@@ -7,16 +7,8 @@ from dagster.core.definitions.definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
 from dagster.core.definitions.resource_definition import ResourceDefinition, is_context_provided
-from dagster.core.storage.input_manager import InputManager
+from dagster.core.storage.input_manager import IInputManagerDefinition, InputManager
 from dagster.utils.backcompat import deprecation_warning, experimental
-
-
-class IInputManagerDefinition:
-    @property
-    @abstractmethod
-    def input_config_schema(self):
-        """The schema for per-input configuration for inputs that are managed by this
-        input manager"""
 
 
 class RootInputManagerDefinition(ResourceDefinition, IInputManagerDefinition):

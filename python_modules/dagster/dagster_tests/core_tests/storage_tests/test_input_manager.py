@@ -8,6 +8,7 @@ from dagster import (
     IOManager,
     In,
     InputDefinition,
+    InputManager,
     MetadataEntry,
     ModeDefinition,
     OutputDefinition,
@@ -16,6 +17,7 @@ from dagster import (
     composite_solid,
     execute_pipeline,
     execute_solid,
+    input_manager,
     io_manager,
     job,
     op,
@@ -236,7 +238,119 @@ def test_input_config():
         )
 
 
-### root input manager tests (deprecate in 0.16.0)
+def test_input_manager_decorator():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            assert False, "should not be called"
+
+    @io_manager
+    def my_io_manager():
+        return MyIOManager()
+
+    class MyInputManager(MyIOManager):
+        def load_input(self, context):
+            if context.upstream_output is None:
+                assert False, "upstream output should not be None"
+            else:
+                return 4
+
+    @input_manager
+    def my_input_manager():
+        return MyInputManager()
+
+    @op
+    def first_op():
+        return 1
+
+    @op(ins={"an_input": In(input_manager_key="my_input_manager")})
+    def second_op(an_input):
+        assert an_input == 4
+
+    @job(resource_defs={"io_manager": my_io_manager, "my_input_manager": my_input_manager})
+    def check_input_managers():
+        out = first_op()
+        second_op(out)
+
+    check_input_managers.execute_in_process()
+
+
+def test_input_manager_w_function():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            assert False, "should not be called"
+
+    @io_manager
+    def my_io_manager():
+        return MyIOManager()
+
+    @input_manager
+    def my_input_manager():
+        return 4
+
+    @op
+    def first_op():
+        return 1
+
+    @op(ins={"an_input": In(input_manager_key="my_input_manager")})
+    def second_op(an_input):
+        assert an_input == 4
+
+    @job(resource_defs={"io_manager": my_io_manager, "my_input_manager": my_input_manager})
+    def check_input_managers():
+        out = first_op()
+        second_op(out)
+
+    check_input_managers.execute_in_process()
+
+
+def test_input_manager_class():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            assert False, "should not be called"
+
+    @io_manager
+    def my_io_manager():
+        return MyIOManager()
+
+    class MyInputManager(InputManager):
+        def load_input(self, context):
+            if context.upstream_output is None:
+                assert False, "upstream output should not be None"
+            else:
+                return 4
+
+    @input_manager
+    def my_input_manager():
+        return MyInputManager()
+
+    @op
+    def first_op():
+        return 1
+
+    @op(ins={"an_input": In(input_manager_key="my_input_manager")})
+    def second_op(an_input):
+        assert an_input == 4
+
+    @job(resource_defs={"io_manager": my_io_manager, "my_input_manager": my_input_manager})
+    def check_input_managers():
+        out = first_op()
+        second_op(out)
+
+    check_input_managers.execute_in_process()
+
+
+##################################################
+# root input manager tests (deprecate in 0.16.0) #
+##################################################
 
 
 def test_validate_inputs():
