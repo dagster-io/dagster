@@ -62,6 +62,7 @@
     "@types/node": "^14.14.22",
     "@types/react": "^17.0.0",
     "jest": "^27.5.1",
+    "node-html-parser": "^5.3.3",
     "prettier": "^2.2.1",
     "remark-cli": "^9.0.0",
     "remark-gfm": "^1.0.0",
