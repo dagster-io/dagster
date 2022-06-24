@@ -18,7 +18,11 @@ import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
-import {AssetLatestRunWithNotices, AssetRunLink} from '../asset-graph/AssetNode';
+import {
+  AssetLatestRunWithNotices,
+  AssetRunLink,
+  ComputeStatusNotice,
+} from '../asset-graph/AssetNode';
 import {LiveData, toGraphId} from '../asset-graph/Utils';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -129,7 +133,7 @@ export const AssetTable = ({
             </th>
             <th>{view === 'directory' ? 'Asset Key Prefix' : 'Asset Key'}</th>
             <th style={{width: 340}}>Defined In</th>
-            <th style={{width: 200}}>Materialized</th>
+            <th style={{width: 265}}>Materialized</th>
             <th style={{width: 115}}>Latest Run</th>
             <th style={{width: 80}}>Actions</th>
           </tr>
@@ -252,24 +256,27 @@ const AssetEntryRow: React.FC<{
         </td>
         <td>
           {liveData ? (
-            liveData.lastMaterialization ? (
-              <Mono>
-                <AssetRunLink
-                  runId={liveData.lastMaterialization.runId}
-                  event={{
-                    stepKey: liveData.stepKey,
-                    timestamp: liveData.lastMaterialization.timestamp,
-                  }}
-                >
-                  <TimestampDisplay
-                    timestamp={Number(liveData.lastMaterialization.timestamp) / 1000}
-                    timeFormat={{showSeconds: false, showTimezone: false}}
-                  />
-                </AssetRunLink>
-              </Mono>
-            ) : (
-              <span>–</span>
-            )
+            <Box flex={{gap: 8, alignItems: 'center'}}>
+              {liveData.lastMaterialization ? (
+                <Mono style={{flex: 1}}>
+                  <AssetRunLink
+                    runId={liveData.lastMaterialization.runId}
+                    event={{
+                      stepKey: liveData.stepKey,
+                      timestamp: liveData.lastMaterialization.timestamp,
+                    }}
+                  >
+                    <TimestampDisplay
+                      timestamp={Number(liveData.lastMaterialization.timestamp) / 1000}
+                      timeFormat={{showSeconds: false, showTimezone: false}}
+                    />
+                  </AssetRunLink>
+                </Mono>
+              ) : (
+                <span>–</span>
+              )}
+              <ComputeStatusNotice computeStatus={liveData?.computeStatus} />
+            </Box>
           ) : undefined}
         </td>
         <td>

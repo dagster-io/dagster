@@ -140,7 +140,6 @@ const ASSET_GRAPH_QUERY = gql`
       dependedByKeys {
         path
       }
-      partitionDefinition
       ...AssetNodeFragment
     }
   }
