@@ -19,7 +19,6 @@ export interface AssetNodeFragment {
   jobNames: string[];
   opNames: string[];
   description: string | null;
-  partitionDefinition: string | null;
   computeKind: string | null;
   assetKey: AssetNodeFragment_assetKey;
 }
