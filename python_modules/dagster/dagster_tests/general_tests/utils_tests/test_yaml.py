@@ -1,3 +1,4 @@
+import datetime
 import os
 
 import pytest
@@ -6,6 +7,8 @@ import yaml
 import dagster._check as check
 from dagster.utils import file_relative_path
 from dagster.utils.yaml_utils import (
+    dump_run_config_yaml,
+    load_run_config_yaml,
     load_yaml_from_glob_list,
     load_yaml_from_globs,
     load_yaml_from_path,
@@ -111,3 +114,37 @@ final: "result"
     ):
         bad_yaml = "--- `"
         merge_yaml_strings([a, bad_yaml])
+
+
+def test_dump_octal_string():
+
+    octal_str_list = {"keys": ["0001823", "0001234"]}
+
+    # normal dump parses the first string as an int
+    assert yaml.safe_dump(octal_str_list) == "keys:\n- 0001823\n- '0001234'\n"
+
+    # our dump does not
+    assert dump_run_config_yaml(octal_str_list) == "keys:\n- '0001823'\n- '0001234'\n"
+
+
+def test_load_datetime_string():
+    date_config_yaml = """ops:
+  my_op:
+    config:
+      start: 2022-06-10T00:00:00.000000+00:00"""
+
+    # normal dump parses as a datetime
+    assert yaml.safe_load(date_config_yaml) == {
+        "ops": {
+            "my_op": {
+                "config": {
+                    "start": datetime.datetime(2022, 6, 10, 0, 0, tzinfo=datetime.timezone.utc)
+                }
+            }
+        }
+    }
+
+    # ours does not
+    assert load_run_config_yaml(date_config_yaml) == {
+        "ops": {"my_op": {"config": {"start": "2022-06-10T00:00:00.000000+00:00"}}}
+    }
