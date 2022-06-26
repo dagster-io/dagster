@@ -100,7 +100,45 @@ A few rules govern partition-to-partition dependencies:
 
   For example, if an asset with a <PyObject object="DailyPartitionsDefinition" /> depends on an asset with an <PyObject object="HourlyPartitionsDefinition" />, then partition `2022-04-12` of the daily asset the would depend on 24 partitions of the hourly asset: `2022-04-12-00:00` through `2022-04-12-23:00`.
 
-## Partitioned Jobs
+## Partitioned Asset Jobs
+
+A partitioned asset job is a job that materializes a particular set of partitioned assets every time it runs.
+
+```python file=/concepts/partitions_schedules_sensors/partitioned_asset_job.py
+from dagster import (
+    AssetSelection,
+    HourlyPartitionsDefinition,
+    asset,
+    define_asset_job,
+    repository,
+)
+
+hourly_partitions_def = HourlyPartitionsDefinition(start_date="2022-05-31-00:00")
+
+
+@asset(partitions_def=hourly_partitions_def)
+def asset1():
+    ...
+
+
+@asset(partitions_def=hourly_partitions_def)
+def asset2():
+    ...
+
+
+partitioned_asset_job = define_asset_job(
+    name="asset_1_and_2_job",
+    selection=AssetSelection.assets(asset1, asset2),
+    partitions_def=hourly_partitions_def,
+)
+
+
+@repository
+def repo():
+    return [asset1, asset2, partitioned_asset_job]
+```
+
+## Partitioned Non-Asset Jobs
 
 ### Relevant APIs
 
@@ -115,7 +153,7 @@ A few rules govern partition-to-partition dependencies:
 | <PyObject object="dynamic_partitioned_config" decorator /> | Decorator for constructing partitioned config for a set of partition keys that can grow over time.  |
 | <PyObject object="build_schedule_from_partitioned_job" />  | A function that constructs a schedule whose interval matches the partitioning of a partitioned job. |
 
-You define a partitioned job by constructing a <PyObject object="PartitionedConfig" /> object and supplying it when you construct your job.
+When defining a job that doesn't use software-defined assets, you can make it partitioned by supplying <PyObject object="PartitionedConfig" /> object as its config.
 
 ### Defining a Job with Time Partitions
 
@@ -281,44 +319,6 @@ def antarctica_schedule():
 ```
 
 Refer to the [Schedules documentation](/concepts/partitions-schedules-sensors/schedules#schedules-from-partitioned-assets-and-jobs) for more info about constructing both schedule types.
-
-## Partitioned Asset Jobs
-
-A partitioned asset job is a job that materializes a particular set of partitioned assets every time it runs.
-
-```python file=/concepts/partitions_schedules_sensors/partitioned_asset_job.py
-from dagster import (
-    AssetSelection,
-    HourlyPartitionsDefinition,
-    asset,
-    define_asset_job,
-    repository,
-)
-
-hourly_partitions_def = HourlyPartitionsDefinition(start_date="2022-05-31-00:00")
-
-
-@asset(partitions_def=hourly_partitions_def)
-def asset1():
-    ...
-
-
-@asset(partitions_def=hourly_partitions_def)
-def asset2():
-    ...
-
-
-partitioned_asset_job = define_asset_job(
-    name="asset_1_and_2_job",
-    selection=AssetSelection.assets(asset1, asset2),
-    partitions_def=hourly_partitions_def,
-)
-
-
-@repository
-def repo():
-    return [asset1, asset2, partitioned_asset_job]
-```
 
 ## Testing
 
