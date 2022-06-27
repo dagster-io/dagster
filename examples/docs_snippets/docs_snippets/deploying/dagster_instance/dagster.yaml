@@ -330,3 +330,17 @@ code_servers:
   local_startup_timeout: 120
 
 # end_marker_code_servers
+
+# start_marker_retention
+
+# Configures how long Dagster keeps sensor / schedule tick data
+retention:
+  schedule:
+    purge_after_days: 90 # sets retention policy for schedule ticks of all types
+  sensor:
+    purge_after_days:
+      skipped: 7
+      failure: 30
+      success: -1 # keep success ticks indefinitely
+
+# end_marker_retention
