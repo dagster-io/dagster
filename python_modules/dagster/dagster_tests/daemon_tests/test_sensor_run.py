@@ -35,18 +35,15 @@ from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster.core.storage.event_log.base import EventRecordsFilter
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import (
-    MockThreadPoolExecutor,
+    SingleThreadPoolExecutor,
     create_test_daemon_workspace,
     get_logger_output_from_capfd,
     instance_for_test,
+    wait_for_futures,
 )
 from dagster.core.workspace.load_target import PythonFileTarget
 from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.sensor import (
-    check_sensor_futures,
-    execute_sensor_iteration,
-    execute_sensor_iteration_loop,
-)
+from dagster.daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 
@@ -383,17 +380,18 @@ def workspace_load_target(attribute="the_repo"):
 
 def evaluate_sensors(instance, workspace):
     logger = get_default_daemon_logger("SensorDaemon")
-    future_contexts = {}
+    futures = {}
     list(
         execute_sensor_iteration(
             instance,
             logger,
             workspace,
-            executor=MockThreadPoolExecutor(),
-            future_contexts=future_contexts,
+            executor=SingleThreadPoolExecutor(),
+            debug_futures=futures,
         )
     )
-    list(check_sensor_futures(logger, future_contexts))
+
+    wait_for_futures(futures)
 
 
 def validate_tick(

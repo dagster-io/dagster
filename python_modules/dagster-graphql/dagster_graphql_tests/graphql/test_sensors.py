@@ -23,10 +23,14 @@ from dagster.core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
-from dagster.core.test_utils import MockThreadPoolExecutor, create_test_daemon_workspace
+from dagster.core.test_utils import (
+    SingleThreadPoolExecutor,
+    create_test_daemon_workspace,
+    wait_for_futures,
+)
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.sensor import check_sensor_futures, execute_sensor_iteration
+from dagster.daemon.sensor import execute_sensor_iteration
 from dagster.utils import Counter, traced_counter
 from dagster.utils.error import SerializableErrorInfo
 
@@ -502,17 +506,17 @@ def _create_tick(graphql_context):
         graphql_context.instance,
     ) as workspace:
         logger = get_default_daemon_logger("SensorDaemon")
-        future_contexts = {}
+        futures = {}
         list(
             execute_sensor_iteration(
                 graphql_context.instance,
                 logger,
                 workspace,
-                executor=MockThreadPoolExecutor(),
-                future_contexts=future_contexts,
+                executor=SingleThreadPoolExecutor(),
+                debug_futures=futures,
             )
         )
-        list(check_sensor_futures(logger, future_contexts))
+        wait_for_futures(futures)
 
 
 def test_sensor_tick_range(graphql_context):
