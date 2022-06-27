@@ -1,5 +1,11 @@
 # Changelog
 
+# 0.15.2
+
+### Bugfixes
+
+* Fixed an issue where asset dependency resolution would break when two assets in the same group had the same name
+
 # 0.15.1
 
 ### New
