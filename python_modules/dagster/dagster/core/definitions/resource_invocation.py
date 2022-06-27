@@ -50,16 +50,18 @@ def resource_invocation_result(
 def _check_invocation_requirements(
     resource_def: "ResourceDefinition", init_context: Optional["UnboundInitResourceContext"]
 ) -> "InitResourceContext":
+    from dagster.core.definitions.resource_definition import is_context_provided
     from dagster.core.execution.context.init import InitResourceContext, build_init_resource_context
 
-    if resource_def.required_resource_keys and init_context is None:
+    context_provided = is_context_provided(resource_def.resource_fn)
+    if context_provided and resource_def.required_resource_keys and init_context is None:
         raise DagsterInvalidInvocationError(
             "Resource has required resources, but no context was provided. Use the "
             "`build_init_resource_context` function to construct a context with the required "
             "resources."
         )
 
-    if init_context is not None and resource_def.required_resource_keys:
+    if context_provided and init_context is not None and resource_def.required_resource_keys:
         ensure_requirements_satisfied(
             init_context._resource_defs,  # pylint: disable=protected-access
             list(resource_def.get_resource_requirements()),
