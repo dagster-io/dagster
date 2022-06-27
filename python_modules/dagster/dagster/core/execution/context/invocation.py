@@ -41,6 +41,7 @@ from dagster.utils.forked_pdb import ForkedPdb
 
 from .compute import OpExecutionContext
 from .system import StepExecutionContext, TypeCheckContext
+from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 
 
 def _property_msg(prop_name: str, method_name: str) -> str:
@@ -301,7 +302,7 @@ def _validate_resource_requirements(
     resource_defs: Mapping[str, ResourceDefinition], solid_def: SolidDefinition
 ) -> None:
     """Validate correctness of resources against required resource keys"""
-    if solid_def.compute_fn.has_context_arg():
+    if cast("DecoratedSolidFunction", solid_def.compute_fn).has_context_arg():
         for requirement in solid_def.get_resource_requirements():
             if not requirement.is_io_manager_requirement:
                 ensure_requirements_satisfied(resource_defs, [requirement])
