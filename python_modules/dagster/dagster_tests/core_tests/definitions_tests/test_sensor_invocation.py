@@ -202,7 +202,6 @@ def test_run_status_sensor_run_request():
         dagster_event=dagster_event,
     )
 
-    # Test no arg invocation
     @run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS)
     def basic_sensor(_):
         return RunRequest(run_key=None, run_config={}, tags={})
@@ -212,10 +211,10 @@ def test_run_status_sensor_run_request():
     # test with context
     @run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS)
     def basic_sensor_w_arg(context):
-        assert context.dagster_event.event_type_value == "PIPELINE_FAILURE"
+        assert context.dagster_event.event_type_value == "PIPELINE_SUCCESS"
         return RunRequest(run_key=None, run_config={}, tags={})
 
-    assert basic_sensor(context).run_config == {}
+    assert basic_sensor_w_arg(context).run_config == {}
 
 
 def test_run_failure_w_run_request():
@@ -250,7 +249,7 @@ def test_run_failure_w_run_request():
     # test with context
     @run_failure_sensor
     def basic_sensor_w_arg(context):
-        assert context.dagster_event.event_type_value == "PIPELINE_SUCCESS"
+        assert context.dagster_event.event_type_value == "PIPELINE_FAILURE"
         return RunRequest(run_key=None, run_config={}, tags={})
 
-    assert basic_sensor(context).run_config == {}
+    assert basic_sensor_w_arg(context).run_config == {}
