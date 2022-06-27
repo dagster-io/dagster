@@ -35,6 +35,13 @@ from dagster_test.graph_job_op_toys.metadata import with_metadata
 from dagster_test.graph_job_op_toys.notebooks import hello_world_notebook_pipeline
 from dagster_test.graph_job_op_toys.partitioned_assets import partitioned_asset_group
 from dagster_test.graph_job_op_toys.retries import retry_job
+from dagster_test.graph_job_op_toys.run_status_sensors import (
+    fails_job,
+    fails_sensor,
+    status_job,
+    succeeds_job,
+    succeeds_sensor,
+)
 from dagster_test.graph_job_op_toys.sleepy import sleepy_job
 from dagster_test.graph_job_op_toys.software_defined_assets import software_defined_assets
 from dagster_test.graph_job_op_toys.unreliable import unreliable_job
@@ -87,6 +94,11 @@ def toys_repository():
             hello_world_notebook_pipeline,
             software_defined_assets,
             with_metadata,
+            succeeds_job,
+            succeeds_sensor,
+            fails_job,
+            fails_sensor,
+            status_job,
         ]
         + get_toys_schedules()
         + get_toys_sensors()

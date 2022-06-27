@@ -178,3 +178,79 @@ def test_run_failure_sensor():
     ).for_run_failure()
 
     failure_sensor(context)
+
+
+def test_run_status_sensor_run_request():
+    @op
+    def succeeds():
+        return 1
+
+    @job
+    def my_job_2():
+        succeeds()
+
+    instance = DagsterInstance.ephemeral()
+    result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
+
+    dagster_run = result.dagster_run
+    dagster_event = result.get_job_success_event()
+
+    context = build_run_status_sensor_context(
+        sensor_name="status_sensor",
+        dagster_instance=instance,
+        dagster_run=dagster_run,
+        dagster_event=dagster_event,
+    )
+
+    # Test no arg invocation
+    @run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS)
+    def basic_sensor(_):
+        return RunRequest(run_key=None, run_config={}, tags={})
+
+    assert basic_sensor(context).run_config == {}
+
+    # test with context
+    @run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS)
+    def basic_sensor_w_arg(context):
+        assert context.dagster_event.event_type_value == "PIPELINE_FAILURE"
+        return RunRequest(run_key=None, run_config={}, tags={})
+
+    assert basic_sensor(context).run_config == {}
+
+
+def test_run_failure_w_run_request():
+    @op
+    def will_fail():
+        raise Exception("failure")
+
+    @job
+    def my_job():
+        will_fail()
+
+    instance = DagsterInstance.ephemeral()
+    result = my_job.execute_in_process(instance=instance, raise_on_error=False)
+
+    dagster_run = result.dagster_run
+    dagster_event = result.get_job_failure_event()
+
+    context = build_run_status_sensor_context(
+        sensor_name="failure_sensor",
+        dagster_instance=instance,
+        dagster_run=dagster_run,
+        dagster_event=dagster_event,
+    ).for_run_failure()
+
+    # Test no arg invocation
+    @run_failure_sensor
+    def basic_sensor(_):
+        return RunRequest(run_key=None, run_config={}, tags={})
+
+    assert basic_sensor(context).run_config == {}
+
+    # test with context
+    @run_failure_sensor
+    def basic_sensor_w_arg(context):
+        assert context.dagster_event.event_type_value == "PIPELINE_SUCCESS"
+        return RunRequest(run_key=None, run_config={}, tags={})
+
+    assert basic_sensor(context).run_config == {}

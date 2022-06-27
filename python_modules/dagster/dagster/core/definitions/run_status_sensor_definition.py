@@ -1,11 +1,11 @@
 import warnings
 from datetime import datetime
-from typing import Any, Callable, List, NamedTuple, Optional, Union, cast
+from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Union, cast
 
 import pendulum
 
 import dagster._check as check
-from dagster.core.definitions import GraphDefinition, PipelineDefinition
+from dagster.core.definitions import GraphDefinition, JobDefinition, PipelineDefinition
 from dagster.core.definitions.sensor_definition import (
     DefaultSensorStatus,
     PipelineRunReaction,
@@ -206,6 +206,9 @@ def pipeline_failure_sensor(
     description: Optional[str] = None,
     pipeline_selection: Optional[List[str]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    run_request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
+    run_request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+    ignore_run_request_job_status: bool = True,
 ) -> Callable[
     [Callable[[PipelineFailureSensorContext], Union[SkipReason, PipelineRunReaction]]],
     SensorDefinition,
@@ -227,6 +230,14 @@ def pipeline_failure_sensor(
             pipeline in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
+        run_request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
+            execute if yielded from the sensor.
+        run_request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
+            A list of jobs to be executed if RunRequests are yielded from the sensor.
+        ignore_run_request_job_status (bool): If set to True, the sensor will not execute for any
+            job in run_request_jobs or run_request_job. This prevents an infinite loop of runs created
+            when a run status sensor starts a run and then is triggered again based on the status of that
+            run.
     """
 
     def inner(
@@ -245,9 +256,12 @@ def pipeline_failure_sensor(
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             default_status=default_status,
+            run_request_job=run_request_job,
+            run_request_jobs=run_request_jobs,
+            ignore_run_request_job_status=ignore_run_request_job_status,
         )
         def _pipeline_failure_sensor(context: RunStatusSensorContext):
-            fn(context.for_pipeline_failure())
+            return fn(context.for_pipeline_failure())
 
         return _pipeline_failure_sensor
 
@@ -265,6 +279,9 @@ def run_failure_sensor(
     job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
     pipeline_selection: Optional[List[str]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    run_request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
+    run_request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+    ignore_run_request_job_status: bool = True,
 ) -> Callable[
     [Callable[[RunFailureSensorContext], Union[SkipReason, PipelineRunReaction]]],
     SensorDefinition,
@@ -289,6 +306,14 @@ def run_failure_sensor(
             the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
+        run_request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
+            execute if yielded from the sensor.
+        run_request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
+            A list of jobs to be executed if RunRequests are yielded from the sensor.
+        ignore_run_request_job_status (bool): If set to True, the sensor will not execute for any
+            job in run_request_jobs or run_request_job. This prevents an infinite loop of runs created
+            when a run status sensor starts a run and then is triggered again based on the status of that
+            run.
     """
 
     def inner(
@@ -308,9 +333,12 @@ def run_failure_sensor(
             job_selection=job_selection,
             pipeline_selection=pipeline_selection,
             default_status=default_status,
+            run_request_job=run_request_job,
+            run_request_jobs=run_request_jobs,
+            ignore_run_request_job_status=ignore_run_request_job_status,
         )
         def _run_failure_sensor(context: RunStatusSensorContext):
-            fn(context.for_run_failure())
+            return fn(context.for_run_failure())
 
         return _run_failure_sensor
 
@@ -357,6 +385,9 @@ class RunStatusSensorDefinition(SensorDefinition):
         description: Optional[str] = None,
         job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+        run_request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
+        run_request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+        ignore_run_request_job_status: bool = True,
     ):
 
         from dagster.core.storage.event_log.base import EventRecordsFilter, RunShardedEventsCursor
@@ -374,6 +405,12 @@ class RunStatusSensorDefinition(SensorDefinition):
             run_status_sensor_fn, "run_status_sensor_fn"
         )
         event_type = PIPELINE_RUN_STATUS_TO_EVENT_TYPE[pipeline_run_status]
+
+        run_request_job_list: List[str] = []
+        if run_request_job:
+            run_request_job_list = [run_request_job.name]
+        if run_request_jobs:
+            run_request_job_list = [job.name for job in run_request_jobs]
 
         def _wrapped_fn(context: SensorEvaluationContext):
             # initiate the cursor to (most recent event id, current timestamp) when:
@@ -462,6 +499,12 @@ class RunStatusSensorDefinition(SensorDefinition):
                         job_selection
                         and pipeline_run.pipeline_name not in map(lambda x: x.name, job_selection)
                     )
+                    or
+                    # the job is the same job as yielded in a RunRequest by the sensor
+                    (
+                        ignore_run_request_job_status
+                        and (pipeline_run.pipeline_name in run_request_job_list)
+                    )
                 ):
                     context.update_cursor(
                         RunStatusSensorCursor(
@@ -478,7 +521,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                         lambda: f'Error occurred during the execution sensor "{name}".',
                     ):
                         # one user code invocation maps to one failure event
-                        run_status_sensor_fn(
+                        yield from run_status_sensor_fn(
                             RunStatusSensorContext(
                                 sensor_name=name,
                                 dagster_run=pipeline_run,
@@ -514,6 +557,8 @@ class RunStatusSensorDefinition(SensorDefinition):
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             default_status=default_status,
+            job=run_request_job,
+            jobs=run_request_jobs,
         )
 
     def __call__(self, *args, **kwargs):
@@ -567,6 +612,9 @@ def run_status_sensor(
     description: Optional[str] = None,
     job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    run_request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
+    run_request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+    ignore_run_request_job_status: bool = True,
 ) -> Callable[
     [Callable[[RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]]],
     RunStatusSensorDefinition,
@@ -592,6 +640,14 @@ def run_status_sensor(
             any job in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
+        run_request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
+            execute if yielded from the sensor.
+        run_request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
+            A list of jobs to be executed if RunRequests are yielded from the sensor.
+        ignore_run_request_job_status (bool): If set to True, the sensor will not execute for any
+            job in run_request_jobs or run_request_job. This prevents an infinite loop of runs created
+            when a run status sensor starts a run and then is triggered again based on the status of that
+            run.
     """
 
     def inner(
@@ -601,18 +657,18 @@ def run_status_sensor(
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
-        def _wrapped_fn(context: RunStatusSensorContext):
-            fn(context)
-
         return RunStatusSensorDefinition(
             name=sensor_name,
             pipeline_run_status=pipeline_run_status,
-            run_status_sensor_fn=_wrapped_fn,
+            run_status_sensor_fn=fn,
             pipeline_selection=pipeline_selection,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job_selection=job_selection,
             default_status=default_status,
+            run_request_job=run_request_job,
+            run_request_jobs=run_request_jobs,
+            ignore_run_request_job_status=ignore_run_request_job_status,
         )
 
     return inner
