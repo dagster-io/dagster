@@ -1503,7 +1503,6 @@ class DagsterInstance:
         Report a EngineEvent that occurred outside of a pipeline execution context.
         """
         from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
-        from dagster.core.events.log import EventLogEntry
 
         check.opt_class_param(cls, "cls")
         check.str_param(message, "message")
@@ -1540,24 +1539,35 @@ class DagsterInstance:
             event_specific_data=engine_event_data,
             step_key=step_key,
         )
+        self.report_dagster_event(dagster_event, run_id=run_id, log_level=log_level)
+        return dagster_event
+
+    def report_dagster_event(
+        self,
+        dagster_event: "DagsterEvent",
+        run_id: str,
+        log_level: Union[str, int] = logging.INFO,
+    ):
+        """
+        Takes a DagsterEvent and stores it in persistent storage for the corresponding PipelineRun
+        """
+        from dagster.core.events.log import EventLogEntry
+
         event_record = EventLogEntry(
             user_message="",
             level=log_level,
-            pipeline_name=pipeline_name,
+            pipeline_name=dagster_event.pipeline_name,
             run_id=run_id,
             error_info=None,
             timestamp=time.time(),
-            step_key=step_key,
+            step_key=dagster_event.step_key,
             dagster_event=dagster_event,
         )
-
         self.handle_new_event(event_record)
-        return dagster_event
 
     def report_run_canceling(self, run, message=None):
 
         from dagster.core.events import DagsterEvent, DagsterEventType
-        from dagster.core.events.log import EventLogEntry
 
         check.inst_param(run, "run", PipelineRun)
         message = check.opt_str_param(
@@ -1570,18 +1580,7 @@ class DagsterInstance:
             pipeline_name=run.pipeline_name,
             message=message,
         )
-
-        event_record = EventLogEntry(
-            user_message="",
-            level=logging.INFO,
-            pipeline_name=run.pipeline_name,
-            run_id=run.run_id,
-            error_info=None,
-            timestamp=time.time(),
-            dagster_event=canceling_event,
-        )
-
-        self.handle_new_event(event_record)
+        self.report_dagster_event(canceling_event, run_id=run.run_id)
 
     def report_run_canceled(
         self,
@@ -1589,7 +1588,6 @@ class DagsterInstance:
         message=None,
     ):
         from dagster.core.events import DagsterEvent, DagsterEventType
-        from dagster.core.events.log import EventLogEntry
 
         check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
 
@@ -1604,22 +1602,13 @@ class DagsterInstance:
             pipeline_name=pipeline_run.pipeline_name,
             message=message,
         )
-        event_record = EventLogEntry(
-            user_message="",
-            level=logging.ERROR,
-            pipeline_name=pipeline_run.pipeline_name,
-            run_id=pipeline_run.run_id,
-            error_info=None,
-            timestamp=time.time(),
-            dagster_event=dagster_event,
+        self.report_dagster_event(
+            dagster_event, run_id=pipeline_run.run_id, log_level=logging.ERROR
         )
-
-        self.handle_new_event(event_record)
         return dagster_event
 
     def report_run_failed(self, pipeline_run, message=None):
         from dagster.core.events import DagsterEvent, DagsterEventType
-        from dagster.core.events.log import EventLogEntry
 
         check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
 
@@ -1634,17 +1623,9 @@ class DagsterInstance:
             pipeline_name=pipeline_run.pipeline_name,
             message=message,
         )
-        event_record = EventLogEntry(
-            user_message="",
-            level=logging.ERROR,
-            pipeline_name=pipeline_run.pipeline_name,
-            run_id=pipeline_run.run_id,
-            error_info=None,
-            timestamp=time.time(),
-            dagster_event=dagster_event,
+        self.report_dagster_event(
+            dagster_event, run_id=pipeline_run.run_id, log_level=logging.ERROR
         )
-
-        self.handle_new_event(event_record)
         return dagster_event
 
     # directories
@@ -1729,7 +1710,6 @@ class DagsterInstance:
             run_id (str): The id of the run the launch.
         """
         from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
-        from dagster.core.events.log import EventLogEntry
         from dagster.core.launcher import LaunchRunContext
 
         run = self.get_run_by_id(run_id)
@@ -1743,17 +1723,7 @@ class DagsterInstance:
             pipeline_name=run.pipeline_name,
         )
 
-        event_record = EventLogEntry(
-            user_message="",
-            level=logging.INFO,
-            pipeline_name=run.pipeline_name,
-            run_id=run.run_id,
-            error_info=None,
-            timestamp=time.time(),
-            dagster_event=launch_started_event,
-        )
-
-        self.handle_new_event(event_record)
+        self.report_dagster_event(launch_started_event, run_id=run.run_id)
 
         run = self.get_run_by_id(run_id)
         if run is None:
