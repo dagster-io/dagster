@@ -5,15 +5,16 @@ from dagster import (
     IOManager,
     ResourceDefinition,
     build_op_context,
+    graph,
     io_manager,
     mem_io_manager,
-    graph,
     op,
-    with_resources,
     resource,
+    with_resources,
     without_resources,
 )
 from dagster.core.asset_defs import AssetsDefinition, SourceAsset, asset, build_assets_job
+from dagster.core.asset_defs.assets import io_manager_key_for_asset_key
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -21,7 +22,6 @@ from dagster.core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster.core.storage.mem_io_manager import InMemoryIOManager
-from dagster.core.asset_defs.assets import io_manager_key_for_asset_key
 
 
 def test_asset():
@@ -74,8 +74,8 @@ def test_without_resources_graph_backed_asset():
         return the_op()
 
     graph_backed = AssetsDefinition(
-        asset_keys_by_input_name={},
-        asset_keys_by_output_name={"result": AssetKey("cool_thing")},
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey("cool_thing")},
         node_def=the_graph,
         resource_defs={"foo": ResourceDefinition.hardcoded_resource("bar")},
     )

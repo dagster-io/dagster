@@ -38,7 +38,7 @@ from dagster.utils.backcompat import (
 
 from .asset_in import AssetIn
 from .asset_out import AssetOut
-from .assets import AssetsDefinition
+from .assets import AssetsDefinition, io_manager_key_for_asset_key
 from .partition_mapping import PartitionMapping
 
 

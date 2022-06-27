@@ -23,7 +23,11 @@ from dagster.core.definitions import (
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.output import OutputDefinition
 from dagster.core.definitions.partition import PartitionsDefinition
-from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
+from dagster.core.definitions.utils import (
+    DEFAULT_GROUP_NAME,
+    DEFAULT_IO_MANAGER_KEY,
+    validate_group_name,
+)
 from dagster.core.errors import DagsterInvalidInvocationError
 from dagster.core.execution.context.compute import OpExecutionContext
 from dagster.utils import merge_dicts
@@ -574,56 +578,56 @@ class AssetsDefinition(ResourceAddable):
     def without_resources(self) -> "AssetsDefinition":
         # In the case where we provided a system-created resource key, we need
         # to remove it without requiring users provide it later.
-        if len(self.asset_keys) == 1 and isinstance(self.node_def, OpDefinition):
+        if isinstance(self.node_def, OpDefinition):
 
-            io_manager_key = io_manager_key_for_asset_key(self.asset_key)
+            output_defs = []
+            for output_def in self.op.output_defs:
+                asset_key = self.keys_by_output_name.get(output_def.name)
+                if output_def.io_manager_key == io_manager_key_for_asset_key(asset_key):
+                    io_manager_key = DEFAULT_IO_MANAGER_KEY
+                    new_required_keys = {
+                        io_manager_key,
+                        *{
+                            key
+                            for key in self.op.required_resource_keys
+                            if key != io_manager_key_for_asset_key(self.asset_key)
+                        },
+                    }
 
-            op_def = self.op
-            output_def = op_def.output_defs[0]
-            if output_def.io_manager_key == io_manager_key_for_asset_key(self.asset_key):
-                io_manager_key = "io_manager"
-                new_required_keys = {
-                    io_manager_key,
-                    *{
-                        key
-                        for key in op_def.required_resource_keys
-                        if key != io_manager_key_for_asset_key(self.asset_key)
-                    },
-                }
+                else:
+                    io_manager_key = output_def.io_manager_key
+                    new_required_keys = self.op.required_resource_keys
 
-            else:
-                io_manager_key = output_def.io_manager_key
-                new_required_keys = op_def.required_resource_keys
-
-            output_def = OutputDefinition(
-                dagster_type=output_def.dagster_type,
-                name=output_def.name,
-                description=output_def.description,
-                is_required=output_def.is_required,
-                io_manager_key=io_manager_key,
-                metadata=output_def.metadata,
-                asset_key=output_def._asset_key,
-                asset_partitions=output_def._asset_partitions_fn,
-                asset_partitions_def=output_def._asset_partitions_def,
-            )
+                output_def = OutputDefinition(
+                    dagster_type=output_def.dagster_type,
+                    name=output_def.name,
+                    description=output_def.description,
+                    is_required=output_def.is_required,
+                    io_manager_key=io_manager_key,
+                    metadata=output_def.metadata,
+                    asset_key=output_def._asset_key,
+                    asset_partitions=output_def._asset_partitions_fn,
+                    asset_partitions_def=output_def._asset_partitions_def,
+                )
+                output_defs.append(output_def)
 
             node_def = OpDefinition(
-                name=op_def.name,
-                input_defs=op_def.input_defs,
-                output_defs=[output_def],
-                compute_fn=op_def.compute_fn,
-                config_schema=op_def.config_schema,
-                description=op_def.description,
-                tags=op_def.tags,
+                name=self.op.name,
+                input_defs=self.op.input_defs,
+                output_defs=output_defs,
+                compute_fn=self.op.compute_fn,
+                config_schema=self.op.config_schema,
+                description=self.op.description,
+                tags=self.op.tags,
                 required_resource_keys=new_required_keys,
-                version=op_def.version,
-                retry_policy=op_def.retry_policy,
+                version=self.op.version,
+                retry_policy=self.op.retry_policy,
             )
         else:
             node_def = self.node_def
         return AssetsDefinition(
-            asset_keys_by_input_name=self._asset_keys_by_input_name,
-            asset_keys_by_output_name=self._asset_keys_by_output_name,
+            keys_by_input_name=self._keys_by_input_name,
+            keys_by_output_name=self._keys_by_output_name,
             node_def=node_def,
             partitions_def=self._partitions_def,
             partition_mappings=self._partition_mappings,
@@ -631,7 +635,7 @@ class AssetsDefinition(ResourceAddable):
             selected_asset_keys=self._selected_asset_keys,
             can_subset=self._can_subset,
             resource_defs=None,
-            group_names=self._group_names,
+            group_names_by_key=self._group_names_by_key,
         )
 
 
