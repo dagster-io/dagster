@@ -194,10 +194,10 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         stderr = self.databricks_runner.client.read_file(
             self._dbfs_path(run_id, step_key, "stderr")
         ).decode()
-        log.info(f"Captured stdout for step {step_key}:")
-        log.info(stdout)
-        log.info(f"Captured stderr for step {step_key}:")
-        log.info(stderr)
+        log.debug(f"Captured stdout for step {step_key}:")
+        log.debug(stdout)
+        log.debug(f"Captured stderr for step {step_key}:")
+        log.debug(stderr)
 
     def step_events_iterator(self, step_context, step_key: str, databricks_run_id: int):
         """The launched Databricks job writes all event records to a specific dbfs file. This iterator
