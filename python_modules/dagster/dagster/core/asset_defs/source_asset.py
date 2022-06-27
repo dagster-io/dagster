@@ -203,3 +203,6 @@ class SourceAsset(
         )
         for source_key, resource_def in self.resource_defs.items():
             yield from resource_def.get_resource_requirements(outer_context=source_key)
+
+    def __str__(self) -> str:
+        return f"SourceAsset with key {self.key.to_string()}"

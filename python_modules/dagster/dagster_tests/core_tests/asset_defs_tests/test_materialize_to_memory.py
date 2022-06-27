@@ -19,6 +19,7 @@ from dagster import (
     multi_asset,
     op,
     with_resources,
+    DagsterInvalidInvocationError,
 )
 
 
@@ -60,7 +61,11 @@ def test_materialize_resources():
     def the_asset(context):
         assert context.resources.foo == "blah"
 
-    assert materialize_to_memory([the_asset]).success
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=r"Attempted to call `materialize_to_memory` for AssetsDefinition with key \[\"the_asset\"\], which has provided resources. All resources must be removed prior to invoking, which can be done using ``without_resources``.",
+    ):
+        materialize_to_memory([the_asset])
 
 
 def test_materialize_resource_instances():
@@ -85,32 +90,12 @@ def test_materialize_resources_not_satisfied():
     ):
         materialize_to_memory([the_asset])
 
-    assert materialize_to_memory(
-        with_resources([the_asset], {"foo": ResourceDefinition.hardcoded_resource("blah")})
-    ).success
-
-
-def test_materialize_conflicting_resources():
-    @asset(resource_defs={"foo": ResourceDefinition.hardcoded_resource("1")})
-    def first():
-        pass
-
-    @asset(resource_defs={"foo": ResourceDefinition.hardcoded_resource("2")})
-    def second():
-        pass
-
     with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Conflicting versions of resource with key 'foo' were provided to different assets.",
-    ):
-        materialize_to_memory([first, second])
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="resource with key 'foo' provided to job conflicts with resource provided to assets. When constructing a job, all resource definitions provided must match by reference equality for a given key.",
+        DagsterInvalidInvocationError,
+        match=r"Attempted to call `materialize_to_memory` for AssetsDefinition with key \[\"the_asset\"\], which has provided resources. All resources must be removed prior to invoking, which can be done using ``without_resources``.",
     ):
         materialize_to_memory(
-            [first], resources={"foo": ResourceDefinition.hardcoded_resource("2")}
+            with_resources([the_asset], {"foo": ResourceDefinition.hardcoded_resource("blah")})
         )
 
 
@@ -132,39 +117,11 @@ def test_materialize_source_assets():
     def the_asset(the_source):
         return the_source + 1
 
-    result = materialize_to_memory([the_asset, the_source])
-    assert result.success
-    assert result.output_for_node("the_asset") == 6
-
-
-def test_materialize_source_asset_conflicts():
-    @io_manager(required_resource_keys={"foo"})
-    def the_manager():
-        pass
-
-    @asset(resource_defs={"foo": ResourceDefinition.hardcoded_resource("1")})
-    def the_asset():
-        pass
-
-    the_source = SourceAsset(
-        key=AssetKey(["the_source"]),
-        io_manager_def=the_manager,
-        resource_defs={"foo": ResourceDefinition.hardcoded_resource("2")},
-    )
-
     with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Conflicting versions of resource with key 'foo' were provided to different assets.",
+        DagsterInvalidInvocationError,
+        match=r"Attempted to call `materialize_to_memory` for SourceAsset with key \[\"the_source\"\], which has provided resources. All resources must be removed prior to invoking, which can be done using ``without_resources``.",
     ):
         materialize_to_memory([the_asset, the_source])
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="resource with key 'foo' provided to job conflicts with resource provided to assets.",
-    ):
-        materialize_to_memory(
-            [the_source], resources={"foo": ResourceDefinition.hardcoded_resource("2")}
-        )
 
 
 def test_materialize_no_assets():
