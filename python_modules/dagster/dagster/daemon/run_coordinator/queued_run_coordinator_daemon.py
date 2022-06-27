@@ -1,12 +1,9 @@
-import logging
 import sys
-import time
 from collections import defaultdict
 from typing import Dict
 
 from dagster import DagsterEvent, DagsterEventType
 from dagster import _check as check
-from dagster.core.events.log import EventLogEntry
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -216,15 +213,5 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             event_type_value=DagsterEventType.PIPELINE_DEQUEUED.value,
             pipeline_name=run.pipeline_name,
         )
-        event_record = EventLogEntry(
-            user_message="",
-            level=logging.INFO,
-            pipeline_name=run.pipeline_name,
-            run_id=run.run_id,
-            error_info=None,
-            timestamp=time.time(),
-            dagster_event=dequeued_event,
-        )
-        instance.handle_new_event(event_record)
-
+        instance.report_dagster_event(dequeued_event, run_id=run.run_id)
         instance.launch_run(run.run_id, workspace)

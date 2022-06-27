@@ -51,7 +51,11 @@ dagit -f serial_asset_graph.py
 
 Navigate to <http://127.0.0.1:3000>. From the **Assets** page, click an asset and then the **Lineage** tab:
 
-<img src="/images/guides/asset-tutorial/serial_asset_graph.png" />
+<Image
+src="/images/guides/asset-tutorial/serial_asset_graph.png"
+width={2662}
+height={1618}
+/>
 
 <br />
 
@@ -122,6 +126,6 @@ dagit -f complex_asset_graph.py
 
 Navigate to <http://127.0.0.1:3000>. From the **Assets** page, click an asset and then the **Lineage** tab:
 
-<img src="/images/guides/asset-tutorial/complex_asset_graph.png" />
+\<Image src="/images/guides/asset-tutorial/complex_asset_graph.png" width={2662} height={1618}
 
 If you click the "Materialize All" button, you'll see that `cereals` executes first, followed by `nabisco_cereals` and `cereal_protein_fractions` executing in parallel, since they don't depend on each other's outputs. Finally, `highest_protein_nabisco_cereal` executes last, only after `nabisco_cereals` and `cereal_protein_fractions` have both executed.

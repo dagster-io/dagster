@@ -48,7 +48,6 @@ import {
   GraphNode,
   isSourceAsset,
   tokenForAssetKey,
-  buildComputeStatusData,
 } from './Utils';
 import {AssetGraphLayout} from './layout';
 import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
@@ -262,11 +261,6 @@ export const AssetGraphExplorerWithData: React.FC<
     }
   };
 
-  const computeStatuses = React.useMemo(
-    () => (assetGraphData ? buildComputeStatusData(assetGraphData, liveDataByNode) : {}),
-    [assetGraphData, liveDataByNode],
-  );
-
   return (
     <SplitPanelContainer
       identifier="explorer"
@@ -330,7 +324,6 @@ export const AssetGraphExplorerWithData: React.FC<
                           <AssetNode
                             definition={graphNode.definition}
                             liveData={liveDataByNode[graphNode.id]}
-                            computeStatus={computeStatuses[graphNode.id]}
                             selected={selectedGraphNodes.includes(graphNode)}
                           />
                         )}

@@ -19,6 +19,7 @@ from dagster.core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 
+from ..implementation.fetch_runs import AssetComputeStatus
 from ..implementation.loader import BatchMaterializationLoader, CrossRepoAssetDependedByLoader
 from . import external
 from .asset_key import GrapheneAssetKey
@@ -79,6 +80,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
 class GrapheneAssetLatestInfo(graphene.ObjectType):
     assetKey = graphene.NonNull(GrapheneAssetKey)
     latestMaterialization = graphene.Field(GrapheneMaterializationEvent)
+    computeStatus = graphene.NonNull(graphene.Enum.from_enum(AssetComputeStatus))
     unstartedRunIds = non_null_list(graphene.String)
     inProgressRunIds = non_null_list(graphene.String)
     latestRun = graphene.Field(GrapheneRun)
