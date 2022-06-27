@@ -6,7 +6,7 @@ import sys
 import tempfile
 import time
 from collections import defaultdict
-from concurrent.futures import Future
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
 
 import pendulum
@@ -565,28 +565,33 @@ def test_counter():
     assert counts["bar"] == 10
 
 
-class MockThreadPoolExecutor:
-    def __init__(self, **kwargs):
-        pass
+def wait_for_futures(futures, timeout=75):
+    start_time = time.time()
+    while True:
+        if not futures:
+            break
+
+        if time.time() - start_time > timeout:
+            raise Exception("Timed out waiting for sensors to evaluate")
+
+        for target_id, future in futures.copy().items():
+            if future.done():
+                del futures[target_id]
+
+        time.sleep(0.5)
+
+
+class SingleThreadPoolExecutor(ThreadPoolExecutor):
+    """
+    Utility class for testing threadpool executor logic which executes functions in a single
+    thread, for easier unit testing.
+    """
+
+    def __init__(self):
+        super().__init__(max_workers=1, thread_name_prefix="sensor_daemon_worker")
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        pass
-
-    def submit(self, fn, *args, **kwargs):
-        # execute functions in series without creating threads
-        # for easier unit testing
-        future = Future()
-
-        try:
-            result = fn(*args, **kwargs)
-            future.set_result(result)
-        except Exception as e:
-            future.set_exception(e)
-
-        return future
-
-    def shutdown(self, wait=True):
         pass

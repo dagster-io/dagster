@@ -9,14 +9,15 @@ from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster.core.test_utils import (
-    MockThreadPoolExecutor,
+    SingleThreadPoolExecutor,
     cleanup_test_instance,
     create_test_daemon_workspace,
     get_crash_signals,
     get_logger_output_from_capfd,
+    wait_for_futures,
 )
 from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.sensor import check_sensor_futures, execute_sensor_iteration
+from dagster.daemon.sensor import execute_sensor_iteration
 from dagster.seven import IS_WINDOWS
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
@@ -37,18 +38,18 @@ def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, deb
                 instance=instance,
             ) as workspace:
                 logger = get_default_daemon_logger("SensorDaemon")
-                future_contexts = {}
+                futures = {}
                 list(
                     execute_sensor_iteration(
                         instance,
                         logger,
                         workspace,
-                        executor=MockThreadPoolExecutor(),
-                        future_contexts=future_contexts,
+                        executor=SingleThreadPoolExecutor(),
                         debug_crash_flags=debug_crash_flags,
+                        debug_futures=futures,
                     )
                 )
-                list(check_sensor_futures(logger, future_contexts))
+                wait_for_futures(futures)
         finally:
             cleanup_test_instance(instance)
 
