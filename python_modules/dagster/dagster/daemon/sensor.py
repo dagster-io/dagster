@@ -311,6 +311,7 @@ def execute_sensor_iteration(
     for external_sensor in sensors.values():
         sensor_name = external_sensor.name
         sensor_debug_crash_flags = debug_crash_flags.get(sensor_name) if debug_crash_flags else None
+        error_info = None
         sensor_state = all_sensor_states.get(external_sensor.selector_id)
         if not sensor_state:
             assert external_sensor.default_status == DefaultSensorStatus.RUNNING
@@ -349,32 +350,39 @@ def _process_tick(
     sensor_debug_crash_flags,
     tick_retention_settings,
 ):
-    tick = instance.create_tick(
-        TickData(
-            instigator_origin_id=sensor_state.instigator_origin_id,
-            instigator_name=sensor_state.instigator_name,
-            instigator_type=InstigatorType.SENSOR,
-            status=TickStatus.STARTED,
-            timestamp=now.timestamp(),
-            selector_id=external_sensor.selector_id,
-        )
-    )
-
-    _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
-
-    with SensorLaunchContext(
-        external_sensor, tick, instance, logger, tick_retention_settings
-    ) as tick_context:
-        _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
-        return list(
-            _evaluate_sensor(
-                tick_context,
-                instance,
-                workspace,
-                external_sensor,
-                sensor_state,
-                sensor_debug_crash_flags,
+    try:
+        tick = instance.create_tick(
+            TickData(
+                instigator_origin_id=sensor_state.instigator_origin_id,
+                instigator_name=sensor_state.instigator_name,
+                instigator_type=InstigatorType.SENSOR,
+                status=TickStatus.STARTED,
+                timestamp=now.timestamp(),
+                selector_id=external_sensor.selector_id,
             )
+        )
+
+        _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
+
+        with SensorLaunchContext(
+            external_sensor, tick, instance, logger, tick_retention_settings
+        ) as tick_context:
+            _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
+            return list(
+                _evaluate_sensor(
+                    tick_context,
+                    instance,
+                    workspace,
+                    external_sensor,
+                    sensor_state,
+                    sensor_debug_crash_flags,
+                )
+            )
+
+    except Exception:
+        error_info = serializable_error_info_from_exc_info(sys.exc_info())
+        logger.error(
+            f"Sensor daemon caught an error for sensor {external_sensor.name} : {error_info.to_string()}"
         )
 
 

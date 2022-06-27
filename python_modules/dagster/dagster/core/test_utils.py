@@ -418,12 +418,7 @@ def get_terminate_signal():
 
 
 def get_crash_signals():
-    if sys.platform == "win32":
-        return [
-            get_terminate_signal()
-        ]  # Windows keeps resources open after termination in a way that messes up tests
-    else:
-        return [get_terminate_signal(), signal.SIGINT]
+    return [get_terminate_signal()]
 
 
 _mocked_system_timezone = {"timezone": None}
@@ -567,18 +562,13 @@ def test_counter():
 
 def wait_for_futures(futures, timeout=75):
     start_time = time.time()
-    while True:
-        if not futures:
-            break
+    end_time = start_time + timeout
+    for target_id, future in futures.copy().items():
+        future_timeout = max(0, timeout - (time.time() - start_time))
 
-        if time.time() - start_time > timeout:
-            raise Exception("Timed out waiting for sensors to evaluate")
-
-        for target_id, future in futures.copy().items():
-            if future.done():
-                del futures[target_id]
-
-        time.sleep(0.5)
+        if not future.done():
+            future.result(timeout=future_timeout)
+            del futures[target_id]
 
 
 class SingleThreadPoolExecutor(ThreadPoolExecutor):
@@ -589,9 +579,3 @@ class SingleThreadPoolExecutor(ThreadPoolExecutor):
 
     def __init__(self):
         super().__init__(max_workers=1, thread_name_prefix="sensor_daemon_worker")
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        pass
