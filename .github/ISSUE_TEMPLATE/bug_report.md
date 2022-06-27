@@ -20,6 +20,15 @@ assignees: ''
 
 
 
+## Dagster Version
+<!-- Add information about your Dagster and Dagit version here. -->
+<!-- Copy and paste the output from: -->
+<!-- * `dagster --version` -->
+<!-- * `dagit --version` -->
+
+
+
+
 ## Dagit UI/UX Issue Screenshots
 <!-- (Optional) -->
 
