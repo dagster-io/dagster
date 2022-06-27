@@ -109,9 +109,8 @@ class InputDefinition:
             )
 
         if root_manager_key and input_manager_key:
-            # TODO make real exception
-            raise Exception(
-                f"can't have both root input manager key {root_manager_key} and input manager key {input_manager_key} for input {name}"
+            raise DagsterInvalidDefinitionError(
+                f"Can't supply both root input manager key {root_manager_key} and input manager key {input_manager_key} on InputDefinition."
             )
 
         self._root_manager_key = check.opt_str_param(root_manager_key, "root_manager_key")
@@ -421,10 +420,8 @@ class In(
         input_manager_key: Optional[str] = None,
     ):
         if root_manager_key and input_manager_key:
-            # TODO make real exception
-
-            raise Exception(
-                f"can't have both root input manager key {root_manager_key} and input manager key {input_manager_key}"
+            raise DagsterInvalidDefinitionError(
+                f"Can't supply both root input manager key {root_manager_key} and input manager key {input_manager_key} on InputDefinition."
             )
 
         if root_manager_key:

@@ -332,7 +332,7 @@ class SolidDefinition(NodeDefinition):
                         key=io_manager_key,
                         node_description=node_description,
                         input_name=input_def.name,
-                        root_input=False,  # TODO maybe need to be true
+                        root_input=False,
                     )
 
         for output_def in self.output_defs:
