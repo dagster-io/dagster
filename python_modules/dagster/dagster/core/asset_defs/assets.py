@@ -581,22 +581,14 @@ class AssetsDefinition(ResourceAddable):
         if isinstance(self.node_def, OpDefinition):
 
             output_defs = []
+            replaced_io_manager_keys = set()
             for output_def in self.op.output_defs:
                 asset_key = self.keys_by_output_name.get(output_def.name)
                 if output_def.io_manager_key == io_manager_key_for_asset_key(asset_key):
                     io_manager_key = DEFAULT_IO_MANAGER_KEY
-                    new_required_keys = {
-                        io_manager_key,
-                        *{
-                            key
-                            for key in self.op.required_resource_keys
-                            if key != io_manager_key_for_asset_key(self.asset_key)
-                        },
-                    }
-
+                    replaced_io_manager_keys.add(io_manager_key_for_asset_key(asset_key))
                 else:
                     io_manager_key = output_def.io_manager_key
-                    new_required_keys = self.op.required_resource_keys
 
                 output_def = OutputDefinition(
                     dagster_type=output_def.dagster_type,
@@ -611,6 +603,18 @@ class AssetsDefinition(ResourceAddable):
                 )
                 output_defs.append(output_def)
 
+            if replaced_io_manager_keys:
+                required_resource_keys = {
+                    DEFAULT_IO_MANAGER_KEY,
+                    *{
+                        key
+                        for key in self.op.required_resource_keys
+                        if key not in replaced_io_manager_keys
+                    },
+                }
+            else:
+                required_resource_keys = self.op.required_resource_keys
+
             node_def = OpDefinition(
                 name=self.op.name,
                 input_defs=self.op.input_defs,
@@ -619,7 +623,7 @@ class AssetsDefinition(ResourceAddable):
                 config_schema=self.op.config_schema,
                 description=self.op.description,
                 tags=self.op.tags,
-                required_resource_keys=new_required_keys,
+                required_resource_keys=required_resource_keys,
                 version=self.op.version,
                 retry_policy=self.op.retry_policy,
             )

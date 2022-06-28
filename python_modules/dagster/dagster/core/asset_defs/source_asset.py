@@ -164,7 +164,7 @@ class SourceAsset(
     def without_resources(self) -> "SourceAsset":
         from .assets import io_manager_key_for_asset_key
 
-        if self.get_io_manager_key() == "io_manager":
+        if self.get_io_manager_key() == DEFAULT_IO_MANAGER_KEY:
             io_manager_key = None
         elif self.get_io_manager_key() == io_manager_key_for_asset_key(self.key):
             io_manager_key = None
