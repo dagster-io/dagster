@@ -1,6 +1,5 @@
-from collections.abc import Iterable
 from functools import update_wrapper
-from typing import Any, Callable, Optional, Union, overload
+from typing import Any, Callable, List, Optional, Union, overload
 
 import dagster._check as check
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -21,24 +20,8 @@ from ..unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 
 def _flatten(items):
-    from dagster.core.asset_defs import AssetGroup, AssetsDefinition, SourceAsset
-
-    BaseTypes = (
-        PipelineDefinition,
-        PartitionSetDefinition,
-        ScheduleDefinition,
-        SensorDefinition,
-        GraphDefinition,
-        AssetGroup,
-        AssetsDefinition,
-        SourceAsset,
-        UnresolvedAssetJobDefinition,
-        str,
-        bytes,
-    )
-
     for x in items:
-        if isinstance(x, Iterable) and not isinstance(x, BaseTypes):
+        if isinstance(x, List):
             yield from _flatten(x)
         else:
             yield x
