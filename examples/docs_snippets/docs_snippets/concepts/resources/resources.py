@@ -108,12 +108,8 @@ def do_database_stuff():
     op_requires_resources()
 
 
-do_database_stuff_prod = do_database_stuff.to_job(
-    resource_defs={"database": database_resource_a}
-)
-do_database_stuff_dev = do_database_stuff.to_job(
-    resource_defs={"database": database_resource_b}
-)
+do_database_stuff_prod = do_database_stuff.to_job(resource_defs={"database": database_resource_a})
+do_database_stuff_dev = do_database_stuff.to_job(resource_defs={"database": database_resource_b})
 
 
 # end_graph_example
@@ -247,8 +243,8 @@ def do_something_with_resource(_):
     pass
 
 
-# start_with_resources_example
-from dagster import with_resources, asset, resource
+# start_asset_use_resource
+from dagster import asset
 
 
 @asset(required_resource_keys={"foo"})
@@ -256,12 +252,26 @@ def asset_requires_resource(context):
     do_something_with_resource(context.resources.foo)
 
 
+# end_asset_use_resource
+
+
 @resource
 def foo_resource():
     ...
 
 
-transformed_asset = with_resources([asset_requires_resource], {"foo": foo_resource})[0]
+# start_asset_provide_resource
+from dagster import repository, with_resources
 
 
-# end_with_resources_example
+@repository
+def repo():
+    return [
+        *with_resources(
+            definitions=[asset_requires_resource],
+            resource_defs={"foo": foo_resource},
+        )
+    ]
+
+
+# end_asset_provide_resource

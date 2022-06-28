@@ -50,26 +50,59 @@ def cereal_fetcher(init_context):
 
 ---
 
-## Accessing resources
+## Using resources
 
-- [In ops](#in-ops)
-- [In software-defined assets](#in-software-defined-assets)
+- [With software-defined assets](#using-resources-with-software-defined-assets)
+- [With ops](#using-resources-with-ops)
 
-### In software-defined assets
+### Using resources with software-defined assets
+
+- [Accessing resources](#accessing-resources-in-software-defined-assets)
+- [Providing resources](#providing-resources-to-software-defined-assets)
+
+#### Accessing resources in software-defined assets
 
 Software-defined assets use resource keys to access resources:
 
-```python file=/concepts/assets/asset_config.py startafter=start_example endbefore=end_example
-@asset(config_schema={"api_endpoint": str})
-def my_configurable_asset(context):
-    api_endpoint = context.op_config["api_endpoint"]
-    data = requests.get(f"{api_endpoint}/data").json()
-    return data
+```python file=/concepts/resources/resources.py startafter=start_asset_use_resource endbefore=end_asset_use_resource
+from dagster import asset
+
+
+@asset(required_resource_keys={"foo"})
+def asset_requires_resource(context):
+    do_something_with_resource(context.resources.foo)
 ```
 
-### In ops
+#### Providing resources to software-defined assets
 
-Ops use resource keys to access resources:
+Resources can be provided to software-defined assets using the <PyObject object="with_resources" /> function. This function takes in a sequence of assets and returns transformed versions of those assets with the provided resources specified:
+
+```python file=/concepts/resources/resources.py startafter=start_asset_provide_resource endbefore=end_asset_provide_resource
+from dagster import repository, with_resources
+
+
+@repository
+def repo():
+    return [
+        *with_resources(
+            definitions=[asset_requires_resource],
+            resource_defs={"foo": foo_resource},
+        )
+    ]
+```
+
+When defining asset jobs (using <PyObject object="define_asset_job" />), you don't need to provide resources to the job directly. The job will make use of the resources provided to the assets.
+
+---
+
+### Using resources with ops
+
+- [Accessing resources](#accessing-resources-in-ops)
+- [Providing resources](#providing-resources-to-ops)
+
+#### Accessing resources in ops
+
+Like software-defined assets, ops use resource keys to access resources:
 
 ```python file=/concepts/resources/resources.py startafter=start_op_with_resources_example endbefore=end_op_with_resources_example
 from dagster import op
@@ -82,35 +115,7 @@ def op_requires_resources(context):
     context.resources.database.execute_query(CREATE_TABLE_1_QUERY)
 ```
 
----
-
-## Providing resources
-
-- [To software-defined assets](#to-software-defined-assets)
-- [To jobs](#to-jobs)
-
-### To software-defined assets
-
-Resources can be provided to software-defined assets using the <PyObject object="with_resources" /> function. This function takes in a sequence of assets and returns transformed versions of those assets with the provided resources specified:
-
-```python file=/concepts/resources/resources.py startafter=start_with_resources_example endbefore=end_with_resources_example
-from dagster import with_resources, asset, resource
-
-
-@asset(required_resource_keys={"foo"})
-def asset_requires_resource(context):
-    do_something_with_resource(context.resources.foo)
-
-
-@resource
-def foo_resource():
-    ...
-
-
-transformed_asset = with_resources([asset_requires_resource], {"foo": foo_resource})[0]
-```
-
-### To jobs
+#### Providing resources to ops
 
 Jobs provide resources to the ops inside them. A job has a dictionary that maps resource keys to resource definitions. You can supply this dictionary to the `resource_defs` argument when using either of the ways to construct a job: <PyObject object="GraphDefinition" method="to_job" /> or <PyObject object="job" decorator />.
 
@@ -125,12 +130,8 @@ def do_database_stuff():
     op_requires_resources()
 
 
-do_database_stuff_prod = do_database_stuff.to_job(
-    resource_defs={"database": database_resource_a}
-)
-do_database_stuff_dev = do_database_stuff.to_job(
-    resource_defs={"database": database_resource_b}
-)
+do_database_stuff_prod = do_database_stuff.to_job(resource_defs={"database": database_resource_a})
+do_database_stuff_dev = do_database_stuff.to_job(resource_defs={"database": database_resource_b})
 ```
 
 Supplying resources to the <PyObject object="job" decorator />, i.e. when there aren't multiple jobs for the same graph, is also useful. For example, if you want to use an off-the-shelf resource or supply configuration in one place instead of in every op.
