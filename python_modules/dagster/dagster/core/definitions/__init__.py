@@ -140,6 +140,7 @@ from .sensor_definition import (
 from .solid_container import create_execution_structure
 from .solid_definition import CompositeSolidDefinition, NodeDefinition, SolidDefinition
 from .time_window_partitions import (
+    TimeWindow,
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition,
