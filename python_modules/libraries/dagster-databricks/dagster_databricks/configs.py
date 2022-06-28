@@ -589,20 +589,26 @@ def _define_adls2_storage_credentials():
     )
 
 
-def _define_storage_credentials():
-    return Selector(
-        {"s3": _define_s3_storage_credentials(), "adls2": _define_adls2_storage_credentials()},
-    )
-
-
 def define_databricks_storage_config():
     return Field(
         Selector(
-            {"s3": _define_s3_storage_credentials(), "adls2": _define_adls2_storage_credentials()}
+            {
+                "s3": _define_s3_storage_credentials(),
+                "adls2": _define_adls2_storage_credentials(),
+                "N/A": Field(Permissive(), description="Use if no storage configuration necessary"),
+            }
         ),
         description="Databricks storage configuration for either S3 or ADLS2. If access credentials "
         "for your Databricks storage are stored in Databricks secrets, this config indicates the "
         "secret scope and the secret keys used to access either S3 or ADLS2.",
+        is_required=False,
+    )
+
+
+def define_databricks_env_variables():
+    return Field(
+        Permissive(),
+        description="Dictionary of arbitrary environment variables",
         is_required=False,
     )
 

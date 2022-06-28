@@ -58,6 +58,7 @@ BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG: Dict[str, object] = {
         ],
     },
     "secrets_to_env_variables": [],
+    "env_variables": {},
     "storage": {
         "s3": {
             "secret_scope": "dagster-databricks-tests",
@@ -273,3 +274,4 @@ def test_do_it_live_databricks_adls2():
         },
     )
     assert result.success
+# 
