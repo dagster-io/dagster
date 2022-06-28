@@ -94,6 +94,7 @@ class DaemonIterationWorkspace(BaseDaemonWorkspace):
     on the parent workspace that get_workspace_copy_for_iteration() was called on to create
     this workspace.
     """
+
     def __init__(self, location_entries_copy):
         self._location_entries_copy = location_entries_copy
         super().__init__()
