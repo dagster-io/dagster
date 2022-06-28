@@ -3,7 +3,6 @@ import warnings
 
 import graphene
 import pendulum
-import yaml
 
 import dagster._check as check
 from dagster.core.definitions.schedule_definition import ScheduleExecutionData
@@ -20,6 +19,7 @@ from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 from dagster.seven.compat.pendulum import to_timezone
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster.utils.yaml_utils import dump_run_config_yaml
 
 from ..implementation.fetch_schedules import get_schedule_next_tick
 from ..implementation.fetch_sensors import get_sensor_next_tick
@@ -247,7 +247,7 @@ class GrapheneRunRequest(graphene.ObjectType):
         ]
 
     def resolve_runConfigYaml(self, _graphene_info):
-        return yaml.dump(self._run_request.run_config, default_flow_style=False, allow_unicode=True)
+        return dump_run_config_yaml(self._run_request.run_config)
 
 
 class GrapheneFutureInstigationTicks(graphene.ObjectType):
