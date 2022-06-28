@@ -493,3 +493,15 @@ retention:
 ```
 
 By default, Dagster retains skipped sensor ticks for 7 days and retains all other ticks indefinitely.
+
+### Sensor evaluation
+
+The `sensors` key lets you configure how your sensors get evaluated. If you want your sensors to be evaluated asynchronously, you can set the `use_threads` attribute as well as a `num_workers` config setting.
+
+```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_sensors endbefore=end_marker_sensors
+sensors:
+  use_threads: true
+  num_workers: 8
+```
+
+By default, Dagster evaluates sensors synchronously.

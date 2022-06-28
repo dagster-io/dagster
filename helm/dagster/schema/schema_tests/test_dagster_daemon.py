@@ -250,9 +250,7 @@ def test_daemon_labels(template: HelmTemplate):
     assert set(pod_labels.items()).issubset(daemon_deployment.spec.template.metadata.labels.items())
 
 
-def test_sensor_threading(template: HelmTemplate):
-    deployment_labels = {"deployment_label": "label"}
-    pod_labels = {"pod_label": "label"}
+def test_sensor_threading(instance_template: HelmTemplate):
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(
             sensors=Sensors.construct(
