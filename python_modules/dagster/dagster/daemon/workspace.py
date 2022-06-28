@@ -71,8 +71,7 @@ class BaseDaemonWorkspace(IWorkspace):
 
         return location_entry.repository_location
 
-    # change this default param
-    def cleanup(self, cleanup_locations: bool = True) -> None:
+    def cleanup(self, cleanup_locations: bool) -> None:
         if self._location_entries != None:
             if cleanup_locations:
                 for location_entry in self._location_entries.values():

@@ -1,4 +1,5 @@
 import concurrent.futures
+import multiprocessing
 import os
 import sys
 import time
@@ -176,6 +177,46 @@ def _check_for_debug_crash(debug_crash_flags, key):
 RELOAD_WORKSPACE = 60
 
 
+class SynchronousExecutor:
+    """
+    Executes functions in series without creating threads, creating a uniform execution interface
+    """
+
+    def __init__(self, **kwargs):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        pass
+
+    def submit(self, fn, *args, **kwargs):
+        future = concurrent.futures.Future()
+
+        try:
+            result = fn(*args, **kwargs)
+            future.set_result(result)
+        except Exception as e:
+            future.set_exception(e)
+
+        return future
+
+    def shutdown(self, wait=True):
+        pass
+
+
+def sensor_executor(instance):
+    settings = instance.get_settings("sensors")
+
+    if settings.get("use_threads"):
+        return concurrent.futures.ThreadPoolExecutor(
+            max_workers=settings.get("num_workers"),
+            thread_name_prefix="sensor_daemon_worker",
+        )
+    return SynchronousExecutor()
+
+
 def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
     """
     Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
@@ -185,12 +226,7 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
     """
     workspace_loaded_time = pendulum.now("UTC").timestamp()
 
-    max_workers = int(os.getenv("DAGSTER_SENSOR_DAEMON_THREADPOOL_WORKERS", "3"))
-
-    with concurrent.futures.ThreadPoolExecutor(
-        max_workers=max_workers,
-        thread_name_prefix="sensor_daemon_worker",
-    ) as executor:
+    with sensor_executor(instance) as executor:
         workspace_iteration = 0
         start_time = pendulum.now("UTC").timestamp()
         while True:
