@@ -18,6 +18,7 @@ from dagster import (
     resource,
 )
 from dagster._check import CheckError
+from dagster.core.test_utils import instance_for_test
 from dagster.core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster.core.storage.mem_io_manager import InMemoryIOManager
@@ -458,7 +459,9 @@ def test_multi_asset_resources_execution():
         yield Output(1, "key1")
         yield Output(2, "key2")
 
-    materialize_to_memory([my_asset])
+    with instance_for_test() as instance:
+        result = materialize([my_asset], instance=instance)
+        assert result.success
 
     assert foo_list == [1]
     assert bar_list == [2]
@@ -480,9 +483,10 @@ def test_graph_backed_asset_resources():
         keys_by_output_name={"result": AssetKey("the_asset")},
         resource_defs={"foo": ResourceDefinition.hardcoded_resource("value")},
     )
-    result = materialize_to_memory([asset_provided_resources])
-    assert result.success
-    assert result.output_for_node("basic") == "value"
+    with instance_for_test() as instance:
+        result = materialize([asset_provided_resources], instance=instance)
+        assert result.success
+        assert result.output_for_node("basic") == "value"
 
     asset_not_provided_resources = AssetsDefinition.from_graph(
         graph_def=basic,
