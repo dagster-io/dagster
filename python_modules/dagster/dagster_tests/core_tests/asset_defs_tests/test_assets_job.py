@@ -3,33 +3,34 @@ import os
 import pytest
 
 from dagster import (
-    AssetGroup,
     AssetKey,
     AssetOut,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
     DependencyDefinition,
     Field,
     GraphIn,
     GraphOut,
     IOManager,
+    In,
     Out,
     Output,
     ResourceDefinition,
     StaticPartitionsDefinition,
-    execute_pipeline,
     graph,
-    in_process_executor,
     io_manager,
+    materialize_to_memory,
     multi_asset,
     op,
     resource,
 )
 from dagster.config.source import StringSource
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job
+from dagster.core.asset_defs.asset_group import AssetGroup
 from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.errors import DagsterInvalidSubsetError
+from dagster.core.definitions.executor_definition import in_process_executor
+from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
+from dagster.core.execution.api import execute_pipeline
 from dagster.core.snap import DependencyStructureIndex
 from dagster.core.snap.dep_snapshot import (
     OutputHandleSnap,
@@ -194,36 +195,6 @@ def test_asset_key_and_inferred():
     assert result.success
     assert result.output_for_node("asset_baz") == 7
     assert _asset_keys_for_node(result, "asset_baz") == {AssetKey("asset_baz")}
-
-
-def test_asset_key_for_asset_with_key_prefix_list():
-    @asset(key_prefix=["hell", "o"])
-    def asset_foo():
-        return "foo"
-
-    @asset(
-        ins={"foo": AssetIn(asset_key=AssetKey("asset_foo"))}
-    )  # Should fail because asset_foo is defined with key_prefix, so has asset key ["hello", "asset_foo"]
-    def failing_asset(foo):  # pylint: disable=unused-argument
-        pass
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-    ):
-        build_assets_job("lol", [asset_foo, failing_asset])
-
-    @asset(ins={"foo": AssetIn(asset_key=AssetKey(["hell", "o", "asset_foo"]))})
-    def success_asset(foo):
-        return foo
-
-    job = build_assets_job("lol", [asset_foo, success_asset])
-
-    result = job.execute_in_process()
-    assert result.success
-    assert result.output_for_node("success_asset") == "foo"
-    assert _asset_keys_for_node(result, "hell__o__asset_foo") == {
-        AssetKey(["hell", "o", "asset_foo"])
-    }
 
 
 def test_asset_key_for_asset_with_key_prefix_str():
@@ -698,11 +669,11 @@ def test_fail_with_get_output_asset_key():
 
 
 def test_internal_asset_deps():
-    with pytest.raises(Exception, match="output_name non_exist_output_name"):
+    @op
+    def my_op(x, y):  # pylint: disable=unused-argument
+        return x
 
-        @op
-        def my_op(x, y):  # pylint: disable=unused-argument
-            return x
+    with pytest.raises(Exception, match="output_name non_exist_output_name"):
 
         @graph(ins={"x": GraphIn()})
         def my_graph(x, y):
@@ -711,6 +682,57 @@ def test_internal_asset_deps():
         AssetsDefinition.from_graph(
             graph_def=my_graph, internal_asset_deps={"non_exist_output_name": {AssetKey("b")}}
         )
+
+    with pytest.raises(Exception, match="output_name non_exist_output_name"):
+        AssetsDefinition.from_op(
+            op_def=my_op, internal_asset_deps={"non_exist_output_name": {AssetKey("b")}}
+        )
+
+
+def test_asset_def_from_op_inputs():
+    @op(ins={"my_input": In(), "other_input": In()}, out={"out1": Out(), "out2": Out()})
+    def my_op(my_input, other_input):  # pylint: disable=unused-argument
+        pass
+
+    assets_def = AssetsDefinition.from_op(
+        op_def=my_op,
+        keys_by_input_name={"my_input": AssetKey("x_asset"), "other_input": AssetKey("y_asset")},
+    )
+
+    assert assets_def.keys_by_input_name["my_input"] == AssetKey("x_asset")
+    assert assets_def.keys_by_input_name["other_input"] == AssetKey("y_asset")
+    assert assets_def.keys_by_output_name["out1"] == AssetKey("out1")
+    assert assets_def.keys_by_output_name["out2"] == AssetKey("out2")
+
+
+def test_asset_def_from_op_outputs():
+    @op(ins={"my_input": In(), "other_input": In()}, out={"out1": Out(), "out2": Out()})
+    def x_op(my_input, other_input):  # pylint: disable=unused-argument
+        pass
+
+    assets_def = AssetsDefinition.from_op(
+        op_def=x_op,
+        keys_by_output_name={"out2": AssetKey("y_asset"), "out1": AssetKey("x_asset")},
+    )
+
+    assert assets_def.keys_by_output_name["out2"] == AssetKey("y_asset")
+    assert assets_def.keys_by_output_name["out1"] == AssetKey("x_asset")
+    assert assets_def.keys_by_input_name["my_input"] == AssetKey("my_input")
+    assert assets_def.keys_by_input_name["other_input"] == AssetKey("other_input")
+
+
+def test_asset_from_op_no_args():
+    @op
+    def my_op(x, y):  # pylint: disable=unused-argument
+        return x
+
+    assets_def = AssetsDefinition.from_op(
+        op_def=my_op,
+    )
+
+    assert assets_def.keys_by_input_name["x"] == AssetKey("x")
+    assert assets_def.keys_by_input_name["y"] == AssetKey("y")
+    assert assets_def.keys_by_output_name["result"] == AssetKey("my_op")
 
 
 def test_asset_def_from_graph_inputs():
@@ -1649,3 +1671,55 @@ def test_transitive_io_manager_dep_not_provided():
         match="resource with key 'foo' required by resource with key 'my_source_asset__io_manager' was not provided.",
     ):
         build_assets_job(name="test", assets=[my_derived_asset], source_assets=[my_source_asset])
+
+
+def test_resolve_dependency_in_group():
+    @asset(key_prefix="abc")
+    def asset1():
+        ...
+
+    @asset
+    def asset2(context, asset1):
+        del asset1
+        assert context.asset_key_for_input("asset1") == AssetKey(["abc", "asset1"])
+
+    assert materialize_to_memory([asset1, asset2]).success
+
+
+def test_resolve_dependency_fail_across_groups():
+    @asset(key_prefix="abc", group_name="other")
+    def asset1():
+        ...
+
+    @asset
+    def asset2(asset1):
+        del asset1
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="is not produced by any of the provided asset ops and is not one of the provided sources",
+    ):
+        materialize_to_memory([asset1, asset2])
+
+
+def test_resolve_dependency_multi_asset_different_groups():
+    @asset(key_prefix="abc", group_name="a")
+    def upstream():
+        ...
+
+    @op(out={"ns1": Out(), "ns2": Out()})
+    def op1(upstream):
+        del upstream
+
+    assets = AssetsDefinition(
+        keys_by_input_name={"upstream": AssetKey("upstream")},
+        keys_by_output_name={"ns1": AssetKey("ns1"), "ns2": AssetKey("ns2")},
+        node_def=op1,
+        group_names_by_key={AssetKey("ns1"): "a", AssetKey("ns2"): "b"},
+    )
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="is not produced by any of the provided asset ops and is not one of the provided sources",
+    ):
+        materialize_to_memory([upstream, assets])

@@ -6,14 +6,14 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {withMiddleTruncation} from '../app/Util';
-import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {NodeHighlightColors} from '../graph/OpNode';
 import {OpTags} from '../graph/OpTags';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {AssetComputeStatus} from '../types/globalTypes';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
-import {ComputeStatus, displayNameForAssetKey, LiveDataForNode} from './Utils';
+import {displayNameForAssetKey, LiveDataForNode} from './Utils';
 import {ASSET_NODE_ANNOTATIONS_MAX_WIDTH, ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
 
@@ -22,16 +22,16 @@ const MISSING_LIVE_DATA = {
   inProgressRunIds: [],
   runWhichFailedToMaterialize: null,
   lastMaterialization: null,
+  computeStatus: AssetComputeStatus.NONE,
   stepKey: '',
 };
 
 export const AssetNode: React.FC<{
   definition: AssetNodeFragment;
   liveData?: LiveDataForNode;
-  computeStatus?: ComputeStatus;
   selected: boolean;
   inAssetCatalog?: boolean;
-}> = React.memo(({definition, selected, liveData, inAssetCatalog, computeStatus}) => {
+}> = React.memo(({definition, selected, liveData, inAssetCatalog}) => {
   const firstOp = definition.opNames.length ? definition.opNames[0] : null;
   const computeName = definition.graphName || definition.opNames[0] || null;
 
@@ -43,7 +43,7 @@ export const AssetNode: React.FC<{
     maxLength: ASSET_NODE_NAME_MAX_LENGTH,
   });
 
-  const {lastMaterialization} = liveData || MISSING_LIVE_DATA;
+  const {lastMaterialization, computeStatus} = liveData || MISSING_LIVE_DATA;
 
   return (
     <AssetNodeContainer $selected={selected}>
@@ -57,13 +57,7 @@ export const AssetNode: React.FC<{
           </div>
           <div style={{flex: 1}} />
           <div style={{maxWidth: ASSET_NODE_ANNOTATIONS_MAX_WIDTH}}>
-            {computeStatus === 'old' && (
-              <UpstreamNotice>
-                upstream
-                <br />
-                changed
-              </UpstreamNotice>
-            )}
+            <ComputeStatusNotice computeStatus={computeStatus} />
           </div>
         </Name>
         {definition.description && !inAssetCatalog && (
@@ -180,29 +174,22 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
   }
 `;
 
+// Note: This fragment should only contain fields that are needed for
+// useAssetGraphData and the Asset DAG. Some pages of Dagit request this
+// fragment for every AssetNode on the instance. Add fields with care!
+//
 export const ASSET_NODE_FRAGMENT = gql`
   fragment AssetNodeFragment on AssetNode {
     id
-    ...AssetNodeConfigFragment
     graphName
     jobNames
     opNames
     description
-    partitionDefinition
     computeKind
     assetKey {
       path
     }
-    repository {
-      id
-      name
-      location {
-        id
-        name
-      }
-    }
   }
-  ${ASSET_NODE_CONFIG_FRAGMENT}
 `;
 
 const BoxColors = {
@@ -310,6 +297,17 @@ const UpstreamNotice = styled.div`
   margin-right: -6px;
   border-top-right-radius: 3px;
 `;
+
+export const ComputeStatusNotice: React.FC<{computeStatus: AssetComputeStatus}> = ({
+  computeStatus,
+}) =>
+  computeStatus === AssetComputeStatus.OUT_OF_DATE ? (
+    <UpstreamNotice>
+      upstream
+      <br />
+      changed
+    </UpstreamNotice>
+  ) : null;
 
 export const AssetLatestRunWithNotices: React.FC<{
   liveData?: LiveDataForNode;

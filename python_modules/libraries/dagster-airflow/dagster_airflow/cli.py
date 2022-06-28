@@ -2,13 +2,13 @@ import os
 from datetime import datetime, timedelta
 
 import click
-import yaml
 
 import dagster._check as check
 from dagster.cli.load_handle import recon_repo_for_cli_args
 from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.indenting_printer import IndentingStringIoPrinter
+from dagster.utils.yaml_utils import dump_run_config_yaml
 
 
 def construct_environment_yaml(preset_name, config, pipeline_name, module_name):
@@ -59,7 +59,7 @@ def construct_scaffolded_file_contents(module_name, job_name, run_config):
     printer.comment("#")
     printer.line("#" * 80)
     printer.line("ENVIRONMENT = '''")
-    printer.line(yaml.dump(run_config, default_flow_style=False))
+    printer.line(dump_run_config_yaml(run_config))
     printer.line("'''")
     printer.blank_line()
     printer.blank_line()

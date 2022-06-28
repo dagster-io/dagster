@@ -54,9 +54,11 @@ my_second_job_with_metadata = my_graph.to_job(
 
 After attaching metadata to a job, you can view it in dagit by navigating to the job overview page. Metadata will be displayed in the right pane.
 
-<img
+<Image
 alt="job-metadata.png"
 src="/images/concepts/ops-jobs-graphs/job-metadata.png"
+width={2880}
+height={1406}
 />
 
 ## Tags
@@ -79,17 +81,11 @@ In addition to adding tags on the `@job` decorator, you can also add metadata us
 my_second_job_with_tags = my_graph.to_job(tags={"foo": "bar"})
 ```
 
-When executing a job, you can add tags to the run using the Launchpad in Dagit <img
-alt="tag-adder.png"
-src="/images/concepts/ops-jobs-graphs/tag-adder.png"
-/>
+When executing a job, you can add tags to the run using the Launchpad in Dagit <Image alt="tag-adder.png" src="/images/concepts/ops-jobs-graphs/tag-adder.png" width={2880} height={1406} />
 
 ### Viewing Tags
 
-You can view the tags that have been attached to runs by going to the Runs page in Dagit <img
-alt="tags-viewer.png"
-src="/images/concepts/ops-jobs-graphs/tags-viewer.png"
-/>
+You can view the tags that have been attached to runs by going to the Runs page in Dagit <Image alt="tags-viewer.png" src="/images/concepts/ops-jobs-graphs/tags-viewer.png" width={2880} height={1406} />
 
 ### Dagster provided tags
 

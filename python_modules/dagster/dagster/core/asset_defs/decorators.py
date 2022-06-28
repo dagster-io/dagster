@@ -145,6 +145,10 @@ def asset(
             `json.loads(json.dumps(value)) == value`.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If not provided,
             the name "default" is used.
+        resource_defs (Optional[Mapping[str, ResourceDefinition]]):
+            A mapping of resource keys to resource definitions. These resources
+            will be initialized during execution, and can be accessed from the
+            context within the body of the function.
 
     Examples:
 
@@ -255,6 +259,10 @@ class _Asset:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
 
+            required_resource_keys = set(self.required_resource_keys).union(
+                set(self.resource_defs.keys())
+            )
+
             if isinstance(self.io_manager, str):
                 io_manager_key = cast(str, self.io_manager)
             elif self.io_manager is not None:
@@ -274,11 +282,6 @@ class _Asset:
                 description=self.description,
             )
 
-            required_resource_keys = set()
-            for key in self.required_resource_keys:
-                required_resource_keys.add(key)
-            for key in self.resource_defs.keys():
-                required_resource_keys.add(key)
             op = _Op(
                 name="__".join(out_asset_key.path).replace("-", "_"),
                 description=self.description,
@@ -331,6 +334,7 @@ def multi_asset(
     partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
     op_tags: Optional[Dict[str, Any]] = None,
     can_subset: bool = False,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
     upstream assets.
@@ -348,7 +352,7 @@ def multi_asset(
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
             op. If set, Dagster will check that config provided for the op matches this schema and fail
             if it does not. If not set, Dagster will accept any config provided for the op.
-        required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
+        required_resource_keys (Optional[Set[str]]): Set of resource handles required by the underlying op.
         io_manager_key (Optional[str]): The resource key of the IOManager used for storing the
             output of the op as an asset, and for loading it in downstream ops
             (default: "io_manager").
@@ -373,15 +377,27 @@ def multi_asset(
             `json.loads(json.dumps(value)) == value`.
         can_subset (bool): If this asset's computation can emit a subset of the asset
             keys based on the context.selected_assets argument. Defaults to False.
+        resource_defs (Optional[Mapping[str, ResourceDefinition]]):
+            A mapping of resource keys to resource definitions. These resources
+            will be initialized during execution, and can be accessed from the
+            context within the body of the function.
     """
     asset_deps = check.opt_dict_param(
         internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
+    )
+    required_resource_keys = check.opt_set_param(
+        required_resource_keys, "required_resource_keys", of_type=str
+    )
+    resource_defs = check.opt_mapping_param(
+        resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
     )
     config_schema = check.opt_dict_param(
         config_schema,
         "config_schema",
         additional_message="Only dicts are supported for asset config_schema.",
     )
+
+    required_resource_keys = set(required_resource_keys).union(set(resource_defs.keys()))
     for out in outs.values():
         if isinstance(out, Out) and not isinstance(out, AssetOut):
             deprecation_warning(
@@ -416,6 +432,7 @@ def multi_asset(
             )
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
+
             op = _Op(
                 name=op_name,
                 description=description,
@@ -455,6 +472,7 @@ def multi_asset(
             if partition_mappings
             else None,
             can_subset=can_subset,
+            resource_defs=resource_defs,
         )
 
     return inner

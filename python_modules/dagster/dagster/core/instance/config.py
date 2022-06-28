@@ -1,15 +1,20 @@
 import os
 import warnings
+from typing import TYPE_CHECKING, Dict, Optional
 
 from dagster import Array, Bool
 from dagster import _check as check
-from dagster.config import Field, Permissive, Selector
+from dagster.config import Field, Permissive, ScalarUnion, Selector
 from dagster.config.validate import validate_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.storage.config import mysql_config, pg_config
 from dagster.serdes import class_from_code_pointer
 from dagster.utils import merge_dicts
 from dagster.utils.yaml_utils import load_yaml_from_globs
+
+if TYPE_CHECKING:
+    from dagster.core.definitions.run_request import InstigatorType
+    from dagster.core.scheduler.instigation import TickStatus
 
 DAGSTER_CONFIG_YAML_FILENAME = "dagster.yaml"
 
@@ -140,6 +145,77 @@ def python_logs_config_schema():
 DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT = 60
 
 
+def get_default_tick_retention_settings(
+    instigator_type: "InstigatorType",
+) -> Dict["TickStatus", int]:
+    from dagster.core.definitions.run_request import InstigatorType
+    from dagster.core.scheduler.instigation import TickStatus
+
+    if instigator_type == InstigatorType.SCHEDULE:
+        return {
+            TickStatus.STARTED: -1,
+            TickStatus.SKIPPED: -1,
+            TickStatus.SUCCESS: -1,
+            TickStatus.FAILURE: -1,
+        }
+    # for sensor
+    return {
+        TickStatus.STARTED: -1,
+        TickStatus.SKIPPED: 7,
+        TickStatus.SUCCESS: -1,
+        TickStatus.FAILURE: -1,
+    }
+
+
+def _tick_retention_config_schema():
+    return Field(
+        {
+            "purge_after_days": ScalarUnion(
+                scalar_type=int,
+                non_scalar_schema={
+                    "skipped": Field(int, is_required=False),
+                    "success": Field(int, is_required=False),
+                    "failure": Field(int, is_required=False),
+                    "started": Field(int, is_required=False),
+                },
+            )
+        },
+        is_required=False,
+    )
+
+
+def retention_config_schema():
+    return Field(
+        {
+            "schedule": _tick_retention_config_schema(),
+            "sensor": _tick_retention_config_schema(),
+        },
+        is_required=False,
+    )
+
+
+def get_tick_retention_settings(
+    settings: Optional[Dict],
+    default_retention_settings: Dict["TickStatus", int],
+) -> Dict["TickStatus", int]:
+    if not settings or not settings.get("purge_after_days"):
+        return default_retention_settings
+
+    purge_value = settings["purge_after_days"]
+    if isinstance(purge_value, int):
+        # set a number of days retention value for all tick types
+        return {status: purge_value for status, _ in default_retention_settings.items()}
+
+    elif isinstance(purge_value, dict):
+        return {
+            # override the number of days retention value for tick types that are specified
+            status: purge_value.get(status.value.lower(), default_value)
+            for status, default_value in default_retention_settings.items()
+        }
+    else:
+        return default_retention_settings
+
+
 def dagster_instance_config_schema():
     return {
         "local_artifact_storage": config_field_for_configurable_class(),
@@ -177,4 +253,5 @@ def dagster_instance_config_schema():
         "code_servers": Field(
             {"local_startup_timeout": Field(int, is_required=False)}, is_required=False
         ),
+        "retention": retention_config_schema(),
     }

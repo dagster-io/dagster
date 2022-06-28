@@ -92,8 +92,11 @@ export function tokenizedValueFromString(
   return {value: str};
 }
 
+export const tokenToString = (v: TokenizingFieldValue) =>
+  v.token ? `${v.token}:${v.value}` : v.value;
+
 export const tokensAsStringArray = (value: TokenizingFieldValue[]) =>
-  value.filter((v) => v.value !== '').map((v) => (v.token ? `${v.token}:${v.value}` : v.value));
+  value.filter((v) => v.value !== '').map(tokenToString);
 
 export const stringFromValue = (value: TokenizingFieldValue[]) =>
   tokensAsStringArray(value).join(',');
@@ -429,7 +432,6 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
           ) : undefined
         }
       />
-      <StyledTagInput />
     </Popover>
   );
 };

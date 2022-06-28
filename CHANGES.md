@@ -1,5 +1,57 @@
 # Changelog
 
+# 0.15.2
+
+### Bugfixes
+
+* Fixed an issue where asset dependency resolution would break when two assets in the same group had the same name
+
+# 0.15.1
+
+### New
+
+* When Dagster loads an event from the event log of a type that it doesn’t recognize (for example, because it was created by a newer version of Dagster) it will now return a placeholder event rather than raising an exception.
+* AssetsDefinition.from_graph() now accepts a group_name parameter. All assets created by from_graph are assigned to this group.
+* You can define an asset from an op via a new utility method `AssetsDefinition.from_op`. Dagster will infer asset inputs and outputs from the ins/outs defined on the `@op` in the same way as `@graphs`.
+* A default executor definition can be defined on a repository using the `default_executor_def` argument. The default executor definition will be used for all op/asset jobs that don’t explicitly define their own executor.
+* `JobDefinition.run_request_for_partition` now accepts a `tags` argument (Thanks @jburnich!)
+* In Dagit, the graph canvas now has a dotted background to help it stand out from the reset of the UI.
+* `@multi_asset` now accepts a resource_defs argument. The provided resources can be either used on the context, or satisfy the io manager requirements of the outs on the asset.
+* In Dagit, show execution timezone on cron strings, and use 12-hour or 24-hour time format depending on the user’s locale.
+* In Dagit, when viewing a run and selecting a specific step in the Gantt chart, the compute log selection state will now update to that step as well.
+* `define_asset_job` and `to_job` now can now accept a `partitions_def` argument and a `config` argument at the same time, as long as the value for the `config` argument is a hardcoded config dictionary (not a `PartitionedConfig` or `ConfigMapping`)
+
+### Bugfixes
+
+* Fixed an issue where entering a string in the launchpad that is valid YAML but invalid JSON would render incorrectly in Dagit.
+* Fixed an issue where steps using the `k8s_job_executor` and `docker_executor` would sometimes return the same event lines twice in the command-line output for the step.
+* Fixed type annotations on the `@op` decorator (Thanks Milos Tomic!)
+* Fixed an issue where job backfills were not displayed correctly on the Partition view in Dagit.
+* `UnresolvedAssetJobDefinition` now supports the `run_request_for_partition` method.
+* Fixed an issue in Dagit where the Instance Overview page would briefly flash a loading state while loading fresh data.
+
+### Breaking Changes
+
+* Runs that were executed in newer versions of Dagster may produce errors when their event logs are loaded in older versions of Dagit, due to new event types that were recently added. Going forward, Dagit has been made more resilient to handling new events.
+
+### Deprecations
+
+* Updated deprecation warnings to clarify that the deprecated metadata APIs will be removed in 0.16.0, not 0.15.0.
+
+### Experimental
+
+* If two assets are in the same group and the upstream asset has a multi-segment asset key, the downstream asset doesn’t need to specify the full asset key when declaring its dependency on the upstream asset - just the last segment.
+
+### Documentation
+
+* Added dedicated sections for op, graph, and job Concept docs in the sidenav
+* Moved graph documentation from the jobs docs into its [own page](https://docs.dagster.io/concepts/ops-jobs-graphs/graphs)
+* Added documentation for assigning [asset groups](https://docs.dagster.io/concepts/assets/software-defined-assets#grouping-assets) and viewing them in Dagit
+* Added apidoc for `AssetOut` and `AssetIn`
+* Fixed a typo on the Run Configuration concept page (Thanks Wenshuai Hou!)
+* Updated screenshots in the software-defined assets tutorial to match the new Dagit UI
+* Fixed a typo in the **Defining an asset** section of the software-defined assets tutorial (Thanks Daniel Kim!)
+
 # 0.15.0 "Cool for the Summer"
 
 ## Major Changes

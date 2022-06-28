@@ -1074,3 +1074,20 @@ def test_get_mapping_key():
         assert context.get_mapping_key() == "the_key"  # Ensure bound context has mapping key
 
     basic_op(context)
+
+
+def test_required_resource_keys_no_context_invocation():
+    @op(required_resource_keys={"foo"})
+    def uses_resource_no_context():
+        pass
+
+    uses_resource_no_context()
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Too many input arguments were provided for op "
+        "'uses_resource_no_context'. This may be because an argument was "
+        "provided for the context parameter, but no context parameter was "
+        "defined for the solid.",
+    ):
+        uses_resource_no_context(None)
