@@ -4,7 +4,9 @@ status_reporting_job = None
 
 # start
 @run_status_sensor(
-    pipeline_run_status=DagsterRunStatus.SUCCESS, run_request_job=status_reporting_job
+    pipeline_run_status=DagsterRunStatus.SUCCESS,
+    run_request_job=status_reporting_job,
+    ignore_job_selection=[status_reporting_job],
 )
 def report_status_sensor(context):
     run_config = {
