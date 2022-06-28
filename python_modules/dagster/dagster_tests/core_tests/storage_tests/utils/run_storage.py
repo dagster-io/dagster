@@ -1211,17 +1211,32 @@ class TestRunStorage:
         assert len(storage.get_backfills()) == 1
         assert len(storage.get_backfills(status=BulkActionStatus.REQUESTED)) == 0
 
-    def test_bulk_actions(self, storage):
+    def test_bulk_run_actions(self, storage):
         action = BulkRunAction(
-            "foo", BulkActionType.RUN_TERMINATION, BulkActionStatus.REQUESTED, time.time()
+            "foo", BulkActionType.RUN_TERMINATION, BulkActionStatus.REQUESTED, time.time(), []
         )
         storage.add_bulk_run_action(action)
         assert storage.get_bulk_run_action("foo") == action
         action2 = BulkRunAction(
-            "foo", BulkActionType.RUN_TERMINATION, BulkActionStatus.REQUESTED, time.time() + 1000
+            "foo",
+            BulkActionType.RUN_TERMINATION,
+            BulkActionStatus.REQUESTED,
+            time.time() + 1000,
+            [],
         )
         storage.update_bulk_run_action(action2)
         assert storage.get_bulk_run_action("foo") == action2
+
+        action3 = BulkRunAction(
+            "bar",
+            BulkActionType.RUN_TERMINATION,
+            BulkActionStatus.REQUESTED,
+            time.time() + 4000,
+            [],
+        )
+        storage.add_bulk_run_action(action3)
+
+        assert storage.get_bulk_run_actions(BulkActionType.RUN_TERMINATION) == [action3, action2]
 
     def test_secondary_index(self, storage):
         if not isinstance(storage, SqlRunStorage):

@@ -1079,6 +1079,35 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         row = self.fetchone(query)
         return deserialize_as(row[0], BulkRunAction) if row else None
 
+    def get_bulk_run_actions(
+        self,
+        action_type: BulkActionType,
+        status: Optional[BulkActionStatus] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> List[BulkRunAction]:
+        check.inst_param(action_type, "action_type", BulkActionType)
+        check.opt_inst_param(status, "status", BulkActionStatus)
+        check.invariant(
+            action_type != BulkActionType.PARTITION_BACKFILL,
+            "Backfills should use the get_backfills method",
+        )
+        query = db.select([BulkActionsTable.c.body]).where(
+            BulkActionsTable.c.action_type == action_type.value
+        )
+        if status:
+            query = query.where(BulkActionsTable.c.status == status.value)
+        if cursor:
+            cursor_query = db.select([BulkActionsTable.c.id]).where(
+                BulkActionsTable.c.key == cursor
+            )
+            query = query.where(BulkActionsTable.c.id < cursor_query)
+        if limit:
+            query = query.limit(limit)
+        query = query.order_by(BulkActionsTable.c.id.desc())
+        rows = self.fetchall(query)
+        return [deserialize_as(row[0], BulkRunAction) for row in rows]
+
     def add_bulk_run_action(self, bulk_action: BulkRunAction):
         check.inst_param(bulk_action, "bulk_action", BulkRunAction)
         check.invariant(

@@ -15,6 +15,7 @@ from dagster import _check as check
 from dagster.core.telemetry import DAEMON_ALIVE, log_action
 from dagster.core.workspace import IWorkspace
 from dagster.daemon.backfill import execute_backfill_iteration
+from dagster.daemon.bulk_run_actions import execute_bulk_run_action_iteration
 from dagster.daemon.monitoring import execute_monitoring_iteration
 from dagster.daemon.sensor import execute_sensor_iteration_loop
 from dagster.daemon.types import DaemonHeartbeat
@@ -239,6 +240,7 @@ class BackfillDaemon(IntervalDaemon):
 
     def run_iteration(self, instance, workspace):
         yield from execute_backfill_iteration(instance, workspace, self._logger)
+        yield from execute_bulk_run_action_iteration(instance, self._logger)
 
 
 class MonitoringDaemon(IntervalDaemon):

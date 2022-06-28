@@ -9,7 +9,7 @@ from dagster.core.errors import (
 )
 from dagster.core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEvent, DagsterEventType
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster.core.execution.bulk_actions import BulkRunAction
+from dagster.core.execution.bulk_actions import BulkActionType, BulkRunAction
 from dagster.core.snap import (
     ExecutionPlanSnapshot,
     PipelineSnapshot,
@@ -412,6 +412,30 @@ class InMemoryRunStorage(RunStorage):
     def get_bulk_run_action(self, action_id: str) -> Optional[BulkRunAction]:
         check.str_param(action_id, "action_id")
         return self._bulk_actions.get(action_id)
+
+    def get_bulk_run_actions(
+        self,
+        action_type: BulkActionType,
+        status: Optional[BulkActionStatus] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> List[BulkRunAction]:
+        check.inst_param(action_type, "action_type", BulkActionType)
+        check.opt_inst_param(status, "status", BulkActionStatus)
+        check.opt_int_param(cursor, "cursor")
+        check.opt_int_param(limit, "limits")
+
+        check.invariant(
+            action_type != BulkActionType.PARTITION_BACKFILL,
+            "Backfills should use the get_backfills method",
+        )
+
+        actions = [
+            action
+            for action in self._bulk_actions.values()
+            if (not status or status == action.status) and action_type == action.action_type
+        ]
+        return self._slice(actions[::-1], cursor, limit, key_fn=lambda _: _)
 
     def add_bulk_run_action(self, bulk_action: BulkRunAction):
         check.inst_param(bulk_action, "bulk_action", BulkRunAction)
