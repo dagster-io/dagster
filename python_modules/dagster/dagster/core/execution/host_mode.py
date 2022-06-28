@@ -89,7 +89,7 @@ def host_mode_execution_context_event_generator(
 
     loggers = []
 
-    for (logger_def, logger_config) in default_system_loggers():
+    for (logger_def, logger_config) in default_system_loggers(instance):
         loggers.append(
             logger_def.logger_fn(
                 InitLoggerContext(

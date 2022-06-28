@@ -81,13 +81,20 @@ def json_console_logger(init_context):
     return logger_
 
 
-def default_system_loggers():
+def default_system_loggers(instance):
     """If users don't provide configuration for any loggers, we instantiate these loggers with the
     default config.
 
     Returns:
         List[Tuple[LoggerDefinition, dict]]: Default loggers and their associated configs."""
-    return [(colored_console_logger, {"name": "dagster", "log_level": "DEBUG"})]
+
+    log_level = instance.python_log_level if (instance and instance.python_log_level) else "DEBUG"
+    return [
+        (
+            colored_console_logger,
+            {"name": "dagster", "log_level": log_level},
+        )
+    ]
 
 
 def default_loggers():
