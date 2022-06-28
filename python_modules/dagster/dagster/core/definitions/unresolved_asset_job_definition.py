@@ -184,6 +184,26 @@ def define_asset_job(
         partitions_def (Optional[PartitionsDefinition]):
             Defines the set of partitions for this job. All AssetDefinitions selected for this job
             must have a matching PartitionsDefinition.
+
+    Examples:
+
+        .. code-block:: python
+
+            @asset
+            def asset1():
+                ...
+
+            @asset
+            def asset2():
+                ...
+
+            @repository
+            def prod():
+                return [
+                    *with_resources([asset1, asset2], resource_defs=prod_resources),
+                    define_asset_job("all_job"),
+                    define_asset_job("asset1_job", assets=AssetSelection.assets(asset1)),
+                ]
     """
     from dagster.core.asset_defs.asset_selection import AssetSelection
 
