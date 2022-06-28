@@ -92,7 +92,7 @@ def execute_scheduler_iteration_loop(
     while True:
         start_time = pendulum.now("UTC").timestamp()
         if start_time - workspace_loaded_time > RELOAD_WORKSPACE:
-            workspace.cleanup()
+            workspace.cleanup(cleanup_locations=True)
             workspace_loaded_time = pendulum.now("UTC").timestamp()
             workspace_iteration = 0
 
