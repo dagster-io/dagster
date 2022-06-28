@@ -31,6 +31,7 @@ from dagster.serdes.errors import DeserializationError
 from dagster.serdes.serdes import register_serdes_tuple_fallbacks
 from dagster.seven import JSONDecodeError
 from dagster.utils import utc_datetime_from_timestamp
+from dagster.utils.backcompat import deprecation_warning
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from ..decorator_utils import get_function_params
@@ -205,6 +206,7 @@ def pipeline_failure_sensor(
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     pipeline_selection: Optional[List[str]] = None,
+    monitored_pipelines: Optional[List[str]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> Callable[
     [Callable[[PipelineFailureSensorContext], Union[SkipReason, PipelineRunReaction]]],
@@ -222,7 +224,10 @@ def pipeline_failure_sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        pipeline_selection (Optional[List[str]]): Names of the pipelines that will be monitored by
+        pipeline_selection (Optional[List[str]]): (deprecated in favor of monitored_pipelines)
+            Names of the pipelines that will be monitored by this failure sensor. Defaults to None,
+            which means the alert will be sent when any pipeline in the repository fails.
+        monitored_pipelines (Optional[List[str]]): Names of the pipelines that will be monitored by
             this failure sensor. Defaults to None, which means the alert will be sent when any
             pipeline in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
@@ -238,9 +243,13 @@ def pipeline_failure_sensor(
         else:
             sensor_name = name
 
+        if pipeline_selection:
+            deprecation_warning("pipeline_selection", "0.16.0", "Use monitored_pipelines instead.")
+        pipelines = monitored_pipelines if monitored_pipelines else pipeline_selection
+
         @run_status_sensor(
             pipeline_run_status=PipelineRunStatus.FAILURE,
-            pipeline_selection=pipeline_selection,
+            monitored_pipelines=pipelines,
             name=sensor_name,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
@@ -262,11 +271,13 @@ def run_failure_sensor(
     name: Optional[Union[Callable[..., Any], str]] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
+    monitored_jobs: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
+    monitored_pipelines: Optional[List[str]] = None,
     job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
     pipeline_selection: Optional[List[str]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    run_request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
-    run_request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+    response_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
+    response_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
 ) -> Callable[
     [Callable[[RunFailureSensorContext], Union[SkipReason, PipelineRunReaction]]],
     SensorDefinition,
@@ -283,17 +294,23 @@ def run_failure_sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        job_selection (Optional[List[Union[JobDefinition, GraphDefinition]]]): The jobs that
+        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition]]]): The jobs that
             will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails.
-        pipeline_selection (Optional[List[str]]): (legacy) Names of the pipelines that will be monitored by
+        monitored_pipelines (Optional[List[str]]): (legacy) Names of the pipelines that will be monitored by
             this sensor. Defaults to None, which means the alert will be sent when any pipeline in
             the repository fails.
+        job_selection (Optional[List[Union[JobDefinition, GraphDefinition]]]): (deprecated in favor of monitored_jobs)
+            The jobs that will be monitored by this failure sensor. Defaults to None, which means
+            the alert will be sent when any job in the repository fails.
+        pipeline_selection (Optional[List[str]]): (legacy, deprecated in favor of monitored_pipelines)
+            Names of the pipelines that will be monitored by this sensor. Defaults to None, which
+            means the alert will be sent when any pipeline in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
-        run_request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
+        response_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
             execute if yielded from the sensor.
-        run_request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
+        response_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
             A list of jobs to be executed if RunRequests are yielded from the sensor.
     """
 
@@ -306,16 +323,24 @@ def run_failure_sensor(
         else:
             sensor_name = name
 
+        if pipeline_selection:
+            deprecation_warning("pipeline_selection", "0.16.0", "Use monitored_pipelines instead.")
+        pipelines = monitored_pipelines if monitored_pipelines else pipeline_selection
+
+        if job_selection:
+            deprecation_warning("job_selection", "0.16.0", "Use monitored_jobs instead.")
+        jobs = monitored_jobs if monitored_jobs else job_selection
+
         @run_status_sensor(
             pipeline_run_status=PipelineRunStatus.FAILURE,
             name=sensor_name,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
-            job_selection=job_selection,
-            pipeline_selection=pipeline_selection,
+            monitored_jobs=jobs,
+            monitored_pipelines=pipelines,
             default_status=default_status,
-            run_request_job=run_request_job,
-            run_request_jobs=run_request_jobs,
+            response_job=response_job,
+            response_jobs=response_jobs,
         )
         def _run_failure_sensor(context: RunStatusSensorContext):
             return fn(context.for_run_failure())
@@ -340,17 +365,19 @@ class RunStatusSensorDefinition(SensorDefinition):
             monitored by the sensor.
         run_status_sensor_fn (Callable[[RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]]): The core
             evaluation function for the sensor. Takes a :py:class:`~dagster.RunStatusSensorContext`.
-        pipeline_selection (Optional[List[str]]): (legacy) Names of the pipelines that will be monitored by
+        monitored_pipelines (Optional[List[str]]): (legacy) Names of the pipelines that will be monitored by
             this sensor. Defaults to None, which means the alert will be sent when any pipeline in
             the repository fails.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        job_selection (Optional[List[Union[JobDefinition, GraphDefinition]]]): The jobs that
+        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition]]]): The jobs that
             will be monitored by this sensor. Defaults to None, which means the alert will be sent
             when any job in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
+        response_job
+        response_jobs
     """
 
     def __init__(
@@ -360,13 +387,13 @@ class RunStatusSensorDefinition(SensorDefinition):
         run_status_sensor_fn: Callable[
             [RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]
         ],
-        pipeline_selection: Optional[List[str]] = None,
+        monitored_pipelines: Optional[List[str]] = None,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
-        job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
+        monitored_jobs: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-        run_request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
-        run_request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+        response_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
+        response_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
     ):
 
         from dagster.core.storage.event_log.base import EventRecordsFilter, RunShardedEventsCursor
@@ -374,10 +401,12 @@ class RunStatusSensorDefinition(SensorDefinition):
         check.str_param(name, "name")
         check.inst_param(pipeline_run_status, "pipeline_run_status", PipelineRunStatus)
         check.callable_param(run_status_sensor_fn, "run_status_sensor_fn")
-        check.opt_list_param(pipeline_selection, "pipeline_selection", str)
+        check.opt_list_param(monitored_pipelines, "monitored_pipelines", str)
         check.opt_int_param(minimum_interval_seconds, "minimum_interval_seconds")
         check.opt_str_param(description, "description")
-        check.opt_list_param(job_selection, "job_selection", (PipelineDefinition, GraphDefinition))
+        check.opt_list_param(
+            monitored_jobs, "monitored_jobs", (PipelineDefinition, GraphDefinition)
+        )
         check.inst_param(default_status, "default_status", DefaultSensorStatus)
 
         self._run_status_sensor_fn = check.callable_param(
@@ -465,12 +494,12 @@ class RunStatusSensorDefinition(SensorDefinition):
                     != context.repository_name
                     or
                     # if pipeline is not selected
-                    (pipeline_selection and pipeline_run.pipeline_name not in pipeline_selection)
+                    (monitored_pipelines and pipeline_run.pipeline_name not in monitored_pipelines)
                     or
                     # if job not selected
                     (
-                        job_selection
-                        and pipeline_run.pipeline_name not in map(lambda x: x.name, job_selection)
+                        monitored_jobs
+                        and pipeline_run.pipeline_name not in map(lambda x: x.name, monitored_jobs)
                     )
                 ):
                     context.update_cursor(
@@ -533,8 +562,8 @@ class RunStatusSensorDefinition(SensorDefinition):
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             default_status=default_status,
-            job=run_request_job,
-            jobs=run_request_jobs,
+            job=response_job,
+            jobs=response_jobs,
         )
 
     def __call__(self, *args, **kwargs):
@@ -582,14 +611,16 @@ class RunStatusSensorDefinition(SensorDefinition):
 
 def run_status_sensor(
     pipeline_run_status: PipelineRunStatus,
+    monitored_pipelines: Optional[List[str]] = None,
     pipeline_selection: Optional[List[str]] = None,
     name: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
+    monitored_jobs: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
     job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    run_request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
-    run_request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+    response_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
+    response_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
 ) -> Callable[
     [Callable[[RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]]],
     RunStatusSensorDefinition,
@@ -603,21 +634,27 @@ def run_status_sensor(
     Args:
         pipeline_run_status (PipelineRunStatus): The status of pipeline execution which will be
             monitored by the sensor.
-        pipeline_selection (Optional[List[str]]): Names of the pipelines that will be monitored by
+        monitored_pipelines (Optional[List[str]]): Names of the pipelines that will be monitored by
             this sensor. Defaults to None, which means the alert will be sent when any pipeline in
             the repository fails.
+        pipeline_selection (Optional[List[str]]): (legacy; deprecated in favor of monitored_pipelines)
+            Names of the pipelines that will be monitored by this sensor. Defaults to None, which
+            means the alert will be sent when any pipeline in the repository fails.
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated function.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): Jobs that will
+        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): Jobs that will
             be monitored by this sensor. Defaults to None, which means the alert will be sent when
+            any job in the repository matches the requested pipeline_run_status.
+        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): (deprecated in favor of monitored_jobs)
+            Jobs that will be monitored by this sensor. Defaults to None, which means the alert will be sent when
             any job in the repository matches the requested pipeline_run_status.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
-        run_request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should be
+        response_job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should be
             executed if a RunRequest is yielded from the sensor.
-        run_request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
+        response_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
             A list of jobs to be executed if RunRequests are yielded from the sensor.
     """
 
@@ -628,17 +665,25 @@ def run_status_sensor(
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
+        if pipeline_selection:
+            deprecation_warning("pipeline_selection", "0.16.0", "Use monitored_pipelines instead.")
+        pipelines = monitored_pipelines if monitored_pipelines else pipeline_selection
+
+        if job_selection:
+            deprecation_warning("job_selection", "0.16.0", "Use monitored_jobs instead.")
+        jobs = monitored_jobs if monitored_jobs else job_selection
+
         return RunStatusSensorDefinition(
             name=sensor_name,
             pipeline_run_status=pipeline_run_status,
             run_status_sensor_fn=fn,
-            pipeline_selection=pipeline_selection,
+            monitored_pipelines=pipelines,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
-            job_selection=job_selection,
+            monitored_jobs=jobs,
             default_status=default_status,
-            run_request_job=run_request_job,
-            run_request_jobs=run_request_jobs,
+            response_job=response_job,
+            response_jobs=response_jobs,
         )
 
     return inner

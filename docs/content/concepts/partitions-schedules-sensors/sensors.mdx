@@ -631,7 +631,7 @@ You can also yield <PyObject object="RunRequest" />s from run status sensors.
 ```python file=concepts/partitions_schedules_sensors/sensors/run_status_run_requests.py startafter=start endbefore=end
 @run_status_sensor(
     pipeline_run_status=DagsterRunStatus.SUCCESS,
-    run_request_job=status_reporting_job,
+    response_job=status_reporting_job,
 )
 def report_status_sensor(context):
     # this condition prevents the sensor from triggering status_reporting_job again after it succeeds
@@ -648,7 +648,7 @@ def report_status_sensor(context):
         return SkipReason("Don't report status of status_reporting_job")
 
 
-@run_failure_sensor(run_request_jobs=status_reporting_job)
+@run_failure_sensor(response_job=status_reporting_job)
 def report_failure_sensor(context):
     run_config = {
         "ops": {
@@ -657,6 +657,8 @@ def report_failure_sensor(context):
     }
     return RunRequest(run_key=None, run_config=run_config)
 ```
+
+In each example, we specify a `response_job`. This is the job that will be executed when the `RunRequest` is returned.
 
 Note that in `report_status_sensor` we conditionally return a RunRequest. This ensures that when `report_status_sensor` runs `status_reporting_job` it doesn't enter an infinite loop where the success of `status_reporting_job` triggers another run of `status_reporting_job`, which triggers another run, and so on.
 
