@@ -2251,6 +2251,34 @@
                 }
             ]
         },
+        "Sensors": {
+            "title": "Sensors",
+            "type": "object",
+            "properties": {
+                "useThreads": {
+                    "title": "Usethreads",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "numWorkers": {
+                    "title": "Numworkers",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            }
+        },
         "Daemon": {
             "title": "Daemon",
             "type": "object",
@@ -2341,6 +2369,17 @@
                 "runRetries": {
                     "title": "Runretries",
                     "type": "object"
+                },
+                "sensors": {
+                    "title": "Sensors",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/Sensors"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
