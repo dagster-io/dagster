@@ -1,11 +1,13 @@
 import datetime
 from collections import defaultdict
+from typing import Sequence
 
 import pytest
 
 from dagster import (
     AssetGroup,
     AssetKey,
+    AssetsDefinition,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     IOManager,
@@ -1322,3 +1324,76 @@ def test_default_executor_jobs_and_pipelines():
         the_repo.get_job("job_explicitly_specifies_default_executor").executor_def
         == multi_or_in_process_executor
     )
+
+
+def test_list_load():
+    @asset
+    def asset1():
+        return 1
+
+    @asset
+    def asset2():
+        return 2
+
+    source = SourceAsset(key=AssetKey("a_source_asset"))
+
+    all_assets: Sequence[AssetsDefinition, SourceAsset] = [asset1, asset2, source]
+
+    @repository
+    def assets_repo():
+        return [all_assets]
+
+    assert len(assets_repo.get_all_jobs()) == 1
+    assert set(assets_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
+        AssetKey(["asset1"]),
+        AssetKey(["asset2"]),
+    }
+
+    @op
+    def op1():
+        return 1
+
+    @op
+    def op2():
+        return 1
+
+    @job
+    def job1():
+        op1()
+
+    @job
+    def job2():
+        op2()
+
+    job_list = [job1, job2]
+
+    @repository
+    def job_repo():
+        return [job_list]
+
+    assert len(job_repo.get_all_jobs()) == len(job_list)
+
+    @asset
+    def asset3():
+        return 3
+
+    @op
+    def op3():
+        return 3
+
+    @job
+    def job3():
+        op3()
+
+    combo_list = [asset3, job3]
+
+    @repository
+    def combo_repo():
+        return [[all_assets], [job_list], combo_list]
+
+    assert len(combo_repo.get_all_jobs()) == 4
+    assert set(combo_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
+        AssetKey(["asset1"]),
+        AssetKey(["asset2"]),
+        AssetKey(["asset3"]),
+    }

@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from functools import update_wrapper
 from typing import Any, Callable, Optional, Union, overload
 
@@ -17,6 +18,30 @@ from ..repository_definition import (
 from ..schedule_definition import ScheduleDefinition
 from ..sensor_definition import SensorDefinition
 from ..unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+
+
+def _flatten(items):
+    from dagster.core.asset_defs import AssetGroup, AssetsDefinition, SourceAsset
+
+    BaseTypes = (
+        PipelineDefinition,
+        PartitionSetDefinition,
+        ScheduleDefinition,
+        SensorDefinition,
+        GraphDefinition,
+        AssetGroup,
+        AssetsDefinition,
+        SourceAsset,
+        UnresolvedAssetJobDefinition,
+        str,
+        bytes,
+    )
+
+    for x in items:
+        if isinstance(x, Iterable) and not isinstance(x, BaseTypes):
+            yield from _flatten(x)
+        else:
+            yield x
 
 
 class _Repository:
@@ -44,6 +69,7 @@ class _Repository:
 
         repository_data: Union[CachingRepositoryData, RepositoryData]
         if isinstance(repository_definitions, list):
+            repository_definitions = list(_flatten(repository_definitions))
             bad_definitions = []
             for i, definition in enumerate(repository_definitions):
                 if not (
