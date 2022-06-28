@@ -92,9 +92,15 @@ def main(
         print("Running dagster job")  # noqa pylint: disable=print-call
 
         step_run_dir = os.path.dirname(step_run_ref_filepath)
+        if step_run_ref.known_state is not None:
+            attempt_count = step_run_ref.known_state.get_retry_state().get_attempt_count(
+                step_run_ref.step_key
+            )
+        else:
+            attempt_count = 0
         events_filepath = os.path.join(
             step_run_dir,
-            f"{step_run_ref.prior_attempts_count}_{PICKLED_EVENTS_FILE_NAME}",
+            f"{attempt_count}_{PICKLED_EVENTS_FILE_NAME}",
         )
         stdout_filepath = os.path.join(step_run_dir, "stdout")
         stderr_filepath = os.path.join(step_run_dir, "stderr")

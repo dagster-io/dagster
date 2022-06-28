@@ -229,6 +229,10 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
                 return resource_invocation_result(
                     self, cast(Optional[UnboundInitResourceContext], kwargs[context_param_name])
                 )
+        elif len(args) + len(kwargs) > 0:
+            raise DagsterInvalidInvocationError(
+                "Attempted to invoke resource with argument, but underlying function has no context argument. Either specify a context argument on the resource function, or remove the passed-in argument."
+            )
         else:
             return resource_invocation_result(self, None)
 

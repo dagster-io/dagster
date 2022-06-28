@@ -1,7 +1,6 @@
 from typing import List
 
 import graphene
-import yaml
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 
@@ -12,6 +11,7 @@ from dagster.core.host_representation.external_data import ExternalPresetData
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunRecord, RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 from dagster.utils import datetime_as_float
+from dagster.utils.yaml_utils import dump_run_config_yaml
 
 from ...implementation.events import from_event_record
 from ...implementation.fetch_assets import get_assets_for_run_id
@@ -347,9 +347,7 @@ class GrapheneRun(graphene.ObjectType):
         return self._pipeline_run.step_keys_to_execute
 
     def resolve_runConfigYaml(self, _graphene_info):
-        return yaml.dump(
-            self._pipeline_run.run_config, default_flow_style=False, allow_unicode=True
-        )
+        return dump_run_config_yaml(self._pipeline_run.run_config)
 
     def resolve_runConfig(self, _graphene_info):
         return self._pipeline_run.run_config
@@ -665,10 +663,7 @@ class GraphenePipelinePreset(graphene.ObjectType):
         return self._active_preset_data.solid_selection
 
     def resolve_runConfigYaml(self, _graphene_info):
-        yaml_str = yaml.safe_dump(
-            self._active_preset_data.run_config, default_flow_style=False, allow_unicode=True
-        )
-        return yaml_str if yaml_str else ""
+        return dump_run_config_yaml(self._active_preset_data.run_config) or ""
 
     def resolve_mode(self, _graphene_info):
         return self._active_preset_data.mode

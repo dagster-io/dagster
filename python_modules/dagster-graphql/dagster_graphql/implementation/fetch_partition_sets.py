@@ -1,4 +1,3 @@
-import yaml
 from graphql.execution.base import ResolveInfo
 
 import dagster._check as check
@@ -9,6 +8,7 @@ from dagster.core.host_representation import (
 )
 from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, TagType, get_tag_type
+from dagster.utils.yaml_utils import dump_run_config_yaml
 
 from .utils import capture_error
 
@@ -95,9 +95,7 @@ def get_partition_config(graphene_info, repository_handle, partition_set_name, p
         partition_name,
     )
 
-    return GraphenePartitionRunConfig(
-        yaml=yaml.safe_dump(result.run_config, default_flow_style=False)
-    )
+    return GraphenePartitionRunConfig(yaml=dump_run_config_yaml(result.run_config))
 
 
 @capture_error

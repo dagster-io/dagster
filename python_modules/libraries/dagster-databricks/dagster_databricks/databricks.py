@@ -271,7 +271,7 @@ def poll_run_state(
             log.error(error_message)
             raise DatabricksError(error_message)
     else:
-        log.info("Run %s in state %s" % (databricks_run_id, run_state))
+        log.debug("Run %s in state %s" % (databricks_run_id, run_state))
     if time.time() - start_poll_time > max_wait_time_sec:
         raise DatabricksError(
             "Job run {} took more than {}s to complete; failing".format(

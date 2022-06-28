@@ -1344,19 +1344,19 @@ def test_graph_backed_asset_resources():
     the_resource = ResourceDefinition.hardcoded_resource("blah")
     other_resource = ResourceDefinition.hardcoded_resource("baz")
 
-    the_asset = AssetsDefinition(
+    the_asset = AssetsDefinition.from_graph(
+        graph_def=basic,
         keys_by_input_name={},
         keys_by_output_name={"result": AssetKey("the_asset")},
-        node_def=basic,
         resource_defs={"foo": the_resource},
     )
     no_conflict_group = AssetGroup([the_asset])
     assert no_conflict_group.materialize().success
 
-    other_asset = AssetsDefinition(
+    other_asset = AssetsDefinition.from_graph(
         keys_by_input_name={},
         keys_by_output_name={"result": AssetKey("other_asset")},
-        node_def=basic,
+        graph_def=basic,
         resource_defs={"foo": other_resource},
     )
 
