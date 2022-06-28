@@ -264,7 +264,6 @@ def run_failure_sensor(
     description: Optional[str] = None,
     job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
     pipeline_selection: Optional[List[str]] = None,
-    ignore_job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     run_request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     run_request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
@@ -296,10 +295,6 @@ def run_failure_sensor(
             execute if yielded from the sensor.
         run_request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
             A list of jobs to be executed if RunRequests are yielded from the sensor.
-        ignore_run_request_job_status (bool): If set to True, the sensor will not execute for any
-            job in run_request_jobs or run_request_job. This prevents an infinite loop of runs created
-            when a run status sensor starts a run and then is triggered again based on the status of that
-            run.
     """
 
     def inner(
@@ -318,7 +313,6 @@ def run_failure_sensor(
             description=description,
             job_selection=job_selection,
             pipeline_selection=pipeline_selection,
-            ignore_job_selection=ignore_job_selection,
             default_status=default_status,
             run_request_job=run_request_job,
             run_request_jobs=run_request_jobs,
@@ -370,7 +364,6 @@ class RunStatusSensorDefinition(SensorDefinition):
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
-        ignore_job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         run_request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
         run_request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
@@ -479,10 +472,6 @@ class RunStatusSensorDefinition(SensorDefinition):
                         job_selection
                         and pipeline_run.pipeline_name not in map(lambda x: x.name, job_selection)
                     )
-                    or
-                    # the job is in the list to ignore
-                    ignore_job_selection
-                    and pipeline_run.pipeline_name in map(lambda x: x.name, ignore_job_selection)
                 ):
                     context.update_cursor(
                         RunStatusSensorCursor(
@@ -598,7 +587,6 @@ def run_status_sensor(
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
-    ignore_job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     run_request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     run_request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
@@ -625,8 +613,6 @@ def run_status_sensor(
         job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): Jobs that will
             be monitored by this sensor. Defaults to None, which means the alert will be sent when
             any job in the repository matches the requested pipeline_run_status.
-        ignore_job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): Jobs that will
-            be ignored by this sensor. Defaults to None.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
         run_request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should be
@@ -650,7 +636,6 @@ def run_status_sensor(
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job_selection=job_selection,
-            ignore_job_selection=ignore_job_selection,
             default_status=default_status,
             run_request_job=run_request_job,
             run_request_jobs=run_request_jobs,

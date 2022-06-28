@@ -632,15 +632,20 @@ You can also yield <PyObject object="RunRequest" />s from run status sensors.
 @run_status_sensor(
     pipeline_run_status=DagsterRunStatus.SUCCESS,
     run_request_job=status_reporting_job,
-    ignore_job_selection=[status_reporting_job],
 )
 def report_status_sensor(context):
-    run_config = {
-        "ops": {
-            "status_report": {"config": {"job_name": context.dagster_run.pipeline_name}}
+    # this condition prevents the sensor from triggering status_reporting_job again after it succeeds
+    if context.dagster_run.pipeline_name != status_reporting_job.name:
+        run_config = {
+            "ops": {
+                "status_report": {
+                    "config": {"job_name": context.dagster_run.pipeline_name}
+                }
+            }
         }
-    }
-    return RunRequest(run_key=None, run_config=run_config)
+        return RunRequest(run_key=None, run_config=run_config)
+    else:
+        return SkipReason("Don't report status of status_reporting_job")
 
 
 @run_failure_sensor(run_request_jobs=status_reporting_job)
@@ -653,7 +658,7 @@ def report_failure_sensor(context):
     return RunRequest(run_key=None, run_config=run_config)
 ```
 
-Note that in `report_status_sensor` we include `status_reporting_job` in `ignore_job_selection`. This ensure that when `report_status_sensor` runs `status_reporting_job` it doesn't enter an infinite loop where the success of `status_reporting_job` triggers another run of `status_reporting_job`, which triggers another run, and so on.
+Note that in `report_status_sensor` we conditionally return a RunRequest. This ensures that when `report_status_sensor` runs `status_reporting_job` it doesn't enter an infinite loop where the success of `status_reporting_job` triggers another run of `status_reporting_job`, which triggers another run, and so on.
 
 ## See it in action
 
