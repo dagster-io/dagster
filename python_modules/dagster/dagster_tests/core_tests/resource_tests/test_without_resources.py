@@ -2,28 +2,18 @@ import pytest
 
 from dagster import (
     AssetKey,
-    IOManager,
     Out,
     ResourceDefinition,
-    build_op_context,
     graph,
     io_manager,
-    mem_io_manager,
     op,
-    resource,
     with_resources,
     without_resources,
 )
 from dagster.core.asset_defs import AssetsDefinition, SourceAsset, asset, build_assets_job
 from dagster.core.asset_defs.assets import io_manager_key_for_asset_key
 from dagster.core.definitions.utils import DEFAULT_IO_MANAGER_KEY
-from dagster.core.errors import (
-    DagsterInvalidConfigError,
-    DagsterInvalidDefinitionError,
-    DagsterInvalidInvocationError,
-    DagsterInvariantViolationError,
-)
-from dagster.core.storage.mem_io_manager import InMemoryIOManager
+from dagster.core.errors import DagsterInvalidDefinitionError
 
 
 def test_asset():

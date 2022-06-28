@@ -590,6 +590,7 @@ class AssetsDefinition(ResourceAddable):
                 else:
                     io_manager_key = output_def.io_manager_key
 
+                # pylint: disable=protected-access
                 output_def = OutputDefinition(
                     dagster_type=output_def.dagster_type,
                     name=output_def.name,
