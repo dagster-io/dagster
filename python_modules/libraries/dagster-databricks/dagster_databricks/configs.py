@@ -9,7 +9,7 @@ See:
 - https://docs.databricks.com/dev-tools/api/latest/clusters.html
 - https://docs.databricks.com/dev-tools/api/latest/libraries.html
 """
-from dagster import Bool, Field, Int, Permissive, Selector, Shape, String
+from dagster import Bool, Enum, EnumValue, Field, Int, Permissive, Selector, Shape, String
 
 
 def _define_autoscale():
@@ -150,22 +150,62 @@ def _define_aws_attributes_conf():
                     "If this value is less than the current cluster size, first_on_demand nodes will be placed on on-demand instances and "
                     "the remainder will be placed on availability instances. This value does not affect cluster size and cannot be mutated "
                     "over the lifetime of a cluster.",
-                    is_required=False
+                    is_required=False,
                 ),
                 "availability": Field(
-                    Selector(["SPOT", "ON_DEMAND", "SPOT_WITH_FALLBACK"]),
+                    Enum(
+                        "AWSAvailability",
+                        [
+                            EnumValue("SPOT"),
+                            EnumValue("ON_DEMAND"),
+                            EnumValue("SPOT_WITH_FALLBACK"),
+                        ],
+                    ),
                     description="Availability type used for all subsequent nodes past the first_on_demand ones. "
                     "Note: If first_on_demand is zero, this availability type will be used for the entire cluster.",
-                    is_required=False
+                    is_required=False,
                 ),
-                "zone_id": Field(String, is_required=False),
-                "instance_profile_arn": Field(String, is_required=False),
-                "spot_bid_price_percent": Field(Int, is_required=False),
-                "ebs_volume_type": Field(Selector(["GENERAL_PURPOSE_SSD", "THROUGHPUT_OPTIMIZED_HDD"]), is_required=False),
-                "ebs_volume_count": Field(Int, is_required=False),
-                "ebs_volume_size": Field(Int, is_required=False),
-                "ebs_volume_iops": Field(Int, is_required=False),
-                "ebs_volume_throughput": Field(Int, is_required=False),
+                "zone_id": Field(
+                    String,
+                    description="Identifier for the availability zone/datacenter in which the cluster resides.",
+                    is_required=False,
+                ),
+                "instance_profile_arn": Field(
+                    String,
+                    description="Nodes for this cluster will only be placed on AWS instances with this instance profile.",
+                    is_required=False,
+                ),
+                "spot_bid_price_percent": Field(
+                    Int,
+                    description="The max price for AWS spot instances, as a percentage of the corresponding instance type's on-demand price.",
+                    is_required=False,
+                ),
+                "ebs_volume_type": Field(
+                    Enum(
+                        "EBSVolumeType",
+                        [EnumValue("GENERAL_PURPOSE_SSD"), EnumValue("THROUGHPUT_OPTIMIZED_HDD")],
+                    ),
+                    description="The type of EBS volumes that will be launched with this cluster.",
+                    is_required=False,
+                ),
+                "ebs_volume_count": Field(
+                    Int,
+                    description="The number of volumes launched for each instance. You can choose up to 10 volumes.",
+                    is_required=False,
+                ),
+                "ebs_volume_size": Field(
+                    Int,
+                    description="The size of each EBS volume (in GiB) launched for each instance.",
+                    is_required=False,
+                ),
+                "ebs_volume_iops": Field(
+                    Int, description="The number of IOPS per EBS gp3 volume.", is_required=False
+                ),
+                "ebs_volume_throughput": Field(
+                    Int,
+                    description="The throughput per EBS gp3 volume, in MiB per second.",
+                    is_required=False,
+                ),
             }
         ),
         description="Attributes related to clusters running on Amazon Web Services. "
