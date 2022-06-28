@@ -334,10 +334,10 @@ export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
 export const RunStateSummary: React.FC<RunTimeProps> = React.memo(({run}) => {
   // kind of a hack, but we manually set the start time to the end time in the graphql resolver
   // for this case, so check for start/end time equality for the failed to start condition
-  const failedToSTart =
+  const failedToStart =
     run.status === RunStatus.FAILURE && (!run.startTime || run.startTime === run.endTime);
 
-  return failedToSTart ? (
+  return failedToStart ? (
     <div>Failed to start</div>
   ) : run.status === RunStatus.CANCELED ? (
     <div>Canceled</div>
