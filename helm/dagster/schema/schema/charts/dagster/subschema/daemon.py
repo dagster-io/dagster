@@ -59,9 +59,11 @@ class RunCoordinator(BaseModel):
             )
         }
 
+
 class Sensors(BaseModel):
     useThreads: Optional[bool]
     numWorkers: Optional[int]
+
 
 class Daemon(BaseModel):
     enabled: bool

@@ -7,6 +7,7 @@ from schema.charts.dagster.subschema.daemon import (
     RunCoordinator,
     RunCoordinatorConfig,
     RunCoordinatorType,
+    Sensors,
     TagConcurrencyLimit,
 )
 from schema.charts.dagster.values import DagsterHelmValues
@@ -247,3 +248,22 @@ def test_daemon_labels(template: HelmTemplate):
 
     assert set(deployment_labels.items()).issubset(daemon_deployment.metadata.labels.items())
     assert set(pod_labels.items()).issubset(daemon_deployment.spec.template.metadata.labels.items())
+
+
+def test_sensor_threading(template: HelmTemplate):
+    deployment_labels = {"deployment_label": "label"}
+    pod_labels = {"pod_label": "label"}
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            sensors=Sensors.construct(
+                useThreads=True,
+                numWorkers=4,
+            )
+        )
+    )
+
+    configmaps = instance_template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    assert instance["sensors"]["useThreads"] == True
+    assert instance["sensors"]["numWorkers"] == 4
