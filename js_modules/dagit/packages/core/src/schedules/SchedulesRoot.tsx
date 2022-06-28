@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {UnloadableSchedules} from '../instigation/Unloadable';
 import {InstigationType} from '../types/globalTypes';
@@ -18,7 +19,9 @@ import {SchedulesTable} from './SchedulesTable';
 import {SchedulesRootQuery, SchedulesRootQueryVariables} from './types/SchedulesRootQuery';
 
 export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
+  useTrackPageView();
   useDocumentTitle('Schedules');
+
   const repositorySelector = repoAddressToSelector(repoAddress);
 
   const queryResult = useQuery<SchedulesRootQuery, SchedulesRootQueryVariables>(

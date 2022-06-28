@@ -2,6 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {PipelineTable, PIPELINE_TABLE_FRAGMENT} from '../pipelines/PipelineTable';
 
@@ -38,6 +39,8 @@ interface Props {
 }
 
 export const RepositoryPipelinesList: React.FC<Props> = (props) => {
+  useTrackPageView();
+
   const {display, repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
 

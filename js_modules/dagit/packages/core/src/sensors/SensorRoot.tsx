@@ -4,6 +4,7 @@ import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TicksTable, TickHistoryTimeline} from '../instigation/TickHistory';
@@ -18,6 +19,8 @@ import {SensorPreviousRuns} from './SensorPreviousRuns';
 import {SensorRootQuery, SensorRootQueryVariables} from './types/SensorRootQuery';
 
 export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
+  useTrackPageView();
+
   const {sensorName} = useParams<{sensorName: string}>();
   useDocumentTitle(`Sensor: ${sensorName}`);
 

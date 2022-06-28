@@ -7,6 +7,7 @@ import {useHistory, useLocation} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {ShortcutHandler} from '../app/ShortcutHandler';
+import {useTrackEvent} from '../app/analytics';
 
 import {SearchResults} from './SearchResults';
 import {SearchResult} from './types';
@@ -60,6 +61,7 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
   const location = useLocation();
   const history = useHistory();
   const {performBootstrapQuery, loading, performSearch} = useRepoSearch();
+  const trackEvent = useTrackEvent();
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {shown, queryString, results, highlight, loaded} = state;
@@ -68,9 +70,10 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
   const numRenderedResults = renderedResults.length;
 
   const openSearch = React.useCallback(() => {
+    trackEvent('userOpenSearch');
     performBootstrapQuery();
     dispatch({type: 'show-dialog'});
-  }, [performBootstrapQuery]);
+  }, [performBootstrapQuery, trackEvent]);
 
   const onChange = React.useCallback((e) => {
     dispatch({type: 'change-query', queryString: e.target.value});
@@ -135,7 +138,7 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
   return (
     <>
       <ShortcutHandler
-        onShortcut={() => dispatch({type: 'show-dialog'})}
+        onShortcut={openSearch}
         shortcutLabel="/"
         shortcutFilter={(e) =>
           e.key === '/' && !e.altKey && !e.metaKey && !e.shiftKey && !e.ctrlKey
