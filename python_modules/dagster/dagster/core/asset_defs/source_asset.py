@@ -85,7 +85,7 @@ class SourceAsset(
                     f"Provided conflicting definitions for io manager key '{io_manager_key}'. Please provide only one definition per key."
                 )
 
-            resource_defs[io_manager_key] = io_manager_def
+            resource_defs[cast(str, io_manager_key)] = io_manager_def
 
         return super().__new__(
             cls,

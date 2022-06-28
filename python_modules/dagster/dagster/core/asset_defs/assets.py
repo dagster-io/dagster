@@ -584,7 +584,9 @@ class AssetsDefinition(ResourceAddable):
             replaced_io_manager_keys = set()
             for output_def in self.op.output_defs:
                 asset_key = self.keys_by_output_name.get(output_def.name)
-                if output_def.io_manager_key == io_manager_key_for_asset_key(asset_key):
+                if asset_key and output_def.io_manager_key == io_manager_key_for_asset_key(
+                    asset_key
+                ):
                     io_manager_key = DEFAULT_IO_MANAGER_KEY
                     replaced_io_manager_keys.add(io_manager_key_for_asset_key(asset_key))
                 else:
@@ -605,7 +607,7 @@ class AssetsDefinition(ResourceAddable):
                 output_defs.append(output_def)
 
             if replaced_io_manager_keys:
-                required_resource_keys = {
+                required_resource_keys: AbstractSet[str] = {
                     DEFAULT_IO_MANAGER_KEY,
                     *{
                         key
@@ -616,7 +618,7 @@ class AssetsDefinition(ResourceAddable):
             else:
                 required_resource_keys = self.op.required_resource_keys
 
-            node_def = OpDefinition(
+            node_def: NodeDefinition = OpDefinition(
                 name=self.op.name,
                 input_defs=self.op.input_defs,
                 output_defs=output_defs,
