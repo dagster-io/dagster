@@ -2,6 +2,7 @@ import dagster._check as check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import InstigatorSelector
 from dagster.core.scheduler.instigation import InstigatorStatus
+from dagster.core.storage.schedules.sql_schedule_storage import SqlScheduleStorage
 
 from .utils import capture_error
 
@@ -21,14 +22,11 @@ def get_unloadable_instigator_states_or_error(graphene_info, instigator_type=Non
         for instigator in repository.get_external_schedules() + repository.get_external_sensors()
     ]
 
-    instigator_origin_ids = {
-        instigator.get_external_origin_id() for instigator in external_instigators
-    }
-
+    instigator_selector_ids = {instigator.selector_id for instigator in external_instigators}
     unloadable_states = [
         instigator_state
         for instigator_state in instigator_states
-        if instigator_state.instigator_origin_id not in instigator_origin_ids
+        if instigator_state.selector_id not in instigator_selector_ids
         and instigator_state.status == InstigatorStatus.RUNNING
     ]
 
