@@ -365,7 +365,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
         return tick
 
-    def purge_ticks(self, origin_id, selector_id, before, tick_statuses=None):
+    def purge_ticks(self, origin_id, selector_id, before, tick_statuses=None, limit=100):
         check.str_param(origin_id, "origin_id")
         check.float_param(before, "before")
         check.opt_list_param(tick_statuses, "tick_statuses", of_type=TickStatus)
@@ -392,6 +392,9 @@ class SqlScheduleStorage(ScheduleStorage):
             )
         else:
             query = query.where(JobTickTable.c.job_origin_id == origin_id)
+
+        if limit:
+            query = query.limit(limit)
 
         with self.connect() as conn:
             conn.execute(query)

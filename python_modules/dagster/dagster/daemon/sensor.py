@@ -31,6 +31,7 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 MIN_INTERVAL_LOOP_TIME = 5
 
 FINISHED_TICK_STATES = [TickStatus.SKIPPED, TickStatus.SUCCESS, TickStatus.FAILURE]
+ALL_TICK_STATUSES = [TickStatus.SKIPPED, TickStatus.SUCCESS, TickStatus.FAILURE, TickStatus.STARTED]
 
 
 class DagsterSensorDaemonError(DagsterError):
@@ -151,11 +152,12 @@ class SensorLaunchContext:
         for day_offset, statuses in self._purge_settings.items():
             if day_offset <= 0:
                 continue
+            should_filter_status = len(set(ALL_TICK_STATUSES) - set(statuses))
             self._instance.purge_ticks(
                 self._external_sensor.get_external_origin_id(),
                 selector_id=self._external_sensor.selector_id,
                 before=pendulum.now("UTC").subtract(days=day_offset).timestamp(),
-                tick_statuses=list(statuses),
+                tick_statuses=list(statuses) if should_filter_status else None,
             )
 
 

@@ -114,6 +114,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         selector_id: str,
         before: float,
         tick_statuses: Optional[List[TickStatus]] = None,
+        limit: int = 100,
     ):
         """Wipe ticks for an instigator for a certain status and timestamp.
 
