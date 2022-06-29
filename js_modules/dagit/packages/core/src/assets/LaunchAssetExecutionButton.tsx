@@ -96,7 +96,8 @@ export const LaunchAssetExecutionButton: React.FC<{
       variables: {assetKeys: assetKeys.map(({path}) => ({path}))},
     });
     const assets = result.data.assetNodes;
-    const next = stateForLaunchingAssets(assets, e, preferredJobName);
+    const forceLaunchpad = e.shiftKey;
+    const next = stateForLaunchingAssets(assets, forceLaunchpad, preferredJobName);
 
     if (next.type === 'error') {
       showCustomAlert({
@@ -154,7 +155,7 @@ export const LaunchAssetExecutionButton: React.FC<{
 
 function stateForLaunchingAssets(
   assets: LaunchAssetExecutionAssetNodeFragment[],
-  mouseEvent: React.MouseEvent<any>,
+  forceLaunchpad: boolean,
   preferredJobName?: string,
 ): LaunchAssetsState {
   if (assets.some(isSourceAsset)) {
@@ -209,7 +210,7 @@ function stateForLaunchingAssets(
 
   // Ok! Assertions met, how do we launch this run
 
-  if (anyAssetsHaveConfig || mouseEvent.shiftKey) {
+  if (anyAssetsHaveConfig || forceLaunchpad) {
     const assetOpNames = assets.flatMap((a) => a.opNames || []);
     return {
       type: 'launchpad',
