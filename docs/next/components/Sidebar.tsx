@@ -188,7 +188,6 @@ const SecondaryNavigation = () => {
 
 const ThirdLevelNavigation = ({ section }) => {
   const { asPathWithoutAnchor } = useVersion();
-  console.log(section);
   return (
     <Link key={section.path} href={section.path}>
       <a

@@ -435,7 +435,7 @@ export default {
             path.join("versioned_images", version, src.replace("/images/", "")),
             "https://dagster-docs-versioned-content.s3.us-west-1.amazonaws.com"
           ).href;
-    console.log(resolvedPath);
+
     return (
       <Zoom wrapElement="span" wrapStyle={{ display: "block" }}>
         <span className="block mx-auto">

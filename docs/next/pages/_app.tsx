@@ -60,7 +60,13 @@ function MyApp({ Component, pageProps }: AppProps) {
       <Head>
         <link rel="shortcut icon" href="/docs-wip/favicon.ico" />
       </Head>
-      <DefaultSeo canonical={canonicalUrl} {...DEFAULT_SEO} />
+      <DefaultSeo
+        canonical={canonicalUrl}
+        {...DEFAULT_SEO}
+        // TODO: remove once live launch
+        dangerouslySetAllPagesToNoIndex={true}
+        dangerouslySetAllPagesToNoFollow={true}
+      />
       {getLayout(<Component {...pageProps} />)}
     </>
   );
