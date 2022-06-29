@@ -412,10 +412,14 @@ class GrapheneRun(graphene.ObjectType):
         if run_record.start_time is None and self._pipeline_run.status in STARTED_STATUSES:
             # Short-circuit if pipeline failed to start, so it has an end time but no start time
             if run_record.end_time is not None:
-                return None
+                return run_record.end_time
 
             if self._run_stats is None or self._run_stats.start_time is None:
                 self._run_stats = graphene_info.context.instance.get_run_stats(self.runId)
+
+            if self._run_stats.start_time is None and self._run_stats.end_time:
+                return self._run_stats.end_time
+
             return self._run_stats.start_time
         return run_record.start_time
 
