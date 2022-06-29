@@ -427,7 +427,7 @@ def my_slack_on_run_success(context: RunStatusSensorContext):
     )
 ```
 
-As you can see, run status sensors don't have to launch runs of jobs.
+When you write a run status sensor that doesn't return anything, an event is added to the run's event log to indicate that the sensor ran.
 
 Once you have written your sensor, you can add the sensor to a repository so it can be enabled and used the same as other sensors:
 
