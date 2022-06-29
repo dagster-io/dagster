@@ -108,8 +108,12 @@ def do_database_stuff():
     op_requires_resources()
 
 
-do_database_stuff_prod = do_database_stuff.to_job(resource_defs={"database": database_resource_a})
-do_database_stuff_dev = do_database_stuff.to_job(resource_defs={"database": database_resource_b})
+do_database_stuff_prod = do_database_stuff.to_job(
+    resource_defs={"database": database_resource_a}
+)
+do_database_stuff_dev = do_database_stuff.to_job(
+    resource_defs={"database": database_resource_b}
+)
 
 
 # end_graph_example
