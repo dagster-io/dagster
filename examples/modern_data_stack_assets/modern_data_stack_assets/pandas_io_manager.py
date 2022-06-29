@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 from dagster import IOManager
@@ -34,3 +35,18 @@ class PandasIOManager(IOManager):
 @io_manager(config_schema={"con_string": str})
 def pandas_io_manager(context):
     return PandasIOManager(context.resource_config["con_string"])
+
+
+# we use the NumpyIOManager as an input manager for an asset to load it as a numpy array rather
+# than a Pandas DataFrame (the default loading behavior for assets)
+# This is to showcase swapping out input managers
+class NumpyIOManager(PandasIOManager):
+    def load_input(self, context) -> np.ndarray:
+        model_name = context.upstream_output.asset_key.path[-1]
+        pd_df = pd.read_sql(f"SELECT * FROM {model_name}", con=self._con)
+        return pd_df.to_numpy()
+
+
+@io_manager(config_schema={"con_string": str})
+def numpy_io_manager(context):
+    return NumpyIOManager(context.resource_config["con_string"])
