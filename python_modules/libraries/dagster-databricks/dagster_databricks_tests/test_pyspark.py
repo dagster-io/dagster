@@ -221,7 +221,7 @@ def test_pyspark_databricks(
     )
     assert result.success
     assert mock_request_patch.call_count == 2
-    assert mock_get_run.call_count == 2
+    assert mock_get_run.call_count == 1
     assert mock_get_run_state.call_count == 6
     assert mock_get_step_events.call_count == 6
     assert mock_put_file.call_count == 4

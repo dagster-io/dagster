@@ -184,7 +184,9 @@ class DatabricksPySparkStepLauncher(StepLauncher):
 
         task = self._get_databricks_task(run_id, step_key)
         databricks_run_id = self.databricks_runner.submit_run(self.run_config, task)
-        self._grant_permissions(log, databricks_run_id)
+
+        if self.permissions:
+            self._grant_permissions(log, databricks_run_id)
 
         try:
             # If this is being called within a `capture_interrupts` context, allow interrupts while
@@ -279,8 +281,29 @@ class DatabricksPySparkStepLauncher(StepLauncher):
 
         return []
 
-    def _grant_permissions(self, log, databricks_run_id):
+    def _grant_permissions(self, log, databricks_run_id, request_retries=3):
         api_client = self.databricks_runner.client.client.client
+
+        # Retrieve run info
+        cluster_id = None
+        for i in range(1, request_retries + 1):
+            run_info = self.databricks_runner.client.get_run(databricks_run_id)
+            # if a new job cluster is created, the cluster_instance key may not be immediately present in the run response
+            try:
+                cluster_id = run_info["cluster_instance"]["cluster_id"]
+                break
+            except:
+                log.warning(
+                    f"Failed to retrieve cluster info for databricks_run_id {databricks_run_id}. "
+                    f"Retrying {i} of {request_retries} times."
+                )
+                time.sleep(3)
+        if not cluster_id:
+            log.warning(
+                f"Failed to retrieve cluster info for databricks_run_id {databricks_run_id} "
+                f"{request_retries} times. Skipping permission updates..."
+            )
+            return
 
         # Update job permissions
         if "job_permissions" in self.permissions:
@@ -291,16 +314,18 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                         {**accessor, **{"permission_level": permission_level}}
                     )
 
-            job_id = self.databricks_runner.client.get_run(databricks_run_id)["job_id"]
+            job_id = run_info["job_id"]
             endpoint = f"{api_client.url}2.0/permissions/jobs/{job_id}"
-            log.debug(f"Updating job permissions with json: {job_permissions}")
+            log.debug(f"Updating job permissions with following json: {job_permissions}")
             response = requests.patch(
                 endpoint, headers=api_client.default_headers, data=json.dumps(job_permissions)
             )
             if not response.ok:
-                log.warning(f"Got invalid HTTP response: {response.status_code}.\n{response.text}")
+                log.warning(
+                    f"Received invalid HTTP response: {response.status_code}.\n{response.text}"
+                )
             else:
-                log.debug(f"Updated permissions | Response: {response.text}")
+                log.debug(f"Updated job permissions | Response: {response.text}")
 
         # Update cluster permissions
         if "new" in self.run_config["cluster"] and "cluster_permissions" in self.permissions:
@@ -310,33 +335,19 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                     cluster_permissions["access_control_list"].append(
                         {**accessor, **{"permission_level": permission_level}}
                     )
-            cluster_id = None
-            for i in range(self.DATABRICKS_RUN_RETRIES):
-                time.sleep(5)  # Can't get cluster_id at the very beginning
-                log.debug(f"Trying {i} time to get cluster id...")
-                run_info = self.databricks_runner.client.get_run(databricks_run_id)
-                log.debug(f"run info: {run_info}")
-                try:
-                    cluster_id = run_info["cluster_instance"]["cluster_id"]
-                    break
-                except Exception:
-                    log.warning("Failed to get cluster id.")
-            if cluster_id:
-                endpoint = f"{api_client.url}2.0/permissions/clusters/{cluster_id}"
-                log.debug(f"Updating cluster permissions with json: {cluster_permissions}")
-                response = requests.patch(
-                    endpoint,
-                    headers=api_client.default_headers,
-                    data=json.dumps(cluster_permissions),
+            endpoint = f"{api_client.url}2.0/permissions/clusters/{cluster_id}"
+            log.debug(f"Updating cluster permissions with following json: {cluster_permissions}")
+            response = requests.patch(
+                endpoint,
+                headers=api_client.default_headers,
+                data=json.dumps(cluster_permissions),
+            )
+            if not response.ok:
+                log.warning(
+                    f"Received invalid HTTP response: {response.status_code}.\n{response.text}"
                 )
-                if not response.ok:
-                    log.warning(
-                        f"Got invalid HTTP response: {response.status_code}.\n{response.text}"
-                    )
-                else:
-                    log.debug(f"Updated permissions | Response: {response.text}")
             else:
-                log.warning("Failed to get cluster id, cluster permissions not updated.")
+                log.debug(f"Updated permissions | Response: {response.text}")
 
     def _get_databricks_task(self, run_id, step_key):
         """Construct the 'task' parameter to  be submitted to the Databricks API.
