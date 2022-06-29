@@ -5,6 +5,7 @@ import { Transition } from "@headlessui/react";
 import { Search } from "components/Search";
 import Icons from "../components/Icons";
 import Link from "./Link";
+import NextLink from "next/link";
 import cx from "classnames";
 import { useNavigation } from "../util/useNavigation";
 import { useVersion } from "../util/useVersion";
@@ -16,22 +17,21 @@ const getCurrentSection = (navigation) => {
   );
   return match || navigation.find((item) => item.path === "/");
 };
-interface FancyButtonProps {
+interface MenuItemProps {
   item: any;
   match: boolean;
   lvl: number;
-  href?: string;
 }
 
 const MenuItem = React.forwardRef<
   HTMLAnchorElement,
-  React.PropsWithChildren<FancyButtonProps>
->(({ item, match, lvl, href }, ref) => {
+  React.PropsWithChildren<MenuItemProps>
+>(({ item, match, lvl }, ref) => {
   const rightIcon = item.isExternalLink
     ? Icons["ExternalLink"]
     : item.children && (match ? Icons["ChevronDown"] : Icons["ChevronRight"]);
 
-  return (
+  const children: JSX.Element = (
     <a
       className={cx(
         "transition group flex justify-between items-center font-medium rounded-md text-gray-800 dark:text-gray-200",
@@ -43,7 +43,7 @@ const MenuItem = React.forwardRef<
           "py-2": lvl <= 2,
         }
       )}
-      href={href}
+      href={item.path}
       ref={ref}
       target={item.isExternalLink ? "_blank" : "_self"}
       rel="noopener noreferrer"
@@ -84,6 +84,16 @@ const MenuItem = React.forwardRef<
       )}
     </a>
   );
+
+  return item.isExternalLink || item.isUnversioned ? (
+    <NextLink href={item.path} passHref>
+      {children}
+    </NextLink>
+  ) : (
+    <Link href={item.path} passHref>
+      {children}
+    </Link>
+  );
 });
 
 const TopLevelNavigation = () => {
@@ -97,13 +107,7 @@ const TopLevelNavigation = () => {
 
         return (
           <div key={item.path}>
-            {item.isExternalLink || item.isUnversioned ? (
-              <MenuItem href={item.path} item={item} match={match} lvl={0} />
-            ) : (
-              <Link href={item.path} passHref>
-                <MenuItem item={item} match={match} lvl={0} />
-              </Link>
-            )}
+            <MenuItem item={item} match={match} lvl={0} />
             {match && (
               <div className="mt-2">
                 <div
@@ -149,18 +153,7 @@ const SecondaryNavigation = () => {
 
         return (
           <div key={itemWithPath.path}>
-            {itemWithPath.isExternalLink || itemWithPath.isUnversioned ? (
-              <MenuItem
-                href={itemWithPath.path}
-                item={sectionOrItem}
-                match={match}
-                lvl={1}
-              />
-            ) : (
-              <Link href={itemWithPath.path} passHref>
-                <MenuItem item={sectionOrItem} match={match} lvl={1} />
-              </Link>
-            )}
+            <MenuItem item={itemWithPath} match={match} lvl={1} />
             {match && sectionOrItem.children && (
               <div className="border-l ml-5 mt-2">
                 <div
