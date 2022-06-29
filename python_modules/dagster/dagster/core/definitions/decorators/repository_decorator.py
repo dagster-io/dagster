@@ -22,7 +22,8 @@ from ..unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 def _flatten(items):
     for x in items:
         if isinstance(x, List):
-            yield from _flatten(x)
+            # switch to `yield from _flatten(x)` to support multiple layers of nesting
+            yield from x
         else:
             yield x
 

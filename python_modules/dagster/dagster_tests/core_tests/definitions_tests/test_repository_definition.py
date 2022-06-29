@@ -1389,11 +1389,30 @@ def test_list_load():
 
     @repository
     def combo_repo():
-        return [[all_assets], [job_list], combo_list]
+        return [combo_list]
 
-    assert len(combo_repo.get_all_jobs()) == 4
+    assert len(combo_repo.get_all_jobs()) == 2
     assert set(combo_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
-        AssetKey(["asset1"]),
-        AssetKey(["asset2"]),
         AssetKey(["asset3"]),
     }
+
+
+def test_multi_nested_list():
+    @asset
+    def asset1():
+        return 1
+
+    @asset
+    def asset2():
+        return 2
+
+    source = SourceAsset(key=AssetKey("a_source_asset"))
+
+    layer_1: Sequence[AssetsDefinition, SourceAsset] = [asset2, source]
+    layer_2 = [layer_1, asset1]
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Bad return value from repository"):
+
+        @repository
+        def assets_repo():
+            return [layer_2]
