@@ -1,12 +1,23 @@
 <p align="center">
-<a href="https://dagster.io/"><img src="assets/dagster-logo.png"></a>
-<br /><br />
-<a href="https://twitter.com/dagsterio"><img src="https://img.shields.io/twitter/follow/dagsterio"></a>
-<a href="https://dagster.io/slack"><img src="https://dagster-slackin.herokuapp.com/badge.svg"></a>
-<a href="https://github.com/dagster-io/dagster"><img src="https://img.shields.io/github/stars/dagster-io/dagster?label=Star&style=social"></a>
+  <a target="_blank" href="https://dagster.io">
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset=".github/dagster-logo-dark.svg">
+        <img alt="dagster logo" src=".github/dagster-logo-light.svg" width="auto" height="120">
+    </picture>
+  </a>
+  <br /><br />
+  <a target="_blank" href="https://twitter.com/dagsterio">
+    <img src="https://img.shields.io/twitter/follow/dagsterio?labelColor=4F43DD&color=163B36&logo=twitter&style=flat">
+  </a>
+  <a target="_blank" href="https://dagster.io/slack">
+    <img src="https://dagster-slackin.herokuapp.com/badge.svg?bg=163B36">
+  </a>
+  <a target="_blank" href="https://github.com/dagster-io/dagster">
+    <img src="https://img.shields.io/github/stars/dagster-io/dagster?labelColor=4F43DD&color=163B36&logo=github">
+  </a>
 </p>
 
-# [Dagster](https://dagster.io/) &middot; [![GitHub license](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/dagster-io/dagster/blob/master/LICENSE) [![PyPI Version](https://badge.fury.io/py/dagster.svg)](https://pypi.org/project/dagster/) [![Coveralls coverage](https://coveralls.io/repos/github/dagster-io/dagster/badge.svg?branch=master)](https://coveralls.io/github/dagster-io/dagster?branch=master)
+# [Dagster](https://dagster.io/) &middot; [![Github license](https://img.shields.io/badge/License-Apache_2.0-blue.svg?label=license&labelColor=4F43DD&color=163B36)](https://github.com/dagster-io/dagster/blob/master/LICENSE) [![PyPI version](https://img.shields.io/pypi/v/dagster?labelColor=4F43DD&color=163B36)](https://pypi.org/project/dagster/) [![Coveralls coverage](https://img.shields.io/coveralls/github/dagster-io/dagster/master?labelColor=4F43DD&color=163B36)](https://coveralls.io/github/dagster-io/dagster?branch=master) ![Supported Python versions](https://img.shields.io/pypi/pyversions/dagster?labelColor=4F43DD&color=163B36)
 
 Dagster is an orchestration platform for the development, production, and observation of data assets.
 
@@ -35,7 +46,7 @@ most time-consuming tasks via a Gantt chart, re-execute subsets of steps, and mo
 Dagster is available on PyPI and officially supports Python 3.6+.
 
 ```bash
-$ pip install dagster dagit
+pip install dagster dagit
 ```
 
 This installs two modules:
