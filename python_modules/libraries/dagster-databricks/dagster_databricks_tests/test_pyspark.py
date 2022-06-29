@@ -57,6 +57,10 @@ BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG: Dict[str, object] = {
             {"pypi": {"package": "pytest"}},
         ],
     },
+    "permissions": {
+        "cluster_permissions": {"CAN_MANAGE": [{"group_name": "my_group"}]},
+        "job_permissions": {"CAN_MANAGE_RUN": [{"user_name": "my_user"}]},
+    },
     "secrets_to_env_variables": [],
     "storage": {
         "s3": {
@@ -162,9 +166,17 @@ def test_local():
 @mock.patch("dagster_databricks.databricks.DatabricksClient.read_file")
 @mock.patch("dagster_databricks.databricks.DatabricksClient.put_file")
 @mock.patch("dagster_databricks.DatabricksPySparkStepLauncher.get_step_events")
+@mock.patch("dagster_databricks.databricks.DatabricksClient.get_run")
 @mock.patch("dagster_databricks.databricks.DatabricksClient.get_run_state")
+@mock.patch("requests.patch", return_value=mock.Mock(ok=True))
 def test_pyspark_databricks(
-    mock_get_run_state, mock_get_step_events, mock_put_file, mock_read_file, mock_submit_run
+    mock_request_patch,
+    mock_get_run_state,
+    mock_get_run,
+    mock_get_step_events,
+    mock_put_file,
+    mock_read_file,
+    mock_submit_run,
 ):
     mock_submit_run.return_value = 12345
     mock_read_file.return_value = "somefilecontents".encode()
@@ -208,6 +220,8 @@ def test_pyspark_databricks(
         },
     )
     assert result.success
+    assert mock_request_patch.call_count == 2
+    assert mock_get_run.call_count == 2
     assert mock_get_run_state.call_count == 6
     assert mock_get_step_events.call_count == 6
     assert mock_put_file.call_count == 4
