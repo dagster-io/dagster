@@ -25,6 +25,7 @@ dbt_assets = load_assets_from_dbt_project(
 
 @asset(
     compute_kind="python",
+    # example of using an input manager to load an asset
     ins={"daily_order_summary": AssetIn(namespace="public", input_manager_key="numpy_io_manager")},
 )
 def order_forecast_model(daily_order_summary: np.ndarray) -> Any:
