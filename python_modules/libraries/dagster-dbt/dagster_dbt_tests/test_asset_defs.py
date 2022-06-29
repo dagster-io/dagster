@@ -17,6 +17,7 @@ from dagster import (
     ResourceDefinition,
     asset,
     io_manager,
+    materialize_to_memory,
     repository,
 )
 from dagster.core.asset_defs import build_assets_job
@@ -225,6 +226,23 @@ def test_basic(
         assert len(observations) == 17
     else:
         assert len(observations) == 0
+
+
+def test_custom_target(
+    dbt_seed, conn_string, test_project_dir, dbt_config_dir, capsys
+):  # pylint: disable=unused-argument
+    dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir, target="dev2")
+
+    materialize_to_memory(
+        dbt_assets,
+        resources={
+            "dbt": dbt_cli_resource.configured(
+                {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+            )
+        },
+    )
+    captured = capsys.readouterr()
+    assert "test-schema2" in captured.err
 
 
 @pytest.mark.parametrize(
