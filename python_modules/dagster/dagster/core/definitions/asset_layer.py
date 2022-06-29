@@ -446,12 +446,13 @@ class AssetLayer:
 
         # keep an index from node handle to all keys expected to be generated using that node
         self._asset_keys_by_node_handle: Dict[NodeHandle, Set[AssetKey]] = defaultdict(set)
-        _asset_info_by_key = {
-            asset_info.key: asset_info
+        _required_asset_keys = {
+            asset_info.key
             for asset_info in self._asset_info_by_node_output_handle.values()
+            if asset_info.is_required
         }
         for asset_key, node_handles in self._dependency_node_handles_by_asset_key.items():
-            if _asset_info_by_key[asset_key].is_required:
+            if asset_key in _required_asset_keys:
                 for node_handle in node_handles:
                     self._asset_keys_by_node_handle[node_handle].add(asset_key)
 
