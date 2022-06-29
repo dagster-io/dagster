@@ -263,5 +263,5 @@ def test_sensor_threading(instance_template: HelmTemplate):
     configmaps = instance_template.render(helm_values)
     assert len(configmaps) == 1
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
-    assert instance["sensors"]["useThreads"] == True
-    assert instance["sensors"]["numWorkers"] == 4
+    assert instance["sensors"]["use_threads"] == True
+    assert instance["sensors"]["num_workers"] == 4
