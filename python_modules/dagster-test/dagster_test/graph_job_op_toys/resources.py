@@ -1,4 +1,4 @@
-from dagster import Field, Int, graph, op, reconstructable, resource
+from dagster import Field, Int, asset, graph, op, reconstructable, repository, resource, with_resources
 
 
 def define_resource(num):
@@ -41,6 +41,20 @@ def resource_ops():
 
 
 resource_job = resource_ops.to_job(resource_defs=lots_of_resources)
+
+@asset(required_resource_keys={"R1"})
+def resource_asset(context):
+    return context.resources.R1
+
+@repository
+def resource_repo():
+    return [
+        resource_job,
+        *with_resources(
+            [resource_asset],
+            resource_defs=lots_of_resources,
+        )
+    ]
 
 if __name__ == "__main__":
     result = reconstructable(resource_job).execute_in_process()
