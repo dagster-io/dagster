@@ -193,8 +193,8 @@ export const AssetsCatalogTable: React.FC<AssetCatalogTableProps> = ({
                 style={{width: '30vw', minWidth: 150, maxWidth: 400}}
                 placeholder={
                   prefixPath.length
-                    ? `Filter asset_keys in ${prefixPath.join('/')}…`
-                    : `Filter all asset_keys…`
+                    ? `Filter asset keys in ${prefixPath.join('/')}…`
+                    : `Filter asset keys…`
                 }
                 onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
               />
