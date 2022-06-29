@@ -2,10 +2,9 @@ import importlib
 from abc import ABC, abstractmethod
 from typing import NamedTuple
 
-import yaml
-
 import dagster._check as check
 
+from ..utils.yaml_utils import load_run_config_yaml
 from .serdes import whitelist_for_serdes
 
 
@@ -39,7 +38,7 @@ class ConfigurableClassData(
 
     @property
     def config_dict(self):
-        return yaml.safe_load(self.config_yaml)
+        return load_run_config_yaml(self.config_yaml)
 
     def info_dict(self):
         return {

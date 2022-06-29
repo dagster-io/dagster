@@ -2,7 +2,6 @@ import os
 import sys
 
 import click
-import yaml
 
 import dagster._check as check
 from dagster import DagsterInvariantViolationError
@@ -22,6 +21,7 @@ from dagster.core.scheduler.instigation import (
     SensorInstigatorData,
 )
 from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.yaml_utils import dump_run_config_yaml
 
 
 @click.group(name="sensor")
@@ -323,7 +323,7 @@ def execute_preview_command(
                         "Sensor returning run requests for {num} run(s):\n\n{run_requests}".format(
                             num=len(sensor_runtime_data.run_requests),
                             run_requests="\n".join(
-                                yaml.safe_dump(run_request.run_config, default_flow_style=False)
+                                dump_run_config_yaml(run_request.run_config)
                                 for run_request in sensor_runtime_data.run_requests
                             ),
                         )

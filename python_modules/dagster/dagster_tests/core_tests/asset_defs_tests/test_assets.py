@@ -387,11 +387,7 @@ def test_asset_invocation_resource_errors():
     def asset_doesnt_use_resources():
         pass
 
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-        match='op "asset_doesnt_use_resources" has required resources, but no context was provided.',
-    ):
-        asset_doesnt_use_resources()
+    asset_doesnt_use_resources()
 
     @asset(resource_defs={"used": ResourceDefinition.hardcoded_resource("foo")})
     def asset_uses_resources(context):
