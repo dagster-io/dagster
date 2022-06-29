@@ -407,7 +407,7 @@ def report_status_sensor(context):
     else:
         return SkipReason("Don't report status of status_reporting_job")
 ```
-`request_job` is the job that will be run when the `RunRequest` is returned.
+`request_jobs` is a list of jobs that can be run by a returned `RunRequest`. The `job_name` parameter for `RunRequest` specifies the job from the `request_jobs` list that should be run.
 
 Note that in `report_status_sensor` we conditionally return a RunRequest. This ensures that when `report_status_sensor` runs `status_reporting_job` it doesn't enter an infinite loop where the success of `status_reporting_job` triggers another run of `status_reporting_job`, which triggers another run, and so on.
 

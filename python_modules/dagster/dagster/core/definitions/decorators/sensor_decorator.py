@@ -10,6 +10,7 @@ from dagster.core.definitions.sensor_definition import (
     SkipReason,
 )
 from dagster.core.errors import DagsterInvariantViolationError
+from dagster.utils.backcompat import deprecation_warning
 
 from ...errors import DagsterInvariantViolationError
 from ..events import AssetKey
@@ -66,12 +67,15 @@ def sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        job (Optional[Union[GraphDefinition, JobDefinition]]): The job to be executed when the sensor fires.
-        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental) A list of jobs to be executed when the sensor fires.
+        job (Optional[Union[GraphDefinition, JobDefinition]]): (deprecated in favor of jobs) The job to be executed when the sensor fires.
+        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): A list of jobs that can be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
     """
     check.opt_str_param(name, "name")
+
+    if job:
+        deprecation_warning("job", "0.16.0", "Use jobs instead.")
 
     def inner(fn: RawSensorEvaluationFunction) -> SensorDefinition:
         check.callable_param(fn, "fn")
@@ -136,13 +140,16 @@ def asset_sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        job (Optional[Union[GraphDefinition, JobDefinition]]): The job to be executed when the sensor fires.
-        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental) A list of jobs to be executed when the sensor fires.
+        job (Optional[Union[GraphDefinition, JobDefinition]]): (deprecated in favor of jobs) The job to be executed when the sensor fires.
+        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): A list of jobs that can be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
     """
 
     check.opt_str_param(name, "name")
+
+    if job:
+        deprecation_warning("job", "0.16.0", "Use jobs instead.")
 
     def inner(fn: AssetMaterializationFunction) -> AssetSensorDefinition:
         check.callable_param(fn, "fn")
