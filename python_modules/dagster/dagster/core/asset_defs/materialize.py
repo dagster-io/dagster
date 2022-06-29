@@ -1,20 +1,20 @@
-from typing import Any, Mapping, Optional, Sequence, Union, Set
+from typing import Any, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
+from dagster.utils import merge_dicts
 
 from ..definitions.utils import DEFAULT_IO_MANAGER_KEY
+from ..errors import DagsterInvariantViolationError
 from ..execution.build_resources import wrap_resources_for_execution
 from ..execution.execute_in_process_result import ExecuteInProcessResult
 from ..execution.with_resources import with_resources
 from ..instance import DagsterInstance
 from ..storage.fs_io_manager import fs_io_manager
+from ..storage.io_manager import IOManagerDefinition
+from ..storage.mem_io_manager import mem_io_manager
 from .assets import AssetsDefinition
 from .assets_job import build_assets_job
 from .source_asset import SourceAsset
-from ..storage.io_manager import IOManagerDefinition
-from ..storage.mem_io_manager import mem_io_manager
-from ..errors import DagsterInvariantViolationError
-from dagster.utils import merge_dicts
 
 
 def materialize(
@@ -91,10 +91,14 @@ def materialize_to_memory(
 
     assets = check.sequence_param(assets, "assets", of_type=(AssetsDefinition, SourceAsset))
     resource_defs = wrap_resources_for_execution(resources)
+    # Gather all resource defs for the purpose of checking io managers.
+    all_resource_defs = dict(resource_defs)
+    for asset in assets:
+        all_resource_defs = merge_dicts(asset.resource_defs, all_resource_defs)
 
     io_manager_keys = _get_required_io_manager_keys(assets)
     for io_manager_key in io_manager_keys:
-        if io_manager_key in resource_defs:
+        if io_manager_key in all_resource_defs:
             raise DagsterInvariantViolationError(
                 "Attempted to call `materialize_to_memory` with a resource "
                 f"provided for io manager key '{io_manager_key}'. Do not "
