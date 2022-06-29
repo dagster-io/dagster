@@ -203,9 +203,9 @@ def get_partition_set_partition_statuses(
             GraphenePartitionStatus(
                 id=f"{partition_set_name}:{name}",
                 partitionName=name,
-                runStatus=name.status,
-                runDuration=name.end_time - name.start_time
-                if name.end_time and name.start_time
+                runStatus=partition_data.status,
+                runDuration=partition_data.end_time - partition_data.start_time
+                if partition_data.end_time and partition_data.start_time
                 else None,
             )
         )
