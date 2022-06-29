@@ -528,3 +528,15 @@ def test_graph_backed_asset_io_manager():
         "entered handle_output for basic.the_op",
         "entered handle_input for basic.the_op",
     ]
+
+
+def test_group_name_requirements():
+    @asset(group_name="float")  # reserved python keywords allowed
+    def good_name():
+        return 1
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="not a valid name in Dagster"):
+
+        @asset(group_name="bad*name")  # regex mismatch
+        def bad_name():
+            return 2
