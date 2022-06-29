@@ -115,7 +115,7 @@ export const LaunchAssetExecutionButton: React.FC<{
 
   return (
     <>
-      <Tooltip content="shift-click to open the config editor">
+      <Tooltip content="Shift+click to add configuration">
         <Button
           intent={intent}
           onClick={onClick}
