@@ -1,8 +1,8 @@
 <p align="center">
   <a target="_blank" href="https://dagster.io">
     <picture>
-        <source media="(prefers-color-scheme: dark)" srcset=".github/dagster-logo-dark.svg">
-        <img alt="dagster logo" src=".github/dagster-logo-light.svg" width="auto" height="120">
+        <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/dagster-io/dagster/master/.github/dagster-logo-dark.svg">
+        <img alt="dagster logo" src="https://raw.githubusercontent.com/dagster-io/dagster/master/.github/dagster-logo-light.svg" width="auto" height="120">
     </picture>
   </a>
   <br /><br />
