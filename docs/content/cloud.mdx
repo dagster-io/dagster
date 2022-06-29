@@ -1,0 +1,32 @@
+---
+title: Getting Started With Dagster Cloud
+---
+
+# Getting Started with Dagster Cloud
+
+Welcome to Dagster Cloud!
+
+This tutorial will walk you through running your first job on Dagster Cloud using [an example Dagster repostitory](https://github.com/dagster-io/dagster-cloud/tree/main/dagster-cloud-examples).
+
+## Architecture overview
+
+### The agent model
+
+Dagster Cloud uses an _agent_ that runs in your infrastructure to ensure that your code, data, and secrets remain private. The agent is responsible for executing your code in your infrastructure. The agent streams metadata about code execution over HTTPS to Dagster Cloud’s _agent API_. For details, please see [The Dagster Cloud Architecture](/guides/architecture-reference).
+
+<Image
+  alt="Dagster Cloud Architecture Diagram (Summary)"
+  src="/cloud/images/architecture_agent.png"
+  width={1680}
+  height={946}
+/>
+
+### Multiple deployments
+
+Dagster Cloud _deployments_ allow your organization to operate multiple independent instances of Dagster, with separately managed permissions. When your Dagster Cloud organization is first created, it starts with a single deployment called `prod`.
+
+### Code locations
+
+Each Dagster Cloud deployment can include code loaded from arbitrarily many _code locations_. A code location specifies a single Python package or file that defines your Dagster code. Many agents also require specifying a Docker image, which the agent uses to create containers for executing your code.
+
+In this tutorial, you'll use the Workspace tab in Dagster Cloud to specify which code locations your agent should include.

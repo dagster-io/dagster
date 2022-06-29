@@ -1,0 +1,60 @@
+---
+title: Adding a code location
+---
+
+## Add a code location
+
+Once you have an agent running, you must tell it where your Dagster code is located. We've published [sample code to PyPI and Docker Hub](https://github.com/dagster-io/dagster-cloud/tree/main/dagster-cloud-examples) that you can use to get started.
+
+When you add a code location, your agent sends the location's Dagster repository metadata to Dagit. You can see your existing locations on the Workspace page in Dagit.
+
+The steps to add a location vary slightly depending on whether you are using the local agent or a container-based agent.
+
+### Local Agent
+
+First, you will want to make sure the `dagster-cloud-examples` package is available in the Python environment you are using:
+
+```shell
+pip install dagster-cloud-examples
+```
+
+To add the location in Dagit, navigate to the Workspace tab, and click on the "Add sample code location" button.
+
+<Image
+  alt="Dagit Workspace Screen"
+  src="/cloud/images/adding_code_location.png"
+  width={1118}
+  height={451}
+/>
+
+This button will prefill a YAML editor with the following config, which tells the agent to load jobs from the `dagster_cloud_examples` python package.
+
+```yaml
+location_name: cloud-examples
+code_source:
+  package_name: dagster_cloud_examples
+```
+
+Press the button to confirm that this config is correct, and your agent will attempt to load the sample code. Once the code is loaded, the new code location will show a green "Loaded" status, and a sample Dagster job will immediately appear in Dagit.
+
+### ECS, Kubernetes, or Docker Agent
+
+To add the location in Dagit, navigate to the Workspace tab, and click on the "Add sample code location" button.
+
+<Image
+  alt="Dagit Workspace Screen"
+  src="/cloud/images/adding_code_location.png"
+  width={1118}
+  height={451}
+/>
+
+This button will prefill a YAML editor with the following config, which tells the agent to pull the `dagster/dagster-cloud-examples` Docker image and load jobs from the `dagster_cloud_examples` python package in that image.
+
+```yaml
+location_name: cloud-examples
+image: dagster/dagster-cloud-examples
+code_source:
+  package_name: dagster_cloud_examples
+```
+
+Press the button to confirm that this config is correct, and your agent will attempt to pull the example image and load the sample code. Once the code is loaded, the new code location will show a green "Loaded" status, and a sample Dagster job will immediately appear in Dagit.

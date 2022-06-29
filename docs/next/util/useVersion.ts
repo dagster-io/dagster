@@ -28,37 +28,41 @@ export function normalizeVersionPath(
 } {
   let detectedVersion: string = defaultVersion;
   // first item will be empty string from splitting at first char
-  const pathnameParts = asPath.split("/");
+  try {
+    const pathnameParts = asPath.split("/");
 
-  (versions || []).some((version) => {
-    if (pathnameParts[1].toLowerCase() === version.toLowerCase()) {
-      detectedVersion = version;
-      pathnameParts.splice(1, 1);
-      asPath = pathnameParts.join("/") || "/";
-      return true;
+    (versions || []).some((version) => {
+      if (pathnameParts[1].toLowerCase() === version.toLowerCase()) {
+        detectedVersion = version;
+        pathnameParts.splice(1, 1);
+        asPath = pathnameParts.join("/") || "/";
+        return true;
+      }
+      return false;
+    });
+
+    let asPathWithoutAnchor = asPath;
+    if (asPathWithoutAnchor.indexOf("#") > 0) {
+      asPathWithoutAnchor = asPath.substring(0, asPath.indexOf("#"));
     }
-    return false;
-  });
+    // sort release versions by latest - we assume `ALL_VERSIONS` starts with master, and then
+    // the following versions are sorted from oldest to latest.
+    const sortedVersions = ALL_VERSIONS.slice(0, 1).concat(
+      ALL_VERSIONS.slice(1).reverse()
+    );
 
-  let asPathWithoutAnchor = asPath;
-  if (asPathWithoutAnchor.indexOf("#") > 0) {
-    asPathWithoutAnchor = asPath.substring(0, asPath.indexOf("#"));
+    return {
+      asPath,
+      asPathWithoutAnchor,
+      version: detectedVersion,
+      versions: sortedVersions,
+      defaultVersion,
+      latestVersion,
+    };
+  } catch (error) {
+    console.log("asPath!!!!!!", asPath);
+    throw error;
   }
-
-  // sort release versions by latest - we assume `ALL_VERSIONS` starts with master, and then
-  // the following versions are sorted from oldest to latest.
-  const sortedVersions = ALL_VERSIONS.slice(0, 1).concat(
-    ALL_VERSIONS.slice(1).reverse()
-  );
-
-  return {
-    asPath,
-    asPathWithoutAnchor,
-    version: detectedVersion,
-    versions: sortedVersions,
-    defaultVersion,
-    latestVersion,
-  };
 }
 
 export function versionFromPage(page: string | string[]) {

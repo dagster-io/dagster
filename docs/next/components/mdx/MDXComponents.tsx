@@ -404,6 +404,18 @@ export default {
      */
     const { version } = useVersion();
     const { src } = props;
+
+    // enable Zoom for cloud images
+    if (src.startsWith("/cloud/images/")) {
+      return (
+        <Zoom wrapElement="span" wrapStyle={{ display: "block" }}>
+          <span className="block mx-auto">
+            <Image {...(props as any)} />
+          </span>
+        </Zoom>
+      );
+    }
+    // no Zoom for other images
     if (!src.startsWith("/images/")) {
       return (
         <span className="block mx-auto">
@@ -412,6 +424,7 @@ export default {
       );
     }
 
+    // resolve paths for oss images because those are versioned
     const resolvedPath =
       version === "master"
         ? src

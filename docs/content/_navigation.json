@@ -732,9 +732,33 @@
     ]
   },
   {
-    "title": "Dagster Cloud Docs",
+    "title": "Dagster Cloud",
     "icon": "Cloud",
-    "path": "https://docs.dagster.cloud/",
-    "isExternalLink": true
+    "path": "/cloud",
+    "children": [
+      {
+        "title": "Tutorial",
+        "icon": "Sparkles",
+        "path": "/cloud",
+        "children": [
+          {
+            "title": "Running an Agent",
+            "path": "/cloud/tutorial/running-an-agent"
+          },
+          {
+            "title": "Adding a Code Location",
+            "path": "/cloud/tutorial/adding-code-locations"
+          },
+          {
+            "title": "Running a Job",
+            "path": "/cloud/tutorial/running-jobs"
+          },
+          {
+            "title": "Next Steps",
+            "path": "/cloud/tutorial/next-steps"
+          }
+        ]
+      }
+    ]
   }
 ]

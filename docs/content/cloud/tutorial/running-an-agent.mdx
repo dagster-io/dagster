@@ -1,0 +1,20 @@
+---
+title: Running an Agent
+---
+
+# Running an Agent
+
+## Choosing an agent implementation
+
+Dagster Cloud uses an [agent](/guides/architecture-reference) that runs in your infrastructure to ensure that your code, data, and secrets remain private. The agent is responsible for executing your code in your infrastructure. The agent streams metadata about code execution over HTTPS to Dagster Cloud’s _agent API_.
+
+Dagster Cloud supports agents running on a variety of different backends. Follow the appropriate setup guide for the agent of your choice:
+
+| Agent                                  | Description                                                                                                                                                                                                                                               |
+| :------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Local](/agents/local/setup)           | Execute Dagster jobs as processes on your computer. This agent is appropriate for testing and small local deployments.                                                                                                                                    |
+| [Kubernetes](/agents/kubernetes/setup) | Execute Dagster jobs on a Kubernetes cluster. This agent is appropriate for scaled production deployments and is a good choice for teams who have already standardized on Kubernetes.                                                                     |
+| [ECS](/agents/ecs/setup)               | Execute Dagster jobs as AWS Fargate ECS tasks. This agent is appropriate for scaled production deployments and is a good choice for teams who have already standardized on ECS or who don't plan to run their own container orchestration infrastructure. |
+| [Docker](/agents/docker/setup)         | Execute Dagster jobs in Docker containers on your computer. This agent is appropriate for testing, small local deployments, or larger bare-metal deployments.                                                                                             |
+
+Continue the tutorial once you have an agent running.

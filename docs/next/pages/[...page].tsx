@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 
-import MDXRenderer, {
+import VersionedMDXRenderer, {
   MDXData,
+  UnversionedMDXRenderer,
   VersionedContentLayout,
 } from "../components/mdx/MDXRenderer";
 import MDXComponents, {
@@ -105,7 +106,17 @@ export default function MdxPage(props: Props) {
     <>
       <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
       {props.type == PageType.MDX ? (
-        <MDXRenderer data={props.data} toggleFeedback={toggleFeedback} />
+        props.data.asPath.startsWith("/cloud") ? (
+          <UnversionedMDXRenderer
+            data={props.data}
+            toggleFeedback={toggleFeedback}
+          />
+        ) : (
+          <VersionedMDXRenderer
+            data={props.data}
+            toggleFeedback={toggleFeedback}
+          />
+        )
       ) : (
         <HTMLRenderer data={props.data} toggleFeedback={toggleFeedback} />
       )}
