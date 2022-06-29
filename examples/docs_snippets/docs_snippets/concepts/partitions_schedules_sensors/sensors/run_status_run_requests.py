@@ -28,6 +28,11 @@ def report_status_sensor(context):
         return SkipReason("Don't report status of status_reporting_job")
 
 
+# end
+
+# start_job_failure
+
+
 @run_failure_sensor(response_job=status_reporting_job)
 def report_failure_sensor(context):
     run_config = {
@@ -38,4 +43,4 @@ def report_failure_sensor(context):
     return RunRequest(run_key=None, run_config=run_config)
 
 
-# end
+# end_job_failure

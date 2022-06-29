@@ -152,7 +152,7 @@ RawSensorEvaluationFunction = Union[
     Callable[[SensorEvaluationContext], RawSensorEvaluationFunctionReturn],
 ]
 SensorEvaluationFunction = Callable[
-    [SensorEvaluationContext], Iterator[Union[SkipReason, RunRequest, PipelineRunReaction]]
+    [SensorEvaluationContext], Iterator[Union[SkipReason, RunRequest]]
 ]
 
 
@@ -257,9 +257,13 @@ class SensorDefinition:
         self._raw_fn: RawSensorEvaluationFunction = check.callable_param(
             evaluation_fn, "evaluation_fn"
         )
-        self._evaluation_fn: SensorEvaluationFunction = wrap_sensor_evaluation(
-            self._name, evaluation_fn
-        )
+        self._evaluation_fn: Union[
+            SensorEvaluationFunction,
+            Callable[
+                [SensorEvaluationContext],
+                Iterator[Union[SkipReason, RunRequest, PipelineRunReaction]],
+            ],
+        ] = wrap_sensor_evaluation(self._name, evaluation_fn)
         self._min_interval = check.opt_int_param(
             minimum_interval_seconds, "minimum_interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
         )

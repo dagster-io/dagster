@@ -15,6 +15,7 @@ from dagster.core.definitions.sensor_definition import (
     is_context_provided,
 )
 from dagster.core.errors import (
+    DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     RunStatusSensorExecutionError,
     user_code_error_boundary,
@@ -248,7 +249,7 @@ def pipeline_failure_sensor(
         pipelines = monitored_pipelines if monitored_pipelines else pipeline_selection
 
         @run_status_sensor(
-            pipeline_run_status=PipelineRunStatus.FAILURE,
+            run_status=PipelineRunStatus.FAILURE,
             monitored_pipelines=pipelines,
             name=sensor_name,
             minimum_interval_seconds=minimum_interval_seconds,
@@ -332,7 +333,7 @@ def run_failure_sensor(
         jobs = monitored_jobs if monitored_jobs else job_selection
 
         @run_status_sensor(
-            pipeline_run_status=PipelineRunStatus.FAILURE,
+            run_status=PipelineRunStatus.FAILURE,
             name=sensor_name,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
@@ -361,7 +362,7 @@ class RunStatusSensorDefinition(SensorDefinition):
 
     Args:
         name (str): The name of the sensor. Defaults to the name of the decorated function.
-        pipeline_run_status (PipelineRunStatus): The status of a run which will be
+        run_status (PipelineRunStatus): The status of a run which will be
             monitored by the sensor.
         run_status_sensor_fn (Callable[[RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]]): The core
             evaluation function for the sensor. Takes a :py:class:`~dagster.RunStatusSensorContext`.
@@ -383,7 +384,7 @@ class RunStatusSensorDefinition(SensorDefinition):
     def __init__(
         self,
         name: str,
-        pipeline_run_status: PipelineRunStatus,
+        run_status: PipelineRunStatus,
         run_status_sensor_fn: Callable[
             [RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]
         ],
@@ -399,7 +400,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         from dagster.core.storage.event_log.base import EventRecordsFilter, RunShardedEventsCursor
 
         check.str_param(name, "name")
-        check.inst_param(pipeline_run_status, "pipeline_run_status", PipelineRunStatus)
+        check.inst_param(run_status, "run_status", PipelineRunStatus)
         check.callable_param(run_status_sensor_fn, "run_status_sensor_fn")
         check.opt_list_param(monitored_pipelines, "monitored_pipelines", str)
         check.opt_int_param(minimum_interval_seconds, "minimum_interval_seconds")
@@ -412,7 +413,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         self._run_status_sensor_fn = check.callable_param(
             run_status_sensor_fn, "run_status_sensor_fn"
         )
-        event_type = PIPELINE_RUN_STATUS_TO_EVENT_TYPE[pipeline_run_status]
+        event_type = PIPELINE_RUN_STATUS_TO_EVENT_TYPE[run_status]
 
         def _wrapped_fn(context: SensorEvaluationContext):
             # initiate the cursor to (most recent event id, current timestamp) when:
@@ -552,7 +553,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                 # * update cursor and job state
                 yield PipelineRunReaction(
                     pipeline_run=pipeline_run,
-                    run_status=pipeline_run_status,
+                    run_status=run_status,
                     error=serializable_error,
                 )
 
@@ -610,7 +611,8 @@ class RunStatusSensorDefinition(SensorDefinition):
 
 
 def run_status_sensor(
-    pipeline_run_status: PipelineRunStatus,
+    run_status: Optional[PipelineRunStatus] = None,
+    pipeline_run_status: Optional[PipelineRunStatus] = None,
     monitored_pipelines: Optional[List[str]] = None,
     pipeline_selection: Optional[List[str]] = None,
     name: Optional[str] = None,
@@ -632,8 +634,10 @@ def run_status_sensor(
     Takes a :py:class:`~dagster.RunStatusSensorContext`.
 
     Args:
-        pipeline_run_status (PipelineRunStatus): The status of pipeline execution which will be
-            monitored by the sensor.
+        run_status (Optional[PipelineRunStatus]): The status of run execution which will be
+            monitored by the sensor. One of run_status or pipeline_run_status must be provided
+        pipeline_run_status (Optional[PipelineRunStatus]): (deprecated in favor of run_status) The status of
+            pipeline execution which will be monitored by the sensor.
         monitored_pipelines (Optional[List[str]]): Names of the pipelines that will be monitored by
             this sensor. Defaults to None, which means the alert will be sent when any pipeline in
             the repository fails.
@@ -646,10 +650,10 @@ def run_status_sensor(
         description (Optional[str]): A human-readable description of the sensor.
         monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): Jobs that will
             be monitored by this sensor. Defaults to None, which means the alert will be sent when
-            any job in the repository matches the requested pipeline_run_status.
+            any job in the repository matches the requested run_status.
         job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): (deprecated in favor of monitored_jobs)
             Jobs that will be monitored by this sensor. Defaults to None, which means the alert will be sent when
-            any job in the repository matches the requested pipeline_run_status.
+            any job in the repository matches the requested run_status.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
         response_job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should be
@@ -665,6 +669,15 @@ def run_status_sensor(
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
+        if pipeline_run_status:
+            deprecation_warning("pipeline_run_status", "0.16.0", "Use run_status instead.")
+
+        run_status_final = run_status if run_status else pipeline_run_status
+        if not run_status_final:
+            raise DagsterInvalidDefinitionError(
+                "run_status must be provided to a run status sensor"
+            )
+
         if pipeline_selection:
             deprecation_warning("pipeline_selection", "0.16.0", "Use monitored_pipelines instead.")
         pipelines = monitored_pipelines if monitored_pipelines else pipeline_selection
@@ -675,7 +688,7 @@ def run_status_sensor(
 
         return RunStatusSensorDefinition(
             name=sensor_name,
-            pipeline_run_status=pipeline_run_status,
+            run_status=run_status_final,
             run_status_sensor_fn=fn,
             monitored_pipelines=pipelines,
             minimum_interval_seconds=minimum_interval_seconds,
