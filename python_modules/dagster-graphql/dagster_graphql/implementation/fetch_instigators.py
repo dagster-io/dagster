@@ -2,7 +2,6 @@ import dagster._check as check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import InstigatorSelector
 from dagster.core.scheduler.instigation import InstigatorStatus
-from dagster.core.storage.schedules.sql_schedule_storage import SqlScheduleStorage
 
 from .utils import capture_error
 
