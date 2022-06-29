@@ -39,7 +39,7 @@ def pandas_io_manager(context):
 
 # we use the NumpyIOManager as an input manager for an asset to load it as a numpy array rather
 # than a Pandas DataFrame (the default loading behavior for assets)
-# This is a toy to showcase swapping out input managers
+# This is to showcase swapping out input managers
 class NumpyIOManager(PandasIOManager):
     def load_input(self, context) -> np.ndarray:
         model_name = context.upstream_output.asset_key.path[-1]

@@ -30,10 +30,12 @@ dbt_assets = load_assets_from_dbt_project(
 )
 def order_forecast_model(daily_order_summary: np.ndarray) -> Any:
     """Model parameters that best fit the observed data"""
-    df = pd.DataFrame(daily_order_summary, columns=["order_date", "total_value", "num_orders"])
     return tuple(
         optimize.curve_fit(
-            f=model_func, xdata=df.order_date.astype(np.int64), ydata=df.num_orders, p0=[10, 100]
+            f=model_func,
+            xdata=daily_order_summary[:, 0],
+            ydata=daily_order_summary[:, 2],
+            p0=[10, 100],
         )[0]
     )
 
