@@ -19,7 +19,7 @@ const Layout = ({ children }) => {
       <div
         style={{
           minHeight: "100vh",
-          backgroundImage: 'url("/assets/head-texture.jpg")',
+          backgroundImage: 'url("/docs-wip/assets/head-texture.jpg")',
           backgroundRepeat: "no-repeat",
           backgroundPosition: "top middle",
           backgroundSize: "fit",

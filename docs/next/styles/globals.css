@@ -12,13 +12,13 @@
   @font-face {
     font-family: Neue Montreal;
     font-weight: 400;
-    src: url(/fonts/PPNeueMontreal-Regular.woff) format("woff");
+    src: url(/docs-wip/fonts/PPNeueMontreal-Regular.woff) format("woff");
   }
 
   @font-face {
     font-family: Diatype Mono;
     font-weight: 400;
-    src: url(/fonts/ABCDiatypeMono-Regular.woff) format("woff");
+    src: url(/docs-wip/fonts/ABCDiatypeMono-Regular.woff) format("woff");
   }
 
   html {

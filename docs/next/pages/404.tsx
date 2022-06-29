@@ -10,7 +10,7 @@ export default function Custom404() {
             <div className="flex flex-col justify-center items-center max-w-3xl prose-sm lg:prose dark:prose-dark mx-12">
               <img
                 className="w-24 lg:w-64 animate-wiggle hover:animate-spin"
-                src="/assets/logos/small.png"
+                src="/docs-wip/assets/logos/small.png"
               />
               <h1>404: Not Found</h1>
               <h2>The page you are looking for does not exist. </h2>

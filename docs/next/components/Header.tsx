@@ -70,7 +70,7 @@ const Header = ({ openMobileDocsMenu }) => {
         >
           <img
             className="block py-3 sm:py-0 h-14 sm:h-8"
-            src="/assets/logos/dagster_logo_primary.svg"
+            src="/docs-wip/assets/logos/dagster_logo_primary.svg"
             alt="Dagster logo"
           />
         </a>

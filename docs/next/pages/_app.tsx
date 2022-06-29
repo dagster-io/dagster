@@ -9,6 +9,7 @@ import Layout from "../layouts/MainLayout";
 import { useEffect } from "react";
 import { useRouter } from "next/router";
 import { useVersion } from "../util/useVersion";
+import Head from "next/head";
 
 const BASE_URL = "https://docs.dagster.io";
 const DEFAULT_SEO = {
@@ -56,6 +57,9 @@ function MyApp({ Component, pageProps }: AppProps) {
 
   return (
     <>
+      <Head>
+        <link rel="shortcut icon" href="/docs-wip/favicon.ico" />
+      </Head>
       <DefaultSeo canonical={canonicalUrl} {...DEFAULT_SEO} />
       {getLayout(<Component {...pageProps} />)}
     </>

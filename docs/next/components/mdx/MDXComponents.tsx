@@ -410,7 +410,10 @@ export default {
       return (
         <Zoom wrapElement="span" wrapStyle={{ display: "block" }}>
           <span className="block mx-auto">
-            <Image {...(props as any)} />
+            <Image
+              src={src.replace("/cloud/images/", "/docs-wip/cloud/images/")}
+              {...(props as any)}
+            />
           </span>
         </Zoom>
       );
@@ -419,7 +422,7 @@ export default {
     if (!src.startsWith("/images/")) {
       return (
         <span className="block mx-auto">
-          <Image {...(props as any)} />
+          <Image src={"/docs-wip/" + src} {...(props as any)} />
         </span>
       );
     }
@@ -427,12 +430,12 @@ export default {
     // resolve paths for oss images because those are versioned
     const resolvedPath =
       version === "master"
-        ? src
+        ? "/docs-wip" + src
         : new URL(
             path.join("versioned_images", version, src.replace("/images/", "")),
             "https://dagster-docs-versioned-content.s3.us-west-1.amazonaws.com"
           ).href;
-
+    console.log(resolvedPath);
     return (
       <Zoom wrapElement="span" wrapStyle={{ display: "block" }}>
         <span className="block mx-auto">
