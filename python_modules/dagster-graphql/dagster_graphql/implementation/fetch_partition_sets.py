@@ -176,20 +176,39 @@ def get_partition_set_partition_statuses(
 
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(partition_set_name, "partition_set_name")
-    run_partition_data = graphene_info.context.instance.run_storage.get_run_partition_data(
-        partition_set_name, job_name, repository_handle.get_external_origin().get_id()
+    partition_data_by_name = {
+        partition_data.partition: partition_data
+        for partition_data in graphene_info.context.instance.run_storage.get_run_partition_data(
+            partition_set_name, job_name, repository_handle.get_external_origin().get_id()
+        )
+    }
+    names_result = graphene_info.context.get_external_partition_names(
+        repository_handle, partition_set_name
     )
-    return GraphenePartitionStatuses(
-        results=[
-            GraphenePartitionStatus(
-                id=f"{partition_set_name}:{p.partition}",
-                partitionName=p.partition,
-                runStatus=p.status,
-                runDuration=p.end_time - p.start_time if p.end_time and p.start_time else None,
+    status_results = []
+
+    for name in names_result.partition_names:
+        if not partition_data_by_name.get(name):
+            status_results.append(
+                GraphenePartitionStatus(
+                    id=f"{partition_set_name}:{name}",
+                    partitionName=name,
+                )
             )
-            for p in run_partition_data
-        ]
-    )
+            continue
+        partition_data = partition_data_by_name[name]
+        status_results.append(
+            GraphenePartitionStatus(
+                id=f"{partition_set_name}:{name}",
+                partitionName=name,
+                runStatus=partition_data.status,
+                runDuration=partition_data.end_time - partition_data.start_time
+                if partition_data.end_time and partition_data.start_time
+                else None,
+            )
+        )
+
+    return GraphenePartitionStatuses(results=status_results)
 
 
 def get_partition_set_partition_runs(graphene_info, partition_set):
