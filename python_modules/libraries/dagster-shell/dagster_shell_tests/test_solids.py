@@ -10,7 +10,7 @@ from dagster_shell import (
     shell_solid,
 )
 
-from dagster import Failure, OutputDefinition, composite_solid, execute_solid
+from dagster import Failure, OutputDefinition, composite_solid, execute_solid, job, op
 
 
 @pytest.mark.parametrize("factory", [create_shell_command_solid, create_shell_command_op])
@@ -52,6 +52,22 @@ def test_shell(shell_defn, name):
         run_config={"solids": {name: {"config": {"env": {"MY_ENV_VAR": "foobar"}}}}},
     )
     assert result.output_values == {"result": "this is a test message: foobar\n"}
+
+
+def test_shell_op_inside_job():
+    # NOTE: this would be best as a docs example
+    @op
+    def get_shell_cmd_op():
+        return "echo $MY_ENV_VAR"
+
+    @job
+    def shell_job():
+        shell_op(get_shell_cmd_op())
+
+    result = shell_job.execute_in_process(
+        run_config={"ops": {"shell_op": {"config": {"env": {"MY_ENV_VAR": "hello world!"}}}}}
+    )
+    assert result.output_for_node("shell_op") == "hello world!\n"
 
 
 @pytest.mark.parametrize("factory", [create_shell_command_op, create_shell_command_solid])

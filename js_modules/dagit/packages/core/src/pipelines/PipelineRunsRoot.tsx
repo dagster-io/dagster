@@ -6,6 +6,7 @@ import {
   Page,
   Tag,
   TokenizingFieldValue,
+  tokenToString,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
@@ -23,6 +24,7 @@ import {
   RunsFilterInput,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
+  RunFilterToken,
 } from '../runs/RunsFilterInput';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {Loading} from '../ui/Loading';
@@ -85,6 +87,16 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
     },
   });
 
+  const onAddTag = React.useCallback(
+    (token: RunFilterToken) => {
+      const tokenAsString = tokenToString(token);
+      if (!filterTokens.some((token) => tokenToString(token) === tokenAsString)) {
+        setFilterTokens([...filterTokens, token]);
+      }
+    },
+    [filterTokens, setFilterTokens],
+  );
+
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   return (
@@ -122,7 +134,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
                 <StickyTableContainer $top={0}>
                   <RunTable
                     runs={displayed}
-                    onSetFilter={setFilterTokens}
+                    onAddTag={onAddTag}
                     actionBarComponents={
                       <RunsFilterInput
                         enabledFilters={ENABLED_FILTERS}

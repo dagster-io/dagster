@@ -18,8 +18,8 @@ export const priorityTagSet = new Set([
 export const RunTags: React.FC<{
   tags: TagType[];
   mode: string | null;
-  onSetFilter?: (search: RunFilterToken[]) => void;
-}> = React.memo(({tags, onSetFilter, mode}) => {
+  onAddTag?: (token: RunFilterToken) => void;
+}> = React.memo(({tags, onAddTag, mode}) => {
   const copy = useCopyToClipboard();
 
   const actions = React.useMemo(() => {
@@ -33,17 +33,17 @@ export const RunTags: React.FC<{
       },
     ];
 
-    if (onSetFilter) {
+    if (onAddTag) {
       list.push({
         label: 'Add tag to filter',
         onClick: (tag: TagType) => {
-          onSetFilter([{token: 'tag', value: `${tag.key}=${tag.value}`}]);
+          onAddTag({token: 'tag', value: `${tag.key}=${tag.value}`});
         },
       });
     }
 
     return list;
-  }, [copy, onSetFilter]);
+  }, [copy, onAddTag]);
 
   const displayedTags = React.useMemo(() => {
     const priority = [];
