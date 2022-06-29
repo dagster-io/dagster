@@ -12,6 +12,7 @@ class AssetIn(
             ("key", Optional[AssetKey]),
             ("metadata", Optional[Mapping[str, Any]]),
             ("key_prefix", Optional[Sequence[str]]),
+            ("input_manager_key", Optional[str]),
         ],
     )
 ):
@@ -37,6 +38,7 @@ class AssetIn(
         namespace: Optional[Sequence[str]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         asset_key: Optional[CoercibleToAssetKey] = None,
+        input_manager_key: Optional[str] = None,
     ):
         key_prefix = canonicalize_backcompat_args(
             key_prefix, "key_prefix", namespace, "namespace", "0.16.0"
@@ -54,4 +56,5 @@ class AssetIn(
             key=AssetKey.from_coerceable(key) if key is not None else None,
             metadata=check.opt_inst_param(metadata, "metadata", Mapping),
             key_prefix=check.opt_list_param(key_prefix, "key_prefix", of_type=str),
+            input_manager_key=check.opt_str_param(input_manager_key, "input_manager_key"),
         )

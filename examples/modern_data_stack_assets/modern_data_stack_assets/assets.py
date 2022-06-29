@@ -6,11 +6,11 @@ from dagster_airbyte import airbyte_resource, build_airbyte_assets
 from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
 from scipy import optimize
 
-from dagster import asset, load_assets_from_current_module, repository
+from dagster import AssetIn, asset, load_assets_from_current_module, repository
 from dagster.core.execution.with_resources import with_resources
 
 from .constants import *  # pylint: disable=wildcard-import,unused-wildcard-import
-from .pandas_io_manager import pandas_io_manager
+from .pandas_io_manager import numpy_io_manager, pandas_io_manager
 
 airbyte_assets = build_airbyte_assets(
     connection_id=AIRBYTE_CONNECTION_ID,
@@ -23,13 +23,19 @@ dbt_assets = load_assets_from_dbt_project(
 )
 
 
-@asset(compute_kind="python")
-def order_forecast_model(daily_order_summary: pd.DataFrame) -> Any:
+@asset(
+    compute_kind="python",
+    # example of using an input manager to load an asset
+    ins={"daily_order_summary": AssetIn(namespace="public", input_manager_key="numpy_io_manager")},
+)
+def order_forecast_model(daily_order_summary: np.ndarray) -> Any:
     """Model parameters that best fit the observed data"""
-    df = daily_order_summary
     return tuple(
         optimize.curve_fit(
-            f=model_func, xdata=df.order_date.astype(np.int64), ydata=df.num_orders, p0=[10, 100]
+            f=model_func,
+            xdata=daily_order_summary[:, 0],
+            ydata=daily_order_summary[:, 2],
+            p0=[10, 100],
         )[0]
     )
 
@@ -51,6 +57,7 @@ resource_defs = {
     "airbyte": airbyte_resource.configured(AIRBYTE_CONFIG),
     "dbt": dbt_cli_resource.configured(DBT_CONFIG),
     "pandas_io_manager": pandas_io_manager.configured(PANDAS_IO_CONFIG),
+    "numpy_io_manager": numpy_io_manager.configured(PANDAS_IO_CONFIG),
 }
 
 
