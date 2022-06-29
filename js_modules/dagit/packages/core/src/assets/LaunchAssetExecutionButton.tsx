@@ -85,7 +85,7 @@ export const LaunchAssetExecutionButton: React.FC<{
     );
   }
 
-  const onClick = async () => {
+  const onClick = async (e: React.MouseEvent<any>) => {
     if (state.type === 'loading') {
       return;
     }
@@ -96,7 +96,7 @@ export const LaunchAssetExecutionButton: React.FC<{
       variables: {assetKeys: assetKeys.map(({path}) => ({path}))},
     });
     const assets = result.data.assetNodes;
-    const next = stateForLaunchingAssets(assets, preferredJobName);
+    const next = stateForLaunchingAssets(assets, e, preferredJobName);
 
     if (next.type === 'error') {
       showCustomAlert({
@@ -114,19 +114,21 @@ export const LaunchAssetExecutionButton: React.FC<{
 
   return (
     <>
-      <Button
-        intent={intent}
-        onClick={onClick}
-        icon={
-          state.type === 'loading' ? (
-            <Spinner purpose="body-text" />
-          ) : (
-            <Icon name="materialization" />
-          )
-        }
-      >
-        {label}
-      </Button>
+      <Tooltip content="shift-click to open the config editor">
+        <Button
+          intent={intent}
+          onClick={onClick}
+          icon={
+            state.type === 'loading' ? (
+              <Spinner purpose="body-text" />
+            ) : (
+              <Icon name="materialization" />
+            )
+          }
+        >
+          {label}
+        </Button>
+      </Tooltip>
       {state.type === 'launchpad' && (
         <AssetLaunchpad
           assetJobName={state.jobName}
@@ -152,6 +154,7 @@ export const LaunchAssetExecutionButton: React.FC<{
 
 function stateForLaunchingAssets(
   assets: LaunchAssetExecutionAssetNodeFragment[],
+  mouseEvent: React.MouseEvent<any>,
   preferredJobName?: string,
 ): LaunchAssetsState {
   if (assets.some(isSourceAsset)) {
@@ -206,7 +209,7 @@ function stateForLaunchingAssets(
 
   // Ok! Assertions met, how do we launch this run
 
-  if (anyAssetsHaveConfig) {
+  if (anyAssetsHaveConfig || mouseEvent.shiftKey) {
     const assetOpNames = assets.flatMap((a) => a.opNames || []);
     return {
       type: 'launchpad',
