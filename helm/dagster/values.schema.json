@@ -2257,14 +2257,7 @@
             "properties": {
                 "useThreads": {
                     "title": "Usethreads",
-                    "anyOf": [
-                        {
-                            "type": "boolean"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ]
+                    "type": "boolean"
                 },
                 "numWorkers": {
                     "title": "Numworkers",
@@ -2277,7 +2270,10 @@
                         }
                     ]
                 }
-            }
+            },
+            "required": [
+                "useThreads"
+            ]
         },
         "Daemon": {
             "title": "Daemon",
@@ -2371,15 +2367,7 @@
                     "type": "object"
                 },
                 "sensors": {
-                    "title": "Sensors",
-                    "anyOf": [
-                        {
-                            "$ref": "#/definitions/Sensors"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ]
+                    "$ref": "#/definitions/Sensors"
                 }
             },
             "required": [
@@ -2403,7 +2391,8 @@
                 "startupProbe",
                 "annotations",
                 "runMonitoring",
-                "runRetries"
+                "runRetries",
+                "sensors"
             ],
             "additionalProperties": false
         },

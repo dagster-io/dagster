@@ -216,6 +216,16 @@ def get_tick_retention_settings(
         return default_retention_settings
 
 
+def sensors_daemon_config():
+    return Field(
+        {
+            "use_threads": Field(Bool, is_required=False, default_value=False),
+            "num_workers": Field(int, is_required=False),
+        },
+        is_required=False,
+    )
+
+
 def dagster_instance_config_schema():
     return {
         "local_artifact_storage": config_field_for_configurable_class(),
@@ -254,11 +264,5 @@ def dagster_instance_config_schema():
             {"local_startup_timeout": Field(int, is_required=False)}, is_required=False
         ),
         "retention": retention_config_schema(),
-        "sensors": Field(
-            {
-                "use_threads": Field(Bool, is_required=False, default_value=False),
-                "num_workers": Field(int, is_required=False),
-            },
-            is_required=False,
-        ),
+        "sensors": sensors_daemon_config(),
     }

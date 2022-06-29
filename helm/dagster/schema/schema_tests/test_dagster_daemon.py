@@ -15,6 +15,8 @@ from schema.charts.dagster_user_deployments.subschema.user_deployments import Us
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
 
+from dagster.core.instance.config import sensors_daemon_config
+
 from .utils import create_simple_user_deployment
 
 
@@ -263,5 +265,7 @@ def test_sensor_threading(instance_template: HelmTemplate):
     configmaps = instance_template.render(helm_values)
     assert len(configmaps) == 1
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    sensors_config = instance["sensors"]
+    assert sensors_config.keys() == sensors_daemon_config().config_type.fields.keys()
     assert instance["sensors"]["use_threads"] == True
     assert instance["sensors"]["num_workers"] == 4

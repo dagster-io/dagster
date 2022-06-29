@@ -1005,10 +1005,10 @@ dagsterDaemon:
 
   sensors:
     # Whether to evaluate sensors using an asynchronous thread pool.  Defaults to false
-    use_threads: false
+    useThreads: false
     # The max number of worker threads to use when asynchronously evaluating sensors. Will use the
     # default value used by Python, which depends on the number of cores available.
-    num_workers: ~
+    numWorkers: ~
 
   # Additional environment variables to set.
   # A Kubernetes ConfigMap will be created with these environment variables. See:
