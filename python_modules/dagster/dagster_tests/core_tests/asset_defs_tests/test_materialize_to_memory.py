@@ -255,3 +255,7 @@ def test_materialize_to_memory_partition_key():
 
     result = materialize_to_memory([the_asset], partition_key="2022-02-02")
     assert result.success
+
+
+def test_materialize_to_memory_provided_io_manager_instance():
+    pass
