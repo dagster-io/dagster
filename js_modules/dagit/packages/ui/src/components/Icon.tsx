@@ -44,6 +44,7 @@ import folder from '../icon-svgs/folder.svg';
 import folder_open from '../icon-svgs/folder_open.svg';
 import gantt_flat from '../icon-svgs/gantt_flat.svg';
 import gantt_waterfall from '../icon-svgs/gantt_waterfall.svg';
+import github from '../icon-svgs/github.svg';
 import github_pr_closed from '../icon-svgs/github_pr_closed.svg';
 import github_pr_merged from '../icon-svgs/github_pr_merged.svg';
 import github_pr_open from '../icon-svgs/github_pr_open.svg';
@@ -155,6 +156,7 @@ export const Icons = {
   folder,
   tag,
   slack,
+  github,
   github_pr_open,
   github_pr_closed,
   github_pr_merged,

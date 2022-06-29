@@ -36,7 +36,7 @@ import {RunTableRunFragment} from './types/RunTableRunFragment';
 interface RunTableProps {
   runs: RunTableRunFragment[];
   filter?: RunsFilter;
-  onSetFilter?: (search: RunFilterToken[]) => void;
+  onAddTag?: (token: RunFilterToken) => void;
   nonIdealState?: React.ReactNode;
   actionBarComponents?: React.ReactNode;
   highlightedIds?: string[];
@@ -45,7 +45,7 @@ interface RunTableProps {
 }
 
 export const RunTable = (props: RunTableProps) => {
-  const {runs, filter, onSetFilter, nonIdealState, highlightedIds, actionBarComponents} = props;
+  const {runs, filter, onAddTag, nonIdealState, highlightedIds, actionBarComponents} = props;
   const allIds = runs.map((r) => r.runId);
 
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(allIds);
@@ -139,7 +139,7 @@ export const RunTable = (props: RunTableProps) => {
               canTerminateOrDelete={canTerminateOrDelete}
               run={run}
               key={run.runId}
-              onSetFilter={onSetFilter}
+              onAddTag={onAddTag}
               checked={checkedIds.has(run.runId)}
               additionalColumns={props.additionalColumnsForRow?.(run)}
               onToggleChecked={onToggleFactory(run.runId)}
@@ -189,7 +189,7 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
 const RunRow: React.FC<{
   run: RunTableRunFragment;
   canTerminateOrDelete: boolean;
-  onSetFilter?: (search: RunFilterToken[]) => void;
+  onAddTag?: (token: RunFilterToken) => void;
   checked?: boolean;
   onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
   additionalColumns?: React.ReactNode[];
@@ -197,7 +197,7 @@ const RunRow: React.FC<{
 }> = ({
   run,
   canTerminateOrDelete,
-  onSetFilter,
+  onAddTag,
   checked,
   onToggleChecked,
   additionalColumns,
@@ -270,7 +270,7 @@ const RunRow: React.FC<{
           <RunTags
             tags={run.tags}
             mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
-            onSetFilter={onSetFilter}
+            onAddTag={onAddTag}
           />
         </Box>
       </td>
