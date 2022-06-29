@@ -2037,6 +2037,13 @@ class DagsterInstance:
             self, daemon_types=daemon_types or self.get_required_daemon_types(), ignore_errors=True
         )
 
+    @property
+    def daemon_skip_heartbeats_without_errors(self):
+        # If enabled, daemon threads won't write heartbeats unless they encounter an error. This is
+        # enabled in cloud, where we don't need to use heartbeats to check if daemons are running, but
+        # do need to surface errors to users. This is an optimization to reduce DB writes.
+        return False
+
     # backfill
     def get_backfills(self, status=None, cursor=None, limit=None):
         return self._run_storage.get_backfills(status=status, cursor=cursor, limit=limit)
