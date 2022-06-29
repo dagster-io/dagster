@@ -141,7 +141,7 @@ class SensorEvaluationContext:
 SensorExecutionContext = SensorEvaluationContext
 
 RawSensorEvaluationFunctionReturn = Union[
-    Iterator[Union[SkipReason, RunRequest, PipelineRunReaction]],
+    Iterator[Union[SkipReason, RunRequest]],
     List[RunRequest],
     SkipReason,
     RunRequest,
