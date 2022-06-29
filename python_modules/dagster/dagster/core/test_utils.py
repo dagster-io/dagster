@@ -560,10 +560,13 @@ def test_counter():
     assert counts["bar"] == 10
 
 
-def wait_for_futures(futures, timeout=75):
+def wait_for_futures(futures, timeout=None):
     start_time = time.time()
     for target_id, future in futures.copy().items():
-        future_timeout = max(0, timeout - (time.time() - start_time))
+        if timeout is not None:
+            future_timeout = max(0, timeout - (time.time() - start_time))
+        else:
+            future_timeout = None
 
         if not future.done():
             future.result(timeout=future_timeout)
