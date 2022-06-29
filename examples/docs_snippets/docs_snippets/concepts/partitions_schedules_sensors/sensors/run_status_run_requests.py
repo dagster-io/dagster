@@ -11,7 +11,7 @@ status_reporting_job = None
 # start
 @run_status_sensor(
     pipeline_run_status=DagsterRunStatus.SUCCESS,
-    response_job=status_reporting_job,
+    request_job=status_reporting_job,
 )
 def report_status_sensor(context):
     # this condition prevents the sensor from triggering status_reporting_job again after it succeeds
@@ -33,7 +33,7 @@ def report_status_sensor(context):
 # start_job_failure
 
 
-@run_failure_sensor(response_job=status_reporting_job)
+@run_failure_sensor(request_job=status_reporting_job)
 def report_failure_sensor(context):
     run_config = {
         "ops": {

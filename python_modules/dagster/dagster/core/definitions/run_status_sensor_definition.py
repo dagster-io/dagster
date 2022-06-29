@@ -277,8 +277,8 @@ def run_failure_sensor(
     job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
     pipeline_selection: Optional[List[str]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    response_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
-    response_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+    request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
+    request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
 ) -> Callable[
     [Callable[[RunFailureSensorContext], Union[SkipReason, PipelineRunReaction]]],
     SensorDefinition,
@@ -309,9 +309,9 @@ def run_failure_sensor(
             means the alert will be sent when any pipeline in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
-        response_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
+        request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
             execute if yielded from the sensor.
-        response_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
+        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
             A list of jobs to be executed if RunRequests are yielded from the sensor.
     """
 
@@ -340,8 +340,8 @@ def run_failure_sensor(
             monitored_jobs=jobs,
             monitored_pipelines=pipelines,
             default_status=default_status,
-            response_job=response_job,
-            response_jobs=response_jobs,
+            request_job=request_job,
+            request_jobs=request_jobs,
         )
         def _run_failure_sensor(context: RunStatusSensorContext):
             return fn(context.for_run_failure())
@@ -377,8 +377,10 @@ class RunStatusSensorDefinition(SensorDefinition):
             when any job in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
-        response_job
-        response_jobs
+        request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
+            execute if yielded from the sensor.
+        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
+            A list of jobs to be executed if RunRequests are yielded from the sensor.
     """
 
     def __init__(
@@ -393,8 +395,8 @@ class RunStatusSensorDefinition(SensorDefinition):
         description: Optional[str] = None,
         monitored_jobs: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-        response_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
-        response_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+        request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
+        request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
     ):
 
         from dagster.core.storage.event_log.base import EventRecordsFilter, RunShardedEventsCursor
@@ -563,8 +565,8 @@ class RunStatusSensorDefinition(SensorDefinition):
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             default_status=default_status,
-            job=response_job,
-            jobs=response_jobs,
+            job=request_job,
+            jobs=request_jobs,
         )
 
     def __call__(self, *args, **kwargs):
@@ -621,8 +623,8 @@ def run_status_sensor(
     monitored_jobs: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
     job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    response_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
-    response_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+    request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
+    request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
 ) -> Callable[
     [Callable[[RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]]],
     RunStatusSensorDefinition,
@@ -656,9 +658,9 @@ def run_status_sensor(
             any job in the repository matches the requested run_status.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
-        response_job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should be
+        request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should be
             executed if a RunRequest is yielded from the sensor.
-        response_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
+        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
             A list of jobs to be executed if RunRequests are yielded from the sensor.
     """
 
@@ -695,8 +697,8 @@ def run_status_sensor(
             description=description,
             monitored_jobs=jobs,
             default_status=default_status,
-            response_job=response_job,
-            response_jobs=response_jobs,
+            request_job=request_job,
+            request_jobs=request_jobs,
         )
 
     return inner

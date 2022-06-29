@@ -39,7 +39,7 @@ def status_job():
     status_printer()
 
 
-@run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS, response_job=status_job)
+@run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS, request_job=status_job)
 def succeeds_sensor(context):
     if context.dagster_run.pipeline_name != status_job.name:
         return RunRequest(
@@ -58,7 +58,7 @@ def succeeds_sensor(context):
         return SkipReason("Don't report status of status_job.")
 
 
-@run_failure_sensor(response_job=status_job)
+@run_failure_sensor(request_job=status_job)
 def fails_sensor(context):
     return RunRequest(
         run_key=None,

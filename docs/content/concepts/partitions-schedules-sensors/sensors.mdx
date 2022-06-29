@@ -391,7 +391,7 @@ Here is an example of a run status sensor that launches a run of `status_reporti
 ```python file=concepts/partitions_schedules_sensors/sensors/run_status_run_requests.py startafter=start endbefore=end
 @run_status_sensor(
     pipeline_run_status=DagsterRunStatus.SUCCESS,
-    response_job=status_reporting_job,
+    request_job=status_reporting_job,
 )
 def report_status_sensor(context):
     # this condition prevents the sensor from triggering status_reporting_job again after it succeeds
@@ -407,6 +407,7 @@ def report_status_sensor(context):
     else:
         return SkipReason("Don't report status of status_reporting_job")
 ```
+`request_job` is the job that will be run when the `RunRequest` is returned.
 
 Note that in `report_status_sensor` we conditionally return a RunRequest. This ensures that when `report_status_sensor` runs `status_reporting_job` it doesn't enter an infinite loop where the success of `status_reporting_job` triggers another run of `status_reporting_job`, which triggers another run, and so on.
 
@@ -444,7 +445,7 @@ def my_repository():
 Dagster provides a set of special run status sensor decorators for defining sensors that monitor job failure events. You can use <PyObject object="run_failure_sensor" /> to decorate a function that will run when a run fails.
 
 ```python file=concepts/partitions_schedules_sensors/sensors/run_status_run_requests.py startafter=start_job_failure endbefore=end_job_failure
-@run_failure_sensor(response_job=status_reporting_job)
+@run_failure_sensor(request_job=status_reporting_job)
 def report_failure_sensor(context):
     run_config = {
         "ops": {
