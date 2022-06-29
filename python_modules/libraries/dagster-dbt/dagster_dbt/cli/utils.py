@@ -26,6 +26,13 @@ def execute_cli(
     docs_url: Optional[str] = None,
 ) -> DbtCliOutput:
     """Executes a command on the dbt CLI in a subprocess."""
+    try:
+        import dbt  # pylint: disable=unused-import
+    except ImportError as e:
+        raise check.CheckError(
+            "You must have `dbt-core` installed in order to execute dbt CLI commands."
+        ) from e
+
     check.str_param(executable, "executable")
     check.str_param(command, "command")
     check.dict_param(flags_dict, "flags_dict", key_type=str)
