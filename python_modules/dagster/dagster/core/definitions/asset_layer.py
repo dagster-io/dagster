@@ -300,7 +300,7 @@ def _asset_key_to_dep_node_handles(
             for dep_asset_key in [key for key in dep_asset_keys if key in assets_def.keys]:
                 output_node = dep_nodes_by_asset_key[asset_key][
                     0
-                ]  # first item in list is the original node that outputted the asset
+                ]  # first item in list is the original node that output the asset
                 dep_asset_key_node_handles = [
                     node for node in dep_nodes_by_asset_key[dep_asset_key] if node != output_node
                 ]
