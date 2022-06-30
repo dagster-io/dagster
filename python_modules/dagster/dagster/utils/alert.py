@@ -9,10 +9,12 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 if TYPE_CHECKING:
     from dagster.core.definitions.graph_definition import GraphDefinition
     from dagster.core.definitions.pipeline_definition import PipelineDefinition
-    from dagster.core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
     from dagster.core.definitions.run_status_sensor_definition import (
         PipelineFailureSensorContext,
         RunFailureSensorContext,
+    )
+    from dagster.core.definitions.unresolved_asset_job_definition import (
+        UnresolvedAssetJobDefinition,
     )
 
 
@@ -193,7 +195,9 @@ def make_email_on_run_failure_sensor(
     smtp_port: Optional[int] = None,
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
-    job_selection: Optional[List[Union["PipelineDefinition", "GraphDefinition", "UnresolvedAssetJobDefinition"]]] = None,
+    job_selection: Optional[
+        List[Union["PipelineDefinition", "GraphDefinition", "UnresolvedAssetJobDefinition"]]
+    ] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
     """Create a job failure sensor that sends email via the SMTP protocol.
