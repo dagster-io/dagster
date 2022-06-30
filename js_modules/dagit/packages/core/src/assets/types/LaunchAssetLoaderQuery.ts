@@ -32,6 +32,11 @@ export interface LaunchAssetLoaderQuery_assetNodes_repository {
   location: LaunchAssetLoaderQuery_assetNodes_repository_location;
 }
 
+export interface LaunchAssetLoaderQuery_assetNodes_requiredResources {
+  __typename: "ResourceRequirement";
+  resourceKey: string;
+}
+
 export interface LaunchAssetLoaderQuery_assetNodes_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
@@ -558,6 +563,7 @@ export interface LaunchAssetLoaderQuery_assetNodes {
   assetKey: LaunchAssetLoaderQuery_assetNodes_assetKey;
   dependencyKeys: LaunchAssetLoaderQuery_assetNodes_dependencyKeys[];
   repository: LaunchAssetLoaderQuery_assetNodes_repository;
+  requiredResources: LaunchAssetLoaderQuery_assetNodes_requiredResources[];
   configField: LaunchAssetLoaderQuery_assetNodes_configField | null;
 }
 

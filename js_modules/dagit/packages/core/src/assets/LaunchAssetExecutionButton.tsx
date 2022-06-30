@@ -208,9 +208,13 @@ function stateForLaunchingAssets(
     };
   }
 
+  const requiredResources = assets.flatMap((a) => a.requiredResources.map((r) => r.resourceKey));
+  // temporary until a cleaner way to query the config requirements of resources is available
+  const anyResourcesHaveConfig = requiredResources.length >= 1;
+
   // Ok! Assertions met, how do we launch this run
 
-  if (anyAssetsHaveConfig || forceLaunchpad) {
+  if (anyAssetsHaveConfig || anyResourcesHaveConfig || forceLaunchpad) {
     const assetOpNames = assets.flatMap((a) => a.opNames || []);
     return {
       type: 'launchpad',
@@ -293,6 +297,9 @@ export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
         id
         name
       }
+    }
+    requiredResources {
+      resourceKey
     }
     ...AssetNodeConfigFragment
   }
