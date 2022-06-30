@@ -26,7 +26,6 @@ import {PartitionStatus} from '../partitions/PartitionStatus';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {inProgressStatuses} from '../runs/RunStatuses';
 import {runsPathWithFilters} from '../runs/RunsFilterInput';
-import {TerminationDialog} from '../runs/TerminationDialog';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {BulkActionStatus, RunStatus} from '../types/globalTypes';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
@@ -64,7 +63,6 @@ export const BackfillTable = ({
   const [resumeBackfill] = useMutation<resumeBackfill, resumeBackfillVariables>(
     RESUME_BACKFILL_MUTATION,
   );
-  const [cancelRunBackfill, setCancelRunBackfill] = React.useState<BackfillTableFragment>();
   const {canCancelPartitionBackfill} = usePermissions();
 
   const candidateId = terminationBackfill?.backfillId;
@@ -109,10 +107,6 @@ export const BackfillTable = ({
     }
   };
 
-  const unfinishedRuns = cancelRunBackfill?.unfinishedRuns;
-  const unfinishedMap =
-    unfinishedRuns?.reduce((accum, run) => ({...accum, [run.id]: run.canTerminate}), {}) || {};
-
   return (
     <>
       <Table>
@@ -150,17 +144,13 @@ export const BackfillTable = ({
         backfill={partitionsRequestedBackfill}
         onClose={() => setPartitionsRequestedBackfill(undefined)}
       />
-      <BackfillTerminationDialog
-        backfill={terminationBackfill}
-        onClose={() => setTerminationBackfill(undefined)}
-        onComplete={() => refetch()}
-      />
-      <TerminationDialog
-        isOpen={!!unfinishedRuns?.length}
-        onClose={() => setCancelRunBackfill(undefined)}
-        onComplete={() => refetch()}
-        selectedRuns={unfinishedMap}
-      />
+      {terminationBackfill ? (
+        <BackfillTerminationDialog
+          backfill={terminationBackfill}
+          onClose={() => setTerminationBackfill(undefined)}
+          onComplete={() => refetch()}
+        />
+      ) : null}
     </>
   );
 };
@@ -217,7 +207,9 @@ const BackfillRow = ({
       })
     : null;
 
-  const canCancel = backfill.unfinishedRuns.length > 0;
+  const canCancelRuns = backfill.partitionStatuses.results.some(
+    (r) => r.runStatus === RunStatus.QUEUED || r.runStatus === RunStatus.STARTED,
+  );
 
   return (
     <tr>
@@ -263,7 +255,7 @@ const BackfillRow = ({
             <Menu>
               {canCancelPartitionBackfill ? (
                 <>
-                  {backfill.numRequested > backfill.partitionStatuses.results.length &&
+                  {backfill.numRequested < backfill.partitionStatuses.results.length &&
                   backfill.status === BulkActionStatus.REQUESTED ? (
                     <MenuItem
                       text="Cancel backfill submission"
@@ -272,7 +264,7 @@ const BackfillRow = ({
                       onClick={() => onTerminateBackfill(backfill)}
                     />
                   ) : null}
-                  {canCancel ? (
+                  {canCancelRuns ? (
                     <MenuItem
                       text="Terminate unfinished runs"
                       icon="cancel"
@@ -469,10 +461,6 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
     numRequested
     partitionNames
     numPartitions
-    unfinishedRuns {
-      id
-      canTerminate
-    }
     timestamp
     partitionSetName
     partitionSet {

@@ -13,12 +13,6 @@ export interface JobBackfillsQuery_partitionSetOrError_PartitionSetNotFoundError
   __typename: "PartitionSetNotFoundError" | "PythonError";
 }
 
-export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_unfinishedRuns {
-  __typename: "Run";
-  id: string;
-  canTerminate: boolean;
-}
-
 export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionSet_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
@@ -68,7 +62,6 @@ export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills {
   numRequested: number;
   partitionNames: string[];
   numPartitions: number;
-  unfinishedRuns: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_unfinishedRuns[];
   timestamp: number;
   partitionSetName: string;
   partitionSet: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionSet | null;

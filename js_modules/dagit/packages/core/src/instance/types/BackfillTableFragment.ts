@@ -9,12 +9,6 @@ import { BulkActionStatus, RunStatus } from "./../../types/globalTypes";
 // GraphQL fragment: BackfillTableFragment
 // ====================================================
 
-export interface BackfillTableFragment_unfinishedRuns {
-  __typename: "Run";
-  id: string;
-  canTerminate: boolean;
-}
-
 export interface BackfillTableFragment_partitionSet_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
@@ -64,7 +58,6 @@ export interface BackfillTableFragment {
   numRequested: number;
   partitionNames: string[];
   numPartitions: number;
-  unfinishedRuns: BackfillTableFragment_unfinishedRuns[];
   timestamp: number;
   partitionSetName: string;
   partitionSet: BackfillTableFragment_partitionSet | null;

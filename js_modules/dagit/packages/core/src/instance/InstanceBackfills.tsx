@@ -137,18 +137,6 @@ const BACKFILLS_QUERY = gql`
           backfillStatus
           numRequested
           numPartitions
-          partitionRunStats {
-            numQueued
-            numInProgress
-            numSucceeded
-            numFailed
-            numPartitionsWithRuns
-            numTotalRuns
-          }
-          unfinishedRuns {
-            id
-            canTerminate
-          }
           timestamp
           partitionSetName
           partitionSet {
