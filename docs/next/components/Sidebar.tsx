@@ -129,7 +129,6 @@ const RecursiveNavigation = ({
 
   const onClick = (key) => {
     setNavKeysToExpanded((prevState) => {
-      console.log("assets", key);
       const updatedValues = { [key]: !prevState[key] };
       return { ...prevState, ...updatedValues };
     });
