@@ -13,7 +13,7 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {AssetComputeStatus} from '../types/globalTypes';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
-import {displayNameForAssetKey, LiveDataForNode} from './Utils';
+import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_ANNOTATIONS_MAX_WIDTH, ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
 
@@ -39,9 +39,7 @@ export const AssetNode: React.FC<{
   // a single step, so just use the first one.
   const stepKey = firstOp || '';
 
-  const displayName = withMiddleTruncation(displayNameForAssetKey(definition.assetKey), {
-    maxLength: ASSET_NODE_NAME_MAX_LENGTH,
-  });
+  const displayName = definition.assetKey.path[definition.assetKey.path.length - 1];
 
   const {lastMaterialization, computeStatus} = liveData || MISSING_LIVE_DATA;
 
@@ -53,7 +51,9 @@ export const AssetNode: React.FC<{
             <Icon name="asset" />
           </span>
           <div style={{overflow: 'hidden', textOverflow: 'ellipsis', marginTop: -1}}>
-            {displayName}
+            {withMiddleTruncation(displayName, {
+              maxLength: ASSET_NODE_NAME_MAX_LENGTH,
+            })}
           </div>
           <div style={{flex: 1}} />
           <div style={{maxWidth: ASSET_NODE_ANNOTATIONS_MAX_WIDTH}}>
@@ -133,11 +133,13 @@ export const AssetNodeMinimal: React.FC<{
   selected: boolean;
   definition: AssetNodeFragment;
 }> = ({selected, definition}) => {
+  const displayName = definition.assetKey.path[definition.assetKey.path.length - 1];
+
   return (
     <MinimalAssetNodeContainer $selected={selected}>
       <MinimalAssetNodeBox $selected={selected}>
         <MinimalName style={{fontSize: 28}}>
-          {withMiddleTruncation(displayNameForAssetKey(definition.assetKey), {maxLength: 17})}
+          {withMiddleTruncation(displayName, {maxLength: 17})}
         </MinimalName>
       </MinimalAssetNodeBox>
     </MinimalAssetNodeContainer>
