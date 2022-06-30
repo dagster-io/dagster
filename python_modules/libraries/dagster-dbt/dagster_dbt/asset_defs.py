@@ -345,9 +345,8 @@ def load_assets_from_dbt_project(
             here determines how the inputs to those ops are loaded. Defaults to "io_manager".
         node_info_to_asset_key: (Mapping[str, Any] -> AssetKey): A function that takes a dictionary
             of dbt metadata and returns the AssetKey that you want to represent a given model or
-            source. By default:
-                dbt model -> AssetKey([model_name])
-                dbt source -> AssetKey([source_name, table_name])
+            source. By default: dbt model -> AssetKey([model_name]) and
+            dbt source -> AssetKey([source_name, table_name])
         use_build_command: (bool): Flag indicating if you want to use `dbt build` as the core computation
             for this asset, rather than `dbt run`.
 
