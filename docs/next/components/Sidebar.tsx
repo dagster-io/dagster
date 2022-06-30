@@ -7,7 +7,12 @@ import Icons from "../components/Icons";
 import Link from "./Link";
 import NextLink from "next/link";
 import cx from "classnames";
-import { useNavigation, flatten, getNavKey } from "../util/useNavigation";
+import {
+  useNavigation,
+  flatten,
+  getNavKey,
+  getNavLvl,
+} from "../util/useNavigation";
 import { useVersion } from "../util/useVersion";
 
 const getCurrentSection = (navigation) => {
@@ -117,7 +122,7 @@ const MenuItem = React.forwardRef<
 
 const RecursiveNavigation = ({
   itemOrSection,
-  lvl,
+  parentKey,
   idx,
   navKeysToExpanded,
   setNavKeysToExpanded,
@@ -125,7 +130,8 @@ const RecursiveNavigation = ({
   const { asPathWithoutAnchor } = useVersion();
   const navigation = useNavigation();
   const currentSection = getCurrentSection(navigation);
-  const navKey = getNavKey(lvl, idx);
+  const navKey = getNavKey(parentKey, idx);
+  const lvl = getNavLvl(navKey);
 
   const onClick = (key) => {
     setNavKeysToExpanded((prevState) => {
@@ -134,6 +140,7 @@ const RecursiveNavigation = ({
     });
   };
 
+  // Note: this logic is based on path which could be improved by having parent info in itemOrSection
   const match =
     itemOrSection == currentSection ||
     itemOrSection.path === asPathWithoutAnchor ||
@@ -178,7 +185,7 @@ const RecursiveNavigation = ({
               <RecursiveNavigation
                 key={idx}
                 itemOrSection={item}
-                lvl={lvl + 1}
+                parentKey={navKey}
                 idx={idx}
                 navKeysToExpanded={navKeysToExpanded}
                 setNavKeysToExpanded={setNavKeysToExpanded}
@@ -209,7 +216,7 @@ const TopLevelNavigation = () => {
           <RecursiveNavigation
             key={idx}
             itemOrSection={itemOrSection}
-            lvl={0}
+            parentKey={""}
             idx={idx}
             navKeysToExpanded={navKeysToExpanded}
             setNavKeysToExpanded={setNavKeysToExpanded}

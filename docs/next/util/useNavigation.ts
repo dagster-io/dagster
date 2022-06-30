@@ -11,17 +11,23 @@ type NavEntry = {
   isExternalLink?: boolean;
 };
 
-export const getNavKey = (lvl: number, idx: number) => {
-  return `${lvl}-${idx}`;
+export const getNavKey = (parentKey: string, idx: number) => {
+  return parentKey ? `${parentKey}-${idx}` : `${idx}`;
 };
 
-export function flatten(yx: any, lvl: number = 0) {
+export const getNavLvl = (navKey: string) => {
+  return navKey.split("-").length - 1;
+};
+
+export function flatten(yx: any, parentKey: string = "") {
   const xs = JSON.parse(JSON.stringify(yx));
 
   return xs.reduce((acc: any, x: any, idx: number) => {
-    acc = acc.concat({ key: getNavKey(lvl, idx), ...x });
+    const navKey = getNavKey(parentKey, idx);
+    // console.log(navKey, x);
+    acc = acc.concat({ key: navKey, ...x });
     if (x.children) {
-      acc = acc.concat(flatten(x.children, lvl + 1));
+      acc = acc.concat(flatten(x.children, navKey));
       x.children = [];
     }
     return acc;
