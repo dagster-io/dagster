@@ -52,6 +52,7 @@ class GraphenePartitionRunConfigOrError(graphene.Union):
 class GraphenePartitionStatus(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     partitionName = graphene.NonNull(graphene.String)
+    runId = graphene.Field(graphene.String)
     runStatus = graphene.Field(GrapheneRunStatus)
     runDuration = graphene.Field(graphene.Float)
 

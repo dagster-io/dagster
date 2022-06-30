@@ -35,7 +35,6 @@ PARTITION_PROGRESS_QUERY = """
           numSucceeded
           numFailed
           numPartitionsWithRuns
-          numTotalRuns
         }
         unfinishedRuns {
           id
@@ -358,7 +357,6 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             "numInProgress": 1,  # "5"
             "numSucceeded": 1,  # "4"
             "numFailed": 2,  # "2,3"
-            "numTotalRuns": 8,
         }
 
         assert len(result.data["partitionBackfillOrError"]["unfinishedRuns"]) == 4
@@ -425,7 +423,6 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             "numInProgress": 0,
             "numSucceeded": 4,
             "numFailed": 0,
-            "numTotalRuns": 4,
         }
 
         assert result.data["partitionBackfillOrError"]["backfillStatus"] == "COMPLETED"
@@ -481,7 +478,6 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             "numInProgress": 0,
             "numSucceeded": 3,
             "numFailed": 1,
-            "numTotalRuns": 4,
         }
 
         assert result.data["partitionBackfillOrError"]["backfillStatus"] == "INCOMPLETE"
