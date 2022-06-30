@@ -1,5 +1,4 @@
 import warnings
-from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -445,17 +444,11 @@ class AssetLayer:
             for key in assets_def.keys
         }
 
-        # keep an index from node handle to all keys expected to be generated using that node
-        self._asset_keys_by_node_handle: Dict[NodeHandle, Set[AssetKey]] = defaultdict(set)
-        _required_asset_keys = {
-            asset_info.key
-            for asset_info in self._asset_info_by_node_output_handle.values()
-            if asset_info.is_required
-        }
+        # keep an index from node handle to the AssetsDefinition for that node
+        self._assets_defs_by_node_handle: Dict[NodeHandle, "AssetsDefinition"] = {}
         for asset_key, node_handles in self._dependency_node_handles_by_asset_key.items():
-            if asset_key in _required_asset_keys:
-                for node_handle in node_handles:
-                    self._asset_keys_by_node_handle[node_handle].add(asset_key)
+            for node_handle in node_handles:
+                self._assets_defs_by_node_handle[node_handle] = self._assets_defs_by_key[asset_key]
 
         self._io_manager_keys_by_asset_key = check.opt_dict_param(
             io_manager_keys_by_asset_key,
@@ -594,8 +587,8 @@ class AssetLayer:
     def assets_def_for_asset(self, asset_key: AssetKey) -> "AssetsDefinition":
         return self._assets_defs_by_key[asset_key]
 
-    def asset_keys_for_node(self, node_handle: NodeHandle) -> AbstractSet[AssetKey]:
-        return self._asset_keys_by_node_handle[node_handle]
+    def assets_def_for_node(self, node_handle: NodeHandle) -> "AssetsDefinition":
+        return self._assets_defs_by_node_handle[node_handle]
 
     def asset_key_for_input(self, node_handle: NodeHandle, input_name: str) -> Optional[AssetKey]:
         return self._asset_keys_by_node_input_handle.get(NodeInputHandle(node_handle, input_name))
