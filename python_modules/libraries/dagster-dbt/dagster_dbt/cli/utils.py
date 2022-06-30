@@ -1,7 +1,7 @@
 import json
 import os
 import subprocess
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence
 
 import dagster._check as check
 from dagster.core.utils import coerce_valid_log_level
@@ -20,7 +20,7 @@ def _create_command_list(
     warn_error: bool,
     json_log_format: bool,
     command: str,
-    flags_dict: Mapping[str, Any],
+    flags_dict: Dict[str, Any],
 ) -> Sequence[str]:
 
     prefix = [executable]
@@ -52,7 +52,7 @@ def _create_command_list(
 def execute_cli(
     executable: str,
     command: str,
-    flags_dict: Mapping[str, Any],
+    flags_dict: Dict[str, Any],
     log: Any,
     warn_error: bool,
     ignore_handled_error: bool,
@@ -84,7 +84,7 @@ def execute_cli(
     return_code = 0
 
     # raw lines
-    raw_output = ""
+    raw_output = []
 
     # parsed messages from the log output
     messages = []
@@ -99,10 +99,11 @@ def execute_cli(
     )
     for raw_line in process.stdout or []:
         line = raw_line.decode("utf-8").rstrip()
-        raw_output += f"\n{raw_line}"
 
         log_level = "info"
         message = line
+
+        raw_output.append(line)
 
         if json_log_format:
             try:
@@ -122,6 +123,8 @@ def execute_cli(
     return_code = process.returncode
 
     log.info("dbt exited with return code {return_code}".format(return_code=return_code))
+
+    raw_output = "\n\n".join(raw_output)
 
     if return_code == 2:
         raise DagsterDbtCliFatalRuntimeError(
@@ -149,7 +152,7 @@ def execute_cli(
     )
 
 
-def parse_run_results(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH) -> Mapping[str, Any]:
+def parse_run_results(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH) -> Dict[str, Any]:
     """Parses the `target/run_results.json` artifact that is produced by a dbt process."""
     run_results_path = os.path.join(path, target_path, "run_results.json")
     try:
@@ -166,7 +169,7 @@ def remove_run_results(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH):
         os.remove(run_results_path)
 
 
-def parse_manifest(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH) -> Mapping[str, Any]:
+def parse_manifest(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH) -> Dict[str, Any]:
     """Parses the `target/manifest.json` artifact that is produced by a dbt process."""
     manifest_path = os.path.join(path, target_path, "manifest.json")
     try:
