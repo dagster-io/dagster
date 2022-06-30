@@ -587,8 +587,8 @@ class AssetLayer:
     def assets_def_for_asset(self, asset_key: AssetKey) -> "AssetsDefinition":
         return self._assets_defs_by_key[asset_key]
 
-    def assets_def_for_node(self, node_handle: NodeHandle) -> "AssetsDefinition":
-        return self._assets_defs_by_node_handle[node_handle]
+    def assets_def_for_node(self, node_handle: NodeHandle) -> Optional["AssetsDefinition"]:
+        return self._assets_defs_by_node_handle.get(node_handle)
 
     def asset_key_for_input(self, node_handle: NodeHandle, input_name: str) -> Optional[AssetKey]:
         return self._asset_keys_by_node_input_handle.get(NodeInputHandle(node_handle, input_name))
