@@ -6,6 +6,7 @@ import pytest
 
 from dagster import (
     AssetKey,
+    AssetsDefinition,
     DailyPartitionsDefinition,
     MetadataValue,
     ModeDefinition,
@@ -308,3 +309,53 @@ def test_fs_io_manager_partitioned_multi_asset():
             filter(lambda evt: evt.is_handled_output, result.all_node_events)
         )
         assert len(handled_output_events) == 3
+
+
+def test_fs_io_manager_partitioned_graph_backed_asset():
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
+        partitions_def = StaticPartitionsDefinition(["A"])
+
+        @asset(key_prefix=["the", "cool", "prefix"], partitions_def=partitions_def)
+        def one():
+            return 1
+
+        @op
+        def add_1(inp):
+            return inp + 1
+
+        @graph
+        def four(inp):
+            return add_1(add_1(add_1(inp)))
+
+        four_asset = AssetsDefinition.from_graph(
+            four,
+            keys_by_input_name={"inp": AssetKey(["the", "cool", "prefix", "one"])},
+            partitions_def=partitions_def,
+        )
+
+        job_def = build_assets_job(
+            name="a", assets=[one, four_asset], resource_defs={"io_manager": io_manager_def}
+        )
+
+        result = job_def.execute_in_process(partition_key="A")
+        assert result.success
+
+        handled_output_events = list(
+            filter(lambda evt: evt.is_handled_output, result.all_node_events)
+        )
+        assert len(handled_output_events) == 4
+
+        filepath_a = os.path.join(tmpdir_path, "the", "cool", "prefix", "one", "A")
+        assert os.path.isfile(filepath_a)
+        with open(filepath_a, "rb") as read_obj:
+            assert pickle.load(read_obj) == 1
+
+        loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, result.all_node_events))
+        assert len(loaded_input_events) == 3
+        assert loaded_input_events[0].event_specific_data.upstream_step_key.endswith("one")
+
+        filepath_b = os.path.join(tmpdir_path, "four", "A")
+        assert os.path.isfile(filepath_b)
+        with open(filepath_b, "rb") as read_obj:
+            assert pickle.load(read_obj) == 4
