@@ -8,7 +8,7 @@ from hacker_news_assets.partitions import hourly_partitions
 from hacker_news_assets.resources.parquet_io_manager import local_partitioned_parquet_io_manager
 from pyspark.sql import DataFrame as SparkDF
 
-from dagster import asset, materialize_to_memory
+from dagster import asset, materialize
 
 
 def test_io_manager():
@@ -26,7 +26,7 @@ def test_io_manager():
         return pandas_df_asset
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        res = materialize_to_memory(
+        res = materialize(
             assets=[pandas_df_asset, spark_input_asset],
             resources={
                 "pyspark": pyspark_resource,

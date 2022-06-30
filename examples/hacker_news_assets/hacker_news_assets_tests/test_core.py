@@ -10,15 +10,16 @@ from dagster import (
     ResourceDefinition,
     fs_io_manager,
     load_assets_from_package_module,
+    materialize,
     mem_io_manager,
 )
 
 
 def test_download():
     with tempfile.TemporaryDirectory() as temp_dir:
-        test_job = AssetGroup(
+        result = materialize(
             load_assets_from_package_module(assets),
-            resource_defs={
+            resources={
                 "io_manager": fs_io_manager,
                 "partition_start": ResourceDefinition.string_resource(),
                 "partition_end": ResourceDefinition.string_resource(),
@@ -30,10 +31,7 @@ def test_download():
                 "hn_client": hn_snapshot_client,
                 "dbt": ResourceDefinition.none_resource(),
             },
-        ).build_job(
-            "test_job",
+            partition_key="2020-12-30-00:00",
         )
-
-        result = test_job.execute_in_process(partition_key="2020-12-30-00:00")
 
         assert result.success
