@@ -80,8 +80,8 @@ Join our community here:
 
 - 🌟 [Star us on Github](https://github.com/dagster-io/dagster)
 - 🐦 [Follow us on Twitter](https://twitter.com/dagsterio)
-- 📺 [Subscribe to our YouTube Channel](https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q)
-- 📚 [Read our Blog Posts](https://dagster.io/blog)
+- 📺 [Subscribe to our YouTube channel](https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q)
+- 📚 [Read our blog posts](https://dagster.io/blog)
 - 👋 [Join us on Slack](https://dagster.io/slack)
 - ✏️ [Start a Github Discussion](https://github.com/dagster-io/dagster/discussions)
 
