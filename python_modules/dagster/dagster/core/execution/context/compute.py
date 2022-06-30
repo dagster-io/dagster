@@ -298,7 +298,10 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def selected_asset_keys(self) -> AbstractSet[AssetKey]:
-        return self.job_def.asset_layer.asset_keys_for_node(self.solid_handle)
+        assets_def = self.job_def.asset_layer.assets_def_for_node(self.solid_handle)
+        if assets_def is None:
+            return set()
+        return assets_def.keys
 
     @property
     def selected_output_names(self) -> AbstractSet[str]:
