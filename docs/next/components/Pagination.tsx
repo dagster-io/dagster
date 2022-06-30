@@ -2,10 +2,10 @@ import { flatten, useNavigation } from "util/useNavigation";
 
 import Link from "./Link";
 import React from "react";
-import { useRouter } from "next/router";
+import { useVersion } from "../util/useVersion";
 
 const Pagination = () => {
-  const { asPath } = useRouter();
+  const { asPath } = useVersion();
   const navigation = useNavigation();
   const flattenedNavigation = flatten(navigation).filter(
     (n: { path: any }) => n.path
