@@ -14,7 +14,6 @@ from dagster.core.definitions import (
 from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.types.dagster_type import DagsterTypeKind
-from dagster.seven.typing import get_origin
 
 
 def create_solid_compute_wrapper(solid_def: SolidDefinition):
@@ -101,6 +100,8 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
                         check.failed(
                             f"{context.describe_op()} has a single dynamic output named '{output_defs[0].name}', which expects either a list of DynamicOutputs to be returned, or DynamicOutput objects to be yielded. Received instead an object of type {type(event)}"
                         )
+        else:
+            yield result
 
     elif len(output_defs) == 1:
         if result is None and output_defs[0].is_required is False:
