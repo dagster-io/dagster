@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union
 
 import graphene
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -8,7 +8,6 @@ from dagster_graphql.schema.solids import (
     GrapheneCompositeSolidDefinition,
     GrapheneResourceRequirement,
     GrapheneSolidDefinition,
-    build_solid_definition,
 )
 
 from dagster import AssetKey
@@ -207,7 +206,8 @@ class GrapheneAssetNode(graphene.ObjectType):
                 or self._external_asset_node.op_name
             )
             self._node_definition_snap = self.get_external_pipeline().get_node_def_snap(node_key)
-        return check.not_none(self._node_definition_snap)
+        # weird mypy bug causes mistyped _node_definition_snap
+        return check.not_none(self._node_definition_snap)  # type: ignore
 
     def get_partition_keys(self) -> Sequence[str]:
         # TODO: Add functionality for dynamic partitions definition
