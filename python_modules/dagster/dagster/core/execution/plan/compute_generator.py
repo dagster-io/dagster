@@ -140,8 +140,10 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
                     value=element.value,
                     metadata_entries=element.metadata_entries,
                 )
-            elif isinstance(element, list) and all(
-                [isinstance(event, DynamicOutput) for event in element]
+            elif (
+                isinstance(element, list)
+                and len(element) > 0
+                and all([isinstance(event, DynamicOutput) for event in element])
             ):
                 if not output_def.is_dynamic:
                     raise DagsterInvariantViolationError(

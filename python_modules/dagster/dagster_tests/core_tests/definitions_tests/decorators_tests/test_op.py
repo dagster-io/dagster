@@ -1198,3 +1198,12 @@ def test_required_io_manager_op_access():
 
     result = the_job.execute_in_process()
     assert result.success
+
+
+def test_list_out_op():
+    @op(out={"list_out": Out(List[str]), "other_out": Out(int)})
+    def test_op():
+        return ([], 5)
+
+    result = execute_op_in_graph(test_op)
+    assert result.success
