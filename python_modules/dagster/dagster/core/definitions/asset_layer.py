@@ -273,7 +273,7 @@ def _asset_key_to_dep_node_handles(
         dep_node_handles_by_node: Dict[
             NodeHandle, List[NodeHandle]
         ] = {}  # memoized map of nodehandle to all node handle dependencies that are ops
-        for output_name, asset_key in assets_defs.node_keys_by_output_name.items():
+        for output_name, asset_key in assets_defs.keys_by_output_name.items():
             output_def = assets_defs.node_def.output_def_named(output_name)
             output_name = output_def.name
 
@@ -294,10 +294,11 @@ def _asset_key_to_dep_node_handles(
                 )
 
     # handle internal_asset_deps
-    for node_handle, assets_defs in assets_defs_by_node_handle.items():
-        all_output_asset_keys = assets_defs.keys
-        for asset_key, dep_asset_keys in assets_defs.asset_deps.items():
-            for dep_asset_key in [key for key in dep_asset_keys if key in all_output_asset_keys]:
+    for node_handle, assets_def in assets_defs_by_node_handle.items():
+        for asset_key, dep_asset_keys in assets_def.asset_deps.items():
+            if asset_key not in assets_def.keys:
+                continue
+            for dep_asset_key in [key for key in dep_asset_keys if key in assets_def.keys]:
                 output_node = dep_nodes_by_asset_key[asset_key][
                     0
                 ]  # first item in list is the original node that outputted the asset
