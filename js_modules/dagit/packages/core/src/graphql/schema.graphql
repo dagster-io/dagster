@@ -1699,7 +1699,6 @@ type PartitionBackfill {
   partitionSetName: String!
   timestamp: Float!
   partitionSet: PartitionSet
-  runs(limit: Int): [Run!]!
   unfinishedRuns(limit: Int): [Run!]!
   error: PythonError
   partitionRunStats: BackfillRunStats!

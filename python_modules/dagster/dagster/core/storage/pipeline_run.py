@@ -113,6 +113,12 @@ NON_IN_PROGRESS_RUN_STATUSES = [
     PipelineRunStatus.CANCELED,
 ]
 
+FINISHED_STATUSES = [
+    PipelineRunStatus.SUCCESS,
+    PipelineRunStatus.FAILURE,
+    PipelineRunStatus.CANCELED,
+]
+
 
 @whitelist_for_serdes
 class PipelineRunStatsSnapshot(
@@ -455,11 +461,7 @@ class PipelineRun(
 
     @property
     def is_finished(self):
-        return (
-            self.status == PipelineRunStatus.SUCCESS
-            or self.status == PipelineRunStatus.FAILURE
-            or self.status == PipelineRunStatus.CANCELED
-        )
+        return self.status in FINISHED_STATUSES
 
     @property
     def is_success(self):

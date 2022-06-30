@@ -1314,13 +1314,9 @@ class DagsterInstance:
         return self._run_storage.supports_bucket_queries
 
     @traced
-    def get_run_partition_data(
-        self, partition_set_name: str, job_name: str, repository_label: str
-    ) -> List[RunPartitionData]:
+    def get_run_partition_data(self, runs_filter: RunsFilter) -> List[RunPartitionData]:
         """Get run partition data for a given partitioned job."""
-        return self._run_storage.get_run_partition_data(
-            partition_set_name, job_name, repository_label
-        )
+        return self._run_storage.get_run_partition_data(runs_filter)
 
     def wipe(self):
         self._run_storage.wipe()
