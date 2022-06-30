@@ -31,7 +31,7 @@ from dagster.core.errors import DagsterInvalidSubsetError
 
 
 def _load_manifest_for_project(
-    project_dir: str, profiles_dir: str, target_dir: str, select: str, target: Optional[str] = None
+    project_dir: str, profiles_dir: str, target_dir: str, select: str
 ) -> Tuple[Mapping[str, Any], DbtCliOutput]:
     # running "dbt ls" regenerates the manifest.json, which includes a superset of the actual
     # "dbt ls" output
@@ -45,7 +45,6 @@ def _load_manifest_for_project(
             "select": select,
             "resource-type": "model",
             "output": "json",
-            "target": target,
         },
         warn_error=False,
         ignore_handled_error=False,
@@ -146,7 +145,6 @@ def _get_node_description(node_info):
 def _dbt_nodes_to_assets(
     dbt_nodes: Mapping[str, Any],
     select: str,
-    target: Optional[str],
     selected_unique_ids: AbstractSet[str],
     runtime_metadata_fn: Optional[
         Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
@@ -236,13 +234,10 @@ def _dbt_nodes_to_assets(
             ]
 
         try:
-            kwargs = {"select": subselect}
-            if target:
-                kwargs["target"] = target
             if use_build_command:
-                dbt_output = context.resources.dbt.build(**kwargs)
+                dbt_output = context.resources.dbt.build(select=subselect)
             else:
-                dbt_output = context.resources.dbt.run(**kwargs)
+                dbt_output = context.resources.dbt.run(select=subselect)
         finally:
             # in the case that the project only partially runs successfully, still attempt to generate
             # events for the parts that were successful
@@ -315,7 +310,6 @@ def load_assets_from_dbt_project(
     profiles_dir: Optional[str] = None,
     target_dir: Optional[str] = None,
     select: Optional[str] = None,
-    target: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     runtime_metadata_fn: Optional[
@@ -339,9 +333,6 @@ def load_assets_from_dbt_project(
             Defaults to "target" underneath the project_dir.
         select (Optional[str]): A dbt selection string for the models in a project that you want
             to include. Defaults to "*".
-        target (Optional[str]): The target dbt profile to run against. Defaults to the default
-            profile configured in your dbt project. If set, a target does not need to be configured
-            on the `dbt_cli_resource`.
         key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all models in the dbt
             project. Does not apply to sources.
         source_key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all sources in the
@@ -377,7 +368,6 @@ def load_assets_from_dbt_project(
     return load_assets_from_dbt_manifest(
         manifest_json=manifest_json,
         select=select,
-        target=target,
         key_prefix=key_prefix,
         source_key_prefix=source_key_prefix,
         runtime_metadata_fn=runtime_metadata_fn,
@@ -391,7 +381,6 @@ def load_assets_from_dbt_project(
 def load_assets_from_dbt_manifest(
     manifest_json: Mapping[str, Any],
     select: Optional[str] = None,
-    target: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     runtime_metadata_fn: Optional[
@@ -413,9 +402,6 @@ def load_assets_from_dbt_manifest(
             a set of models to load into assets.
         select (Optional[str]): A dbt selection string for the models in a project that you want
             to include. Defaults to "*".
-        target (Optional[str]): The target dbt profile to run against. Defaults to the default
-            profile configured in your dbt project. If set, a target does not need to be configured
-            on the `dbt_cli_resource`.
         key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all models in the dbt
             project. Does not apply to sources.
         source_key_prefix (Optional[Union[str, List[str]]]): A prefix to apply to all sources in the
@@ -455,7 +441,6 @@ def load_assets_from_dbt_manifest(
         runtime_metadata_fn=runtime_metadata_fn,
         io_manager_key=io_manager_key,
         select=select,
-        target=target,
         selected_unique_ids=selected_unique_ids,
         node_info_to_asset_key=node_info_to_asset_key,
         use_build_command=use_build_command,
