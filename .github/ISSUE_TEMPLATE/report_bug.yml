@@ -1,0 +1,95 @@
+name: 🪲 Report a bug
+description: Report problems and issues with the Dagster framework.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        <p align="center">
+          <a target="_blank" href="https://dagster.io">
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/dagster-io/dagster/master/.github/dagster-logo-dark.svg">
+              <img alt="dagster logo" src="https://raw.githubusercontent.com/dagster-io/dagster/master/.github/dagster-logo-light.svg" width="auto" height="80">
+            </picture>
+          </a>
+        </p>
+  - type: markdown
+    attributes:
+      value: >
+        Thank you for contributing to improve Dagster.
+        If you have a change ready to submit, you do not need to create an issue.
+        Instead, you can open a [pull request](https://github.com/dagster-io/dagster/pulls).
+  - type: input
+    attributes:
+      label: Dagster version
+      description: What Dagster version are you using?
+      placeholder: "Copy and paste the output from `dagster --version`."
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What's the issue?
+      description: Provide a brief description of the issue.
+      placeholder: |
+        Please provide a brief description of the issue and the context in which it happened.
+
+        When possible, add error logs, screenshots or video links that display the issue.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What did you expect to happen?
+      description: Describe what you think went wrong.
+      placeholder: Please explain why you think the existing behavior is incorrect.
+  - type: textarea
+    attributes:
+      label: How to reproduce?
+      description: How can we reproduce the issue?
+      placeholder: Please provide a reproducible guide of how to create the issue.
+  - type: dropdown
+    attributes:
+      label: Deployment type
+      description: What kind of Dagster deployment do you have?
+      multiple: false
+      options:
+        - "Dagster Helm chart"
+        - "Docker Compose"
+        - "Other Docker-based deployment"
+        - "Local"
+        - "Dagster Cloud"
+        - "Other"
+  - type: textarea
+    attributes:
+      label: Deployment details
+      description: Add information about your deployment.
+      placeholder: >
+        Enter any relevant details about your deployment. For example, include the version of your
+        tools (docker, helm, kubernetes, etc.) and any customizations or configuration that
+        you added.
+  - type: textarea
+    attributes:
+      label: Additional information
+      description: Anything else we need to know?
+      placeholder: Enter additional details that may be relevant.
+  - type: markdown
+    attributes:
+      value: "# Thanks for contributing to Dagster!"
+  - type: markdown
+    attributes:
+      value: >
+        Are you willing to submit a PR?
+        This is not required, but we are happy to guide you through the contribution process.
+        [Find us on Slack](https://dagster.io/slack)!
+  - type: markdown
+    attributes:
+      value: >
+        By submitting this issue, you agree to follow Dagster's
+        [Code of Conduct](https://github.com/dagster-io/dagster/blob/master/CODE_OF_CONDUCT.md).
+  - type: textarea
+    attributes:
+      label: Message from the maintainers
+      description: This form field should be ignored. This is to include a footer message on the generated issue.
+      value: |
+        This form field should be ignored.
+
+        Impacted by this issue? Give it a 👍! We factor engagement into prioritization.
