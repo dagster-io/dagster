@@ -14,6 +14,7 @@ from dagster.core.definitions import (
 from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.types.dagster_type import DagsterTypeKind
+from dagster.seven.typing import get_origin
 
 
 def create_solid_compute_wrapper(solid_def: SolidDefinition):
@@ -90,13 +91,17 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
     elif isinstance(result, Output):
         yield result
     elif len(output_defs) == 1 and output_defs[0].is_dynamic:
-        if isinstance(result, list) and all([isinstance(event, DynamicOutput) for event in result]):
-            for event in result:
-                yield event
-        elif result is not None:
-            check.failed(
-                f"{context.describe_op()} has a single dynamic output named '{output_defs[0].name}', which expects either a list of DynamicOutputs to be returned, or DynamicOutput objects to be yielded. Received instead an object of type {type(result)}"
-            )
+        if isinstance(result, list):
+            if all([isinstance(event, DynamicOutput) for event in result]) or len(result) == 0:
+                for event in result:
+                    yield event
+            else:
+                for event in result:
+                    if not isinstance(event, DynamicOutput):
+                        check.failed(
+                            f"{context.describe_op()} has a single dynamic output named '{output_defs[0].name}', which expects either a list of DynamicOutputs to be returned, or DynamicOutput objects to be yielded. Received instead an object of type {type(event)}"
+                        )
+
     elif len(output_defs) == 1:
         if result is None and output_defs[0].is_required is False:
             context.log.warn(
@@ -143,7 +148,11 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
             elif isinstance(element, list) and output_def.is_dynamic:
                 for dynamic_output in element:
                     if not isinstance(dynamic_output, DynamicOutput):
-                        f"Dynamic Output '{output_def.name}' expected a list " "of DynamicOutputs, but an element of the list was of " f"type '{type(dynamic_output)}'."
+                        raise DagsterInvariantViolationError(
+                            f"Dynamic Output '{output_def.name}' expected a list "
+                            "of DynamicOutputs, but an element of the list was of "
+                            f"type '{type(dynamic_output)}'."
+                        )
                     if (
                         not dynamic_output.output_name == DEFAULT_OUTPUT
                         and not dynamic_output.output_name == output_def.name

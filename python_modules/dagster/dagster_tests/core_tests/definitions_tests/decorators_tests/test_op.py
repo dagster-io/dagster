@@ -29,6 +29,7 @@ from dagster import (
     op,
     solid,
 )
+from dagster.check import CheckError
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.dagster_type import Int, String
@@ -1164,6 +1165,28 @@ def test_generic_dynamic_output_empty_with_type():
 
     # Ensure that invocation behavior matches
     basic()
+
+
+def test_dynamic_output_bad_list_entry():
+    @op
+    def basic() -> List[DynamicOutput[int]]:
+        return ["foo"]
+
+    with pytest.raises(
+        CheckError,
+        match="op \"basic\" has a single dynamic output named 'result', which expects either a list of DynamicOutputs to be returned, or DynamicOutput objects to be yielded.",
+    ):
+        execute_op_in_graph(basic)
+
+    @op(out={"out1": Out(), "out2": DynamicOut()})
+    def basic_multi_output() -> Tuple[Output[int], List[DynamicOutput[str]]]:
+        return (5, ["foo"])
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Dynamic Output 'out2' expected a list of DynamicOutputs, but an element of the list was of type '<class 'str'>'",
+    ):
+        execute_op_in_graph(basic_multi_output)
 
 
 def test_generic_dynamic_multiple_outputs_empty():
