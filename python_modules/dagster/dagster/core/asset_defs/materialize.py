@@ -72,7 +72,9 @@ def materialize_to_memory(
     """
     Executes a single-threaded, in-process run which materializes provided assets in memory.
 
-    Will explicitly use :py:func:`mem_io_manager` for all required io manager keys. If any io managers are directly provided using the `resources` argument, a :py:class:`DagsterInvariantViolationError` will be thrown.
+    Will explicitly use :py:func:`mem_io_manager` for all required io manager
+    keys. If any io managers are directly provided using the `resources`
+    argument, a :py:class:`DagsterInvariantViolationError` will be thrown.
 
     Args:
         assets (Sequence[Union[AssetsDefinition, SourceAsset]]):
@@ -80,7 +82,7 @@ def materialize_to_memory(
         run_config (Optional[Any]): The run config to use for the run that materializes the assets.
         resources (Optional[Mapping[str, object]]):
             The resources needed for execution. Can provide resource instances
-            directly, or resource definitions. Note that if provided resources
+            directly, or resource definitions. If provided resources
             conflict with resources directly on assets, an error will be thrown.
         partition_key: (Optional[str])
             The string partition key that specifies the run config to execute. Can only be used

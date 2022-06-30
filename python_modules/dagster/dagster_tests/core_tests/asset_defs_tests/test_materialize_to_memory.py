@@ -139,7 +139,10 @@ def test_materialize_source_assets():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Attempted to call `materialize_to_memory` with a resource provided for io manager key 'the_source__io_manager'. Do not provide resources for io manager keys when calling `materialize_to_memory`, as it will override io management behavior for all keys.",
+        match="Attempted to call `materialize_to_memory` with a resource "
+        "provided for io manager key 'the_source__io_manager'. Do not provide "
+        "resources for io manager keys when calling `materialize_to_memory`, as "
+        "it will override io management behavior for all keys.",
     ):
         materialize_to_memory([the_asset, the_source])
 
