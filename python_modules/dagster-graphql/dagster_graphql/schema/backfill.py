@@ -124,10 +124,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     partitionSetName = graphene.NonNull(graphene.String)
     timestamp = graphene.NonNull(graphene.Float)
     partitionSet = graphene.Field("dagster_graphql.schema.partition_sets.GraphenePartitionSet")
-    runs = graphene.Field(
-        non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"),
-        limit=graphene.Int(),
-    )
     unfinishedRuns = graphene.Field(
         non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"),
         limit=graphene.Int(),
@@ -257,12 +253,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             numPartitionsWithRuns=len(partition_run_data),
             numTotalRuns=len(partition_run_data),  # hack, but this is unused
         )
-
-    def resolve_runs(self, graphene_info):
-        from .pipelines.pipeline import GrapheneRun
-
-        records = self._get_records(graphene_info)
-        return [GrapheneRun(record) for record in records]
 
     def resolve_numPartitions(self, _graphene_info):
         return len(self._backfill_job.partition_names)
