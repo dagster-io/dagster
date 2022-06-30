@@ -9,8 +9,6 @@ from dagster import (
     Output,
     Out,
     op,
-    io_manager,
-    IOManager,
     graph,
 )
 
@@ -132,9 +130,7 @@ def my_foo_resource(context):
 
 
 def test_op_resource_def():
-    context = build_op_context(
-        resources={"foo": my_foo_resource.configured({"my_str": "bar"})}
-    )
+    context = build_op_context(resources={"foo": my_foo_resource.configured({"my_str": "bar"})})
     assert op_requires_foo(context) == "found bar"
 
 
