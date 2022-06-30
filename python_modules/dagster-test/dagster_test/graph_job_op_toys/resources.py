@@ -1,8 +1,18 @@
-from dagster import Field, Int, asset, graph, op, reconstructable, repository, resource, with_resources
+from dagster import (
+    Field,
+    Int,
+    asset,
+    graph,
+    op,
+    reconstructable,
+    repository,
+    resource,
+    with_resources,
+)
 
 
 def define_resource(num):
-    @resource(config_schema=Field(Int, is_required=False))
+    @resource(config_schema=Field(Int, is_required=True))
     def a_resource(context):
         return num if context.resource_config is None else context.resource_config
 
@@ -42,9 +52,11 @@ def resource_ops():
 
 resource_job = resource_ops.to_job(resource_defs=lots_of_resources)
 
+
 @asset(required_resource_keys={"R1"})
 def resource_asset(context):
     return context.resources.R1
+
 
 @repository
 def resource_repo():
@@ -53,8 +65,9 @@ def resource_repo():
         *with_resources(
             [resource_asset],
             resource_defs=lots_of_resources,
-        )
+        ),
     ]
+
 
 if __name__ == "__main__":
     result = reconstructable(resource_job).execute_in_process()
