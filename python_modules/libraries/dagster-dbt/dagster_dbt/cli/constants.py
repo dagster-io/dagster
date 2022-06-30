@@ -97,4 +97,15 @@ CLI_COMMON_OPTIONS_CONFIG_SCHEMA = {
         is_required=False,
         description="The url for where dbt docs are being served for this project.",
     ),
+    "json_log_format": Field(
+        config=bool,
+        description="When True, dbt will invoked with the `--log-format json` flag, allowing "
+        "Dagster to parse the log messages and emit simpler log messages to the event log.",
+        default_value=True,
+    ),
+    "capture_logs": Field(
+        config=bool,
+        description="When True, logs emitted from dbt will be logged to the Dagster event log.",
+        default_value=True,
+    ),
 }
