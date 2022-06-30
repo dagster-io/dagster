@@ -140,16 +140,10 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
                     value=element.value,
                     metadata_entries=element.metadata_entries,
                 )
-            elif (
-                isinstance(element, list)
-                and len(element) > 0
-                and all([isinstance(event, DynamicOutput) for event in element])
-            ):
-                if not output_def.is_dynamic:
-                    raise DagsterInvariantViolationError(
-                        f"Received a list of DynamicOutputs for output named '{output_def.name}', but output is not dynamic."
-                    )
+            elif isinstance(element, list) and output_def.is_dynamic:
                 for dynamic_output in element:
+                    if not isinstance(dynamic_output, DynamicOutput):
+                        f"Dynamic Output '{output_def.name}' expected a list " "of DynamicOutputs, but an element of the list was of " f"type '{type(dynamic_output)}'."
                     if (
                         not dynamic_output.output_name == DEFAULT_OUTPUT
                         and not dynamic_output.output_name == output_def.name
@@ -166,6 +160,12 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
                         mapping_key=dynamic_output.mapping_key,
                         metadata_entries=dynamic_output.metadata_entries,
                     )
+            elif isinstance(element, list) and any(
+                [isinstance(event, DynamicOutput) for event in element]
+            ):
+                raise DagsterInvariantViolationError(
+                    f"Received a DynamicOutput within a list for output named '{output_def.name}', but output is not dynamic."
+                )
             else:
                 # If an output object was not returned, then construct one from any metadata that has been logged within the op's body.
                 metadata = context.get_output_metadata(output_def.name)
