@@ -30,6 +30,8 @@ class DbtCliResource(DbtResource):
         target_path: str,
         logger: Optional[Any] = None,
         docs_url: Optional[str] = None,
+        json_log_format: bool = True,
+        capture_logs: bool = True,
     ):
         self._default_flags = default_flags
         self._executable = executable
@@ -37,6 +39,8 @@ class DbtCliResource(DbtResource):
         self._ignore_handled_error = ignore_handled_error
         self._target_path = target_path
         self._docs_url = docs_url
+        self._json_log_format = json_log_format
+        self._capture_logs = capture_logs
         super().__init__(logger)
 
     @property
@@ -90,6 +94,8 @@ class DbtCliResource(DbtResource):
             ignore_handled_error=self._ignore_handled_error,
             target_path=self._target_path,
             docs_url=self._docs_url,
+            json_log_format=self._json_log_format,
+            capture_logs=self._capture_logs,
         )
 
     def compile(
@@ -308,50 +314,11 @@ class DbtCliResource(DbtResource):
                 **CLI_COMMON_FLAGS_CONFIG_SCHEMA, **CLI_COMMON_OPTIONS_CONFIG_SCHEMA
             ).items()
         }
-    ),
-    description="A resource that can run dbt CLI commands.",
+    )
 )
 def dbt_cli_resource(context) -> DbtCliResource:
-    """This resource defines a dbt CLI interface.
+    """This resource issues dbt CLI commands against a configured dbt project."""
 
-    To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/concepts/configuration/configured>`_ method.
-
-    Examples:
-
-    .. code-block:: python
-
-        custom_dbt_cli_resource = dbt_cli_resource.configured({"project-dir": "path/to/my/dbt_project"})
-
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={"dbt": custom_dbt_cli_resource})])
-        def dbt_cli_pipeline():
-            # Run solids with `required_resource_keys={"dbt", ...}`.
-
-    You may configure this resource as follows:
-
-    .. code-block:: YAML
-
-        resources:
-          dbt_cli_resource:
-            config:
-              project_dir: "."
-              # Optional[str]: Which directory to look in for the dbt_project.yml file. Default is
-              # the current working directory and its parents.
-              profiles_dir: $DBT_PROFILES_DIR or $HOME/.dbt
-              # Optional[str]: Which directory to look in for the profiles.yml file.
-              profile: ""
-              # Optional[str]: Which profile to load. Overrides setting in dbt_project.yml.
-              target: ""
-              # Optional[str]: Which target to load for the given profile.
-              vars: {}
-              # Optional[Permissive]: Supply variables to the project. This argument overrides
-              # variables defined in your dbt_project.yml file. This argument should be a
-              # dictionary, eg. "{'my_variable': 'my_value'}"
-              bypass_cache: False
-              # Optional[bool]: If set, bypass the adapter-level cache of database state.
-
-
-    """
     # set of options in the config schema that are not flags
     non_flag_options = {k.replace("-", "_") for k in CLI_COMMON_OPTIONS_CONFIG_SCHEMA}
     # all config options that are intended to be used as flags for dbt commands
@@ -364,4 +331,6 @@ def dbt_cli_resource(context) -> DbtCliResource:
         target_path=context.resource_config["target_path"],
         logger=context.log,
         docs_url=context.resource_config.get("docs_url"),
+        capture_logs=context.resource_config["capture_logs"],
+        json_log_format=context.resource_config["json_log_format"],
     )
