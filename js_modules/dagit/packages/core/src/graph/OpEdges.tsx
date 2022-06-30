@@ -21,9 +21,18 @@ type Path = {
 const buildSVGPaths = weakmapMemoize((edges: OpLayoutEdge[], nodes: {[name: string]: OpLayout}) =>
   edges
     .map(({from, to}) => {
-      const sourceOutput = nodes[from.opName].outputs[from.edgeName];
-      const targetInput = nodes[to.opName].inputs[to.edgeName];
+      const source = nodes[from.opName];
+      const sourceOutput =
+        source.outputs[from.edgeName] ||
+        Object.values(source.outputs).find((o) => o.collapsed.includes(from.edgeName));
+
+      const target = nodes[to.opName];
+      const targetInput =
+        target.inputs[to.edgeName] ||
+        Object.values(target.inputs).find((o) => o.collapsed.includes(to.edgeName));
+
       if (!sourceOutput || !targetInput) {
+        console.log(`Unexpected error: An input or output is not reflected in the DAG layout`);
         return null;
       }
       return {

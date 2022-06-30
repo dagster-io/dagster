@@ -78,7 +78,7 @@ export const OpIOBox: React.FC<OpIOBoxProps> = ({
         </>
       )}
       {layoutInfo.collapsed.length > 0 && (
-        <div className="count">+ {layoutInfo.collapsed.length}</div>
+        <div className="collapsedCount">+ {layoutInfo.collapsed.length}</div>
       )}
     </OpIOContainer>
   );
@@ -117,10 +117,11 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
     font-weight: 700;
     border-radius: 4px;
   }
-  .count {
+  .collapsedCount {
     color: ${(p) => (p.$highlighted ? Colors.Blue500 : Colors.Gray500)};
     font-weight: 600;
     margin-left: -3px;
+    padding-right: 4px;
   }
 `;
 
