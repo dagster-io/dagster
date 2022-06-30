@@ -96,9 +96,9 @@ def asset(
     """Create a definition for how to compute an asset.
 
     A software-defined asset is the combination of:
-    1. An asset key, e.g. the name of a table.
-    2. A function, which can be run to compute the contents of the asset.
-    3. A set of upstream assets that are provided as inputs to the function when computing the asset.
+      1. An asset key, e.g. the name of a table.
+      2. A function, which can be run to compute the contents of the asset.
+      3. A set of upstream assets that are provided as inputs to the function when computing the asset.
 
     Unlike an op, whose dependencies are determined by the graph it lives inside, an asset knows
     about the upstream assets it depends on. The upstream assets are inferred from the arguments

@@ -184,6 +184,42 @@ def define_asset_job(
         partitions_def (Optional[PartitionsDefinition]):
             Defines the set of partitions for this job. All AssetDefinitions selected for this job
             must have a matching PartitionsDefinition.
+
+    Returns:
+        UnresolvedAssetJobDefinition: The job, which can be placed inside a repository.
+
+    Examples:
+
+        .. code-block:: python
+
+            # A job that targets all assets in the repository:
+            @asset
+            def asset1():
+                ...
+
+            @repository
+            def repo():
+                return [asset1, define_asset_job("all_assets")]
+
+            # A job that targets all the assets in a group:
+            @repository
+            def repo():
+                return [
+                    assets,
+                    define_asset_job("marketing_job", selection=AssetSelection.groups("marketing")),
+                ]
+
+            # Resources are supplied to the assets, not the job:
+            @asset(required_resource_keys={"slack_client"})
+            def asset1():
+                ...
+
+            @repository
+            def prod_repo():
+                return [
+                    *with_resources([asset1], resource_defs={"slack_client": prod_slack_client}),
+                    define_asset_job("all_assets"),
+                ]
     """
     from dagster.core.asset_defs.asset_selection import AssetSelection
 
