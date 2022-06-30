@@ -406,7 +406,6 @@
     "title": "Guides",
     "icon": "Search",
     "path": "/guides",
-    "isDefaultOpen": true,
     "children": [
       {
         "title": "Upgrading to Software-Defined Assets",
