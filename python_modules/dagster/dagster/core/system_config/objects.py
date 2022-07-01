@@ -19,11 +19,11 @@ class SolidConfig(
         [
             ("config", object),
             ("inputs", Mapping[str, object]),
-            ("outputs", "OutputsConfig"),
+            ("outputs", Optional["OutputsConfig"]),
         ],
     )
 ):
-    def __new__(cls, config, inputs: Mapping[str, object], outputs: "OutputsConfig"):
+    def __new__(cls, config, inputs: Mapping[str, object], outputs: Optional["OutputsConfig"]):
         return super(SolidConfig, cls).__new__(
             cls,
             config,
@@ -38,7 +38,7 @@ class SolidConfig(
         return SolidConfig(
             config=config.get("config"),
             inputs=config.get("inputs") or {},
-            outputs=OutputsConfig(config["outputs"]),
+            outputs=OutputsConfig(config.get("outputs")),
         )
 
 
@@ -48,7 +48,7 @@ class OutputsConfig(NamedTuple):
     output_config_schema, and a list otherwise.
     """
 
-    config: Union[Dict, List]
+    config: Optional[Union[Dict, List]]
 
     @property
     def output_names(self) -> AbstractSet[str]:
