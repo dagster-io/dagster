@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Mapping, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, Optional, TypeVar, Union
 
 from typing_extensions import Self
 
@@ -71,7 +71,7 @@ class AnonymousConfigurableDefinition(ConfigurableDefinition):
         config_or_config_fn: Any,
         config_schema: CoercableToConfigSchema = None,
         description: Optional[str] = None,
-    ) -> Self:
+    ) -> Self:  # type: ignore [valid-type] # (until mypy supports Self)
         """
         Wraps this object in an object of the same type that provides configuration to the inner
         object.
@@ -102,7 +102,7 @@ class AnonymousConfigurableDefinition(ConfigurableDefinition):
         description: Optional[str],
         config_schema: IDefinitionConfigSchema,
         config_or_config_fn: Union[Any, Callable[[Any], Any]],
-    ) -> Self:
+    ) -> Self:  # type: ignore [valid-type] # (until mypy supports Self)
         raise NotImplementedError()
 
 
@@ -115,7 +115,7 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
         name: str,
         config_schema: Optional[Dict[str, Any]] = None,
         description: Optional[str] = None,
-    ) -> Self:
+    ) -> Self:  # type: ignore [valid-type] # (until mypy supports Self)
         """
         Wraps this object in an object of the same type that provides configuration to the inner
         object.
@@ -151,7 +151,7 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
         description: Optional[str],
         config_schema: IDefinitionConfigSchema,
         config_or_config_fn: Union[Any, Callable[[Any], Any]],
-    ) -> Self:
+    ) -> Self:  # type: ignore [valid-type] # (until mypy supports Self)
         ...
 
 
@@ -183,7 +183,10 @@ def _check_configurable_param(configurable: ConfigurableDefinition) -> None:
     )
 
 
-T_Configurable = TypeVar("T_Configurable", bound=ConfigurableDefinition)
+T_Configurable = TypeVar(
+    "T_Configurable", bound=Union["AnonymousConfigurableDefinition", "NamedConfigurableDefinition"]
+)
+
 
 def configured(
     configurable: T_Configurable,
@@ -233,11 +236,15 @@ def configured(
     if isinstance(configurable, NamedConfigurableDefinition):
 
         def _configured(config_or_config_fn: object) -> T_Configurable:
-            fn_name = getattr(config_or_config_fn, '__name__', None) if callable(config_or_config_fn) else None
-            name = check.not_none(kwargs.get("name") or fn_name)
+            fn_name = (
+                getattr(config_or_config_fn, "__name__", None)
+                if callable(config_or_config_fn)
+                else None
+            )
+            name: str = check.not_none(kwargs.get("name") or fn_name)
             return configurable.configured(
                 config_or_config_fn=config_or_config_fn,
-                name=name,
+                name=name,  # type: ignore [call-arg] # (mypy bug)
                 config_schema=config_schema,
                 **{k: v for k, v in kwargs.items() if k != "name"},
             )

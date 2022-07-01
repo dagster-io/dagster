@@ -131,22 +131,28 @@ class InProgressCompositionContext:
     composition function such as @composite_solid or @pipeline
     """
 
+    name: str
+    source: str
+    _invocations: Dict[str, "InvokedNode"]
+    _collisions: Dict[str, int]
+    _pending_invocations: Dict[str, "PendingNodeInvocation"]
+
     def __init__(self, name: str, source: str):
         self.name = check.str_param(name, "name")
         self.source = check.str_param(source, "source")
-        self._invocations: Dict[str, "InvokedNode"] = {}
-        self._collisions: Dict[str, int] = {}
-        self._pending_invocations: Dict[str, PendingNodeInvocation] = {}
+        self._invocations = {}
+        self._collisions = {}
+        self._pending_invocations = {}
 
     def observe_invocation(
         self,
-        given_alias: str,
+        given_alias: Optional[str],
         node_def: NodeDefinition,
         input_bindings: Mapping[str, Any],
         tags: Optional[frozentags],
         hook_defs: Optional[AbstractSet[HookDefinition]],
         retry_policy: Optional[RetryPolicy],
-    ):
+    ) -> str:
         if given_alias is None:
             node_name = node_def.name
             self._pending_invocations.pop(node_name, None)
@@ -173,7 +179,7 @@ class InProgressCompositionContext:
         )
         return node_name
 
-    def add_pending_invocation(self, solid: "PendingNodeInvocation"):
+    def add_pending_invocation(self, solid: "PendingNodeInvocation") -> None:
         solid_name = solid.given_alias if solid.given_alias else solid.node_def.name
         self._pending_invocations[solid_name] = solid
 
@@ -281,11 +287,17 @@ class PendingNodeInvocation:
     an alias before invoking.
     """
 
+    node_def: NodeDefinition
+    given_alias: Optional[str]
+    tags: Optional[frozentags]
+    hook_defs: AbstractSet[HookDefinition]
+    retry_policy: Optional[RetryPolicy]
+
     def __init__(
         self,
         node_def: NodeDefinition,
         given_alias: Optional[str],
-        tags: Optional[Mapping[str, str]],
+        tags: Optional[frozentags],
         hook_defs: Optional[AbstractSet[HookDefinition]],
         retry_policy: Optional[RetryPolicy],
     ):
@@ -989,6 +1001,7 @@ def do_composition(
         resolve_checked_solid_fn_inputs,
     )
 
+    actual_output_defs: Sequence[OutputDefinition]
     if provided_output_defs is None:
         outputs_are_explicit = False
         actual_output_defs = [OutputDefinition.create_from_inferred(infer_output_props(fn))]

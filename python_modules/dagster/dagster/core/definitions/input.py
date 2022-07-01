@@ -3,18 +3,24 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    List,
     Mapping,
     NamedTuple,
     Optional,
+    Sequence,
     Set,
     Type,
+    TypeVar,
     Union,
 )
 
 import dagster._check as check
 from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
+from dagster.core.definitions.metadata import (
+    MetadataEntry,
+    PartitionMetadataEntry,
+    RawMetadataValue,
+    normalize_metadata,
+)
 from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import (
     BuiltinScalarDagsterType,
@@ -29,10 +35,12 @@ from .utils import NoValueSentinel, check_valid_name
 if TYPE_CHECKING:
     from dagster.core.execution.context.input import InputContext
 
+T = TypeVar("T")
+
 
 # unfortunately since type_check functions need TypeCheckContext which is only available
 # at runtime, we can only check basic types before runtime
-def _check_default_value(input_name, dagster_type, default_value):
+def _check_default_value(input_name: str, dagster_type: DagsterType, default_value: T) -> T:
     if default_value is not NoValueSentinel:
         if dagster_type.is_nothing:
             raise DagsterInvalidDefinitionError(
@@ -92,7 +100,7 @@ class InputDefinition:
     _input_manager_key: Optional[str]
     _root_manager_key: Optional[str]
     _metadata: Mapping[str, RawMetadataValue]
-    _metadata_entries: List[MetadataEntry]
+    _metadata_entries: Sequence[Union[MetadataEntry, PartitionMetadataEntry]]
     _asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]
     _asset_partitions_fn: Optional[Callable[["InputContext"], Set[str]]]
 
@@ -135,9 +143,7 @@ class InputDefinition:
         self._input_manager_key = check.opt_str_param(input_manager_key, "input_manager_key")
 
         self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
-        self._metadata_entries = check.is_list(
-            normalize_metadata(self._metadata, [], allow_invalid=True), MetadataEntry
-        )
+        self._metadata_entries = normalize_metadata(self._metadata, [], allow_invalid=True)
 
         if asset_key:
             experimental_arg_warning("asset_key", "InputDefinition.__init__")
@@ -200,7 +206,7 @@ class InputDefinition:
         return self._asset_key is not None
 
     @property
-    def metadata_entries(self) -> List[MetadataEntry]:
+    def metadata_entries(self) -> Sequence[Union[MetadataEntry, PartitionMetadataEntry]]:
         return self._metadata_entries
 
     @property
@@ -460,7 +466,7 @@ class In(
             default_value=default_value,
             root_manager_key=check.opt_str_param(root_manager_key, "root_manager_key"),
             metadata=check.opt_dict_param(metadata, "metadata", key_type=str),
-            asset_key=check.opt_inst_param(asset_key, "asset_key", (AssetKey, FunctionType)),
+            asset_key=check.opt_inst_param(asset_key, "asset_key", (AssetKey, FunctionType)),  # type: ignore  # (mypy bug)
             asset_partitions=asset_partitions,
             input_manager_key=check.opt_str_param(input_manager_key, "input_manager_key"),
         )

@@ -58,6 +58,7 @@ from .utils import DEFAULT_IO_MANAGER_KEY
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
+    from dagster.core.execution.context.init import InitResourceContext
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster.core.instance import DagsterInstance
 
@@ -137,16 +138,16 @@ class GraphDefinition(NodeDefinition):
         name (str): The name of the graph. Must be unique within any :py:class:`GraphDefinition`
             or :py:class:`JobDefinition` containing the graph.
         description (Optional[str]): A human-readable description of the pipeline.
-        node_defs (Optional[List[NodeDefinition]]): The set of ops / graphs used in this graph.
+        node_defs (Optional[Sequence[NodeDefinition]]): The set of ops / graphs used in this graph.
         dependencies (Optional[Dict[Union[str, NodeInvocation], Dict[str, DependencyDefinition]]]):
             A structure that declares the dependencies of each op's inputs on the outputs of other
             ops in the graph. Keys of the top level dict are either the string names of ops in the
             graph or, in the case of aliased ops, :py:class:`NodeInvocations <NodeInvocation>`.
             Values of the top level dict are themselves dicts, which map input names belonging to
             the op or aliased op to :py:class:`DependencyDefinitions <DependencyDefinition>`.
-        input_mappings (Optional[List[InputMapping]]): Defines the inputs to the nested graph, and
+        input_mappings (Optional[Sequence[InputMapping]]): Defines the inputs to the nested graph, and
             how they map to the inputs of its constituent ops.
-        output_mappings (Optional[List[OutputMapping]]): Defines the outputs of the nested graph,
+        output_mappings (Optional[Sequence[OutputMapping]]): Defines the outputs of the nested graph,
             and how they map from the outputs of its constituent ops.
         config (Optional[ConfigMapping]): Defines the config of the graph, and how its schema maps
             to the config of its constituent ops.
@@ -190,7 +191,7 @@ class GraphDefinition(NodeDefinition):
         description: Optional[str] = None,
         node_defs: Optional[Sequence[NodeDefinition]] = None,
         dependencies: Optional[
-            Mapping[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]
+            Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
         ] = None,
         input_mappings: Optional[Sequence[InputMapping]] = None,
         output_mappings: Optional[Sequence[OutputMapping]] = None,
@@ -204,7 +205,7 @@ class GraphDefinition(NodeDefinition):
             self._node_defs, self._dependencies, graph_definition=self
         )
 
-        # List[InputMapping]
+        # Sequence[InputMapping]
         self._input_mappings, input_defs = _validate_in_mappings(
             check.opt_list_param(input_mappings, "input_mappings"),
             self._node_dict,
@@ -212,7 +213,7 @@ class GraphDefinition(NodeDefinition):
             name,
             class_name=type(self).__name__,
         )
-        # List[OutputMapping]
+        # Sequence[OutputMapping]
         self._output_mappings = _validate_out_mappings(
             check.opt_list_param(output_mappings, "output_mappings"),
             self._node_dict,
@@ -442,7 +443,7 @@ class GraphDefinition(NodeDefinition):
         return mapped_solid.definition.input_has_default(mapping.maps_to.input_name)
 
     @property
-    def dependencies(self) -> Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]:
+    def dependencies(self) -> Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]:
         return self._dependencies
 
     @property
@@ -504,9 +505,9 @@ class GraphDefinition(NodeDefinition):
         name: Optional[str] = None,
         description: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
-        tags: Optional[Dict[str, Any]] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        config: Optional[Union[ConfigMapping, Mapping[str, object], "PartitionedConfig"]] = None,
+        tags: Optional[Mapping[str, object]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
@@ -547,16 +548,16 @@ class GraphDefinition(NodeDefinition):
                 values that can parameterize the job, as well as a function for mapping those
                 values to the base config. The values provided will be viewable and editable in the
                 Dagit playground, so be careful with secrets.
-            tags (Optional[Dict[str, Any]]):
+            tags (Optional[Mapping[str, Any]]):
                 Arbitrary information that will be attached to the execution of the Job.
                 Values that are not strings will be json encoded and must meet the criteria that
                 `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
                 values provided at invocation time.
-            metadata (Optional[Dict[str, RawMetadataValue]]):
+            metadata (Optional[Mapping[str, RawMetadataValue]]):
                 Arbitrary information that will be attached to the JobDefinition and be viewable in Dagit.
                 Keys must be strings, and values must be python primitive types or one of the provided
                 MetadataValue types
-            logger_defs (Optional[Dict[str, LoggerDefinition]]):
+            logger_defs (Optional[Mapping[str, LoggerDefinition]]):
                 A dictionary of string logger identifiers to their implementations.
             executor_def (Optional[ExecutorDefinition]):
                 How this Job will be executed. Defaults to :py:class:`multi_or_in_process_executor`,
@@ -691,7 +692,7 @@ class GraphDefinition(NodeDefinition):
         self,
         run_config: Any = None,
         instance: Optional["DagsterInstance"] = None,
-        resources: Optional[Dict[str, Any]] = None,
+        resources: Optional[Mapping[str, object]] = None,
         raise_on_error: bool = True,
         op_selection: Optional[List[str]] = None,
         run_id: Optional[str] = None,
@@ -701,12 +702,12 @@ class GraphDefinition(NodeDefinition):
         Execute this graph in-process, collecting results in-memory.
 
         Args:
-            run_config (Optional[Dict[str, Any]]):
+            run_config (Optional[Mapping[str, Any]]):
                 Run config to provide to execution. The configuration for the underlying graph
                 should exist under the "ops" key.
             instance (Optional[DagsterInstance]):
                 The instance to execute against, an ephemeral one will be used if none provided.
-            resources (Optional[Dict[str, Any]]):
+            resources (Optional[Mapping[str, Any]]):
                 The resources needed if any are required. Can provide resource instances directly,
                 or resource definitions.
             raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
@@ -785,27 +786,27 @@ class SubselectedGraphDefinition(GraphDefinition):
             from. This is used for tracking where the subselected graph originally comes from.
             Note that we allow subselecting a subselected graph, and this field refers to the direct
             parent graph of the current subselection, rather than the original root graph.
-        node_defs (Optional[List[NodeDefinition]]): A list of all top level nodes in the graph. A
+        node_defs (Optional[Sequence[NodeDefinition]]): A list of all top level nodes in the graph. A
             node can be an op or a graph that contains other nodes.
-        dependencies (Optional[Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]]):
+        dependencies (Optional[Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]]):
             A structure that declares the dependencies of each op's inputs on the outputs of other
             ops in the subselected graph. Keys of the top level dict are either the string names of
             ops in the graph or, in the case of aliased solids, :py:class:`NodeInvocations <NodeInvocation>`.
             Values of the top level dict are themselves dicts, which map input names belonging to
             the op or aliased op to :py:class:`DependencyDefinitions <DependencyDefinition>`.
-        input_mappings (Optional[List[InputMapping]]): Define the inputs to the nested graph, and
+        input_mappings (Optional[Sequence[InputMapping]]): Define the inputs to the nested graph, and
             how they map to the inputs of its constituent ops.
-        output_mappings (Optional[List[OutputMapping]]): Define the outputs of the nested graph, and
+        output_mappings (Optional[Sequence[OutputMapping]]): Define the outputs of the nested graph, and
             how they map from the outputs of its constituent ops.
     """
 
     def __init__(
         self,
         parent_graph_def: GraphDefinition,
-        node_defs: Optional[List[NodeDefinition]],
-        dependencies: Optional[Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]],
-        input_mappings: Optional[List[InputMapping]],
-        output_mappings: Optional[List[OutputMapping]],
+        node_defs: Optional[Sequence[NodeDefinition]],
+        dependencies: Optional[Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]],
+        input_mappings: Optional[Sequence[InputMapping]],
+        output_mappings: Optional[Sequence[OutputMapping]],
     ):
         self._parent_graph_def = check.inst_param(
             parent_graph_def, "parent_graph_def", GraphDefinition
@@ -835,12 +836,12 @@ class SubselectedGraphDefinition(GraphDefinition):
 
 
 def _validate_in_mappings(
-    input_mappings: List[InputMapping],
-    solid_dict: Dict[str, Node],
+    input_mappings: Sequence[InputMapping],
+    solid_dict: Mapping[str, Node],
     dependency_structure: DependencyStructure,
     name: str,
     class_name: str,
-) -> Tuple[List[InputMapping], List[InputDefinition]]:
+) -> Tuple[Sequence[InputMapping], Sequence[InputDefinition]]:
     from .composition import MappedInputPlaceholder
 
     input_def_dict: Dict[str, InputDefinition] = OrderedDict()
@@ -971,12 +972,12 @@ def _validate_in_mappings(
 
 
 def _validate_out_mappings(
-    output_mappings: List[OutputMapping],
-    solid_dict: Dict[str, Node],
+    output_mappings: Sequence[OutputMapping],
+    solid_dict: Mapping[str, Node],
     dependency_structure: DependencyStructure,
     name: str,
     class_name: str,
-) -> List[OutputMapping]:
+) -> Sequence[OutputMapping]:
     for mapping in output_mappings:
         if isinstance(mapping, OutputMapping):
 
@@ -1107,7 +1108,7 @@ def _config_mapping_with_default_value(
 @io_manager(
     description="Built-in filesystem IO manager that stores and retrieves values using pickling."
 )
-def default_job_io_manager(init_context):
+def default_job_io_manager(init_context: "InitResourceContext"):
     from dagster.core.storage.fs_io_manager import PickledObjectFilesystemIOManager
-
-    return PickledObjectFilesystemIOManager(base_dir=init_context.instance.storage_directory())
+    instance = check.not_none(init_context.instance)
+    return PickledObjectFilesystemIOManager(base_dir=instance.storage_directory())

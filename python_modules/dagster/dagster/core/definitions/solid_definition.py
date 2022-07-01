@@ -3,7 +3,6 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
-    Dict,
     Iterator,
     List,
     Mapping,
@@ -372,12 +371,12 @@ class CompositeSolidDefinition(GraphDefinition):
             configuration for the composite solid, and a configuration mapping function, which
             is called to map the configuration of the composite solid into the configuration that
             is applied to any child solids.
-        dependencies (Optional[Dict[Union[str, NodeInvocation], Dict[str, DependencyDefinition]]]):
+        dependencies (Optional[Mapping[Union[str, NodeInvocation], Mapping[str, DependencyDefinition]]]):
             A structure that declares where each solid gets its inputs. The keys at the top
             level dict are either string names of solids or NodeInvocations. The values
             are dicts that map input names to DependencyDefinitions.
         description (Optional[str]): Human readable description of this composite solid.
-        tags (Optional[Dict[str, Any]]): Arbitrary metadata for the solid. Frameworks may
+        tags (Optional[Mapping[str, Any]]): Arbitrary metadata for the solid. Frameworks may
             expect and require certain metadata to be attached to a solid. Users should generally
             not set metadata directly. Values that are not strings will be json encoded and must meet
             the criteria that `json.loads(json.dumps(value)) == value`.
@@ -413,7 +412,7 @@ class CompositeSolidDefinition(GraphDefinition):
         output_mappings: Optional[Sequence[OutputMapping]] = None,
         config_mapping: Optional[ConfigMapping] = None,
         dependencies: Optional[
-            Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]
+            Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
         ] = None,
         description: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,

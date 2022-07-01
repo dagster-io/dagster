@@ -19,6 +19,8 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.utils.backcompat import ExperimentalWarning
 
@@ -139,7 +141,7 @@ def _resolve_output_to_destinations(output_name, node_def, handle) -> Sequence[N
 def _build_graph_dependencies(
     graph_def: GraphDefinition,
     parent_handle: Union[NodeHandle, None],
-    outputs_by_graph_handle: Dict[NodeHandle, Dict[str, NodeOutputHandle]],
+    outputs_by_graph_handle: Dict[NodeHandle, Mapping[str, NodeOutputHandle]],
     non_asset_inputs_by_node_handle: Dict[NodeHandle, Sequence[NodeOutputHandle]],
     assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
 ):
@@ -256,7 +258,7 @@ def _asset_key_to_dep_node_handles(
 
     # A mapping of every graph node handle to a dictionary with each out
     # name as a key and node output handle value
-    outputs_by_graph_handle: Dict[NodeHandle, Dict[str, NodeOutputHandle]] = {}
+    outputs_by_graph_handle: Dict[NodeHandle, Mapping[str, NodeOutputHandle]] = {}
     _build_graph_dependencies(
         graph_def=graph_def,
         parent_handle=None,
@@ -396,6 +398,15 @@ class AssetLayer:
             keys for each asset key produced by this job.
     """
 
+    _asset_keys_by_node_input_handle: Mapping[NodeInputHandle, AssetKey]
+    _asset_info_by_node_output_handle: Mapping[NodeOutputHandle, AssetOutputInfo]
+    _asset_deps: Mapping[AssetKey, AbstractSet[AssetKey]]
+    _dependency_node_handles_by_asset_key: Mapping[AssetKey, Set[NodeHandle]]
+    _source_assets_by_key: Mapping[AssetKey, "SourceAsset"]
+    _asset_defs_by_key: Mapping[AssetKey, "AssetsDefinition"]
+    _asset_defs_by_node_handle: Mapping[NodeHandle, Set[AssetsDefinition]]
+    _io_manager_keys_by_asset_key: Mapping[AssetKey, str]
+
     def __init__(
         self,
         asset_keys_by_node_input_handle: Optional[Mapping[NodeInputHandle, AssetKey]] = None,
@@ -404,7 +415,7 @@ class AssetLayer:
         ] = None,
         asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
         dependency_node_handles_by_asset_key: Optional[Mapping[AssetKey, Set[NodeHandle]]] = None,
-        assets_defs: Optional[List["AssetsDefinition"]] = None,
+        assets_defs: Optional[Sequence["AssetsDefinition"]] = None,
         source_asset_defs: Optional[Sequence["SourceAsset"]] = None,
         io_manager_keys_by_asset_key: Optional[Mapping[AssetKey, str]] = None,
     ):
@@ -474,7 +485,7 @@ class AssetLayer:
     def from_graph_and_assets_node_mapping(
         graph_def: GraphDefinition,
         assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
-        source_assets: Sequence[Union["SourceAsset"]],
+        source_assets: Sequence["SourceAsset"],
         resolved_asset_deps: "ResolvedAssetDependencies",
     ) -> "AssetLayer":
         """
@@ -568,7 +579,7 @@ class AssetLayer:
         return self._asset_deps[asset_key]
 
     @property
-    def dependency_node_handles_by_asset_key(self) -> Mapping[AssetKey, Sequence[NodeOutputHandle]]:
+    def dependency_node_handles_by_asset_key(self) -> Mapping[AssetKey, AbstractSet[NodeHandle]]:
         return self._dependency_node_handles_by_asset_key
 
     @property
@@ -595,10 +606,10 @@ class AssetLayer:
     def io_manager_key_for_asset(self, asset_key: AssetKey) -> str:
         return self._io_manager_keys_by_asset_key.get(asset_key, "io_manager")
 
-    def metadata_for_asset(self, asset_key: AssetKey) -> Optional[Dict[str, object]]:
+    def metadata_for_asset(self, asset_key: AssetKey) -> Optional[MetadataUserInput]:
         if asset_key in self._source_assets_by_key:
             metadata = self._source_assets_by_key[asset_key].metadata
-            return {key: value.value for key, value in metadata.items()} if metadata else None
+            return {key: cast(RawMetadataValue, value.value) for key, value in metadata.items()} if metadata else None
         elif asset_key in self._assets_defs_by_key:
             return self._assets_defs_by_key[asset_key].metadata_by_asset_key[asset_key]
         else:
@@ -645,14 +656,14 @@ def build_asset_selection_job(
     assets: Iterable["AssetsDefinition"],
     source_assets: Iterable["SourceAsset"],
     executor_def: Optional[ExecutorDefinition] = None,
-    config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
+    config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]] = None,
     partitions_def: Optional["PartitionsDefinition"] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
-    tags: Optional[Dict[str, Any]] = None,
+    tags: Optional[Mapping[str, Any]] = None,
     asset_selection: Optional[FrozenSet[AssetKey]] = None,
     asset_selection_data: Optional[AssetSelectionData] = None,
-):
+) -> "JobDefinition":
     from dagster.core.definitions import build_assets_job
 
     if asset_selection:

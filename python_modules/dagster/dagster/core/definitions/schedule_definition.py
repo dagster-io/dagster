@@ -2,7 +2,7 @@ import copy
 from contextlib import ExitStack
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, Iterator, List, NamedTuple, Optional, TypeVar, Union, cast
+from typing import Any, Callable, Iterator, List, Mapping, NamedTuple, Optional, Sequence, TypeVar, Union, cast
 
 import pendulum
 from typing_extensions import TypeAlias, TypeGuard
@@ -36,11 +36,11 @@ T = TypeVar("T")
 # Preserve ScheduleExecutionContext for backcompat so type annotations don't break.
 ScheduleExecutionContext: TypeAlias = "ScheduleEvaluationContext"
 
-RunConfig: TypeAlias = Dict[str, Any]
+RunConfig: TypeAlias = Mapping[str, Any]
 RunRequestIterator: TypeAlias = Iterator[Union[RunRequest, SkipReason]]
 
 ScheduleEvaluationFunctionReturn: TypeAlias = Union[
-    RunRequest, SkipReason, RunConfig, RunRequestIterator, List[RunRequest]
+    RunRequest, SkipReason, RunConfig, RunRequestIterator, Sequence[RunRequest]
 ]
 RawScheduleEvaluationFunction: TypeAlias = Union[
     Callable[["ScheduleEvaluationContext"], ScheduleEvaluationFunctionReturn],
@@ -52,7 +52,7 @@ ScheduleRunConfigFunction: TypeAlias = Union[
     Callable[[], RunConfig],
 ]
 
-ScheduleTagsFunction: TypeAlias = Callable[["ScheduleEvaluationContext"], Dict[str, str]]
+ScheduleTagsFunction: TypeAlias = Callable[["ScheduleEvaluationContext"], Mapping[str, str]]
 ScheduleShouldExecuteFunction: TypeAlias = Callable[["ScheduleEvaluationContext"], bool]
 ScheduleExecutionFunction: TypeAlias = Union[
     Callable[["ScheduleEvaluationContext"], Any],
@@ -169,7 +169,7 @@ def build_schedule_context(
 
 @whitelist_for_serdes
 class ScheduleExecutionData(NamedTuple):
-    run_requests: Optional[List[RunRequest]]
+    run_requests: Optional[Sequence[RunRequest]]
     skip_message: Optional[str]
 
 
@@ -188,19 +188,19 @@ class ScheduleDefinition:
 
             This function must return a generator, which must yield either a single SkipReason
             or one or more RunRequest objects.
-        run_config (Optional[Dict]): The config that parameterizes this execution,
+        run_config (Optional[Mapping]): The config that parameterizes this execution,
             as a dict.
-        run_config_fn (Optional[Callable[[ScheduleEvaluationContext], [Dict]]]): A function that
+        run_config_fn (Optional[Callable[[ScheduleEvaluationContext], [Mapping]]]): A function that
             takes a ScheduleEvaluationContext object and returns the run configuration that
             parameterizes this execution, as a dict. You may set only one of ``run_config``,
             ``run_config_fn``, and ``execution_fn``.
-        tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
+        tags (Optional[Mapping[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.
-        tags_fn (Optional[Callable[[ScheduleEvaluationContext], Optional[Dict[str, str]]]]): A
+        tags_fn (Optional[Callable[[ScheduleEvaluationContext], Optional[Mapping[str, str]]]]): A
             function that generates tags to attach to the schedules runs. Takes a
             :py:class:`~dagster.ScheduleEvaluationContext` and returns a dictionary of tags (string
             key-value pairs). You may set only one of ``tags``, ``tags_fn``, and ``execution_fn``.
-        solid_selection (Optional[List[str]]): A list of solid subselection (including single
+        solid_selection (Optional[Sequence[str]]): A list of solid subselection (including single
             solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): (legacy) The mode to apply when executing this schedule. (default: 'default')
         should_execute (Optional[Callable[[ScheduleEvaluationContext], bool]]): A function that runs
@@ -226,12 +226,12 @@ class ScheduleDefinition:
         pipeline_name: Optional[str] = None,
         run_config: Optional[Any] = None,
         run_config_fn: Optional[ScheduleRunConfigFunction] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         tags_fn: Optional[ScheduleTagsFunction] = None,
-        solid_selection: Optional[List[Any]] = None,
+        solid_selection: Optional[Sequence[Any]] = None,
         mode: Optional[str] = None,
         should_execute: Optional[ScheduleShouldExecuteFunction] = None,
-        environment_vars: Optional[Dict[str, str]] = None,
+        environment_vars: Optional[Mapping[str, str]] = None,
         execution_timezone: Optional[str] = None,
         execution_fn: Optional[ScheduleExecutionFunction] = None,
         description: Optional[str] = None,
@@ -253,7 +253,7 @@ class ScheduleDefinition:
             self._target = RepoRelativeTarget(
                 pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
                 mode=check.opt_str_param(mode, "mode") or DEFAULT_MODE_NAME,
-                solid_selection=check.opt_nullable_list_param(
+                solid_selection=check.opt_nullable_sequence_param(
                     solid_selection, "solid_selection", of_type=str
                 ),
             )
@@ -312,7 +312,7 @@ class ScheduleDefinition:
                 tags_fn = lambda _context: tags  # type: ignore
             else:
                 tags_fn = check.opt_callable_param(
-                    tags_fn, "tags_fn", default=lambda _context: cast(Dict[str, str], {})
+                    tags_fn, "tags_fn", default=lambda _context: cast(Mapping[str, str], {})
                 )
 
             _should_execute: ScheduleShouldExecuteFunction = check.opt_callable_param(
@@ -432,7 +432,7 @@ class ScheduleDefinition:
         return self._target.pipeline_name
 
     @property
-    def solid_selection(self) -> Optional[List[Any]]:
+    def solid_selection(self) -> Optional[Sequence[str]]:
         return self._target.solid_selection
 
     @property
@@ -448,7 +448,7 @@ class ScheduleDefinition:
         return self._cron_schedule
 
     @property
-    def environment_vars(self) -> Dict[str, str]:
+    def environment_vars(self) -> Mapping[str, str]:
         return self._environment_vars
 
     @property

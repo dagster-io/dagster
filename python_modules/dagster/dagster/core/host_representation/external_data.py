@@ -207,9 +207,9 @@ class ExternalPresetData(
         [
             ("name", str),
             ("run_config", Mapping[str, object]),
-            ("solid_selection", Optional[List[str]]),
+            ("solid_selection", Optional[Sequence[str]]),
             ("mode", str),
-            ("tags", Dict[str, str]),
+            ("tags", Mapping[str, str]),
         ],
     )
 ):
@@ -217,15 +217,15 @@ class ExternalPresetData(
         cls,
         name: str,
         run_config: Optional[Mapping[str, object]],
-        solid_selection: Optional[List[str]],
+        solid_selection: Optional[Sequence[str]],
         mode: str,
-        tags: Dict[str, str],
+        tags: Mapping[str, str],
     ):
         return super(ExternalPresetData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
-            solid_selection=check.opt_nullable_list_param(
+            solid_selection=check.opt_nullable_sequence_param(
                 solid_selection, "solid_selection", of_type=str
             ),
             mode=check.str_param(mode, "mode"),
@@ -247,9 +247,9 @@ class ExternalScheduleData(
             ("name", str),
             ("cron_schedule", str),
             ("pipeline_name", str),
-            ("solid_selection", Optional[List[str]]),
+            ("solid_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
-            ("environment_vars", Optional[Dict[str, str]]),
+            ("environment_vars", Optional[Mapping[str, str]]),
             ("partition_set_name", Optional[str]),
             ("execution_timezone", Optional[str]),
             ("description", Optional[str]),
@@ -303,28 +303,28 @@ class ExternalScheduleExecutionErrorData(
 class ExternalTargetData(
     NamedTuple(
         "_ExternalTargetData",
-        [("pipeline_name", str), ("mode", str), ("solid_selection", Optional[List[str]])],
+        [("pipeline_name", str), ("mode", str), ("solid_selection", Optional[Sequence[str]])],
     )
 ):
-    def __new__(cls, pipeline_name: str, mode: str, solid_selection: Optional[List[str]]):
+    def __new__(cls, pipeline_name: str, mode: str, solid_selection: Optional[Sequence[str]]):
         return super(ExternalTargetData, cls).__new__(
             cls,
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             mode=check.str_param(mode, "mode"),
-            solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
+            solid_selection=check.opt_nullable_sequence_param(solid_selection, "solid_selection", str),
         )
 
 
 @whitelist_for_serdes
 class ExternalSensorMetadata(
-    NamedTuple("_ExternalSensorMetadata", [("asset_keys", Optional[List[AssetKey]])])
+    NamedTuple("_ExternalSensorMetadata", [("asset_keys", Optional[Sequence[AssetKey]])])
 ):
     """Stores additional sensor metadata which is available on the Dagit frontend."""
 
-    def __new__(cls, asset_keys: Optional[List[AssetKey]] = None):
+    def __new__(cls, asset_keys: Optional[Sequence[AssetKey]] = None):
         return super(ExternalSensorMetadata, cls).__new__(
             cls,
-            asset_keys=check.opt_nullable_list_param(asset_keys, "asset_keys", of_type=AssetKey),
+            asset_keys=check.opt_nullable_sequence_param(asset_keys, "asset_keys", of_type=AssetKey),
         )
 
 
@@ -341,11 +341,11 @@ class ExternalSensorData(
         [
             ("name", str),
             ("pipeline_name", Optional[str]),
-            ("solid_selection", Optional[List[str]]),
+            ("solid_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
             ("min_interval", Optional[int]),
             ("description", Optional[str]),
-            ("target_dict", Dict[str, ExternalTargetData]),
+            ("target_dict", Mapping[str, ExternalTargetData]),
             ("metadata", Optional[ExternalSensorMetadata]),
             ("default_status", Optional[DefaultSensorStatus]),
         ],
@@ -355,11 +355,11 @@ class ExternalSensorData(
         cls,
         name: str,
         pipeline_name: Optional[str] = None,
-        solid_selection: Optional[List[str]] = None,
+        solid_selection: Optional[Sequence[str]] = None,
         mode: Optional[str] = None,
         min_interval: Optional[int] = None,
         description: Optional[str] = None,
-        target_dict: Optional[Dict[str, ExternalTargetData]] = None,
+        target_dict: Optional[Mapping[str, ExternalTargetData]] = None,
         metadata: Optional[ExternalSensorMetadata] = None,
         default_status: Optional[DefaultSensorStatus] = None,
     ):
@@ -370,7 +370,7 @@ class ExternalSensorData(
                 pipeline_name: ExternalTargetData(
                     pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
                     mode=check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME),
-                    solid_selection=check.opt_nullable_list_param(
+                    solid_selection=check.opt_nullable_sequence_param(
                         solid_selection, "solid_selection", str
                     ),
                 )
@@ -382,7 +382,7 @@ class ExternalSensorData(
             pipeline_name=check.opt_str_param(
                 pipeline_name, "pipeline_name"
             ),  # keep legacy field populated
-            solid_selection=check.opt_nullable_list_param(
+            solid_selection=check.opt_nullable_sequence_param(
                 solid_selection, "solid_selection", str
             ),  # keep legacy field populated
             mode=check.opt_str_param(mode, "mode"),  # keep legacy field populated
@@ -428,7 +428,7 @@ class ExternalExecutionParamsData(
     def __new__(
         cls,
         run_config: Optional[Mapping[str, object]] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ):
         return super(ExternalExecutionParamsData, cls).__new__(
             cls,
@@ -498,9 +498,9 @@ class ExternalTimeWindowPartitionsDefinitionData(
 @whitelist_for_serdes
 class ExternalStaticPartitionsDefinitionData(
     ExternalPartitionsDefinitionData,
-    NamedTuple("_ExternalStaticPartitionsDefinitionData", [("partition_keys", List[str])]),
+    NamedTuple("_ExternalStaticPartitionsDefinitionData", [("partition_keys", Sequence[str])]),
 ):
-    def __new__(cls, partition_keys: List[str]):
+    def __new__(cls, partition_keys: Sequence[str]):
         return super(ExternalStaticPartitionsDefinitionData, cls).__new__(
             cls, partition_keys=check.list_param(partition_keys, "partition_keys", str)
         )
@@ -516,7 +516,7 @@ class ExternalPartitionSetData(
         [
             ("name", str),
             ("pipeline_name", str),
-            ("solid_selection", Optional[List[str]]),
+            ("solid_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
         ],
     )
@@ -525,23 +525,23 @@ class ExternalPartitionSetData(
         cls,
         name: str,
         pipeline_name: str,
-        solid_selection: Optional[List[str]],
+        solid_selection: Optional[Sequence[str]],
         mode: Optional[str],
     ):
         return super(ExternalPartitionSetData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
-            solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
+            solid_selection=check.opt_nullable_sequence_param(solid_selection, "solid_selection", str),
             mode=check.opt_str_param(mode, "mode"),
         )
 
 
 @whitelist_for_serdes
 class ExternalPartitionNamesData(
-    NamedTuple("_ExternalPartitionNamesData", [("partition_names", List[str])])
+    NamedTuple("_ExternalPartitionNamesData", [("partition_names", Sequence[str])])
 ):
-    def __new__(cls, partition_names: Optional[List[str]] = None):
+    def __new__(cls, partition_names: Optional[Sequence[str]] = None):
         return super(ExternalPartitionNamesData, cls).__new__(
             cls,
             partition_names=check.opt_list_param(partition_names, "partition_names", str),
@@ -594,10 +594,10 @@ class ExternalPartitionExecutionParamData(
 class ExternalPartitionSetExecutionParamData(
     NamedTuple(
         "_ExternalPartitionSetExecutionParamData",
-        [("partition_data", List[ExternalPartitionExecutionParamData])],
+        [("partition_data", Sequence[ExternalPartitionExecutionParamData])],
     )
 ):
-    def __new__(cls, partition_data: List[ExternalPartitionExecutionParamData]):
+    def __new__(cls, partition_data: Sequence[ExternalPartitionExecutionParamData]):
         return super(ExternalPartitionSetExecutionParamData, cls).__new__(
             cls,
             partition_data=check.list_param(

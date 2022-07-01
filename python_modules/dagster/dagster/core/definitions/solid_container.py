@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Set, Tuple, Union
 
 import dagster._check as check
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -73,9 +73,9 @@ def validate_dependency_dict(
 
 def create_execution_structure(
     solid_defs: Sequence["NodeDefinition"],
-    dependencies_dict: Mapping[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]],
+    dependencies_dict: Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]],
     graph_definition: "GraphDefinition",
-) -> Tuple[DependencyStructure, Dict[str, Node]]:
+) -> Tuple[DependencyStructure, Mapping[str, Node]]:
     """This builder takes the dependencies dictionary specified during creation of the
     PipelineDefinition object and builds (1) the execution structure and (2) a solid dependency
     dictionary.

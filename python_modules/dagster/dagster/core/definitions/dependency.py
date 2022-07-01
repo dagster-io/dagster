@@ -8,6 +8,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Mapping,
     NamedTuple,
     Optional,
     Tuple,
@@ -772,12 +773,12 @@ InputToOutputHandleDict = Dict[SolidInputHandle, DepTypeAndOutputHandles]
 
 
 def _create_handle_dict(
-    solid_dict: Dict[str, Node],
-    dep_dict: Dict[str, Dict[str, IDependencyDefinition]],
+    solid_dict: Mapping[str, Node],
+    dep_dict: Mapping[str, Mapping[str, IDependencyDefinition]],
 ) -> InputToOutputHandleDict:
     from .composition import MappedInputPlaceholder
 
-    check.dict_param(solid_dict, "solid_dict", key_type=str, value_type=Node)
+    check.mapping_param(solid_dict, "solid_dict", key_type=str, value_type=Node)
     check.two_dim_dict_param(dep_dict, "dep_dict", value_type=IDependencyDefinition)
 
     handle_dict: InputToOutputHandleDict = {}
@@ -820,7 +821,7 @@ def _create_handle_dict(
 
 class DependencyStructure:
     @staticmethod
-    def from_definitions(solids: Dict[str, Node], dep_dict: Dict[str, Any]):
+    def from_definitions(solids: Mapping[str, Node], dep_dict: Mapping[str, Any]):
         return DependencyStructure(list(dep_dict.keys()), _create_handle_dict(solids, dep_dict))
 
     def __init__(self, solid_names: List[str], handle_dict: InputToOutputHandleDict):

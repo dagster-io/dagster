@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, NamedTuple, Optional, Set, Tuple, cast
+from typing import AbstractSet, Any, Iterator, Mapping, NamedTuple, Optional, Sequence, Tuple, cast
 
 from dagster.config import Field, Permissive, Selector
 from dagster.config.config_type import ALL_CONFIG_BUILTINS, Array, ConfigType
@@ -30,7 +30,7 @@ from .solid_definition import NodeDefinition, SolidDefinition
 
 def define_resource_dictionary_cls(
     resource_defs: Mapping[str, ResourceDefinition],
-    required_resources: Set[str],
+    required_resources: AbstractSet[str],
 ) -> Shape:
     fields = {}
     for resource_name, resource_def in resource_defs.items():
@@ -50,7 +50,7 @@ def define_resource_dictionary_cls(
     return Shape(fields=fields)
 
 
-def remove_none_entries(ddict: dict) -> dict:
+def remove_none_entries(ddict: Mapping[Any, Any]) -> dict:
     return {k: v for k, v in ddict.items() if v is not None}
 
 
@@ -70,12 +70,12 @@ def def_config_field(
 
 class RunConfigSchemaCreationData(NamedTuple):
     pipeline_name: str
-    solids: List[Node]
+    solids: Sequence[Node]
     graph_def: GraphDefinition
     dependency_structure: DependencyStructure
     mode_definition: ModeDefinition
     logger_defs: Mapping[str, LoggerDefinition]
-    ignored_solids: List[Node]
+    ignored_solids: Sequence[Node]
     required_resources: AbstractSet[str]
     is_using_graph_job_op_apis: bool
     direct_inputs: Mapping[str, Any]
@@ -91,7 +91,7 @@ def define_logger_dictionary_cls(creation_data: RunConfigSchemaCreationData) -> 
     )
 
 
-def define_execution_field(executor_defs: List[ExecutorDefinition]) -> Field:
+def define_execution_field(executor_defs: Sequence[ExecutorDefinition]) -> Field:
     default_in_process = False
     for executor_def in executor_defs:
         if executor_def == in_process_executor:  # pylint: disable=comparison-with-callable
@@ -213,7 +213,7 @@ def get_inputs_field(
         elif name in direct_inputs and not has_upstream:
             input_field = None
         elif inp.root_manager_key and not has_upstream:
-            input_field = get_input_manager_input_field(solid, inp, resource_defs)
+            input_field = get_input_manager_input_field(solid, inp, inp.root_manager_key, resource_defs)
         elif inp.dagster_type.loader and not has_upstream:
             input_field = get_type_loader_input_field(solid, name, inp)
         else:
@@ -248,6 +248,7 @@ def input_has_upstream(
 def get_input_manager_input_field(
     solid: Node,
     input_def: InputDefinition,
+    root_manager_key: str,
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> Optional[Field]:
     if input_def.root_manager_key:
@@ -369,7 +370,7 @@ def get_type_output_field(output_def: OutputDefinition) -> Optional[Field]:
 
 
 def solid_config_field(
-    fields: Dict[str, Optional[Field]], ignored: bool, is_using_graph_job_op_apis: bool
+    fields: Mapping[str, Optional[Field]], ignored: bool, is_using_graph_job_op_apis: bool
 ) -> Optional[Field]:
     field_aliases = {"ops": "solids"} if is_using_graph_job_op_apis else {"solids": "ops"}
     trimmed_fields = remove_none_entries(fields)
@@ -502,8 +503,8 @@ def define_isolid_field(
 
 
 def define_solid_dictionary_cls(
-    solids: List[Node],
-    ignored_solids: Optional[List[Node]],
+    solids: Sequence[Node],
+    ignored_solids: Optional[Sequence[Node]],
     dependency_structure: DependencyStructure,
     resource_defs: Mapping[str, ResourceDefinition],
     is_using_graph_job_op_apis: bool,
@@ -556,7 +557,7 @@ def iterate_node_def_config_types(node_def: NodeDefinition) -> Iterator[ConfigTy
         check.invariant("Unexpected NodeDefinition type {type}".format(type=type(node_def)))
 
 
-def _gather_all_schemas(node_defs: List[NodeDefinition]) -> Iterator[ConfigType]:
+def _gather_all_schemas(node_defs: Sequence[NodeDefinition]) -> Iterator[ConfigType]:
     dagster_types = construct_dagster_type_dictionary(node_defs)
     for dagster_type in list(dagster_types.values()) + list(ALL_RUNTIME_BUILTINS):
         if dagster_type.loader:
@@ -566,7 +567,7 @@ def _gather_all_schemas(node_defs: List[NodeDefinition]) -> Iterator[ConfigType]
 
 
 def _gather_all_config_types(
-    node_defs: List[NodeDefinition], run_config_schema_type: ConfigType
+    node_defs: Sequence[NodeDefinition], run_config_schema_type: ConfigType
 ) -> Iterator[ConfigType]:
     for node_def in node_defs:
         yield from iterate_node_def_config_types(node_def)
@@ -575,9 +576,9 @@ def _gather_all_config_types(
 
 
 def construct_config_type_dictionary(
-    node_defs: List[NodeDefinition],
+    node_defs: Sequence[NodeDefinition],
     run_config_schema_type: ConfigType,
-) -> Tuple[Dict[str, ConfigType], Dict[str, ConfigType]]:
+) -> Tuple[Mapping[str, ConfigType], Mapping[str, ConfigType]]:
     type_dict_by_name = {t.given_name: t for t in ALL_CONFIG_BUILTINS if t.given_name}
     type_dict_by_key = {t.key: t for t in ALL_CONFIG_BUILTINS}
     all_types = list(_gather_all_config_types(node_defs, run_config_schema_type)) + list(

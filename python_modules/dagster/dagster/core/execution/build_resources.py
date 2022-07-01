@@ -54,12 +54,12 @@ def build_resources(
     context, resources will also be torn down safely.
 
     Args:
-        resources (Dict[str, Any]): Resource instances or definitions to build. All
+        resources (Mapping[str, Any]): Resource instances or definitions to build. All
             required resource dependencies to a given resource must be contained within this
             dictionary, or the resource build will fail.
         instance (Optional[DagsterInstance]): The dagster instance configured to instantiate
             resources on.
-        resource_config (Optional[Dict[str, Any]]): A dict representing the config to be
+        resource_config (Optional[Mapping[str, Any]]): A dict representing the config to be
             provided to each resource during initialization and teardown.
         pipeline_run (Optional[PipelineRun]): The pipeline run to provide during resource
             initialization and teardown. If the provided resources require either the `pipeline_run`

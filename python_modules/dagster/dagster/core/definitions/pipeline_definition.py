@@ -48,18 +48,15 @@ from .mode import ModeDefinition
 from .node_definition import NodeDefinition
 from .preset import PresetDefinition
 from .resource_requirement import ensure_requirements_satisfied
+from .solid_definition import SolidDefinition
 from .utils import validate_tags
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
-    from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster.core.host_representation import PipelineIndex
-    from dagster.core.instance import DagsterInstance
     from dagster.core.snap import ConfigSchemaSnapshot, PipelineSnapshot
 
-    from .partition import PartitionSetDefinition
     from .run_config_schema import RunConfigSchema
-    from .solid_definition import SolidDefinition
 
 
 class PipelineDefinition:
@@ -77,7 +74,7 @@ class PipelineDefinition:
       code, and to switch between them.
 
     Args:
-        solid_defs (List[SolidDefinition]): The set of solids used in this pipeline.
+        solid_defs (Sequence[SolidDefinition]): The set of solids used in this pipeline.
         name (str): The name of the pipeline. Must be unique within any
             :py:class:`RepositoryDefinition` containing the pipeline.
         description (Optional[str]): A human-readable description of the pipeline.
@@ -88,11 +85,11 @@ class PipelineDefinition:
             :py:class:`NodeInvocations <NodeInvocation>`. Values of the top level dict are
             themselves dicts, which map input names belonging to the solid or aliased solid to
             :py:class:`DependencyDefinitions <DependencyDefinition>`.
-        mode_defs (Optional[List[ModeDefinition]]): The set of modes in which this pipeline can
+        mode_defs (Optional[Sequence[ModeDefinition]]): The set of modes in which this pipeline can
             operate. Modes are used to attach resources, custom loggers, custom system storage
             options, and custom executors to a pipeline. Modes can be used, e.g., to vary available
             resource and logging implementations between local test and production runs.
-        preset_defs (Optional[List[PresetDefinition]]): A set of preset collections of configuration
+        preset_defs (Optional[Sequence[PresetDefinition]]): A set of preset collections of configuration
             options that may be used to execute a pipeline. A preset consists of an environment
             dict, an optional subset of solids to execute, and a mode selection. Presets can be used
             to ship common combinations of options to pipeline end users in Python code, and can
@@ -169,7 +166,7 @@ class PipelineDefinition:
     _resource_requirements: Mapping[str, AbstractSet[str]]
     _all_node_defs: Mapping[str, NodeDefinition]
     _parent_pipeline_def: Optional["PipelineDefinition"]
-    _cached_run_config_schemas: Dict[str, RunConfigSchema]
+    _cached_run_config_schemas: Dict[str, "RunConfigSchema"]
     _cached_external_pipeline: Any
     _version_strategy: VersionStrategy
 
@@ -193,7 +190,7 @@ class PipelineDefinition:
         ] = None,  # https://github.com/dagster-io/dagster/issues/2115
         version_strategy: Optional[VersionStrategy] = None,
         asset_layer: Optional[AssetLayer] = None,
-        metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
     ):
         # If a graph is specified directly use it
         if isinstance(graph_def, GraphDefinition):
@@ -599,7 +596,7 @@ class PipelineDefinition:
 
         if solid.retry_policy:
             return solid.retry_policy
-        elif isinstance(definition, "SolidDefinition") and definition.retry_policy:
+        elif isinstance(definition, SolidDefinition) and definition.retry_policy:
             return definition.retry_policy
 
         # could be expanded to look in composite_solid / graph containers

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Union
 
 import dagster._check as check
 from dagster.config.config_schema import UserConfigSchema
@@ -99,13 +99,13 @@ class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
     _current_field: Optional[Field]
     _config_fn: Callable[..., object]
 
-    def __init__(self, parent_definition: "ConfigurableDefinition", config_schema: Optional[DefinitionConfigSchema], config_or_config_fn: object):
+    def __init__(self, parent_definition: "ConfigurableDefinition", config_schema: Optional[IDefinitionConfigSchema], config_or_config_fn: object):
         from .configurable import ConfigurableDefinition
 
         self.parent_def = check.inst_param(
             parent_definition, "parent_definition", ConfigurableDefinition
         )
-        check.opt_inst_param(config_schema, "config_schema", DefinitionConfigSchema)
+        check.opt_inst_param(config_schema, "config_schema", IDefinitionConfigSchema)
 
         self._current_field = config_schema.as_field() if config_schema else None
 

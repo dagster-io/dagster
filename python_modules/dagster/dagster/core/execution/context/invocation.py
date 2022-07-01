@@ -346,7 +346,7 @@ class BoundSolidExecutionContext(OpExecutionContext):
     _solid_def: SolidDefinition
     _solid_config: Any
     _resources: "Resources"
-    _resources_config: Dict[str, Any]
+    _resources_config: Mapping[str, Any]
     _instance: DagsterInstance
     _log_manager: DagsterLogManager
     _pdb: Optional[ForkedPdb]
@@ -363,11 +363,11 @@ class BoundSolidExecutionContext(OpExecutionContext):
         solid_def: SolidDefinition,
         solid_config: Any,
         resources: "Resources",
-        resources_config: Dict[str, Any],
+        resources_config: Mapping[str, Any],
         instance: DagsterInstance,
         log_manager: DagsterLogManager,
         pdb: Optional[ForkedPdb],
-        tags: Optional[Dict[str, str]],
+        tags: Optional[Mapping[str, str]],
         hook_defs: Optional[AbstractSet[HookDefinition]],
         alias: Optional[str],
         user_events: List[UserEvent],
@@ -433,8 +433,8 @@ class BoundSolidExecutionContext(OpExecutionContext):
         return "EPHEMERAL"
 
     @property
-    def run_config(self) -> dict:
-        run_config = {}
+    def run_config(self) -> Mapping[str, object]:
+        run_config: Dict[str, object] = {}
         if self._solid_config:
             run_config["solids"] = {self._solid_def.name: {"config": self._solid_config}}
         run_config["resources"] = self._resources_config

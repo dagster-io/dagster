@@ -1,4 +1,4 @@
-from typing import List, NamedTuple, Optional, Union
+from typing import NamedTuple, Optional, Sequence, Union
 
 from typing_extensions import TypeAlias
 
@@ -21,7 +21,7 @@ class RepoRelativeTarget(NamedTuple):
 
     pipeline_name: str
     mode: str
-    solid_selection: Optional[List[str]]
+    solid_selection: Optional[Sequence[str]]
 
 
 class DirectTarget(

@@ -8,8 +8,9 @@ from dagster.config import Field
 from dagster.core.utils import coerce_valid_log_level
 from dagster.utils.log import default_date_format_string, default_format_string
 
+from dagster.core.definitions.logger_definition import LoggerDefinition, logger
+
 if TYPE_CHECKING:
-    from dagster.core.definitions.logger_definition import LoggerDefinition, logger
     from dagster.core.execution.context.logger import InitLoggerContext
 
 
@@ -33,7 +34,7 @@ if TYPE_CHECKING:
     ),
     description="The default colored console logger.",
 )
-def colored_console_logger(init_context: InitLoggerContext) -> logging.Logger:
+def colored_console_logger(init_context: "InitLoggerContext") -> logging.Logger:
     """This logger provides support for sending Dagster logs to stdout in a colored format. It is
     included by default on jobs which do not otherwise specify loggers.
     """
@@ -73,7 +74,7 @@ def colored_console_logger(init_context: InitLoggerContext) -> logging.Logger:
     ),
     description="A JSON-formatted console logger.",
 )
-def json_console_logger(init_context: InitLoggerContext) -> logging.Logger:
+def json_console_logger(init_context: "InitLoggerContext") -> logging.Logger:
     """This logger provides support for sending Dagster logs to stdout in json format.
 
     Example:

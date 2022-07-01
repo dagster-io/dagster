@@ -14,6 +14,17 @@ from typing import (
 
 import dagster._check as check
 from dagster.core.decorator_utils import get_function_params
+from dagster.core.definitions import (
+    GraphDefinition,
+    NodeDefinition,
+    NodeHandle,
+    OpDefinition,
+    ResourceDefinition,
+)
+from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.metadata import MetadataUserInput
+from dagster.core.definitions.partition import PartitionsDefinition
+from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
 from dagster.core.errors import DagsterInvalidInvocationError
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import deprecation_warning
@@ -52,6 +63,18 @@ class AssetsDefinition(ResourceAddable):
             meaning that they refer to other assets that are produced by this definition, or
             "external", meaning that they refer to assets that aren't produced by this definition.
     """
+
+    _node_def: NodeDefinition
+    _keys_by_input_name: Mapping[str, AssetKey]
+    _keys_by_output_name: Mapping[str, AssetKey]
+    _partitions_def: Optional[PartitionsDefinition]
+    _partition_mappings: Mapping[AssetKey, PartitionMapping]
+    _asset_deps: Mapping[AssetKey, AbstractSet[AssetKey]]
+    _resource_defs: Mapping[str, ResourceDefinition]
+    _group_names_by_key: Mapping[AssetKey, str]
+    _selected_asset_keys: AbstractSet[AssetKey]
+    _can_subset: bool
+    _metadata_by_asset_key: Mapping[AssetKey, MetadataUserInput]
 
     def __init__(
         self,

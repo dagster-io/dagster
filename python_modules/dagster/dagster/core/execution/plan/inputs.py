@@ -65,7 +65,7 @@ class StepInputData(
         return super(StepInputData, cls).__new__(
             cls,
             input_name=check.str_param(input_name, "input_name"),
-            type_check_data=check.opt_inst_param(type_check_data, "type_check_data", TypeCheckData),
+            type_check_data=check.inst_param(type_check_data, "type_check_data", TypeCheckData),
         )
 
 

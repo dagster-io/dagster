@@ -87,7 +87,7 @@ def struct_to_string(name: str, **kwargs: object) -> str:
     return "{name}({props_str})".format(name=name, props_str=props_str)
 
 
-def validate_tags(tags: Optional[Mapping[str, Any]], allow_reserved_tags=True) -> Dict[str, str]:
+def validate_tags(tags: Optional[Mapping[str, Any]], allow_reserved_tags=True) -> frozentags:
     valid_tags = {}
     for key, value in check.opt_dict_param(tags, "tags", key_type=str).items():
         if not isinstance(value, str):

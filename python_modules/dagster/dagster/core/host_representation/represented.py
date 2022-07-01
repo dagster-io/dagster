@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import AbstractSet, List, Optional, Sequence, Union
+from typing import AbstractSet, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster.config.snap import ConfigSchemaSnapshot

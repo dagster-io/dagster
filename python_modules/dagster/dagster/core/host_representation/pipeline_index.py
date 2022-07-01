@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
+from typing import Any, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster.config.snap import ConfigSchemaSnapshot
@@ -98,7 +98,7 @@ class PipelineIndex:
     def get_dep_structure_index(self, comp_solid_def_name: str) -> DependencyStructureIndex:
         return self._comp_dep_structures[comp_solid_def_name]
 
-    def get_dagster_type_snaps(self) -> List[DagsterTypeSnap]:
+    def get_dagster_type_snaps(self) -> Sequence[DagsterTypeSnap]:
         dt_namespace = self.pipeline_snapshot.dagster_type_namespace_snapshot
         return list(dt_namespace.all_dagster_type_snaps_by_key.values())
 
@@ -117,7 +117,7 @@ class PipelineIndex:
         return False
 
     @property
-    def available_modes(self) -> List[str]:
+    def available_modes(self) -> Sequence[str]:
         return [mode_def_snap.name for mode_def_snap in self.pipeline_snapshot.mode_def_snaps]
 
     def get_mode_def_snap(self, name: str) -> ModeDefSnap:

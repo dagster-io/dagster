@@ -1,4 +1,4 @@
-from typing import Dict, Mapping, NamedTuple
+from typing import Mapping, NamedTuple
 
 import dagster._check as check
 from dagster.core.definitions import ExecutorDefinition, IPipeline

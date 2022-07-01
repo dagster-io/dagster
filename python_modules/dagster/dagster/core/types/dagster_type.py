@@ -912,7 +912,6 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
 
 
 def is_dynamic_output_annotation(dagster_type: object) -> bool:
-    from dagster.seven.typing import get_args, get_origin
 
     check.invariant(
         not (isinstance(dagster_type, type) and is_subclass(dagster_type, ConfigType)),
