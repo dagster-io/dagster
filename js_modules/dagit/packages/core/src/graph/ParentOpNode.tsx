@@ -8,7 +8,6 @@ import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {ExternalConnectionNode} from './ExternalConnectionNode';
 import {MappingLine} from './MappingLine';
 import {metadataForCompositeParentIO, PARENT_IN, PARENT_OUT, OpIOBox} from './OpIOBox';
-import {position} from './OpNode';
 import {SVGLabeledRect} from './SVGComponents';
 import {OpGraphLayout} from './asyncGraphLayout';
 import {Edge} from './common';
@@ -97,66 +96,68 @@ export const ParentOpNode: React.FC<ParentOpNodeProps> = (props) => {
           />
         );
       })}
-      {op.definition.inputDefinitions.map((input, idx) => {
-        const metadata = metadataForCompositeParentIO(op.definition, input);
-        const invocationInput = op.inputs.find((i) => i.definition.name === input.name)!;
+      <foreignObject width={layout.width} height={layout.height} style={{pointerEvents: 'none'}}>
+        {op.definition.inputDefinitions.map((input, idx) => {
+          const metadata = metadataForCompositeParentIO(op.definition, input);
+          const invocationInput = op.inputs.find((i) => i.definition.name === input.name)!;
 
-        return (
-          <React.Fragment key={idx}>
-            {invocationInput.dependsOn.map((dependsOn, iidx) => (
-              <ExternalConnectionNode
+          return (
+            <React.Fragment key={idx}>
+              {invocationInput.dependsOn.map((dependsOn, iidx) => (
+                <ExternalConnectionNode
+                  {...highlightingProps}
+                  {...metadata}
+                  key={iidx}
+                  labelAttachment="top"
+                  label={titleOfIO(dependsOn)}
+                  minified={minified}
+                  layout={parentLayout.dependsOn[titleOfIO(dependsOn)]}
+                  target={parentLayout.inputs[input.name].port}
+                  onDoubleClickLabel={() => props.onClickOp({path: ['..', dependsOn.solid.name]})}
+                />
+              ))}
+              <OpIOBox
                 {...highlightingProps}
                 {...metadata}
-                key={iidx}
-                labelAttachment="top"
-                label={titleOfIO(dependsOn)}
                 minified={minified}
-                layout={parentLayout.dependsOn[titleOfIO(dependsOn)]}
-                target={parentLayout.inputs[input.name].port}
-                onDoubleClickLabel={() => props.onClickOp({path: ['..', dependsOn.solid.name]})}
+                colorKey="input"
+                item={input}
+                layoutInfo={parentLayout.inputs[input.name]}
               />
-            ))}
-            <OpIOBox
-              {...highlightingProps}
-              {...metadata}
-              minified={minified}
-              colorKey="input"
-              item={input}
-              style={position(parentLayout.inputs[input.name].layout)}
-            />
-          </React.Fragment>
-        );
-      })}
-      {op.definition.outputDefinitions.map((output, idx) => {
-        const metadata = metadataForCompositeParentIO(op.definition, output);
-        const invocationOutput = op.outputs.find((i) => i.definition.name === output.name)!;
+            </React.Fragment>
+          );
+        })}
+        {op.definition.outputDefinitions.map((output, idx) => {
+          const metadata = metadataForCompositeParentIO(op.definition, output);
+          const invocationOutput = op.outputs.find((i) => i.definition.name === output.name)!;
 
-        return (
-          <React.Fragment key={idx}>
-            {invocationOutput.dependedBy.map((dependedBy, iidx) => (
-              <ExternalConnectionNode
+          return (
+            <React.Fragment key={idx}>
+              {invocationOutput.dependedBy.map((dependedBy, iidx) => (
+                <ExternalConnectionNode
+                  {...highlightingProps}
+                  {...metadata}
+                  key={iidx}
+                  labelAttachment="bottom"
+                  label={titleOfIO(dependedBy)}
+                  minified={minified}
+                  layout={parentLayout.dependedBy[titleOfIO(dependedBy)]}
+                  target={parentLayout.outputs[output.name].port}
+                  onDoubleClickLabel={() => props.onClickOp({path: ['..', dependedBy.solid.name]})}
+                />
+              ))}
+              <OpIOBox
                 {...highlightingProps}
                 {...metadata}
-                key={iidx}
-                labelAttachment="bottom"
-                label={titleOfIO(dependedBy)}
                 minified={minified}
-                layout={parentLayout.dependedBy[titleOfIO(dependedBy)]}
-                target={parentLayout.outputs[output.name].port}
-                onDoubleClickLabel={() => props.onClickOp({path: ['..', dependedBy.solid.name]})}
+                colorKey="output"
+                item={output}
+                layoutInfo={parentLayout.outputs[output.name]}
               />
-            ))}
-            <OpIOBox
-              {...highlightingProps}
-              {...metadata}
-              minified={minified}
-              colorKey="output"
-              item={output}
-              style={position(parentLayout.outputs[output.name].layout)}
-            />
-          </React.Fragment>
-        );
-      })}
+            </React.Fragment>
+          );
+        })}
+      </foreignObject>
     </>
   );
 };
