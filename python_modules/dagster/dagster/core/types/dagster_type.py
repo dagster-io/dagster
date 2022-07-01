@@ -8,7 +8,7 @@ from typing import Iterator as TypingIterator
 from typing import Mapping
 from typing import Optional as TypingOptional
 from typing import Sequence, cast
-from typing_extensions import get_args, get_origin
+from typing_compat import get_args, get_origin
 
 import dagster._check as check
 from dagster.builtins import BuiltinEnum
