@@ -55,7 +55,11 @@ To view all partitions for an asset, open the **Definition** tab of the asset's 
 
 In the following image, the partitions bar is entirely gray. This is because none of the partitions have been materialized:
 
-<img src="/images/concepts/partitions-schedules-sensors/partitions/partitioned-asset.png" />
+<Image
+src="/images/concepts/partitions-schedules-sensors/partitions/partitioned-asset.png"
+width={2662}
+height={1618}
+/>
 
 ### Materializating partitioned assets
 
@@ -63,15 +67,27 @@ When you materialize a partitioned asset, you choose which partitions to materia
 
 **Note**: If you choose more than one partition, the [Dagster Daemon](/deployment/guides/service#running-dagster-daemon) needs to be running to queue the multiple runs.
 
-<img src="/images/concepts/partitions-schedules-sensors/partitions/rematerialize-partition.png" />
+<Image
+src="/images/concepts/partitions-schedules-sensors/partitions/rematerialize-partition.png"
+width={2662}
+height={1618}
+/>
 
 After you've materialized a partition, it will show up as green in the partitions bar.
 
-<img src="/images/concepts/partitions-schedules-sensors/partitions/materialized-partitioned-asset.png" />
+<Image
+src="/images/concepts/partitions-schedules-sensors/partitions/materialized-partitioned-asset.png"
+width={2662}
+height={1618}
+/>
 
 To view materializations by partition, navigate to the **Activity** tab:
 
-<img src="/images/concepts/partitions-schedules-sensors/partitions/materialized-partitioned-asset-activity.png" />
+<Image
+src="/images/concepts/partitions-schedules-sensors/partitions/materialized-partitioned-asset-activity.png"
+width={2662}
+height={1618}
+/>
 
 ### Partition Dependencies
 
@@ -84,7 +100,45 @@ A few rules govern partition-to-partition dependencies:
 
   For example, if an asset with a <PyObject object="DailyPartitionsDefinition" /> depends on an asset with an <PyObject object="HourlyPartitionsDefinition" />, then partition `2022-04-12` of the daily asset the would depend on 24 partitions of the hourly asset: `2022-04-12-00:00` through `2022-04-12-23:00`.
 
-## Partitioned Jobs
+## Partitioned Asset Jobs
+
+A partitioned asset job is a job that materializes a particular set of partitioned assets every time it runs.
+
+```python file=/concepts/partitions_schedules_sensors/partitioned_asset_job.py
+from dagster import (
+    AssetSelection,
+    HourlyPartitionsDefinition,
+    asset,
+    define_asset_job,
+    repository,
+)
+
+hourly_partitions_def = HourlyPartitionsDefinition(start_date="2022-05-31-00:00")
+
+
+@asset(partitions_def=hourly_partitions_def)
+def asset1():
+    ...
+
+
+@asset(partitions_def=hourly_partitions_def)
+def asset2():
+    ...
+
+
+partitioned_asset_job = define_asset_job(
+    name="asset_1_and_2_job",
+    selection=AssetSelection.assets(asset1, asset2),
+    partitions_def=hourly_partitions_def,
+)
+
+
+@repository
+def repo():
+    return [asset1, asset2, partitioned_asset_job]
+```
+
+## Partitioned Non-Asset Jobs
 
 ### Relevant APIs
 
@@ -99,7 +153,7 @@ A few rules govern partition-to-partition dependencies:
 | <PyObject object="dynamic_partitioned_config" decorator /> | Decorator for constructing partitioned config for a set of partition keys that can grow over time.  |
 | <PyObject object="build_schedule_from_partitioned_job" />  | A function that constructs a schedule whose interval matches the partitioning of a partitioned job. |
 
-You define a partitioned job by constructing a <PyObject object="PartitionedConfig" /> object and supplying it when you construct your job.
+When defining a job that doesn't use software-defined assets, you can make it partitioned by supplying <PyObject object="PartitionedConfig" /> object as its config.
 
 ### Defining a Job with Time Partitions
 
@@ -165,9 +219,11 @@ def do_stuff_partitioned():
 
 In Dagit, you can view runs by partition in the Partitions tab of a Job page.
 
-<img
+<Image
 alt="Partitions Tab"
 src="/images/concepts/partitions-schedules-sensors/partitions/partitioned-job.png"
+width={2662}
+height={1618}
 />
 
 In the "Run Matrix", each column corresponds to one of the partitions in the job. The time listed corresponds to the start time of the partition. Each row corresponds to one of the steps in the job. You can click on an individual box to navigate to logs and run information for the step.
@@ -176,9 +232,11 @@ You can view and use partitions in the Dagit Launchpad tab for a job. In the top
 
 In the screenshot below, we select the `2020-01-02` partition, and we can see that the run config for the partition has been populated in the editor.
 
-<img
+<Image
 alt="Partitions in Dagit Launchpad"
 src="/images/concepts/partitions-schedules-sensors/partitions/launchpad.png"
+width={2662}
+height={1618}
 />
 
 In addition to the <PyObject object="daily_partitioned_config" decorator /> decorator, Dagster also provides <PyObject object="monthly_partitioned_config" decorator />, <PyObject object="weekly_partitioned_config" decorator />, <PyObject object="hourly_partitioned_config" decorator />. See the API docs for each of these decorators for more information on how partitions are built based on different `start_date`, `minute_offset`, `hour_offset`, and `day_offset` inputs.
@@ -261,44 +319,6 @@ def antarctica_schedule():
 ```
 
 Refer to the [Schedules documentation](/concepts/partitions-schedules-sensors/schedules#schedules-from-partitioned-assets-and-jobs) for more info about constructing both schedule types.
-
-## Partitioned Asset Jobs
-
-A partitioned asset job is a job that materializes a particular set of partitioned assets every time it runs.
-
-```python file=/concepts/partitions_schedules_sensors/partitioned_asset_job.py
-from dagster import (
-    AssetSelection,
-    HourlyPartitionsDefinition,
-    asset,
-    define_asset_job,
-    repository,
-)
-
-hourly_partitions_def = HourlyPartitionsDefinition(start_date="2022-05-31-00:00")
-
-
-@asset(partitions_def=hourly_partitions_def)
-def asset1():
-    ...
-
-
-@asset(partitions_def=hourly_partitions_def)
-def asset2():
-    ...
-
-
-partitioned_asset_job = define_asset_job(
-    name="asset_1_and_2_job",
-    selection=AssetSelection.assets(asset1, asset2),
-    partitions_def=hourly_partitions_def,
-)
-
-
-@repository
-def repo():
-    return [asset1, asset2, partitioned_asset_job]
-```
 
 ## Testing
 

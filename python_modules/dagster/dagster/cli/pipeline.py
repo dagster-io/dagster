@@ -6,7 +6,6 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, cast
 
 import click
 import pendulum
-import yaml
 from tabulate import tabulate
 
 import dagster._check as check
@@ -50,6 +49,7 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 from dagster.utils.indenting_printer import IndentingPrinter
 from dagster.utils.interrupts import capture_interrupts
+from dagster.utils.yaml_utils import dump_run_config_yaml
 
 from .config_scaffolder import scaffold_pipeline_config
 from .utils import get_instance_for_service
@@ -717,7 +717,7 @@ def do_scaffold_command(
     check.bool_param(skip_non_required, "skip_non_required")
 
     config_dict = scaffold_pipeline_config(pipeline_def, skip_non_required=skip_non_required)
-    yaml_string = yaml.dump(config_dict, default_flow_style=False)
+    yaml_string = dump_run_config_yaml(config_dict)
     printer(yaml_string)
 
 

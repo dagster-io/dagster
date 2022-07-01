@@ -75,7 +75,11 @@ def _check_invocation_requirements(
     """
 
     # Check resource requirements
-    if solid_def.required_resource_keys and context is None:
+    if (
+        solid_def.required_resource_keys
+        and cast("DecoratedSolidFunction", solid_def.compute_fn).has_context_arg()
+        and context is None
+    ):
         node_label = solid_def.node_type_str  # string "solid" for solids, "op" for ops
         raise DagsterInvalidInvocationError(
             f'{node_label} "{solid_def.name}" has required resources, but no context was provided. '

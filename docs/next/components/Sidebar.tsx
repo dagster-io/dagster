@@ -1,12 +1,18 @@
-import React from "react";
+import React, { useState } from "react";
 
 import { Transition } from "@headlessui/react";
 
 import { Search } from "components/Search";
 import Icons from "../components/Icons";
 import Link from "./Link";
+import NextLink from "next/link";
 import cx from "classnames";
-import { useNavigation } from "../util/useNavigation";
+import {
+  useNavigation,
+  flatten,
+  getNavKey,
+  getNavLvl,
+} from "../util/useNavigation";
 import { useVersion } from "../util/useVersion";
 
 const getCurrentSection = (navigation) => {
@@ -16,38 +22,35 @@ const getCurrentSection = (navigation) => {
   );
   return match || navigation.find((item) => item.path === "/");
 };
-interface FancyButtonProps {
+interface MenuItemProps {
   item: any;
   match: boolean;
   lvl: number;
-  href?: string;
+  onClick: () => void;
+  expanded: boolean;
 }
 
 const MenuItem = React.forwardRef<
   HTMLAnchorElement,
-  React.PropsWithChildren<FancyButtonProps>
->(({ item, match, lvl, href }, ref) => {
+  React.PropsWithChildren<MenuItemProps>
+>(({ item, match, lvl, onClick, expanded }, ref) => {
   const rightIcon = item.isExternalLink
     ? Icons["ExternalLink"]
-    : item.children && (match ? Icons["ChevronDown"] : Icons["ChevronRight"]);
+    : item.children &&
+      (expanded ? Icons["ChevronDown"] : Icons["ChevronRight"]);
 
-  return (
-    <a
-      className={cx(
-        "transition group flex justify-between items-center font-medium rounded-md text-gray-800 dark:text-gray-200",
-        {
-          "hover:bg-lavender hover:bg-opacity-50 text-blurple": match,
-          "hover:text-gray-900 hover:bg-lavender hover:bg-opacity-50": !match,
-          "px-2": lvl === 0,
-          "pl-3 pr-2": lvl <= 1,
-          "py-2": lvl <= 2,
-        }
-      )}
-      href={href}
-      ref={ref}
-      target={item.isExternalLink ? "_blank" : "_self"}
-      rel="noopener noreferrer"
-    >
+  const itemClassName = cx(
+    "w-full transition group flex justify-between items-center rounded-md text-gray-700 dark:text-gray-200",
+    {
+      "hover:bg-lavender hover:bg-opacity-50 text-blurple": match,
+      "hover:text-gray-900 hover:bg-lavender hover:bg-opacity-50": !match,
+      "px-2 py-2 pl-3 pr-2 font-semibold": lvl === 0,
+      "py-2 pl-3 pr-2 font-medium": lvl >= 1,
+      "px-3 py-1 text-sm": lvl >= 2,
+    }
+  );
+  const children: JSX.Element = (
+    <>
       <div className="flex justify-start">
         {item.icon && (
           <svg
@@ -66,7 +69,6 @@ const MenuItem = React.forwardRef<
         )}
         <span>{item.title}</span>
       </div>
-
       {rightIcon && (
         <svg
           className={cx("mr-2 h-4 w-4 text-gray-400 transition flex-shrink-0", {
@@ -82,129 +84,146 @@ const MenuItem = React.forwardRef<
           {rightIcon}
         </svg>
       )}
+    </>
+  );
+  const hyperlink: JSX.Element = (
+    <a
+      className={itemClassName}
+      href={item.path}
+      onClick={onClick}
+      ref={ref}
+      target={item.isExternalLink ? "_blank" : "_self"}
+      rel="noopener noreferrer"
+    >
+      {children}
     </a>
+  );
+
+  return item.path === undefined ? (
+    // no link
+    <button className={itemClassName} onClick={onClick}>
+      {children}
+    </button>
+  ) : item.isExternalLink ? (
+    // external link
+    hyperlink
+  ) : item.isUnversioned ? (
+    // unversioned link
+    <NextLink href={item.path} passHref>
+      {hyperlink}
+    </NextLink>
+  ) : (
+    // versioned link
+    <Link href={item.path} passHref>
+      {hyperlink}
+    </Link>
   );
 });
 
-const TopLevelNavigation = () => {
+const RecursiveNavigation = ({
+  itemOrSection,
+  parentKey,
+  idx,
+  navKeysToExpanded,
+  setNavKeysToExpanded,
+}) => {
+  const { asPathWithoutAnchor } = useVersion();
   const navigation = useNavigation();
   const currentSection = getCurrentSection(navigation);
+  const navKey = getNavKey(parentKey, idx);
+  const lvl = getNavLvl(navKey);
 
+  const onClick = (key) => {
+    setNavKeysToExpanded((prevState) => {
+      const updatedValues = { [key]: !prevState[key] };
+      return { ...prevState, ...updatedValues };
+    });
+  };
+
+  // Note: this logic is based on path which could be improved by having parent info in itemOrSection
+  const match =
+    itemOrSection == currentSection ||
+    itemOrSection.path === asPathWithoutAnchor ||
+    (itemOrSection.children &&
+      itemOrSection.children.find((item) => item.path === asPathWithoutAnchor));
+
+  const expanded = Boolean(navKeysToExpanded[navKey]);
+
+  // Display item
+  if (!itemOrSection?.children) {
+    return (
+      <MenuItem
+        item={itemOrSection}
+        match={match}
+        lvl={lvl}
+        onClick={() => onClick(navKey)}
+        expanded={expanded}
+      />
+    );
+  }
+
+  // Display section
   return (
-    <div className="space-y-1">
-      {navigation.map((item) => {
-        const match = item == currentSection;
-
-        return (
-          <div key={item.path}>
-            {item.isExternalLink || item.isUnversioned ? (
-              <MenuItem href={item.path} item={item} match={match} lvl={0} />
-            ) : (
-              <Link href={item.path} passHref>
-                <MenuItem item={item} match={match} lvl={0} />
-              </Link>
-            )}
-            {match && (
-              <div className="mt-2">
-                <div
-                  className="ml-1"
-                  role="group"
-                  aria-labelledby="second-level-nav"
-                >
-                  <div className="border-l ml-5">
-                    <SecondaryNavigation />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        );
+    <div
+      className={cx({
+        "mt-1 ml-1 space-y-1": lvl >= 2,
       })}
+      role="group"
+      aria-labelledby={`${lvl + 1}-level-nav`}
+    >
+      <MenuItem
+        item={itemOrSection}
+        match={match}
+        lvl={lvl}
+        onClick={() => onClick(navKey)}
+        expanded={expanded}
+      />
+      {expanded &&
+        itemOrSection.children.map((item, idx) => {
+          return (
+            <div className="border-l ml-6" key={idx}>
+              <RecursiveNavigation
+                key={idx}
+                itemOrSection={item}
+                parentKey={navKey}
+                idx={idx}
+                navKeysToExpanded={navKeysToExpanded}
+                setNavKeysToExpanded={setNavKeysToExpanded}
+              />
+            </div>
+          );
+        })}
     </div>
   );
 };
 
-const SecondaryNavigation = () => {
+const TopLevelNavigation = () => {
   const navigation = useNavigation();
-  const currentSection = getCurrentSection(navigation);
-  const { asPathWithoutAnchor } = useVersion();
 
-  if (!currentSection?.children) {
-    return null;
-  }
+  const [navKeysToExpanded, setNavKeysToExpanded] = useState<{
+    [key: string]: boolean;
+  }>(
+    flatten(navigation).reduce((map, obj) => {
+      map[obj.key] = obj.isDefaultOpen;
+      return map;
+    })
+  );
 
   return (
-    <>
-      {currentSection.children.map((sectionOrItem) => {
-        const match =
-          sectionOrItem.path === asPathWithoutAnchor ||
-          (sectionOrItem.children &&
-            sectionOrItem.children.find(
-              (item) => item.path === asPathWithoutAnchor
-            ));
-
-        const itemWithPath = sectionOrItem.path
-          ? sectionOrItem
-          : sectionOrItem.children[0];
-
+    <div className="space-y-1">
+      {navigation.map((itemOrSection, idx) => {
         return (
-          <div key={itemWithPath.path}>
-            {itemWithPath.isExternalLink || itemWithPath.isUnversioned ? (
-              <MenuItem
-                href={itemWithPath.path}
-                item={sectionOrItem}
-                match={match}
-                lvl={1}
-              />
-            ) : (
-              <Link href={itemWithPath.path} passHref>
-                <MenuItem item={sectionOrItem} match={match} lvl={1} />
-              </Link>
-            )}
-            {match && sectionOrItem.children && (
-              <div className="border-l ml-5 mt-2">
-                <div
-                  className="mt-1 ml-1 space-y-1"
-                  role="group"
-                  aria-labelledby="third-level-nav"
-                >
-                  {sectionOrItem.children.map((section) => {
-                    return (
-                      <ThirdLevelNavigation
-                        key={section.title}
-                        section={section}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
+          <RecursiveNavigation
+            key={idx}
+            itemOrSection={itemOrSection}
+            parentKey={""}
+            idx={idx}
+            navKeysToExpanded={navKeysToExpanded}
+            setNavKeysToExpanded={setNavKeysToExpanded}
+          />
         );
       })}
-    </>
-  );
-};
-
-const ThirdLevelNavigation = ({ section }) => {
-  const { asPathWithoutAnchor } = useVersion();
-
-  return (
-    <Link key={section.path} href={section.path}>
-      <a
-        className={cx(
-          "group flex items-center px-3 py-1 text-sm text-gray-700 rounded-md",
-          {
-            "hover:bg-lavender hover:bg-opacity-50 text-blurple":
-              section.path === asPathWithoutAnchor,
-            "hover:text-gray-900 hover:bg-lavender hover:bg-opacity-50":
-              section.path !== asPathWithoutAnchor,
-          }
-        )}
-      >
-        <span>{section.title}</span>
-      </a>
-    </Link>
+    </div>
   );
 };
 

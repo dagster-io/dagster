@@ -7,7 +7,7 @@ import {AssetConnectedEdges} from '../asset-graph/AssetEdges';
 import {EXPERIMENTAL_MINI_SCALE} from '../asset-graph/AssetGraphExplorer';
 import {AssetNodeMinimal, AssetNode} from '../asset-graph/AssetNode';
 import {ForeignNode} from '../asset-graph/ForeignNode';
-import {buildComputeStatusData, GraphData, LiveData, toGraphId} from '../asset-graph/Utils';
+import {GraphData, LiveData, toGraphId} from '../asset-graph/Utils';
 import {SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {getJSONForKey} from '../hooks/useStateWithStorage';
@@ -46,11 +46,6 @@ export const AssetNodeLineageGraph: React.FC<{
       viewportEl.current.focus();
     }
   }, [viewportEl, layout, assetGraphId]);
-
-  const computeStatuses = React.useMemo(
-    () => buildComputeStatusData(assetGraphData, liveDataByNode),
-    [assetGraphData, liveDataByNode],
-  );
 
   if (!layout || loading) {
     return (
@@ -106,7 +101,6 @@ export const AssetNodeLineageGraph: React.FC<{
                   <AssetNode
                     definition={graphNode.definition}
                     liveData={liveDataByNode[graphNode.id]}
-                    computeStatus={computeStatuses[graphNode.id]}
                     selected={graphNode.id === assetGraphId}
                   />
                 )}

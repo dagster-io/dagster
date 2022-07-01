@@ -39,6 +39,19 @@ from .source_asset import SourceAsset
 
 
 class AssetsDefinition(ResourceAddable):
+    """
+    Defines a set of assets that are produced by the same op or graph.
+
+    AssetsDefinitions are typically not instantiated directly, but rather produced using the
+    :py:func:`@asset <asset>` or :py:func:`@multi_asset <multi_asset>` decorators.
+
+    Attributes:
+        asset_deps (Mapping[AssetKey, AbstractSet[AssetKey]]): Maps assets that are produced by this
+            definition to assets that they depend on. The dependencies can be either "internal",
+            meaning that they refer to other assets that are produced by this definition, or
+            "external", meaning that they refer to assets that aren't produced by this definition.
+    """
+
     def __init__(
         self,
         keys_by_input_name: Mapping[str, AssetKey],
@@ -141,6 +154,7 @@ class AssetsDefinition(ResourceAddable):
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from a GraphDefinition.
@@ -162,6 +176,10 @@ class AssetsDefinition(ResourceAddable):
                 compose the assets.
             group_name (Optional[str]): A group name for the constructed asset. Assets without a
                 group name are assigned to a group called "default".
+            resource_defs (Optional[Mapping[str, ResourceDefinition]]):
+                A mapping of resource keys to resource definitions. These resources
+                will be initialized during execution, and can be accessed from the
+                body of ops in the graph during execution.
         """
         return AssetsDefinition._from_node(
             graph_def,
@@ -170,6 +188,7 @@ class AssetsDefinition(ResourceAddable):
             internal_asset_deps,
             partitions_def,
             group_name,
+            resource_defs,
         )
 
     @staticmethod
@@ -219,6 +238,7 @@ class AssetsDefinition(ResourceAddable):
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     ) -> "AssetsDefinition":
         node_def = check.inst_param(node_def, "node_def", (GraphDefinition, OpDefinition))
         keys_by_input_name = check.opt_dict_param(
@@ -232,6 +252,9 @@ class AssetsDefinition(ResourceAddable):
         )
         internal_asset_deps = check.opt_dict_param(
             internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
+        )
+        resource_defs = check.opt_mapping_param(
+            resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )
 
         transformed_internal_asset_deps = {}
@@ -267,6 +290,7 @@ class AssetsDefinition(ResourceAddable):
                 PartitionsDefinition,
             ),
             group_names_by_key=group_names_by_key,
+            resource_defs=resource_defs,
         )
 
     @property

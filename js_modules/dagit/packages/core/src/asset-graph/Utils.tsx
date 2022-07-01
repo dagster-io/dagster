@@ -1,5 +1,7 @@
 import {pathVerticalDiagonal} from '@vx/shape';
 
+import {AssetComputeStatus} from '../types/globalTypes';
+
 import {
   AssetGraphLiveQuery_assetsLatestInfo_latestRun,
   AssetGraphLiveQuery_assetNodes_assetMaterializations,
@@ -108,14 +110,13 @@ export const buildSVGPath = pathVerticalDiagonal({
   y: (s: any) => s.y,
 });
 
-export type ComputeStatus = 'good' | 'old' | 'none' | 'unknown';
-
 export interface LiveDataForNode {
   stepKey: string;
   unstartedRunIds: string[]; // run in progress and step not started
   inProgressRunIds: string[]; // run in progress and step in progress
   runWhichFailedToMaterialize: AssetGraphLiveQuery_assetsLatestInfo_latestRun | null;
   lastMaterialization: AssetGraphLiveQuery_assetNodes_assetMaterializations | null;
+  computeStatus: AssetComputeStatus;
 }
 export interface LiveData {
   [assetId: GraphId]: LiveDataForNode;
@@ -131,55 +132,6 @@ export interface AssetDefinitionsForLiveData {
   };
 }
 
-export const buildComputeStatusData = (graph: GraphData, liveData: LiveData) => {
-  const statuses: {[assetId: string]: ComputeStatus} = {};
-  const lastChanged: {[assetId: string]: number} = {};
-
-  for (const [graphId, liveNode] of Object.entries(liveData)) {
-    const definition = graph.nodes[graphId]?.definition;
-    if (!definition) {
-      console.warn(`buildUpstreamChangedData could not find the definition matching ${graphId}`);
-      continue;
-    }
-
-    lastChanged[graphId] = Number(liveNode.lastMaterialization?.timestamp || 0) / 1000;
-    statuses[graphId] = isSourceAsset(definition)
-      ? 'good' // foreign nodes are always considered up-to-date
-      : definition.partitionDefinition
-      ? // partitioned nodes are not supported, need to compare materializations
-        // of the same partition key and the API does not make fetching this easy
-        'none'
-      : liveNode.lastMaterialization
-      ? 'unknown' // will resolve to 'good' or 'old' by looking upstream below
-      : 'none';
-  }
-
-  const fillStatusFor = (assetId: string): ComputeStatus => {
-    if (!statuses[assetId]) {
-      // Currently compute status assumes foreign nodes are up to date
-      // and only shows "upstream changed" for upstreams in the same job
-      return 'good';
-    }
-    if (statuses[assetId] !== 'unknown') {
-      return statuses[assetId];
-    }
-
-    const upstreamIds = Object.keys(graph.upstream[assetId] || {});
-
-    return upstreamIds.some((upstreamId) => lastChanged[upstreamId] > lastChanged[assetId])
-      ? 'old'
-      : upstreamIds.some((upstreamId) => fillStatusFor(upstreamId) !== 'good')
-      ? 'old'
-      : 'good';
-  };
-
-  for (const assetId of Object.keys(statuses)) {
-    statuses[assetId] = fillStatusFor(assetId);
-  }
-
-  return statuses;
-};
-
 export const buildLiveData = ({assetNodes, assetsLatestInfo}: AssetGraphLiveQuery) => {
   const data: LiveData = {};
 
@@ -187,11 +139,11 @@ export const buildLiveData = ({assetNodes, assetsLatestInfo}: AssetGraphLiveQuer
     const graphId = toGraphId(liveNode.assetKey);
     const lastMaterialization = liveNode.assetMaterializations[0] || null;
 
-    const assetLiveRuns = assetsLatestInfo.find(
+    const assetLatestInfo = assetsLatestInfo.find(
       (r) => JSON.stringify(r.assetKey) === JSON.stringify(liveNode.assetKey),
     );
 
-    const latestRunForAsset = assetLiveRuns?.latestRun ? assetLiveRuns.latestRun : null;
+    const latestRunForAsset = assetLatestInfo?.latestRun ? assetLatestInfo.latestRun : null;
 
     const runWhichFailedToMaterialize =
       (latestRunForAsset?.status === 'FAILURE' &&
@@ -202,8 +154,9 @@ export const buildLiveData = ({assetNodes, assetsLatestInfo}: AssetGraphLiveQuer
     data[graphId] = {
       lastMaterialization,
       stepKey: liveNode.opNames[0],
-      inProgressRunIds: assetLiveRuns?.inProgressRunIds || [],
-      unstartedRunIds: assetLiveRuns?.unstartedRunIds || [],
+      inProgressRunIds: assetLatestInfo?.inProgressRunIds || [],
+      unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
+      computeStatus: assetLatestInfo?.computeStatus || AssetComputeStatus.NONE,
       runWhichFailedToMaterialize,
     };
   }

@@ -11,13 +11,13 @@ const formatOptions = memoize((language: string) => {
 });
 
 export const humanCronString = (cronSchedule: string, longTimezone?: string) => {
-  const human = convertString(cronSchedule);
+  let human = convertString(cronSchedule);
 
   if (longTimezone) {
     // Find the "At XX:YY" string and insert the timezone abbreviation.
-    const timeMatch = human.match(/^At [0-9: APM]+/);
+    const timeMatch = human.match(/[0-9]{1,2}:[0-9]{2}( [A|P]M)?/g);
     if (timeMatch) {
-      let shortTimezone;
+      let shortTimezone: string | null;
       try {
         shortTimezone = timeZoneAbbr(longTimezone);
       } catch (e) {
@@ -25,9 +25,11 @@ export const humanCronString = (cronSchedule: string, longTimezone?: string) => 
         shortTimezone = null;
       }
 
-      const stringMatch = timeMatch[0];
-      if (stringMatch && shortTimezone) {
-        return human.replace(stringMatch, `${stringMatch} ${shortTimezone}`);
+      if (timeMatch.length && shortTimezone) {
+        timeMatch.forEach((stringMatch) => {
+          human = human.replace(stringMatch, `${stringMatch} ${shortTimezone}`);
+        });
+        return human;
       }
     }
   }

@@ -85,7 +85,7 @@ export const LaunchAssetExecutionButton: React.FC<{
     );
   }
 
-  const onClick = async () => {
+  const onClick = async (e: React.MouseEvent<any>) => {
     if (state.type === 'loading') {
       return;
     }
@@ -96,7 +96,8 @@ export const LaunchAssetExecutionButton: React.FC<{
       variables: {assetKeys: assetKeys.map(({path}) => ({path}))},
     });
     const assets = result.data.assetNodes;
-    const next = stateForLaunchingAssets(assets, preferredJobName);
+    const forceLaunchpad = e.shiftKey;
+    const next = stateForLaunchingAssets(assets, forceLaunchpad, preferredJobName);
 
     if (next.type === 'error') {
       showCustomAlert({
@@ -114,19 +115,21 @@ export const LaunchAssetExecutionButton: React.FC<{
 
   return (
     <>
-      <Button
-        intent={intent}
-        onClick={onClick}
-        icon={
-          state.type === 'loading' ? (
-            <Spinner purpose="body-text" />
-          ) : (
-            <Icon name="materialization" />
-          )
-        }
-      >
-        {label}
-      </Button>
+      <Tooltip content="Shift+click to add configuration">
+        <Button
+          intent={intent}
+          onClick={onClick}
+          icon={
+            state.type === 'loading' ? (
+              <Spinner purpose="body-text" />
+            ) : (
+              <Icon name="materialization" />
+            )
+          }
+        >
+          {label}
+        </Button>
+      </Tooltip>
       {state.type === 'launchpad' && (
         <AssetLaunchpad
           assetJobName={state.jobName}
@@ -152,6 +155,7 @@ export const LaunchAssetExecutionButton: React.FC<{
 
 function stateForLaunchingAssets(
   assets: LaunchAssetExecutionAssetNodeFragment[],
+  forceLaunchpad: boolean,
   preferredJobName?: string,
 ): LaunchAssetsState {
   if (assets.some(isSourceAsset)) {
@@ -204,9 +208,13 @@ function stateForLaunchingAssets(
     };
   }
 
+  const requiredResources = assets.flatMap((a) => a.requiredResources.map((r) => r.resourceKey));
+  // temporary until a cleaner way to query the config requirements of resources is available
+  const anyResourcesHaveConfig = requiredResources.length >= 1;
+
   // Ok! Assertions met, how do we launch this run
 
-  if (anyAssetsHaveConfig) {
+  if (anyAssetsHaveConfig || anyResourcesHaveConfig || forceLaunchpad) {
     const assetOpNames = assets.flatMap((a) => a.opNames || []);
     return {
       type: 'launchpad',
@@ -289,6 +297,9 @@ export const LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT = gql`
         id
         name
       }
+    }
+    requiredResources {
+      resourceKey
     }
     ...AssetNodeConfigFragment
   }

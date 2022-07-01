@@ -2,6 +2,7 @@ import datetime
 import os
 import sys
 import time
+from collections import defaultdict
 from typing import cast
 
 import pendulum
@@ -32,10 +33,14 @@ from dagster.utils.log import default_date_format_string
 
 
 class _ScheduleLaunchContext:
-    def __init__(self, tick, instance, logger):
+    def __init__(self, external_schedule, tick, instance, logger, tick_retention_settings):
+        self._external_schedule = external_schedule
         self._instance = instance
         self._logger = logger
         self._tick = tick
+        self._purge_settings = defaultdict(set)
+        for status, day_offset in tick_retention_settings.items():
+            self._purge_settings[day_offset].add(status)
 
     @property
     def failure_count(self) -> int:
@@ -62,6 +67,15 @@ class _ScheduleLaunchContext:
 
     def __exit__(self, exception_type, exception_value, traceback):
         self._write()
+        for day_offset, statuses in self._purge_settings.items():
+            if day_offset <= 0:
+                continue
+            self._instance.purge_ticks(
+                self._external_schedule.get_external_origin_id(),
+                selector_id=self._external_schedule.selector_id,
+                before=pendulum.now("UTC").subtract(days=day_offset).timestamp(),
+                tick_statuses=list(statuses),
+            )
 
 
 MIN_INTERVAL_LOOP_TIME = 5
@@ -78,7 +92,7 @@ def execute_scheduler_iteration_loop(
     while True:
         start_time = pendulum.now("UTC").timestamp()
         if start_time - workspace_loaded_time > RELOAD_WORKSPACE:
-            workspace.cleanup()
+            workspace.cleanup(cleanup_locations=True)
             workspace_loaded_time = pendulum.now("UTC").timestamp()
             workspace_iteration = 0
 
@@ -121,6 +135,8 @@ def launch_scheduled_runs(
         schedule_state.selector_id: schedule_state
         for schedule_state in instance.all_instigator_state(instigator_type=InstigatorType.SCHEDULE)
     }
+
+    tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SCHEDULE)
 
     schedules = {}
     for location_entry in workspace_snapshot.values():
@@ -226,6 +242,7 @@ def launch_scheduled_runs(
                 end_datetime_utc,
                 max_catchup_runs,
                 max_tick_retries,
+                tick_retention_settings,
                 (
                     debug_crash_flags.get(schedule_state.instigator_name)
                     if debug_crash_flags
@@ -250,6 +267,7 @@ def launch_scheduled_runs_for_schedule(
     end_datetime_utc: datetime.datetime,
     max_catchup_runs,
     max_tick_retries,
+    tick_retention_settings,
     debug_crash_flags=None,
     log_verbose_checks=True,
 ):
@@ -346,7 +364,9 @@ def launch_scheduled_runs_for_schedule(
 
             _check_for_debug_crash(debug_crash_flags, "TICK_CREATED")
 
-        with _ScheduleLaunchContext(tick, instance, logger) as tick_context:
+        with _ScheduleLaunchContext(
+            external_schedule, tick, instance, logger, tick_retention_settings
+        ) as tick_context:
             try:
                 _check_for_debug_crash(debug_crash_flags, "TICK_HELD")
 

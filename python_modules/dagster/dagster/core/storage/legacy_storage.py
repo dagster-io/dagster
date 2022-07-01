@@ -523,10 +523,14 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
         return self._storage.schedule_storage.update_tick(tick)
 
     def purge_ticks(
-        self, origin_id: str, selector_id: str, tick_status: "TickStatus", before: float
+        self,
+        origin_id: str,
+        selector_id: str,
+        before: float,
+        tick_statuses: Optional[List["TickStatus"]] = None,
     ):
         return self._storage.schedule_storage.purge_ticks(
-            origin_id, selector_id, tick_status, before
+            origin_id, selector_id, before, tick_statuses
         )
 
     def upgrade(self):

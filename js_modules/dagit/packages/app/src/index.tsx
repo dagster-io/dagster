@@ -49,6 +49,14 @@ const SettingsLink = styled(Link)`
   &:active ${IconWrapper} {
     background: ${Colors.White};
   }
+
+  &:focus {
+    outline: none;
+
+    ${IconWrapper} {
+      background: ${Colors.White};
+    }
+  }
 `;
 
 ReactDOM.render(

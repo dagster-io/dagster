@@ -1,0 +1,58 @@
+name: ❓ Report documentation issue
+description: Report problems and issues with Dagster documentation.
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        <p align="center">
+          <a target="_blank" href="https://dagster.io">
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/dagster-io/dagster/master/.github/dagster-logo-dark.svg">
+              <img alt="dagster logo" src="https://raw.githubusercontent.com/dagster-io/dagster/master/.github/dagster-logo-light.svg" width="auto" height="80">
+            </picture>
+          </a>
+        </p>
+  - type: markdown
+    attributes:
+      value: >
+        Thank you for contributing to improve Dagster.
+        If you have a change ready to submit, you do not need to create an issue.
+        Instead, you can open a [pull request](https://github.com/dagster-io/dagster/pulls).
+  - type: markdown
+    attributes:
+      value: >
+        If you're adding a change to our documentation, check out our
+        [Writer's Guide](https://github.com/dagster-io/dagster/tree/master/docs).
+  - type: textarea
+    attributes:
+      label: What's the issue or suggestion?
+      description: >
+        Please provide a brief description of the issue and the context in which it happened.
+      placeholder: Please provide a brief description of the issue.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Additional information
+      description: Anything else we need to know?
+      placeholder: Enter additional details that may be relevant.
+  - type: markdown
+    attributes:
+      value: "# Thanks for contributing to Dagster!"
+  - type: markdown
+    attributes:
+      value: >
+        Are you willing to submit a PR?
+        This is not required, but we are happy to guide you through the contribution process.
+        [Find us on Slack](https://dagster.io/slack)!
+  - type: markdown
+    attributes:
+      value: >
+        By submitting this issue, you agree to follow Dagster's
+        [Code of Conduct](https://github.com/dagster-io/dagster/blob/master/CODE_OF_CONDUCT.md).
+  - type: textarea
+    attributes:
+      label: Message from the maintainers
+      description: This form field should be ignored. This is to include a footer message on the generated issue.
+      value: Impacted by this issue? Give it a 👍! We factor engagement into prioritization.

@@ -11,3 +11,13 @@ dagster_dbt_test_project:
       schema: test-schema
       threads: 2
       keepalives_idle: 0
+    dev2:
+      type: postgres
+      host: "{{ env_var('POSTGRES_TEST_DB_DBT_HOST') }}"
+      user: test
+      pass: test
+      port: 5432
+      dbname: test
+      schema: test-schema2
+      threads: 2
+      keepalives_idle: 0

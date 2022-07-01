@@ -475,3 +475,33 @@ When you aren't [running your own gRPC server](/concepts/repositories-workspaces
 code_servers:
   local_startup_timeout: 120
 ```
+
+### Data retention
+
+The `retention` key lets you configure how long Dagster retains certain types of data that have diminishing value over time, like schedule/sensor tick data. If you want to clean up old ticks to minimize storage concerns and improve query performance, you can set retention policy using the `retention` config key:
+
+```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_retention endbefore=end_marker_retention
+# Configures how long Dagster keeps sensor / schedule tick data
+retention:
+  schedule:
+    purge_after_days: 90 # sets retention policy for schedule ticks of all types
+  sensor:
+    purge_after_days:
+      skipped: 7
+      failure: 30
+      success: -1 # keep success ticks indefinitely
+```
+
+By default, Dagster retains skipped sensor ticks for 7 days and retains all other ticks indefinitely.
+
+### Sensor evaluation
+
+The `sensors` key lets you configure how your sensors get evaluated. If you want your sensors to be evaluated asynchronously, you can set the `use_threads` attribute as well as a `num_workers` config setting.
+
+```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_sensors endbefore=end_marker_sensors
+sensors:
+  use_threads: true
+  num_workers: 8
+```
+
+By default, Dagster evaluates sensors synchronously.

@@ -338,7 +338,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     // is in flight, in which case completion of this async method should not set loading=false.
     previewCounter.current += 1;
     const currentPreviewCount = previewCounter.current;
-    const configYamlOrEmpty = configYaml || '{}';
+    const configYamlOrEmpty = configYaml.trim() || '{}';
 
     dispatch({type: 'preview-loading', payload: true});
 

@@ -5,6 +5,8 @@ from dagster import (
     AssetsDefinition,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
+    DailyPartitionsDefinition,
     GraphOut,
     IOManager,
     Out,
@@ -84,9 +86,13 @@ def test_materialize_resources_not_satisfied():
     ):
         materialize_to_memory([the_asset])
 
-    assert materialize_to_memory(
-        with_resources([the_asset], {"foo": ResourceDefinition.hardcoded_resource("blah")})
-    ).success
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Attempted to call `materialize_to_memory` with a resource provided for io manager key 'io_manager'. Do not provide resources for io manager keys when calling `materialize_to_memory`, as it will override io management behavior for all keys.",
+    ):
+        materialize_to_memory(
+            with_resources([the_asset], {"foo": ResourceDefinition.hardcoded_resource("blah")})
+        )
 
 
 def test_materialize_conflicting_resources():
@@ -131,39 +137,14 @@ def test_materialize_source_assets():
     def the_asset(the_source):
         return the_source + 1
 
-    result = materialize_to_memory([the_asset, the_source])
-    assert result.success
-    assert result.output_for_node("the_asset") == 6
-
-
-def test_materialize_source_asset_conflicts():
-    @io_manager(required_resource_keys={"foo"})
-    def the_manager():
-        pass
-
-    @asset(resource_defs={"foo": ResourceDefinition.hardcoded_resource("1")})
-    def the_asset():
-        pass
-
-    the_source = SourceAsset(
-        key=AssetKey(["the_source"]),
-        io_manager_def=the_manager,
-        resource_defs={"foo": ResourceDefinition.hardcoded_resource("2")},
-    )
-
     with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Conflicting versions of resource with key 'foo' were provided to different assets.",
+        DagsterInvariantViolationError,
+        match="Attempted to call `materialize_to_memory` with a resource "
+        "provided for io manager key 'the_source__io_manager'. Do not provide "
+        "resources for io manager keys when calling `materialize_to_memory`, as "
+        "it will override io management behavior for all keys.",
     ):
         materialize_to_memory([the_asset, the_source])
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="resource with key 'foo' provided to job conflicts with resource provided to assets.",
-    ):
-        materialize_to_memory(
-            [the_source], resources={"foo": ResourceDefinition.hardcoded_resource("2")}
-        )
 
 
 def test_materialize_no_assets():
@@ -245,3 +226,47 @@ def test_materialize_multi_asset():
     assert result.success
     assert result.output_for_node("multi_asset_with_internal_deps", "my_out_name") == 1
     assert result.output_for_node("multi_asset_with_internal_deps", "my_other_out_name") == 2
+
+
+def test_materialize_to_memory_partition_key():
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
+    def the_asset(context):
+        assert context.asset_partition_key_for_output() == "2022-02-02"
+
+    result = materialize_to_memory([the_asset], partition_key="2022-02-02")
+    assert result.success
+
+
+def test_materialize_to_memory_provided_io_manager_instance():
+    @io_manager
+    def the_manager():
+        pass
+
+    @asset(io_manager_key="blah")
+    def the_asset():
+        pass
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Attempted to call `materialize_to_memory` with a resource "
+        "provided for io manager key 'blah'. Do not provide resources for io "
+        "manager keys when calling `materialize_to_memory`, as it will override "
+        "io management behavior for all keys.",
+    ):
+        materialize_to_memory([the_asset], resources={"blah": the_manager})
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            pass
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Attempted to call `materialize_to_memory` with a resource "
+        "provided for io manager key 'blah'. Do not provide resources for io "
+        "manager keys when calling `materialize_to_memory`, as it will override "
+        "io management behavior for all keys.",
+    ):
+        materialize_to_memory([the_asset], resources={"blah": MyIOManager()})
