@@ -18,6 +18,7 @@ from dagster import (
     Nothing,
     Out,
     Output,
+    PartitionsDefinition,
     SolidExecutionContext,
     TableColumn,
     TableSchema,
@@ -152,6 +153,8 @@ def _dbt_nodes_to_assets(
     io_manager_key: Optional[str] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
     use_build_command: bool = False,
+    partitions_def: Optional[PartitionsDefinition] = None,
+    partition_key_to_vars_fn: Optional[Callable[[str], Dict[str, Any]]] = None,
 ) -> AssetsDefinition:
 
     outs: Dict[str, Out] = {}
@@ -234,10 +237,15 @@ def _dbt_nodes_to_assets(
             ]
 
         try:
+            # variables to pass into the command
+            kwargs = {"select": subselect}
+            if partition_key_to_vars_fn:
+                kwargs["vars"] = partition_key_to_vars_fn(context.partition_key)
+
             if use_build_command:
-                dbt_output = context.resources.dbt.build(select=subselect)
+                dbt_output = context.resources.dbt.build(**kwargs)
             else:
-                dbt_output = context.resources.dbt.run(select=subselect)
+                dbt_output = context.resources.dbt.run(**kwargs)
         finally:
             # in the case that the project only partially runs successfully, still attempt to generate
             # events for the parts that were successful
@@ -283,6 +291,7 @@ def _dbt_nodes_to_assets(
         can_subset=True,
         asset_deps=asset_deps,
         group_names_by_key=group_names,
+        partitions_def=partitions_def,
     )
 
 
@@ -318,6 +327,8 @@ def load_assets_from_dbt_project(
     io_manager_key: Optional[str] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
     use_build_command: bool = False,
+    partitions_def: Optional[PartitionsDefinition] = None,
+    partition_key_to_vars_fn: Optional[Callable[[str], Dict[str, Any]]] = None,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models from a dbt project into Dagster assets.
@@ -374,6 +385,8 @@ def load_assets_from_dbt_project(
         selected_unique_ids=selected_unique_ids,
         node_info_to_asset_key=node_info_to_asset_key,
         use_build_command=use_build_command,
+        partitions_def=partitions_def,
+        partition_key_to_vars_fn=partition_key_to_vars_fn,
     )
 
 
@@ -389,6 +402,8 @@ def load_assets_from_dbt_manifest(
     selected_unique_ids: Optional[AbstractSet[str]] = None,
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
     use_build_command: bool = False,
+    partitions_def: Optional[PartitionsDefinition] = None,
+    partition_key_to_vars_fn: Optional[Callable[[str], Dict[str, Any]]] = None,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models, described in a manifest.json, into Dagster assets.
@@ -443,6 +458,8 @@ def load_assets_from_dbt_manifest(
         selected_unique_ids=selected_unique_ids,
         node_info_to_asset_key=node_info_to_asset_key,
         use_build_command=use_build_command,
+        partitions_def=partitions_def,
+        partition_key_to_vars_fn=partition_key_to_vars_fn,
     )
     if source_key_prefix:
         if isinstance(source_key_prefix, str):
