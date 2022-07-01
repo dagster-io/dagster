@@ -54,7 +54,4 @@ body:
     attributes:
       label: Message from the maintainers
       description: This form field should be ignored. This is to include a footer message on the generated issue.
-      value: |
-        This form field should be ignored.
-
-        Impacted by this issue? Give it a 👍! We factor engagement into prioritization.
+      value: Impacted by this issue? Give it a 👍! We factor engagement into prioritization.
