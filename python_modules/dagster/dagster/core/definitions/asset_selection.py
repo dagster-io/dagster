@@ -13,6 +13,7 @@ from dagster.core.selector.subset_selector import (
 
 from .assets import AssetsDefinition
 from .events import AssetKey, CoercibleToAssetKey
+from .source_asset import SourceAsset
 
 
 class AssetSelection(ABC):

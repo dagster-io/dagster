@@ -733,7 +733,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         )
 
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        from dagster.core.definitions import get_upstream_partitions_for_partition_range
+        from dagster.core.definitions.asset_partitions import get_upstream_partitions_for_partition_range
 
         asset_layer = self.pipeline_def.asset_layer
         assets_def = asset_layer.assets_def_for_node(self.solid_handle)

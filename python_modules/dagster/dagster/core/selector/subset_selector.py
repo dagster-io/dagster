@@ -103,7 +103,7 @@ class AssetSelectionData(
 def generate_asset_dep_graph(
     assets_defs: Iterable["AssetsDefinition"], source_assets: Iterable["SourceAsset"]
 ) -> DependencyGraph:
-    from dagster.core.asset_defs.resolved_asset_deps import ResolvedAssetDependencies
+    from dagster.core.definitions.resolved_asset_deps import ResolvedAssetDependencies
 
     resolved_asset_deps = ResolvedAssetDependencies(assets_defs, source_assets)
 

@@ -178,7 +178,7 @@ class PartitionsDefinition(ABC, Generic[T]):
         return [partition.name for partition in self.get_partitions(current_time)]
 
     def get_default_partition_mapping(self):
-        from dagster.core.definitions import IdentityPartitionMapping
+        from dagster.core.definitions.partition_mapping import IdentityPartitionMapping
 
         return IdentityPartitionMapping()
 

@@ -143,6 +143,7 @@ from dagster.core.definitions import (
     materialize_to_memory,
     monthly_partitioned_config,
     monthly_schedule,
+    multi_asset,
     multi_or_in_process_executor,
     multiple_process_executor_requirements,
     multiprocess_executor,

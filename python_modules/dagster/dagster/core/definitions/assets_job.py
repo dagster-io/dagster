@@ -19,7 +19,6 @@ from .events import AssetKey
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, default_job_io_manager
 from .job_definition import JobDefinition
-from .output import OutputDefinition
 from .partition import PartitionedConfig, PartitionsDefinition
 from .resource_definition import ResourceDefinition
 from .resource_requirement import ensure_requirements_satisfied

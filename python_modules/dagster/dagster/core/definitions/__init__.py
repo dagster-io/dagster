@@ -127,6 +127,7 @@ from .reconstruct import (
     reconstructable,
 )
 from .repository_definition import RepositoryData, RepositoryDefinition
+from .resolved_asset_deps import ResolvedAssetDependencies
 from .resource_definition import ResourceDefinition, make_values_resource, resource
 from .run_config_schema import RunConfigSchema, create_run_config_schema
 from .run_request import InstigatorType, RunRequest, SkipReason

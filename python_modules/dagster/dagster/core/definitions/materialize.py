@@ -1,16 +1,9 @@
-from typing import Any, Mapping, Optional, Sequence, Set, Union
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
 from dagster.utils import merge_dicts
 
-from .assets import AssetsDefinition
-from .assets_job import build_assets_job
-from .source_asset import SourceAsset
-
 from ..errors import DagsterInvariantViolationError
-from ..execution.build_resources import wrap_resources_for_execution
-from ..execution.execute_in_process_result import ExecuteInProcessResult
-from ..execution.with_resources import with_resources
 from ..instance import DagsterInstance
 from ..storage.fs_io_manager import fs_io_manager
 from ..storage.io_manager import IOManagerDefinition
@@ -20,13 +13,16 @@ from .assets_job import build_assets_job
 from .source_asset import SourceAsset
 from .utils import DEFAULT_IO_MANAGER_KEY
 
+if TYPE_CHECKING:
+    from ..execution.execute_in_process_result import ExecuteInProcessResult
+
 def materialize(
     assets: Sequence[Union[AssetsDefinition, SourceAsset]],
     run_config: Any = None,
     instance: Optional[DagsterInstance] = None,
     resources: Optional[Mapping[str, object]] = None,
     partition_key: Optional[str] = None,
-) -> ExecuteInProcessResult:
+) -> "ExecuteInProcessResult":
     """
     Executes a single-threaded, in-process run which materializes provided assets.
 
@@ -47,6 +43,7 @@ def materialize(
     Returns:
         ExecuteInProcessResult: The result of the execution.
     """
+    from ..execution.build_resources import wrap_resources_for_execution
     from dagster.core.execution.with_resources import with_resources
 
     assets = check.sequence_param(assets, "assets", of_type=(AssetsDefinition, SourceAsset))
@@ -72,7 +69,7 @@ def materialize_to_memory(
     instance: Optional[DagsterInstance] = None,
     resources: Optional[Mapping[str, object]] = None,
     partition_key: Optional[str] = None,
-) -> ExecuteInProcessResult:
+) -> "ExecuteInProcessResult":
     """
     Executes a single-threaded, in-process run which materializes provided assets in memory.
 
