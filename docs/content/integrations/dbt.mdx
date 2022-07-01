@@ -33,6 +33,16 @@ dbt_assets = load_assets_from_dbt_project(
 
 The `load_assets_from_dbt_project` function will compile your dbt project, parse the metadata that dbt provides, and generate a set of software-defined assets that reflect the models in the project. These assets will all share the same underlying operation, which will invoke dbt to run the models represented by the loaded assets.
 
+```python
+from dagster_dbt import load_assets_from_dbt_project
+
+dbt_assets = load_assets_from_dbt_project(
+    project_dir="path/to/dbt/project",
+    # optional
+    profiles_dir="path/to/dbt/profiles",
+)
+```
+
 ### Loading `dbt` models from a dbt manifest.json file
 
 For larger projects, the overhead involved in recompiling your entire project whenever your repository needs to be loaded may become a concern. In these cases, it's possible to load
