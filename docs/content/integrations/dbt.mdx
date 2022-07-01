@@ -1,23 +1,21 @@
 ---
 title: Dagster with dbt
-description: Dagster can orchestrate dbt models.
+description: Dagster can orchestrate dbt alongside other technologies.
 ---
 
-# Using dbt with Dagster
-
-This guide explains how you can run a [dbt](https://docs.getdbt.com/docs/introduction) project as part of a Dagster job. This guide focuses on dbt Core, the open-source dbt offering. Dagster also offers an integration with the hosted version of dbt, [dbt Cloud](https://docs.getdbt.com/docs/dbt-cloud/cloud-overview). Check out the [API docs](/_apidocs/libraries/dagster-dbt#dagster_dbt.dbt_cloud_resource) to learn more.
-
-## What is dbt?
-
-[dbt](https://docs.getdbt.com/docs/introduction) (data build tool) helps engineers transform data in their warehouses by simply writing `SELECT` statements. dbt automatically builds a dependency graph for your transformations and turns these `SELECT` statements into tables and views in your data warehouse.
-
-dbt not only runs your data transformations, but also can create data quality tests and generate documentation for your data, right out of the box. To learn more about dbt, visit [the official dbt documentation website](https://docs.getdbt.com/docs/introduction).
-
-## How does dbt work with Dagster?
+## Using dbt with Dagster
 
 Dagster orchestrates dbt alongside _other technologies_, so you can combine dbt with Spark, Python, etc. in a single job. Dagster also provides built-in operational and data observability capabilities, like storing dbt run results longitudinally and sending alerts when a dbt run fails.
 
-## Loading dbt models as Software-Defined Assets
+There are two ways
+
+If you plan on
+
+`dbt` models translate well into Dagster's software-defined asset paradigm, and if you're just getting started, this is the
+
+It's also possible to load
+
+## dbt models and Software-Defined Assets
 
 Models defined in a `dbt` project are conceptually very similar to Dagster's Software-Defined Assets.
 
@@ -33,9 +31,19 @@ There are two ways to load `dbt` models as software-defined assets.
 
 ### Loading `dbt` models from a dbt project
 
+```python
+from dagster_dbt import load_assets_from_dbt_project
+
+dbt_assets = load_assets_from_dbt_project(
+    project_dir="path/to/dbt/project",
+    # optional
+    profiles_dir="path/to/dbt/profiles",
+)
+```
+
 ### Loading `dbt` models from a dbt manifest.json file
 
-For larger projects, the overhead involved in recompiling your entire project whenever your repository needs to be loaded may become a significant concern. In these cases, it's possible
+For larger projects, the overhead involved in recompiling your entire project whenever your repository needs to be loaded may become a concern. In these cases, it's possible to load
 
 ```python
 import json
