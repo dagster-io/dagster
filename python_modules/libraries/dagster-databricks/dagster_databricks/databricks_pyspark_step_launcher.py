@@ -2,7 +2,6 @@ import io
 import json
 import os.path
 import pickle
-import requests
 import tempfile
 import time
 
@@ -125,9 +124,6 @@ def databricks_pyspark_step_launcher(context):
 
 
 class DatabricksPySparkStepLauncher(StepLauncher):
-
-    DATABRICKS_RUN_RETRIES = 3
-
     def __init__(
         self,
         run_config,
@@ -297,7 +293,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                     f"Failed to retrieve cluster info for databricks_run_id {databricks_run_id}. "
                     f"Retrying {i} of {request_retries} times."
                 )
-                time.sleep(3)
+                time.sleep(5)
         if not cluster_id:
             log.warning(
                 f"Failed to retrieve cluster info for databricks_run_id {databricks_run_id} "
@@ -307,47 +303,38 @@ class DatabricksPySparkStepLauncher(StepLauncher):
 
         # Update job permissions
         if "job_permissions" in self.permissions:
-            job_permissions = {"access_control_list": []}
-            for permission_level, accessors in self.permissions["job_permissions"].items():
-                for accessor in accessors:
-                    job_permissions["access_control_list"].append(
-                        {**accessor, **{"permission_level": permission_level}}
-                    )
-
+            job_permissions = self._format_permissions(self.permissions["job_permissions"])
             job_id = run_info["job_id"]
-            endpoint = f"{api_client.url}2.0/permissions/jobs/{job_id}"
             log.debug(f"Updating job permissions with following json: {job_permissions}")
-            response = requests.patch(
-                endpoint, headers=api_client.default_headers, data=json.dumps(job_permissions)
+            response = api_client.perform_query(
+                method="PATCH", path=f"permissions/jobs/{job_id}", data=json.dumps(job_permissions)
             )
-            if not response.ok:
-                log.warning(
-                    f"Received invalid HTTP response: {response.status_code}.\n{response.text}"
-                )
-            else:
-                log.debug(f"Updated job permissions | Response: {response.text}")
+            log.info(f"Successfully updated cluster permissions | Response: {response}")
 
         # Update cluster permissions
-        if "new" in self.run_config["cluster"] and "cluster_permissions" in self.permissions:
-            cluster_permissions = {"access_control_list": []}
-            for permission_level, accessor in self.permissions["cluster_permissions"].items():
-                for accessor in accessors:
-                    cluster_permissions["access_control_list"].append(
-                        {**accessor, **{"permission_level": permission_level}}
-                    )
-            endpoint = f"{api_client.url}2.0/permissions/clusters/{cluster_id}"
+        if "cluster_permissions" in self.permissions:
+            if "existing" in self.run_config["cluster"]:
+                raise ValueError(
+                    "Attempting to update permissions of an existing cluster. "
+                    "This is dangerous and thus unsupported."
+                )
+            cluster_permissions = self._format_permissions(self.permissions["cluster_permissions"])
             log.debug(f"Updating cluster permissions with following json: {cluster_permissions}")
-            response = requests.patch(
-                endpoint,
-                headers=api_client.default_headers,
+            response = api_client.perform_query(
+                method="PATCH",
+                path=f"permissions/clusters/{cluster_id}",
                 data=json.dumps(cluster_permissions),
             )
-            if not response.ok:
-                log.warning(
-                    f"Received invalid HTTP response: {response.status_code}.\n{response.text}"
+            log.info(f"Successfully updated cluster permissions | Response: {response}")
+
+    def _format_permissions(self, input_permissions):
+        permissions = {"access_control_list": []}
+        for permission_level, accessors in input_permissions.items():
+            for accessor in accessors:
+                permissions["access_control_list"].append(
+                    {**accessor, **{"permission_level": permission_level}}
                 )
-            else:
-                log.debug(f"Updated permissions | Response: {response.text}")
+        return permissions
 
     def _get_databricks_task(self, run_id, step_key):
         """Construct the 'task' parameter to  be submitted to the Databricks API.

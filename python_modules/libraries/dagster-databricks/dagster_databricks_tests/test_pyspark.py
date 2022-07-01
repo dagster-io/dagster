@@ -168,9 +168,9 @@ def test_local():
 @mock.patch("dagster_databricks.DatabricksPySparkStepLauncher.get_step_events")
 @mock.patch("dagster_databricks.databricks.DatabricksClient.get_run")
 @mock.patch("dagster_databricks.databricks.DatabricksClient.get_run_state")
-@mock.patch("requests.patch", return_value=mock.Mock(ok=True))
+@mock.patch("databricks_cli.sdk.api_client.ApiClient.perform_query")
 def test_pyspark_databricks(
-    mock_request_patch,
+    mock_perform_query,
     mock_get_run_state,
     mock_get_run,
     mock_get_step_events,
@@ -196,6 +196,9 @@ def test_pyspark_databricks(
             for event in instance.all_logs(result.run_id)
             if event.step_key == "do_nothing_solid"
         ]
+
+    # Test 1 - successful execution
+
     config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
     config.pop("local_pipeline_package_path")
     result = execute_pipeline(
@@ -220,13 +223,45 @@ def test_pyspark_databricks(
         },
     )
     assert result.success
-    assert mock_request_patch.call_count == 2
+    assert mock_perform_query.call_count == 2
     assert mock_get_run.call_count == 1
     assert mock_get_run_state.call_count == 6
     assert mock_get_step_events.call_count == 6
     assert mock_put_file.call_count == 4
     assert mock_read_file.call_count == 2
     assert mock_submit_run.call_count == 1
+
+    # Test 2 - attempting to update permissions for an existing cluster
+
+    config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
+    config.pop("local_pipeline_package_path")
+    config["run_config"]["cluster"] = {"existing": "cluster_id"}
+    with pytest.raises(ValueError) as excinfo:
+        execute_pipeline(
+            pipeline=reconstructable(define_do_nothing_pipe),
+            mode="test",
+            run_config={
+                "resources": {
+                    "pyspark_step_launcher": {
+                        "config": deep_merge_dicts(
+                            config,
+                            {
+                                "databricks_host": "",
+                                "databricks_token": "",
+                                "poll_interval_sec": 0.1,
+                                "local_dagster_job_package_path": os.path.abspath(
+                                    os.path.dirname(__file__)
+                                ),
+                            },
+                        ),
+                    },
+                },
+            },
+        )
+        assert (
+            str(excinfo.value)
+            == "Attempting to update permissions of an existing cluster. This is dangerous and thus unsupported."
+        )
 
 
 @pytest.mark.skipif(
