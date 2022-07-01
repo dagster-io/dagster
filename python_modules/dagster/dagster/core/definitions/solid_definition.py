@@ -242,8 +242,8 @@ class SolidDefinition(NodeDefinition):
 
     def resolve_output_to_origin(
         self, output_name: str, handle: Optional[NodeHandle]
-    ) -> Tuple[OutputDefinition, NodeHandle]:
-        return self.output_def_named(output_name), check.not_none(handle)
+    ) -> Tuple[OutputDefinition, Optional[NodeHandle]]:
+        return self.output_def_named(output_name), handle
 
     def get_inputs_must_be_resolved_top_level(
         self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
