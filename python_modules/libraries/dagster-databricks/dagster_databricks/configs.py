@@ -595,7 +595,6 @@ def define_databricks_storage_config():
             {
                 "s3": _define_s3_storage_credentials(),
                 "adls2": _define_adls2_storage_credentials(),
-                "N/A": Field(Permissive(), description="Use if no storage configuration necessary"),
             }
         ),
         description="Databricks storage configuration for either S3 or ADLS2. If access credentials "
@@ -608,7 +607,7 @@ def define_databricks_storage_config():
 def define_databricks_env_variables():
     return Field(
         Permissive(),
-        description="Dictionary of arbitrary environment variables",
+        description="Dictionary of arbitrary environment variables to be set on the databricks cluster.",
         is_required=False,
     )
 
