@@ -9,13 +9,57 @@ Dagit is a web-based interface for viewing and interacting with Dagster objects.
 
 You can inspect op, job, and graph definitions, launch runs, view launched runs, and view assets produced by those runs.
 
-To launch the Dagit web server, run `dagit`. The command will print out the URL you can access the interface from in the browser, usually on port 3000.
+---
+
+## Accessing Dagit
 
 Dagit fetches definitions - jobs, ops, schedules, sensors - from a set of repositories configured in `workspace.yaml`. It fetches runs and assets from storage, configured in an instance's `dagster.yaml`.
 
-These are the main pages inside Dagit:
+### Locally
+
+To launch the Dagit web server locally, run the following:
+
+```shell
+dagit
+```
+
+The command will print out the URL you can access the interface from in the browser, usually on port 3000.
+
+### Dagster Cloud
+
+To access Dagit on Dagster Cloud:
+
+1. Navigate to the [sign in page](https://dagster.cloud/)
+2. Enter your organization's URL
+3. Complete the authentication process.
+
+---
+
+## Dagit page reference
+
+In the following table:
+
+- **Page**: The name of the page in Dagit
+- **Platform**: Indicates if the page is available in:
+   - **Both**: Available in Dagster Open Source and Dagster Cloud
+   - **Open Source**: Available only in Dagster Open Source
+   - **Cloud**: Available only in Dagster Cloud
+- **Description**: Brief description of the page
+
+| Page            | Platform | Description                                                                                                                   |
+|-----------------|----------|-------------------------------------------------------------------------------------------------------------------------------|
+| [Job](#job)            | Both     | Offers tools to explore a job's definition and launch runs for a job.                                                         |
+| [Runs](#runs)            | Both     | Lists all job runs.                                                                                                           |
+| [Assets](#assets)          | Both     | Lists all assets in the workspace.                                                                                            |
+| [Schedules](#schedules)       | Both     | Lists all schedules defined in the workspace, including upcoming ticks for anticipated schedule runs.                         |
+| [Sensors](#sensors)         | Both     | Lists all sensors defined in the workspace, including info about their frequency and last ticks.                              |
+| [Instance status](#instance-status) | Both     | Contains info about workspace repositories, daemon health, schedules, sensors, and configuration details.                     |
+| [User settings](#user-settings)   | Both     | Contains settings for the currently logged in user, including preferences and SSH key management.                             |
+| [Cloud settings](#cloud-settings) | Cloud    | Contains settings for the workspace, including user management, token configuration, alerts, deployments, usage, and billing. |
 
 <!-- Notes: all screenshots are from go/prod -->
+
+---
 
 ## Job
 
@@ -50,6 +94,8 @@ The Launchpad tab provides a configuration editor to let you experiment with con
 The Runs tab shows the list of recent runs for the job.
 
 <img alt="Dagit Pipeline Runs Tab" src="/images/concepts/dagit/runs-tab.png" />
+
+---
 
 ## Runs
 
@@ -93,6 +139,8 @@ height={2414}
 
 Related runs (e.g., runs created by re-executing the same previous run) are now grouped together in the right pane for easy reference.
 
+---
+
 ## Assets
 
 The Assets page lists all assets. You can filter the list by asset key.
@@ -115,9 +163,9 @@ width={3808}
 height={2414}
 />
 
-## Schedules and Sensors
+---
 
-### Schedules
+## Schedules
 
 The Schedules page lists all schedules defined in your workspace, as well as information about upcoming ticks for anticipated scheduled runs.
 
@@ -130,7 +178,9 @@ height={2414}
 
 Clicking each schedule, you can find details about a single schedule, its recent tick history, and recent runs.
 
-### Sensors
+---
+
+## Sensors
 
 The Sensors page lists all sensors defined in your workspace, as well as information about the sensor's frequency and its last tick.
 
@@ -143,13 +193,32 @@ height={2414}
 
 Clicking each sensor, you can find details about a single sensor, its recent tick history, and recent runs.
 
-## Instance Status
+---
+
+## Instance status
 
 The Instance status page includes information about the status of the repositories in your workspace, daemon health, schedules, sensors, and configuration details.
 
 <Image
 alt="status-instance"
 src="/images/concepts/dagit/status-instance.png"
+width={3808}
+height={2414}
+/>
+
+---
+
+## Cloud settings
+
+<Note>
+	This page is available only on Dagster Cloud.
+</Note>
+
+The **Cloud settings** page contains settings for the workspace, including user management, token configuration, alerts, deployments, usage, and billing.
+
+<Image
+alt="cloud-settings"
+src="/images/concepts/dagit/cloud-settings.png"
 width={3808}
 height={2414}
 />
