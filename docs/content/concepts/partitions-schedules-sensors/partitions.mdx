@@ -5,17 +5,19 @@ description: Partitioned assets and jobs enable launching backfills, where each 
 
 # Partitioned Assets and Jobs
 
-Partitioning allows software-defined assets and jobs to consume and/or produce data that is subdivided along some axis (most commonly time). These subdivisions are called _partitions_, with each partition denoted by a _partition key_.
+Partitioning allows a job or software-defined asset to correspond to a set of entities with identical structure but different parameters.
 
-A _partitioned asset_ represents a body of subdivided data. Depending on how the asset is stored, each partition might correspond to a file or a slice of a table in a database. Materializations of a partitioned asset are parameterized by a partition key, and thus scoped to a single partition.
+A _partitioned job_ is a job where each run corresponds to a partition key. Most commonly, each partition key represents a time window, so, when a job executes, it processes data within one of the time windows.
 
-A _partitioned job_ operates over subdivided data. Runs of a partitioned job are parameterized by a partition key. It's common to construct a partitioned job that materializes a collection of partitioned assets every time it runs.
+A _partitioned asset_ is an asset that's composed of a set of partitions, which can be materialized and tracked independently. Most commonly, each partition represents all the records in a data set that fall within a particular time window. Depending on where the asset is stored, each partition might correspond to a file or a slice of a table in a database.
 
-With a partitioned asset or job, you can:
+It's common to construct a partitioned job that materializes a particular set of partitioned assets every time it runs.
+
+Having defined a partitioned job or asset, you can:
 
 - View runs by partition in Dagit.
-- Define a [schedule](/concepts/partitions-schedules-sensors/schedules) that launches partition-scoped runs. For example, a job might run each day and process the data that arrived during the previous day.
-- Launch a [backfill](/concepts/partitions-schedules-sensors/backfills), which is a set of partition-scoped runs. For example, after making a code change to a partitioned job, you might want to re-run the job over all previously processed partitions.
+- Define a [schedule](/concepts/partitions-schedules-sensors/schedules) that fills in a partition each time it runs. For example, a job might run each day and process the data that arrived during the previous day.
+- Launch [backfills](/concepts/partitions-schedules-sensors/backfills), which are sets of runs that each process a different partition. For example, after making a code change, you might want to run your job on all time windows instead of just one of them.
 
 ---
 
