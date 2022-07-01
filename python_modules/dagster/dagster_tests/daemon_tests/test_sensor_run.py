@@ -35,7 +35,6 @@ from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster.core.storage.event_log.base import EventRecordsFilter
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import (
-    SingleThreadPoolExecutor,
     create_test_daemon_workspace,
     get_logger_output_from_capfd,
     instance_for_test,
@@ -383,10 +382,7 @@ def workspace_load_target(attribute="the_repo"):
 
 
 def get_sensor_executors():
-    return [
-        SingleThreadPoolExecutor(),
-        SynchronousExecutor(),
-    ]
+    return [SynchronousExecutor()]
 
 
 def evaluate_sensors(instance, workspace, executor, timeout=75):
