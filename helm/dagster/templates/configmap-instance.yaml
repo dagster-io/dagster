@@ -116,3 +116,15 @@ data:
 
     telemetry:
       enabled: {{ .Values.telemetry.enabled }}
+
+    {{- if .Values.retention }}
+    retention:
+      {{- if .Values.retention.sensor }}
+      sensor:
+        purge_after_days: {{ .Values.retention.sensor.purgeAfterDays | toYaml | nindent 12 }}
+      {{- end }}
+      {{- if .Values.retention.schedule }}
+      schedule:
+        purge_after_days: {{ .Values.retention.schedule.purgeAfterDays | toYaml | nindent 12 }}
+      {{- end }}
+    {{- end }}

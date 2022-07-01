@@ -1142,3 +1142,13 @@ serviceAccount:
   name: ""
 
   annotations: {}
+
+retention:
+  schedule:
+    purge_after_days: -1
+  sensor:
+    purge_after_days:
+      failed: -1
+      skipped: 7
+      started: -1
+      success: -1
