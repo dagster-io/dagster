@@ -5,6 +5,7 @@ import {useParams} from 'react-router-dom';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TicksTable} from '../instigation/TickHistory';
@@ -32,6 +33,8 @@ interface Props {
 }
 
 export const ScheduleRoot: React.FC<Props> = (props) => {
+  useTrackPageView();
+
   const {repoAddress} = props;
   const {scheduleName} = useParams<{scheduleName: string}>();
 

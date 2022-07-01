@@ -17,6 +17,7 @@ import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
@@ -85,6 +86,8 @@ const initialState: State = {
 };
 
 export const InstanceOverviewPage = () => {
+  useTrackPageView();
+
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
   const {searchValue} = state;

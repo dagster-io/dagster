@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {useHistory, useLocation, useParams} from 'react-router-dom';
 
+import {useTrackPageView} from '../app/analytics';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -24,6 +25,8 @@ interface Props {
 }
 
 export const PipelineOverviewRoot: React.FC<Props> = (props) => {
+  useTrackPageView();
+
   const {repoAddress} = props;
   const history = useHistory();
   const location = useLocation();

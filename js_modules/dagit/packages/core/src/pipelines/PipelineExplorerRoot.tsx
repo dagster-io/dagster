@@ -3,6 +3,7 @@ import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -28,6 +29,8 @@ import {
 } from './types/PipelineExplorerRootQuery';
 
 export const PipelineExplorerSnapshotRoot = () => {
+  useTrackPageView();
+
   const params = useParams();
   const explorerPath = explorerPathFromString(params['0']);
   const {pipelineName, snapshotId} = explorerPath;

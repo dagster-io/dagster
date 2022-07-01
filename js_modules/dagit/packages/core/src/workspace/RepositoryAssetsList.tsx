@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -51,6 +52,8 @@ interface Props {
 }
 
 export const RepositoryAssetsList: React.FC<Props> = (props) => {
+  useTrackPageView();
+
   const {repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
 

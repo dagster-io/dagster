@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSchedules} from '../instigation/Unloadable';
 import {SCHEDULE_FRAGMENT} from '../schedules/ScheduleUtils';
@@ -19,6 +20,8 @@ import {InstanceTabs} from './InstanceTabs';
 import {InstanceSchedulesQuery} from './types/InstanceSchedulesQuery';
 
 export const InstanceSchedules = React.memo(() => {
+  useTrackPageView();
+
   const queryData = useQuery<InstanceSchedulesQuery>(INSTANCE_SCHEDULES_QUERY, {
     fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
