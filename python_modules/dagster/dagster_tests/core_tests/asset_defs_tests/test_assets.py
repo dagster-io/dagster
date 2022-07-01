@@ -5,11 +5,14 @@ from dagster import (
     AssetOut,
     AssetsDefinition,
     IOManager,
+    IOManagerDefinition,
     Out,
     Output,
     ResourceDefinition,
     build_op_context,
+    graph,
     io_manager,
+    materialize,
     materialize_to_memory,
     op,
     resource,
@@ -18,6 +21,7 @@ from dagster._check import CheckError
 from dagster.core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster.core.storage.mem_io_manager import InMemoryIOManager
+from dagster.core.test_utils import instance_for_test
 
 
 def test_with_replaced_asset_keys():
@@ -384,11 +388,7 @@ def test_asset_invocation_resource_errors():
     def asset_doesnt_use_resources():
         pass
 
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-        match='op "asset_doesnt_use_resources" has required resources, but no context was provided.',
-    ):
-        asset_doesnt_use_resources()
+    asset_doesnt_use_resources()
 
     @asset(resource_defs={"used": ResourceDefinition.hardcoded_resource("foo")})
     def asset_uses_resources(context):
@@ -455,7 +455,92 @@ def test_multi_asset_resources_execution():
         yield Output(1, "key1")
         yield Output(2, "key2")
 
-    materialize_to_memory([my_asset])
+    with instance_for_test() as instance:
+        materialize([my_asset], instance=instance)
 
     assert foo_list == [1]
     assert bar_list == [2]
+
+
+def test_graph_backed_asset_resources():
+    @op(required_resource_keys={"foo"})
+    def the_op(context):
+        assert context.resources.foo == "value"
+        return context.resources.foo
+
+    @graph
+    def basic():
+        return the_op()
+
+    asset_provided_resources = AssetsDefinition.from_graph(
+        graph_def=basic,
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey("the_asset")},
+        resource_defs={"foo": ResourceDefinition.hardcoded_resource("value")},
+    )
+    result = materialize_to_memory([asset_provided_resources])
+    assert result.success
+    assert result.output_for_node("basic") == "value"
+
+    asset_not_provided_resources = AssetsDefinition.from_graph(
+        graph_def=basic,
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey("the_asset")},
+    )
+    result = materialize_to_memory([asset_not_provided_resources], resources={"foo": "value"})
+    assert result.success
+    assert result.output_for_node("basic") == "value"
+
+
+def test_graph_backed_asset_io_manager():
+    @op(required_resource_keys={"foo"}, out=Out(io_manager_key="the_manager"))
+    def the_op(context):
+        assert context.resources.foo == "value"
+        return context.resources.foo
+
+    @op
+    def ingest(x):
+        return x
+
+    @graph
+    def basic():
+        return ingest(the_op())
+
+    events = []
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, _obj):
+            events.append(f"entered handle_output for {context.step_key}")
+
+        def load_input(self, context):
+            events.append(f"entered handle_input for {context.upstream_output.step_key}")
+
+    asset_provided_resources = AssetsDefinition.from_graph(
+        graph_def=basic,
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey("the_asset")},
+        resource_defs={
+            "foo": ResourceDefinition.hardcoded_resource("value"),
+            "the_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager()),
+        },
+    )
+
+    with instance_for_test() as instance:
+        result = materialize([asset_provided_resources], instance=instance)
+        assert result.success
+        assert events == [
+            "entered handle_output for basic.the_op",
+            "entered handle_input for basic.the_op",
+        ]
+
+
+def test_group_name_requirements():
+    @asset(group_name="float")  # reserved python keywords allowed
+    def good_name():
+        return 1
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="not a valid name in Dagster"):
+
+        @asset(group_name="bad*name")  # regex mismatch
+        def bad_name():
+            return 2

@@ -44,6 +44,7 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
       assetKey {
         path
       }
+      computeStatus
       unstartedRunIds
       inProgressRunIds
       latestRun {

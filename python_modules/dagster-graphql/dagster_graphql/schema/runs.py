@@ -6,6 +6,7 @@ from graphene.types.generic import GenericScalar
 
 import dagster._check as check
 from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.yaml_utils import load_run_config_yaml
 
 from ..implementation.fetch_runs import get_runs, get_runs_count
 from ..implementation.utils import UserFacingGraphQLError
@@ -149,7 +150,7 @@ class GrapheneRunConfigData(GenericScalar, graphene.Scalar):
 def parse_run_config_input(run_config, raise_on_error: bool):
     if run_config and isinstance(run_config, str):
         try:
-            return yaml.safe_load(run_config)
+            return load_run_config_yaml(run_config)
         except yaml.YAMLError:
             if raise_on_error:
                 raise UserFacingGraphQLError(

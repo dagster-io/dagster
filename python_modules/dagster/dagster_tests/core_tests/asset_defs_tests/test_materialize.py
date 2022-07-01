@@ -8,6 +8,7 @@ from dagster import (
     AssetsDefinition,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
+    DailyPartitionsDefinition,
     GraphOut,
     IOManager,
     MetadataValue,
@@ -46,10 +47,12 @@ def test_materialize_config():
     def the_asset_reqs_config(context):
         assert context.op_config["foo_str"] == "foo"
 
-    assert materialize(
-        [the_asset_reqs_config],
-        run_config={"ops": {"the_asset_reqs_config": {"config": {"foo_str": "foo"}}}},
-    ).success
+    with instance_for_test() as instance:
+        assert materialize(
+            [the_asset_reqs_config],
+            run_config={"ops": {"the_asset_reqs_config": {"config": {"foo_str": "foo"}}}},
+            instance=instance,
+        ).success
 
 
 def test_materialize_bad_config():
@@ -57,11 +60,13 @@ def test_materialize_bad_config():
     def the_asset_reqs_config(context):
         assert context.op_config["foo_str"] == "foo"
 
-    with pytest.raises(DagsterInvalidConfigError, match="Error in config for job"):
-        materialize(
-            [the_asset_reqs_config],
-            run_config={"ops": {"the_asset_reqs_config": {"config": {"bad": "foo"}}}},
-        )
+    with instance_for_test() as instance:
+        with pytest.raises(DagsterInvalidConfigError, match="Error in config for job"):
+            materialize(
+                [the_asset_reqs_config],
+                run_config={"ops": {"the_asset_reqs_config": {"config": {"bad": "foo"}}}},
+                instance=instance,
+            )
 
 
 def test_materialize_resources():
@@ -69,7 +74,8 @@ def test_materialize_resources():
     def the_asset(context):
         assert context.resources.foo == "blah"
 
-    assert materialize([the_asset]).success
+    with instance_for_test() as instance:
+        assert materialize([the_asset], instance=instance).success
 
 
 def test_materialize_resources_not_satisfied():
@@ -77,15 +83,17 @@ def test_materialize_resources_not_satisfied():
     def the_asset(context):
         assert context.resources.foo == "blah"
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="resource with key 'foo' required by op 'the_asset' was not provided",
-    ):
-        materialize([the_asset])
+    with instance_for_test() as instance:
+        with pytest.raises(
+            DagsterInvalidDefinitionError,
+            match="resource with key 'foo' required by op 'the_asset' was not provided",
+        ):
+            materialize([the_asset], instance=instance)
 
-    assert materialize(
-        with_resources([the_asset], {"foo": ResourceDefinition.hardcoded_resource("blah")})
-    ).success
+        assert materialize(
+            with_resources([the_asset], {"foo": ResourceDefinition.hardcoded_resource("blah")}),
+            instance=instance,
+        ).success
 
 
 def test_materialize_conflicting_resources():
@@ -97,11 +105,12 @@ def test_materialize_conflicting_resources():
     def second():
         pass
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Conflicting versions of resource with key 'foo' were provided to different assets.",
-    ):
-        materialize([first, second])
+    with instance_for_test() as instance:
+        with pytest.raises(
+            DagsterInvalidDefinitionError,
+            match="Conflicting versions of resource with key 'foo' were provided to different assets.",
+        ):
+            materialize([first, second], instance=instance)
 
 
 def test_materialize_source_assets():
@@ -122,9 +131,10 @@ def test_materialize_source_assets():
     def the_asset(the_source):
         return the_source + 1
 
-    result = materialize([the_asset, the_source])
-    assert result.success
-    assert result.output_for_node("the_asset") == 6
+    with instance_for_test() as instance:
+        result = materialize([the_asset, the_source], instance=instance)
+        assert result.success
+        assert result.output_for_node("the_asset") == 6
 
 
 def test_materialize_source_asset_conflicts():
@@ -142,15 +152,17 @@ def test_materialize_source_asset_conflicts():
         resource_defs={"foo": ResourceDefinition.hardcoded_resource("2")},
     )
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match="Conflicting versions of resource with key 'foo' were provided to different assets.",
-    ):
-        materialize([the_asset, the_source])
+    with instance_for_test() as instance:
+        with pytest.raises(
+            DagsterInvalidDefinitionError,
+            match="Conflicting versions of resource with key 'foo' were provided to different assets.",
+        ):
+            materialize([the_asset, the_source], instance=instance)
 
 
 def test_materialize_no_assets():
-    assert materialize([]).success
+    with instance_for_test() as instance:
+        assert materialize([], instance=instance).success
 
 
 def test_materialize_graph_backed_asset():
@@ -182,9 +194,10 @@ def test_materialize_graph_backed_asset():
         node_def=create_cool_thing,
     )
 
-    result = materialize([cool_thing_asset, a, b])
-    assert result.success
-    assert result.output_for_node("create_cool_thing.combine_strings") == "aaaabb"
+    with instance_for_test() as instance:
+        result = materialize([cool_thing_asset, a, b], instance=instance)
+        assert result.success
+        assert result.output_for_node("create_cool_thing.combine_strings") == "aaaabb"
 
 
 def test_materialize_multi_asset():
@@ -224,7 +237,22 @@ def test_materialize_multi_asset():
         yield Output(1, "my_out_name")
         yield Output(2, "my_other_out_name")
 
-    result = materialize([thing_asset, multi_asset_with_internal_deps])
-    assert result.success
-    assert result.output_for_node("multi_asset_with_internal_deps", "my_out_name") == 1
-    assert result.output_for_node("multi_asset_with_internal_deps", "my_other_out_name") == 2
+    with instance_for_test() as instance:
+        result = materialize([thing_asset, multi_asset_with_internal_deps], instance=instance)
+        assert result.success
+        assert result.output_for_node("multi_asset_with_internal_deps", "my_out_name") == 1
+        assert result.output_for_node("multi_asset_with_internal_deps", "my_other_out_name") == 2
+
+
+def test_materialize_partition_key():
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
+    def the_asset(context):
+        assert context.asset_partition_key_for_output() == "2022-02-02"
+
+    with instance_for_test() as instance:
+        result = materialize([the_asset], partition_key="2022-02-02", instance=instance)
+        assert result.success
+
+
+def test_materialize_provided_resources():
+    pass

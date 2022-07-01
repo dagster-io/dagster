@@ -1,10 +1,10 @@
-import {Box, ExternalAnchorButton, Colors, NonIdealState, Spinner} from '@dagster-io/ui';
+import {Box, Colors, ExternalAnchorButton, NonIdealState, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {Redirect, Route, Switch, useLocation} from 'react-router-dom';
 
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
-import {workspacePipelinePath} from '../workspace/workspacePath';
+import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
+import {workspacePath, workspacePipelinePath} from '../workspace/workspacePath';
 
 const InstanceRedirect = () => {
   const location = useLocation();
@@ -28,6 +28,9 @@ export const FallthroughRoot = () => {
   );
 };
 
+const getVisibleJobs = (r: DagsterRepoOption) =>
+  r.repository.pipelines.filter((j) => !isHiddenAssetGroupJob(j.name));
+
 const FinalRedirectOrLoadingRoot = () => {
   const workspaceContext = React.useContext(WorkspaceContext);
   const {allRepos, loading, locationEntries} = workspaceContext;
@@ -49,21 +52,28 @@ const FinalRedirectOrLoadingRoot = () => {
     return <Redirect to="/workspace" />;
   }
 
-  const reposWithAJob = allRepos.filter((r) => r.repository.pipelines.length > 0);
+  const reposWithVisibleJobs = allRepos.filter((r) => getVisibleJobs(r).length > 0);
 
-  // If every loaded repo only contains asset jobs, route to the asset catalog
-  if (
-    reposWithAJob.every(({repository}) =>
-      repository.pipelines.every((p) => isHiddenAssetGroupJob(p.name)),
-    )
-  ) {
-    return <Redirect to="/instance/assets" />;
+  // If we have no repos with jobs, see if we have an asset group and route to it.
+  if (reposWithVisibleJobs.length === 0) {
+    const repoWithAssetGroup = allRepos.find((r) => r.repository.assetGroups.length);
+    if (repoWithAssetGroup) {
+      return (
+        <Redirect
+          to={workspacePath(
+            repoWithAssetGroup.repository.name,
+            repoWithAssetGroup.repositoryLocation.name,
+            `/asset-groups/${repoWithAssetGroup.repository.assetGroups[0].groupName}`,
+          )}
+        />
+      );
+    }
   }
 
   // If we have exactly one repo with one job, route to the job overview
-  if (reposWithAJob.length === 1 && reposWithAJob[0].repository.pipelines.length === 1) {
-    const repo = reposWithAJob[0];
-    const job = repo.repository.pipelines[0];
+  if (reposWithVisibleJobs.length === 1 && getVisibleJobs(reposWithVisibleJobs[0]).length === 1) {
+    const repo = reposWithVisibleJobs[0];
+    const job = getVisibleJobs(repo)[0];
     return (
       <Redirect
         to={workspacePipelinePath({
@@ -77,7 +87,7 @@ const FinalRedirectOrLoadingRoot = () => {
   }
 
   // If we have more than one repo with a job, route to the instance overview
-  if (reposWithAJob.length > 0) {
+  if (reposWithVisibleJobs.length > 0) {
     return <Redirect to="/instance" />;
   }
 

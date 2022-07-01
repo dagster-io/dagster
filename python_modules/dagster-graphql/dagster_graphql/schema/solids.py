@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Union
 
 import graphene
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -674,7 +675,9 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
         return []
 
 
-def build_solid_definition(represented_pipeline, solid_def_name):
+def build_solid_definition(
+    represented_pipeline: RepresentedPipeline, solid_def_name: str
+) -> Union[GrapheneSolidDefinition, GrapheneCompositeSolidDefinition]:
     check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
     check.str_param(solid_def_name, "solid_def_name")
 

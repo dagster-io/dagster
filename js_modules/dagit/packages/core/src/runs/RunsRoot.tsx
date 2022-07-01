@@ -12,6 +12,7 @@ import {
   Tag,
   Heading,
   TokenizingFieldValue,
+  tokenToString,
 } from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
@@ -38,6 +39,7 @@ import {
   RunsFilterInput,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
+  RunFilterToken,
 } from './RunsFilterInput';
 import {QueueDaemonStatusQuery} from './types/QueueDaemonStatusQuery';
 import {RunsRootQuery, RunsRootQueryVariables} from './types/RunsRootQuery';
@@ -114,6 +116,16 @@ export const RunsRoot = () => {
       }
     },
     [filterTokens, setFilterTokens, staticStatusTags],
+  );
+
+  const onAddTag = React.useCallback(
+    (token: RunFilterToken) => {
+      const tokenAsString = tokenToString(token);
+      if (!filterTokens.some((token) => tokenToString(token) === tokenAsString)) {
+        setFilterTokensWithStatus([...filterTokens, token]);
+      }
+    },
+    [filterTokens, setFilterTokensWithStatus],
   );
 
   const enabledFilters = React.useMemo(() => {
@@ -245,7 +257,7 @@ export const RunsRoot = () => {
                 <StickyTableContainer $top={0}>
                   <RunTable
                     runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
-                    onSetFilter={setFilterTokensWithStatus}
+                    onAddTag={onAddTag}
                     filter={filter}
                     actionBarComponents={
                       showScheduled ? null : (

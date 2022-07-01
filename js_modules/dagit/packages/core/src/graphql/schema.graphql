@@ -397,6 +397,7 @@ type AssetNode {
   dependencyKeys: [AssetKey!]!
   description: String
   graphName: String
+  groupName: String
   id: ID!
   jobNames: [String!]!
   jobs: [Pipeline!]!
@@ -409,7 +410,7 @@ type AssetNode {
   partitionKeys: [String!]!
   partitionDefinition: String
   repository: Repository!
-  groupName: String
+  requiredResources: [ResourceRequirement!]!
 }
 
 type AssetKey {
@@ -2249,9 +2250,19 @@ type Permission {
 type AssetLatestInfo {
   assetKey: AssetKey!
   latestMaterialization: MaterializationEvent
+  computeStatus: AssetComputeStatus!
   unstartedRunIds: [String!]!
   inProgressRunIds: [String!]!
   latestRun: Run
+}
+
+"""
+An enumeration.
+"""
+enum AssetComputeStatus {
+  NONE
+  UP_TO_DATE
+  OUT_OF_DATE
 }
 
 union EventConnectionOrError = EventConnection | RunNotFoundError | PythonError

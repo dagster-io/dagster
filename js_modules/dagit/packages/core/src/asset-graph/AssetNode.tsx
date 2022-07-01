@@ -10,9 +10,10 @@ import {NodeHighlightColors} from '../graph/OpNode';
 import {OpTags} from '../graph/OpTags';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {AssetComputeStatus} from '../types/globalTypes';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
-import {ComputeStatus, displayNameForAssetKey, LiveDataForNode} from './Utils';
+import {LiveDataForNode} from './Utils';
 import {ASSET_NODE_ANNOTATIONS_MAX_WIDTH, ASSET_NODE_NAME_MAX_LENGTH} from './layout';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
 
@@ -21,16 +22,16 @@ const MISSING_LIVE_DATA = {
   inProgressRunIds: [],
   runWhichFailedToMaterialize: null,
   lastMaterialization: null,
+  computeStatus: AssetComputeStatus.NONE,
   stepKey: '',
 };
 
 export const AssetNode: React.FC<{
   definition: AssetNodeFragment;
   liveData?: LiveDataForNode;
-  computeStatus?: ComputeStatus;
   selected: boolean;
   inAssetCatalog?: boolean;
-}> = React.memo(({definition, selected, liveData, inAssetCatalog, computeStatus}) => {
+}> = React.memo(({definition, selected, liveData, inAssetCatalog}) => {
   const firstOp = definition.opNames.length ? definition.opNames[0] : null;
   const computeName = definition.graphName || definition.opNames[0] || null;
 
@@ -38,11 +39,9 @@ export const AssetNode: React.FC<{
   // a single step, so just use the first one.
   const stepKey = firstOp || '';
 
-  const displayName = withMiddleTruncation(displayNameForAssetKey(definition.assetKey), {
-    maxLength: ASSET_NODE_NAME_MAX_LENGTH,
-  });
+  const displayName = definition.assetKey.path[definition.assetKey.path.length - 1];
 
-  const {lastMaterialization} = liveData || MISSING_LIVE_DATA;
+  const {lastMaterialization, computeStatus} = liveData || MISSING_LIVE_DATA;
 
   return (
     <AssetNodeContainer $selected={selected}>
@@ -52,17 +51,13 @@ export const AssetNode: React.FC<{
             <Icon name="asset" />
           </span>
           <div style={{overflow: 'hidden', textOverflow: 'ellipsis', marginTop: -1}}>
-            {displayName}
+            {withMiddleTruncation(displayName, {
+              maxLength: ASSET_NODE_NAME_MAX_LENGTH,
+            })}
           </div>
           <div style={{flex: 1}} />
           <div style={{maxWidth: ASSET_NODE_ANNOTATIONS_MAX_WIDTH}}>
-            {computeStatus === 'old' && (
-              <UpstreamNotice>
-                upstream
-                <br />
-                changed
-              </UpstreamNotice>
-            )}
+            <ComputeStatusNotice computeStatus={computeStatus} />
           </div>
         </Name>
         {definition.description && !inAssetCatalog && (
@@ -138,11 +133,13 @@ export const AssetNodeMinimal: React.FC<{
   selected: boolean;
   definition: AssetNodeFragment;
 }> = ({selected, definition}) => {
+  const displayName = definition.assetKey.path[definition.assetKey.path.length - 1];
+
   return (
     <MinimalAssetNodeContainer $selected={selected}>
       <MinimalAssetNodeBox $selected={selected}>
         <MinimalName style={{fontSize: 28}}>
-          {withMiddleTruncation(displayNameForAssetKey(definition.assetKey), {maxLength: 17})}
+          {withMiddleTruncation(displayName, {maxLength: 17})}
         </MinimalName>
       </MinimalAssetNodeBox>
     </MinimalAssetNodeContainer>
@@ -190,7 +187,6 @@ export const ASSET_NODE_FRAGMENT = gql`
     jobNames
     opNames
     description
-    partitionDefinition
     computeKind
     assetKey {
       path
@@ -303,6 +299,17 @@ const UpstreamNotice = styled.div`
   margin-right: -6px;
   border-top-right-radius: 3px;
 `;
+
+export const ComputeStatusNotice: React.FC<{computeStatus: AssetComputeStatus}> = ({
+  computeStatus,
+}) =>
+  computeStatus === AssetComputeStatus.OUT_OF_DATE ? (
+    <UpstreamNotice>
+      upstream
+      <br />
+      changed
+    </UpstreamNotice>
+  ) : null;
 
 export const AssetLatestRunWithNotices: React.FC<{
   liveData?: LiveDataForNode;

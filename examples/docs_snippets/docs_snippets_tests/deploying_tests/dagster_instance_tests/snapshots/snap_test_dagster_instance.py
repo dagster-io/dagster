@@ -10,10 +10,12 @@ snapshots["test_instance_yaml 1"] = [
     "code_servers",
     "compute_logs",
     "local_artifact_storage",
+    "retention",
     "run_coordinator",
     "run_launcher",
     "run_monitoring",
     "run_retries",
+    "sensors",
     "storage",
     "telemetry",
 ]

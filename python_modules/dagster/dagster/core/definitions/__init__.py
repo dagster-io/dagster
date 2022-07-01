@@ -143,6 +143,7 @@ from .time_window_partitions import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition,
+    TimeWindow,
     TimeWindowPartitionsDefinition,
     WeeklyPartitionsDefinition,
     daily_partitioned_config,

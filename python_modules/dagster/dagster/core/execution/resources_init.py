@@ -419,6 +419,9 @@ def get_required_resource_keys_for_step(
 
         resource_keys = resource_keys.union(step_input.source.required_resource_keys(pipeline_def))
 
+        if input_def.input_manager_key:
+            resource_keys = resource_keys.union([input_def.input_manager_key])
+
         if isinstance(step_input, StepInput):
             source_handles = step_input.get_step_output_handle_dependencies()
         elif isinstance(step_input, (UnresolvedMappedStepInput, UnresolvedCollectStepInput)):

@@ -187,7 +187,7 @@ class IntervalDaemon(DagsterDaemon):
         while True:
             start_time = time.time()
             # Clear out the workspace locations after each iteration
-            workspace.cleanup()
+            workspace.cleanup(cleanup_locations=True)
             try:
                 yield from self.run_iteration(instance, workspace)
             except Exception:
@@ -225,7 +225,11 @@ class SensorDaemon(DagsterDaemon):
         return "SENSOR"
 
     def core_loop(self, instance, workspace):
-        yield from execute_sensor_iteration_loop(instance, workspace, self._logger)
+        yield from execute_sensor_iteration_loop(
+            instance,
+            workspace,
+            self._logger,
+        )
 
 
 class BackfillDaemon(IntervalDaemon):

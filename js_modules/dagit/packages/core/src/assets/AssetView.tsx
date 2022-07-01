@@ -1,6 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
+  BaseTag,
   Box,
   ButtonLink,
   Colors,
@@ -26,6 +27,7 @@ import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {useDidLaunchEvent} from '../runs/RunUtils';
+import {AssetComputeStatus} from '../types/globalTypes';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -47,6 +49,7 @@ export interface AssetViewParams {
   view?: 'activity' | 'definition' | 'lineage';
   lineageScope?: AssetLineageScope;
   lineageShowSecondaryEdges?: boolean;
+  lineageDepth?: number;
   partition?: string;
   time?: string;
   asOf?: string;
@@ -71,12 +74,17 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     : null;
 
   const token = tokenForAssetKey(assetKey);
-  const {assetGraphData, graphAssetKeys} = useAssetGraphData(
+
+  const defaultDepth = params.lineageScope === 'neighbors' ? 2 : 5;
+  const requestedDepth = Number(params.lineageDepth) || defaultDepth;
+  const depthStr = '+'.repeat(requestedDepth);
+
+  const {assetGraphData, graphAssetKeys, graphQueryItems} = useAssetGraphData(
     params.view === 'lineage' && params.lineageScope === 'upstream'
-      ? `*"${token}"`
+      ? `${depthStr}"${token}"`
       : params.view === 'lineage' && params.lineageScope === 'downstream'
-      ? `"${token}"*`
-      : `++"${token}"++`,
+      ? `"${token}"${depthStr}`
+      : `${depthStr}"${token}"${depthStr}`,
     {hideEdgesToNodesOutsideQuery: !params.lineageShowSecondaryEdges},
   );
 
@@ -95,6 +103,9 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   // Avoid thrashing the materializations UI (which chooses a different default query based on whether
   // data is partitioned) by waiting for the definition to be loaded. (null OR a valid definition)
   const isDefinitionLoaded = definition !== undefined;
+  const isUpstreamChanged =
+    liveDataByNode[toGraphId(assetKey)]?.computeStatus === AssetComputeStatus.OUT_OF_DATE;
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', width: '100%', overflowY: 'auto'}}>
       <AssetPageHeader
@@ -123,6 +134,18 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
                 </Link>
               </Tag>
             )}
+            {isUpstreamChanged ? (
+              <Box
+                onClick={() => setParams({...params, view: 'lineage', lineageScope: 'upstream'})}
+              >
+                <BaseTag
+                  fillColor={Colors.Yellow50}
+                  textColor={Colors.Yellow700}
+                  label="Upstream changed"
+                  interactive
+                />
+              </Box>
+            ) : undefined}
           </>
         }
         tabs={
@@ -203,6 +226,8 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
                 assetNode={definition}
                 liveDataByNode={liveDataByNode}
                 assetGraphData={assetGraphData}
+                requestedDepth={requestedDepth}
+                graphQueryItems={graphQueryItems}
               />
             ) : (
               <Box style={{flex: 1}} flex={{alignItems: 'center', justifyContent: 'center'}}>

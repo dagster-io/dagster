@@ -10,13 +10,24 @@ type NavEntry = {
   isUnversioned?: boolean;
   isExternalLink?: boolean;
 };
-export function flatten(yx: any) {
+
+export const getNavKey = (parentKey: string, idx: number) => {
+  return parentKey ? `${parentKey}-${idx}` : `${idx}`;
+};
+
+export const getNavLvl = (navKey: string) => {
+  return navKey.split("-").length - 1;
+};
+
+export function flatten(yx: any, parentKey: string = "") {
   const xs = JSON.parse(JSON.stringify(yx));
 
-  return xs.reduce((acc: any, x: any) => {
-    acc = acc.concat(x);
+  return xs.reduce((acc: any, x: any, idx: number) => {
+    const navKey = getNavKey(parentKey, idx);
+    // console.log(navKey, x);
+    acc = acc.concat({ key: navKey, ...x });
     if (x.children) {
-      acc = acc.concat(flatten(x.children));
+      acc = acc.concat(flatten(x.children, navKey));
       x.children = [];
     }
     return acc;

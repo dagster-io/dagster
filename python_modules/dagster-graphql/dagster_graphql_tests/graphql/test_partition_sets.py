@@ -116,6 +116,7 @@ GET_PARTITION_SET_STATUS_QUERY = """
             ...on PartitionSet {
                 id
                 partitionStatusesOrError {
+                    __typename
                     ... on PartitionStatuses {
                         results {
                             id
@@ -271,7 +272,7 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
         partitionStatuses = result.data["partitionSetOrError"]["partitionStatusesOrError"][
             "results"
         ]
-        assert len(partitionStatuses) == 2
+        assert len(partitionStatuses) == 10
         for partitionStatus in partitionStatuses:
             if partitionStatus["partitionName"] in ("2", "3"):
                 assert partitionStatus["runStatus"] == "SUCCESS"

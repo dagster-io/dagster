@@ -36,6 +36,7 @@
     "title": "Building with Dagster",
     "icon": "Menu",
     "path": "/building",
+    "isDefaultOpen": true,
     "children": [
       {
         "title": "Best practices",

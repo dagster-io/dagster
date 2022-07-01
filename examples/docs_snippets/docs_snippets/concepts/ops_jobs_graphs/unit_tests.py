@@ -9,8 +9,6 @@ from dagster import (
     Output,
     Out,
     op,
-    io_manager,
-    IOManager,
     graph,
 )
 
@@ -302,46 +300,6 @@ def test_data_assets():
 
 # end_materialize_asset
 
-
-@io_manager
-def source_io_manager():
-    class MyIOManager(IOManager):
-        def handle_output(self, context, obj):
-            pass
-
-        def load_input(self, context):
-            return "foo"
-
-    return MyIOManager()
-
-
-# start_materialize_source_asset
-from dagster import asset, SourceAsset, materialize_to_memory, AssetKey
-
-the_source = SourceAsset(
-    key=AssetKey("repository_a_asset"), io_manager_def=source_io_manager
-)
-
-
-@asset
-def repository_b_asset(repository_a_asset):
-    ...
-
-
-@asset
-def other_repository_b_asset(repository_a_asset):
-    ...
-
-
-def test_repository_b_assets():
-    result = materialize_to_memory(
-        [the_source, repository_b_asset, other_repository_b_asset]
-    )
-    assert result.success
-    ...
-
-
-# end_materialize_source_asset
 
 # start_materialize_resources
 from dagster import asset, resource, materialize_to_memory
