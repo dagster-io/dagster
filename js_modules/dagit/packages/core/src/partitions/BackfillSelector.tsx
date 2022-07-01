@@ -155,7 +155,8 @@ export const BackfillPartitionSelector: React.FC<{
   );
   const setSelected = (selection: string[]) => {
     const selectionSet = new Set(selection);
-    // first order the partition names
+    // first order the partition names, according to the order given by partition names, which
+    // is the order determined from the partition definition set in user code
     _setSelected(partitionNames.filter((name) => selectionSet.has(name)));
     if (options.fromFailure && selection.filter((x) => !isFailed(x)).length > 0) {
       setOptions({...options, fromFailure: false});
