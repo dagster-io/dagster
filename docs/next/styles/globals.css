@@ -534,6 +534,10 @@ dt > a.reference.internal {
   margin: 0;
 }
 
+button {
+  text-align: left;
+}
+
 /*.article-list li {
   list
 }*/
