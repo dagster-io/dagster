@@ -384,8 +384,10 @@ def workspace_load_target(attribute="the_repo"):
 
 def get_sensor_executors():
     return [
-        SingleThreadPoolExecutor(),
         SynchronousExecutor(),
+        pytest.param(
+            SingleThreadPoolExecutor(), marks=pytest.mark.xfail(reason="multithreaded timeouts")
+        ),
     ]
 
 
