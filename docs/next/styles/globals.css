@@ -526,3 +526,7 @@ dt > a.reference.internal {
   color: theme("colors.primary.900");
   font-weight: 500;
 }
+
+button {
+  text-align: left;
+}
