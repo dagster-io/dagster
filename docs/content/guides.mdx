@@ -1,16 +1,291 @@
+---
+title: "Guides | Dagster Docs"
+---
+
 # Guides
 
-## Dagster Guides
+## Best practices
 
-This section explains how to accomplish common tasks in Dagster and showcases Dagster's experimental features.
+<div class="category-container">
+	<div class="category-inner-container">
+		<ul class="article-list">
+			<li>
+				<a href="/guides/dagster/enriching-with-software-defined-assets">Organzing your project</a>
+			</li>
+			<li>
+				<a href="/guides/dagster/software-defined-assets">TBD: More best practices</a>
+			</li>
+			<li>
+				<a href="/guides/dagster/software-defined-assets">TBD: More best practices</a>
+			</li>
+			<li>
+				<a href="/guides/dagster/software-defined-assets">TBD: More best practices</a>
+			</li>
+		</ul>
+	</div>
+</div>
 
-| Name                                                                                           | Description                                                                                                                   |   |
-| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | - |
-| [Upgrading to Software-Defined Assets](/guides/dagster/enriching-with-software-defined-assets) | This guide describes how to enrich what you've built in Dagster with software-defined assets.                                 |   |
-| [Versioning and Memoization](/guides/dagster/memoization)                                      | This guide describes how to use Dagster's versioning and memoization features. <Experimental />                               |   |
-| [Software-Defined Assets with Pandas and PySpark](/guides/dagster/software-defined-assets)     | This guide offers a fast introduction to software-defined assets, with Pandas and PySpark.                                    |   |
-| [Run Attribution](/guides/dagster/run-attribution)                                             | This guide describes how to perform Run Attribution by using a Custom Run Coordinator <Experimental />                        |   |
-| [Migrating to Graphs, Jobs, and Ops](/guides/dagster/graph_job_op)                             | This guide describes how to migrate to the Graph, Job, and Op APIs from the legacy Dagster APIs (Solids and Pipelines).       |   |
-| [Re-execution](/guides/dagster/re-execution)                                                   | This guide describes how to re-execute a job within Dagit and using Dagster's APIs.                                           |   |
-| [Fully-Featured Example Project](/guides/dagster/example_project)                              | This guide describes the Hacker News example project, which takes advantage of many of Dagster's features                     |   |
-| [Validating Data with Dagster Type Factories](/guides/dagster/dagster_type_factories)          | This guide illustrates the use of a Dagster Type factory to validate Pandas dataframes using the third-party library Pandera. |   |
+---
+
+## Assets
+
+<div class="category-container">
+	<div class="category-inner-container">
+		<ul class="article-list">
+			<li>
+				<a href="/guides/dagster/enriching-with-software-defined-assets">Upgrading to Software-defined assets</a>
+			</li>
+			<li>
+				<a href="/guides/assets/defining-an-asset">Defining Software-defined assets</a>
+			</li>
+			<li>
+				<a href="/guides/assets/asset-graph">Building graphs of assets</a>
+			</li>
+			<li>
+				<a href="/guides/assets/testing-assets">Testing Software-defined assets</a>
+			</li>
+			<li>
+				<a href="/guides/dagster/software-defined-assets">Software-defined assets with Pandas and PySpark</a>
+			</li>
+			<li>
+				<a href="/guides/dagster/software-defined-assets">Choosing asset keys</a>
+			</li>
+		</ul>
+	</div>
+</div>
+
+---
+
+## Ops and jobs
+
+<div class="category-container">
+	<div class="category-inner-container">
+		<ul class="article-list">
+			<li>
+				<a href="/guides/dagster/graph_job_op">Migrating to graphs, jobs, and ops</a>
+			</li>
+			<li>
+				<a href="/guides/ops-jobs/single-op-job">Defining and executing a single op job</a>
+			</li>
+			<li>
+				<a href="/guides/ops-jobs/connecting-ops">Connecting ops in jobs</a>
+			</li>
+			<li>
+				<a href="/guides/ops-jobs/testable">Testing ops and jobs</a>
+			</li>
+		</ul>
+	</div>
+</div>
+
+---
+
+## Integrations
+
+<div class="category-container">
+	<div class="category-inner-container">
+		<ul class="article-list">
+			<li>
+				<a href="/integrations/airflow">Integrating with Airflow</a>
+			</li>
+			<li>
+				<a href="/integrations/dagstermill">Integrating with Dagstermill</a>
+			</li>
+			<li>
+				<a href="/integrations/dbt">Integrating with dbt</a>
+			</li>
+			<li>
+				<a href="/integrations/great-expectations">Integrating with Great Expectations</a>
+			</li>
+			<li>
+				<a href="/integrations/pandas">Integrating with Pandas</a>
+			</li>
+			<li>
+				<a href="/integrations/pandera">Integrating with Pandera</a>
+			</li>
+			<li>
+				<a href="/integrations/spark">Integrating with Spark</a>
+			</li>
+		</ul>
+	</div>
+</div>
+
+---
+
+## Deployment
+
+### Open source
+
+<div class="category-container">
+	<div class="category-inner-container">
+		<ul class="article-list">
+			<li>
+				<a href="/guides/deployment/aws">Amazon Web Services (AWS)</a>
+			</li>
+			<li>
+				<a href="/guides/deployment/celery">Celery</a>
+			</li>
+			<li>
+				<a href="/guides/deployment/dagster-daemon">Dagster Daemon</a>
+			</li>
+			<li>
+				<a href="/guides/deployment/dask">Dask</a>
+			</li>
+			<li>
+				<a href="/guides/deployment/docker">Docker</a>
+			</li>
+			<li>
+				<a href="/guides/deployment/gcp">Google Cloud Platform (GCP)</a>
+			</li>
+			<li>
+				<a href="/guides/deployment/kubernetes">Kubernetes</a>
+			</li>
+		</ul>
+	</div>
+</div>
+
+### Cloud
+
+<div class="category-container">
+	<div class="category-inner-container">
+		<ul class="article-list">
+			<li>
+				<a href="/guides/cloud">Managing deployments</a>
+			</li>
+			<li>
+				<a href="/integrations/dagstermill">TBD: Cloud deployment guide</a>
+			</li>
+			<li>
+				<a href="/integrations/dbt">TBD: Cloud deployment guide</a>
+			</li>
+			<li>
+				<a href="/integrations/great-expectations">TBD: Cloud deployment guide</a>
+			</li>
+			<li>
+				<a href="/integrations/pandas">TBD: Cloud deployment guide</a>
+			</li>
+		</ul>
+	</div>
+</div>
+
+---
+
+## Cloud
+
+### General
+
+<div class="category-container">
+	<div class="category-inner-container">
+		<ul class="article-list">
+			<li>
+				<a href="/guides/cloud/authentication">Dagster Cloud architecture</a>
+			</li>
+			<li>
+				<a href="/guides/cloud/authentication">Adding code to Dagster Cloud</a>
+			</li>
+			<li>
+				<a href="/guides/cloud/authentication">Setting up CI/CD</a>
+			</li>
+			<li>
+				<a href="/guides/cloud/authentication">Developing and testing Dagster jobs</a>
+			</li>
+			<li>
+				<a href="/guides/cloud/authentication">Using code previews with Dagster jobs</a>
+			</li>
+			<li>
+				<a href="/guides/cloud/authentication">Using the Dagster Cloud CLI</a>
+			</li>
+			<li>
+				<a href="/guides/cloud/authentication">Setting up monitoring and alerting</a>
+			</li>
+		</ul>
+	</div>
+</div>
+
+### Agents
+
+<div class="category-container">
+	<div class="category-inner-container">
+		<ul class="article-list">
+			<li>
+				<a href="/guides/cloud/authentication">Local agents</a>
+			</li>
+			<li>
+				<a href="/guides/cloud/authentication">Kubernetes agents</a>
+			</li>
+			<li>
+				<a href="/guides/cloud/authentication">ECS agents</a>
+			</li>
+			<li>
+				<a href="/guides/cloud/authentication">Docker agents</a>
+			</li>
+			<li>
+				<a href="/guides/cloud/authentication">Customizing agent settings</a>
+			</li>
+			<li>
+				<a href="/guides/cloud/authentication">Running multiple agents</a> <Experimental />
+			</li>
+		</ul>
+	</div>
+</div>
+
+### Authentication
+
+<div class="category-container">
+	<div class="category-inner-container">
+		<ul class="article-list">
+			<li>
+				<a href="/guides/cloud/authentication">Azure Active Directory single sign-on</a>
+			</li>
+			<li>
+				<a href="/guides/cloud/authentication">Google Workspace single sign-on</a>
+			</li>
+			<li>
+				<a href="/guides/cloud/authentication">OneLogin single sign-on</a>
+			</li>
+			<li>
+				<a href="/guides/cloud/authentication">Okta single sign-on</a>
+			</li>
+			<li>
+				<a href="/guides/cloud/authentication">PingOne single sign-on</a>
+			</li>
+		</ul>
+	</div>
+</div>
+
+### User management
+
+<div class="category-container">
+	<div class="category-inner-container">
+		<ul class="article-list">
+			<li>
+				<a href="/guides/cloud/authentication">Managing users</a>
+			</li>
+			<li>
+				<a href="/guides/cloud/authentication">Using role-based access control</a>
+			</li>
+		</ul>
+	</div>
+</div>
+
+---
+
+## Other guides
+
+<div class="category-container">
+	<div class="category-inner-container">
+		<ul class="article-list">
+			<li>
+				<a href="/guides/dagster/run-attribution">Performing run attribution</a>
+			</li>
+			<li>
+				<a href="/guides/dagster/re-execution">Re-executing jobs using Dagit and Dagster APIs</a>
+			</li>
+			<li>
+				<a href="/guides/dagster/dagster_type_factories">Validating data with Dagster type factories</a>
+			</li>
+			<li>
+				<a href="/guides/dagster/memoization">Using versioning and memoization</a> <Experimental />
+			</li>
+		</ul>
+	</div>
+</div>
