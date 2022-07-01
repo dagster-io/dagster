@@ -213,7 +213,7 @@ def get_inputs_field(
         elif name in direct_inputs and not has_upstream:
             input_field = None
         elif inp.root_manager_key and not has_upstream:
-            input_field = get_input_manager_input_field(solid, inp, inp.root_manager_key, resource_defs)
+            input_field = get_input_manager_input_field(solid, inp, resource_defs)
         elif inp.dagster_type.loader and not has_upstream:
             input_field = get_type_loader_input_field(solid, name, inp)
         else:
@@ -248,7 +248,6 @@ def input_has_upstream(
 def get_input_manager_input_field(
     solid: Node,
     input_def: InputDefinition,
-    root_manager_key: str,
     resource_defs: Mapping[str, ResourceDefinition],
 ) -> Optional[Field]:
     if input_def.root_manager_key:

@@ -336,7 +336,7 @@ class FromRootInputManager(
         from ..resolve_versions import check_valid_version, resolve_config_version
 
         solid = pipeline_def.get_solid(self.solid_handle)
-        input_manager_key = check.not_none(
+        input_manager_key: str = check.not_none(
             solid.input_def_named(self.input_name).root_manager_key
             if solid.input_def_named(self.input_name).root_manager_key
             else solid.input_def_named(self.input_name).input_manager_key
@@ -378,7 +378,7 @@ class FromRootInputManager(
     def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
         input_def = pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
 
-        input_manager_key = check.not_none(
+        input_manager_key: str = check.not_none(
             input_def.root_manager_key
             if input_def.root_manager_key
             else input_def.input_manager_key

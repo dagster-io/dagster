@@ -404,7 +404,7 @@ class AssetLayer:
     _dependency_node_handles_by_asset_key: Mapping[AssetKey, Set[NodeHandle]]
     _source_assets_by_key: Mapping[AssetKey, "SourceAsset"]
     _asset_defs_by_key: Mapping[AssetKey, "AssetsDefinition"]
-    _asset_defs_by_node_handle: Mapping[NodeHandle, Set[AssetsDefinition]]
+    _asset_defs_by_node_handle: Mapping[NodeHandle, Set["AssetsDefinition"]]
     _io_manager_keys_by_asset_key: Mapping[AssetKey, str]
 
     def __init__(
