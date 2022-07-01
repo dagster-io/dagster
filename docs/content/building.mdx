@@ -1,89 +1,286 @@
-# Concepts
+---
+title: "Building with Dagster | Dagster Docs"
+---
 
-Dagster is a data orchestrator. It lets you define jobs in terms of the data flow between logical components called ops. These jobs can be developed locally and run anywhere.
+# Building with Dagster
 
-## How to use the Concepts section
+## Best practices
 
-Each page in this section contains:
+<div class="category-container">
+  <div class="category-inner-container">
+    <ul class="article-list">
+      <li>
+        <a href="/guides/dagster/enriching-with-software-defined-assets">Organzing your project</a>
+      </li>
+      <li>
+        <a href="/guides/dagster/software-defined-assets">TBD: More best practices</a>
+      </li>
+      <li>
+        <a href="/guides/dagster/software-defined-assets">TBD: More best practices</a>
+      </li>
+      <li>
+        <a href="/guides/dagster/software-defined-assets">TBD: More best practices</a>
+      </li>
+    </ul>
+  </div>
+</div>
 
-- **Overview**: Description of the concept.
-- **Relevant APIs**: Index of top-level Dagster APIs that are relevant to the concept.
-- **Examples**: Easy-to-copy code snippets for the concept.
-- **Patterns**: A list of advanced patterns to use and anti-patterns to avoid with the concept.
+---
 
-## Sections
+## Understanding Dagster
 
-<LinkGrid>
-  <LinkGridItem title="Assets" href="/concepts/assets/software-defined-assets">
-    Assets are data objects that you produce during a run. This section walks
-    you through how to inform Dagster about these assets so that they can be
-    tracked over time.
-  </LinkGridItem>
-  <LinkGridItem
-    title="Ops, Jobs, and Graphs"
-    href="/concepts/ops-jobs-graphs/ops"
-  >
-    Ops, Jobs, and Graphs are the building blocks of Dagster code. This section
-    covers how to define and use both ops and jobs.
-  </LinkGridItem>
-  <LinkGridItem
-    title="Schedules, Sensors, and Partitions"
-    href="/concepts/partitions-schedules-sensors/schedules"
-  >
-    Schedulers can launch runs on a fixed interval, while sensors allow you to
-    run based on any external state change. This section demonstrates how to
-    define them and their convenient capabilities like partitioning and
-    backfilling.
-  </LinkGridItem>
-  <LinkGridItem
-    title="IO Management"
-    href="/concepts/io-management/io-managers"
-  >
-    IO Managers are user-provided objects that store op outputs and load them as
-    inputs to downstream ops. This section explains how Dagster thinks about IO
-    management and shows how to define and use IO managers and other IO-related
-    features.
-  </LinkGridItem>
-  <LinkGridItem
-    title="Configuration"
-    href="/concepts/configuration/config-schema"
-  >
-    Dagster provides a configuration system that allows you to document,
-    schematize, and error-check your configuration. This section demonstrates
-    how configurations work with different Dagster entities.
-  </LinkGridItem>
-  <LinkGridItem
-    title="Repositories and Workspaces"
-    href="/concepts/repositories-workspaces/repositories"
-  >
-    A workspace is a collection of user-defined repositories and information
-    about where to find them. Dagster tools, like Dagit and the Dagster CLI, use
-    workspaces to load user code. This section shows how to define and when to
-    use repositories and workspaces.
-  </LinkGridItem>
-  <LinkGridItem title="Resources" href="/concepts/resources">
-    Resources enable you to separate logic from its heavyweight external
-    dependencies. This makes testing and developing data jobs possible in
-    various environments.
-  </LinkGridItem>
-  <LinkGridItem title="Dagit & GraphQL API" href="/concepts/dagit/dagit">
-    Dagit is a web-based interface for viewing and interacting with Dagster
-    objects. This section walks you through Dagit's functionalities and the
-    GraphQL API used to interact with Dagster programatically.
-  </LinkGridItem>
-  <LinkGridItem title="Dagster Types" href="/concepts/types">
-    Dagster includes gradual, opt-in typing for the inputs and outputs of ops.
-    This section explains how to define, use, and test types in Dagster.
-  </LinkGridItem>
-  <LinkGridItem title="Logging" href="/concepts/logging/loggers">
-    Dagster includes a rich and extensible logging system. This section
-    showcases Dagster's built-in logger and shows how you can customize loggers
-    to fit your logging and monitoring infrastructure.
-  </LinkGridItem>
-  <LinkGridItem title="Testing" href="/concepts/testing">
-    Dagster enables you to build testable and maintainable data applications.
-    This section shows that Dagster enables you to unit-test your data jobs,
-    separate business logic from external dependencies, and run data quality
-    tests.
-  </LinkGridItem>
-</LinkGrid>
+### Building blocks
+
+Basics - these are required to do anything in Dagster.
+
+#### Assets
+
+<div class="category-container">
+  <div class="category-inner-container">
+    <ul class="article-list">
+      <li>
+        <a href="/guides/dagster/enriching-with-software-defined-assets">Upgrading to Software-defined assets</a>
+      </li>
+      <li>
+        <a href="/guides/assets/defining-an-asset">Defining Software-defined assets</a>
+      </li>
+      <li>
+        <a href="/guides/assets/asset-graph">Building graphs of assets</a>
+      </li>
+      <li>
+        <a href="/guides/assets/testing-assets">Testing Software-defined assets</a>
+      </li>
+      <li>
+        <a href="/guides/dagster/software-defined-assets">Software-defined assets with Pandas and PySpark</a>
+      </li>
+      <li>
+        <a href="/guides/dagster/software-defined-assets">Choosing asset keys</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+#### Ops and jobs
+
+<div class="category-container">
+  <div class="category-inner-container">
+    <ul class="article-list">
+      <li>
+        <a href="/guides/dagster/graph_job_op">Migrating to graphs, jobs, and ops</a>
+      </li>
+      <li>
+        <a href="/guides/ops-jobs/single-op-job">Defining and executing a single op job</a>
+      </li>
+      <li>
+        <a href="/guides/ops-jobs/connecting-ops">Connecting ops in jobs</a>
+      </li>
+      <li>
+        <a href="/guides/ops-jobs/testable">Testing ops and jobs</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+### Production
+
+Does things with the Building Blocks - produces data or other assets.
+
+<div class="category-container">
+  <div class="category-inner-container">
+    <ul class="article-list">
+      <li>
+        <a href="/guides/dagster/graph_job_op">Schedules</a>
+      </li>
+      <li>
+        <a href="/guides/ops-jobs/single-op-job">Sensors</a>
+      </li>
+      <li>
+        <a href="/guides/ops-jobs/connecting-ops">Partitions</a>
+      </li>
+      <li>
+        <a href="/guides/ops-jobs/testable">Backfills</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+### Customization
+
+Customizes inputs, outputs, behavior (?) of jobs and Building Blocks.
+
+<div class="category-container">
+  <div class="category-inner-container">
+    <ul class="article-list">
+      <li>
+        <a href="/guides/dagster/graph_job_op">IO managers</a>
+      </li>
+      <li>
+        <a href="/guides/ops-jobs/single-op-job">Resources</a>
+      </li>
+      <li>
+        <a href="/guides/ops-jobs/connecting-ops">Configuration</a>
+      </li>
+      <li>
+        <a href="/guides/ops-jobs/testable">Dagster types</a>
+      </li>
+      <li>
+        <a href="/guides/ops-jobs/testable">Logging</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+### Organization
+
+Buckets Building Blocks and other items like jobs, schedules, etc.
+
+<div class="category-container">
+  <div class="category-inner-container">
+    <ul class="article-list">
+      <li>
+        <a href="/guides/dagster/graph_job_op">Workspaces</a>
+      </li>
+      <li>
+        <a href="/guides/ops-jobs/single-op-job">Repositories</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+### Test and log
+
+Testing and logging.
+
+<div class="category-container">
+  <div class="category-inner-container">
+    <ul class="article-list">
+      <li>
+        <a href="/guides/dagster/graph_job_op">Logging</a>
+      </li>
+      <li>
+        <a href="/guides/ops-jobs/single-op-job">Testing</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+---
+
+## Using Dagit
+
+<div class="category-container">
+  <div class="category-inner-container">
+    <ul class="article-list">
+      <li>
+        <a href="/building/understanding-dagster/dagit/dagit">Dagit UI</a>
+      </li>
+      <li>
+        <a href="/building/understanding-dagster/dagit/graphql">GraphQL API</a>
+      </li>
+      <li>
+        <a href="/building/understanding-dagster/dagit/graphql-client">GraphQL Python Client</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+---
+
+## Using Dagster Cloud
+
+### Developing and testing
+
+<div class="category-container">
+  <div class="category-inner-container">
+    <ul class="article-list">
+      <li>
+        <a href="/guides/cloud/authentication">Dagster Cloud architecture</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Adding code to Dagster Cloud</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Setting up CI/CD</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Developing and testing Dagster jobs</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Using code previews with Dagster jobs</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Using the Dagster Cloud CLI</a>
+      </li>
+      
+    </ul>
+  </div>
+</div>
+
+### Adding an agent
+
+<div class="category-container">
+  <div class="category-inner-container">
+    <ul class="article-list">
+      <li>
+        <a href="/guides/cloud/authentication">Local agents</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Kubernetes agents</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">ECS agents</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Docker agents</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Customizing agent settings</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Running multiple agents</a> <Experimental />
+      </li>
+    </ul>
+  </div>
+</div>
+
+### Configuring authentication
+
+<div class="category-container">
+  <div class="category-inner-container">
+    <ul class="article-list">
+      <li>
+        <a href="/guides/cloud/authentication">Azure Active Directory single sign-on</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Google Workspace single sign-on</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">OneLogin single sign-on</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Okta single sign-on</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">PingOne single sign-on</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+### Managing instances and users
+
+<div class="category-container">
+  <div class="category-inner-container">
+    <ul class="article-list">
+      <li>
+        <a href="/guides/cloud/authentication">Setting up monitoring and alerting</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Managing users</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Using role-based access control</a>
+      </li>
+    </ul>
+  </div>
+</div>
