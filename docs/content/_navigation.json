@@ -40,7 +40,6 @@
     "children": [
       {
         "title": "Best practices",
-        "path": "/guides/best-practices",
         "children": [
           {
             "title": "Organizing a project",
@@ -50,77 +49,31 @@
       },
       {
         "title": "Understanding Dagster",
-        "path": "/building/understanding-dagster",
         "children": [
           {
-            "title": "Assets",
-            "path": "/building/understanding-dagster/assets/"
+            "title": "Building blocks",
+            "path": "/building#building-blocks"
           },
           {
-            "title": "Ops",
-            "path": "/building/understanding-dagster/ops-jobs-graphs/ops"
+            "title": "Production",
+            "path": "/building#production"
           },
           {
-            "title": "Graphs",
-            "path": "/building/understanding-dagster/ops-jobs-graphs/graphs"
+            "title": "Customization",
+            "path": "/building#customization"
           },
           {
-            "title": "Jobs",
-            "path": "/building/understanding-dagster/ops-jobs-graphs/jobs"
+            "title": "Organization",
+            "path": "/building#organization"
           },
           {
-            "title": "Schedules",
-            "path": "/building/understanding-dagster/partitions-schedules-sensors/schedules"
-          },
-          {
-            "title": "Sensors",
-            "path": "/building/understanding-dagster/partitions-schedules-sensors/sensors"
-          },
-          {
-            "title": "Partitions",
-            "path": "/building/understanding-dagster/partitions-schedules-sensors/partitions"
-          },
-          {
-            "title": "Backfills",
-            "path": "/building/understanding-dagster/partitions-schedules-sensors/backfills"
-          },
-          {
-            "title": "IO Managers",
-            "path": "/building/understanding-dagster/io-management/io-managers"
-          },
-          {
-            "title": "Configuration",
-            "path": "/building/understanding-dagster/configuration"
-          },
-          {
-            "title": "Repositories",
-            "path": "/building/understanding-dagster/repositories-workspaces/repositories"
-          },
-          {
-            "title": "Workspaces",
-            "path": "/building/understanding-dagster/repositories-workspaces/workspaces"
-          },
-          {
-            "title": "Resources",
-            "path": "/building/understanding-dagster/resources"
-          },
-          {
-            "title": "Dagster Types",
-            "path": "/building/understanding-dagster/types"
-          },
-          {
-            "title": "Logging",
-            "path": "/building/understanding-dagster/logging/loggers"
-          },
-          {
-            "title": "Testing",
-            "path": "/building/understanding-dagster/testing"
+            "title": "Test and log",
+            "path": "/building#test-and-log"
           }
         ]
       },
       {
         "title": "Using Dagit",
-        "path": "todo",
         "children": [
           {
             "title": "Dagit UI",
@@ -138,19 +91,22 @@
       },
       {
         "title": "Using Dagster Cloud",
-        "path": "/building/dagster-cloud",
         "children": [
           {
-            "title": "Adding an agent",
-            "path": "todo"
+            "title": "Developing and testing",
+            "path": "/building#developing-and-testing"
           },
           {
-            "title": "Adding code locations",
-            "path": "todo"
+            "title": "Adding an agent",
+            "path": "/building#adding-an-agent"
           },
           {
             "title": "Configuring authentication",
-            "path": "todo"
+            "path": "/building#configuring-authentication"
+          },
+          {
+            "title": "Managing instances and users",
+            "path": "/building#managing-instances-and-users"
           }
         ]
       }
@@ -162,20 +118,20 @@
     "icon": "Grid",
     "children": [
       {
+        "title": "Azure",
+        "path": "/_apidocs/libraries/dagster-azure"
+      },
+      {
+        "title": "Amazon Web Services (AWS)",
+        "path": "/_apidocs/libraries/dagster-aws"
+      },
+      {
         "title": "dbt",
         "path": "/integrations/dbt"
       },
       {
-        "title": "Airflow",
-        "path": "/integrations/airflow"
-      },
-      {
-        "title": "Great Expectations",
-        "path": "/integrations/great-expectations"
-      },
-      {
-        "title": "PySpark",
-        "path": "/integrations/spark"
+        "title": "Google Cloud Platform (GCP)",
+        "path": "/_apidocs/libraries/dagster-gcp"
       },
       {
         "title": "Pandas",
@@ -186,8 +142,29 @@
         "path": "/integrations/pandera"
       },
       {
-        "title": "Jupyter/Papermill",
-        "path": "/integrations/dagstermill"
+        "title": "Guides",
+        "children": [  
+          {
+            "title": "Airflow",
+            "path": "/integrations/airflow"
+          },
+          {
+            "title": "Great Expectations",
+            "path": "/integrations/great-expectations"
+          },
+          {
+            "title": "PySpark",
+            "path": "/integrations/spark"
+          },
+          {
+            "title": "Jupyter/Papermill",
+            "path": "/integrations/dagstermill"
+          }
+        ]
+      },
+      {
+      "title": "All integrations",
+      "path": "/integrations#libraries"
       }
     ]
   },
@@ -492,12 +469,14 @@
       },
       {
         "title": "Slack",
-        "path": "/community/contributing",
+        "path": "https://dagster-slackin.herokuapp.com/",
+        "isExternalLink": true,
         "isUnversioned": true
       },
       {
         "title": "GitHub",
         "path": "https://github.com/dagster-io/dagster",
+        "isExternalLink": true,
         "isUnversioned": true
       }
     ]
@@ -505,7 +484,6 @@
   {
     "title": "About",
     "icon": "InfoCircle",
-    "path": "/about/releases",
     "isUnversioned": true,
     "children": [
       {
