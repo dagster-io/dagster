@@ -7,7 +7,7 @@ import React from 'react';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {usePermissions} from '../app/Permissions';
-import {isSourceAsset, LiveData, toGraphId} from '../asset-graph/Utils';
+import {isSourceAsset} from '../asset-graph/Utils';
 import {useLaunchWithTelemetry} from '../launchpad/LaunchRootExecutionButton';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {DagsterTag} from '../runs/RunTag';
@@ -48,11 +48,10 @@ type LaunchAssetsState =
 
 export const LaunchAssetExecutionButton: React.FC<{
   assetKeys: AssetKey[]; // Memoization not required
-  liveDataByNode: LiveData;
   context?: 'all' | 'selected';
   intent?: 'primary' | 'none';
   preferredJobName?: string;
-}> = ({assetKeys, liveDataByNode, preferredJobName, context, intent = 'primary'}) => {
+}> = ({assetKeys, preferredJobName, context, intent = 'primary'}) => {
   const {canLaunchPipelineExecution} = usePermissions();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
@@ -60,12 +59,7 @@ export const LaunchAssetExecutionButton: React.FC<{
   const client = useApolloClient();
 
   const count = assetKeys.length > 1 ? ` (${assetKeys.length})` : '';
-  const isRematerializeForAll = (assetKeys.length
-    ? assetKeys.map((n) => liveDataByNode[toGraphId(n)])
-    : Object.values(liveDataByNode)
-  ).every((e) => !!e?.lastMaterialization);
-
-  const label = `${isRematerializeForAll ? 'Rematerialize' : 'Materialize'}${
+  const label = `Materialize${
     context === 'all' ? ` all${count}` : context === 'selected' ? ` selected${count}` : count
   }`;
 
