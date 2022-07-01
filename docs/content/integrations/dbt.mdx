@@ -5,7 +5,7 @@ description: Dagster can orchestrate dbt models.
 
 # Using dbt with Dagster
 
-This guide explains how you can run a [dbt](https://docs.getdbt.com/docs/introduction) project as part of a Dagster job. This guide focuses on dbt Core, the open-source dbt offering. Dagster also offers an integration with the hosted version of dbt, [dbt Cloud](https://docs.getdbt.com/docs/dbt-cloud/cloud-overview). Check out the [API docs](/\_apidocs/libraries/dagster-dbt#dagster_dbt.dbt_cloud_resource) to learn more.
+This guide explains how you can run a [dbt](https://docs.getdbt.com/docs/introduction) project as part of a Dagster job. This guide focuses on dbt Core, the open-source dbt offering. Dagster also offers an integration with the hosted version of dbt, [dbt Cloud](https://docs.getdbt.com/docs/dbt-cloud/cloud-overview). Check out the [API docs](/_apidocs/libraries/dagster-dbt#dagster_dbt.dbt_cloud_resource) to learn more.
 
 ## What is dbt?
 
@@ -16,6 +16,41 @@ dbt not only runs your data transformations, but also can create data quality te
 ## How does dbt work with Dagster?
 
 Dagster orchestrates dbt alongside _other technologies_, so you can combine dbt with Spark, Python, etc. in a single job. Dagster also provides built-in operational and data observability capabilities, like storing dbt run results longitudinally and sending alerts when a dbt run fails.
+
+## Loading dbt models as Software-Defined Assets
+
+Models defined in a `dbt` project are conceptually very similar to Dagster's Software-Defined Assets.
+
+A Software-Defined Asset includes the following:
+
+An AssetKey, which is a handle for referring to the asset.
+
+A set of upstream asset keys, which refer to assets that the contents of the software-defined asset are derived from.
+
+An op, which is a function responsible for computing the contents of the asset from its upstream dependencies.
+
+There are two ways to load `dbt` models as software-defined assets.
+
+### Loading `dbt` models from a dbt project
+
+### Loading `dbt` models from a dbt manifest.json file
+
+For larger projects, the overhead involved in recompiling your entire project whenever your repository needs to be loaded may become a significant concern. In these cases, it's possible
+
+```python
+import json
+from dagster_dbt import load_assets_from_dbt_manifest
+
+dbt_assets = load_assets_from_dbt_manifest(
+    json.load("path/to/dbt/manifest.json", encoding="utf8"),
+)
+```
+
+Note: you'll need to recompile
+
+## Running dbt commands as Ops in a Graph
+
+todo
 
 `dagster-dbt` is an integration library that provides pre-built resources for using dbt together with Dagster. These are all designed to be configurable for any dbt project.
 
@@ -269,7 +304,7 @@ def my_dbt_job():
 
 ## Advanced Configuration
 
-For full documentation on all available config, [visit the API docs for dagster-dbt](/\_apidocs/libraries/dagster_dbt).
+For full documentation on all available config, [visit the API docs for dagster-dbt](/_apidocs/libraries/dagster_dbt).
 
 **Generating Asset Materializations when you run your dbt project**
 
