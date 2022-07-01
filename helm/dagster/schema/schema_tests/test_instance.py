@@ -29,6 +29,7 @@ from schema.charts.dagster.subschema.daemon import (
 )
 from schema.charts.dagster.subschema.postgresql import PostgreSQL, Service
 from schema.charts.dagster.subschema.python_logs import PythonLogs
+from schema.charts.dagster.subschema.retention import Retention, TickRetention, TickRetentionByType
 from schema.charts.dagster.subschema.run_launcher import (
     CeleryK8sRunLauncherConfig,
     K8sRunLauncherConfig,
@@ -36,7 +37,6 @@ from schema.charts.dagster.subschema.run_launcher import (
     RunLauncherConfig,
     RunLauncherType,
 )
-from schema.charts.dagster.subschema.retention import Retention, TickRetention, TickRetentionByType
 from schema.charts.dagster.subschema.telemetry import Telemetry
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.utils.helm_template import HelmTemplate
@@ -679,7 +679,7 @@ def test_retention(template: HelmTemplate):
                     success=30,
                     failed=30,
                 ),
-            )
+            ),
         )
     )
 
