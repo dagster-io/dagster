@@ -526,3 +526,14 @@ dt > a.reference.internal {
   color: theme("colors.primary.900");
   font-weight: 500;
 }
+
+.article-list {
+  column-count: 2; 
+  column-gap: 20px; 
+  padding: 0; 
+  margin: 0;
+}
+
+/*.article-list li {
+  list
+}*/
