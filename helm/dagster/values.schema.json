@@ -2501,8 +2501,8 @@
                     "title": "Success",
                     "type": "integer"
                 },
-                "failed": {
-                    "title": "Failed",
+                "failure": {
+                    "title": "Failure",
                     "type": "integer"
                 },
                 "started": {

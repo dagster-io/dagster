@@ -1148,7 +1148,7 @@ retention:
     purgeAfterDays: -1
   sensor:
     purgeAfterDays:
-      failed: -1
+      failure: -1
       skipped: 7
       started: -1
       success: -1

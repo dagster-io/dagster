@@ -677,7 +677,7 @@ def test_retention(template: HelmTemplate):
                 purgeAfterDays=TickRetentionByType(
                     skipped=7,
                     success=30,
-                    failed=30,
+                    failure=30,
                 ),
             ),
         )
