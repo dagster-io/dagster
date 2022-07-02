@@ -1,6 +1,7 @@
 import os
 import random
 import string
+import sys
 import tempfile
 import time
 from contextlib import contextmanager
@@ -384,9 +385,15 @@ def workspace_load_target(attribute="the_repo"):
 
 def get_sensor_executors():
     return [
-        SynchronousExecutor(),
         pytest.param(
-            SingleThreadPoolExecutor(), marks=pytest.mark.xfail(reason="multithreaded timeouts")
+            SynchronousExecutor(),
+            marks=pytest.mark.skipif(sys.version_info.minor != 9, reason="multithreaded timeouts"),
+            id="synchronous",
+        ),
+        pytest.param(
+            SingleThreadPoolExecutor(),
+            marks=pytest.mark.skipif(sys.version_info.minor != 9, reason="multithreaded timeouts"),
+            id="threadpool",
         ),
     ]
 
