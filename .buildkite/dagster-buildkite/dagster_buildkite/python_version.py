@@ -26,7 +26,11 @@ class AvailablePythonVersion(str, Enum):
 
         branch_name = safe_getenv("BUILDKITE_BRANCH")
         commit_message = safe_getenv("BUILDKITE_MESSAGE")
-        if branch_name == "master" or is_release_branch(branch_name):
+        if (
+            branch_name == "master"
+            or is_release_branch(branch_name)
+            or branch_name == "prha/actually_test"
+        ):
             return cls.get_all()
         else:
 
