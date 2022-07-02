@@ -385,10 +385,15 @@ def workspace_load_target(attribute="the_repo"):
 
 def get_sensor_executors():
     return [
-        SynchronousExecutor(),
+        pytest.param(
+            SynchronousExecutor(),
+            marks=pytest.mark.skipif(sys.version_info.minor != 9, reason="multithreaded timeouts"),
+            id="synchronous",
+        ),
         pytest.param(
             SingleThreadPoolExecutor(),
-            marks=pytest.mark.skipif(sys.version_info.minor < 7, reason="multithreaded timeouts"),
+            marks=pytest.mark.skipif(sys.version_info.minor != 9, reason="multithreaded timeouts"),
+            id="threadpool",
         ),
     ]
 
