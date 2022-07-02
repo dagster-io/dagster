@@ -6,7 +6,7 @@ from pydantic import BaseModel, Extra
 class TickRetentionByType(BaseModel):
     skipped: Optional[int]
     success: Optional[int]
-    failure: Optional[int]
+    failed: Optional[int]
     started: Optional[int]
 
     class Config:

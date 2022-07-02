@@ -1145,9 +1145,9 @@ serviceAccount:
 
 retention:
   schedule:
-    purge_after_days: -1
+    purgeAfterDays: -1
   sensor:
-    purge_after_days:
+    purgeAfterDays:
       failed: -1
       skipped: 7
       started: -1
