@@ -1,6 +1,7 @@
 import os
 import random
 import string
+import sys
 import tempfile
 import time
 from contextlib import contextmanager
@@ -386,7 +387,8 @@ def get_sensor_executors():
     return [
         SynchronousExecutor(),
         pytest.param(
-            SingleThreadPoolExecutor(), marks=pytest.mark.xfail(reason="multithreaded timeouts")
+            SingleThreadPoolExecutor(),
+            marks=pytest.mark.skipif(sys.version_info.minor < 7, reason="multithreaded timeouts"),
         ),
     ]
 
