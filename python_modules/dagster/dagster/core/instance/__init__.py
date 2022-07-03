@@ -1611,7 +1611,6 @@ class DagsterInstance:
         from dagster.core.events import DagsterEvent, DagsterEventType
 
         check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
-        
         message = check.opt_str_param(
             message,
             "message",
