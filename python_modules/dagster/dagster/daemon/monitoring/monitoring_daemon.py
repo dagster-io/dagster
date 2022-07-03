@@ -42,7 +42,7 @@ def count_resume_run_attempts(instance: DagsterInstance, run_id: str):
 def monitor_started_run(instance: DagsterInstance, workspace, run, logger):
     check.invariant(run.status == PipelineRunStatus.STARTED)
     check_health_result = instance.run_launcher.check_run_worker_health(run)
-    if check_health_result.status != WorkerStatus.RUNNING:
+    if check_health_result.status not in [WorkerStatus.RUNNING, WorkerStatus.SUCCESS]:
         num_prev_attempts = count_resume_run_attempts(instance, run.run_id)
         if num_prev_attempts < instance.run_monitoring_max_resume_run_attempts:
             msg = (
@@ -61,7 +61,7 @@ def monitor_started_run(instance: DagsterInstance, workspace, run, logger):
             if instance.run_launcher.supports_resume_run:
                 msg = (
                     f"Detected run worker status {check_health_result}. Marking run {run.run_id} as "
-                    "failed, because it has surpassed the configured maximum attempts to resume the run: {max_resume_run_attempts}."
+                    f"failed, because it has surpassed the configured maximum attempts to resume the run: {max_resume_run_attempts}."
                 )
             else:
                 msg = (
