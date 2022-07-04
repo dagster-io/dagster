@@ -9,6 +9,7 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    TypeVar,
     Union,
     cast,
 )
@@ -240,9 +241,11 @@ class SolidDefinition(NodeDefinition):
     def iterate_solid_defs(self) -> Iterator["SolidDefinition"]:
         yield self
 
+    T_Handle = TypeVar("T_Handle", bound=Optional[NodeHandle])
+
     def resolve_output_to_origin(
-        self, output_name: str, handle: Optional[NodeHandle]
-    ) -> Tuple[OutputDefinition, Optional[NodeHandle]]:
+        self, output_name: str, handle: T_Handle
+    ) -> Tuple[OutputDefinition, T_Handle]:
         return self.output_def_named(output_name), handle
 
     def get_inputs_must_be_resolved_top_level(

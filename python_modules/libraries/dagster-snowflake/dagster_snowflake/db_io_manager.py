@@ -116,6 +116,9 @@ class DbIOManager(IOManager):
     ) -> TableSlice:
         output_context_metadata = output_context.metadata or {}
 
+        schema: str
+        table: str
+        time_window: Optional[TimeWindow]
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
             table = asset_key_path[-1]
@@ -161,7 +164,7 @@ class DbIOManager(IOManager):
             time_window = None
 
         if time_window is not None:
-            partition_expr = output_context_metadata.get("partition_expr")
+            partition_expr = cast(str, output_context_metadata.get("partition_expr"))
             if partition_expr is None:
                 raise ValueError(
                     f"Asset '{context.asset_key}' has partitions, but no 'partition_expr' metadata "
@@ -179,5 +182,5 @@ class DbIOManager(IOManager):
             schema=schema,
             database=cast(Mapping[str, str], context.resource_config)["database"],
             partition=partition,
-            columns=(context.metadata or {}).get("columns"),
+            columns=(context.metadata or {}).get("columns"),  # type: ignore  # (mypy bug)
         )

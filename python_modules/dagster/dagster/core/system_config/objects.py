@@ -19,11 +19,11 @@ class SolidConfig(
         [
             ("config", object),
             ("inputs", Mapping[str, object]),
-            ("outputs", Optional["OutputsConfig"]),
+            ("outputs", "OutputsConfig"),
         ],
     )
 ):
-    def __new__(cls, config, inputs: Mapping[str, object], outputs: Optional["OutputsConfig"]):
+    def __new__(cls, config, inputs: Mapping[str, object], outputs: "OutputsConfig"):
         return super(SolidConfig, cls).__new__(
             cls,
             config,

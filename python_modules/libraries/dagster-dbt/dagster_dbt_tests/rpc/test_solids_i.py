@@ -27,7 +27,7 @@ from dagster import (
 
 
 def output_for_solid_executed_with_rpc_resource(
-    a_solid, rpc_resource=local_dbt_rpc_resource
+    a_solid: SolidDefinition, rpc_resource=local_dbt_rpc_resource
 ) -> Tuple[SolidExecutionResult, DbtRpcOutput]:
     mode_def = ModeDefinition(resource_defs={"dbt_rpc": rpc_resource})  # use config defaults
     solid_result = execute_solid(a_solid, mode_def)

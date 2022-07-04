@@ -394,7 +394,7 @@ class _PlanBuilder:
                 resolved_output_def, resolved_handle = solid.definition.resolve_output_to_origin(
                     output_def.name, handle
                 )
-                step = self.get_step_by_solid_handle(resolved_handle)
+                step = self.get_step_by_solid_handle(check.not_none(resolved_handle))
                 if isinstance(step, (ExecutionStep, UnresolvedCollectExecutionStep)):
                     step_output_handle: Union[
                         StepOutputHandle, UnresolvedStepOutputHandle

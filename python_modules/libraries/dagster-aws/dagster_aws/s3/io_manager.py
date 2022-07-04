@@ -1,6 +1,6 @@
 import io
 import pickle
-from typing import Union
+from typing import Sequence, Union
 
 from dagster import (
     Field,
@@ -28,10 +28,11 @@ class PickledObjectS3IOManager(MemoizableIOManager):
         self.s3.list_objects(Bucket=self.bucket, Prefix=self.s3_prefix, MaxKeys=1)
 
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
+        path: Sequence[str]
         if context.has_asset_key:
             path = context.get_asset_identifier()
         else:
-            path = ["storage"] + context.get_identifier()
+            path = ["storage", *context.get_identifier()]
 
         return "/".join([self.s3_prefix, *path])
 

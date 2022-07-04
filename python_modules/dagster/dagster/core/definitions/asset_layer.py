@@ -532,7 +532,7 @@ class AssetLayer:
                 inner_output_def, inner_node_handle = assets_def.node_def.resolve_output_to_origin(
                     output_name, handle=node_handle
                 )
-                node_output_handle = NodeOutputHandle(inner_node_handle, inner_output_def.name)
+                node_output_handle = NodeOutputHandle(check.not_none(inner_node_handle), inner_output_def.name)
                 partition_fn = lambda context: {context.partition_key}
                 asset_info_by_output[node_output_handle] = AssetOutputInfo(
                     asset_key,

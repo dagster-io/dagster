@@ -12,6 +12,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    TypeVar,
     Union,
     cast,
 )
@@ -402,9 +403,11 @@ class GraphDefinition(NodeDefinition):
                 return mapping
         check.failed(f"Could not find output mapping {output_name}")
 
+    T_Handle = TypeVar("T_Handle", bound=Optional[NodeHandle])
+
     def resolve_output_to_origin(
-        self, output_name: str, handle: Optional[NodeHandle]
-    ) -> Tuple[OutputDefinition, NodeHandle]:
+        self, output_name: str, handle: Optional[NodeHandle],
+    ) -> Tuple[OutputDefinition, Optional[NodeHandle]]:
         check.str_param(output_name, "output_name")
         check.opt_inst_param(handle, "handle", NodeHandle)
 
@@ -413,7 +416,7 @@ class GraphDefinition(NodeDefinition):
         mapped_solid = self.solid_named(mapping.maps_from.solid_name)
         return mapped_solid.definition.resolve_output_to_origin(
             mapping.maps_from.output_name,
-            NodeHandle(mapped_solid.name, handle),
+            NodeHandle(mapped_solid.name, handle),  # type: ignore
         )
 
     def default_value_for_input(self, input_name: str) -> object:

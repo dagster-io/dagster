@@ -53,7 +53,7 @@ class SnowflakeDbClient(DbClient):
     @staticmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
         with SnowflakeConnection(
-            dict(**(context.resource_config or {}), schema=table_slice.schema), context.log
+                dict(schema=table_slice.schema, **(context.resource_config or {})), context.log  # type: ignore
         ).get_connection() as con:
             con.execute_string(_get_cleanup_statement(table_slice))
 

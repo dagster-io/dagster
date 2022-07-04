@@ -138,7 +138,7 @@ class ExecuteInProcessResult:
 
         # Get output from origin node
         return _filter_outputs_by_handle(
-            self._output_capture, origin_handle, origin_output_def.name
+            self._output_capture, check.not_none(origin_handle), origin_output_def.name
         )
 
     def output_for_node(self, node_str: str, output_name: str = DEFAULT_OUTPUT) -> Any:
@@ -163,7 +163,7 @@ class ExecuteInProcessResult:
 
         # retrieve output value from resolved handle
         return _filter_outputs_by_handle(
-            self._output_capture, origin_handle, origin_output_def.name
+            self._output_capture, check.not_none(origin_handle), origin_output_def.name
         )
 
     def get_job_success_event(self):

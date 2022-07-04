@@ -605,7 +605,9 @@ def int_elem(ddict: Mapping, key: str, additional_message: Optional[str] = None)
     return value
 
 
-def opt_int_elem(ddict: Mapping, key: str, additional_message: Optional[str] = None) -> Optional[int]:
+def opt_int_elem(
+    ddict: Mapping, key: str, additional_message: Optional[str] = None
+) -> Optional[int]:
     dict_param(ddict, "ddict")
     str_param(key, "key")
 
@@ -635,6 +637,7 @@ def inst_param(
         )
     return obj
 
+
 @overload
 def opt_inst_param(
     obj: Optional[T],
@@ -655,6 +658,7 @@ def opt_inst_param(
     additional_message: Optional[str] = None,
 ) -> T:
     ...
+
 
 @overload
 def opt_inst_param(
@@ -1298,7 +1302,9 @@ def str_elem(ddict: Mapping, key: str, additional_message: Optional[str] = None)
     return value
 
 
-def opt_str_elem(ddict: Mapping, key: str, additional_message: Optional[str] = None) -> Optional[str]:
+def opt_str_elem(
+    ddict: Mapping, key: str, additional_message: Optional[str] = None
+) -> Optional[str]:
     dict_param(ddict, "ddict")
     str_param(key, "key")
 
