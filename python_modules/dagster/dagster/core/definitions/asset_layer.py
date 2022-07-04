@@ -532,7 +532,9 @@ class AssetLayer:
                 inner_output_def, inner_node_handle = assets_def.node_def.resolve_output_to_origin(
                     output_name, handle=node_handle
                 )
-                node_output_handle = NodeOutputHandle(check.not_none(inner_node_handle), inner_output_def.name)
+                node_output_handle = NodeOutputHandle(
+                    check.not_none(inner_node_handle), inner_output_def.name
+                )
                 partition_fn = lambda context: {context.partition_key}
                 asset_info_by_output[node_output_handle] = AssetOutputInfo(
                     asset_key,
@@ -609,7 +611,11 @@ class AssetLayer:
     def metadata_for_asset(self, asset_key: AssetKey) -> Optional[MetadataUserInput]:
         if asset_key in self._source_assets_by_key:
             metadata = self._source_assets_by_key[asset_key].metadata
-            return {key: cast(RawMetadataValue, value.value) for key, value in metadata.items()} if metadata else None
+            return (
+                {key: cast(RawMetadataValue, value.value) for key, value in metadata.items()}
+                if metadata
+                else None
+            )
         elif asset_key in self._assets_defs_by_key:
             return self._assets_defs_by_key[asset_key].metadata_by_asset_key[asset_key]
         else:

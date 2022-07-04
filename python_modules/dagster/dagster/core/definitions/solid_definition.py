@@ -122,7 +122,6 @@ class SolidDefinition(NodeDefinition):
     ):
         from .decorators.solid_decorator import DecoratedSolidFunction
 
-
         if isinstance(compute_fn, DecoratedSolidFunction):
             self._compute_fn = compute_fn
         else:

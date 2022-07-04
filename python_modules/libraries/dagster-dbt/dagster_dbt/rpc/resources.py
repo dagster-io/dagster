@@ -636,6 +636,8 @@ def dbt_rpc_sync_resource(
     )
 
 
-local_dbt_rpc_resource = cast(ResourceDefinition, dbt_rpc_resource.configured({"host": "0.0.0.0", "port": 8580}))
+local_dbt_rpc_resource = cast(
+    ResourceDefinition, dbt_rpc_resource.configured({"host": "0.0.0.0", "port": 8580})
+)
 local_dbt_rpc_resource.__doc__ = """This resource defines a dbt RPC client for an RPC server running
 on 0.0.0.0:8580."""

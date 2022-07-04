@@ -70,7 +70,9 @@ if TYPE_CHECKING:
     from .solid_definition import SolidDefinition
 
 
-def _check_node_defs_arg(graph_name: str, node_defs: Optional[Sequence[NodeDefinition]]) -> Sequence[NodeDefinition]:
+def _check_node_defs_arg(
+    graph_name: str, node_defs: Optional[Sequence[NodeDefinition]]
+) -> Sequence[NodeDefinition]:
     node_defs = node_defs or []
 
     _node_defs = check.opt_sequence_param(node_defs, "node_defs")
@@ -406,7 +408,9 @@ class GraphDefinition(NodeDefinition):
     T_Handle = TypeVar("T_Handle", bound=Optional[NodeHandle])
 
     def resolve_output_to_origin(
-        self, output_name: str, handle: Optional[NodeHandle],
+        self,
+        output_name: str,
+        handle: Optional[NodeHandle],
     ) -> Tuple[OutputDefinition, Optional[NodeHandle]]:
         check.str_param(output_name, "output_name")
         check.opt_inst_param(handle, "handle", NodeHandle)
@@ -446,7 +450,9 @@ class GraphDefinition(NodeDefinition):
         return mapped_solid.definition.input_has_default(mapping.maps_to.input_name)
 
     @property
-    def dependencies(self) -> Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]:
+    def dependencies(
+        self,
+    ) -> Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]:
         return self._dependencies
 
     @property
@@ -807,7 +813,9 @@ class SubselectedGraphDefinition(GraphDefinition):
         self,
         parent_graph_def: GraphDefinition,
         node_defs: Optional[Sequence[NodeDefinition]],
-        dependencies: Optional[Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]],
+        dependencies: Optional[
+            Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
+        ],
         input_mappings: Optional[Sequence[InputMapping]],
         output_mappings: Optional[Sequence[OutputMapping]],
     ):
@@ -1113,5 +1121,6 @@ def _config_mapping_with_default_value(
 )
 def default_job_io_manager(init_context: "InitResourceContext"):
     from dagster.core.storage.fs_io_manager import PickledObjectFilesystemIOManager
+
     instance = check.not_none(init_context.instance)
     return PickledObjectFilesystemIOManager(base_dir=instance.storage_directory())

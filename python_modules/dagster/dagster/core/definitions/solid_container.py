@@ -13,7 +13,9 @@ if TYPE_CHECKING:
 
 
 def validate_dependency_dict(
-    dependencies: Optional[Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]],
+    dependencies: Optional[
+        Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
+    ],
 ) -> Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]:
     prelude = (
         'The expected type for "dependencies" is Dict[Union[str, NodeInvocation], Dict[str, '

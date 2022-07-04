@@ -421,7 +421,9 @@ def validate_enum_config(
     return EvaluateValueResult.for_value(config_value)
 
 
-def process_config(config_type: object, config_dict: Mapping[str, object]) -> EvaluateValueResult[Mapping]:
+def process_config(
+    config_type: object, config_dict: Mapping[str, object]
+) -> EvaluateValueResult[Mapping]:
     config_type = resolve_to_config_type(config_type)
     config_type = check.inst(cast(ConfigType, config_type), ConfigType)
     validate_evr = validate_config(config_type, config_dict)

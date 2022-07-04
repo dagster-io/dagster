@@ -1,5 +1,17 @@
 """System-provided config objects and constructors."""
-from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Type, Union, cast
+from typing import (
+    AbstractSet,
+    Any,
+    Dict,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster.core.definitions.configurable import ConfigurableDefinition
@@ -99,13 +111,13 @@ class ResolvedRunConfig(
 ):
     def __new__(
         cls,
-        solids: Optional[Mapping[str, SolidConfig]]=None,
-        execution: Optional["ExecutionConfig"]=None,
-        resources: Optional[Mapping[str, ResourceConfig]]=None,
-        loggers: Optional[Mapping[str, Mapping[str, object]]]=None,
-        original_config_dict: Optional[Mapping[str, object]]=None,
-        mode: Optional[str]=None,
-        inputs: Optional[Mapping[str, object]]=None,
+        solids: Optional[Mapping[str, SolidConfig]] = None,
+        execution: Optional["ExecutionConfig"] = None,
+        resources: Optional[Mapping[str, ResourceConfig]] = None,
+        loggers: Optional[Mapping[str, Mapping[str, object]]] = None,
+        original_config_dict: Optional[Mapping[str, object]] = None,
+        mode: Optional[str] = None,
+        inputs: Optional[Mapping[str, object]] = None,
     ):
         check.opt_inst_param(execution, "execution", ExecutionConfig)
         check.opt_dict_param(original_config_dict, "original_config_dict")
@@ -155,7 +167,9 @@ class ResolvedRunConfig(
                 run_config
             )
 
-        config_evr = process_config(run_config_schema.run_config_schema_type, check.not_none(run_config))
+        config_evr = process_config(
+            run_config_schema.run_config_schema_type, check.not_none(run_config)
+        )
         if not config_evr.success:
             raise DagsterInvalidConfigError(
                 f"Error in config for {pipeline_def.target_type}".format(pipeline_def.name),
@@ -382,7 +396,11 @@ class ExecutionConfig(
         ],
     )
 ):
-    def __new__(cls, execution_engine_name: Optional[str], execution_engine_config: Optional[Mapping[str, object]]):
+    def __new__(
+        cls,
+        execution_engine_name: Optional[str],
+        execution_engine_config: Optional[Mapping[str, object]],
+    ):
         return super(ExecutionConfig, cls).__new__(
             cls,
             execution_engine_name=check.opt_str_param(
@@ -395,7 +413,7 @@ class ExecutionConfig(
         )
 
     @staticmethod
-    def from_dict(config: Optional[Mapping[str, object]]=None) -> "ExecutionConfig":
+    def from_dict(config: Optional[Mapping[str, object]] = None) -> "ExecutionConfig":
         check.opt_mapping_param(config, "config", key_type=str)
         if config:
             execution_engine_name, execution_engine_config = ensure_single_item(config)

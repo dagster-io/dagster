@@ -311,7 +311,9 @@ class ExternalTargetData(
             cls,
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             mode=check.str_param(mode, "mode"),
-            solid_selection=check.opt_nullable_sequence_param(solid_selection, "solid_selection", str),
+            solid_selection=check.opt_nullable_sequence_param(
+                solid_selection, "solid_selection", str
+            ),
         )
 
 
@@ -324,7 +326,9 @@ class ExternalSensorMetadata(
     def __new__(cls, asset_keys: Optional[Sequence[AssetKey]] = None):
         return super(ExternalSensorMetadata, cls).__new__(
             cls,
-            asset_keys=check.opt_nullable_sequence_param(asset_keys, "asset_keys", of_type=AssetKey),
+            asset_keys=check.opt_nullable_sequence_param(
+                asset_keys, "asset_keys", of_type=AssetKey
+            ),
         )
 
 
@@ -532,7 +536,9 @@ class ExternalPartitionSetData(
             cls,
             name=check.str_param(name, "name"),
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
-            solid_selection=check.opt_nullable_sequence_param(solid_selection, "solid_selection", str),
+            solid_selection=check.opt_nullable_sequence_param(
+                solid_selection, "solid_selection", str
+            ),
             mode=check.opt_str_param(mode, "mode"),
         )
 

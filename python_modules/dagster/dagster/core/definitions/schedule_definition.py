@@ -2,7 +2,19 @@ import copy
 from contextlib import ExitStack
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Iterator, List, Mapping, NamedTuple, Optional, Sequence, TypeVar, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Iterator,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import pendulum
 from typing_extensions import TypeAlias, TypeGuard

@@ -22,7 +22,11 @@ from dagster import execute_pipeline, lambda_solid
 from dagster.core.definitions.logger_definition import LoggerDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.resource_definition import ScopedResourcesBuilder
-from dagster.core.definitions.solid_definition import CompositeSolidDefinition, NodeDefinition, SolidDefinition
+from dagster.core.definitions.solid_definition import (
+    CompositeSolidDefinition,
+    NodeDefinition,
+    SolidDefinition,
+)
 from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
 from dagster.core.execution.context.system import PlanExecutionContext
 from dagster.core.execution.context_creation_pipeline import (
@@ -268,6 +272,7 @@ def yield_empty_pipeline_context(
     with scoped_pipeline_context(execution_plan, pipeline, {}, pipeline_run, instance) as context:
         yield context
 
+
 @overload
 def execute_solid(
     solid_def: CompositeSolidDefinition,
@@ -279,6 +284,7 @@ def execute_solid(
 ) -> "CompositeSolidExecutionResult":
     ...
 
+
 @overload
 def execute_solid(
     solid_def: SolidDefinition,
@@ -289,6 +295,7 @@ def execute_solid(
     raise_on_error: bool = ...,
 ) -> "SolidExecutionResult":
     ...
+
 
 def execute_solid(
     solid_def: NodeDefinition,

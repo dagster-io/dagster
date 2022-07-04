@@ -5,20 +5,12 @@ import pytest
 from dagster import (
     DagsterInstance,
     DagsterInvariantViolationError,
-    ScheduleEvaluationContext,
-    ScheduleExecutionContext,
     build_schedule_context,
     daily_schedule,
     schedule,
 )
 from dagster.core.errors import DagsterInvalidInvocationError
 from dagster.core.test_utils import instance_for_test
-
-
-def test_schedule_context_backcompat():
-    # If an instance of ScheduleEvaluationContext is a ScheduleExecutionContext, then annotating as
-    # ScheduleExecutionContext and passing in a ScheduleEvaluationContext should pass mypy
-    assert isinstance(ScheduleEvaluationContext(None, None), ScheduleExecutionContext)
 
 
 def cron_test_schedule_factory_context():

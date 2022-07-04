@@ -99,7 +99,12 @@ class ConfiguredDefinitionConfigSchema(IDefinitionConfigSchema):
     _current_field: Optional[Field]
     _config_fn: Callable[..., object]
 
-    def __init__(self, parent_definition: "ConfigurableDefinition", config_schema: Optional[IDefinitionConfigSchema], config_or_config_fn: object):
+    def __init__(
+        self,
+        parent_definition: "ConfigurableDefinition",
+        config_schema: Optional[IDefinitionConfigSchema],
+        config_or_config_fn: object,
+    ):
         from .configurable import ConfigurableDefinition
 
         self.parent_def = check.inst_param(

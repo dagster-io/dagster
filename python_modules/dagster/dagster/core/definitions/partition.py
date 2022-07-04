@@ -3,7 +3,19 @@ import inspect
 from abc import ABC, abstractmethod
 from datetime import datetime, time, timedelta
 from enum import Enum
-from typing import Any, Callable, Generic, List, Mapping, NamedTuple, Optional, Sequence, TypeVar, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import pendulum
 from dateutil.relativedelta import relativedelta
@@ -306,7 +318,9 @@ class ScheduleTimeBasedPartitionsDefinition(
             check.opt_int_param(offset, "offset", default=1),
         )
 
-    def get_partitions(self, current_time: Optional[datetime] = None) -> Sequence[Partition[datetime]]:
+    def get_partitions(
+        self, current_time: Optional[datetime] = None
+    ) -> Sequence[Partition[datetime]]:
         check.opt_inst_param(current_time, "current_time", datetime)
 
         return schedule_partition_range(
@@ -363,7 +377,12 @@ class DynamicPartitionsDefinition(
     PartitionsDefinition,
     NamedTuple(
         "_DynamicPartitionsDefinition",
-        [("partition_fn", Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]])],
+        [
+            (
+                "partition_fn",
+                Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]],
+            )
+        ],
     ),
 ):
     def __new__(  # pylint: disable=arguments-differ

@@ -183,7 +183,9 @@ class InProgressCompositionContext:
         solid_name = solid.given_alias if solid.given_alias else solid.node_def.name
         self._pending_invocations[solid_name] = solid
 
-    def complete(self, output: Optional[Mapping[str, OutputMapping]]) -> "CompleteCompositionContext":
+    def complete(
+        self, output: Optional[Mapping[str, OutputMapping]]
+    ) -> "CompleteCompositionContext":
         return CompleteCompositionContext.create(
             self.name,
             self.source,

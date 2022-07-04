@@ -1,5 +1,16 @@
 import warnings
-from typing import TYPE_CHECKING, Any, ContextManager, Iterator, List, Mapping, Optional, Sequence, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ContextManager,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster.core.definitions.asset_layer import AssetOutputInfo
@@ -57,7 +68,6 @@ class OutputContext:
     _events: List["DagsterEvent"]
     _user_events: List[Union[AssetMaterialization, AssetObservation, Materialization]]
     _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]]
-
 
     """
     The context object that is available to the `handle_output` method of an :py:class:`IOManager`.

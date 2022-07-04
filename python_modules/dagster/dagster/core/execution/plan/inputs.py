@@ -347,7 +347,9 @@ class FromRootInputManager(
 
         solid_config = resolved_run_config.solids[solid.name]
         input_config = solid_config.inputs.get(self.input_name)
-        resource_config = check.not_none(resolved_run_config.resources.get(input_manager_key)).config
+        resource_config = check.not_none(
+            resolved_run_config.resources.get(input_manager_key)
+        ).config
 
         version_context = ResourceVersionContext(
             resource_def=input_manager_def,

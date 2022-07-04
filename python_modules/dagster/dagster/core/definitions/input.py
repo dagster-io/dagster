@@ -114,7 +114,7 @@ class InputDefinition:
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
         asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
-        input_manager_key: Optional[str]=None
+        input_manager_key: Optional[str] = None
         # when adding new params, make sure to update combine_with_inferred below
     ):
         self._name = check_valid_name(name)

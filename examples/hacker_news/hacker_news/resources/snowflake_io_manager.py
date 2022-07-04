@@ -1,7 +1,7 @@
 import os
 import textwrap
 from contextlib import contextmanager
-from typing import Any, Dict, Mapping, Optional, Sequence, Union, cast
+from typing import Any, Mapping, Optional, Sequence, Union, cast
 
 from pandas import DataFrame as PandasDataFrame
 from pandas import read_sql

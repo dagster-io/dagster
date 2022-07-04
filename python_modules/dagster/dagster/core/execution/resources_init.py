@@ -1,7 +1,19 @@
 import inspect
 from collections import deque
 from contextlib import ContextDecorator
-from typing import AbstractSet, Any, Callable, Deque, Dict, Generator, Mapping, Optional, Set, Union, cast
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Deque,
+    Dict,
+    Generator,
+    Mapping,
+    Optional,
+    Set,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
@@ -94,7 +106,9 @@ def ensure_resource_deps_satisfiable(resource_deps: Mapping[str, AbstractSet[str
         _helper(resource_key)
 
 
-def get_dependencies(resource_name: str, resource_deps: Mapping[str, AbstractSet[str]]) -> AbstractSet[str]:
+def get_dependencies(
+    resource_name: str, resource_deps: Mapping[str, AbstractSet[str]]
+) -> AbstractSet[str]:
     """Get all resources that must be initialized before resource_name can be initialized.
 
     Uses dfs to get all required dependencies from a particular resource. Assumes that resource dependencies are not cyclic (check performed by a different function).

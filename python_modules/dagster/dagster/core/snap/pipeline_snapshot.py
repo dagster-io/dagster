@@ -1,4 +1,17 @@
-from typing import AbstractSet, Any, Dict, FrozenSet, List, Mapping, NamedTuple, Optional, Sequence, Set, Union, cast
+from typing import (
+    AbstractSet,
+    Any,
+    Dict,
+    FrozenSet,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+    cast,
+)
 
 from dagster import Field, Map, Permissive, Selector, Shape
 from dagster import _check as check
@@ -178,7 +191,9 @@ class PipelineSnapshot(
             dep_structure_snapshot=check.inst_param(
                 dep_structure_snapshot, "dep_structure_snapshot", DependencyStructureSnapshot
             ),
-            mode_def_snaps=check.sequence_param(mode_def_snaps, "mode_def_snaps", of_type=ModeDefSnap),
+            mode_def_snaps=check.sequence_param(
+                mode_def_snaps, "mode_def_snaps", of_type=ModeDefSnap
+            ),
             lineage_snapshot=check.opt_inst_param(
                 lineage_snapshot, "lineage_snapshot", PipelineSnapshotLineage
             ),

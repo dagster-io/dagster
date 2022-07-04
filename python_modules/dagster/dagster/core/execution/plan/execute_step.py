@@ -103,8 +103,10 @@ def _step_output_error_checked_user_event_sequence(
             output = Output(
                 value=output.value,
                 output_name=output.output_name,
-                metadata_entries=[*output.metadata_entries,
-                *normalize_metadata(cast(Dict[str, Any], metadata), [])],
+                metadata_entries=[
+                    *output.metadata_entries,
+                    *normalize_metadata(cast(Dict[str, Any], metadata), []),
+                ],
             )
         else:
             if not output_def.is_dynamic:
@@ -124,8 +126,10 @@ def _step_output_error_checked_user_event_sequence(
             output = DynamicOutput(
                 value=output.value,
                 output_name=output.output_name,
-                metadata_entries=[*output.metadata_entries,
-                *normalize_metadata(cast(Dict[str, Any], metadata), [])],
+                metadata_entries=[
+                    *output.metadata_entries,
+                    *normalize_metadata(cast(Dict[str, Any], metadata), []),
+                ],
                 mapping_key=output.mapping_key,
             )
 

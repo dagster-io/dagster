@@ -1,6 +1,17 @@
 from enum import Enum as PyEnum
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Sequence, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    overload,
+)
 
 from typing_extensions import TypeAlias
 
@@ -113,7 +124,9 @@ class ExecutorDefinition(NamedConfigurableDefinition):
     def config_schema(self) -> IDefinitionConfigSchema:
         return self._config_schema
 
-    def get_requirements(self, executor_config: Mapping[str, object]) -> Sequence[ExecutorRequirement]:
+    def get_requirements(
+        self, executor_config: Mapping[str, object]
+    ) -> Sequence[ExecutorRequirement]:
         return self._requirements_fn(executor_config)
 
     @property

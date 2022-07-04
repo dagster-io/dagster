@@ -1,5 +1,16 @@
 from abc import abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Dict, Iterable, Iterator, Mapping, Optional, Sequence, Tuple, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Dict,
+    Iterable,
+    Iterator,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+)
 
 import dagster._check as check
 from dagster.core.definitions.configurable import NamedConfigurableDefinition
@@ -152,7 +163,9 @@ class NodeDefinition(NamedConfigurableDefinition):
 
     @abstractmethod
     def resolve_output_to_origin(
-        self, output_name: str, handle: Optional["NodeHandle"],
+        self,
+        output_name: str,
+        handle: Optional["NodeHandle"],
     ) -> Tuple["OutputDefinition", Optional["NodeHandle"]]:
         ...
 
