@@ -1,4 +1,4 @@
-import {gql, useApolloClient, useQuery, useSubscription} from '@apollo/client';
+import {gql, useApolloClient, useQuery} from '@apollo/client';
 import {TokenizingFieldValue} from '@dagster-io/ui';
 import throttle from 'lodash/throttle';
 import * as React from 'react';
@@ -10,13 +10,14 @@ import {LogLevelCounts} from './LogsToolbar';
 import {RunFragments} from './RunFragments';
 import {logNodeLevel} from './logNodeLevel';
 import {LogNode} from './types';
-import {
-  PipelineRunLogsSubscription,
-  PipelineRunLogsSubscriptionVariables,
-} from './types/PipelineRunLogsSubscription';
+import {PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess} from './types/PipelineRunLogsSubscription';
 import {PipelineRunLogsSubscriptionStatusFragment} from './types/PipelineRunLogsSubscriptionStatusFragment';
 import {RunDagsterRunEventFragment} from './types/RunDagsterRunEventFragment';
 import {RunLogsQuery, RunLogsQueryVariables} from './types/RunLogsQuery';
+import {
+  usePipelineRunLogsSubscription,
+  usePipelineRunLogsSubscriptionWorker,
+} from './usePipelineRunLogsSubscription';
 
 export interface LogFilterValue extends TokenizingFieldValue {
   token?: 'step' | 'type' | 'query';
@@ -168,17 +169,14 @@ const useLogsProviderWithSubscription = (runId: string) => {
 
   const {nodes, counts, cursor, loading} = state;
 
-  useSubscription<PipelineRunLogsSubscription, PipelineRunLogsSubscriptionVariables>(
-    PIPELINE_RUN_LOGS_SUBSCRIPTION,
-    {
-      fetchPolicy: 'no-cache',
-      variables: {runId, cursor},
-      onSubscriptionData: ({subscriptionData}) => {
-        const logs = subscriptionData.data?.pipelineRunLogs;
-        if (!logs || logs.__typename === 'PipelineRunLogsSubscriptionFailure') {
-          return;
-        }
+  const useHook = new URLSearchParams(window.location.search).get('worker')
+    ? usePipelineRunLogsSubscriptionWorker
+    : usePipelineRunLogsSubscription;
 
+  useHook(
+    {runId, cursor},
+    React.useCallback(
+      (logs: PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess) => {
         const {messages, hasMorePastEvents, cursor} = logs;
         const nextPipelineStatus = pipelineStatusFromMessages(messages);
 
@@ -192,7 +190,8 @@ const useLogsProviderWithSubscription = (runId: string) => {
         queue.current = [...queue.current, ...messages];
         throttledSetNodes(hasMorePastEvents, cursor);
       },
-    },
+      [syncPipelineStatusToApolloCache, throttledSetNodes],
+    ),
   );
 
   return React.useMemo(
@@ -286,30 +285,6 @@ export const LogsProvider: React.FC<LogsProviderProps> = (props) => {
 
   return <LogsProviderWithSubscription runId={runId}>{children}</LogsProviderWithSubscription>;
 };
-
-const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
-  subscription PipelineRunLogsSubscription($runId: ID!, $cursor: String) {
-    pipelineRunLogs(runId: $runId, cursor: $cursor) {
-      __typename
-      ... on PipelineRunLogsSubscriptionSuccess {
-        messages {
-          ... on MessageEvent {
-            runId
-          }
-          ...RunDagsterRunEventFragment
-        }
-        hasMorePastEvents
-        cursor
-      }
-      ... on PipelineRunLogsSubscriptionFailure {
-        missingRunId
-        message
-      }
-    }
-  }
-
-  ${RunFragments.RunDagsterRunEventFragment}
-`;
 
 const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
   fragment PipelineRunLogsSubscriptionStatusFragment on Run {
