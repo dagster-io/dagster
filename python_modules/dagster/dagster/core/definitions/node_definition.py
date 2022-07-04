@@ -9,7 +9,6 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    TypeVar,
 )
 
 import dagster._check as check
