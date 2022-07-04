@@ -11,7 +11,6 @@ import {
 } from './types/PipelineRunLogsSubscription';
 
 export function usePipelineRunLogsSubscription({runId, cursor}: any, onLogs: any) {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   useSubscription<PipelineRunLogsSubscription, PipelineRunLogsSubscriptionVariables>(
     PIPELINE_RUN_LOGS_SUBSCRIPTION,
     {
