@@ -19,7 +19,7 @@ from dagster import (
     io_manager,
     repository,
 )
-from dagster.core.definitions.assets import build_assets_job
+from dagster.core.definitions import build_assets_job
 from dagster.utils import file_relative_path
 
 

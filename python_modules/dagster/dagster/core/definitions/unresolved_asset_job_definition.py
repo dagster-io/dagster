@@ -14,6 +14,7 @@ if TYPE_CHECKING:
         AssetSelection,
         AssetsDefinition,
         JobDefinition,
+        PartitionSetDefinition,
         PartitionedConfig,
         PartitionsDefinition,
         SourceAsset,
