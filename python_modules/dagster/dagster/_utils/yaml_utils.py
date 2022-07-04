@@ -1,6 +1,6 @@
 import functools
 import glob
-from typing import Any, Mapping, Sequence
+from typing import Any, Dict, Mapping, Sequence
 
 import yaml
 
@@ -15,6 +15,7 @@ YAML_STR_TAG = "tag:yaml.org,2002:str"
 class _CanRemoveImplicitResolver:
     # Adds a "remove_implicit_resolver" method that can be used to selectively
     # disable default PyYAML resolvers
+    # type: ignore
     @classmethod
     def remove_implicit_resolver(cls, tag):
         # See https://github.com/yaml/pyyaml/blob/master/lib/yaml/resolver.py#L26 for inspiration
@@ -53,12 +54,12 @@ DagsterRunConfigYamlDumper.remove_implicit_resolver(YAML_TIMESTAMP_TAG)
 DagsterRunConfigYamlDumper.add_representer(str, _octal_string_representer)
 
 
-def load_yaml_from_globs(*globs, loader=DagsterRunConfigYamlLoader):
+def load_yaml_from_globs(*globs: str, loader=DagsterRunConfigYamlLoader) -> object:
     return load_yaml_from_glob_list(list(globs), loader=loader)
 
 
-def load_yaml_from_glob_list(glob_list, loader=DagsterRunConfigYamlLoader):
-    check.list_param(glob_list, "glob_list", of_type=str)
+def load_yaml_from_glob_list(glob_list: Sequence[str], loader=DagsterRunConfigYamlLoader) -> object:
+    check.sequence_param(glob_list, "glob_list", of_type=str)
 
     all_files_list = []
 
@@ -68,7 +69,7 @@ def load_yaml_from_glob_list(glob_list, loader=DagsterRunConfigYamlLoader):
     return merge_yamls(all_files_list, loader=loader)
 
 
-def merge_yamls(file_list, loader=DagsterRunConfigYamlLoader):
+def merge_yamls(file_list: Sequence[str], loader=DagsterRunConfigYamlLoader) -> Dict[str, Any]:
     """Combine a list of YAML files into a dictionary.
 
     Args:
@@ -82,10 +83,10 @@ def merge_yamls(file_list, loader=DagsterRunConfigYamlLoader):
     """
     check.sequence_param(file_list, "file_list", of_type=str)
 
-    merged = {}
+    merged: Dict[str, Any] = {}
 
     for yaml_file in file_list:
-        yaml_dict = load_yaml_from_path(yaml_file, loader=loader) or {}
+        yaml_dict = check.is_dict(load_yaml_from_path(yaml_file, loader=loader) or {})
 
         if isinstance(yaml_dict, dict):
             merged = deep_merge_dicts(merged, yaml_dict)
@@ -131,7 +132,7 @@ def load_yaml_from_path(path: str, loader=DagsterRunConfigYamlLoader) -> object:
         return yaml.load(ff, Loader=loader)
 
 
-def load_run_config_yaml(yaml_str: str):
+def load_run_config_yaml(yaml_str: str) -> object:
     return yaml.load(yaml_str, Loader=DagsterRunConfigYamlLoader)
 
 

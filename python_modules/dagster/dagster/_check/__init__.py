@@ -26,6 +26,7 @@ TypeOrTupleOfTypes = Union[type, Tuple[type, ...]]
 Numeric = Union[int, float]
 T = TypeVar("T")
 U = TypeVar("U")
+V = TypeVar("V")
 
 # This module contains runtime type-checking code used throughout Dagster. It is divided into three
 # sections:
@@ -237,7 +238,7 @@ def dict_param(
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Dict:
+) -> Dict[Any, Any]:
     """Ensures argument obj is a native Python dictionary, raises an exception if not, and otherwise
     returns obj.
     """
@@ -416,12 +417,30 @@ def opt_nullable_dict_elem(
         return _check_mapping_entries(value, key_type, value_type, mapping_type=dict)
 
 
+@overload
 def is_dict(
-    obj: Dict[T, U],
+    obj: Dict[U, V],
+    key_type: Optional[TypeOrTupleOfTypes] = ...,
+    value_type: Optional[TypeOrTupleOfTypes] = ...,
+    additional_message: Optional[str] = ...,
+) -> Dict[U, V]:
+    ...
+
+@overload
+def is_dict(
+    obj: object,
+    key_type: Optional[TypeOrTupleOfTypes] = ...,
+    value_type: Optional[TypeOrTupleOfTypes] = ...,
+    additional_message: Optional[str] = ...,
+) -> Dict[Any, Any]:
+    ...
+
+def is_dict(
+    obj: object,
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Dict[T, U]:
+) -> Dict:
     from dagster._utils import frozendict
 
     if not isinstance(obj, (frozendict, dict)):
@@ -1606,12 +1625,12 @@ def _param_invariant_exception(param_name: str, desc: Optional[str] = None) -> P
     )
 
 
-V = TypeVar("V", bound=Iterable)
+T_Iterable = TypeVar("T_Iterable", bound=Iterable)
 
 
 def _check_iterable_items(
-    obj_iter: V, of_type: TypeOrTupleOfTypes, collection_name: str = "iterable"
-) -> V:
+    obj_iter: T_Iterable, of_type: TypeOrTupleOfTypes, collection_name: str = "iterable"
+) -> T_Iterable:
     for obj in obj_iter:
 
         if not isinstance(obj, of_type):

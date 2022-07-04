@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 @resource(
     config_schema={
         "scratch_dir": Field(
-            StringSource,
+            StringSource,  # type: ignore  # (mypy bug)
             description="Directory used to pass files between the plan process and step process.",
         ),
     },
