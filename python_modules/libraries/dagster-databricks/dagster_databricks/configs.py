@@ -9,7 +9,7 @@ See:
 - https://docs.databricks.com/dev-tools/api/latest/clusters.html
 - https://docs.databricks.com/dev-tools/api/latest/libraries.html
 """
-from dagster import Bool, Field, Int, Permissive, Selector, Shape, String
+from dagster import Array, Bool, Field, Int, Permissive, Selector, Shape, String
 
 
 def _define_autoscale():
@@ -623,4 +623,50 @@ def define_databricks_secrets_config():
         "variables must be stored as Databricks secrets and specified here, which will ensure "
         "they are re-exported as environment variables accessible to Dagster upon execution.",
         is_required=False,
+    )
+
+
+def _define_accessor():
+    return Selector(
+        {"group_name": str, "user_name": str},
+        description="Group or User that shall access the target.",
+    )
+
+
+def _define_databricks_job_permission():
+    job_permission_levels = [
+        "NO_PERMISSIONS",
+        "CAN_VIEW",
+        "CAN_MANAGE_RUN",
+        "IS_OWNER",
+        "CAN_MANAGE",
+    ]
+    return Field(
+        {
+            permission_level: Field(Array(_define_accessor()), is_required=False)
+            for permission_level in job_permission_levels
+        },
+        description="job permission spec; ref: https://docs.databricks.com/security/access-control/jobs-acl.html#job-permissions",
+        is_required=False,
+    )
+
+
+def _define_databricks_cluster_permission():
+    cluster_permission_levels = ["NO_PERMISSIONS", "CAN_ATTACH_TO", "CAN_RESTART", "CAN_MANAGE"]
+    return Field(
+        {
+            permission_level: Field(Array(_define_accessor()), is_required=False)
+            for permission_level in cluster_permission_levels
+        },
+        description="cluster permission spec; ref: https://docs.databricks.com/security/access-control/cluster-acl.html#cluster-level-permissions",
+        is_required=False,
+    )
+
+
+def define_databricks_permissions():
+    return Field(
+        {
+            "job_permissions": _define_databricks_job_permission(),
+            "cluster_permissions": _define_databricks_cluster_permission(),
+        }
     )
