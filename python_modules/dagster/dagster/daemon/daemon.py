@@ -187,7 +187,7 @@ class IntervalDaemon(DagsterDaemon):
         while True:
             start_time = time.time()
             # Clear out the workspace locations after each iteration
-            workspace.cleanup(cleanup_locations=True)
+            workspace.cleanup()
             try:
                 yield from self.run_iteration(instance, workspace)
             except Exception:
