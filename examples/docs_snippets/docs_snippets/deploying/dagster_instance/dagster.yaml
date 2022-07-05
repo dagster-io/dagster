@@ -344,11 +344,3 @@ retention:
       success: -1 # keep success ticks indefinitely
 
 # end_marker_retention
-
-# start_marker_sensors
-
-sensors:
-  use_threads: true
-  num_workers: 8
-
-# end_marker_sensors

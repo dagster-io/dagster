@@ -105,14 +105,5 @@ data:
       {{- end }}
     {{- end }}
 
-    {{- $sensors := .Values.dagsterDaemon.sensors }}
-    {{- if and (.Values.dagsterDaemon.enabled) ($sensors.useThreads) }}
-    sensors:
-      use_threads: {{ $sensors.useThreads }}
-      {{- if $sensors.numWorkers }}
-      num_workers: {{ $sensors.numWorkers }}
-      {{- end }}
-    {{- end }}
-
     telemetry:
       enabled: {{ .Values.telemetry.enabled }}

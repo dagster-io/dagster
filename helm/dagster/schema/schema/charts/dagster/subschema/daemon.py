@@ -60,11 +60,6 @@ class RunCoordinator(BaseModel):
         }
 
 
-class Sensors(BaseModel):
-    useThreads: bool
-    numWorkers: Optional[int]
-
-
 class Daemon(BaseModel):
     enabled: bool
     image: kubernetes.Image
@@ -87,7 +82,6 @@ class Daemon(BaseModel):
     annotations: kubernetes.Annotations
     runMonitoring: Dict[str, Any]
     runRetries: Dict[str, Any]
-    sensors: Sensors
 
     class Config:
         extra = Extra.forbid

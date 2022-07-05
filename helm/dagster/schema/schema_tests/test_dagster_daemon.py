@@ -7,15 +7,12 @@ from schema.charts.dagster.subschema.daemon import (
     RunCoordinator,
     RunCoordinatorConfig,
     RunCoordinatorType,
-    Sensors,
     TagConcurrencyLimit,
 )
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.subschema.user_deployments import UserDeployments
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
-
-from dagster.core.instance.config import sensors_daemon_config
 
 from .utils import create_simple_user_deployment
 
@@ -250,22 +247,3 @@ def test_daemon_labels(template: HelmTemplate):
 
     assert set(deployment_labels.items()).issubset(daemon_deployment.metadata.labels.items())
     assert set(pod_labels.items()).issubset(daemon_deployment.spec.template.metadata.labels.items())
-
-
-def test_sensor_threading(instance_template: HelmTemplate):
-    helm_values = DagsterHelmValues.construct(
-        dagsterDaemon=Daemon.construct(
-            sensors=Sensors.construct(
-                useThreads=True,
-                numWorkers=4,
-            )
-        )
-    )
-
-    configmaps = instance_template.render(helm_values)
-    assert len(configmaps) == 1
-    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
-    sensors_config = instance["sensors"]
-    assert sensors_config.keys() == sensors_daemon_config().config_type.fields.keys()
-    assert instance["sensors"]["use_threads"] == True
-    assert instance["sensors"]["num_workers"] == 4

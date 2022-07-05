@@ -2251,30 +2251,6 @@
                 }
             ]
         },
-        "Sensors": {
-            "title": "Sensors",
-            "type": "object",
-            "properties": {
-                "useThreads": {
-                    "title": "Usethreads",
-                    "type": "boolean"
-                },
-                "numWorkers": {
-                    "title": "Numworkers",
-                    "anyOf": [
-                        {
-                            "type": "integer"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ]
-                }
-            },
-            "required": [
-                "useThreads"
-            ]
-        },
         "Daemon": {
             "title": "Daemon",
             "type": "object",
@@ -2365,9 +2341,6 @@
                 "runRetries": {
                     "title": "Runretries",
                     "type": "object"
-                },
-                "sensors": {
-                    "$ref": "#/definitions/Sensors"
                 }
             },
             "required": [
@@ -2391,8 +2364,7 @@
                 "startupProbe",
                 "annotations",
                 "runMonitoring",
-                "runRetries",
-                "sensors"
+                "runRetries"
             ],
             "additionalProperties": false
         },
