@@ -391,7 +391,7 @@ def get_sensor_executors():
     ]
 
 
-def evaluate_sensors(instance, workspace, executor, timeout=75):
+def evaluate_sensors(instance, workspace, executor):
     logger = get_default_daemon_logger("SensorDaemon")
     futures = {}
     list(
@@ -404,7 +404,7 @@ def evaluate_sensors(instance, workspace, executor, timeout=75):
         )
     )
 
-    wait_for_futures(futures, timeout=timeout)
+    wait_for_futures(futures)
 
 
 def validate_tick(
@@ -1310,7 +1310,7 @@ def test_large_sensor(executor):
         with pendulum.test(freeze_datetime):
             external_sensor = external_repo.get_external_sensor("large_sensor")
             instance.start_sensor(external_sensor)
-            evaluate_sensors(instance, workspace, executor, timeout=300)
+            evaluate_sensors(instance, workspace, executor)
             ticks = instance.get_ticks(
                 external_sensor.get_external_origin_id(), external_sensor.selector_id
             )
