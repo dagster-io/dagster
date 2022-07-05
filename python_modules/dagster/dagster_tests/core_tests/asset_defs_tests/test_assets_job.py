@@ -1080,27 +1080,35 @@ def test_twice_nested_graph():
     def transformer(string):
         return string + "qux"
 
-    @graph(out={"n1": GraphOut(), "n2": GraphOut()})
+    @op
+    def combiner(s1, s2):
+        return s1 + s2
+
+    @graph(out={"n1": GraphOut(), "n2": GraphOut(), "unused": GraphOut()})
     def middle_thing():
         n1, unused_output = innermost_thing()
         n2 = get_string()
-        return {"n1": n1, "n2": n2}
+        return {"n1": n1, "n2": n2, "unused": unused_output}
 
-    @graph(out={"n1": GraphOut(), "n2": GraphOut()})
+    @graph(out={"n1": GraphOut(), "n2": GraphOut(), "unused": GraphOut()})
     def outer_thing(foo_asset):
-        n1, output = middle_thing()
+        n1, output, unused_output = middle_thing()
         n2 = transformer(output)
-        unused_output = transformer(foo_asset)  # pylint: disable=unused-variable
-        return {"n1": n1, "n2": n2}
+        unused_output = combiner(unused_output, transformer(foo_asset))
+        return {"n1": n1, "n2": n2, "unused": unused_output}
 
     @asset
     def foo_asset():
         return "foo"
 
-    thing_asset = AssetsDefinition(
+    thing_asset = AssetsDefinition.from_graph(
+        graph_def=outer_thing,
         keys_by_input_name={},
-        keys_by_output_name={"n1": AssetKey("thing"), "n2": AssetKey("thing_2")},
-        node_def=outer_thing,
+        keys_by_output_name={
+            "n1": AssetKey("thing"),
+            "n2": AssetKey("thing_2"),
+            "unused": AssetKey("asjdlaksjhbdluuawubn"),
+        },
     )
 
     job = build_assets_job("graph_asset_job", [foo_asset, thing_asset])
