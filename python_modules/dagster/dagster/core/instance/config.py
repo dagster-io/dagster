@@ -254,11 +254,4 @@ def dagster_instance_config_schema():
             {"local_startup_timeout": Field(int, is_required=False)}, is_required=False
         ),
         "retention": retention_config_schema(),
-        "sensors": Field(
-            {
-                "use_threads": Field(Bool, is_required=False, default_value=False),
-                "num_workers": Field(int, is_required=False),
-            },
-            is_required=False,
-        ),
     }
