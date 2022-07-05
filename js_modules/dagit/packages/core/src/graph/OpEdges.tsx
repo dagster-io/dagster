@@ -5,36 +5,46 @@ import {weakmapMemoize} from '../app/Util';
 import {buildSVGPath} from '../asset-graph/Utils';
 
 import {OpGraphLayout, OpLayout, OpLayoutEdge} from './asyncGraphLayout';
+import {OpLayoutEdgeSide, OpLayoutIO} from './layout';
 import {OpGraphOpFragment} from './types/OpGraphOpFragment';
 
 export type Edge = {a: string; b: string};
 
+type Path = {
+  path: string;
+  sourceOutput: OpLayoutIO;
+  targetInput: OpLayoutIO;
+  from: OpLayoutEdgeSide;
+  to: OpLayoutEdgeSide;
+};
+
 const buildSVGPaths = weakmapMemoize((edges: OpLayoutEdge[], nodes: {[name: string]: OpLayout}) =>
-  edges.map(({from, to}) => {
-    const sourceOutput = nodes[from.opName].outputs[from.edgeName];
-    if (!sourceOutput) {
-      throw new Error(
-        `Cannot find ${from.opName}:${from.edgeName} for edge to ${to.opName}:${to.edgeName}`,
-      );
-    }
-    const targetInput = nodes[to.opName].inputs[to.edgeName];
-    if (!targetInput) {
-      throw new Error(
-        `Cannot find ${to.opName}:${to.edgeName} for edge from ${from.opName}:${from.edgeName}`,
-      );
-    }
-    return {
-      // can also use from.point for the "Dagre" closest point on node
-      path: buildSVGPath({
-        source: sourceOutput.port,
-        target: targetInput.port,
-      }),
-      sourceOutput,
-      targetInput,
-      from,
-      to,
-    };
-  }),
+  edges
+    .map(({from, to}) => {
+      const source = nodes[from.opName];
+      const sourceOutput =
+        source.outputs[from.edgeName] ||
+        Object.values(source.outputs).find((o) => o.collapsed.includes(from.edgeName));
+
+      const target = nodes[to.opName];
+      const targetInput =
+        target.inputs[to.edgeName] ||
+        Object.values(target.inputs).find((o) => o.collapsed.includes(to.edgeName));
+
+      if (!sourceOutput || !targetInput) {
+        console.log(`Unexpected error: An input or output is not reflected in the DAG layout`);
+        return null;
+      }
+      return {
+        // can also use from.point for the "Dagre" closest point on node
+        path: buildSVGPath({source: sourceOutput.port, target: targetInput.port}),
+        sourceOutput,
+        targetInput,
+        from,
+        to,
+      };
+    })
+    .filter((path): path is Path => !!path),
 );
 
 const outputIsDynamic = (ops: OpGraphOpFragment[], from: {opName: string; edgeName: string}) => {

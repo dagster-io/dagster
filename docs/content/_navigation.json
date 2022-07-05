@@ -71,6 +71,7 @@
     "title": "Concepts",
     "icon": "Menu",
     "path": "/concepts",
+    "isDefaultOpen": true,
     "children": [
       {
         "title": "Assets",

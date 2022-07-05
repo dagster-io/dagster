@@ -4,7 +4,8 @@ import styled from 'styled-components/macro';
 
 import {DEFAULT_RESULT_NAME, titleOfIO} from '../app/titleOfIO';
 
-import {Edge, isHighlighted} from './common';
+import {Edge, isHighlighted, position} from './common';
+import {OpLayoutIO} from './layout';
 import {
   OpNodeDefinitionFragment,
   OpNodeDefinitionFragment_SolidDefinition_inputDefinitions,
@@ -26,7 +27,7 @@ interface OpIOBoxProps extends OpIORenderMetadata {
   item:
     | OpNodeDefinitionFragment_SolidDefinition_inputDefinitions
     | OpNodeDefinitionFragment_SolidDefinition_outputDefinitions;
-  style: React.CSSProperties;
+  layoutInfo: OpLayoutIO | undefined;
 
   // Passed through from Solid props
   minified: boolean;
@@ -43,17 +44,20 @@ export const OpIOBox: React.FC<OpIOBoxProps> = ({
   highlightedEdges,
   colorKey,
   item,
+  layoutInfo,
   onDoubleClick,
   onHighlightEdges,
-  style,
 }) => {
+  if (!layoutInfo) {
+    return null;
+  }
   const {name, type} = item;
   const highlighted = edges.some((e) => isHighlighted(highlightedEdges, e));
 
   return (
     <OpIOContainer
       title={title}
-      style={{...style, width: 'initial'}}
+      style={{...position(layoutInfo.layout), width: 'initial'}}
       onMouseEnter={() => onHighlightEdges(edges)}
       onMouseLeave={() => onHighlightEdges([])}
       onClick={(e) => {
@@ -64,25 +68,30 @@ export const OpIOBox: React.FC<OpIOBoxProps> = ({
       $colorKey={colorKey}
       $highlighted={highlighted}
     >
-      <div>
+      {minified || !layoutInfo.label ? (
         <div className="circle" />
-        {!minified && name !== DEFAULT_RESULT_NAME && <div className="label">{name}</div>}
-        {!minified && type.displayName && <div className="type">{type.displayName}</div>}
-      </div>
+      ) : (
+        <>
+          <div className="circle" />
+          {name !== DEFAULT_RESULT_NAME && <div className="label">{name}</div>}
+          {type.displayName && <div className="type">{type.displayName}</div>}
+        </>
+      )}
+      {layoutInfo.collapsed.length > 0 && (
+        <div className="collapsedCount">+ {layoutInfo.collapsed.length}</div>
+      )}
     </OpIOContainer>
   );
 };
 
 const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
-  display: block;
-  & > div {
-    display: inline-flex;
-    align-items: center;
-    border-top-right-radius: 6px;
-    border-bottom-right-radius: 6px;
-    background: ${(p) => (p.$highlighted ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.75)')};
-    font-size: 12px;
-  }
+  display: inline-flex;
+  align-items: center;
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+  background: ${(p) => (p.$highlighted ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.75)')};
+  font-size: 12px;
+
   .circle {
     width: 14px;
     height: 14px;
@@ -107,6 +116,12 @@ const OpIOContainer = styled.div<{$colorKey: string; $highlighted: boolean}>`
     font-family: ${FontFamily.monospace};
     font-weight: 700;
     border-radius: 4px;
+  }
+  .collapsedCount {
+    color: ${(p) => (p.$highlighted ? Colors.Blue500 : Colors.Gray500)};
+    font-weight: 600;
+    margin-left: -3px;
+    padding-right: 4px;
   }
 `;
 

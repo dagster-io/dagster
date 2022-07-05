@@ -10,7 +10,7 @@ import {AssetKey} from '../assets/types';
 import {OpIOBox, metadataForIO} from './OpIOBox';
 import {OpTags, IOpTag} from './OpTags';
 import {OpLayout} from './asyncGraphLayout';
-import {Edge, IBounds} from './common';
+import {Edge, position} from './common';
 import {OpNodeDefinitionFragment} from './types/OpNodeDefinitionFragment';
 import {OpNodeInvocationFragment} from './types/OpNodeInvocationFragment';
 
@@ -143,7 +143,7 @@ export class OpNode extends React.Component<IOpNodeProps> {
             {...metadataForIO(item, invocation)}
             key={idx}
             item={item}
-            style={{...position(layout.inputs[item.name].layout)}}
+            layoutInfo={layout.inputs[item.name]}
             colorKey="input"
           />
         ))}
@@ -154,7 +154,7 @@ export class OpNode extends React.Component<IOpNodeProps> {
             {...metadataForIO(item, invocation)}
             key={idx}
             item={item}
-            style={{...position(layout.outputs[item.name].layout)}}
+            layoutInfo={layout.outputs[item.name]}
             colorKey="output"
           />
         ))}
@@ -403,11 +403,3 @@ const NodeContainer = styled.div<{
     font-size: 12px;
   }
 `;
-
-export const position = ({x, y, width, height}: IBounds) => ({
-  left: x,
-  top: y,
-  width,
-  height,
-  position: 'absolute' as const,
-});

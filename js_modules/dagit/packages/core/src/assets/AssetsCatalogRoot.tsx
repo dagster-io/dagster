@@ -4,6 +4,7 @@ import * as React from 'react';
 import {useHistory} from 'react-router';
 import {useParams} from 'react-router-dom';
 
+import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
@@ -18,6 +19,8 @@ import {
 } from './types/AssetsCatalogRootQuery';
 
 export const AssetsCatalogRoot = () => {
+  useTrackPageView();
+
   const params = useParams();
   const history = useHistory();
   const currentPath: string[] = (params['0'] || '')

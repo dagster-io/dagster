@@ -252,3 +252,7 @@ def test_materialize_partition_key():
     with instance_for_test() as instance:
         result = materialize([the_asset], partition_key="2022-02-02", instance=instance)
         assert result.success
+
+
+def test_materialize_provided_resources():
+    pass

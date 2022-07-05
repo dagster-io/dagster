@@ -249,18 +249,15 @@ class DagsterDaemonController:
                 )
             )
 
-    def check_daemon_loop(self, check_heartbeats=True):
+    def check_daemon_loop(self):
         start_time = time.time()
-        last_heartbeat_check_time = start_time if check_heartbeats else None
+        last_heartbeat_check_time = start_time
         while True:
             # Wait until a daemon has been unhealthy for a long period of time
             # before potentially restarting it due to a hanging or failed daemon
             with raise_interrupts_as(KeyboardInterrupt):
                 time.sleep(THREAD_CHECK_INTERVAL)
                 self.check_daemon_threads()
-
-                if not check_heartbeats:
-                    continue
 
                 now = time.time()
                 # Give the daemon enough time to send an initial heartbeat before checking

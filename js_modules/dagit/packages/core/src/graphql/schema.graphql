@@ -397,6 +397,7 @@ type AssetNode {
   dependencyKeys: [AssetKey!]!
   description: String
   graphName: String
+  groupName: String
   id: ID!
   jobNames: [String!]!
   jobs: [Pipeline!]!
@@ -409,7 +410,7 @@ type AssetNode {
   partitionKeys: [String!]!
   partitionDefinition: String
   repository: Repository!
-  groupName: String
+  requiredResources: [ResourceRequirement!]!
 }
 
 type AssetKey {
