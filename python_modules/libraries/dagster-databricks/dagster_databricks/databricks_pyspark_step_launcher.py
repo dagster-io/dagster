@@ -135,8 +135,8 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         staging_prefix,
         wait_for_logs,
         max_completion_wait_time_seconds,
-        env_variables={},
-        storage={},
+        env_variables=None,
+        storage=None,
         poll_interval_sec=5,
         local_pipeline_package_path=None,
         local_dagster_job_package_path=None,
@@ -146,8 +146,8 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         self.databricks_host = check.str_param(databricks_host, "databricks_host")
         self.databricks_token = check.str_param(databricks_token, "databricks_token")
         self.secrets = check.list_param(secrets_to_env_variables, "secrets_to_env_variables", dict)
-        self.env_variables = check.dict_param(env_variables, "env_variables")
-        self.storage = check.dict_param(storage, "storage")
+        self.env_variables = check.opt_dict_param(env_variables, "env_variables")
+        self.storage = check.opt_dict_param(storage, "storage")
         check.invariant(
             local_dagster_job_package_path is not None or local_pipeline_package_path is not None,
             "Missing config: need to provide either 'local_dagster_job_package_path' or 'local_pipeline_package_path' config entry",
