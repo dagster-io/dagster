@@ -1,18 +1,19 @@
 # pylint: disable=redefined-outer-name
+import pandas as pd
+
 from dagster import Field, asset
 
 from ..lib import (
+    SP500_CSV_URL,
     AnomalousEventsDgType,
     BollingerBandsDgType,
     StockPricesDgType,
     compute_anomalous_events,
     compute_bollinger_bands_multi,
-    load_sp500_prices,
     download_file,
-    SP500_CSV_URL,
+    load_sp500_prices,
     normalize_path,
 )
-import pandas as pd
 
 
 @asset(
@@ -20,28 +21,21 @@ import pandas as pd
     metadata={"owner": "alice@example.com"},
     io_manager_key="snowflake",
 )
-def sp500_prices(context):
+def sp500_prices():
     """Historical stock prices for the S&P 500."""
-    df = load_sp500_prices()
-    # df["date"] = df["date"].dt.tz_localize("US/Eastern")
-    # df["date"] = df["date"].dt.ceil(freq='ms').values.astype("datetime64[ms]")
-    # df["date"] = df["date"].apply(lambda x: pd.Timestamp(x))
-    df["date"] = df["date"].dt.date
-    context.log.info(f"date {df['date'][:10]}")
-    context.log.info(f"sp500 prices head {df.head()}")
-    context.log.info(f"data types {df.dtypes}")
-    return df
+    return load_sp500_prices()
 
 
-# @asset(
-#     dagster_type=StockPricesDgType,
-#     metadata={"owner": "alice@example.com"},
-#     io_manager_key="snowflake"
-# )
-# def sp500_prices() -> pd.DataFrame:
-#     path = normalize_path("all_stocks_5yr.csv")
-#     download_file(SP500_CSV_URL, path)
-#     return load_sp500_prices()
+# TODO - remove once download script works for me
+@asset(
+    dagster_type=StockPricesDgType,
+    metadata={"owner": "alice@example.com"},
+    io_manager_key="snowflake",
+)
+def sp500_prices_w_download() -> pd.DataFrame:
+    path = normalize_path("all_stocks_5yr.csv")
+    download_file(SP500_CSV_URL, path)
+    return load_sp500_prices()
 
 
 @asset(
@@ -56,6 +50,8 @@ def sp500_prices(context):
 )
 def sp500_bollinger_bands(context, sp500_prices: pd.DataFrame):
     """Bollinger bands for the S&amp;P 500 stock prices."""
+    context.log.info(f"sp500 head {sp500_prices.head()}")
+    context.log.info(f"data types {sp500_prices.dtypes}")
     return compute_bollinger_bands_multi(
         sp500_prices, rate=context.op_config["rate"], sigma=context.op_config["sigma"]
     )
