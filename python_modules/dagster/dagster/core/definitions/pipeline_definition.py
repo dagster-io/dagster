@@ -176,7 +176,7 @@ class PipelineDefinition:
         name: Optional[str] = None,
         description: Optional[str] = None,
         dependencies: Optional[
-            Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]
+            Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
         ] = None,
         mode_defs: Optional[Sequence[ModeDefinition]] = None,
         preset_defs: Optional[Sequence[PresetDefinition]] = None,
