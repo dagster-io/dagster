@@ -122,6 +122,7 @@ class DbIOManager(IOManager):
                 schema = asset_key_path[-2]
             else:
                 schema = "public"
+            schema = "JAMIE"
             time_window = (
                 context.asset_partitions_time_window if context.has_asset_partitions else None
             )
