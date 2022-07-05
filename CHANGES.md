@@ -1,5 +1,41 @@
 # Changelog
 
+# 0.15.3
+
+### New
+
+* When loading an upstream asset or op output as an input, you can now set custom loading behavior using the  input_manager_key argument to AssetIn and In
+* The list of objects returned by a repository can now contain nested lists.
+* Added a data retention instance setting in dagster.yaml that enables the automatic removal of sensor/schedule ticks after a certain number of days.
+* Added a sensor daemon setting in dagster.yaml that enables sensor evaluations to happen in a thread pool to increase throughput.
+* `materialize_to_memory` and materialize now both have the partition_key argument.
+* `Output` and `DynamicOutput` objects now work with deep equality checks:
+```python
+Output(value=5, name="foo") == Output(value=5, name="foo") # evaluates to True
+```
+* RunRequests can now be returned from run status sensors
+* Added `resource_defs` argument to `AssetsDefinition.from_graph`. Allows for specifying resources required by constituent ops directly on the asset.
+* When adding a tag to the Run search filter in Dagit by clicking the hover menu on the tag, the tag will now be appended to the filter instead of replacing the entire filter state.
+
+### Bugfixes
+
+* [dagster-dbt] An exception is now emitted if you attempt to invoke the library without having dbt-core installed. dbt-core is now also added as a dependency to the library.
+* Asset group names can now contain reserved python keywords
+* Fixed a run config parsing bug that was introduced in `0.15.1` that caused Dagit to interpret datetime strings as datetime objects and octal strings as integers.
+* Runs that have failed to start are now represented in the Instance Timeline view on Dagit.
+* Fixed an issue where the partition status was missing for partitioned jobs that had no runs.
+* Fixed a bug where op/resource invocation would error when resources were required, no context was used in the body of the function, and no context was provided when invoking.
+* [dagster-databricks] Fixed an issue where an exception related to the deprecated prior_attempts_count field when using the databricks_pyspark_step_launcher.
+* [dagster-databricks] Polling information logged from the databricks_pyspark_step_launcher is now emitted at the DEBUG level instead of INFO.
+* In the yaml editor in Dagit, the typeahead feature now correctly shows suggestions for nullable schema types.
+* When editing asset configuration in Dagit, the “Scaffold config” button in the Dagit launchpad sometimes showed the scaffold dialog beneath the launchpad. This has been fixed.
+* A recent change added execution timezones to some human-readable cron strings on schedules in Dagit. This was added incorrectly in some cases, and has now been fixed.
+* In the Dagit launchpad, a config state containing only empty newlines could lead to an error that could break the editor. This has been fixed.
+* Fixed issue that could cause partitioned graph-backed assets to attempt to load upstream inputs from the incorrect path when using the fs_io_manager (or other similar io managers).
+* [dagster-dbt] Fixed issue where errors generated from issuing dbt cli commands would only show json-formatted output, rather than a parsed, human-readable output.
+* [dagster-dbt] By default, dagster will invoke the dbt cli with a --log-format json flag. In some cases, this may cause dbt to report incorrect or misleading error messages. As a workaround, it is now possible to disable this behavior by setting the json_log_format configuration option on the dbt_cli_resource to False.
+* materialize_to_memory erroneously allowed non-in-memory io managers to be used. Now, providing io managers to materialize_to_memory will result in an error, and mem_io_manager will be provided to all io manager keys.
+
 # 0.15.2
 
 ### Bugfixes
@@ -112,7 +148,7 @@ This release marks the official transition of software-defined assets from exper
 ### Extension libraries
 
 - [dagster-dbt] (breaks previously-experimental API) When using the load_assets_from_dbt_project or load_assets_from_dbt_manifest , the AssetKeys generated for dbt sources are now the union of the source name and the table name, and the AssetKeys generated for models are now the union of the configured schema name for a given model (if any), and the model name. To revert to the old behavior: `dbt_assets = load_assets_from_dbt_project(..., node_info_to_asset_key=lambda node_info: AssetKey(node_info["name"])`.
-- [dagster-k8s] In the Dagster Helm chart, user code deployment configuration (like secrets, configmaps, or volumes) is now automatically included in any runs launched from that code. Previously, this behavior was opt-in. In most cases, this will not be a breaking change, but in less common cases where a user code deployment was running in a different kubernetes namespace or using a different service account, this could result in missing secrets or configmaps in a launched run that previously worked. You can return to the previous behavior where config on the user code deployment was not applied to any runs by setting the includeConfigInLaunchedRuns.enabled field to false for the user code deployment. See the [Kubernetes Deployment docs](https://docs.dagster.io/deployment/guides/kubernetes/deploying-with-helm#configure-your-user-deployment) for more details. 
+- [dagster-k8s] In the Dagster Helm chart, user code deployment configuration (like secrets, configmaps, or volumes) is now automatically included in any runs launched from that code. Previously, this behavior was opt-in. In most cases, this will not be a breaking change, but in less common cases where a user code deployment was running in a different kubernetes namespace or using a different service account, this could result in missing secrets or configmaps in a launched run that previously worked. You can return to the previous behavior where config on the user code deployment was not applied to any runs by setting the includeConfigInLaunchedRuns.enabled field to false for the user code deployment. See the [Kubernetes Deployment docs](https://docs.dagster.io/deployment/guides/kubernetes/deploying-with-helm#configure-your-user-deployment) for more details.
 - [dagster-snowflake] dagster-snowflake has dropped support for python 3.6. The library it is currently built on, snowflake-connector-python, dropped 3.6 support in their recent 2.7.5 release.
 
 ### Other
@@ -126,7 +162,7 @@ This release marks the official transition of software-defined assets from exper
 * A new `define_asset_job` function allows you to define a selection of assets that should be executed together. The selection can be a simple string, or an AssetSelection object. This selection will be resolved into a set of assets once placed on the repository.
   ```
   from dagster import repository, define_asset_job, AssetSelection
-      
+
   string_selection_job = define_asset_job(
       name="foo_job", selection="*foo"
   )
@@ -148,19 +184,19 @@ This release marks the official transition of software-defined assets from exper
 * Resources and io managers can now be provided directly on assets and source assets.
   ```
   from dagster import asset, SourceAsset, resource, io_manager
-        
+
   @resource
   def foo_resource():
       pass
-      
+
   @asset(resource_defs={"foo": foo_resource})
   def the_resource(context):
       foo = context.resources.foo
-      
+
   @io_manager
   def the_manager():
       ...
-      
+
   @asset(io_manager_def=the_manager)
   def the_asset():
       ...
@@ -169,34 +205,34 @@ This release marks the official transition of software-defined assets from exper
 * A `materialize_to_memory` method which will load the materializations of a provided list of assets into memory:
   ```
   from dagster import asset, materialize_to_memory
-        
+
   @asset
   def the_asset():
       return 5
-      
+
   result = materialize_to_memory([the_asset])
   output = result.output_for_node("the_asset")
   ```
 * A `with_resources` method, which allows resources to be added to multiple assets / source assets at once:
   ```
   from dagster import asset, with_resources, resource
-      
+
   @asset(required_resource_keys={"foo"})
   def requires_foo(context):
       ...
-      
+
   @asset(required_resource_keys={"foo"})
   def also_requires_foo(context):
       ...
-      
+
   @resource
   def foo_resource():
       ...
-      
+
   requires_foo, also_requires_foo = with_resources(
-      [requires_foo, also_requires_foo], 
+      [requires_foo, also_requires_foo],
       {"foo": foo_resource},
-  ) 
+  )
   ```
 * You can now include asset definitions directly on repositories. A `default_executor_def` property has been added to the repository, which will be used on any materializations of assets provided directly to the repository.
   ```
@@ -210,7 +246,7 @@ This release marks the official transition of software-defined assets from exper
   def repo():
       return [my_asset]
   ```
-* The `run_storage`, `event_log_storage`, and `schedule_storage` configuration sections of the `dagster.yaml` can now be replaced by a unified `storage` configuration section. This should avoid duplicate configuration blocks with your `dagster.yaml`.  For example, instead of:  
+* The `run_storage`, `event_log_storage`, and `schedule_storage` configuration sections of the `dagster.yaml` can now be replaced by a unified `storage` configuration section. This should avoid duplicate configuration blocks with your `dagster.yaml`.  For example, instead of:
 
   ```
   # dagster.yaml
@@ -266,7 +302,7 @@ This release marks the official transition of software-defined assets from exper
 
 * Added a guide that helps users who are familiar with ops and graphs understand how and when to use software-defined assets.
 * Updated and reorganized docs to document software-defined assets changes since 0.14.0.
-* The Deploying in Docker example now includes an example of using the `docker_executor` to run each step of a job in a different Docker container. 
+* The Deploying in Docker example now includes an example of using the `docker_executor` to run each step of a job in a different Docker container.
 * Descriptions for the top-level fields of Dagit GraphQL queries, mutations, and subscriptions have been added.
 
 # 0.14.20

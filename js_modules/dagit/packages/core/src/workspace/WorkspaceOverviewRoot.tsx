@@ -12,6 +12,7 @@ import {
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useTrackPageView} from '../app/analytics';
 import {LoadingSpinner} from '../ui/Loading';
 
 import {ReloadAllButton} from './ReloadAllButton';
@@ -21,6 +22,7 @@ import {buildRepoPath} from './buildRepoAddress';
 import {workspacePath} from './workspacePath';
 
 export const WorkspaceOverviewRoot = () => {
+  useTrackPageView();
   const {loading, error, options} = useRepositoryOptions();
 
   const content = () => {

@@ -24,6 +24,7 @@ from dagster_test.graph_job_op_toys.error_monster import (
     error_monster_passing_job,
 )
 from dagster_test.graph_job_op_toys.hammer import hammer_default_executor_job
+from dagster_test.graph_job_op_toys.input_managers import df_stats_job
 from dagster_test.graph_job_op_toys.log_asset import log_asset_job
 from dagster_test.graph_job_op_toys.log_file import log_file_job
 from dagster_test.graph_job_op_toys.log_s3 import log_s3_job
@@ -32,9 +33,17 @@ from dagster_test.graph_job_op_toys.long_asset_keys import long_asset_keys_group
 from dagster_test.graph_job_op_toys.longitudinal import longitudinal_job
 from dagster_test.graph_job_op_toys.many_events import many_events, many_events_subset_job
 from dagster_test.graph_job_op_toys.metadata import with_metadata
+from dagster_test.graph_job_op_toys.multi_inputs_outputs import multi_inputs_outputs_job
 from dagster_test.graph_job_op_toys.notebooks import hello_world_notebook_pipeline
 from dagster_test.graph_job_op_toys.partitioned_assets import partitioned_asset_group
 from dagster_test.graph_job_op_toys.retries import retry_job
+from dagster_test.graph_job_op_toys.run_status_sensors import (
+    fails_job,
+    fails_sensor,
+    status_job,
+    succeeds_job,
+    succeeds_sensor,
+)
 from dagster_test.graph_job_op_toys.sleepy import sleepy_job
 from dagster_test.graph_job_op_toys.software_defined_assets import software_defined_assets
 from dagster_test.graph_job_op_toys.unreliable import unreliable_job
@@ -84,9 +93,16 @@ def toys_repository():
             asset_lineage_job,
             asset_lineage_partition_set,
             model_job,
+            multi_inputs_outputs_job,
             hello_world_notebook_pipeline,
             software_defined_assets,
             with_metadata,
+            succeeds_job,
+            succeeds_sensor,
+            fails_job,
+            fails_sensor,
+            status_job,
+            df_stats_job,
         ]
         + get_toys_schedules()
         + get_toys_sensors()

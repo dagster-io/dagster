@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSensors} from '../instigation/Unloadable';
 import {SENSOR_FRAGMENT} from '../sensors/SensorFragment';
@@ -19,6 +20,8 @@ import {InstanceTabs} from './InstanceTabs';
 import {InstanceSensorsQuery} from './types/InstanceSensorsQuery';
 
 export const InstanceSensors = React.memo(() => {
+  useTrackPageView();
+
   const queryData = useQuery<InstanceSensorsQuery>(INSTANCE_SENSORS_QUERY, {
     fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,

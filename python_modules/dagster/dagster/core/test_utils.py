@@ -6,6 +6,7 @@ import sys
 import tempfile
 import time
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
 
 import pendulum
@@ -417,12 +418,7 @@ def get_terminate_signal():
 
 
 def get_crash_signals():
-    if sys.platform == "win32":
-        return [
-            get_terminate_signal()
-        ]  # Windows keeps resources open after termination in a way that messes up tests
-    else:
-        return [get_terminate_signal(), signal.SIGINT]
+    return [get_terminate_signal()]
 
 
 _mocked_system_timezone = {"timezone": None}
@@ -562,3 +558,26 @@ def test_counter():
     counts = counter.counts()
     assert counts["foo"] == 20
     assert counts["bar"] == 10
+
+
+def wait_for_futures(futures, timeout=None):
+    start_time = time.time()
+    for target_id, future in futures.copy().items():
+        if timeout is not None:
+            future_timeout = max(0, timeout - (time.time() - start_time))
+        else:
+            future_timeout = None
+
+        if not future.done():
+            future.result(timeout=future_timeout)
+            del futures[target_id]
+
+
+class SingleThreadPoolExecutor(ThreadPoolExecutor):
+    """
+    Utility class for testing threadpool executor logic which executes functions in a single
+    thread, for easier unit testing.
+    """
+
+    def __init__(self):
+        super().__init__(max_workers=1, thread_name_prefix="sensor_daemon_worker")

@@ -1,7 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
+import keyBy from 'lodash/keyBy';
 import React from 'react';
 
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
+import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../types/globalTypes';
 
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
@@ -17,6 +19,11 @@ export interface AssetGraphFetchScope {
   pipelineSelector?: PipelineSelector;
   groupSelector?: AssetGroupSelector;
 }
+
+export type AssetGraphQueryItem = GraphQueryItem & {
+  node: AssetNode;
+};
+
 /** Fetches data for rendering an asset graph:
  *
  * @param pipelineSelector: Optionally scope to an asset job, or pass null for the global graph
@@ -88,11 +95,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 type AssetNode = AssetGraphQuery_assetNodes;
 
 const buildGraphQueryItems = (nodes: AssetNode[]) => {
-  const items: {
-    [name: string]: GraphQueryItem & {
-      node: AssetNode;
-    };
-  } = {};
+  const items: {[name: string]: AssetGraphQueryItem} = {};
 
   for (const node of nodes) {
     const name = tokenForAssetKey(node.assetKey);
@@ -128,6 +131,34 @@ const removeEdgesToHiddenAssets = (graphData: GraphData) => {
       }
     }
   }
+};
+
+export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: AssetKey) => {
+  const map = keyBy(items, (g) => g.name);
+  const start = map[tokenForAssetKey(assetKey)];
+  if (!start) {
+    return {upstream: 0, downstream: 0};
+  }
+
+  const bfsUpstream = (ins: GraphQueryItem['inputs'], depth: number): number => {
+    const next = ins
+      .flatMap((i) => i.dependsOn.map((d) => d.solid.name))
+      .map((name) => map[name].inputs);
+
+    return Math.max(depth, ...next.map((nextIns) => bfsUpstream(nextIns, depth + 1)));
+  };
+  const bfsDownstream = (outs: GraphQueryItem['outputs'], depth: number): number => {
+    const next = outs
+      .flatMap((i) => i.dependedBy.map((d) => d.solid.name))
+      .map((name) => map[name].outputs);
+
+    return Math.max(depth, ...next.map((nextOuts) => bfsDownstream(nextOuts, depth + 1)));
+  };
+
+  return {
+    upstream: bfsUpstream(start.inputs, 0),
+    downstream: bfsDownstream(start.outputs, 0),
+  };
 };
 
 const ASSET_GRAPH_QUERY = gql`

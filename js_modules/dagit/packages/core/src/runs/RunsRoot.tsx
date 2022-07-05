@@ -24,6 +24,7 @@ import {
   QueryRefreshCountdown,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 import {RunStatus} from '../types/globalTypes';
@@ -64,7 +65,9 @@ const selectedTabId = (filterTokens: TokenizingFieldValue[]) => {
 };
 
 export const RunsRoot = () => {
+  useTrackPageView();
   useDocumentTitle('Runs');
+
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
   const [showScheduled, setShowScheduled] = React.useState(false);

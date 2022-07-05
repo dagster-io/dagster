@@ -86,7 +86,8 @@ class SolidDefinitionResourceRequirement(
 
 class InputManagerRequirement(
     NamedTuple(
-        "_InputManagerRequirement", [("key", str), ("node_description", str), ("input_name", str)]
+        "_InputManagerRequirement",
+        [("key", str), ("node_description", str), ("input_name", str), ("root_input", bool)],
     ),
     ResourceRequirement,
 ):

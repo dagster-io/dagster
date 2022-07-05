@@ -13,6 +13,9 @@ if TYPE_CHECKING:
         PipelineFailureSensorContext,
         RunFailureSensorContext,
     )
+    from dagster.core.definitions.unresolved_asset_job_definition import (
+        UnresolvedAssetJobDefinition,
+    )
 
 
 def _default_failure_email_body(context) -> str:
@@ -192,7 +195,9 @@ def make_email_on_run_failure_sensor(
     smtp_port: Optional[int] = None,
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
-    job_selection: Optional[List[Union["PipelineDefinition", "GraphDefinition"]]] = None,
+    job_selection: Optional[
+        List[Union["PipelineDefinition", "GraphDefinition", "UnresolvedAssetJobDefinition"]]
+    ] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
     """Create a job failure sensor that sends email via the SMTP protocol.

@@ -17,6 +17,7 @@ import {
   QueryRefreshCountdown,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
 import {
@@ -44,6 +45,8 @@ interface Props {
 }
 
 export const PipelineRunsRoot: React.FC<Props> = (props) => {
+  useTrackPageView();
+
   const {pipelinePath} = useParams<{pipelinePath: string}>();
   const {repoAddress = null} = props;
   const explorerPath = explorerPathFromString(pipelinePath);

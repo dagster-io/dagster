@@ -315,6 +315,14 @@ class SolidDefinition(NodeDefinition):
                     key=input_def.root_manager_key,
                     node_description=node_description,
                     input_name=input_def.name,
+                    root_input=True,
+                )
+            elif input_def.input_manager_key:
+                yield InputManagerRequirement(
+                    key=input_def.input_manager_key,
+                    node_description=node_description,
+                    input_name=input_def.name,
+                    root_input=False,
                 )
             elif asset_layer and handle:
                 input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
@@ -324,6 +332,7 @@ class SolidDefinition(NodeDefinition):
                         key=io_manager_key,
                         node_description=node_description,
                         input_name=input_def.name,
+                        root_input=False,
                     )
 
         for output_def in self.output_defs:

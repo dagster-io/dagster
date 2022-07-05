@@ -3,6 +3,7 @@ import {Box, Colors, PageHeader, Heading, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 
 import {DaemonList} from './DaemonList';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
@@ -10,6 +11,8 @@ import {InstanceTabs} from './InstanceTabs';
 import {InstanceHealthQuery} from './types/InstanceHealthQuery';
 
 export const InstanceHealthPage = () => {
+  useTrackPageView();
+
   const queryData = useQuery<InstanceHealthQuery>(INSTANCE_HEALTH_QUERY, {
     fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,

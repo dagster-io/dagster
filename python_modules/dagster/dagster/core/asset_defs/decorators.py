@@ -96,9 +96,9 @@ def asset(
     """Create a definition for how to compute an asset.
 
     A software-defined asset is the combination of:
-    1. An asset key, e.g. the name of a table.
-    2. A function, which can be run to compute the contents of the asset.
-    3. A set of upstream assets that are provided as inputs to the function when computing the asset.
+      1. An asset key, e.g. the name of a table.
+      2. A function, which can be run to compute the contents of the asset.
+      3. A set of upstream assets that are provided as inputs to the function when computing the asset.
 
     Unlike an op, whose dependencies are determined by the graph it lives inside, an asset knows
     about the upstream assets it depends on. The upstream assets are inferred from the arguments
@@ -519,15 +519,20 @@ def build_asset_ins(
             asset_key = asset_ins[input_name].key
             metadata = asset_ins[input_name].metadata or {}
             key_prefix = asset_ins[input_name].key_prefix
+            input_manager_key = asset_ins[input_name].input_manager_key
         else:
             metadata = {}
             key_prefix = None
+            input_manager_key = None
 
         asset_key = asset_key or AssetKey(
             list(filter(None, [*(key_prefix or asset_key_prefix or []), input_name]))
         )
 
-        ins_by_asset_key[asset_key] = (input_name.replace("-", "_"), In(metadata=metadata))
+        ins_by_asset_key[asset_key] = (
+            input_name.replace("-", "_"),
+            In(metadata=metadata, input_manager_key=input_manager_key),
+        )
 
     for asset_key in non_argument_deps:
         stringified_asset_key = "_".join(asset_key.path).replace("-", "_")

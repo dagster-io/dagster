@@ -35,6 +35,7 @@ if __name__ == "__main__":
         install_requires=[
             f"dagster{pin}",
             f"dagster-pandas{pin}",
+            "dbt-core",
             "pandas",
             "requests",
             "attrs",
@@ -43,7 +44,6 @@ if __name__ == "__main__":
         extras_require={
             "test": [
                 "Jinja2",
-                "dbt-core",
                 "dbt-rpc",
                 "dbt-postgres",
                 "matplotlib",

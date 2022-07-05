@@ -141,7 +141,11 @@ class SensorEvaluationContext:
 SensorExecutionContext = SensorEvaluationContext
 
 RawSensorEvaluationFunctionReturn = Union[
-    Iterator[Union[SkipReason, RunRequest]], List[RunRequest], SkipReason, RunRequest
+    Iterator[Union[SkipReason, RunRequest]],
+    List[RunRequest],
+    SkipReason,
+    RunRequest,
+    PipelineRunReaction,
 ]
 RawSensorEvaluationFunction = Union[
     Callable[[], RawSensorEvaluationFunctionReturn],
@@ -253,9 +257,13 @@ class SensorDefinition:
         self._raw_fn: RawSensorEvaluationFunction = check.callable_param(
             evaluation_fn, "evaluation_fn"
         )
-        self._evaluation_fn: SensorEvaluationFunction = wrap_sensor_evaluation(
-            self._name, evaluation_fn
-        )
+        self._evaluation_fn: Union[
+            SensorEvaluationFunction,
+            Callable[
+                [SensorEvaluationContext],
+                Iterator[Union[SkipReason, RunRequest, PipelineRunReaction]],
+            ],
+        ] = wrap_sensor_evaluation(self._name, evaluation_fn)
         self._min_interval = check.opt_int_param(
             minimum_interval_seconds, "minimum_interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
         )
@@ -364,31 +372,24 @@ class SensorDefinition:
         else:
             check.is_list(result, (SkipReason, RunRequest, PipelineRunReaction))
             has_skip = any(map(lambda x: isinstance(x, SkipReason), result))
-            has_run_request = any(map(lambda x: isinstance(x, RunRequest), result))
-            has_run_reaction = any(map(lambda x: isinstance(x, PipelineRunReaction), result))
+            run_requests = [item for item in result if isinstance(item, RunRequest)]
+            pipeline_run_reactions = [
+                item for item in result if isinstance(item, PipelineRunReaction)
+            ]
 
             if has_skip:
-                if has_run_request:
+                if len(run_requests) > 0:
                     check.failed(
                         "Expected a single SkipReason or one or more RunRequests: received both "
                         "RunRequest and SkipReason"
                     )
-                elif has_run_reaction:
+                elif len(pipeline_run_reactions) > 0:
                     check.failed(
                         "Expected a single SkipReason or one or more PipelineRunReaction: "
                         "received both PipelineRunReaction and SkipReason"
                     )
                 else:
                     check.failed("Expected a single SkipReason: received multiple SkipReasons")
-
-            if has_run_request:
-                run_requests = cast(List[RunRequest], result)
-                pipeline_run_reactions = []
-
-            else:
-                # only run reactions
-                run_requests = []
-                pipeline_run_reactions = cast(List[PipelineRunReaction], result)
 
         self.check_valid_run_requests(run_requests)
 

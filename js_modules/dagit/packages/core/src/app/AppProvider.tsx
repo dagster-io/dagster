@@ -34,6 +34,7 @@ import {LayoutProvider} from './LayoutProvider';
 import {PermissionsProvider} from './Permissions';
 import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
 import {WebSocketProvider} from './WebSocketProvider';
+import {AnalyticsContext, dummyAnalytics} from './analytics';
 import {TimezoneProvider} from './time/TimezoneContext';
 
 import './blueprint.css';
@@ -157,6 +158,8 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
     [basePath, rootServerURI, staticPathRoot, telemetryEnabled],
   );
 
+  const analytics = React.useMemo(() => dummyAnalytics(), []);
+
   return (
     <AppContext.Provider value={appContextValue}>
       <WebSocketProvider websocketClient={websocketClient}>
@@ -174,7 +177,9 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
               <TimezoneProvider>
                 <WorkspaceProvider>
                   <CustomConfirmationProvider>
-                    <LayoutProvider>{props.children}</LayoutProvider>
+                    <AnalyticsContext.Provider value={analytics}>
+                      <LayoutProvider>{props.children}</LayoutProvider>
+                    </AnalyticsContext.Provider>
                   </CustomConfirmationProvider>
                   <CustomTooltipProvider />
                   <CustomAlertProvider />

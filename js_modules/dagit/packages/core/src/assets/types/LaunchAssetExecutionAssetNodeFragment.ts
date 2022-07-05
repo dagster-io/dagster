@@ -30,6 +30,11 @@ export interface LaunchAssetExecutionAssetNodeFragment_repository {
   location: LaunchAssetExecutionAssetNodeFragment_repository_location;
 }
 
+export interface LaunchAssetExecutionAssetNodeFragment_requiredResources {
+  __typename: "ResourceRequirement";
+  resourceKey: string;
+}
+
 export interface LaunchAssetExecutionAssetNodeFragment_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
@@ -556,5 +561,6 @@ export interface LaunchAssetExecutionAssetNodeFragment {
   assetKey: LaunchAssetExecutionAssetNodeFragment_assetKey;
   dependencyKeys: LaunchAssetExecutionAssetNodeFragment_dependencyKeys[];
   repository: LaunchAssetExecutionAssetNodeFragment_repository;
+  requiredResources: LaunchAssetExecutionAssetNodeFragment_requiredResources[];
   configField: LaunchAssetExecutionAssetNodeFragment_configField | null;
 }

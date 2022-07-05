@@ -17,6 +17,7 @@ import {useHistory, useLocation, useParams} from 'react-router-dom';
 import {AutoSizer, CellMeasurer, CellMeasurerCache, List} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
+import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -117,10 +118,12 @@ interface Props {
 }
 
 export const OpsRoot: React.FC<Props> = (props) => {
+  useTrackPageView();
+  useDocumentTitle('Ops');
+
   const {name} = useParams<{name?: string}>();
   const {repoAddress} = props;
 
-  useDocumentTitle('Ops');
   const repositorySelector = repoAddressToSelector(repoAddress);
 
   const queryResult = useQuery<OpsRootQuery, OpsRootQueryVariables>(OPS_ROOT_QUERY, {

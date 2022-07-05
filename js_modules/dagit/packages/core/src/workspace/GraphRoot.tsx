@@ -4,6 +4,7 @@ import React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
@@ -28,6 +29,8 @@ interface Props {
 }
 
 export const GraphRoot: React.FC<Props> = (props) => {
+  useTrackPageView();
+
   const {repoAddress} = props;
   const params = useParams();
 
