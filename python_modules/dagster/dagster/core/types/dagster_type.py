@@ -27,7 +27,9 @@ from .builtin_config_schemas import BuiltinSchemas
 from .config_schema import DagsterTypeLoader, DagsterTypeMaterializer
 
 if t.TYPE_CHECKING:
-    from dagster.core.definitions.node_definition import NodeDefinition
+    from dagster.core.definitions.node_definition import (  # pylint: disable=unused-import
+        NodeDefinition,
+    )
     from dagster.core.execution.context.system import (  # pylint: disable=unused-import
         StepExecutionContext,
         TypeCheckContext,
