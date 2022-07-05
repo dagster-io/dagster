@@ -359,19 +359,32 @@ def execute_sensor_iteration(
         elif _is_under_min_interval(sensor_state, external_sensor, now):
             continue
 
-        future = executor.submit(
-            _process_tick,
-            logger,
-            instance,
-            workspace,
-            now,
-            external_sensor,
-            sensor_state,
-            sensor_debug_crash_flags,
-            tick_retention_settings,
-        )
-        if debug_futures is not None:
-            debug_futures[external_sensor.selector_id] = future
+        if isinstance(executor, SynchronousExecutor):
+            yield from _process_tick_generator(
+                logger,
+                instance,
+                workspace,
+                now,
+                external_sensor,
+                sensor_state,
+                sensor_debug_crash_flags,
+                tick_retention_settings,
+            )
+        else:
+            future = executor.submit(
+                _process_tick,
+                logger,
+                instance,
+                workspace,
+                now,
+                external_sensor,
+                sensor_state,
+                sensor_debug_crash_flags,
+                tick_retention_settings,
+            )
+            yield
+            if debug_futures is not None:
+                debug_futures[external_sensor.selector_id] = future
 
 
 def _process_tick(
@@ -384,6 +397,31 @@ def _process_tick(
     sensor_debug_crash_flags,
     tick_retention_settings,
 ):
+    list(
+        _process_tick_generator(
+            logger,
+            instance,
+            workspace,
+            now,
+            external_sensor,
+            sensor_state,
+            sensor_debug_crash_flags,
+            tick_retention_settings,
+        )
+    )
+
+
+def _process_tick_generator(
+    logger,
+    instance,
+    workspace,
+    now,
+    external_sensor,
+    sensor_state,
+    sensor_debug_crash_flags,
+    tick_retention_settings,
+):
+    error_info = None
     try:
         tick = instance.create_tick(
             TickData(
@@ -402,15 +440,13 @@ def _process_tick(
             external_sensor, tick, instance, logger, tick_retention_settings
         ) as tick_context:
             _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
-            return list(
-                _evaluate_sensor(
-                    tick_context,
-                    instance,
-                    workspace,
-                    external_sensor,
-                    sensor_state,
-                    sensor_debug_crash_flags,
-                )
+            yield from _evaluate_sensor(
+                tick_context,
+                instance,
+                workspace,
+                external_sensor,
+                sensor_state,
+                sensor_debug_crash_flags,
             )
 
     except Exception:
@@ -418,6 +454,8 @@ def _process_tick(
         logger.error(
             f"Sensor daemon caught an error for sensor {external_sensor.name} : {error_info.to_string()}"
         )
+
+    yield error_info
 
 
 def _evaluate_sensor(
@@ -444,6 +482,8 @@ def _evaluate_sensor(
         state.instigator_data.last_run_key if state.instigator_data else None,
         state.instigator_data.cursor if state.instigator_data else None,
     )
+
+    yield
 
     assert isinstance(sensor_runtime_data, SensorExecutionData)
     if not sensor_runtime_data.run_requests:
@@ -500,6 +540,7 @@ def _evaluate_sensor(
             context.logger.info(f"No run requests returned for {external_sensor.name}, skipping")
             context.update_state(TickStatus.SKIPPED, cursor=sensor_runtime_data.cursor)
 
+        yield
         return  # Done with run status sensors
 
     skipped_runs = []
@@ -531,12 +572,12 @@ def _evaluate_sensor(
         if isinstance(run, SkippedSensorRun):
             skipped_runs.append(run)
             context.add_run_info(run_id=None, run_key=run_request.run_key)
+            yield
             continue
 
         _check_for_debug_crash(sensor_debug_crash_flags, "RUN_CREATED")
 
         error_info = None
-
         try:
             context.logger.info(
                 "Launching run for {sensor_name}".format(sensor_name=external_sensor.name)
@@ -552,7 +593,7 @@ def _evaluate_sensor(
             context.logger.error(
                 f"Run {run.run_id} created successfully but failed to launch: " f"{str(error_info)}"
             )
-            yield error_info
+        yield error_info
 
         _check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
 
@@ -570,6 +611,8 @@ def _evaluate_sensor(
         context.update_state(TickStatus.SUCCESS, cursor=sensor_runtime_data.cursor)
     else:
         context.update_state(TickStatus.SKIPPED, cursor=sensor_runtime_data.cursor)
+
+    yield
 
 
 def _is_under_min_interval(state, external_sensor, now):
