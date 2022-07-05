@@ -1,6 +1,6 @@
 from typing import List
 
-from ..images.versions import TEST_IMAGE_BUILDER_VERSION, UNIT_IMAGE_VERSION
+from ..images.versions import TEST_IMAGE_BUILDER_VERSION, TEST_IMAGE_BUILDER_BASE_VERSION
 from ..python_version import AvailablePythonVersion
 from ..step_builder import CommandStepBuilder
 from ..utils import BuildkiteLeafStep, GroupStep
@@ -27,10 +27,10 @@ def build_test_image_steps() -> List[GroupStep]:
                 "/scriptdir/aws.pex ecr get-login --no-include-email --region us-west-2 | sh",
                 'export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp-key-elementl-dev.json"',
                 "/scriptdir/aws.pex s3 cp s3://$${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json $${GOOGLE_APPLICATION_CREDENTIALS}",
-                "export BASE_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/buildkite-unit:py"
+                "export BASE_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/buildkite-test-image-builder-base:py"
                 + version
                 + "-"
-                + UNIT_IMAGE_VERSION,
+                + TEST_IMAGE_BUILDER_BASE_VERSION,
                 # build and tag test image
                 "export TEST_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/buildkite-test-image:$${BUILDKITE_BUILD_ID}-"
                 + version,
@@ -67,10 +67,10 @@ def build_test_image_steps() -> List[GroupStep]:
                 # credentials
                 "/scriptdir/aws.pex ecr get-login --no-include-email --region us-west-2 | sh",
                 # set the base image
-                "export BASE_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/buildkite-unit:py"
+                "export BASE_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/buildkite-test-image-builder-base:py"
                 + version
                 + "-"
-                + UNIT_IMAGE_VERSION,
+                + TEST_IMAGE_BUILDER_BASE_VERSION,
                 # build and tag test image
                 "export TEST_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/buildkite-test-image-core:$${BUILDKITE_BUILD_ID}-"
                 + version,

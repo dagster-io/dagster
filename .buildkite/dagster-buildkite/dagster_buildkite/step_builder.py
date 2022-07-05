@@ -2,7 +2,7 @@ import os
 from enum import Enum
 from typing import Dict, List, Optional
 
-from .images.versions import INTEGRATION_IMAGE_VERSION, UNIT_IMAGE_VERSION
+from .images.versions import INTEGRATION_IMAGE_VERSION
 from .python_version import AvailablePythonVersion
 from .utils import CommandStep
 
@@ -86,17 +86,6 @@ class CommandStepBuilder:
         }
         self._step["plugins"] = [{ECR_PLUGIN: ecr_settings}, {DOCKER_PLUGIN: settings}]
         return self
-
-    def on_unit_image(
-        self, ver: AvailablePythonVersion, env: Optional[List[str]] = None
-    ) -> "CommandStepBuilder":
-        if not isinstance(ver, AvailablePythonVersion):
-            raise Exception(f"Unsupported python version for unit image: {ver}.")
-
-        return self.on_python_image(
-            image=f"buildkite-unit:py{ver}-{UNIT_IMAGE_VERSION}",
-            env=env,
-        )
 
     def on_integration_image(
         self, ver: AvailablePythonVersion, env: Optional[List[str]] = None

@@ -28,5 +28,5 @@ def get_image_version(image_name: str) -> str:
 
 COVERAGE_IMAGE_VERSION: str = get_image_version("buildkite-coverage")
 INTEGRATION_IMAGE_VERSION: str = get_image_version("buildkite-integration")
-UNIT_IMAGE_VERSION: str = get_image_version("buildkite-unit")
+TEST_IMAGE_BUILDER_BASE_VERSION: str = get_image_version("buildkite-test-image-builder-base")
 TEST_IMAGE_BUILDER_VERSION: str = get_image_version("buildkite-test-image-builder")
