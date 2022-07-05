@@ -168,15 +168,13 @@ const useLogsProviderWithSubscription = (runId: string) => {
       }
       const queuedLogs = [...queue.current];
       queue.current = [];
-      const queuedMessages = ([] as RunDagsterRunEventFragment[]).concat(
-        ...queuedLogs.map((log) => log.messages),
-      );
+      const queuedMessages = queuedLogs.flatMap((log) => log.messages);
       const lastLog = queuedLogs[queuedLogs.length - 1];
       const hasMore = lastLog.hasMorePastEvents;
       const cursor = lastLog.cursor;
 
       dispatch({type: 'append', queued: queuedMessages, hasMore, cursor});
-      const nextPipelineStatus = pipelineStatusFromMessages(lastLog.messages);
+      const nextPipelineStatus = pipelineStatusFromMessages(queuedMessages);
 
       // If we're still loading past events, don't sync to the cache -- event chunks could
       // give us `status` values that don't match the actual state of the run.
