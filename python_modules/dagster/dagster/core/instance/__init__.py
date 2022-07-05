@@ -1618,16 +1618,6 @@ class DagsterInstance:
             "This run has been marked as failed from outside the execution context.",
         )
 
-        run = self.get_run_by_id(pipeline_run.run_id)
-        if run is None:
-            raise DagsterInvariantViolationError(
-                f"Could not load run {pipeline_run.run_id} that was passed to report_run_failed"
-            )
-        if run.status not in IN_PROGRESS_RUN_STATUSES:
-            raise DagsterInvariantViolationError(
-                f"Run {run.run_id} with status {run.status} is not in a state that can be failed"
-            )
-
         dagster_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
             pipeline_name=pipeline_run.pipeline_name,
