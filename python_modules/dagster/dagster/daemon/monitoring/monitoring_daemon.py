@@ -49,7 +49,7 @@ def monitor_started_run(instance: DagsterInstance, workspace, run, logger):
         if status_changed:
             msg = (
                 f"Detected run status changed during monitoring loop: "
-                f"{run.status} -> {new_run.status}, disregarding for now"
+                f"{run.status} -> {recheck_run.status}, disregarding for now"
             )
             logger.info(msg)
             return
