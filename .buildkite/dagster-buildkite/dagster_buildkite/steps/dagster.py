@@ -42,7 +42,7 @@ def build_repo_wide_black_steps() -> List[CommandStep]:
     return [
         CommandStepBuilder(":python-black: black")
         .run("pip install -e python_modules/dagster[black]", "make check_black")
-        .on_integration_image(AvailablePythonVersion.get_default())
+        .on_test_image(AvailablePythonVersion.get_default())
         .build(),
     ]
 
@@ -51,7 +51,7 @@ def build_repo_wide_isort_steps() -> List[CommandStep]:
     return [
         CommandStepBuilder(":isort: isort")
         .run("pip install -e python_modules/dagster[isort]", "make check_isort")
-        .on_integration_image(AvailablePythonVersion.get_default())
+        .on_test_image(AvailablePythonVersion.get_default())
         .build(),
     ]
 
@@ -74,7 +74,7 @@ def build_repo_wide_check_manifest_steps() -> List[CommandStep]:
 
     return [
         CommandStepBuilder(":white_check_mark: check-manifest")
-        .on_integration_image(AvailablePythonVersion.get_default())
+        .on_test_image(AvailablePythonVersion.get_default())
         .run(*commands)
         .build()
     ]
@@ -83,7 +83,7 @@ def build_repo_wide_check_manifest_steps() -> List[CommandStep]:
 def build_sql_schema_check_steps() -> List[CommandStep]:
     return [
         CommandStepBuilder(":mysql: mysql-schema")
-        .on_integration_image(AvailablePythonVersion.get_default())
+        .on_test_image(AvailablePythonVersion.get_default())
         .run("pip install -e python_modules/dagster", "python scripts/check_schemas.py")
         .build()
     ]
@@ -92,7 +92,7 @@ def build_sql_schema_check_steps() -> List[CommandStep]:
 def build_graphql_python_client_backcompat_steps() -> List[CommandStep]:
     return [
         CommandStepBuilder(":graphql: GraphQL Python Client backcompat")
-        .on_integration_image(AvailablePythonVersion.get_default())
+        .on_test_image(AvailablePythonVersion.get_default())
         .run(
             "pip install -e python_modules/dagster[test] -e python_modules/dagster-graphql -e python_modules/automation",
             "dagster-graphql-client query check",

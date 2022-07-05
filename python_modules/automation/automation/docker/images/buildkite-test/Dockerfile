@@ -1,13 +1,13 @@
 ####################################################################################################
 #
-# DAGSTER INTEGRATION IMAGE Base
+# DAGSTER BUILDKITE TEST
 #
-# We use this Dockerfile to build an image for our Buildkite CI/CD pipeline.
-# System dependencies go here - Python dependencies go in buildkite-integration.
+# This Dockerfile specifies an image that serves as base for all Python testing
+# steps (both integration and unit) run on BK. 
 #
 ####################################################################################################
 ARG BASE_IMAGE
-FROM "${BASE_IMAGE}"
+FROM "${BASE_IMAGE}" AS system_base
 
 LABEL maintainer="Elementl"
 
@@ -141,3 +141,23 @@ RUN curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/f
 RUN apt-get remove -yqq \
     && apt-get autoremove -yqq --purge \
     && apt-get clean
+
+
+# Temp image used to get non-dagster Python dependencies
+FROM system_base AS snapshot_builder
+
+# Build a requirements file with all non-Dagster packages
+RUN git clone https://github.com/dagster-io/dagster.git \
+    && cd dagster \
+    && make install_dev_python_modules \
+    && pip freeze --exclude-editable > /snapshot-reqs.txt
+
+# Final image includes both system deps and preinstalled non-Dagster python deps
+FROM system_base
+
+COPY --from=snapshot_builder /snapshot-reqs.txt .
+
+# Preinstall non-Dagster packages in image so that the virtual environment
+# builds faster in Buildkite.
+RUN pip install -r /snapshot-reqs.txt \
+    && rm /snapshot-reqs.txt
