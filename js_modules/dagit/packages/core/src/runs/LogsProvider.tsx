@@ -13,6 +13,7 @@ import {LogNode} from './types';
 import {
   PipelineRunLogsSubscription,
   PipelineRunLogsSubscriptionVariables,
+  PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess,
 } from './types/PipelineRunLogsSubscription';
 import {PipelineRunLogsSubscriptionStatusFragment} from './types/PipelineRunLogsSubscriptionStatusFragment';
 import {RunDagsterRunEventFragment} from './types/RunDagsterRunEventFragment';
@@ -117,7 +118,9 @@ const initialState: State = {
 
 const useLogsProviderWithSubscription = (runId: string) => {
   const client = useApolloClient();
-  const queue = React.useRef<RunDagsterRunEventFragment[]>([]);
+  const queue = React.useRef<
+    PipelineRunLogsSubscription_pipelineRunLogs_PipelineRunLogsSubscriptionSuccess[]
+  >([]);
   const [state, dispatch] = React.useReducer(reducer, initialState);
 
   const syncPipelineStatusToApolloCache = React.useCallback(
@@ -159,12 +162,29 @@ const useLogsProviderWithSubscription = (runId: string) => {
   // Batch the nodes together so they don't overwhelm the animation of the Gantt,
   // which depends on a bit of a timing delay to maintain smoothness.
   const throttledSetNodes = React.useMemo(() => {
-    return throttle((hasMore: boolean, cursor: string) => {
-      const queued = [...queue.current];
+    return throttle(() => {
+      if (!queue.current.length) {
+        return;
+      }
+      const queuedLogs = [...queue.current];
       queue.current = [];
-      dispatch({type: 'append', queued, hasMore, cursor});
+      const queuedMessages = ([] as RunDagsterRunEventFragment[]).concat(
+        ...queuedLogs.map((log) => log.messages),
+      );
+      const lastLog = queuedLogs[queuedLogs.length - 1];
+      const hasMore = lastLog.hasMorePastEvents;
+      const cursor = lastLog.cursor;
+
+      dispatch({type: 'append', queued: queuedMessages, hasMore, cursor});
+      const nextPipelineStatus = pipelineStatusFromMessages(lastLog.messages);
+
+      // If we're still loading past events, don't sync to the cache -- event chunks could
+      // give us `status` values that don't match the actual state of the run.
+      if (nextPipelineStatus && !hasMore) {
+        syncPipelineStatusToApolloCache(nextPipelineStatus);
+      }
     }, BATCH_INTERVAL);
-  }, []);
+  }, [syncPipelineStatusToApolloCache]);
 
   const {nodes, counts, cursor, loading} = state;
 
@@ -178,19 +198,12 @@ const useLogsProviderWithSubscription = (runId: string) => {
         if (!logs || logs.__typename === 'PipelineRunLogsSubscriptionFailure') {
           return;
         }
-
-        const {messages, hasMorePastEvents, cursor} = logs;
-        const nextPipelineStatus = pipelineStatusFromMessages(messages);
-
-        // If we're still loading past events, don't sync to the cache -- event chunks could
-        // give us `status` values that don't match the actual state of the run.
-        if (nextPipelineStatus && !hasMorePastEvents) {
-          syncPipelineStatusToApolloCache(nextPipelineStatus);
-        }
-
         // Maintain a queue of messages as they arrive, and call the throttled setter.
-        queue.current = [...queue.current, ...messages];
-        throttledSetNodes(hasMorePastEvents, cursor);
+        queue.current = [...queue.current, logs];
+        // Wait until end of animation frame to call throttled set nodes
+        // otherwise we wont end up batching anything if rendering takes
+        // longer than the BATCH_INTERVAL
+        requestAnimationFrame(throttledSetNodes);
       },
     },
   );
