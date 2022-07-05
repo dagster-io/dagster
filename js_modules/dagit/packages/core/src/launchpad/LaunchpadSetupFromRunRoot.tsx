@@ -8,7 +8,7 @@ import {
   useExecutionSessionStorage,
 } from '../app/ExecutionSessionStorage';
 import {usePermissions} from '../app/Permissions';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';

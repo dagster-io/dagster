@@ -1,7 +1,7 @@
 import {gql, useApolloClient, ApolloClient} from '@apollo/client';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {DagsterTag} from '../runs/RunTag';
 import {RunFilterToken} from '../runs/RunsFilterInput';

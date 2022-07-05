@@ -21,7 +21,8 @@ import styled from 'styled-components/macro';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {PartitionStatus} from '../partitions/PartitionStatus';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {

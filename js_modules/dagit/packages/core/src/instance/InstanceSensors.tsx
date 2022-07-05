@@ -2,7 +2,8 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, PageHeader, Heading, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';

@@ -11,7 +11,7 @@ import {
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,

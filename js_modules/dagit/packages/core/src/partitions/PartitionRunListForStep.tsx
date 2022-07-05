@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {NonIdealState, Spinner} from '@dagster-io/ui';
 import React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
 import {StepEventStatus} from '../types/globalTypes';

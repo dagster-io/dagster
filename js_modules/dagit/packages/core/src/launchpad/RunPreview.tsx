@@ -19,7 +19,8 @@ import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {errorStackToYamlPath} from '../configeditor/ConfigEditorUtils';
 import {
   ConfigEditorRunConfigSchemaFragment,

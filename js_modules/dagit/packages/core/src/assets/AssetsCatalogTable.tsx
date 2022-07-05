@@ -14,7 +14,8 @@ import uniqBy from 'lodash/uniqBy';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {tokenForAssetKey} from '../asset-graph/Utils';

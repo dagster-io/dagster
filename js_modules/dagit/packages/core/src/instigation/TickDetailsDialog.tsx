@@ -4,7 +4,8 @@ import {Button, DialogBody, DialogFooter, Dialog, Group, Icon} from '@dagster-io
 import * as React from 'react';
 
 import {copyValue} from '../app/DomUtils';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {InstigationSelector, InstigationTickStatus} from '../types/globalTypes';
 

@@ -3,7 +3,7 @@ import {Box, Colors, NonIdealState, PageHeader, Tag, Heading} from '@dagster-io/
 import React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';

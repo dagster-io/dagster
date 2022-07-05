@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
 
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../app/MetadataEntryFragment';
 import {StepEventStatus} from '../types/globalTypes';
 
 import {LogsProviderLogs} from './LogsProvider';

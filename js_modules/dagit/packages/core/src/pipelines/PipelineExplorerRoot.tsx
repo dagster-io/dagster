@@ -2,13 +2,13 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {METADATA_ENTRY_FRAGMENT} from '../app/MetadataEntryFragment';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {Loading} from '../ui/Loading';
 import {buildPipelineSelector} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';

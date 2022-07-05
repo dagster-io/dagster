@@ -3,9 +3,10 @@ import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {METADATA_ENTRY_FRAGMENT} from '../app/MetadataEntryFragment';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {setHighlightedGanttChartTime} from '../gantt/GanttChart';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {LogLevel} from '../types/globalTypes';
 
 import {CellTruncationProvider} from './CellTruncationProvider';

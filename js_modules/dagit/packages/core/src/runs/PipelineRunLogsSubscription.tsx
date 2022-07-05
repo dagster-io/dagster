@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../app/MetadataEntryFragment';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 
 const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
   fragment RunMetadataProviderMessageFragment on DagsterRunEvent {

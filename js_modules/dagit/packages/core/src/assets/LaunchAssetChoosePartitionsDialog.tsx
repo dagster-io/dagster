@@ -15,7 +15,8 @@ import React from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {PartitionHealthSummary, usePartitionHealthData} from '../assets/PartitionHealthSummary';
 import {AssetKey} from '../assets/types';

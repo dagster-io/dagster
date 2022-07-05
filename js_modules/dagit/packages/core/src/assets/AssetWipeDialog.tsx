@@ -2,7 +2,7 @@ import {gql, RefetchQueriesFunction, useMutation} from '@apollo/client';
 import {Button, DialogBody, DialogFooter, Dialog, Group} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 
 import {AssetWipeMutation, AssetWipeMutationVariables} from './types/AssetWipeMutation';

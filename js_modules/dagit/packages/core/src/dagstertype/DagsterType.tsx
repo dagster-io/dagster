@@ -4,8 +4,8 @@ import {Spacing} from '@dagster-io/ui/src/components/types';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {METADATA_ENTRY_FRAGMENT} from '../app/MetadataEntryFragment';
 import {gqlTypePredicate} from '../app/Util';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {TableSchema} from '../metadata/TableSchema';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
 import {Description} from '../pipelines/Description';

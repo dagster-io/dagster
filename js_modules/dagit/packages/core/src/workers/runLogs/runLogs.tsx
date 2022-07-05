@@ -36,10 +36,8 @@ function initialize(data: INITIALIZE) {
       variables: {runId: data.runId},
     })
     .subscribe({
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore - used ApolloClient<any> not sure why this errors
-      next(fetchResult: PipelineRunLogsSubscription) {
-        const logs = fetchResult?.pipelineRunLogs;
+      next({data}: {data: PipelineRunLogsSubscription}) {
+        const logs = data?.pipelineRunLogs;
         if (!logs || logs.__typename === 'PipelineRunLogsSubscriptionFailure') {
           return;
         }

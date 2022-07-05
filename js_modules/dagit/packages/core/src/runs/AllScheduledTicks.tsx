@@ -3,7 +3,7 @@ import {Alert, Box, ButtonLink, Colors, Group} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {REPOSITORY_SCHEDULES_FRAGMENT} from '../schedules/ScheduleUtils';

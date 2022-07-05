@@ -24,7 +24,8 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {SharedToaster} from '../app/DomUtils';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {useCopyToClipboard} from '../app/browser';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunTags} from '../runs/RunTags';

@@ -1,7 +1,7 @@
 import {gql, useApolloClient, ApolloClient} from '@apollo/client';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DagsterTag} from '../runs/RunTag';

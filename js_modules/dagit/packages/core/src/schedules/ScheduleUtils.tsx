@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';

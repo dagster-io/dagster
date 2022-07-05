@@ -3,7 +3,7 @@ import sortBy from 'lodash/sortBy';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {PipelineSelector} from '../types/globalTypes';
 

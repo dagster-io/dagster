@@ -3,7 +3,7 @@ import {print} from 'graphql';
 import * as React from 'react';
 
 import {AppContext} from './AppContext';
-import {PYTHON_ERROR_FRAGMENT} from './PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from './PythonErrorFragment';
 
 export enum TelemetryAction {
   LAUNCH_RUN = 'LAUNCH_RUN',

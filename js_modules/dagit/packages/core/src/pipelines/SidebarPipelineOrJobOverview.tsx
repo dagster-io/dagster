@@ -2,8 +2,9 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, MetadataTable} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {METADATA_ENTRY_FRAGMENT, MetadataEntry} from '../metadata/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../app/MetadataEntryFragment';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {MetadataEntry} from '../metadata/MetadataEntry';
 import {PipelineSelector} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';

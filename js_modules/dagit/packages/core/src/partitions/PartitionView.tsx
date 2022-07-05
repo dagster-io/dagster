@@ -13,7 +13,7 @@ import {
 import * as React from 'react';
 
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {OptionsContainer} from '../gantt/VizComponents';
 import {useViewport} from '../gantt/useViewport';
 import {BackfillTable, BACKFILL_TABLE_FRAGMENT} from '../instance/BackfillTable';

@@ -3,7 +3,7 @@ import {Group, Table} from '@dagster-io/ui';
 import moment from 'moment-timezone';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {Timestamp} from '../app/time/Timestamp';
 
 import {DaemonHealth} from './DaemonHealth';

@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {act, render, screen} from '@testing-library/react';
 import * as React from 'react';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {TestProvider} from '../testing/TestProvider';
 import {InstigationStatus} from '../types/globalTypes';
 

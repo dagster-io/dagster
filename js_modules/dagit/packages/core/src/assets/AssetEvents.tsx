@@ -2,8 +2,8 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, ButtonGroup, Colors, NonIdealState, Spinner, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {METADATA_ENTRY_FRAGMENT} from '../app/MetadataEntryFragment';
 import {LiveDataForNode} from '../asset-graph/Utils';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {RepositorySelector} from '../types/globalTypes';
 
