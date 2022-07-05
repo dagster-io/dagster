@@ -1,5 +1,4 @@
 import io
-import json
 import os.path
 import pickle
 import tempfile
@@ -307,7 +306,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             job_id = run_info["job_id"]
             log.debug(f"Updating job permissions with following json: {job_permissions}")
             response = api_client.perform_query(
-                method="PATCH", path=f"permissions/jobs/{job_id}", data=json.dumps(job_permissions)
+                method="PATCH", path=f"/permissions/jobs/{job_id}", data=job_permissions
             )
             log.info(f"Successfully updated cluster permissions | Response: {response}")
 
@@ -322,8 +321,8 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             log.debug(f"Updating cluster permissions with following json: {cluster_permissions}")
             response = api_client.perform_query(
                 method="PATCH",
-                path=f"permissions/clusters/{cluster_id}",
-                data=json.dumps(cluster_permissions),
+                path=f"/permissions/clusters/{cluster_id}",
+                data=cluster_permissions,
             )
             log.info(f"Successfully updated cluster permissions | Response: {response}")
 
