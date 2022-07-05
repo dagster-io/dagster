@@ -116,22 +116,17 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
     @property
     def supports_batch_queries(self):
-        if not super().supports_batch_queries:
-            return False
-
-        return super().supports_batch_queries and parse(get_sqlite_version()) >= parse(
-            MINIMUM_SQLITE_BATCH_VERSION
-        )
-
-    @property
-    def supports_batch_queries(self):
-        if not super().supports_batch_queries:
-            return False
-
         if not self._mysql_version:
             return False
 
         return parse(self._mysql_version) >= parse(MINIMUM_MYSQL_BATCH_VERSION)
+
+    def get_server_version(self):
+        rows = self.execute("select version()")
+        if not rows:
+            return None
+
+        return rows[0][0]
 
     def upgrade(self):
         alembic_config = mysql_alembic_config(__file__)
