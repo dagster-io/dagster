@@ -27,6 +27,7 @@ from dagster.serdes import deserialize_value
 from dagster.utils.backoff import backoff
 
 from .configs import (
+    define_databricks_env_variables,
     define_databricks_permissions,
     define_databricks_secrets_config,
     define_databricks_storage_config,
@@ -51,6 +52,7 @@ PICKLED_CONFIG_FILE_NAME = "config.pkl"
             is_required=True,
             description="Databricks access token",
         ),
+        "env_variables": define_databricks_env_variables(),
         "secrets_to_env_variables": define_databricks_secrets_config(),
         "storage": define_databricks_storage_config(),
         "local_pipeline_package_path": Field(
@@ -130,10 +132,11 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         databricks_host,
         databricks_token,
         secrets_to_env_variables,
-        storage,
         staging_prefix,
         wait_for_logs,
         max_completion_wait_time_seconds,
+        env_variables=None,
+        storage=None,
         poll_interval_sec=5,
         local_pipeline_package_path=None,
         local_dagster_job_package_path=None,
@@ -143,7 +146,8 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         self.databricks_host = check.str_param(databricks_host, "databricks_host")
         self.databricks_token = check.str_param(databricks_token, "databricks_token")
         self.secrets = check.list_param(secrets_to_env_variables, "secrets_to_env_variables", dict)
-        self.storage = check.dict_param(storage, "storage")
+        self.env_variables = check.opt_dict_param(env_variables, "env_variables")
+        self.storage = check.opt_dict_param(storage, "storage")
         check.invariant(
             local_dagster_job_package_path is not None or local_pipeline_package_path is not None,
             "Missing config: need to provide either 'local_dagster_job_package_path' or 'local_pipeline_package_path' config entry",
@@ -384,6 +388,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         )
 
         databricks_config = DatabricksConfig(
+            env_variables=self.env_variables,
             storage=self.storage,
             secrets=self.secrets,
         )
@@ -458,12 +463,13 @@ class DatabricksConfig:
     We use a separate class to avoid coupling the setup to the format of the `step_run_ref` object.
     """
 
-    def __init__(self, storage, secrets):
+    def __init__(self, env_variables, storage, secrets):
         """Create a new DatabricksConfig object.
 
         `storage` and `secrets` should be of the same shape as the `storage` and
         `secrets_to_env_variables` config passed to `databricks_pyspark_step_launcher`.
         """
+        self.env_variables = env_variables
         self.storage = storage
         self.secrets = secrets
 
@@ -527,6 +533,9 @@ class DatabricksConfig:
         This is important for any `StringSource` config since the environment variables
         won't ordinarily be available in the Databricks execution environment.
         """
+        for env_k, env_v in self.env_variables.items():
+            os.environ[env_k] = env_v
+
         for secret in self.secrets:
             name = secret["name"]
             key = secret["key"]

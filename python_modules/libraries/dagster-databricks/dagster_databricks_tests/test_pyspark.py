@@ -62,6 +62,7 @@ BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG: Dict[str, object] = {
         "job_permissions": {"CAN_MANAGE_RUN": [{"user_name": "my_user"}]},
     },
     "secrets_to_env_variables": [],
+    "env_variables": {},
     "storage": {
         "s3": {
             "secret_scope": "dagster-databricks-tests",
