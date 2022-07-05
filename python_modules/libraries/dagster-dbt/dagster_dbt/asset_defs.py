@@ -29,6 +29,7 @@ from dagster.core.asset_defs.load_assets_from_modules import prefix_assets
 from dagster.core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster.core.definitions.metadata import RawMetadataValue
 from dagster.core.errors import DagsterInvalidSubsetError
+from dagster.utils.backcompat import experimental_arg_warning
 
 
 def _load_manifest_for_project(
@@ -358,8 +359,13 @@ def load_assets_from_dbt_project(
             of dbt metadata and returns the AssetKey that you want to represent a given model or
             source. By default: dbt model -> AssetKey([model_name]) and
             dbt source -> AssetKey([source_name, table_name])
-        use_build_command: (bool): Flag indicating if you want to use `dbt build` as the core computation
+        use_build_command (bool): Flag indicating if you want to use `dbt build` as the core computation
             for this asset, rather than `dbt run`.
+        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
+            compose the dbt assets.
+        partition_key_to_vars_fn (Optional[str -> Dict[str, Any]]): A function to translate a given
+            partition key (e.g. '2022-01-01') to a dictionary of vars to be passed into the dbt
+            invocation (e.g. {"run_date": "2022-01-01"})
 
     """
     project_dir = check.str_param(project_dir, "project_dir")
@@ -431,10 +437,24 @@ def load_assets_from_dbt_manifest(
         node_info_to_asset_key: (Mapping[str, Any] -> AssetKey): A function that takes a dictionary
             of dbt node info and returns the AssetKey that you want to represent that node. By
             default, the asset key will simply be the name of the dbt model.
-        use_build_command: (bool): Flag indicating if you want to use `dbt build` as the core computation
+        use_build_command (bool): Flag indicating if you want to use `dbt build` as the core computation
             for this asset, rather than `dbt run`.
+        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
+            compose the dbt assets.
+        partition_key_to_vars_fn (Optional[str -> Dict[str, Any]]): A function to translate a given
+            partition key (e.g. '2022-01-01') to a dictionary of vars to be passed into the dbt
+            invocation (e.g. {"run_date": "2022-01-01"})
     """
     check.dict_param(manifest_json, "manifest_json", key_type=str)
+    if partitions_def:
+        experimental_arg_warning("partitions_def", "load_assets_from_dbt_manifest")
+    if partition_key_to_vars_fn:
+        experimental_arg_warning("partition_key_to_vars_fn", "load_assets_from_dbt_manifest")
+        check.invariant(
+            partitions_def is not None,
+            "Cannot supply a `partition_key_to_vars_fn` without a `partitions_def`.",
+        )
+
     dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"]}
 
     if select is None:
