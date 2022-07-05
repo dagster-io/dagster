@@ -70,7 +70,7 @@ def monitor_started_run(instance: DagsterInstance, workspace, run, logger):
             if instance.run_launcher.supports_resume_run:
                 msg = (
                     f"Detected run worker status {check_health_result}. Marking run {run.run_id} as "
-                    f"failed, because it has surpassed the configured maximum attempts to resume the "
+                    "failed, because it has surpassed the configured maximum attempts to resume the "
                     f"run: {instance.run_monitoring_max_resume_run_attempts}."
                 )
             else:
