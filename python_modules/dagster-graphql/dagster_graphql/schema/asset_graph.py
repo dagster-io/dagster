@@ -145,6 +145,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         materialization_loader: Optional[BatchMaterializationLoader] = None,
         depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
     ):
+        from ..implementation.fetch_assets import get_unique_asset_id
+
         self._repository_location = check.inst_param(
             repository_location,
             "repository_location",
@@ -166,7 +168,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._node_definition_snap = None  # lazily loaded
 
         super().__init__(
-            id=external_asset_node.asset_key.to_string(),
+            id=get_unique_asset_id(
+                external_asset_node.asset_key, repository_location.name, external_repository.name
+            ),
             assetKey=external_asset_node.asset_key,
             description=external_asset_node.op_description,
             opName=external_asset_node.op_name,

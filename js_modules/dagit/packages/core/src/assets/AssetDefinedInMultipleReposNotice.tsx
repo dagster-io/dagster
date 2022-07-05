@@ -11,6 +11,10 @@ export const AssetDefinedInMultipleReposNotice: React.FC<{
   assetId: string;
   loadedFromRepo: RepoAddress;
 }> = ({assetId, loadedFromRepo}) => {
+  function get_asset_key_from_id(id: string) {
+    return id.split('.').pop();
+  }
+
   const {data} = useQuery<AssetIdScanQuery>(ASSET_ID_SCAN_QUERY);
   const otherRepos =
     data?.repositoriesOrError.__typename === 'RepositoryConnection'
@@ -18,9 +22,10 @@ export const AssetDefinedInMultipleReposNotice: React.FC<{
           (r) => r.name !== loadedFromRepo.name || r.location.name !== loadedFromRepo.location,
         )
       : [];
-
   const otherReposWithAsset = otherRepos.filter((r) =>
-    r.assetNodes.some((a) => a.id === assetId && a.opNames.length),
+    r.assetNodes.some(
+      (a) => get_asset_key_from_id(a.id) === get_asset_key_from_id(assetId) && a.opNames.length,
+    ),
   );
 
   if (otherReposWithAsset.length === 0) {
