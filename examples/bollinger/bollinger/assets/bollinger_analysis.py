@@ -23,7 +23,10 @@ from ..lib import (
 )
 def sp500_prices():
     """Historical stock prices for the S&P 500."""
-    return load_sp500_prices()
+    df = load_sp500_prices()
+    print("!!!!!!!!!!COLUMNS WITH NAN!!!!!!!!!!!!!!")
+    print(df.columns[df.isna().any()].tolist())
+    return df
 
 
 # TODO - remove once download script works for me
