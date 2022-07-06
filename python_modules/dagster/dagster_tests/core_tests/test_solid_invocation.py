@@ -469,19 +469,13 @@ def test_wrong_output():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape(
-            'Core compute for solid "solid_wrong_output" returned an output "wrong_name" that does '
-            "not exist. The available outputs are ['result']"
-        ),
+        match="Output object returned directly without annotating the decorated function.",
     ):
         execute_solid(solid_wrong_output)
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape(
-            'Invocation of solid "solid_wrong_output" returned an output "wrong_name" that does '
-            "not exist. The available outputs are ['result']"
-        ),
+        match="Output object returned directly without annotating the decorated function.",
     ):
         solid_wrong_output()
 
@@ -496,7 +490,17 @@ def test_optional_output_return():
     def solid_multiple_outputs_not_sent():
         return Output(2, output_name="2")
 
-    assert solid_multiple_outputs_not_sent().value == 2
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="solid \"solid_multiple_outputs_not_sent\" has multiple outputs, but only one output was returned of type <class 'dagster.core.definitions.events.Output'>.",
+    ):
+        solid_multiple_outputs_not_sent()
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="solid \"solid_multiple_outputs_not_sent\" has multiple outputs, but only one output was returned of type <class 'dagster.core.definitions.events.Output'>.",
+    ):
+        execute_solid(solid_multiple_outputs_not_sent)
 
 
 def test_optional_output_yielded():
@@ -588,16 +592,14 @@ def test_missing_required_output_return():
         return Output(2, output_name="2")
 
     with pytest.raises(
-        DagsterStepOutputNotFoundError,
-        match='Core compute for solid "solid_multiple_outputs_not_sent" did not return an output '
-        'for non-optional output "1"',
+        DagsterInvariantViolationError,
+        match="solid \"solid_multiple_outputs_not_sent\" has multiple outputs, but only one output was returned of type <class 'dagster.core.definitions.events.Output'>. When using multiple outputs, either yield each output, or return a tuple containing a value for each output. Check out the documentation on outputs for more: https://docs.dagster.io/concepts/ops-jobs-graphs/ops#outputs.",
     ):
         execute_solid(solid_multiple_outputs_not_sent)
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Invocation of solid 'solid_multiple_outputs_not_sent' did not return an output "
-        "for non-optional output '1'",
+        match="solid \"solid_multiple_outputs_not_sent\" has multiple outputs, but only one output was returned of type <class 'dagster.core.definitions.events.Output'>. When using multiple outputs, either yield each output, or return a tuple containing a value for each output. Check out the documentation on outputs for more: https://docs.dagster.io/concepts/ops-jobs-graphs/ops#outputs.",
     ):
         solid_multiple_outputs_not_sent()
 
@@ -866,10 +868,15 @@ def test_dynamic_output_non_gen():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Attempted to return a DynamicOutput from solid. DynamicOuts are only supported "
-        "using yield syntax.",
+        match="dynamic output 'a' expected a list of DynamicOutput objects, but instead received instead an object of type <class 'dagster.core.definitions.events.DynamicOutput'>.",
     ):
         should_not_work()
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="dynamic output 'a' expected a list of DynamicOutput objects, but instead received instead an object of type <class 'dagster.core.definitions.events.DynamicOutput'>.",
+    ):
+        execute_solid(should_not_work)
 
 
 def test_dynamic_output_async_non_gen():
@@ -881,10 +888,15 @@ def test_dynamic_output_async_non_gen():
     loop = asyncio.get_event_loop()
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Attempted to return a DynamicOutput from solid. DynamicOuts are only supported "
-        "using yield syntax.",
+        match="Error with output for solid \"should_not_work\": dynamic output 'a' expected a list of DynamicOutput objects, but instead received instead an object of type <class 'dagster.core.definitions.events.DynamicOutput'>.",
     ):
         loop.run_until_complete(should_not_work())
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Error with output for solid \"should_not_work\": dynamic output 'a' expected a list of DynamicOutput objects, but instead received instead an object of type <class 'dagster.core.definitions.events.DynamicOutput'>.",
+    ):
+        execute_solid(should_not_work())
 
 
 def test_solid_invocation_with_bad_resources(capsys):

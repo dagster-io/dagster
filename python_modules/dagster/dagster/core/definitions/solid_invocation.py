@@ -289,59 +289,14 @@ def _type_check_output_wrapper(
 
 def _type_check_function_output(
     solid_def: "SolidDefinition", result: Any, context: "BoundSolidExecutionContext"
-) -> Any:
-    """Unpacks valid outputs from solid function."""
+):
+    from ..execution.plan.compute_generator import validate_and_coerce_solid_result_to_iterator
 
-    if isinstance(
-        result, (AssetMaterialization, AssetObservation, Materialization, ExpectationResult)
+    output_defs_by_name = {output_def.name: output_def for output_def in solid_def.output_defs}
+    for event in validate_and_coerce_solid_result_to_iterator(
+        result, context, solid_def.output_defs
     ):
-        raise DagsterInvariantViolationError(
-            (
-                f"Error in {solid_def.node_type_str} '{solid_def.name}'': If you are returning an AssetMaterialization "
-                "or an ExpectationResult from solid you must yield them to avoid "
-                "ambiguity with an implied result from returning a value."
-            )
-        )
-    if isinstance(result, DynamicOutput):
-        raise DagsterInvariantViolationError(
-            f"Error in {solid_def.node_type_str} '{solid_def.name}': Attempted to return a DynamicOutput from {solid_def.node_type_str}. "
-            "DynamicOuts can only be yielded or returned in a list."
-        )
-    if (
-        not isinstance(result, Output)
-        and isinstance(result, tuple)
-        and len(solid_def.output_defs) > 1
-    ):  # for op case
-        for i, output_def in enumerate(solid_def.output_defs):
-            _type_check_output(output_def, result[i], context)
-        return result
-
-    if len(solid_def.output_defs) > 1 and not isinstance(result, (Output, DynamicOutput)):
-        raise DagsterInvariantViolationError(
-            "Multiple outputs but no Output wrapper provided is ambiguous."
-        )
-    received_output = None
-    output_defs = {output_def.name: output_def for output_def in solid_def.output_defs}
-    if isinstance(result, (Output, DynamicOutput)):
-        if result.output_name not in output_defs:
-            raise DagsterInvariantViolationError(
-                f'Invocation of {solid_def.node_type_str} "{solid_def.name}" returned an output "{result.output_name}" '
-                "that does not exist. The available outputs are "
-                f"{[output_def.name for output_def in solid_def.output_defs]}"
-            )
-        output_def = output_defs[result.output_name]
-        received_output = output_def.name
-        _type_check_output(output_def, result, context)
-    else:
-        _type_check_output(solid_def.output_defs[0], result, context)
-        received_output = solid_def.output_defs[0].name
-
-    for output_def in solid_def.output_defs:
-        if output_def.is_required and not output_def.name == received_output:
-            raise DagsterInvariantViolationError(
-                f"Invocation of {solid_def.node_type_str} '{solid_def.name}' did not return an output for non-optional "
-                f"output '{output_def.name}'."
-            )
+        _type_check_output(output_defs_by_name[event.output_name], event, context)
     return result
 
 
@@ -360,37 +315,6 @@ def _type_check_output(
 
     op_label = context.describe_op()
 
-    if output_def.is_dynamic:
-        if isinstance(output, list) and all([isinstance(inner, DynamicOutput) for inner in output]):
-            dagster_type = output_def.dagster_type
-            output_list = cast(List[DynamicOutput], output)
-            for dyn_output in output_list:
-                if (
-                    not dyn_output.output_name == DEFAULT_OUTPUT
-                    and dyn_output.output_name != output_def.name
-                ):
-                    raise DagsterInvariantViolationError(
-                        f"Received dynamic output with name '{dyn_output.output_name}' that does not exist."
-                    )
-                type_check = do_type_check(
-                    context.for_type(dagster_type), dagster_type, dyn_output.value
-                )
-                if not type_check.success:
-                    raise DagsterTypeCheckDidNotPass(
-                        description=(
-                            f'Type check failed for {op_label} dynamic output "{dyn_output.output_name}" with mapping key "{dyn_output.mapping_key}" - '
-                            f'expected type "{dagster_type.display_name}". '
-                            f"Description: {type_check.description}"
-                        ),
-                        metadata_entries=type_check.metadata_entries,
-                        dagster_type=dagster_type,
-                    )
-                context.observe_output(output_def.name, dyn_output.mapping_key)
-            return output
-        elif not isinstance(output, DynamicOutput):
-            raise DagsterInvariantViolationError(
-                f"Error with output for {context.describe_op()}: dynamic output '{output_def.name}' expected a list of DynamicOutput objects, but instead received instead an object of type {type(output)}."
-            )
     if isinstance(output, (Output, DynamicOutput)):
         dagster_type = output_def.dagster_type
         type_check = do_type_check(context.for_type(dagster_type), dagster_type, output.value)
