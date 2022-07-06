@@ -958,7 +958,7 @@ ALL_RUNTIME_BUILTINS = list(_RUNTIME_MAP.values())
 def construct_dagster_type_dictionary(
     node_defs: Sequence["NodeDefinition"],
 ) -> Mapping[str, DagsterType]:
-    from dagster.core.definitions.solid_definition import CompositeSolidDefinition
+    from dagster.core.definitions.graph_definition import GraphDefinition
 
     type_dict_by_name = {t.unique_name: t for t in ALL_RUNTIME_BUILTINS}
     type_dict_by_key = {t.key: t for t in ALL_RUNTIME_BUILTINS}
@@ -987,7 +987,7 @@ def construct_dagster_type_dictionary(
                     ).format(type_name=dagster_type.display_name)
                 )
 
-        if isinstance(node_def, CompositeSolidDefinition):
+        if isinstance(node_def, GraphDefinition):
             for child_node_def in node_def.node_defs:
                 process_node_def(child_node_def)
 
