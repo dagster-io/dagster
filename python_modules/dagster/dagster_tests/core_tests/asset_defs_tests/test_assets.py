@@ -534,6 +534,39 @@ def test_graph_backed_asset_io_manager():
         ]
 
 
+def test_invalid_graph_backed_assets():
+    @op
+    def a():
+        return 1
+
+    @op
+    def validate(inp):
+        return inp == 1
+
+    @graph
+    def foo():
+        a_val = a()
+        validate(a_val)
+        return a_val
+
+    @graph
+    def bar():
+        return foo()
+
+    @graph
+    def baz():
+        return a(), bar(), a()
+
+    with pytest.raises(CheckError, match=r"leaf nodes.*validate"):
+        AssetsDefinition.from_graph(foo)
+
+    with pytest.raises(CheckError, match=r"leaf nodes.*bar\.validate"):
+        AssetsDefinition.from_graph(bar)
+
+    with pytest.raises(CheckError, match=r"leaf nodes.*baz\.bar\.validate"):
+        AssetsDefinition.from_graph(baz)
+
+
 def test_group_name_requirements():
     @asset(group_name="float")  # reserved python keywords allowed
     def good_name():
