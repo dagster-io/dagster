@@ -108,7 +108,7 @@ class UnresolvedAssetJobDefinition(
         self,
         assets: Sequence["AssetsDefinition"],
         source_assets: Sequence["SourceAsset"],
-        executor_def: Optional["ExecutorDefinition"],
+        executor_def: Optional["ExecutorDefinition"] = None,
     ) -> "JobDefinition":
         """
         Resolve this UnresolvedAssetJobDefinition into a JobDefinition.
