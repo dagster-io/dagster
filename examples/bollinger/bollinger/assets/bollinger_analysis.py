@@ -27,15 +27,15 @@ def sp500_prices():
 
 
 # TODO - remove once download script works for me
-@asset(
-    dagster_type=StockPricesDgType,
-    metadata={"owner": "alice@example.com"},
-    io_manager_key="snowflake",
-)
-def sp500_prices_w_download() -> pd.DataFrame:
-    path = normalize_path("all_stocks_5yr.csv")
-    download_file(SP500_CSV_URL, path)
-    return load_sp500_prices()
+# @asset(
+#     dagster_type=StockPricesDgType,
+#     metadata={"owner": "alice@example.com"},
+#     io_manager_key="snowflake",
+# )
+# def sp500_prices_w_download() -> pd.DataFrame:
+#     path = normalize_path("all_stocks_5yr.csv")
+#     download_file(SP500_CSV_URL, path)
+#     return load_sp500_prices()
 
 
 @asset(
