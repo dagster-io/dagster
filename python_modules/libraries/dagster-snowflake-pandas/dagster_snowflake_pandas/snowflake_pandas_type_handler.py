@@ -32,6 +32,7 @@ def _convert_timestamp_to_string(s: pd.Series) -> pd.Series:
     else:
         return s
 
+
 def _get_timestamp_data(s: pd.Series) -> pd.Series:
     """
     Converts columns of data of type pd.Timestamp to string so that it can be stored in
@@ -40,7 +41,6 @@ def _get_timestamp_data(s: pd.Series) -> pd.Series:
     if pd.core.dtypes.common.is_datetime_or_timedelta_dtype(s):
         # return s.dt.strftime("%Y-%m-%d %H:%M:%S.%f %z")
         return s.dt.to_pydatetime()
-
 
 
 def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
@@ -55,7 +55,6 @@ def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
             return s
     else:
         return s
-
 
 
 class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
@@ -85,7 +84,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         with _connect_snowflake(context, table_slice) as con:
             with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
             with_uppercase_cols = with_uppercase_cols.apply(
-                _convert_timestamp_to_string, axis="columns"
+                _convert_timestamp_to_string, axis="index"
             )
             with_uppercase_cols.to_sql(
                 table_slice.table,
@@ -99,9 +98,13 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
                 if pd.core.dtypes.common.is_datetime_or_timedelta_dtype(c):
                     converted = c.dt.to_pydatetime()
                     con.execute(
-                        "INSERT INTO {%s}({%s}) values(%s)", (table_slice.table, "DATE", converted,)
+                        "INSERT INTO {%s}({%s}) values(%s)",
+                        (
+                            table_slice.table,
+                            "DATE",
+                            converted,
+                        ),
                     )
-
 
         return {
             "row_count": obj.shape[0],
@@ -118,7 +121,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     def load_input(self, context: InputContext, table_slice: TableSlice) -> pd.DataFrame:
         with _connect_snowflake(context, table_slice) as con:
             result = pd.read_sql(sql=SnowflakeDbClient.get_select_statement(table_slice), con=con)
-            result = result.apply(_convert_string_to_timestamp, axis="columns")
+            result = result.apply(_convert_string_to_timestamp, axis="index")
             result.columns = map(str.lower, result.columns)
             return result
 
