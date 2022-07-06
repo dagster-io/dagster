@@ -160,6 +160,7 @@ class AssetsDefinition(ResourceAddable):
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from a GraphDefinition.
@@ -185,6 +186,12 @@ class AssetsDefinition(ResourceAddable):
                 A mapping of resource keys to resource definitions. These resources
                 will be initialized during execution, and can be accessed from the
                 body of ops in the graph during execution.
+            partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
+                keys for this asset to partition keys of upstream assets. Each key in the dictionary
+                correponds to one of the input assets, and each value is a PartitionMapping.
+                If no entry is provided for a particular asset dependency, the partition mapping defaults
+                to the default partition mapping for the partitions definition, which is typically maps
+                partition keys to the same partition keys in upstream assets.
         """
         return AssetsDefinition._from_node(
             graph_def,
@@ -194,6 +201,7 @@ class AssetsDefinition(ResourceAddable):
             partitions_def,
             group_name,
             resource_defs,
+            partition_mappings,
         )
 
     @staticmethod
@@ -204,6 +212,7 @@ class AssetsDefinition(ResourceAddable):
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
+        partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from an OpDefinition.
@@ -225,6 +234,12 @@ class AssetsDefinition(ResourceAddable):
                 compose the assets.
             group_name (Optional[str]): A group name for the constructed asset. Assets without a
                 group name are assigned to a group called "default".
+            partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
+                keys for this asset to partition keys of upstream assets. Each key in the dictionary
+                correponds to one of the input assets, and each value is a PartitionMapping.
+                If no entry is provided for a particular asset dependency, the partition mapping defaults
+                to the default partition mapping for the partitions definition, which is typically maps
+                partition keys to the same partition keys in upstream assets.
         """
         return AssetsDefinition._from_node(
             op_def,
@@ -233,6 +248,7 @@ class AssetsDefinition(ResourceAddable):
             internal_asset_deps,
             partitions_def,
             group_name,
+            partition_mappings=partition_mappings,
         )
 
     @staticmethod
@@ -244,10 +260,14 @@ class AssetsDefinition(ResourceAddable):
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
     ) -> "AssetsDefinition":
         node_def = check.inst_param(node_def, "node_def", (GraphDefinition, OpDefinition))
-        keys_by_input_name = check.opt_dict_param(
-            keys_by_input_name, "keys_by_input_name", key_type=str, value_type=AssetKey
+        keys_by_input_name = _infer_keys_by_input_names(
+            node_def,
+            check.opt_dict_param(
+                keys_by_input_name, "keys_by_input_name", key_type=str, value_type=AssetKey
+            ),
         )
         keys_by_output_name = check.opt_dict_param(
             keys_by_output_name,
@@ -282,10 +302,7 @@ class AssetsDefinition(ResourceAddable):
         )
 
         return AssetsDefinition(
-            keys_by_input_name=_infer_keys_by_input_names(
-                node_def,
-                keys_by_input_name or {},
-            ),
+            keys_by_input_name=keys_by_input_name,
             keys_by_output_name=keys_by_output_name,
             node_def=node_def,
             asset_deps=transformed_internal_asset_deps or None,
@@ -296,6 +313,12 @@ class AssetsDefinition(ResourceAddable):
             ),
             group_names_by_key=group_names_by_key,
             resource_defs=resource_defs,
+            partition_mappings={
+                keys_by_input_name[input_name]: partition_mapping
+                for input_name, partition_mapping in partition_mappings.items()
+            }
+            if partition_mappings
+            else None,
         )
 
     @property
