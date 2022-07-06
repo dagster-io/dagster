@@ -3,6 +3,7 @@ import os
 import sys
 import time
 from collections import defaultdict
+from contextlib import ExitStack
 from typing import Dict, NamedTuple, Optional
 
 import pendulum
@@ -176,46 +177,6 @@ def _check_for_debug_crash(debug_crash_flags, key):
 RELOAD_WORKSPACE = 60
 
 
-class SynchronousExecutor:
-    """
-    Executes functions in series without creating threads, creating a uniform execution interface
-    """
-
-    def __init__(self, **kwargs):
-        pass
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        pass
-
-    def submit(self, fn, *args, **kwargs):
-        future = concurrent.futures.Future()
-
-        try:
-            result = fn(*args, **kwargs)
-            future.set_result(result)
-        except Exception as e:
-            future.set_exception(e)
-
-        return future
-
-    def shutdown(self, wait=True):
-        pass
-
-
-def sensor_executor(instance):
-    settings = instance.get_settings("sensors")
-
-    if settings.get("use_threads"):
-        return concurrent.futures.ThreadPoolExecutor(
-            max_workers=settings.get("num_workers"),
-            thread_name_prefix="sensor_daemon_worker",
-        )
-    return SynchronousExecutor()
-
-
 def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
     """
     Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
@@ -225,7 +186,18 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
     """
     workspace_loaded_time = pendulum.now("UTC").timestamp()
 
-    with sensor_executor(instance) as executor:
+    with ExitStack() as stack:
+        settings = instance.get_settings("sensors")
+        if settings.get("use_threads"):
+            threadpool_executor = stack.enter_context(
+                concurrent.futures.ThreadPoolExecutor(
+                    max_workers=settings.get("num_workers"),
+                    thread_name_prefix="sensor_daemon_worker",
+                )
+            )
+        else:
+            threadpool_executor = None
+
         workspace_iteration = 0
         start_time = pendulum.now("UTC").timestamp()
         while True:
@@ -245,7 +217,7 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
                 instance,
                 logger,
                 workspace.get_workspace_copy_for_iteration(),
-                executor,
+                threadpool_executor,
                 log_verbose_checks=(workspace_iteration == 0),
             )
 
@@ -260,7 +232,7 @@ def execute_sensor_iteration(
     instance,
     logger,
     workspace,
-    executor,
+    threadpool_executor=None,
     log_verbose_checks=True,
     debug_crash_flags=None,
     debug_futures=None,
@@ -359,19 +331,9 @@ def execute_sensor_iteration(
         elif _is_under_min_interval(sensor_state, external_sensor, now):
             continue
 
-        if isinstance(executor, SynchronousExecutor):
-            yield from _process_tick_generator(
-                logger,
-                instance,
-                workspace,
-                now,
-                external_sensor,
-                sensor_state,
-                sensor_debug_crash_flags,
-                tick_retention_settings,
-            )
-        else:
-            future = executor.submit(
+        if threadpool_executor:
+            # add the sensor evaluations to a threadpool
+            future = threadpool_executor.submit(
                 _process_tick,
                 logger,
                 instance,
@@ -382,9 +344,25 @@ def execute_sensor_iteration(
                 sensor_debug_crash_flags,
                 tick_retention_settings,
             )
-            yield
+
+            # for tests, add the futures to enable for waiting
             if debug_futures is not None:
                 debug_futures[external_sensor.selector_id] = future
+            yield
+
+        else:
+            # evaluate the sensors in a loop, synchronously, yielding to allow the sensor daemon to
+            # heartbeat
+            yield from _process_tick_generator(
+                logger,
+                instance,
+                workspace,
+                now,
+                external_sensor,
+                sensor_state,
+                sensor_debug_crash_flags,
+                tick_retention_settings,
+            )
 
 
 def _process_tick(
@@ -397,6 +375,8 @@ def _process_tick(
     sensor_debug_crash_flags,
     tick_retention_settings,
 ):
+    # evaluate the tick immediately, but from within a thread.  The main thread should be able to
+    # heartbeat to keep the daemon alive
     list(
         _process_tick_generator(
             logger,
