@@ -59,17 +59,22 @@ def test_fs_io_manager():
         assert len(handled_output_events) == 2
 
         filepath_a = os.path.join(tmpdir_path, result.run_id, "solid_a", "result")
-        result_metadata_entry_a = handled_output_events[0].event_specific_data.metadata_entries[0]
-        assert result_metadata_entry_a.label == "path"
-        assert result_metadata_entry_a.value == MetadataValue.path(filepath_a)
+        metadata_a = {
+            entry.label: entry.entry_data
+            for entry in handled_output_events[0].event_specific_data.metadata_entries
+        }
+        assert metadata_a["path"] == MetadataValue.path(filepath_a)
+        assert metadata_a["n_bytes"].value > 0
         assert os.path.isfile(filepath_a)
         with open(filepath_a, "rb") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3]
 
         loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, result.event_list))
-        input_metadata_entry_a = loaded_input_events[0].event_specific_data.metadata_entries[0]
-        assert input_metadata_entry_a.label == "path"
-        assert input_metadata_entry_a.value == MetadataValue.path(filepath_a)
+        input_metadata_a = {
+            entry.label: entry.entry_data
+            for entry in loaded_input_events[0].event_specific_data.metadata_entries
+        }
+        assert input_metadata_a["path"] == MetadataValue.path(filepath_a)
         assert len(loaded_input_events) == 1
         assert "solid_a" == loaded_input_events[0].event_specific_data.upstream_step_key
 
