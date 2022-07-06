@@ -67,6 +67,9 @@ class AssetsDefinition(ResourceAddable):
         # if adding new fields, make sure to handle them in the with_prefix_or_group
         # and from_graph methods
     ):
+        if isinstance(node_def, GraphDefinition):
+            _validate_graph_def(node_def)
+
         self._node_def = node_def
         self._keys_by_input_name = check.dict_param(
             keys_by_input_name,
@@ -675,3 +678,37 @@ def _build_invocation_context_with_included_resources(
         # If user is mocking OpExecutionContext, send it through (we don't know
         # what modifications they might be making, and we don't want to override)
         return context
+
+
+def _validate_graph_def(graph_def: GraphDefinition, prefix: Optional[Sequence[str]] = None):
+    """Ensure that all leaf nodes are mapped to graph outputs."""
+    from dagster.core.definitions.graph_definition import _create_adjacency_lists
+
+    prefix = check.opt_list_param(prefix, "prefix")
+
+    # recursively validate any sub-graphs
+    for inner_node_def in graph_def.node_defs:
+        if isinstance(inner_node_def, GraphDefinition):
+            _validate_graph_def(inner_node_def, prefix=prefix + [graph_def.name])
+
+    # leaf nodes have no downstream nodes
+    forward_edges, _ = _create_adjacency_lists(graph_def.solids, graph_def.dependency_structure)
+    leaf_nodes = {
+        node_name for node_name, downstream_nodes in forward_edges.items() if not downstream_nodes
+    }
+
+    # set of nodes that have outputs mapped to a graph output
+    mapped_output_nodes = {
+        output_mapping.maps_from.solid_name for output_mapping in graph_def.output_mappings
+    }
+
+    # leaf nodes which do not have an associated mapped output
+    unmapped_leaf_nodes = {".".join(prefix + [node]) for node in leaf_nodes - mapped_output_nodes}
+
+    check.invariant(
+        not unmapped_leaf_nodes,
+        f"All leaf nodes within graph '{graph_def.name}' must generate outputs which are mapped to "
+        "outputs of the graph, and produce assets. The following leaf node(s) are non-asset producing "
+        f"ops: {unmapped_leaf_nodes}. This behavior is not currently supported because these ops "
+        "are not required for the creation of the associated asset(s).",
+    )
