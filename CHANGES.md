@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.15.4
+
+- No new features in 0.15.4. Some features were added for Dagster Cloud, which you can read about at https://github.com/dagster-io/dagster-cloud/blob/main/CHANGES.md
+
 # 0.15.3
 
 ### New
