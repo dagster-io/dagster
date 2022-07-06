@@ -2,7 +2,7 @@ import json
 import textwrap
 from typing import Any, List, Type, Union, cast
 
-import dagster.check as check
+import dagster._check as check
 from dagster import BoolSource, Field, IntSource, StringSource
 from dagster._config.config_type import (
     Array,
