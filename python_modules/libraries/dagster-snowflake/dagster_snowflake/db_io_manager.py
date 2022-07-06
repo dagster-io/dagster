@@ -83,7 +83,7 @@ class DbIOManager(IOManager):
 
     def handle_output(self, context: OutputContext, obj: object) -> None:
         table_slice = self._get_table_slice(context, context)
-        self._db_client.delete_table_slice(context, table_slice)
+        # self._db_client.delete_table_slice(context, table_slice)
 
         obj_type = type(obj)
         check.invariant(
