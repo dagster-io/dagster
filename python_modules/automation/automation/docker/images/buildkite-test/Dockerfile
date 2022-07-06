@@ -122,9 +122,8 @@ RUN curl -fsSL https://download.docker.com/linux/debian/gpg | \
     # https://github.com/docker/compose-cli/blob/main/INSTALL.md
     && curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
 
-# Install Python build deps, awscli
-RUN pip install -U pip setuptools wheel \
-    && pip install awscli
+# Install Python build deps
+RUN pip install -U pip setuptools wheel
 
 # Install redis
 RUN wget http://download.redis.io/redis-stable.tar.gz \
@@ -146,10 +145,15 @@ RUN apt-get remove -yqq \
 # Temp image used to get non-dagster Python dependencies
 FROM system_base AS snapshot_builder
 
-# Build a requirements file with all non-Dagster packages
-RUN git clone https://github.com/dagster-io/dagster.git \
-    && cd dagster \
-    && make install_dev_python_modules \
+# Build a requirements file with all non-Dagster packages that are dependencies of a Dagster
+# package. We also install `awscli` (used in Buildkite) at this stage so that it can be installed
+# together with Dagster dependencies. This allows pip's dependency resolver to account for
+# everything.
+RUN git clone https://github.com/dagster-io/dagster.git
+
+WORKDIR dagster
+
+RUN python scripts/install_dev_python_modules.py awscli \
     && pip freeze --exclude-editable > /snapshot-reqs.txt
 
 # Final image includes both system deps and preinstalled non-Dagster python deps

@@ -25,6 +25,7 @@ def execute_docker_build(
         args += ["--build-arg", "{arg}={value}".format(arg=arg, value=value)]
 
     args += ["-t", image]
+    args += ["--progress", "plain"]
 
     if platform:
         args += ["--platform", platform]
