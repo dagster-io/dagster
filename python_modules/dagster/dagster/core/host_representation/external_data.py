@@ -11,7 +11,6 @@ from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tup
 
 from dagster import StaticPartitionsDefinition
 from dagster import _check as check
-from dagster.core.asset_defs import SourceAsset
 from dagster.core.definitions import (
     JobDefinition,
     PartitionSetDefinition,
@@ -20,6 +19,7 @@ from dagster.core.definitions import (
     PresetDefinition,
     RepositoryDefinition,
     ScheduleDefinition,
+    SourceAsset,
 )
 from dagster.core.definitions.asset_layer import AssetOutputInfo
 from dagster.core.definitions.dependency import NodeOutputHandle

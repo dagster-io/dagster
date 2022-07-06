@@ -19,7 +19,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.asset_defs import AssetGroup, AssetIn, asset, build_assets_job, multi_asset
+from dagster.core.definitions import AssetGroup, AssetIn, asset, build_assets_job, multi_asset
 from dagster.core.definitions.version_strategy import VersionStrategy
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.api import create_execution_plan

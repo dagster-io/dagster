@@ -1,4 +1,5 @@
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Dict,
     Iterable,
@@ -13,29 +14,29 @@ from typing import (
 
 import dagster._check as check
 from dagster.core.decorator_utils import get_function_params
-from dagster.core.definitions import (
-    GraphDefinition,
-    NodeDefinition,
-    NodeHandle,
-    OpDefinition,
-    ResourceDefinition,
-)
-from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.partition import PartitionsDefinition
-from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
 from dagster.core.errors import DagsterInvalidInvocationError
-from dagster.core.execution.context.compute import OpExecutionContext
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import deprecation_warning
 
-from ..definitions.resource_requirement import (
+from .dependency import NodeHandle
+from .events import AssetKey
+from .graph_definition import GraphDefinition
+from .op_definition import OpDefinition
+from .partition import PartitionsDefinition
+from .partition_mapping import PartitionMapping
+from .resource_definition import ResourceDefinition
+from .resource_requirement import (
     ResourceAddable,
     ResourceRequirement,
     ensure_requirements_satisfied,
     get_resource_key_conflicts,
 )
-from .partition_mapping import PartitionMapping
+from .solid_definition import NodeDefinition
 from .source_asset import SourceAsset
+from .utils import DEFAULT_GROUP_NAME, validate_group_name
+
+if TYPE_CHECKING:
+    from dagster.core.execution.context.compute import OpExecutionContext
 
 
 class AssetsDefinition(ResourceAddable):
@@ -122,6 +123,7 @@ class AssetsDefinition(ResourceAddable):
 
     def __call__(self, *args, **kwargs):
         from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
+        from dagster.core.execution.context.compute import OpExecutionContext
 
         if isinstance(self.node_def, GraphDefinition):
             return self._node_def(*args, **kwargs)
@@ -642,8 +644,8 @@ def _infer_keys_by_output_names(
 
 def _build_invocation_context_with_included_resources(
     assets_def: AssetsDefinition,
-    context: OpExecutionContext,
-) -> OpExecutionContext:
+    context: "OpExecutionContext",
+) -> "OpExecutionContext":
     from dagster.core.execution.context.invocation import (
         UnboundSolidExecutionContext,
         build_op_context,

@@ -59,7 +59,6 @@ from .output import OutputContext, get_output_context
 if TYPE_CHECKING:
     from dagster.core.definitions.dependency import Node, NodeHandle
     from dagster.core.definitions.resource_definition import Resources
-    from dagster.core.events import DagsterEvent
     from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.execution.plan.state import KnownExecutionState
     from dagster.core.instance import DagsterInstance
@@ -734,7 +733,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         )
 
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        from dagster.core.asset_defs.asset_partitions import (
+        from dagster.core.definitions.asset_partitions import (
             get_upstream_partitions_for_partition_range,
         )
 

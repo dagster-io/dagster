@@ -4,30 +4,26 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, 
 from toposort import CircularDependencyError, toposort
 
 import dagster._check as check
-from dagster.core.definitions.asset_layer import AssetLayer
-from dagster.core.definitions.config import ConfigMapping
-from dagster.core.definitions.dependency import (
-    DependencyDefinition,
-    IDependencyDefinition,
-    NodeHandle,
-    NodeInvocation,
-)
-from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.executor_definition import ExecutorDefinition
-from dagster.core.definitions.graph_definition import GraphDefinition, default_job_io_manager
-from dagster.core.definitions.job_definition import JobDefinition
-from dagster.core.definitions.partition import PartitionedConfig, PartitionsDefinition
-from dagster.core.definitions.resource_definition import ResourceDefinition
-from dagster.core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster.core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import experimental
 
+from .asset_layer import AssetLayer
 from .assets import AssetsDefinition
+from .config import ConfigMapping
+from .dependency import DependencyDefinition, IDependencyDefinition, NodeHandle, NodeInvocation
+from .events import AssetKey
+from .executor_definition import ExecutorDefinition
+from .graph_definition import GraphDefinition, default_job_io_manager
+from .job_definition import JobDefinition
+from .partition import PartitionedConfig, PartitionsDefinition
 from .resolved_asset_deps import ResolvedAssetDependencies
+from .resource_definition import ResourceDefinition
+from .resource_requirement import ensure_requirements_satisfied
 from .source_asset import SourceAsset
+from .utils import DEFAULT_IO_MANAGER_KEY
 
 
 @experimental

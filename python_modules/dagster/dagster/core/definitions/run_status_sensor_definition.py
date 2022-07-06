@@ -5,15 +5,6 @@ from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Union, c
 import pendulum
 
 import dagster._check as check
-from dagster.core.definitions import GraphDefinition, JobDefinition, PipelineDefinition
-from dagster.core.definitions.sensor_definition import (
-    DefaultSensorStatus,
-    PipelineRunReaction,
-    SensorDefinition,
-    SensorEvaluationContext,
-    SkipReason,
-    is_context_provided,
-)
 from dagster.core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -36,6 +27,17 @@ from dagster.utils.backcompat import deprecation_warning
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from ..decorator_utils import get_function_params
+from .graph_definition import GraphDefinition
+from .job_definition import JobDefinition
+from .pipeline_definition import PipelineDefinition
+from .sensor_definition import (
+    DefaultSensorStatus,
+    PipelineRunReaction,
+    SensorDefinition,
+    SensorEvaluationContext,
+    SkipReason,
+    is_context_provided,
+)
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 
