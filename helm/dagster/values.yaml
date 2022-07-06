@@ -1143,10 +1143,23 @@ serviceAccount:
 
   annotations: {}
 
+####################################################################################################
+# Sets a data retention policy for data types such as schedule / sensor ticks.
+#
+# For more details, see:
+# https://docs.dagster.io/deployment/dagster-instance#data-retention
+####################################################################################################
 retention:
+  enabled: false
   schedule:
+    # For schedule ticks, specifies after how many days ticks can be removed.  This field can either
+    # be a dict of tick types to integers, or an integer (applies to all tick types).  A value of -1
+    # indicates that ticks should be retained indefinitely
     purgeAfterDays: -1
   sensor:
+    # For sensor ticks, specifies after how many days ticks can be removed.  This field can either
+    # be a dict of tick types to integers, or an integer (applies to all tick types).  A value of -1
+    # indicates that ticks should be retained indefinitely
     purgeAfterDays:
       failure: -1
       skipped: 7

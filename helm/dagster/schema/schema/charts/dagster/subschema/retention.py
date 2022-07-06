@@ -4,10 +4,10 @@ from pydantic import BaseModel, Extra
 
 
 class TickRetentionByType(BaseModel):
-    skipped: Optional[int]
-    success: Optional[int]
-    failure: Optional[int]
-    started: Optional[int]
+    skipped: int
+    success: int
+    failure: int
+    started: int
 
     class Config:
         extra = Extra.forbid
@@ -18,6 +18,7 @@ class TickRetention(BaseModel):
 
 
 class Retention(BaseModel):
+    enabled: bool
     sensor: TickRetention
     schedule: TickRetention
 

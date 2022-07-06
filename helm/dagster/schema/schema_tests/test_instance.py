@@ -670,6 +670,7 @@ def test_run_coordinator_has_schema(json_schema_model, run_coordinator_class):
 def test_retention(template: HelmTemplate):
     helm_values = DagsterHelmValues.construct(
         retention=Retention.construct(
+            enabled=True,
             schedule=TickRetention.construct(
                 purgeAfterDays=30,
             ),
@@ -678,6 +679,7 @@ def test_retention(template: HelmTemplate):
                     skipped=7,
                     success=30,
                     failure=30,
+                    started=30,
                 ),
             ),
         )
@@ -692,3 +694,10 @@ def test_retention(template: HelmTemplate):
     assert instance["retention"]["sensor"]["purge_after_days"]["skipped"] == 7
     assert instance["retention"]["sensor"]["purge_after_days"]["success"] == 30
     assert instance["retention"]["sensor"]["purge_after_days"]["failure"] == 30
+
+
+def test_retention_backcompat(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct()
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    assert not instance.get("retention")

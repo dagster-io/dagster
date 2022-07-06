@@ -83,8 +83,8 @@ To configure storage, you should set the `storage` attribute in your `dagster.ya
 #### Sqlite storage (Default)
 
 <PyObject
-module="dagster.core.storage.sqlite_storage"
-object="DagsterSqliteStorage"
+  module="dagster.core.storage.sqlite_storage"
+  object="DagsterSqliteStorage"
 /> uses a Sqlite DB for storage.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_storage_sqlite endbefore=end_marker_storage_sqlite
@@ -330,8 +330,8 @@ To configure Compute Log Storage, set the `compute_logs` key in your `dagster.ya
 #### LocalComputeLogManager (Default)
 
 <PyObject
-module="dagster.core.storage.local_compute_log_manager"
-object="LocalComputeLogManager"
+  module="dagster.core.storage.local_compute_log_manager"
+  object="LocalComputeLogManager"
 /> writes stdout & stderr logs to disk.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_compute_log_storage_local endbefore=end_marker_compute_log_storage_local
@@ -479,6 +479,8 @@ code_servers:
 ### Data retention
 
 The `retention` key lets you configure how long Dagster retains certain types of data that have diminishing value over time, like schedule/sensor tick data. If you want to clean up old ticks to minimize storage concerns and improve query performance, you can set retention policy using the `retention` config key:
+
+For schedule and sensor ticks, you can specify the field `purge_after_days`, which takes either a mapping of tick types to integers, or an integer that applies to all tick types. This integer determines after how many days that ticks can be safely removed. A value of `-1` indicates that ticks should be retained indefinitely.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_retention endbefore=end_marker_retention
 # Configures how long Dagster keeps sensor / schedule tick data

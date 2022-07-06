@@ -117,7 +117,7 @@ data:
     telemetry:
       enabled: {{ .Values.telemetry.enabled }}
 
-    {{- if .Values.retention }}
+    {{- if .Values.retention.enabled }}
     retention:
       {{- if .Values.retention.sensor }}
       sensor:

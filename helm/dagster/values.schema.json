@@ -2510,6 +2510,12 @@
                     "type": "integer"
                 }
             },
+            "required": [
+                "skipped",
+                "success",
+                "failure",
+                "started"
+            ],
             "additionalProperties": false
         },
         "TickRetention": {
@@ -2536,6 +2542,10 @@
             "title": "Retention",
             "type": "object",
             "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
                 "sensor": {
                     "$ref": "#/definitions/TickRetention"
                 },
@@ -2544,6 +2554,7 @@
                 }
             },
             "required": [
+                "enabled",
                 "sensor",
                 "schedule"
             ],
