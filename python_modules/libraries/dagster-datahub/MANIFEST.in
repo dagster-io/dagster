@@ -1,0 +1,6 @@
+recursive-include dagster_datahub *.sh
+recursive-include dagster_datahub *.yaml
+recursive-include dagster_datahub *.txt
+recursive-include dagster_datahub *.template
+include LICENSE
+include dagster_datahub/py.typed
