@@ -84,15 +84,15 @@ def test_solid_yield():
     assert result.output_value()["foo"] == "bar"
 
 
-def test_solid_result_return():
+def test_solid_result_return_no_annotation():
     @solid(output_defs=[OutputDefinition()])
     def hello_world(_context):
         return Output(value={"foo": "bar"})
 
-    result = execute_solid(hello_world)
-
-    assert result.success
-    assert result.output_value()["foo"] == "bar"
+    with pytest.raises(
+        DagsterInvariantViolationError, match="Output object returned directly without annotating"
+    ):
+        execute_solid(hello_world)
 
 
 def test_solid_with_explicit_empty_outputs():
@@ -100,13 +100,8 @@ def test_solid_with_explicit_empty_outputs():
     def hello_world(_context):
         return "foo"
 
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
-        result = execute_solid(hello_world)
-
-    assert (
-        'Error in solid "hello_world": Unexpectedly returned output foo of type '
-        "<class 'str'>. Solid is explicitly defined to return no results."
-    ) in str(exc_info.value)
+    with pytest.raises(DagsterInvariantViolationError):
+        execute_solid(hello_world)
 
 
 def test_solid_with_implicit_single_output():
@@ -125,10 +120,11 @@ def test_solid_return_list_instead_of_multiple_results():
     def hello_world(_context):
         return ["foo", "bar"]
 
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
-        result = execute_solid(hello_world)
-
-    assert "unexpectedly returned output ['foo', 'bar']" in str(exc_info.value)
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="has multiple outputs, but only one output was returned",
+    ):
+        execute_solid(hello_world)
 
 
 def test_lambda_solid_with_name():

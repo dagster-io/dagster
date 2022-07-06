@@ -62,7 +62,7 @@ def test_io_manager_diamond_lineage():
 
     @solid(output_defs=[OutputDefinition(name="outputC", io_manager_key="asset_io_manager")])
     def solid_combine(_, _inputA, _inputB):
-        return Output(None, "outputC")
+        yield Output(None, "outputC")
 
     @pipeline(mode_defs=[ModeDefinition(resource_defs={"asset_io_manager": my_io_manager})])
     def my_pipeline():
@@ -142,7 +142,7 @@ def test_input_definition_multiple_partition_lineage():
         ],
     )
     def solid1(_):
-        return Output(
+        yield Output(
             None,
             "output1",
             metadata_entries=[
@@ -278,7 +278,7 @@ def test_dynamic_output_definition_single_partition_materialization():
 
     @solid(output_defs=[OutputDefinition(name="output1", asset_key=AssetKey("table1"))])
     def solid1(_):
-        return Output(None, "output1", metadata_entries=[entry1])
+        yield Output(None, "output1", metadata_entries=[entry1])
 
     @solid(
         output_defs=[
