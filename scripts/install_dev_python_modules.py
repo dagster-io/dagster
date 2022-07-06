@@ -1,5 +1,4 @@
 # pylint: disable=print-call
-import os
 import subprocess
 import sys
 
@@ -70,10 +69,16 @@ def main(quiet):
             "-e python_modules/libraries/dagster-snowflake-pandas",
         ]
 
+    # NOTE: `dagster-ge` is out of date and does not support recent versions of great expectations.
+    # Because of this, it has second-order dependencies on old versions of popular libraries like
+    # numpy which conflict with the requirements of our other libraries. For this reason, until
+    # dagster-ge is updated we won't install `dagster-ge` in the common dev environment or
+    # pre-install its dependencies in our BK images (which this script is used for).
+    #
     # dagster-ge depends on a great_expectations version that does not install on Windows
     # https://github.com/dagster-io/dagster/issues/3319
-    if sys.version_info >= (3, 7) and os.name != "nt":
-        install_targets += ["-e python_modules/libraries/dagster-ge"]
+    # if sys.version_info >= (3, 7) and os.name != "nt":
+    #     install_targets += ["-e python_modules/libraries/dagster-ge"]
 
     # NOTE: These need to be installed as one long pip install command, otherwise pip will install
     # conflicting dependencies, which will break pip freeze snapshot creation during the integration
