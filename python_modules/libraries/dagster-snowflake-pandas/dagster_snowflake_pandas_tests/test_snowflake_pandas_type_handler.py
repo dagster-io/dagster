@@ -154,9 +154,27 @@ def test_io_manager_with_snowflake_pandas():
             assert set(df.columns) == {"foo", "quux"}
             assert len(df.index) == 2
 
-        @op
+        time_df = pandas.DataFrame(
+            {
+                "foo": ["bar", "baz"],
+                "date": [pandas.Timestamp("2017-01-01T12"), pandas.Timestamp("2017-02-01T12")],
+            }
+        )
+
+        @op(
+            out={
+                table_name: Out(
+                    io_manager_key="snowflake", metadata={"schema": "SNOWFLAKE_IO_MANAGER_SCHEMA"}
+                )
+            }
+        )
         def emit_time_df(_):
-            
+            return time_df
+
+        @op
+        def read_time_df(df: pandas.DataFrame):
+            assert set(df.columns) == {"foo", "date"}
+            assert (df == time_df).all()
 
         snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
 
@@ -175,6 +193,7 @@ def test_io_manager_with_snowflake_pandas():
         )
         def io_manager_test_pipeline():
             read_pandas_df(emit_pandas_df())
+            read_time_df(emit_time_df())
 
         res = io_manager_test_pipeline.execute_in_process()
         assert res.success
