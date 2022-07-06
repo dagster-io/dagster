@@ -1416,3 +1416,21 @@ def test_multi_nested_list():
         @repository
         def assets_repo():
             return [layer_2]
+
+
+def test_default_executor_config():
+    @asset
+    def some_asset():
+        pass
+
+    @repository(default_executor_def=in_process_executor)
+    def the_repo():
+        # The config provided to the_job matches in_process_executor, but not the default executor.
+        return [
+            define_asset_job(
+                "the_job", config={"execution": {"config": {"retries": {"enabled": {}}}}}
+            ),
+            some_asset,
+        ]
+
+    assert the_repo.get_job("the_job").executor_def == in_process_executor
