@@ -87,6 +87,7 @@ class JobDefinition(PipelineDefinition):
         _input_values: Optional[Mapping[str, object]] = None,
         _metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         _executor_def_specified: bool = False,
+        _logger_defs_specified: bool = False,
     ):
 
         # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
@@ -99,6 +100,7 @@ class JobDefinition(PipelineDefinition):
         )
 
         self._executor_def_specified = _executor_def_specified
+        self._logger_defs_specified = _logger_defs_specified
         self._cached_partition_set: Optional["PartitionSetDefinition"] = None
         self._subset_selection_data = check.opt_inst_param(
             _subset_selection_data,
@@ -240,6 +242,7 @@ class JobDefinition(PipelineDefinition):
             asset_layer=self.asset_layer,
             _input_values=input_values,
             _executor_def_specified=self._executor_def_specified,
+            _logger_defs_specified=self._logger_defs_specified,
         )
 
         ephemeral_job = ephemeral_job.get_job_def_for_subset_selection(
@@ -382,6 +385,7 @@ class JobDefinition(PipelineDefinition):
                 graph_def=sub_graph,
                 version_strategy=self.version_strategy,
                 _executor_def_specified=self._executor_def_specified,
+                _logger_defs_specified=self._logger_defs_specified,
                 _subset_selection_data=OpSelectionData(
                     op_selection=op_selection,
                     resolved_op_selection=set(
@@ -473,6 +477,7 @@ class JobDefinition(PipelineDefinition):
             asset_layer=self.asset_layer,
             _subset_selection_data=self._subset_selection_data,
             _executor_def_specified=self._executor_def_specified,
+            _logger_defs_specified=self._logger_defs_specified,
         )
 
         update_wrapper(job_def, self, updated=())
@@ -517,15 +522,10 @@ class JobDefinition(PipelineDefinition):
             asset_layer=self.asset_layer,
             _input_values=self._input_values,
             _executor_def_specified=True,
+            _logger_defs_specified=self._logger_defs_specified,
         )
 
     def with_logger_defs(self, logger_defs: Mapping[str, LoggerDefinition]) -> "JobDefinition":
-        conflicting_keys = set(logger_defs.keys()).intersection(self.loggers.keys())
-        if conflicting_keys:
-            raise DagsterInvalidDefinitionError(
-                f"Provided logger defs conflict with logger defs on job '{self.name}'. The following logger keys conflict: {sorted(list(conflicting_keys))}"
-            )
-        logger_defs = merge_dicts(logger_defs, self.loggers)
         return JobDefinition(
             graph_def=self.graph,
             resource_defs=dict(self.resource_defs),
@@ -545,6 +545,7 @@ class JobDefinition(PipelineDefinition):
             asset_layer=self.asset_layer,
             _input_values=self._input_values,
             _executor_def_specified=self._executor_def_specified,
+            _logger_defs_specified=True,
         )
 
 

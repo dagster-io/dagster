@@ -800,7 +800,8 @@ class CachingRepositoryData(RepositoryData):
 
         if default_logger_defs:
             for name, job_def in jobs.items():
-                jobs[name] = job_def.with_logger_defs(default_logger_defs)
+                if not job_def._logger_defs_specified:  # pylint: disable=protected-access
+                    jobs[name] = job_def.with_logger_defs(default_logger_defs)
 
         return CachingRepositoryData(
             pipelines=pipelines,
