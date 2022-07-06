@@ -72,7 +72,9 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         connector.paramstyle = "pyformat"
         with _connect_snowflake(context, table_slice) as con:
             with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
-            with_uppercase_cols = with_uppercase_cols.apply(_convert_timestamp_to_string, axis=0)
+            with_uppercase_cols = with_uppercase_cols.apply(
+                _convert_timestamp_to_string, axis="columns"
+            )
             with_uppercase_cols.to_sql(
                 table_slice.table,
                 con=con.engine,
@@ -96,7 +98,7 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     def load_input(self, context: InputContext, table_slice: TableSlice) -> pd.DataFrame:
         with _connect_snowflake(context, table_slice) as con:
             result = pd.read_sql(sql=SnowflakeDbClient.get_select_statement(table_slice), con=con)
-            result = result.apply(_convert_string_to_timestamp, axis=0)
+            result = result.apply(_convert_string_to_timestamp, axis="columns")
             result.columns = map(str.lower, result.columns)
             return result
 
