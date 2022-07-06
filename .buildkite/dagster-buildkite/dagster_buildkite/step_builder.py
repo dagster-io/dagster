@@ -2,7 +2,7 @@ import os
 from enum import Enum
 from typing import Dict, List, Optional
 
-from .images.versions import TEST_IMAGE_VERSION
+from .images.versions import BUILDKITE_TEST_IMAGE_VERSION
 from .python_version import AvailablePythonVersion
 from .utils import CommandStep
 
@@ -94,7 +94,7 @@ class CommandStepBuilder:
             raise Exception(f"Unsupported python version for test image: {ver}.")
 
         return self.on_python_image(
-            image=f"buildkite-test:py{ver}-{TEST_IMAGE_VERSION}",
+            image=f"buildkite-test:py{ver}-{BUILDKITE_TEST_IMAGE_VERSION}",
             env=env,
         )
 

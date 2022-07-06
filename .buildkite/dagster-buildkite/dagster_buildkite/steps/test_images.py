@@ -1,6 +1,6 @@
 from typing import List
 
-from ..images.versions import TEST_IMAGE_BUILDER_VERSION, TEST_IMAGE_BUILDER_BASE_VERSION
+from ..images.versions import BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION, TEST_PROJECT_BASE_IMAGE_VERSION
 from ..python_version import AvailablePythonVersion
 from ..step_builder import CommandStepBuilder
 from ..utils import BuildkiteLeafStep, GroupStep
@@ -20,19 +20,19 @@ def build_test_image_steps() -> List[GroupStep]:
         key = _test_image_step(version)
         steps.append(
             CommandStepBuilder(f":docker: test-image {version}", key=key)
-            # these run commands are coupled to the way the test-image-builder is built
-            # see python_modules/automation/automation/docker/images/buildkite-test-image-builder
+            # these run commands are coupled to the way the buildkite-build-test-project-image is built
+            # see python_modules/automation/automation/docker/images/buildkite-build-test-project-image
             .run(
                 # credentials
                 "/scriptdir/aws.pex ecr get-login --no-include-email --region us-west-2 | sh",
                 'export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp-key-elementl-dev.json"',
                 "/scriptdir/aws.pex s3 cp s3://$${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json $${GOOGLE_APPLICATION_CREDENTIALS}",
-                "export BASE_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/buildkite-test-image-builder-base:py"
+                "export BASE_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/buildkite-test-project-base:py"
                 + version
                 + "-"
-                + TEST_IMAGE_BUILDER_BASE_VERSION,
+                + TEST_PROJECT_BASE_IMAGE_VERSION,
                 # build and tag test image
-                "export TEST_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/buildkite-test-image:$${BUILDKITE_BUILD_ID}-"
+                "export TEST_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/buildkite-test-project:$${BUILDKITE_BUILD_ID}-"
                 + version,
                 "./python_modules/dagster-test/dagster_test/test_project/build.sh "
                 + version
@@ -43,9 +43,9 @@ def build_test_image_steps() -> List[GroupStep]:
                 "docker push $${TEST_IMAGE}",
             )
             .on_python_image(
-                "buildkite-test-image-builder:py{python_version}-{image_version}".format(
+                "buildkite-build-test-project-image:py{python_version}-{image_version}".format(
                     python_version=AvailablePythonVersion.V3_8,
-                    image_version=TEST_IMAGE_BUILDER_VERSION,
+                    image_version=BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION,
                 ),
                 [
                     "AIRFLOW_HOME",
@@ -61,18 +61,18 @@ def build_test_image_steps() -> List[GroupStep]:
         key = _core_test_image_step(version)
         steps.append(
             CommandStepBuilder(f":docker: test-image-core {version}", key=key)
-            # these run commands are coupled to the way the test-image-builder is built
-            # see python_modules/automation/automation/docker/images/buildkite-test-image-builder
+            # these run commands are coupled to the way the buildkite-build-test-project-image is built
+            # see python_modules/automation/automation/docker/images/buildkite-build-test-project-image
             .run(
                 # credentials
                 "/scriptdir/aws.pex ecr get-login --no-include-email --region us-west-2 | sh",
                 # set the base image
-                "export BASE_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/buildkite-test-image-builder-base:py"
+                "export BASE_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/buildkite-test-project-base:py"
                 + version
                 + "-"
-                + TEST_IMAGE_BUILDER_BASE_VERSION,
+                + TEST_PROJECT_BASE_IMAGE_VERSION,
                 # build and tag test image
-                "export TEST_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/buildkite-test-image-core:$${BUILDKITE_BUILD_ID}-"
+                "export TEST_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/buildkite-test-project-core:$${BUILDKITE_BUILD_ID}-"
                 + version,
                 "./python_modules/dagster-test/build_core.sh " + version + " $${TEST_IMAGE}",
                 #
@@ -81,9 +81,9 @@ def build_test_image_steps() -> List[GroupStep]:
                 "docker push $${TEST_IMAGE}",
             )
             .on_python_image(
-                "buildkite-test-image-builder:py{python_version}-{image_version}".format(
+                "buildkite-build-test-project-image:py{python_version}-{image_version}".format(
                     python_version=AvailablePythonVersion.V3_8,
-                    image_version=TEST_IMAGE_BUILDER_VERSION,
+                    image_version=BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION,
                 ),
                 [
                     "AWS_ACCOUNT_ID",
