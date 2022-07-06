@@ -108,7 +108,8 @@ def asset(
         name (Optional[str]): The name of the asset.  If not provided, defaults to the name of the
             decorated function.
         namespace (Optional[Sequence[str]]): **Deprecated (use `key_prefix`)**. The namespace that
-            the asset resides in.  The namespace + the name forms the asset key.
+            the asset resides in.  The namespace + the name forms the asset key. The asset key must
+            be a valid name in dagster (ie only contains letters, numbers, and _ )
         key_prefix (Optional[Union[str, Sequence[str]]]): If provided, the asset's key is the
             concatenation of the key_prefix and the asset's name, which defaults to the name of
             the decorated function.
