@@ -141,7 +141,7 @@ def validate_and_coerce_solid_result_to_iterator(
             f"type {type(result)}. {context.solid_def.node_type_str.capitalize()} is explicitly defined to return no "
             "results."
         )
-    else:
+    elif output_defs:
         for position, output_def, element in _zip_and_iterate_solid_result(
             result, context, output_defs
         ):
