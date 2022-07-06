@@ -1,5 +1,6 @@
 import pendulum
 import sqlalchemy as db
+from packaging.version import parse
 
 import dagster._check as check
 from dagster.core.storage.config import mysql_config
@@ -21,6 +22,8 @@ from ..utils import (
     retry_mysql_connection_fn,
     retry_mysql_creation_fn,
 )
+
+MINIMUM_MYSQL_BATCH_VERSION = "8.0.0"
 
 
 class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
@@ -56,6 +59,8 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         table_names = retry_mysql_connection_fn(db.inspect(self._engine).get_table_names)
         if "jobs" not in table_names:
             retry_mysql_creation_fn(self._init_db)
+
+        self._mysql_version = self.get_server_version()
 
         super().__init__()
 
@@ -108,6 +113,20 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
     def connect(self, run_id=None):  # pylint: disable=arguments-differ, unused-argument
         return create_mysql_connection(self._engine, __file__, "schedule")
+
+    @property
+    def supports_batch_queries(self):
+        if not self._mysql_version:
+            return False
+
+        return parse(self._mysql_version) >= parse(MINIMUM_MYSQL_BATCH_VERSION)
+
+    def get_server_version(self):
+        rows = self.execute("select version()")
+        if not rows:
+            return None
+
+        return rows[0][0]
 
     def upgrade(self):
         alembic_config = mysql_alembic_config(__file__)
