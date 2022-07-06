@@ -155,7 +155,7 @@ def _dbt_nodes_to_assets(
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
-    partition_key_to_vars_fn: Optional[Callable[[str], Dict[str, Any]]] = None,
+    partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
 ) -> AssetsDefinition:
 
     outs: Dict[str, Out] = {}
@@ -329,7 +329,7 @@ def load_assets_from_dbt_project(
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
-    partition_key_to_vars_fn: Optional[Callable[[str], Dict[str, Any]]] = None,
+    partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models from a dbt project into Dagster assets.
@@ -409,7 +409,7 @@ def load_assets_from_dbt_manifest(
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
-    partition_key_to_vars_fn: Optional[Callable[[str], Dict[str, Any]]] = None,
+    partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models, described in a manifest.json, into Dagster assets.
