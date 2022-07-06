@@ -12,8 +12,8 @@ from dagster_snowflake.resources import SnowflakeConnection
 from dagster_snowflake.snowflake_io_manager import TableSlice
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler
 from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
-    _convert_date_to_timestamp,
-    _convert_timestamp_to_date,
+    _convert_string_to_timestamp,
+    _convert_timestamp_to_string,
 )
 from pandas import DataFrame
 
@@ -111,23 +111,26 @@ def test_load_input():
 def test_type_conversions():
     # no timestamp data
     no_time = pandas.Series([1, 2, 3, 4, 5])
-    converted = _convert_date_to_timestamp(_convert_timestamp_to_date(no_time))
+    converted = _convert_string_to_timestamp(_convert_timestamp_to_string(no_time))
 
     assert (converted == no_time).all()
 
     # timestamp data
     with_time = pandas.Series(
         [
-            pandas.Timestamp("2017-01-01T12"),
-            pandas.Timestamp("2017-02-01T12"),
-            pandas.Timestamp("2017-03-01T12"),
+            pandas.Timestamp("2017-01-01T12:30:45.35"),
+            pandas.Timestamp("2017-02-01T12:30:45.35"),
+            pandas.Timestamp("2017-03-01T12:30:45.35"),
         ]
     )
-    time_converted = _convert_date_to_timestamp(
-        pandas.Series(_convert_timestamp_to_date(with_time))
-    )
+    time_converted = _convert_string_to_timestamp(_convert_timestamp_to_string(with_time))
 
     assert (with_time == time_converted).all()
+
+    # string that isn't a time
+    string_data = pandas.Series(["not", "a", "timestamp"])
+
+    assert (_convert_string_to_timestamp(string_data) == string_data).all()
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
@@ -157,7 +160,10 @@ def test_io_manager_with_snowflake_pandas():
         time_df = pandas.DataFrame(
             {
                 "foo": ["bar", "baz"],
-                "date": [pandas.Timestamp("2017-01-01T12"), pandas.Timestamp("2017-02-01T12")],
+                "date": [
+                    pandas.Timestamp("2017-01-01T12:30:45.35"),
+                    pandas.Timestamp("2017-02-01T12:30:45.35"),
+                ],
             }
         )
 
