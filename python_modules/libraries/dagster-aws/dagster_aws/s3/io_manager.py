@@ -2,7 +2,7 @@ import io
 import pickle
 from typing import Union
 
-from dagster import Field, InputContext, MemoizableIOManager, MetadataEntry, OutputContext, StringSource
+from dagster import Field, InputContext, MemoizableIOManager, MetadataValue, OutputContext, StringSource
 from dagster import _check as check
 from dagster import io_manager
 from dagster.utils import PICKLE_PROTOCOL
@@ -76,7 +76,7 @@ class PickledObjectS3IOManager(MemoizableIOManager):
         pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
         pickled_obj_bytes = io.BytesIO(pickled_obj)
         self.s3.upload_fileobj(pickled_obj_bytes, self.bucket, key)
-        yield MetadataEntry.path(path, label="uri")
+        context.add_output_metadata({"uri": MetadataValue.path(key)})
 
 
 @io_manager(
