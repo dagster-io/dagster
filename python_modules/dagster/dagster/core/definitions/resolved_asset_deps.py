@@ -83,7 +83,9 @@ def resolve_assets_def_deps(
             matching_asset_keys = asset_keys_by_group_and_name.get(
                 cast(Tuple[str, str], group_and_upstream_name)
             )
-            if (
+            if upstream_key in all_asset_keys:
+                pass
+            elif (
                 group_name is not None
                 and len(upstream_key) == 1
                 and matching_asset_keys
@@ -102,10 +104,7 @@ def resolve_assets_def_deps(
                     )
 
                     warned = True
-            elif (
-                upstream_key not in all_asset_keys
-                and not assets_def.node_def.input_def_named(input_name).dagster_type.is_nothing
-            ):
+            elif not assets_def.node_def.input_def_named(input_name).dagster_type.is_nothing:
                 raise DagsterInvalidDefinitionError(
                     f"Input asset '{upstream_key.to_string()}' for asset "
                     f"'{next(iter(assets_def.keys)).to_string()}' is not "

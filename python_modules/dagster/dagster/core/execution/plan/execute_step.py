@@ -505,7 +505,7 @@ def _get_output_asset_materializations(
 
         for partition in asset_partitions:
             with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=ExperimentalWarning)
+                warnings.simplefilter("ignore", category=DeprecationWarning)
 
                 yield AssetMaterialization(
                     asset_key=asset_key,
@@ -520,7 +520,7 @@ def _get_output_asset_materializations(
                     "is not associated with any specific partitions."
                 )
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
+            warnings.simplefilter("ignore", category=DeprecationWarning)
 
             yield AssetMaterialization(asset_key=asset_key, metadata_entries=all_metadata)
 
