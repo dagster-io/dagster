@@ -1137,11 +1137,18 @@ def test_generic_dynamic_output_empty():
     def basic_yield():
         pass
 
-    result = execute_op_in_graph(basic_yield)
-    assert result.success
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=r"dynamic output 'result' expected a list of DynamicOutput objects, but instead received instead an object of type \<class 'NoneType'\>\.",
+    ):
+        execute_op_in_graph(basic_yield)
 
     # Ensure that invocation behavior matches
-    basic_yield()
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=r"dynamic output 'result' expected a list of DynamicOutput objects, but instead received instead an object of type \<class 'NoneType'\>\.",
+    ):
+        basic_yield()
 
 
 def test_generic_dynamic_output_empty_with_type():

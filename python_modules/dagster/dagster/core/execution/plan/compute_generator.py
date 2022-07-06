@@ -1,6 +1,6 @@
 import inspect
 from functools import wraps
-from typing import Generator, cast
+from typing import Generator, cast, Iterator, Tuple, Sequence, Generator, Any, Union
 
 import dagster._check as check
 from dagster.core.definitions import (
@@ -10,10 +10,21 @@ from dagster.core.definitions import (
     Materialization,
     Output,
     SolidDefinition,
+    OutputDefinition,
 )
+from ..context.compute import OpExecutionContext
 from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.types.dagster_type import DagsterTypeKind
+from dagster.seven.typing import get_origin, get_args
+from dagster.core.types.dagster_type import (
+    DagsterTypeKind,
+    is_generic_output_annotation,
+    is_dynamic_output_annotation,
+)
+
+
+class NoAnnotationSentinel:
+    pass
 
 
 def create_solid_compute_wrapper(solid_def: SolidDefinition):
@@ -68,19 +79,126 @@ def _coerce_solid_compute_fn_to_iterator(fn, output_defs, context, context_arg_p
         yield event
 
 
-def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
+def _zip_and_iterate_solid_result(
+    result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
+) -> Iterator[Tuple[int, Any, OutputDefinition]]:
+    if isinstance(context.solid_def.compute_fn, DecoratedSolidFunction):
+        decorated_fn = cast(DecoratedSolidFunction, context.solid_def.compute_fn)
+        if (
+            decorated_fn.get_output_annotation()
+            and get_origin(decorated_fn.get_output_annotation()) == tuple
+            and len(output_defs) > 1
+        ):
+            for position, (output_def, element) in enumerate(zip(output_defs, result)):
+                yield position, output_def, element
+    if len(output_defs) > 1:
+        raise DagsterInvariantViolationError(
+            f"{context.describe_op()} has multiple outputs, but only one output was returned of type {type(result)}. When using multiple outputs, either yield each output, or return a tuple containing a value for each output. Check out the documentation on outputs for more: https://docs.dagster.io/concepts/ops-jobs-graphs/ops#outputs."
+        )
+    else:
+        yield 0, output_defs[0], result
+
+
+def _get_annotation_for_output_position(
+    position: int, solid_def: SolidDefinition, output_defs: Sequence[OutputDefinition]
+) -> Any:
+    if solid_def.is_from_decorator():
+        if len(output_defs) > 1:
+            return get_args(solid_def.get_output_annotation())[position]
+        else:
+            return solid_def.get_output_annotation()
+    return NoAnnotationSentinel()
+
+
+def _check_output_object_name(
+    output: Union[DynamicOutput, Output], output_def: OutputDefinition, position: int
+) -> None:
+    if not output.output_name == DEFAULT_OUTPUT and not output.output_name == output_def.name:
+        raise DagsterInvariantViolationError(
+            f"Bad state: Output was explicitly named '{output.output_name}', which does not match the output definition specified for position {position}: '{output_def.name}'."
+        )
+
+
+def _validate_and_coerce_solid_result_to_iterator(
+    result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
+) -> Generator[Any, None, None]:
+    if inspect.isgenerator(result):
+        # this happens when a user explicitly returns a generator in the solid
+        for event in result:
+            yield event
+    elif result is not None and not output_defs:
+        raise DagsterInvariantViolationError(
+            f"Error in {context.describe_op()}: Unexpectedly returned output of type {type(result)}. {context.solid_def.node_type_str.capitalize()} is explicitly defined to return no "
+            "results."
+        )
+    else:
+        for position, output_def, element in _zip_and_iterate_solid_result(
+            result, context, output_defs
+        ):
+            annotation = _get_annotation_for_output_position(
+                position, context.solid_def, output_defs
+            )
+            if output_def.is_dynamic:
+                if not isinstance(element, list):
+                    raise DagsterInvariantViolationError(
+                        f"Error with output for {context.describe_op()}: dynamic output '{output_def.name}' expected a list of DynamicOutput objects, but instead received instead an object of type {type(element)}."
+                    )
+                for item in element:
+                    if not isinstance(item, DynamicOutput):
+                        raise DagsterInvariantViolationError(
+                            f"Error with output for {context.describe_op()}: dynamic output '{output_def.name}' expected a list of DynamicOutput objects, but received an item with type {type(item)}."
+                        )
+                    dynamic_output = cast(DynamicOutput, item)
+                    _check_output_object_name(dynamic_output, output_def, position)
+                    yield DynamicOutput(
+                        output_name=output_def.name,
+                        value=dynamic_output.value,
+                        mapping_key=dynamic_output.mapping_key,
+                        metadata_entries=dynamic_output.metadata_entries,
+                    )
+            elif is_generic_output_annotation(annotation):
+                if not isinstance(element, Output):
+                    raise DagsterInvariantViolationError(
+                        f"Error with output for {context.describe_op()}: output '{output_def.name}' has generic output annotation, but did not receive an Output object for this output. Received instead an object of type {type(element)}."
+                    )
+                output = cast(Output, element)
+                _check_output_object_name(output, output_def, position)
+                yield Output(
+                    output_name=output_def.name,
+                    value=output.value,
+                    metadata_entries=output.metadata_entries,
+                )
+            else:
+                if isinstance(element, (AssetMaterialization, Materialization, ExpectationResult)):
+                    raise DagsterInvariantViolationError(
+                        f"Error in {context.describe_op()}: If you are returning an AssetMaterialization "
+                        f"or an ExpectationResult from {context.solid_def.node_type_str} you must yield them directly, or log them using the OpExecutionContext.log_event method to avoid "
+                        "ambiguity with an implied result from returning a value. Check out the docs on logging events here: https://docs.dagster.io/concepts/ops-jobs-graphs/op-events#op-events-and-exceptions"
+                    )
+                if isinstance(element, (Output, DynamicOutput)):
+                    raise DagsterInvariantViolationError(
+                        f"Error in {context.describe_op()}: Output object returned directly without annotating the decorated function. Output events can either be yielded, or returned with an accompanying annotation. Check out the docs on specifying Output annotations here: https://docs.dagster.io/concepts/ops-jobs-graphs/op-events#output-objects"
+                    )
+                if result is None and output_def.is_required is False:
+                    context.log.warn(
+                        f'Value "None" returned for non-required output "{output_def.name}" of {context.describe_op()}. '
+                        f"This value will be passed to downstream {context.solid_def.node_type_str}s. For conditional execution, results must be yielded: https://docs.dagster.io/concepts/ops-jobs-graphs/graphs#with-conditional-branching"
+                    )
+                # If an output object was not returned, then construct one from any metadata that has been logged within the op's body.
+                metadata = context.get_output_metadata(output_def.name)
+                yield Output(output_name=output_def.name, value=element, metadata=metadata)
+
+
+def _validate_and_coerce_solid_result_to_iterator_old(
+    result: Any, context: OpExecutionContext, output_defs: Sequence[OutputDefinition]
+):
     from dagster.core.definitions.events import DEFAULT_OUTPUT
 
     if isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
         raise DagsterInvariantViolationError(
-            (
-                "Error in {described_op}: If you are returning an AssetMaterialization "
-                "or an ExpectationResult from {node_type} you must yield them to avoid "
-                "ambiguity with an implied result from returning a value.".format(
-                    described_op=context.describe_op(),
-                    node_type=context.solid_def.node_type_str,
-                )
-            )
+            f"Error in {context.describe_op()}: If you are returning an AssetMaterialization "
+            f"or an ExpectationResult from {context.solid_def.node_type_str} you must yield them directly, or log them using the OpExecutionContext.log_event method to avoid "
+            "ambiguity with an implied result from returning a value."
         )
 
     if inspect.isgenerator(result):
@@ -89,6 +207,10 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
             yield event
     elif isinstance(result, Output):
         yield result
+    elif isinstance(result, DynamicOutput):
+        raise DagsterInvariantViolationError(
+            f"Attempted to directly return a DynamicOutput from {context.describe_op()}. DynamicOutput objects must be either yielded or returned in a list."
+        )
     elif len(output_defs) == 1 and output_defs[0].is_dynamic:
         if isinstance(result, list) and all([isinstance(event, DynamicOutput) for event in result]):
             for event in result:
