@@ -113,7 +113,12 @@ def result_to_events(
         upstream_unique_ids = manifest_json["nodes"][unique_id]["depends_on"]["nodes"]
         # tests can apply to multiple asset keys
         for upstream_id in upstream_unique_ids:
-            node_info = manifest_json["nodes"][upstream_id]
+            # the upstream id can reference a node or a source
+            node_info = manifest_json["nodes"].get(upstream_id) or manifest_json["sources"].get(
+                upstream_id
+            )
+            if node_info is None:
+                continue
             upstream_asset_key = node_info_to_asset_key(node_info)
             yield AssetObservation(asset_key=upstream_asset_key, metadata=metadata)
 
