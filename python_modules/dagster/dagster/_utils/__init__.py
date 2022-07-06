@@ -17,9 +17,24 @@ import threading
 from collections import OrderedDict
 from datetime import timezone
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, ContextManager, Generator, Generic, Iterator
-from typing import Mapping as TypingMapping
-from typing import Optional, Sequence, Tuple, Type, TypeVar, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ContextManager,
+    Generator,
+    Generic,
+    Iterator,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 from warnings import warn
 
 import packaging.version
@@ -27,10 +42,6 @@ from typing_extensions import Literal
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._core.definitions.sensor_definition import SensorDefinition
-from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster._seven import IS_WINDOWS
-from dagster._seven.abc import Mapping
 
 from .merger import merge_dicts
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
@@ -393,7 +404,7 @@ def _kill_on_event(termination_event):
 
 
 def send_interrupt():
-    if IS_WINDOWS:
+    if seven.IS_WINDOWS:
         # This will raise a KeyboardInterrupt in python land - meaning this wont be able to
         # interrupt things like sleep()
         thread.interrupt_main()
@@ -584,7 +595,7 @@ def restore_sys_modules():
 
 
 def process_is_alive(pid):
-    if IS_WINDOWS:
+    if seven.IS_WINDOWS:
         import psutil  # pylint: disable=import-error
 
         return psutil.pid_exists(pid=pid)
@@ -620,7 +631,7 @@ class Counter:
         with self._lock:
             self._counts[key] = self._counts.get(key, 0) + 1
 
-    def counts(self) -> TypingMapping[str, int]:
+    def counts(self) -> Mapping[str, int]:
         with self._lock:
             copy = {k: v for k, v in self._counts.items()}
         return copy
@@ -628,8 +639,7 @@ class Counter:
 
 traced_counter = contextvars.ContextVar("traced_counts", default=Counter())
 
-T_Callable = TypeVar("T_Callable", bound=Callable)
-
+T_Callable = TypeVar('T_Callable', bound=Callable)
 
 def traced(func: T_Callable) -> T_Callable:
     """

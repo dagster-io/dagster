@@ -19,7 +19,7 @@ def sync_get_external_schedule_execution_data_ephemeral_grpc(
     repository_handle: RepositoryHandle,
     schedule_name: str,
     scheduled_execution_time: Any,
-):
+) -> ScheduleExecutionData:
     from dagster._grpc.client import ephemeral_grpc_api_client
 
     origin = repository_handle.get_external_origin()
