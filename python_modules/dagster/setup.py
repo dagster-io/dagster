@@ -96,7 +96,7 @@ if __name__ == "__main__":
                 "coverage==5.3",
                 "docker",
                 "freezegun>=0.3.15",
-                "grpcio-tools==1.32.0",
+                "grpcio-tools",
                 "mock==3.0.5",
                 "objgraph",
                 "protobuf==3.13.0",  # without this, pip will install the most up-to-date protobuf

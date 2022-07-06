@@ -1,5 +1,4 @@
 # pylint: disable=print-call
-import os
 import subprocess
 import sys
 
@@ -16,6 +15,11 @@ def main(quiet):
     # build errors, try this first. For context, there is a lengthy discussion here:
     # https://github.com/pypa/pip/issues/5599
 
+    # Not all libs are supported on all Python versions. Consult `dagster_buildkite.steps.packages`
+    # as the source of truth on which packages support which Python versions. The building of
+    # `install_targets` below should use `sys.version_info` checks to reflect this.
+
+    # Supported on all Python versions.
     install_targets = [
         "-e python_modules/dagster[black,isort,mypy,test]",
         "-e python_modules/dagster-graphql",
@@ -41,15 +45,12 @@ def main(quiet):
         "-e python_modules/libraries/dagster-mysql",
         "-e python_modules/libraries/dagster-pagerduty",
         "-e python_modules/libraries/dagster-pandas",
-        "-e python_modules/libraries/dagster-pandera",
         "-e python_modules/libraries/dagster-papertrail",
         "-e python_modules/libraries/dagster-postgres",
         "-e python_modules/libraries/dagster-prometheus",
         "-e python_modules/libraries/dagster-pyspark",
         "-e python_modules/libraries/dagster-shell",
         "-e python_modules/libraries/dagster-slack",
-        "-e python_modules/libraries/dagster-snowflake",
-        "-e python_modules/libraries/dagster-snowflake-pandas",
         "-e python_modules/libraries/dagster-spark",
         "-e python_modules/libraries/dagster-ssh",
         "-e python_modules/libraries/dagster-twilio",
@@ -60,10 +61,24 @@ def main(quiet):
         "-e helm/dagster/schema[test]",
     ]
 
+    if sys.version_info >= (3, 7):
+        install_targets += [
+            "-e python_modules/libraries/dagster-dbt",
+            "-e python_modules/libraries/dagster-pandera",
+            "-e python_modules/libraries/dagster-snowflake",
+            "-e python_modules/libraries/dagster-snowflake-pandas",
+        ]
+
+    # NOTE: `dagster-ge` is out of date and does not support recent versions of great expectations.
+    # Because of this, it has second-order dependencies on old versions of popular libraries like
+    # numpy which conflict with the requirements of our other libraries. For this reason, until
+    # dagster-ge is updated we won't install `dagster-ge` in the common dev environment or
+    # pre-install its dependencies in our BK images (which this script is used for).
+    #
     # dagster-ge depends on a great_expectations version that does not install on Windows
     # https://github.com/dagster-io/dagster/issues/3319
-    if not os.name == "nt":
-        install_targets += ["-e python_modules/libraries/dagster-ge"]
+    # if sys.version_info >= (3, 7) and os.name != "nt":
+    #     install_targets += ["-e python_modules/libraries/dagster-ge"]
 
     # NOTE: These need to be installed as one long pip install command, otherwise pip will install
     # conflicting dependencies, which will break pip freeze snapshot creation during the integration
