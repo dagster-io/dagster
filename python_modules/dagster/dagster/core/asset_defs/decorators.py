@@ -106,13 +106,15 @@ def asset(
 
     Args:
         name (Optional[str]): The name of the asset.  If not provided, defaults to the name of the
-            decorated function.
+            decorated function. The asset's name must be a valid name in dagster (ie only contains
+            letters, numbers, and _ )
         namespace (Optional[Sequence[str]]): **Deprecated (use `key_prefix`)**. The namespace that
             the asset resides in.  The namespace + the name forms the asset key. The asset key must
             be a valid name in dagster (ie only contains letters, numbers, and _ )
         key_prefix (Optional[Union[str, Sequence[str]]]): If provided, the asset's key is the
             concatenation of the key_prefix and the asset's name, which defaults to the name of
-            the decorated function.
+            the decorated function. The asset key must be a valid name in dagster (ie only contains
+            letters, numbers, and _ )
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
             and namespaces.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Set of asset keys that are
