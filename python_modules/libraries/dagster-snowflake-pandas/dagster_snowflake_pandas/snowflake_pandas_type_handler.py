@@ -24,7 +24,7 @@ def _connect_snowflake(context: Union[InputContext, OutputContext], table_slice:
 
 def _convert_timestamp_to_date(s: pd.Series) -> pd.Series:
     """
-    Converts columns of data of type pd.Timezone to datetime.date so that it can be stored in
+    Converts columns of data of type pd.Timestamp to datetime.datetime so that it can be stored in
     snowflake
     """
     if pd.core.dtypes.common.is_datetime_or_timedelta_dtype(s):
@@ -34,6 +34,9 @@ def _convert_timestamp_to_date(s: pd.Series) -> pd.Series:
 
 
 def _convert_date_to_timestamp(s: pd.Series) -> pd.Series:
+    """
+    Converts columns of datetime.date to pd.Timestamp to undo the conversion in _convert_timestamp_to_date
+    """
     if isinstance(s[0], datetime.date):
         return pd.to_datetime(s.values)
     else:
