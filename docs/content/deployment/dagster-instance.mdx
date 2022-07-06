@@ -83,8 +83,8 @@ To configure storage, you should set the `storage` attribute in your `dagster.ya
 #### Sqlite storage (Default)
 
 <PyObject
-  module="dagster.core.storage.sqlite_storage"
-  object="DagsterSqliteStorage"
+module="dagster.core.storage.sqlite_storage"
+object="DagsterSqliteStorage"
 /> uses a Sqlite DB for storage.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_storage_sqlite endbefore=end_marker_storage_sqlite
@@ -330,8 +330,8 @@ To configure Compute Log Storage, set the `compute_logs` key in your `dagster.ya
 #### LocalComputeLogManager (Default)
 
 <PyObject
-  module="dagster.core.storage.local_compute_log_manager"
-  object="LocalComputeLogManager"
+module="dagster.core.storage.local_compute_log_manager"
+object="LocalComputeLogManager"
 /> writes stdout & stderr logs to disk.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_compute_log_storage_local endbefore=end_marker_compute_log_storage_local
