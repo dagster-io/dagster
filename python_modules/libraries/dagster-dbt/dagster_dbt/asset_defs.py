@@ -31,6 +31,9 @@ from dagster.core.definitions.metadata import RawMetadataValue
 from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.utils.backcompat import experimental_arg_warning
 
+# dbt resource types that may be considered assets
+ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
+
 
 def _load_manifest_for_project(
     project_dir: str, profiles_dir: str, target_dir: str, select: str
@@ -45,7 +48,6 @@ def _load_manifest_for_project(
             "project-dir": project_dir,
             "profiles-dir": profiles_dir,
             "select": select,
-            "resource-type": "model",
             "output": "json",
         },
         warn_error=False,
@@ -142,6 +144,33 @@ def _get_node_description(node_info):
         f"#### Raw SQL:\n```\n{code_block}\n```",
     ]
     return "\n\n".join(filter(None, description_sections))
+
+
+def _get_asset_deps(dbt_nodes, selected_unique_ids, asset_resource_types):
+
+    asset_deps: Dict[str, Set[str]] = {}
+    for unique_id in selected_unique_ids:
+        asset_deps[unqiue_id] = set()
+
+        node_info = dbt_nodes[unique_id]
+        node_resource_type = node_info["resource_type"]
+        node_parent_unique_ids = node_info["depends_on"]["nodes"]
+
+        # skip non-asset resources, such as tests
+        if node_resource_types not in asset_resource_types:
+            continue
+
+        for parent_unique_id in node_parent_unique_ids:
+            parent_node_info = dbt_nodes[parent_unique_id]
+            parent_resource_type = parent_node_info["resource_type"]
+
+            # only sources or other assets may be parents
+            if parent_resource_type not in ["source"] + asset_resource_types:
+                continue
+
+            asset_deps[unqiue_id].add(parent_unique_id)
+
+    return asset_deps
 
 
 def _dbt_nodes_to_assets(
