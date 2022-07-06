@@ -76,7 +76,7 @@ class PickledObjectS3IOManager(MemoizableIOManager):
         pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
         pickled_obj_bytes = io.BytesIO(pickled_obj)
         self.s3.upload_fileobj(pickled_obj_bytes, self.bucket, key)
-        context.add_output_metadata({"uri": MetadataValue.path(key)})
+        context.add_output_metadata({"uri": MetadataValue.path(path)})
 
 
 @io_manager(
