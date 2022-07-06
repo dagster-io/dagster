@@ -52,22 +52,15 @@ export class Structured extends React.Component<StructuredProps, StructuredState
         title: 'Step Retry',
         body: <PythonErrorInfo error={node.error ? node.error : node} />,
       });
-    } else if (node.__typename === 'HookErroredEvent') {
+    } else if (
+      (node.__typename === 'EngineEvent' && node.error) ||
+      (node.__typename === 'RunFailureEvent' && node.error) ||
+      node.__typename === 'HookErroredEvent' ||
+      node.__typename === 'ResourceInitFailureEvent'
+    ) {
       showCustomAlert({
         title: 'Error',
         body: <PythonErrorInfo error={node.error ? node.error : node} />,
-      });
-    } else if (node.__typename === 'EngineEvent' && node.engineError) {
-      showCustomAlert({
-        title: 'Error',
-        body: <PythonErrorInfo error={node.engineError} />,
-      });
-    } else if (node.__typename === 'RunFailureEvent' && node.pipelineFailureError) {
-      showCustomAlert({
-        title: 'Error',
-        body: (
-          <PythonErrorInfo error={node.pipelineFailureError ? node.pipelineFailureError : node} />
-        ),
       });
     } else {
       showCustomAlert({
@@ -111,6 +104,15 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
         ...MetadataEntryFragment
       }
     }
+    ... on MarkerEvent {
+      markerStart
+      markerEnd
+    }
+    ... on ErrorEvent {
+      error {
+        ...PythonErrorFragment
+      }
+    }
     ... on MaterializationEvent {
       assetKey {
         path
@@ -121,25 +123,12 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
         path
       }
     }
-    ... on RunFailureEvent {
-      pipelineFailureError: error {
-        ...PythonErrorFragment
-      }
-    }
     ... on ExecutionStepFailureEvent {
-      error {
-        ...PythonErrorFragment
-      }
       errorSource
       failureMetadata {
         metadataEntries {
           ...MetadataEntryFragment
         }
-      }
-    }
-    ... on ExecutionStepUpForRetryEvent {
-      error {
-        ...PythonErrorFragment
       }
     }
     ... on ExecutionStepInputEvent {
@@ -191,16 +180,6 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
       managerKey
       upstreamOutputName
       upstreamStepKey
-    }
-    ... on EngineEvent {
-      engineError: error {
-        ...PythonErrorFragment
-      }
-    }
-    ... on HookErroredEvent {
-      error {
-        ...PythonErrorFragment
-      }
     }
     ... on LogsCapturedEvent {
       logKey

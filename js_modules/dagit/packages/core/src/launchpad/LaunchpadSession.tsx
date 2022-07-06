@@ -283,7 +283,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
 
     return {
       executionParams: {
-        runConfigData: currentSession.runConfigYaml,
+        runConfigData: currentSession.runConfigYaml || {},
         selector: pipelineSelector,
         mode: currentSession.mode || 'default',
         executionMetadata: {
@@ -338,6 +338,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     // is in flight, in which case completion of this async method should not set loading=false.
     previewCounter.current += 1;
     const currentPreviewCount = previewCounter.current;
+    const configYamlOrEmpty = configYaml.trim() || '{}';
 
     dispatch({type: 'preview-loading', payload: true});
 
@@ -345,7 +346,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
       fetchPolicy: 'no-cache',
       query: PREVIEW_CONFIG_QUERY,
       variables: {
-        runConfigData: configYaml,
+        runConfigData: configYamlOrEmpty,
         pipeline: pipelineSelector,
         mode: currentSession.mode || 'default',
       },
@@ -357,13 +358,13 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
         type: 'set-preview',
         payload: {
           preview: data,
-          previewedDocument: configYaml,
+          previewedDocument: configYamlOrEmpty,
           previewLoading: isLatestRequest ? false : state.previewLoading,
         },
       });
     }
 
-    return responseToYamlValidationResult(configYaml, data.isPipelineConfigValid);
+    return responseToYamlValidationResult(configYamlOrEmpty, data.isPipelineConfigValid);
   };
 
   const tagsApplyingNewBaseTags = (newBaseTags: PipelineRunTag[]) => {

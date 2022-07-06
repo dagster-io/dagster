@@ -119,6 +119,7 @@ from dagster.core.definitions import (
     TableSchema,
     TableSchemaMetadataValue,
     TextMetadataValue,
+    TimeWindow,
     TimeWindowPartitionsDefinition,
     TypeCheck,
     UrlMetadataValue,
@@ -145,6 +146,7 @@ from dagster.core.definitions import (
     make_values_resource,
     monthly_partitioned_config,
     monthly_schedule,
+    multi_or_in_process_executor,
     multiple_process_executor_requirements,
     multiprocess_executor,
     op,
@@ -187,6 +189,7 @@ from dagster.core.errors import (
     DagsterInvalidConfigDefinitionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     DagsterResourceFunctionError,
     DagsterRunNotFoundError,
@@ -243,6 +246,7 @@ from dagster.core.storage.event_log import (
 )
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
 from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
+from dagster.core.storage.input_manager import InputManager, input_manager
 from dagster.core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
 from dagster.core.storage.mem_io_manager import mem_io_manager
 from dagster.core.storage.memoizable_io_manager import MemoizableIOManager
@@ -546,6 +550,7 @@ __all__ = [
     "DagsterExecutionStepExecutionError",
     "DagsterExecutionStepNotFoundError",
     "DagsterInvalidConfigDefinitionError",
+    "DagsterInvalidInvocationError",
     "DagsterInvalidConfigError",
     "DagsterInvalidDefinitionError",
     "DagsterInvariantViolationError",
@@ -639,6 +644,7 @@ __all__ = [
     "DailyPartitionsDefinition",
     "HourlyPartitionsDefinition",
     "MonthlyPartitionsDefinition",
+    "TimeWindow",
     "TimeWindowPartitionsDefinition",
     "WeeklyPartitionsDefinition",
     "Partition",
@@ -675,6 +681,8 @@ __all__ = [
     "IOManager",
     "IOManagerDefinition",
     "io_manager",
+    "input_manager",
+    "InputManager",
     "RootInputManager",
     "RootInputManagerDefinition",
     "root_input_manager",

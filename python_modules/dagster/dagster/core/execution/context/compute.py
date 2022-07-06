@@ -298,7 +298,10 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def selected_asset_keys(self) -> AbstractSet[AssetKey]:
-        return self.job_def.asset_layer.asset_keys_for_node(self.solid_handle)
+        assets_def = self.job_def.asset_layer.assets_def_for_node(self.solid_handle)
+        if assets_def is None:
+            return set()
+        return assets_def.keys
 
     @property
     def selected_output_names(self) -> AbstractSet[str]:
@@ -321,6 +324,15 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
             check.failed(f"Output '{output_name}' has no asset")
         else:
             return asset_output_info.key
+
+    def asset_key_for_input(self, input_name: str) -> AssetKey:
+        key = self.pipeline_def.asset_layer.asset_key_for_input(
+            node_handle=self.op_handle, input_name=input_name
+        )
+        if key is None:
+            check.failed(f"Input '{input_name}' has no asset")
+        else:
+            return key
 
     def output_asset_partition_key(self, output_name: str = "result") -> str:
         deprecation_warning(

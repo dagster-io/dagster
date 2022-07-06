@@ -6,6 +6,7 @@ import {Redirect, useParams} from 'react-router-dom';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {usePermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {useTrackPageView} from '../app/analytics';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
@@ -88,6 +89,8 @@ interface Props {
 }
 
 const LaunchpadAllowedRoot: React.FC<Props> = (props) => {
+  useTrackPageView();
+
   const {pipelinePath, repoAddress, launchpadType, sessionPresets} = props;
   const explorerPath = explorerPathFromString(pipelinePath);
   const {pipelineName} = explorerPath;

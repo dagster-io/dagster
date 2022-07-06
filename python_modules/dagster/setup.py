@@ -96,7 +96,7 @@ if __name__ == "__main__":
                 "coverage==5.3",
                 "docker",
                 "freezegun>=0.3.15",
-                "grpcio-tools==1.32.0",
+                "grpcio-tools",
                 "mock==3.0.5",
                 "objgraph",
                 "protobuf==3.13.0",  # without this, pip will install the most up-to-date protobuf
@@ -132,7 +132,7 @@ if __name__ == "__main__":
                 "types-mock",  # version will be resolved against mock
                 "types-paramiko",  # version will be resolved against paramiko
                 "types-pkg-resources",  # version will be resolved against setuptools (contains pkg_resources)
-                "types-protobuf",  # version will be resolved against protobuf
+                "types-protobuf<=3.19.21",  # version will be resolved against protobuf (3.19.22 introduced breaking change)
                 "types-pyOpenSSL",  # version will be resolved against pyOpenSSL
                 "types-python-dateutil",  # version will be resolved against python-dateutil
                 "types-PyYAML",  # version will be resolved against PyYAML

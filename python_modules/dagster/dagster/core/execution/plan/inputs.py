@@ -296,16 +296,21 @@ class FromRootInputManager(
         solid_config = step_context.resolved_run_config.solids.get(str(self.solid_handle))
         config_data = solid_config.inputs.get(self.input_name) if solid_config else None
 
-        loader = getattr(step_context.resources, input_def.root_manager_key)
+        input_manager_key = (
+            input_def.root_manager_key
+            if input_def.root_manager_key
+            else input_def.input_manager_key
+        )
+
+        loader = getattr(step_context.resources, input_manager_key)
+
         load_input_context = step_context.for_input_manager(
             input_def.name,
             config_data,
             metadata=input_def.metadata,
             dagster_type=input_def.dagster_type,
-            resource_config=step_context.resolved_run_config.resources[
-                input_def.root_manager_key
-            ].config,
-            resources=build_resources_for_manager(input_def.root_manager_key, step_context),
+            resource_config=step_context.resolved_run_config.resources[input_manager_key].config,
+            resources=build_resources_for_manager(input_manager_key, step_context),
         )
 
         yield from _load_input_with_input_manager(loader, load_input_context)
@@ -315,7 +320,7 @@ class FromRootInputManager(
         yield DagsterEvent.loaded_input(
             step_context,
             input_name=input_def.name,
-            manager_key=input_def.root_manager_key,
+            manager_key=input_manager_key,
             metadata_entries=[
                 entry for entry in metadata_entries if isinstance(entry, MetadataEntry)
             ],
@@ -325,17 +330,21 @@ class FromRootInputManager(
         from ..resolve_versions import check_valid_version, resolve_config_version
 
         solid = pipeline_def.get_solid(self.solid_handle)
-        root_manager_key = solid.input_def_named(self.input_name).root_manager_key
-        root_manager_def = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs[
-            root_manager_key
-        ]
+        input_manager_key = (
+            solid.input_def_named(self.input_name).root_manager_key
+            if solid.input_def_named(self.input_name).root_manager_key
+            else solid.input_def_named(self.input_name).input_manager_key
+        )
+        input_manager_def = pipeline_def.get_mode_definition(
+            resolved_run_config.mode
+        ).resource_defs[input_manager_key]
 
         solid_config = resolved_run_config.solids.get(solid.name)
         input_config = solid_config.inputs.get(self.input_name)
-        resource_config = resolved_run_config.resources.get(root_manager_key).config
+        resource_config = resolved_run_config.resources.get(input_manager_key).config
 
         version_context = ResourceVersionContext(
-            resource_def=root_manager_def,
+            resource_def=input_manager_def,
             resource_config=resource_config,
         )
 
@@ -344,13 +353,13 @@ class FromRootInputManager(
                 version_context
             )
         else:
-            root_manager_def_version = root_manager_def.version
+            root_manager_def_version = input_manager_def.version
 
         if root_manager_def_version is None:
             raise DagsterInvariantViolationError(
-                f"While using memoization, version for root input manager '{root_manager_key}' was "
+                f"While using memoization, version for input manager '{input_manager_key}' was "
                 "None. Please either provide a versioning strategy for your job, or provide a "
-                "version using the root_input_manager decorator."
+                "version using the root_input_manager or input_manager decorator."
             )
 
         check_valid_version(root_manager_def_version)
@@ -363,7 +372,13 @@ class FromRootInputManager(
     def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
         input_def = pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
 
-        return {input_def.root_manager_key}
+        input_manager_key = (
+            input_def.root_manager_key
+            if input_def.root_manager_key
+            else input_def.input_manager_key
+        )
+
+        return {input_manager_key}
 
 
 @whitelist_for_serdes
@@ -444,20 +459,33 @@ class FromStepOutput(
         input_def: InputDefinition,
     ) -> Iterator["DagsterEvent"]:
         from dagster.core.events import DagsterEvent
+        from dagster.core.storage.input_manager import InputManager
 
         source_handle = self.step_output_handle
-        manager_key = step_context.execution_plan.get_manager_key(
-            source_handle, step_context.pipeline_def
-        )
-        input_manager = step_context.get_io_manager(source_handle)
-        check.invariant(
-            isinstance(input_manager, IOManager),
-            f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
-            f'the manager of upstream output "{source_handle.output_name}" from step '
-            f'"{source_handle.step_key}" to load it, but that manager is not an IOManager. '
-            f"Please ensure that the resource returned for resource key "
-            f'"{manager_key}" is an IOManager.',
-        )
+
+        if input_def.input_manager_key is not None:
+            manager_key = input_def.input_manager_key
+            input_manager = getattr(step_context.resources, manager_key)
+            check.invariant(
+                isinstance(input_manager, InputManager),
+                f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
+                f'the manager "{manager_key}" to load it, but it is not an InputManager. '
+                f"Please ensure that the resource returned for resource key "
+                f'"{manager_key}" is an InputManager.',
+            )
+        else:
+            manager_key = step_context.execution_plan.get_manager_key(
+                source_handle, step_context.pipeline_def
+            )
+            input_manager = step_context.get_io_manager(source_handle)
+            check.invariant(
+                isinstance(input_manager, IOManager),
+                f'Input "{input_def.name}" for step "{step_context.step.key}" is depending on '
+                f'the manager of upstream output "{source_handle.output_name}" from step '
+                f'"{source_handle.step_key}" to load it, but that manager is not an IOManager. '
+                f"Please ensure that the resource returned for resource key "
+                f'"{manager_key}" is an IOManager.',
+            )
         load_input_context = self.get_load_context(step_context, input_def)
         yield from _load_input_with_input_manager(input_manager, load_input_context)
 

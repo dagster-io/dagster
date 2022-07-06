@@ -21,5 +21,6 @@ export interface ScheduleSwitchFragment {
   id: string;
   name: string;
   cronSchedule: string;
+  executionTimezone: string | null;
   scheduleState: ScheduleSwitchFragment_scheduleState;
 }

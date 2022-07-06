@@ -89,6 +89,7 @@ const ROOT_WORKSPACE_QUERY = gql`
                 schedules {
                   id
                   cronSchedule
+                  executionTimezone
                   mode
                   name
                   pipelineName

@@ -29,7 +29,7 @@ from .solid_definition import NodeDefinition, SolidDefinition
 
 
 def define_resource_dictionary_cls(
-    resource_defs: Dict[str, ResourceDefinition],
+    resource_defs: Mapping[str, ResourceDefinition],
     required_resources: Set[str],
 ) -> Shape:
     fields = {}
@@ -70,7 +70,7 @@ class RunConfigSchemaCreationData(NamedTuple):
     graph_def: GraphDefinition
     dependency_structure: DependencyStructure
     mode_definition: ModeDefinition
-    logger_defs: Dict[str, LoggerDefinition]
+    logger_defs: Mapping[str, LoggerDefinition]
     ignored_solids: List[Node]
     required_resources: Set[str]
     is_using_graph_job_op_apis: bool
@@ -185,7 +185,7 @@ def get_inputs_field(
     solid: Node,
     handle: NodeHandle,
     dependency_structure: DependencyStructure,
-    resource_defs: Dict[str, ResourceDefinition],
+    resource_defs: Mapping[str, ResourceDefinition],
     solid_ignored: bool,
     asset_layer: AssetLayer,
     is_using_graph_job_op_apis: bool,
@@ -196,7 +196,9 @@ def get_inputs_field(
     for name, inp in solid.definition.input_dict.items():
         inp_handle = SolidInputHandle(solid, inp)
         has_upstream = input_has_upstream(dependency_structure, inp_handle, solid, name)
-        if asset_layer.asset_key_for_input(handle, name) and not has_upstream:
+        if inp.input_manager_key:
+            input_field = get_input_manager_input_field(solid, inp, resource_defs)
+        elif asset_layer.asset_key_for_input(handle, name) and not has_upstream:
             input_field = None
         elif name in direct_inputs and not has_upstream:
             input_field = None
@@ -236,26 +238,48 @@ def input_has_upstream(
 def get_input_manager_input_field(
     solid: Node,
     input_def: InputDefinition,
-    resource_defs: Dict[str, ResourceDefinition],
+    resource_defs: Mapping[str, ResourceDefinition],
 ) -> Optional[Field]:
-    if input_def.root_manager_key not in resource_defs:
-        raise DagsterInvalidDefinitionError(
-            f"Input '{input_def.name}' for {solid.describe_node()} requires root_manager_key "
-            f"'{input_def.root_manager_key}', but no resource has been provided. Please include a "
-            f"resource definition for that key in the provided resource_defs."
-        )
+    if input_def.root_manager_key:
+        if input_def.root_manager_key not in resource_defs:
+            raise DagsterInvalidDefinitionError(
+                f"Input '{input_def.name}' for {solid.describe_node()} requires root_manager_key "
+                f"'{input_def.root_manager_key}', but no resource has been provided. Please include a "
+                f"resource definition for that key in the provided resource_defs."
+            )
 
-    root_manager = resource_defs[input_def.root_manager_key]
-    if not isinstance(root_manager, IInputManagerDefinition):
-        raise DagsterInvalidDefinitionError(
-            f"Input '{input_def.name}' for {solid.describe_node()} requires root_manager_key "
-            f"'{input_def.root_manager_key}', but the resource definition provided is not an "
-            "IInputManagerDefinition"
-        )
+        root_manager = resource_defs[input_def.root_manager_key]
+        if not isinstance(root_manager, IInputManagerDefinition):
+            raise DagsterInvalidDefinitionError(
+                f"Input '{input_def.name}' for {solid.describe_node()} requires root_manager_key "
+                f"'{input_def.root_manager_key}', but the resource definition provided is not an "
+                "IInputManagerDefinition"
+            )
 
-    input_config_schema = root_manager.input_config_schema
-    if input_config_schema:
-        return input_config_schema.as_field()
+        input_config_schema = root_manager.input_config_schema
+        if input_config_schema:
+            return input_config_schema.as_field()
+        return None
+    elif input_def.input_manager_key:
+        if input_def.input_manager_key not in resource_defs:
+            raise DagsterInvalidDefinitionError(
+                f"Input '{input_def.name}' for {solid.describe_node()} requires input_manager_key "
+                f"'{input_def.input_manager_key}', but no resource has been provided. Please include a "
+                f"resource definition for that key in the provided resource_defs."
+            )
+
+        input_manager = resource_defs[input_def.input_manager_key]
+        if not isinstance(input_manager, IInputManagerDefinition):
+            raise DagsterInvalidDefinitionError(
+                f"Input '{input_def.name}' for {solid.describe_node()} requires input_manager_key "
+                f"'{input_def.input_manager_key}', but the resource definition provided is not an "
+                "IInputManagerDefinition"
+            )
+
+        input_config_schema = input_manager.input_config_schema
+        if input_config_schema:
+            return input_config_schema.as_field()
+        return None
 
     return None
 
@@ -271,7 +295,7 @@ def get_type_loader_input_field(solid: Node, input_name: str, input_def: InputDe
 
 def get_outputs_field(
     solid: Node,
-    resource_defs: Dict[str, ResourceDefinition],
+    resource_defs: Mapping[str, ResourceDefinition],
 ) -> Optional[Field]:
 
     # if any outputs have configurable output managers, use those for the schema and ignore all type
@@ -301,7 +325,7 @@ def get_outputs_field(
 
 
 def get_output_manager_output_field(
-    solid: Node, output_def: OutputDefinition, resource_defs: Dict[str, ResourceDefinition]
+    solid: Node, output_def: OutputDefinition, resource_defs: Mapping[str, ResourceDefinition]
 ) -> Optional[ConfigType]:
     if output_def.io_manager_key not in resource_defs:
         raise DagsterInvalidDefinitionError(
@@ -358,7 +382,7 @@ def construct_leaf_solid_config(
     handle: NodeHandle,
     dependency_structure: DependencyStructure,
     config_schema: Optional[IDefinitionConfigSchema],
-    resource_defs: Dict[str, ResourceDefinition],
+    resource_defs: Mapping[str, ResourceDefinition],
     ignored: bool,
     is_using_graph_job_op_apis: bool,
     asset_layer: AssetLayer,
@@ -386,7 +410,7 @@ def define_isolid_field(
     solid: Node,
     handle: NodeHandle,
     dependency_structure: DependencyStructure,
-    resource_defs: Dict[str, ResourceDefinition],
+    resource_defs: Mapping[str, ResourceDefinition],
     ignored: bool,
     is_using_graph_job_op_apis: bool,
     asset_layer: AssetLayer,
@@ -470,7 +494,7 @@ def define_solid_dictionary_cls(
     solids: List[Node],
     ignored_solids: Optional[List[Node]],
     dependency_structure: DependencyStructure,
-    resource_defs: Dict[str, ResourceDefinition],
+    resource_defs: Mapping[str, ResourceDefinition],
     is_using_graph_job_op_apis: bool,
     asset_layer: AssetLayer,
     parent_handle: Optional[NodeHandle] = None,

@@ -1,5 +1,3 @@
-import logging
-import time
 from typing import Any, Dict, List, NamedTuple, Optional
 
 from dagster import DagsterEvent, DagsterEventType, IntSource, String
@@ -8,7 +6,6 @@ from dagster.builtins import Bool
 from dagster.config import Field
 from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.config.field_utils import Shape
-from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
@@ -129,16 +126,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
             pipeline_name=pipeline_run.pipeline_name,
         )
-        event_record = EventLogEntry(
-            user_message="",
-            level=logging.INFO,
-            pipeline_name=pipeline_run.pipeline_name,
-            run_id=pipeline_run.run_id,
-            error_info=None,
-            timestamp=time.time(),
-            dagster_event=enqueued_event,
-        )
-        self._instance.handle_new_event(event_record)
+        self._instance.report_dagster_event(enqueued_event, run_id=pipeline_run.run_id)
 
         run = self._instance.get_run_by_id(pipeline_run.run_id)
         if run is None:

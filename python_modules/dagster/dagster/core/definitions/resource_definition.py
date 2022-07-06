@@ -194,7 +194,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
         )
 
     def __call__(self, *args, **kwargs):
-        from dagster.core.execution.resources_init import InitResourceContext
+        from dagster.core.execution.context.init import UnboundInitResourceContext
 
         context_provided = is_context_provided(self.resource_fn)
 
@@ -213,18 +213,26 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
             context_param_name = get_function_params(self.resource_fn)[0].name
 
             if args:
-                check.opt_inst_param(args[0], context_param_name, InitResourceContext)
-                return resource_invocation_result(self, args[0])
+                check.opt_inst_param(args[0], context_param_name, UnboundInitResourceContext)
+                return resource_invocation_result(
+                    self, cast(Optional[UnboundInitResourceContext], args[0])
+                )
             else:
                 if context_param_name not in kwargs:
                     raise DagsterInvalidInvocationError(
                         f"Resource initialization expected argument '{context_param_name}'."
                     )
                 check.opt_inst_param(
-                    kwargs[context_param_name], context_param_name, InitResourceContext
+                    kwargs[context_param_name], context_param_name, UnboundInitResourceContext
                 )
 
-                return resource_invocation_result(self, kwargs[context_param_name])
+                return resource_invocation_result(
+                    self, cast(Optional[UnboundInitResourceContext], kwargs[context_param_name])
+                )
+        elif len(args) + len(kwargs) > 0:
+            raise DagsterInvalidInvocationError(
+                "Attempted to invoke resource with argument, but underlying function has no context argument. Either specify a context argument on the resource function, or remove the passed-in argument."
+            )
         else:
             return resource_invocation_result(self, None)
 

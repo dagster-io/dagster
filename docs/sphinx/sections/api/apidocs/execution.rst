@@ -50,6 +50,9 @@ Reconstructable jobs
 
 Executors
 ---------
+.. autodata:: multi_or_in_process_executor
+  :annotation: ExecutorDefinition
+
 .. autodata:: in_process_executor
   :annotation: ExecutorDefinition
 

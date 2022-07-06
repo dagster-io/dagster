@@ -15,6 +15,7 @@ import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 import {FeatureFlag, getFeatureFlags, setFeatureFlags} from './Flags';
 import {SHORTCUTS_STORAGE_KEY} from './ShortcutHandler';
+import {useTrackPageView} from './analytics';
 import {TimezoneSelect} from './time/TimezoneSelect';
 import {automaticLabel} from './time/browserTimezone';
 
@@ -22,6 +23,7 @@ export interface SettingsRootProps {
   tabs?: React.ReactNode;
 }
 const UserSettingsRoot: React.FC<SettingsRootProps> = ({tabs}) => {
+  useTrackPageView();
   useDocumentTitle('User settings');
 
   const [flags, setFlags] = React.useState<FeatureFlag[]>(() => getFeatureFlags());

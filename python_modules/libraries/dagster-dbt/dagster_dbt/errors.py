@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any, Dict, List
+from typing import Any, Mapping, Sequence
 
 from dagster import Failure, MetadataEntry
 from dagster import _check as check
@@ -12,9 +12,9 @@ class DagsterDbtError(Failure, ABC):
 class DagsterDbtCliUnexpectedOutputError(DagsterDbtError):
     """Represents an error when parsing the output of a dbt CLI command."""
 
-    invalid_line_nos: List[int]
+    invalid_line_nos: Sequence[int]
 
-    def __init__(self, invalid_line_nos: List[int]):
+    def __init__(self, invalid_line_nos: Sequence[int]):
         check.list_param(invalid_line_nos, "invalid_line_nos", int)
         line_nos_str = ", ".join(map(str, invalid_line_nos))
         description = f"dbt CLI emitted unexpected output on lines {line_nos_str}"
@@ -28,15 +28,21 @@ class DagsterDbtCliUnexpectedOutputError(DagsterDbtError):
 class DagsterDbtCliRuntimeError(DagsterDbtError, ABC):
     """Represents an error while executing a dbt CLI command."""
 
-    def __init__(self, description: str, logs: List[Dict[str, Any]], raw_output: str):
+    def __init__(
+        self,
+        description: str,
+        logs: Sequence[Mapping[str, Any]],
+        raw_output: str,
+        messages: Sequence[str],
+    ):
         metadata_entries = [
             MetadataEntry(
                 "Parsed CLI Output (JSON)",
                 value={"logs": logs},
             ),
             MetadataEntry(
-                "Parsed CLI Output (JSON) Message Attributes",
-                value=DagsterDbtCliRuntimeError.stitch_messages(logs),
+                "Parsed CLI Messages",
+                value="\n".join(messages),
             ),
             MetadataEntry(
                 "Raw CLI Output",
@@ -45,27 +51,19 @@ class DagsterDbtCliRuntimeError(DagsterDbtError, ABC):
         ]
         super().__init__(description, metadata_entries)
 
-    @staticmethod
-    def stitch_messages(logs: List[dict]) -> str:
-        return "\n".join(
-            log["message"].strip("\n")
-            for log in logs
-            if isinstance(log.get("message"), str)  # defensive
-        )
-
 
 class DagsterDbtCliHandledRuntimeError(DagsterDbtCliRuntimeError):
     """Represents a model error reported by the dbt CLI at runtime (return code 1)."""
 
-    def __init__(self, logs: List[Dict[str, Any]], raw_output: str):
-        super().__init__("Handled error in the dbt CLI (return code 1)", logs, raw_output)
+    def __init__(self, logs: Sequence[Mapping[str, Any]], raw_output: str, messages: Sequence[str]):
+        super().__init__("Handled error in the dbt CLI (return code 1)", logs, raw_output, messages)
 
 
 class DagsterDbtCliFatalRuntimeError(DagsterDbtCliRuntimeError):
     """Represents a fatal error in the dbt CLI (return code 2)."""
 
-    def __init__(self, logs: List[Dict[str, Any]], raw_output: str):
-        super().__init__("Fatal error in the dbt CLI (return code 2)", logs, raw_output)
+    def __init__(self, logs: Sequence[Mapping[str, Any]], raw_output: str, messages: Sequence[str]):
+        super().__init__("Fatal error in the dbt CLI (return code 2)", logs, raw_output, messages)
 
 
 class DagsterDbtRpcUnexpectedPollOutputError(DagsterDbtError):

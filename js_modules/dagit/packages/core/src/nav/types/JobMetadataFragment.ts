@@ -22,6 +22,7 @@ export interface JobMetadataFragment_schedules {
   mode: string;
   name: string;
   cronSchedule: string;
+  executionTimezone: string | null;
   scheduleState: JobMetadataFragment_schedules_scheduleState;
 }
 

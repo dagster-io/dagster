@@ -6,21 +6,11 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['TestMaterializations.test_materializations[sqlite_with_default_run_launcher_deployed_grpc_env] 1'] = [
-    'RunStartingEvent',
-    'RunStartEvent',
-    'LogsCapturedEvent',
-    'ExecutionStepStartEvent',
-    'MaterializationEvent',
-    'ExecutionStepOutputEvent',
-    'HandledOutputEvent',
-    'ExecutionStepSuccessEvent',
-    'RunSuccessEvent'
-]
-
 snapshots['TestMaterializations.test_materializations[sqlite_with_default_run_launcher_managed_grpc_env] 1'] = [
     'RunStartingEvent',
     'RunStartEvent',
+    'ResourceInitStartedEvent',
+    'ResourceInitSuccessEvent',
     'LogsCapturedEvent',
     'ExecutionStepStartEvent',
     'MaterializationEvent',

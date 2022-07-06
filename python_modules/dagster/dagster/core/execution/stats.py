@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterable, List, NamedTuple, Optional, cast
 
 import dagster._check as check
 from dagster.core.definitions import ExpectationResult
-from dagster.core.events import DagsterEventType, StepExpectationResultData
+from dagster.core.events import MARKER_EVENTS, DagsterEventType, StepExpectationResultData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot
 from dagster.serdes import whitelist_for_serdes
@@ -130,7 +130,7 @@ def build_run_step_stats_from_events(
             DagsterEventType.STEP_RESTARTED,
         ):
             attempt_events[step_key].append(event)
-        if dagster_event.event_type == DagsterEventType.ENGINE_EVENT:
+        if dagster_event.event_type in MARKER_EVENTS:
             if dagster_event.engine_event_data.marker_start:
                 key = dagster_event.engine_event_data.marker_start
                 if key not in markers[step_key]:

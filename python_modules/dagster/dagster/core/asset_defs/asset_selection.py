@@ -1,10 +1,11 @@
 import operator
 from abc import ABC
 from functools import reduce
-from typing import AbstractSet, FrozenSet, Optional, Sequence
+from typing import AbstractSet, FrozenSet, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster.core.asset_defs.assets import AssetsDefinition
+from dagster.core.asset_defs.source_asset import SourceAsset
 from dagster.core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.selector.subset_selector import (
@@ -15,29 +16,72 @@ from dagster.core.selector.subset_selector import (
 
 
 class AssetSelection(ABC):
+    """
+    An AssetSelection defines a query over a set of assets, normally all the assets in a repository.
+
+    You can use the "|" and "&" operators to create unions and intersections of asset selections,
+    respectively.
+
+    AssetSelections are typically used with :py:func:`define_asset_job`.
+
+    Examples:
+
+        .. code-block:: python
+
+            # Select all assets in group "marketing":
+            AssetSelection.groups("marketing")
+
+            # Select all assets in group "marketing", as well as the asset with key "promotion":
+            AssetSelection.groups("marketing") | AssetSelection.keys("promotion")
+
+            # Select all assets in group "marketing" that are downstream of asset "leads":
+            AssetSelection.groups("marketing") & AssetSelection.keys("leads").downstream()
+    """
+
     @staticmethod
     def all() -> "AllAssetSelection":
+        """Returns a selection that includes all assets."""
         return AllAssetSelection()
 
     @staticmethod
     def assets(*assets_defs: AssetsDefinition) -> "KeysAssetSelection":
+        """Returns a selection that includes all of the provided assets."""
         return KeysAssetSelection(*(key for assets_def in assets_defs for key in assets_def.keys))
 
     @staticmethod
     def keys(*asset_keys: CoercibleToAssetKey) -> "KeysAssetSelection":
+        """Returns a selection that includes assets with any of the provided keys."""
         _asset_keys = [AssetKey.from_coerceable(key) for key in asset_keys]
         return KeysAssetSelection(*_asset_keys)
 
     @staticmethod
     def groups(*group_strs) -> "GroupsAssetSelection":
+        """Returns a selection that includes assets that belong to any of the provided groups"""
         check.tuple_param(group_strs, "group_strs", of_type=str)
         return GroupsAssetSelection(*group_strs)
 
     def downstream(self, depth: Optional[int] = None) -> "DownstreamAssetSelection":
+        """
+        Returns a selection that includes all assets that are downstream of any of the assets in
+        this selection, as well as all the assets in this selection.
+
+        depth (Optional[int]): If provided, then only include assets to the given depth. A depth
+            of 2 means all assets that are children or grandchildren of the assets in this
+            selection.
+        """
         check.opt_int_param(depth, "depth")
         return DownstreamAssetSelection(self, depth=depth)
 
     def upstream(self, depth: Optional[int] = None) -> "UpstreamAssetSelection":
+        """
+        Returns a selection that includes all assets that are upstream of any of the assets in
+        this selection, as well as all the assets in this selection.
+
+        Args:
+            depth (Optional[int]): If provided, then only include assets to the given depth. A depth
+                of 2 means all assets that are parents or grandparents of the assets in this
+                selection.
+        """
         check.opt_int_param(depth, "depth")
         return UpstreamAssetSelection(self, depth=depth)
 
@@ -49,8 +93,10 @@ class AssetSelection(ABC):
         check.inst_param(other, "other", AssetSelection)
         return AndAssetSelection(self, other)
 
-    def resolve(self, all_assets: Sequence[AssetsDefinition]) -> FrozenSet[AssetKey]:
-        check.sequence_param(all_assets, "all_assets", AssetsDefinition)
+    def resolve(
+        self, all_assets: Sequence[Union[AssetsDefinition, SourceAsset]]
+    ) -> FrozenSet[AssetKey]:
+        check.sequence_param(all_assets, "all_assets", (AssetsDefinition, SourceAsset))
         return Resolver(all_assets).resolve(self)
 
 
@@ -96,10 +142,20 @@ class UpstreamAssetSelection(AssetSelection):
 
 
 class Resolver:
-    def __init__(self, all_assets: Sequence[AssetsDefinition]):
-        self.all_assets = all_assets
-        self.asset_dep_graph = generate_asset_dep_graph(list(all_assets))
-        self.all_assets_by_name = generate_asset_name_to_definition_map(all_assets)
+    def __init__(self, all_assets: Sequence[Union[AssetsDefinition, SourceAsset]]):
+        assets_defs = []
+        source_assets = []
+        for asset in all_assets:
+            if isinstance(asset, SourceAsset):
+                source_assets.append(asset)
+            elif isinstance(asset, AssetsDefinition):
+                assets_defs.append(asset)
+            else:
+                check.failed(f"Expected SourceAsset or AssetsDefinition, got {type(asset)}")
+
+        self.assets_defs = assets_defs
+        self.asset_dep_graph = generate_asset_dep_graph(assets_defs, source_assets)
+        self.all_assets_by_name = generate_asset_name_to_definition_map(assets_defs)
 
     def resolve(self, root_node: AssetSelection) -> FrozenSet[AssetKey]:
         return frozenset(
@@ -130,7 +186,7 @@ class Resolver:
         elif isinstance(node, GroupsAssetSelection):
             return reduce(
                 operator.or_,
-                [_match_groups(assets_def, set(node.children)) for assets_def in self.all_assets],
+                [_match_groups(assets_def, set(node.children)) for assets_def in self.assets_defs],
             )
         elif isinstance(node, KeysAssetSelection):
             specified_keys = set([child.to_user_string() for child in node.children])

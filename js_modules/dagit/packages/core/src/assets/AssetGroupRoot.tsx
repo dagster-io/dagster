@@ -2,6 +2,7 @@ import {Page, PageHeader, Heading, Box, Tag, Tabs} from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
+import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -29,6 +30,8 @@ export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress; tab: 'lineage' 
   repoAddress,
   tab,
 }) => {
+  useTrackPageView();
+
   const {groupName, 0: path} = useParams<AssetGroupRootParams>();
   const history = useHistory();
 

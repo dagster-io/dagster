@@ -80,7 +80,6 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
             handleID={parentOpHandleID}
             showingSubgraph={true}
             getInvocations={getInvocations}
-            onEnterSubgraph={onEnterSubgraph}
             onClickOp={onClickOp}
             repoAddress={repoAddress}
             isGraph={isGraph}

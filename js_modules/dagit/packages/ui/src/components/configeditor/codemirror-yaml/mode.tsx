@@ -400,10 +400,20 @@ CodeMirror.registerHelper(
       }
       // Using a lookup table here seems like a good idea
       // https://github.com/dagster-io/dagster/issues/1966
-      const type = options.schema.allConfigTypes.find((t) => t.key === key);
+      let type = options.schema.allConfigTypes.find((t) => t.key === key);
       if (!type) {
         return false;
       }
+
+      // If nullable, extract the inner type.
+      if (type.__typename === 'NullableConfigType') {
+        const innerKey = type.typeParamKeys[0];
+        type = options.schema.allConfigTypes.find((t) => t.key === innerKey);
+        if (!type) {
+          return false;
+        }
+      }
+
       return (
         type.__typename === 'ArrayConfigType' ||
         type.__typename === 'CompositeConfigType' ||
@@ -609,7 +619,14 @@ function findAutocompletionContext(
       const typeKey = nextTypeKey ? nextTypeKey : parentTypeDef?.configTypeKey;
       nextTypeKey = null;
 
-      const parentConfigType = schema.allConfigTypes.find((t) => t.key === typeKey)!;
+      let parentConfigType = schema.allConfigTypes.find((t) => t.key === typeKey)!;
+
+      // If nullable, extract the inner type.
+      if (parentConfigType.__typename === 'NullableConfigType') {
+        const innerType = parentConfigType.typeParamKeys[0];
+        parentConfigType = schema.allConfigTypes.find((t) => t.key === innerType)!;
+      }
+
       let childTypeKey = parentConfigType.key;
       let childEntriesUnique = true;
 

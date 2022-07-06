@@ -1,6 +1,9 @@
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
+import {Box} from './Box';
+import {Button} from './Button';
+import {Checkbox} from './Checkbox';
 import {Colors} from './Colors';
 import {CustomTooltipProvider} from './CustomTooltipProvider';
 import {Group} from './Group';
@@ -111,5 +114,24 @@ export const Default = () => {
         fetch_from_redshift…
       </span>
     </Group>
+  );
+};
+
+export const CanShow = () => {
+  const [disabled, setDisabled] = React.useState(true);
+  return (
+    <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 12}}>
+      <Checkbox
+        format="switch"
+        checked={disabled}
+        onChange={() => setDisabled((current) => !current)}
+        label="Disable button and show tooltip?"
+      />
+      <Tooltip content="I am a disabled button!" canShow={disabled}>
+        <Button disabled={disabled}>
+          {disabled ? 'Disabled button with tooltip' : 'Enabled button'}
+        </Button>
+      </Tooltip>
+    </Box>
   );
 };

@@ -17,6 +17,7 @@ import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
@@ -85,6 +86,8 @@ const initialState: State = {
 };
 
 export const InstanceOverviewPage = () => {
+  useTrackPageView();
+
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
   const {searchValue} = state;
@@ -102,7 +105,7 @@ export const InstanceOverviewPage = () => {
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true,
   });
-  const {data: lastTenRunsData, loading: lastTenRunsLoading} = queryResultLastRuns;
+  const {data: lastTenRunsData} = queryResultLastRuns;
 
   const refreshState = useMergedRefresh(
     useQueryRefreshAtInterval(queryResultLastRuns, FIFTEEN_SECONDS),
@@ -129,7 +132,7 @@ export const InstanceOverviewPage = () => {
       return a.job.name.toLocaleLowerCase().localeCompare(b.job.name.toLocaleLowerCase());
     };
 
-    if (!loading && data?.workspaceOrError.__typename === 'Workspace') {
+    if (data && Object.keys(data).length && data?.workspaceOrError.__typename === 'Workspace') {
       for (const locationEntry of data.workspaceOrError.locationEntries) {
         if (
           locationEntry.__typename === 'WorkspaceLocationEntry' &&
@@ -182,7 +185,7 @@ export const InstanceOverviewPage = () => {
     neverRan.sort(sortFn);
 
     return {failed, inProgress, queued, succeeded, neverRan};
-  }, [data, loading]);
+  }, [data]);
 
   const filteredJobs = React.useMemo(() => {
     const searchToLower = searchValue.toLocaleLowerCase();
@@ -206,7 +209,7 @@ export const InstanceOverviewPage = () => {
   }, [bucketed, visibleRepos, searchValue]);
 
   const lastTenRunsFlattened = React.useMemo(() => {
-    if (lastTenRunsLoading || !lastTenRunsData) {
+    if (!lastTenRunsData || Object.keys(lastTenRunsData).length === 0) {
       return null;
     }
 
@@ -231,7 +234,7 @@ export const InstanceOverviewPage = () => {
     }
 
     return flattened;
-  }, [lastTenRunsData, lastTenRunsLoading]);
+  }, [lastTenRunsData]);
 
   const filteredJobsFlattened: JobItem[] = React.useMemo(() => {
     return Object.values(filteredJobs).reduce((accum, jobList) => {
@@ -257,7 +260,7 @@ export const InstanceOverviewPage = () => {
     };
   }, [lastTenRunsFlattened, filteredJobs]);
 
-  if (!data && loading) {
+  if (!data || Object.keys(data).length === 0) {
     return (
       <>
         <PageHeader

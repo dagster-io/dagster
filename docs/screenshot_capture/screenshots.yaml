@@ -10,6 +10,12 @@
   defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/basics/single_solid_pipeline/hello_cereal.py
   url: http://127.0.0.1:3000/workspace/__repository__hello_cereal_job@hello_cereal.py/jobs/hello_cereal_job/playground
 
+- path: tutorial/hello_cereal_figure_three.png
+  defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/basics/single_solid_pipeline/hello_cereal.py
+  url: http://127.0.0.1:3000/workspace/__repository__hello_cereal_job@hello_cereal.py/jobs/hello_cereal_job/playground
+  steps:
+    - Click the Launch Run button
+
 - path: tutorial/serial_pipeline_figure_one.png
   defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/serial_pipeline.py
   url: http://127.0.0.1:3000/
@@ -22,13 +28,33 @@
 # Asset tutorial
 #################
 
+- path: guides/asset-tutorial/defining_an_asset.png
+  defs_file: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/cereal.py
+  url: http://127.0.0.1:3000/instance/assets/cereals?view=activity
+
+- path: guides/asset-tutorial/asset_run.png
+  defs_file: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/cereal.py
+  url: http://127.0.0.1:3000/
+  steps:
+    - launch a run and click on the run
+
+- path: guides/asset-tutorial/asset_details.png
+  defs_file: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/cereal.py
+  url: http://127.0.0.1:3000/instance/assets/cereals
+  steps:
+    - hit the materialize button and then close the run toast
+
 - path: guides/asset-tutorial/serial_asset_graph.png
   defs_file: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/serial_asset_graph.py
   url: http://127.0.0.1:3000/
+  steps:
+    - Click asset, navigate to Lineage tab
 
 - path: guides/asset-tutorial/complex_asset_graph.png
   defs_file: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/complex_asset_graph.py
   url: http://127.0.0.1:3000/
+  steps:
+    - Click asset, navigate to Lineage tab
 
 
 #################

@@ -100,6 +100,7 @@ export const SCHEDULE_SWITCH_FRAGMENT = gql`
     id
     name
     cronSchedule
+    executionTimezone
     scheduleState {
       id
       selectorId

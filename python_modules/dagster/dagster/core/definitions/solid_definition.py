@@ -39,6 +39,7 @@ from .resource_requirement import (
     SolidDefinitionResourceRequirement,
 )
 from .solid_invocation import solid_invocation_result
+from .utils import DEFAULT_IO_MANAGER_KEY
 
 if TYPE_CHECKING:
     from .asset_layer import AssetLayer
@@ -314,6 +315,14 @@ class SolidDefinition(NodeDefinition):
                     key=input_def.root_manager_key,
                     node_description=node_description,
                     input_name=input_def.name,
+                    root_input=True,
+                )
+            elif input_def.input_manager_key:
+                yield InputManagerRequirement(
+                    key=input_def.input_manager_key,
+                    node_description=node_description,
+                    input_name=input_def.name,
+                    root_input=False,
                 )
             elif asset_layer and handle:
                 input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
@@ -323,6 +332,7 @@ class SolidDefinition(NodeDefinition):
                         key=io_manager_key,
                         node_description=node_description,
                         input_name=input_def.name,
+                        root_input=False,
                     )
 
         for output_def in self.output_defs:
@@ -481,7 +491,7 @@ def _check_io_managers_on_composite_solid(
     if output_mappings:
         for output_mapping in output_mappings:
             output_def = output_mapping.definition
-            if output_def.io_manager_key != "io_manager":
+            if output_def.io_manager_key != DEFAULT_IO_MANAGER_KEY:
                 raise DagsterInvalidDefinitionError(
                     "IO manager cannot be set on a composite solid: "
                     f'io_manager_key "{output_def.io_manager_key}" '

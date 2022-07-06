@@ -12,6 +12,7 @@ import {
   Tag,
   Heading,
   TokenizingFieldValue,
+  tokenToString,
 } from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
@@ -23,6 +24,7 @@ import {
   QueryRefreshCountdown,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 import {RunStatus} from '../types/globalTypes';
@@ -38,6 +40,7 @@ import {
   RunsFilterInput,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
+  RunFilterToken,
 } from './RunsFilterInput';
 import {QueueDaemonStatusQuery} from './types/QueueDaemonStatusQuery';
 import {RunsRootQuery, RunsRootQueryVariables} from './types/RunsRootQuery';
@@ -62,7 +65,9 @@ const selectedTabId = (filterTokens: TokenizingFieldValue[]) => {
 };
 
 export const RunsRoot = () => {
+  useTrackPageView();
   useDocumentTitle('Runs');
+
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
   const [showScheduled, setShowScheduled] = React.useState(false);
@@ -114,6 +119,16 @@ export const RunsRoot = () => {
       }
     },
     [filterTokens, setFilterTokens, staticStatusTags],
+  );
+
+  const onAddTag = React.useCallback(
+    (token: RunFilterToken) => {
+      const tokenAsString = tokenToString(token);
+      if (!filterTokens.some((token) => tokenToString(token) === tokenAsString)) {
+        setFilterTokensWithStatus([...filterTokens, token]);
+      }
+    },
+    [filterTokens, setFilterTokensWithStatus],
   );
 
   const enabledFilters = React.useMemo(() => {
@@ -245,7 +260,7 @@ export const RunsRoot = () => {
                 <StickyTableContainer $top={0}>
                   <RunTable
                     runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
-                    onSetFilter={setFilterTokensWithStatus}
+                    onAddTag={onAddTag}
                     filter={filter}
                     actionBarComponents={
                       showScheduled ? null : (

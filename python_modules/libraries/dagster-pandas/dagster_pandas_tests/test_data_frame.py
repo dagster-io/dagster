@@ -1,3 +1,5 @@
+from typing import List
+
 import pytest
 from dagster_pandas.constraints import (
     ColumnDTypeInSetConstraint,
@@ -12,6 +14,7 @@ from dagster import (
     AssetMaterialization,
     DagsterInvariantViolationError,
     DagsterType,
+    DynamicOutput,
     Field,
     In,
     MetadataEntry,
@@ -22,6 +25,7 @@ from dagster import (
     dagster_type_loader,
     dagster_type_materializer,
     graph,
+    job,
     op,
 )
 from dagster.utils import safe_tempfile_path
@@ -308,3 +312,31 @@ def test_basic_pipeline_with_pandas_dataframe_dagster_type_metadata_entries():
             )
             assert len(mock_df_output_event_metadata) == 1
             assert any([entry.label == "max_pid" for entry in mock_df_output_event_metadata])
+
+
+def execute_op_in_job(the_op):
+    @job
+    def the_job():
+        the_op()
+
+    return the_job.execute_in_process()
+
+
+def test_dataframe_annotations():
+    @op
+    def op_returns_dataframe() -> DataFrame:
+        return DataFrame()
+
+    assert execute_op_in_job(op_returns_dataframe).success
+
+    @op
+    def op_returns_output() -> Output[DataFrame]:
+        return Output(DataFrame())
+
+    assert execute_op_in_job(op_returns_output).success
+
+    @op
+    def op_returns_dynamic_output() -> List[DynamicOutput[DataFrame]]:
+        return [DynamicOutput(DataFrame(), "1")]
+
+    assert execute_op_in_job(op_returns_dynamic_output).success

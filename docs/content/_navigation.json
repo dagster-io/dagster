@@ -71,6 +71,7 @@
     "title": "Concepts",
     "icon": "Menu",
     "path": "/concepts",
+    "isDefaultOpen": true,
     "children": [
       {
         "title": "Assets",
@@ -415,7 +416,7 @@
         "path": "/guides/dagster/memoization"
       },
       {
-        "title": "Software-Defined Assets with Pandas and PySpark (Experimental)",
+        "title": "Software-Defined Assets with Pandas and PySpark",
         "path": "/guides/dagster/software-defined-assets"
       },
       {

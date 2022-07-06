@@ -16,6 +16,7 @@ from dagster.utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 DEFAULT_OUTPUT = "result"
 DEFAULT_GROUP_NAME = "default"  # asset group_name used when none is provided
+DEFAULT_IO_MANAGER_KEY = "io_manager"
 
 DISALLOWED_NAMES = set(
     [
@@ -57,13 +58,17 @@ def check_valid_name(name: str):
             f'"{name}" is not a valid name in Dagster. It conflicts with a Dagster or python reserved keyword.'
         )
 
+    check_valid_chars(name)
+
+    check.invariant(is_valid_name(name))
+    return name
+
+
+def check_valid_chars(name: str):
     if not has_valid_name_chars(name):
         raise DagsterInvalidDefinitionError(
             f'"{name}" is not a valid name in Dagster. Names must be in regex {VALID_NAME_REGEX_STR}.'
         )
-
-    check.invariant(is_valid_name(name))
-    return name
 
 
 def is_valid_name(name):
@@ -119,7 +124,8 @@ def validate_tags(tags: Optional[Dict[str, Any]], allow_reserved_tags=True) -> D
 def validate_group_name(group_name: Optional[str]) -> str:
     """Ensures a string name is valid and returns a default if no name provided."""
     if group_name:
-        return check_valid_name(group_name)
+        check_valid_chars(group_name)
+        return group_name
     return DEFAULT_GROUP_NAME
 
 

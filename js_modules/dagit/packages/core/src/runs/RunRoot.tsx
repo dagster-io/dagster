@@ -4,6 +4,7 @@ import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
 import {formatElapsedTime} from '../app/Util';
+import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -20,6 +21,8 @@ import {assetKeysForRun} from './RunUtils';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRootQuery';
 
 export const RunRoot = () => {
+  useTrackPageView();
+
   const {runId} = useParams<{runId: string}>();
 
   const {data, loading} = useQuery<RunRootQuery, RunRootQueryVariables>(RUN_ROOT_QUERY, {

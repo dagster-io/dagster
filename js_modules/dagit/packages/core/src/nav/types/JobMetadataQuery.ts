@@ -26,6 +26,7 @@ export interface JobMetadataQuery_pipelineOrError_Pipeline_schedules {
   mode: string;
   name: string;
   cronSchedule: string;
+  executionTimezone: string | null;
   scheduleState: JobMetadataQuery_pipelineOrError_Pipeline_schedules_scheduleState;
 }
 

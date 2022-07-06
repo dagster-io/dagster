@@ -816,6 +816,50 @@ def test_nasty_nested_graph_asset():
     ]
 
 
+def test_deps_resolve_group():
+    @asset(key_prefix="abc")
+    def asset1():
+        ...
+
+    @asset
+    def asset2(asset1):
+        del asset1
+
+    assets_job = build_assets_job("assets_job", [asset1, asset2])
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+
+    assert external_asset_nodes == [
+        ExternalAssetNode(
+            asset_key=AssetKey(["abc", "asset1"]),
+            dependencies=[],
+            depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey("asset2"))],
+            op_name="abc__asset1",
+            node_definition_name="abc__asset1",
+            graph_name=None,
+            op_names=["abc__asset1"],
+            op_description=None,
+            job_names=["assets_job"],
+            output_name="result",
+            output_description=None,
+            group_name=DEFAULT_GROUP_NAME,
+        ),
+        ExternalAssetNode(
+            asset_key=AssetKey("asset2"),
+            dependencies=[ExternalAssetDependency(upstream_asset_key=AssetKey(["abc", "asset1"]))],
+            depended_by=[],
+            op_name="asset2",
+            node_definition_name="asset2",
+            graph_name=None,
+            op_names=["asset2"],
+            op_description=None,
+            job_names=["assets_job"],
+            output_name="result",
+            output_description=None,
+            group_name=DEFAULT_GROUP_NAME,
+        ),
+    ]
+
+
 def test_back_compat_external_sensor():
     SERIALIZED_0_12_10_SENSOR = '{"__class__": "ExternalSensorData", "description": null, "min_interval": null, "mode": "default", "name": "my_sensor", "pipeline_name": "my_pipeline", "solid_selection": null}'
     external_sensor_data = deserialize_json_to_dagster_namedtuple(SERIALIZED_0_12_10_SENSOR)

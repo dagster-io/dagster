@@ -209,7 +209,7 @@ const OpNamesDisplay = (props: {
   repoAddress: RepoAddress;
 }) => {
   const {assetNode, repoAddress} = props;
-  const {assetKey, graphName, opNames} = assetNode;
+  const {assetKey, graphName, opNames, jobNames} = assetNode;
   const opCount = opNames.length;
 
   if (!opCount) {
@@ -232,16 +232,18 @@ const OpNamesDisplay = (props: {
     );
   }
 
-  const graphPath = workspacePathFromAddress(
-    repoAddress,
-    `/graphs/${__ASSET_JOB_PREFIX}/${graphName}/`,
-  );
+  if (!jobNames.length) {
+    return null;
+  }
 
   return (
     <Box flex={{gap: 4, alignItems: 'center'}}>
       <Icon name="schema" size={16} />
       <Mono>
-        <Link to={graphPath}>{graphName}</Link> ({opCount === 1 ? '1 op' : `${opCount} ops`})
+        <Link to={workspacePathFromAddress(repoAddress, `/graphs/${jobNames[0]}/${graphName}/`)}>
+          {graphName}
+        </Link>
+        {` (${opCount === 1 ? '1 op' : `${opCount} ops`})`}
       </Mono>
     </Box>
   );
@@ -255,6 +257,7 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     graphName
     opNames
     jobNames
+    partitionDefinition
     repository {
       id
       name

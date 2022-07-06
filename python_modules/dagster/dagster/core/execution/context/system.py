@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Dict,
     Iterable,
@@ -437,7 +438,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self.step.solid_handle
 
     @property
-    def required_resource_keys(self) -> Set[str]:
+    def required_resource_keys(self) -> AbstractSet[str]:
         return self._required_resource_keys
 
     @property
@@ -722,14 +723,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         asset_layer = self.pipeline_def.asset_layer
-        asset_keys_for_node = asset_layer.asset_keys_for_node(self.solid_handle)
-        if not asset_keys_for_node:
-            return False
-        assets_def = asset_layer.assets_def_for_asset(next(iter(asset_keys_for_node)))
+        assets_def = asset_layer.assets_def_for_node(self.solid_handle)
         upstream_asset_key = asset_layer.asset_key_for_input(self.solid_handle, input_name)
 
         return (
             upstream_asset_key is not None
+            and assets_def is not None
             and assets_def.partitions_def is not None
             and asset_layer.partitions_def_for_asset(upstream_asset_key) is not None
         )
@@ -740,15 +739,17 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         )
 
         asset_layer = self.pipeline_def.asset_layer
-        assets_def = asset_layer.assets_def_for_asset(
-            next(iter(asset_layer.asset_keys_for_node(self.solid_handle)))
-        )
+        assets_def = asset_layer.assets_def_for_node(self.solid_handle)
         upstream_asset_key = asset_layer.asset_key_for_input(self.solid_handle, input_name)
 
         if upstream_asset_key is not None:
             upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
 
-            if assets_def.partitions_def is not None and upstream_asset_partitions_def is not None:
+            if (
+                assets_def is not None
+                and assets_def.partitions_def is not None
+                and upstream_asset_partitions_def is not None
+            ):
                 return get_upstream_partitions_for_partition_range(
                     assets_def,
                     upstream_asset_partitions_def,

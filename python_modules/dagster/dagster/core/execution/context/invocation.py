@@ -4,6 +4,7 @@ from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, 
 import dagster._check as check
 from dagster.config import Shape
 from dagster.core.definitions.composition import PendingNodeInvocation
+from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster.core.definitions.dependency import Node, NodeHandle
 from dagster.core.definitions.events import (
     AssetMaterialization,
@@ -298,13 +299,13 @@ class UnboundSolidExecutionContext(OpExecutionContext):
 
 
 def _validate_resource_requirements(
-    resource_defs: Dict[str, ResourceDefinition], solid_def: SolidDefinition
+    resource_defs: Mapping[str, ResourceDefinition], solid_def: SolidDefinition
 ) -> None:
     """Validate correctness of resources against required resource keys"""
-
-    for requirement in solid_def.get_resource_requirements():
-        if not requirement.is_io_manager_requirement:
-            ensure_requirements_satisfied(resource_defs, [requirement])
+    if cast(DecoratedSolidFunction, solid_def.compute_fn).has_context_arg():
+        for requirement in solid_def.get_resource_requirements():
+            if not requirement.is_io_manager_requirement:
+                ensure_requirements_satisfied(resource_defs, [requirement])
 
 
 def _resolve_bound_config(solid_config: Any, solid_def: SolidDefinition) -> Any:

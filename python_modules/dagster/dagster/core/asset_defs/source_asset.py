@@ -17,7 +17,11 @@ from dagster.core.definitions.resource_requirement import (
     SourceAssetIOManagerRequirement,
     get_resource_key_conflicts,
 )
-from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
+from dagster.core.definitions.utils import (
+    DEFAULT_GROUP_NAME,
+    DEFAULT_IO_MANAGER_KEY,
+    validate_group_name,
+)
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster.core.storage.io_manager import IOManagerDefinition
 from dagster.utils import merge_dicts
@@ -102,7 +106,7 @@ class SourceAsset(
         return {entry.label: entry.entry_data for entry in self.metadata_entries}  # type: ignore
 
     def get_io_manager_key(self) -> str:
-        return self.io_manager_key or "io_manager"
+        return self.io_manager_key or DEFAULT_IO_MANAGER_KEY
 
     @property
     def io_manager_def(self) -> Optional[IOManagerDefinition]:
@@ -128,7 +132,7 @@ class SourceAsset(
         merged_resource_defs = merge_dicts(resource_defs, self.resource_defs)
 
         io_manager_def = merged_resource_defs.get(self.get_io_manager_key())
-        if not io_manager_def and self.get_io_manager_key() != "io_manager":
+        if not io_manager_def and self.get_io_manager_key() != DEFAULT_IO_MANAGER_KEY:
             raise DagsterInvalidDefinitionError(
                 f"SourceAsset with asset key {self.key} requires IO manager with key '{self.get_io_manager_key()}', but none was provided."
             )
@@ -143,7 +147,9 @@ class SourceAsset(
         }
 
         io_manager_key = (
-            self.get_io_manager_key() if self.get_io_manager_key() != "io_manager" else None
+            self.get_io_manager_key()
+            if self.get_io_manager_key() != DEFAULT_IO_MANAGER_KEY
+            else None
         )
         return SourceAsset(
             key=self.key,

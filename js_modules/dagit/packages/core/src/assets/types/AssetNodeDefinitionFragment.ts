@@ -3104,8 +3104,8 @@ export interface AssetNodeDefinitionFragment {
   graphName: string | null;
   opNames: string[];
   jobNames: string[];
-  repository: AssetNodeDefinitionFragment_repository;
   partitionDefinition: string | null;
+  repository: AssetNodeDefinitionFragment_repository;
   computeKind: string | null;
   assetKey: AssetNodeDefinitionFragment_assetKey;
   metadataEntries: AssetNodeDefinitionFragment_metadataEntries[];

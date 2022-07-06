@@ -6,6 +6,7 @@ import {
   Page,
   Tag,
   TokenizingFieldValue,
+  tokenToString,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
@@ -16,6 +17,7 @@ import {
   QueryRefreshCountdown,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
 import {
@@ -23,6 +25,7 @@ import {
   RunsFilterInput,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
+  RunFilterToken,
 } from '../runs/RunsFilterInput';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {Loading} from '../ui/Loading';
@@ -42,6 +45,8 @@ interface Props {
 }
 
 export const PipelineRunsRoot: React.FC<Props> = (props) => {
+  useTrackPageView();
+
   const {pipelinePath} = useParams<{pipelinePath: string}>();
   const {repoAddress = null} = props;
   const explorerPath = explorerPathFromString(pipelinePath);
@@ -85,6 +90,16 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
     },
   });
 
+  const onAddTag = React.useCallback(
+    (token: RunFilterToken) => {
+      const tokenAsString = tokenToString(token);
+      if (!filterTokens.some((token) => tokenToString(token) === tokenAsString)) {
+        setFilterTokens([...filterTokens, token]);
+      }
+    },
+    [filterTokens, setFilterTokens],
+  );
+
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   return (
@@ -122,7 +137,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
                 <StickyTableContainer $top={0}>
                   <RunTable
                     runs={displayed}
-                    onSetFilter={setFilterTokens}
+                    onAddTag={onAddTag}
                     actionBarComponents={
                       <RunsFilterInput
                         enabledFilters={ENABLED_FILTERS}

@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 
 import {repoAddressAsString} from './repoAddressAsString';
@@ -65,7 +66,10 @@ interface Item {
   path: string;
   repoAddress: RepoAddress;
 }
+
 export const RepositoryGraphsList: React.FC<Props> = (props) => {
+  useTrackPageView();
+
   const {repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
 

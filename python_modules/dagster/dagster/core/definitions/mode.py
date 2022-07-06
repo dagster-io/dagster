@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Dict, List, Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster.core.definitions.executor_definition import ExecutorDefinition, default_executors
@@ -8,7 +8,7 @@ from dagster.utils.merger import merge_dicts
 from .config import ConfigMapping
 from .logger_definition import LoggerDefinition
 from .resource_definition import ResourceDefinition
-from .utils import check_valid_name
+from .utils import DEFAULT_IO_MANAGER_KEY, check_valid_name
 
 DEFAULT_MODE_NAME = "default"
 
@@ -38,7 +38,7 @@ class ModeDefinition(
     Args:
         name (Optional[str]): The name of the mode. Must be unique within the
             :py:class:`PipelineDefinition` to which the mode is attached. (default: "default").
-        resource_defs (Optional[Dict[str, ResourceDefinition]]): A dictionary of string resource
+        resource_defs (Optional[Mapping [str, ResourceDefinition]]): A dictionary of string resource
             keys to their implementations. Individual solids may require resources to be present by
             these keys.
         logger_defs (Optional[Dict[str, LoggerDefinition]]): A dictionary of string logger
@@ -54,8 +54,8 @@ class ModeDefinition(
     def __new__(
         cls,
         name: Optional[str] = None,
-        resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
-        logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_defs: Optional[List[ExecutorDefinition]] = None,
         description: Optional[str] = None,
         _config_mapping: Optional[ConfigMapping] = None,
@@ -72,13 +72,13 @@ class ModeDefinition(
             if not key.isidentifier():
                 check.failed(f"Resource key '{key}' must be a valid Python identifier.")
 
-        if resource_defs and "io_manager" in resource_defs:
+        if resource_defs and DEFAULT_IO_MANAGER_KEY in resource_defs:
             resource_defs_with_defaults = resource_defs
         else:
             from dagster.core.storage.mem_io_manager import mem_io_manager
 
             resource_defs_with_defaults = merge_dicts(
-                {"io_manager": mem_io_manager}, resource_defs or {}
+                {DEFAULT_IO_MANAGER_KEY: mem_io_manager}, resource_defs or {}
             )
 
         return super(ModeDefinition, cls).__new__(

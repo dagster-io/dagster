@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import Any, Callable, Optional, Union, overload
+from typing import Any, Callable, List, Optional, Union, overload
 
 import dagster._check as check
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -17,6 +17,15 @@ from ..repository_definition import (
 from ..schedule_definition import ScheduleDefinition
 from ..sensor_definition import SensorDefinition
 from ..unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+
+
+def _flatten(items):
+    for x in items:
+        if isinstance(x, List):
+            # switch to `yield from _flatten(x)` to support multiple layers of nesting
+            yield from x
+        else:
+            yield x
 
 
 class _Repository:
@@ -44,6 +53,7 @@ class _Repository:
 
         repository_data: Union[CachingRepositoryData, RepositoryData]
         if isinstance(repository_definitions, list):
+            repository_definitions = list(_flatten(repository_definitions))
             bad_definitions = []
             for i, definition in enumerate(repository_definitions):
                 if not (
@@ -117,7 +127,11 @@ def repository(name: Callable[..., Any]) -> RepositoryDefinition:
 
 
 @overload
-def repository(name: Optional[str] = ..., description: Optional[str] = ...) -> _Repository:
+def repository(
+    name: Optional[str] = ...,
+    description: Optional[str] = ...,
+    default_executor_def: Optional[ExecutorDefinition] = ...,
+) -> _Repository:
     ...
 
 

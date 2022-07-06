@@ -26,7 +26,7 @@ from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvali
 from dagster.utils import check
 
 if TYPE_CHECKING:
-    from dagster.core.asset_defs import AssetsDefinition
+    from dagster.core.asset_defs import AssetsDefinition, SourceAsset
     from dagster.core.definitions.job_definition import JobDefinition
     from dagster.core.definitions.pipeline_definition import PipelineDefinition
 
@@ -99,7 +99,13 @@ class AssetSelectionData(
         )
 
 
-def generate_asset_dep_graph(assets_defs: Iterable["AssetsDefinition"]) -> DependencyGraph:
+def generate_asset_dep_graph(
+    assets_defs: Iterable["AssetsDefinition"], source_assets: Iterable["SourceAsset"]
+) -> DependencyGraph:
+    from dagster.core.asset_defs.resolved_asset_deps import ResolvedAssetDependencies
+
+    resolved_asset_deps = ResolvedAssetDependencies(assets_defs, source_assets)
+
     upstream: Dict[str, Set[str]] = {}
     downstream: Dict[str, Set[str]] = {}
     for assets_def in assets_defs:
@@ -108,7 +114,9 @@ def generate_asset_dep_graph(assets_defs: Iterable["AssetsDefinition"]) -> Depen
             upstream[asset_name] = set()
             downstream[asset_name] = downstream.get(asset_name, set())
             # for each asset upstream of this one, set that as upstream, and this downstream of it
-            upstream_asset_keys = assets_def.asset_deps[asset_key]
+            upstream_asset_keys = resolved_asset_deps.get_resolved_upstream_asset_keys(
+                assets_def, asset_key
+            )
             for upstream_key in upstream_asset_keys:
                 upstream_name = upstream_key.to_user_string()
                 upstream[asset_name].add(upstream_name)
@@ -472,7 +480,9 @@ def parse_step_selection(
 
 
 def parse_asset_selection(
-    assets_defs: Sequence["AssetsDefinition"], asset_selection: Sequence[str]
+    assets_defs: Sequence["AssetsDefinition"],
+    source_assets: Sequence["SourceAsset"],
+    asset_selection: Sequence[str],
 ) -> FrozenSet["AssetKey"]:
     """Find assets that match the given selection query
 
@@ -485,14 +495,13 @@ def parse_asset_selection(
         FrozenSet[str]: a frozenset of qualified deduplicated asset keys, empty if no qualified
             subset selected.
     """
-
     check.list_param(asset_selection, "asset_selection", of_type=str)
 
     # special case: select *
     if len(asset_selection) == 1 and asset_selection[0] == "*":
         return frozenset(set().union(*(ad.keys for ad in assets_defs)))
 
-    graph = generate_asset_dep_graph(assets_defs)
+    graph = generate_asset_dep_graph(assets_defs, source_assets)
     assets_set: Set[str] = set()
 
     # loop over clauses

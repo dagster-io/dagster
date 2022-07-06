@@ -397,6 +397,7 @@ type AssetNode {
   dependencyKeys: [AssetKey!]!
   description: String
   graphName: String
+  groupName: String
   id: ID!
   jobNames: [String!]!
   jobs: [Pipeline!]!
@@ -409,7 +410,7 @@ type AssetNode {
   partitionKeys: [String!]!
   partitionDefinition: String
   repository: Repository!
-  groupName: String
+  requiredResources: [ResourceRequirement!]!
 }
 
 type AssetKey {
@@ -462,6 +463,11 @@ enum DagsterEventType {
   STEP_START
   STEP_SUCCESS
   STEP_SKIPPED
+  STEP_WORKER_STARTING
+  STEP_WORKER_STARTED
+  RESOURCE_INIT_STARTED
+  RESOURCE_INIT_SUCCESS
+  RESOURCE_INIT_FAILURE
   STEP_UP_FOR_RETRY
   STEP_RESTARTED
   ASSET_MATERIALIZATION
@@ -855,6 +861,9 @@ union DagsterRunEvent =
   | ExecutionStepUpForRetryEvent
   | ExecutionStepRestartEvent
   | LogMessageEvent
+  | ResourceInitFailureEvent
+  | ResourceInitStartedEvent
+  | ResourceInitSuccessEvent
   | RunFailureEvent
   | RunStartEvent
   | RunEnqueuedEvent
@@ -863,6 +872,8 @@ union DagsterRunEvent =
   | RunCancelingEvent
   | RunCanceledEvent
   | RunSuccessEvent
+  | StepWorkerStartedEvent
+  | StepWorkerStartingEvent
   | HandledOutputEvent
   | LoadedInputEvent
   | LogsCapturedEvent
@@ -879,7 +890,7 @@ union DagsterRunEvent =
   | AlertFailureEvent
   | AssetMaterializationPlannedEvent
 
-type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
+type ExecutionStepFailureEvent implements MessageEvent & StepEvent & ErrorEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -890,6 +901,10 @@ type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   error: PythonError
   errorSource: ErrorSource
   failureMetadata: FailureMetadata
+}
+
+interface ErrorEvent {
+  error: PythonError
 }
 
 """
@@ -972,7 +987,7 @@ type ExecutionStepSuccessEvent implements MessageEvent & StepEvent {
   eventType: DagsterEventType
 }
 
-type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent {
+type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent & ErrorEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -1004,7 +1019,58 @@ type LogMessageEvent implements MessageEvent {
   eventType: DagsterEventType
 }
 
-type RunFailureEvent implements MessageEvent & RunEvent {
+type ResourceInitFailureEvent implements MessageEvent & DisplayableEvent & StepEvent & MarkerEvent & ErrorEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  markerStart: String
+  markerEnd: String
+  error: PythonError
+}
+
+interface MarkerEvent {
+  markerStart: String
+  markerEnd: String
+}
+
+type ResourceInitStartedEvent implements MessageEvent & DisplayableEvent & StepEvent & MarkerEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  markerStart: String
+  markerEnd: String
+}
+
+type ResourceInitSuccessEvent implements MessageEvent & DisplayableEvent & StepEvent & MarkerEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  markerStart: String
+  markerEnd: String
+}
+
+type RunFailureEvent implements MessageEvent & RunEvent & ErrorEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -1097,6 +1163,36 @@ type RunSuccessEvent implements MessageEvent & RunEvent {
   pipelineName: String!
 }
 
+type StepWorkerStartedEvent implements MessageEvent & DisplayableEvent & StepEvent & MarkerEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  markerStart: String
+  markerEnd: String
+}
+
+type StepWorkerStartingEvent implements MessageEvent & DisplayableEvent & StepEvent & MarkerEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  markerStart: String
+  markerEnd: String
+}
+
 type HandledOutputEvent implements MessageEvent & StepEvent & DisplayableEvent {
   runId: String!
   message: String!
@@ -1178,7 +1274,7 @@ type StepExpectationResultEvent implements MessageEvent & StepEvent {
   expectationResult: ExpectationResult!
 }
 
-type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent {
+type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent & MarkerEvent & ErrorEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -1189,9 +1285,9 @@ type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent {
   label: String
   description: String
   metadataEntries: [MetadataEntry!]!
-  error: PythonError
   markerStart: String
   markerEnd: String
+  error: PythonError
 }
 
 type HookCompletedEvent implements MessageEvent & StepEvent {
@@ -1214,7 +1310,7 @@ type HookSkippedEvent implements MessageEvent & StepEvent {
   eventType: DagsterEventType
 }
 
-type HookErroredEvent implements MessageEvent & StepEvent {
+type HookErroredEvent implements MessageEvent & StepEvent & ErrorEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -2154,9 +2250,19 @@ type Permission {
 type AssetLatestInfo {
   assetKey: AssetKey!
   latestMaterialization: MaterializationEvent
+  computeStatus: AssetComputeStatus!
   unstartedRunIds: [String!]!
   inProgressRunIds: [String!]!
   latestRun: Run
+}
+
+"""
+An enumeration.
+"""
+enum AssetComputeStatus {
+  NONE
+  UP_TO_DATE
+  OUT_OF_DATE
 }
 
 union EventConnectionOrError = EventConnection | RunNotFoundError | PythonError
