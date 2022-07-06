@@ -1,4 +1,4 @@
-# pylint: disable=print-call, redefined-outer-name
+# pylint: disable=print-call, redefined-outer-name, unused-argument
 import base64
 import json
 import os
@@ -69,7 +69,7 @@ def _create_namespace(should_cleanup, existing_helm_namespace=None, prefix="dags
 
 
 @pytest.fixture(scope="session")
-def namespace(pytestconfig, should_cleanup):
+def namespace(cluster_provider, pytestconfig, should_cleanup):
     """If an existing Helm chart namespace is specified via pytest CLI with the argument
     --existing-helm-namespace, we will use that chart.
 
@@ -84,7 +84,7 @@ def namespace(pytestconfig, should_cleanup):
 
 
 @pytest.fixture(scope="session")
-def run_monitoring_namespace(pytestconfig, should_cleanup):
+def run_monitoring_namespace(cluster_provider, pytestconfig, should_cleanup):
     """If an existing Helm chart namespace is specified via pytest CLI with the argument
     --existing-helm-namespace, we will use that chart.
 
