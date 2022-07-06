@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from dagster.core.definitions import (
         AssetSelection,
         AssetsDefinition,
+        ExecutorDefinition,
         JobDefinition,
         PartitionSetDefinition,
         PartitionedConfig,
@@ -104,7 +105,10 @@ class UnresolvedAssetJobDefinition(
         return RunRequest(run_key=run_key, run_config=run_config, tags=run_request_tags)
 
     def resolve(
-        self, assets: Sequence["AssetsDefinition"], source_assets: Sequence["SourceAsset"]
+        self,
+        assets: Sequence["AssetsDefinition"],
+        source_assets: Sequence["SourceAsset"],
+        executor_def: Optional["ExecutorDefinition"] = None,
     ) -> "JobDefinition":
         """
         Resolve this UnresolvedAssetJobDefinition into a JobDefinition.
@@ -118,6 +122,7 @@ class UnresolvedAssetJobDefinition(
             tags=self.tags,
             asset_selection=self.selection.resolve([*assets, *source_assets]),
             partitions_def=self.partitions_def,
+            executor_def=executor_def,
         )
 
 

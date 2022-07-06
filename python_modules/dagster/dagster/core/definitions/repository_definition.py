@@ -609,6 +609,7 @@ class CachingRepositoryData(RepositoryData):
                     # TODO: https://github.com/dagster-io/dagster/issues/8263
                     assets=[],
                     source_assets=[],
+                    executor_def=None,
                 )
             elif not isinstance(job, JobDefinition) and not isfunction(job):
                 raise DagsterInvalidDefinitionError(
@@ -776,6 +777,7 @@ class CachingRepositoryData(RepositoryData):
             resolved_job = unresolved_job_def.resolve(
                 assets=combined_asset_group.assets,
                 source_assets=combined_asset_group.source_assets,
+                executor_def=default_executor_def,
             )
             pipelines_or_jobs[name] = resolved_job
 
