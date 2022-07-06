@@ -160,7 +160,7 @@ class DagsterKubernetesClient:
             job_name (str): Name of the job to wait for.
             namespace (str): Namespace in which the job is located.
             wait_timeout (numeric, optional): Timeout after which to give up and raise exception.
-                Defaults to DEFAULT_WAIT_TIMEOUT.
+                Defaults to DEFAULT_WAIT_TIMEOUT. Set to 0 to disable.
             wait_time_between_attempts (numeric, optional): Wait time between polling attempts. Defaults
                 to DEFAULT_WAIT_BETWEEN_ATTEMPTS.
 
@@ -222,7 +222,7 @@ class DagsterKubernetesClient:
             job_name (str): Name of the job to wait for.
             namespace (str): Namespace in which the job is located.
             wait_timeout (numeric, optional): Timeout after which to give up and raise exception.
-                Defaults to DEFAULT_WAIT_TIMEOUT.
+                Defaults to DEFAULT_WAIT_TIMEOUT. Set to 0 to disable.
             wait_time_between_attempts (numeric, optional): Wait time between polling attempts. Defaults
                 to DEFAULT_WAIT_BETWEEN_ATTEMPTS.
 
@@ -415,7 +415,7 @@ class DagsterKubernetesClient:
             wait_for_state (WaitForPodState, optional): Whether to wait for pod readiness or
                 termination. Defaults to waiting for readiness.
             wait_timeout (numeric, optional): Timeout after which to give up and raise exception.
-                Defaults to DEFAULT_WAIT_TIMEOUT.
+                Defaults to DEFAULT_WAIT_TIMEOUT. Set to 0 to disable.
             wait_time_between_attempts (numeric, optional): Wait time between polling attempts. Defaults
                 to DEFAULT_WAIT_BETWEEN_ATTEMPTS.
 
@@ -439,7 +439,7 @@ class DagsterKubernetesClient:
             ).items
             pod = pods[0] if pods else None
 
-            if self.timer() - start > wait_timeout:
+            if wait_timeout and self.timer() - start > wait_timeout:
                 raise DagsterK8sError(
                     "Timed out while waiting for pod to become ready with pod info: %s" % str(pod)
                 )
