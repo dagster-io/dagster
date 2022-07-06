@@ -11,6 +11,10 @@ from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake.resources import SnowflakeConnection
 from dagster_snowflake.snowflake_io_manager import TableSlice
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
+    _convert_date_to_timestamp,
+    _convert_timestamp_to_date,
+)
 from pandas import DataFrame
 
 from dagster import (
@@ -84,7 +88,7 @@ def test_handle_output():
 
 def test_load_input():
     with patch("dagster_snowflake_pandas.snowflake_pandas_type_handler._connect_snowflake"), patch(
-        "dagster_snowflake_pandas.snowflake_pandas_type_handler.read_sql"
+        "dagster_snowflake_pandas.snowflake_pandas_type_handler.pd.read_sql"
     ) as mock_read_sql:
         mock_read_sql.return_value = DataFrame([{"COL1": "a", "COL2": 1}])
 
@@ -102,6 +106,28 @@ def test_load_input():
         )
         assert mock_read_sql.call_args_list[0][1]["sql"] == "SELECT * FROM my_db.my_schema.my_table"
         assert df.equals(DataFrame([{"col1": "a", "col2": 1}]))
+
+
+def test_type_conversions():
+    # no timestamp data
+    no_time = pandas.Series([1, 2, 3, 4, 5])
+    converted = _convert_date_to_timestamp(_convert_timestamp_to_date(no_time))
+
+    assert (converted == no_time).all()
+
+    # timestamp data
+    with_time = pandas.Series(
+        [
+            pandas.Timestamp("2017-01-01T12"),
+            pandas.Timestamp("2017-02-01T12"),
+            pandas.Timestamp("2017-03-01T12"),
+        ]
+    )
+    time_converted = _convert_date_to_timestamp(
+        pandas.Series(_convert_timestamp_to_date(with_time))
+    )
+
+    assert (with_time == time_converted).all()
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
@@ -127,6 +153,10 @@ def test_io_manager_with_snowflake_pandas():
         def read_pandas_df(df: pandas.DataFrame):
             assert set(df.columns) == {"foo", "quux"}
             assert len(df.index) == 2
+
+        @op
+        def emit_time_df(_):
+            
 
         snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
 
