@@ -5,7 +5,7 @@ import psycopg2
 import pytest
 from dagster_dbt import dbt_cli_resource
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
-from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError
+from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliHandledRuntimeError
 from dagster_dbt.types import DbtOutput
 
 from dagster import (
@@ -225,6 +225,48 @@ def test_basic(
         assert len(observations) == 17
     else:
         assert len(observations) == 0
+
+
+def test_partitions(
+    dbt_seed, conn_string, test_project_dir, dbt_config_dir
+):  # pylint: disable=unused-argument
+    from dagster import DailyPartitionsDefinition, materialize_to_memory
+
+    def _partition_key_to_vars(partition_key: str):
+        if partition_key == "2022-01-02":
+            return {"fail_test": True}
+        else:
+            return {"fail_test": False}
+
+    dbt_assets = load_assets_from_dbt_project(
+        test_project_dir,
+        dbt_config_dir,
+        use_build_command=True,
+        partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"),
+        partition_key_to_vars_fn=_partition_key_to_vars,
+    )
+
+    result = materialize_to_memory(
+        dbt_assets,
+        partition_key="2022-01-01",
+        resources={
+            "dbt": dbt_cli_resource.configured(
+                {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+            )
+        },
+    )
+    assert result.success
+
+    with pytest.raises(DagsterDbtCliHandledRuntimeError):
+        result = materialize_to_memory(
+            dbt_assets,
+            partition_key="2022-01-02",
+            resources={
+                "dbt": dbt_cli_resource.configured(
+                    {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+                )
+            },
+        )
 
 
 @pytest.mark.parametrize(
