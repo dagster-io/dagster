@@ -1185,6 +1185,22 @@ def test_generic_dynamic_multiple_outputs_empty():
     assert isinstance(out2, list)
 
 
+def test_non_dynamic_empty_list():
+    @op(
+        out={
+            "output_1": Out(List[Dict]),
+            "output_2": Out(List[Dict]),
+        }
+    )
+    def dummy_op():
+        output_1 = [{"dummy_key1": "dummy_value1"}, {"dummy_key2": "dummy_value2"}]
+        output_2 = []
+        return (output_1, output_2)
+
+    result = execute_op_in_graph(dummy_op)
+    assert result.success
+
+
 def test_required_io_manager_op_access():
     # Show that required io manager keys can be accessed from within the body
     # of an op.
