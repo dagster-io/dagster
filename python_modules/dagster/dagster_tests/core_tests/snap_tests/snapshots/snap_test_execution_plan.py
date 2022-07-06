@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
 snapshots['test_create_execution_plan_with_dep 1'] = '''{
@@ -20,7 +21,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "330e31c23c3edacaa7a9224039b53a703f011788",
+  "pipeline_snapshot_id": "4e770878de7d4f59d0c4841924046e1310918f5b",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "solid_one",
@@ -154,7 +155,7 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "7ffd65ba8633d4c172a7b15dfee5927bed301724",
+  "pipeline_snapshot_id": "8ed9ed25f01be4b6c27ffe6d5619edbf54f7e859",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "noop_solid"
@@ -217,7 +218,7 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "b96bfd4d61336a6ed2016679d1467c3e1daa3285",
+  "pipeline_snapshot_id": "9fe072eddd35c49d2899a4d605ae231e268086db",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "noop_solid"
@@ -294,7 +295,7 @@ snapshots['test_create_with_composite 1'] = '''{
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "7bb46b4373672e250386288663f7eca81f0a0a02",
+  "pipeline_snapshot_id": "7ff012b7ed8b0a5aeb1a53929bbd30108fe77873",
   "snapshot_version": 1,
   "step_keys_to_execute": [
     "comp_1.return_one",

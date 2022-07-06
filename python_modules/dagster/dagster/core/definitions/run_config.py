@@ -44,6 +44,7 @@ def define_resource_dictionary_cls(
             fields[resource_name] = def_config_field(
                 resource_def,
                 is_required=is_required,
+                description=resource_def.description,
             )
 
     return Shape(fields=fields)
@@ -54,13 +55,16 @@ def remove_none_entries(ddict: dict) -> dict:
 
 
 def def_config_field(
-    configurable_def: ConfigurableDefinition, is_required: Optional[bool] = None
+    configurable_def: ConfigurableDefinition,
+    is_required: Optional[bool] = None,
+    description: Optional[str] = None,
 ) -> Field:
     return Field(
         Shape(
             {"config": configurable_def.config_field} if configurable_def.has_config_field else {}
         ),
         is_required=is_required,
+        description=description,
     )
 
 
@@ -119,6 +123,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
         if not creation_data.is_using_graph_job_op_apis
         else define_single_execution_field(creation_data.mode_definition.executor_defs[0])
     )
+    execution_field.description = "Configure how steps are executed within a run."
 
     top_level_node = Node(
         name=creation_data.graph_def.name,
@@ -128,12 +133,16 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
 
     fields = {
         "execution": execution_field,
-        "loggers": Field(define_logger_dictionary_cls(creation_data)),
+        "loggers": Field(
+            define_logger_dictionary_cls(creation_data),
+            description="Configure how loggers emit messages within a run.",
+        ),
         "resources": Field(
             define_resource_dictionary_cls(
                 creation_data.mode_definition.resource_defs,
                 creation_data.required_resources,
-            )
+            ),
+            description="Configure how shared resources are implemented within a run.",
         ),
         "inputs": get_inputs_field(
             solid=top_level_node,
@@ -161,6 +170,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
                 asset_layer=creation_data.asset_layer,
             )
         )
+    nodes_field.description = "Configure runtime parameters for ops or assets."
 
     if creation_data.is_using_graph_job_op_apis:
         fields["ops"] = nodes_field
