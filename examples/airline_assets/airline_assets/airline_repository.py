@@ -1,7 +1,15 @@
 import pandas as pd
 
-from dagster import AssetsDefinition, GraphOut, asset, define_asset_job, graph, op, repository
-from dagster.core.asset_defs.asset_selection import AssetSelection
+from dagster import (
+    AssetSelection,
+    AssetsDefinition,
+    GraphOut,
+    asset,
+    define_asset_job,
+    graph,
+    op,
+    repository,
+)
 
 
 @asset

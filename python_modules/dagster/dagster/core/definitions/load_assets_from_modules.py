@@ -6,10 +6,10 @@ from types import ModuleType
 from typing import Dict, Generator, Iterable, List, Optional, Sequence, Set, Tuple, Union
 
 import dagster._check as check
-from dagster.core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
+from dagster.core.errors import DagsterInvalidDefinitionError
 
-from ..errors import DagsterInvalidDefinitionError
 from .assets import AssetsDefinition
+from .events import AssetKey, CoercibleToAssetKeyPrefix
 from .source_asset import SourceAsset
 
 

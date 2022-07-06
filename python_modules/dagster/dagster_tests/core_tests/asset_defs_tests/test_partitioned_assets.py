@@ -18,14 +18,14 @@ from dagster import (
     graph,
     op,
 )
-from dagster.core.asset_defs import asset, build_assets_job, multi_asset
-from dagster.core.asset_defs.asset_partitions import (
+from dagster.core.definitions import asset, build_assets_job, multi_asset
+from dagster.core.definitions.asset_partitions import (
     get_downstream_partitions_for_partition_range,
     get_upstream_partitions_for_partition_range,
 )
-from dagster.core.asset_defs.partition_mapping import PartitionMapping
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
+from dagster.core.definitions.partition_mapping import PartitionMapping
 from dagster.core.definitions.time_window_partitions import TimeWindow
 
 

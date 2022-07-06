@@ -25,8 +25,8 @@ from dagster import (
 )
 from dagster import _check as check
 from dagster import get_dagster_logger, op
-from dagster.core.asset_defs.load_assets_from_modules import prefix_assets
 from dagster.core.definitions.events import CoercibleToAssetKeyPrefix
+from dagster.core.definitions.load_assets_from_modules import prefix_assets
 from dagster.core.definitions.metadata import RawMetadataValue
 from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.utils.backcompat import experimental_arg_warning

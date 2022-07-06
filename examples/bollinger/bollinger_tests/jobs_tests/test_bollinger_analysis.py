@@ -5,9 +5,7 @@ from bollinger.assets.bollinger_analysis import (
 )
 from bollinger.resources.csv_io_manager import local_csv_io_manager
 
-from dagster.core.asset_defs.asset_selection import AssetSelection
-from dagster.core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster.core.execution.with_resources import with_resources
+from dagster import AssetSelection, define_asset_job, with_resources
 
 
 def test_bollinger_analysis():
