@@ -1,6 +1,9 @@
 from typing import List
 
-from ..images.versions import BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION, TEST_PROJECT_BASE_IMAGE_VERSION
+from ..images.versions import (
+    BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION,
+    TEST_PROJECT_BASE_IMAGE_VERSION,
+)
 from ..python_version import AvailablePythonVersion
 from ..step_builder import CommandStepBuilder
 from ..utils import BuildkiteLeafStep, GroupStep

@@ -26,7 +26,9 @@ def get_image_version(image_name: str) -> str:
     return versions.pop()
 
 
-BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION: str = get_image_version("buildkite-build-test-project-image")
+BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION: str = get_image_version(
+    "buildkite-build-test-project-image"
+)
 BUILDKITE_COVERAGE_IMAGE_VERSION: str = get_image_version("buildkite-coverage")
 BUILDKITE_TEST_IMAGE_VERSION: str = get_image_version("buildkite-test")
 TEST_PROJECT_BASE_IMAGE_VERSION: str = get_image_version("test-project-base")
