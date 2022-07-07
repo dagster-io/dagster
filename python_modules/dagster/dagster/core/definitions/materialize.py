@@ -49,13 +49,13 @@ def materialize(
     from ..execution.build_resources import wrap_resources_for_execution
 
     assets = check.sequence_param(assets, "assets", of_type=(AssetsDefinition, SourceAsset))
-    assets = with_resources(assets, {DEFAULT_IO_MANAGER_KEY: fs_io_manager})
     assets_defs = [the_def for the_def in assets if isinstance(the_def, AssetsDefinition)]
     source_assets = [the_def for the_def in assets if isinstance(the_def, SourceAsset)]
     instance = check.opt_inst_param(instance, "instance", DagsterInstance)
     partition_key = check.opt_str_param(partition_key, "partition_key")
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
     resource_defs = wrap_resources_for_execution(resources)
+    resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: fs_io_manager}, resource_defs)
 
     return build_assets_job(
         "in_process_materialization_job",
