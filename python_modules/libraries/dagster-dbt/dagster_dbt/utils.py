@@ -8,12 +8,15 @@ from dagster.core.definitions.metadata import RawMetadataValue
 
 from .types import DbtOutput
 
+# dbt resource types that may be considered assets
+ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
+
 
 def default_node_info_to_asset_key(node_info: Dict[str, Any]) -> AssetKey:
     return AssetKey(node_info["unique_id"].split("."))
 
 
-def _node_type(unique_id: str) -> str:
+def _resource_type(unique_id: str) -> str:
     # returns the type of the node (e.g. model, test, snapshot)
     return unique_id.split(".")[0]
 
@@ -111,9 +114,9 @@ def result_to_events(
 
     # if you have a manifest available, get the full node info, otherwise just populate unique_id
     node_info = manifest_json["nodes"][unique_id] if manifest_json else {"unique_id": unique_id}
-    node_type = _node_type(unique_id)
+    node_resource_type = _resource_type(unique_id)
 
-    if node_type == "model" and status == "success":
+    if node_resource_type in ASSET_RESOURCE_TYPES and status == "success":
         if generate_asset_outputs:
             yield Output(
                 value=None,
@@ -127,7 +130,7 @@ def result_to_events(
                 metadata=metadata,
             )
     # can only associate tests with assets if we have manifest_json available
-    elif node_type == "test" and manifest_json:
+    elif node_resource_type == "test" and manifest_json:
         upstream_unique_ids = manifest_json["nodes"][unique_id]["depends_on"]["nodes"]
         # tests can apply to multiple asset keys
         for upstream_id in upstream_unique_ids:

@@ -29,9 +29,6 @@ from dagster.core.definitions.metadata import RawMetadataValue
 from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.utils.backcompat import experimental_arg_warning
 
-# dbt resource types that may be considered assets
-ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
-
 
 def _load_manifest_for_project(
     project_dir: str, profiles_dir: str, target_dir: str, select: str
@@ -283,7 +280,12 @@ def _dbt_nodes_to_assets(
 
     package_name: str = ""
 
-    deps = _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types=["model"])
+    if use_build_command:
+        deps = _get_deps(
+            dbt_nodes, selected_unique_ids, asset_resource_types=["model", "seed", "snapshot"]
+        )
+    else:
+        deps = _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types=["model"])
 
     for unique_id, parent_unique_ids in deps.items():
         node_info = dbt_nodes[unique_id]
