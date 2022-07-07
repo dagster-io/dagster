@@ -45,8 +45,11 @@ def _get_timestamp_data(s: pd.Series) -> pd.Series:
 
 def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
     """
-    Converts columns of strings in Timestamp format to pd.Timestamp to undo the converstion in
+    Converts columns of strings in Timestamp format to pd.Timestamp to undo the conversion in
     _convert_timestamp_to_string
+
+    This will not convert non-timestamp strings into timestamps (pd.to_datetime with raise an
+    exception if the string cannot be converted)
     """
     if isinstance(s[0], str):
         try:

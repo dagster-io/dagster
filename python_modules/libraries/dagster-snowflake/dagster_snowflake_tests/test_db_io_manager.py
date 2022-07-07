@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 from unittest.mock import MagicMock
 
 from dagster_snowflake import DbTypeHandler
@@ -199,3 +200,40 @@ def test_non_asset_out():
 
     assert len(handler.handle_input_calls) == 1
     assert handler.handle_input_calls[0][1] == table_slice
+
+
+def test_schema_defaults():
+    handler = IntHandler()
+    db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
+    manager = DbIOManager(type_handlers=[handler], db_client=db_client)
+
+    asset_key = AssetKey(["schema1", "table1"])
+    output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
+    table_slice = manager._get_table_slice(output_context, output_context)
+
+    assert table_slice.schema == "schema1"
+
+    asset_key = AssetKey(["table1"])
+    output_context = build_output_context(asset_key=asset_key, resource_config=resource_config)
+    table_slice = manager._get_table_slice(output_context, output_context)
+
+    assert table_slice.schema == "public"
+
+    resource_config_w_schema = resource_config
+    resource_config_w_schema["schema"] = "my_schema"
+
+    asset_key = AssetKey(["table1"])
+    output_context = build_output_context(
+        asset_key=asset_key, resource_config=resource_config_w_schema
+    )
+    table_slice = manager._get_table_slice(output_context, output_context)
+
+    assert table_slice.schema == "my_schema"
+
+    asset_key = AssetKey(["schema1", "table1"])
+    output_context = build_output_context(
+        asset_key=asset_key, resource_config=resource_config_w_schema
+    )
+    table_slice = manager._get_table_slice(output_context, output_context)
+
+    assert table_slice.schema == "schema1"

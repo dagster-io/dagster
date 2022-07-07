@@ -120,6 +120,8 @@ class DbIOManager(IOManager):
             table = asset_key_path[-1]
             if len(asset_key_path) > 1:
                 schema = asset_key_path[-2]
+            elif context.resource_config.get("schema"):
+                schema = context.resource_config["schema"]
             else:
                 schema = "public"
             time_window = (
