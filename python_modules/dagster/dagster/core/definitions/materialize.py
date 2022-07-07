@@ -44,8 +44,6 @@ def materialize(
     Returns:
         ExecuteInProcessResult: The result of the execution.
     """
-    from dagster.core.execution.with_resources import with_resources
-
     from ..execution.build_resources import wrap_resources_for_execution
 
     assets = check.sequence_param(assets, "assets", of_type=(AssetsDefinition, SourceAsset))
