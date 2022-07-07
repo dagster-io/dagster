@@ -36,8 +36,8 @@
 ### Community Contributions
 
 * TimeWindow is now exported from the dagster package (Thanks [@nvinhphuc](https://github.com/nvinhphuc)!)
-* Added a fix to allow customization of slack messages (Thanks [@solarisa21](https://github.com/solarisa21))!
-* [dagster-databricks] The `databricks_pyspark_step_launcher` now allows you to configure the following (Thanks [@Phazure](https://github.com/Phazure])!):
+* Added a fix to allow customization of slack messages (Thanks [@solarisa21](https://github.com/solarisa21)!)
+* [dagster-databricks] The `databricks_pyspark_step_launcher` now allows you to configure the following (Thanks [@Phazure](https://github.com/Phazure)!):
     * the `aws_attributes` of the cluster that will be spun up for the step.
     * arbitrary environment variables to be copied over to databricks from the host machine, rather than requiring these variables to be stored as secrets.
     * job and cluster permissions, allowing users to view the completed runs through the databricks console, even if they’re kicked off by a service account.
