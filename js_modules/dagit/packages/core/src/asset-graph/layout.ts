@@ -1,4 +1,5 @@
 import * as dagre from 'dagre';
+import groupBy from 'lodash/groupBy';
 
 import {IBounds, IPoint} from '../graph/common';
 
@@ -6,11 +7,17 @@ import {GraphData, GraphNode, GraphId, displayNameForAssetKey} from './Utils';
 
 export interface AssetLayout {
   id: GraphId;
-
-  // Overall frame of the box relative to 0,0 on the graph
-  bounds: IBounds;
+  bounds: IBounds; // Overall frame of the box relative to 0,0 on the graph
 }
 
+export interface GroupLayout {
+  id: GraphId;
+  groupName: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+  repositoryDisambiguationRequired: boolean;
+  bounds: IBounds; // Overall frame of the box relative to 0,0 on the graph
+}
 export type AssetLayoutEdge = {
   from: IPoint;
   fromId: string;
@@ -23,12 +30,17 @@ export type AssetGraphLayout = {
   height: number;
   edges: AssetLayoutEdge[];
   nodes: {[id: string]: AssetLayout};
+  groups: {[name: string]: GroupLayout};
 };
 
 const opts: {margin: number; mini: boolean} = {
   margin: 100,
   mini: false,
 };
+
+// Prefix group nodes in the Dagre layout so that an asset and an asset
+// group cannot have the same name.
+const GROUP_NODE_PREFIX = 'group__';
 
 export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
   const g = new dagre.graphlib.Graph({compound: true});
@@ -43,15 +55,46 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
   });
   g.setDefaultEdgeLabel(() => ({}));
 
+  const parentNodeIdForNode = (node: GraphNode) =>
+    [
+      GROUP_NODE_PREFIX,
+      node.definition.repository.location.name,
+      node.definition.repository.name,
+      node.definition.groupName,
+    ].join('__');
+
   const shouldRender = (node?: GraphNode) => node && node.definition.opNames.length > 0;
+  const renderedNodes = Object.values(graphData.nodes).filter(shouldRender);
+
+  const groups: {[id: string]: GroupLayout} = {};
+  for (const node of renderedNodes) {
+    if (node.definition.groupName) {
+      const id = parentNodeIdForNode(node);
+      groups[id] = {
+        id,
+        groupName: node.definition.groupName,
+        repositoryName: node.definition.repository.name,
+        repositoryLocationName: node.definition.repository.location.name,
+        repositoryDisambiguationRequired: false,
+        bounds: {x: 0, y: 0, width: 0, height: 0},
+      };
+    }
+  }
+
+  // Add all the group boxes to the graph
+  const showGroups = Object.keys(groups).length > 1;
+  if (showGroups) {
+    Object.keys(groups).forEach((groupId) => g.setNode(groupId, {}));
+  }
 
   // Add all the nodes to the graph
-  Object.values(graphData.nodes)
-    .filter(shouldRender)
-    .forEach((node) => {
-      const {width, height} = getAssetNodeDimensions(node.definition);
-      g.setNode(node.id, {width: opts.mini ? 230 : width, height});
-    });
+  renderedNodes.forEach((node) => {
+    const {width, height} = getAssetNodeDimensions(node.definition);
+    g.setNode(node.id, {width: opts.mini ? 230 : width, height});
+    if (showGroups && node.definition.groupName) {
+      g.setParent(node.id, parentNodeIdForNode(node));
+    }
+  });
 
   const foreignNodes = {};
 
@@ -84,33 +127,55 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
 
   dagre.layout(g);
 
-  const dagreNodesById: {[id: string]: dagre.Node} = {};
-  g.nodes().forEach((id) => {
-    const node = g.node(id);
-    if (!node) {
-      return;
-    }
-    dagreNodesById[id] = node;
-  });
-
   let maxWidth = 0;
   let maxHeight = 0;
 
   const nodes: {[id: string]: AssetLayout} = {};
 
-  Object.keys(dagreNodesById).forEach((id) => {
-    const dagreNode = dagreNodesById[id];
+  g.nodes().forEach((id) => {
+    const dagreNode = g.node(id);
+    if (!dagreNode) {
+      return;
+    }
     const bounds = {
       x: dagreNode.x - dagreNode.width / 2,
       y: dagreNode.y - dagreNode.height / 2,
       width: dagreNode.width,
       height: dagreNode.height,
     };
-    nodes[id] = {id, bounds};
+    if (!id.startsWith(GROUP_NODE_PREFIX)) {
+      nodes[id] = {id, bounds};
+    }
 
     maxWidth = Math.max(maxWidth, dagreNode.x + dagreNode.width / 2);
     maxHeight = Math.max(maxHeight, dagreNode.y + dagreNode.height / 2);
   });
+
+  // Apply bounds to the groups based on the nodes inside them
+  if (showGroups) {
+    for (const node of renderedNodes) {
+      if (node.definition.groupName) {
+        const groupId = parentNodeIdForNode(node);
+        groups[groupId].bounds =
+          groups[groupId].bounds.width === 0
+            ? nodes[node.id].bounds
+            : extendBounds(groups[groupId].bounds, nodes[node.id].bounds);
+      }
+    }
+    for (const group of Object.values(groups)) {
+      group.bounds = padBounds(group.bounds, {x: 15, y: 30});
+    }
+  }
+
+  // Annotate groups that require disambiguation (same group name appears twice)
+  Object.values(groupBy(Object.values(groups), (g) => g.groupName))
+    .filter((set) => set.length > 1)
+    .flat()
+    .forEach((group) => {
+      group.bounds.y -= 18;
+      group.bounds.height += 18;
+      group.repositoryDisambiguationRequired = true;
+    });
 
   const edges: AssetLayoutEdge[] = [];
 
@@ -129,12 +194,22 @@ export const layoutAssetGraph = (graphData: GraphData): AssetGraphLayout => {
     edges,
     width: maxWidth + opts.margin,
     height: maxHeight + opts.margin,
+    groups: showGroups ? groups : {},
   };
 };
 
 export const getForeignNodeDimensions = (id: string) => {
   const path = JSON.parse(id);
   return {width: displayNameForAssetKey({path}).length * 8 + 30, height: 30};
+};
+
+export const padBounds = (a: IBounds, padding: {x: number; y: number}) => {
+  return {
+    x: a.x - padding.x,
+    y: a.y - padding.y,
+    width: a.width + padding.x * 2,
+    height: a.height + padding.y * 2,
+  };
 };
 
 export const extendBounds = (a: IBounds, b: IBounds) => {
@@ -159,15 +234,17 @@ export const assetNameMaxlengthForWidth = (width: number) => {
 export const getAssetNodeDimensions = (def: {
   assetKey: {path: string[]};
   opNames: string[];
+  graphName: string | null;
   description?: string | null;
 }) => {
-  let height = 75;
+  let height = 82;
   if (def.description) {
     height += 25;
   }
-  const displayName = displayNameForAssetKey(def.assetKey);
-  const firstOp = def.opNames[0];
-  if (firstOp && displayName !== firstOp) {
+  const computeName = def.graphName || def.opNames[0] || null;
+  const displayName = def.assetKey.path[def.assetKey.path.length - 1];
+
+  if (computeName && displayName !== computeName) {
     height += 25;
   }
   return {

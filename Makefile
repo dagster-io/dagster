@@ -34,7 +34,7 @@ isort:
 	isort \
     `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' 'helm/*.py' 'python_modules/*.py' \
       ':!:examples/docs_snippets' \
-      ':!:snapshots'`
+      ':!:*/snapshots/*.py'`
 	isort \
    `git ls-files 'examples/docs_snippets/*.py'`
 
@@ -42,7 +42,7 @@ check_isort:
 	isort --check \
     `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' 'helm/*.py' 'python_modules/*.py' \
       ':!:examples/docs_snippets' \
-      ':!:snapshots'`
+      ':!:*/snapshots/*.py'`
 	isort --check \
     `git ls-files 'examples/docs_snippets/*.py'`
 
@@ -53,7 +53,7 @@ pylint:
       ':!:examples/airflow_ingest' \
       ':!:python_modules/libraries/dagster-airflow' \
       ':!:vendor' \
-      ':!:snapshots'`
+      ':!:*/snapshots/*.py'`
 
 yamllint:
 	yamllint -c .yamllint.yaml --strict \

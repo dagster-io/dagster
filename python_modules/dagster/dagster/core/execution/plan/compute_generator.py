@@ -140,8 +140,10 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
                     value=element.value,
                     metadata_entries=element.metadata_entries,
                 )
-            elif isinstance(element, list) and all(
-                [isinstance(event, DynamicOutput) for event in element]
+            elif (
+                isinstance(element, list)
+                and element  # ensure list is non empty before all() check
+                and all([isinstance(event, DynamicOutput) for event in element])
             ):
                 if not output_def.is_dynamic:
                     raise DagsterInvariantViolationError(
@@ -164,6 +166,9 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
                         mapping_key=dynamic_output.mapping_key,
                         metadata_entries=dynamic_output.metadata_entries,
                     )
+            # if we got an empty list and its dynamic output, yield nothing
+            elif isinstance(element, list) and not element and output_def.is_dynamic:
+                continue
             else:
                 # If an output object was not returned, then construct one from any metadata that has been logged within the op's body.
                 metadata = context.get_output_metadata(output_def.name)

@@ -17,6 +17,10 @@ APIs
 .. autoconfigurable:: k8s_job_executor
   :annotation: ExecutorDefinition
 
+Ops
+===
+
+.. autoconfigurable:: k8s_job_op
 
 Python API
 ^^^^^^^^^^

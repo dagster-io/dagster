@@ -3,19 +3,22 @@ from functools import reduce
 from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
-from dagster.core.definitions.asset_layer import build_asset_selection_job
-from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.run_request import RunRequest
 from dagster.core.selector.subset_selector import parse_clause
 
+from .asset_layer import build_asset_selection_job
+from .config import ConfigMapping
+
 if TYPE_CHECKING:
-    from dagster.core.asset_defs import AssetsDefinition, SourceAsset
-    from dagster.core.asset_defs.asset_selection import AssetSelection
     from dagster.core.definitions import (
+        AssetSelection,
+        AssetsDefinition,
+        ExecutorDefinition,
         JobDefinition,
         PartitionSetDefinition,
         PartitionedConfig,
         PartitionsDefinition,
+        SourceAsset,
     )
 
 
@@ -41,8 +44,7 @@ class UnresolvedAssetJobDefinition(
         tags: Optional[Dict[str, Any]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
     ):
-        from dagster.core.asset_defs.asset_selection import AssetSelection
-        from dagster.core.definitions import PartitionsDefinition
+        from dagster.core.definitions import AssetSelection, PartitionsDefinition
 
         return super(UnresolvedAssetJobDefinition, cls).__new__(
             cls,
@@ -103,7 +105,10 @@ class UnresolvedAssetJobDefinition(
         return RunRequest(run_key=run_key, run_config=run_config, tags=run_request_tags)
 
     def resolve(
-        self, assets: Sequence["AssetsDefinition"], source_assets: Sequence["SourceAsset"]
+        self,
+        assets: Sequence["AssetsDefinition"],
+        source_assets: Sequence["SourceAsset"],
+        executor_def: Optional["ExecutorDefinition"] = None,
     ) -> "JobDefinition":
         """
         Resolve this UnresolvedAssetJobDefinition into a JobDefinition.
@@ -117,11 +122,12 @@ class UnresolvedAssetJobDefinition(
             tags=self.tags,
             asset_selection=self.selection.resolve([*assets, *source_assets]),
             partitions_def=self.partitions_def,
+            executor_def=executor_def,
         )
 
 
 def _selection_from_string(string: str) -> "AssetSelection":
-    from dagster.core.asset_defs.asset_selection import AssetSelection
+    from dagster.core.definitions import AssetSelection
 
     if string == "*":
         return AssetSelection.all()
@@ -221,7 +227,7 @@ def define_asset_job(
                     define_asset_job("all_assets"),
                 ]
     """
-    from dagster.core.asset_defs.asset_selection import AssetSelection
+    from dagster.core.definitions import AssetSelection
 
     selection = check.opt_inst_param(
         selection, "selection", (str, list, AssetSelection), default=AssetSelection.all()

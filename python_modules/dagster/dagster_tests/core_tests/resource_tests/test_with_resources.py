@@ -9,7 +9,7 @@ from dagster import (
     mem_io_manager,
     resource,
 )
-from dagster.core.asset_defs import AssetsDefinition, SourceAsset, asset, build_assets_job
+from dagster.core.definitions import AssetsDefinition, SourceAsset, asset, build_assets_job
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,

@@ -11,7 +11,6 @@ from dateutil.relativedelta import relativedelta
 import dagster._check as check
 from dagster.serdes import whitelist_for_serdes
 
-from ...core.definitions.utils import validate_tags
 from ...seven.compat.pendulum import PendulumDateTime, to_timezone
 from ...utils import frozenlist, merge_dicts
 from ...utils.schedules import schedule_execution_time_iterator
@@ -179,7 +178,7 @@ class PartitionsDefinition(ABC, Generic[T]):
         return [partition.name for partition in self.get_partitions(current_time)]
 
     def get_default_partition_mapping(self):
-        from dagster.core.asset_defs.partition_mapping import IdentityPartitionMapping
+        from dagster.core.definitions.partition_mapping import IdentityPartitionMapping
 
         return IdentityPartitionMapping()
 

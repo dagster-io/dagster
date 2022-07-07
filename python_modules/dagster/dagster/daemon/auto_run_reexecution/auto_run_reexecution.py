@@ -5,10 +5,12 @@ from dagster import DagsterRun, MetadataEntry, MetadataValue
 from dagster.core.events import EngineEventData
 from dagster.core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import DagsterRunStatus, RunRecord
-from dagster.core.storage.tags import MAX_RETRIES_TAG, RETRY_NUMBER_TAG
+from dagster.core.storage.pipeline_run import DagsterRunStatus, PipelineRun, RunRecord
+from dagster.core.storage.tags import MAX_RETRIES_TAG, RETRY_NUMBER_TAG, RETRY_STRATEGY_TAG
 from dagster.core.workspace.workspace import IWorkspace
 from dagster.utils.error import serializable_error_info_from_exc_info
+
+DEFAULT_REEXECUTION_POLICY = ReexecutionStrategy.FROM_FAILURE
 
 
 def filter_runs_to_should_retry(
@@ -59,6 +61,22 @@ def filter_runs_to_should_retry(
             yield (run, retry_number)
 
 
+def get_reexecution_strategy(
+    run: PipelineRun, instance: DagsterInstance
+) -> Optional[ReexecutionStrategy]:
+    raw_strategy_tag = run.tags.get(RETRY_STRATEGY_TAG)
+    if raw_strategy_tag is None:
+        return None
+
+    if raw_strategy_tag not in ReexecutionStrategy.__members__:
+        instance.report_engine_event(
+            f"Error parsing retry strategy from tag '{RETRY_STRATEGY_TAG}: {raw_strategy_tag}'", run
+        )
+        return None
+    else:
+        return ReexecutionStrategy[raw_strategy_tag]
+
+
 def retry_run(
     failed_run: DagsterRun,
     retry_number: int,
@@ -102,11 +120,13 @@ def retry_run(
 
     external_pipeline = external_repo.get_full_external_pipeline(failed_run.pipeline_name)
 
+    strategy = get_reexecution_strategy(failed_run, instance) or DEFAULT_REEXECUTION_POLICY
+
     new_run = instance.create_reexecuted_run(
         failed_run,
         repo_location,
         external_pipeline,
-        strategy=ReexecutionStrategy.FROM_FAILURE,
+        strategy=strategy,
         extra_tags=tags,
         use_parent_run_tags=True,
     )

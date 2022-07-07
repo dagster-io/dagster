@@ -4,11 +4,12 @@ import * as React from 'react';
 import {useHistory} from 'react-router';
 import {useParams} from 'react-router-dom';
 
+import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
-import {AssetPageHeader} from './AssetPageHeader';
+import {AssetGlobalLineageLink, AssetPageHeader} from './AssetPageHeader';
 import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
@@ -18,6 +19,8 @@ import {
 } from './types/AssetsCatalogRootQuery';
 
 export const AssetsCatalogRoot = () => {
+  useTrackPageView();
+
   const params = useParams();
   const history = useHistory();
   const currentPath: string[] = (params['0'] || '')
@@ -51,7 +54,12 @@ export const AssetsCatalogRoot = () => {
     <Page>
       <AssetPageHeader
         assetKey={{path: currentPath}}
-        right={<ReloadAllButton label="Reload definitions" />}
+        right={
+          <Box flex={{gap: 12, alignItems: 'center'}}>
+            <AssetGlobalLineageLink />
+            <ReloadAllButton label="Reload definitions" />
+          </Box>
+        }
       />
       <AssetsCatalogTable
         prefixPath={currentPath}

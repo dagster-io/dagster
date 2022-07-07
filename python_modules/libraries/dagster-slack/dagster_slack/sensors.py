@@ -11,6 +11,7 @@ from dagster.core.definitions.run_status_sensor_definition import (
     pipeline_failure_sensor,
     run_failure_sensor,
 )
+from dagster.core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 T = TypeVar("T", bound=RunStatusSensorContext)
 
@@ -21,25 +22,25 @@ def _build_slack_blocks_and_text(
     blocks_fn: Optional[Callable[[T], List[Dict]]],
     dagit_base_url: Optional[str],
 ) -> Tuple[List[Dict[str, Any]], str]:
-    blocks: List[Dict[str, Any]] = [
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f'*Job "{context.pipeline_run.pipeline_name}" failed. `{context.pipeline_run.run_id.split("-")[0]}`*',
-            },
-        },
-    ]
     main_body_text = text_fn(context)
-
+    blocks: List[Dict[str, Any]] = []
     if blocks_fn:
         blocks.extend(blocks_fn(context))
     else:
-        blocks.append(
-            {
-                "type": "section",
-                "text": {"type": "mrkdwn", "text": main_body_text},
-            },
+        blocks.extend(
+            [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f'*Job "{context.pipeline_run.pipeline_name}" failed. `{context.pipeline_run.run_id.split("-")[0]}`*',
+                    },
+                },
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": main_body_text},
+                },
+            ]
         )
 
     if dagit_base_url:
@@ -155,7 +156,9 @@ def make_slack_on_run_failure_sensor(
     blocks_fn: Optional[Callable[[RunFailureSensorContext], List[Dict]]] = None,
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
-    job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
+    job_selection: Optional[
+        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+    ] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
     """Create a sensor on job failures that will message the given Slack channel.

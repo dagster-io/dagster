@@ -120,3 +120,11 @@ export function computeNodeKeyPrefixBoundingBoxes(layout: OpGraphLayout) {
 
   return boxes;
 }
+
+export const position = ({x, y, width, height}: IBounds) => ({
+  left: x,
+  top: y,
+  width,
+  height,
+  position: 'absolute' as const,
+});

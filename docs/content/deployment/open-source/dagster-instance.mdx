@@ -480,6 +480,8 @@ code_servers:
 
 The `retention` key lets you configure how long Dagster retains certain types of data that have diminishing value over time, like schedule/sensor tick data. If you want to clean up old ticks to minimize storage concerns and improve query performance, you can set retention policy using the `retention` config key:
 
+For schedule and sensor ticks, you can specify the field `purge_after_days`, which takes either a mapping of tick types to integers, or an integer that applies to all tick types. This integer determines after how many days that ticks can be safely removed. A value of `-1` indicates that ticks should be retained indefinitely.
+
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_retention endbefore=end_marker_retention
 # Configures how long Dagster keeps sensor / schedule tick data
 retention:

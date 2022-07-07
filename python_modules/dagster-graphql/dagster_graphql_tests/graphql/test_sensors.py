@@ -512,7 +512,7 @@ def _create_tick(graphql_context):
                 graphql_context.instance,
                 logger,
                 workspace,
-                executor=SingleThreadPoolExecutor(),
+                threadpool_executor=SingleThreadPoolExecutor(),
                 debug_futures=futures,
             )
         )

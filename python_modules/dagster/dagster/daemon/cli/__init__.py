@@ -56,20 +56,6 @@ def _daemon_run_command(instance, kwargs):
 
 
 @click.command(
-    name="health-check",
-    help="DEPRECATED, use liveness-check instead",
-)
-def health_check_command():
-    warnings.warn("health-check is deprecated. Use liveness-check instead.")
-    with DagsterInstance.get() as instance:
-        if all_daemons_healthy(instance, heartbeat_tolerance_seconds=_get_heartbeat_tolerance()):
-            click.echo("Daemon healthy")
-        else:
-            click.echo("Daemon not healthy")
-            sys.exit(1)
-
-
-@click.command(
     name="liveness-check",
     help="Check for recent heartbeats from the daemon.",
 )
@@ -121,7 +107,6 @@ def debug_group():
 def create_dagster_daemon_cli():
     commands = {
         "run": run_command,
-        "health-check": health_check_command,
         "liveness-check": liveness_check_command,
         "wipe": wipe_command,
         "debug": debug_group,

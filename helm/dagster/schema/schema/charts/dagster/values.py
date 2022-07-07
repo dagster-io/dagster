@@ -30,3 +30,4 @@ class DagsterHelmValues(BaseModel):
     telemetry: subschema.Telemetry
     serviceAccount: subschema.ServiceAccount
     global_: subschema.Global = Field(..., alias="global")
+    retention: subschema.Retention

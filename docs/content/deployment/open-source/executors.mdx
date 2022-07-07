@@ -22,7 +22,49 @@ Every job has an executor. The default executor is the <PyObject object="multi_o
 
 An executor can be specified directly on the job by supplying an <PyObject object="ExecutorDefinition" /> to the `executor_def` parameter of <PyObject object="job" decorator /> or <PyObject object="GraphDefinition" method="to_job" />.
 
+```python file=/deploying/executors/executors.py startafter=start_executor_on_job endbefore=end_executor_on_job
+from dagster import multiprocess_executor, job, graph
+
+# Providing an executor using the job decorator
+@job(executor_def=multiprocess_executor)
+def the_job():
+    ...
+
+
+@graph
+def the_graph():
+    ...
+
+
+# Providing an executor using graph_def.to_job(...)
+other_job = the_graph.to_job(executor_def=multiprocess_executor)
+```
+
 A default executor can be specified for all jobs and assets provided to a repository using the `default_executor_def` argument of <PyObject object="repository" decorator />. All jobs that don't specify an executor will use this default executor, but if a job explicitly specifies an executor, then the default provided to the repository will not be used.
+
+```python file=/deploying/executors/executors.py startafter=start_executor_on_repo endbefore=end_executor_on_repo
+from dagster import multiprocess_executor, define_asset_job, asset, repository
+
+
+@asset
+def the_asset():
+    pass
+
+
+asset_job = define_asset_job("the_job", selection="*")
+
+
+@job
+def op_job():
+    ...
+
+
+# op_job and asset_job will both use the default_executor_def,
+# since neither define their own executor.
+@repository(default_executor_def=multiprocess_executor)
+def the_repo():
+    return [the_asset, asset_job, op_job]
+```
 
 Executing a job via <PyObject object="JobDefinition" method="execute_in_process" />, overrides the job's executor and uses <PyObject object="in_process_executor" /> instead.
 

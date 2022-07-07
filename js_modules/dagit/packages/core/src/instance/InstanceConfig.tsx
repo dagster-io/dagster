@@ -16,6 +16,7 @@ import * as React from 'react';
 import {createGlobalStyle} from 'styled-components/macro';
 
 import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceConfigQuery} from './types/InstanceConfigQuery';
@@ -33,6 +34,8 @@ const InstanceConfigStyle = createGlobalStyle`
 `;
 
 export const InstanceConfig = React.memo(() => {
+  useTrackPageView();
+
   const queryResult = useQuery<InstanceConfigQuery>(INSTANCE_CONFIG_QUERY, {
     fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,

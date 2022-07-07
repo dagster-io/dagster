@@ -248,6 +248,10 @@ class GrapheneAssetNode(graphene.ObjectType):
     def is_graph_backed_asset(self) -> bool:
         return self.graphName is not None
 
+    # all regular assets belong to at least one job
+    def is_source_asset(self) -> bool:
+        return len(self._external_asset_node.job_names) == 0
+
     def resolve_assetMaterializations(
         self, graphene_info, **kwargs
     ) -> Sequence[GrapheneMaterializationEvent]:
@@ -292,6 +296,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
     def resolve_configField(self, _graphene_info) -> Optional[GrapheneConfigTypeField]:
+        if self.is_source_asset():
+            return None
         external_pipeline = self.get_external_pipeline()
         node_def_snap = self.get_node_definition_snap()
         return (
@@ -455,6 +461,8 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_op(
         self, _graphene_info
     ) -> Optional[Union[GrapheneSolidDefinition, GrapheneCompositeSolidDefinition]]:
+        if self.is_source_asset():
+            return None
         external_pipeline = self.get_external_pipeline()
         node_def_snap = self.get_node_definition_snap()
         if isinstance(node_def_snap, SolidDefSnap):

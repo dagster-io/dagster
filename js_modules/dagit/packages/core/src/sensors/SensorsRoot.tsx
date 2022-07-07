@@ -4,6 +4,7 @@ import React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
@@ -23,8 +24,10 @@ interface Props {
 }
 
 export const SensorsRoot = (props: Props) => {
-  const {repoAddress} = props;
+  useTrackPageView();
   useDocumentTitle('Sensors');
+
+  const {repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
 
   const queryResult = useQuery<SensorsRootQuery, SensorsRootQueryVariables>(SENSORS_ROOT_QUERY, {

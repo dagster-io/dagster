@@ -1,5 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import keyBy from 'lodash/keyBy';
+import reject from 'lodash/reject';
 import React from 'react';
 
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
@@ -16,6 +17,7 @@ import {
 
 export interface AssetGraphFetchScope {
   hideEdgesToNodesOutsideQuery?: boolean;
+  hideNodesMatching?: (node: AssetGraphQuery_assetNodes) => boolean;
   pipelineSelector?: PipelineSelector;
   groupSelector?: AssetGroupSelector;
 }
@@ -60,11 +62,17 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       };
     }
 
+    // Apply any filters provided by the caller. This is where we do repo filtering
+    let matching = nodes;
+    if (options.hideNodesMatching) {
+      matching = reject(matching, options.hideNodesMatching);
+    }
+
     // Filter the set of all AssetNodes down to those matching the `opsQuery`.
     // In the future it might be ideal to move this server-side, but we currently
     // get to leverage the useQuery cache almost 100% of the time above, making this
     // super fast after the first load vs a network fetch on every page view.
-    const graphQueryItems = buildGraphQueryItems(nodes);
+    const graphQueryItems = buildGraphQueryItems(matching);
     const {all, applyingEmptyDefault} = filterByQuery(graphQueryItems, opsQuery);
 
     // Assemble the response into the data structure used for layout, traversal, etc.
@@ -74,13 +82,13 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     }
 
     return {
-      allAssetKeys: nodes.map((n) => n.assetKey),
+      allAssetKeys: matching.map((n) => n.assetKey),
       graphAssetKeys: all.map((n) => ({path: n.node.assetKey.path})),
       assetGraphData,
       graphQueryItems,
       applyingEmptyDefault,
     };
-  }, [nodes, opsQuery, options.hideEdgesToNodesOutsideQuery]);
+  }, [nodes, opsQuery, options.hideEdgesToNodesOutsideQuery, options.hideNodesMatching]);
 
   return {
     fetchResult,
@@ -165,6 +173,15 @@ const ASSET_GRAPH_QUERY = gql`
   query AssetGraphQuery($pipelineSelector: PipelineSelector, $groupSelector: AssetGroupSelector) {
     assetNodes(pipeline: $pipelineSelector, group: $groupSelector) {
       id
+      groupName
+      repository {
+        id
+        name
+        location {
+          id
+          name
+        }
+      }
       dependencyKeys {
         path
       }
