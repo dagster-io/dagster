@@ -332,6 +332,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # dependency on dagster-dbt
             AvailablePythonVersion.V3_6,
+            AvailablePythonVersion.V3_10,
         ],
     ),
     PackageSpec(
@@ -339,6 +340,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # dependency on dagster-dbt
             AvailablePythonVersion.V3_6,
+            AvailablePythonVersion.V3_10,
         ],
     ),
     PackageSpec(
@@ -426,9 +428,10 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-dbt",
         pytest_extra_cmds=dbt_extra_cmds,
-        # dbt-core no longer supports python 3.6
+        # dbt-core no longer supports python 3.6 and does not yet support python 3.10
         unsupported_python_versions=[
             AvailablePythonVersion.V3_6,
+            AvailablePythonVersion.V3_10,
         ],
     ),
     PackageSpec(
