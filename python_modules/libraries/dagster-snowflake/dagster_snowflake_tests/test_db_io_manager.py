@@ -1,12 +1,14 @@
 # pylint: disable=protected-access
 from unittest.mock import MagicMock
 
+import pytest
 from dagster_snowflake import DbTypeHandler
 from dagster_snowflake.db_io_manager import DbClient, DbIOManager, TablePartition, TableSlice
 from pendulum import datetime
 
 from dagster import AssetKey, InputContext, OutputContext, build_output_context
 from dagster.core.definitions.time_window_partitions import TimeWindow
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import resolve_dagster_type
 
 resource_config = {
@@ -202,7 +204,7 @@ def test_non_asset_out():
     assert handler.handle_input_calls[0][1] == table_slice
 
 
-def test_schema_defaults():
+def test_asset_schema_defaults():
     handler = IntHandler()
     db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
     manager = DbIOManager(type_handlers=[handler], db_client=db_client)
@@ -219,8 +221,14 @@ def test_schema_defaults():
 
     assert table_slice.schema == "public"
 
-    resource_config_w_schema = resource_config
-    resource_config_w_schema["schema"] = "my_schema"
+    resource_config_w_schema = {
+        "database": "database_abc",
+        "account": "account_abc",
+        "user": "user_abc",
+        "password": "password_abc",
+        "warehouse": "warehouse_abc",
+        "schema": "my_schema",
+    }
 
     asset_key = AssetKey(["table1"])
     output_context = build_output_context(
@@ -234,6 +242,42 @@ def test_schema_defaults():
     output_context = build_output_context(
         asset_key=asset_key, resource_config=resource_config_w_schema
     )
+    with pytest.raises(DagsterInvalidDefinitionError):
+        table_slice = manager._get_table_slice(output_context, output_context)
+
+
+def test_output_schema_defaults():
+    handler = IntHandler()
+    db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))
+    manager = DbIOManager(type_handlers=[handler], db_client=db_client)
+    output_context = build_output_context(
+        name="table1", metadata={"schema": "schema1"}, resource_config=resource_config
+    )
     table_slice = manager._get_table_slice(output_context, output_context)
 
     assert table_slice.schema == "schema1"
+
+    output_context = build_output_context(name="table1", resource_config=resource_config)
+    table_slice = manager._get_table_slice(output_context, output_context)
+
+    assert table_slice.schema == "public"
+
+    resource_config_w_schema = {
+        "database": "database_abc",
+        "account": "account_abc",
+        "user": "user_abc",
+        "password": "password_abc",
+        "warehouse": "warehouse_abc",
+        "schema": "my_schema",
+    }
+
+    output_context = build_output_context(name="table1", resource_config=resource_config_w_schema)
+    table_slice = manager._get_table_slice(output_context, output_context)
+
+    assert table_slice.schema == "my_schema"
+
+    output_context = build_output_context(
+        name="table1", metadata={"schema": "schema1"}, resource_config=resource_config_w_schema
+    )
+    with pytest.raises(DagsterInvalidDefinitionError):
+        table_slice = manager._get_table_slice(output_context, output_context)
