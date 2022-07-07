@@ -19,7 +19,7 @@ def test_download():
         result = materialize(
             load_assets_from_package_module(assets),
             resources={
-                "io_manager": fs_io_manager,
+                "io_manager": fs_io_manager.configured({"base_dir": temp_dir}),
                 "partition_start": ResourceDefinition.string_resource(),
                 "partition_end": ResourceDefinition.string_resource(),
                 "parquet_io_manager": local_partitioned_parquet_io_manager.configured(
