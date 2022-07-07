@@ -1,4 +1,5 @@
 import os
+import warnings
 
 import pytest
 
@@ -37,6 +38,17 @@ from dagster.core.snap.dep_snapshot import (
 )
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import safe_tempfile_path
+from dagster.utils.backcompat import ExperimentalWarning
+
+
+@pytest.fixture(autouse=True)
+def check_experimental_warnings():
+    with warnings.catch_warnings(record=True) as record:
+        yield
+
+        for w in record:
+            if "build_assets_job" not in w.message.args[0]:
+                assert False, f"Unexpected warning: {w.message.args[0]}"
 
 
 def _asset_keys_for_node(result, node_name):
@@ -143,7 +155,7 @@ def test_asset_key_output():
     def asset1():
         return 1
 
-    @asset(ins={"hello": AssetIn(asset_key=AssetKey("asset1"))})
+    @asset(ins={"hello": AssetIn(key=AssetKey("asset1"))})
     def asset2(hello):
         return hello
 
@@ -164,7 +176,7 @@ def test_asset_key_matches_input_name():
         return "bar"
 
     @asset(
-        ins={"asset_bar": AssetIn(asset_key=AssetKey("asset_foo"))}
+        ins={"asset_bar": AssetIn(key=AssetKey("asset_foo"))}
     )  # should still use output from asset_foo
     def last_asset(asset_bar):
         return asset_bar
@@ -185,7 +197,7 @@ def test_asset_key_and_inferred():
     def asset_bar():
         return 5
 
-    @asset(ins={"foo": AssetIn(asset_key=AssetKey("asset_foo"))})
+    @asset(ins={"foo": AssetIn(key=AssetKey("asset_foo"))})
     def asset_baz(foo, asset_bar):
         return foo + asset_bar
 
@@ -201,7 +213,7 @@ def test_asset_key_for_asset_with_key_prefix_str():
     def asset_foo():
         return "foo"
 
-    @asset(ins={"foo": AssetIn(asset_key=AssetKey(["hello", "asset_foo"]))})
+    @asset(ins={"foo": AssetIn(key=AssetKey(["hello", "asset_foo"]))})
     def success_asset(foo):
         return foo
 
@@ -1690,7 +1702,10 @@ def test_resolve_dependency_in_group():
         del asset1
         assert context.asset_key_for_input("asset1") == AssetKey(["abc", "asset1"])
 
-    assert materialize_to_memory([asset1, asset2]).success
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=ExperimentalWarning)
+
+        assert materialize_to_memory([asset1, asset2]).success
 
 
 def test_resolve_dependency_fail_across_groups():
@@ -1706,7 +1721,11 @@ def test_resolve_dependency_fail_across_groups():
         DagsterInvalidDefinitionError,
         match="is not produced by any of the provided asset ops and is not one of the provided sources",
     ):
-        materialize_to_memory([asset1, asset2])
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+
+            materialize_to_memory([asset1, asset2])
 
 
 def test_resolve_dependency_multi_asset_different_groups():
@@ -1729,4 +1748,7 @@ def test_resolve_dependency_multi_asset_different_groups():
         DagsterInvalidDefinitionError,
         match="is not produced by any of the provided asset ops and is not one of the provided sources",
     ):
-        materialize_to_memory([upstream, assets])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+
+            materialize_to_memory([upstream, assets])
