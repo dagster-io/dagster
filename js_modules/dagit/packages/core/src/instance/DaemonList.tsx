@@ -35,13 +35,12 @@ const DaemonLabel = (props: DaemonLabelProps) => {
 
 interface Props {
   daemonStatuses: DaemonStatus[] | undefined;
+  showTimestampColumn?: boolean;
 }
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
-export const DaemonList = (props: Props) => {
-  const {daemonStatuses} = props;
-
+export const DaemonList: React.FC<Props> = ({daemonStatuses, showTimestampColumn = true}) => {
   if (!daemonStatuses?.length) {
     return null;
   }
@@ -52,7 +51,7 @@ export const DaemonList = (props: Props) => {
         <tr>
           <th style={{width: '25%'}}>Daemon</th>
           <th style={{width: '30%'}}>Status</th>
-          <th>Last heartbeat</th>
+          {showTimestampColumn && <th>Last heartbeat</th>}
         </tr>
       </thead>
       <tbody>
@@ -67,19 +66,21 @@ export const DaemonList = (props: Props) => {
                 <td>
                   <DaemonHealth daemon={daemon} />
                 </td>
-                <td>
-                  {daemon.lastHeartbeatTime ? (
-                    <Group direction="row" spacing={4}>
-                      <Timestamp
-                        timestamp={{unix: daemon.lastHeartbeatTime}}
-                        timeFormat={TIME_FORMAT}
-                      />
-                      <span>&nbsp;({`${moment.unix(daemon.lastHeartbeatTime).fromNow()}`})</span>
-                    </Group>
-                  ) : (
-                    'Never'
-                  )}
-                </td>
+                {showTimestampColumn && (
+                  <td>
+                    {daemon.lastHeartbeatTime ? (
+                      <Group direction="row" spacing={4}>
+                        <Timestamp
+                          timestamp={{unix: daemon.lastHeartbeatTime}}
+                          timeFormat={TIME_FORMAT}
+                        />
+                        <span>&nbsp;({`${moment.unix(daemon.lastHeartbeatTime).fromNow()}`})</span>
+                      </Group>
+                    ) : (
+                      'Never'
+                    )}
+                  </td>
+                )}
               </tr>
             );
           })}
