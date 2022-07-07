@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 class InputContext:
     """
-    The ``context`` object available to the load_input method of :py:class:`RootInputManager`.
+    The ``context`` object available to the load_input method of :py:class:`InputManager`.
 
     Attributes:
         name (Optional[str]): The name of the input that we're loading.
@@ -38,9 +38,9 @@ class InputContext:
         dagster_type (Optional[DagsterType]): The type of this input.
         log (Optional[DagsterLogManager]): The log manager to use for this input.
         resource_config (Optional[Dict[str, Any]]): The config associated with the resource that
-            initializes the RootInputManager.
+            initializes the InputManager.
         resources (Optional[Resources]): The resources required by the resource that initializes the
-            input manager. If using the :py:func:`@root_input_manager` decorator, these resources
+            input manager. If using the :py:func:`@input_manager` decorator, these resources
             correspond to those requested with the `required_resource_keys` parameter.
         op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
     """

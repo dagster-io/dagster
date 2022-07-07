@@ -18,7 +18,7 @@ from dagster import (
     job,
     op,
     pipeline,
-    root_input_manager,
+    input_manager,
     solid,
 )
 from dagster._check import CheckError
@@ -206,18 +206,18 @@ def test_io_manager_add_input_metadata():
     assert loaded_input_event_metadata[1].label == "baz"
 
 
-def test_root_input_manager_add_input_metadata():
-    @root_input_manager
-    def my_root_input_manager(context):
+def test_input_manager_add_input_metadata():
+    @input_manager
+    def my_input_manager(context):
         context.add_input_metadata(metadata={"foo": "bar"})
         context.add_input_metadata(metadata={"baz": "qux"})
         return []
 
-    @op(ins={"input1": In(root_manager_key="my_root_input_manager")})
+    @op(ins={"input1": In(input_manager_key="my_input_manager")})
     def my_op(_, input1):
         return input1
 
-    @job(resource_defs={"my_root_input_manager": my_root_input_manager})
+    @job(resource_defs={"my_input_manager": my_input_manager})
     def my_job():
         my_op()
 

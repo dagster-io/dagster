@@ -254,11 +254,6 @@ from dagster.core.storage.pipeline_run import (
     PipelineRun,
     PipelineRunStatus,
 )
-from dagster.core.storage.root_input_manager import (
-    RootInputManager,
-    RootInputManagerDefinition,
-    root_input_manager,
-)
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.types.config_schema import (
     DagsterTypeLoader,
@@ -680,9 +675,6 @@ __all__ = [
     "io_manager",
     "input_manager",
     "InputManager",
-    "RootInputManager",
-    "RootInputManagerDefinition",
-    "root_input_manager",
     "fs_io_manager",
     "mem_io_manager",
     "custom_path_fs_io_manager",

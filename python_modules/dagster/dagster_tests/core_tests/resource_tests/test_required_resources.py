@@ -756,12 +756,12 @@ def test_extra_configured_resources():
     assert execute_pipeline(extra).success
 
 
-def test_root_input_manager():
+def test_input_manager():
     @solid
     def start(_):
         return 4
 
-    @solid(input_defs=[InputDefinition("x", root_manager_key="root_in")])
+    @solid(input_defs=[InputDefinition("x", input_manager_key="root_in")])
     def end(_, x):
         return x
 
@@ -773,21 +773,21 @@ def test_root_input_manager():
         _invalid = _valid.get_pipeline_subset_def({"end"})
 
 
-def test_root_input_manager_missing_fails():
+def test_input_manager_missing_fails():
     @solid(
-        input_defs=[InputDefinition("root_input", root_manager_key="missing_root_input_manager")]
+        input_defs=[InputDefinition("root_input", input_manager_key="missing_input_manager")]
     )
-    def requires_missing_root_input_manager(root_input: int):
+    def requires_missing_input_manager(root_input: int):
         return root_input
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="input manager with key 'missing_root_input_manager' required by input 'root_input' of solid 'requires_missing_root_input_manager' was not provided",
+        match="input manager with key 'missing_input_manager' required by input 'root_input' of solid 'requires_missing_input_manager' was not provided",
     ):
 
         @pipeline
         def _invalid():
-            requires_missing_root_input_manager()
+            requires_missing_input_manager()
 
 
 def test_io_manager_missing_fails():

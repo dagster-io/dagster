@@ -13,7 +13,7 @@ from dagster import (
     job,
     op,
     repository,
-    root_input_manager,
+    input_manager,
 )
 from dagster.core.errors import DagsterInvalidInvocationError, DagsterInvalidSubsetError
 from dagster.core.events import DagsterEventType
@@ -180,16 +180,16 @@ def test_unsatisfied_input_use_config():
     assert subset_result.output_for_node("end") == 4
 
 
-def test_unsatisfied_input_use_root_input_manager():
-    @root_input_manager(input_config_schema=int)
+def test_unsatisfied_input_use_input_manager():
+    @input_manager(input_config_schema=int)
     def config_io_man(context):
         return context.config
 
-    @op(ins={"x": In(root_manager_key="my_loader")})
+    @op(ins={"x": In(input_manager_key="my_loader")})
     def start(_, x):
         return x
 
-    @op(ins={"x": In(root_manager_key="my_loader")})
+    @op(ins={"x": In(input_manager_key="my_loader")})
     def end(_, x):
         return x
 

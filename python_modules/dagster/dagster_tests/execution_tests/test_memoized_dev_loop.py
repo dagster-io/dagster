@@ -12,7 +12,7 @@ from dagster import (
     op,
     reexecute_pipeline,
     resource,
-    root_input_manager,
+    input_manager,
 )
 from dagster.core.definitions.version_strategy import VersionStrategy
 from dagster.core.execution.api import create_execution_plan
@@ -316,7 +316,7 @@ def test_version_strategy_depends_from_context():
             assert len(unmemoized_plan.step_keys_to_execute) == 1
 
 
-def test_version_strategy_root_input_manager():
+def test_version_strategy_input_manager():
     class MyVersionStrategy(VersionStrategy):
         def get_solid_version(self, _):
             return "foo"
@@ -324,11 +324,11 @@ def test_version_strategy_root_input_manager():
         def get_resource_version(self, _):
             return "foo"
 
-    @root_input_manager
+    @input_manager
     def my_input_manager(_):
         return 5
 
-    @op(ins={"x": In(root_manager_key="my_input_manager")})
+    @op(ins={"x": In(manager_key="my_input_manager")})
     def my_op(x):
         return x
 

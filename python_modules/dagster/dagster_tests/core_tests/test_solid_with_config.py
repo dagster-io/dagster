@@ -9,7 +9,7 @@ from dagster import (
     composite_solid,
     execute_pipeline,
     pipeline,
-    root_input_manager,
+    input_manager,
     solid,
 )
 
@@ -239,11 +239,11 @@ def test_extra_config_unsatisfied_input():
 
 
 def test_extra_config_unsatisfied_input_io_man():
-    @root_input_manager(input_config_schema=int)
+    @input_manager(input_config_schema=int)
     def config_io_man(context):
         return context.config
 
-    @solid(input_defs=[InputDefinition("x", root_manager_key="my_loader")])
+    @solid(input_defs=[InputDefinition("x", input_manager_key="my_loader")])
     def start(_, x):
         return x
 

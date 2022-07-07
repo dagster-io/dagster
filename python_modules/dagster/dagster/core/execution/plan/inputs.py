@@ -263,9 +263,9 @@ class FromSourceAsset(
 
 
 @whitelist_for_serdes
-class FromRootInputManager(
+class FromInputManager(
     NamedTuple(
-        "_FromRootInputManager",
+        "_FromInputManager",
         [
             ("solid_handle", NodeHandle),
             ("input_name", str),
@@ -274,7 +274,7 @@ class FromRootInputManager(
     StepInputSource,
 ):
     """
-    Load input value via a RootInputManager.
+    Load input value via an InputManager.
     """
 
     def load_input_object(
@@ -286,7 +286,7 @@ class FromRootInputManager(
 
         check.invariant(
             step_context.solid_handle == self.solid_handle and input_def.name == self.input_name,
-            "RootInputManager source must be op input and not one along compostion mapping. "
+            "InputManager source must be op input and not one along composition mapping. "
             f"Loading for op {step_context.solid_handle}.{input_def.name} "
             f"but source is {self.solid_handle}.{self.input_name}.",
         )
@@ -296,21 +296,15 @@ class FromRootInputManager(
         solid_config = step_context.resolved_run_config.solids.get(str(self.solid_handle))
         config_data = solid_config.inputs.get(self.input_name) if solid_config else None
 
-        input_manager_key = (
-            input_def.root_manager_key
-            if input_def.root_manager_key
-            else input_def.input_manager_key
-        )
-
-        loader = getattr(step_context.resources, input_manager_key)
+        loader = getattr(step_context.resources, input_def.input_manager_key)
 
         load_input_context = step_context.for_input_manager(
             input_def.name,
             config_data,
             metadata=input_def.metadata,
             dagster_type=input_def.dagster_type,
-            resource_config=step_context.resolved_run_config.resources[input_manager_key].config,
-            resources=build_resources_for_manager(input_manager_key, step_context),
+            resource_config=step_context.resolved_run_config.resources[input_def.input_manager_key].config,
+            resources=build_resources_for_manager(input_def.input_manager_key, step_context),
         )
 
         yield from _load_input_with_input_manager(loader, load_input_context)
@@ -320,7 +314,7 @@ class FromRootInputManager(
         yield DagsterEvent.loaded_input(
             step_context,
             input_name=input_def.name,
-            manager_key=input_manager_key,
+            manager_key=input_def.input_manager_key,
             metadata_entries=[
                 entry for entry in metadata_entries if isinstance(entry, MetadataEntry)
             ],
@@ -330,11 +324,7 @@ class FromRootInputManager(
         from ..resolve_versions import check_valid_version, resolve_config_version
 
         solid = pipeline_def.get_solid(self.solid_handle)
-        input_manager_key = (
-            solid.input_def_named(self.input_name).root_manager_key
-            if solid.input_def_named(self.input_name).root_manager_key
-            else solid.input_def_named(self.input_name).input_manager_key
-        )
+        input_manager_key = solid.input_def_named(self.input_name).input_manager_key
         input_manager_def = pipeline_def.get_mode_definition(
             resolved_run_config.mode
         ).resource_defs[input_manager_key]
@@ -349,36 +339,30 @@ class FromRootInputManager(
         )
 
         if pipeline_def.version_strategy is not None:
-            root_manager_def_version = pipeline_def.version_strategy.get_resource_version(
+            input_manager_def_version = pipeline_def.version_strategy.get_resource_version(
                 version_context
             )
         else:
-            root_manager_def_version = input_manager_def.version
+            input_manager_def_version = input_manager_def.version
 
-        if root_manager_def_version is None:
+        if input_manager_def_version is None:
             raise DagsterInvariantViolationError(
                 f"While using memoization, version for input manager '{input_manager_key}' was "
                 "None. Please either provide a versioning strategy for your job, or provide a "
-                "version using the root_input_manager or input_manager decorator."
+                "version using the input_manager decorator."
             )
 
-        check_valid_version(root_manager_def_version)
+        check_valid_version(input_manager_def_version)
         return join_and_hash(
             resolve_config_version(input_config),
             resolve_config_version(resource_config),
-            root_manager_def_version,
+            input_manager_def_version,
         )
 
     def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
         input_def = pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
 
-        input_manager_key = (
-            input_def.root_manager_key
-            if input_def.root_manager_key
-            else input_def.input_manager_key
-        )
-
-        return {input_manager_key}
+        return {input_def.input_manager_key}
 
 
 @whitelist_for_serdes

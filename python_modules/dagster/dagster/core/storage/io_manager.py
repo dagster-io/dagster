@@ -16,7 +16,7 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.storage.input_manager import InputManager
 from dagster.core.storage.output_manager import IOutputManagerDefinition, OutputManager
-from dagster.core.storage.root_input_manager import IInputManagerDefinition
+from dagster.core.storage.input_manager import IInputManagerDefinition
 
 if TYPE_CHECKING:
     from dagster.core.execution.context.init import InitResourceContext

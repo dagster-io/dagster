@@ -20,7 +20,7 @@ from dagster.core.execution.plan.inputs import (
     FromDynamicCollect,
     FromMultipleSources,
     FromPendingDynamicStepOutput,
-    FromRootInputManager,
+    FromInputManager,
     FromStepOutput,
     FromUnresolvedStepOutput,
 )
@@ -29,7 +29,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.storage.root_input_manager import root_input_manager
+from dagster.core.storage.input_manager import input_manager
 from dagster.utils import file_relative_path
 from dagster.utils.test import copy_directory
 
@@ -44,13 +44,13 @@ def sum_fan_in(_, nums):
     return sum(nums)
 
 
-@root_input_manager
-def fake_root_input_manager(_context):
+@input_manager
+def fake_input_manager(_context):
     return 678
 
 
-@solid(input_defs=[InputDefinition("from_manager", root_manager_key="root_input_manager")])
-def input_from_root_manager(_context, from_manager):
+@solid(input_defs=[InputDefinition("from_manager", input_manager_key="input_manager")])
+def input_from_input_manager(_context, from_manager):
     return from_manager
 
 
@@ -116,13 +116,13 @@ def dynamic_echo(_, nums):
         ModeDefinition(
             resource_defs={
                 "io_manager": fs_io_manager,
-                "root_input_manager": fake_root_input_manager,
+                "input_manager": fake_input_manager,
             }
         )
     ]
 )
 def dynamic_pipeline():
-    input_from_root_manager()
+    input_from_input_manager()
     optional_outputs()
     numbers = emit()
     dynamic = numbers.map(lambda num: multiply_by_two(multiply_inputs(num, emit_ten())))
@@ -154,10 +154,10 @@ def _validate_execution_plan(plan):
     emit_input_source = plan.get_step_by_key("emit").step_input_named("range_input").source
     assert isinstance(emit_input_source, FromConfig)
 
-    input_from_root_manager_source = (
-        plan.get_step_by_key("input_from_root_manager").step_input_named("from_manager").source
+    input_from_input_manager_source = (
+        plan.get_step_by_key("input_from_input_manager").step_input_named("from_manager").source
     )
-    assert isinstance(input_from_root_manager_source, FromRootInputManager)
+    assert isinstance(input_from_input_manager_source, FromInputManager)
 
     fan_in_source = plan.get_step_by_key("sum_fan_in").step_input_named("nums").source
     assert isinstance(fan_in_source, FromMultipleSources)
