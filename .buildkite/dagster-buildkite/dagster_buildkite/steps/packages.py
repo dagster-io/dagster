@@ -360,6 +360,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # dependency on dagster-ge
             AvailablePythonVersion.V3_6,
+            # Issue with pinned of great_expectations
             AvailablePythonVersion.V3_10,
         ],
     ),

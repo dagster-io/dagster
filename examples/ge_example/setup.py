@@ -10,7 +10,7 @@ setup(
         "dagster",
         "dagit",
         "dagster-ge",
-        "great_expectations",  # pinned because pip is using the cached wheel for 0.13.14
+        "great_expectations>=0.14.12",  # pinned because pip is using the cached wheel for 0.13.14
     ],
     author="Elementl",
     license="Apache-2.0",
