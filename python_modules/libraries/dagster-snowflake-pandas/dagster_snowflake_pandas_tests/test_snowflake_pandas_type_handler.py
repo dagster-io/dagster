@@ -157,6 +157,34 @@ def test_io_manager_with_snowflake_pandas():
             assert set(df.columns) == {"foo", "quux"}
             assert len(df.index) == 2
 
+        snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
+
+        @job(
+            resource_defs={"snowflake": snowflake_io_manager},
+            config={
+                "resources": {
+                    "snowflake": {
+                        "config": {
+                            **SHARED_BUILDKITE_SNOWFLAKE_CONF,
+                            "database": "TEST_SNOWFLAKE_IO_MANAGER",
+                        }
+                    }
+                }
+            },
+        )
+        def io_manager_test_pipeline():
+            read_pandas_df(emit_pandas_df())
+
+        res = io_manager_test_pipeline.execute_in_process()
+        assert res.success
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
+def test_io_manager_with_snowflake_pandas_timestamp_data():
+    with temporary_snowflake_table(
+        schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA", db_name="TEST_SNOWFLAKE_IO_MANAGER"
+    ) as table_name:
+
         time_df = pandas.DataFrame(
             {
                 "foo": ["bar", "baz"],
@@ -197,9 +225,8 @@ def test_io_manager_with_snowflake_pandas():
                 }
             },
         )
-        def io_manager_test_pipeline():
-            read_pandas_df(emit_pandas_df())
+        def io_manager_timestamp_test_job():
             read_time_df(emit_time_df())
 
-        res = io_manager_test_pipeline.execute_in_process()
+        res = io_manager_timestamp_test_job.execute_in_process()
         assert res.success
