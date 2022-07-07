@@ -42,7 +42,7 @@
     * job and cluster permissions, allowing users to view the completed runs through the databricks console, even if they’re kicked off by a service account.
 
 ### Experimental
-* [dagster-k8s] Added the experimental k8s_job_op to launch a Kubernetes Job with an abitrary image and CLI command. Contrast with the `k8s_job_executor`, which runs each Dagster op in a Dagster job in its own k8s job.  This op may be useful when you need to orchestrate a command that isn't a Dagster op (or isn't written in Python). Usage:
+* [dagster-k8s] Added `k8s_job_op` to launch a Kubernetes Job with an abitrary image and CLI command. Contrast with the `k8s_job_executor`, which runs each Dagster op in a Dagster job in its own k8s job.  This op may be useful when you need to orchestrate a command that isn't a Dagster op (or isn't written in Python). Usage:
 
    ```python
    from dagster_k8s import k8s_job_op
