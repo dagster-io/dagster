@@ -4,72 +4,68 @@ title: "Building with Dagster | Dagster Docs"
 
 # Building with Dagster
 
-## Best practices
+<!-- 
+- [Get the basics](#getting-the-basics)
+- [Run Dagster](#running-dagster)
+- [Organize your Dagster project](#organizing-dagster-projects)
+- [Customize Dagster](#customizing-dagster)
+- [Test and log](#testing-and-logging) -->
+
+## Getting the basics
+
+Learn the basics of Dagster's core concepts and start building.
+
+### Assets
 
 <div class="category-container">
   <div class="category-inner-container">
     <ul class="article-list">
       <li>
-        <a href="/guides/dagster/enriching-with-software-defined-assets">Organzing your project</a>
+        <a href="/guides/dagster/enriching-with-software-defined-assets">
+          Upgrading to Software-defined assets
+        </a>
       </li>
       <li>
-        <a href="/guides/dagster/software-defined-assets">TBD: More best practices</a>
-      </li>
-      <li>
-        <a href="/guides/dagster/software-defined-assets">TBD: More best practices</a>
-      </li>
-      <li>
-        <a href="/guides/dagster/software-defined-assets">TBD: More best practices</a>
-      </li>
-    </ul>
-  </div>
-</div>
-
----
-
-## Understanding Dagster
-
-### Building blocks
-
-Basics - these are required to do anything in Dagster.
-
-#### Assets
-
-<div class="category-container">
-  <div class="category-inner-container">
-    <ul class="article-list">
-      <li>
-        <a href="/guides/dagster/enriching-with-software-defined-assets">Upgrading to Software-defined assets</a>
-      </li>
-      <li>
-        <a href="/guides/assets/defining-an-asset">Defining Software-defined assets</a>
+        <a href="/guides/assets/defining-an-asset">
+          Defining Software-defined assets
+        </a>
       </li>
       <li>
         <a href="/guides/assets/asset-graph">Building graphs of assets</a>
       </li>
       <li>
-        <a href="/guides/assets/testing-assets">Testing Software-defined assets</a>
+        <a href="/guides/assets/testing-assets">
+          Testing Software-defined assets
+        </a>
       </li>
       <li>
-        <a href="/guides/dagster/software-defined-assets">Software-defined assets with Pandas and PySpark</a>
+        <a href="/guides/dagster/software-defined-assets">
+          Software-defined assets with Pandas and PySpark
+        </a>
       </li>
       <li>
-        <a href="/guides/dagster/software-defined-assets">Choosing asset keys</a>
+        <a href="/guides/dagster/software-defined-assets">
+          Choosing asset keys
+        </a>
       </li>
     </ul>
   </div>
 </div>
 
-#### Ops and jobs
+### Ops and jobs
 
 <div class="category-container">
   <div class="category-inner-container">
     <ul class="article-list">
       <li>
-        <a href="/guides/dagster/graph_job_op">Migrating to graphs, jobs, and ops</a>
+        <a href="/guides/dagster/graph_job_op">
+          Migrating to graphs, jobs, and ops
+        </a>
       </li>
       <li>
-        <a href="/guides/ops-jobs/single-op-job">Defining and executing a single op job</a>
+        <a href="/guides/ops-jobs/single-op-job">
+          Defining and executing a single op job
+        </a>
       </li>
       <li>
         <a href="/guides/ops-jobs/connecting-ops">Connecting ops in jobs</a>
@@ -81,9 +77,11 @@ Basics - these are required to do anything in Dagster.
   </div>
 </div>
 
-### Production
+---
 
-Does things with the Building Blocks - produces data or other assets.
+## Running Dagster
+
+Configure your pipeline to run jobs with using a variety of flexible options.
 
 <div class="category-container">
   <div class="category-inner-container">
@@ -104,9 +102,11 @@ Does things with the Building Blocks - produces data or other assets.
   </div>
 </div>
 
-### Customization
+---
 
-Customizes inputs, outputs, behavior (?) of jobs and Building Blocks.
+## Customizing Dagster
+
+Customize inputs and outputs, add reusable resources, validate data types, and more.
 
 <div class="category-container">
   <div class="category-inner-container">
@@ -123,16 +123,15 @@ Customizes inputs, outputs, behavior (?) of jobs and Building Blocks.
       <li>
         <a href="/guides/ops-jobs/testable">Dagster types</a>
       </li>
-      <li>
-        <a href="/guides/ops-jobs/testable">Logging</a>
-      </li>
     </ul>
   </div>
 </div>
 
-### Organization
+---
 
-Buckets Building Blocks and other items like jobs, schedules, etc.
+## Organizing Dagster projects
+
+Organize and manage your Dagster project.
 
 <div class="category-container">
   <div class="category-inner-container">
@@ -147,9 +146,11 @@ Buckets Building Blocks and other items like jobs, schedules, etc.
   </div>
 </div>
 
-### Test and log
+---
 
-Testing and logging.
+## Testing and logging
+
+Verify things are working as expected.
 
 <div class="category-container">
   <div class="category-inner-container">
@@ -178,7 +179,9 @@ Testing and logging.
         <a href="/building/understanding-dagster/dagit/graphql">GraphQL API</a>
       </li>
       <li>
-        <a href="/building/understanding-dagster/dagit/graphql-client">GraphQL Python Client</a>
+        <a href="/building/understanding-dagster/dagit/graphql-client">
+          GraphQL Python Client
+        </a>
       </li>
     </ul>
   </div>
@@ -211,8 +214,7 @@ Testing and logging.
       <li>
         <a href="/guides/cloud/authentication">Using the Dagster Cloud CLI</a>
       </li>
-      
-    </ul>
+    </ul>Sche
   </div>
 </div>
 
@@ -237,7 +239,8 @@ Testing and logging.
         <a href="/guides/cloud/authentication">Customizing agent settings</a>
       </li>
       <li>
-        <a href="/guides/cloud/authentication">Running multiple agents</a> <Experimental />
+        <a href="/guides/cloud/authentication">Running multiple agents</a>
+        <Experimental />
       </li>
     </ul>
   </div>
@@ -249,10 +252,14 @@ Testing and logging.
   <div class="category-inner-container">
     <ul class="article-list">
       <li>
-        <a href="/guides/cloud/authentication">Azure Active Directory single sign-on</a>
+        <a href="/guides/cloud/authentication">
+          Azure Active Directory single sign-on
+        </a>
       </li>
       <li>
-        <a href="/guides/cloud/authentication">Google Workspace single sign-on</a>
+        <a href="/guides/cloud/authentication">
+          Google Workspace single sign-on
+        </a>
       </li>
       <li>
         <a href="/guides/cloud/authentication">OneLogin single sign-on</a>
@@ -273,13 +280,48 @@ Testing and logging.
   <div class="category-inner-container">
     <ul class="article-list">
       <li>
-        <a href="/guides/cloud/authentication">Setting up monitoring and alerting</a>
+        <a href="/guides/cloud/authentication">
+          Setting up monitoring and alerting
+        </a>
       </li>
       <li>
         <a href="/guides/cloud/authentication">Managing users</a>
       </li>
       <li>
-        <a href="/guides/cloud/authentication">Using role-based access control</a>
+        <a href="/guides/cloud/authentication">
+          Using role-based access control
+        </a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+---
+
+## Best practices
+
+<div class="category-container">
+  <div class="category-inner-container">
+    <ul class="article-list">
+      <li>
+        <a href="/guides/dagster/enriching-with-software-defined-assets">
+          Organzing your project
+        </a>
+      </li>
+      <li>
+        <a href="/guides/dagster/software-defined-assets">
+          TBD: More best practices
+        </a>
+      </li>
+      <li>
+        <a href="/guides/dagster/software-defined-assets">
+          TBD: More best practices
+        </a>
+      </li>
+      <li>
+        <a href="/guides/dagster/software-defined-assets">
+          TBD: More best practices
+        </a>
       </li>
     </ul>
   </div>

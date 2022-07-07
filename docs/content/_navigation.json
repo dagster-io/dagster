@@ -39,36 +39,27 @@
     "isDefaultOpen": true,
     "children": [
       {
-        "title": "Best practices",
-        "children": [
-          {
-            "title": "Organizing a project",
-            "path": "/guides/best-practices/organizing-a-project"
-          }
-        ]
-      },
-      {
         "title": "Understanding Dagster",
         "children": [
           {
-            "title": "Building blocks",
-            "path": "/building#building-blocks"
+            "title": "Getting the basics",
+            "path": "/building#getting-the-basics"
           },
           {
-            "title": "Production",
-            "path": "/building#production"
+            "title": "Running Dagster",
+            "path": "/building#running-dagster"
           },
           {
-            "title": "Customization",
-            "path": "/building#customization"
+            "title": "Organizing Dagster projects",
+            "path": "/building#organizing-dagster-projects"
           },
           {
-            "title": "Organization",
-            "path": "/building#organization"
+            "title": "Customizing Dagster",
+            "path": "/building#customizing-dagster"
           },
           {
-            "title": "Test and log",
-            "path": "/building#test-and-log"
+            "title": "Testing and logging",
+            "path": "/building#testing-and-logging"
           }
         ]
       },
@@ -107,6 +98,15 @@
           {
             "title": "Managing instances and users",
             "path": "/building#managing-instances-and-users"
+          }
+        ]
+      },
+            {
+        "title": "Best practices",
+        "children": [
+          {
+            "title": "Organizing a project",
+            "path": "/guides/best-practices/organizing-a-project"
           }
         ]
       }
