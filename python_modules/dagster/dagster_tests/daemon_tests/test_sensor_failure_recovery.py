@@ -44,7 +44,7 @@ def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, deb
                         instance,
                         logger,
                         workspace,
-                        executor=SingleThreadPoolExecutor(),
+                        threadpool_executor=SingleThreadPoolExecutor(),
                         debug_crash_flags=debug_crash_flags,
                         debug_futures=futures,
                     )
@@ -198,7 +198,7 @@ def test_failure_after_run_created_before_run_launched(crash_location, crash_sig
 
             launch_process = spawn_ctx.Process(
                 target=_test_launch_sensor_runs_in_subprocess,
-                args=[instance.get_ref(), frozen_datetime.add(seconds=1), None],
+                args=[instance.get_ref(), frozen_datetime.add(seconds=31), None],
             )
             launch_process.start()
             launch_process.join(timeout=60)
@@ -282,7 +282,7 @@ def test_failure_after_run_launched(crash_location, crash_signal, capfd):
 
             launch_process = spawn_ctx.Process(
                 target=_test_launch_sensor_runs_in_subprocess,
-                args=[instance.get_ref(), frozen_datetime.add(seconds=1), None],
+                args=[instance.get_ref(), frozen_datetime.add(seconds=31), None],
             )
             launch_process.start()
             launch_process.join(timeout=60)

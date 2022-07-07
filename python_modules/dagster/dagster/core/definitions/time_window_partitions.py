@@ -147,7 +147,9 @@ class TimeWindowPartitionsDefinition(
         return pendulum.instance(datetime.strptime(partition_key, self.fmt), tz=self.timezone)
 
     def get_default_partition_mapping(self):
-        from dagster.core.asset_defs.time_window_partition_mapping import TimeWindowPartitionMapping
+        from dagster.core.definitions.time_window_partition_mapping import (
+            TimeWindowPartitionMapping,
+        )
 
         return TimeWindowPartitionMapping()
 

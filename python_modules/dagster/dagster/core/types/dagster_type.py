@@ -4,8 +4,9 @@ from enum import Enum as PythonEnum
 from functools import partial
 from typing import AbstractSet as TypingAbstractSet
 from typing import Iterator as TypingIterator
+from typing import Mapping
 from typing import Optional as TypingOptional
-from typing import cast
+from typing import Sequence, cast
 
 import dagster._check as check
 from dagster.builtins import BuiltinEnum
@@ -26,6 +27,9 @@ from .builtin_config_schemas import BuiltinSchemas
 from .config_schema import DagsterTypeLoader, DagsterTypeMaterializer
 
 if t.TYPE_CHECKING:
+    from dagster.core.definitions.node_definition import (  # pylint: disable=unused-import
+        NodeDefinition,
+    )
     from dagster.core.execution.context.system import (  # pylint: disable=unused-import
         StepExecutionContext,
         TypeCheckContext,
@@ -951,11 +955,18 @@ def resolve_python_type_to_dagster_type(python_type: t.Type) -> DagsterType:
 ALL_RUNTIME_BUILTINS = list(_RUNTIME_MAP.values())
 
 
-def construct_dagster_type_dictionary(solid_defs):
+def construct_dagster_type_dictionary(
+    node_defs: Sequence["NodeDefinition"],
+) -> Mapping[str, DagsterType]:
+    from dagster.core.definitions.graph_definition import GraphDefinition
+
     type_dict_by_name = {t.unique_name: t for t in ALL_RUNTIME_BUILTINS}
     type_dict_by_key = {t.key: t for t in ALL_RUNTIME_BUILTINS}
-    for solid_def in solid_defs:
-        for dagster_type in solid_def.all_dagster_types():
+
+    def process_node_def(node_def: "NodeDefinition"):
+        input_output_types = list(node_def.all_input_output_types())
+        for dagster_type in input_output_types:
+
             # We don't do uniqueness check on key because with classes
             # like Array, Noneable, etc, those are ephemeral objects
             # and it is perfectly fine to have many of them.
@@ -975,6 +986,13 @@ def construct_dagster_type_dictionary(solid_defs):
                         "Dagster types have must have unique names."
                     ).format(type_name=dagster_type.display_name)
                 )
+
+        if isinstance(node_def, GraphDefinition):
+            for child_node_def in node_def.node_defs:
+                process_node_def(child_node_def)
+
+    for node_def in node_defs:
+        process_node_def(node_def)
 
     return type_dict_by_key
 

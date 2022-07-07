@@ -13,7 +13,6 @@ from dagster.core.code_pointer import (
     ModuleCodePointer,
     get_python_file_from_target,
 )
-from dagster.core.definitions.events import AssetKey
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
@@ -25,11 +24,11 @@ from dagster.serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster.utils import frozenlist, make_readonly_value
 from dagster.utils.backcompat import experimental
 
+from .events import AssetKey
 from .pipeline_base import IPipeline
 
 if TYPE_CHECKING:
-    from dagster.core.asset_defs.asset_group import AssetGroup
-
+    from .asset_group import AssetGroup
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
     from .repository_definition import RepositoryDefinition
@@ -569,7 +568,7 @@ def bootstrap_standalone_recon_pipeline(pointer):
 
 
 def _check_is_loadable(definition):
-    from dagster.core.asset_defs import AssetGroup
+    from dagster.core.definitions import AssetGroup
 
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
@@ -606,7 +605,7 @@ def def_from_pointer(
 ) -> Union["PipelineDefinition", "RepositoryDefinition", "GraphDefinition"]:
     target = pointer.load_target()
 
-    from dagster.core.asset_defs.asset_group import AssetGroup
+    from dagster.core.definitions import AssetGroup
 
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
@@ -659,7 +658,7 @@ def repository_def_from_target_def(target: object) -> None:
 
 
 def repository_def_from_target_def(target: object) -> Optional["RepositoryDefinition"]:
-    from dagster.core.asset_defs.asset_group import AssetGroup
+    from dagster.core.definitions import AssetGroup
 
     from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition

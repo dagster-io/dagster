@@ -16,7 +16,10 @@ from dagster.utils import PICKLE_PROTOCOL, mkdir_p
 from dagster.utils.backcompat import experimental
 
 
-@io_manager(config_schema={"base_dir": Field(StringSource, is_required=False)})
+@io_manager(
+    config_schema={"base_dir": Field(StringSource, is_required=False)},
+    description="Built-in filesystem IO manager that stores and retrieves values using pickling.",
+)
 def fs_io_manager(init_context):
     """Built-in filesystem IO manager that stores and retrieves values using pickling.
 

@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
 snapshots['test_mode_fetch_resources 1'] = {
@@ -19,7 +20,7 @@ snapshots['test_mode_fetch_resources 1'] = {
                                 'key': 'Any'
                             }
                         },
-                        'description': None,
+                        'description': 'Built-in IO manager that stores and retrieves values in memory.',
                         'name': 'io_manager'
                     },
                     {
@@ -42,7 +43,7 @@ snapshots['test_mode_fetch_resources 1'] = {
                                 'key': 'Any'
                             }
                         },
-                        'description': None,
+                        'description': 'Built-in IO manager that stores and retrieves values in memory.',
                         'name': 'io_manager'
                     },
                     {
@@ -79,7 +80,7 @@ snapshots['test_mode_fetch_resources 1'] = {
                                 'key': 'Any'
                             }
                         },
-                        'description': None,
+                        'description': 'Built-in IO manager that stores and retrieves values in memory.',
                         'name': 'io_manager'
                     },
                     {

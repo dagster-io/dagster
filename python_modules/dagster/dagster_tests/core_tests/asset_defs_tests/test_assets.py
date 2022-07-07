@@ -18,7 +18,7 @@ from dagster import (
     resource,
 )
 from dagster._check import CheckError
-from dagster.core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
+from dagster.core.definitions import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster.core.storage.mem_io_manager import InMemoryIOManager
 from dagster.core.test_utils import instance_for_test
@@ -532,6 +532,39 @@ def test_graph_backed_asset_io_manager():
             "entered handle_output for basic.the_op",
             "entered handle_input for basic.the_op",
         ]
+
+
+def test_invalid_graph_backed_assets():
+    @op
+    def a():
+        return 1
+
+    @op
+    def validate(inp):
+        return inp == 1
+
+    @graph
+    def foo():
+        a_val = a()
+        validate(a_val)
+        return a_val
+
+    @graph
+    def bar():
+        return foo()
+
+    @graph
+    def baz():
+        return a(), bar(), a()
+
+    with pytest.raises(CheckError, match=r"leaf nodes.*validate"):
+        AssetsDefinition.from_graph(foo)
+
+    with pytest.raises(CheckError, match=r"leaf nodes.*bar\.validate"):
+        AssetsDefinition.from_graph(bar)
+
+    with pytest.raises(CheckError, match=r"leaf nodes.*baz\.bar\.validate"):
+        AssetsDefinition.from_graph(baz)
 
 
 def test_group_name_requirements():

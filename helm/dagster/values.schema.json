@@ -68,6 +68,9 @@
         },
         "global": {
             "$ref": "#/definitions/Global"
+        },
+        "retention": {
+            "$ref": "#/definitions/Retention"
         }
     },
     "required": [
@@ -90,7 +93,8 @@
         "migrate",
         "telemetry",
         "serviceAccount",
-        "global"
+        "global",
+        "retention"
     ],
     "definitions": {
         "PullPolicy": {
@@ -2484,6 +2488,77 @@
                 "serviceAccountName",
                 "celeryConfigSecretName"
             ]
+        },
+        "TickRetentionByType": {
+            "title": "TickRetentionByType",
+            "type": "object",
+            "properties": {
+                "skipped": {
+                    "title": "Skipped",
+                    "type": "integer"
+                },
+                "success": {
+                    "title": "Success",
+                    "type": "integer"
+                },
+                "failure": {
+                    "title": "Failure",
+                    "type": "integer"
+                },
+                "started": {
+                    "title": "Started",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "skipped",
+                "success",
+                "failure",
+                "started"
+            ],
+            "additionalProperties": false
+        },
+        "TickRetention": {
+            "title": "TickRetention",
+            "type": "object",
+            "properties": {
+                "purgeAfterDays": {
+                    "title": "Purgeafterdays",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/definitions/TickRetentionByType"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "purgeAfterDays"
+            ]
+        },
+        "Retention": {
+            "title": "Retention",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "sensor": {
+                    "$ref": "#/definitions/TickRetention"
+                },
+                "schedule": {
+                    "$ref": "#/definitions/TickRetention"
+                }
+            },
+            "required": [
+                "enabled",
+                "sensor",
+                "schedule"
+            ],
+            "additionalProperties": false
         }
     }
 }

@@ -41,10 +41,14 @@ class SensorInstigatorData(
     NamedTuple(
         "_SensorInstigatorData",
         [
+            # the last completed tick timestamp, exposed to the context as a deprecated field
             ("last_tick_timestamp", Optional[float]),
             ("last_run_key", Optional[str]),
             ("min_interval", Optional[int]),
             ("cursor", Optional[str]),
+            # the last time a tick was initiated, used to prevent issuing multiple threads from
+            # evaluating ticks within the minimum interval
+            ("last_tick_start_timestamp", Optional[float]),
         ],
     )
 ):
@@ -54,6 +58,7 @@ class SensorInstigatorData(
         last_run_key: Optional[str] = None,
         min_interval: Optional[int] = None,
         cursor: Optional[str] = None,
+        last_tick_start_timestamp: Optional[float] = None,
     ):
         return super(SensorInstigatorData, cls).__new__(
             cls,
@@ -61,6 +66,7 @@ class SensorInstigatorData(
             check.opt_str_param(last_run_key, "last_run_key"),
             check.opt_int_param(min_interval, "min_interval"),
             check.opt_str_param(cursor, "cursor"),
+            check.opt_float_param(last_tick_start_timestamp, "last_tick_start_timestamp"),
         )
 
 

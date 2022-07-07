@@ -10,8 +10,8 @@ from dagster.serdes.serdes import whitelist_for_serdes
 def get_retries_config():
     return Field(
         Selector({"enabled": {}, "disabled": {}}),
-        is_required=False,
         default_value={"enabled": {}},
+        description="Whether retries are enabled or not. By default, retries are enabled.",
     )
 
 

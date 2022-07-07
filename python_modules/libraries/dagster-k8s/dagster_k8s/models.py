@@ -35,6 +35,9 @@ def _get_openapi_dict_value_type(attr_type):
 
 
 def _k8s_parse_value(data, classname, attr_name):
+    if data == None:
+        return None
+
     if _is_openapi_list_type(classname):
         sub_kls = _get_openapi_list_element_type(classname)
         return [

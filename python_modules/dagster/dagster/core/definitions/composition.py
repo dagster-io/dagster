@@ -25,11 +25,6 @@ from dagster.core.errors import (
 from dagster.utils import frozentags
 
 from .config import ConfigMapping
-from .decorators.solid_decorator import (
-    DecoratedSolidFunction,
-    NoContextDecoratedSolidFunction,
-    resolve_checked_solid_fn_inputs,
-)
 from .dependency import (
     DependencyDefinition,
     DynamicCollectDependencyDefinition,
@@ -306,6 +301,7 @@ class PendingNodeInvocation:
 
     def __call__(self, *args, **kwargs):
         from ..execution.context.invocation import UnboundSolidExecutionContext
+        from .decorators.solid_decorator import DecoratedSolidFunction
         from .solid_invocation import solid_invocation_result
 
         node_name = self.given_alias if self.given_alias else self.node_def.name
@@ -982,6 +978,10 @@ def do_composition(
             the user has not explicitly provided the output definitions.
             This should be removed in 0.11.0.
     """
+    from .decorators.solid_decorator import (
+        NoContextDecoratedSolidFunction,
+        resolve_checked_solid_fn_inputs,
+    )
 
     if provided_output_defs is None:
         outputs_are_explicit = False

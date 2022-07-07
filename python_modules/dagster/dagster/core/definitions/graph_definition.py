@@ -193,7 +193,6 @@ class GraphDefinition(NodeDefinition):
         **kwargs,
     ):
         self._node_defs = _check_node_defs_arg(name, node_defs)
-        self._dagster_type_dict = construct_dagster_type_dictionary(self._node_defs)
         self._dependencies = validate_dependency_dict(dependencies)
         self._dependency_structure, self._node_dict = create_execution_structure(
             self._node_defs, self._dependencies, graph_definition=self
@@ -230,6 +229,7 @@ class GraphDefinition(NodeDefinition):
         # must happen after base class construction as properties are assumed to be there
         # eager computation to detect cycles
         self.solids_in_topological_order = self._solids_in_topological_order()
+        self._dagster_type_dict = construct_dagster_type_dictionary([self])
 
     def _solids_in_topological_order(self):
 
@@ -1070,7 +1070,10 @@ def _config_mapping_with_default_value(
 
     config_schema = Shape(
         fields=updated_fields,
-        description="run config schema with default values from default_config",
+        description=(
+            "This run config schema was automatically populated with default values "
+            "from `default_config`."
+        ),
         field_aliases=inner_schema.field_aliases,
     )
 
@@ -1088,7 +1091,7 @@ def _config_mapping_with_default_value(
 
 
 @io_manager(
-    description="The default io manager for Jobs. Uses filesystem but switches to in-memory when invoked through execute_in_process."
+    description="Built-in filesystem IO manager that stores and retrieves values using pickling."
 )
 def default_job_io_manager(init_context):
     from dagster.core.storage.fs_io_manager import PickledObjectFilesystemIOManager

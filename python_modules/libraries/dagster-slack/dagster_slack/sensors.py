@@ -22,25 +22,25 @@ def _build_slack_blocks_and_text(
     blocks_fn: Optional[Callable[[T], List[Dict]]],
     dagit_base_url: Optional[str],
 ) -> Tuple[List[Dict[str, Any]], str]:
-    blocks: List[Dict[str, Any]] = [
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f'*Job "{context.pipeline_run.pipeline_name}" failed. `{context.pipeline_run.run_id.split("-")[0]}`*',
-            },
-        },
-    ]
     main_body_text = text_fn(context)
-
+    blocks: List[Dict[str, Any]] = []
     if blocks_fn:
         blocks.extend(blocks_fn(context))
     else:
-        blocks.append(
-            {
-                "type": "section",
-                "text": {"type": "mrkdwn", "text": main_body_text},
-            },
+        blocks.extend(
+            [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f'*Job "{context.pipeline_run.pipeline_name}" failed. `{context.pipeline_run.run_id.split("-")[0]}`*',
+                    },
+                },
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": main_body_text},
+                },
+            ]
         )
 
     if dagit_base_url:

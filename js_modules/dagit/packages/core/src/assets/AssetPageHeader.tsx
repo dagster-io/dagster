@@ -1,6 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
-import {Box, Colors, PageHeader, Heading} from '@dagster-io/ui';
+import {Box, Colors, PageHeader, Heading, Icon} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -43,6 +43,15 @@ export const AssetPageHeader: React.FC<Props> = ({assetKey, ...extra}) => {
   );
 };
 
+export const AssetGlobalLineageLink = () => (
+  <Link to="/instance/asset-groups">
+    <Box flex={{gap: 4}}>
+      <Icon color={Colors.Link} name="schema" />
+      View global asset lineage
+    </Box>
+  </Link>
+);
+
 const BreadcrumbsWithSlashes = styled(Breadcrumbs)`
   & li:not(:first-child)::after {
     background: none;
@@ -54,6 +63,7 @@ const BreadcrumbsWithSlashes = styled(Breadcrumbs)`
     line-height: 16px;
   }
 `;
+
 const BreadcrumbLink = styled(Link)`
   color: ${Colors.Gray800};
 

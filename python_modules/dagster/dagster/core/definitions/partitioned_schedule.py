@@ -49,7 +49,8 @@ def build_schedule_from_partitioned_job(
         partitioned_config = cast(PartitionedConfig, job.mode_definitions[0].partitioned_config)
         partition_set = cast(PartitionSetDefinition, job.get_partition_set_def())
         partitions_def = cast(TimeWindowPartitionsDefinition, partitioned_config.partitions_def)
-    else:
+    else:  # UnresolvedAssetJobDefinition
+        check.invariant(job.partitions_def is not None, "Job does not have a partitions_def.")
         partition_set = cast(PartitionSetDefinition, job.get_partition_set_def())
         partitions_def = cast(TimeWindowPartitionsDefinition, job.partitions_def)
 

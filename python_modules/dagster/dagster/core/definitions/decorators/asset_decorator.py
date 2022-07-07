@@ -19,13 +19,6 @@ from dagster.builtins import Nothing
 from dagster.config import Field
 from dagster.config.config_schema import UserConfigSchema
 from dagster.core.decorator_utils import get_function_params, get_valid_name_permutations
-from dagster.core.definitions.decorators.op_decorator import _Op
-from dagster.core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
-from dagster.core.definitions.input import In
-from dagster.core.definitions.output import Out
-from dagster.core.definitions.partition import PartitionsDefinition
-from dagster.core.definitions.resource_definition import ResourceDefinition
-from dagster.core.definitions.utils import DEFAULT_IO_MANAGER_KEY, NoValueSentinel
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.io_manager import IOManagerDefinition
 from dagster.core.types.dagster_type import DagsterType
@@ -36,10 +29,17 @@ from dagster.utils.backcompat import (
     deprecation_warning,
 )
 
-from .asset_in import AssetIn
-from .asset_out import AssetOut
-from .assets import AssetsDefinition
-from .partition_mapping import PartitionMapping
+from ..asset_in import AssetIn
+from ..asset_out import AssetOut
+from ..assets import AssetsDefinition
+from ..decorators.op_decorator import _Op
+from ..events import AssetKey, CoercibleToAssetKeyPrefix
+from ..input import In
+from ..output import Out
+from ..partition import PartitionsDefinition
+from ..partition_mapping import PartitionMapping
+from ..resource_definition import ResourceDefinition
+from ..utils import DEFAULT_IO_MANAGER_KEY, NoValueSentinel
 
 
 @overload

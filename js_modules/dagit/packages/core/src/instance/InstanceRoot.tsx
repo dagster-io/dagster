@@ -3,6 +3,7 @@ import * as React from 'react';
 import {Redirect, Route, Switch, useLocation} from 'react-router-dom';
 
 import {AssetsCatalogRoot} from '../assets/AssetsCatalogRoot';
+import {AssetsGroupsGlobalGraphRoot} from '../assets/AssetsGroupsGlobalGraphRoot';
 import {RunRoot} from '../runs/RunRoot';
 import {RunsRoot} from '../runs/RunsRoot';
 import {SnapshotRoot} from '../snapshots/SnapshotRoot';
@@ -20,6 +21,9 @@ export const InstanceRoot = () => {
   return (
     <MainContent ref={main}>
       <Switch>
+        <Route path="/instance/asset-groups(/?.*)">
+          <AssetsGroupsGlobalGraphRoot />
+        </Route>
         <Route path="/instance/assets(/?.*)">
           <AssetsCatalogRoot />
         </Route>

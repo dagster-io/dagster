@@ -26,9 +26,10 @@ from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvali
 from dagster.utils import check
 
 if TYPE_CHECKING:
-    from dagster.core.asset_defs import AssetsDefinition, SourceAsset
+    from dagster.core.definitions.assets import AssetsDefinition
     from dagster.core.definitions.job_definition import JobDefinition
     from dagster.core.definitions.pipeline_definition import PipelineDefinition
+    from dagster.core.definitions.source_asset import SourceAsset
 
 MAX_NUM = sys.maxsize
 
@@ -102,7 +103,7 @@ class AssetSelectionData(
 def generate_asset_dep_graph(
     assets_defs: Iterable["AssetsDefinition"], source_assets: Iterable["SourceAsset"]
 ) -> DependencyGraph:
-    from dagster.core.asset_defs.resolved_asset_deps import ResolvedAssetDependencies
+    from dagster.core.definitions.resolved_asset_deps import ResolvedAssetDependencies
 
     resolved_asset_deps = ResolvedAssetDependencies(assets_defs, source_assets)
 

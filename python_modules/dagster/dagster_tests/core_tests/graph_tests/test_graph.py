@@ -1,6 +1,7 @@
 import enum
 import json
 from datetime import datetime
+from typing import Optional
 
 import pendulum
 import pytest
@@ -1177,3 +1178,30 @@ def test_unsatisfied_input_nested():
         match="Input 'x' of graph 'the_graph' has no way of being resolved.",
     ):
         the_top_level_graph.to_job()
+
+
+def test_all_dagster_types():
+    class Foo:
+        pass
+
+    class Bar(Foo):
+        pass
+
+    @op
+    def my_op(x: Foo):
+        return x
+
+    @op
+    def my_op_2(x: Foo):
+        return x
+
+    @graph
+    def my_graph(x: Optional[Bar]):
+        y = x or Foo()
+        my_op_2(my_op(y))
+
+    names = [x.display_name for x in my_graph.all_dagster_types()]
+
+    assert "Foo" in names
+    assert "Bar" in names
+    assert "Bar?" in names
