@@ -230,7 +230,7 @@ def dagster_extra_cmds(version: str, _) -> List[str]:
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
         "aws ecr get-login --no-include-email --region us-west-2 | sh",
-        "export IMAGE_NAME=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/buildkite-test-image-core:$${BUILDKITE_BUILD_ID}-"
+        "export IMAGE_NAME=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/test-project-core:$${BUILDKITE_BUILD_ID}-"
         + version,
         "pushd python_modules/dagster/dagster_tests",
         "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
