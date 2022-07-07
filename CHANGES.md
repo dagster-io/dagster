@@ -22,7 +22,7 @@
 * Fixed an issue with storage implementations using MySQL server version 5.6 which caused SQL syntax exceptions to surface when rendering the Instance overview pages in Dagit.
 * Fixed a bug with the `default_executor_def` argument on repository where asset jobs that defined executor config would result in errors.
 * Fixed a bug where an erroneous exception would be raised if an empty list was returned for a list output of an op.
-* [dagit] Clicking the "Materialize" button for assets with configurable resources will now present the asset launchpad.M
+* [dagit] Clicking the "Materialize" button for assets with configurable resources will now present the asset launchpad.
 * [dagit] If you have an asset group and no jobs, Dagit will display it by default rather than directing you to the asset catalog.
 * [dagit] DAG renderings of software-defined assets now display only the last component of the asset's key for improved readability.
 * [dagit] Fixes a regression where clicking on a source asset would trigger a GraphQL error.
