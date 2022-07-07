@@ -193,11 +193,11 @@ width={2048}
 height={804}
 />
 
-### Specifying Default Loggers
+### Specifying Default Repository Loggers
 
 Default loggers can be specified on a <PyObject object="repository" decorator /> using the `default_logger_defs` argument. These loggers will be added to every job specified on the repository, and will be used for any materializatons of software-defined assets provided to the repository.
 
-Note that `default_logger_defs` are provided in addition to whatever loggers already exist on a job. For example, by default, every job has system loggers provided. Those default loggers will be used in addition to those provided by `default_logger_defs`.
+Note that if you explicitly specify loggers on a job, they will override those provided to `default_logger_defs`.
 
 ```python file=/concepts/logging/custom_logger.py startafter=start_default_logger_repo endbefore=end_default_logger_repo
 from dagster import repository, define_asset_job, asset

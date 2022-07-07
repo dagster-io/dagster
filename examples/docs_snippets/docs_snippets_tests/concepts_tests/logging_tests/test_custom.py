@@ -30,6 +30,4 @@ def test_testing_examples():
 
 
 def test_default_logger_repo_example():
-    assert the_repo.get_job("the_job").loggers == merge_dicts(
-        {"json_logger": json_console_logger}, default_loggers()
-    )
+    assert the_repo.get_job("the_job").loggers == {"json_logger": json_console_logger}
