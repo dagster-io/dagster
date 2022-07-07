@@ -521,6 +521,12 @@ class ScheduleDefinition:
     def has_loadable_target(self):
         return isinstance(self._target, DirectTarget)
 
+    @property
+    def targets_unresolved_asset_job(self) -> bool:
+        return self.has_loadable_target() and isinstance(
+            self.load_target(), UnresolvedAssetJobDefinition
+        )
+
     def load_target(
         self,
     ) -> Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition]:

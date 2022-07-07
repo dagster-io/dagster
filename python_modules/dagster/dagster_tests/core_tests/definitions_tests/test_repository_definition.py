@@ -10,6 +10,7 @@ from dagster import (
     AssetsDefinition,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
+    DailyPartitionsDefinition,
     IOManager,
     JobDefinition,
     PipelineDefinition,
@@ -1434,3 +1435,22 @@ def test_default_executor_config():
         ]
 
     assert the_repo.get_job("the_job").executor_def == in_process_executor
+
+
+def test_scheduled_partitioned_asset_job():
+    partitions_def = DailyPartitionsDefinition(start_date="2022-06-06")
+
+    @asset(partitions_def=partitions_def)
+    def asset1():
+        ...
+
+    @repository
+    def repo():
+        return [
+            asset1,
+            build_schedule_from_partitioned_job(
+                define_asset_job("fdsjk", partitions_def=partitions_def)
+            ),
+        ]
+
+    repo.load_all_definitions()
