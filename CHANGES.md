@@ -64,7 +64,7 @@
 
 # 0.15.4
 
-- No new features in 0.15.4.
+- Reverted sensor threadpool changes from 0.15.3 to address daemon stability issues.
 
 # 0.15.3
 
