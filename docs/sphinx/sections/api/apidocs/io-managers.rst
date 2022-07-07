@@ -46,16 +46,15 @@ Built-in IO Managers
   :annotation: IOManagerDefinition
 
 
-Root Input Managers (Experimental)
+Input Managers
 ----------------------------------
 
-Root input managers are user-provided objects that specify how to load inputs that aren't connected
-to upstream outputs.
+Input managers are user-provided objects that specify how to load inputs.
 
-.. autodecorator:: root_input_manager
+.. autodecorator:: input_manager
 
-.. autoclass:: RootInputManager
+.. autoclass:: InputManager
     :members:
 
-.. autoclass:: RootInputManagerDefinition
+.. autoclass:: InputManagerDefinition
     :members:

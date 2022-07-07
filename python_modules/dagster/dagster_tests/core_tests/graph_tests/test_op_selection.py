@@ -189,7 +189,7 @@ def test_unsatisfied_input_use_input_manager():
     def start(_, x):
         return x
 
-    @op(ins={"x": In(input_manager_key="my_loader")})
+    @op(ins={"x": In(dagster_type=int)})
     def end(_, x):
         return x
 

@@ -795,7 +795,7 @@ def get_graph_req_input_manager():
     [
         (get_basic_graph(), BadSolidStrategy()),
         (get_graph_reqs_resource(), BadResourceStrategy()),
-        (get_graph_reqs_input_manager(), BadResourceStrategy()),
+        (get_graph_req_input_manager(), BadResourceStrategy()),
     ],
 )
 def test_bad_version_str(graph_for_test, strategy):

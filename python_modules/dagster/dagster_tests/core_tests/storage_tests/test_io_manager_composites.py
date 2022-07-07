@@ -9,7 +9,6 @@ from dagster import (
     composite_solid,
     execute_pipeline,
     pipeline,
-    input_manager,
     solid,
 )
 from dagster.core.storage.io_manager import IOManager, io_manager
@@ -203,37 +202,6 @@ def test_inner_inputs_connected_to_outer_dependency():
     result = execute_pipeline(my_pipeline)
     assert result.success
     assert result.output_for_solid("my_composite.inner_solid") == "from top_level_solid"
-
-
-def test_inner_inputs_connected_to_outer_dependency_with_input_manager():
-    called = {}
-
-    @input_manager(input_config_schema={"test": str})
-    def my_root(_):
-        # should not reach
-        called["my_root"] = True
-
-    @solid(input_defs=[InputDefinition("data", dagster_type=str, input_manager_key="my_root")])
-    def inner_solid(_, data):
-        return data
-
-    @composite_solid
-    def my_composite(data: str):
-        return inner_solid(data)
-
-    @solid
-    def top_level_solid():
-        return "from top_level_solid"
-
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_root": my_root})])
-    def my_pipeline():
-        # inner_solid should be connected to top_level_solid
-        my_composite(top_level_solid())
-
-    result = execute_pipeline(my_pipeline)
-    assert result.success
-    assert result.output_for_solid("my_composite.inner_solid") == "from top_level_solid"
-    assert "my_root" not in called
 
 
 def test_inner_inputs_connected_to_nested_outer_dependency():

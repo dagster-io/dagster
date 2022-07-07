@@ -48,7 +48,7 @@ def check_experimental_warnings():
 
         raises_warning = False
         for w in record:
-            if "build_assets_job" in w.message.args[0] or "root_input_manager" in w.message.args[0]:
+            if "build_assets_job" in w.message.args[0]:
                 raises_warning = True
                 break
 
