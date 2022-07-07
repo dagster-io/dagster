@@ -6,7 +6,6 @@ from hacker_news_assets.resources.hn_resource import hn_snapshot_client
 from hacker_news_assets.resources.parquet_io_manager import local_partitioned_parquet_io_manager
 
 from dagster import (
-    AssetGroup,
     ResourceDefinition,
     fs_io_manager,
     load_assets_from_package_module,
