@@ -33,11 +33,13 @@ def test_datahub_rest_emitter_resource():
     with responses.RequestsMock() as rsps:
         # Creating the datahub_rest_emitter resource will run the DatahubRestEmitter.test_connection() method.
         # The response needs to be mocked out prior to the resource gets instantiated.
-        rsps.add(rsps.GET, "http://localhost:8080/config", status=200, json={"noCode": "true"})
-        rsps.add(
-            rsps.POST, "http://localhost:8080/aspects?action=ingestProposal", status=200, json={}
+        rsps.add(rsps.GET, "http://foobar:8080/config", status=200, json={"noCode": "true"})
+        rsps.add(rsps.POST, "http://foobar:8080/aspects?action=ingestProposal", status=200, json={})
+        context = build_op_context(
+            resources={
+                "datahub": datahub_rest_emitter.configured({"connection": "http://foobar:8080"})
+            }
         )
-        context = build_op_context(resources={"datahub": datahub_rest_emitter})
         datahub_op(context)
 
 
@@ -55,7 +57,12 @@ def test_datahub_emitter_resource_failure():
         context = build_op_context(
             resources={
                 "datahub": datahub_rest_emitter.configured(
-                    {"read_timeout_sec": 0.01, "connect_timeout_sec": 0.01, "retry_max_times": 1}
+                    {
+                        "connection": "http://foobar:8080",
+                        "read_timeout_sec": 0.01,
+                        "connect_timeout_sec": 0.01,
+                        "retry_max_times": 1,
+                    }
                 )
             }
         )

@@ -13,9 +13,7 @@ from dagster import Array, Field, InitResourceContext, Map, Noneable, Shape, Str
 
 @resource(
     config_schema={
-        "connection": Field(
-            str, description="Datahub GMS Server", default_value="http://localhost:8080"
-        ),
+        "connection": Field(StringSource, description="Datahub GMS Server"),
         "token": Field(Noneable(str), default_value=None, description="Personal Access Token"),
         "connect_timeout_sec": Field(Noneable(float), default_value=None),
         "read_timeout_sec": Field(Noneable(float), default_value=None),
