@@ -40,7 +40,7 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
             "user": StringSource,
             "password": StringSource,
             "warehouse": Field(StringSource, is_required=False),
-            "schema": Field(StringSource, default_value=None),
+            "schema": Field(StringSource, is_required=False),
         }
     )
     def snowflake_io_manager():
