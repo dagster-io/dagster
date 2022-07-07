@@ -14,7 +14,9 @@ from dagster import Array, Field, InitResourceContext, Map, Noneable, Shape, Str
 @resource(
     config_schema={
         "connection": Field(StringSource, description="Datahub GMS Server"),
-        "token": Field(Noneable(str), default_value=None, description="Personal Access Token"),
+        "token": Field(
+            Noneable(StringSource), default_value=None, description="Personal Access Token"
+        ),
         "connect_timeout_sec": Field(Noneable(float), default_value=None),
         "read_timeout_sec": Field(Noneable(float), default_value=None),
         "retry_status_codes": Field(Noneable(Array(int)), default_value=None),
@@ -54,8 +56,7 @@ def datahub_rest_emitter(init_context: InitResourceContext) -> DatahubRestEmitte
                     description="Kafka Boostrap Servers. Comma delimited",
                 ),
                 "schema_registry_url": Field(
-                    str,
-                    default_value="http://localhost:8081",
+                    StringSource,
                     description="Schema Registry Location.",
                 ),
                 "schema_registry_config": Field(

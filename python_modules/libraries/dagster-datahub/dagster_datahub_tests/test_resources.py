@@ -77,7 +77,7 @@ def test_datahub_kafka_emitter_resource():
     context = build_op_context(
         resources={
             "datahub": datahub_kafka_emitter.configured(
-                {"connection": {"bootstrap": "foobar:9092"}}
+                {"connection": {"bootstrap": "foobar:9092", "schema_registry_url": "foobar:8081"}}
             )
         }
     )
@@ -94,7 +94,7 @@ def test_datahub_kafka_emitter_resource_failure():
             resources={
                 "datahub": datahub_kafka_emitter.configured(
                     {
-                        "connection": {"bootstrap": "foobar:9092"},
+                        "connection": {"bootstrap": "foobar:9092", "schema_registry_url": "http://foobar:8081"},
                         "topic": "NewTopic",
                         "topic_routes": {MCE_KEY: "NewTopic"},
                     }
