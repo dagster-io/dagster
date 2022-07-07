@@ -27,20 +27,9 @@ def _convert_timestamp_to_string(s: pd.Series) -> pd.Series:
     snowflake
     """
     if pd.core.dtypes.common.is_datetime_or_timedelta_dtype(s):
-        # return s.dt.strftime("%Y-%m-%d %H:%M:%S.%f %z")
-        return None
+        return s.dt.strftime("%Y-%m-%d %H:%M:%S.%f %z")
     else:
         return s
-
-
-def _get_timestamp_data(s: pd.Series) -> pd.Series:
-    """
-    Converts columns of data of type pd.Timestamp to string so that it can be stored in
-    snowflake
-    """
-    if pd.core.dtypes.common.is_datetime_or_timedelta_dtype(s):
-        # return s.dt.strftime("%Y-%m-%d %H:%M:%S.%f %z")
-        return s.dt.to_pydatetime()
 
 
 def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
@@ -48,7 +37,7 @@ def _convert_string_to_timestamp(s: pd.Series) -> pd.Series:
     Converts columns of strings in Timestamp format to pd.Timestamp to undo the conversion in
     _convert_timestamp_to_string
 
-    This will not convert non-timestamp strings into timestamps (pd.to_datetime with raise an
+    This will not convert non-timestamp strings into timestamps (pd.to_datetime will raise an
     exception if the string cannot be converted)
     """
     if isinstance(s[0], str):
@@ -96,18 +85,6 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
                 index=False,
                 method=pd_writer,
             )
-
-            for c in obj:
-                if pd.core.dtypes.common.is_datetime_or_timedelta_dtype(c):
-                    converted = c.dt.to_pydatetime()
-                    con.execute(
-                        "INSERT INTO {%s}({%s}) values(%s)",
-                        (
-                            table_slice.table,
-                            "DATE",
-                            converted,
-                        ),
-                    )
 
         return {
             "row_count": obj.shape[0],
