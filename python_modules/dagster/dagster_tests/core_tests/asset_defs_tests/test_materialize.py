@@ -20,8 +20,10 @@ from dagster import (
     graph,
     io_manager,
     materialize,
+    mem_io_manager,
     multi_asset,
     op,
+    resource,
     with_resources,
 )
 from dagster.core.test_utils import instance_for_test
@@ -255,4 +257,16 @@ def test_materialize_partition_key():
 
 
 def test_materialize_provided_resources():
-    pass
+    @asset(required_resource_keys={"foo"})
+    def the_asset(context):
+        assert context.resources.foo == 5
+
+    @resource(required_resource_keys={"bar"})
+    def foo_resource(init_context):
+        return init_context.resources.bar + 1
+
+    result = materialize(
+        [the_asset], resources={"foo": foo_resource, "bar": 4, "io_manager": mem_io_manager}
+    )
+    assert result.success
+    assert result.asset_materializations_for_node("the_asset")[0].metadata_entries == []
