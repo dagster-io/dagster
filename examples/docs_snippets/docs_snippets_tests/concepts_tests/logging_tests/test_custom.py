@@ -1,7 +1,6 @@
 import yaml
 
-from dagster.loggers import default_loggers
-from dagster.utils import file_relative_path, merge_dicts
+from dagster.utils import file_relative_path
 from docs_snippets.concepts.logging.custom_logger import (
     demo_job,
     json_console_logger,
