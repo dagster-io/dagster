@@ -9,7 +9,7 @@ import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
-import {AssetPageHeader} from './AssetPageHeader';
+import {AssetGlobalLineageLink, AssetPageHeader} from './AssetPageHeader';
 import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
@@ -54,7 +54,12 @@ export const AssetsCatalogRoot = () => {
     <Page>
       <AssetPageHeader
         assetKey={{path: currentPath}}
-        right={<ReloadAllButton label="Reload definitions" />}
+        right={
+          <Box flex={{gap: 12, alignItems: 'center'}}>
+            <AssetGlobalLineageLink />
+            <ReloadAllButton label="Reload definitions" />
+          </Box>
+        }
       />
       <AssetsCatalogTable
         prefixPath={currentPath}
