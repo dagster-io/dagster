@@ -31,6 +31,7 @@ RUN apt-get update -yqq \
     && dpkg-reconfigure --frontend=noninteractive locales \
     && update-locale LANG=en_US.UTF-8
 
+# Envionment variables that will be referenced during installation of various packages
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
@@ -40,16 +41,13 @@ ENV LANG=en_US.UTF-8 \
     PYSPARK_VERSION=3.0.1 \
     FOSSA_VERSION=v1.1.10
 
-# Install kubectl
+# Install Kubernetes tools: kubectl, kind, helm
 RUN curl -LO "https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl" \
     && chmod +x ./kubectl \
-    && mv ./kubectl /usr/local/bin/kubectl
-
-# Install kind & helm
-RUN curl -L "https://github.com/kubernetes-sigs/kind/releases/download/$KIND_VERSION/kind-linux-amd64" -o ./kind \
+    && mv ./kubectl /usr/local/bin/kubectl \
+    && curl -L "https://github.com/kubernetes-sigs/kind/releases/download/$KIND_VERSION/kind-linux-amd64" -o ./kind \
     && chmod +x ./kind \
     && mv ./kind /usr/local/bin/kind \
-    && echo "--- \033[32m:k8s: Install helm\033[0m" \
     && curl "https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3" | bash
 
 # Install libxmlsec to use xmlsec
@@ -58,9 +56,14 @@ RUN apt-get update -yqq \
        libxmlsec1-dev \
        pkg-config
 
-# Install Java 8 (required by pyspark) - see: http://bit.ly/2ZIuHRh
-# nodejs
-RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - \
+# Install various packages used in running/installing/testing Dagster:
+# - git/make (cloning dagster, running checks defined in Makefile)
+# - openjdk-11-{jdk,jre}-headless 8 (Java required by pyspark) see: http://bit.ly/2ZIuHRh
+# - nodejs/yarn (dagit)
+# - assorted others-- some may no longer be required, but leaving in place for now
+#
+# deb.nodesource script adds node source to apt 
+RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - \
     # Add yarn GPG key and apt source
     && curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | \
        gpg --dearmor -o /usr/share/keyrings/yarnkey.gpg \
@@ -105,20 +108,24 @@ RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg > /usr/share/keyr
     && apt-get -yqq install \
        google-cloud-sdk
 
-# Install Docker
-# https://docs.docker.com/engine/install/debian/
-# Add docker GPG key and apt source
+# Install Docker -- note that we have some older code using `docker-compose` instead of `docker
+# compose`, so we have to install both the `docker-compose` executable and the docker compose CLI
+# plugin. Eventually we should update the code using `docker-compose` and then we can just use the
+# CLI plugin.
+# See: https://docs.docker.com/engine/install/debian/
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | \
        gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
     && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | \
        tee -a /etc/apt/sources.list.d/docker.list > /dev/null \
     && apt-get -yqq update \
     && apt-get -yqq install \
-       docker-ce \
+       docker-ce docker-ce-cli containerd.io docker-compose-plugin \
     # Install docker-compose
     && curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
     && chmod +x /usr/local/bin/docker-compose \
-    # Install docker compose-cli
+    # Install docker compose Cloud Integrations (for ecs). Note that the `compose-cli` name is old.
+    # The compose-cli is actually handled by `docker-compose-plugin` above, but we still have to
+    # install this for the cloud integrations.
     # https://github.com/docker/compose-cli/blob/main/INSTALL.md
     && curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
 
