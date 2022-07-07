@@ -11,7 +11,6 @@
 * [dagit] A new global asset lineage view, linked from the Asset Catalog and Asset Group pages, allows you to view a graph of assets in all loaded asset groups and filter by query selector and repo.
 * [dagit] A new option on Asset Lineage pages allows you to choose how many layers of the upstream / downstream graph to display.
 * [dagit] Dagit's DAG view now collapses large sets of edges between the same ops for improved readability and rendering performance.
-* [dagster-k8s] Added a new op `k8s_job_op` which will run a k8s job.
 
 ### Bugfixes
 
@@ -43,6 +42,19 @@
     * job and cluster permissions, allowing users to view the completed runs through the databricks console, even if they’re kicked off by a service account.
 
 ### Experimental
+* [dagster-k8s] Added the experimental k8s_job_op to launch a Kubernetes Job with an abitrary image and CLI command. Contrast with the `k8s_job_executor`, which runs each Dagster op in a Dagster job in its own k8s job.  This op may be useful when you need to orchestrate a command that isn't a Dagster op (or isn't written in Python). Usage:
+
+   ```python
+   from dagster_k8s import k8s_job_op
+
+   my_k8s_op = k8s_job_op.configured({
+    "image": "busybox",
+    "command": ["/bin/sh", "-c"],
+    "args": ["echo HELLO"],
+    },
+    name="my_k8s_op",
+   )
+   ```
 
 * [dagster-dbt] The dbt asset-loading functions now support `partitions_def` and `partition_key_to_vars_fn` parameters, adding preliminary support for partitioned dbt assets. To learn more, check out the [Github issue](https://github.com/dagster-io/dagster/issues/7683#issuecomment-1175593637)!
 
