@@ -1,5 +1,67 @@
 # Changelog
 
+# 0.15.5
+
+### New
+
+* Added documentation and helm chart configuration for threaded sensor evaluations.
+* Added documentation and helm chart configuration for tick retention policies.
+* Added descriptions for default config schema. Fields like execution, loggers, ops, and resources are now documented.
+* UnresolvedAssetJob objects can now be passed to run status sensors.
+* [dagit] A new global asset lineage view, linked from the Asset Catalog and Asset Group pages, allows you to view a graph of assets in all loaded asset groups and filter by query selector and repo.
+* [dagit] A new option on Asset Lineage pages allows you to choose how many layers of the upstream / downstream graph to display.
+* [dagit] Dagit's DAG view now collapses large sets of edges between the same ops for improved readability and rendering performance.
+
+### Bugfixes
+
+* Fixed issue that caused repositories to fail to load when `build_schedule_from_partitioned_job` and `define_asset_job` were used together.
+* Fixed a bug that caused auto run retries to always use the `FROM_FAILURE` strategy
+* Previously, it was possible to construct Software-Defined Assets from graphs whose leaf ops were not mapped to assets. This is invalid, as these ops are not required for the production of any assets, and would cause confusing behavior or errors on execution. This will now result in an error at definition time, as intended.
+* Fixed issue where the run monitoring daemon could mark completed runs as failed if they transitioned quickly between STARTING and SUCCESS status.
+* Fixed stability issues with the sensor daemon introduced in 0.15.3 that caused the daemon to fail heartbeat checks if the sensor evaluation took too long.
+* Fixed issues with the thread pool implementation of the sensor daemon where race conditions caused the sensor to fire more frequently than the minimum interval.
+* Fixed an issue with storage implementations using MySQL server version 5.6 which caused SQL syntax exceptions to surface when rendering the Instance overview pages in Dagit.
+* Fixed a bug with the `default_executor_def` argument on repository where asset jobs that defined executor config would result in errors.
+* Fixed a bug where an erroneous exception would be raised if an empty list was returned for a list output of an op.
+* [dagit] Clicking the "Materialize" button for assets with configurable resources will now present the asset launchpad.
+* [dagit] If you have an asset group and no jobs, Dagit will display it by default rather than directing you to the asset catalog.
+* [dagit] DAG renderings of software-defined assets now display only the last component of the asset's key for improved readability.
+* [dagit] Fixes a regression where clicking on a source asset would trigger a GraphQL error.
+* [dagit] Fixed issue where the “Unloadable” section on the sensors / schedules pages in Dagit were populated erroneously with loadable sensors and schedules
+* [dagster-dbt] Fixed an issue where an exception would be raised when using the dbt build command with Software-Defined Assets if a test was defined on a source.
+
+### Deprecations
+
+* Removed the deprecated dagster-daemon health-check CLI command
+
+### Community Contributions
+
+* TimeWindow is now exported from the dagster package (Thanks [@nvinhphuc](https://github.com/nvinhphuc)!)
+* Added a fix to allow customization of slack messages (Thanks [@solarisa21](https://github.com/solarisa21)!)
+* [dagster-databricks] The `databricks_pyspark_step_launcher` now allows you to configure the following (Thanks [@Phazure](https://github.com/Phazure)!):
+    * the `aws_attributes` of the cluster that will be spun up for the step.
+    * arbitrary environment variables to be copied over to databricks from the host machine, rather than requiring these variables to be stored as secrets.
+    * job and cluster permissions, allowing users to view the completed runs through the databricks console, even if they’re kicked off by a service account.
+
+### Experimental
+* [dagster-k8s] Added `k8s_job_op` to launch a Kubernetes Job with an arbitrary image and CLI command. This is in contrast with the `k8s_job_executor`, which runs each Dagster op in a Dagster job in its own k8s job.  This op may be useful when you need to orchestrate a command that isn't a Dagster op (or isn't written in Python). Usage:
+
+   ```python
+   from dagster_k8s import k8s_job_op
+
+   my_k8s_op = k8s_job_op.configured({
+    "image": "busybox",
+    "command": ["/bin/sh", "-c"],
+    "args": ["echo HELLO"],
+    },
+    name="my_k8s_op",
+   )
+   ```
+
+* [dagster-dbt] The dbt asset-loading functions now support `partitions_def` and `partition_key_to_vars_fn` parameters, adding preliminary support for partitioned dbt assets. To learn more, check out the [Github issue](https://github.com/dagster-io/dagster/issues/7683#issuecomment-1175593637)!
+
+
+
 # 0.15.4
 
 - No new features in 0.15.4.
