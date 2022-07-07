@@ -14,10 +14,8 @@
 
 ### Bugfixes
 
-* [dagit] Fixed issue where the “Unloadable” section on the sensors / schedules pages in Dagit were populated erroneously with loadable sensors and schedules
 * Fixed a bug that caused auto run retries to always use the `FROM_FAILURE` strategy
 * Previously, it was possible to construct Software-Defined Assets from graphs whose leaf ops were not mapped to assets. This is invalid, as these ops are not required for the production of any assets, and would cause confusing behavior or errors on execution. This will now result in an error at definition time, as intended.
-* [dagster-dbt] Fixed an issue where an exception would be raised when using the dbt build command with Software-Defined Assets if a test was defined on a source.
 * Fixed issue where the run monitoring daemon could mark completed runs as failed if they transitioned quickly between STARTING and SUCCESS status.
 * Fixed stability issues with the sensor daemon introduced in 0.15.3 that caused the daemon to fail heartbeat checks if the sensor evaluation took too long.
 * Fixed issues with the thread pool implementation of the sensor daemon where race conditions caused the sensor to fire more frequently than the minimum interval.
@@ -27,6 +25,9 @@
 * [dagit] Clicking the "Materialize" button for assets with configurable resources will now present the asset launchpad.M
 * [dagit] If you have an asset group and no jobs, Dagit will display it by default rather than directing you to the asset catalog.
 * [dagit] DAG renderings of software-defined assets now display only the last component of the asset's key for improved readability.
+* [dagit] Fixes a regression where clicking on a source asset would trigger a GraphQL error.
+* [dagit] Fixed issue where the “Unloadable” section on the sensors / schedules pages in Dagit were populated erroneously with loadable sensors and schedules
+* [dagster-dbt] Fixed an issue where an exception would be raised when using the dbt build command with Software-Defined Assets if a test was defined on a source.
 
 ### Deprecations
 
@@ -42,7 +43,7 @@
     * job and cluster permissions, allowing users to view the completed runs through the databricks console, even if they’re kicked off by a service account.
 
 ### Experimental
-* [dagster-k8s] Added `k8s_job_op` to launch a Kubernetes Job with an abitrary image and CLI command. Contrast with the `k8s_job_executor`, which runs each Dagster op in a Dagster job in its own k8s job.  This op may be useful when you need to orchestrate a command that isn't a Dagster op (or isn't written in Python). Usage:
+* [dagster-k8s] Added `k8s_job_op` to launch a Kubernetes Job with an arbitrary image and CLI command. This is in contrast with the `k8s_job_executor`, which runs each Dagster op in a Dagster job in its own k8s job.  This op may be useful when you need to orchestrate a command that isn't a Dagster op (or isn't written in Python). Usage:
 
    ```python
    from dagster_k8s import k8s_job_op
