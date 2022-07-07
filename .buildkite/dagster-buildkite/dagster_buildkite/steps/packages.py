@@ -317,7 +317,7 @@ postgres_extra_cmds = [
 EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/airflow_ingest",
-        unsupported_python_versions=[AvailablePythonVersion.V3_9],
+        unsupported_python_versions=[AvailablePythonVersion.V3_9, AvailablePythonVersion.V3_10],
     ),
     PackageSpec(
         "examples/bollinger",
@@ -360,6 +360,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # dependency on dagster-ge
             AvailablePythonVersion.V3_6,
+            AvailablePythonVersion.V3_10,
         ],
     ),
     PackageSpec(
@@ -434,6 +435,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         # omit python 3.9 until we add support
         unsupported_python_versions=[
             AvailablePythonVersion.V3_9,
+            AvailablePythonVersion.V3_10,
         ],
         env_vars=[
             "AIRFLOW_HOME",
