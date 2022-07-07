@@ -360,7 +360,10 @@ class OutputContext:
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
-        return self._partition_key
+        if self._step_context:
+            return self._step_context.partition_key
+        else:
+            return self._partition_key
 
     @property
     def has_asset_partitions(self) -> bool:
