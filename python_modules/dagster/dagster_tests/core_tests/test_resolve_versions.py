@@ -370,7 +370,7 @@ def test_memoized_plan_custom_io_manager_key():
 
     @solid(version="39", output_defs=[OutputDefinition(io_manager_key="my_key")])
     def solid_requires_io_manager():
-        return 5
+        return Output(5)
 
     @pipeline(
         mode_defs=[

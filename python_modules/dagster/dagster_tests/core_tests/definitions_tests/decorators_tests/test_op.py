@@ -862,15 +862,13 @@ def test_output_generic_correct_inner_type():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Output object returned directly without annotating the decorated "
-        "function. Output events can either be yielded, or returned with an "
-        "accompanying annotation.",
+        match="received Output object for output 'result' which does not have an Output annotation.",
     ):
         execute_op_in_graph(the_op_annotation_not_using_output)
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Output object returned directly without annotating the decorated function.",
+        match="received Output object for output 'result' which does not have an Output annotation.",
     ):
         the_op_annotation_not_using_output()
 
@@ -1277,3 +1275,35 @@ def test_list_out_op():
     assert result.success
 
     assert test_op() == ([], 5)
+
+
+def test_dynamic_list_out_no_annotation():
+    @op(out=DynamicOut())
+    def the_op():
+        return [DynamicOutput(5, mapping_key="foo")]
+
+    result = execute_op_in_graph(the_op)
+    assert result.success
+
+    assert len(the_op()) == 1
+
+
+def test_output_return_no_annotation():
+    @op
+    def the_op():
+        return Output(5)
+
+    assert execute_op_in_graph(the_op).success
+    assert the_op() == Output(5)
+
+
+def test_output_mismatch_tuple_lengths():
+    @op(out={"out1": Out(), "out2": Out()})
+    def the_op() -> Tuple[int, int]:
+        return (1, 2, 3)
+
+    with pytest.raises(DagsterInvariantViolationError, match="Length mismatch"):
+        execute_op_in_graph(the_op)
+
+    with pytest.raises(DagsterInvariantViolationError, match="Length mismatch"):
+        the_op()

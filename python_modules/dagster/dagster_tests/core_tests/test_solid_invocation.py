@@ -469,13 +469,13 @@ def test_wrong_output():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Output object returned directly without annotating the decorated function.",
+        match="explicitly named 'wrong_name'",
     ):
         execute_solid(solid_wrong_output)
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Output object returned directly without annotating the decorated function.",
+        match="explicitly named 'wrong_name'",
     ):
         solid_wrong_output()
 

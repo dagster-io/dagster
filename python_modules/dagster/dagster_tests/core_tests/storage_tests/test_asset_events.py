@@ -47,7 +47,7 @@ def test_output_definition_single_partition_materialization():
 
     @solid(output_defs=[OutputDefinition(name="output1", asset_key=AssetKey("table1"))])
     def solid1(_):
-        yield Output(None, "output1", metadata_entries=[entry1])
+        return Output(None, "output1", metadata_entries=[entry1])
 
     @solid(output_defs=[OutputDefinition(name="output2", asset_key=lambda _: AssetKey("table2"))])
     def solid2(_, _input1):
@@ -92,7 +92,7 @@ def test_output_definition_multiple_partition_materialization():
         ]
     )
     def solid1(_):
-        yield Output(
+        return Output(
             None,
             "output1",
             metadata_entries=[
@@ -302,7 +302,7 @@ def test_io_manager_single_partition_materialization():
 
     @solid(output_defs=[OutputDefinition(name="output1")])
     def solid1(_):
-        yield Output(None, "output1")
+        return Output(None, "output1")
 
     @solid(output_defs=[OutputDefinition(name="output2")])
     def solid2(_, _input1):
