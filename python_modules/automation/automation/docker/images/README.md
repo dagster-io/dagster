@@ -30,7 +30,8 @@ solved issues when building on an M1 mac.
 You will not be able to publish images unless you are authenticated for ECR.
 Ensure you are authenticated by running:
 
-    aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 968703565975.dkr.ecr.us-west-2.amazonaws.com
+    $ aws sso login
+    $ aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 968703565975.dkr.ecr.us-west-2.amazonaws.com
 
 Once you are authenticated, you can publish the newly built images with:
 
