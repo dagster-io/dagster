@@ -53,7 +53,7 @@ def temporary_snowflake_table(schema_name: str, db_name: str) -> Iterator[str]:
     with SnowflakeConnection(
         snowflake_config, logging.getLogger("temporary_snowflake_table")
     ).get_connection() as conn:
-        conn.cursor().execute(f"create table {schema_name}.{table_name} (foo string, quux integer)")
+        conn.cursor().execute(f"create table {schema_name}.{table_name} (foo string, quux integer, date TIMESTAMP_LTZ(9))")
         try:
             yield table_name
         finally:
