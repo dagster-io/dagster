@@ -1,15 +1,14 @@
-from typing import Dict
-from datahub.emitter.rest_emitter import DatahubRestEmitter
 from datahub.emitter.kafka_emitter import (
-    DatahubKafkaEmitter,
-    KafkaEmitterConfig,
     DEFAULT_MCE_KAFKA_TOPIC,
+    DEFAULT_MCP_KAFKA_TOPIC,
     MCE_KEY,
     MCP_KEY,
-    DEFAULT_MCP_KAFKA_TOPIC,
+    DatahubKafkaEmitter,
+    KafkaEmitterConfig,
 )
+from datahub.emitter.rest_emitter import DatahubRestEmitter
 
-from dagster import resource, InitResourceContext, Noneable, Field, Shape, Array, Map
+from dagster import Array, Field, InitResourceContext, Map, Noneable, Shape, StringSource, resource
 
 
 @resource(
@@ -53,8 +52,7 @@ def datahub_rest_emitter(init_context: InitResourceContext) -> DatahubRestEmitte
         "connection": Shape(
             {
                 "bootstrap": Field(
-                    str,
-                    default_value="localhost:9092",
+                    StringSource,
                     description="Kafka Boostrap Servers. Comma delimited",
                 ),
                 "schema_registry_url": Field(
@@ -78,5 +76,4 @@ def datahub_rest_emitter(init_context: InitResourceContext) -> DatahubRestEmitte
     }
 )
 def datahub_kafka_emitter(init_context: InitResourceContext) -> DatahubKafkaEmitter:
-    print(init_context.resource_config)
     return DatahubKafkaEmitter(KafkaEmitterConfig.parse_obj(init_context.resource_config))
