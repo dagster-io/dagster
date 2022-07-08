@@ -7,7 +7,7 @@ description: Dagster can orchestrate dbt alongside other technologies.
 
 Dagster orchestrates dbt alongside _other technologies_, so you can combine dbt with Spark, Python, etc. in a single workflow. Dagster's software-defined asset (SDA) abstractions make it simple to define data assets that depend on specific dbt models, or to define the computation required to compute the sources that your dbt models depend on.
 
-This guide focuses on how to work with `dbt` models through the SDA framework, which we recommend for most use cases. Dagster's SDAs allow you to map multiple
+This guide focuses on how to work with `dbt` models through the SDA framework, which we recommend for most use cases.
 
 ## dbt Models and Software-Defined Assets
 
@@ -17,21 +17,9 @@ A software-defined asset contains an asset key, a set of upstream asset keys, an
 - The upstream dependencies of a dbt model are defined with `ref` or `source` calls within the model's definition.
 - The computation required to compute the asset from its upstream dependencies is the SQL within the model's definition.
 
-These similarities make it natural to want to interact with dbt models as SDAs, making it possible to
+These similarities make it natural to interact with dbt models as SDAs. Dagster has built-in support for loading dbt models, seeds, and snapshots as SDAs, allowing you to define Dagster assets that depend on dbt models, or to define the computations that generate sources for your dbt project and have Dagster automatically orchestrate those computations alongside dbt.
 
 ### Loading dbt models from a dbt project
-
-For smaller dbt projects where compilation time is not a concern, the simplest way to load your dbt assets into Dagster is the following:
-
-```python
-from dagster_dbt import load_assets_from_dbt_project
-
-dbt_assets = load_assets_from_dbt_project(
-    project_dir="path/to/dbt/project"
-)
-```
-
-The `load_assets_from_dbt_project` function will compile your dbt project, parse the metadata that dbt provides, and generate a set of software-defined assets that reflect the models in the project. These assets will all share the same underlying operation, which will invoke dbt to run the models represented by the loaded assets.
 
 For smaller dbt projects, where compilation time is not a concern, the simplest way to load your dbt assets into Dagster is the following:
 
@@ -49,9 +37,7 @@ The `load_assets_from_dbt_project` function:
 2. Parses the metadata that dbt provides, and
 3. Generates a set of software-defined assets that reflect the models in the project. These assets will share the same underlying operation, which will invoke dbt to run the models represented by the loaded assets.
 
-### Loading dbt models from a dbt manifest.json file
-
-For larger projects, recompiling the entire project when the repository needs to be loaded may be a concern. In these cases, you can load dbt models from a dbt `manifest.json` file:
+For larger projects, the overhead involved with recompiling the entire project may be a concern. In these cases, you can load dbt models from an existing dbt `manifest.json` file:
 
 ```python
 import json
@@ -66,9 +52,11 @@ Note: if you make any changes to your dbt project that change the structure of t
 
 ## Adding a resource
 
-In order to function, these assets require a "dbt" resource, which will be responsible for firing off dbt cli commands. The `dagster-dbt` integration provides the `dbt_cli_resource` to make this easy. This resource can be configured with CLI flags that will be passed i
+In order to be executed, these assets require a dbt resource, which will be responsible for firing off dbt cli commands. The `dagster-dbt` integration provides the `dbt_cli_resource` for this purpose. This resource can be configured with CLI flags that will be passed into every dbt invocation.
 
-You can configure this resource and add it to your dbt assets:
+The most important flag to set is the `project_dir` flag, which points Dagster at the directory of your dbt project, but a complete list of configuration options can be found in the [dbt_cli_resource API docs](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.dbt_cli_resource).
+
+You can configure this resource and add it to your dbt assets by doing the following:
 
 ```python
 from dagster import with_resources
@@ -86,7 +74,7 @@ dbt_assets = with_resources(
 
 ## Scheduling dbt jobs
 
-Once you have your dbt assets, it's simple to define a job that runs some or all of these assets on a schedule
+Once you have your dbt assets, you can define a job that runs some or all of these assets on a schedule:
 
 ```python
 from dagster import ScheduleDefinition, define_asset_job
@@ -131,11 +119,24 @@ def my_downstream_asset(model_name):
     return
 ```
 
-## Customizing AssetKeys
+## Understanding AssetKeys
 
-Dagster automatically generates AssetKeys for each dbt model in the project and the sources used by the models.
+In Dagster, each asset has an asset key to identify it. Dagster automatically generates these keys for each dbt node in the project as well as the sources for each node.
 
-The default asset key for a model will be the model name, and the default name for a source in the project will be the name of the source alongside the name of the source table.
+For models, seeds, and snapshots, the default asset key will be the configured schema for that node (if any), concatenated with the name of the node.
+
+For example, if you have configured a [custom schema](https://docs.getdbt.com/docs/building-a-dbt-project/building-models/using-custom-schemas) for a subdirectory in your `dbt_project.yml` file:
+
+```yaml
+models:
+  my_project:
+    marketing:
+      +schema: marketing
+```
+
+Then the
+
+For sources, the default asset key will be the name of the source concatenated with the name of the source table.
 
 For example, a model defined in `my_model.sql` will be given the asset key `my_model`, while the source table defined in the following `sources.yaml` will be `jaffle_shop/orders`:
 
@@ -146,11 +147,9 @@ sources:
       - name: orders
 ```
 
-You may have a different organization scheme for your asset keys, and therefore want to generate different keys for your dbt models.
-
 ### Adding a prefix to AssetKeys
 
-A common pattern is to use the prefix of an asset key to indicate what database an asset is stored in. For example, you might want all of your assets stored in Snowflake to start with the prefix "snowflake". To add a prefix to the models generated by your dbt project, you can pass in a "key_prefix" argument to either the load_assets_from_dbt_manifest or load_assets_from_dbt_project functions.
+A common pattern is to use the prefix of an asset key to indicate what database an asset is stored in. For example, you might want all of your assets stored in Snowflake to start with the prefix `snowflake`. To add a prefix to the models generated by your dbt project, you can pass in a `key_prefix` argument to either the `load_assets_from_dbt_manifest` or `load_assets_from_dbt_project` function.
 
 ```python
 dbt_assets = load_assets_from_dbt_project(
@@ -163,13 +162,9 @@ This prefix will apply only to the models. If you want to apply a prefix to the 
 ```python
 
 dbt_assets = load_assets_from_dbt_project(
-    ..., key_prefix="snowflake", source_key_prefix="snowflake"
+    ..., source_key_prefix="snowflake"
 )
 ```
-
-### Fully customizing AssetKeys
-
-Sometimes, you want to have full control over what asset key you generate. You can do this by setting the `node_info_to_asset_key` parameter to a function that takes a dictionary of dbt node info (parsed from the dbt manifest) and returns an asset key. This dictionary contains (link to doc).
 
 ## Conclusion
 
