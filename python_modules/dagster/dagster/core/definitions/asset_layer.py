@@ -35,6 +35,7 @@ from .resource_definition import ResourceDefinition
 
 if TYPE_CHECKING:
     from dagster.core.definitions.assets import AssetsDefinition, SourceAsset
+    from dagster.core.definitions.job_definition import JobDefinition
     from dagster.core.definitions.resolved_asset_defs import ResolvedAssetDependencies
     from dagster.core.execution.context.output import OutputContext
 

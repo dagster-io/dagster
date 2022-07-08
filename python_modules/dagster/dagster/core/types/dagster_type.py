@@ -3,7 +3,6 @@ from abc import abstractmethod
 from enum import Enum as PythonEnum
 from functools import partial
 from typing import AbstractSet as TypingAbstractSet
-from typing import Dict
 from typing import Iterator as TypingIterator
 from typing import Mapping
 from typing import Optional as TypingOptional
@@ -17,7 +16,6 @@ from dagster.config.config_type import Array, ConfigType
 from dagster.config.config_type import Noneable as ConfigNoneable
 from dagster.core.definitions.events import DynamicOutput, Output, TypeCheck
 from dagster.core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
-from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.serdes import whitelist_for_serdes
 from dagster.seven import is_subclass
