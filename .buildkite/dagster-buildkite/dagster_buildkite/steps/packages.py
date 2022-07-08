@@ -5,7 +5,10 @@ from typing import List, Optional
 from dagster_buildkite.defines import GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
 from dagster_buildkite.package_spec import PackageSpec
 from dagster_buildkite.python_version import AvailablePythonVersion
-from dagster_buildkite.steps.test_project import test_project_core_depends_fn, test_project_depends_fn
+from dagster_buildkite.steps.test_project import (
+    test_project_core_depends_fn,
+    test_project_depends_fn,
+)
 from dagster_buildkite.utils import (
     BuildkiteStep,
     connect_sibling_docker_container,

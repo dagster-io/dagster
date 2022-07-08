@@ -77,7 +77,9 @@ def build_test_project_steps() -> List[GroupStep]:
                 # build and tag test image
                 "export TEST_PROJECT_CORE_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/test-project-core:$${BUILDKITE_BUILD_ID}-"
                 + version,
-                "./python_modules/dagster-test/build_core.sh " + version + " $${TEST_PROJECT_CORE_IMAGE}",
+                "./python_modules/dagster-test/build_core.sh "
+                + version
+                + " $${TEST_PROJECT_CORE_IMAGE}",
                 #
                 # push the built image
                 'echo -e "--- \033[32m:docker: Pushing Docker image\033[0m"',
