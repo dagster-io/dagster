@@ -186,7 +186,7 @@ def test_io_manager_with_snowflake_pandas_timestamp_data():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
-        column_str="foo string, date TIMESTAMP_LTZ(9)",
+        column_str="foo string, date TIMESTAMP_TZ(9)",
     ) as table_name:
 
         time_df = pandas.DataFrame(
