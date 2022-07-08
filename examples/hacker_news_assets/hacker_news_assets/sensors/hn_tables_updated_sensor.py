@@ -4,14 +4,13 @@ from dagster import (
     AssetKey,
     DagsterEventType,
     EventRecordsFilter,
-    JobDefinition,
     RunRequest,
     SensorDefinition,
     sensor,
 )
 
 
-def make_hn_tables_updated_sensor(job: JobDefinition) -> SensorDefinition:
+def make_hn_tables_updated_sensor(job) -> SensorDefinition:
     """
     Returns a sensor that launches the given job when the HN "comments" and "stories" tables have
     both been updated.

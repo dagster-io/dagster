@@ -570,6 +570,7 @@ __all__ = [
     "config_from_yaml_strings",
     "configured",
     "build_assets_job",
+    "define_asset_job",
     "load_assets_from_modules",
     "load_assets_from_current_module",
     "load_assets_from_package_module",
