@@ -4,7 +4,7 @@ import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {AssetConnectedEdges} from '../asset-graph/AssetEdges';
-import {EXPERIMENTAL_MINI_SCALE} from '../asset-graph/AssetGraphExplorer';
+import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
 import {AssetNodeMinimal, AssetNode} from '../asset-graph/AssetNode';
 import {ForeignNode} from '../asset-graph/ForeignNode';
 import {GraphData, LiveData, toGraphId} from '../asset-graph/Utils';
@@ -92,7 +92,7 @@ export const AssetNodeLineageGraph: React.FC<{
               >
                 {!graphNode || !graphNode.definition.opNames.length ? (
                   <ForeignNode assetKey={{path}} />
-                ) : scale < EXPERIMENTAL_MINI_SCALE ? (
+                ) : scale < MINIMAL_SCALE ? (
                   <AssetNodeMinimal
                     definition={graphNode.definition}
                     selected={graphNode.id === assetGraphId}

@@ -54,6 +54,7 @@ from dagster import (
     ScheduleDefinition,
     ScheduleEvaluationContext,
     SolidExecutionContext,
+    SourceAsset,
     SourceHashVersionStrategy,
     StaticPartitionsDefinition,
     String,
@@ -65,6 +66,8 @@ from dagster import (
 )
 from dagster import _check as check
 from dagster import (
+    asset,
+    build_assets_job,
     composite_solid,
     dagster_type_loader,
     dagster_type_materializer,
@@ -83,7 +86,6 @@ from dagster import (
     usable_as_dagster_type,
     weekly_schedule,
 )
-from dagster.core.asset_defs import SourceAsset, asset, build_assets_job
 from dagster.core.definitions.decorators.sensor_decorator import sensor
 from dagster.core.definitions.executor_definition import in_process_executor
 from dagster.core.definitions.metadata import MetadataValue

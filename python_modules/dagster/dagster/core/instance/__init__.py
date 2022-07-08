@@ -105,7 +105,7 @@ if TYPE_CHECKING:
     from dagster.core.storage.runs import RunStorage
     from dagster.core.storage.schedules import ScheduleStorage
     from dagster.core.workspace.workspace import IWorkspace
-    from dagster.daemon.types import DaemonHeartbeat
+    from dagster.daemon.types import DaemonHeartbeat, DaemonStatus
 
 
 def _check_run_equality(
@@ -2022,6 +2022,20 @@ class DagsterInstance:
         if self.run_retries_enabled:
             daemons.append(EventLogConsumerDaemon.daemon_type())
         return daemons
+
+    def get_daemon_statuses(
+        self, daemon_types: Optional[List[str]] = None
+    ) -> Dict[str, "DaemonStatus"]:
+        """
+        Get the current status of the daemons. If daemon_types aren't provided, defaults to all
+        required types. Returns a dict of daemon type to status.
+        """
+        from dagster.daemon.controller import get_daemon_statuses
+
+        check.opt_list_param(daemon_types, "daemon_types", of_type=str)
+        return get_daemon_statuses(
+            self, daemon_types=daemon_types or self.get_required_daemon_types(), ignore_errors=True
+        )
 
     # backfill
     def get_backfills(self, status=None, cursor=None, limit=None):

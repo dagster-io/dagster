@@ -1,9 +1,9 @@
 import dagster._check as check
-from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.partition import PartitionsDefinition
-from dagster.core.definitions.partition_key_range import PartitionKeyRange
+from dagster.core.definitions import AssetsDefinition
 
-from .assets import AssetsDefinition
+from .events import AssetKey
+from .partition import PartitionsDefinition
+from .partition_key_range import PartitionKeyRange
 
 
 def get_upstream_partitions_for_partition_range(

@@ -25,7 +25,7 @@ from dagster import (
     repository,
     resource,
 )
-from dagster.core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
+from dagster.core.definitions import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
 from dagster.core.errors import DagsterInvalidSubsetError, DagsterUnmetExecutorRequirementsError
 from dagster.core.test_utils import instance_for_test
 

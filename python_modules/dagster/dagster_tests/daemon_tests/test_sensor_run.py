@@ -44,11 +44,7 @@ from dagster.core.test_utils import (
 )
 from dagster.core.workspace.load_target import PythonFileTarget
 from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.sensor import (
-    SynchronousExecutor,
-    execute_sensor_iteration,
-    execute_sensor_iteration_loop,
-)
+from dagster.daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 
@@ -386,13 +382,13 @@ def workspace_load_target(attribute="the_repo"):
 def get_sensor_executors():
     return [
         pytest.param(
-            SynchronousExecutor(),
-            marks=pytest.mark.skipif(sys.version_info.minor != 9, reason="multithreaded timeouts"),
+            None,
+            marks=pytest.mark.skipif(sys.version_info.minor != 9, reason="timeouts"),
             id="synchronous",
         ),
         pytest.param(
             SingleThreadPoolExecutor(),
-            marks=pytest.mark.skipif(sys.version_info.minor != 9, reason="multithreaded timeouts"),
+            marks=pytest.mark.skipif(sys.version_info.minor != 9, reason="timeouts"),
             id="threadpool",
         ),
     ]
@@ -406,7 +402,7 @@ def evaluate_sensors(instance, workspace, executor, timeout=75):
             instance,
             logger,
             workspace,
-            executor=executor,
+            threadpool_executor=executor,
             debug_futures=futures,
         )
     )

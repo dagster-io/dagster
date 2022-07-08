@@ -73,6 +73,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
             and return an instance of :py:class:`Executor`
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
             executor.
+        description (Optional[str]): A description of the executor.
     """
 
     def __init__(
@@ -245,10 +246,17 @@ def _core_in_process_executor_creation(config: ExecutorConfig) -> "InProcessExec
     )
 
 
-IN_PROC_CONFIG = {
-    "retries": get_retries_config(),
-    "marker_to_close": Field(str, is_required=False),
-}
+IN_PROC_CONFIG = Field(
+    {
+        "retries": get_retries_config(),
+        "marker_to_close": Field(
+            str,
+            is_required=False,
+            description="[DEPRECATED]",
+        ),
+    },
+    description="Execute all steps in a single process.",
+)
 
 
 @executor(
@@ -307,34 +315,58 @@ def _core_multiprocess_executor_creation(config: ExecutorConfig) -> "Multiproces
     )
 
 
-MULTI_PROC_CONFIG = {
-    "max_concurrent": Field(Int, is_required=False, default_value=0),
-    "start_method": Field(
-        Selector(
-            {
-                "spawn": {},
-                "forkserver": {
-                    "preload_modules": Field(
-                        [str],
-                        is_required=False,
-                        description="Explicit modules to preload in the forkserver.",
+MULTI_PROC_CONFIG = Field(
+    {
+        "max_concurrent": Field(
+            Int,
+            default_value=0,
+            description=(
+                "The number of processes that may run concurrently. "
+                "By default, this is set to be the return value of `multiprocessing.cpu_count()`."
+            ),
+        ),
+        "start_method": Field(
+            Selector(
+                fields={
+                    "spawn": Field(
+                        {},
+                        description=(
+                            "Configure the multiprocess executor to start subprocesses "
+                            "using `spawn`."
+                        ),
                     ),
-                },
-                # fork currently unsupported due to threads usage
-            }
+                    "forkserver": Field(
+                        {
+                            "preload_modules": Field(
+                                [str],
+                                is_required=False,
+                                description=(
+                                    "Explicitly specify the modules to preload in the forkserver. "
+                                    "Otherwise, there are two cases for default values if modules "
+                                    "are not specified. If the Dagster job was loaded from a module, "
+                                    "the same module will be preloaded. If not, the `dagster` module "
+                                    "is preloaded."
+                                ),
+                            ),
+                        },
+                        description=(
+                            "Configure the multiprocess executor to start subprocesses "
+                            "using `forkserver`."
+                        ),
+                    ),
+                    # fork currently unsupported due to threads usage
+                }
+            ),
+            is_required=False,
+            description=(
+                "Select how subprocesses are created. By default, `spawn` is selected. See "
+                "https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods."
+            ),
         ),
-        is_required=False,
-        description=(
-            "Select how subprocesses are created. Defaults to spawn.\n"
-            "When forkserver is selected, set_forkserver_preload will be called with either:\n"
-            "* the preload_modules list if provided by config\n"
-            "* the module containing the Job if it was loaded from a module\n"
-            "* dagster\n"
-            "https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods"
-        ),
-    ),
-    "retries": get_retries_config(),
-}
+        "retries": get_retries_config(),
+    },
+    description="Execute each step in an individual process.",
+)
 
 
 @executor(

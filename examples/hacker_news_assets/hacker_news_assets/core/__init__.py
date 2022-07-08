@@ -1,18 +1,17 @@
-from hacker_news_assets.resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
+from hacker_news_assets.partitions import hourly_partitions
 
-from dagster import AssetGroup, schedule_from_partitions
+from dagster import (
+    AssetSelection,
+    build_schedule_from_partitioned_job,
+    define_asset_job,
+    load_assets_from_package_module,
+)
 
 from . import assets
 
-core_assets_prod = AssetGroup.from_package_module(
-    package_module=assets, resource_defs=RESOURCES_PROD
-).prefixed("core")
-core_assets_staging = AssetGroup.from_package_module(
-    package_module=assets, resource_defs=RESOURCES_STAGING
-).prefixed("core")
-core_assets_local = AssetGroup.from_package_module(
-    package_module=assets, resource_defs=RESOURCES_LOCAL
-).prefixed("core")
+CORE = "core"
+
+core_assets = load_assets_from_package_module(package_module=assets, group_name=CORE)
 
 RUN_TAGS = {
     "dagster-k8s/config": {
@@ -24,19 +23,11 @@ RUN_TAGS = {
     }
 }
 
-core_assets_schedule_prod = schedule_from_partitions(
-    core_assets_prod.build_job(name="core_job", tags=RUN_TAGS)
+core_assets_schedule = build_schedule_from_partitioned_job(
+    define_asset_job(
+        "core_job",
+        selection=AssetSelection.groups(CORE),
+        tags=RUN_TAGS,
+        partitions_def=hourly_partitions,
+    )
 )
-
-core_assets_schedule_staging = schedule_from_partitions(
-    core_assets_staging.build_job(name="core_job", tags=RUN_TAGS)
-)
-
-core_assets_schedule_local = schedule_from_partitions(
-    core_assets_local.build_job(name="core_job", tags=RUN_TAGS)
-)
-
-
-core_definitions_prod = [core_assets_prod, core_assets_schedule_prod]
-core_definitions_staging = [core_assets_staging, core_assets_schedule_staging]
-core_definitions_local = [core_assets_local, core_assets_schedule_local]

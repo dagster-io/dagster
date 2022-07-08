@@ -86,6 +86,7 @@ const LoadingContainer = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  z-index: 2;
 `;
 
 const CenteredContainer = styled.div`
@@ -93,6 +94,7 @@ const CenteredContainer = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  z-index: 2;
 `;
 
 const LargeDAGContainer = styled.div`

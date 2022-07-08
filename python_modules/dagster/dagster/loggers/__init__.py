@@ -10,10 +10,23 @@ from dagster.utils.log import default_date_format_string, default_format_string
 
 
 @logger(
-    {
-        "log_level": Field(str, is_required=False, default_value="INFO"),
-        "name": Field(str, is_required=False, default_value="dagster"),
-    },
+    Field(
+        {
+            "log_level": Field(
+                str,
+                is_required=False,
+                default_value="INFO",
+                description="The logger's threshold.",
+            ),
+            "name": Field(
+                str,
+                is_required=False,
+                default_value="dagster",
+                description="The name of your logger.",
+            ),
+        },
+        description="The default colored console logger.",
+    ),
     description="The default colored console logger.",
 )
 def colored_console_logger(init_context):
@@ -37,11 +50,24 @@ def colored_console_logger(init_context):
 
 
 @logger(
-    {
-        "log_level": Field(str, is_required=False, default_value="INFO"),
-        "name": Field(str, is_required=False, default_value="dagster"),
-    },
-    description="A JSON-formatted console logger",
+    Field(
+        {
+            "log_level": Field(
+                str,
+                is_required=False,
+                default_value="INFO",
+                description="The logger's threshold.",
+            ),
+            "name": Field(
+                str,
+                is_required=False,
+                default_value="dagster",
+                description="The name of your logger.",
+            ),
+        },
+        description="A JSON-formatted console logger.",
+    ),
+    description="A JSON-formatted console logger.",
 )
 def json_console_logger(init_context):
     """This logger provides support for sending Dagster logs to stdout in json format.

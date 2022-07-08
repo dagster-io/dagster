@@ -1,6 +1,7 @@
 from typing import Dict
 
 import sqlalchemy as db
+from packaging.version import parse
 
 import dagster._check as check
 from dagster.core.storage.config import mysql_config
@@ -28,6 +29,8 @@ from ..utils import (
     retry_mysql_connection_fn,
     retry_mysql_creation_fn,
 )
+
+MINIMUM_MYSQL_BUCKET_VERSION = "8.0.0"
 
 
 class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
@@ -72,6 +75,8 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         elif "instance_info" not in table_names:
             InstanceInfo.create(self._engine)
 
+        self._mysql_version = self.get_server_version()
+
         super().__init__()
 
     def _init_db(self):
@@ -97,6 +102,13 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
     @classmethod
     def config_type(cls):
         return mysql_config()
+
+    def get_server_version(self):
+        row = self.fetchone("select version()")
+        if not row:
+            return None
+
+        return row[0]
 
     @staticmethod
     def from_config_value(inst_data, config_value):
@@ -134,6 +146,16 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         super(MySQLRunStorage, self).mark_index_built(migration_name)
         if migration_name in self._index_migration_cache:
             del self._index_migration_cache[migration_name]
+
+    @property
+    def supports_bucket_queries(self):
+        if not super().supports_bucket_queries:
+            return False
+
+        if not self._mysql_version:
+            return False
+
+        return parse(self._mysql_version) >= parse(MINIMUM_MYSQL_BUCKET_VERSION)
 
     def add_daemon_heartbeat(self, daemon_heartbeat):
         with self.connect() as conn:

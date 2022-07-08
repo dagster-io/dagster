@@ -17,6 +17,7 @@ import {ReloadAllButton} from '../workspace/ReloadAllButton';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
+import {AssetGlobalLineageLink} from './AssetPageHeader';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
@@ -87,11 +88,15 @@ export const AssetGroupRoot: React.FC<{repoAddress: RepoAddress; tab: 'lineage' 
           </Tag>
         }
         tabs={
-          <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
+          <Box
+            flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+            margin={{right: 4}}
+          >
             <Tabs selectedTabId={tab}>
               <TabLink id="lineage" title="Lineage" to={`${groupPath}/lineage`} />
               <TabLink id="list" title="List" to={`${groupPath}/list`} />
             </Tabs>
+            <AssetGlobalLineageLink />
           </Box>
         }
       />

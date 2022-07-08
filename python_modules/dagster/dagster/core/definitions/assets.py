@@ -1,4 +1,5 @@
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Dict,
     Iterable,
@@ -13,29 +14,29 @@ from typing import (
 
 import dagster._check as check
 from dagster.core.decorator_utils import get_function_params
-from dagster.core.definitions import (
-    GraphDefinition,
-    NodeDefinition,
-    NodeHandle,
-    OpDefinition,
-    ResourceDefinition,
-)
-from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.partition import PartitionsDefinition
-from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
 from dagster.core.errors import DagsterInvalidInvocationError
-from dagster.core.execution.context.compute import OpExecutionContext
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import deprecation_warning
 
-from ..definitions.resource_requirement import (
+from .dependency import NodeHandle
+from .events import AssetKey
+from .graph_definition import GraphDefinition
+from .op_definition import OpDefinition
+from .partition import PartitionsDefinition
+from .partition_mapping import PartitionMapping
+from .resource_definition import ResourceDefinition
+from .resource_requirement import (
     ResourceAddable,
     ResourceRequirement,
     ensure_requirements_satisfied,
     get_resource_key_conflicts,
 )
-from .partition_mapping import PartitionMapping
+from .solid_definition import NodeDefinition
 from .source_asset import SourceAsset
+from .utils import DEFAULT_GROUP_NAME, validate_group_name
+
+if TYPE_CHECKING:
+    from dagster.core.execution.context.compute import OpExecutionContext
 
 
 class AssetsDefinition(ResourceAddable):
@@ -67,6 +68,9 @@ class AssetsDefinition(ResourceAddable):
         # if adding new fields, make sure to handle them in the with_prefix_or_group
         # and from_graph methods
     ):
+        if isinstance(node_def, GraphDefinition):
+            _validate_graph_def(node_def)
+
         self._node_def = node_def
         self._keys_by_input_name = check.dict_param(
             keys_by_input_name,
@@ -122,6 +126,7 @@ class AssetsDefinition(ResourceAddable):
 
     def __call__(self, *args, **kwargs):
         from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
+        from dagster.core.execution.context.compute import OpExecutionContext
 
         if isinstance(self.node_def, GraphDefinition):
             return self._node_def(*args, **kwargs)
@@ -155,6 +160,7 @@ class AssetsDefinition(ResourceAddable):
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from a GraphDefinition.
@@ -180,6 +186,12 @@ class AssetsDefinition(ResourceAddable):
                 A mapping of resource keys to resource definitions. These resources
                 will be initialized during execution, and can be accessed from the
                 body of ops in the graph during execution.
+            partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
+                keys for this asset to partition keys of upstream assets. Each key in the dictionary
+                correponds to one of the input assets, and each value is a PartitionMapping.
+                If no entry is provided for a particular asset dependency, the partition mapping defaults
+                to the default partition mapping for the partitions definition, which is typically maps
+                partition keys to the same partition keys in upstream assets.
         """
         return AssetsDefinition._from_node(
             graph_def,
@@ -189,6 +201,7 @@ class AssetsDefinition(ResourceAddable):
             partitions_def,
             group_name,
             resource_defs,
+            partition_mappings,
         )
 
     @staticmethod
@@ -199,6 +212,7 @@ class AssetsDefinition(ResourceAddable):
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
+        partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from an OpDefinition.
@@ -220,6 +234,12 @@ class AssetsDefinition(ResourceAddable):
                 compose the assets.
             group_name (Optional[str]): A group name for the constructed asset. Assets without a
                 group name are assigned to a group called "default".
+            partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
+                keys for this asset to partition keys of upstream assets. Each key in the dictionary
+                correponds to one of the input assets, and each value is a PartitionMapping.
+                If no entry is provided for a particular asset dependency, the partition mapping defaults
+                to the default partition mapping for the partitions definition, which is typically maps
+                partition keys to the same partition keys in upstream assets.
         """
         return AssetsDefinition._from_node(
             op_def,
@@ -228,6 +248,7 @@ class AssetsDefinition(ResourceAddable):
             internal_asset_deps,
             partitions_def,
             group_name,
+            partition_mappings=partition_mappings,
         )
 
     @staticmethod
@@ -239,10 +260,14 @@ class AssetsDefinition(ResourceAddable):
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
     ) -> "AssetsDefinition":
         node_def = check.inst_param(node_def, "node_def", (GraphDefinition, OpDefinition))
-        keys_by_input_name = check.opt_dict_param(
-            keys_by_input_name, "keys_by_input_name", key_type=str, value_type=AssetKey
+        keys_by_input_name = _infer_keys_by_input_names(
+            node_def,
+            check.opt_dict_param(
+                keys_by_input_name, "keys_by_input_name", key_type=str, value_type=AssetKey
+            ),
         )
         keys_by_output_name = check.opt_dict_param(
             keys_by_output_name,
@@ -277,10 +302,7 @@ class AssetsDefinition(ResourceAddable):
         )
 
         return AssetsDefinition(
-            keys_by_input_name=_infer_keys_by_input_names(
-                node_def,
-                keys_by_input_name or {},
-            ),
+            keys_by_input_name=keys_by_input_name,
             keys_by_output_name=keys_by_output_name,
             node_def=node_def,
             asset_deps=transformed_internal_asset_deps or None,
@@ -291,6 +313,12 @@ class AssetsDefinition(ResourceAddable):
             ),
             group_names_by_key=group_names_by_key,
             resource_defs=resource_defs,
+            partition_mappings={
+                keys_by_input_name[input_name]: partition_mapping
+                for input_name, partition_mapping in partition_mappings.items()
+            }
+            if partition_mappings
+            else None,
         )
 
     @property
@@ -642,8 +670,8 @@ def _infer_keys_by_output_names(
 
 def _build_invocation_context_with_included_resources(
     assets_def: AssetsDefinition,
-    context: OpExecutionContext,
-) -> OpExecutionContext:
+    context: "OpExecutionContext",
+) -> "OpExecutionContext":
     from dagster.core.execution.context.invocation import (
         UnboundSolidExecutionContext,
         build_op_context,
@@ -675,3 +703,37 @@ def _build_invocation_context_with_included_resources(
         # If user is mocking OpExecutionContext, send it through (we don't know
         # what modifications they might be making, and we don't want to override)
         return context
+
+
+def _validate_graph_def(graph_def: GraphDefinition, prefix: Optional[Sequence[str]] = None):
+    """Ensure that all leaf nodes are mapped to graph outputs."""
+    from dagster.core.definitions.graph_definition import _create_adjacency_lists
+
+    prefix = check.opt_list_param(prefix, "prefix")
+
+    # recursively validate any sub-graphs
+    for inner_node_def in graph_def.node_defs:
+        if isinstance(inner_node_def, GraphDefinition):
+            _validate_graph_def(inner_node_def, prefix=prefix + [graph_def.name])
+
+    # leaf nodes have no downstream nodes
+    forward_edges, _ = _create_adjacency_lists(graph_def.solids, graph_def.dependency_structure)
+    leaf_nodes = {
+        node_name for node_name, downstream_nodes in forward_edges.items() if not downstream_nodes
+    }
+
+    # set of nodes that have outputs mapped to a graph output
+    mapped_output_nodes = {
+        output_mapping.maps_from.solid_name for output_mapping in graph_def.output_mappings
+    }
+
+    # leaf nodes which do not have an associated mapped output
+    unmapped_leaf_nodes = {".".join(prefix + [node]) for node in leaf_nodes - mapped_output_nodes}
+
+    check.invariant(
+        not unmapped_leaf_nodes,
+        f"All leaf nodes within graph '{graph_def.name}' must generate outputs which are mapped to "
+        "outputs of the graph, and produce assets. The following leaf node(s) are non-asset producing "
+        f"ops: {unmapped_leaf_nodes}. This behavior is not currently supported because these ops "
+        "are not required for the creation of the associated asset(s).",
+    )

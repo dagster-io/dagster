@@ -3,34 +3,49 @@ import warnings
 from collections import defaultdict
 from importlib import import_module
 from types import ModuleType
-from typing import Any, Dict, FrozenSet, Iterable, List, Mapping, Optional, Sequence, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    FrozenSet,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+)
 
 import dagster._check as check
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster.core.definitions.executor_definition import in_process_executor
 from dagster.core.definitions.utils import DEFAULT_IO_MANAGER_KEY
-from dagster.core.errors import DagsterUnmetExecutorRequirementsError
-from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterUnmetExecutorRequirementsError
 from dagster.core.selector.subset_selector import AssetSelectionData
+from dagster.core.storage.fs_io_manager import fs_io_manager
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import ExperimentalWarning
 
-from ..definitions.asset_layer import build_asset_selection_job
-from ..definitions.executor_definition import ExecutorDefinition
-from ..definitions.job_definition import JobDefinition
-from ..definitions.partition import PartitionsDefinition
-from ..definitions.resource_definition import ResourceDefinition
-from ..errors import DagsterInvalidDefinitionError
-from ..storage.fs_io_manager import fs_io_manager
+from .asset_layer import build_asset_selection_job
 from .assets import AssetsDefinition
 from .assets_job import build_assets_job, check_resources_satisfy_requirements
+from .dependency import NodeHandle
+from .events import AssetKey, CoercibleToAssetKeyPrefix
+from .executor_definition import ExecutorDefinition, in_process_executor
+from .job_definition import JobDefinition
 from .load_assets_from_modules import (
     assets_and_source_assets_from_modules,
     assets_and_source_assets_from_package_module,
     prefix_assets,
 )
+from .partition import PartitionsDefinition
+from .resource_definition import ResourceDefinition
 from .source_asset import SourceAsset
+
+if TYPE_CHECKING:
+    from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 
 # Prefix for auto created jobs that are used to materialize assets
 ASSET_BASE_JOB_PREFIX = "__ASSET_JOB"
@@ -355,7 +370,7 @@ class AssetGroup:
 
     def materialize(
         self, selection: Optional[Union[str, List[str]]] = None, run_config: Optional[Any] = None
-    ) -> ExecuteInProcessResult:
+    ) -> "ExecuteInProcessResult":
         """
         Executes an in-process run that materializes all assets in the group.
 

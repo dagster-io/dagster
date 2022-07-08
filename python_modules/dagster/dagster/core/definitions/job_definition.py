@@ -87,6 +87,7 @@ class JobDefinition(PipelineDefinition):
         _input_values: Optional[Mapping[str, object]] = None,
         _metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         _executor_def_specified: bool = False,
+        _logger_defs_specified: bool = False,
     ):
 
         # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
@@ -99,6 +100,7 @@ class JobDefinition(PipelineDefinition):
         )
 
         self._executor_def_specified = _executor_def_specified
+        self._logger_defs_specified = _logger_defs_specified
         self._cached_partition_set: Optional["PartitionSetDefinition"] = None
         self._subset_selection_data = check.opt_inst_param(
             _subset_selection_data,
@@ -240,6 +242,7 @@ class JobDefinition(PipelineDefinition):
             asset_layer=self.asset_layer,
             _input_values=input_values,
             _executor_def_specified=self._executor_def_specified,
+            _logger_defs_specified=self._logger_defs_specified,
         )
 
         ephemeral_job = ephemeral_job.get_job_def_for_subset_selection(
@@ -382,6 +385,7 @@ class JobDefinition(PipelineDefinition):
                 graph_def=sub_graph,
                 version_strategy=self.version_strategy,
                 _executor_def_specified=self._executor_def_specified,
+                _logger_defs_specified=self._logger_defs_specified,
                 _subset_selection_data=OpSelectionData(
                     op_selection=op_selection,
                     resolved_op_selection=set(
@@ -473,6 +477,7 @@ class JobDefinition(PipelineDefinition):
             asset_layer=self.asset_layer,
             _subset_selection_data=self._subset_selection_data,
             _executor_def_specified=self._executor_def_specified,
+            _logger_defs_specified=self._logger_defs_specified,
         )
 
         update_wrapper(job_def, self, updated=())
@@ -517,6 +522,30 @@ class JobDefinition(PipelineDefinition):
             asset_layer=self.asset_layer,
             _input_values=self._input_values,
             _executor_def_specified=True,
+            _logger_defs_specified=self._logger_defs_specified,
+        )
+
+    def with_logger_defs(self, logger_defs: Mapping[str, LoggerDefinition]) -> "JobDefinition":
+        return JobDefinition(
+            graph_def=self.graph,
+            resource_defs=dict(self.resource_defs),
+            executor_def=self.executor_def,
+            logger_defs=logger_defs,
+            config_mapping=self.config_mapping,
+            partitioned_config=self.partitioned_config,
+            name=self.name,
+            description=self.description,
+            preset_defs=self.preset_defs,
+            tags=self.tags,
+            _metadata_entries=self.metadata,
+            hook_defs=self.hook_defs,
+            op_retry_policy=self._solid_retry_policy,
+            version_strategy=self.version_strategy,
+            _subset_selection_data=self._subset_selection_data,
+            asset_layer=self.asset_layer,
+            _input_values=self._input_values,
+            _executor_def_specified=self._executor_def_specified,
+            _logger_defs_specified=True,
         )
 
 
