@@ -4,8 +4,8 @@ import React from 'react';
 
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
-import {AssetKey} from './types';
 
+import {AssetKey} from './types';
 import {AssetIdScanQuery} from './types/AssetIdScanQuery';
 
 export const AssetDefinedInMultipleReposNotice: React.FC<{
