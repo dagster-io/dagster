@@ -8,9 +8,7 @@ from urllib.parse import urlparse
 import boto3
 from botocore.stub import Stubber
 
-from dagster import Field, StringSource
-from dagster import _check as check
-from dagster import resource
+from dagster import Field, StringSource, _check as check, resource
 
 
 class AthenaError(Exception):

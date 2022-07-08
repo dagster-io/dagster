@@ -54,9 +54,7 @@ from dagster import (
     TableConstraints,
     TableRecord,
     TableSchema,
-)
-from dagster import _check as check
-from dagster import (
+    _check as check,
     asset,
     dagster_type_loader,
     dagster_type_materializer,

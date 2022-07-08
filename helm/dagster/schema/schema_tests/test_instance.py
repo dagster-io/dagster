@@ -6,16 +6,10 @@ from dagster_gcp.gcs.compute_log_manager import GCSComputeLogManager
 from kubernetes.client import models
 from schema.charts.dagster.subschema.compute_log_manager import (
     AzureBlobComputeLogManager as AzureBlobComputeLogManagerModel,
-)
-from schema.charts.dagster.subschema.compute_log_manager import (
     ComputeLogManager,
     ComputeLogManagerConfig,
     ComputeLogManagerType,
-)
-from schema.charts.dagster.subschema.compute_log_manager import (
     GCSComputeLogManager as GCSComputeLogManagerModel,
-)
-from schema.charts.dagster.subschema.compute_log_manager import (
     S3ComputeLogManager as S3ComputeLogManagerModel,
 )
 from schema.charts.dagster.subschema.daemon import (

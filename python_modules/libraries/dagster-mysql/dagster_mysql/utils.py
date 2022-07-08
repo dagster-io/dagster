@@ -1,8 +1,7 @@
 import logging
 import time
 from contextlib import contextmanager
-from urllib.parse import quote_plus as urlquote
-from urllib.parse import urlparse
+from urllib.parse import quote_plus as urlquote, urlparse
 
 import mysql.connector as mysql
 import sqlalchemy as db

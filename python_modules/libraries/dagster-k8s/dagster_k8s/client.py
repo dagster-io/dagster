@@ -5,8 +5,7 @@ from enum import Enum
 
 import kubernetes
 
-from dagster import DagsterInstance
-from dagster import _check as check
+from dagster import DagsterInstance, _check as check
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 
 DEFAULT_WAIT_TIMEOUT = 86400.0  # 1 day

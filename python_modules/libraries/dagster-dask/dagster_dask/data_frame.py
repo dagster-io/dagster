@@ -18,9 +18,10 @@ from dagster import (
     Shape,
     String,
     TypeCheck,
+    _check as check,
+    dagster_type_loader,
+    dagster_type_materializer,
 )
-from dagster import _check as check
-from dagster import dagster_type_loader, dagster_type_materializer
 
 from .utils import DataFrameUtilities, apply_utilities_to_df
 

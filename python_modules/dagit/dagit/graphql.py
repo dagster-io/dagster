@@ -6,8 +6,7 @@ from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, Union, cast
 from dagit.templates.playground import TEMPLATE
 from dagster_graphql.implementation.utils import ErrorCapture
 from graphene import Schema
-from graphql.error import GraphQLError, GraphQLLocatedError
-from graphql.error import format_error as format_graphql_error
+from graphql.error import GraphQLError, GraphQLLocatedError, format_error as format_graphql_error
 from graphql.execution import ExecutionResult
 from rx import Observable
 from rx.concurrency import thread_pool_scheduler

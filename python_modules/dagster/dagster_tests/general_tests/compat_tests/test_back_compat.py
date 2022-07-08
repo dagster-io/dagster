@@ -12,9 +12,7 @@ import pendulum
 import pytest
 import sqlalchemy as db
 
-from dagster import AssetKey, AssetMaterialization, Output
-from dagster import _check as check
-from dagster import file_relative_path, job
+from dagster import AssetKey, AssetMaterialization, Output, _check as check, file_relative_path, job
 from dagster._cli.debug import DebugRunPayload
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.events import DagsterEvent

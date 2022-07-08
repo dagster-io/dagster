@@ -2,8 +2,7 @@ import sys
 from collections import defaultdict
 from typing import Dict
 
-from dagster import DagsterEvent, DagsterEventType
-from dagster import _check as check
+from dagster import DagsterEvent, DagsterEventType, _check as check
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,

@@ -2,8 +2,7 @@ import graphene
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 
-from dagster import DagsterInstance
-from dagster import _check as check
+from dagster import DagsterInstance, _check as check
 from dagster._core.host_representation import (
     ExternalRepository,
     GrpcServerRepositoryLocation,

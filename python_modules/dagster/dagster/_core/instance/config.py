@@ -2,8 +2,7 @@ import os
 import warnings
 from typing import TYPE_CHECKING, Dict, Optional
 
-from dagster import Array, Bool
-from dagster import _check as check
+from dagster import Array, Bool, _check as check
 from dagster._config import Field, Permissive, ScalarUnion, Selector, validate_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.config import mysql_config, pg_config

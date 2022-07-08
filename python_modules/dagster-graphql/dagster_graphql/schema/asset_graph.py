@@ -10,8 +10,7 @@ from dagster_graphql.schema.solids import (
     GrapheneSolidDefinition,
 )
 
-from dagster import AssetKey
-from dagster import _check as check
+from dagster import AssetKey, _check as check
 from dagster._core.host_representation import ExternalRepository, RepositoryLocation
 from dagster._core.host_representation.external import ExternalPipeline
 from dagster._core.host_representation.external_data import (

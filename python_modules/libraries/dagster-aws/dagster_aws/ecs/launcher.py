@@ -6,8 +6,7 @@ from typing import Any, Dict, Optional
 import boto3
 from botocore.exceptions import ClientError
 
-from dagster import Array, Field, Noneable, ScalarUnion, StringSource
-from dagster import _check as check
+from dagster import Array, Field, Noneable, ScalarUnion, StringSource, _check as check
 from dagster._core.events import EngineEventData, MetadataEntry
 from dagster._core.launcher.base import (
     CheckRunHealthResult,

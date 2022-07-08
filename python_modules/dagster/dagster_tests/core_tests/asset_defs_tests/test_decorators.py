@@ -12,9 +12,11 @@ from dagster import (
     Output,
     StaticPartitionsDefinition,
     String,
+    _check as check,
+    build_op_context,
+    io_manager,
+    resource,
 )
-from dagster import _check as check
-from dagster import build_op_context, io_manager, resource
 from dagster._core.definitions import (
     AssetIn,
     AssetsDefinition,

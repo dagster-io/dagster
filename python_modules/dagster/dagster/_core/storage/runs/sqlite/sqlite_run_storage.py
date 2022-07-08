@@ -5,8 +5,7 @@ from urllib.parse import urljoin, urlparse
 import sqlalchemy as db
 from sqlalchemy.pool import NullPool
 
-from dagster import StringSource
-from dagster import _check as check
+from dagster import StringSource, _check as check
 from dagster._core.storage.sql import (
     check_alembic_revision,
     create_engine,

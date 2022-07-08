@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, NamedTuple, Optional, cast
 
-from dagster import Array, Field, Noneable, Shape, StringSource
-from dagster import _check as check
+from dagster import Array, Field, Noneable, Shape, StringSource, _check as check
 from dagster._config import process_config
 from dagster._core.container_context import process_shared_container_context_config
 from dagster._core.errors import DagsterInvalidConfigError

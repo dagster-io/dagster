@@ -9,9 +9,9 @@ from dagster import (
     MetadataValue,
     OutputContext,
     StringSource,
+    _check as check,
+    io_manager,
 )
-from dagster import _check as check
-from dagster import io_manager
 from dagster._utils import PICKLE_PROTOCOL
 
 

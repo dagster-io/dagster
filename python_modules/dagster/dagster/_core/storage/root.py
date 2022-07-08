@@ -1,7 +1,6 @@
 import os
 
-from dagster import StringSource
-from dagster import _check as check
+from dagster import StringSource, _check as check
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 

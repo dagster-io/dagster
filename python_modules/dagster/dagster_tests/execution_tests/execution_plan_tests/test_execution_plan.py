@@ -1,7 +1,6 @@
 import pytest
 
-from dagster import DagsterInstance, Int, Output
-from dagster import _check as check
+from dagster import DagsterInstance, Int, Output, _check as check
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import (
     DagsterInvalidConfigError,

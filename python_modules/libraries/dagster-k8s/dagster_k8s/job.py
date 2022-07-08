@@ -9,8 +9,7 @@ from typing import Any, Dict, List, Optional
 import kubernetes
 
 import dagster._check as check
-from dagster import Array, BoolSource, Field, Noneable, StringSource
-from dagster import __version__ as dagster_version
+from dagster import Array, BoolSource, Field, Noneable, StringSource, __version__ as dagster_version
 from dagster._config import Permissive, Shape, validate_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.utils import parse_env_var

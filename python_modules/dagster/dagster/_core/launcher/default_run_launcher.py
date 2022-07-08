@@ -2,8 +2,7 @@ import time
 from typing import cast
 
 import dagster._seven as seven
-from dagster import Bool, Field
-from dagster import _check as check
+from dagster import Bool, Field, _check as check
 from dagster._core.errors import DagsterInvariantViolationError, DagsterLaunchFailedError
 from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster._core.host_representation.repository_location import GrpcServerRepositoryLocation

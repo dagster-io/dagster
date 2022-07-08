@@ -5,8 +5,7 @@ from typing import Optional, Sequence, Union
 import click
 
 import dagster._check as check
-from dagster import DagsterInvariantViolationError
-from dagster import __version__ as dagster_version
+from dagster import DagsterInvariantViolationError, __version__ as dagster_version
 from dagster._cli.workspace.cli_target import (
     get_external_repository_from_kwargs,
     repository_target_argument,

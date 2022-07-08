@@ -10,9 +10,7 @@ from dagster_aws.emr import EmrError, EmrJobRunner, emr_step_main
 from dagster_aws.emr.configs_spark import spark_config as get_spark_config
 from dagster_aws.utils.mrjob.log4j import parse_hadoop_log4j_records
 
-from dagster import Field, StringSource
-from dagster import _check as check
-from dagster import resource
+from dagster import Field, StringSource, _check as check, resource
 from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.errors import DagsterInvariantViolationError, raise_execution_interrupts
 from dagster._core.execution.plan.external_step import (

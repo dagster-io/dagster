@@ -1,5 +1,4 @@
-from dagster import Field, Output, String
-from dagster import _check as check
+from dagster import Field, Output, String, _check as check
 from dagster._legacy import OutputDefinition, execute_pipeline, pipeline, solid
 
 

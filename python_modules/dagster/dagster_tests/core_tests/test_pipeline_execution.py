@@ -14,9 +14,9 @@ from dagster import (
     Output,
     ResourceDefinition,
     String,
+    _check as check,
+    reconstructable,
 )
-from dagster import _check as check
-from dagster import reconstructable
 from dagster._core.definitions import Node
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.graph_definition import _create_adjacency_lists

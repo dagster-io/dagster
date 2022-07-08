@@ -10,8 +10,7 @@ from typing import Callable, ContextManager, Tuple
 
 import pendulum
 
-from dagster import DagsterInstance
-from dagster import _check as check
+from dagster import DagsterInstance, _check as check
 from dagster._core.telemetry import DAEMON_ALIVE, log_action
 from dagster._core.workspace import IWorkspace
 from dagster._daemon.backfill import execute_backfill_iteration

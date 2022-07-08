@@ -1,8 +1,7 @@
 import dagster._check as check
 from dagster._builtins import Bool, Float, Int, String
 
-from .dagster_type import Any as RuntimeAny
-from .dagster_type import List
+from .dagster_type import Any as RuntimeAny, List
 from .python_dict import PythonDict
 from .python_set import PythonSet
 from .python_tuple import PythonTuple

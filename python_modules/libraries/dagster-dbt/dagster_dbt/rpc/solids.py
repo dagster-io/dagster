@@ -18,8 +18,8 @@ from dagster import (
     Permissive,
     RetryRequested,
     String,
+    _check as check,
 )
-from dagster import _check as check
 from dagster._core.execution.context.compute import SolidExecutionContext
 from dagster._legacy import InputDefinition, OutputDefinition, solid
 

@@ -5,8 +5,7 @@ import types
 import pytest
 import yaml
 
-from dagster import DagsterEventType, DagsterInvalidConfigError, Output
-from dagster import _check as check
+from dagster import DagsterEventType, DagsterInvalidConfigError, Output, _check as check
 from dagster._core.definitions.events import RetryRequested
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType

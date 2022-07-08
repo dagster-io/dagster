@@ -27,7 +27,7 @@ from dagster._utils.backcompat import (
     experimental_class_warning,
 )
 
-from .table import TableColumn, TableColumnConstraints, TableConstraints, TableRecord, TableSchema
+from .table import TableColumn, TableRecord, TableSchema
 
 if TYPE_CHECKING:
     from dagster._core.definitions.events import AssetKey

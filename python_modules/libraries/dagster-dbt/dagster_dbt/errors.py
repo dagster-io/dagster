@@ -1,8 +1,7 @@
 from abc import ABC
 from typing import Any, Mapping, Sequence
 
-from dagster import Failure, MetadataEntry
-from dagster import _check as check
+from dagster import Failure, MetadataEntry, _check as check
 
 
 class DagsterDbtError(Failure, ABC):

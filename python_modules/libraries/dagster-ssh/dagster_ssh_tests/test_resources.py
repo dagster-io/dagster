@@ -5,8 +5,7 @@ from unittest import mock
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
-from dagster_ssh.resources import SSHResource, key_from_str
-from dagster_ssh.resources import ssh_resource as sshresource
+from dagster_ssh.resources import SSHResource, key_from_str, ssh_resource as sshresource
 
 from dagster import Field
 from dagster._legacy import ModeDefinition, execute_solid, solid

@@ -27,9 +27,16 @@ from dagster_k8s.utils import (
     wait_for_job_success,
 )
 
-from dagster import DagsterEvent, DagsterEventType, DagsterInstance, Executor, MetadataEntry
-from dagster import _check as check
-from dagster import executor, multiple_process_executor_requirements
+from dagster import (
+    DagsterEvent,
+    DagsterEventType,
+    DagsterInstance,
+    Executor,
+    MetadataEntry,
+    _check as check,
+    executor,
+    multiple_process_executor_requirements,
+)
 from dagster._cli.api import ExecuteStepArgs
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.events import EngineEventData

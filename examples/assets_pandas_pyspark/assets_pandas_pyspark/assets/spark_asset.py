@@ -1,6 +1,4 @@
-from pyspark.sql import DataFrame as SparkDF
-from pyspark.sql import Window
-from pyspark.sql import functions as f
+from pyspark.sql import DataFrame as SparkDF, Window, functions as f
 
 from dagster import asset
 

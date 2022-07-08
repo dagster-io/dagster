@@ -4,9 +4,9 @@ import graphene
 from graphene.types.generic import GenericScalar
 
 import dagster._check as check
-from dagster._config import ConfigSchemaSnapshot
-from dagster._config import EvaluationError as DagsterEvaluationError
 from dagster._config import (
+    ConfigSchemaSnapshot,
+    EvaluationError as DagsterEvaluationError,
     EvaluationStackListItemEntry,
     EvaluationStackMapKeyEntry,
     EvaluationStackMapValueEntry,

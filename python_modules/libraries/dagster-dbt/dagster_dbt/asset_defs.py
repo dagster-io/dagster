@@ -19,9 +19,10 @@ from dagster import (
     PartitionsDefinition,
     TableColumn,
     TableSchema,
+    _check as check,
+    get_dagster_logger,
+    op,
 )
-from dagster import _check as check
-from dagster import get_dagster_logger, op
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.metadata import RawMetadataValue
