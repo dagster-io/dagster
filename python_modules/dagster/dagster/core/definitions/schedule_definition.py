@@ -45,9 +45,6 @@ from .utils import check_valid_name, validate_tags
 
 T = TypeVar("T")
 
-# Preserve ScheduleExecutionContext for backcompat so type annotations don't break.
-ScheduleExecutionContext: TypeAlias = "ScheduleEvaluationContext"
-
 RunConfig: TypeAlias = Mapping[str, Any]
 RunRequestIterator: TypeAlias = Iterator[Union[RunRequest, SkipReason]]
 
@@ -489,7 +486,7 @@ class ScheduleDefinition:
             execution_fn = self._execution_fn.wrapped_fn
         else:
             execution_fn = cast(
-                Callable[[ScheduleExecutionContext], "ScheduleEvaluationFunctionReturn"],
+                Callable[[ScheduleEvaluationContext], "ScheduleEvaluationFunctionReturn"],
                 self._execution_fn,
             )
 
@@ -554,3 +551,7 @@ class ScheduleDefinition:
     @property
     def default_status(self) -> DefaultScheduleStatus:
         return self._default_status
+
+
+# Preserve ScheduleExecutionContext for backcompat so type annotations don't break.
+ScheduleExecutionContext = ScheduleEvaluationContext
