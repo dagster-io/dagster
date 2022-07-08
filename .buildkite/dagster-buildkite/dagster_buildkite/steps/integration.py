@@ -10,7 +10,7 @@ from ..utils import (
     connect_sibling_docker_container,
     network_buildkite_container,
 )
-from .test_images import test_image_depends_fn
+from .test_project import test_project_depends_fn
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 DAGSTER_CURRENT_BRANCH = "current_branch"
@@ -182,7 +182,7 @@ def build_integration_suite_steps(
         ],
         upload_coverage=upload_coverage,
         pytest_extra_cmds=pytest_extra_cmds,
-        pytest_step_dependencies=test_image_depends_fn,
+        pytest_step_dependencies=test_project_depends_fn,
         pytest_tox_factors=pytest_tox_factors,
         retries=2,
         timeout_in_minutes=30,

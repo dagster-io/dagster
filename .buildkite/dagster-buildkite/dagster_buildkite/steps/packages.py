@@ -5,7 +5,7 @@ from typing import List, Optional
 from dagster_buildkite.defines import GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
 from dagster_buildkite.package_spec import PackageSpec
 from dagster_buildkite.python_version import AvailablePythonVersion
-from dagster_buildkite.steps.test_images import core_test_image_depends_fn, test_image_depends_fn
+from dagster_buildkite.steps.test_project import test_project_core_depends_fn, test_project_depends_fn
 from dagster_buildkite.utils import (
     BuildkiteStep,
     connect_sibling_docker_container,
@@ -391,7 +391,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "python_modules/dagster",
         pytest_extra_cmds=dagster_extra_cmds,
         env_vars=["AWS_ACCOUNT_ID"],
-        pytest_step_dependencies=core_test_image_depends_fn,
+        pytest_step_dependencies=test_project_core_depends_fn,
         pytest_tox_factors=[
             "api_tests",
             "cli_tests",
@@ -450,7 +450,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "GOOGLE_APPLICATION_CREDENTIALS",
         ],
         pytest_extra_cmds=airflow_extra_cmds,
-        pytest_step_dependencies=test_image_depends_fn,
+        pytest_step_dependencies=test_project_depends_fn,
         pytest_tox_factors=["default", "requiresairflowdb"],
     ),
     PackageSpec(
@@ -465,13 +465,13 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "python_modules/libraries/dagster-celery",
         env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
         pytest_extra_cmds=celery_extra_cmds,
-        pytest_step_dependencies=test_image_depends_fn,
+        pytest_step_dependencies=test_project_depends_fn,
     ),
     PackageSpec(
         "python_modules/libraries/dagster-celery-docker",
         env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
         pytest_extra_cmds=celery_docker_extra_cmds,
-        pytest_step_dependencies=test_image_depends_fn,
+        pytest_step_dependencies=test_project_depends_fn,
     ),
     PackageSpec(
         "python_modules/libraries/dagster-dask",
@@ -484,7 +484,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "python_modules/libraries/dagster-docker",
         env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
         pytest_extra_cmds=docker_extra_cmds,
-        pytest_step_dependencies=test_image_depends_fn,
+        pytest_step_dependencies=test_project_depends_fn,
     ),
     PackageSpec(
         "python_modules/libraries/dagster-gcp",
@@ -507,7 +507,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "BUILDKITE_SECRETS_BUCKET",
         ],
         pytest_extra_cmds=k8s_extra_cmds,
-        pytest_step_dependencies=test_image_depends_fn,
+        pytest_step_dependencies=test_project_depends_fn,
     ),
     PackageSpec("python_modules/libraries/dagster-mlflow", upload_coverage=False),
     PackageSpec("python_modules/libraries/dagster-mysql", pytest_extra_cmds=mysql_extra_cmds),

@@ -9,7 +9,7 @@ from ..step_builder import CommandStepBuilder
 from ..utils import BuildkiteLeafStep, GroupStep
 
 
-def build_test_image_steps() -> List[GroupStep]:
+def build_test_project_steps() -> List[GroupStep]:
     """This set of tasks builds and pushes Docker images, which are used by the dagster-airflow and
     the dagster-k8s tests
     """
@@ -20,9 +20,9 @@ def build_test_image_steps() -> List[GroupStep]:
     py_versions = AvailablePythonVersion.get_all()
 
     for version in py_versions:
-        key = _test_image_step(version)
+        key = _test_project_step_key(version)
         steps.append(
-            CommandStepBuilder(f":docker: test-image {version}", key=key)
+            CommandStepBuilder(f":docker: test-project {version}", key=key)
             # these run commands are coupled to the way the buildkite-build-test-project-image is built
             # see python_modules/automation/automation/docker/images/buildkite-build-test-project-image
             .run(
@@ -35,15 +35,15 @@ def build_test_image_steps() -> List[GroupStep]:
                 + "-"
                 + TEST_PROJECT_BASE_IMAGE_VERSION,
                 # build and tag test image
-                "export TEST_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/test-project:$${BUILDKITE_BUILD_ID}-"
+                "export TEST_PROJECT_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/test-project:$${BUILDKITE_BUILD_ID}-"
                 + version,
                 "./python_modules/dagster-test/dagster_test/test_project/build.sh "
                 + version
-                + " $${TEST_IMAGE}",
+                + " $${TEST_PROJECT_IMAGE}",
                 #
                 # push the built image
                 'echo -e "--- \033[32m:docker: Pushing Docker image\033[0m"',
-                "docker push $${TEST_IMAGE}",
+                "docker push $${TEST_PROJECT_IMAGE}",
             )
             .on_python_image(
                 "buildkite-build-test-project-image:py{python_version}-{image_version}".format(
@@ -61,9 +61,9 @@ def build_test_image_steps() -> List[GroupStep]:
             .build()
         )
 
-        key = _core_test_image_step(version)
+        key = _test_project_core_step_key(version)
         steps.append(
-            CommandStepBuilder(f":docker: test-image-core {version}", key=key)
+            CommandStepBuilder(f":docker: test-project-core {version}", key=key)
             # these run commands are coupled to the way the buildkite-build-test-project-image is built
             # see python_modules/automation/automation/docker/images/buildkite-build-test-project-image
             .run(
@@ -75,13 +75,13 @@ def build_test_image_steps() -> List[GroupStep]:
                 + "-"
                 + TEST_PROJECT_BASE_IMAGE_VERSION,
                 # build and tag test image
-                "export TEST_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/test-project-core:$${BUILDKITE_BUILD_ID}-"
+                "export TEST_PROJECT_CORE_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/test-project-core:$${BUILDKITE_BUILD_ID}-"
                 + version,
-                "./python_modules/dagster-test/build_core.sh " + version + " $${TEST_IMAGE}",
+                "./python_modules/dagster-test/build_core.sh " + version + " $${TEST_PROJECT_CORE_IMAGE}",
                 #
                 # push the built image
                 'echo -e "--- \033[32m:docker: Pushing Docker image\033[0m"',
-                "docker push $${TEST_IMAGE}",
+                "docker push $${TEST_PROJECT_CORE_IMAGE}",
             )
             .on_python_image(
                 "buildkite-build-test-project-image:py{python_version}-{image_version}".format(
@@ -99,24 +99,24 @@ def build_test_image_steps() -> List[GroupStep]:
         )
     return [
         GroupStep(
-            group=":docker: test-image",
-            key="test-image",
+            group=":docker: test-project-image",
+            key="test-project-image",
             steps=steps,
         )
     ]
 
 
-def _test_image_step(version: AvailablePythonVersion) -> str:
-    return f"dagster-test-images-{AvailablePythonVersion.to_tox_factor(version)}"
+def _test_project_step_key(version: AvailablePythonVersion) -> str:
+    return f"sample-project-{AvailablePythonVersion.to_tox_factor(version)}"
 
 
-def test_image_depends_fn(version: AvailablePythonVersion, _) -> List[str]:
-    return [_test_image_step(version)]
+def test_project_depends_fn(version: AvailablePythonVersion, _) -> List[str]:
+    return [_test_project_step_key(version)]
 
 
-def _core_test_image_step(version: AvailablePythonVersion) -> str:
-    return f"dagster-core-test-images-{AvailablePythonVersion.to_tox_factor(version)}"
+def _test_project_core_step_key(version: AvailablePythonVersion) -> str:
+    return f"sample-project-core-{AvailablePythonVersion.to_tox_factor(version)}"
 
 
-def core_test_image_depends_fn(version: AvailablePythonVersion, _) -> List[str]:
-    return [_core_test_image_step(version)]
+def test_project_core_depends_fn(version: AvailablePythonVersion, _) -> List[str]:
+    return [_test_project_core_step_key(version)]
