@@ -78,8 +78,6 @@ class SnowflakePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             with_uppercase_cols = with_uppercase_cols.apply(
                 _convert_timestamp_to_string, axis="index"
             )
-            print("GOING INTO DB")
-            print(with_uppercase_cols)
             with_uppercase_cols.to_sql(
                 table_slice.table,
                 con=con.engine,

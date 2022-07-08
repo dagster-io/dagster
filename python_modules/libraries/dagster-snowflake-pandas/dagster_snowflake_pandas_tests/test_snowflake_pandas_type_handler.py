@@ -212,10 +212,6 @@ def test_io_manager_with_snowflake_pandas_timestamp_data():
         @op
         def read_time_df(df: pandas.DataFrame):
             assert set(df.columns) == {"foo", "date"}
-            print("GOT")
-            print(df)
-            print("EXPECTED")
-            print(time_df)
             assert (df["date"] == time_df["date"]).all()
 
         snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
