@@ -186,15 +186,15 @@ def test_io_manager_with_snowflake_pandas_timestamp_data():
     with temporary_snowflake_table(
         schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
         db_name="TEST_SNOWFLAKE_IO_MANAGER",
-        column_str="foo string, date TIMESTAMP_TZ(9)",
+        column_str="foo string, date TIMESTAMP_NTZ(9)",
     ) as table_name:
 
         time_df = pandas.DataFrame(
             {
                 "foo": ["bar", "baz"],
                 "date": [
-                    pandas.Timestamp("2017-01-01T12:30:45.350000+00:00", tz="UTC"),
-                    pandas.Timestamp("2017-02-01T12:30:45.350000+00:00", tz="UTC"),
+                    pandas.Timestamp("2017-01-01T12:30:45.350"),
+                    pandas.Timestamp("2017-02-01T12:30:45.350"),
                 ],
             }
         )
