@@ -47,15 +47,13 @@ SHARED_BUILDKITE_SNOWFLAKE_CONF = {
 
 
 @contextmanager
-def temporary_snowflake_table(schema_name: str, db_name: str) -> Iterator[str]:
+def temporary_snowflake_table(schema_name: str, db_name: str, column_str: str) -> Iterator[str]:
     snowflake_config = dict(database=db_name, **SHARED_BUILDKITE_SNOWFLAKE_CONF)
     table_name = "test_io_manager_" + str(uuid.uuid4()).replace("-", "_")
     with SnowflakeConnection(
         snowflake_config, logging.getLogger("temporary_snowflake_table")
     ).get_connection() as conn:
-        conn.cursor().execute(
-            f"create table {schema_name}.{table_name} (foo string, quux integer, date TIMESTAMP_LTZ(9))"
-        )
+        conn.cursor().execute(f"create table {schema_name}.{table_name} ({column_str})")
         try:
             yield table_name
         finally:
@@ -138,7 +136,9 @@ def test_type_conversions():
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 def test_io_manager_with_snowflake_pandas():
     with temporary_snowflake_table(
-        schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA", db_name="TEST_SNOWFLAKE_IO_MANAGER"
+        schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
+        db_name="TEST_SNOWFLAKE_IO_MANAGER",
+        column_str="foo string, quux integer",
     ) as table_name:
 
         # Create a job with the temporary table name as an output, so that it will write to that table
@@ -184,7 +184,9 @@ def test_io_manager_with_snowflake_pandas():
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE snowflake DB")
 def test_io_manager_with_snowflake_pandas_timestamp_data():
     with temporary_snowflake_table(
-        schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA", db_name="TEST_SNOWFLAKE_IO_MANAGER"
+        schema_name="SNOWFLAKE_IO_MANAGER_SCHEMA",
+        db_name="TEST_SNOWFLAKE_IO_MANAGER",
+        column_str="foo string, date TIMESTAMP_LTZ(9)",
     ) as table_name:
 
         time_df = pandas.DataFrame(

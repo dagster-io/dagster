@@ -154,7 +154,7 @@ class DbIOManager(IOManager):
                 )
             elif output_context.resource_config and output_context_metadata.get("schema"):
                 schema = output_context_metadata["schema"]
-            elif context.resource_config.get("schema"):
+            elif context.resource_config and context.resource_config.get("schema"):
                 schema = output_context.resource_config["schema"]
             else:
                 schema = "public"
