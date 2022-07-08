@@ -14,7 +14,6 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {useViewport} from '../gantt/useViewport';
-import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 import {linkToRunEvent} from '../runs/RunUtils';
 import {RunFilterToken} from '../runs/RunsFilterInput';
 import {MenuLink} from '../ui/MenuLink';

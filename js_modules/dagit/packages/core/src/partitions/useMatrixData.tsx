@@ -7,11 +7,11 @@ import {GanttChartLayout} from '../gantt/Constants';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
+import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 import {StepEventStatus} from '../types/globalTypes';
 
-import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
-import {PartitionMatrixStepRunFragment} from './types/PartitionMatrixStepRunFragment';
 import {PartitionMatrixSolidHandleFragment} from './types/PartitionMatrixSolidHandleFragment';
+import {PartitionMatrixStepRunFragment} from './types/PartitionMatrixStepRunFragment';
 
 type StatusSquareColor =
   | 'SUCCESS'
