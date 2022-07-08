@@ -1,5 +1,7 @@
 import os
-from typing import Callable, List, Mapping, NamedTuple, Optional, Union
+from typing import Callable, List, Mapping, NamedTuple, Optional, Sequence, Union
+
+from dagster_buildkite.platform import AvailablePlatform
 
 from .python_version import AvailablePythonVersion
 from .step_builder import BuildkiteQueue
@@ -44,8 +46,8 @@ _PACKAGE_TYPE_TO_EMOJI_MAP: Mapping[str, str] = {
     "unknown": ":grey_question:",
 }
 
-PytestExtraCommandsFunction = Callable[[AvailablePythonVersion, Optional[str]], List[str]]
-PytestDependenciesFunction = Callable[[AvailablePythonVersion, Optional[str]], List[str]]
+PytestExtraCommandsFunction = Callable[[AvailablePythonVersion, Optional[str]], Sequence[str]]
+PytestDependenciesFunction = Callable[[AvailablePythonVersion, Optional[str]], Sequence[str]]
 
 
 class PackageSpec(
@@ -55,11 +57,12 @@ class PackageSpec(
             ("directory", str),
             ("name", str),
             ("package_type", str),
-            ("unsupported_python_versions", List[AvailablePythonVersion]),
-            ("pytest_extra_cmds", Optional[Union[List[str], PytestExtraCommandsFunction]]),
-            ("pytest_step_dependencies", Optional[Union[List[str], PytestDependenciesFunction]]),
-            ("pytest_tox_factors", Optional[List[str]]),
-            ("env_vars", List[str]),
+            ("unsupported_python_versions", Sequence[AvailablePythonVersion]),
+            ("unsupported_platforms", Sequence[AvailablePlatform]),
+            ("pytest_extra_cmds", Optional[Union[Sequence[str], PytestExtraCommandsFunction]]),
+            ("pytest_step_dependencies", Optional[Union[Sequence[str], PytestDependenciesFunction]]),
+            ("pytest_tox_factors", Optional[Sequence[str]]),
+            ("env_vars", Sequence[str]),
             ("tox_file", Optional[str]),
             ("retries", Optional[int]),
             ("upload_coverage", bool),
@@ -81,27 +84,27 @@ class PackageSpec(
         package_type (str, optional): Used to determine the emoji attached to the buildkite label.
             Possible values are "core", "example", "extension", and "infrastructure". By default it
             is inferred from the location of the passed directory.
-        unsupported_python_versions (List[AvailablePythonVersion], optional): Python versions that
+        unsupported_python_versions (Sequence[AvailablePythonVersion], optional): Python versions that
             are not supported by this package. The versions for which pytest will be run are
             the versions determined for the commit minus this list. If this result is empty, then
             the lowest supported version will be tested. Defaults to None (all versions are supported).
-        pytest_extra_cmds (Callable[str, List[str]], optional): Optional specification of
+        pytest_extra_cmds (Callable[str, Sequence[str]], optional): Optional specification of
             commands to run before the main pytest invocation through tox. Can be either a list of
             commands or a function. Function form takes two arguments, the python version being
             tested and the tox factor (if any), and returns a list of shell commands to execute.
             Defaults to None (no additional commands).
-        pytest_step_dependencies (Callable[str, List[str]], optional): Optional specification of
+        pytest_step_dependencies (Callable[str, Sequence[str]], optional): Optional specification of
             Buildkite dependencies (e.g. on test image build step) for pytest steps. Can be either a
             list of commands or a function. Function form takes two arguments, the python version
             being tested and the tox factor (if any), and returns a list of Buildkite step names.
             Defaults to None (no additional commands).
-        pytest_tox_factors: (List[str], optional): List of additional tox environment factors to
+        pytest_tox_factors: (Sequence[str], optional): Sequence of additional tox environment factors to
             use when iterating pytest tox environments. A separate pytest step is generated for each
             element of the product of versions tested and these factors. For example, if we are
             testing Python 3.7 and 3.8 and pass factors `["a", "b"]`, then four steps will be
             generated corresponding to environments "py37-a", "py37-b", "py38-a", "py38-b". Defaults
             to None.
-        env_vars (List[str], optional): Additional environment variables to pass through to each
+        env_vars (Sequence[str], optional): Additional environment variables to pass through to each
             test environment. These must also be listed in the target toxfile under `passenv`.
             Defaults to None.
         tox_file (str, optional): The tox file to use. Defaults to {directory}/tox.ini.
@@ -122,11 +125,12 @@ class PackageSpec(
         directory: str,
         name: Optional[str] = None,
         package_type: Optional[str] = None,
-        unsupported_python_versions: Optional[List[AvailablePythonVersion]] = None,
-        pytest_extra_cmds: Optional[Union[List[str], PytestExtraCommandsFunction]] = None,
-        pytest_step_dependencies: Optional[Union[List[str], PytestDependenciesFunction]] = None,
-        pytest_tox_factors: Optional[List[str]] = None,
-        env_vars: Optional[List[str]] = None,
+        unsupported_python_versions: Optional[Sequence[AvailablePythonVersion]] = None,
+        unsupported_platforms: Optional[Sequence[AvailablePlatform]] = None,
+        pytest_extra_cmds: Optional[Union[Sequence[str], PytestExtraCommandsFunction]] = None,
+        pytest_step_dependencies: Optional[Union[Sequence[str], PytestDependenciesFunction]] = None,
+        pytest_tox_factors: Optional[Sequence[str]] = None,
+        env_vars: Optional[Sequence[str]] = None,
         tox_file: Optional[str] = None,
         retries: Optional[int] = None,
         upload_coverage: Optional[bool] = None,
@@ -143,6 +147,7 @@ class PackageSpec(
             name or os.path.basename(directory),
             package_type,
             unsupported_python_versions or [],
+            unsupported_platforms or [],
             pytest_extra_cmds,
             pytest_step_dependencies,
             pytest_tox_factors,
@@ -161,11 +166,23 @@ class PackageSpec(
         base_name = self.name or os.path.basename(self.directory)
         steps: List[BuildkiteLeafStep] = []
 
+        supported_platforms = [
+            v for v in AvailablePlatform.get_all() if v not in self.unsupported_platforms
+        ]
+
         supported_python_versions = [
             v for v in AvailablePythonVersion.get_all() if v not in self.unsupported_python_versions
         ]
 
         if self.run_pytest:
+
+            default_platforms = AvailablePlatform.get_pytest_defaults()
+            pytest_platforms = sorted(
+                list(set(default_platforms) - set(self.unsupported_python_versions))
+            )
+            # Use first matching platform if no defaults match.
+            if len(pytest_platforms) == 0:
+                pytest_platforms = [supported_platforms[0]]
 
             default_python_versions = AvailablePythonVersion.get_pytest_defaults()
             pytest_python_versions = sorted(

@@ -1,6 +1,6 @@
 import os
 from enum import Enum
-from typing import List
+from typing import List, Sequence
 
 from dagster_buildkite.utils import is_release_branch, safe_getenv
 
@@ -15,7 +15,7 @@ class AvailablePythonVersion(str, Enum):
     V3_10 = "3.10.5"
 
     @classmethod
-    def get_all(cls) -> List["AvailablePythonVersion"]:
+    def get_all(cls) -> Sequence["AvailablePythonVersion"]:
         return list(cls)
 
     @classmethod
@@ -23,7 +23,7 @@ class AvailablePythonVersion(str, Enum):
         return cls["V3_9"]
 
     @classmethod
-    def get_pytest_defaults(cls) -> List["AvailablePythonVersion"]:
+    def get_pytest_defaults(cls) -> Sequence["AvailablePythonVersion"]:
 
         branch_name = safe_getenv("BUILDKITE_BRANCH")
         commit_message = safe_getenv("BUILDKITE_MESSAGE")
@@ -42,7 +42,7 @@ class AvailablePythonVersion(str, Enum):
                 marker = f"test-{cls.to_tox_factor(version)}"
                 if any(marker in v for v in env_vars):
                     specified_versions.append(version)
-            if any("test-all" in v for v in env_vars):
+            if any("test-all" in v or "test-all-pythons" in v for v in env_vars):
                 specified_versions += cls.get_all()
 
             return (

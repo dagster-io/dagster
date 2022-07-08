@@ -1,6 +1,6 @@
 import os
 import subprocess
-from typing import Dict, List, Optional, Union
+from typing import Dict, Mapping, Optional, Sequence, Union
 
 import yaml
 from typing_extensions import Literal, TypeAlias, TypedDict
@@ -23,20 +23,20 @@ BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP = {
 
 
 class CommandStep(TypedDict, total=False):
-    agents: Dict[str, str]
-    commands: List[str]
-    depends_on: List[str]
+    agents: Mapping[str, str]
+    commands: Sequence[str]
+    depends_on: Sequence[str]
     key: str
     label: str
-    plugins: List[Dict[str, object]]
-    retry: Dict[str, object]
+    plugins: Sequence[Mapping[str, object]]
+    retry: Mapping[str, object]
     timeout_in_minutes: int
 
 
 class GroupStep(TypedDict):
     group: str
     key: str
-    steps: List["BuildkiteLeafStep"]  # no nested groups
+    steps: Sequence["BuildkiteLeafStep"]  # no nested groups
 
 
 # use alt syntax because of `async` and `if` reserved words
@@ -46,7 +46,7 @@ TriggerStep = TypedDict(
         "trigger": str,
         "label": str,
         "async": Optional[bool],
-        "build": Dict[str, object],
+        "build": Mapping[str, object],
         "branches": Optional[str],
         "if": Optional[str],
     },
@@ -111,7 +111,7 @@ def check_for_release() -> bool:
     return False
 
 
-def network_buildkite_container(network_name: str) -> List[str]:
+def network_buildkite_container(network_name: str) -> Sequence[str]:
     return [
         # hold onto your hats, this is docker networking at its best. First, we figure out
         # the name of the currently running container...
@@ -127,7 +127,7 @@ def network_buildkite_container(network_name: str) -> List[str]:
 
 def connect_sibling_docker_container(
     network_name: str, container_name: str, env_variable: str
-) -> List[str]:
+) -> Sequence[str]:
     return [
         # Now, we grab the IP address of the target container from within the target
         # bridge network and export it; this will let the tox tests talk to the target cot.

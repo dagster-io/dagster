@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Sequence
 
 from ..images.versions import (
     BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION,
@@ -9,7 +9,7 @@ from ..step_builder import CommandStepBuilder
 from ..utils import BuildkiteLeafStep, GroupStep
 
 
-def build_test_project_steps() -> List[GroupStep]:
+def build_test_project_steps() -> Sequence[GroupStep]:
     """This set of tasks builds and pushes Docker images, which are used by the dagster-airflow and
     the dagster-k8s tests
     """
@@ -112,7 +112,7 @@ def _test_project_step_key(version: AvailablePythonVersion) -> str:
     return f"sample-project-{AvailablePythonVersion.to_tox_factor(version)}"
 
 
-def test_project_depends_fn(version: AvailablePythonVersion, _) -> List[str]:
+def test_project_depends_fn(version: AvailablePythonVersion, _) -> Sequence[str]:
     return [_test_project_step_key(version)]
 
 
@@ -120,5 +120,5 @@ def _test_project_core_step_key(version: AvailablePythonVersion) -> str:
     return f"sample-project-core-{AvailablePythonVersion.to_tox_factor(version)}"
 
 
-def test_project_core_depends_fn(version: AvailablePythonVersion, _) -> List[str]:
+def test_project_core_depends_fn(version: AvailablePythonVersion, _) -> Sequence[str]:
     return [_test_project_core_step_key(version)]

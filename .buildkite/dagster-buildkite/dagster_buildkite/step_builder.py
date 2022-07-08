@@ -1,6 +1,8 @@
 import os
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, Optional, Sequence
+
+from dagster_buildkite.platform import AvailablePlatform
 
 from .images.versions import BUILDKITE_TEST_IMAGE_VERSION
 from .python_version import AvailablePythonVersion
@@ -62,7 +64,7 @@ class CommandStepBuilder:
             "mount-ssh-agent": True,
         }
 
-    def on_python_image(self, image: str, env: Optional[List[str]] = None) -> "CommandStepBuilder":
+    def on_python_image(self, image: str, env: Optional[Sequence[str]] = None) -> "CommandStepBuilder":
         settings = self._base_docker_settings()
         settings["image"] = f"{AWS_ACCOUNT_ID}.dkr.ecr.{AWS_ECR_REGION}.amazonaws.com/{image}"
         # Mount the Docker socket so we can run Docker inside of our container
@@ -76,7 +78,7 @@ class CommandStepBuilder:
         # pytest `tmp_path` or `tmpdir` fixtures are used used, the temporary
         # path they return will be nested under /tmp.
         # https://github.com/pytest-dev/pytest/blob/501637547ecefa584db3793f71f1863da5ffc25f/src/_pytest/tmpdir.py#L116-L117
-        settings["environment"] = ["BUILDKITE", "PYTEST_DEBUG_TEMPROOT=/tmp"] + (env or [])
+        settings["environment"] = ["BUILDKITE", "PYTEST_DEBUG_TEMPROOT=/tmp", *(env or [])]
         ecr_settings = {
             "login": True,
             "no-include-email": True,
@@ -88,13 +90,16 @@ class CommandStepBuilder:
         return self
 
     def on_test_image(
-        self, ver: AvailablePythonVersion, env: Optional[List[str]] = None
+        self,
+        ver: AvailablePythonVersion,
+        platform: AvailablePlatform = AvailablePlatform.UNIX,
+        env: Optional[Sequence[str]] = None,
     ) -> "CommandStepBuilder":
         if not isinstance(ver, AvailablePythonVersion):
             raise Exception(f"Unsupported python version for test image: {ver}.")
 
         return self.on_python_image(
-            image=f"buildkite-test:py{ver}-{BUILDKITE_TEST_IMAGE_VERSION}",
+            image=f"{_platform_to_image_basename(platform)}:py{ver}-{BUILDKITE_TEST_IMAGE_VERSION}",
             env=env,
         )
 
@@ -115,13 +120,21 @@ class CommandStepBuilder:
         if queue is not None:
             assert BuildkiteQueue.contains(queue)
             agents = self._step["agents"]  # type: ignore
-            agents["queue"] = queue.value
+            self._step["agents"] = {**agents, "queue": queue.value}
         return self
 
-    def with_dependencies(self, step_keys: Optional[List[str]]) -> "CommandStepBuilder":
+    def with_dependencies(self, step_keys: Optional[Sequence[str]]) -> "CommandStepBuilder":
         if step_keys is not None:
             self._step["depends_on"] = step_keys
         return self
 
     def build(self) -> CommandStep:
         return self._step
+
+def _platform_to_image_basename(platform: AvailablePlatform) -> str:
+    if platform == AvailablePlatform.WINDOWS:
+        return "buildkite-integration-windows"
+    elif platform == AvailablePlatform.UNIX:
+        return "buildkite-test"
+    else:
+        assert False, "Unsupported platform"

@@ -1,8 +1,9 @@
 import os
 import re
 import shlex
-from typing import List, Optional
+from typing import Optional, Sequence
 
+from dagster_buildkite.platform import AvailablePlatform
 from dagster_buildkite.python_version import AvailablePythonVersion
 from dagster_buildkite.step_builder import BuildkiteQueue, CommandStepBuilder
 from dagster_buildkite.utils import CommandStep, make_buildkite_section_header
@@ -21,11 +22,12 @@ def build_tox_step(
     base_label: Optional[str] = None,
     command_type: str = "miscellaneous",
     python_version: Optional[AvailablePythonVersion] = None,
+    platform: Optional[AvailablePlatform] = None,
     tox_file: Optional[str] = None,
-    extra_commands_pre: Optional[List[str]] = None,
-    extra_commands_post: Optional[List[str]] = None,
-    env_vars: Optional[List[str]] = None,
-    dependencies: Optional[List[str]] = None,
+    extra_commands_pre: Optional[Sequence[str]] = None,
+    extra_commands_post: Optional[Sequence[str]] = None,
+    env_vars: Optional[Sequence[str]] = None,
+    dependencies: Optional[Sequence[str]] = None,
     retries: Optional[int] = None,
     timeout_in_minutes: Optional[int] = None,
     queue: Optional[BuildkiteQueue] = None,
@@ -65,7 +67,7 @@ def build_tox_step(
         .with_retry(retries)
         .with_dependencies(dependencies)
         .with_queue(queue)
-        .on_test_image(python_version, env_vars or [])
+        .on_test_image(python_version, platform, env_vars or [])
     ).build()
 
 
