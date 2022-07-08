@@ -310,7 +310,10 @@ const Warning = ({ children }) => {
 
 const CodeReferenceLink = ({ filePath, isInline, children }) => {
   const { version } = useVersion();
-  const url = `https://github.com/dagster-io/dagster/tree/${version}/${filePath}`;
+  const url =
+    filePath === "examples/modern_data_stack_assets" // for mock
+      ? "https://github.com/dagster-io/dagster/tree/yuhan/mock-example-gallery/examples/modern_data_stack_assets"
+      : `https://github.com/dagster-io/dagster/tree/${version}/${filePath}`;
 
   if (isInline) {
     return (
