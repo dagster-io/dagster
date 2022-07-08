@@ -1,7 +1,6 @@
 import inspect
-from typing import TYPE_CHECKING, Any, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
-import dagster._check as check
 from dagster.core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
@@ -9,7 +8,6 @@ from dagster.core.errors import (
 )
 
 from .events import (
-    DEFAULT_OUTPUT,
     AssetMaterialization,
     AssetObservation,
     DynamicOutput,

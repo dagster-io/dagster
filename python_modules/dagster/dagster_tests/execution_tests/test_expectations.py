@@ -71,11 +71,8 @@ def test_return_expectation_failure():
         name="success_expectation_in_compute_pipeline", solid_defs=[return_expectation_failure]
     )
 
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="If you are returning an AssetMaterialization or an ExpectationResult from solid you must yield them directly",
+    ) as exc_info:
         execute_pipeline(pipeline_def)
-
-    assert str(exc_info.value) == (
-        'Error in solid "return_expectation_failure": If you are returning '
-        "an AssetMaterialization or an ExpectationResult from solid you must yield "
-        "them to avoid ambiguity with an implied result from returning a value."
-    )

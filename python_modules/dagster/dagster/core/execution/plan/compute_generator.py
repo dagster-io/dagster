@@ -14,12 +14,8 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.types.dagster_type import (
-    DagsterTypeKind,
-    is_dynamic_output_annotation,
-    is_generic_output_annotation,
-)
-from dagster.seven.typing import get_args, get_origin
+from dagster.core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
+from dagster.seven.typing import get_args
 
 from ..context.compute import OpExecutionContext
 
@@ -147,6 +143,17 @@ def validate_and_coerce_solid_result_to_iterator(
         # this happens when a user explicitly returns a generator in the solid
         for event in result:
             yield event
+    elif isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
+        raise DagsterInvariantViolationError(
+            f"Error in {context.describe_op()}: If you are "
+            "returning an AssetMaterialization "
+            f"or an ExpectationResult from "
+            f"{context.solid_def.node_type_str} you must yield them "
+            "directly, or log them using the OpExecutionContext.log_event method to avoid "
+            "ambiguity with an implied result from returning a "
+            "value. Check out the docs on logging events here: "
+            "https://docs.dagster.io/concepts/ops-jobs-graphs/op-events#op-events-and-exceptions"
+        )
     elif result is not None and not output_defs:
         raise DagsterInvariantViolationError(
             f"Error in {context.describe_op()}: Unexpectedly returned output of "
@@ -205,17 +212,6 @@ def validate_and_coerce_solid_result_to_iterator(
                         f"'{output_def.name}' has generic output annotation, "
                         "but did not receive an Output object for this output. "
                         f"Received instead an object of type {type(element)}."
-                    )
-                if isinstance(element, (AssetMaterialization, Materialization, ExpectationResult)):
-                    raise DagsterInvariantViolationError(
-                        f"Error in {context.describe_op()}: If you are "
-                        "returning an AssetMaterialization "
-                        f"or an ExpectationResult from "
-                        f"{context.solid_def.node_type_str} you must yield them "
-                        "directly, or log them using the OpExecutionContext.log_event method to avoid "
-                        "ambiguity with an implied result from returning a "
-                        "value. Check out the docs on logging events here: "
-                        "https://docs.dagster.io/concepts/ops-jobs-graphs/op-events#op-events-and-exceptions"
                     )
                 if result is None and output_def.is_required is False:
                     context.log.warn(

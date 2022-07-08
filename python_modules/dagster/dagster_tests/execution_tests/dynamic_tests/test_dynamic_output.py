@@ -75,8 +75,8 @@ def test_fails_with_wrong_output():
         return 1
 
     with pytest.raises(
-        check.CheckError,
-        match="expects either a list of DynamicOutputs to be returned, or DynamicOutput objects to be yielded. Received instead an object of type <class 'int'>",
+        DagsterInvariantViolationError,
+        match="dynamic output 'result' expected a list of DynamicOutput objects",
     ):
         execute_solid(should_also_fail)
 
