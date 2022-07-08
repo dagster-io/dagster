@@ -15,6 +15,6 @@ def build_dagit_ui_steps() -> List[CommandStep]:
             "mv packages/core/coverage/lcov.info lcov.dagit.$BUILDKITE_BUILD_ID.info",
             "buildkite-agent artifact upload lcov.dagit.$BUILDKITE_BUILD_ID.info",
         )
-        .on_integration_image(AvailablePythonVersion.get_default())
+        .on_test_image(AvailablePythonVersion.get_default())
         .build(),
     ]

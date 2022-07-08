@@ -1,8 +1,9 @@
 ####################################################################################################
 #
-# DAGSTER UNIT IMAGE
+# DAGSTER BUILDKITE TEST IMAGE BUILDER BASE
 #
-# We use this Dockerfile to build an unit test image for our Buildkite CI/CD pipeline.
+# We use this Dockerfile to build the base image for the test Dagster project
+# image that is built in our CI pipeline.
 #
 ####################################################################################################
 ARG BASE_IMAGE
