@@ -84,15 +84,15 @@ def test_solid_yield():
     assert result.output_value()["foo"] == "bar"
 
 
-def test_solid_result_return_no_annotation():
+def test_solid_result_return():
     @solid(output_defs=[OutputDefinition()])
     def hello_world(_context):
         return Output(value={"foo": "bar"})
 
-    with pytest.raises(
-        DagsterInvariantViolationError, match="Output object returned directly without annotating"
-    ):
-        execute_solid(hello_world)
+    result = execute_solid(hello_world)
+
+    assert result.success
+    assert result.output_value()["foo"] == "bar"
 
 
 def test_solid_with_explicit_empty_outputs():

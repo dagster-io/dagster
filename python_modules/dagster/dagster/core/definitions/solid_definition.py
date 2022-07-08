@@ -227,10 +227,10 @@ class SolidDefinition(NodeDefinition):
     def get_output_annotation(self) -> Any:
         if not self.is_from_decorator():
             raise DagsterInvalidInvocationError(
-                f"Attempted to get output annotation for {self.describe_op()}, "
+                f"Attempted to get output annotation for {self.node_type_str} '{self.name}', "
                 "which was not constructed from a decorated function."
             )
-        return self.compute_fn.get_output_annotation()
+        return cast("DecoratedSolidFunction", self.compute_fn).get_output_annotation()
 
     @property
     def config_schema(self) -> IDefinitionConfigSchema:
