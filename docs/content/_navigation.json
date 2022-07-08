@@ -81,27 +81,6 @@
         ]
       },
       {
-        "title": "Using Dagster Cloud",
-        "children": [
-          {
-            "title": "Developing and testing",
-            "path": "/building#developing-and-testing"
-          },
-          {
-            "title": "Adding an agent",
-            "path": "/building#adding-an-agent"
-          },
-          {
-            "title": "Configuring authentication",
-            "path": "/building#configuring-authentication"
-          },
-          {
-            "title": "Managing instances and users",
-            "path": "/building#managing-instances-and-users"
-          }
-        ]
-      },
-            {
         "title": "Best practices",
         "children": [
           {
@@ -174,12 +153,38 @@
     "path": "/deployment",
     "children": [
       {
-        "title": "Open source",
-        "path": "/deployment/open-source"
+        "title": "Dagster open source",
+        "children": [
+          {
+            "title": "Understanding OS deployments",
+            "path": "/deployment/open-source/overview"
+          },
+          {
+            "title": "TODO",
+            "path": "/deployment/open-source/todo"
+          }
+        ]
       },
       {
-        "title": "Cloud",
-        "path": "/deployment/cloud"
+        "title": "Dagster Cloud",
+        "children": [
+          {
+            "title": "Developing and testing",
+            "path": "/deployment#developing-and-testing"
+          },
+          {
+            "title": "Adding an agent",
+            "path": "/deployment#adding-an-agent"
+          },
+          {
+            "title": "Configuring authentication",
+            "path": "/deployment#configuring-authentication"
+          },
+          {
+            "title": "Managing instances and users",
+            "path": "/deployment#managing-instances-and-users"
+          }
+        ]
       }
     ]
   },
