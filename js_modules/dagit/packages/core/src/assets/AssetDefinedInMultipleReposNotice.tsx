@@ -4,17 +4,14 @@ import React from 'react';
 
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
+import {AssetKey} from './types';
 
 import {AssetIdScanQuery} from './types/AssetIdScanQuery';
 
 export const AssetDefinedInMultipleReposNotice: React.FC<{
-  assetId: string;
+  assetKey: AssetKey;
   loadedFromRepo: RepoAddress;
-}> = ({assetId, loadedFromRepo}) => {
-  function get_asset_key_from_id(id: string) {
-    return id.split('.').pop();
-  }
-
+}> = ({assetKey, loadedFromRepo}) => {
   const {data} = useQuery<AssetIdScanQuery>(ASSET_ID_SCAN_QUERY);
   const otherRepos =
     data?.repositoriesOrError.__typename === 'RepositoryConnection'
@@ -24,7 +21,7 @@ export const AssetDefinedInMultipleReposNotice: React.FC<{
       : [];
   const otherReposWithAsset = otherRepos.filter((r) =>
     r.assetNodes.some(
-      (a) => get_asset_key_from_id(a.id) === get_asset_key_from_id(assetId) && a.opNames.length,
+      (a) => JSON.stringify(a.assetKey) === JSON.stringify(assetKey) && a.opNames.length,
     ),
   );
 
@@ -65,6 +62,9 @@ const ASSET_ID_SCAN_QUERY = gql`
           assetNodes {
             id
             opNames
+            assetKey {
+              path
+            }
           }
         }
       }
