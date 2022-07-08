@@ -158,10 +158,67 @@ const Badge = ({ text }) => {
   const colors = getColorForString(text);
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium ${colors}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-thin ${colors}`}
     >
       {text}
     </span>
+  );
+};
+
+const ExampleItemSmall = ({ title, hrefCode, tags = [] }) => {
+  return (
+    <button className="w-full h-full py-3 px-4 rounded-lg bg-white border hover:border-gray-500 text-gray-500">
+      <CodeReferenceLink filePath={hrefCode} isInline>
+        <span className="font-bold text-gable-green hover:no-underline">
+          {title}
+        </span>
+      </CodeReferenceLink>
+      <div className="mt-2 text-sm space-x-1 space-y-1 bg-opacity-70">
+        {tags.map((tag) => (
+          <Badge key={tag} text={tag} />
+        ))}
+      </div>
+    </button>
+  );
+};
+
+const ExampleItem = ({
+  title,
+  hrefCloud,
+  hrefDoc = null,
+  hrefCode,
+  children,
+  tags = [],
+}) => {
+  return (
+    <div className="px-6 py-4 rounded-lg shadow-lg shadow-cyan-500/50 relative group bg-white">
+      <span className="font-bold text-2xl text-gable-green">{title}</span>
+      <div className="space-x-2 bg-opacity-70">
+        {tags.map((tag) => (
+          <Badge key={tag} text={tag} />
+        ))}
+      </div>
+      <p className="text-sm text-gray-500">{children}</p>
+      <div className="inline-flex flex-row space-x-4">
+        <a href={hrefCloud}>
+          <button className="py-1 px-4 rounded-lg bg-gable-green text-white hover:bg-transparent hover:text-gable-green hover: border hover:border-gable-green">
+            Clone and Deploy
+          </button>
+        </a>
+        {hrefDoc && (
+          <Link href={hrefDoc}>
+            <button className="py-1 px-4 rounded-lg bg-transparent border text-gray-500 hover:text-gray-700 hover:bg-gray-100 hover:border-gray-300">
+              Doc
+            </button>
+          </Link>
+        )}
+        <CodeReferenceLink filePath={hrefCode} isInline>
+          <button className="py-1 px-4 rounded-lg bg-transparent border text-gray-500 hover:text-gray-700 hover:bg-gray-100 hover:border-gray-300">
+            Code
+          </button>
+        </CodeReferenceLink>
+      </div>
+    </div>
   );
 };
 
@@ -256,7 +313,11 @@ const CodeReferenceLink = ({ filePath, isInline, children }) => {
   const url = `https://github.com/dagster-io/dagster/tree/${version}/${filePath}`;
 
   if (isInline) {
-    return <a href={url}>{children}</a>;
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    );
   } else {
     return (
       <div className="bg-primary-100 rounded flex item-center p-4">
@@ -270,7 +331,10 @@ const CodeReferenceLink = ({ filePath, isInline, children }) => {
           </svg>
         </div>
         <div className="pl-4 pt-1">
-          You can find the code for this example on <a href={url}>Github</a>
+          You can find the code for this example on{" "}
+          <a href={url} target="_blank" rel="noopener noreferrer">
+            Github
+          </a>
         </div>
       </div>
     );
@@ -291,9 +355,7 @@ const ReferenceTable = ({ children }) => {
           <th>Description</th>
         </tr>
       </thead>
-      <tbody>
-        {children}
-      </tbody>
+      <tbody>{children}</tbody>
     </table>
   );
 };
@@ -303,14 +365,12 @@ const ReferenceTableItem = ({ propertyName, children }) => {
     <tr>
       <td
         style={{
-        width: "40%",
+          width: "40%",
         }}
-        >
+      >
         {propertyName}
       </td>
-      <td>
-        {children}
-      </td>
+      <td>{children}</td>
     </tr>
   );
 };
@@ -457,9 +517,9 @@ const ArticleListItem = ({ title, href }) => {
 const ExampleItemSmall = ({ title, hrefCode, tags = [] }) => {
   return (
     <button className="w-full h-full py-3 px-4 rounded-lg bg-white border hover:border-gray-500 text-gray-500">
-        <span className="font-bold text-gable-green hover:no-underline">
-          {title}
-        </span>
+      <span className="font-bold text-gable-green hover:no-underline">
+        {title}
+      </span>
       <div className="mt-2 text-sm space-x-1 space-y-1 bg-opacity-70">
         {tags.map((tag) => (
           <Badge key={tag} text={tag} />

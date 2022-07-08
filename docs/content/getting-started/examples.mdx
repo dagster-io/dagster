@@ -1,0 +1,114 @@
+---
+title: Example Gallery | Dagster
+description: TODO
+---
+
+# Example Gallery
+
+Create a Dagster project using one of the official examples.
+
+<div class="flex flex-row justify-center">
+  <div class="flex flex-col space-y-8">
+    <ExampleItem
+      title="Hacker News Example"
+      hrefCloud="#TODO"
+      hrefDoc="/guides/dagster/example_project"
+      hrefCode="examples/hacker_news_assets"
+      tags={["Software-defined assets", "Modern data stack"]}
+    >
+      Getting started with a full-featured example project that stores events
+      from the Hacker News API to Snowflake, builds a machine learning model to
+      recommend stories, and produces metric tables using dbt.
+    </ExampleItem>
+    <ExampleItem
+      title="Bollinger"
+      hrefCloud="#TODO"
+      hrefCode="examples/bollinger"
+      tags={["Software-defined assets", "Pandera", "Types", "Metadata"]}
+    >
+      A graph of software-defined assets that compute bollinger bands for S&P
+      500 prices
+    </ExampleItem>
+  </div>
+</div>
+
+## Explore More
+
+<div class="grid md:grid-cols-3 grid-flow-row gap-4">
+  <ExampleItemSmall
+    title="assets-modern-data-stack"
+    hrefCode="examples/modern_data_stack_assets"
+    tags={["Software-defined assets", "Airbyte", "dbt"]}
+  />
+  <ExampleItemSmall
+    title="example-hacker-news"
+    hrefCode="examples/hacker_news"
+    tags={["dbt", "Snowflake", "AWS S3", "Pyspark"]}
+  />
+  <ExampleItemSmall
+    title="example-airline"
+    hrefCode="examples/airline_assets"
+    tags={["Software-defined assets"]}
+  />
+  <ExampleItemSmall
+    title="with-great-expectations"
+    hrefCode="examples/gc_example"
+    tags={["Metadata"]}
+  />
+  <ExampleItemSmall
+    title="with-conditional-branching"
+    hrefCode="examples/nyt-feed"
+    tags={["DAG design"]}
+  />
+  <ExampleItemSmall
+    title="with-dynamic-output"
+    hrefCode="#TODO"
+    tags={["DAG design"]}
+  />
+  <ExampleItemSmall
+    title="with-memoization"
+    hrefCode="examples/memoized_development"
+    tags={["DAG design"]}
+  />
+  <ExampleItemSmall
+    title="with-dbt"
+    hrefCode="examples/dbt_example"
+    tags={["dbt"]}
+  />
+  <ExampleItemSmall
+    title="assets-dbt"
+    hrefCode="examples/dbt_python_assets"
+    tags={["Software-defined assets", "dbt"]}
+  />
+  <ExampleItemSmall
+    title="with-pyspark"
+    hrefCode="examples/basic_pyspark"
+    tags={["PySpark"]}
+  />
+  <ExampleItemSmall
+    title="with-pyspark-emr"
+    hrefCode="examples/emr_spark"
+    tags={["PySpark", "AWS EMR"]}
+  />
+  <ExampleItemSmall
+    title="with-snowflake"
+    hrefCode="#TODO"
+    tags={["IO handling"]}
+  />
+  <ExampleItemSmall title="with-gcs" hrefCode="#TODO" tags={["IO handling"]} />
+  <ExampleItemSmall
+    title="deploy-docker"
+    hrefCode="examples/deploy_docker"
+    tags={["Deployment"]}
+  />
+  <ExampleItemSmall
+    title="deploy-ecs"
+    hrefCode="examples/deploy_ecs"
+    tags={["Deployment"]}
+  />
+  <ExampleItemSmall
+    title="deploy-k8s"
+    hrefCode="examples/deploy_k8s"
+    tags={["Deployment"]}
+  />
+</div>

@@ -13,6 +13,10 @@
         "path": "/getting-started/create-new-project"
       },
       {
+        "title": "Example Gallery",
+        "path": "/getting-started/examples"
+      },
+      {
         "title": "Telemetry",
         "path": "/getting-started/telemetry"
       }
