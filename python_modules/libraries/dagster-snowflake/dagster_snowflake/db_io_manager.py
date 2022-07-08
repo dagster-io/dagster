@@ -136,7 +136,7 @@ class DbIOManager(IOManager):
             elif len(asset_key_path) > 1:
                 schema = asset_key_path[-2]
             elif context.resource_config and context.resource_config.get("schema"):
-                schema = context.resource_config["schema"]
+                schema = cast(str, context.resource_config["schema"])
             else:
                 schema = "public"
             time_window = (
@@ -156,9 +156,9 @@ class DbIOManager(IOManager):
                     "Schema can only be specified one way."
                 )
             elif output_context.resource_config and output_context_metadata.get("schema"):
-                schema = output_context_metadata["schema"]
+                schema = cast(str, output_context_metadata["schema"])
             elif output_context.resource_config and output_context.resource_config.get("schema"):
-                schema = output_context.resource_config["schema"]
+                schema = cast(str, output_context.resource_config["schema"])
             else:
                 schema = "public"
             time_window = None
