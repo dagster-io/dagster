@@ -1,7 +1,7 @@
 import os
 import textwrap
 from contextlib import contextmanager
-from typing import Mapping, Optional, Sequence, Union
+from typing import Any, Mapping, Optional, Sequence, Union, cast
 
 from pandas import DataFrame as PandasDataFrame
 from pandas import read_sql
@@ -77,7 +77,7 @@ class SnowflakeIOManager(IOManager):
 
     def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
         metadata = check.not_none(context.metadata)
-        schema, table = metadata["table"].split(".")
+        schema, table = cast(str, metadata["table"]).split(".")
 
         partition_bounds = (
             context.resources.partition_bounds if metadata.get("partitioned") is True else None
@@ -94,8 +94,9 @@ class SnowflakeIOManager(IOManager):
                 "SnowflakeIOManager only supports pandas DataFrames and spark DataFrames"
             )
 
+        columns = cast(Optional[Sequence[str]], metadata.get("columns"))
         yield MetadataEntry.text(
-            self._get_select_statement(table, schema, metadata.get("columns"), partition_bounds),
+            self._get_select_statement(table, schema, columns, partition_bounds),
             "Query",
         )
 
@@ -143,6 +144,7 @@ class SnowflakeIOManager(IOManager):
             return f"DELETE FROM {schema}.{table}"
 
     def load_input(self, context: InputContext) -> PandasDataFrame:
+        metadata: Mapping[str, Any]
         if context.upstream_output is not None:
             # loading from an upstream output
             metadata = check.not_none(context.upstream_output.metadata)
@@ -187,7 +189,7 @@ class SnowflakeIOManager(IOManager):
 
     def get_output_asset_key(self, context: OutputContext) -> AssetKey:
         metadata = check.not_none(context.metadata)
-        return AssetKey(["snowflake", *metadata["table"].split(".")])
+        return AssetKey(["snowflake", *cast(str, metadata["table"]).split(".")])
 
     def get_output_asset_partitions(self, context: OutputContext):
         metadata = check.not_none(context.metadata)

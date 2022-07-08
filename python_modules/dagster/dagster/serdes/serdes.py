@@ -117,9 +117,11 @@ class WhitelistMap(NamedTuple):
 
 _WHITELIST_MAP = WhitelistMap.create()
 
+T_Type = TypeVar("T_Type", bound=Type[Any])
+
 
 @overload
-def whitelist_for_serdes(__cls: Type) -> Type:
+def whitelist_for_serdes(__cls: T_Type) -> T_Type:
     ...
 
 
@@ -129,16 +131,16 @@ def whitelist_for_serdes(
     *,
     serializer: Optional[Type["Serializer"]] = ...,
     storage_name: Optional[str] = ...,
-) -> Callable[[Type], Type]:
+) -> Callable[[T_Type], T_Type]:
     ...
 
 
 def whitelist_for_serdes(
-    __cls: Optional[Type] = None,
+    __cls: Optional[T_Type] = None,
     *,
     serializer: Optional[Type["Serializer"]] = None,
     storage_name: Optional[str] = None,
-):
+) -> Union[T_Type, Callable[[T_Type], T_Type]]:
     """
     Decorator to whitelist a NamedTuple or enum to be serializable. If a `storage_name` is provided
     for a NamedTuple, then serialized instances of the NamedTuple will be stored with under the
@@ -171,8 +173,8 @@ def _whitelist_for_serdes(
     whitelist_map: WhitelistMap,
     serializer: Optional[Type["Serializer"]] = None,
     storage_name: Optional[str] = None,
-) -> Callable[[type], type]:
-    def __whitelist_for_serdes(klass: type) -> type:
+) -> Callable[[T_Type], T_Type]:
+    def __whitelist_for_serdes(klass: T_Type) -> T_Type:
         if issubclass(klass, Enum) and (
             serializer is None or issubclass(serializer, EnumSerializer)
         ):
@@ -203,7 +205,7 @@ class Serializer(ABC):
 class EnumSerializer(Serializer):
     @classmethod
     @abstractmethod
-    def value_from_storage_str(cls, storage_str: str, klass: Type) -> Enum:
+    def value_from_storage_str(cls, storage_str: str, klass: Type[Any]) -> Enum:
         raise NotImplementedError()
 
     @classmethod
@@ -216,7 +218,7 @@ class EnumSerializer(Serializer):
 
 class DefaultEnumSerializer(EnumSerializer):
     @classmethod
-    def value_from_storage_str(cls, storage_str: str, klass: Type) -> Enum:
+    def value_from_storage_str(cls, storage_str: str, klass: Type[Any]) -> Enum:
         return getattr(klass, storage_str)
 
     @classmethod
@@ -232,7 +234,7 @@ class NamedTupleSerializer(Serializer):
     def value_from_storage_dict(
         cls,
         storage_dict: Dict[str, Any],
-        klass: Type,
+        klass: Type[Any],
         args_for_class: Mapping[str, Parameter],
         whitelist_map: WhitelistMap,
         descent_path: str,
@@ -284,7 +286,7 @@ class DefaultNamedTupleSerializer(NamedTupleSerializer):
     def value_from_storage_dict(
         cls,
         storage_dict: Dict[str, Any],
-        klass: Type,
+        klass: Type[Any],
         args_for_class: Mapping[str, Parameter],
         whitelist_map: WhitelistMap,
         descent_path: str,
@@ -303,7 +305,7 @@ class DefaultNamedTupleSerializer(NamedTupleSerializer):
     def value_from_unpacked(
         cls,
         unpacked_dict: Dict[str, Any],
-        klass: Type,
+        klass: Type[Any],
     ):
         return klass(**unpacked_dict)
 

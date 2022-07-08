@@ -10,15 +10,16 @@ from .core.types.python_dict import PythonDict
 from .core.types.python_set import PythonSet
 from .core.types.python_tuple import PythonTuple
 
+# Type-ignores below are due to mypy bug tracking names imported from module's named "types".
 SUPPORTED_RUNTIME_BUILTINS = {
     int: Int,
     float: Float,
     bool: Bool,
     str: String,
-    list: List(RuntimeAny),
-    tuple: PythonTuple,
-    set: PythonSet,
-    dict: PythonDict,
+    list: List(RuntimeAny),  # type: ignore
+    tuple: PythonTuple,  # type: ignore
+    set: PythonSet,  # type: ignore
+    dict: PythonDict,  # type: ignore
 }
 
 

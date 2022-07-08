@@ -305,7 +305,7 @@ def resolve_checked_solid_fn_inputs(
     decorator_name: str,
     fn_name: str,
     compute_fn: DecoratedSolidFunction,
-    explicit_input_defs: List[InputDefinition],
+    explicit_input_defs: Sequence[InputDefinition],
     exclude_nothing: bool,
 ) -> List[InputDefinition]:
     """

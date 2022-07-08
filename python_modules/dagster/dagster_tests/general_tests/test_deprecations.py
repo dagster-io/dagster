@@ -99,7 +99,7 @@ def test_arbitrary_metadata():
         OutputDefinition(metadata={"foo": object()})
 
     with pytest.warns(DeprecationWarning, match=re.escape("arbitrary metadata values")):
-        InputDefinition(metadata={"foo": object()})
+        InputDefinition(name="foo", metadata={"foo": object()})
 
 
 def test_metadata_entry_description():

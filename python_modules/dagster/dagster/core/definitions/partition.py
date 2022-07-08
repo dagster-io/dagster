@@ -3,12 +3,26 @@ import inspect
 from abc import ABC, abstractmethod
 from datetime import datetime, time, timedelta
 from enum import Enum
-from typing import Any, Callable, Dict, Generic, List, NamedTuple, Optional, TypeVar, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import pendulum
 from dateutil.relativedelta import relativedelta
+from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster.core.definitions.target import ExecutableDefinition
 from dagster.serdes import whitelist_for_serdes
 
 from ...seven.compat.pendulum import PendulumDateTime, to_timezone
@@ -30,10 +44,27 @@ from .schedule_definition import (
     DefaultScheduleStatus,
     ScheduleDefinition,
     ScheduleEvaluationContext,
+    ScheduleExecutionFunction,
+    ScheduleRunConfigFunction,
+    ScheduleShouldExecuteFunction,
+    ScheduleTagsFunction,
 )
 from .utils import check_valid_name, validate_tags
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
+
+RawPartitionFunction: TypeAlias = Union[
+    Callable[[Optional[datetime]], Sequence[Union[str, "Partition[Any]"]]],
+    Callable[[], Sequence[Union[str, "Partition"]]],
+]
+
+PartitionFunction: TypeAlias = Callable[[Optional[datetime]], Sequence["Partition[Any]"]]
+PartitionTagsFunction: TypeAlias = Callable[["Partition"], Mapping[str, str]]
+PartitionScheduleFunction: TypeAlias = Callable[[datetime], Mapping[str, Any]]
+PartitionSelectorFunction: TypeAlias = Callable[
+    [ScheduleEvaluationContext, "PartitionSetDefinition"],
+    Union["Partition", Sequence["Partition"], SkipReason],
+]
 
 T = TypeVar("T")
 
@@ -75,7 +106,7 @@ def schedule_partition_range(
     timezone: Optional[str],
     execution_time_to_partition_fn: Callable,
     current_time: Optional[datetime],
-) -> List[Partition[datetime]]:
+) -> Sequence[Partition[datetime]]:
     if end and start > end:
         raise DagsterInvariantViolationError(
             'Selected date range start "{start}" is after date range end "{end}'.format(
@@ -167,14 +198,14 @@ class ScheduleType(Enum):
 
 class PartitionsDefinition(ABC, Generic[T]):
     @abstractmethod
-    def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition[T]]:
+    def get_partitions(self, current_time: Optional[datetime] = None) -> Sequence[Partition[T]]:
         ...
 
     def __str__(self) -> str:
         joined_keys = ", ".join([f"'{key}'" for key in self.get_partition_keys()])
         return joined_keys
 
-    def get_partition_keys(self, current_time: Optional[datetime] = None) -> List[str]:
+    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Sequence[str]:
         return [partition.name for partition in self.get_partitions(current_time)]
 
     def get_default_partition_mapping(self):
@@ -186,7 +217,7 @@ class PartitionsDefinition(ABC, Generic[T]):
 class StaticPartitionsDefinition(
     PartitionsDefinition[str],
 ):  # pylint: disable=unsubscriptable-object
-    def __init__(self, partition_keys: List[str]):
+    def __init__(self, partition_keys: Sequence[str]):
         check.list_param(partition_keys, "partition_keys", of_type=str)
 
         # Dagit selects partition ranges following the format '2022-01-13...2022-01-14'
@@ -198,7 +229,7 @@ class StaticPartitionsDefinition(
 
     def get_partitions(
         self, current_time: Optional[datetime] = None  # pylint: disable=unused-argument
-    ) -> List[Partition[str]]:
+    ) -> Sequence[Partition[str]]:
         return self._partitions
 
     def __hash__(self):
@@ -225,8 +256,8 @@ class ScheduleTimeBasedPartitionsDefinition(
             ("execution_day", Optional[int]),
             ("end", Optional[datetime]),
             ("fmt", str),
-            ("timezone", Optional[str]),
-            ("offset", Optional[int]),
+            ("timezone", str),
+            ("offset", int),
         ],
     ),
 ):
@@ -282,12 +313,14 @@ class ScheduleTimeBasedPartitionsDefinition(
                 "execution_day",
             ),
             check.opt_inst_param(end, "end", datetime),
-            cast(str, check.opt_str_param(fmt, "fmt", default=DEFAULT_DATE_FORMAT)),
+            check.opt_str_param(fmt, "fmt", default=DEFAULT_DATE_FORMAT),
             check.opt_str_param(timezone, "timezone", default="UTC"),
             check.opt_int_param(offset, "offset", default=1),
         )
 
-    def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition[datetime]]:
+    def get_partitions(
+        self, current_time: Optional[datetime] = None
+    ) -> Sequence[Partition[datetime]]:
         check.opt_inst_param(current_time, "current_time", datetime)
 
         return schedule_partition_range(
@@ -344,20 +377,25 @@ class DynamicPartitionsDefinition(
     PartitionsDefinition,
     NamedTuple(
         "_DynamicPartitionsDefinition",
-        [("partition_fn", Callable[[Optional[datetime]], Union[List[Partition], List[str]]])],
+        [
+            (
+                "partition_fn",
+                Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]],
+            )
+        ],
     ),
 ):
     def __new__(  # pylint: disable=arguments-differ
-        cls, partition_fn: Callable[[Optional[datetime]], Union[List[Partition], List[str]]]
+        cls, partition_fn: Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]]
     ):
         return super(DynamicPartitionsDefinition, cls).__new__(
             cls, check.callable_param(partition_fn, "partition_fn")
         )
 
-    def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition]:
+    def get_partitions(self, current_time: Optional[datetime] = None) -> Sequence[Partition]:
         partitions = self.partition_fn(current_time)
         if all(isinstance(partition, Partition) for partition in partitions):
-            return cast(List[Partition], partitions)
+            return cast(Sequence[Partition], partitions)
         else:
             return [Partition(p) for p in partitions]
 
@@ -369,9 +407,9 @@ class PartitionSetDefinition(Generic[T]):
     Args:
         name (str): Name for this partition set
         pipeline_name (str): The name of the pipeline definition
-        partition_fn (Optional[Callable[void, List[Partition]]]): User-provided function to define
+        partition_fn (Optional[Callable[void, Sequence[Partition]]]): User-provided function to define
             the set of valid partition objects.
-        solid_selection (Optional[List[str]]): A list of solid subselection (including single
+        solid_selection (Optional[Sequence[str]]): A list of solid subselection (including single
             solid names) to execute with this partition. e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The mode to apply when executing this partition. (default: 'default')
         run_config_fn_for_partition (Callable[[Partition], Any]): A
@@ -384,26 +422,33 @@ class PartitionSetDefinition(Generic[T]):
             of valid partition objects.
     """
 
+    _name: str
+    _pipeline_name: Optional[str]
+    _job_name: Optional[str]
+    _solid_selection: Optional[Sequence[str]]
+    _mode: Optional[str]
+    _user_defined_run_config_fn_for_partition: Callable[[Partition], Mapping[str, Any]]
+    _user_defined_tags_fn_for_partition: Callable[[Partition], Optional[Mapping[str, str]]]
+    _partitions_def: PartitionsDefinition
+
     def __init__(
         self,
         name: str,
         pipeline_name: Optional[str] = None,
-        partition_fn: Optional[Callable[..., Union[List[Partition[T]], List[str]]]] = None,
-        solid_selection: Optional[List[str]] = None,
+        partition_fn: Optional[RawPartitionFunction] = None,
+        solid_selection: Optional[Sequence[str]] = None,
         mode: Optional[str] = None,
-        run_config_fn_for_partition: Callable[[Partition[T]], Any] = lambda _partition: {},
+        run_config_fn_for_partition: Callable[
+            [Partition[T]], Mapping[str, Any]
+        ] = lambda _partition: {},
         tags_fn_for_partition: Callable[
-            [Partition[T]], Optional[Dict[str, str]]
+            [Partition[T]], Optional[Mapping[str, str]]
         ] = lambda _partition: {},
         partitions_def: Optional[
             PartitionsDefinition[T]  # pylint: disable=unsubscriptable-object
         ] = None,
         job_name: Optional[str] = None,
     ):
-        check.invariant(
-            partition_fn is not None or partitions_def is not None,
-            "One of `partition_fn` or `partitions_def` must be supplied.",
-        )
         check.invariant(
             not (partition_fn and partitions_def),
             "Only one of `partition_fn` or `partitions_def` must be supplied.",
@@ -413,68 +458,72 @@ class PartitionSetDefinition(Generic[T]):
             "Exactly one one of `job_name` and `pipeline_name` must be supplied.",
         )
 
-        _wrap_partition_fn = None
-
-        if partition_fn is not None:
-            partition_fn_param_count = len(inspect.signature(partition_fn).parameters)
-
-            def _wrap_partition(x: Union[str, Partition]) -> Partition:
-                if isinstance(x, Partition):
-                    return x
-                if isinstance(x, str):
-                    return Partition(x)
-                raise DagsterInvalidDefinitionError(
-                    "Expected <Partition> | <str>, received {type}".format(type=type(x))
-                )
-
-            def _wrap_partition_fn(current_time=None) -> List[Partition]:
-                if not current_time:
-                    current_time = pendulum.now("UTC")
-
-                check.callable_param(partition_fn, "partition_fn")  # type: ignore
-
-                if partition_fn_param_count == 1:
-                    obj_list = cast(
-                        Callable[..., List[Union[Partition[T], str]]],
-                        partition_fn,
-                    )(current_time)
-                else:
-                    obj_list = partition_fn()  # type: ignore
-
-                return [_wrap_partition(obj) for obj in obj_list]
-
         self._name = check_valid_name(name)
         self._pipeline_name = check.opt_str_param(pipeline_name, "pipeline_name")
         self._job_name = check.opt_str_param(job_name, "job_name")
-        self._partition_fn = _wrap_partition_fn
-        self._solid_selection = check.opt_nullable_list_param(
+        self._solid_selection = check.opt_nullable_sequence_param(
             solid_selection, "solid_selection", of_type=str
         )
         self._mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
-        self._user_defined_run_config_fn_for_partition = check.callable_param(
+        # Type ignores workaround for mypy bug "cannot assign to a method"
+        self._user_defined_run_config_fn_for_partition = check.callable_param(  # type: ignore
             run_config_fn_for_partition, "run_config_fn_for_partition"
         )
-        self._user_defined_tags_fn_for_partition = check.callable_param(
+        self._user_defined_tags_fn_for_partition = check.callable_param(  # type: ignore
             tags_fn_for_partition, "tags_fn_for_partition"
         )
-        check.opt_inst_param(partitions_def, "partitions_def", PartitionsDefinition)
         if partitions_def is not None:
-            self._partitions_def = partitions_def
+            self._partitions_def = check.inst_param(
+                partitions_def, "partitions_def", PartitionsDefinition
+            )
+        elif partition_fn is not None:
+            _wrapped = self._wrap_partition_fn(partition_fn)
+            self._partitions_def = DynamicPartitionsDefinition(partition_fn=_wrapped)
         else:
-            if partition_fn is None:
-                check.failed("One of `partition_fn` or `partitions_def` must be supplied.")
-            self._partitions_def = DynamicPartitionsDefinition(partition_fn=_wrap_partition_fn)
+            check.failed(
+                "One of `partition_fn` or `partitions_def` must be supplied.",
+            )
+
+    def _wrap_partition_fn(self, partition_fn: RawPartitionFunction) -> PartitionFunction:
+        partition_fn_param_count = len(inspect.signature(partition_fn).parameters)
+
+        def wrap_partition(x: Union[str, Partition]) -> Partition:
+            if isinstance(x, Partition):
+                return x
+            if isinstance(x, str):
+                return Partition(x)
+            raise DagsterInvalidDefinitionError(
+                "Expected <Partition> | <str>, received {type}".format(type=type(x))
+            )
+
+        def wrapper(current_time: Optional[datetime] = None) -> Sequence[Partition]:
+            if not current_time:
+                current_time = pendulum.now("UTC")
+
+            check.callable_param(partition_fn, "partition_fn")  # type: ignore
+
+            if partition_fn_param_count == 1:
+                obj_list = cast(
+                    Callable[..., Sequence[Union[Partition[T], str]]],
+                    partition_fn,
+                )(current_time)
+            else:
+                obj_list = partition_fn()  # type: ignore
+
+            return [wrap_partition(obj) for obj in obj_list]
+
+        return wrapper
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def pipeline_name(self):
+    def pipeline_name(self) -> Optional[str]:
         return self._pipeline_name
 
     @property
-    def job_name(self):
+    def job_name(self) -> Optional[str]:
         return self._job_name
 
     @property
@@ -483,25 +532,25 @@ class PartitionSetDefinition(Generic[T]):
         return cast(str, self._pipeline_name or self._job_name)
 
     @property
-    def solid_selection(self):
+    def solid_selection(self) -> Optional[Sequence[str]]:
         return self._solid_selection
 
     @property
-    def mode(self):
+    def mode(self) -> Optional[str]:
         return self._mode
 
-    def run_config_for_partition(self, partition: Partition[T]) -> Dict[str, Any]:
-        return copy.deepcopy(self._user_defined_run_config_fn_for_partition(partition))
+    def run_config_for_partition(self, partition: Partition[T]) -> Mapping[str, Any]:
+        return copy.deepcopy(self._user_defined_run_config_fn_for_partition(partition))  # type: ignore
 
-    def tags_for_partition(self, partition: Partition[T]) -> Dict[str, str]:
+    def tags_for_partition(self, partition: Partition[T]) -> Mapping[str, str]:
         user_tags = validate_tags(
-            self._user_defined_tags_fn_for_partition(partition), allow_reserved_tags=False
+            self._user_defined_tags_fn_for_partition(partition), allow_reserved_tags=False  # type: ignore
         )
         tags = merge_dicts(user_tags, PipelineRun.tags_for_partition_set(self, partition))
 
         return tags
 
-    def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition[T]]:
+    def get_partitions(self, current_time: Optional[datetime] = None) -> Sequence[Partition[T]]:
         """Return the set of known partitions.
 
         Arguments:
@@ -518,28 +567,28 @@ class PartitionSetDefinition(Generic[T]):
 
         raise DagsterUnknownPartitionError(f"Could not find a partition with key `{name}`")
 
-    def get_partition_names(self, current_time: Optional[datetime] = None) -> List[str]:
+    def get_partition_names(self, current_time: Optional[datetime] = None) -> Sequence[str]:
         return [part.name for part in self.get_partitions(current_time)]
 
     def create_schedule_definition(
         self,
-        schedule_name,
-        cron_schedule,
-        partition_selector,
-        should_execute=None,
-        environment_vars=None,
-        execution_timezone=None,
-        description=None,
-        decorated_fn=None,
-        job=None,
+        schedule_name: str,
+        cron_schedule: str,
+        partition_selector: PartitionSelectorFunction,
+        should_execute: Optional[Callable[..., bool]] = None,
+        environment_vars: Optional[Mapping[str, str]] = None,
+        execution_timezone: Optional[str] = None,
+        description: Optional[str] = None,
+        decorated_fn: Optional[PartitionScheduleFunction] = None,
+        job: Optional[ExecutableDefinition] = None,
         default_status=DefaultScheduleStatus.STOPPED,
-    ):
+    ) -> "PartitionScheduleDefinition":
         """Create a ScheduleDefinition from a PartitionSetDefinition.
 
         Arguments:
             schedule_name (str): The name of the schedule.
             cron_schedule (str): A valid cron string for the schedule
-            partition_selector (Callable[ScheduleEvaluationContext, PartitionSetDefinition], Union[Partition, List[Partition]]):
+            partition_selector (Callable[[ScheduleEvaluationContext, PartitionSetDefinition], Union[Partition, Sequence[Partition]]]):
                 Function that determines the partition to use at a given execution time. Can return
                 either a single Partition or a list of Partitions. For time-based partition sets,
                 will likely be either `identity_partition_selector` or a selector returned by
@@ -663,22 +712,22 @@ class PartitionScheduleDefinition(ScheduleDefinition):
 
     def __init__(
         self,
-        name,
-        cron_schedule,
-        pipeline_name,
-        tags_fn,
-        solid_selection,
-        mode,
-        should_execute,
-        environment_vars,
-        partition_set,
-        run_config_fn=None,
-        execution_timezone=None,
-        execution_fn=None,
-        description=None,
-        decorated_fn=None,
-        job=None,
-        default_status=DefaultScheduleStatus.STOPPED,
+        name: str,
+        cron_schedule: str,
+        pipeline_name: Optional[str],
+        tags_fn: Optional[ScheduleTagsFunction],
+        solid_selection: Optional[Sequence[str]],
+        mode: Optional[str],
+        should_execute: Optional[ScheduleShouldExecuteFunction],
+        partition_set: PartitionSetDefinition,
+        environment_vars: Optional[Mapping[str, str]] = None,
+        run_config_fn: Optional[ScheduleRunConfigFunction] = None,
+        execution_timezone: Optional[str] = None,
+        execution_fn: Optional[ScheduleExecutionFunction] = None,
+        description: Optional[str] = None,
+        decorated_fn: Optional[PartitionScheduleFunction] = None,
+        job: Optional[ExecutableDefinition] = None,
+        default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
     ):
         super(PartitionScheduleDefinition, self).__init__(
             name=check_valid_name(name),
@@ -701,7 +750,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
         )
         self._decorated_fn = check.opt_callable_param(decorated_fn, "decorated_fn")
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> Mapping[str, Any]:
         if not self._decorated_fn:
             raise DagsterInvalidInvocationError(
                 "Only partition schedules created using one of the partition schedule decorators "
@@ -731,7 +780,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
 
         return self._decorated_fn(date)
 
-    def get_partition_set(self):
+    def get_partition_set(self) -> PartitionSetDefinition:
         return self._partition_set
 
 
@@ -746,9 +795,9 @@ class PartitionedConfig(Generic[T]):
     def __init__(
         self,
         partitions_def: PartitionsDefinition[T],  # pylint: disable=unsubscriptable-object
-        run_config_for_partition_fn: Callable[[Partition[T]], Dict[str, Any]],
-        decorated_fn: Optional[Callable[..., Dict[str, Any]]] = None,
-        tags_for_partition_fn: Optional[Callable[[Partition[T]], Dict[str, str]]] = None,
+        run_config_for_partition_fn: Callable[[Partition[T]], Mapping[str, Any]],
+        decorated_fn: Optional[Callable[..., Mapping[str, Any]]] = None,
+        tags_for_partition_fn: Optional[Callable[[Partition[T]], Mapping[str, str]]] = None,
     ):
         self._partitions = check.inst_param(partitions_def, "partitions_def", PartitionsDefinition)
         self._run_config_for_partition_fn = check.callable_param(
@@ -764,17 +813,17 @@ class PartitionedConfig(Generic[T]):
         return self._partitions
 
     @property
-    def run_config_for_partition_fn(self) -> Callable[[Partition[T]], Dict[str, Any]]:
+    def run_config_for_partition_fn(self) -> Callable[[Partition[T]], Mapping[str, Any]]:
         return self._run_config_for_partition_fn
 
     @property
-    def tags_for_partition_fn(self) -> Optional[Callable[[Partition[T]], Dict[str, str]]]:
+    def tags_for_partition_fn(self) -> Optional[Callable[[Partition[T]], Mapping[str, str]]]:
         return self._tags_for_partition_fn
 
-    def get_partition_keys(self, current_time: Optional[datetime] = None) -> List[str]:
+    def get_partition_keys(self, current_time: Optional[datetime] = None) -> Sequence[str]:
         return [partition.name for partition in self.partitions_def.get_partitions(current_time)]
 
-    def get_run_config_for_partition_key(self, partition_key: str) -> Dict[str, Any]:
+    def get_run_config_for_partition_key(self, partition_key: str) -> Mapping[str, Any]:
         """Generates the run config corresponding to a partition key.
 
         Args:
@@ -797,9 +846,9 @@ class PartitionedConfig(Generic[T]):
 
 
 def static_partitioned_config(
-    partition_keys: List[str],
-    tags_for_partition_fn: Optional[Callable[[str], Dict[str, str]]] = None,
-) -> Callable[[Callable[[str], Dict[str, Any]]], PartitionedConfig]:
+    partition_keys: Sequence[str],
+    tags_for_partition_fn: Optional[Callable[[str], Mapping[str, str]]] = None,
+) -> Callable[[Callable[[str], Mapping[str, Any]]], PartitionedConfig]:
     """Creates a static partitioned config for a job.
 
     The provided partition_keys returns a static list of strings identifying the set of partitions,
@@ -814,7 +863,7 @@ def static_partitioned_config(
     target job.
 
     Args:
-        partition_keys (List[str]): A list of valid partition keys, which serve as the range of
+        partition_keys (Sequence[str]): A list of valid partition keys, which serve as the range of
             values that can be provided to the decorated run config function.
 
     Returns:
@@ -822,13 +871,13 @@ def static_partitioned_config(
     """
     check.list_param(partition_keys, "partition_keys", str)
 
-    def inner(fn: Callable[[str], Dict[str, Any]]) -> PartitionedConfig:
+    def inner(fn: Callable[[str], Mapping[str, Any]]) -> PartitionedConfig:
         check.callable_param(fn, "fn")
 
-        def _run_config_wrapper(partition: Partition[T]) -> Dict[str, Any]:
+        def _run_config_wrapper(partition: Partition) -> Mapping[str, Any]:
             return fn(partition.name)
 
-        def _tag_wrapper(partition: Partition[T]) -> Dict[str, str]:
+        def _tag_wrapper(partition: Partition) -> Mapping[str, str]:
             return tags_for_partition_fn(partition.name) if tags_for_partition_fn else {}
 
         return PartitionedConfig(
@@ -842,9 +891,9 @@ def static_partitioned_config(
 
 
 def dynamic_partitioned_config(
-    partition_fn: Callable[[Optional[datetime]], List[str]],
-    tags_for_partition_fn: Optional[Callable[[str], Dict[str, str]]] = None,
-) -> Callable[[Callable[[str], Dict[str, Any]]], PartitionedConfig]:
+    partition_fn: Callable[[Optional[datetime]], Sequence[str]],
+    tags_for_partition_fn: Optional[Callable[[str], Mapping[str, str]]] = None,
+) -> Callable[[Callable[[str], Mapping[str, Any]]], PartitionedConfig]:
     """Creates a dynamic partitioned config for a job.
 
     The provided partition_fn returns a list of strings identifying the set of partitions, given
@@ -864,11 +913,11 @@ def dynamic_partitioned_config(
     """
     check.callable_param(partition_fn, "partition_fn")
 
-    def inner(fn: Callable[[str], Dict[str, Any]]) -> PartitionedConfig:
-        def _run_config_wrapper(partition: Partition[T]) -> Dict[str, Any]:
+    def inner(fn: Callable[[str], Mapping[str, Any]]) -> PartitionedConfig:
+        def _run_config_wrapper(partition: Partition) -> Mapping[str, Any]:
             return fn(partition.name)
 
-        def _tag_wrapper(partition: Partition[T]) -> Dict[str, str]:
+        def _tag_wrapper(partition: Partition) -> Mapping[str, str]:
             return tags_for_partition_fn(partition.name) if tags_for_partition_fn else {}
 
         return PartitionedConfig(

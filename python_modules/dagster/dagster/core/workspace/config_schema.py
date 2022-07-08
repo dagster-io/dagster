@@ -1,5 +1,5 @@
 import os
-from typing import Dict, cast
+from typing import Dict, Mapping, cast
 
 import dagster._check as check
 from dagster.config import Field, ScalarUnion, Selector
@@ -11,9 +11,9 @@ from dagster.utils import merge_dicts
 
 
 def process_workspace_config(
-    workspace_config: Dict[str, object]
-) -> EvaluateValueResult[Dict[str, object]]:
-    workspace_config = check.dict_param(workspace_config, "workspace_config")
+    workspace_config: Mapping[str, object]
+) -> EvaluateValueResult[Mapping[str, object]]:
+    workspace_config = check.mapping_param(workspace_config, "workspace_config")
 
     return process_config(WORKSPACE_CONFIG_SCHEMA, workspace_config)
 

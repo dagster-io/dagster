@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster.config.snap import ConfigSchemaSnapshot
@@ -16,10 +16,10 @@ class PipelineIndex:
 
     pipeline_snapshot: PipelineSnapshot
     parent_pipeline_snapshot: Optional[PipelineSnapshot]
-    _node_defs_snaps_index: Dict[str, Union[SolidDefSnap, CompositeSolidDefSnap]]
-    _dagster_type_snaps_by_name_index: Dict[str, DagsterTypeSnap]
+    _node_defs_snaps_index: Mapping[str, Union[SolidDefSnap, CompositeSolidDefSnap]]
+    _dagster_type_snaps_by_name_index: Mapping[str, DagsterTypeSnap]
     dep_structure_index: DependencyStructureIndex
-    _comp_dep_structures: Dict[str, DependencyStructureIndex]
+    _comp_dep_structures: Mapping[str, DependencyStructureIndex]
     _pipeline_snapshot_id: Optional[str]
 
     def __init__(
@@ -40,7 +40,7 @@ class PipelineIndex:
                 "Can not create PipelineIndex for pipeline_snapshot with lineage without parent_pipeline_snapshot",
             )
 
-        node_def_snaps: List[Union[SolidDefSnap, CompositeSolidDefSnap]] = [
+        node_def_snaps: Sequence[Union[SolidDefSnap, CompositeSolidDefSnap]] = [
             *pipeline_snapshot.solid_definitions_snapshot.solid_def_snaps,
             *pipeline_snapshot.solid_definitions_snapshot.composite_solid_def_snaps,
         ]
@@ -72,7 +72,7 @@ class PipelineIndex:
         return self.pipeline_snapshot.description
 
     @property
-    def tags(self) -> Dict[str, Any]:
+    def tags(self) -> Mapping[str, Any]:
         return self.pipeline_snapshot.tags
 
     @property
@@ -98,7 +98,7 @@ class PipelineIndex:
     def get_dep_structure_index(self, comp_solid_def_name: str) -> DependencyStructureIndex:
         return self._comp_dep_structures[comp_solid_def_name]
 
-    def get_dagster_type_snaps(self) -> List[DagsterTypeSnap]:
+    def get_dagster_type_snaps(self) -> Sequence[DagsterTypeSnap]:
         dt_namespace = self.pipeline_snapshot.dagster_type_namespace_snapshot
         return list(dt_namespace.all_dagster_type_snaps_by_key.values())
 
@@ -117,7 +117,7 @@ class PipelineIndex:
         return False
 
     @property
-    def available_modes(self) -> List[str]:
+    def available_modes(self) -> Sequence[str]:
         return [mode_def_snap.name for mode_def_snap in self.pipeline_snapshot.mode_def_snaps]
 
     def get_mode_def_snap(self, name: str) -> ModeDefSnap:

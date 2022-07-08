@@ -116,6 +116,9 @@ class DbIOManager(IOManager):
     ) -> TableSlice:
         output_context_metadata = output_context.metadata or {}
 
+        schema: str
+        table: str
+        time_window: Optional[TimeWindow]
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
             table = asset_key_path[-1]
@@ -133,7 +136,7 @@ class DbIOManager(IOManager):
             elif len(asset_key_path) > 1:
                 schema = asset_key_path[-2]
             elif context.resource_config and context.resource_config.get("schema"):
-                schema = context.resource_config["schema"]
+                schema = cast(str, context.resource_config["schema"])
             else:
                 schema = "public"
             time_window = (
@@ -153,15 +156,15 @@ class DbIOManager(IOManager):
                     "Schema can only be specified one way."
                 )
             elif output_context.resource_config and output_context_metadata.get("schema"):
-                schema = output_context_metadata["schema"]
+                schema = cast(str, output_context_metadata["schema"])
             elif output_context.resource_config and output_context.resource_config.get("schema"):
-                schema = output_context.resource_config["schema"]
+                schema = cast(str, output_context.resource_config["schema"])
             else:
                 schema = "public"
             time_window = None
 
         if time_window is not None:
-            partition_expr = output_context_metadata.get("partition_expr")
+            partition_expr = cast(str, output_context_metadata.get("partition_expr"))
             if partition_expr is None:
                 raise ValueError(
                     f"Asset '{context.asset_key}' has partitions, but no 'partition_expr' metadata "
@@ -179,5 +182,5 @@ class DbIOManager(IOManager):
             schema=schema,
             database=cast(Mapping[str, str], context.resource_config)["database"],
             partition=partition,
-            columns=(context.metadata or {}).get("columns"),
+            columns=(context.metadata or {}).get("columns"),  # type: ignore  # (mypy bug)
         )

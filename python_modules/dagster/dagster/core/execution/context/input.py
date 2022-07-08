@@ -306,7 +306,7 @@ class InputContext:
             partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
 
-    def get_identifier(self) -> List[str]:
+    def get_identifier(self) -> Sequence[str]:
         """Utility method to get a collection of identifiers that as a whole represent a unique
         step input.
 

@@ -9,7 +9,9 @@ from typing import (
     List,
     Mapping,
     NamedTuple,
+    NoReturn,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Type,
@@ -93,7 +95,7 @@ def enter_composition(name: str, source: str) -> None:
 
 
 def exit_composition(
-    output: Optional[Dict[str, OutputMapping]] = None
+    output: Optional[Mapping[str, OutputMapping]] = None
 ) -> "CompleteCompositionContext":
     return _composition_stack.pop().complete(output)
 
@@ -129,22 +131,28 @@ class InProgressCompositionContext:
     composition function such as @composite_solid or @pipeline
     """
 
+    name: str
+    source: str
+    _invocations: Dict[str, "InvokedNode"]
+    _collisions: Dict[str, int]
+    _pending_invocations: Dict[str, "PendingNodeInvocation"]
+
     def __init__(self, name: str, source: str):
         self.name = check.str_param(name, "name")
         self.source = check.str_param(source, "source")
-        self._invocations: Dict[str, "InvokedNode"] = {}
-        self._collisions: Dict[str, int] = {}
-        self._pending_invocations: Dict[str, PendingNodeInvocation] = {}
+        self._invocations = {}
+        self._collisions = {}
+        self._pending_invocations = {}
 
     def observe_invocation(
         self,
-        given_alias: str,
+        given_alias: Optional[str],
         node_def: NodeDefinition,
-        input_bindings: Dict[str, Any],
+        input_bindings: Mapping[str, Any],
         tags: Optional[frozentags],
         hook_defs: Optional[AbstractSet[HookDefinition]],
         retry_policy: Optional[RetryPolicy],
-    ):
+    ) -> str:
         if given_alias is None:
             node_name = node_def.name
             self._pending_invocations.pop(node_name, None)
@@ -171,16 +179,18 @@ class InProgressCompositionContext:
         )
         return node_name
 
-    def add_pending_invocation(self, solid: "PendingNodeInvocation"):
+    def add_pending_invocation(self, solid: "PendingNodeInvocation") -> None:
         solid_name = solid.given_alias if solid.given_alias else solid.node_def.name
         self._pending_invocations[solid_name] = solid
 
-    def complete(self, output: Optional[Dict[str, OutputMapping]]) -> "CompleteCompositionContext":
+    def complete(
+        self, output: Optional[Mapping[str, OutputMapping]]
+    ) -> "CompleteCompositionContext":
         return CompleteCompositionContext.create(
             self.name,
             self.source,
             self._invocations,
-            check.opt_dict_param(output, "output"),
+            check.opt_mapping_param(output, "output"),
             self._pending_invocations,
         )
 
@@ -189,18 +199,18 @@ class CompleteCompositionContext(NamedTuple):
     """The processed information from capturing solid invocations during a composition function."""
 
     name: str
-    solid_defs: List[NodeDefinition]
-    dependencies: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]
-    input_mappings: List[InputMapping]
-    output_mapping_dict: Dict[str, OutputMapping]
+    solid_defs: Sequence[NodeDefinition]
+    dependencies: Mapping[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]
+    input_mappings: Sequence[InputMapping]
+    output_mapping_dict: Mapping[str, OutputMapping]
 
     @staticmethod
     def create(
         name: str,
         source: str,
-        invocations: Dict[str, "InvokedNode"],
-        output_mapping_dict: Dict[str, OutputMapping],
-        pending_invocations: Dict[str, "PendingNodeInvocation"],
+        invocations: Mapping[str, "InvokedNode"],
+        output_mapping_dict: Mapping[str, OutputMapping],
+        pending_invocations: Mapping[str, "PendingNodeInvocation"],
     ):
 
         dep_dict: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
@@ -278,6 +288,12 @@ class PendingNodeInvocation:
     """An intermediate object in composition to allow for binding information such as
     an alias before invoking.
     """
+
+    node_def: NodeDefinition
+    given_alias: Optional[str]
+    tags: Optional[frozentags]
+    hook_defs: AbstractSet[HookDefinition]
+    retry_policy: Optional[RetryPolicy]
 
     def __init__(
         self,
@@ -649,7 +665,7 @@ class InvokedNode(NamedTuple):
 
     node_name: str
     node_def: NodeDefinition
-    input_bindings: Dict[str, Any]
+    input_bindings: Mapping[str, Any]
     tags: Optional[frozentags]
     hook_defs: Optional[AbstractSet[HookDefinition]]
     retry_policy: Optional[RetryPolicy]
@@ -658,12 +674,16 @@ class InvokedNode(NamedTuple):
 class InvokedSolidOutputHandle:
     """The return value for an output when invoking a node in a composition function."""
 
-    def __init__(self, solid_name, output_name, node_type):
+    solid_name: str
+    output_name: str
+    node_type: str
+
+    def __init__(self, solid_name: str, output_name: str, node_type: str):
         self.solid_name = check.str_param(solid_name, "solid_name")
         self.output_name = check.str_param(output_name, "output_name")
         self.node_type = check.str_param(node_type, "node_type")
 
-    def __iter__(self):
+    def __iter__(self) -> NoReturn:
         raise DagsterInvariantViolationError(
             'Attempted to iterate over an {cls}. This object represents the output "{out}" '
             'from the solid "{solid}". Consider defining multiple Outs if you seek to pass '
@@ -672,7 +692,7 @@ class InvokedSolidOutputHandle:
             )
         )
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: object) -> NoReturn:
         raise DagsterInvariantViolationError(
             'Attempted to index in to an {cls}. This object represents the output "{out}" '
             "from the {described_node}. Consider defining multiple Outs if you seek to pass "
@@ -684,10 +704,10 @@ class InvokedSolidOutputHandle:
             )
         )
 
-    def describe_node(self):
+    def describe_node(self) -> str:
         return f"{self.node_type} '{self.solid_name}'"
 
-    def alias(self, _):
+    def alias(self, _) -> NoReturn:
         raise DagsterInvariantViolationError(
             "In {source} {name}, attempted to call alias method for {cls}. This object "
             'represents the output "{out}" from the already invoked {described_node}. Consider '
@@ -700,7 +720,7 @@ class InvokedSolidOutputHandle:
             )
         )
 
-    def with_hooks(self, _):
+    def with_hooks(self, _) -> NoReturn:
         raise DagsterInvariantViolationError(
             "In {source} {name}, attempted to call hook method for {cls}. This object "
             'represents the output "{out}" from the already invoked {described_node}. Consider '
@@ -830,12 +850,12 @@ class InputMappingNode(NamedTuple):
 
 def composite_mapping_from_output(
     output: Any,
-    output_defs: List[OutputDefinition],
+    output_defs: Sequence[OutputDefinition],
     solid_name: str,
     decorator_name: str,
-) -> Optional[Dict[str, OutputMapping]]:
+) -> Optional[Mapping[str, OutputMapping]]:
     # output can be different types
-    check.list_param(output_defs, "output_defs", OutputDefinition)
+    check.sequence_param(output_defs, "output_defs", OutputDefinition)
     check.str_param(solid_name, "solid_name")
 
     # single output
@@ -945,17 +965,17 @@ def do_composition(
     decorator_name: str,
     graph_name: str,
     fn: Callable,
-    provided_input_defs: List[InputDefinition],
-    provided_output_defs: Optional[List[OutputDefinition]],
+    provided_input_defs: Sequence[InputDefinition],
+    provided_output_defs: Optional[Sequence[OutputDefinition]],
     config_mapping: Optional[ConfigMapping],
     ignore_output_from_composition_fn: bool,
 ) -> Tuple[
-    List[InputMapping],
-    List[OutputMapping],
-    Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]],
-    List[NodeDefinition],
+    Sequence[InputMapping],
+    Sequence[OutputMapping],
+    Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]],
+    Sequence[NodeDefinition],
     Optional[ConfigMapping],
-    List[str],
+    Sequence[str],
 ]:
     """
     This a function used by both @pipeline and @composite_solid to implement their composition
@@ -983,6 +1003,7 @@ def do_composition(
         resolve_checked_solid_fn_inputs,
     )
 
+    actual_output_defs: Sequence[OutputDefinition]
     if provided_output_defs is None:
         outputs_are_explicit = False
         actual_output_defs = [OutputDefinition.create_from_inferred(infer_output_props(fn))]

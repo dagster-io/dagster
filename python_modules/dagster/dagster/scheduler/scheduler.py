@@ -272,7 +272,7 @@ def launch_scheduled_runs_for_schedule(
     log_verbose_checks=True,
 ):
     instance = check.inst_param(instance, "instance", DagsterInstance)
-    schedule_state = check.opt_inst_param(schedule_state, "schedule_state", InstigatorState)
+    schedule_state = check.inst_param(schedule_state, "schedule_state", InstigatorState)
     end_datetime_utc = check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
 
     instigator_origin_id = external_schedule.get_external_origin_id()
