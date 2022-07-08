@@ -367,6 +367,12 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
 
+    def asset_partition_key_for_input(self, input_name: str) -> str:
+        """Returns the asset partition key for the given output. Defaults to "result", which is the
+        name of the default output.
+        """
+        return self._step_execution_context.asset_partition_key_for_input(input_name)
+
     def has_tag(self, key: str) -> bool:
         """Check if a logging tag is set.
 
