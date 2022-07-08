@@ -193,8 +193,8 @@ def test_io_manager_with_snowflake_pandas_timestamp_data():
             {
                 "foo": ["bar", "baz"],
                 "date": [
-                    pandas.Timestamp("2017-01-01T12:30:45.350000+00:00"),
-                    pandas.Timestamp("2017-02-01T12:30:45.350000+00:00"),
+                    pandas.Timestamp("2017-01-01T12:30:45.350000+00:00", tz="UTC"),
+                    pandas.Timestamp("2017-02-01T12:30:45.350000+00:00", tz="UTC"),
                 ],
             }
         )
