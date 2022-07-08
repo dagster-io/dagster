@@ -42,8 +42,8 @@
         "title": "Understanding Dagster",
         "children": [
           {
-            "title": "Getting the basics",
-            "path": "/building#getting-the-basics"
+            "title": "Designing DAGs",
+            "path": "/building#designing-dags"
           },
           {
             "title": "Running Dagster",
