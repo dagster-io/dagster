@@ -9,10 +9,10 @@ import {buildLayout} from '../gantt/GanttChartLayout';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {StepEventStatus} from '../types/globalTypes';
 
+import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 import {PartitionMatrixStepRunFragment} from './types/PartitionMatrixStepRunFragment';
-import {PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles} from './types/PartitionRunMatrixPipelineQuery';
+import {PartitionMatrixSolidHandleFragment} from './types/PartitionMatrixSolidHandleFragment';
 
-type SolidHandle = PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles;
 type StatusSquareColor =
   | 'SUCCESS'
   | 'FAILURE'
@@ -162,7 +162,7 @@ function buildMatrixData(
 }
 
 interface MatrixDataInputs {
-  solidHandles: SolidHandle[] | false;
+  solidHandles: PartitionMatrixSolidHandleFragment[] | false;
   partitionNames: string[];
   partitions: PartitionRuns[];
   stepQuery: string;
@@ -223,4 +223,32 @@ export const PARTITION_MATRIX_STEP_RUN_FRAGMENT = gql`
       value
     }
   }
+`;
+
+export const PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT = gql`
+  fragment PartitionMatrixSolidHandleFragment on SolidHandle {
+    handleID
+    solid {
+      name
+      definition {
+        name
+      }
+      inputs {
+        dependsOn {
+          solid {
+            name
+          }
+        }
+      }
+      outputs {
+        dependedBy {
+          solid {
+            name
+          }
+        }
+      }
+    }
+    ...GraphExplorerSolidHandleFragment
+  }
+  ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
 `;

@@ -37,6 +37,7 @@ import {
   PartitionStepStatusPipelineQueryVariables,
 } from './types/PartitionStepStatusPipelineQuery';
 import {
+  PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT,
   isStepKeyForNode,
   MatrixStep,
   PartitionRuns,
@@ -321,33 +322,12 @@ const PARTITION_STEP_STATUS_PIPELINE_QUERY = gql`
         id
         name
         solidHandles {
-          handleID
-          solid {
-            name
-            definition {
-              name
-            }
-            inputs {
-              dependsOn {
-                solid {
-                  name
-                }
-              }
-            }
-            outputs {
-              dependedBy {
-                solid {
-                  name
-                }
-              }
-            }
-          }
-          ...GraphExplorerSolidHandleFragment
+          ...PartitionMatrixSolidHandleFragment
         }
       }
     }
   }
-  ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
+  ${PARTITION_MATRIX_SOLID_HANDLE_FRAGMENT}
 `;
 
 const PartitionStepSquare: React.FC<{
