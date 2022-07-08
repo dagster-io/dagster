@@ -17,7 +17,6 @@ setup(
     description="Dagster example for using the Great Expectations integration.",
     url="https://github.com/dagster-io/dagster/tree/master/examples/ge_example",
     classifiers=[
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",

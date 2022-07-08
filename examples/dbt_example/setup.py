@@ -22,7 +22,6 @@ setup(
     description="Dagster example for integrating with dbt.",
     url="https://github.com/dagster-io/dagster/tree/master/examples/dbt_examples",
     classifiers=[
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
