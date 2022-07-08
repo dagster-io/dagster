@@ -24,6 +24,7 @@ dbt_assets = load_assets_from_dbt_manifest(
     # the schemas are already specified in dbt, so we don't need to also specify them in the key
     # prefix here
     key_prefix=["snowflake"],
+    source_key_prefix=["snowflake"],
 )
 
 all_assets = [*core_assets, *recommender_assets, *dbt_assets, *activity_analytics_assets]
