@@ -248,7 +248,7 @@ class SolidDefinition(NodeDefinition):
             if (
                 not input_def.dagster_type.loader
                 and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
-                and not input_def.root_manager_key
+                and not input_def.input_manager_key
                 and not input_def.has_default_value
             ):
                 input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
@@ -310,19 +310,11 @@ class SolidDefinition(NodeDefinition):
                 key=resource_key, node_description=node_description
             )
         for input_def in self.input_defs:
-            if input_def.root_manager_key:
-                yield InputManagerRequirement(
-                    key=input_def.root_manager_key,
-                    node_description=node_description,
-                    input_name=input_def.name,
-                    root_input=True,
-                )
-            elif input_def.input_manager_key:
+            if input_def.input_manager_key:
                 yield InputManagerRequirement(
                     key=input_def.input_manager_key,
                     node_description=node_description,
                     input_name=input_def.name,
-                    root_input=False,
                 )
             elif asset_layer and handle:
                 input_asset_key = asset_layer.asset_key_for_input(handle, input_def.name)
@@ -332,7 +324,6 @@ class SolidDefinition(NodeDefinition):
                         key=io_manager_key,
                         node_description=node_description,
                         input_name=input_def.name,
-                        root_input=False,
                     )
 
         for output_def in self.output_defs:
@@ -477,14 +468,14 @@ def _check_io_managers_on_composite_solid(
     input_mappings: Optional[List[InputMapping]],
     output_mappings: Optional[List[OutputMapping]],
 ):
-    # Ban root_manager_key on composite solids
+    # Ban input_manager_key on composite solids
     if input_mappings:
         for input_mapping in input_mappings:
             input_def = input_mapping.definition
-            if input_def.root_manager_key:
+            if input_def.input_manager_key:
                 raise DagsterInvalidDefinitionError(
-                    "Root input manager cannot be set on a composite solid: "
-                    f'root_manager_key "{input_def.root_manager_key}" '
+                    "Input manager cannot be set on a composite solid: "
+                    f'input_manager_key "{input_def.input_manager_key}" '
                     f'is set on InputDefinition "{input_def.name}" of composite solid "{name}". '
                 )
     # Ban io_manager_key on composite solids

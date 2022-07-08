@@ -10,10 +10,10 @@ from dagster import (
     DynamicOutput,
     In,
     graph,
+    input_manager,
     job,
     op,
     repository,
-    input_manager,
 )
 from dagster.core.errors import DagsterInvalidInvocationError, DagsterInvalidSubsetError
 from dagster.core.events import DagsterEventType

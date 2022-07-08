@@ -131,7 +131,7 @@ def _check_top_level_inputs_for_node(
         if (
             not input_def.dagster_type.loader
             and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
-            and not input_def.root_manager_key
+            and not input_def.input_manager_key
             and not input_def.has_default_value
             and not top_level_input_provided
         ):

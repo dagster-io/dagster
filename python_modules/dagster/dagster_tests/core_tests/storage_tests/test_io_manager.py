@@ -533,7 +533,7 @@ def test_io_manager_resources_on_context():
 
     @solid(
         input_defs=[
-            InputDefinition("_manager_input", root_manager_key="io_manager_reqs_resources")
+            InputDefinition("_manager_input", input_manager_key="io_manager_reqs_resources")
         ],
         output_defs=[
             OutputDefinition(dagster_type=str, io_manager_key="io_manager_reqs_resources")

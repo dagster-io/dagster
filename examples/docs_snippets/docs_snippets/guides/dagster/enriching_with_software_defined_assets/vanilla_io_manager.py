@@ -6,7 +6,7 @@ from .mylib import s3_io_manager, snowflake_io_manager, train_recommender_model
 
 
 @op(
-    ins={"raw_users": In(root_manager_key="warehouse")},
+    ins={"raw_users": In(input_manager_key="warehouse")},
     out={"users": Out(io_manager_key="warehouse")},
 )
 def build_users(raw_users: DataFrame) -> DataFrame:

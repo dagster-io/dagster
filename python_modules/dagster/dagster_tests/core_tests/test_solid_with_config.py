@@ -8,8 +8,8 @@ from dagster import (
     String,
     composite_solid,
     execute_pipeline,
-    pipeline,
     input_manager,
+    pipeline,
     solid,
 )
 

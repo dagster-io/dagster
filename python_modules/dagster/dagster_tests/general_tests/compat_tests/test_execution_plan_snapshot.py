@@ -18,9 +18,9 @@ from dagster.core.execution.plan.inputs import (
     FromConfig,
     FromDefaultValue,
     FromDynamicCollect,
+    FromInputManager,
     FromMultipleSources,
     FromPendingDynamicStepOutput,
-    FromInputManager,
     FromStepOutput,
     FromUnresolvedStepOutput,
 )
@@ -28,8 +28,8 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
-from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.input_manager import input_manager
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.utils import file_relative_path
 from dagster.utils.test import copy_directory
 

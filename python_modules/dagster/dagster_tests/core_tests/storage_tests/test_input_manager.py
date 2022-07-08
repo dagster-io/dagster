@@ -3,27 +3,15 @@ import tempfile
 import pytest
 
 from dagster import (
-    DagsterInstance,
-    DagsterInvalidDefinitionError,
     IOManager,
     In,
-    InputDefinition,
     InputManager,
-    MetadataEntry,
-    ModeDefinition,
-    OutputDefinition,
-    PythonObjectDagsterType,
-    composite_solid,
-    execute_pipeline,
-    execute_solid,
     input_manager,
     io_manager,
     job,
     op,
-    pipeline,
-    resource,
-    input_manager,
-    solid,
+    DagsterInstance,
+    MetadataEntry
 )
 from dagster.core.definitions.events import Failure, RetryRequested
 from dagster.core.errors import DagsterInvalidConfigError
@@ -305,3 +293,91 @@ def test_input_manager_class():
         second_op(out)
 
     check_input_managers.execute_in_process()
+
+def test_input_manager_with_retries():
+    _count = {"total": 0}
+
+    @input_manager
+    def should_succeed_after_retries(_):
+        if _count["total"] < 2:
+            _count["total"] += 1
+            raise RetryRequested(max_retries=3)
+        return "foo"
+
+    @input_manager
+    def should_retry(_):
+        raise RetryRequested(max_retries=3)
+
+    @op(
+        ins={"op_input": In(input_manager_key="should_succeed_after_retries")}
+    )
+    def take_input_1(_, op_input):
+        return op_input
+
+    @op(ins={"op_input": In(input_manager_key="should_retry")})
+    def take_input_2(_, op_input):
+        return op_input
+
+    @op
+    def take_input_3(_, _input1, _input2):
+        assert False, "should not be called"
+
+    @job(
+        resource_defs={
+            "should_succeed_after_retries": should_succeed_after_retries,
+            "should_retry": should_retry,
+        }
+    )
+    def simple():
+        take_input_3(take_input_2(), take_input_1())
+
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+
+        instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
+
+        result = simple.execute_in_process(instance=instance, raise_on_error=False)
+
+        step_stats = instance.get_run_step_stats(result.run_id)
+        assert len(step_stats) == 2
+
+        step_stats_1 = instance.get_run_step_stats(result.run_id, step_keys=["take_input_1"])
+        assert len(step_stats_1) == 1
+        step_stat_1 = step_stats_1[0]
+        assert step_stat_1.status.value == "SUCCESS"
+        assert step_stat_1.attempts == 3
+
+        step_stats_2 = instance.get_run_step_stats(result.run_id, step_keys=["take_input_2"])
+        assert len(step_stats_2) == 1
+        step_stat_2 = step_stats_2[0]
+        assert step_stat_2.status.value == "FAILURE"
+        assert step_stat_2.attempts == 4
+
+        step_stats_3 = instance.get_run_step_stats(result.run_id, step_keys=["take_input_3"])
+        assert len(step_stats_3) == 0
+
+
+def test_input_manager_with_failure():
+    @input_manager
+    def should_fail(_):
+        raise Failure(
+            description="Foolure",
+            metadata_entries=[MetadataEntry("label", value="text")],
+        )
+
+    @op(ins={"_fail_input": In(input_manager_key="should_fail")})
+    def fail_on_input(_, _fail_input):
+        assert False, "should not be called"
+
+    @job(resource_defs={"should_fail": should_fail})
+    def simple():
+        fail_on_input()
+
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+
+        instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
+
+        result = simple.execute_in_process(instance=instance, raise_on_error=False)
+
+        assert not result.success
+
+

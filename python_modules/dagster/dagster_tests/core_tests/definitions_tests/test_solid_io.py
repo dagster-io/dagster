@@ -73,7 +73,7 @@ def test_precedence():
                 default_value="hi",
                 description="legit",
                 metadata={"explicit": True},
-                root_manager_key="rudy",
+                input_manager_key="rudy",
                 asset_key=AssetKey("table_1"),
                 asset_partitions={"0"},
             )
@@ -96,7 +96,7 @@ def test_precedence():
     assert precedence.input_defs[0].description == "legit"
     assert precedence.input_defs[0].default_value == "hi"
     assert precedence.input_defs[0].metadata["explicit"]
-    assert precedence.input_defs[0].root_manager_key == "rudy"
+    assert precedence.input_defs[0].input_manager_key == "rudy"
     assert precedence.input_defs[0].get_asset_key(None) is not None
     assert precedence.input_defs[0].get_asset_partitions(None) is not None
 

@@ -9,10 +9,10 @@ from dagster import (
     In,
     execute_pipeline,
     graph,
+    input_manager,
     op,
     reexecute_pipeline,
     resource,
-    input_manager,
 )
 from dagster.core.definitions.version_strategy import VersionStrategy
 from dagster.core.execution.api import create_execution_plan

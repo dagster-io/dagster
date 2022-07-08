@@ -14,11 +14,11 @@ from dagster import (
     build_assets_job,
     build_input_context,
     execute_pipeline,
+    input_manager,
     io_manager,
     job,
     op,
     pipeline,
-    input_manager,
     solid,
 )
 from dagster._check import CheckError

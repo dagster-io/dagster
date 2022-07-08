@@ -303,7 +303,9 @@ class FromInputManager(
             config_data,
             metadata=input_def.metadata,
             dagster_type=input_def.dagster_type,
-            resource_config=step_context.resolved_run_config.resources[input_def.input_manager_key].config,
+            resource_config=step_context.resolved_run_config.resources[
+                input_def.input_manager_key
+            ].config,
             resources=build_resources_for_manager(input_def.input_manager_key, step_context),
         )
 

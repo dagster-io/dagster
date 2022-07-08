@@ -774,9 +774,7 @@ def test_input_manager():
 
 
 def test_input_manager_missing_fails():
-    @solid(
-        input_defs=[InputDefinition("root_input", input_manager_key="missing_input_manager")]
-    )
+    @solid(input_defs=[InputDefinition("root_input", input_manager_key="missing_input_manager")])
     def requires_missing_input_manager(root_input: int):
         return root_input
 

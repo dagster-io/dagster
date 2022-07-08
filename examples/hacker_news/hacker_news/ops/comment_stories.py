@@ -9,11 +9,11 @@ logger = get_dagster_logger()
 @op(
     ins={
         "stories": In(
-            root_manager_key="warehouse_loader",
+            input_manager_key="warehouse_loader",
             metadata={"table": "hackernews.stories", "columns": ["id"]},
         ),
         "comments": In(
-            root_manager_key="warehouse_loader",
+            input_manager_key="warehouse_loader",
             metadata={
                 "table": "hackernews.comments",
                 "columns": ["id", "user_id", "parent"],
