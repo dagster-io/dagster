@@ -24,10 +24,6 @@ if __name__ == "__main__":
         description=("Integration layer for dagster and pandera."),
         url="https://github.com/dagster-io/dagster",
         classifiers=[
-            "Programming Language :: Python :: 3.7",
-            "Programming Language :: Python :: 3.8",
-            "Programming Language :: Python :: 3.9",
-            "Programming Language :: Python :: 3.10",
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
@@ -38,5 +34,6 @@ if __name__ == "__main__":
             "test": [
                 "pytest",
             ],
+            python_requires=">=3.7,<=3.10",
         },
     )

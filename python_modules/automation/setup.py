@@ -9,8 +9,6 @@ setup(
     description="Tools for infrastructure automation",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/automation",
     classifiers=[
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
@@ -27,6 +25,7 @@ setup(
         "wheel==0.33.6",
         "urllib3",
     ],
+    python_requires=">=3.6,<=3.7",
     entry_points={
         "console_scripts": [
             "dagster-buildkite = automation.buildkite.cli:main",

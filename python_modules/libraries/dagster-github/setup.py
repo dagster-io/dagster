@@ -24,11 +24,6 @@ if __name__ == "__main__":
         description="A Github client resource for interacting with the github API with a github App",
         url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-github",
         classifiers=[
-            "Programming Language :: Python :: 3.6",
-            "Programming Language :: Python :: 3.7",
-            "Programming Language :: Python :: 3.8",
-            "Programming Language :: Python :: 3.9",
-            "Programming Language :: Python :: 3.10",
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
@@ -41,5 +36,6 @@ if __name__ == "__main__":
             # No officially supported python sdk for github :(
             "requests",
         ],
+        python_requires=">=3.6,<=3.10",
         zip_safe=False,
     )

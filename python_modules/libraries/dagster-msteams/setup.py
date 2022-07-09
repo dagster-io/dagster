@@ -19,11 +19,6 @@ if __name__ == "__main__":
         description="A Microsoft Teams client resource for posting to Microsoft Teams",
         url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-msteams",
         classifiers=[
-            "Programming Language :: Python :: 3.6",
-            "Programming Language :: Python :: 3.7",
-            "Programming Language :: Python :: 3.8",
-            "Programming Language :: Python :: 3.9",
-            "Programming Language :: Python :: 3.10",
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
@@ -32,5 +27,6 @@ if __name__ == "__main__":
             "dagster",
             "requests>=2,<3",
         ],
+        python_requires=">=3.6,<=3.10",
         zip_safe=False,
     )

@@ -24,11 +24,6 @@ if __name__ == "__main__":
         description="Package for PySpark Dagster framework components.",
         url="https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-framework/pyspark",
         classifiers=[
-            "Programming Language :: Python :: 3.6",
-            "Programming Language :: Python :: 3.7",
-            "Programming Language :: Python :: 3.8",
-            "Programming Language :: Python :: 3.9",
-            "Programming Language :: Python :: 3.10",
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
@@ -40,5 +35,6 @@ if __name__ == "__main__":
             'pyspark>=3.0.0; python_version >= "3.8"',
             'pyspark>=2.0.2; python_version < "3.8"',
         ],
+        python_requires=">=3.6,<=3.10",
         zip_safe=False,
     )

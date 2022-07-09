@@ -24,11 +24,6 @@ if __name__ == "__main__":
         description="A Dagster integration for postgres",
         url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-postgres",
         classifiers=[
-            "Programming Language :: Python :: 3.6",
-            "Programming Language :: Python :: 3.7",
-            "Programming Language :: Python :: 3.8",
-            "Programming Language :: Python :: 3.9",
-            "Programming Language :: Python :: 3.10",
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
@@ -40,5 +35,6 @@ if __name__ == "__main__":
         },
         include_package_data=True,
         install_requires=[f"dagster{pin}", "psycopg2-binary"],
+        python_requires=">=3.6,<=3.10",
         zip_safe=False,
     )

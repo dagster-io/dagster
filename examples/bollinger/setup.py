@@ -13,4 +13,5 @@ setup(
         "pandera",
         "pandas",
     ],
+    python_requires=">=3.7,<=3.10",
 )

@@ -24,9 +24,6 @@ if __name__ == "__main__":
         description="Airflow plugin for Dagster",
         url="https://github.com/dagster-io/dagster",
         classifiers=[
-            "Programming Language :: Python :: 3.6",
-            "Programming Language :: Python :: 3.7",
-            "Programming Language :: Python :: 3.8",
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
@@ -57,6 +54,7 @@ if __name__ == "__main__":
                 # by apache-airflow==1.10.10
                 "markupsafe<=2.0.1",
             ],
+            python_requires=">=3.6,<=3.8",
         },
         entry_points={"console_scripts": ["dagster-airflow = dagster_airflow.cli:main"]},
     )

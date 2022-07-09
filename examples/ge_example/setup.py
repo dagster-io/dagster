@@ -12,14 +12,12 @@ setup(
         "dagster-ge",
         "great_expectations>=0.14.12",  # pinned because pip is using the cached wheel for 0.13.14
     ],
+    python_requires=">=3.7,<=3.9",
     author="Elementl",
     license="Apache-2.0",
     description="Dagster example for using the Great Expectations integration.",
     url="https://github.com/dagster-io/dagster/tree/master/examples/ge_example",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],

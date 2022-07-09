@@ -7,6 +7,7 @@ setup(
     packages=find_packages(exclude=["emr_pyspark_tests*"]),
     include_package_data=True,
     install_requires=["dagster", "dagit", "dagster-aws", "dagster-pyspark"],
+    python_requires=">=3.6,<=3.10",
     author="Elementl",
     license="Apache-2.0",
     description="Example of using Dagster with PySpark on Amazon EMR",

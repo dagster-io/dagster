@@ -24,15 +24,12 @@ if __name__ == "__main__":
         description="Package for Snowflake Dagster framework components.",
         url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-snowflake",
         classifiers=[
-            "Programming Language :: Python :: 3.7",
-            "Programming Language :: Python :: 3.8",
-            "Programming Language :: Python :: 3.9",
-            "Programming Language :: Python :: 3.10",
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["dagster_snowflake_tests*"]),
         install_requires=[f"dagster{pin}", "snowflake-connector-python>=2.1.0"],
         extras_require={"snowflake.sqlalchemy": ["sqlalchemy", "snowflake-sqlalchemy"]},
+        python_requires=">=3.7,<=3.10",
         zip_safe=False,
     )

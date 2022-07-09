@@ -11,13 +11,9 @@ setup(
     description="Dagster example for performing run attribution by reading from HTTP headers in the RunCoordinator",
     url="https://github.com/dagster-io/dagster/tree/master/examples/run_attribution_example",
     classifiers=[
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     extras_require={"test": ["pytest", "mock"]},
+    python_requires=">=3.6,<=3.10",
 )

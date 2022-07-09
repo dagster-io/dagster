@@ -36,15 +36,11 @@ if __name__ == "__main__":
         long_description_content_type="text/markdown",
         url="https://github.com/dagster-io/dagster",
         classifiers=[
-            "Programming Language :: Python :: 3.6",
-            "Programming Language :: Python :: 3.7",
-            "Programming Language :: Python :: 3.8",
-            "Programming Language :: Python :: 3.9",
-            "Programming Language :: Python :: 3.10",
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["dagster_pandas_tests*"]),
         include_package_data=True,
         install_requires=[f"dagster{pin}", "pandas"],
+        python_requires=">=3.6,<=3.10",
     )
