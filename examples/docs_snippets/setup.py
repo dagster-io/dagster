@@ -8,15 +8,10 @@ if __name__ == "__main__":
         license="Apache-2.0",
         url="https://github.com/dagster-io/dagster/tree/master/examples/docs_snippets",
         classifiers=[
-            "Programming Language :: Python :: 3.6",
-            "Programming Language :: Python :: 3.7",
-            "Programming Language :: Python :: 3.8",
-            "Programming Language :: Python :: 3.9",
-            "Programming Language :: Python :: 3.10",
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=find_packages(exclude=["test"]),
+        packages=find_packages(exclude=["docs_snippets_tests*"]),
         install_requires=[
             "dagit",
             "dagster",
@@ -48,4 +43,5 @@ if __name__ == "__main__":
                 "snapshottest",
             ]
         },
+        python_requires=">=3.6,<=3.10",
     )
