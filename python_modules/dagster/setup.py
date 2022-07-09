@@ -112,7 +112,6 @@ if __name__ == "__main__":
                 "astroid",  # let pylint determine the version
                 "pylint==2.13.7",
             ],
-            python_requires=">=3.6,<=3.10",
             "black": [
                 "black[jupyter]==22.3.0",
             ],
@@ -142,6 +141,7 @@ if __name__ == "__main__":
                 "types-toml",  # version will be resolved against toml
             ],
         },
+        python_requires=">=3.6,<=3.10",
         entry_points={
             "console_scripts": [
                 "dagster = dagster.cli:main",
