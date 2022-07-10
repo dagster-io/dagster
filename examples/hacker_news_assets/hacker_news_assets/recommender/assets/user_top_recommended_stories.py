@@ -1,4 +1,5 @@
 import numpy as np
+from hacker_news_assets.stores import snowflake_store
 from pandas import DataFrame
 from scipy.sparse import coo_matrix, csc_matrix, csr_matrix
 from sklearn.decomposition import TruncatedSVD
@@ -8,7 +9,7 @@ from dagster import asset
 from .user_story_matrix import IndexedCooMatrix
 
 
-@asset(io_manager_key="warehouse_io_manager", key_prefix=["snowflake", "recommender"])
+@asset(store=snowflake_store)
 def user_top_recommended_stories(
     context, recommender_model: TruncatedSVD, user_story_matrix: IndexedCooMatrix
 ) -> DataFrame:

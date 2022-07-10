@@ -1,3 +1,4 @@
+from hacker_news_assets.stores import snowflake_store
 from pandas import DataFrame, Series
 
 from dagster import AssetIn, asset
@@ -5,13 +6,10 @@ from dagster import AssetIn, asset
 
 @asset(
     ins={
-        "stories": AssetIn(key_prefix=["snowflake", "core"], metadata={"columns": ["id"]}),
-        "comments": AssetIn(
-            key_prefix=["snowflake", "core"], metadata={"columns": ["id", "user_id", "parent"]}
-        ),
+        "stories": AssetIn(key_prefix=["core"], metadata={"columns": ["id"]}),
+        "comments": AssetIn(key_prefix=["core"], metadata={"columns": ["id", "user_id", "parent"]}),
     },
-    io_manager_key="warehouse_io_manager",
-    key_prefix=["snowflake", "recommender"],
+    store=snowflake_store,
 )
 def comment_stories(stories: DataFrame, comments: DataFrame) -> DataFrame:
     """

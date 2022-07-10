@@ -6,7 +6,9 @@ from . import assets
 
 RECOMMENDER = "recommender"
 
-recommender_assets = load_assets_from_package_module(package_module=assets, group_name=RECOMMENDER)
+recommender_assets = load_assets_from_package_module(
+    package_module=assets, group_name=RECOMMENDER, key_prefix=RECOMMENDER
+)
 
 recommender_assets_sensor = make_hn_tables_updated_sensor(
     define_asset_job("story_recommender_job", selection=AssetSelection.groups(RECOMMENDER))

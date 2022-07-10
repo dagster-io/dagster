@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 import random
 
+from hacker_news_assets.stores import s3_object_store, snowflake_store
 from pandas import DataFrame, Series
 from sklearn.decomposition import TruncatedSVD
 
@@ -9,7 +10,7 @@ from dagster import AssetIn, MetadataValue, Output, asset
 from .user_story_matrix import IndexedCooMatrix
 
 
-@asset(key_prefix=["s3", "recommender"])
+@asset(store=s3_object_store)
 def recommender_model(user_story_matrix: IndexedCooMatrix) -> Output[TruncatedSVD]:
     """
     An SVD model for collaborative filtering-based recommendation.
@@ -30,11 +31,8 @@ def recommender_model(user_story_matrix: IndexedCooMatrix) -> Output[TruncatedSV
 
 
 @asset(
-    ins={
-        "stories": AssetIn(key_prefix=["snowflake", "core"], metadata={"columns": ["id", "title"]})
-    },
-    io_manager_key="warehouse_io_manager",
-    key_prefix=["snowflake", "recommender"],
+    ins={"stories": AssetIn(key_prefix=["core"], metadata={"columns": ["id", "title"]})},
+    store=snowflake_store,
 )
 def component_top_stories(
     recommender_model: TruncatedSVD, user_story_matrix: IndexedCooMatrix, stories: DataFrame
