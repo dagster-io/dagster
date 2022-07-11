@@ -32,7 +32,7 @@ export interface InstigationStateFragment_runs {
   updateTime: number | null;
 }
 
-export interface InstigationStateFragment_ticks_error_cause {
+export interface InstigationStateFragment_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -42,7 +42,7 @@ export interface InstigationStateFragment_ticks_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstigationStateFragment_ticks_error_cause | null;
+  causes: InstigationStateFragment_ticks_error_causes[];
 }
 
 export interface InstigationStateFragment_ticks {

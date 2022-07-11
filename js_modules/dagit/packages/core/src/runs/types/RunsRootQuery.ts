@@ -58,7 +58,7 @@ export interface RunsRootQuery_pipelineRunsOrError_InvalidPipelineRunsFilterErro
   message: string;
 }
 
-export interface RunsRootQuery_pipelineRunsOrError_PythonError_cause {
+export interface RunsRootQuery_pipelineRunsOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -68,7 +68,7 @@ export interface RunsRootQuery_pipelineRunsOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: RunsRootQuery_pipelineRunsOrError_PythonError_cause | null;
+  causes: RunsRootQuery_pipelineRunsOrError_PythonError_causes[];
 }
 
 export type RunsRootQuery_pipelineRunsOrError = RunsRootQuery_pipelineRunsOrError_Runs | RunsRootQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | RunsRootQuery_pipelineRunsOrError_PythonError;

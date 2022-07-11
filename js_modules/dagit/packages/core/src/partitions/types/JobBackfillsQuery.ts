@@ -59,7 +59,7 @@ export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_pa
   repositoryOrigin: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_partitionSet_repositoryOrigin;
 }
 
-export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_error_cause {
+export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -69,7 +69,7 @@ export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_er
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_error_cause | null;
+  causes: JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills_error_causes[];
 }
 
 export interface JobBackfillsQuery_partitionSetOrError_PartitionSet_backfills {

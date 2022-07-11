@@ -19,7 +19,7 @@ export interface ConfigForRunQuery_runOrError_Run {
   solidSelection: string[] | null;
 }
 
-export interface ConfigForRunQuery_runOrError_PythonError_cause {
+export interface ConfigForRunQuery_runOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -29,7 +29,7 @@ export interface ConfigForRunQuery_runOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: ConfigForRunQuery_runOrError_PythonError_cause | null;
+  causes: ConfigForRunQuery_runOrError_PythonError_causes[];
 }
 
 export type ConfigForRunQuery_runOrError = ConfigForRunQuery_runOrError_RunNotFoundError | ConfigForRunQuery_runOrError_Run | ConfigForRunQuery_runOrError_PythonError;

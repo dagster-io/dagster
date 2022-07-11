@@ -689,6 +689,7 @@ type PythonError implements Error {
   className: String
   stack: [String!]!
   cause: PythonError
+  causes: [PythonError!]!
 }
 
 interface Error {

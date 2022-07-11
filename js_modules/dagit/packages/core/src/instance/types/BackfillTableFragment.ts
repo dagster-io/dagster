@@ -55,7 +55,7 @@ export interface BackfillTableFragment_partitionSet {
   repositoryOrigin: BackfillTableFragment_partitionSet_repositoryOrigin;
 }
 
-export interface BackfillTableFragment_error_cause {
+export interface BackfillTableFragment_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -65,7 +65,7 @@ export interface BackfillTableFragment_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: BackfillTableFragment_error_cause | null;
+  causes: BackfillTableFragment_error_causes[];
 }
 
 export interface BackfillTableFragment {

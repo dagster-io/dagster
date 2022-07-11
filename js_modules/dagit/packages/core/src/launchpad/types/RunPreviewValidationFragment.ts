@@ -214,7 +214,7 @@ export interface RunPreviewValidationFragment_InvalidSubsetError {
   message: string;
 }
 
-export interface RunPreviewValidationFragment_PythonError_cause {
+export interface RunPreviewValidationFragment_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -224,7 +224,7 @@ export interface RunPreviewValidationFragment_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: RunPreviewValidationFragment_PythonError_cause | null;
+  causes: RunPreviewValidationFragment_PythonError_causes[];
 }
 
 export type RunPreviewValidationFragment = RunPreviewValidationFragment_PipelineConfigValidationValid | RunPreviewValidationFragment_RunConfigValidationInvalid | RunPreviewValidationFragment_PipelineNotFoundError | RunPreviewValidationFragment_InvalidSubsetError | RunPreviewValidationFragment_PythonError;

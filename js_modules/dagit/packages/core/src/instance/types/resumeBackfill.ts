@@ -17,7 +17,7 @@ export interface resumeBackfill_resumePartitionBackfill_UnauthorizedError {
   message: string;
 }
 
-export interface resumeBackfill_resumePartitionBackfill_PythonError_cause {
+export interface resumeBackfill_resumePartitionBackfill_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -27,7 +27,7 @@ export interface resumeBackfill_resumePartitionBackfill_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: resumeBackfill_resumePartitionBackfill_PythonError_cause | null;
+  causes: resumeBackfill_resumePartitionBackfill_PythonError_causes[];
 }
 
 export type resumeBackfill_resumePartitionBackfill = resumeBackfill_resumePartitionBackfill_ResumeBackfillSuccess | resumeBackfill_resumePartitionBackfill_UnauthorizedError | resumeBackfill_resumePartitionBackfill_PythonError;
