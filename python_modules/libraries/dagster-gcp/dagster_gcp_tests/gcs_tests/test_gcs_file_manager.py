@@ -23,7 +23,7 @@ def test_gcs_file_manager_write():
 
     assert gcs_mock.bucket().blob().upload_from_file.call_count == 1
 
-    file_handle = file_manager.write_data(foo_bytes, key="test", ext="foo")
+    file_handle = file_manager.write_data(foo_bytes, ext="foo", key="test")
 
     assert isinstance(file_handle, GCSFileHandle)
 
