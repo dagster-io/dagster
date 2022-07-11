@@ -74,5 +74,5 @@ def test_return_expectation_failure():
     with pytest.raises(
         DagsterInvariantViolationError,
         match="If you are returning an AssetMaterialization or an ExpectationResult from solid you must yield them directly",
-    ) as exc_info:
+    ):
         execute_pipeline(pipeline_def)

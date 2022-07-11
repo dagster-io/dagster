@@ -2,7 +2,6 @@ import inspect
 from functools import wraps
 from typing import Any, Generator, Iterator, Sequence, Tuple, Union, cast
 
-import dagster._check as check
 from dagster.core.definitions import (
     AssetMaterialization,
     DynamicOutput,
@@ -189,7 +188,7 @@ def validate_and_coerce_solid_result_to_iterator(
                         output_name=output_def.name,
                         value=dynamic_output.value,
                         mapping_key=dynamic_output.mapping_key,
-                        metadata_entries=dynamic_output.metadata_entries,
+                        metadata_entries=list(dynamic_output.metadata_entries),
                     )
             elif isinstance(element, Output):
                 if annotation and not is_generic_output_annotation(annotation):

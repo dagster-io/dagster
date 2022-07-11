@@ -933,7 +933,7 @@ def is_dynamic_output_annotation(dagster_type: object) -> bool:
     return False
 
 
-def _is_generic_output_annotation(dagster_type: object) -> bool:
+def is_generic_output_annotation(dagster_type: object) -> bool:
 
     return dagster_type == Output or get_origin(dagster_type) == Output
 

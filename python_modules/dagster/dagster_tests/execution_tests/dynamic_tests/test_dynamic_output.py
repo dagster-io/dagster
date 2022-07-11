@@ -4,9 +4,11 @@ from typing import NamedTuple
 import objgraph
 import pytest
 
-from dagster import DynamicOut, DynamicOutput, DynamicOutputDefinition, Out
-from dagster import _check as check
 from dagster import (
+    DynamicOut,
+    DynamicOutput,
+    DynamicOutputDefinition,
+    Out,
     build_solid_context,
     execute_pipeline,
     execute_solid,

@@ -1,7 +1,7 @@
 import inspect
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
@@ -56,6 +56,7 @@ def solid_invocation_result(
     if not isinstance(compute_fn, DecoratedSolidFunction):
         check.failed("solid invocation only works with decorated solid fns")
 
+    compute_fn = cast(DecoratedSolidFunction, compute_fn)
     result = (
         compute_fn.decorated_fn(context, **input_dict)
         if compute_fn.has_context_arg()
