@@ -26,7 +26,7 @@ export interface ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_eva
   tags: ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_runRequests_tags[];
 }
 
-export interface ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_error_cause {
+export interface ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -36,7 +36,7 @@ export interface ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_eva
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_error_cause | null;
+  causes: ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_error_causes[];
 }
 
 export interface ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult {

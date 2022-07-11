@@ -13,7 +13,7 @@ export interface RunGroupPanelQuery_runGroupOrError_RunGroupNotFoundError {
   __typename: "RunGroupNotFoundError";
 }
 
-export interface RunGroupPanelQuery_runGroupOrError_PythonError_cause {
+export interface RunGroupPanelQuery_runGroupOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -23,7 +23,7 @@ export interface RunGroupPanelQuery_runGroupOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: RunGroupPanelQuery_runGroupOrError_PythonError_cause | null;
+  causes: RunGroupPanelQuery_runGroupOrError_PythonError_causes[];
 }
 
 export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs_tags {

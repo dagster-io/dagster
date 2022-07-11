@@ -530,7 +530,13 @@ def pipeline_with_enum_config():
 def naughty_programmer_pipeline():
     @lambda_solid
     def throw_a_thing():
-        raise Exception("bad programmer, bad")
+        try:
+            try:
+                raise Exception("bad programmer, bad")
+            except Exception as e:
+                raise Exception("Outer exception") from e
+        except Exception as e:
+            raise Exception("Even more outer exception") from e
 
     throw_a_thing()
 

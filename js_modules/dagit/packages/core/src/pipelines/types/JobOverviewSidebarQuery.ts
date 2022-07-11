@@ -1239,7 +1239,7 @@ export interface JobOverviewSidebarQuery_pipelineSnapshotOrError_PipelineSnapsho
   message: string;
 }
 
-export interface JobOverviewSidebarQuery_pipelineSnapshotOrError_PythonError_cause {
+export interface JobOverviewSidebarQuery_pipelineSnapshotOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -1249,7 +1249,7 @@ export interface JobOverviewSidebarQuery_pipelineSnapshotOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: JobOverviewSidebarQuery_pipelineSnapshotOrError_PythonError_cause | null;
+  causes: JobOverviewSidebarQuery_pipelineSnapshotOrError_PythonError_causes[];
 }
 
 export type JobOverviewSidebarQuery_pipelineSnapshotOrError = JobOverviewSidebarQuery_pipelineSnapshotOrError_PipelineSnapshot | JobOverviewSidebarQuery_pipelineSnapshotOrError_PipelineNotFoundError | JobOverviewSidebarQuery_pipelineSnapshotOrError_PipelineSnapshotNotFoundError | JobOverviewSidebarQuery_pipelineSnapshotOrError_PythonError;

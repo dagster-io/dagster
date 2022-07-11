@@ -214,7 +214,7 @@ export interface PreviewConfigQuery_isPipelineConfigValid_InvalidSubsetError {
   message: string;
 }
 
-export interface PreviewConfigQuery_isPipelineConfigValid_PythonError_cause {
+export interface PreviewConfigQuery_isPipelineConfigValid_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -224,7 +224,7 @@ export interface PreviewConfigQuery_isPipelineConfigValid_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: PreviewConfigQuery_isPipelineConfigValid_PythonError_cause | null;
+  causes: PreviewConfigQuery_isPipelineConfigValid_PythonError_causes[];
 }
 
 export type PreviewConfigQuery_isPipelineConfigValid = PreviewConfigQuery_isPipelineConfigValid_PipelineConfigValidationValid | PreviewConfigQuery_isPipelineConfigValid_RunConfigValidationInvalid | PreviewConfigQuery_isPipelineConfigValid_PipelineNotFoundError | PreviewConfigQuery_isPipelineConfigValid_InvalidSubsetError | PreviewConfigQuery_isPipelineConfigValid_PythonError;
