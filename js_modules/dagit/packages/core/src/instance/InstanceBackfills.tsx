@@ -25,7 +25,7 @@ import {
 } from './types/InstanceBackfillsQuery';
 import {InstanceHealthForBackfillsQuery} from './types/InstanceHealthForBackfillsQuery';
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 
 export const InstanceBackfills = () => {
   useTrackPageView();

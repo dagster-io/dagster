@@ -144,13 +144,11 @@ export const BackfillTable = ({
         backfill={partitionsRequestedBackfill}
         onClose={() => setPartitionsRequestedBackfill(undefined)}
       />
-      {terminationBackfill ? (
-        <BackfillTerminationDialog
-          backfill={terminationBackfill}
-          onClose={() => setTerminationBackfill(undefined)}
-          onComplete={() => refetch()}
-        />
-      ) : null}
+      <BackfillTerminationDialog
+        backfill={terminationBackfill}
+        onClose={() => setTerminationBackfill(undefined)}
+        onComplete={() => refetch()}
+      />
     </>
   );
 };
