@@ -6,7 +6,6 @@ import pendulum
 
 import dagster._check as check
 from dagster.core.errors import (
-    DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     RunStatusSensorExecutionError,
     user_code_error_boundary,
