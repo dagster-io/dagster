@@ -600,6 +600,10 @@
             "path": "/_apidocs/libraries/dagster-datadog"
           },
           {
+            "title": "Datahub (dagster-Datahub)",
+            "path": "/_apidocs/libraries/dagster-datahub"
+          },
+          {
             "title": "dbt (dagster-dbt)",
             "path": "/_apidocs/libraries/dagster-dbt"
           },

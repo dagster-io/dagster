@@ -87,7 +87,6 @@ def datahub_rest_emitter(init_context: InitResourceContext) -> DatahubRestEmitte
                 MCP_KEY: DEFAULT_MCP_KAFKA_TOPIC,
             },
             is_required=False,
-            description="test",
         ),
     }
 )
