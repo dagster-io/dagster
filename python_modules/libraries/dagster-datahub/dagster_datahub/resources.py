@@ -13,19 +13,22 @@ from dagster import Array, Field, InitResourceContext, Map, Noneable, Shape, Str
 
 @resource(
     config_schema={
-        "connection": Field(StringSource, description="Datahub GMS Server"),
+        "connection": Field(StringSource, is_required=True, description="Datahub GMS Server"),
         "token": Field(
-            Noneable(StringSource), default_value=None, description="Personal Access Token"
+            Noneable(StringSource),
+            default_value=None,
+            is_required=False,
+            description="Personal Access Token",
         ),
-        "connect_timeout_sec": Field(Noneable(float), default_value=None),
-        "read_timeout_sec": Field(Noneable(float), default_value=None),
-        "retry_status_codes": Field(Noneable(Array(int)), default_value=None),
-        "retry_methods": Field(Noneable(Array(str)), default_value=None),
-        "retry_max_times": Field(Noneable(int), default_value=None),
-        "extra_headers": Field(Noneable(Map(str, str)), default_value=None),
-        "ca_certificate_path": Field(Noneable(str), default_value=None),
-        "server_telemetry_id": Field(Noneable(str), default_value=None),
-        "disable_ssl_verification": Field(bool, default_value=False),
+        "connect_timeout_sec": Field(Noneable(float), default_value=None, is_required=False),
+        "read_timeout_sec": Field(Noneable(float), default_value=None, is_required=False),
+        "retry_status_codes": Field(Noneable(Array(int)), default_value=None, is_required=False),
+        "retry_methods": Field(Noneable(Array(str)), default_value=None, is_required=False),
+        "retry_max_times": Field(Noneable(int), default_value=None, is_required=False),
+        "extra_headers": Field(Noneable(Map(str, str)), default_value=None, is_required=False),
+        "ca_certificate_path": Field(Noneable(str), default_value=None, is_required=False),
+        "server_telemetry_id": Field(Noneable(str), default_value=None, is_required=False),
+        "disable_ssl_verification": Field(bool, default_value=False, is_required=False),
     }
 )
 def datahub_rest_emitter(init_context: InitResourceContext) -> DatahubRestEmitter:
@@ -47,30 +50,44 @@ def datahub_rest_emitter(init_context: InitResourceContext) -> DatahubRestEmitte
     return emitter
 
 
+# Copied over from datahub.emitter.kafka_emitter
+# DEFAULT_MCE_KAFKA_TOPIC = "MetadataChangeEvent_v4"
+# DEFAULT_MCP_KAFKA_TOPIC = "MetadataChangeProposal_v1"
+# MCE_KEY = "MetadataChangeEvent"
+# MCP_KEY = "MetadataChangeProposal"
+
+
 @resource(
     config_schema={
         "connection": Shape(
             {
                 "bootstrap": Field(
                     StringSource,
+                    is_required=True,
                     description="Kafka Boostrap Servers. Comma delimited",
                 ),
                 "schema_registry_url": Field(
                     StringSource,
+                    is_required=True,
                     description="Schema Registry Location.",
                 ),
                 "schema_registry_config": Field(
-                    dict, default_value={}, description="Extra Schema Registry Config."
+                    dict,
+                    default_value={},
+                    is_required=False,
+                    description="Extra Schema Registry Config.",
                 ),
             }
         ),
-        "topic": Field(str, default_value=DEFAULT_MCE_KAFKA_TOPIC),
+        "topic": Field(str, default_value=DEFAULT_MCE_KAFKA_TOPIC, is_required=False),
         "topic_routes": Field(
             Map(str, str),
             default_value={
                 MCE_KEY: DEFAULT_MCE_KAFKA_TOPIC,
                 MCP_KEY: DEFAULT_MCP_KAFKA_TOPIC,
             },
+            is_required=False,
+            description="test",
         ),
     }
 )
