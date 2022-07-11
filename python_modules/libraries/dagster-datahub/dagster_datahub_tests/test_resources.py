@@ -33,6 +33,7 @@ def test_datahub_rest_emitter_resource():
     with responses.RequestsMock() as rsps:
         # Creating the datahub_rest_emitter resource will run the DatahubRestEmitter.test_connection() method.
         # The response needs to be mocked out prior to the resource gets instantiated.
+        # This is because creating the resource its the config endpoint as a healthcheck.
         rsps.add(rsps.GET, "http://foobar:8080/config", status=200, json={"noCode": "true"})
         rsps.add(rsps.POST, "http://foobar:8080/aspects?action=ingestProposal", status=200, json={})
         context = build_op_context(
