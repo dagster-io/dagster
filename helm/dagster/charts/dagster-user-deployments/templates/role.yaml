@@ -5,25 +5,13 @@ metadata:
   name: {{ template "dagster.fullname" . }}-role
   labels: {{ include "dagster.labels" . | nindent 4 }}
 
-#
-# It is tricky to figure out the correct rules to use here, because K8s sub-resources are not
-# documented. See https://stackoverflow.com/a/51289417/11295366 for notes on how to get a list of
-# available subresources.
-#
-# The CLI command `kubectl api-resources -o wide` is also useful for understanding resources/verbs.
-#
-# The auth CLI can also be useful for verifying that access has been applied correctly. Note that
-# you MUST ensure you've fully-qualified the service account as shown below, or else kubectl will
-# lie to you about permissions.
-#
-# kubectl auth can-i --list --as system:serviceaccount:default:<release name>-dagster
-#
+# Allow the Dagster service account to read and write Kubernetes jobs and pods.
 rules:
-- apiGroups: ["batch"]
-  resources: ["jobs", "jobs/status", "cronjobs"]
-  verbs: ["*"]
-# The empty arg "" corresponds to the core API group
-- apiGroups: [""]
-  resources: ["pods", "pods/log", "pods/status"]
-  verbs: ["*"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "jobs/status"]
+    verbs: ["*"]
+  # The empty arg "" corresponds to the core API group
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "pods/status"]
+    verbs: ["*"]
 {{- end -}}
