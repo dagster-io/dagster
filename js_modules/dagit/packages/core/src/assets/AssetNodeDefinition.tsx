@@ -47,7 +47,10 @@ export const AssetNodeDefinition: React.FC<{
 
   return (
     <>
-      <AssetDefinedInMultipleReposNotice assetId={assetNode.id} loadedFromRepo={repoAddress} />
+      <AssetDefinedInMultipleReposNotice
+        assetKey={assetNode.assetKey}
+        loadedFromRepo={repoAddress}
+      />
       <Box flex={{direction: 'row'}} style={{flex: 1}}>
         <Box
           style={{flex: 1, minWidth: 0}}

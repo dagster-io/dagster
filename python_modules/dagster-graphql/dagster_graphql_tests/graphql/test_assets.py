@@ -517,7 +517,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert len(result.data["assetNodes"]) == 1
         asset_node = result.data["assetNodes"][0]
-        assert asset_node["id"] == '["asset_one"]'
+        assert asset_node["id"] == 'test.test_repo.["asset_one"]'
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -530,7 +530,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert len(result.data["assetNodes"]) == 2
         asset_node = result.data["assetNodes"][0]
-        assert asset_node["id"] == '["asset_one"]'
+        assert asset_node["id"] == 'test.test_repo.["asset_one"]'
 
     def test_asset_partitions_in_pipeline(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "two_assets_job")
@@ -1121,7 +1121,11 @@ class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
             graphql_context, CROSS_REPO_ASSET_GRAPH, variables={"repositorySelector": selector}
         )
         asset_nodes = result.data["assetNodes"]
-        upstream_asset = [node for node in asset_nodes if node["id"] == '["upstream_asset"]'][0]
+        upstream_asset = [
+            node
+            for node in asset_nodes
+            if node["id"] == 'cross_asset_repos.upstream_assets_repository.["upstream_asset"]'
+        ][0]
         dependent_asset_keys = [{"path": ["downstream_asset1"]}, {"path": ["downstream_asset2"]}]
 
         result_dependent_keys = sorted(
