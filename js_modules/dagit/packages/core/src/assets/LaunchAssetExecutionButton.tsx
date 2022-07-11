@@ -1,4 +1,4 @@
-import {gql, useApolloClient} from '@apollo/client';
+import {ApolloClient, gql, useApolloClient} from '@apollo/client';
 import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui';
 import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
@@ -12,10 +12,15 @@ import {useLaunchWithTelemetry} from '../launchpad/LaunchRootExecutionButton';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {DagsterTag} from '../runs/RunTag';
 import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
+import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
-import {ASSET_NODE_CONFIG_FRAGMENT, configSchemaForAssetNode} from './AssetConfig';
+import {
+  ASSET_NODE_CONFIG_FRAGMENT,
+  configSchemaForAssetNode,
+  configSchemaForResource,
+} from './AssetConfig';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {AssetKey} from './types';
 import {LaunchAssetExecutionAssetNodeFragment} from './types/LaunchAssetExecutionAssetNodeFragment';
@@ -23,6 +28,10 @@ import {
   LaunchAssetLoaderQuery,
   LaunchAssetLoaderQueryVariables,
 } from './types/LaunchAssetLoaderQuery';
+import {
+  LaunchAssetLoaderResourceQuery,
+  LaunchAssetLoaderResourceQueryVariables,
+} from './types/LaunchAssetLoaderResourceQuery';
 
 type LaunchAssetsState =
   | {type: 'none'}
@@ -97,7 +106,8 @@ export const LaunchAssetExecutionButton: React.FC<{
     });
     const assets = result.data.assetNodes;
     const forceLaunchpad = e.shiftKey;
-    const next = stateForLaunchingAssets(assets, forceLaunchpad, preferredJobName);
+
+    const next = await stateForLaunchingAssets(assets, forceLaunchpad, preferredJobName, client);
 
     if (next.type === 'error') {
       showCustomAlert({
@@ -153,11 +163,12 @@ export const LaunchAssetExecutionButton: React.FC<{
   );
 };
 
-function stateForLaunchingAssets(
+async function stateForLaunchingAssets(
   assets: LaunchAssetExecutionAssetNodeFragment[],
   forceLaunchpad: boolean,
   preferredJobName?: string,
-): LaunchAssetsState {
+  client: ApolloClient<any>,
+): Promise<LaunchAssetsState> {
   if (assets.some(isSourceAsset)) {
     return {
       type: 'error',
@@ -169,6 +180,7 @@ function stateForLaunchingAssets(
     assets[0]?.repository.name || '',
     assets[0]?.repository.location.name || '',
   );
+
   if (
     !assets.every(
       (a) =>
@@ -200,17 +212,37 @@ function stateForLaunchingAssets(
     };
   }
 
-  const anyAssetsHaveConfig = assets.some((a) => configSchemaForAssetNode(a));
-  if (anyAssetsHaveConfig && partitionDefinition) {
+  const requiredResources = assets.flatMap((a) => a.requiredResources.map((r) => r.resourceKey));
+  const resourceResult = await client.query<
+    LaunchAssetLoaderResourceQuery,
+    LaunchAssetLoaderResourceQueryVariables
+  >({
+    query: LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
+    variables: {
+      pipelineSelector: {
+        pipelineName: jobName,
+        repositoryName: assets[0].repository.name,
+        repositoryLocationName: assets[0].repository.location.name,
+      },
+    },
+  });
+  const pipeline = resourceResult.data.pipelineOrError;
+  if (pipeline.__typename !== 'Pipeline') {
     return {
       type: 'error',
-      error: 'Cannot materialize assets using both asset config and partitions.',
+      error: `Pipeline ${jobName} does not exist.`,
     };
   }
+  const resources = pipeline.modes[0].resources.filter((r) => requiredResources.includes(r.name));
+  const anyResourcesHaveConfig = resources.some((a) => configSchemaForResource(a));
 
-  const requiredResources = assets.flatMap((a) => a.requiredResources.map((r) => r.resourceKey));
-  // temporary until a cleaner way to query the config requirements of resources is available
-  const anyResourcesHaveConfig = requiredResources.length >= 1;
+  const anyAssetsHaveConfig = assets.some((a) => configSchemaForAssetNode(a));
+  if ((anyAssetsHaveConfig || anyResourcesHaveConfig) && partitionDefinition) {
+    return {
+      type: 'error',
+      error: 'Cannot materialize assets using both asset/resource config and partitions.',
+    };
+  }
 
   // Ok! Assertions met, how do we launch this run
 
@@ -314,4 +346,31 @@ const LAUNCH_ASSET_LOADER_QUERY = gql`
     }
   }
   ${LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT}
+`;
+
+const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
+  query LaunchAssetLoaderResourceQuery($pipelineSelector: PipelineSelector!) {
+    pipelineOrError(params: $pipelineSelector) {
+      ... on Pipeline {
+        id
+        modes {
+          id
+          resources {
+            name
+            description
+            configField {
+              name
+              configType {
+                ...ConfigTypeSchemaFragment
+                recursiveConfigTypes {
+                  ...ConfigTypeSchemaFragment
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  ${CONFIG_TYPE_SCHEMA_FRAGMENT}
 `;
