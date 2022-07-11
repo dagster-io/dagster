@@ -48,8 +48,8 @@ class ConfigurableClassData(
         }
 
     def rehydrate(self):
-        from dagster.config.field import resolve_to_config_type
-        from dagster.config.validate import process_config
+        from dagster._config.field import resolve_to_config_type
+        from dagster._config.validate import process_config
         from dagster.core.errors import DagsterInvalidConfigError
 
         try:

@@ -6,20 +6,20 @@ from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union, cast
 
 import dagster._check as check
-from dagster.api.get_server_id import sync_get_server_id
-from dagster.api.list_repositories import sync_list_repositories_grpc
-from dagster.api.notebook_data import sync_get_streaming_external_notebook_data_grpc
-from dagster.api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
-from dagster.api.snapshot_partition import (
+from dagster._api.get_server_id import sync_get_server_id
+from dagster._api.list_repositories import sync_list_repositories_grpc
+from dagster._api.notebook_data import sync_get_streaming_external_notebook_data_grpc
+from dagster._api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
+from dagster._api.snapshot_partition import (
     sync_get_external_partition_config_grpc,
     sync_get_external_partition_names_grpc,
     sync_get_external_partition_set_execution_param_data_grpc,
     sync_get_external_partition_tags_grpc,
 )
-from dagster.api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
-from dagster.api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
-from dagster.api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
-from dagster.api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
+from dagster._api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
+from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
+from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
+from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.errors import DagsterInvariantViolationError

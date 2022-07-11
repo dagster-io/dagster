@@ -3,7 +3,7 @@ from typing import Any, Iterable, List, Mapping, Optional, Sequence, TypeVar, ca
 from dagster import _check as check
 from dagster.utils import merge_dicts
 
-from ...config import Shape
+from ..._config import Shape
 from ..definitions import ResourceDefinition
 from ..definitions.resource_requirement import ResourceAddable
 from ..definitions.utils import DEFAULT_IO_MANAGER_KEY
@@ -66,7 +66,7 @@ def with_resources(
 
 
     """
-    from dagster.config.validate import validate_config
+    from dagster._config.validate import validate_config
     from dagster.core.storage.fs_io_manager import fs_io_manager
 
     check.mapping_param(resource_defs, "resource_defs")

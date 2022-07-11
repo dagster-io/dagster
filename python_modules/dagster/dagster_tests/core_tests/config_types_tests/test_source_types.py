@@ -1,7 +1,7 @@
 import os
 
 from dagster import Array, BoolSource, IntSource, Noneable, StringSource
-from dagster.config.validate import process_config
+from dagster._config.validate import process_config
 from dagster.core.test_utils import environ
 
 

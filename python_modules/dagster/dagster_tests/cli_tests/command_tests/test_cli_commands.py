@@ -26,10 +26,10 @@ from dagster import (
     repository,
 )
 from dagster._legacy import pipeline, solid
-from dagster.cli import ENV_PREFIX, cli
-from dagster.cli.job import job_execute_command
-from dagster.cli.pipeline import pipeline_execute_command
-from dagster.cli.run import run_delete_command, run_list_command, run_wipe_command
+from dagster._cli import ENV_PREFIX, cli
+from dagster._cli.job import job_execute_command
+from dagster._cli.pipeline import pipeline_execute_command
+from dagster._cli.run import run_delete_command, run_list_command, run_wipe_command
 from dagster.core.definitions.decorators.sensor_decorator import sensor
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster.core.definitions.sensor_definition import RunRequest

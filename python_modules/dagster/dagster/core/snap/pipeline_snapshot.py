@@ -15,7 +15,7 @@ from typing import (
 
 from dagster import Field, Map, Permissive, Selector, Shape
 from dagster import _check as check
-from dagster.config.config_type import (
+from dagster._config.config_type import (
     Array,
     ConfigTypeKind,
     Enum,
@@ -24,8 +24,8 @@ from dagster.config.config_type import (
     ScalarUnion,
     get_builtin_scalar_by_name,
 )
-from dagster.config.field_utils import FIELD_NO_DEFAULT_PROVIDED
-from dagster.config.snap import (
+from dagster._config.field_utils import FIELD_NO_DEFAULT_PROVIDED
+from dagster._config.snap import (
     ConfigEnumValueSnap,
     ConfigFieldSnap,
     ConfigSchemaSnapshot,

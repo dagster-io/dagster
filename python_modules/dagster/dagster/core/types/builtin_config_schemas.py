@@ -3,7 +3,7 @@ import warnings
 
 import dagster._check as check
 import dagster.seven as seven
-from dagster.config.config_type import (
+from dagster._config.config_type import (
     ConfigAnyInstance,
     ConfigBoolInstance,
     ConfigFloatInstance,
@@ -13,8 +13,8 @@ from dagster.config.config_type import (
     ConfigTypeKind,
     ScalarUnion,
 )
-from dagster.config.field import Field
-from dagster.config.field_utils import Selector
+from dagster._config.field import Field
+from dagster._config.field_utils import Selector
 from dagster.utils.backcompat import ExperimentalWarning
 
 from .config_schema import dagster_type_loader, dagster_type_materializer

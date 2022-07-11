@@ -4,8 +4,8 @@ import graphene
 from graphene.types.generic import GenericScalar
 
 import dagster._check as check
-from dagster.config.errors import EvaluationError as DagsterEvaluationError
-from dagster.config.errors import (
+from dagster._config.errors import EvaluationError as DagsterEvaluationError
+from dagster._config.errors import (
     FieldNotDefinedErrorData,
     FieldsNotDefinedErrorData,
     MissingFieldErrorData,
@@ -13,8 +13,8 @@ from dagster.config.errors import (
     RuntimeMismatchErrorData,
     SelectorTypeErrorData,
 )
-from dagster.config.snap import ConfigSchemaSnapshot
-from dagster.config.stack import (
+from dagster._config.snap import ConfigSchemaSnapshot
+from dagster._config.stack import (
     EvaluationStackListItemEntry,
     EvaluationStackMapKeyEntry,
     EvaluationStackMapValueEntry,

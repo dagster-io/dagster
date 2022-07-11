@@ -11,9 +11,9 @@ from typing import Sequence, cast
 from typing_compat import get_args, get_origin
 
 import dagster._check as check
+from dagster._config.config_type import Array, ConfigType
+from dagster._config.config_type import Noneable as ConfigNoneable
 from dagster.builtins import BuiltinEnum
-from dagster.config.config_type import Array, ConfigType
-from dagster.config.config_type import Noneable as ConfigNoneable
 from dagster.core.definitions.events import DynamicOutput, Output, TypeCheck
 from dagster.core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError

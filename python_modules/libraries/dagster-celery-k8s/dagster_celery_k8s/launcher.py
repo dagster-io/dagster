@@ -12,8 +12,8 @@ from dagster_k8s.utils import delete_job
 
 from dagster import DagsterInvariantViolationError, MetadataEntry
 from dagster import _check as check
-from dagster.config.field import resolve_to_config_type
-from dagster.config.validate import process_config
+from dagster._config.field import resolve_to_config_type
+from dagster._config.validate import process_config
 from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import RetryMode
 from dagster.core.launcher import LaunchRunContext, RunLauncher
@@ -199,7 +199,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         user_defined_k8s_config = get_user_defined_k8s_config(frozentags(run.tags))
 
-        from dagster.cli.api import ExecuteRunArgs
+        from dagster._cli.api import ExecuteRunArgs
 
         run_args = ExecuteRunArgs(
             pipeline_origin=pipeline_origin,

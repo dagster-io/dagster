@@ -11,7 +11,7 @@ from google.cloud.bigquery.job import (
 )
 
 from dagster import Enum, EnumValue
-from dagster.config import ConfigScalar, ConfigScalarKind, PostProcessingError
+from dagster._config import ConfigScalar, ConfigScalarKind, PostProcessingError
 
 
 class BigQueryLoadSource(PyEnum):

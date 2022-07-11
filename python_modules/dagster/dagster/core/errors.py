@@ -320,7 +320,7 @@ class DagsterInvalidConfigError(DagsterError):
     schema)."""
 
     def __init__(self, preamble, errors, config_value, *args, **kwargs):
-        from dagster.config.errors import EvaluationError
+        from dagster._config.errors import EvaluationError
 
         check.str_param(preamble, "preamble")
         self.errors = check.list_param(errors, "errors", of_type=EvaluationError)

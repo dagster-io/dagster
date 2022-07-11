@@ -10,7 +10,7 @@ from dagster_celery.executor import CELERY_CONFIG
 from dagster import DagsterInstance, Executor, Field, MetadataEntry, Permissive, StringSource
 from dagster import _check as check
 from dagster import executor, multiple_process_executor_requirements
-from dagster.cli.api import ExecuteStepArgs
+from dagster._cli.api import ExecuteStepArgs
 from dagster.core.events import EngineEventData
 from dagster.core.events.utils import filter_dagster_events_from_cli_logs
 from dagster.core.execution.retries import RetryMode

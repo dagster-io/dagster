@@ -16,7 +16,7 @@ from watchdog.observers import Observer
 
 import dagster._check as check
 import dagster.seven as seven
-from dagster.config.source import StringSource
+from dagster._config.source import StringSource
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter

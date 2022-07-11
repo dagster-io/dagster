@@ -5,7 +5,7 @@ from typing_extensions import Self
 
 from dagster import Field
 from dagster import _check as check
-from dagster.config.evaluate_value_result import EvaluateValueResult
+from dagster._config.evaluate_value_result import EvaluateValueResult
 
 from .definition_config_schema import (
     CoercableToConfigSchema,

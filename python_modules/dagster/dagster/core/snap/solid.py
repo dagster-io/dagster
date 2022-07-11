@@ -1,7 +1,7 @@
 from typing import Mapping, NamedTuple, Optional, Sequence, Set, Union
 
 import dagster._check as check
-from dagster.config.snap import ConfigFieldSnap, snap_from_field
+from dagster._config.snap import ConfigFieldSnap, snap_from_field
 from dagster.core.definitions import (
     GraphDefinition,
     InputDefinition,

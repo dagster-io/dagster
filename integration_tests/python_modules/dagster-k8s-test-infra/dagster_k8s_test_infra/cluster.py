@@ -15,7 +15,7 @@ from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage, Postgr
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
 import dagster._check as check
-from dagster.cli.debug import export_run
+from dagster._cli.debug import export_run
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.run_coordinator import DefaultRunCoordinator, QueuedRunCoordinator

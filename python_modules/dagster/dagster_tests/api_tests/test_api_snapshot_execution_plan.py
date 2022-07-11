@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from dagster.api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
+from dagster._api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.handle import PipelineHandle
 from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshot

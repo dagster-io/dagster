@@ -2,7 +2,7 @@ import sys
 
 import pytest
 
-from dagster.api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
+from dagster._api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.external_data import ExternalPipelineSubsetResult
 from dagster.core.host_representation.handle import PipelineHandle

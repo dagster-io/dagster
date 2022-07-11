@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, AbstractSet, Callable, Iterator, Optional, Union, cast
 
 import dagster._check as check
-from dagster.config.config_type import ConfigType
+from dagster._config.config_type import ConfigType
 from dagster.core.decorator_utils import get_function_params, validate_expected_params
 from dagster.core.definitions.events import AssetMaterialization, Materialization
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -201,7 +201,7 @@ def dagster_type_loader(
         def load_dict(_context, value):
             return value
     """
-    from dagster.config.field import resolve_to_config_type
+    from dagster._config.field import resolve_to_config_type
 
     config_type = resolve_to_config_type(config_schema)
     EXPECTED_POSITIONALS = ["context", "*"]
@@ -286,7 +286,7 @@ def dagster_type_materializer(
             return AssetMaterialization.file(path)
 
     """
-    from dagster.config.field import resolve_to_config_type
+    from dagster._config.field import resolve_to_config_type
 
     config_type = resolve_to_config_type(config_schema)
     return lambda func: _create_output_materializer_for_decorator(

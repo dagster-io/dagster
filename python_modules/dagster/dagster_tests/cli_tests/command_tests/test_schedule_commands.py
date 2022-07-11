@@ -5,7 +5,7 @@ import mock
 import pytest
 from click.testing import CliRunner
 
-from dagster.cli.schedule import (
+from dagster._cli.schedule import (
     check_repo_and_scheduler,
     schedule_list_command,
     schedule_logs_command,

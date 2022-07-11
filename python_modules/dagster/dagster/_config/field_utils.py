@@ -8,7 +8,7 @@ from dagster.core.errors import DagsterInvalidConfigDefinitionError
 from .config_type import Array, ConfigType, ConfigTypeKind
 
 if TYPE_CHECKING:
-    from dagster.config.field import Field
+    from dagster._config.field import Field
 
 
 def all_optional_type(config_type: ConfigType) -> bool:

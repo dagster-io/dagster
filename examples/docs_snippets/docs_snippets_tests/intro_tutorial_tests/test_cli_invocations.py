@@ -6,8 +6,8 @@ from click.testing import CliRunner
 from dagit.app import create_app_from_workspace_process_context
 from starlette.testclient import TestClient
 
-from dagster.cli.pipeline import pipeline_execute_command
-from dagster.cli.workspace import get_workspace_process_context_from_kwargs
+from dagster._cli.pipeline import pipeline_execute_command
+from dagster._cli.workspace import get_workspace_process_context_from_kwargs
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import check_script, pushd, script_relative_path

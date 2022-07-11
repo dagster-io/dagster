@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Set, Uni
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster.config.config_schema import UserConfigSchema
+from dagster._config.config_schema import UserConfigSchema
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.definition_config_schema import (
     CoercableToConfigSchema,

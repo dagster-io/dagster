@@ -29,7 +29,7 @@ communicated between user repositories and host processes such as dagit.
 
 """
 
-from dagster.config.snap import (
+from dagster._config.snap import (
     ConfigEnumValueSnap,
     ConfigFieldSnap,
     ConfigSchemaSnapshot,

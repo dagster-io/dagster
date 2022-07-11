@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Mapping, Sequence, Tuple
 import coloredlogs
 
 from dagster import seven
-from dagster.config import Field
+from dagster._config import Field
 from dagster.core.definitions.logger_definition import LoggerDefinition, logger
 from dagster.core.utils import coerce_valid_log_level
 from dagster.utils.log import default_date_format_string, default_format_string

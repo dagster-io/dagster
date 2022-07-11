@@ -3,7 +3,7 @@ import sys
 from graphql.execution.base import ResolveInfo
 
 import dagster._check as check
-from dagster.config.validate import validate_config_from_snap
+from dagster._config.validate import validate_config_from_snap
 from dagster.core.host_representation import ExternalPipeline, PipelineSelector, RepositorySelector
 from dagster.core.workspace.context import BaseWorkspaceRequestContext
 from dagster.utils.error import serializable_error_info_from_exc_info

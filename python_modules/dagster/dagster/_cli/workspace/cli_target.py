@@ -341,38 +341,38 @@ def python_pipeline_or_job_config_argument(command_name, using_job_op_graph_apis
 
 
 def python_pipeline_target_argument(f):
-    from dagster.cli.pipeline import apply_click_params
+    from dagster._cli.pipeline import apply_click_params
 
     return apply_click_params(f, *python_pipeline_target_click_options())
 
 
 def python_job_target_argument(f):
-    from dagster.cli.pipeline import apply_click_params
+    from dagster._cli.pipeline import apply_click_params
 
     return apply_click_params(f, *python_job_target_click_options())
 
 
 def workspace_target_argument(f):
-    from dagster.cli.pipeline import apply_click_params
+    from dagster._cli.pipeline import apply_click_params
 
     return apply_click_params(f, *workspace_target_click_options())
 
 
 def job_workspace_target_argument(f):
-    from dagster.cli.pipeline import apply_click_params
+    from dagster._cli.pipeline import apply_click_params
 
     return apply_click_params(f, *workspace_target_click_options(using_job_op_graph_apis=True))
 
 
 def grpc_server_origin_target_argument(f):
-    from dagster.cli.pipeline import apply_click_params
+    from dagster._cli.pipeline import apply_click_params
 
     options = grpc_server_target_click_options()
     return apply_click_params(f, *options)
 
 
 def python_origin_target_argument(f):
-    from dagster.cli.pipeline import apply_click_params
+    from dagster._cli.pipeline import apply_click_params
 
     options = python_target_click_options()
     return apply_click_params(f, *options)
@@ -398,13 +398,13 @@ def repository_click_options():
 
 
 def repository_target_argument(f):
-    from dagster.cli.pipeline import apply_click_params
+    from dagster._cli.pipeline import apply_click_params
 
     return apply_click_params(workspace_target_argument(f), *repository_click_options())
 
 
 def job_repository_target_argument(f):
-    from dagster.cli.pipeline import apply_click_params
+    from dagster._cli.pipeline import apply_click_params
 
     return apply_click_params(job_workspace_target_argument(f), *repository_click_options())
 
@@ -421,7 +421,7 @@ def pipeline_option():
 
 
 def pipeline_target_argument(f):
-    from dagster.cli.pipeline import apply_click_params
+    from dagster._cli.pipeline import apply_click_params
 
     return apply_click_params(repository_target_argument(f), pipeline_option())
 
@@ -436,7 +436,7 @@ def job_option():
 
 
 def job_target_argument(f):
-    from dagster.cli.pipeline import apply_click_params
+    from dagster._cli.pipeline import apply_click_params
 
     return apply_click_params(job_repository_target_argument(f), job_option())
 

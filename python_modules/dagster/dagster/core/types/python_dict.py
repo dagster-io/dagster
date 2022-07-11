@@ -1,7 +1,7 @@
 import typing
 
 import dagster._check as check
-from dagster.config.field_utils import Permissive
+from dagster._config.field_utils import Permissive
 from dagster.core.types.dagster_type import String
 
 from .config_schema import DagsterTypeLoader, dagster_type_loader

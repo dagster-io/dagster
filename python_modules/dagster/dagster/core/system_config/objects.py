@@ -150,7 +150,7 @@ class ResolvedRunConfig(
 
         In case the run_config is invalid, this method raises a DagsterInvalidConfigError
         """
-        from dagster.config.validate import process_config
+        from dagster._config.validate import process_config
 
         from .composite_descent import composite_descent
 

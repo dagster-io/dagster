@@ -13,7 +13,7 @@ from dagster import (
     Shape,
 )
 from dagster._legacy import pipeline, solid
-from dagster.config.config_type import Array, Bool, Enum, EnumValue, Float, Int, Noneable, String
+from dagster._config.config_type import Array, Bool, Enum, EnumValue, Float, Int, Noneable, String
 from dagster.core.snap import (
     DependencyStructureIndex,
     PipelineSnapshot,

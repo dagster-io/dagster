@@ -1,14 +1,14 @@
 from dagster import Any, Bool, Field, Int, Noneable, Selector, Shape, String, StringSource
-from dagster.config.errors import DagsterEvaluationErrorReason
-from dagster.config.evaluate_value_result import EvaluateValueResult
-from dagster.config.field import resolve_to_config_type
-from dagster.config.stack import (
+from dagster._config.errors import DagsterEvaluationErrorReason
+from dagster._config.evaluate_value_result import EvaluateValueResult
+from dagster._config.field import resolve_to_config_type
+from dagster._config.stack import (
     EvaluationStackListItemEntry,
     EvaluationStackMapKeyEntry,
     EvaluationStackMapValueEntry,
     EvaluationStackPathEntry,
 )
-from dagster.config.validate import process_config
+from dagster._config.validate import process_config
 
 
 def eval_config_value_from_dagster_type(dagster_type, value):
