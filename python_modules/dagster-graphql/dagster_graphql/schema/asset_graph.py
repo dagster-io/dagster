@@ -238,7 +238,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             ]
             external_pipeline = self.get_external_pipeline()
             constituent_resource_key_sets = [
-                self.get_required_resources(external_pipeline.get_node_def_snap(name))
+                self.get_required_resource_keys_rec(external_pipeline.get_node_def_snap(name))
                 for name in constituent_node_names
             ]
             return [key for res_key_set in constituent_resource_key_sets for key in res_key_set]
