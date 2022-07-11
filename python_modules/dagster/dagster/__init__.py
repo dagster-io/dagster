@@ -11,7 +11,10 @@ sys.meta_path.insert(
     _module_alias_map.get_meta_path_insertion_index(),
     _module_alias_map.AliasedModuleFinder(
         {
+            "dagster.api": "dagster._api",
             "dagster.check": "dagster._check",
+            "dagster.cli": "dagster._cli",
+            "dagster.config": "dagster._config",
         }
     ),
 )
