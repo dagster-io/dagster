@@ -1,4 +1,5 @@
-import dagster
+from dagster import pipeline, repository
+from dagster.legacy import solid
 
 
 @dagster.legacy.solid
@@ -6,11 +7,11 @@ def solid(_):
     pass
 
 
-@dagster.pipeline
+@pipeline
 def pipeline():
     solid()
 
 
-@dagster.repository
+@repository
 def repository():
     return {"pipelines": {"pipeline": pipeline}}
