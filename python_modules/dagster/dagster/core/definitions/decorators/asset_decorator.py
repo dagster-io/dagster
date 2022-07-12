@@ -335,6 +335,7 @@ def multi_asset(
     op_tags: Optional[Dict[str, Any]] = None,
     can_subset: bool = False,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    group_name: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
     upstream assets.
@@ -381,6 +382,8 @@ def multi_asset(
             A mapping of resource keys to resource definitions. These resources
             will be initialized during execution, and can be accessed from the
             context within the body of the function.
+        group_name (Optional[str]): A string name used to organize multiple assets into groups. This
+            group name will be applied to all assets produced by this multi_asset.
     """
     asset_deps = check.opt_dict_param(
         internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
@@ -459,11 +462,23 @@ def multi_asset(
         keys_by_output_name = {
             output_name: asset_key for asset_key, (output_name, _) in asset_outs.items()
         }
+
+        # source group names from the AssetOuts (if any)
         group_names_by_key = {
             keys_by_output_name[output_name]: out.group_name
             for output_name, out in outs.items()
             if isinstance(out, AssetOut) and out.group_name is not None
         }
+        if group_name:
+            check.invariant(
+                not group_names_by_key,
+                "Cannot set group_name parameter on multi_asset if one or more of the AssetOuts "
+                "supplied to this multi_asset have a group_name defined.",
+            )
+            group_names_by_key = {
+                asset_key: group_name for asset_key in keys_by_output_name.values()
+            }
+
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name=keys_by_output_name,

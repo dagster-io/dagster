@@ -157,6 +157,46 @@ def test_multi_asset_group_names():
     }
 
 
+def test_multi_asset_group_name():
+    @multi_asset(
+        outs={
+            "out1": AssetOut(key=AssetKey(["cool", "key1"])),
+            "out2": Out(),
+            "out3": AssetOut(),
+            "out4": AssetOut(key_prefix="prefix4"),
+            "out5": AssetOut(),
+        },
+        group_name="bar",
+    )
+    def my_asset():
+        pass
+
+    assert my_asset.group_names_by_key == {
+        AssetKey(["cool", "key1"]): "bar",
+        AssetKey("out2"): "bar",
+        AssetKey("out3"): "bar",
+        AssetKey(["prefix4", "out4"]): "bar",
+        AssetKey("out5"): "bar",
+    }
+
+
+def test_multi_asset_group_names_and_group_name():
+    with pytest.raises(check.CheckError):
+
+        @multi_asset(
+            outs={
+                "out1": AssetOut(group_name="foo", key=AssetKey(["cool", "key1"])),
+                "out2": Out(),
+                "out3": AssetOut(),
+                "out4": AssetOut(group_name="bar", key_prefix="prefix4"),
+                "out5": AssetOut(group_name="bar"),
+            },
+            group_name="something",
+        )
+        def my_asset():
+            pass
+
+
 def test_multi_asset_internal_asset_deps_metadata():
     @multi_asset(
         outs={
