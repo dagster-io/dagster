@@ -478,6 +478,7 @@ __all__ = [
     "lambda_solid",
     "logger",
     "multi_asset",
+    "multi_or_in_process_executor",
     "op",
     "pipeline",
     "repository",
