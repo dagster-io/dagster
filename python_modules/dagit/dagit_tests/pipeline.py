@@ -3,19 +3,19 @@ from dagster import (
     Int,
     OutputDefinition,
     daily_schedule,
-    lambda_solid,
     pipeline,
     repository,
+    solid,
 )
 from dagster.core.test_utils import today_at_midnight
 
 
-@lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+@solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
 def add_one(num):
     return num + 1
 
 
-@lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+@solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
 def mult_two(num):
     return num * 2
 

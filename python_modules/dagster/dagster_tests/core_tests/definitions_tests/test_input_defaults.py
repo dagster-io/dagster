@@ -10,9 +10,9 @@ from dagster import (
     execute_pipeline,
     execute_solid,
     job,
-    lambda_solid,
     op,
     pipeline,
+    solid,
 )
 
 
@@ -26,7 +26,7 @@ def test_none():
 
 
 def test_none_infer():
-    @lambda_solid
+    @solid
     def none_x(x=None):
         return x
 
@@ -44,7 +44,7 @@ def test_int():
 
 
 def test_int_infer():
-    @lambda_solid
+    @solid
     def int_x(x=1337):
         return x
 
@@ -96,7 +96,7 @@ def test_env_precedence():
 
 
 def test_input_precedence():
-    @lambda_solid
+    @solid
     def emit_one():
         return 1
 

@@ -4,7 +4,7 @@ import types
 
 import pytest
 
-from dagster import DagsterInvariantViolationError, PipelineDefinition, lambda_solid, pipeline
+from dagster import DagsterInvariantViolationError, PipelineDefinition, pipeline, solid
 from dagster.core.code_pointer import FileCodePointer
 from dagster.core.definitions.reconstruct import reconstructable
 from dagster.core.origin import (
@@ -17,7 +17,7 @@ from dagster.utils import file_relative_path
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 
 
-@lambda_solid
+@solid
 def the_solid():
     return 1
 

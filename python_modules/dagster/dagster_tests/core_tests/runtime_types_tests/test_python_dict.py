@@ -9,13 +9,13 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     execute_solid,
-    lambda_solid,
+    solid,
     usable_as_dagster_type,
 )
 
 
 def test_basic_python_dictionary_output():
-    @lambda_solid(output_def=OutputDefinition(dict))
+    @solid(output_defs=[OutputDefinition(dict)])
     def emit_dict():
         return {"key": "value"}
 
@@ -23,7 +23,7 @@ def test_basic_python_dictionary_output():
 
 
 def test_basic_python_dictionary_input():
-    @lambda_solid(input_defs=[InputDefinition("data", dict)], output_def=OutputDefinition(str))
+    @solid(input_defs=[InputDefinition("data", dict)], output_defs=[OutputDefinition(str)])
     def input_dict(data):
         return data["key"]
 
@@ -33,7 +33,7 @@ def test_basic_python_dictionary_input():
 
 
 def test_basic_python_dictionary_wrong():
-    @lambda_solid(output_def=OutputDefinition(dict))
+    @solid(output_defs=[OutputDefinition(dict)])
     def emit_dict():
         return 1
 
@@ -42,7 +42,7 @@ def test_basic_python_dictionary_wrong():
 
 
 def test_basic_python_dictionary_input_wrong():
-    @lambda_solid(input_defs=[InputDefinition("data", dict)], output_def=OutputDefinition(str))
+    @solid(input_defs=[InputDefinition("data", dict)], output_defs=[OutputDefinition(str)])
     def input_dict(data):
         return data["key"]
 
@@ -51,7 +51,7 @@ def test_basic_python_dictionary_input_wrong():
 
 
 def test_execute_dict_from_config():
-    @lambda_solid(input_defs=[InputDefinition("data", dict)], output_def=OutputDefinition(str))
+    @solid(input_defs=[InputDefinition("data", dict)], output_defs=[OutputDefinition(str)])
     def input_dict(data):
         return data["key"]
 
@@ -65,7 +65,7 @@ def test_execute_dict_from_config():
 
 
 def test_dagster_dictionary_output():
-    @lambda_solid(output_def=OutputDefinition(dict))
+    @solid(output_defs=[OutputDefinition(dict)])
     def emit_dict():
         return {"key": "value"}
 
@@ -73,7 +73,7 @@ def test_dagster_dictionary_output():
 
 
 def test_basic_dagster_dictionary_input():
-    @lambda_solid(input_defs=[InputDefinition("data", Dict)], output_def=OutputDefinition(str))
+    @solid(input_defs=[InputDefinition("data", Dict)], output_defs=[OutputDefinition(str)])
     def input_dict(data):
         return data["key"]
 
@@ -83,7 +83,7 @@ def test_basic_dagster_dictionary_input():
 
 
 def test_basic_typing_dictionary_output():
-    @lambda_solid(output_def=OutputDefinition(typing.Dict))
+    @solid(output_defs=[OutputDefinition(typing.Dict)])
     def emit_dict():
         return {"key": "value"}
 
@@ -91,8 +91,8 @@ def test_basic_typing_dictionary_output():
 
 
 def test_basic_typing_dictionary_input():
-    @lambda_solid(
-        input_defs=[InputDefinition("data", typing.Dict)], output_def=OutputDefinition(str)
+    @solid(
+        input_defs=[InputDefinition("data", typing.Dict)], output_defs=[OutputDefinition(str)]
     )
     def input_dict(data):
         return data["key"]
@@ -103,7 +103,7 @@ def test_basic_typing_dictionary_input():
 
 
 def test_basic_closed_typing_dictionary_wrong():
-    @lambda_solid(output_def=OutputDefinition(typing.Dict[int, int]))
+    @solid(output_defs=[OutputDefinition(typing.Dict[int, int])])
     def emit_dict():
         return 1
 
@@ -112,7 +112,7 @@ def test_basic_closed_typing_dictionary_wrong():
 
 
 def test_basic_closed_typing_dictionary_output():
-    @lambda_solid(output_def=OutputDefinition(typing.Dict[str, str]))
+    @solid(output_defs=[OutputDefinition(typing.Dict[str, str])])
     def emit_dict():
         return {"key": "value"}
 
@@ -123,9 +123,9 @@ def test_basic_closed_typing_dictionary_output():
 
 
 def test_basic_closed_typing_dictionary_input():
-    @lambda_solid(
+    @solid(
         input_defs=[InputDefinition("data", typing.Dict[str, str])],
-        output_def=OutputDefinition(str),
+        output_defs=[OutputDefinition(str)],
     )
     def input_dict(data):
         return data["key"]
@@ -136,7 +136,7 @@ def test_basic_closed_typing_dictionary_input():
 
 
 def test_basic_closed_typing_dictionary_key_wrong():
-    @lambda_solid(output_def=OutputDefinition(typing.Dict[str, str]))
+    @solid(output_defs=[OutputDefinition(typing.Dict[str, str])])
     def emit_dict():
         return {1: "foo"}
 
@@ -145,7 +145,7 @@ def test_basic_closed_typing_dictionary_key_wrong():
 
 
 def test_basic_closed_typing_dictionary_value_wrong():
-    @lambda_solid(output_def=OutputDefinition(typing.Dict[str, str]))
+    @solid(output_defs=[OutputDefinition(typing.Dict[str, str])])
     def emit_dict():
         return {"foo": 1}
 
@@ -154,7 +154,7 @@ def test_basic_closed_typing_dictionary_value_wrong():
 
 
 def test_complicated_dictionary_typing_pass():
-    @lambda_solid(output_def=OutputDefinition(typing.Dict[str, typing.List[typing.Dict[int, int]]]))
+    @solid(output_defs=[OutputDefinition(typing.Dict[str, typing.List[typing.Dict[int, int]]])])
     def emit_dict():
         return {"foo": [{1: 1, 2: 2}]}
 
@@ -162,7 +162,7 @@ def test_complicated_dictionary_typing_pass():
 
 
 def test_complicated_dictionary_typing_fail():
-    @lambda_solid(output_def=OutputDefinition(typing.Dict[str, typing.List[typing.Dict[int, int]]]))
+    @solid(output_defs=[OutputDefinition(typing.Dict[str, typing.List[typing.Dict[int, int]]])])
     def emit_dict():
         return {"foo": [{1: 1, "2": 2}]}
 

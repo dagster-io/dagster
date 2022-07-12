@@ -14,7 +14,7 @@ from dagster import (
     SolidDefinition,
 )
 from dagster import _check as check
-from dagster import execute_pipeline, execute_solid, lambda_solid, pipeline, solid
+from dagster import execute_pipeline, execute_solid, pipeline, solid
 
 
 def create_root_success_solid(name):
@@ -194,11 +194,11 @@ def test_user_error_propogation():
     class UserError(Exception):
         pass
 
-    @lambda_solid
+    @solid
     def throws_user_error():
         raise UserError(err_msg)
 
-    @lambda_solid
+    @solid
     def return_one():
         return 1
 
@@ -219,7 +219,7 @@ def test_user_error_propogation():
 
 
 def test_explicit_failure():
-    @lambda_solid
+    @solid
     def throws_failure():
         raise DagsterTypeCheckDidNotPass(
             description="Always fails.",

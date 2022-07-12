@@ -144,7 +144,7 @@ def composite_solid(
 
         .. code-block:: python
 
-            @lambda_solid
+            @solid
             def add_one(num: int) -> int:
                 return num + 1
 

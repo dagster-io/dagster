@@ -16,7 +16,6 @@ from dagster import (
     execute_pipeline,
     execute_solid,
     graph,
-    lambda_solid,
     op,
     pipeline,
     solid,
@@ -30,7 +29,7 @@ from dagster.core.utility_solids import define_stub_solid
 def test_no_parens_solid():
     called = {}
 
-    @lambda_solid
+    @solid
     def hello_world():
         called["yup"] = True
 
@@ -52,7 +51,7 @@ def test_empty_solid():
 
 
 def test_solid():
-    @solid(output_defs=[OutputDefinition()])
+    @solid
     def hello_world(_context):
         return {"foo": "bar"}
 
@@ -63,7 +62,7 @@ def test_solid():
 
 
 def test_solid_one_output():
-    @lambda_solid
+    @solid
     def hello_world():
         return {"foo": "bar"}
 
@@ -74,7 +73,7 @@ def test_solid_one_output():
 
 
 def test_solid_yield():
-    @solid(output_defs=[OutputDefinition()])
+    @solid
     def hello_world(_context):
         yield Output(value={"foo": "bar"})
 
@@ -85,7 +84,7 @@ def test_solid_yield():
 
 
 def test_solid_result_return():
-    @solid(output_defs=[OutputDefinition()])
+    @solid
     def hello_world(_context):
         return Output(value={"foo": "bar"})
 
@@ -179,7 +178,7 @@ def test_lambda_solid_with_underscore_input():
     def emit_input(_):
         return _
 
-    @lambda_solid
+    @solid
     def emit_five():
         return 5
 
@@ -305,7 +304,7 @@ def test_solid_docstring():
         """FOO_DOCSTRING"""
         return
 
-    @lambda_solid
+    @solid
     def bar_solid():
         """BAR_DOCSTRING"""
         return
@@ -446,7 +445,7 @@ def test_solid_returns_iterator():
 
 
 def test_input_default():
-    @lambda_solid
+    @solid
     def foo(bar="ok"):
         return bar
 

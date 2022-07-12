@@ -11,7 +11,6 @@ from dagster import (
     ModeDefinition,
     OutputDefinition,
     composite_solid,
-    lambda_solid,
     resource,
     solid,
 )
@@ -26,7 +25,7 @@ from dagster.utils.test import execute_solid
 
 
 def test_single_solid_in_isolation():
-    @lambda_solid
+    @solid
     def solid_one():
         return 1
 
@@ -36,7 +35,7 @@ def test_single_solid_in_isolation():
 
 
 def test_single_solid_with_single():
-    @lambda_solid(input_defs=[InputDefinition(name="num")])
+    @solid(input_defs=[InputDefinition(name="num")])
     def add_one_solid(num):
         return num + 1
 
@@ -110,7 +109,7 @@ def test_single_solid_error():
     class SomeError(Exception):
         pass
 
-    @lambda_solid
+    @solid
     def throw_error():
         raise SomeError()
 
@@ -121,7 +120,7 @@ def test_single_solid_error():
 
 
 def test_single_solid_type_checking_output_error():
-    @lambda_solid(output_def=OutputDefinition(Int))
+    @lambda_solid(output_defs=[OutputDefinition(Int)])
     def return_string():
         return "ksjdfkjd"
 
@@ -133,7 +132,7 @@ def test_failing_solid_in_isolation():
     class ThisException(Exception):
         pass
 
-    @lambda_solid
+    @solid
     def throw_an_error():
         raise ThisException("nope")
 
@@ -144,7 +143,7 @@ def test_failing_solid_in_isolation():
 
 
 def test_composites():
-    @lambda_solid
+    @solid
     def hello():
         return "hello"
 

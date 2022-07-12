@@ -6,7 +6,7 @@ from dagster import (
     InputDefinition,
     OutputDefinition,
     execute_solid,
-    lambda_solid,
+    solid,
 )
 
 
@@ -24,7 +24,7 @@ def test_typed_python_dict_failure():
 
 
 def test_basic_solid_dict_int_int_output():
-    @lambda_solid(output_def=OutputDefinition(Dict[int, int]))
+    @solid(output_defs=[OutputDefinition(Dict[int, int])])
     def emit_dict_int_int():
         return {1: 1}
 
@@ -32,7 +32,7 @@ def test_basic_solid_dict_int_int_output():
 
 
 def test_basic_solid_dict_int_int_output_faile():
-    @lambda_solid(output_def=OutputDefinition(Dict[int, int]))
+    @solid(output_defs=[OutputDefinition(Dict[int, int])])
     def emit_dict_int_int():
         return {1: "1"}
 

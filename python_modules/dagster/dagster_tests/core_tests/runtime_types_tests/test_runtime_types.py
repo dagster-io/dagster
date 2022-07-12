@@ -16,8 +16,8 @@ from dagster import (
     Set,
     String,
     Tuple,
-    lambda_solid,
     pipeline,
+    solid,
 )
 from dagster.core.types.dagster_type import (
     ALL_RUNTIME_BUILTINS,
@@ -112,7 +112,7 @@ def test_python_mapping():
     runtime = resolve_dagster_type(float)
     assert runtime.unique_name == "Float"
 
-    @lambda_solid(input_defs=[InputDefinition("num", int)])
+    @solid(input_defs=[InputDefinition("num", int)])
     def add_one(num):
         return num + 1
 
@@ -134,13 +134,13 @@ def test_double_dagster_type():
     AlwaysSucceedsFoo = DagsterType(name="Foo", type_check_fn=lambda _, _val: True)
     AlwaysFailsFoo = DagsterType(name="Foo", type_check_fn=lambda _, _val: False)
 
-    @lambda_solid
+    @solid
     def return_a_thing():
         return 1
 
     @lambda_solid(
         input_defs=[InputDefinition("succeeds", AlwaysSucceedsFoo)],
-        output_def=OutputDefinition(AlwaysFailsFoo),
+        output_defs=[OutputDefinition(AlwaysFailsFoo)],
     )
     def yup(succeeds):
         return succeeds

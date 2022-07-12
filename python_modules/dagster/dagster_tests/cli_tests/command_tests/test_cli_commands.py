@@ -21,7 +21,6 @@ from dagster import (
     graph,
     in_process_executor,
     job,
-    lambda_solid,
     op,
     pipeline,
     repository,
@@ -43,12 +42,12 @@ from dagster.utils import file_relative_path, merge_dicts
 from dagster.version import __version__
 
 
-@lambda_solid
+@solid
 def do_something():
     return 1
 
 
-@lambda_solid
+@solid
 def do_input(x):
     return x
 

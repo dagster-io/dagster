@@ -16,7 +16,7 @@ def get_repo():
     This is a repo that changes name very time it's loaded
     """
 
-    @lambda_solid
+    @solid
     def solid_A():
         pass
 

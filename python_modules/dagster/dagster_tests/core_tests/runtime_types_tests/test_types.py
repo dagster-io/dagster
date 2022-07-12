@@ -21,7 +21,6 @@ from dagster import (
     TypeCheck,
     check_dagster_type,
     execute_pipeline,
-    lambda_solid,
     make_python_type_usable_as_dagster_type,
     pipeline,
     resource,
@@ -145,11 +144,11 @@ def _type_check_data_for_input(solid_result, input_name):
 
 
 def test_input_types_succeed_in_pipeline():
-    @lambda_solid
+    @solid
     def return_one():
         return 1
 
-    @lambda_solid(input_defs=[InputDefinition("num", int)])
+    @solid(input_defs=[InputDefinition("num", int)])
     def take_num(num):
         return num
 
@@ -168,7 +167,7 @@ def test_input_types_succeed_in_pipeline():
 
 
 def test_output_types_succeed_in_pipeline():
-    @lambda_solid(output_def=OutputDefinition(int))
+    @solid(output_defs=[OutputDefinition(int)])
     def return_one():
         return 1
 
@@ -188,11 +187,11 @@ def test_output_types_succeed_in_pipeline():
 
 
 def test_input_types_fail_in_pipeline():
-    @lambda_solid
+    @solid
     def return_one():
         return 1
 
-    @lambda_solid(input_defs=[InputDefinition("string", str)])
+    @solid(input_defs=[InputDefinition("string", str)])
     def take_string(string):
         return string
 
@@ -220,7 +219,7 @@ def test_input_types_fail_in_pipeline():
 
 
 def test_output_types_fail_in_pipeline():
-    @lambda_solid(output_def=OutputDefinition(str))
+    @solid(output_defs=[OutputDefinition(str)])
     def return_int_fails():
         return 1
 
@@ -274,7 +273,7 @@ BadType = DagsterType(name="BadType", type_check_fn=_return_bad_value)
 
 
 def test_input_type_returns_wrong_thing():
-    @lambda_solid
+    @solid
     def return_one():
         return 1
 
@@ -305,7 +304,7 @@ def test_input_type_returns_wrong_thing():
 
 
 def test_output_type_returns_wrong_thing():
-    @lambda_solid(output_def=OutputDefinition(BadType))
+    @lambda_solid(output_defs=[OutputDefinition(BadType)])
     def return_one_bad_thing():
         return 1
 
@@ -324,7 +323,7 @@ def test_output_type_returns_wrong_thing():
 
 
 def test_input_type_throw_arbitrary_exception():
-    @lambda_solid
+    @solid
     def return_one():
         return 1
 
@@ -346,7 +345,7 @@ def test_input_type_throw_arbitrary_exception():
 
 
 def test_output_type_throw_arbitrary_exception():
-    @lambda_solid(output_def=OutputDefinition(ThrowsExceptionType))
+    @lambda_solid(output_defs=[OutputDefinition(ThrowsExceptionType)])
     def return_one_throws():
         return 1
 
@@ -600,7 +599,7 @@ def test_contextual_type_check():
 
         return _Foo()
 
-    @lambda_solid
+    @solid
     def return_one():
         return 1
 

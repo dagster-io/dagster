@@ -6,7 +6,6 @@ from dagster import (
     OutputDefinition,
     PartitionSetDefinition,
     ScheduleDefinition,
-    lambda_solid,
     op,
     pipeline,
     repository,
@@ -19,12 +18,12 @@ from dagster.core.errors import DagsterError
 from dagster.core.test_utils import default_mode_def_for_test
 
 
-@lambda_solid
+@solid
 def do_something():
     return 1
 
 
-@lambda_solid
+@solid
 def do_input(x):
     return x
 

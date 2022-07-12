@@ -6,7 +6,6 @@ from dagster import (
     OutputDefinition,
     PartitionSetDefinition,
     ScheduleDefinition,
-    lambda_solid,
     pipeline,
     repository,
     solid,
@@ -14,12 +13,12 @@ from dagster import (
 )
 
 
-@lambda_solid
+@solid
 def do_something():
     return 1
 
 
-@lambda_solid
+@solid
 def do_input(x):
     return x
 

@@ -14,7 +14,6 @@ from dagster import (
     composite_solid,
     execute_pipeline,
     graph,
-    lambda_solid,
     pipeline,
     solid,
 )
@@ -754,7 +753,7 @@ def test_nested_empty_config():
 
 
 def test_nested_empty_config_input():
-    @lambda_solid
+    @solid
     def number(num):
         return num
 

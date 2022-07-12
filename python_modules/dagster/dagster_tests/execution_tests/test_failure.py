@@ -1,8 +1,8 @@
-from dagster import Failure, MetadataEntry, execute_pipeline, lambda_solid, pipeline
+from dagster import Failure, MetadataEntry, execute_pipeline, pipeline, solid
 
 
 def test_failure():
-    @lambda_solid
+    @solid
     def throw():
         raise Failure(
             description="it Failure",

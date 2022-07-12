@@ -450,19 +450,19 @@ def lambda_solid(
 
     .. code-block:: python
 
-        @lambda_solid
+        @solid
         def hello_world():
             return 'hello'
 
-        @lambda_solid(
+        @solid(
             input_defs=[InputDefinition(name='foo', str)],
-            output_def=OutputDefinition(str)
+            output_defs=[OutputDefinition(str)]
         )
         def hello_world(foo):
             # explicitly type and name inputs and outputs
             return foo
 
-        @lambda_solid
+        @solid
         def hello_world(foo: str) -> str:
             # same as above inferred from signature
             return foo

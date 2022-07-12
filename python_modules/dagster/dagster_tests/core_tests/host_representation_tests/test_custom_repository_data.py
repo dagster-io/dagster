@@ -2,7 +2,7 @@ import sys
 
 import pytest
 
-from dagster import file_relative_path, lambda_solid, pipeline, repository
+from dagster import file_relative_path, pipeline, repository, solid
 from dagster.core.definitions.repository_definition import RepositoryData
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
@@ -19,7 +19,7 @@ def define_do_something(num_calls):
     return do_something
 
 
-@lambda_solid
+@solid
 def do_input(x):
     return x
 

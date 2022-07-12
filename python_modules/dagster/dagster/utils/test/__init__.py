@@ -18,7 +18,7 @@ from dagster import (
     TypeCheck,
 )
 from dagster import _check as check
-from dagster import execute_pipeline, lambda_solid
+from dagster import execute_pipeline, solid
 from dagster.core.definitions.logger_definition import LoggerDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.resource_definition import ScopedResourcesBuilder

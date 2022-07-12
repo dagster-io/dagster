@@ -5,7 +5,6 @@ from dagster import (
     Output,
     OutputDefinition,
     PipelineDefinition,
-    lambda_solid,
     solid,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
@@ -14,7 +13,7 @@ from dagster.core.instance import DagsterInstance
 
 
 def define_two_int_pipeline():
-    @lambda_solid
+    @solid
     def return_one():
         return 1
 

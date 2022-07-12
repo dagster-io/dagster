@@ -27,7 +27,7 @@ def test_double_input():
 
 
 def test_noop_lambda_solid():
-    @lambda_solid
+    @solid
     def noop():
         pass
 
@@ -37,7 +37,7 @@ def test_noop_lambda_solid():
 
 
 def test_one_arg_lambda_solid():
-    @lambda_solid
+    @solid
     def one_arg(num):
         return num
 

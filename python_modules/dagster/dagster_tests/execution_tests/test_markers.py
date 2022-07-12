@@ -1,10 +1,10 @@
-from dagster import execute_pipeline, lambda_solid, pipeline, reconstructable
+from dagster import execute_pipeline, pipeline, reconstructable, solid
 from dagster.core.events import MARKER_EVENTS
 from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
 
 
 def define_pipeline():
-    @lambda_solid
+    @solid
     def ping():
         return "ping"
 

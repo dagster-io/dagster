@@ -14,7 +14,6 @@ from dagster import (
     String,
     dagster_type_materializer,
     execute_pipeline,
-    lambda_solid,
     solid,
 )
 from dagster.core.errors import DagsterInvariantViolationError
@@ -25,7 +24,7 @@ from dagster.utils.test import get_temp_file_name, get_temp_file_names
 
 
 def single_int_output_pipeline():
-    @lambda_solid(output_def=OutputDefinition(Int))
+    @solid(output_defs=[OutputDefinition(Int)])
     def return_one():
         return 1
 
@@ -33,7 +32,7 @@ def single_int_output_pipeline():
 
 
 def single_string_output_pipeline():
-    @lambda_solid(output_def=OutputDefinition(String))
+    @solid(output_defs=[OutputDefinition(String)])
     def return_foo():
         return "foo"
 
@@ -50,7 +49,7 @@ def multiple_output_pipeline():
 
 
 def single_int_named_output_pipeline():
-    @lambda_solid(output_def=OutputDefinition(Int, name="named"))
+    @solid(output_defs=[OutputDefinition(Int, name="named")])
     def return_named_one():
         return Output(1, "named")
 
@@ -338,7 +337,7 @@ def yield_two_materializations(*_args, **_kwargs):
 def test_basic_yield_multiple_materializations():
     SomeDagsterType = create_any_type(name="SomeType", materializer=yield_two_materializations)
 
-    @lambda_solid(output_def=OutputDefinition(SomeDagsterType))
+    @solid(output_defs=[OutputDefinition(SomeDagsterType)])
     def return_one():
         return 1
 
@@ -368,7 +367,7 @@ def return_int(*_args, **_kwargs):
 def test_basic_bad_output_materialization():
     SomeDagsterType = create_any_type(name="SomeType", materializer=return_int)
 
-    @lambda_solid(output_def=OutputDefinition(SomeDagsterType))
+    @solid(output_defs=[OutputDefinition(SomeDagsterType)])
     def return_one():
         return 1
 

@@ -1,9 +1,9 @@
 import time
 
-from dagster import PresetDefinition, RetryRequested, lambda_solid, pipeline, solid
+from dagster import PresetDefinition, RetryRequested, pipeline, solid
 
 
-@lambda_solid
+@solid
 def echo(x):
     return x
 

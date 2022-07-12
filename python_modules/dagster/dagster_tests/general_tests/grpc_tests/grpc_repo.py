@@ -8,7 +8,6 @@ from dagster import (
     PartitionSetDefinition,
     ScheduleDefinition,
     SkipReason,
-    lambda_solid,
     pipeline,
     repository,
     sensor,
@@ -17,12 +16,12 @@ from dagster import (
 )
 
 
-@lambda_solid
+@solid
 def do_something():
     return 1
 
 
-@lambda_solid
+@solid
 def do_input(x):
     return x
 

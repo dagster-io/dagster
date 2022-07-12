@@ -15,7 +15,6 @@ from dagster import (
     PresetDefinition,
     String,
     execute_pipeline,
-    lambda_solid,
     pipeline,
     reconstructable,
     solid,
@@ -104,11 +103,11 @@ def test_forkserver_preload():
 
 
 def define_diamond_pipeline():
-    @lambda_solid
+    @solid
     def return_two():
         return 2
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @solid(input_defs=[InputDefinition("num")])
     def add_three(num):
         return num + 3
 
@@ -141,7 +140,7 @@ def define_diamond_pipeline():
 
 
 def define_in_mem_pipeline():
-    @lambda_solid
+    @solid
     def return_two():
         return 2
 
@@ -157,11 +156,11 @@ def define_in_mem_pipeline():
 
 
 def define_error_pipeline():
-    @lambda_solid
+    @solid
     def should_never_execute(_x):
         assert False  # this should never execute
 
-    @lambda_solid
+    @solid
     def throw_error():
         raise Exception("bad programmer")
 
@@ -269,7 +268,7 @@ def define_subdag_pipeline():
 
     @lambda_solid(
         input_defs=[InputDefinition("after", Nothing)],
-        output_def=OutputDefinition(Nothing),
+        output_defs=[OutputDefinition(Nothing)],
     )
     def noop():
         pass
@@ -347,7 +346,7 @@ def either_or(_context):
     yield Output(1, "option_1")
 
 
-@lambda_solid
+@solid
 def echo(x):
     return x
 
@@ -378,7 +377,7 @@ def test_optional_outputs():
         assert len([event for event in multi_result.step_event_list if event.is_step_skipped]) == 2
 
 
-@lambda_solid
+@solid
 def throw():
     raise Failure(
         description="it Failure",

@@ -1,12 +1,12 @@
-from dagster import InputDefinition, Int, OutputDefinition, lambda_solid, pipeline, repository
+from dagster import InputDefinition, Int, OutputDefinition, pipeline, repository, solid
 
 
-@lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+@solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
 def add_one(num):
     return num + 1
 
 
-@lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+@solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
 def mult_two(num):
     return num * 2
 

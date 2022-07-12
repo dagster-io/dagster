@@ -8,14 +8,14 @@ from dagster import (
     Optional,
     OutputDefinition,
     execute_solid,
-    lambda_solid,
+    solid,
 )
 from dagster.core.types.dagster_type import resolve_dagster_type
 from dagster.core.types.python_set import create_typed_runtime_set
 
 
 def test_vanilla_set_output():
-    @lambda_solid(output_def=OutputDefinition(set))
+    @solid(output_defs=[OutputDefinition(set)])
     def emit_set():
         return {1, 2}
 
@@ -23,7 +23,7 @@ def test_vanilla_set_output():
 
 
 def test_vanilla_set_output_fail():
-    @lambda_solid(output_def=OutputDefinition(set))
+    @solid(output_defs=[OutputDefinition(set)])
     def emit_set():
         return "foo"
 
@@ -32,7 +32,7 @@ def test_vanilla_set_output_fail():
 
 
 def test_vanilla_set_input():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=set)])
+    @solid(input_defs=[InputDefinition(name="tt", dagster_type=set)])
     def take_set(tt):
         return tt
 
@@ -40,7 +40,7 @@ def test_vanilla_set_input():
 
 
 def test_vanilla_set_input_fail():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=set)])
+    @solid(input_defs=[InputDefinition(name="tt", dagster_type=set)])
     def take_set(tt):
         return tt
 
@@ -49,7 +49,7 @@ def test_vanilla_set_input_fail():
 
 
 def test_open_typing_set_output():
-    @lambda_solid(output_def=OutputDefinition(typing.Set))
+    @lambda_solid(output_defs=[OutputDefinition(typing.Set)])
     def emit_set():
         return {1, 2}
 
@@ -57,7 +57,7 @@ def test_open_typing_set_output():
 
 
 def test_open_typing_set_output_fail():
-    @lambda_solid(output_def=OutputDefinition(typing.Set))
+    @lambda_solid(output_defs=[OutputDefinition(typing.Set)])
     def emit_set():
         return "foo"
 

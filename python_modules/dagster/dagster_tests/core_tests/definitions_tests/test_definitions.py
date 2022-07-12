@@ -13,7 +13,6 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     String,
-    lambda_solid,
     solid,
 )
 from dagster.core.definitions import AssetMaterialization, Node, create_run_config_schema
@@ -30,7 +29,7 @@ def test_deps_equal():
 
 
 def test_solid_def():
-    @lambda_solid
+    @solid
     def produce_string():
         return "foo"
 
@@ -120,7 +119,7 @@ def test_solid_def_receives_version():
 
 
 def test_pipeline_types():
-    @lambda_solid
+    @solid
     def produce_string():
         return "foo"
 
@@ -146,7 +145,7 @@ def test_pipeline_types():
 
 
 def test_mapper_errors():
-    @lambda_solid
+    @solid
     def solid_a():
         return 1
 
@@ -225,11 +224,11 @@ def test_rehydrate_solid_handle():
 
 
 def test_cycle_detect():
-    @lambda_solid
+    @solid
     def return_one():
         return 1
 
-    @lambda_solid
+    @solid
     def add(a, b):
         return a + b
 
@@ -267,11 +266,11 @@ def test_cycle_detect():
 
 
 def test_composite_mapping_collision():
-    @lambda_solid
+    @solid
     def return_one():
         return 1
 
-    @lambda_solid
+    @solid
     def add(a, b):
         return a + b
 

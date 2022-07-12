@@ -13,7 +13,6 @@ from dagster import (
     SolidDefinition,
     composite_solid,
     execute_pipeline,
-    lambda_solid,
     pipeline,
     solid,
 )
@@ -27,32 +26,32 @@ def builder(graph):
     return graph.add_one(graph.return_one())
 
 
-@lambda_solid(output_def=OutputDefinition(Int))
+@solid(output_defs=[OutputDefinition(Int)])
 def echo(blah):
     return blah
 
 
-@lambda_solid
+@solid
 def return_one():
     return 1
 
 
-@lambda_solid
+@solid
 def return_two():
     return 2
 
 
-@lambda_solid
+@solid
 def return_tuple():
     return (1, 2)
 
 
-@lambda_solid(input_defs=[InputDefinition("num")])
+@solid(input_defs=[InputDefinition("num")])
 def add_one(num):
     return num + 1
 
 
-@lambda_solid(input_defs=[InputDefinition("num")])
+@solid(input_defs=[InputDefinition("num")])
 def pipe(num):
     return num
 
@@ -207,7 +206,7 @@ def test_two_inputs_with_dsl():
     def subtract(num_one, num_two):
         return num_one - num_two
 
-    @lambda_solid
+    @solid
     def return_three():
         return 3
 
@@ -258,7 +257,7 @@ def test_diamond_graph():
 
 def test_mapping():
     @lambda_solid(
-        input_defs=[InputDefinition("num_in", Int)], output_def=OutputDefinition(Int, "num_out")
+        input_defs=[InputDefinition("num_in", Int)], output_defs=[OutputDefinition(Int, "num_out")]
     )
     def double(num_in):
         return num_in * 2
@@ -288,7 +287,7 @@ def test_mapping():
 
 
 def test_mapping_args_kwargs():
-    @lambda_solid
+    @solid
     def take(a, b, c):
         return (a, b, c)
 
@@ -382,7 +381,7 @@ def test_deep_graph():
     def canonicalize_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")], output_def=OutputDefinition(Int))
+    @lambda_solid(input_defs=[InputDefinition("num")], output_defs=[OutputDefinition(Int)])
     def load_num(num):
         return num + 3
 
@@ -461,7 +460,7 @@ def test_pipeline_has_solid_def():
 
 
 def test_mapping_args_ordering():
-    @lambda_solid
+    @solid
     def take(a, b, c):
         assert a == "a"
         assert b == "b"
@@ -505,7 +504,7 @@ def test_unused_mapping():
             return_one()
 
 
-@lambda_solid
+@solid
 def single_input_solid():
     return
 

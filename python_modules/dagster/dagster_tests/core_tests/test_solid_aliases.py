@@ -7,7 +7,6 @@ from dagster import (
     NodeInvocation,
     PipelineDefinition,
     execute_pipeline,
-    lambda_solid,
     solid,
 )
 

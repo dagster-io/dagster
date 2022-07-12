@@ -13,7 +13,7 @@ from dagster import (
     PipelineDefinition,
     String,
     execute_pipeline,
-    lambda_solid,
+    solid,
 )
 from dagster.utils.test import get_temp_file_name
 
@@ -25,27 +25,27 @@ def _execute_pipeline_with_subset(pipeline, run_config, solid_selection):
 
 
 def define_test_all_scalars_pipeline():
-    @lambda_solid(input_defs=[InputDefinition("num", Int)])
+    @solid(input_defs=[InputDefinition("num", Int)])
     def take_int(num):
         return num
 
-    @lambda_solid(output_def=OutputDefinition(Int))
+    @solid(output_defs=[OutputDefinition(Int)])
     def produce_int():
         return 2
 
-    @lambda_solid(input_defs=[InputDefinition("string", String)])
+    @solid(input_defs=[InputDefinition("string", String)])
     def take_string(string):
         return string
 
-    @lambda_solid(output_def=OutputDefinition(String))
+    @solid(output_defs=[OutputDefinition(String)])
     def produce_string():
         return "foo"
 
-    @lambda_solid(input_defs=[InputDefinition("float_number", Float)])
+    @solid(input_defs=[InputDefinition("float_number", Float)])
     def take_float(float_number):
         return float_number
 
-    @lambda_solid(output_def=OutputDefinition(Float))
+    @lambda_solid(output_defs=[OutputDefinition(Float)])
     def produce_float():
         return 3.14
 
@@ -53,7 +53,7 @@ def define_test_all_scalars_pipeline():
     def take_bool(bool_value):
         return bool_value
 
-    @lambda_solid(output_def=OutputDefinition(Bool))
+    @lambda_solid(output_defs=[OutputDefinition(Bool)])
     def produce_bool():
         return True
 
@@ -61,7 +61,7 @@ def define_test_all_scalars_pipeline():
     def take_any(any_value):
         return any_value
 
-    @lambda_solid(output_def=OutputDefinition(Any))
+    @lambda_solid(output_defs=[OutputDefinition(Any)])
     def produce_any():
         return True
 

@@ -12,7 +12,6 @@ from dagster import (
     composite_solid,
     configured,
     execute_pipeline,
-    lambda_solid,
     mem_io_manager,
     pipeline,
     solid,
@@ -264,7 +263,7 @@ def test_nested_input_via_config_mapping():
 
 
 def test_double_nested_input_via_config_mapping():
-    @lambda_solid
+    @solid
     def number(num):
         return num
 

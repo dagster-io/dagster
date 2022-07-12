@@ -10,8 +10,8 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     execute_pipeline,
-    lambda_solid,
     reexecute_pipeline,
+    solid,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
@@ -25,15 +25,15 @@ from dagster.core.test_utils import default_mode_def_for_test
 
 
 def define_addy_pipeline(using_file_system=False):
-    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+    @solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
     def add_one(num):
         return num + 1
 
-    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+    @solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
     def add_two(num):
         return num + 2
 
-    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+    @solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
     def add_three(num):
         return num + 3
 

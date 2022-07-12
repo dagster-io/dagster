@@ -1,14 +1,14 @@
 import string
 
-from dagster import PartitionSetDefinition, ScheduleDefinition, lambda_solid, pipeline, repository
+from dagster import PartitionSetDefinition, ScheduleDefinition, pipeline, repository, solid
 
 
-@lambda_solid
+@solid
 def do_something():
     return 1
 
 
-@lambda_solid
+@solid
 def do_input(x):
     return x
 

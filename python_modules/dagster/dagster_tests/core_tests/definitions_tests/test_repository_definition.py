@@ -28,7 +28,6 @@ from dagster import (
     in_process_executor,
     io_manager,
     job,
-    lambda_solid,
     logger,
     op,
     pipeline,

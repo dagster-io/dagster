@@ -21,7 +21,7 @@ def define_pass_value_solid(name, description=None):
 
 
 def test_execute_solid_with_input_same_name():
-    @solid(output_defs=[OutputDefinition()])
+    @solid
     def a_thing(_, a_thing):
         return a_thing + a_thing
 

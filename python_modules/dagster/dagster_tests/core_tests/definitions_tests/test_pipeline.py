@@ -10,7 +10,6 @@ from dagster import (
     PipelineDefinition,
     composite_solid,
     execute_pipeline,
-    lambda_solid,
     pipeline,
     solid,
     usable_as_dagster_type,
@@ -21,17 +20,17 @@ def builder(graph):
     return graph.add_one(graph.return_one())
 
 
-@lambda_solid
+@solid
 def return_one():
     return 1
 
 
-@lambda_solid
+@solid
 def return_two():
     return 2
 
 
-@lambda_solid
+@solid
 def return_three():
     return 3
 
@@ -210,7 +209,7 @@ def test_dupe_defs_fail():
 
 
 def test_composite_dupe_defs_fail():
-    @lambda_solid
+    @solid
     def noop():
         pass
 

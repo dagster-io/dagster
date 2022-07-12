@@ -2,7 +2,7 @@ import pytest
 
 from dagster import DagsterInstance, Int, Output, OutputDefinition
 from dagster import _check as check
-from dagster import composite_solid, execute_pipeline, lambda_solid, pipeline, solid
+from dagster import composite_solid, execute_pipeline, pipeline, solid
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import (
     DagsterInvalidConfigError,
@@ -18,7 +18,7 @@ from dagster.core.utils import make_new_run_id
 
 
 def define_diamond_pipeline():
-    @lambda_solid
+    @solid
     def return_two():
         return 2
 
@@ -440,7 +440,7 @@ def test_fan_out_should_skip_step():
 
 
 def test_fan_in_should_skip_step():
-    @lambda_solid
+    @solid
     def one():
         return 1
 

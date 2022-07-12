@@ -16,10 +16,10 @@ from dagster import (
     Output,
     execute_pipeline,
     job,
-    lambda_solid,
     op,
     pipeline,
     repository,
+    solid,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import execute_run
@@ -357,11 +357,11 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
 
 
 def get_repo_at_time_1():
-    @lambda_solid
+    @solid
     def solid_A():
         pass
 
-    @lambda_solid
+    @solid
     def solid_B():
         pass
 
@@ -382,11 +382,11 @@ def get_repo_at_time_1():
 
 
 def get_repo_at_time_2():
-    @lambda_solid
+    @solid
     def solid_A():
         pass
 
-    @lambda_solid
+    @solid
     def solid_B_prime():
         pass
 

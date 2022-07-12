@@ -43,7 +43,7 @@ def test_streaming_external_repositories_error(instance):
             )
 
 
-@lambda_solid
+@solid
 def do_something():
     return 1
 

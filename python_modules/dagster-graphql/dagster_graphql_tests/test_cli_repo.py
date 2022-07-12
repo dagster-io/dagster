@@ -3,19 +3,18 @@ from dagster import (
     Int,
     OutputDefinition,
     ScheduleDefinition,
-    lambda_solid,
     pipeline,
     repository,
     solid,
 )
 
 
-@lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+@solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
 def add_one(num):
     return num + 1
 
 
-@lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+@solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
 def mult_two(num):
     return num * 2
 
@@ -30,7 +29,7 @@ def needs_config(context):
     return context.solid_config["gimme"]
 
 
-@lambda_solid
+@solid
 def no_config():
     return "ok"
 

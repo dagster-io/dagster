@@ -12,7 +12,7 @@ from dagster import (
     PresetDefinition,
 )
 from dagster import _check as check
-from dagster import execute_pipeline, lambda_solid, pipeline, solid
+from dagster import execute_pipeline, pipeline, solid
 from dagster.utils import file_relative_path
 
 
@@ -23,7 +23,7 @@ def test_presets():
             raise Exception("I did an error")
         return "cool"
 
-    @lambda_solid
+    @solid
     def always_fail():
         raise Exception("I always do this")
 
@@ -114,7 +114,7 @@ def test_presets():
 
 
 def test_invalid_preset():
-    @lambda_solid
+    @solid
     def lil_solid():
         return ";)"
 
@@ -128,7 +128,7 @@ def test_invalid_preset():
 
 
 def test_conflicting_preset():
-    @lambda_solid
+    @solid
     def lil_solid():
         return ";)"
 
@@ -198,7 +198,7 @@ def test_from_pkg_resources():
 
 
 def test_tags():
-    @lambda_solid
+    @solid
     def a_solid():
         return "solid"
 

@@ -30,7 +30,6 @@ from dagster import (
     file_relative_path,
     fs_io_manager,
     job,
-    lambda_solid,
     op,
     pipeline,
     repository,

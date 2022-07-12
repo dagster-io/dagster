@@ -12,7 +12,6 @@ from dagster import (
     VersionStrategy,
     default_executors,
     fs_io_manager,
-    lambda_solid,
     pipeline,
     solid,
 )
@@ -105,12 +104,12 @@ def test_optional_outputs():
     bar.alias("third_consumer")(input_arg=foo_res.out_3)
 
 
-@lambda_solid
+@solid
 def fails():
     raise Exception("argjhgjh")
 
 
-@lambda_solid
+@solid
 def should_never_execute(_):
     assert False  # should never execute
 
@@ -120,7 +119,7 @@ def test_fails():
     should_never_execute(fails())
 
 
-@lambda_solid
+@solid
 def retry_request():
     raise RetryRequested()
 
