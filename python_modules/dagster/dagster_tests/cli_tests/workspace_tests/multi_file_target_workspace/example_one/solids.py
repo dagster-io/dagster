@@ -1,4 +1,4 @@
-from dagster import solid
+from dagster.legacy import solid
 
 
 @solid
