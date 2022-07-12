@@ -202,7 +202,7 @@ def test_multiple():
 
 
 def test_two_inputs_with_dsl():
-    @lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
+    @solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
     def subtract(num_one, num_two):
         return num_one - num_two
 
@@ -241,7 +241,7 @@ def test_diamond_graph():
         yield Output(1, "value_one")
         yield Output(2, "value_two")
 
-    @lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
+    @solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
     def subtract(num_one, num_two):
         return num_one - num_two
 
@@ -256,7 +256,7 @@ def test_diamond_graph():
 
 
 def test_mapping():
-    @lambda_solid(
+    @solid(
         input_defs=[InputDefinition("num_in", Int)], output_defs=[OutputDefinition(Int, "num_out")]
     )
     def double(num_in):
@@ -365,23 +365,23 @@ def test_deep_graph():
     def download_num(context):
         return context.solid_config
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @solid(input_defs=[InputDefinition("num")])
     def unzip_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @solid(input_defs=[InputDefinition("num")])
     def ingest_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @solid(input_defs=[InputDefinition("num")])
     def subsample_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @solid(input_defs=[InputDefinition("num")])
     def canonicalize_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")], output_defs=[OutputDefinition(Int)])
+    @solid(input_defs=[InputDefinition("num")], output_defs=[OutputDefinition(Int)])
     def load_num(num):
         return num + 3
 
@@ -684,7 +684,7 @@ def test_multiple_pending_invocations():
 
 
 def test_compose_nothing():
-    @lambda_solid(input_defs=[InputDefinition("start", Nothing)])
+    @solid(input_defs=[InputDefinition("start", Nothing)])
     def go():
         pass
 

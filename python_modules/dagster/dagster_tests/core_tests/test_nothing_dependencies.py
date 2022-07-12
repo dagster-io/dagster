@@ -265,25 +265,25 @@ def test_invalid_nothing_fns():
 def test_wrapping_nothing():
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lambda_solid(output_defs=[OutputDefinition(List[Nothing])])
+        @solid(output_defs=[OutputDefinition(List[Nothing])])
         def _():
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lambda_solid(input_defs=[InputDefinition("in", List[Nothing])])
+        @solid(input_defs=[InputDefinition("in", List[Nothing])])
         def _(_in):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lambda_solid(output_defs=[OutputDefinition(Optional[Nothing])])
+        @solid(output_defs=[OutputDefinition(Optional[Nothing])])
         def _():
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lambda_solid(input_defs=[InputDefinition("in", Optional[Nothing])])
+        @solid(input_defs=[InputDefinition("in", Optional[Nothing])])
         def _(_in):
             pass
 
@@ -293,7 +293,7 @@ def test_execution_plan():
     def emit_nothing(_context):
         yield AssetMaterialization.file(path="/path/")
 
-    @lambda_solid(input_defs=[InputDefinition("ready", Nothing)])
+    @solid(input_defs=[InputDefinition("ready", Nothing)])
     def consume_nothing():
         pass
 

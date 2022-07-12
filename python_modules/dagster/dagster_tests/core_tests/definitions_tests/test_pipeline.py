@@ -35,7 +35,7 @@ def return_three():
     return 3
 
 
-@lambda_solid(input_defs=[InputDefinition("num")])
+@solid(input_defs=[InputDefinition("num")])
 def add_one(num):
     return num + 1
 
@@ -59,7 +59,7 @@ def test_basic_use_case_with_dsl():
 
 
 def test_two_inputs_without_dsl():
-    @lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
+    @solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
     def subtract(num_one, num_two):
         return num_one - num_two
 
@@ -78,7 +78,7 @@ def test_two_inputs_without_dsl():
 
 
 def test_two_inputs_with_dsl():
-    @lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
+    @solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
     def subtract(num_one, num_two):
         return num_one - num_two
 
@@ -103,7 +103,7 @@ def test_diamond_graph():
         yield Output(1, "value_one")
         yield Output(2, "value_two")
 
-    @lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
+    @solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
     def subtract(num_one, num_two):
         return num_one - num_two
 
@@ -134,23 +134,23 @@ def test_deep_graph():
     def download_num(context):
         return context.solid_config
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @solid(input_defs=[InputDefinition("num")])
     def unzip_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @solid(input_defs=[InputDefinition("num")])
     def ingest_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @solid(input_defs=[InputDefinition("num")])
     def subsample_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @solid(input_defs=[InputDefinition("num")])
     def canonicalize_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @solid(input_defs=[InputDefinition("num")])
     def load_num(num):
         return num + 3
 
@@ -172,7 +172,7 @@ def test_unconfigurable_inputs_pipeline():
     class NewType:
         pass
 
-    @lambda_solid(input_defs=[InputDefinition("_", NewType)])
+    @solid(input_defs=[InputDefinition("_", NewType)])
     def noop(_):
         pass
 
@@ -189,11 +189,11 @@ def test_unconfigurable_inputs_pipeline():
 
 
 def test_dupe_defs_fail():
-    @lambda_solid(name="same")
+    @solid(name="same")
     def noop():
         pass
 
-    @lambda_solid(name="same")
+    @solid(name="same")
     def noop2():
         pass
 
@@ -248,7 +248,7 @@ def test_two_inputs_with_reversed_input_defs_and_dsl():
     def subtract_ctx(_context, num_one, num_two):
         return num_one - num_two
 
-    @lambda_solid(input_defs=[InputDefinition("num_two"), InputDefinition("num_one")])
+    @solid(input_defs=[InputDefinition("num_two"), InputDefinition("num_one")])
     def subtract(num_one, num_two):
         return num_one - num_two
 
@@ -264,7 +264,7 @@ def test_two_inputs_with_reversed_input_defs_and_dsl():
 
 
 def test_single_non_positional_input_use():
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @solid(input_defs=[InputDefinition("num")])
     def add_one_kw(**kwargs):
         return kwargs["num"] + 1
 
@@ -278,7 +278,7 @@ def test_single_non_positional_input_use():
 
 
 def test_single_positional_single_kwarg_input_use():
-    @lambda_solid(input_defs=[InputDefinition("num_two"), InputDefinition("num_one")])
+    @solid(input_defs=[InputDefinition("num_two"), InputDefinition("num_one")])
     def subtract_kw(num_one, **kwargs):
         return num_one - kwargs["num_two"]
 
@@ -293,7 +293,7 @@ def test_single_positional_single_kwarg_input_use():
 
 
 def test_bad_positional_input_use():
-    @lambda_solid(
+    @solid(
         input_defs=[
             InputDefinition("num_two"),
             InputDefinition("num_one"),

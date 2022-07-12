@@ -45,31 +45,31 @@ def define_test_all_scalars_pipeline():
     def take_float(float_number):
         return float_number
 
-    @lambda_solid(output_defs=[OutputDefinition(Float)])
+    @solid(output_defs=[OutputDefinition(Float)])
     def produce_float():
         return 3.14
 
-    @lambda_solid(input_defs=[InputDefinition("bool_value", Bool)])
+    @solid(input_defs=[InputDefinition("bool_value", Bool)])
     def take_bool(bool_value):
         return bool_value
 
-    @lambda_solid(output_defs=[OutputDefinition(Bool)])
+    @solid(output_defs=[OutputDefinition(Bool)])
     def produce_bool():
         return True
 
-    @lambda_solid(input_defs=[InputDefinition("any_value", Any)])
+    @solid(input_defs=[InputDefinition("any_value", Any)])
     def take_any(any_value):
         return any_value
 
-    @lambda_solid(output_defs=[OutputDefinition(Any)])
+    @solid(output_defs=[OutputDefinition(Any)])
     def produce_any():
         return True
 
-    @lambda_solid(input_defs=[InputDefinition("string_list", List[String])])
+    @solid(input_defs=[InputDefinition("string_list", List[String])])
     def take_string_list(string_list):
         return string_list
 
-    @lambda_solid(input_defs=[InputDefinition("nullable_string", Optional[String])])
+    @solid(input_defs=[InputDefinition("nullable_string", Optional[String])])
     def take_nullable_string(nullable_string):
         return nullable_string
 

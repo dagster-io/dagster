@@ -91,12 +91,6 @@ def test_solid_input_arguments():
     assert "x" in _context_arguments_out_of_order_still_works.input_dict
     assert "_context" in _context_arguments_out_of_order_still_works.input_dict
 
-    @solid
-    def _lambda_solid_underscore_input(_):
-        pass
-
-    assert "_" in _lambda_solid_underscore_input.input_dict
-
 
 def test_execution_cases():
     @solid

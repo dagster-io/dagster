@@ -111,11 +111,11 @@ def define_diamond_pipeline():
     def add_three(num):
         return num + 3
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @solid(input_defs=[InputDefinition("num")])
     def mult_three(num):
         return num * 3
 
-    @lambda_solid(input_defs=[InputDefinition("left"), InputDefinition("right")])
+    @solid(input_defs=[InputDefinition("left"), InputDefinition("right")])
     def adder(left, right):
         return left + right
 
@@ -144,7 +144,7 @@ def define_in_mem_pipeline():
     def return_two():
         return 2
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @solid(input_defs=[InputDefinition("num")])
     def add_three(num):
         return num + 3
 
@@ -266,7 +266,7 @@ def define_subdag_pipeline():
             fd.write("1")
         return
 
-    @lambda_solid(
+    @solid(
         input_defs=[InputDefinition("after", Nothing)],
         output_defs=[OutputDefinition(Nothing)],
     )

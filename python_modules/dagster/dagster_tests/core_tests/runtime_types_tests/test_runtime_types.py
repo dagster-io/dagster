@@ -138,7 +138,7 @@ def test_double_dagster_type():
     def return_a_thing():
         return 1
 
-    @lambda_solid(
+    @solid(
         input_defs=[InputDefinition("succeeds", AlwaysSucceedsFoo)],
         output_defs=[OutputDefinition(AlwaysFailsFoo)],
     )

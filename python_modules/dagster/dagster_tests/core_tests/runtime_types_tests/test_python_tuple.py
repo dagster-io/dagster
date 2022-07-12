@@ -116,7 +116,7 @@ def test_nested_python_tuple_directly():
 
 
 def test_closed_typing_tuple_output():
-    @lambda_solid(output_defs=[OutputDefinition(Tuple[int, int])])
+    @solid(output_defs=[OutputDefinition(Tuple[int, int])])
     def emit_tuple():
         return (1, 2)
 
@@ -124,7 +124,7 @@ def test_closed_typing_tuple_output():
 
 
 def test_closed_typing_tuple_output_fail():
-    @lambda_solid(output_defs=[OutputDefinition(Tuple[int, int])])
+    @solid(output_defs=[OutputDefinition(Tuple[int, int])])
     def emit_tuple():
         return "foo"
 
@@ -133,7 +133,7 @@ def test_closed_typing_tuple_output_fail():
 
 
 def test_closed_typing_tuple_output_fail_wrong_member_types():
-    @lambda_solid(output_defs=[OutputDefinition(Tuple[int, int])])
+    @solid(output_defs=[OutputDefinition(Tuple[int, int])])
     def emit_tuple():
         return (1, "nope")
 
@@ -142,7 +142,7 @@ def test_closed_typing_tuple_output_fail_wrong_member_types():
 
 
 def test_closed_typing_tuple_output_fail_wrong_length():
-    @lambda_solid(output_defs=[OutputDefinition(Tuple[int, int])])
+    @solid(output_defs=[OutputDefinition(Tuple[int, int])])
     def emit_tuple():
         return (1,)
 
@@ -151,7 +151,7 @@ def test_closed_typing_tuple_output_fail_wrong_length():
 
 
 def test_closed_typing_tuple_input():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=Tuple[int, int])])
+    @solid(input_defs=[InputDefinition(name="tt", dagster_type=Tuple[int, int])])
     def take_tuple(tt):
         return tt
 
@@ -159,7 +159,7 @@ def test_closed_typing_tuple_input():
 
 
 def test_closed_typing_tuple_input_fail():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=Tuple[int, int])])
+    @solid(input_defs=[InputDefinition(name="tt", dagster_type=Tuple[int, int])])
     def take_tuple(tt):
         return tt
 

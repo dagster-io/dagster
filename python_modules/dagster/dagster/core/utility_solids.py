@@ -22,7 +22,7 @@ def _compute_fn(context, inputs):
 def define_stub_solid(name, value):
     check.str_param(name, "name")
 
-    @lambda_solid(name=name)
+    @solid(name=name)
     def _stub():
         return value
 

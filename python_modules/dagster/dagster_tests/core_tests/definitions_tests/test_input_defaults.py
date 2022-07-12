@@ -17,7 +17,7 @@ from dagster import (
 
 
 def test_none():
-    @lambda_solid(input_defs=[InputDefinition("x", Optional[int], default_value=None)])
+    @solid(input_defs=[InputDefinition("x", Optional[int], default_value=None)])
     def none_x(x):
         return x
 
@@ -35,7 +35,7 @@ def test_none_infer():
 
 
 def test_int():
-    @lambda_solid(input_defs=[InputDefinition("x", Optional[int], default_value=1337)])
+    @solid(input_defs=[InputDefinition("x", Optional[int], default_value=1337)])
     def int_x(x):
         return x
 
@@ -58,7 +58,7 @@ def test_early_fail():
         match="Type check failed for the default_value of InputDefinition x of type Int",
     ):
 
-        @lambda_solid(input_defs=[InputDefinition("x", int, default_value="foo")])
+        @solid(input_defs=[InputDefinition("x", int, default_value="foo")])
         def _int_x(x):
             return x
 
@@ -67,14 +67,14 @@ def test_early_fail():
         match="Type check failed for the default_value of InputDefinition x of type String",
     ):
 
-        @lambda_solid(input_defs=[InputDefinition("x", str, default_value=1337)])
+        @solid(input_defs=[InputDefinition("x", str, default_value=1337)])
         def _int_x(x):
             return x
 
 
 # we can't catch bad default_values except for scalars until runtime since the type_check function depends on
 # a context that has access to resources etc.
-@lambda_solid(input_defs=[InputDefinition("x", Optional[int], default_value="number")])
+@solid(input_defs=[InputDefinition("x", Optional[int], default_value="number")])
 def bad_default(x):
     return x
 
@@ -112,13 +112,13 @@ def test_input_precedence():
 def test_nothing():
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lambda_solid(input_defs=[InputDefinition("x", Nothing, default_value=None)])
+        @solid(input_defs=[InputDefinition("x", Nothing, default_value=None)])
         def _nothing():
             pass
 
 
 def test_composite_outer_default():
-    @lambda_solid(input_defs=[InputDefinition("x", Optional[int])])
+    @solid(input_defs=[InputDefinition("x", Optional[int])])
     def int_x(x):
         return x
 
@@ -132,7 +132,7 @@ def test_composite_outer_default():
 
 
 def test_composite_inner_default():
-    @lambda_solid(input_defs=[InputDefinition("x", Optional[int], default_value=1337)])
+    @solid(input_defs=[InputDefinition("x", Optional[int], default_value=1337)])
     def int_x(x):
         return x
 
@@ -146,7 +146,7 @@ def test_composite_inner_default():
 
 
 def test_composite_precedence_default():
-    @lambda_solid(input_defs=[InputDefinition("x", Optional[int], default_value=1337)])
+    @solid(input_defs=[InputDefinition("x", Optional[int], default_value=1337)])
     def int_x(x):
         return x
 
@@ -160,7 +160,7 @@ def test_composite_precedence_default():
 
 
 def test_composite_mid_default():
-    @lambda_solid(input_defs=[InputDefinition("x", Optional[int])])
+    @solid(input_defs=[InputDefinition("x", Optional[int])])
     def int_x(x):
         return x
 

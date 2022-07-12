@@ -334,7 +334,7 @@ def execute_solid(
     solid_defs = [solid_def]
 
     def create_value_solid(input_name, input_value):
-        @lambda_solid(name=input_name)
+        @solid(name=input_name)
         def input_solid():
             return input_value
 

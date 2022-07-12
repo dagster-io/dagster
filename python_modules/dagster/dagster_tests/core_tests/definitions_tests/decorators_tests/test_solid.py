@@ -41,7 +41,7 @@ def test_no_parens_solid():
 def test_empty_solid():
     called = {}
 
-    @lambda_solid()
+    @solid()
     def hello_world():
         called["yup"] = True
 
@@ -130,17 +130,6 @@ def test_solid_return_list_instead_of_multiple_results():
     assert "unexpectedly returned output ['foo', 'bar']" in str(exc_info.value)
 
 
-def test_lambda_solid_with_name():
-    @lambda_solid(name="foobar")
-    def hello_world():
-        return {"foo": "bar"}
-
-    result = execute_solid(hello_world)
-
-    assert result.success
-    assert result.output_value()["foo"] == "bar"
-
-
 def test_solid_with_name():
     @solid(name="foobar", output_defs=[OutputDefinition()])
     def hello_world(_context):
@@ -153,7 +142,7 @@ def test_solid_with_name():
 
 
 def test_solid_with_input():
-    @lambda_solid(input_defs=[InputDefinition(name="foo_to_foo")])
+    @solid(input_defs=[InputDefinition(name="foo_to_foo")])
     def hello_world(foo_to_foo):
         return foo_to_foo
 
@@ -169,39 +158,6 @@ def test_solid_with_input():
 
     assert result.success
     assert result.output_value()["foo"] == "bar"
-
-
-def test_lambda_solid_with_underscore_input():
-    # Document that it is possible for lambda_solid to take an arg that the decorator machinery
-    # would otherwise think is a context.
-    @lambda_solid()
-    def emit_input(_):
-        return _
-
-    @solid
-    def emit_five():
-        return 5
-
-    @pipeline
-    def basic_lambda_pipeline():
-        emit_input(emit_five())
-
-    pipeline_result = execute_pipeline(basic_lambda_pipeline)
-
-    result = pipeline_result.result_for_solid("emit_input")
-
-    assert result.success
-    assert result.output_value() == 5
-
-
-def test_lambda_solid_definition_errors():
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match=re.escape("positional vararg parameter '*args'")
-    ):
-
-        @lambda_solid(input_defs=[InputDefinition(name="foo")])
-        def vargs(foo, *args):
-            pass
 
 
 def test_solid_definition_errors():
@@ -314,7 +270,7 @@ def test_solid_docstring():
         """BAZ_DOCSTRING"""
         return
 
-    @lambda_solid(name="quux")
+    @solid(name="quux")
     def quux_solid():
         """QUUX_DOCSTRING"""
         return

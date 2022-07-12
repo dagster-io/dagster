@@ -59,7 +59,7 @@ class DecoratedSolidFunction(NamedTuple):
 
 class NoContextDecoratedSolidFunction(DecoratedSolidFunction):
     """Wrapper around a decorated solid function, when the decorator does not permit a context
-    parameter (such as lambda_solid).
+    parameter.
     """
 
     @lru_cache(maxsize=1)

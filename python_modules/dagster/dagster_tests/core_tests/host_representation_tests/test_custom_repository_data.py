@@ -12,7 +12,7 @@ from dagster.grpc.server import GrpcServerProcess
 
 
 def define_do_something(num_calls):
-    @lambda_solid(name="do_something_" + str(num_calls))
+    @solid(name="do_something_" + str(num_calls))
     def do_something():
         return num_calls
 

@@ -6,7 +6,7 @@ from unittest import mock
 import pytest
 from dagster_graphql.test.utils import define_out_of_process_workspace, main_repo_location_name
 
-from dagster import lambda_solid, pipeline, repository
+from dagster import pipeline, repository, solid
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.test_utils import instance_for_test
 

@@ -10,7 +10,7 @@ def test_from_intermediates_from_multiple_outputs():
     def y():
         return "y"
 
-    @lambda_solid(input_defs=[InputDefinition("stuff", Optional[List[str]])])
+    @solid(input_defs=[InputDefinition("stuff", Optional[List[str]])])
     def gather(stuff):
         return "{} and {}".format(*stuff)
 

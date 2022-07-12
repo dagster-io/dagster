@@ -41,7 +41,7 @@ def test_basic_solid_dict_int_int_output_faile():
 
 
 def test_basic_solid_dict_int_int_input_pass():
-    @lambda_solid(input_defs=[InputDefinition("ddict", Dict[int, int])])
+    @solid(input_defs=[InputDefinition("ddict", Dict[int, int])])
     def emit_dict_int_int(ddict):
         return ddict
 
@@ -49,7 +49,7 @@ def test_basic_solid_dict_int_int_input_pass():
 
 
 def test_basic_solid_dict_int_int_input_fails():
-    @lambda_solid(input_defs=[InputDefinition("ddict", Dict[int, int])])
+    @solid(input_defs=[InputDefinition("ddict", Dict[int, int])])
     def emit_dict_int_int(ddict):
         return ddict
 

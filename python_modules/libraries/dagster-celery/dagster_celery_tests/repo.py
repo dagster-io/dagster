@@ -54,7 +54,7 @@ def emit_values(_context):
     yield Output(2, "value_two")
 
 
-@lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
+@solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
 def subtract(num_one, num_two):
     return num_one - num_two
 

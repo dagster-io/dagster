@@ -17,7 +17,7 @@ def define_two_int_pipeline():
     def return_one():
         return 1
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @solid(input_defs=[InputDefinition("num")])
     def add_one(num):
         return num + 1
 

@@ -964,7 +964,7 @@ def retry_multi_input_early_terminate_pipeline():
                 time.sleep(0.1)
         return one
 
-    @lambda_solid(
+    @solid(
         input_defs=[InputDefinition("input_one", Int), InputDefinition("input_two", Int)],
         output_defs=[OutputDefinition(Int)],
     )

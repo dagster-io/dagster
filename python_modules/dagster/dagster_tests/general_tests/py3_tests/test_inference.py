@@ -85,18 +85,6 @@ def test_double_typed_input():
     assert subtract.input_defs[1].dagster_type.unique_name == "Int"
 
 
-def test_one_arg_typed_lambda_solid():
-    @solid
-    def one_arg(num: int):
-        return num
-
-    assert one_arg
-    assert len(one_arg.input_defs) == 1
-    assert one_arg.input_defs[0].name == "num"
-    assert one_arg.input_defs[0].dagster_type.unique_name == "Int"
-    assert len(one_arg.output_defs) == 1
-
-
 def test_single_typed_input_and_output():
     @solid
     def add_one(_context, num: int) -> int:

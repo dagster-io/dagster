@@ -277,7 +277,7 @@ def test_input_type_returns_wrong_thing():
     def return_one():
         return 1
 
-    @lambda_solid(input_defs=[InputDefinition("value", BadType)])
+    @solid(input_defs=[InputDefinition("value", BadType)])
     def take_bad_thing(value):
         return value
 
@@ -304,7 +304,7 @@ def test_input_type_returns_wrong_thing():
 
 
 def test_output_type_returns_wrong_thing():
-    @lambda_solid(output_defs=[OutputDefinition(BadType)])
+    @solid(output_defs=[OutputDefinition(BadType)])
     def return_one_bad_thing():
         return 1
 
@@ -327,7 +327,7 @@ def test_input_type_throw_arbitrary_exception():
     def return_one():
         return 1
 
-    @lambda_solid(input_defs=[InputDefinition("value", ThrowsExceptionType)])
+    @solid(input_defs=[InputDefinition("value", ThrowsExceptionType)])
     def take_throws(value):
         return value
 
@@ -345,7 +345,7 @@ def test_input_type_throw_arbitrary_exception():
 
 
 def test_output_type_throw_arbitrary_exception():
-    @lambda_solid(output_defs=[OutputDefinition(ThrowsExceptionType)])
+    @solid(output_defs=[OutputDefinition(ThrowsExceptionType)])
     def return_one_throws():
         return 1
 

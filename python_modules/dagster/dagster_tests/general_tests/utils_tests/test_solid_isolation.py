@@ -46,7 +46,7 @@ def test_single_solid_with_single():
 
 
 def test_single_solid_with_multiple_inputs():
-    @lambda_solid(input_defs=[InputDefinition(name="num_one"), InputDefinition("num_two")])
+    @solid(input_defs=[InputDefinition(name="num_one"), InputDefinition("num_two")])
     def add_solid(num_one, num_two):
         return num_one + num_two
 
@@ -120,7 +120,7 @@ def test_single_solid_error():
 
 
 def test_single_solid_type_checking_output_error():
-    @lambda_solid(output_defs=[OutputDefinition(Int)])
+    @solid(output_defs=[OutputDefinition(Int)])
     def return_string():
         return "ksjdfkjd"
 
@@ -235,7 +235,7 @@ def test_execute_nested_composite_solids():
 
 
 def test_single_solid_with_bad_inputs():
-    @lambda_solid(input_defs=[InputDefinition("num_one", int), InputDefinition("num_two", int)])
+    @solid(input_defs=[InputDefinition("num_one", int), InputDefinition("num_two", int)])
     def add_solid(num_one, num_two):
         return num_one + num_two
 

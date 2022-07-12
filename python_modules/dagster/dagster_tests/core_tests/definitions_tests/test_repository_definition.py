@@ -106,11 +106,11 @@ def test_repo_lazy_definition():
 
 
 def test_dupe_solid_repo_definition():
-    @lambda_solid(name="same")
+    @solid(name="same")
     def noop():
         pass
 
-    @lambda_solid(name="same")
+    @solid(name="same")
     def noop2():
         pass
 

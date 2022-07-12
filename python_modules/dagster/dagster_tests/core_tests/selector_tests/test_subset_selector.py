@@ -25,17 +25,17 @@ def return_two():
     return 2
 
 
-@lambda_solid(input_defs=[InputDefinition("num1"), InputDefinition("num2")])
+@solid(input_defs=[InputDefinition("num1"), InputDefinition("num2")])
 def add_nums(num1, num2):
     return num1 + num2
 
 
-@lambda_solid(input_defs=[InputDefinition("num")])
+@solid(input_defs=[InputDefinition("num")])
 def multiply_two(num):
     return num * 2
 
 
-@lambda_solid(input_defs=[InputDefinition("num")])
+@solid(input_defs=[InputDefinition("num")])
 def add_one(num):
     return num + 1
 

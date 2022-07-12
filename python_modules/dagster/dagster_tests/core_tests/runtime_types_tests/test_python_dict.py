@@ -91,9 +91,7 @@ def test_basic_typing_dictionary_output():
 
 
 def test_basic_typing_dictionary_input():
-    @solid(
-        input_defs=[InputDefinition("data", typing.Dict)], output_defs=[OutputDefinition(str)]
-    )
+    @solid(input_defs=[InputDefinition("data", typing.Dict)], output_defs=[OutputDefinition(str)])
     def input_dict(data):
         return data["key"]
 
@@ -173,7 +171,7 @@ def test_complicated_dictionary_typing_fail():
 def test_dict_type_loader():
     test_input = {"hello": 5, "goodbye": 42}
 
-    @lambda_solid(input_defs=[InputDefinition("dict_input", dagster_type=typing.Dict[str, int])])
+    @solid(input_defs=[InputDefinition("dict_input", dagster_type=typing.Dict[str, int])])
     def emit_dict(dict_input):
         return dict_input
 
@@ -192,9 +190,7 @@ def test_dict_type_loader_typing_fail():
 
     test_input = {"hello": "foo", "goodbye": "bar"}
 
-    @lambda_solid(
-        input_defs=[InputDefinition("dict_input", dagster_type=typing.Dict[str, CustomType])]
-    )
+    @solid(input_defs=[InputDefinition("dict_input", dagster_type=typing.Dict[str, CustomType])])
     def emit_dict(dict_input):
         return dict_input
 
@@ -212,7 +208,7 @@ def test_dict_type_loader_inner_type_mismatch():
 
     test_input = {"hello": "foo", "goodbye": "bar"}
 
-    @lambda_solid(input_defs=[InputDefinition("dict_input", dagster_type=typing.Dict[str, int])])
+    @solid(input_defs=[InputDefinition("dict_input", dagster_type=typing.Dict[str, int])])
     def emit_dict(dict_input):
         return dict_input
 

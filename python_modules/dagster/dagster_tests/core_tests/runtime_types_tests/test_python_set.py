@@ -49,7 +49,7 @@ def test_vanilla_set_input_fail():
 
 
 def test_open_typing_set_output():
-    @lambda_solid(output_defs=[OutputDefinition(typing.Set)])
+    @solid(output_defs=[OutputDefinition(typing.Set)])
     def emit_set():
         return {1, 2}
 
@@ -57,7 +57,7 @@ def test_open_typing_set_output():
 
 
 def test_open_typing_set_output_fail():
-    @lambda_solid(output_defs=[OutputDefinition(typing.Set)])
+    @solid(output_defs=[OutputDefinition(typing.Set)])
     def emit_set():
         return "foo"
 
@@ -66,7 +66,7 @@ def test_open_typing_set_output_fail():
 
 
 def test_open_typing_set_input():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set)])
+    @solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set)])
     def take_set(tt):
         return tt
 
@@ -74,7 +74,7 @@ def test_open_typing_set_input():
 
 
 def test_open_typing_set_input_fail():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set)])
+    @solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set)])
     def take_set(tt):
         return tt
 
@@ -113,7 +113,7 @@ def test_runtime_optional_set():
 
 
 def test_closed_typing_set_input():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set[int])])
+    @solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set[int])])
     def take_set(tt):
         return tt
 
@@ -121,7 +121,7 @@ def test_closed_typing_set_input():
 
 
 def test_closed_typing_set_input_fail():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set[int])])
+    @solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set[int])])
     def take_set(tt):
         return tt
 
@@ -133,7 +133,7 @@ def test_closed_typing_set_input_fail():
 
 
 def test_typed_set_type_loader():
-    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set[int])])
+    @solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set[int])])
     def take_set(tt):
         return tt
 
