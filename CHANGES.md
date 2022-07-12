@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.15.6
+
+* Fixed a bug where partitioned assets with resources fail materialization in dagit.
+
 # 0.15.5
 
 ### New
