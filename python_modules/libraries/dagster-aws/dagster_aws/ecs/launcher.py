@@ -1,6 +1,7 @@
 import warnings
 from collections import namedtuple
 from contextlib import suppress
+from typing import Dict
 
 import boto3
 from botocore.exceptions import ClientError
@@ -224,12 +225,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         # Set cpu or memory overrides
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
-        cpu_and_memory_overrides = {}
-        tags = self._get_run_tags(run.run_id)
-        if tags.cpu:
-            cpu_and_memory_overrides["cpu"] = tags.cpu
-        if tags.memory:
-            cpu_and_memory_overrides["memory"] = tags.memory
+        overrides = self.get_overrides(run)
 
         # Run a task using the same network configuration as this processes's
         # task.
@@ -242,11 +238,11 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                         "name": self.container_name,
                         "command": command,
                         # containerOverrides expects cpu/memory as integers
-                        **{k: int(v) for k, v in cpu_and_memory_overrides.items()},
+                        **{k: int(v) for k, v in overrides.items()},
                     }
                 ],
                 # taskOverrides expects cpu/memory as strings
-                **cpu_and_memory_overrides,
+                **overrides,
             },
             networkConfiguration={
                 "awsvpcConfiguration": {
@@ -285,6 +281,18 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             ),
             cls=self.__class__,
         )
+
+    def get_overrides(self, run: PipelineRun) -> Dict[str, str]:
+        overrides = {}
+
+        cpu = run.tags.get("ecs/cpu")
+        memory = run.tags.get("ecs/memory")
+
+        if cpu:
+            overrides["cpu"] = cpu
+        if memory:
+            overrides["memory"] = memory
+        return overrides
 
     def terminate(self, run_id):
         tags = self._get_run_tags(run_id)
