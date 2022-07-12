@@ -246,18 +246,6 @@ async function stateForLaunchingAssets(
 
   // Ok! Assertions met, how do we launch this run
 
-  if (anyAssetsHaveConfig || anyResourcesHaveConfig || forceLaunchpad) {
-    const assetOpNames = assets.flatMap((a) => a.opNames || []);
-    return {
-      type: 'launchpad',
-      jobName,
-      repoAddress,
-      sessionPresets: {
-        solidSelection: assetOpNames,
-        solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(' '),
-      },
-    };
-  }
   if (partitionDefinition) {
     const assetKeys = new Set(assets.map((a) => JSON.stringify(a.assetKey)));
     const upstreamAssetKeys = uniq(
@@ -272,6 +260,18 @@ async function stateForLaunchingAssets(
       jobName,
       repoAddress,
       upstreamAssetKeys,
+    };
+  }
+  if (anyAssetsHaveConfig || anyResourcesHaveConfig || forceLaunchpad) {
+    const assetOpNames = assets.flatMap((a) => a.opNames || []);
+    return {
+      type: 'launchpad',
+      jobName,
+      repoAddress,
+      sessionPresets: {
+        solidSelection: assetOpNames,
+        solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(' '),
+      },
     };
   }
   return {
