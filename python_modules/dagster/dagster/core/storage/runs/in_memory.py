@@ -15,7 +15,7 @@ from dagster.core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
 )
-from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster.core.storage.tags import PARTITION_NAME_TAG
 from dagster.daemon.types import DaemonHeartbeat
 from dagster.utils import EPOCH, frozendict, merge_dicts
 
@@ -339,16 +339,9 @@ class InMemoryRunStorage(RunStorage):
             for root_run_id, run_group in root_run_id_to_group.items()
         }
 
-    def get_run_partition_data(
-        self, partition_set_name: str, job_name: str, repository_label: str
-    ) -> List[RunPartitionData]:
+    def get_run_partition_data(self, runs_filter: RunsFilter) -> List[RunPartitionData]:
         """Get run partition data for a given partitioned job."""
-        check.str_param(partition_set_name, "partition_set_name")
-        check.str_param(job_name, "job_name")
-
-        run_filter = build_run_filter(
-            RunsFilter(pipeline_name=job_name, tags={PARTITION_SET_TAG: partition_set_name})
-        )
+        run_filter = build_run_filter(runs_filter)
         matching_runs = list(filter(run_filter, list(self._runs.values())[::-1]))
         _partition_data_by_partition = {}
         for run in matching_runs:
