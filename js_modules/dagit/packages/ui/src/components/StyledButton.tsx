@@ -46,7 +46,7 @@ export const StyledButton = styled.button<StyledButtonProps>`
       `${$strokeColor} inset 0px 0px 0px 1px, rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;`};
   }
 
-  :active {
+  :active:not(:disabled) {
     filter: brightness(0.95);
   }
 
