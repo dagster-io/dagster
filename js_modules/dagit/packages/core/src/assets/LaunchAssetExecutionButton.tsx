@@ -208,7 +208,6 @@ async function stateForLaunchingAssets(
     };
   }
 
-  const requiredResources = assets.flatMap((a) => a.requiredResources.map((r) => r.resourceKey));
   const resourceResult = await client.query<
     LaunchAssetLoaderResourceQuery,
     LaunchAssetLoaderResourceQueryVariables
@@ -229,20 +228,25 @@ async function stateForLaunchingAssets(
       error: `Pipeline ${jobName} does not exist.`,
     };
   }
-  const resources = pipeline.modes[0].resources.filter((r) => requiredResources.includes(r.name));
+  const requiredResourceKeys = assets.flatMap((a) => a.requiredResources.map((r) => r.resourceKey));
+  const resources = pipeline.modes[0].resources.filter((r) =>
+    requiredResourceKeys.includes(r.name),
+  );
+  const anyResourcesHaveConfig = resources.some((r) => r.configField);
   const anyResourcesHaveRequiredConfig = resources.some((r) => r.configField?.isRequired);
 
   const anyAssetsHaveConfig = assets.some((a) => configSchemaForAssetNode(a));
   if ((anyAssetsHaveConfig || anyResourcesHaveRequiredConfig) && partitionDefinition) {
     return {
       type: 'error',
-      error: 'Cannot materialize assets using both asset/resource config and partitions.',
+      error:
+        'Cannot materialize assets using both partitions and asset or required resource config.',
     };
   }
 
   // Ok! Assertions met, how do we launch this run
 
-  if (anyAssetsHaveConfig || anyResourcesHaveRequiredConfig || forceLaunchpad) {
+  if (anyAssetsHaveConfig || anyResourcesHaveConfig || forceLaunchpad) {
     const assetOpNames = assets.flatMap((a) => a.opNames || []);
     return {
       type: 'launchpad',
