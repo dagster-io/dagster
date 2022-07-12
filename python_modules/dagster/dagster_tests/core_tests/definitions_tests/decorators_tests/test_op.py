@@ -1128,21 +1128,32 @@ def test_generic_dynamic_output_empty():
     assert isinstance(result, list)
 
     @op(out=DynamicOut())
-    def basic_yield():
+    def dynamic_op_no_return_or_yield():
         pass
 
     with pytest.raises(
         DagsterInvariantViolationError,
         match=r"dynamic output 'result' expected a list of DynamicOutput objects, but instead received instead an object of type \<class 'NoneType'\>\.",
     ):
-        execute_op_in_graph(basic_yield)
+        execute_op_in_graph(dynamic_op_no_return_or_yield)
 
     # Ensure that invocation behavior matches
     with pytest.raises(
         DagsterInvariantViolationError,
         match=r"dynamic output 'result' expected a list of DynamicOutput objects, but instead received instead an object of type \<class 'NoneType'\>\.",
     ):
-        basic_yield()
+        dynamic_op_no_return_or_yield()
+
+
+def test_dynamic_output_yields_no_outputs():
+    @op(out=DynamicOut())
+    def the_op():
+        yield AssetMaterialization("third")
+
+    result = execute_op_in_graph(the_op)
+    assert result.success
+
+    assert len(list(the_op())) == 1
 
 
 def test_generic_dynamic_output_empty_with_type():
@@ -1235,13 +1246,13 @@ def test_dynamic_output_bad_list_entry():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Error with output for op \"basic\": dynamic output 'result' expected a list of DynamicOutput objects, but received an item with type <class 'str'>.",
+        match="Error with output for op \"basic\": dynamic output 'result' at position 0 expected a list of DynamicOutput objects, but received an item with type <class 'str'>.",
     ):
         execute_op_in_graph(basic)
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Error with output for op \"basic\": dynamic output 'result' expected a list of DynamicOutput objects, but received an item with type <class 'str'>.",
+        match="Error with output for op \"basic\": dynamic output 'result' at position 0 expected a list of DynamicOutput objects, but received an item with type <class 'str'>.",
     ):
         basic()
 

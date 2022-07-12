@@ -178,7 +178,7 @@ def validate_and_coerce_solid_result_to_iterator(
                     if not isinstance(item, DynamicOutput):
                         raise DagsterInvariantViolationError(
                             f"Error with output for {context.describe_op()}: "
-                            f"dynamic output '{output_def.name}' expected a "
+                            f"dynamic output '{output_def.name}' at position {position} expected a "
                             "list of DynamicOutput objects, but received an "
                             f"item with type {type(item)}."
                         )

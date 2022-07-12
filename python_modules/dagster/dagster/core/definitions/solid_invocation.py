@@ -276,7 +276,11 @@ def _type_check_output_wrapper(
                         outputs_seen.add(output_def.name)
                     yield output
             for output_def in solid_def.output_defs:
-                if output_def.name not in outputs_seen and output_def.is_required:
+                if (
+                    output_def.name not in outputs_seen
+                    and output_def.is_required
+                    and not output_def.is_dynamic
+                ):
                     raise DagsterInvariantViolationError(
                         f"Invocation of {solid_def.node_type_str} '{context.alias}' did not return an output for non-optional output '{output_def.name}'"
                     )
