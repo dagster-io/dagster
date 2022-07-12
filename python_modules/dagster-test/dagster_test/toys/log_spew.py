@@ -7,8 +7,8 @@ from dagster import (
     OutputDefinition,
     fs_io_manager,
     pipeline,
-    solid,
 )
+from dagster.legacy import solid
 
 
 def nonce_solid(name, n_inputs, n_outputs):

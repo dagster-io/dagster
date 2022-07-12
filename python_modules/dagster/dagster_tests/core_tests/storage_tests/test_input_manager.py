@@ -24,11 +24,11 @@ from dagster import (
     pipeline,
     resource,
     root_input_manager,
-    solid,
 )
 from dagster.core.definitions.events import Failure, RetryRequested
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.instance import InstanceRef
+from dagster.legacy import solid
 
 ### input manager tests
 

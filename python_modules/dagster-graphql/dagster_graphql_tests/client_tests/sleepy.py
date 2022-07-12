@@ -11,9 +11,9 @@ from dagster import (
     OutputDefinition,
     PresetDefinition,
     pipeline,
-    solid,
 )
 from dagster.core.test_utils import default_mode_def_for_test
+from dagster.legacy import solid
 
 
 @solid(

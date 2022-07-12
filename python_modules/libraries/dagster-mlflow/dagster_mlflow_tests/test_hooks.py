@@ -9,8 +9,8 @@ from dagster import (
     ResourceDefinition,
     execute_pipeline,
     pipeline,
-    solid,
 )
+from dagster.legacy import solid
 
 
 def test_cleanup_on_success():

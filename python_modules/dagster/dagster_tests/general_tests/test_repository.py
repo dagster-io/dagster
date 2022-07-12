@@ -10,8 +10,8 @@ from dagster import (
     fs_io_manager,
     repository,
     resource,
-    solid,
 )
+from dagster.legacy import solid
 from dagster.utils import file_relative_path
 
 

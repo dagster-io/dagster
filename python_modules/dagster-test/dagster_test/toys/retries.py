@@ -1,6 +1,7 @@
 import time
 
-from dagster import PresetDefinition, RetryRequested, lambda_solid, pipeline, solid
+from dagster import PresetDefinition, RetryRequested, lambda_solid, pipeline
+from dagster.legacy import solid
 
 
 @lambda_solid

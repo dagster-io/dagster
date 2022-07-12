@@ -17,7 +17,6 @@ from dagster import (
     graph,
     pipeline,
     repository,
-    solid,
 )
 from dagster.core.definitions import Partition, PartitionSetDefinition
 from dagster.core.execution.api import execute_pipeline
@@ -39,6 +38,7 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace.load_target import PythonFileTarget
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.backfill import execute_backfill_iteration
+from dagster.legacy import solid
 from dagster.seven import IS_WINDOWS, get_system_temp_directory
 from dagster.utils import touch_file
 from dagster.utils.error import SerializableErrorInfo

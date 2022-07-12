@@ -1,4 +1,5 @@
-from dagster import execute_pipeline, pipeline, solid
+from dagster import execute_pipeline, pipeline
+from dagster.legacy import solid
 
 
 def _set_key_value(ddict, key, value):

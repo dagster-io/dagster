@@ -14,7 +14,7 @@ import sqlalchemy as db
 
 from dagster import AssetKey, AssetMaterialization, Output
 from dagster import _check as check
-from dagster import execute_pipeline, file_relative_path, job, pipeline, solid
+from dagster import execute_pipeline, file_relative_path, job, pipeline
 from dagster.cli.debug import DebugRunPayload
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.events import DagsterEvent
@@ -27,6 +27,7 @@ from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster.core.storage.migration.utils import upgrading_instance
 from dagster.core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster.core.storage.tags import REPOSITORY_LABEL_TAG
+from dagster.legacy import solid
 from dagster.serdes import DefaultNamedTupleSerializer, create_snapshot_id
 from dagster.serdes.serdes import (
     WhitelistMap,

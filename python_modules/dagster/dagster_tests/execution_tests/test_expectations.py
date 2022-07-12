@@ -6,8 +6,8 @@ from dagster import (
     ExpectationResult,
     PipelineDefinition,
     execute_pipeline,
-    solid,
 )
+from dagster.legacy import solid
 
 
 def expt_results_for_compute_step(result, solid_name):

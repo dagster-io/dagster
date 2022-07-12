@@ -1,4 +1,5 @@
-from dagster import pipeline, solid
+from dagster import pipeline
+from dagster.legacy import solid
 
 
 @solid

@@ -22,38 +22,40 @@ from dagster import Bool, Field, Float, StringSource, resource
 def msteams_resource(context):
     """This resource is for connecting to Microsoft Teams.
 
-    The resource object is a `dagster_msteams.TeamsClient`.
+        The resource object is a `dagster_msteams.TeamsClient`.
 
-    By configuring this resource, you can post messages to MS Teams from any Dagster solid:
+        By configuring this resource, you can post messages to MS Teams from any Dagster solid:
 
-    Examples:
+        Examples:
 
-    .. code-block:: python
+        .. code-block:: python
 
-        import os
+            import os
 
-        from dagster import ModeDefinition, execute_pipeline, pipeline, solid
-        from dagster_msteams import Card, msteams_resource
+            from dagster import ModeDefinition, execute_pipeline, pipeline,
 
-
-        @solid(required_resource_keys={"msteams"})
-        def teams_solid(context):
-            card = Card()
-            card.add_attachment(text_message="Hello There !!")
-            context.resources.msteams.post_message(payload=card.payload)
+    from dagster.legacy import solid
+            from dagster_msteams import Card, msteams_resource
 
 
-        @pipeline(
-            mode_defs=[ModeDefinition(resource_defs={"msteams": msteams_resource})],
-        )
-        def teams_pipeline():
-            teams_solid()
+            @solid(required_resource_keys={"msteams"})
+            def teams_solid(context):
+                card = Card()
+                card.add_attachment(text_message="Hello There !!")
+                context.resources.msteams.post_message(payload=card.payload)
 
 
-        execute_pipeline(
-            teams_pipeline,
-            {"resources": {"msteams": {"config": {"hook_url": os.getenv("TEAMS_WEBHOOK_URL")}}}},
-        )
+            @pipeline(
+                mode_defs=[ModeDefinition(resource_defs={"msteams": msteams_resource})],
+            )
+            def teams_pipeline():
+                teams_solid()
+
+
+            execute_pipeline(
+                teams_pipeline,
+                {"resources": {"msteams": {"config": {"hook_url": os.getenv("TEAMS_WEBHOOK_URL")}}}},
+            )
 
     """
     return TeamsClient(

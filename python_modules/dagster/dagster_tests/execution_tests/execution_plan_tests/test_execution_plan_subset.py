@@ -6,11 +6,11 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     lambda_solid,
-    solid,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance
+from dagster.legacy import solid
 
 
 def define_two_int_pipeline():
