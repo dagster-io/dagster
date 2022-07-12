@@ -3,16 +3,15 @@ import {Button, DialogBody, DialogFooter, Dialog} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {cancelableStatuses} from '../runs/RunStatuses';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {BulkActionStatus} from '../types/globalTypes';
 
+import {BackfillTableFragment} from './types/BackfillTableFragment';
 import {CancelBackfill, CancelBackfillVariables} from './types/CancelBackfill';
-import {InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results} from './types/InstanceBackfillsQuery';
-
-type Backfill = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results;
 
 interface Props {
-  backfill?: Backfill;
+  backfill?: BackfillTableFragment;
   onClose: () => void;
   onComplete: () => void;
 }
@@ -25,20 +24,26 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
   if (!backfill) {
     return null;
   }
+
   const numUnscheduled = (backfill.numPartitions || 0) - (backfill.numRequested || 0);
-  const unfinishedRuns = backfill.unfinishedRuns;
-
-  const unfinishedMap = unfinishedRuns?.reduce(
-    (accum, run) => ({...accum, [run.id]: run.canTerminate}),
-    {},
-  );
-
   const cancel = async () => {
     setIsSubmitting(true);
     await cancelBackfill({variables: {backfillId: backfill.backfillId}});
     onComplete();
     setIsSubmitting(false);
+    onClose();
   };
+
+  const unfinishedPartitions = backfill.partitionStatuses.results.filter(
+    (partition) =>
+      partition.runStatus && partition.runId && partition.runStatus in cancelableStatuses,
+  );
+  const unfinishedMap =
+    unfinishedPartitions?.reduce(
+      (accum, partition) =>
+        partition && partition.runId ? {...accum, [partition.runId]: true} : accum,
+      {},
+    ) || {};
 
   return (
     <>
@@ -70,7 +75,7 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
         isOpen={
           !!backfill &&
           (!numUnscheduled || backfill.status !== 'REQUESTED') &&
-          !!unfinishedRuns.length
+          !!unfinishedPartitions.length
         }
         onClose={onClose}
         onComplete={onComplete}

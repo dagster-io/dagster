@@ -9,22 +9,6 @@ import { BulkActionStatus, BackfillStatus, RunStatus } from "./../../types/globa
 // GraphQL query operation: InstanceBackfillsQuery
 // ====================================================
 
-export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionRunStats {
-  __typename: "BackfillRunStats";
-  numQueued: number;
-  numInProgress: number;
-  numSucceeded: number;
-  numFailed: number;
-  numPartitionsWithRuns: number;
-  numTotalRuns: number;
-}
-
-export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_unfinishedRuns {
-  __typename: "Run";
-  id: string;
-  canTerminate: boolean;
-}
-
 export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
@@ -54,18 +38,17 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   causes: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error_causes[];
 }
 
-export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs_tags {
-  __typename: "PipelineTag";
-  key: string;
-  value: string;
+export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionStatuses_results {
+  __typename: "PartitionStatus";
+  id: string;
+  partitionName: string;
+  runId: string | null;
+  runStatus: RunStatus | null;
 }
 
-export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs {
-  __typename: "Run";
-  id: string;
-  canTerminate: boolean;
-  status: RunStatus;
-  tags: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs_tags[];
+export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionStatuses {
+  __typename: "PartitionStatuses";
+  results: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionStatuses_results[];
 }
 
 export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results {
@@ -74,15 +57,13 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   status: BulkActionStatus;
   backfillStatus: BackfillStatus;
   numRequested: number;
-  partitionNames: string[];
   numPartitions: number;
-  partitionRunStats: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionRunStats;
-  unfinishedRuns: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_unfinishedRuns[];
   timestamp: number;
   partitionSetName: string;
   partitionSet: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet | null;
   error: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error | null;
-  runs: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs[];
+  partitionNames: string[];
+  partitionStatuses: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionStatuses;
 }
 
 export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills {
