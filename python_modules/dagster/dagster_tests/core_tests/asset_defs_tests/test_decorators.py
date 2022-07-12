@@ -135,6 +135,28 @@ def test_multi_asset_infer_from_empty_asset_key():
     assert my_asset.keys == {AssetKey("my_out_name"), AssetKey("my_other_out_name")}
 
 
+def test_multi_asset_group_names():
+    @multi_asset(
+        outs={
+            "out1": AssetOut(group_name="foo", key=AssetKey(["cool", "key1"])),
+            "out2": Out(),
+            "out3": AssetOut(),
+            "out4": AssetOut(group_name="bar", key_prefix="prefix4"),
+            "out5": AssetOut(group_name="bar"),
+        }
+    )
+    def my_asset():
+        pass
+
+    assert my_asset.group_names_by_key == {
+        AssetKey(["cool", "key1"]): "foo",
+        AssetKey("out2"): "default",
+        AssetKey("out3"): "default",
+        AssetKey(["prefix4", "out4"]): "bar",
+        AssetKey("out5"): "bar",
+    }
+
+
 def test_multi_asset_internal_asset_deps_metadata():
     @multi_asset(
         outs={

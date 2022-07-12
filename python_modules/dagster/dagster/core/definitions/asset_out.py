@@ -20,6 +20,7 @@ class AssetOut(
             ("description", Optional[str]),
             ("is_required", bool),
             ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
+            ("group_name", Optional[str]),
         ],
     )
 ):
@@ -44,6 +45,8 @@ class AssetOut(
             For example, users can provide a file path if the data object will be stored in a
             filesystem, or provide information of a database table when it is going to load the data
             into the table.
+        group_name (Optional[str]): A string name used to organize multiple assets into groups. If
+            not provided, the name "default" is used.
     """
 
     def __new__(
@@ -55,6 +58,7 @@ class AssetOut(
         is_required: bool = True,
         io_manager_key: Optional[str] = None,
         metadata: Optional[MetadataUserInput] = None,
+        group_name: Optional[str] = None,
     ):
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
@@ -72,6 +76,7 @@ class AssetOut(
                 io_manager_key, "io_manager_key", default=DEFAULT_IO_MANAGER_KEY
             ),
             metadata=check.opt_dict_param(metadata, "metadata", key_type=str),
+            group_name=check.opt_str_param(group_name, "group_name"),
         )
 
     def to_out(self) -> Out:

@@ -459,6 +459,11 @@ def multi_asset(
         keys_by_output_name = {
             output_name: asset_key for asset_key, (output_name, _) in asset_outs.items()
         }
+        group_names_by_key = {
+            keys_by_output_name[output_name]: out.group_name
+            for output_name, out in outs.items()
+            if isinstance(out, AssetOut) and out.group_name is not None
+        }
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name=keys_by_output_name,
@@ -473,6 +478,7 @@ def multi_asset(
             else None,
             can_subset=can_subset,
             resource_defs=resource_defs,
+            group_names_by_key=group_names_by_key,
         )
 
     return inner
