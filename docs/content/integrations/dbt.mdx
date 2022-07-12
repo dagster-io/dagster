@@ -11,7 +11,7 @@ This guide focuses on how to work with `dbt` models through the SDA framework, w
 
 ## dbt Models and Software-Defined Assets
 
-A software-defined asset contains an asset key, a set of upstream asset keys, and an operation that is responsible for computing the asset from its upstream dependencies. Models defined in a `dbt` project are conceptually similar to Dagster's software-defined assets.
+A software-defined asset contains an asset key, a set of upstream asset keys, and an operation that is responsible for computing the asset from its upstream dependencies. Models defined in a `dbt` project are conceptually similar to Dagster's software-defined assets:
 
 - The asset key for a dbt model is (by default) the name of the model.
 - The upstream dependencies of a dbt model are defined with `ref` or `source` calls within the model's definition.
@@ -99,24 +99,64 @@ def my_repo():
     ]
 ```
 
-See (docs for running stuff on a schedule) to learn more.
+See the docs on [running jobs on a schedule](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules#running-the-scheduler) to learn more.
 
 ## Defining Downstream Dependencies
 
-Dagster allows you to define assets that are downstream of specific dbt models. One property of dbt-based assets is that the external tool - in this case, dbt - handles the loading/storing of those models internally, rather than Dagster directly storing/loading the tables that are updated.
+Dagster allows you to define assets that are downstream of specific dbt models. One property of dbt-based assets is that the external tool - in this case, dbt - handles storing each model in the database internally, rather than Dagster directly storing the tables that are updated.
 
-This means that there's a range of ways to load a dbt model as input to a Python function. For example, you might want to load the contents as a Pandas dataframe or into a PySpark session.
-
-To define how assets should be loaded, you can specify an input manager on the downstream asset.
+This means that there's a range of ways to load a dbt model as input to a Python function. For example, you might want to load the contents as a Pandas dataframe or into a PySpark session. You can specify this loading behavior on each downstream asset. For example, if you wanted to consume a dbt model named `my_dbt_model` as a Pandas DataFrame, that would look something like the following:
 
 ```python
-from dagster import asset
-
 @asset(
-    ins={"model_name": AssetIn(input_manager_key="pandas_dbt_input_manager")}
+    ins={"my_dbt_model": AssetIn(input_manager_key="pandas_df_manager")}
 )
-def my_downstream_asset(model_name):
-    return
+def my_downstream_asset(my_dbt_model):
+    # my_dbt_model is a Pandas DataFrame
+    return my_dbt_model.where(foo="bar")
+```
+
+### Defining your IOManager
+
+The implementation of your IOManager will depend on what python object you want to use to represent your table, as well as what database you're loading from. A simple IOManager implementation that loads data from a dbt-managed table into a Pandas DataFrame would look somthing like the following:
+
+```python
+import pandas as pd
+from dagster import IOManager, io_manager
+
+class PandasIOManager(IOManager):
+
+    def __init__(self, con_string: str):
+        self._con = con_string
+
+    def load_input(self, context) -> pd.DataFrame:
+        """Load the contents of a table as a pandas DataFrame."""
+        table_name = context.upstream_output.asset_key.path[-1]
+        return pd.read_sql(f"SELECT * FROM {table_name}", con=self._con)
+
+
+@io_manager(config_schema={"con_string": str})
+def pandas_io_manager(context):
+    return PandasIOManager(context.resource_config["con_string"])
+```
+
+Once your IOManager is defined, you can supply it just like any other resource when calling `with_resources`:
+
+```python
+from dagster import with_resources
+from dagster_dbt import dbt_cli_resource
+
+dbt_assets = with_resources(
+    load_assets_from_dbt_project(...),
+    {
+        "dbt": dbt_cli_resource.configured(
+            {"project_dir": "path/to/dbt_project"}
+        ),
+        "pandas_df_manager": pandas_io_manager.configured(
+            {"con_string": "..."}
+        )
+    }
+)
 ```
 
 ## Understanding AssetKeys
@@ -134,11 +174,11 @@ models:
       +schema: marketing
 ```
 
-Then the
+Then the asset key for a model named "some_model" will be `marketing/some_model`. If you have not configured a custom schema, then the asset key will simply be `some_model`.
 
 For sources, the default asset key will be the name of the source concatenated with the name of the source table.
 
-For example, a model defined in `my_model.sql` will be given the asset key `my_model`, while the source table defined in the following `sources.yaml` will be `jaffle_shop/orders`:
+For example, the source table defined in the following `sources.yaml` will be `jaffle_shop/orders`:
 
 ```yaml
 sources:
