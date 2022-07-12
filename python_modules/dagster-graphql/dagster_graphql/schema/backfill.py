@@ -298,7 +298,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         partition_set_name = self._backfill_job.partition_set_origin.partition_set_name
         partition_run_data = self._get_partition_run_data(graphene_info)
         return partition_statuses_from_run_partition_data(
-            partition_set_name, partition_run_data, self._backfill_job.partition_names
+            partition_set_name, partition_run_data, self._backfill_job.partition_names, backfill_id=self._backfill_job.backfill_id,
         )
 
     def resolve_error(self, _):
