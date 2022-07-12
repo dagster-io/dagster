@@ -19,7 +19,6 @@ import {RepoAddress} from '../workspace/types';
 import {
   ASSET_NODE_CONFIG_FRAGMENT,
   configSchemaForAssetNode,
-  configSchemaForResource,
 } from './AssetConfig';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {AssetKey} from './types';
@@ -107,7 +106,7 @@ export const LaunchAssetExecutionButton: React.FC<{
     const assets = result.data.assetNodes;
     const forceLaunchpad = e.shiftKey;
 
-    const next = await stateForLaunchingAssets(assets, forceLaunchpad, preferredJobName, client);
+    const next = await stateForLaunchingAssets(client, assets, forceLaunchpad, preferredJobName);
 
     if (next.type === 'error') {
       showCustomAlert({
@@ -164,10 +163,10 @@ export const LaunchAssetExecutionButton: React.FC<{
 };
 
 async function stateForLaunchingAssets(
+  client: ApolloClient<any>,
   assets: LaunchAssetExecutionAssetNodeFragment[],
   forceLaunchpad: boolean,
   preferredJobName?: string,
-  client: ApolloClient<any>,
 ): Promise<LaunchAssetsState> {
   if (assets.some(isSourceAsset)) {
     return {
@@ -234,7 +233,8 @@ async function stateForLaunchingAssets(
     };
   }
   const resources = pipeline.modes[0].resources.filter((r) => requiredResources.includes(r.name));
-  const anyResourcesHaveConfig = resources.some((a) => configSchemaForResource(a));
+  const anyResourcesHaveConfig = resources.some((r) => r.configField);
+  console.log('resources', resources, 'anyHaveConfig', anyResourcesHaveConfig);
 
   const anyAssetsHaveConfig = assets.some((a) => configSchemaForAssetNode(a));
   if ((anyAssetsHaveConfig || anyResourcesHaveConfig) && partitionDefinition) {

@@ -10,7 +10,7 @@ export interface HasConfigField {
   configField: ConfigField | null;
 }
 
-function configSchemaForObject(obj: HasConfigField): ConfigSchema | null {
+export function configSchemaForAssetNode(obj: HasConfigField): ConfigSchema | null {
   if (obj.configField) {
     const configSchema = obj.configField.configType as ConfigSchema;
     if (configSchema.fields) {
@@ -21,14 +21,6 @@ function configSchemaForObject(obj: HasConfigField): ConfigSchema | null {
   } else {
     return null;
   }
-}
-
-export function configSchemaForAssetNode(obj: HasConfigField): ConfigSchema | null {
-  return configSchemaForObject(obj);
-}
-
-export function configSchemaForResource(obj: HasConfigField): ConfigSchema | null {
-  return configSchemaForObject(obj);
 }
 
 export const ASSET_NODE_CONFIG_FRAGMENT = gql`
