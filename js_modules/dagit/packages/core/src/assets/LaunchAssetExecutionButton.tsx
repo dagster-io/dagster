@@ -230,11 +230,10 @@ async function stateForLaunchingAssets(
     };
   }
   const resources = pipeline.modes[0].resources.filter((r) => requiredResources.includes(r.name));
-  const anyResourcesHaveConfig = resources.some((r) => r.configField);
-  console.log('resources', resources, 'anyHaveConfig', anyResourcesHaveConfig);
+  const anyResourcesHaveRequiredConfig = resources.some((r) => r.configField?.isRequired);
 
   const anyAssetsHaveConfig = assets.some((a) => configSchemaForAssetNode(a));
-  if ((anyAssetsHaveConfig || anyResourcesHaveConfig) && partitionDefinition) {
+  if ((anyAssetsHaveConfig || anyResourcesHaveRequiredConfig) && partitionDefinition) {
     return {
       type: 'error',
       error: 'Cannot materialize assets using both asset/resource config and partitions.',
@@ -243,7 +242,7 @@ async function stateForLaunchingAssets(
 
   // Ok! Assertions met, how do we launch this run
 
-  if (anyAssetsHaveConfig || anyResourcesHaveConfig || forceLaunchpad) {
+  if (anyAssetsHaveConfig || anyResourcesHaveRequiredConfig || forceLaunchpad) {
     const assetOpNames = assets.flatMap((a) => a.opNames || []);
     return {
       type: 'launchpad',
@@ -357,6 +356,7 @@ const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
             description
             configField {
               name
+              isRequired
               configType {
                 ...ConfigTypeSchemaFragment
                 recursiveConfigTypes {

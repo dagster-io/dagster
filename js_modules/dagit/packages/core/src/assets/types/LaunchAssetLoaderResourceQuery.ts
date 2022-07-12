@@ -526,6 +526,7 @@ export type LaunchAssetLoaderResourceQuery_pipelineOrError_Pipeline_modes_resour
 export interface LaunchAssetLoaderResourceQuery_pipelineOrError_Pipeline_modes_resources_configField {
   __typename: "ConfigTypeField";
   name: string;
+  isRequired: boolean;
   configType: LaunchAssetLoaderResourceQuery_pipelineOrError_Pipeline_modes_resources_configField_configType;
 }
 
