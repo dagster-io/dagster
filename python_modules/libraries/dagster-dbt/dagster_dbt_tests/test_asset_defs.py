@@ -91,10 +91,11 @@ def test_runtime_metadata_fn():
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 4
-    assert materializations[0].metadata_entries == [
+    for entry in [
         MetadataEntry("op_name", value=dbt_assets[0].op.name),
         MetadataEntry("dbt_model", value=materializations[0].asset_key.path[-1]),
-    ]
+    ]:
+        assert entry in materializations[0].metadata_entries
 
 
 def assert_assets_match_project(dbt_assets, prefix=None):
