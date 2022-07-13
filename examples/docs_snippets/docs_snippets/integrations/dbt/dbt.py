@@ -68,7 +68,7 @@ def scope_schedule_assets():
 
 
 def scope_downstream_asset():
-    from dagster import asset, AssetIn
+    from dagster import AssetIn, asset
 
     # start_downstream_asset
     @asset(
