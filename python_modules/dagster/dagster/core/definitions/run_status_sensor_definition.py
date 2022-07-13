@@ -250,7 +250,7 @@ def pipeline_failure_sensor(
 
         @run_status_sensor(
             run_status=PipelineRunStatus.FAILURE,
-            monitored_pipelines=pipelines,
+        =pipelines,
             name=sensor_name,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
