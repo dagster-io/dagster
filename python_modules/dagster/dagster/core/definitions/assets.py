@@ -27,7 +27,7 @@ from .events import AssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
 from .partition import PartitionsDefinition
-from .partition_mapping import PartitionMapping
+from .partition_mapping import AllPartitionMapping, PartitionMapping
 from .resource_definition import ResourceDefinition
 from .resource_requirement import (
     ResourceAddable,
@@ -465,12 +465,11 @@ class AssetsDefinition(ResourceAddable):
         return self._metadata_by_asset_key
 
     def get_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
-        if self._partitions_def is None:
-            check.failed("Asset is not partitioned")
-
         return self._partition_mappings.get(
             in_asset_key,
-            self._partitions_def.get_default_partition_mapping(),
+            self._partitions_def.get_default_partition_mapping()
+            if self._partitions_def
+            else AllPartitionMapping(),
         )
 
     def with_prefix_or_group(
