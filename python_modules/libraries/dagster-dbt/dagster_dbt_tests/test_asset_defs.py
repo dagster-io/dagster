@@ -227,6 +227,24 @@ def test_basic(
         assert len(observations) == 0
 
 
+def test_custom_groups(
+    dbt_seed, conn_string, test_project_dir, dbt_config_dir
+):  # pylint: disable=unused-argument
+    def _node_info_to_group(node_info):
+        return node_info["tags"][0]
+
+    dbt_assets = load_assets_from_dbt_project(
+        test_project_dir, dbt_config_dir, node_info_to_group_fn=_node_info_to_group
+    )
+
+    assert dbt_assets[0].group_names_by_key == {
+        AssetKey(["cold_schema", "sort_cold_cereals_by_calories"]): "foo",
+        AssetKey(["sort_by_calories"]): "foo",
+        AssetKey(["sort_hot_cereals_by_calories"]): "bar",
+        AssetKey(["subdir_schema", "least_caloric"]): "bar",
+    }
+
+
 def test_partitions(
     dbt_seed, conn_string, test_project_dir, dbt_config_dir
 ):  # pylint: disable=unused-argument
