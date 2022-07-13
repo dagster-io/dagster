@@ -68,7 +68,7 @@ class AssetsDefinition(ResourceAddable):
     _group_names_by_key: Mapping[AssetKey, str]
     _selected_asset_keys: AbstractSet[AssetKey]
     _can_subset: bool
-    _metadata_by_asset_key: Mapping[AssetKey, MetadataUserInput]
+    _metadata_by_key: Mapping[AssetKey, MetadataUserInput]
 
     def __init__(
         self,
@@ -82,6 +82,7 @@ class AssetsDefinition(ResourceAddable):
         can_subset: bool = False,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
+        metadata_by_key: Optional[Mapping[AssetKey, MetadataUserInput]] = None,
         # if adding new fields, make sure to handle them in the with_prefix_or_group
         # and from_graph methods
     ):
@@ -138,10 +139,14 @@ class AssetsDefinition(ResourceAddable):
             self._selected_asset_keys = all_asset_keys
         self._can_subset = can_subset
 
-        self._metadata_by_asset_key = {
-            asset_key: node_def.resolve_output_to_origin(output_name, None)[0].metadata
-            for output_name, asset_key in keys_by_output_name.items()
-        }
+        self._metadata_by_key = check.opt_dict_param(
+            metadata_by_key, "metadata_by_key", key_type=AssetKey, value_type=dict
+        )
+        for output_name, asset_key in keys_by_output_name.items():
+            self._metadata_by_key[asset_key] = merge_dicts(
+                node_def.resolve_output_to_origin(output_name, None)[0].metadata,
+                self._metadata_by_key.get(asset_key, {}),
+            )
 
     def __call__(self, *args, **kwargs):
         from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
@@ -183,6 +188,7 @@ class AssetsDefinition(ResourceAddable):
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
+        metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from a GraphDefinition.
@@ -218,6 +224,10 @@ class AssetsDefinition(ResourceAddable):
                 If no entry is provided for a particular asset dependency, the partition mapping defaults
                 to the default partition mapping for the partitions definition, which is typically maps
                 partition keys to the same partition keys in upstream assets.
+            metadata_by_output_name (Optional[Mapping[str, MetadataUserInput]]): Defines metadata to
+                be associated with each of the output assets for this node. Keys are names of the
+                outputs, and values are dictionaries of metadata to be associated with the related
+                asset.
         """
         return AssetsDefinition._from_node(
             graph_def,
@@ -228,6 +238,7 @@ class AssetsDefinition(ResourceAddable):
             group_name,
             resource_defs,
             partition_mappings,
+            metadata_by_output_name,
             key_prefix=key_prefix,
         )
 
@@ -241,6 +252,7 @@ class AssetsDefinition(ResourceAddable):
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
+        metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from an OpDefinition.
@@ -272,6 +284,10 @@ class AssetsDefinition(ResourceAddable):
                 If no entry is provided for a particular asset dependency, the partition mapping defaults
                 to the default partition mapping for the partitions definition, which is typically maps
                 partition keys to the same partition keys in upstream assets.
+            metadata_by_output_name (Optional[Mapping[str, MetadataUserInput]]): Defines metadata to
+                be associated with each of the output assets for this node. Keys are names of the
+                outputs, and values are dictionaries of metadata to be associated with the related
+                asset.
         """
         return AssetsDefinition._from_node(
             op_def,
@@ -281,6 +297,7 @@ class AssetsDefinition(ResourceAddable):
             partitions_def,
             group_name,
             partition_mappings=partition_mappings,
+            metadata_by_output_name=metadata_by_output_name,
             key_prefix=key_prefix,
         )
 
@@ -294,6 +311,7 @@ class AssetsDefinition(ResourceAddable):
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
+        metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ) -> "AssetsDefinition":
         from .graph_definition import GraphDefinition
@@ -363,6 +381,12 @@ class AssetsDefinition(ResourceAddable):
                 for input_name, partition_mapping in partition_mappings.items()
             }
             if partition_mappings
+            else None,
+            metadata_by_key={
+                keys_by_output_name[output_name]: metadata
+                for output_name, metadata in metadata_by_output_name.items()
+            }
+            if metadata_by_output_name
             else None,
         )
 
@@ -461,8 +485,8 @@ class AssetsDefinition(ResourceAddable):
         return self._partitions_def
 
     @property
-    def metadata_by_asset_key(self):
-        return self._metadata_by_asset_key
+    def metadata_by_key(self):
+        return self._metadata_by_key
 
     def get_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
         if self._partitions_def is None:
