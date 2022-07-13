@@ -4,21 +4,19 @@ import graphene
 from graphene.types.generic import GenericScalar
 
 import dagster._check as check
-from dagster._config.errors import EvaluationError as DagsterEvaluationError
-from dagster._config.errors import (
+from dagster._config import ConfigSchemaSnapshot
+from dagster._config import EvaluationError as DagsterEvaluationError
+from dagster._config import (
+    EvaluationStackListItemEntry,
+    EvaluationStackMapKeyEntry,
+    EvaluationStackMapValueEntry,
+    EvaluationStackPathEntry,
     FieldNotDefinedErrorData,
     FieldsNotDefinedErrorData,
     MissingFieldErrorData,
     MissingFieldsErrorData,
     RuntimeMismatchErrorData,
     SelectorTypeErrorData,
-)
-from dagster._config.snap import ConfigSchemaSnapshot
-from dagster._config.stack import (
-    EvaluationStackListItemEntry,
-    EvaluationStackMapKeyEntry,
-    EvaluationStackMapValueEntry,
-    EvaluationStackPathEntry,
 )
 from dagster.core.host_representation.represented import RepresentedPipeline
 from dagster.utils.error import SerializableErrorInfo

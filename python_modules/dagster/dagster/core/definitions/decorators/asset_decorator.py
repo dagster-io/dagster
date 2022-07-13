@@ -15,8 +15,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._config import Field
-from dagster._config.config_schema import UserConfigSchema
+from dagster._config import Field, UserConfigSchema
 from dagster.builtins import Nothing
 from dagster.core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster.core.errors import DagsterInvalidDefinitionError

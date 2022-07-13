@@ -2,10 +2,15 @@ import os
 from typing import Dict, Mapping, cast
 
 import dagster._check as check
-from dagster._config import Field, ScalarUnion, Selector
-from dagster._config.evaluate_value_result import EvaluateValueResult
-from dagster._config.source import IntSource, StringSource
-from dagster._config.validate import process_config
+from dagster._config import (
+    EvaluateValueResult,
+    Field,
+    IntSource,
+    ScalarUnion,
+    Selector,
+    StringSource,
+    process_config,
+)
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.utils import merge_dicts
 

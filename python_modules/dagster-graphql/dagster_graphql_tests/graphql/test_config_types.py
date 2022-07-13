@@ -3,7 +3,7 @@ import json
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 import dagster._check as check
-from dagster._config.config_type import ALL_CONFIG_BUILTINS
+from dagster._config import ALL_CONFIG_BUILTINS
 from dagster.utils import file_relative_path
 
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix

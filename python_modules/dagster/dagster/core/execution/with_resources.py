@@ -66,7 +66,7 @@ def with_resources(
 
 
     """
-    from dagster._config.validate import validate_config
+    from dagster._config import validate_config
     from dagster.core.storage.fs_io_manager import fs_io_manager
 
     check.mapping_param(resource_defs, "resource_defs")

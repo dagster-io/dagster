@@ -20,7 +20,7 @@ def logger_invocation_result(logger_def: LoggerDefinition, init_context: Unbound
 
 
 def _resolve_bound_config(logger_config: Any, logger_def: "LoggerDefinition") -> Any:
-    from dagster._config.validate import process_config
+    from dagster._config import process_config
 
     validated_config = None
     outer_config_shape = Shape({"config": logger_def.get_config_field()})

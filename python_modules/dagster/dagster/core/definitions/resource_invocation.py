@@ -92,7 +92,7 @@ def _check_invocation_requirements(
 
 
 def _resolve_bound_config(resource_config: Any, resource_def: "ResourceDefinition") -> Any:
-    from dagster._config.validate import process_config
+    from dagster._config import process_config
 
     outer_config_shape = Shape({"config": resource_def.get_config_field()})
     config_evr = process_config(

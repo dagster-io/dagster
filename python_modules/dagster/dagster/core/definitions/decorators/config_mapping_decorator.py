@@ -1,7 +1,7 @@
 from typing import Any, Callable, Optional, Union, overload
 
 import dagster._check as check
-from dagster._config.config_schema import UserConfigSchema
+from dagster._config import UserConfigSchema
 
 from ..config import ConfigMapping
 

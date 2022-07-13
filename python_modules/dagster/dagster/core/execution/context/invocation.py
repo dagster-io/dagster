@@ -310,7 +310,7 @@ def _validate_resource_requirements(
 
 def _resolve_bound_config(solid_config: Any, solid_def: SolidDefinition) -> Any:
     """Validate config against config schema, and return validated config."""
-    from dagster._config.validate import process_config
+    from dagster._config import process_config
 
     # Config processing system expects the top level config schema to be a dictionary, but solid
     # config schema can be scalar. Thus, we wrap it in another layer of indirection.

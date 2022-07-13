@@ -1,7 +1,7 @@
 import dagster._check as check
-from dagster._config.config_type import Array
-from dagster._config.config_type import ConfigAnyInstance as ConfigAny
-from dagster._config.field_utils import Permissive
+from dagster._config import Array
+from dagster._config import ConfigAnyInstance as ConfigAny
+from dagster._config import Permissive
 
 from .builtins import Bool, Float, Int, String
 from .core.types.dagster_type import Any as RuntimeAny
@@ -56,7 +56,7 @@ def remap_python_builtin_for_config(ttype):
     """This function remaps a python type to a Dagster type, or passes it through if it cannot be
     remapped.
     """
-    from dagster._config.field import resolve_to_config_type
+    from dagster._config import resolve_to_config_type
 
     check.param_invariant(is_supported_config_python_builtin(ttype), "ttype")
 

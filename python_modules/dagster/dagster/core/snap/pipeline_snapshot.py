@@ -13,24 +13,26 @@ from typing import (
     cast,
 )
 
-from dagster import Field, Map, Permissive, Selector, Shape
 from dagster import _check as check
-from dagster._config.config_type import (
+from dagster._config import (
+    FIELD_NO_DEFAULT_PROVIDED,
     Array,
-    ConfigTypeKind,
-    Enum,
-    EnumValue,
-    Noneable,
-    ScalarUnion,
-    get_builtin_scalar_by_name,
-)
-from dagster._config.field_utils import FIELD_NO_DEFAULT_PROVIDED
-from dagster._config.snap import (
     ConfigEnumValueSnap,
     ConfigFieldSnap,
     ConfigSchemaSnapshot,
     ConfigType,
+    ConfigTypeKind,
     ConfigTypeSnap,
+    Enum,
+    EnumValue,
+    Field,
+    Map,
+    Noneable,
+    Permissive,
+    ScalarUnion,
+    Selector,
+    Shape,
+    get_builtin_scalar_by_name,
 )
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.job_definition import JobDefinition

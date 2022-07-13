@@ -1,7 +1,7 @@
 from typing import Dict, Generator, cast
 
 import dagster._check as check
-from dagster._config.field import Field
+from dagster._config import Field
 
 from .config_type import ConfigType, ConfigTypeKind
 from .snap import ConfigSchemaSnapshot, snap_from_config_type

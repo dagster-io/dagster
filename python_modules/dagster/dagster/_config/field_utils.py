@@ -8,7 +8,7 @@ from dagster.core.errors import DagsterInvalidConfigDefinitionError
 from .config_type import Array, ConfigType, ConfigTypeKind
 
 if TYPE_CHECKING:
-    from dagster._config.field import Field
+    from dagster._config import Field
 
 
 def all_optional_type(config_type: ConfigType) -> bool:
@@ -66,7 +66,7 @@ def _add_hash(m, string):
     m.update(string.encode("utf-8"))
 
 
-def _compute_fields_hash(fields, description, field_aliases=None):
+def compute_fields_hash(fields, description, field_aliases=None):
 
     m = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
     if description:
@@ -94,7 +94,7 @@ def _compute_fields_hash(fields, description, field_aliases=None):
 
 
 def _define_shape_key_hash(fields, description, field_aliases):
-    return "Shape." + _compute_fields_hash(fields, description, field_aliases=field_aliases)
+    return "Shape." + compute_fields_hash(fields, description, field_aliases=field_aliases)
 
 
 class Shape(_ConfigHasFields):
@@ -200,7 +200,7 @@ class Map(ConfigType):
 
 def _define_permissive_dict_key(fields, description):
     return (
-        "Permissive." + _compute_fields_hash(fields, description=description)
+        "Permissive." + compute_fields_hash(fields, description=description)
         if fields
         else "Permissive"
     )
@@ -245,7 +245,7 @@ class Permissive(_ConfigHasFields):
 
 
 def _define_selector_key(fields, description):
-    return "Selector." + _compute_fields_hash(fields, description=description)
+    return "Selector." + compute_fields_hash(fields, description=description)
 
 
 class Selector(_ConfigHasFields):

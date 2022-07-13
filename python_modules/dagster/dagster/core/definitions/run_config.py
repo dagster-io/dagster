@@ -1,9 +1,15 @@
 from typing import AbstractSet, Any, Iterator, Mapping, NamedTuple, Optional, Sequence, Tuple, cast
 
-from dagster._config import Field, Permissive, Selector
-from dagster._config.config_type import ALL_CONFIG_BUILTINS, Array, ConfigType
-from dagster._config.field_utils import Shape
-from dagster._config.iterate_types import iterate_config_types
+from dagster._config import (
+    ALL_CONFIG_BUILTINS,
+    Array,
+    ConfigType,
+    Field,
+    Permissive,
+    Selector,
+    Shape,
+    iterate_config_types,
+)
 from dagster.core.definitions.asset_layer import AssetLayer
 from dagster.core.definitions.executor_definition import (
     ExecutorDefinition,

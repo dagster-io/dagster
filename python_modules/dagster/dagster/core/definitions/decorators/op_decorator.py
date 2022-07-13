@@ -14,7 +14,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._config.config_schema import UserConfigSchema
+from dagster._config import UserConfigSchema
 from dagster.core.decorator_utils import format_docstring_for_description
 from dagster.core.errors import DagsterInvariantViolationError
 

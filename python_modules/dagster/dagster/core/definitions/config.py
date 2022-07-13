@@ -1,9 +1,7 @@
 from typing import TYPE_CHECKING, Any, Callable, Mapping, NamedTuple, Optional, Union, cast
 
 import dagster._check as check
-from dagster._config import ConfigType
-from dagster._config.post_process import resolve_defaults
-from dagster._config.validate import process_config, validate_config
+from dagster._config import ConfigType, process_config, resolve_defaults, validate_config
 from dagster.builtins import BuiltinEnum
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster.core.errors import DagsterInvalidConfigError

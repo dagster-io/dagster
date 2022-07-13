@@ -1,13 +1,13 @@
 from dagster import Field, Noneable, Permissive, ScalarUnion, Selector, Shape
-from dagster._config.errors import DagsterEvaluationErrorReason
-from dagster._config.field import resolve_to_config_type
-from dagster._config.stack import (
+from dagster._config import (
+    DagsterEvaluationErrorReason,
     EvaluationStackListItemEntry,
     EvaluationStackMapKeyEntry,
     EvaluationStackMapValueEntry,
     EvaluationStackPathEntry,
+    resolve_to_config_type,
+    validate_config,
 )
-from dagster._config.validate import validate_config
 
 
 def test_parse_scalar_success():

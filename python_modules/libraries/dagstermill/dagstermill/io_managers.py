@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, List, Optional
 
 import dagster._check as check
-from dagster._config.field import Field
+from dagster._config import Field
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.metadata import MetadataEntry, MetadataValue
 from dagster.core.execution.context.input import InputContext

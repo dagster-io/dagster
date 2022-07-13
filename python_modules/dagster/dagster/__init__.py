@@ -18,9 +18,19 @@ sys.meta_path.insert(
         }
     ),
 )
-from dagster._config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
-from dagster._config.config_schema import ConfigSchema
-from dagster._config.config_type import Array, Noneable, ScalarUnion
+from dagster._config import (
+    Array,
+    ConfigSchema,
+    Enum,
+    EnumValue,
+    Field,
+    Map,
+    Noneable,
+    Permissive,
+    ScalarUnion,
+    Selector,
+    Shape,
+)
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.core.definitions import (
     AllPartitionMapping,
@@ -302,7 +312,7 @@ from dagster.utils.test import (
 
 from .version import __version__
 
-from dagster._config.source import BoolSource, StringSource, IntSource  # isort:skip
+from dagster._config import BoolSource, StringSource, IntSource  # isort:skip
 
 # ########################
 # ##### DEPRECATED ALIASES

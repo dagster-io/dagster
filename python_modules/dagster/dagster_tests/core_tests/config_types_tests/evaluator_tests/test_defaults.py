@@ -2,10 +2,13 @@ import pytest
 
 from dagster import Any, Enum, EnumValue, Field, Noneable, Permissive, String
 from dagster._check import CheckError, ParameterCheckError
-from dagster._config.config_type import ConfigType, ConfigTypeKind
-from dagster._config.field import resolve_to_config_type
-from dagster._config.field_utils import Selector
-from dagster._config.post_process import post_process_config
+from dagster._config import (
+    ConfigType,
+    ConfigTypeKind,
+    Selector,
+    post_process_config,
+    resolve_to_config_type,
+)
 
 
 def test_post_process_config():

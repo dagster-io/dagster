@@ -5,8 +5,7 @@ from typing import Union
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster.config import Field
-from dagster.config.source import StringSource
+from dagster._config import Field, StringSource
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.input import InputContext
 from dagster.core.execution.context.output import OutputContext
