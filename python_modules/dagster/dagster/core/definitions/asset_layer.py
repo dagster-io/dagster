@@ -618,7 +618,7 @@ class AssetLayer:
                 else None
             )
         elif asset_key in self._assets_defs_by_key:
-            return self._assets_defs_by_key[asset_key].metadata_by_asset_key[asset_key]
+            return self._assets_defs_by_key[asset_key].metadata_by_key[asset_key]
         else:
             check.failed(f"Couldn't find key {asset_key}")
 
