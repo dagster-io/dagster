@@ -842,6 +842,24 @@ def test_direct_assets():
     assert my_repo.get_all_jobs()[0].resource_defs["foo"] == foo_resource
 
 
+def test_direct_assets_duplicate_keys():
+    def make_asset():
+        @asset
+        def asset1():
+            pass
+
+        return asset1
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r"Duplicate asset key: AssetKey\(\['asset1'\]\)",
+    ):
+
+        @repository
+        def my_repo():
+            return [make_asset(), make_asset()]
+
+
 def test_direct_asset_unsatified_resource():
     @asset(required_resource_keys={"a"})
     def asset1():

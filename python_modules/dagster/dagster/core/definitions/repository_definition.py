@@ -10,6 +10,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Set,
     Type,
     TypeVar,
     Union,
@@ -654,6 +655,7 @@ class CachingRepositoryData(RepositoryData):
         schedules: Dict[str, ScheduleDefinition] = {}
         sensors: Dict[str, SensorDefinition] = {}
         assets_defs: List[AssetsDefinition] = []
+        asset_keys: Set[AssetKey] = set()
         source_assets: List[SourceAsset] = []
         combined_asset_group = None
         for definition in repository_definitions:
@@ -663,9 +665,7 @@ class CachingRepositoryData(RepositoryData):
                     and pipelines_or_jobs[definition.name] != definition
                 ) or definition.name in unresolved_jobs:
                     raise DagsterInvalidDefinitionError(
-                        "Duplicate {target_type} definition found for {target}".format(
-                            target_type=definition.target_type, target=definition.describe_target()
-                        )
+                        f"Duplicate {definition.target_type} definition found for {definition.describe_target()}"
                     )
                 if AssetGroup.is_base_job_name(definition.name):
                     raise DagsterInvalidDefinitionError(
@@ -676,8 +676,7 @@ class CachingRepositoryData(RepositoryData):
             elif isinstance(definition, PartitionSetDefinition):
                 if definition.name in partition_sets:
                     raise DagsterInvalidDefinitionError(
-                        "Duplicate partition set definition found for partition set "
-                        "{partition_set_name}".format(partition_set_name=definition.name)
+                        f"Duplicate partition set definition found for partition set {definition.name}"
                     )
                 partition_sets[definition.name] = definition
             elif isinstance(definition, SensorDefinition):
@@ -700,25 +699,21 @@ class CachingRepositoryData(RepositoryData):
                     ):
                         raise DagsterInvalidDefinitionError(
                             "Duplicate partition set definition found for partition set "
-                            "{partition_set_name}".format(partition_set_name=partition_set_def.name)
+                            f"{partition_set_def.name}"
                         )
                     partition_sets[partition_set_def.name] = partition_set_def
             elif isinstance(definition, GraphDefinition):
                 coerced = definition.coerce_to_job()
                 if coerced.name in pipelines_or_jobs:
                     raise DagsterInvalidDefinitionError(
-                        "Duplicate {target_type} definition found for graph '{name}'".format(
-                            target_type=coerced.target_type, name=coerced.name
-                        )
+                        f"Duplicate {coerced.target_type} definition found for graph '{coerced.name}'"
                     )
                 pipelines_or_jobs[coerced.name] = coerced
                 coerced_graphs[coerced.name] = coerced
             elif isinstance(definition, UnresolvedAssetJobDefinition):
                 if definition.name in pipelines_or_jobs or definition.name in unresolved_jobs:
                     raise DagsterInvalidDefinitionError(
-                        "Duplicate definition found for unresolved job '{name}'".format(
-                            name=definition.name
-                        )
+                        f"Duplicate definition found for unresolved job '{definition.name}'"
                     )
                 # we can only resolve these once we have all assets
                 unresolved_jobs[definition.name] = definition
@@ -728,6 +723,11 @@ class CachingRepositoryData(RepositoryData):
                 else:
                     combined_asset_group = definition
             elif isinstance(definition, AssetsDefinition):
+                for key in definition.keys:
+                    if key in asset_keys:
+                        raise DagsterInvalidDefinitionError(f"Duplicate asset key: {key}")
+
+                asset_keys.update(definition.keys)
                 assets_defs.append(definition)
             elif isinstance(definition, SourceAsset):
                 source_assets.append(definition)
