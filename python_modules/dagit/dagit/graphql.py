@@ -133,7 +133,7 @@ class GraphQLServer(ABC):
 
         if result.errors:
             response_data["errors"] = self.handle_graphql_errors(result.errors)
-            status_code = status.HTTP_400_BAD_REQUEST
+            status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
 
         return JSONResponse(response_data, status_code=status_code)
 
