@@ -123,6 +123,7 @@ def test_single_partitioned_asset_job():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             assert context.asset_partition_key == "b"
+            assert context.asset_partitions_def == partitions_def
 
         def load_input(self, context):
             assert False, "shouldn't get here"
@@ -212,6 +213,7 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
         def load_input(self, context):
             start, end = context.asset_partition_key_range
             assert start, end == ("1", "2")
+            assert context.asset_partitions_def == upstream_partitions_def
 
     @asset(partitions_def=upstream_partitions_def)
     def upstream_asset(context):

@@ -12,8 +12,8 @@ from dagster.core.definitions.time_window_partitions import (
 from dagster.core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
+    from dagster.core.definitions import PartitionsDefinition, SolidDefinition
     from dagster.core.definitions.resource_definition import Resources
-    from dagster.core.definitions.solid_definition import SolidDefinition
     from dagster.core.events import DagsterEvent
     from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.log_manager import DagsterLogManager
@@ -222,6 +222,18 @@ class InputContext:
         if result is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access asset_key, but no asset is associated with this input"
+            )
+
+        return result
+
+    @property
+    def asset_partitions_def(self) -> "PartitionsDefinition":
+        """The PartitionsDefinition on the upstream asset corresponding to this input."""
+        asset_key = self.asset_key
+        result = self.step_context.pipeline_def.asset_layer.partitions_def_for_asset(asset_key)
+        if result is None:
+            raise DagsterInvariantViolationError(
+                f"Attempting to access partitions def for asset {asset_key}, but it is not partitioned"
             )
 
         return result
