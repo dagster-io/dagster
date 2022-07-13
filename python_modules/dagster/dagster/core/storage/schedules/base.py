@@ -38,7 +38,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def add_instigator_state(self, state: InstigatorState):
+    def add_instigator_state(self, state: InstigatorState) -> InstigatorState:
         """Add an instigator state to storage.
 
         Args:
@@ -46,7 +46,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def update_instigator_state(self, state: InstigatorState):
+    def update_instigator_state(self, state: InstigatorState) -> InstigatorState:
         """Update an instigator state in storage.
 
         Args:
