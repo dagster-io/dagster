@@ -236,6 +236,7 @@ from dagster._core.errors import (
 )
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.execution.api import (
+    execute_job,
     execute_pipeline,
     execute_pipeline_iterator,
     reexecute_pipeline,
@@ -572,6 +573,7 @@ __all__ = [
     "default_executors",
     "execute_pipeline_iterator",
     "execute_pipeline",
+    "execute_job",
     "validate_run_config",
     "execute_solid_within_pipeline",
     "in_process_executor",

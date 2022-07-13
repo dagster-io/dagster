@@ -84,7 +84,10 @@ def core_execute_in_process(
         event_list = list(execute_run_iterable)
 
     return ExecuteInProcessResult(
-        node, event_list, execute_instance.get_run_by_id(run_id), output_capture
+        job_def=ephemeral_pipeline,
+        event_list=event_list,
+        dagster_run=execute_instance.get_run_by_id(run_id),
+        output_capture=output_capture,
     )
 
 
