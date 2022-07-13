@@ -133,12 +133,6 @@ def asset(
             will be executed on the output of the decorated function after it runs.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
-        partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
-            keys for this asset to partition keys of upstream assets. Each key in the dictionary
-            correponds to one of the input assets, and each value is a PartitionMapping.
-            If no entry is provided for a particular asset dependency, the partition mapping defaults
-            to the default partition mapping for the partitions definition, which is typically maps
-            partition keys to the same partition keys in upstream assets.
         op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the asset.
             Frameworks may expect and require certain metadata to be attached to a op. Values that
             are not strings will be json encoded and must meet the criteria that
@@ -172,6 +166,13 @@ def asset(
         "parameter of this asset to a dictionary of the form "
         "'input_name': AssetIn(key_prefix=...).",
     )
+
+    if partition_mappings is not None:
+        deprecation_warning(
+            "The partition_mappings argument of @asset",
+            "0.16.0",
+            "Use the partition_mapping argument on AssetIn instead.",
+        )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         check.invariant(
@@ -304,17 +305,31 @@ class _Asset:
         keys_by_input_name = {
             input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
         }
+        partition_mappings_by_key_from_asset_ins = {
+            keys_by_input_name[input_name]: asset_in.partition_mapping
+            for input_name, asset_in in self.ins.items()
+            if asset_in.partition_mapping
+        }
+        if partition_mappings_by_key_from_asset_ins:
+            check.invariant(
+                not self.partition_mappings,
+                "If providing partition mappings on AssetIns, can't also provide partition_mappings "
+                "argument on @asset decorator",
+            )
+
+            partition_mappings = partition_mappings_by_key_from_asset_ins
+        else:
+            partition_mappings = {
+                keys_by_input_name[input_name]: partition_mapping
+                for input_name, partition_mapping in (self.partition_mappings or {}).items()
+            }
+
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name={"result": out_asset_key},
             node_def=op,
             partitions_def=self.partitions_def,
-            partition_mappings={
-                keys_by_input_name[input_name]: partition_mapping
-                for input_name, partition_mapping in self.partition_mappings.items()
-            }
-            if self.partition_mappings
-            else None,
+            partition_mappings=partition_mappings if partition_mappings else None,
             resource_defs=self.resource_defs,
             group_names_by_key={out_asset_key: self.group_name} if self.group_name else None,
         )

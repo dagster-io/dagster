@@ -728,7 +728,6 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return (
             upstream_asset_key is not None
             and assets_def is not None
-            and assets_def.partitions_def is not None
             and asset_layer.partitions_def_for_asset(upstream_asset_key) is not None
         )
 
@@ -744,11 +743,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         if upstream_asset_key is not None:
             upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
 
-            if (
-                assets_def is not None
-                and assets_def.partitions_def is not None
-                and upstream_asset_partitions_def is not None
-            ):
+            if assets_def is not None and upstream_asset_partitions_def is not None:
                 return get_upstream_partitions_for_partition_range(
                     assets_def,
                     upstream_asset_partitions_def,

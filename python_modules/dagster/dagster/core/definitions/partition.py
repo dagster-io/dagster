@@ -208,6 +208,12 @@ class PartitionsDefinition(ABC, Generic[T]):
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Sequence[str]:
         return [partition.name for partition in self.get_partitions(current_time)]
 
+    def get_last_partition_key(self, current_time: Optional[datetime] = None) -> str:
+        return self.get_partitions(current_time)[-1].name
+
+    def get_first_partition_key(self, current_time: Optional[datetime] = None) -> str:
+        return self.get_partitions(current_time)[0].name
+
     def get_default_partition_mapping(self):
         from dagster.core.definitions.partition_mapping import IdentityPartitionMapping
 
