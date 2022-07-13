@@ -101,7 +101,12 @@ def test_empty_executable_args():
         process = open_server_process(
             port, socket=None, loadable_target_origin=loadable_target_origin
         )
-        assert process.args[:3] == ["dagster", "api", "grpc"]
+        assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]
+
+        client = DagsterGrpcClient(port=port, host="localhost")
+        list_repositories_response = sync_list_repositories_grpc(client)
+        assert list_repositories_response.entry_point == ["dagster"]
+        assert list_repositories_response.executable_path == sys.executable
     finally:
         if process:
             process.terminate()

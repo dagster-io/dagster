@@ -8,6 +8,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Mapping,
     NamedTuple,
     Optional,
     Tuple,
@@ -108,6 +109,15 @@ class Node:
     Node invocation within a graph. Identified by its name inside the graph.
     """
 
+    name: str
+    definition: "NodeDefinition"
+    graph_definition: "GraphDefinition"
+    _additional_tags: Dict[str, str]
+    _hook_defs: AbstractSet[HookDefinition]
+    _retry_policy: Optional[RetryPolicy]
+    _input_handles: Dict[str, "SolidInputHandle"]
+    _output_handles: Dict[str, "SolidOutputHandle"]
+
     def __init__(
         self,
         name: str,
@@ -198,7 +208,8 @@ class Node:
 
     @property
     def tags(self) -> frozentags:
-        return self.definition.tags.updated_with(self._additional_tags)
+        # Type-ignore temporarily pending assessment of right data structure for `tags`
+        return self.definition.tags.updated_with(self._additional_tags)  # type: ignore
 
     def container_maps_input(self, input_name: str) -> bool:
         return (
@@ -500,8 +511,12 @@ class SolidInputHandle(
     def __hash__(self):
         return hash((self.solid.name, self.input_def.name))
 
-    def __eq__(self, other):
-        return self.solid.name == other.solid.name and self.input_def.name == other.input_def.name
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, SolidInputHandle)
+            and self.solid.name == other.solid.name
+            and self.input_def.name == other.input_def.name
+        )
 
     @property
     def solid_name(self) -> str:
@@ -758,12 +773,12 @@ InputToOutputHandleDict = Dict[SolidInputHandle, DepTypeAndOutputHandles]
 
 
 def _create_handle_dict(
-    solid_dict: Dict[str, Node],
-    dep_dict: Dict[str, Dict[str, IDependencyDefinition]],
+    solid_dict: Mapping[str, Node],
+    dep_dict: Mapping[str, Mapping[str, IDependencyDefinition]],
 ) -> InputToOutputHandleDict:
     from .composition import MappedInputPlaceholder
 
-    check.dict_param(solid_dict, "solid_dict", key_type=str, value_type=Node)
+    check.mapping_param(solid_dict, "solid_dict", key_type=str, value_type=Node)
     check.two_dim_dict_param(dep_dict, "dep_dict", value_type=IDependencyDefinition)
 
     handle_dict: InputToOutputHandleDict = {}
@@ -806,7 +821,7 @@ def _create_handle_dict(
 
 class DependencyStructure:
     @staticmethod
-    def from_definitions(solids: Dict[str, Node], dep_dict: Dict[str, Any]):
+    def from_definitions(solids: Mapping[str, Node], dep_dict: Mapping[str, Any]):
         return DependencyStructure(list(dep_dict.keys()), _create_handle_dict(solids, dep_dict))
 
     def __init__(self, solid_names: List[str], handle_dict: InputToOutputHandleDict):

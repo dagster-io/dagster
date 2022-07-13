@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, NamedTuple, Optional
+from typing import Iterable, Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster.config.config_type import ConfigType
@@ -9,8 +9,8 @@ from .pipeline_definition import PipelineDefinition
 
 class RunConfigSchema(NamedTuple):
     run_config_schema_type: ConfigType
-    config_type_dict_by_name: Dict[str, ConfigType]
-    config_type_dict_by_key: Dict[str, ConfigType]
+    config_type_dict_by_name: Mapping[str, ConfigType]
+    config_type_dict_by_key: Mapping[str, ConfigType]
     config_mapping: Optional[ConfigMapping]
 
     def has_config_type(self, name: str) -> bool:

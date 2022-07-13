@@ -17,7 +17,7 @@ export interface PartitionGraphFragment_stats_RunStatsSnapshot {
   materializations: number;
 }
 
-export interface PartitionGraphFragment_stats_PythonError_cause {
+export interface PartitionGraphFragment_stats_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -27,7 +27,7 @@ export interface PartitionGraphFragment_stats_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: PartitionGraphFragment_stats_PythonError_cause | null;
+  causes: PartitionGraphFragment_stats_PythonError_causes[];
 }
 
 export type PartitionGraphFragment_stats = PartitionGraphFragment_stats_RunStatsSnapshot | PartitionGraphFragment_stats_PythonError;

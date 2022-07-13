@@ -46,7 +46,7 @@ export interface AssetCatalogTableQuery_assetsOrError_AssetConnection {
   nodes: AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes[];
 }
 
-export interface AssetCatalogTableQuery_assetsOrError_PythonError_cause {
+export interface AssetCatalogTableQuery_assetsOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -56,7 +56,7 @@ export interface AssetCatalogTableQuery_assetsOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: AssetCatalogTableQuery_assetsOrError_PythonError_cause | null;
+  causes: AssetCatalogTableQuery_assetsOrError_PythonError_causes[];
 }
 
 export type AssetCatalogTableQuery_assetsOrError = AssetCatalogTableQuery_assetsOrError_AssetConnection | AssetCatalogTableQuery_assetsOrError_PythonError;

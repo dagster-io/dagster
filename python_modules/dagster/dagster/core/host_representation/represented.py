@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import AbstractSet, List, Optional, Union
+from typing import AbstractSet, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster.config.snap import ConfigSchemaSnapshot
@@ -61,7 +61,7 @@ class RepresentedPipeline(ABC):
         return self._pipeline_index.parent_pipeline_snapshot
 
     @property
-    def solid_selection(self) -> Optional[List[str]]:
+    def solid_selection(self) -> Optional[Sequence[str]]:
         return (
             self._pipeline_index.pipeline_snapshot.lineage_snapshot.solid_selection
             if self._pipeline_index.pipeline_snapshot.lineage_snapshot
@@ -85,7 +85,7 @@ class RepresentedPipeline(ABC):
     # DagsterTypes
 
     @property
-    def dagster_type_snaps(self) -> List[DagsterTypeSnap]:
+    def dagster_type_snaps(self) -> Sequence[DagsterTypeSnap]:
         return self._pipeline_index.get_dagster_type_snaps()
 
     def has_dagster_type_named(self, type_name: str) -> bool:
@@ -97,7 +97,7 @@ class RepresentedPipeline(ABC):
     # Modes
 
     @property
-    def mode_def_snaps(self) -> List[ModeDefSnap]:
+    def mode_def_snaps(self) -> Sequence[ModeDefSnap]:
         return self._pipeline_index.pipeline_snapshot.mode_def_snaps
 
     def get_mode_def_snap(self, mode_name: str) -> ModeDefSnap:

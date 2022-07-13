@@ -534,7 +534,7 @@ export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFail
 
 export type RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries = RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_PathMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_JsonMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_UrlMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TextMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_MarkdownMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_PythonArtifactMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_FloatMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_IntMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_BoolMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_PipelineRunMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_AssetMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry | RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry;
 
-export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_error_cause {
+export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -544,7 +544,7 @@ export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFail
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_error_cause | null;
+  causes: RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent_error_causes[];
 }
 
 export interface RunLogsQuery_logsForRun_EventConnection_events_ResourceInitFailureEvent {
@@ -1438,7 +1438,7 @@ export interface RunLogsQuery_logsForRun_EventConnection_events_ObservationEvent
   assetKey: RunLogsQuery_logsForRun_EventConnection_events_ObservationEvent_assetKey | null;
 }
 
-export interface RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepFailureEvent_error_cause {
+export interface RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepFailureEvent_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -1448,7 +1448,7 @@ export interface RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepFai
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepFailureEvent_error_cause | null;
+  causes: RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepFailureEvent_error_causes[];
 }
 
 export interface RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepFailureEvent_failureMetadata_metadataEntries_PathMetadataEntry {
@@ -1627,7 +1627,7 @@ export interface RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepFai
   failureMetadata: RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepFailureEvent_failureMetadata | null;
 }
 
-export interface RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepUpForRetryEvent_error_cause {
+export interface RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepUpForRetryEvent_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -1637,7 +1637,7 @@ export interface RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepUpF
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepUpForRetryEvent_error_cause | null;
+  causes: RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepUpForRetryEvent_error_causes[];
 }
 
 export interface RunLogsQuery_logsForRun_EventConnection_events_ExecutionStepUpForRetryEvent {

@@ -7,7 +7,7 @@
 // GraphQL query operation: InstanceHealthForBackfillsQuery
 // ====================================================
 
-export interface InstanceHealthForBackfillsQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause {
+export interface InstanceHealthForBackfillsQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -17,7 +17,7 @@ export interface InstanceHealthForBackfillsQuery_instance_daemonHealth_allDaemon
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceHealthForBackfillsQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause | null;
+  causes: InstanceHealthForBackfillsQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes[];
 }
 
 export interface InstanceHealthForBackfillsQuery_instance_daemonHealth_allDaemonStatuses {

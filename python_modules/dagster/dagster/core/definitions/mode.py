@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, Mapping, NamedTuple, Optional
+from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster.core.definitions.executor_definition import ExecutorDefinition, default_executors
@@ -21,9 +21,9 @@ class ModeDefinition(
         "_ModeDefinition",
         [
             ("name", str),
-            ("resource_defs", Dict[str, ResourceDefinition]),
-            ("loggers", Dict[str, LoggerDefinition]),
-            ("executor_defs", List[ExecutorDefinition]),
+            ("resource_defs", Mapping[str, ResourceDefinition]),
+            ("loggers", Mapping[str, LoggerDefinition]),
+            ("executor_defs", Sequence[ExecutorDefinition]),
             ("description", Optional[str]),
             ("config_mapping", Optional[ConfigMapping]),
             ("partitioned_config", Optional["PartitionedConfig"]),
@@ -56,7 +56,7 @@ class ModeDefinition(
         name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
-        executor_defs: Optional[List[ExecutorDefinition]] = None,
+        executor_defs: Optional[Sequence[ExecutorDefinition]] = None,
         description: Optional[str] = None,
         _config_mapping: Optional[ConfigMapping] = None,
         _partitioned_config: Optional["PartitionedConfig"] = None,
@@ -86,7 +86,7 @@ class ModeDefinition(
             name=check_valid_name(name) if name else DEFAULT_MODE_NAME,
             resource_defs=resource_defs_with_defaults,
             loggers=(
-                check.opt_dict_param(
+                check.opt_mapping_param(
                     logger_defs, "logger_defs", key_type=str, value_type=LoggerDefinition
                 )
                 or default_loggers()

@@ -21,7 +21,7 @@ def check_valid_version(version: str) -> None:
         )
 
 
-def resolve_config_version(config_value):
+def resolve_config_version(config_value: object):
     """Resolve a configuration value into a hashed version.
 
     If a None value is passed in, we return the result of an empty join_and_hash.

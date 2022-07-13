@@ -656,6 +656,31 @@ def test_multi_asset_non_identity_partition_mapping():
 def test_from_graph():
     partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
 
+    class SpecialIdentityPartitionMapping(PartitionMapping):
+        def __init__(self):
+            self.upstream_calls = 0
+            self.downstream_calls = 0
+
+        def get_upstream_partitions_for_partition_range(
+            self,
+            downstream_partition_key_range: PartitionKeyRange,
+            downstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+            upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+        ) -> PartitionKeyRange:
+            self.upstream_calls += 1
+            return downstream_partition_key_range
+
+        def get_downstream_partitions_for_partition_range(
+            self,
+            upstream_partition_key_range: PartitionKeyRange,
+            downstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+            upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+        ) -> PartitionKeyRange:
+            self.downstream_calls += 1
+            return upstream_partition_key_range
+
+    partition_mapping = SpecialIdentityPartitionMapping()
+
     @op
     def my_op(context):
         assert context.asset_partition_key_for_output() == "a"
@@ -666,6 +691,7 @@ def test_from_graph():
 
     @op
     def my_op2(context, upstream_asset):
+        assert context.asset_partition_key_for_input("upstream_asset") == "a"
         assert context.asset_partition_key_for_output() == "a"
         return upstream_asset
 
@@ -686,11 +712,17 @@ def test_from_graph():
         "my_job",
         assets=[
             AssetsDefinition.from_graph(upstream_asset, partitions_def=partitions_def),
-            AssetsDefinition.from_graph(downstream_asset, partitions_def=partitions_def),
+            AssetsDefinition.from_graph(
+                downstream_asset,
+                partitions_def=partitions_def,
+                partition_mappings={"upstream_asset": partition_mapping},
+            ),
         ],
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     assert my_job.execute_in_process(partition_key="a").success
+    assert partition_mapping.downstream_calls == 0
+    assert partition_mapping.upstream_calls == 2
 
 
 def test_config_with_partitions():

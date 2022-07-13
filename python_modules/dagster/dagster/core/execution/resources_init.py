@@ -50,7 +50,7 @@ from .context.init import InitResourceContext
 
 def resource_initialization_manager(
     resource_defs: Mapping[str, ResourceDefinition],
-    resource_configs: Dict[str, ResourceConfig],
+    resource_configs: Mapping[str, ResourceConfig],
     log_manager: DagsterLogManager,
     execution_plan: Optional[ExecutionPlan],
     pipeline_run: Optional[PipelineRun],
@@ -106,7 +106,9 @@ def ensure_resource_deps_satisfiable(resource_deps: Mapping[str, AbstractSet[str
         _helper(resource_key)
 
 
-def get_dependencies(resource_name: str, resource_deps: Mapping[str, AbstractSet[str]]) -> Set[str]:
+def get_dependencies(
+    resource_name: str, resource_deps: Mapping[str, AbstractSet[str]]
+) -> AbstractSet[str]:
     """Get all resources that must be initialized before resource_name can be initialized.
 
     Uses dfs to get all required dependencies from a particular resource. Assumes that resource dependencies are not cyclic (check performed by a different function).
@@ -125,7 +127,7 @@ def get_dependencies(resource_name: str, resource_deps: Mapping[str, AbstractSet
 
 def _core_resource_initialization_event_generator(
     resource_defs: Mapping[str, ResourceDefinition],
-    resource_configs: Dict[str, ResourceConfig],
+    resource_configs: Mapping[str, ResourceConfig],
     resource_log_manager: DagsterLogManager,
     resource_managers: Deque[EventGenerationManager],
     execution_plan: Optional[ExecutionPlan],
@@ -224,7 +226,7 @@ def _core_resource_initialization_event_generator(
 
 def resource_initialization_event_generator(
     resource_defs: Mapping[str, ResourceDefinition],
-    resource_configs: Dict[str, ResourceConfig],
+    resource_configs: Mapping[str, ResourceConfig],
     log_manager: DagsterLogManager,
     execution_plan: Optional[ExecutionPlan],
     pipeline_run: Optional[PipelineRun],
@@ -299,7 +301,7 @@ class InitializedResource:
     `EventGenerationManager`-wrapped event stream.
     """
 
-    def __init__(self, obj: Any, duration: float, is_generator: bool):
+    def __init__(self, obj: Any, duration: str, is_generator: bool):
         self.resource = obj
         self.duration = duration
         self.is_generator = is_generator
@@ -309,12 +311,13 @@ def single_resource_generation_manager(
     context: InitResourceContext, resource_name: str, resource_def: ResourceDefinition
 ) -> EventGenerationManager:
     generator = single_resource_event_generator(context, resource_name, resource_def)
-    return EventGenerationManager(generator, InitializedResource)
+    # EventGenerationManager needs to be renamed/generalized so that it doesn't only take event generators
+    return EventGenerationManager(generator, InitializedResource)  # type: ignore
 
 
 def single_resource_event_generator(
     context: InitResourceContext, resource_name: str, resource_def: ResourceDefinition
-) -> Generator[Any, None, None]:
+) -> Generator[InitializedResource, None, None]:
     try:
         msg_fn = lambda: "Error executing resource_fn on ResourceDefinition {name}".format(
             name=resource_name
@@ -387,7 +390,7 @@ def get_required_resource_keys_to_init(
 
 def get_transitive_required_resource_keys(
     required_resource_keys: AbstractSet[str], resource_defs: Mapping[str, ResourceDefinition]
-) -> Set[str]:
+) -> AbstractSet[str]:
 
     resource_dependencies = resolve_resource_dependencies(resource_defs)
     ensure_resource_deps_satisfiable(resource_dependencies)

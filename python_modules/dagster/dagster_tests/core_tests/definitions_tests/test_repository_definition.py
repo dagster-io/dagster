@@ -10,6 +10,7 @@ from dagster import (
     AssetsDefinition,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
+    DailyPartitionsDefinition,
     IOManager,
     JobDefinition,
     PipelineDefinition,
@@ -28,6 +29,7 @@ from dagster import (
     io_manager,
     job,
     lambda_solid,
+    logger,
     op,
     pipeline,
     repository,
@@ -43,6 +45,7 @@ from dagster.core.definitions.executor_definition import (
 )
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster.core.errors import DagsterInvalidSubsetError
+from dagster.loggers import default_loggers
 
 # pylint: disable=comparison-with-callable
 
@@ -1434,3 +1437,127 @@ def test_default_executor_config():
         ]
 
     assert the_repo.get_job("the_job").executor_def == in_process_executor
+
+
+def test_scheduled_partitioned_asset_job():
+    partitions_def = DailyPartitionsDefinition(start_date="2022-06-06")
+
+    @asset(partitions_def=partitions_def)
+    def asset1():
+        ...
+
+    @repository
+    def repo():
+        return [
+            asset1,
+            build_schedule_from_partitioned_job(
+                define_asset_job("fdsjk", partitions_def=partitions_def)
+            ),
+        ]
+
+    repo.load_all_definitions()
+
+
+def test_default_loggers_repo():
+    @logger
+    def basic():
+        pass
+
+    @repository(default_logger_defs={"foo": basic})
+    def the_repo():
+        return []
+
+
+def test_default_loggers_assets_repo():
+    @graph
+    def no_logger_provided():
+        pass
+
+    @asset
+    def the_asset():
+        pass
+
+    @logger
+    def basic():
+        pass
+
+    @repository(default_logger_defs={"foo": basic})
+    def the_repo():
+        return [no_logger_provided, the_asset]
+
+    assert the_repo.get_job("__ASSET_JOB").loggers == {"foo": basic}
+
+    assert the_repo.get_job("no_logger_provided").loggers == {"foo": basic}
+
+
+def test_default_loggers_jobs_and_pipelines():
+    @asset
+    def the_asset():
+        pass
+
+    unresolved_job = define_asset_job("asset_job", selection="*")
+
+    @logger
+    def custom_logger(_):
+        pass
+
+    @logger
+    def other_custom_logger(_):
+        pass
+
+    @job(logger_defs={"bar": custom_logger})
+    def op_job_with_loggers():
+        pass
+
+    @job
+    def op_job_no_loggers():
+        pass
+
+    @job(logger_defs=default_loggers())
+    def job_explicitly_specifies_default_loggers():
+        pass
+
+    @pipeline
+    def the_pipeline():
+        pass
+
+    @repository(default_logger_defs={"foo": other_custom_logger})
+    def the_repo():
+        return [
+            the_asset,
+            op_job_with_loggers,
+            op_job_no_loggers,
+            unresolved_job,
+            the_pipeline,
+            job_explicitly_specifies_default_loggers,
+        ]
+
+    assert the_repo.get_pipeline("the_pipeline").mode_definitions[0].loggers == default_loggers()
+
+    assert the_repo.get_job("asset_job").loggers == {"foo": other_custom_logger}
+
+    assert the_repo.get_job("op_job_with_loggers").loggers == {"bar": custom_logger}
+
+    assert the_repo.get_job("op_job_no_loggers").loggers == {"foo": other_custom_logger}
+
+    assert the_repo.get_job("job_explicitly_specifies_default_loggers").loggers == default_loggers()
+
+
+def test_default_loggers_keys_conflict():
+    @logger
+    def some_logger():
+        pass
+
+    @logger
+    def other_logger():
+        pass
+
+    @job(logger_defs={"foo": some_logger})
+    def the_job():
+        pass
+
+    @repository(default_logger_defs={"foo": other_logger})
+    def the_repo():
+        return [the_job]
+
+    assert the_repo.get_job("the_job").loggers == {"foo": some_logger}

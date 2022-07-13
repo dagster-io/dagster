@@ -14,7 +14,7 @@ export interface PipelinePartitionsRootQuery_partitionSetsOrError_PipelineNotFou
   message: string;
 }
 
-export interface PipelinePartitionsRootQuery_partitionSetsOrError_PythonError_cause {
+export interface PipelinePartitionsRootQuery_partitionSetsOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -24,7 +24,7 @@ export interface PipelinePartitionsRootQuery_partitionSetsOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: PipelinePartitionsRootQuery_partitionSetsOrError_PythonError_cause | null;
+  causes: PipelinePartitionsRootQuery_partitionSetsOrError_PythonError_causes[];
 }
 
 export interface PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results {

@@ -1,11 +1,11 @@
 ---
-title: Metadata & Tags | Dagster
-description: Metadata and tags provide two ways to attach information in Dagster
+title: Job Metadata & Run Tags | Dagster
+description: Job metadata and run tags provide two ways to attach information in Dagster
 ---
 
-# Metadata & Tags
+# Job Metadata & Run Tags
 
-Metadata and tags provide two different ways for you to attach information to your jobs and the runs launched from those jobs. The main difference between metadata and tags is what "object" the information is attached to. Metadata is attached to JobDefinitions (specified using the @job decorator) and tags are attached to runs that are created by executing a job.
+Metadata and tags provide two different ways for you to attach information to your jobs and the runs launched from those jobs. The main difference between metadata and tags is what "object" the information is attached to. Metadata is attached to JobDefinitions (specified using the <PyObject object="job" decorator /> decorator), and tags are attached to runs that are created by executing a job.
 
 ## Metadata
 
@@ -17,7 +17,7 @@ Metadata allows you to attach information to a job. This information can be what
 
 Note: If you are running Dagster using separate Dagit and user code installations (more info [here](/deployment/overview)), then your Dagit installation must be >=0.14.18 to use metadata on jobs.
 
-### Specifying Metadata
+### Specifying metadata
 
 When you attach metadata to a job, you do it as a dictionary of key value pairs. The keys must be a string, but the values can be any one of the <PyObject object="MetadataValue" /> classes we provide. You can also use primitive python types as values, and dagster will convert them to the appropriate <PyObject object="MetadataValue" />.
 
@@ -65,7 +65,7 @@ height={1406}
 
 Tags allow you to attach information to the run created when you execute a job. Tags can contain any information you want, and dagster will also attach some tags to your runs (we'll cover these later).
 
-### Specifying Tags
+### Specifying tags
 
 You can specify tags you want attached to every run by adding them to a job. Tags are specified as a dictionary of key value pairs where the key must be a string and the value must be a string or json that is serializable to a string.
 
@@ -87,11 +87,11 @@ When executing a job, you can add tags to the run using the Launchpad in Dagit <
 
 You can view the tags that have been attached to runs by going to the Runs page in Dagit <Image alt="tags-viewer.png" src="/images/concepts/ops-jobs-graphs/tags-viewer.png" width={2880} height={1406} />
 
-### Dagster provided tags
+### Dagster-provided tags
 
 Dagster will automatically add tags to your runs in some cases including:
 
-- The solid selection for the run, if applicable
+- The op selection for the run, if applicable
 - The partition set and partition of the run, if applicable
 - The schedule that triggered the run, if applicable
 - The backfill ID, if applicable

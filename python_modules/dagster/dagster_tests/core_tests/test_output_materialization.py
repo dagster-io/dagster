@@ -50,9 +50,9 @@ def multiple_output_pipeline():
 
 
 def single_int_named_output_pipeline():
-    @lambda_solid(output_def=OutputDefinition(Int, name="named"))
+    @solid(output_defs=[OutputDefinition(Int, name="named")])
     def return_named_one():
-        return Output(1, "named")
+        return 1
 
     return PipelineDefinition(
         name="single_int_named_output_pipeline", solid_defs=[return_named_one]

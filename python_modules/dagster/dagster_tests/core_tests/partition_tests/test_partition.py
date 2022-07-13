@@ -1,5 +1,5 @@
 from datetime import datetime, time
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Sequence
 
 import pendulum
 import pytest
@@ -22,7 +22,7 @@ from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE
 
 
 def assert_expected_partitions(
-    generated_partitions: List[Partition], expected_partitions: List[str]
+    generated_partitions: Sequence[Partition], expected_partitions: Sequence[str]
 ):
     assert all(
         isinstance(generated_partition, Partition) for generated_partition in generated_partitions

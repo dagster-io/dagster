@@ -1,6 +1,6 @@
 import os
 import subprocess
-from distutils import spawn
+from distutils import spawn  # pylint: disable=deprecated-module
 
 import psycopg2
 import pytest

@@ -1,7 +1,7 @@
 from dagster_buildkite.step_builder import CommandStepBuilder
 from dagster_buildkite.utils import CommandStep
 
-from ..images.versions import COVERAGE_IMAGE_VERSION
+from ..images.versions import BUILDKITE_COVERAGE_IMAGE_VERSION
 
 
 def build_coverage_step() -> CommandStep:
@@ -21,7 +21,7 @@ def build_coverage_step() -> CommandStep:
             "coveralls",  # add '--merge=coverage.js.json' to report JS coverage
         )
         .on_python_image(
-            "buildkite-coverage:py3.8.7-{version}".format(version=COVERAGE_IMAGE_VERSION),
+            "buildkite-coverage:py3.8.7-{version}".format(version=BUILDKITE_COVERAGE_IMAGE_VERSION),
             [
                 "COVERALLS_REPO_TOKEN",  # exported by /env in ManagedSecretsBucket
                 "CI_NAME",

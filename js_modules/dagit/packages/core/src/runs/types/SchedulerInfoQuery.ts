@@ -9,7 +9,7 @@ import { InstigationType, InstigationStatus, RunStatus, InstigationTickStatus } 
 // GraphQL query operation: SchedulerInfoQuery
 // ====================================================
 
-export interface SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause {
+export interface SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -19,7 +19,7 @@ export interface SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses_last
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause | null;
+  causes: SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes[];
 }
 
 export interface SchedulerInfoQuery_instance_daemonHealth_allDaemonStatuses {
@@ -79,7 +79,7 @@ export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nod
   updateTime: number | null;
 }
 
-export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_error_cause {
+export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -89,7 +89,7 @@ export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nod
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_error_cause | null;
+  causes: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_error_causes[];
 }
 
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks {
@@ -164,7 +164,7 @@ export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection {
   nodes: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes[];
 }
 
-export interface SchedulerInfoQuery_repositoriesOrError_PythonError_cause {
+export interface SchedulerInfoQuery_repositoriesOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -174,7 +174,7 @@ export interface SchedulerInfoQuery_repositoriesOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: SchedulerInfoQuery_repositoriesOrError_PythonError_cause | null;
+  causes: SchedulerInfoQuery_repositoriesOrError_PythonError_causes[];
 }
 
 export type SchedulerInfoQuery_repositoriesOrError = SchedulerInfoQuery_repositoriesOrError_RepositoryConnection | SchedulerInfoQuery_repositoriesOrError_PythonError;

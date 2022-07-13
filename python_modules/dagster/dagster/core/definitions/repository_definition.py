@@ -24,6 +24,7 @@ from .events import AssetKey
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .job_definition import JobDefinition
+from .logger_definition import LoggerDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline_definition import PipelineDefinition
 from .schedule_definition import ScheduleDefinition
@@ -504,11 +505,13 @@ class CachingRepositoryData(RepositoryData):
             schedules,
             self._validate_schedule,
         )
-        schedule_partition_sets = [
-            schedule.get_partition_set()
-            for schedule in self._schedules.get_all_definitions()
-            if isinstance(schedule, PartitionScheduleDefinition)
-        ]
+        schedule_partition_sets = filter(
+            None,
+            [
+                _get_partition_set_from_schedule(schedule)
+                for schedule in self._schedules.get_all_definitions()
+            ],
+        )
         self._source_assets_by_key = source_assets_by_key
 
         def load_partition_sets_from_pipelines() -> List[PartitionSetDefinition]:
@@ -609,7 +612,7 @@ class CachingRepositoryData(RepositoryData):
                     # TODO: https://github.com/dagster-io/dagster/issues/8263
                     assets=[],
                     source_assets=[],
-                    executor_def=None,
+                    default_executor_def=None,
                 )
             elif not isinstance(job, JobDefinition) and not isfunction(job):
                 raise DagsterInvalidDefinitionError(
@@ -633,6 +636,7 @@ class CachingRepositoryData(RepositoryData):
             ]
         ],
         default_executor_def: Optional[ExecutorDefinition] = None,
+        default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     ) -> "CachingRepositoryData":
         """Static constructor.
 
@@ -688,8 +692,8 @@ class CachingRepositoryData(RepositoryData):
                         f"Duplicate definition found for {definition.name}"
                     )
                 schedules[definition.name] = definition
-                if isinstance(definition, PartitionScheduleDefinition):
-                    partition_set_def = definition.get_partition_set()
+                partition_set_def = _get_partition_set_from_schedule(definition)
+                if partition_set_def:
                     if (
                         partition_set_def.name in partition_sets
                         and partition_set_def != partition_sets[partition_set_def.name]
@@ -777,7 +781,7 @@ class CachingRepositoryData(RepositoryData):
             resolved_job = unresolved_job_def.resolve(
                 assets=combined_asset_group.assets,
                 source_assets=combined_asset_group.source_assets,
-                executor_def=default_executor_def,
+                default_executor_def=default_executor_def,
             )
             pipelines_or_jobs[name] = resolved_job
 
@@ -793,6 +797,11 @@ class CachingRepositoryData(RepositoryData):
             for name, job_def in jobs.items():
                 if not job_def._executor_def_specified:  # pylint: disable=protected-access
                     jobs[name] = job_def.with_executor_def(default_executor_def)
+
+        if default_logger_defs:
+            for name, job_def in jobs.items():
+                if not job_def._logger_defs_specified:  # pylint: disable=protected-access
+                    jobs[name] = job_def.with_logger_defs(default_logger_defs)
 
         return CachingRepositoryData(
             pipelines=pipelines,
@@ -1311,3 +1320,27 @@ def _process_and_validate_target(
 
 def _get_error_msg_for_target_conflict(targeter, target_type, target_name, dupe_target_type):
     return f"{targeter} targets {target_type} '{target_name}', but a different {dupe_target_type} with the same name was provided. Disambiguate between these by providing a separate name to one of them."
+
+
+def _get_partition_set_from_schedule(
+    schedule: ScheduleDefinition,
+) -> Optional[PartitionSetDefinition]:
+    """With the legacy APIs, partition sets can live on schedules. With the non-legacy APIs,
+    they live on jobs. Pulling partition sets from schedules causes problems with unresolved asset
+    jobs, because two different instances of the same logical partition set end up getting created
+    - one on the schedule and one on the the resolved job.
+
+    To avoid this problem, we avoid pulling partition sets off of schedules that target unresolved
+    asset jobs. This works, because the partition set still gets pulled directly off the asset job
+    elsewhere.
+
+    When we remove the legacy APIs, we should be able to stop pulling partition sets off of
+    schedules entirely and remove this entire code path.
+    """
+    if (
+        isinstance(schedule, PartitionScheduleDefinition)
+        and not schedule.targets_unresolved_asset_job
+    ):
+        return schedule.get_partition_set()
+    else:
+        return None

@@ -4,7 +4,7 @@ import tempfile
 import uuid
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, Generator, Optional, Union
+from typing import TYPE_CHECKING, AbstractSet, Any, Dict, Generator, Optional, Union, overload
 
 # top-level include is dangerous in terms of incurring circular deps
 from dagster import (
@@ -22,7 +22,11 @@ from dagster import execute_pipeline, lambda_solid
 from dagster.core.definitions.logger_definition import LoggerDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.resource_definition import ScopedResourcesBuilder
-from dagster.core.definitions.solid_definition import NodeDefinition
+from dagster.core.definitions.solid_definition import (
+    CompositeSolidDefinition,
+    NodeDefinition,
+    SolidDefinition,
+)
 from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
 from dagster.core.execution.context.system import PlanExecutionContext
 from dagster.core.execution.context_creation_pipeline import (
@@ -55,7 +59,7 @@ from ..temp_file import (
 from ..typing_api import is_typing_type
 
 if TYPE_CHECKING:
-    from dagster._core.execution.results import CompositeSolidExecutionResult, SolidExecutionResult
+    from dagster.core.execution.results import CompositeSolidExecutionResult, SolidExecutionResult
 
 
 def create_test_pipeline_execution_context(
@@ -129,7 +133,7 @@ def build_pipeline_with_input_stubs(
 
     return PipelineDefinition(
         name=pipeline_def.name + "_stubbed",
-        solid_defs=pipeline_def.top_level_solid_defs + stub_solid_defs,
+        solid_defs=[*pipeline_def.top_level_solid_defs, *stub_solid_defs],
         mode_defs=pipeline_def.mode_definitions,
         dependencies=deps,  # type: ignore
     )
@@ -267,6 +271,30 @@ def yield_empty_pipeline_context(
     )
     with scoped_pipeline_context(execution_plan, pipeline, {}, pipeline_run, instance) as context:
         yield context
+
+
+@overload
+def execute_solid(
+    solid_def: CompositeSolidDefinition,
+    mode_def: Optional[ModeDefinition] = ...,
+    input_values: Optional[Dict[str, object]] = ...,
+    tags: Optional[Dict[str, Any]] = ...,
+    run_config: Optional[Dict[str, object]] = ...,
+    raise_on_error: bool = ...,
+) -> "CompositeSolidExecutionResult":
+    ...
+
+
+@overload
+def execute_solid(
+    solid_def: SolidDefinition,
+    mode_def: Optional[ModeDefinition] = ...,
+    input_values: Optional[Dict[str, object]] = ...,
+    tags: Optional[Dict[str, Any]] = ...,
+    run_config: Optional[Dict[str, object]] = ...,
+    raise_on_error: bool = ...,
+) -> "SolidExecutionResult":
+    ...
 
 
 def execute_solid(

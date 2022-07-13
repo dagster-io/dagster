@@ -41,7 +41,7 @@ export interface LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntri
   repositories: LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories[];
 }
 
-export interface LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_cause {
+export interface LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -51,7 +51,7 @@ export interface LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntri
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_cause | null;
+  causes: LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_causes[];
 }
 
 export type LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError = LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation | LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError;
@@ -67,7 +67,7 @@ export interface LastTenRunsPerJobQuery_workspaceOrError_Workspace {
   locationEntries: LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntries[];
 }
 
-export interface LastTenRunsPerJobQuery_workspaceOrError_PythonError_cause {
+export interface LastTenRunsPerJobQuery_workspaceOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -77,7 +77,7 @@ export interface LastTenRunsPerJobQuery_workspaceOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: LastTenRunsPerJobQuery_workspaceOrError_PythonError_cause | null;
+  causes: LastTenRunsPerJobQuery_workspaceOrError_PythonError_causes[];
 }
 
 export type LastTenRunsPerJobQuery_workspaceOrError = LastTenRunsPerJobQuery_workspaceOrError_Workspace | LastTenRunsPerJobQuery_workspaceOrError_PythonError;

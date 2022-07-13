@@ -999,11 +999,7 @@ def open_server_process(
     executable_path = loadable_target_origin.executable_path if loadable_target_origin else None
 
     subprocess_args = (
-        (
-            get_python_environment_entry_point(executable_path)
-            if executable_path
-            else DEFAULT_DAGSTER_ENTRY_POINT
-        )
+        get_python_environment_entry_point(executable_path or sys.executable)
         + ["api", "grpc"]
         + ["--lazy-load-user-code"]
         + (["--port", str(port)] if port else [])
@@ -1014,6 +1010,7 @@ def open_server_process(
         + (["--fixed-server-id", fixed_server_id] if fixed_server_id else [])
         + (["--override-system-timezone", mocked_system_timezone] if mocked_system_timezone else [])
         + (["--log-level", "WARNING"])  # don't log INFO messages for automatically spun up servers
+        # only use the Python environment if it has been explicitly set in the workspace
         + (["--use-python-environment-entry-point"] if executable_path else [])
     )
 

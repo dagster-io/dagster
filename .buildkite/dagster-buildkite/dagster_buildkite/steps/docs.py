@@ -21,7 +21,7 @@ def build_docs_steps() -> List[BuildkiteStep]:
         # Be sure to check the diff to make sure the literalincludes are as you expect them."
         CommandStepBuilder("docs code snapshots")
         .run("pushd docs; make docs_dev_install; make snapshot", "git diff --exit-code")
-        .on_integration_image(AvailablePythonVersion.V3_7)
+        .on_test_image(AvailablePythonVersion.V3_7)
         .build(),
         # Make sure the docs site can build end-to-end.
         CommandStepBuilder("docs next")
@@ -31,7 +31,7 @@ def build_docs_steps() -> List[BuildkiteStep]:
             "yarn test",
             "yarn build-master",
         )
-        .on_integration_image(AvailablePythonVersion.V3_7)
+        .on_test_image(AvailablePythonVersion.V3_7)
         .build(),
         # Make sure docs sphinx build runs.
         CommandStepBuilder("docs sphinx json build")
@@ -40,12 +40,12 @@ def build_docs_steps() -> List[BuildkiteStep]:
             "cd docs",
             "tox -vv -e py38-sphinx",
         )
-        .on_integration_image(AvailablePythonVersion.V3_8)
+        .on_test_image(AvailablePythonVersion.V3_8)
         .build(),
         # Verify screenshot integrity.
         CommandStepBuilder("docs screenshot spec")
         .run("python docs/screenshot_capture/match_screenshots.py")
-        .on_integration_image(AvailablePythonVersion.V3_8)
+        .on_test_image(AvailablePythonVersion.V3_8)
         .build(),
         # mypy for build scripts
         build_tox_step("docs", "mypy", command_type="mypy"),

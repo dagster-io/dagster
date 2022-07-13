@@ -23,7 +23,7 @@ export interface LaunchPartitionBackfill_launchPartitionBackfill_PartitionSetNot
   message: string;
 }
 
-export interface LaunchPartitionBackfill_launchPartitionBackfill_PythonError_cause {
+export interface LaunchPartitionBackfill_launchPartitionBackfill_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -33,7 +33,7 @@ export interface LaunchPartitionBackfill_launchPartitionBackfill_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: LaunchPartitionBackfill_launchPartitionBackfill_PythonError_cause | null;
+  causes: LaunchPartitionBackfill_launchPartitionBackfill_PythonError_causes[];
 }
 
 export interface LaunchPartitionBackfill_launchPartitionBackfill_InvalidStepError {

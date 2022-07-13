@@ -1,8 +1,15 @@
 import io
 import pickle
-from typing import Union
+from typing import Sequence, Union
 
-from dagster import Field, InputContext, MemoizableIOManager, OutputContext, StringSource
+from dagster import (
+    Field,
+    InputContext,
+    MemoizableIOManager,
+    MetadataValue,
+    OutputContext,
+    StringSource,
+)
 from dagster import _check as check
 from dagster import io_manager
 from dagster.utils import PICKLE_PROTOCOL
@@ -21,10 +28,11 @@ class PickledObjectS3IOManager(MemoizableIOManager):
         self.s3.list_objects(Bucket=self.bucket, Prefix=self.s3_prefix, MaxKeys=1)
 
     def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
+        path: Sequence[str]
         if context.has_asset_key:
             path = context.get_asset_identifier()
         else:
-            path = ["storage"] + context.get_identifier()
+            path = ["storage", *context.get_identifier()]
 
         return "/".join([self.s3_prefix, *path])
 
@@ -66,7 +74,8 @@ class PickledObjectS3IOManager(MemoizableIOManager):
 
     def handle_output(self, context, obj):
         key = self._get_path(context)
-        context.log.debug(f"Writing S3 object at: {self._uri_for_key(key)}")
+        path = self._uri_for_key(key)
+        context.log.debug(f"Writing S3 object at: {path}")
 
         if self._has_object(key):
             context.log.warning(f"Removing existing S3 key: {key}")
@@ -75,6 +84,7 @@ class PickledObjectS3IOManager(MemoizableIOManager):
         pickled_obj = pickle.dumps(obj, PICKLE_PROTOCOL)
         pickled_obj_bytes = io.BytesIO(pickled_obj)
         self.s3.upload_fileobj(pickled_obj_bytes, self.bucket, key)
+        context.add_output_metadata({"uri": MetadataValue.path(path)})
 
 
 @io_manager(

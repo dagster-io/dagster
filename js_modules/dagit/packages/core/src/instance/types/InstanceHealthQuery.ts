@@ -7,7 +7,7 @@
 // GraphQL query operation: InstanceHealthQuery
 // ====================================================
 
-export interface InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause {
+export interface InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -17,7 +17,7 @@ export interface InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_las
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause | null;
+  causes: InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes[];
 }
 
 export interface InstanceHealthQuery_instance_daemonHealth_allDaemonStatuses {

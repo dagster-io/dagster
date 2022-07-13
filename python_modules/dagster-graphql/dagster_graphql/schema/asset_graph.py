@@ -145,6 +145,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         materialization_loader: Optional[BatchMaterializationLoader] = None,
         depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
     ):
+        from ..implementation.fetch_assets import get_unique_asset_id
+
         self._repository_location = check.inst_param(
             repository_location,
             "repository_location",
@@ -166,7 +168,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._node_definition_snap = None  # lazily loaded
 
         super().__init__(
-            id=external_asset_node.asset_key.to_string(),
+            id=get_unique_asset_id(
+                external_asset_node.asset_key, repository_location.name, external_repository.name
+            ),
             assetKey=external_asset_node.asset_key,
             description=external_asset_node.op_description,
             opName=external_asset_node.op_name,
@@ -238,7 +242,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             ]
             external_pipeline = self.get_external_pipeline()
             constituent_resource_key_sets = [
-                self.get_required_resources(external_pipeline.get_node_def_snap(name))
+                self.get_required_resource_keys_rec(external_pipeline.get_node_def_snap(name))
                 for name in constituent_node_names
             ]
             return [key for res_key_set in constituent_resource_key_sets for key in res_key_set]
@@ -247,6 +251,10 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def is_graph_backed_asset(self) -> bool:
         return self.graphName is not None
+
+    # all regular assets belong to at least one job
+    def is_source_asset(self) -> bool:
+        return len(self._external_asset_node.job_names) == 0
 
     def resolve_assetMaterializations(
         self, graphene_info, **kwargs
@@ -292,6 +300,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
     def resolve_configField(self, _graphene_info) -> Optional[GrapheneConfigTypeField]:
+        if self.is_source_asset():
+            return None
         external_pipeline = self.get_external_pipeline()
         node_def_snap = self.get_node_definition_snap()
         return (
@@ -455,6 +465,8 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_op(
         self, _graphene_info
     ) -> Optional[Union[GrapheneSolidDefinition, GrapheneCompositeSolidDefinition]]:
+        if self.is_source_asset():
+            return None
         external_pipeline = self.get_external_pipeline()
         node_def_snap = self.get_node_definition_snap()
         if isinstance(node_def_snap, SolidDefSnap):
