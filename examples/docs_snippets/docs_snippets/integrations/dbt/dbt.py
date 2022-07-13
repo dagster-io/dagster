@@ -108,8 +108,9 @@ def scope_input_manager():
 
 
 def scope_input_manager_resources():
+    pandas_io_manager = None
     # start_input_manager_resources
-    from dagster_dbt import dbt_cli_resource
+    from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
 
     from dagster import with_resources
 
