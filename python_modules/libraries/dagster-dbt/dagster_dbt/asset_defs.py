@@ -156,9 +156,7 @@ def _dbt_nodes_to_assets(
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Optional[
-        Callable[[Dict[str, Any]], Optional[str]]
-    ] = _get_node_group_name,
+    node_info_to_group_fn: Callable[[Dict[str, Any]], Optional[str]] = _get_node_group_name,
 ) -> AssetsDefinition:
 
     outs: Dict[str, Out] = {}
@@ -333,9 +331,7 @@ def load_assets_from_dbt_project(
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Optional[
-        Callable[[Dict[str, Any]], Optional[str]]
-    ] = _get_node_group_name,
+    node_info_to_group_fn: Callable[[Dict[str, Any]], Optional[str]] = _get_node_group_name,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models from a dbt project into Dagster assets.
@@ -372,7 +368,7 @@ def load_assets_from_dbt_project(
         partition_key_to_vars_fn (Optional[str -> Dict[str, Any]]): A function to translate a given
             partition key (e.g. '2022-01-01') to a dictionary of vars to be passed into the dbt
             invocation (e.g. {"run_date": "2022-01-01"})
-        node_info_to_group_fn (Optional[Dict[str, Any] -> Optional[str]]): A function that takes a
+        node_info_to_group_fn (Dict[str, Any] -> Optional[str]): A function that takes a
             dictionary of dbt node info and returns the group that this node should be assigned to.
 
     """
@@ -419,9 +415,7 @@ def load_assets_from_dbt_manifest(
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Optional[
-        Callable[[Dict[str, Any]], Optional[str]]
-    ] = _get_node_group_name,
+    node_info_to_group_fn: Callable[[Dict[str, Any]], Optional[str]] = _get_node_group_name,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models, described in a manifest.json, into Dagster assets.
@@ -456,7 +450,7 @@ def load_assets_from_dbt_manifest(
         partition_key_to_vars_fn (Optional[str -> Dict[str, Any]]): A function to translate a given
             partition key (e.g. '2022-01-01') to a dictionary of vars to be passed into the dbt
             invocation (e.g. {"run_date": "2022-01-01"})
-        node_info_to_group_fn (Optional[Dict[str, Any] -> Optional[str]]): A function that takes a
+        node_info_to_group_fn (Dict[str, Any] -> Optional[str]): A function that takes a
             dictionary of dbt node info and returns the group that this node should be assigned to.
     """
     check.dict_param(manifest_json, "manifest_json", key_type=str)
