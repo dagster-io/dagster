@@ -219,6 +219,19 @@ class SolidDefinition(NodeDefinition):
     def compute_fn(self) -> Union[Callable[..., Any], "DecoratedSolidFunction"]:
         return self._compute_fn
 
+    def is_from_decorator(self) -> bool:
+        from .decorators.solid_decorator import DecoratedSolidFunction
+
+        return isinstance(self._compute_fn, DecoratedSolidFunction)
+
+    def get_output_annotation(self) -> Any:
+        if not self.is_from_decorator():
+            raise DagsterInvalidInvocationError(
+                f"Attempted to get output annotation for {self.node_type_str} '{self.name}', "
+                "which was not constructed from a decorated function."
+            )
+        return cast("DecoratedSolidFunction", self.compute_fn).get_output_annotation()
+
     @property
     def config_schema(self) -> IDefinitionConfigSchema:
         return self._config_schema

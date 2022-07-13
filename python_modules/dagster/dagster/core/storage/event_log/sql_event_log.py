@@ -1059,7 +1059,7 @@ class SqlEventLogStorage(EventLogStorage):
         limit=None,
         cursor=None,
     ):
-        if asset_keys:
+        if asset_keys is not None:
             query = query.where(
                 AssetKeyTable.c.asset_key.in_([asset_key.to_string() for asset_key in asset_keys])
             )

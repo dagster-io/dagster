@@ -852,7 +852,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     )
 
     # First, check to see if we're using Dagster's generic output type to do the type catching.
-    if _is_generic_output_annotation(dagster_type):
+    if is_generic_output_annotation(dagster_type):
         type_args = get_args(dagster_type)
         # If no inner type was provided, forward Any type.
         dagster_type = type_args[0] if len(type_args) == 1 else Any
@@ -933,7 +933,7 @@ def is_dynamic_output_annotation(dagster_type: object) -> bool:
     return False
 
 
-def _is_generic_output_annotation(dagster_type: object) -> bool:
+def is_generic_output_annotation(dagster_type: object) -> bool:
 
     return dagster_type == Output or get_origin(dagster_type) == Output
 

@@ -191,13 +191,15 @@ def get_partition_set_partition_statuses(
 
 
 def partition_statuses_from_run_partition_data(
-    partition_set_name, run_partition_data, partition_names
+    partition_set_name, run_partition_data, partition_names, backfill_id=None
 ):
     from ..schema.partition_sets import GraphenePartitionStatus, GraphenePartitionStatuses
 
     partition_data_by_name = {
         partition_data.partition: partition_data for partition_data in run_partition_data
     }
+
+    suffix = f":{backfill_id}" if backfill_id else ""
 
     results = []
     for name in partition_names:
@@ -212,7 +214,7 @@ def partition_statuses_from_run_partition_data(
         partition_data = partition_data_by_name[name]
         results.append(
             GraphenePartitionStatus(
-                id=f"{partition_set_name}:{name}",
+                id=f"{partition_set_name}:{name}{suffix}",
                 partitionName=name,
                 runId=partition_data.run_id,
                 runStatus=partition_data.status,

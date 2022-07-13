@@ -23,7 +23,7 @@ from dagster.utils import merge_dicts
 from dagster.utils.backcompat import deprecation_warning
 
 from .dependency import NodeHandle
-from .events import AssetKey
+from .events import AssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
 from .partition import PartitionsDefinition
@@ -182,6 +182,7 @@ class AssetsDefinition(ResourceAddable):
         graph_def: "GraphDefinition",
         keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
+        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
@@ -200,6 +201,10 @@ class AssetsDefinition(ResourceAddable):
             keys_by_output_name (Optional[Mapping[str, AssetKey]]): A mapping of the output
                 names of the decorated graph to their corresponding asset keys. If not provided,
                 the output asset keys will be created from the graph output names.
+            key_prefix (Optional[Union[str, Sequence[str]]]): If provided, key_prefix will be prepended
+                to each key in keys_by_output_name. Each item in key_prefix must be a valid name in
+                dagster (ie only contains letters, numbers, and _) and may not contain python
+                reserved keywords.
             internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
                 that all assets produced by the graph depend on all assets that are consumed by that
                 graph. If this default is not correct, you pass in a map of output names to a
@@ -234,6 +239,7 @@ class AssetsDefinition(ResourceAddable):
             resource_defs,
             partition_mappings,
             metadata_by_output_name,
+            key_prefix=key_prefix,
         )
 
     @staticmethod
@@ -241,6 +247,7 @@ class AssetsDefinition(ResourceAddable):
         op_def: OpDefinition,
         keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
+        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
@@ -258,6 +265,10 @@ class AssetsDefinition(ResourceAddable):
             keys_by_output_name (Optional[Mapping[str, AssetKey]]): A mapping of the output
                 names of the decorated op to their corresponding asset keys. If not provided,
                 the output asset keys will be created from the op output names.
+            key_prefix (Optional[Union[str, Sequence[str]]]): If provided, key_prefix will be prepended
+                to each key in keys_by_output_name. Each item in key_prefix must be a valid name in
+                dagster (ie only contains letters, numbers, and _) and may not contain python
+                reserved keywords.
             internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
                 that all assets produced by the op depend on all assets that are consumed by that
                 op. If this default is not correct, you pass in a map of output names to a
@@ -287,6 +298,7 @@ class AssetsDefinition(ResourceAddable):
             group_name,
             partition_mappings=partition_mappings,
             metadata_by_output_name=metadata_by_output_name,
+            key_prefix=key_prefix,
         )
 
     @staticmethod
@@ -300,6 +312,7 @@ class AssetsDefinition(ResourceAddable):
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
+        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ) -> "AssetsDefinition":
         from .graph_definition import GraphDefinition
 
@@ -334,6 +347,15 @@ class AssetsDefinition(ResourceAddable):
 
         keys_by_output_name = _infer_keys_by_output_names(node_def, keys_by_output_name or {})
 
+        keys_by_output_name_with_prefix: Dict[str, AssetKey] = {}
+        key_prefix_list = [key_prefix] if isinstance(key_prefix, str) else key_prefix
+        for output_name, key in keys_by_output_name.items():
+            # add key_prefix to the beginning of each asset key
+            key_with_key_prefix = AssetKey(
+                list(filter(None, [*(key_prefix_list or []), *key.path]))
+            )
+            keys_by_output_name_with_prefix[output_name] = key_with_key_prefix
+
         # For graph backed assets, we assign all assets to the same group_name, if specified.
         # To assign to different groups, use .with_prefix_or_groups.
         group_names_by_key = (
@@ -344,7 +366,7 @@ class AssetsDefinition(ResourceAddable):
 
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
-            keys_by_output_name=keys_by_output_name,
+            keys_by_output_name=keys_by_output_name_with_prefix,
             node_def=node_def,
             asset_deps=transformed_internal_asset_deps or None,
             partitions_def=check.opt_inst_param(
