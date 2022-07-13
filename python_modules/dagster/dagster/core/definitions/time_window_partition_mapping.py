@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import cast
+from typing import Optional, cast
 
 import dagster._check as check
 from dagster.core.definitions.partition import PartitionsDefinition, ScheduleType
@@ -34,9 +34,12 @@ class TimeWindowPartitionMapping(PartitionMapping):
     def get_upstream_partitions_for_partition_range(
         self,
         downstream_partition_key_range: PartitionKeyRange,
-        downstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionKeyRange:
+        if downstream_partitions_def is None:
+            check.failed("downstream asset is not partitioned")
+
         return self._map_partitions(
             downstream_partitions_def, upstream_partitions_def, downstream_partition_key_range
         )
@@ -44,9 +47,12 @@ class TimeWindowPartitionMapping(PartitionMapping):
     def get_downstream_partitions_for_partition_range(
         self,
         upstream_partition_key_range: PartitionKeyRange,
-        downstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionKeyRange:
+        if downstream_partitions_def is None:
+            check.failed("downstream asset is not partitioned")
+
         return self._map_partitions(
             upstream_partitions_def, downstream_partitions_def, upstream_partition_key_range
         )

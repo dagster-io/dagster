@@ -4,6 +4,8 @@ import dagster._check as check
 from dagster.core.definitions.events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from dagster.utils.backcompat import canonicalize_backcompat_args
 
+from .partition_mapping import PartitionMapping
+
 
 class AssetIn(
     NamedTuple(
@@ -13,6 +15,7 @@ class AssetIn(
             ("metadata", Optional[Mapping[str, Any]]),
             ("key_prefix", Optional[Sequence[str]]),
             ("input_manager_key", Optional[str]),
+            ("partition_mapping", Optional[PartitionMapping]),
         ],
     )
 ):
@@ -29,6 +32,10 @@ class AssetIn(
             For example, if you only need a subset of columns from an upstream table, you could
             include that in metadata and the IO manager that loads the upstream table could use the
             metadata to determine which columns to load.
+        partition_mapping (Optional[PartitionMapping]): Defines what partitions to depend on in
+            the upstream asset. If not provided, defaults to the default partition mapping for the
+            partitions definition, which is typically maps partition keys to the same partition keys
+            in upstream assets.
     """
 
     def __new__(
@@ -39,6 +46,7 @@ class AssetIn(
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         asset_key: Optional[CoercibleToAssetKey] = None,
         input_manager_key: Optional[str] = None,
+        partition_mapping: Optional[PartitionMapping] = None,
     ):
         key_prefix = canonicalize_backcompat_args(
             key_prefix, "key_prefix", namespace, "namespace", "0.16.0"
@@ -57,4 +65,7 @@ class AssetIn(
             metadata=check.opt_inst_param(metadata, "metadata", Mapping),
             key_prefix=check.opt_list_param(key_prefix, "key_prefix", of_type=str),
             input_manager_key=check.opt_str_param(input_manager_key, "input_manager_key"),
+            partition_mapping=check.opt_inst_param(
+                partition_mapping, "partition_mapping", PartitionMapping
+            ),
         )
