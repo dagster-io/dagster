@@ -31,7 +31,7 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.utils import build_resources_for_manager
 
 if TYPE_CHECKING:
-    from dagster.core.definitions import PipelineDefinition
+    from dagster.core.definitions import PartitionsDefinition, PipelineDefinition
     from dagster.core.definitions.resource_definition import Resources
     from dagster.core.events import DagsterEvent
     from dagster.core.execution.context.system import StepExecutionContext
@@ -297,6 +297,18 @@ class OutputContext:
             )
 
         return self._asset_info.key
+
+    @property
+    def asset_partitions_def(self) -> "PartitionsDefinition":
+        """The PartitionsDefinition on the upstream asset corresponding to this input."""
+        asset_key = self.asset_key
+        result = self.step_context.pipeline_def.asset_layer.partitions_def_for_asset(asset_key)
+        if result is None:
+            raise DagsterInvariantViolationError(
+                f"Attempting to access partitions def for asset {asset_key}, but it is not partitioned"
+            )
+
+        return result
 
     @property
     def step_context(self) -> "StepExecutionContext":
