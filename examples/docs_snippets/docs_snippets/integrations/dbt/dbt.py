@@ -23,7 +23,7 @@ def scope_load_assets_from_dbt_manifest():
 
 def scope_dbt_cli_resource_config():
     # start_dbt_cli_resource
-    from dagster_dbt import dbt_cli_resource
+    from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
 
     from dagster import with_resources
 
@@ -41,26 +41,25 @@ def scope_dbt_cli_resource_config():
 
 
 def scope_schedule_assets():
+    dbt_assets = []
     # start_schedule_assets
-    from dagster_dbt import dbt_cli_resource
-
     from dagster import ScheduleDefinition, define_asset_job, repository
 
     run_everything_job = define_asset_job("run_everything", selection="*")
 
     # only my_model and its children
-    run_something = define_asset_job("run_something", selection="my_model*")
+    run_something_job = define_asset_job("run_something", selection="my_model*")
 
     @repository
     def my_repo():
         return [
             dbt_assets,
             ScheduleDefinition(
-                job=run_something,
+                job=run_something_job,
                 cron_schedule="@daily",
             ),
             ScheduleDefinition(
-                job=run_everything,
+                job=run_everything_job,
                 cron_schedule="@weekly",
             ),
         ]
@@ -69,6 +68,8 @@ def scope_schedule_assets():
 
 
 def scope_downstream_asset():
+    from dagster import asset, AssetIn
+
     # start_downstream_asset
     @asset(
         ins={"my_dbt_model": AssetIn(input_manager_key="pandas_df_manager")},
@@ -89,6 +90,10 @@ def scope_input_manager():
     class PandasIOManager(IOManager):
         def __init__(self, con_string: str):
             self._con = con_string
+
+        def handle_output(self, context, obj):
+            # dbt handles outputs for us
+            pass
 
         def load_input(self, context) -> pd.DataFrame:
             """Load the contents of a table as a pandas DataFrame."""
@@ -123,7 +128,7 @@ def scope_input_manager_resources():
 
 
 def scope_key_prefixes():
-    from dagster import load_assets_from_dbt_package
+    from dagster_dbt import load_assets_from_dbt_project
 
     # start_key_prefix
     dbt_assets = load_assets_from_dbt_project(
