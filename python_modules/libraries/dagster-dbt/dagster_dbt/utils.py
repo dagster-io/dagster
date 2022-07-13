@@ -114,9 +114,11 @@ def result_to_events(
 
     # if you have a manifest available, get the full node info, otherwise just populate unique_id
     node_info = manifest_json["nodes"][unique_id] if manifest_json else {"unique_id": unique_id}
+
     node_resource_type = _resource_type(unique_id)
 
     if node_resource_type in ASSET_RESOURCE_TYPES and status == "success":
+
         if generate_asset_outputs:
             yield Output(
                 value=None,
