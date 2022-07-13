@@ -50,13 +50,6 @@ def datahub_rest_emitter(init_context: InitResourceContext) -> DatahubRestEmitte
     return emitter
 
 
-# Copied over from datahub.emitter.kafka_emitter
-# DEFAULT_MCE_KAFKA_TOPIC = "MetadataChangeEvent_v4"
-# DEFAULT_MCP_KAFKA_TOPIC = "MetadataChangeProposal_v1"
-# MCE_KEY = "MetadataChangeEvent"
-# MCP_KEY = "MetadataChangeProposal"
-
-
 @resource(
     config_schema={
         "connection": Shape(
