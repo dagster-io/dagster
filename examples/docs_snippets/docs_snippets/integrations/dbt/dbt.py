@@ -12,6 +12,7 @@ def scope_load_assets_from_dbt_project():
 def scope_load_assets_from_dbt_manifest():
     # start_marker_load_assets_from_dbt_manifest
     import json
+
     from dagster_dbt import load_assets_from_dbt_manifest
 
     dbt_assets = load_assets_from_dbt_manifest(
@@ -22,8 +23,9 @@ def scope_load_assets_from_dbt_manifest():
 
 def scope_dbt_cli_resource_config():
     # start_dbt_cli_resource
-    from dagster import with_resources
     from dagster_dbt import dbt_cli_resource
+
+    from dagster import with_resources
 
     DBT_PROJECT_PATH = "path/to/dbt_project"
 
@@ -41,7 +43,8 @@ def scope_dbt_cli_resource_config():
 def scope_schedule_assets():
     # start_schedule_assets
     from dagster_dbt import dbt_cli_resource
-    from dagster import define_asset_job, repository, ScheduleDefinition
+
+    from dagster import ScheduleDefinition, define_asset_job, repository
 
     run_everything_job = define_asset_job("run_everything", selection="*")
 
@@ -80,6 +83,7 @@ def scope_downstream_asset():
 def scope_input_manager():
     # start_input_manager
     import pandas as pd
+
     from dagster import IOManager, io_manager
 
     class PandasIOManager(IOManager):
@@ -100,8 +104,9 @@ def scope_input_manager():
 
 def scope_input_manager_resources():
     # start_input_manager_resources
-    from dagster import with_resources
     from dagster_dbt import dbt_cli_resource
+
+    from dagster import with_resources
 
     dbt_assets = with_resources(
         load_assets_from_dbt_project(...),
