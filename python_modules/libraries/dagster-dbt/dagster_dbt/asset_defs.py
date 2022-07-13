@@ -184,6 +184,7 @@ def _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types):
 
     return asset_deps
 
+
 def _get_dbt_op(
     op_name: str,
     ins: Dict[str, In],
@@ -288,7 +289,6 @@ def _dbt_nodes_to_assets(
         )
     else:
         deps = _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types=["model"])
-
 
     for unique_id, parent_unique_ids in deps.items():
         node_info = dbt_nodes[unique_id]
