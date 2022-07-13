@@ -1,5 +1,5 @@
 ---
-title: Dagster with dbt
+title: "Using Dagster with dbt"
 description: Dagster can orchestrate dbt alongside other technologies.
 ---
 
@@ -9,7 +9,7 @@ Dagster orchestrates dbt alongside _other technologies_, so you can combine dbt 
 
 This guide focuses on how to work with `dbt` models through the SDA framework, which we recommend for most use cases.
 
-## dbt Models and Software-Defined Assets
+## Dagster software-defined assets vs. dbt models
 
 A software-defined asset contains an asset key, a set of upstream asset keys, and an operation that is responsible for computing the asset from its upstream dependencies. Models defined in a `dbt` project are conceptually similar to Dagster's software-defined assets:
 
@@ -17,18 +17,19 @@ A software-defined asset contains an asset key, a set of upstream asset keys, an
 - The upstream dependencies of a dbt model are defined with `ref` or `source` calls within the model's definition.
 - The computation required to compute the asset from its upstream dependencies is the SQL within the model's definition.
 
-These similarities make it natural to interact with dbt models as SDAs. Dagster has built-in support for loading dbt models, seeds, and snapshots as SDAs, allowing you to define Dagster assets that depend on dbt models, or to define the computations that generate sources for your dbt project and have Dagster automatically orchestrate those computations alongside dbt.
+These similarities make it natural to interact with dbt models as SDAs. Dagster has built-in support for loading dbt models, seeds, and snapshots as SDAs. This allows you to:
+
+- Visualize and orchestrate a graph of dbt assets, and execute them with a single dbt invocation
+- View detailed historical metadata and logs for each asset
+- Define python computations that depend directly on tables updated using dbt
+- Track data lineage through dbt and your other tools
 
 ### Loading dbt models from a dbt project
 
 For smaller dbt projects, where compilation time is not a concern, the simplest way to load your dbt assets into Dagster is the following:
 
-```python
-from dagster_dbt import load_assets_from_dbt_project
-
-dbt_assets = load_assets_from_dbt_project(
-    project_dir="path/to/dbt/project"
-)
+```python startafter=start_load_assets_from_dbt_project endbefore=end_load_assets_from_dbt_project file=/integrations/dbt/dbt.py dedent=4
+No match for startAfter value "start_load_assets_from_dbt_project"
 ```
 
 The `load_assets_from_dbt_project` function:
@@ -39,36 +40,33 @@ The `load_assets_from_dbt_project` function:
 
 For larger projects, the overhead involved with recompiling the entire project may be a concern. In these cases, you can load dbt models from an existing dbt `manifest.json` file:
 
-```python
-import json
-from dagster_dbt import load_assets_from_dbt_manifest
-
-dbt_assets = load_assets_from_dbt_manifest(
-    json.load("path/to/dbt/manifest.json", encoding="utf8"),
-)
+```python startafter=start_load_assets_from_dbt_manifest endbefore=end_load_assets_from_dbt_manifest file=/integrations/dbt/dbt.py dedent=4
+No match for startAfter value "start_load_assets_from_dbt_manifest"
 ```
 
-Note: if you make any changes to your dbt project that change the structure of the project (such as changing the dependencies of a model or adding a new one), you'll need to regenerate your manifest file for those changes to be reflected in Dagster.
+**Note:** if you make any changes to your dbt project that change the structure of the project (such as changing the dependencies of a model or adding a new one), you'll need to regenerate your manifest file for those changes to be reflected in Dagster.
 
 ## Adding a resource
 
-In order to be executed, these assets require a dbt resource, which will be responsible for firing off dbt cli commands. The `dagster-dbt` integration provides the `dbt_cli_resource` for this purpose. This resource can be configured with CLI flags that will be passed into every dbt invocation.
+Assets loaded from dbt require a dbt resource, which is responsible for firing off dbt CLI commands. This resource will be responsible for firing off dbt CLI commands. The `dagster-dbt` integration provides the `dbt_cli_resource` for this purpose. This resource can be configured with CLI flags that will be passed into every dbt invocation.
 
-The most important flag to set is the `project_dir` flag, which points Dagster at the directory of your dbt project, but a complete list of configuration options can be found in the [dbt_cli_resource API docs](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.dbt_cli_resource).
+The most important flag to set is the `project_dir` flag, which points Dagster at the directory of your dbt project. For a full list of configuration options, refer to the [dbt_cli_resource API docs](https://docs.dagster.io/\_apidocs/libraries/dagster-dbt#dagster_dbt.dbt_cli_resource).
 
 You can configure this resource and add it to your dbt assets by doing the following:
 
-```python
+```python startafter=start_dbt_cli_resource endbefore=end_dbt_cli_resource file=/integrations/dbt/dbt.py dedent=4
 from dagster import with_resources
 from dagster_dbt import dbt_cli_resource
 
+DBT_PROJECT_PATH = "path/to/dbt_project"
+
 dbt_assets = with_resources(
-    load_assets_from_dbt_project(...),
+    load_assets_from_dbt_project(DBT_PROJECT_PATH),
     {
         "dbt": dbt_cli_resource.configured(
-            {"project_dir": "path/to/dbt_project"}
+            {"project_dir": DBT_PROJECT_PATH},
         )
-    }
+    },
 )
 ```
 
@@ -76,8 +74,9 @@ dbt_assets = with_resources(
 
 Once you have your dbt assets, you can define a job that runs some or all of these assets on a schedule:
 
-```python
-from dagster import ScheduleDefinition, define_asset_job
+```python startafter=start_schedule_assets endbefore=end_schedule_assets file=/integrations/dbt/dbt.py dedent=4
+from dagster_dbt import dbt_cli_resource
+from dagster import define_asset_job, repository, ScheduleDefinition
 
 run_everything_job = define_asset_job("run_everything", selection="*")
 
@@ -95,69 +94,11 @@ def my_repo():
         ScheduleDefinition(
             job=run_everything,
             cron_schedule="@weekly",
-        )
+        ),
     ]
 ```
 
-See the docs on [running jobs on a schedule](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules#running-the-scheduler) to learn more.
-
-## Defining Downstream Dependencies
-
-Dagster allows you to define assets that are downstream of specific dbt models. One property of dbt-based assets is that the external tool - in this case, dbt - handles storing each model in the database internally, rather than Dagster directly storing the tables that are updated.
-
-This means that there's a range of ways to load a dbt model as input to a Python function. For example, you might want to load the contents as a Pandas dataframe or into a PySpark session. You can specify this loading behavior on each downstream asset. For example, if you wanted to consume a dbt model named `my_dbt_model` as a Pandas DataFrame, that would look something like the following:
-
-```python
-@asset(
-    ins={"my_dbt_model": AssetIn(input_manager_key="pandas_df_manager")}
-)
-def my_downstream_asset(my_dbt_model):
-    # my_dbt_model is a Pandas DataFrame
-    return my_dbt_model.where(foo="bar")
-```
-
-### Defining your IOManager
-
-The implementation of your IOManager will depend on what python object you want to use to represent your table, as well as what database you're loading from. A simple IOManager implementation that loads data from a dbt-managed table into a Pandas DataFrame would look somthing like the following:
-
-```python
-import pandas as pd
-from dagster import IOManager, io_manager
-
-class PandasIOManager(IOManager):
-
-    def __init__(self, con_string: str):
-        self._con = con_string
-
-    def load_input(self, context) -> pd.DataFrame:
-        """Load the contents of a table as a pandas DataFrame."""
-        table_name = context.upstream_output.asset_key.path[-1]
-        return pd.read_sql(f"SELECT * FROM {table_name}", con=self._con)
-
-
-@io_manager(config_schema={"con_string": str})
-def pandas_io_manager(context):
-    return PandasIOManager(context.resource_config["con_string"])
-```
-
-Once your IOManager is defined, you can supply it just like any other resource when calling `with_resources`:
-
-```python
-from dagster import with_resources
-from dagster_dbt import dbt_cli_resource
-
-dbt_assets = with_resources(
-    load_assets_from_dbt_project(...),
-    {
-        "dbt": dbt_cli_resource.configured(
-            {"project_dir": "path/to/dbt_project"}
-        ),
-        "pandas_df_manager": pandas_io_manager.configured(
-            {"con_string": "..."}
-        )
-    }
-)
-```
+Refer to the [Schedule documentation](/concepts/partitions-schedules-sensors/schedules#running-the-scheduler) for more info on running jobs on a schedule.
 
 ## Understanding AssetKeys
 
@@ -187,22 +128,79 @@ sources:
       - name: orders
 ```
 
+## Defining downstream dependencies
+
+Dagster allows you to define assets that are downstream of specific dbt models. One property of dbt-based assets is that the external tool - in this case, dbt - handles storing each model in the database internally, rather than Dagster directly storing the tables that are updated.
+
+This means that there's a range of ways to load a dbt model as input to a Python function. For example, you might want to load the contents as a Pandas dataframe or into a PySpark session. You can specify this loading behavior on each downstream asset. For example, if you wanted to consume a dbt model with the asset key `my_dbt_model` as a Pandas dataframe, that would look something like the following:
+
+```python startafter=start_downstream_asset endbefore=end_downstream_asset file=/integrations/dbt/dbt.py dedent=4
+@asset(
+    ins={"my_dbt_model": AssetIn(input_manager_key="pandas_df_manager")},
+)
+def my_downstream_asset(my_dbt_model):
+    # my_dbt_model is a Pandas dataframe
+    return my_dbt_model.where(foo="bar")
+```
+
+### Defining your IOManager
+
+The implementation of your IOManager will depend on what python object you want to use to represent your table, as well as what database you're loading from. A simple IOManager implementation that loads data from a dbt-managed table into a Pandas DataFrame would look somthing like the following:
+
+```python startafter=start_input_manager endbefore=end_input_manager file=/integrations/dbt/dbt.py dedent=4
+import pandas as pd
+from dagster import IOManager, io_manager
+
+class PandasIOManager(IOManager):
+    def __init__(self, con_string: str):
+        self._con = con_string
+
+    def load_input(self, context) -> pd.DataFrame:
+        """Load the contents of a table as a pandas DataFrame."""
+        table_name = context.upstream_output.asset_key.path[-1]
+        return pd.read_sql(f"SELECT * FROM {table_name}", con=self._con)
+
+@io_manager(config_schema={"con_string": str})
+def pandas_io_manager(context):
+    return PandasIOManager(context.resource_config["con_string"])
+```
+
+Once your IOManager is defined, you can supply it just like any other resource when calling `with_resources`:
+
+```python startafter=start_input_manager_resources endbefore=end_input_manager_resources file=/integrations/dbt/dbt.py dedent=4
+from dagster import with_resources
+from dagster_dbt import dbt_cli_resource
+
+dbt_assets = with_resources(
+    load_assets_from_dbt_project(...),
+    {
+        "dbt": dbt_cli_resource.configured(
+            {"project_dir": "path/to/dbt_project"},
+        ),
+        "pandas_df_manager": pandas_io_manager.configured(
+            {"con_string": "..."},
+        ),
+    },
+)
+```
+
 ### Adding a prefix to AssetKeys
 
 A common pattern is to use the prefix of an asset key to indicate what database an asset is stored in. For example, you might want all of your assets stored in Snowflake to start with the prefix `snowflake`. To add a prefix to the models generated by your dbt project, you can pass in a `key_prefix` argument to either the `load_assets_from_dbt_manifest` or `load_assets_from_dbt_project` function.
 
-```python
+```python startafter=start_key_prefix endbefore=end_key_prefix file=/integrations/dbt/dbt.py dedent=4
 dbt_assets = load_assets_from_dbt_project(
-    ..., key_prefix="snowflake"
+    "path/to/dbt_project",
+    key_prefix="snowflake",
 )
 ```
 
-This prefix will apply only to the models. If you want to apply a prefix to the source keys that dagster generates:
+**Note**: The `key_prefix` argument only applies to models. If you want to apply a prefix to the source keys that Dagster generates, pass in a `source_key_prefix` argument:
 
-```python
-
+```python startafter=start_source_key_prefix endbefore=end_source_key_prefix file=/integrations/dbt/dbt.py dedent=4
 dbt_assets = load_assets_from_dbt_project(
-    ..., source_key_prefix="snowflake"
+    "path/to/dbt_project",
+    source_key_prefix="snowflake",
 )
 ```
 
