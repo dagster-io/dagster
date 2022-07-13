@@ -16,6 +16,7 @@ import "react-medium-image-zoom/dist/styles.css";
 export const SearchIndexContext = React.createContext(null);
 import path from "path";
 import { Transition } from "@headlessui/react";
+import OpenUserSettings from "./OpenUserSettings.mdx";
 
 const PyObject: React.FunctionComponent<{
   module: string;
@@ -448,4 +449,5 @@ export default {
   PlaceholderImage,
   Experimental,
   Icons,
+  OpenUserSettings,
 };
