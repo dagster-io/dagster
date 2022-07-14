@@ -1,7 +1,8 @@
 import logging
 import os
+import re
 import subprocess
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from dagster_buildkite.defines import DO_COVERAGE
 from dagster_buildkite.steps.coverage import build_coverage_step
@@ -11,7 +12,7 @@ from dagster_buildkite.steps.docs import build_docs_steps
 from dagster_buildkite.steps.integration import build_integration_steps
 from dagster_buildkite.steps.trigger import build_trigger_step
 from dagster_buildkite.steps.wait import build_wait_step
-from dagster_buildkite.utils import BuildkiteStep, is_feature_branch, safe_getenv
+from dagster_buildkite.utils import BuildkiteStep, is_feature_branch, is_release_branch, safe_getenv
 
 _DAGIT_PATHES = ("js_modules/dagit",)
 _DOCS_PATHES = ("examples", "docs")
@@ -36,23 +37,25 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
     steps: List[BuildkiteStep] = []
 
     # Trigger a build on the internal pipeline for Elementl dev PRs. Feature branches use the
-    # `oss-internal-compatibility` pipeline and always use the internal master branch.
-    # Master/release branches use the full `nternal` pipeline and run on the matching internal
-    # branch.
+    # `oss-internal-compatibility` pipeline, master/release branches use the full `internal`
+    # pipeline. Feature branches use internal' `master` branch by default, but this can be
+    # overridden by setting the `INTERNAL_COMPATIBILITY_BRANCH` environment variable or passing
+    # `[INTERNAL_COMPATIBILITY_BRANCH=<branch>]` in the commit message. Master/release branches
+    # always run on the matching internal branch.
     if (
         build_creator_email
         and build_creator_email.endswith("@elementl.com")
         and build_creator_email != "devtools@elementl.com"
         and not oss_contribution
     ):
-        if is_feature_branch(branch_name):
-            pipeline_name = "oss-internal-compatibility"
-            trigger_branch = "master"
-            async_step = False
-        else:
+        if branch_name == "master" or is_release_branch(branch_name):
             pipeline_name = "internal"
             trigger_branch = branch_name  # build on matching internal release branch
             async_step = True
+        else:  # feature branch
+            pipeline_name = "oss-internal-compatibility"
+            trigger_branch = _get_internal_branch_specifier() or "master"
+            async_step = False
 
         steps.append(
             build_trigger_step(
@@ -106,3 +109,13 @@ def _is_path_only_diff(paths: Tuple[str, ...]) -> bool:
 
     except subprocess.CalledProcessError:
         return False
+
+
+def _get_internal_branch_specifier() -> Optional[str]:
+    direct_specifier = os.getenv("INTERNAL_COMPATIBILITY_BRANCH")
+    commit_message = safe_getenv("BUILDKITE_MESSAGE")
+    if direct_specifier:
+        return direct_specifier
+    else:
+        m = re.search(r"\[INTERNAL_COMPATIBILITY_BRANCH=(\S+)\]", commit_message)
+        return m.group(1) if m else None
