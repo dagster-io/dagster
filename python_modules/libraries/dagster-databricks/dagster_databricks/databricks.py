@@ -287,7 +287,8 @@ def poll_run_state(
 def wait_for_run_to_complete(client, log, databricks_run_id, poll_interval_sec, max_wait_time_sec):
     """Wait for a Databricks run to complete."""
     check.int_param(databricks_run_id, "databricks_run_id")
-    log.info("Waiting for Databricks run %s to complete..." % databricks_run_id)
+    databricks_url = client.client.jobs.get_run(databricks_run_id).get("run_page_url")
+    log.info("Waiting for Databricks run %s to complete... view at %s" % (databricks_run_id, databricks_url))
     start = time.time()
     while True:
         if poll_run_state(client, log, start, databricks_run_id, max_wait_time_sec):
