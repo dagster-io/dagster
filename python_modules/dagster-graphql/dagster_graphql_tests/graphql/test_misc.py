@@ -1,6 +1,7 @@
 import csv
 from collections import OrderedDict
 
+from dagster_graphql.schema.roots.mutation import execution_params_from_graphql
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from dagster import (
@@ -209,3 +210,34 @@ def test_production_query(graphql_context):
 
     assert not result.errors
     assert result.data
+
+
+def test_params_from_graphql():
+    selector = {
+        "repositoryName": "repo",
+        "repositoryLocationName": "rl",
+        "jobName": "job",
+    }
+    assert execution_params_from_graphql(
+        {
+            "selector": selector,
+        }
+    )
+    assert execution_params_from_graphql(
+        {
+            "selector": selector,
+            "runConfigData": "{}",
+        }
+    )
+    assert execution_params_from_graphql(
+        {
+            "selector": selector,
+            "runConfigData": "\n\n",
+        }
+    )
+    assert execution_params_from_graphql(
+        {
+            "selector": selector,
+            "runConfigData": "",
+        }
+    )
