@@ -125,7 +125,7 @@ If you want your containerized job to be available to Airflow operators running 
 
 ## Ingesting Airflow operators
 
-Dagster can convert Airflow operators to Dagster ops, for any Airflow operators that require no instance-wide configuration via `airflow.cfg`. Using <PyObject module="dagster_airflow" object="airflow_operator_to_op"/>, you can convert instantiated Airflow operators to be executed within a Dagster op. Optionally, you can pass in a list of Airflow connection objects utilized by the operator.
+Dagster can convert Airflow operators to Dagster ops for any Airflow operators that require no instance-wide configuration via `airflow.cfg`. Using <PyObject module="dagster_airflow" object="airflow_operator_to_op"/>, you can convert instantiated Airflow operators to be executed within a Dagster op. Optionally, you can pass in a list of Airflow connection objects utilized by the operator:
 
 ```python file=../../airflow_ingest/airflow_operator_to_op.py startafter=start_operator_to_op_1 endbefore=end_operator_to_op_1
 http_task = SimpleHttpOperator(task_id="http_task", method="GET", endpoint="images")
@@ -138,7 +138,7 @@ def my_http_job():
     dagster_op()
 ```
 
-In order to specify extra parameters to an instantiated Airflow connection, pass a JSON string into the `set_extra()` function of the Airflow connection object.
+To specify extra parameters to an instantiated Airflow connection, pass a JSON string into the `set_extra()` function of the Airflow connection object:
 
 ```python file=../../airflow_ingest/airflow_operator_to_op.py startafter=start_operator_to_op_2 endbefore=end_operator_to_op_2
 s3_conn = Connection(conn_id="s3_conn", conn_type="s3")
