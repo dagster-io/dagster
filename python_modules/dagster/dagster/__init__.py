@@ -15,6 +15,10 @@ sys.meta_path.insert(
             "dagster.check": "dagster._check",
             "dagster.cli": "dagster._cli",
             "dagster.config": "dagster._config",
+            "dagster.daemon": "dagster._daemon",
+            "dagster.generate": "dagster._generate",
+            "dagster.grpc": "dagster._grpc",
+            "dagster.loggers": "dagster._loggers",
         }
     ),
 )
