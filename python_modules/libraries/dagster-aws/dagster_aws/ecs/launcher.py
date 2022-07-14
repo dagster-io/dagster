@@ -225,25 +225,29 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         # Set cpu or memory overrides
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
-        overrides = self.get_overrides(run)
+        cpu_and_memory_overrides = self.get_cpu_and_memory_overrides(run)
+
+        container_overrides = [
+            {
+                "name": self.container_name,
+                "command": command,
+                # containerOverrides expects cpu/memory as integers
+                **{k: int(v) for k, v in cpu_and_memory_overrides.items()},
+            }
+        ]
+
+        overrides = {
+            "containerOverrides": container_overrides,
+            # taskOverrides expects cpu/memory as strings
+            **cpu_and_memory_overrides,
+        }
 
         # Run a task using the same network configuration as this processes's
         # task.
         response = self.ecs.run_task(
             taskDefinition=task_definition,
             cluster=metadata.cluster,
-            overrides={
-                "containerOverrides": [
-                    {
-                        "name": self.container_name,
-                        "command": command,
-                        # containerOverrides expects cpu/memory as integers
-                        **{k: int(v) for k, v in overrides.items()},
-                    }
-                ],
-                # taskOverrides expects cpu/memory as strings
-                **overrides,
-            },
+            overrides=overrides,
             networkConfiguration={
                 "awsvpcConfiguration": {
                     "subnets": metadata.subnets,
@@ -282,7 +286,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             cls=self.__class__,
         )
 
-    def get_overrides(self, run: PipelineRun) -> Dict[str, str]:
+    def get_cpu_and_memory_overrides(self, run: PipelineRun) -> Dict[str, str]:
         overrides = {}
 
         cpu = run.tags.get("ecs/cpu")
