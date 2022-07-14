@@ -5,13 +5,15 @@ description: Dagster can orchestrate dbt alongside other technologies.
 
 # Using dbt with Dagster
 
-Dagster orchestrates dbt alongside _other technologies_, so you can combine dbt with Spark, Python, etc. in a single workflow. Dagster's software-defined asset (SDA) abstractions make it simple to define data assets that depend on specific dbt models, or to define the computation required to compute the sources that your dbt models depend on.
+Dagster orchestrates dbt alongside other technologies, so you can combine dbt with Spark, Python, etc. in a single workflow. Dagster's [software-defined asset (SDA)](/concepts/assets/software-defined-assets) abstractions make it simple to define data assets that depend on specific dbt models, or to define the computation required to compute the sources that your dbt models depend on.
 
-This guide focuses on how to work with `dbt` models through the SDA framework, which we recommend for most use cases.
+This guide focuses on how to work with dbt models through the SDA framework, which we recommend for most use cases.
+
+---
 
 ## Dagster software-defined assets vs. dbt models
 
-A software-defined asset contains an asset key, a set of upstream asset keys, and an operation that is responsible for computing the asset from its upstream dependencies. Models defined in a `dbt` project are conceptually similar to Dagster's software-defined assets:
+A software-defined asset contains an asset key, a set of upstream asset keys, and an operation that is responsible for computing the asset from its upstream dependencies. Models defined in a dbt project are conceptually similar to Dagster's software-defined assets:
 
 - The asset key for a dbt model is (by default) the name of the model.
 - The upstream dependencies of a dbt model are defined with `ref` or `source` calls within the model's definition.
@@ -24,7 +26,9 @@ These similarities make it natural to interact with dbt models as SDAs. Dagster 
 - Define python computations that depend directly on tables updated using dbt
 - Track data lineage through dbt and your other tools
 
-### Loading dbt models from a dbt project
+---
+
+## Loading dbt models from a dbt project
 
 For smaller dbt projects, where compilation time is not a concern, the simplest way to load your dbt assets into Dagster is the following:
 
@@ -45,6 +49,8 @@ No match for startAfter value "start_load_assets_from_dbt_manifest"
 ```
 
 **Note:** if you make any changes to your dbt project that change the structure of the project (such as changing the dependencies of a model or adding a new one), you'll need to regenerate your manifest file for those changes to be reflected in Dagster.
+
+---
 
 ## Adding a resource
 
@@ -70,6 +76,8 @@ dbt_assets = with_resources(
     },
 )
 ```
+
+---
 
 ## Scheduling dbt jobs
 
@@ -100,6 +108,8 @@ def my_repo():
 
 Refer to the [Schedule documentation](/concepts/partitions-schedules-sensors/schedules#running-the-scheduler) for more info on running jobs on a schedule.
 
+---
+
 ## Understanding asset keys
 
 In Dagster, each asset has an asset key to identify it. Dagster automatically generates these keys for each dbt node in the project as well as the sources for each node.
@@ -128,7 +138,7 @@ sources:
       - name: orders
 ```
 
-### Adding a prefix to AssetKeys
+### Adding a prefix to asset keys
 
 A common pattern is to use the prefix of an asset key to indicate what database an asset is stored in. For example, you might want all of your assets stored in Snowflake to start with the prefix `snowflake`.
 
@@ -150,6 +160,8 @@ dbt_assets = load_assets_from_dbt_project(
 )
 ```
 
+---
+
 ## Defining downstream dependencies
 
 Dagster allows you to define assets that are downstream of specific dbt models. One property of dbt-based assets is that the external tool - in this case, dbt - handles storing each model in the database internally, rather than Dagster directly storing the tables that are updated.
@@ -169,8 +181,8 @@ def my_downstream_asset(my_dbt_model):
 
 The implementation of your IO manager depends on:
 
-    - The Python object you want to use to represent your table, and
-    - The database that dbt is writing tables to
+- The Python object you want to use to represent your table, and
+- The database that dbt is writing tables to
 
 A simple IO manager implementation that loads data from a dbt-managed table into a Pandas dataframe would look something like the following:
 
@@ -216,6 +228,8 @@ dbt_assets = with_resources(
     },
 )
 ```
+
+---
 
 ## Conclusion
 
