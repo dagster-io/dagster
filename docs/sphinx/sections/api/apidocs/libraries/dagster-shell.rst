@@ -16,3 +16,5 @@ APIs
 .. autofunction:: shell_op
 
 .. autofunction:: execute_shell_command
+
+.. autofunction:: execute_shell_script

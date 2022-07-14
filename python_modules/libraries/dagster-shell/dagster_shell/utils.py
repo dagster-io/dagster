@@ -29,14 +29,19 @@ OUTPUT_LOGGING_OPTIONS = ["STREAM", "BUFFER", "NONE"]
 
 
 def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=None):
-    """Execute a shell script file specified by the argument ``shell_command``. The script will be
+    """Execute a shell script file specified by the argument ``shell_script_path``. The script will be
     invoked via ``subprocess.Popen(['bash', shell_script_path], ...)``.
 
     In the Popen invocation, ``stdout=PIPE, stderr=STDOUT`` is used, and the combined stdout/stderr
     output is retrieved.
 
+    Examples:
+
+        .. literalinclude:: ../../../../../../python_modules/libraries/dagster-shell/dagster_shell_tests/example_shell_script_utility.py
+           :language: python
+
     Args:
-        shell_command (str): The shell command to execute
+        shell_script_path (str): The shell script to execute.
         output_logging (str): The logging mode to use. Supports STREAM, BUFFER, and NONE.
         log (Union[logging.Logger, DagsterLogManager]): Any logger which responds to .info()
         cwd (str, optional): Working directory for the shell command to use. Defaults to the
