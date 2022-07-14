@@ -2,8 +2,9 @@ import json
 
 from airflow.models import Connection
 from airflow.operators.http_operator import SimpleHttpOperator
-from dagster import job
 from dagster_airflow import airflow_operator_to_op
+
+from dagster import job
 
 # start_operator_to_op_1
 http_task = SimpleHttpOperator(task_id="http_task", method="GET", endpoint="images")
@@ -19,7 +20,7 @@ def my_http_job():
 # end_operator_to_op_1
 
 # start_operator_to_op_2
-s3_conn = Connection(conn_id=f"s3_conn", conn_type="s3")
+s3_conn = Connection(conn_id="s3_conn", conn_type="s3")
 s3_conn.set_extra(
     json.dumps(
         {

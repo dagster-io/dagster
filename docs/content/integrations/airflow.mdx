@@ -141,7 +141,7 @@ def my_http_job():
 In order to specify extra parameters to an instantiated Airflow connection, pass a JSON string into the `set_extra()` function of the Airflow connection object.
 
 ```python file=../../airflow_ingest/airflow_operator_to_op.py startafter=start_operator_to_op_2 endbefore=end_operator_to_op_2
-s3_conn = Connection(conn_id=f"s3_conn", conn_type="s3")
+s3_conn = Connection(conn_id="s3_conn", conn_type="s3")
 s3_conn.set_extra(
     json.dumps(
         {
