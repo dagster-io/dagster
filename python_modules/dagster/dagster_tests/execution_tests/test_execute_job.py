@@ -1,10 +1,10 @@
 import pytest
 
+import dagster._check as check
 from dagster import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
     Field,
-    check,
     execute_job,
     graph,
     job,
