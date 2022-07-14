@@ -7,7 +7,7 @@ from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import IStepContext, PlanOrchestrationContext
 from dagster.core.execution.plan.step import ExecutionStep
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.grpc.types import ExecuteStepArgs
+from dagster._grpc.types import ExecuteStepArgs
 
 
 class StepHandlerContext:

@@ -17,7 +17,7 @@ from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.test_utils import instance_for_test
-from dagster.loggers import colored_console_logger, json_console_logger
+from dagster._loggers import colored_console_logger, json_console_logger
 from dagster.utils.error import SerializableErrorInfo
 
 REGEX_UUID = r"[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}"

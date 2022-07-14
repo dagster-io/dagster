@@ -10,11 +10,11 @@ from dagster.core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshot,
     ExecutionPlanSnapshotErrorData,
 )
-from dagster.grpc.types import ExecutionPlanSnapshotArgs
+from dagster._grpc.types import ExecutionPlanSnapshotArgs
 from dagster.serdes import deserialize_as
 
 if TYPE_CHECKING:
-    from dagster.grpc.client import DagsterGrpcClient
+    from dagster._grpc.client import DagsterGrpcClient
 
 
 def sync_get_external_execution_plan_grpc(
@@ -29,7 +29,7 @@ def sync_get_external_execution_plan_grpc(
     known_state: Optional[KnownExecutionState] = None,
     instance: Optional[DagsterInstance] = None,
 ) -> ExecutionPlanSnapshot:
-    from dagster.grpc.client import DagsterGrpcClient
+    from dagster._grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
     check.inst_param(pipeline_origin, "pipeline_origin", ExternalPipelineOrigin)

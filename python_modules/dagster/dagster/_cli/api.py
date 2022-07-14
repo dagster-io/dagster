@@ -28,9 +28,9 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.test_utils import mock_system_timezone
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.utils import coerce_valid_log_level
-from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer
-from dagster.grpc.impl import core_execute_run
-from dagster.grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
+from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
+from dagster._grpc.impl import core_execute_run
+from dagster._grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
 from dagster.serdes import deserialize_as, serialize_dagster_namedtuple
 from dagster.seven import nullcontext
 from dagster.utils.error import serializable_error_info_from_exc_info

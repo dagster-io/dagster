@@ -13,7 +13,7 @@ from dagster.core.storage.pipeline_run import (
 )
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.core.workspace import IWorkspace
-from dagster.daemon.daemon import IntervalDaemon
+from dagster._daemon.daemon import IntervalDaemon
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 

@@ -39,7 +39,7 @@ from dagster.core.errors import (
     DagsterInvalidDefinitionError,
 )
 from dagster.core.test_utils import instance_for_test
-from dagster.loggers import json_console_logger
+from dagster._loggers import json_console_logger
 
 
 def get_ops():

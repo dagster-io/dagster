@@ -16,7 +16,7 @@ from dagster.core.launcher.base import (
     WorkerStatus,
 )
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.grpc.types import ExecuteRunArgs
+from dagster._grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass
 
 from ..secretsmanager import get_secrets_from_arns

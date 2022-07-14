@@ -9,8 +9,8 @@ from dagster.core.host_representation.grpc_server_registry import ProcessGrpcSer
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import GRPC_INFO_TAG
-from dagster.grpc.client import DagsterGrpcClient
-from dagster.grpc.types import CancelExecutionRequest, ExecuteExternalPipelineArgs, StartRunResult
+from dagster._grpc.client import DagsterGrpcClient
+from dagster._grpc.types import CancelExecutionRequest, ExecuteExternalPipelineArgs, StartRunResult
 from dagster.serdes import ConfigurableClass, deserialize_as, deserialize_json_to_dagster_namedtuple
 from dagster.utils import merge_dicts
 

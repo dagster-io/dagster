@@ -16,7 +16,7 @@ from dagster.core.test_utils import instance_for_test, poll_for_finished_run, po
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import GrpcServerTarget, PythonFileTarget
-from dagster.grpc.server import GrpcServerProcess
+from dagster._grpc.server import GrpcServerProcess
 from dagster.utils import find_free_port, merge_dicts
 
 

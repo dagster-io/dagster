@@ -14,7 +14,7 @@ from dagster.core.test_utils import (
     instance_for_test,
 )
 from dagster.core.workspace.load_target import EmptyWorkspaceTarget
-from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
+from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 
 
 @contextmanager

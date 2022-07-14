@@ -43,7 +43,7 @@ if TYPE_CHECKING:
         RunsFilter,
         TagBucket,
     )
-    from dagster.daemon.types import DaemonHeartbeat
+    from dagster._daemon.types import DaemonHeartbeat
 
 
 class CompositeStorage(DagsterStorage, ConfigurableClass):

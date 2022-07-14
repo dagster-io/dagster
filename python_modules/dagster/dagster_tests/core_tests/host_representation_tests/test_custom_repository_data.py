@@ -9,7 +9,7 @@ from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace import WorkspaceProcessContext
 from dagster.core.workspace.load_target import GrpcServerTarget
-from dagster.grpc.server import GrpcServerProcess
+from dagster._grpc.server import GrpcServerProcess
 
 
 def define_do_something(num_calls):

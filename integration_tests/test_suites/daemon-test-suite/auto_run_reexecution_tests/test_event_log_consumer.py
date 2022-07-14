@@ -4,7 +4,7 @@ import time
 from dagster import DagsterEvent, DagsterEventType, EventLogEntry
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import create_run_for_test
-from dagster.daemon.auto_run_reexecution.event_log_consumer import (
+from dagster._daemon.auto_run_reexecution.event_log_consumer import (
     EventLogConsumerDaemon,
     _get_new_cursor,
 )

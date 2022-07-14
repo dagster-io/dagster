@@ -41,7 +41,7 @@ from dagster.core.host_representation.origin import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryPythonOrigin
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
-from dagster.grpc.impl import (
+from dagster._grpc.impl import (
     get_external_schedule_execution,
     get_external_sensor_execution,
     get_notebook_data,
@@ -50,7 +50,7 @@ from dagster.grpc.impl import (
     get_partition_set_execution_param_data,
     get_partition_tags,
 )
-from dagster.grpc.types import GetCurrentImageResult
+from dagster._grpc.types import GetCurrentImageResult
 from dagster.serdes import deserialize_as
 from dagster.seven.compat.pendulum import PendulumDateTime
 from dagster.utils import merge_dicts
@@ -267,7 +267,7 @@ class RepositoryLocation(AbstractContextManager):
 
 class InProcessRepositoryLocation(RepositoryLocation):
     def __init__(self, origin: InProcessRepositoryLocationOrigin):
-        from dagster.grpc.server import LoadedRepositories
+        from dagster._grpc.server import LoadedRepositories
 
         self._origin = check.inst_param(origin, "origin", InProcessRepositoryLocationOrigin)
 
@@ -345,7 +345,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             ),
         )
 
-        from dagster.grpc.impl import get_external_pipeline_subset_result
+        from dagster._grpc.impl import get_external_pipeline_subset_result
 
         return get_external_pipeline_subset_result(
             self.get_reconstructable_pipeline(selector.pipeline_name),
@@ -500,7 +500,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         watch_server: Optional[bool] = True,
         grpc_server_registry: Optional[GrpcServerRegistry] = None,
     ):
-        from dagster.grpc.client import DagsterGrpcClient, client_heartbeat_thread
+        from dagster._grpc.client import DagsterGrpcClient, client_heartbeat_thread
 
         self._origin = check.inst_param(origin, "origin", RepositoryLocationOrigin)
 

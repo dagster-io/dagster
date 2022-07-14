@@ -44,7 +44,12 @@ from dagster.core.definitions.executor_definition import (
 )
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster.core.errors import DagsterInvalidSubsetError
+<<<<<<< HEAD
 from dagster.loggers import default_loggers
+=======
+from dagster.legacy import solid
+from dagster._loggers import default_loggers
+>>>>>>> 6d8f466b59 (renames)
 
 # pylint: disable=comparison-with-callable
 

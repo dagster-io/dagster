@@ -4,9 +4,9 @@ import time
 
 import pytest
 
-from dagster.grpc.client import DagsterGrpcClient
-from dagster.grpc.server import open_server_process
-from dagster.grpc.server_watcher import create_grpc_watch_thread
+from dagster._grpc.client import DagsterGrpcClient
+from dagster._grpc.server import open_server_process
+from dagster._grpc.server_watcher import create_grpc_watch_thread
 from dagster.serdes.ipc import interrupt_ipc_subprocess_pid
 from dagster.utils import find_free_port
 

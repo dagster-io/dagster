@@ -31,9 +31,9 @@ from dagster.core.test_utils import (
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace import WorkspaceProcessContext
 from dagster.core.workspace.load_target import GrpcServerTarget, PythonFileTarget
-from dagster.grpc.client import DagsterGrpcClient
-from dagster.grpc.server import GrpcServerProcess
-from dagster.grpc.types import CancelExecutionRequest
+from dagster._grpc.client import DagsterGrpcClient
+from dagster._grpc.server import GrpcServerProcess
+from dagster._grpc.types import CancelExecutionRequest
 
 default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 

@@ -17,8 +17,8 @@ from dagster.core.test_utils import (
     instance_for_test,
 )
 from dagster.core.workspace.load_target import EmptyWorkspaceTarget
-from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.monitoring.monitoring_daemon import monitor_started_run, monitor_starting_run
+from dagster._daemon import get_default_daemon_logger
+from dagster._daemon.monitoring.monitoring_daemon import monitor_started_run, monitor_starting_run
 from dagster.serdes import ConfigurableClass
 
 

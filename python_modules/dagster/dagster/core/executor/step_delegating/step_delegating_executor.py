@@ -13,7 +13,7 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.plan.step import ExecutionStep
 from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
-from dagster.grpc.types import ExecuteStepArgs
+from dagster._grpc.types import ExecuteStepArgs
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from ..base import Executor

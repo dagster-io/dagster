@@ -1,5 +1,5 @@
 from dagster.core.definitions.run_status_sensor_definition import RunStatusSensorCursor
-from dagster.daemon.types import DaemonHeartbeat
+from dagster._daemon.types import DaemonHeartbeat
 from dagster.serdes import deserialize_as, deserialize_json_to_dagster_namedtuple
 from dagster.utils.error import SerializableErrorInfo
 

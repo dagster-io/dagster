@@ -37,7 +37,7 @@ from dagster.core.storage.memoizable_io_manager import versioned_filesystem_io_m
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.grpc.server import GrpcServerProcess
+from dagster._grpc.server import GrpcServerProcess
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.version import __version__
 
