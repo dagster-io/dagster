@@ -6,7 +6,7 @@ from dagster import BoolSource, Field, IntSource, StringSource
 from dagster.config.config_type import ConfigType, ConfigTypeKind
 from dagster.core.definitions.configurable import ConfigurableDefinition
 from dagster.serdes import ConfigurableClass
-from sphinx.ext.autodoc import DataDocumenter   # pylint: disable=import-error,no-name-in-module
+from sphinx.ext.autodoc import DataDocumenter  # pylint: disable=import-error,no-name-in-module
 
 
 def type_repr(config_type: ConfigType) -> str:
@@ -37,6 +37,8 @@ def type_repr(config_type: ConfigType) -> str:
         return "strict dict"
     elif config_type.kind == ConfigTypeKind.PERMISSIVE_SHAPE:
         return "permissive dict"
+    elif config_type.kind == ConfigTypeKind.MAP:
+        return "dict"
     elif config_type.kind == ConfigTypeKind.SCALAR_UNION:
         return (
             f"Union[{type_repr(config_type.scalar_type)}, {type_repr(config_type.non_scalar_type)}]"
@@ -97,7 +99,9 @@ class ConfigurableDocumenter(DataDocumenter):
     directivetype = "data"
 
     @classmethod
-    def can_document_member(cls, member: Any, _membername: str, _isattr: bool, _parent: Any) -> bool:
+    def can_document_member(
+        cls, member: Any, _membername: str, _isattr: bool, _parent: Any
+    ) -> bool:
         return isinstance(member, ConfigurableDefinition) or isinstance(member, ConfigurableClass)
 
     def add_content(self, more_content, no_docstring: bool = False) -> None:
