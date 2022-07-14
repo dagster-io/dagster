@@ -44,6 +44,7 @@
 
 * The Hacker News example now uses stable 0.15+ asset APIs, instead of the deprecated 0.14.x asset APIs.
 * Fixed the build command in the instructions for contributing docs changes.
+* [dagster-dbt] The dagster-dbt integration guide now contains information on using dbt with Software-Defined Assets.
 
 # 0.15.5
 
