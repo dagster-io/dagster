@@ -10,10 +10,10 @@ if TYPE_CHECKING:
     from .pipeline_definition import PipelineDefinition
 
 
-class IJob(ABC):
+class IPipeline(ABC):
     """
-    IJob is a wrapper interface for JobDefinitions to be used as parameters to Dagster's
-    core execution APIs.  This enables these execution APIs to operate on both in memory job
+    IPipeline is a wrapper interface for PipelineDefinitions to be used as parameters to Dagster's
+    core execution APIs.  This enables these execution APIs to operate on both in memory pipeline
     definitions to be executed in the current process (InMemoryPipeline) as well as definitions that
     can be reconstructed and executed in a different process (ReconstructablePipeline).
     """
@@ -27,7 +27,7 @@ class IJob(ABC):
         self,
         solid_selection: Optional[List[str]] = None,
         asset_selection: Optional[FrozenSet[AssetKey]] = None,
-    ) -> "IJob":
+    ) -> "IPipeline":
         pass
 
     @property
@@ -45,14 +45,11 @@ class IJob(ABC):
         self,
         solids_to_execute: Optional[FrozenSet[str]] = None,
         asset_selection: Optional[FrozenSet[AssetKey]] = None,
-    ) -> "IJob":
+    ) -> "IPipeline":
         pass
 
 
-IPipeline = IJob
-
-
-class InMemoryPipeline(IJob, object):
+class InMemoryPipeline(IPipeline, object):
     def __init__(
         self, pipeline_def, solid_selection=None, solids_to_execute=None, asset_selection=None
     ):

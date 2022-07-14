@@ -25,7 +25,7 @@ from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster._utils import frozenlist, make_readonly_value
 
 from .events import AssetKey
-from .pipeline_base import IJob
+from .pipeline_base import IPipeline
 
 if TYPE_CHECKING:
     from .asset_group import AssetGroup
@@ -120,9 +120,9 @@ class ReconstructableRepository(
 
 
 @whitelist_for_serdes
-class ReconstructableJob(
+class ReconstructablePipeline(
     NamedTuple(
-        "_ReconstructableJob",
+        "_ReconstructablePipeline",
         [
             ("repository", ReconstructableRepository),
             ("pipeline_name", str),
@@ -131,9 +131,9 @@ class ReconstructableJob(
             ("asset_selection", Optional[FrozenSet[AssetKey]]),
         ],
     ),
-    IJob,
+    IPipeline,
 ):
-    """Defines a reconstructable job. When your pipeline/job must cross process boundaries,
+    """Defines a reconstructable pipeline. When your pipeline/job must cross process boundaries,
     Dagster must know how to reconstruct the pipeline/job on the other side of the process boundary.
 
     Args:
@@ -332,7 +332,7 @@ class ReconstructableJob(
         return None
 
 
-ReconstructablePipeline = ReconstructableJob
+ReconstructableJob = ReconstructablePipeline
 
 
 def reconstructable(target):

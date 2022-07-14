@@ -1,12 +1,12 @@
 import sys
 from contextlib import contextmanager
-from typing import Any, Dict, FrozenSet, Iterator, List, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, FrozenSet, Iterator, List, Mapping, Optional, Tuple, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions import IPipeline, JobDefinition, PipelineDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import PipelineSubsetDefinition
-from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructablePipeline
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.context.system import PlanOrchestrationContext
@@ -32,7 +32,7 @@ from .context_creation_pipeline import (
     orchestration_context_event_generator,
     scoped_pipeline_context,
 )
-from .execute_job_result import ExecuteJobResultContext
+from .execute_job_result import ExecuteJobResult
 from .results import PipelineExecutionResult
 
 ## Brief guide to the execution APIs
@@ -170,7 +170,7 @@ def execute_run(
     instance: DagsterInstance,
     raise_on_error: bool = False,
     _from_execute_job: bool = False,
-) -> PipelineExecutionResult:
+) -> Union[PipelineExecutionResult, ExecuteJobResult]:
     """Executes an existing pipeline run synchronously.
 
     Synchronous version of execute_run_iterator.
@@ -261,7 +261,7 @@ def execute_run(
 
     pipeline_def = pipeline.get_definition()
     if _from_execute_job:
-        return ExecuteJobResultContext(
+        return ExecuteJobResult(
             job_def=pipeline.get_definition(),
             reconstruct_context=scoped_pipeline_context(
                 execution_plan,
@@ -379,7 +379,7 @@ def execute_job(
     tags: Optional[Dict[str, Any]] = None,
     raise_on_error: bool = True,
     op_selection: Optional[List[str]] = None,
-):
+) -> ExecuteJobResult:
     """Execute a pipeline synchronously.
 
     Users will typically call this API when testing pipeline execution, or running standalone
@@ -413,10 +413,10 @@ def execute_job(
       :py:class:`JobExecutionResult`: The result of job execution.
     """
 
-    check.inst_param(job, "job", ReconstructableJob)
+    check.inst_param(job, "job", ReconstructablePipeline)
     check.inst_param(instance, "instance", DagsterInstance)
 
-    return _logged_execute_pipeline(
+    result = _logged_execute_pipeline(
         job,
         instance=instance,
         run_config=run_config,
@@ -425,6 +425,7 @@ def execute_job(
         raise_on_error=raise_on_error,
         _from_execute_job=True,
     )
+    return cast(ExecuteJobResult, result)
 
 
 def execute_pipeline(
@@ -496,7 +497,7 @@ def _logged_execute_pipeline(
     solid_selection: Optional[List[str]] = None,
     raise_on_error: bool = True,
     _from_execute_job: bool = False,
-) -> PipelineExecutionResult:
+) -> Union[PipelineExecutionResult, ExecuteJobResult]:
     check.inst_param(instance, "instance", DagsterInstance)
     (
         pipeline,
@@ -524,7 +525,7 @@ def _logged_execute_pipeline(
         solids_to_execute=solids_to_execute,
         tags=tags,
         pipeline_code_origin=(
-            pipeline.get_python_origin() if isinstance(pipeline, ReconstructableJob) else None
+            pipeline.get_python_origin() if isinstance(pipeline, ReconstructablePipeline) else None
         ),
     )
 
@@ -637,12 +638,13 @@ def reexecute_pipeline(
             parent_run_id=parent_pipeline_run.run_id,
         )
 
-        return execute_run(
+        result = execute_run(
             pipeline,
             pipeline_run,
             execute_instance,
             raise_on_error=raise_on_error,
         )
+        return cast(PipelineExecutionResult, result)
 
 
 def reexecute_pipeline_iterator(

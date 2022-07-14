@@ -50,18 +50,14 @@ class ExecuteInProcessResult(ExecutionResult):
         return self._dagster_run
 
     @property
-    def all_events(self) -> DagsterRun:
+    def all_events(self) -> Sequence[DagsterEvent]:
+        """List[DagsterEvent]: All dagster events emitted during execution."""
+
         return self._event_list
 
     @property
     def run_id(self) -> str:
         return self.dagster_run.run_id
-
-    @property
-    def all_events(self) -> Sequence[DagsterEvent]:
-        """List[DagsterEvent]: All dagster events emitted during in-process execution."""
-
-        return self._event_list
 
     @property
     def run_id(self) -> str:

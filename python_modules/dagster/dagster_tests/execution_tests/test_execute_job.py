@@ -1,7 +1,16 @@
 import pytest
 
-from dagster import DagsterInvalidConfigError, Field, execute_job, graph, job, op, reconstructable
-from dagster.check import CheckError
+from dagster import (
+    DagsterInvalidConfigError,
+    DagsterInvariantViolationError,
+    Field,
+    check,
+    execute_job,
+    graph,
+    job,
+    op,
+    reconstructable,
+)
 from dagster.core.test_utils import instance_for_test
 
 
@@ -51,24 +60,24 @@ def emit_error_job():
 
 
 def test_basic_success(instance):
-    with execute_job(reconstructable(emit_job), instance) as result:
-        assert result.success
+    result = execute_job(reconstructable(emit_job), instance)
+    assert result.success
 
 
 def test_no_raise_on_error(instance):
-    with execute_job(
+    result = execute_job(
         reconstructable(emit_error_job),
         instance,
         raise_on_error=False,
-    ) as result:
-        assert not result.success
+    )
+    assert not result.success
 
 
 def test_tags_for_run(instance):
-    with execute_job(reconstructable(emit_job), instance, tags={"foo": "bar"}) as result:
-        assert result.success
-        run = instance.get_run_by_id(result.run_id)
-        assert run.tags == {"foo": "bar"}
+    result = execute_job(reconstructable(emit_job), instance, tags={"foo": "bar"})
+    assert result.success
+    run = instance.get_run_by_id(result.run_id)
+    assert run.tags == {"foo": "bar"}
 
 
 def test_run_config(instance):
@@ -88,6 +97,12 @@ def test_run_config(instance):
         )
 
 
+def test_retrieve_outputs_not_context_manager(instance):
+    result = execute_job(reconstructable(emit_job), instance)
+    with pytest.raises(DagsterInvariantViolationError, match="must be opened as a context manager"):
+        result.output_for_node("nested")
+
+
 def test_op_selection(instance):
     with execute_job(
         reconstructable(emit_job),
@@ -105,5 +120,5 @@ def test_op_selection(instance):
     ) as result:
         assert result.success
         assert result.output_for_node("nested.returns_six") == 6
-        with pytest.raises(CheckError):
+        with pytest.raises(check.CheckError):
             result.output_for_node("conditional_return")

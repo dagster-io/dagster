@@ -12,6 +12,7 @@ from dagster.core.events import (
     DagsterEventType,
     StepMaterializationData,
 )
+from dagster.core.execution.context.system import PlanExecutionContext
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import StepKind
 from dagster.core.execution.plan.utils import build_resources_for_manager
@@ -27,25 +28,22 @@ class ExecuteJobResultContext:
         self._event_list = event_list
         self._dagster_run = dagster_run
 
+
+class ExecuteJobResult(ExecutionResult):
+    def __init__(self, job_def, reconstruct_context, event_list, dagster_run):
+        self._job_def = job_def
+        self._reconstruct_context = reconstruct_context
+        self._context = None
+        self._event_list = event_list
+        self._dagster_run = dagster_run
+
     def __enter__(self) -> "ExecuteJobResult":
         context = self._reconstruct_context.__enter__()
-        return ExecuteJobResult(
-            job_def=self._job_def,
-            context=context,
-            event_list=self._event_list,
-            dagster_run=self._dagster_run,
-        )
+        self._context = context
+        return self
 
     def __exit__(self, *exc):
         return self._reconstruct_context.__exit__(*exc)
-
-
-class ExecuteJobResult(ExecutionResult):
-    def __init__(self, job_def, context, event_list, dagster_run):
-        self._job_def = job_def
-        self.context = context
-        self._event_list = event_list
-        self._dagster_run = dagster_run
 
     @property
     def job_def(self) -> JobDefinition:
@@ -56,22 +54,14 @@ class ExecuteJobResult(ExecutionResult):
         return self._dagster_run
 
     @property
-    def all_events(self) -> DagsterRun:
+    def all_events(self) -> Sequence[DagsterEvent]:
         return self._event_list
 
     @property
     def run_id(self) -> str:
         return self.dagster_run.run_id
 
-    @property
-    def all_events(self) -> Sequence[DagsterEvent]:
-        """List[DagsterEvent]: All dagster events emitted during in-process execution."""
-
-        return self._event_list
-
-    def compute_events_for_handle(
-        self, handle: NodeHandle
-    ) -> Sequence[Union[Materialization, AssetMaterialization]]:
+    def compute_events_for_handle(self, handle: NodeHandle) -> Sequence[DagsterEvent]:
         return [
             event
             for event in self._filter_events_by_handle(handle)
@@ -79,6 +69,10 @@ class ExecuteJobResult(ExecutionResult):
         ]
 
     def _get_output_for_handle(self, handle: NodeHandle, output_name: str) -> Any:
+        if not self._context:
+            raise DagsterInvariantViolationError(
+                "In order to access output objects, the result of `execute_job` must be opened as a context manager: 'with execute_job(...) as result:"
+            )
         found = False
         result = None
         for compute_step_event in self.compute_events_for_handle(handle):
@@ -88,11 +82,11 @@ class ExecuteJobResult(ExecutionResult):
             ):
                 found = True
                 output = compute_step_event.step_output_data
-                step = self.context.execution_plan.get_step_by_key(compute_step_event.step_key)
+                step = self._context.execution_plan.get_step_by_key(compute_step_event.step_key)
                 dagster_type = (
                     self.job_def.get_solid(handle).output_def_named(output_name).dagster_type
                 )
-                value = self._get_value(self.context.for_step(step), output, dagster_type)
+                value = self._get_value(self._context.for_step(step), output, dagster_type)
                 check.invariant(
                     not (output.mapping_key and step.get_mapping_key()),
                     "Not set up to handle mapped outputs downstream of mapped steps",
@@ -111,10 +105,9 @@ class ExecuteJobResult(ExecutionResult):
         if found:
             return result
 
+        node = self.job_def.get_solid(handle)
         raise DagsterInvariantViolationError(
-            (
-                "Did not find result {output_name} in solid {self.solid.name} " "execution result"
-            ).format(output_name=output_name, self=self)
+            f"Did not find result {output_name} in {node.describe_node()} " "execution result"
         )
 
     def _get_value(self, context, step_output_data, dagster_type):

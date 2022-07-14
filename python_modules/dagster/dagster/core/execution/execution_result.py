@@ -109,7 +109,7 @@ class ExecutionResult(ABC):
         )
 
         # Get output from origin node
-        return self._get_output_for_handle(origin_handle, origin_output_def.name)
+        return self._get_output_for_handle(check.not_none(origin_handle), origin_output_def.name)
 
     def output_for_node(self, node_str: str, output_name: str = DEFAULT_OUTPUT) -> Any:
         """Retrieves output value with a particular name from the in-process run of the job.
