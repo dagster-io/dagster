@@ -22,8 +22,7 @@ from dagster.core.definitions.metadata import (
     normalize_metadata,
 )
 from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
-from dagster.core.types.dagster_type import (
-    BuiltinScalarDagsterType,
+from dagster.core.types.dagster_type import (  # BuiltinScalarDagsterType,
     DagsterType,
     resolve_dagster_type,
 )
@@ -41,6 +40,8 @@ T = TypeVar("T")
 # unfortunately since type_check functions need TypeCheckContext which is only available
 # at runtime, we can only check basic types before runtime
 def _check_default_value(input_name: str, dagster_type: DagsterType, default_value: T) -> T:
+    from dagster.core.types.dagster_type import BuiltinScalarDagsterType
+
     if default_value is not NoValueSentinel:
         if dagster_type.is_nothing:
             raise DagsterInvalidDefinitionError(
