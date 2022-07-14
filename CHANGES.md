@@ -13,6 +13,9 @@
 * You can now apply a group name to assets produced with the `@multi_asset` decorator, either by supplying a `group_name` argument (which will apply to all of the output assets), or by setting the `group_name` argument on individual `AssetOut`s.
 * `InputContext` and `OutputContext` now each have an `asset_partitions_def` property, which returns the `PartitionsDefinition` of the asset that’s being loaded or stored.
 * `build_schedule_from_partitioned_job` now raises a more informative error when provided a non-partitioned asset job
+* `PartitionMapping`, `IdentityPartitionMapping`, `AllPartitionMapping`, and `LastPartitionMapping` are exposed at the top-level `dagster` package. They're currently marked experimental.
+* When a non-partitioned asset depends on a partitioned asset, you can now control which partitions of the upstream asset are used by the downstream asset, by supplying a `PartitionMapping`.
+* You can now set `PartitionMappings` on `AssetIn`.
 * [dagit] Made performance improvements to the loading of the partitions and backfill pages.
 * [dagit] The Global Asset Graph is back by popular demand, and can be reached via a new “View global asset lineage ”link on asset group and asset catalog pages! The global graph keeps asset in the same group visually clustered together and the query bar allows you to visualize a custom slice of your asset graph.
 * [dagit] Simplified the Content Security Policy and removed `frame-ancestors` restriction.
