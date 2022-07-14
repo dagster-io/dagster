@@ -134,7 +134,7 @@ def _get_node_group_name(node_info: Mapping[str, Any]) -> Optional[str]:
 def _get_node_description(node_info):
     code_block = textwrap.indent(node_info["raw_sql"], "    ")
     description_sections = [
-        node_info["description"],
+        node_info["description"] or f"dbt {node_info['resource_type']} {node_info['name']}",
         f"#### Raw SQL:\n```\n{code_block}\n```",
     ]
     return "\n\n".join(filter(None, description_sections))
@@ -283,7 +283,12 @@ def _dbt_nodes_to_assets(
 
     package_name: str = ""
 
-    deps = _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types=["model"])
+    if use_build_command:
+        deps = _get_deps(
+            dbt_nodes, selected_unique_ids, asset_resource_types=["model", "seed", "snapshot"]
+        )
+    else:
+        deps = _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types=["model"])
 
     for unique_id, parent_unique_ids in deps.items():
         node_info = dbt_nodes[unique_id]
