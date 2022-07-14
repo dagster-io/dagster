@@ -78,7 +78,12 @@ def test_datahub_kafka_emitter_resource():
     context = build_op_context(
         resources={
             "datahub": datahub_kafka_emitter.configured(
-                {"connection": {"bootstrap": "foobar:9092", "schema_registry_url": "http://foobar:8081"}}
+                {
+                    "connection": {
+                        "bootstrap": "foobar:9092",
+                        "schema_registry_url": "http://foobar:8081",
+                    }
+                }
             )
         }
     )
