@@ -472,11 +472,13 @@ class AssetLayer:
     def from_graph(graph_def: GraphDefinition) -> "AssetLayer":
         """Scrape asset info off of InputDefinition/OutputDefinition instances"""
         check.inst_param(graph_def, "graph_def", GraphDefinition)
-        asset_by_input, asset_by_output, asset_deps, io_manager_by_asset = _asset_mappings_for_node(
+        _, asset_by_output, asset_deps, io_manager_by_asset = _asset_mappings_for_node(
             graph_def, None
         )
         return AssetLayer(
-            asset_keys_by_node_input_handle=asset_by_input,
+            # we ignore InputDef<>AssetKey mappings in the AssetLayer to avoid
+            # changing input loading behavior for non-SDA JobDefinitions.
+            asset_keys_by_node_input_handle={},
             asset_info_by_node_output_handle=asset_by_output,
             asset_deps=asset_deps,
             io_manager_keys_by_asset_key=io_manager_by_asset,
