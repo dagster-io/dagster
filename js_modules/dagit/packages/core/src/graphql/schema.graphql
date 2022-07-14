@@ -1988,7 +1988,12 @@ type Sensors {
   results: [Sensor!]!
 }
 
-union InstigationStateOrError = InstigationState | PythonError
+union InstigationStateOrError = InstigationState | InstigationStateNotFoundError | PythonError
+
+type InstigationStateNotFoundError implements Error {
+  message: String!
+  name: String!
+}
 
 """
 This type represents the fields necessary to identify a schedule or sensor.

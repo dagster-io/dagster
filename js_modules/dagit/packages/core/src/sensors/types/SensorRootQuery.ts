@@ -10,7 +10,7 @@ import { SensorSelector, InstigationType, InstigationStatus, RunStatus, Instigat
 // ====================================================
 
 export interface SensorRootQuery_sensorOrError_SensorNotFoundError {
-  __typename: "SensorNotFoundError" | "UnauthorizedError" | "PythonError";
+  __typename: "SensorNotFoundError" | "UnauthorizedError";
 }
 
 export interface SensorRootQuery_sensorOrError_Sensor_nextTick {
@@ -111,7 +111,20 @@ export interface SensorRootQuery_sensorOrError_Sensor {
   metadata: SensorRootQuery_sensorOrError_Sensor_metadata;
 }
 
-export type SensorRootQuery_sensorOrError = SensorRootQuery_sensorOrError_SensorNotFoundError | SensorRootQuery_sensorOrError_Sensor;
+export interface SensorRootQuery_sensorOrError_PythonError_causes {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface SensorRootQuery_sensorOrError_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  causes: SensorRootQuery_sensorOrError_PythonError_causes[];
+}
+
+export type SensorRootQuery_sensorOrError = SensorRootQuery_sensorOrError_SensorNotFoundError | SensorRootQuery_sensorOrError_Sensor | SensorRootQuery_sensorOrError_PythonError;
 
 export interface SensorRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes {
   __typename: "PythonError";
