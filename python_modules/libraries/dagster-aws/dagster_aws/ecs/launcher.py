@@ -1,7 +1,7 @@
 import warnings
 from collections import namedtuple
 from contextlib import suppress
-from typing import Dict
+from typing import Any, Dict
 
 import boto3
 from botocore.exceptions import ClientError
@@ -236,7 +236,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             }
         ]
 
-        overrides = {
+        overrides: Dict[str, Any] = {
             "containerOverrides": container_overrides,
             # taskOverrides expects cpu/memory as strings
             **cpu_and_memory_overrides,
