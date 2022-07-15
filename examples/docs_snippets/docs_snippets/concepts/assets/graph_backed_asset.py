@@ -3,7 +3,6 @@ from unittest import mock
 from pandas import DataFrame
 
 from dagster import (
-    AssetGroup,
     AssetKey,
     AssetsDefinition,
     GraphOut,
@@ -16,6 +15,7 @@ from dagster import (
     op,
     repository,
 )
+from dagster.legacy import AssetGroup
 
 
 def create_db_connection():

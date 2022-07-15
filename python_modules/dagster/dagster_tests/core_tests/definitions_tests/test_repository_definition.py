@@ -5,7 +5,6 @@ from typing import Sequence
 import pytest
 
 from dagster import (
-    AssetGroup,
     AssetKey,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
@@ -43,7 +42,7 @@ from dagster.core.definitions.executor_definition import (
 )
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster.core.errors import DagsterInvalidSubsetError
-from dagster.legacy import pipeline, solid
+from dagster.legacy import AssetGroup, pipeline, solid
 from dagster.loggers import default_loggers
 
 # pylint: disable=comparison-with-callable

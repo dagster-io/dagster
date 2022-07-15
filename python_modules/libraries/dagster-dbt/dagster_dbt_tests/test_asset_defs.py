@@ -9,7 +9,6 @@ from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliHand
 from dagster_dbt.types import DbtOutput
 
 from dagster import (
-    AssetGroup,
     AssetIn,
     AssetKey,
     IOManager,
@@ -20,6 +19,7 @@ from dagster import (
     repository,
 )
 from dagster.core.definitions import build_assets_job
+from dagster.legacy import AssetGroup
 from dagster.utils import file_relative_path
 
 

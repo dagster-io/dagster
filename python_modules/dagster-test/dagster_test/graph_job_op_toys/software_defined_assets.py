@@ -1,7 +1,8 @@
 # pylint: disable=redefined-outer-name
 import time
 
-from dagster import AssetGroup, AssetKey, IOManager, IOManagerDefinition, SourceAsset, asset
+from dagster import AssetKey, IOManager, IOManagerDefinition, SourceAsset, asset
+from dagster.legacy import AssetGroup
 
 sfo_q2_weather_sample = SourceAsset(key=AssetKey("sfo_q2_weather_sample"))
 

@@ -9,7 +9,6 @@ from dagster_azure.adls2.resources import adls2_resource
 from dagster_azure.blob import create_blob_client
 
 from dagster import (
-    AssetGroup,
     AssetIn,
     AssetKey,
     DagsterInstance,
@@ -34,6 +33,7 @@ from dagster.core.execution.api import execute_plan
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
+from dagster.legacy import AssetGroup
 
 
 def fake_io_manager_factory(io_manager):

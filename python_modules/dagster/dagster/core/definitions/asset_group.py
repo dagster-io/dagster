@@ -81,7 +81,8 @@ class AssetGroup:
 
         .. code-block:: python
 
-            from dagster import AssetGroup, asset, AssetIn, AssetKey, SourceAsset, resource
+            from dagster import asset, AssetIn, AssetKey, SourceAsset, resource
+            from dagster.legacy import AssetGroup
 
             source_asset = SourceAsset("source")
 
@@ -186,7 +187,7 @@ class AssetGroup:
 
             .. code-block:: python
 
-                from dagster import AssetGroup
+                from dagster.legacy import AssetGroup
 
                 the_asset_group = AssetGroup(...)
 

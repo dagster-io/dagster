@@ -1,1 +1,1 @@
-from dagster.core.definitions import pipeline, solid
+from dagster.core.definitions import AssetGroup, pipeline, solid

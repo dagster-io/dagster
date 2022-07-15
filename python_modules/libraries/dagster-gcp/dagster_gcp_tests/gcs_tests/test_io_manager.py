@@ -4,7 +4,6 @@ from dagster_gcp.gcs.resources import gcs_resource
 from google.cloud import storage  # type: ignore
 
 from dagster import (
-    AssetGroup,
     AssetsDefinition,
     DagsterInstance,
     DynamicOut,
@@ -32,6 +31,7 @@ from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
+from dagster.legacy import AssetGroup
 
 
 @resource

@@ -19,7 +19,6 @@ from dagster_graphql.test.utils import (
 
 from dagster import (
     Any,
-    AssetGroup,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
@@ -96,7 +95,7 @@ from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import default_mode_def_for_test, today_at_midnight
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import PythonFileTarget
-from dagster.legacy import pipeline, solid
+from dagster.legacy import AssetGroup, pipeline, solid
 from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, segfault
 
