@@ -1,8 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Tab, Tabs, Page} from '@dagster-io/ui';
+import {Box, Tab, Tabs, Page, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -48,7 +49,18 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
       {({sensorOrError, instance}) => {
-        if (sensorOrError.__typename !== 'Sensor') {
+        if (sensorOrError.__typename === 'SensorNotFoundError') {
+          return (
+            <Box padding={{vertical: 32}} flex={{justifyContent: 'center'}}>
+              <NonIdealState
+                icon="error"
+                title={`Could not find sensor \`${sensorName}\` in repository \`${repoAddress.name}\``}
+              />
+            </Box>
+          );
+        } else if (sensorOrError.__typename === 'PythonError') {
+          return <PythonErrorInfo error={sensorOrError} />;
+        } else if (sensorOrError.__typename !== 'Sensor') {
           return null;
         }
         const showDaemonWarning = !instance.daemonHealth.daemonStatus.healthy;
@@ -87,6 +99,7 @@ const SENSOR_ROOT_QUERY = gql`
         id
         ...SensorFragment
       }
+      ...PythonErrorFragment
     }
     instance {
       ...InstanceHealthFragment
@@ -99,6 +112,7 @@ const SENSOR_ROOT_QUERY = gql`
       }
     }
   }
+  ${PYTHON_ERROR_FRAGMENT}
   ${SENSOR_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
 `;
