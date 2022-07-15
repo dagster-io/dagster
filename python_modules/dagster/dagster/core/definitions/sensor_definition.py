@@ -658,9 +658,14 @@ class AssetSensorDefinition(SensorDefinition):
 
             return _fn
 
-        deprecation_warning("pipeline_name", "1.1.0", "use the job argument instead.")
-        deprecation_warning("solid_selection", "1.1.0", "use the op_selection argument instead.")
-        deprecation_warning("mode", "1.1.0")
+        if pipeline_name:
+            deprecation_warning("pipeline_name", "1.1.0", "use the job argument instead.")
+        if solid_selection:
+            deprecation_warning(
+                "solid_selection", "1.1.0", "use the op_selection argument instead."
+            )
+        if mode:
+            deprecation_warning("mode", "1.1.0")
 
         super(AssetSensorDefinition, self).__init__(
             name=check_valid_name(name),
