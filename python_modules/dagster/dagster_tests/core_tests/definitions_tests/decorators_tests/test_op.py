@@ -28,10 +28,10 @@ from dagster import (
     mem_io_manager,
     op,
 )
+from dagster._legacy import solid
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.dagster_type import Int, String
-from dagster._legacy import solid
 
 
 def execute_op_in_graph(an_op, instance=None):
@@ -1106,7 +1106,7 @@ def test_generic_dynamic_output_bare():
     ):
 
         @op
-        def basic() -> DynamicOutput[int]:
+        def another_basic() -> DynamicOutput[int]:
             pass
 
 

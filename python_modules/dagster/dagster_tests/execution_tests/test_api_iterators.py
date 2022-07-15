@@ -3,6 +3,7 @@ import pytest
 from dagster import ModeDefinition, PipelineDefinition
 from dagster import _check as check
 from dagster import resource
+from dagster._legacy import solid
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events.log import EventLogEntry, construct_event_logger
@@ -15,7 +16,6 @@ from dagster.core.execution.api import (
 )
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
-from dagster._legacy import solid
 
 
 @resource

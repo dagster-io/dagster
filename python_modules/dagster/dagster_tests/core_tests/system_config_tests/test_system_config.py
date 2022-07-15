@@ -17,6 +17,7 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.config.config_type import ConfigTypeKind
 from dagster.config.validate import process_config
 from dagster.core.definitions import create_run_config_schema
@@ -25,7 +26,6 @@ from dagster.core.definitions.run_config import (
     define_solid_dictionary_cls,
 )
 from dagster.core.system_config.objects import ResolvedRunConfig, ResourceConfig, SolidConfig
-from dagster._legacy import pipeline, solid
 from dagster.loggers import default_loggers
 
 

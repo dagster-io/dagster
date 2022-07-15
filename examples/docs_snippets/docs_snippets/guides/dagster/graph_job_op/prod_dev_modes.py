@@ -12,7 +12,9 @@ def do_something():
 # start
 @pipeline(
     mode_defs=[
-        ModeDefinition("prod", resource_defs={"external_service": prod_external_service}),
+        ModeDefinition(
+            "prod", resource_defs={"external_service": prod_external_service}
+        ),
         ModeDefinition("dev", resource_defs={"external_service": dev_external_service}),
     ]
 )

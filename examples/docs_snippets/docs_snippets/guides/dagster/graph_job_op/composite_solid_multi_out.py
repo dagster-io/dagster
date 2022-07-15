@@ -13,7 +13,9 @@ def return_multi():
     yield Output(2, "two")
 
 
-@composite_solid(output_defs=[OutputDefinition(int, "one"), OutputDefinition(int, "two")])
+@composite_solid(
+    output_defs=[OutputDefinition(int, "one"), OutputDefinition(int, "two")]
+)
 def do_two_things():
     do_something()
     one, two = return_multi()

@@ -15,10 +15,10 @@ from dagster import (
     String,
     lambda_solid,
 )
+from dagster._legacy import solid
 from dagster.core.definitions import AssetMaterialization, Node, create_run_config_schema
 from dagster.core.definitions.dependency import NodeHandle, SolidOutputHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster._legacy import solid
 
 
 def test_deps_equal():

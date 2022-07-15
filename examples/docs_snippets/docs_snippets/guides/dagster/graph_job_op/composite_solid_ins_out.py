@@ -1,6 +1,6 @@
 from dagster import OutputDefinition, composite_solid
-from dagster.core.definitions.input import InputDefinition
 from dagster._legacy import pipeline, solid
+from dagster.core.definitions.input import InputDefinition
 
 
 @solid

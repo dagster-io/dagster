@@ -7,9 +7,9 @@ import pytest
 from dagster_graphql.test.utils import define_out_of_process_workspace, main_repo_location_name
 
 from dagster import lambda_solid, repository
+from dagster._legacy import pipeline
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.test_utils import instance_for_test
-from dagster._legacy import pipeline
 
 
 def get_repo():

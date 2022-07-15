@@ -1,4 +1,5 @@
 from dagster import schedule
+from dagster._legacy import pipeline
 
 # start_marker_priority
 

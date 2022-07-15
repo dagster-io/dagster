@@ -18,13 +18,13 @@ from dagster import (
     Tuple,
     lambda_solid,
 )
+from dagster._legacy import pipeline
 from dagster.core.types.dagster_type import (
     ALL_RUNTIME_BUILTINS,
     DagsterType,
     DagsterTypeKind,
     resolve_dagster_type,
 )
-from dagster._legacy import pipeline
 
 
 def inner_type_key_set(dagster_type):

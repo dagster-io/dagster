@@ -32,6 +32,7 @@ from dagster import (
     resource,
 )
 from dagster._check import CheckError
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster.core.execution.api import create_execution_plan, execute_plan
@@ -42,7 +43,6 @@ from dagster.core.storage.io_manager import IOManager, io_manager
 from dagster.core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.test_utils import instance_for_test
-from dagster._legacy import pipeline, solid
 
 
 def test_io_manager_with_config():

@@ -19,7 +19,9 @@ def do_something():
         ModeDefinition(resource_defs={"external_service": external_service}),
         ModeDefinition(
             "test",
-            resource_defs={"external_service": ResourceDefinition.hardcoded_resource(MagicMock())},
+            resource_defs={
+                "external_service": ResourceDefinition.hardcoded_resource(MagicMock())
+            },
         ),
     ]
 )

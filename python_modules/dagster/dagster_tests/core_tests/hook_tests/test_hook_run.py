@@ -16,11 +16,11 @@ from dagster import (
     op,
     resource,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions import failure_hook, success_hook
 from dagster.core.definitions.decorators.hook_decorator import event_list_hook
 from dagster.core.definitions.events import Failure, HookExecutionResult
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster._legacy import pipeline, solid
 
 
 class SomeUserException(Exception):

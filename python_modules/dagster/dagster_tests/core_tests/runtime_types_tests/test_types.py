@@ -25,6 +25,7 @@ from dagster import (
     make_python_type_usable_as_dagster_type,
     resource,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.test_utils import default_mode_def_for_test
 from dagster.core.types.dagster_type import (
     DagsterType,
@@ -32,7 +33,6 @@ from dagster.core.types.dagster_type import (
     PythonObjectDagsterType,
     resolve_dagster_type,
 )
-from dagster._legacy import pipeline, solid
 
 
 class BarObj:

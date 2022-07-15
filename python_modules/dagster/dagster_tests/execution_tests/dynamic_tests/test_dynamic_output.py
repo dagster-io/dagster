@@ -17,11 +17,11 @@ from dagster import (
     op,
     reconstructable,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.events import Output
 from dagster.core.definitions.output import OutputDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.test_utils import instance_for_test
-from dagster._legacy import pipeline, solid
 
 
 def test_basic():

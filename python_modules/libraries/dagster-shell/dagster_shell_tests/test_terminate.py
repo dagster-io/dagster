@@ -5,11 +5,11 @@ import psutil
 from dagster_shell.utils import execute
 
 from dagster import repository
+from dagster._legacy import pipeline, solid
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test, poll_for_finished_run, poll_for_step_start
 from dagster.core.workspace import WorkspaceProcessContext
 from dagster.core.workspace.load_target import PythonFileTarget
-from dagster._legacy import solid
 from dagster.utils import file_relative_path
 
 
