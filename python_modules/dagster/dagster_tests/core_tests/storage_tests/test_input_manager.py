@@ -3,15 +3,15 @@ import tempfile
 import pytest
 
 from dagster import (
+    DagsterInstance,
     IOManager,
     In,
     InputManager,
+    MetadataEntry,
     input_manager,
     io_manager,
     job,
     op,
-    DagsterInstance,
-    MetadataEntry
 )
 from dagster.core.definitions.events import Failure, RetryRequested
 from dagster.core.errors import DagsterInvalidConfigError
@@ -294,6 +294,7 @@ def test_input_manager_class():
 
     check_input_managers.execute_in_process()
 
+
 def test_input_manager_with_retries():
     _count = {"total": 0}
 
@@ -308,9 +309,7 @@ def test_input_manager_with_retries():
     def should_retry(_):
         raise RetryRequested(max_retries=3)
 
-    @op(
-        ins={"op_input": In(input_manager_key="should_succeed_after_retries")}
-    )
+    @op(ins={"op_input": In(input_manager_key="should_succeed_after_retries")})
     def take_input_1(_, op_input):
         return op_input
 
