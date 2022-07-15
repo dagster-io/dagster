@@ -714,29 +714,37 @@ class BoolMetadataValue(
 
 
 @whitelist_for_serdes(storage_name="DagsterPipelineRunMetadataEntryData")
-class DagsterPipelineRunMetadataValue(
+class DagsterRunMetadataValue(
     NamedTuple(
-        "_DagsterPipelineRunMetadataValue",
+        "_DagsterRunMetadataValue",
         [
             ("run_id", str),
         ],
     ),
     MetadataValue,
 ):
-    """Representation of a dagster pipeline run.
+    """Representation of a dagster run.
 
     Args:
-        run_id (str): The pipeline run id
+        run_id (str): The run id
     """
 
     def __new__(cls, run_id: str):
-        return super(DagsterPipelineRunMetadataValue, cls).__new__(
-            cls, check.str_param(run_id, "run_id")
-        )
+        return super(DagsterRunMetadataValue, cls).__new__(cls, check.str_param(run_id, "run_id"))
 
     @property
     def value(self) -> str:
         return self.run_id
+
+
+class DagsterPipelineRunMetadataValue(DagsterRunMetadataValue):
+    def __new__(cls, run_id: str):
+        deprecation_warning(
+            "DagsterPipelineRunMetadataValue", "1.1.0", "Use DagsterRunMetadataValue instead."
+        )
+        return super(DagsterPipelineRunMetadataValue, cls).__new__(
+            cls, check.str_param(run_id, "run_id")
+        )
 
 
 @whitelist_for_serdes(storage_name="DagsterAssetMetadataEntryData")
