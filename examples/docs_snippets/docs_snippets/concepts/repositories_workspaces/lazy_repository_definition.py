@@ -7,10 +7,12 @@ from dagster import (
     RunRequest,
     daily_schedule,
     job,
-    pipeline,
+    
+
     repository,
     sensor,
 )
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 

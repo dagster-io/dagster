@@ -15,9 +15,9 @@ from dagster import (
     graph,
     job,
     op,
-    pipeline,
     reconstructable,
 )
+from dagster.legacy import pipeline
 from dagster.core.definitions.events import Output
 from dagster.core.definitions.output import OutputDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError

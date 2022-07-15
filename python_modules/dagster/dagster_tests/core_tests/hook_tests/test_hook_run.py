@@ -14,9 +14,9 @@ from dagster import (
     graph,
     job,
     op,
-    pipeline,
     resource,
 )
+from dagster.legacy import pipeline
 from dagster.core.definitions import failure_hook, success_hook
 from dagster.core.definitions.decorators.hook_decorator import event_list_hook
 from dagster.core.definitions.events import Failure, HookExecutionResult

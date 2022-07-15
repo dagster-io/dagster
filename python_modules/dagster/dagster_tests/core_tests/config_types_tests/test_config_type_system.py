@@ -26,8 +26,8 @@ from dagster import (
     composite_solid,
     execute_pipeline,
     execute_solid,
-    pipeline,
 )
+from dagster.legacy import pipeline
 from dagster._check import ParameterCheckError
 from dagster.config.errors import DagsterEvaluationErrorReason
 from dagster.config.field_utils import Map, Shape, convert_potential_field

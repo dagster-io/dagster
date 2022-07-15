@@ -10,9 +10,9 @@ from dagster import (
     ModeDefinition,
     String,
     execute_pipeline,
-    pipeline,
     resource,
 )
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 

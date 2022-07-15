@@ -1,4 +1,10 @@
-from dagster import Failure, MetadataEntry, execute_pipeline, lambda_solid, pipeline
+from dagster import (
+    Failure,
+    MetadataEntry,
+    execute_pipeline,
+    lambda_solid,
+)
+from dagster.legacy import pipeline
 
 
 def test_failure():

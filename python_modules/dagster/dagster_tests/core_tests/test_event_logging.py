@@ -7,8 +7,8 @@ from dagster import (
     PipelineDefinition,
     execute_pipeline,
     lambda_solid,
-    pipeline,
 )
+from dagster.legacy import pipeline
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry, construct_event_logger
 from dagster.loggers import colored_console_logger

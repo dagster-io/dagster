@@ -14,8 +14,8 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     mem_io_manager,
-    pipeline,
 )
+from dagster.legacy import pipeline
 from dagster.core.system_config.composite_descent import composite_descent
 from dagster.legacy import solid
 

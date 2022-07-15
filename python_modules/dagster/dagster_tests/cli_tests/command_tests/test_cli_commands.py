@@ -23,9 +23,9 @@ from dagster import (
     job,
     lambda_solid,
     op,
-    pipeline,
     repository,
 )
+from dagster.legacy import pipeline
 from dagster.cli import ENV_PREFIX, cli
 from dagster.cli.job import job_execute_command
 from dagster.cli.pipeline import pipeline_execute_command

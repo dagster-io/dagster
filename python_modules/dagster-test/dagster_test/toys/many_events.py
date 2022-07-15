@@ -9,8 +9,8 @@ from dagster import (
     OutputDefinition,
     file_relative_path,
     fs_io_manager,
-    pipeline,
 )
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 MARKDOWN_EXAMPLE = "markdown_example.md"

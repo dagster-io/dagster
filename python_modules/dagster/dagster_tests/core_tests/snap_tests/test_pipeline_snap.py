@@ -11,8 +11,8 @@ from dagster import (
     Permissive,
     Selector,
     Shape,
-    pipeline,
 )
+from dagster.legacy import pipeline
 from dagster.config.config_type import Array, Bool, Enum, EnumValue, Float, Int, Noneable, String
 from dagster.core.snap import (
     DependencyStructureIndex,

@@ -1,6 +1,10 @@
 from dagster import Field, Output, OutputDefinition, String
 from dagster import _check as check
-from dagster import execute_pipeline, pipeline
+from dagster import (
+    execute_pipeline,
+)
+
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 

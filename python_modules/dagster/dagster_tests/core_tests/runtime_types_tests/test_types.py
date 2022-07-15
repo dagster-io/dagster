@@ -23,9 +23,9 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     make_python_type_usable_as_dagster_type,
-    pipeline,
     resource,
 )
+from dagster.legacy import pipeline
 from dagster.core.test_utils import default_mode_def_for_test
 from dagster.core.types.dagster_type import (
     DagsterType,

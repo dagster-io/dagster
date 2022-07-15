@@ -12,8 +12,8 @@ from dagster import (
     job,
     lambda_solid,
     op,
-    pipeline,
 )
+from dagster.legacy import pipeline
 
 
 def test_none():

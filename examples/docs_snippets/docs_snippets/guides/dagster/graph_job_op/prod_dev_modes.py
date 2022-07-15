@@ -1,4 +1,6 @@
-from dagster import ModeDefinition, pipeline, repository
+from dagster import ModeDefinition, repository
+
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 from .prod_dev_resources import dev_external_service, prod_external_service
@@ -12,9 +14,7 @@ def do_something():
 # start
 @pipeline(
     mode_defs=[
-        ModeDefinition(
-            "prod", resource_defs={"external_service": prod_external_service}
-        ),
+        ModeDefinition("prod", resource_defs={"external_service": prod_external_service}),
         ModeDefinition("dev", resource_defs={"external_service": dev_external_service}),
     ]
 )

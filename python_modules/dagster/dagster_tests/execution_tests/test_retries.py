@@ -22,11 +22,11 @@ from dagster import (
     job,
     lambda_solid,
     op,
-    pipeline,
     reconstructable,
     reexecute_pipeline,
     success_hook,
 )
+from dagster.legacy import pipeline
 from dagster.core.definitions.events import HookExecutionResult
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvalidDefinitionError

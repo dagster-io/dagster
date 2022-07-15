@@ -3,7 +3,9 @@ from memoized_development.solids.dog import emit_dog
 from memoized_development.solids.sentence import emit_sentence
 from memoized_development.solids.tree import emit_tree
 
-from dagster import ModeDefinition, pipeline, repository
+from dagster import ModeDefinition, repository
+
+from dagster.legacy import pipeline
 from dagster.core.storage.memoizable_io_manager import versioned_filesystem_io_manager
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 

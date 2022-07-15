@@ -17,9 +17,9 @@ from dagster import (
     io_manager,
     job,
     op,
-    pipeline,
     root_input_manager,
 )
+from dagster.legacy import pipeline
 from dagster._check import CheckError
 from dagster.core.definitions.events import AssetLineageInfo
 from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry

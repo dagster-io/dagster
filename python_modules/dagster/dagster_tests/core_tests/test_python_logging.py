@@ -9,10 +9,10 @@ from dagster import (
     ModeDefinition,
     execute_pipeline,
     get_dagster_logger,
-    pipeline,
     reconstructable,
     resource,
 )
+from dagster.legacy import pipeline
 from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster.legacy import solid
 

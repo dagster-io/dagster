@@ -6,7 +6,11 @@ from dagster_tests.api_tests.utils import get_bar_workspace
 
 from dagster import PipelineDefinition
 from dagster import _check as check
-from dagster import execute_pipeline, pipeline
+from dagster import (
+    execute_pipeline,
+)
+
+from dagster.legacy import pipeline
 from dagster._check import CheckError
 from dagster.config import Field
 from dagster.core.errors import (

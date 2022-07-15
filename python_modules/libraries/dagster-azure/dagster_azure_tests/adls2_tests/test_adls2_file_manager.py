@@ -17,8 +17,8 @@ from dagster import (
     configured,
     execute_pipeline,
     op,
-    pipeline,
 )
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 # For deps

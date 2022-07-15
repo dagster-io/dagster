@@ -1,7 +1,9 @@
 # isort: skip_file
 from dagster import (
-    pipeline,
+    
+
 )
+from dagster.legacy import pipeline
 
 from dagster.legacy import solid
 

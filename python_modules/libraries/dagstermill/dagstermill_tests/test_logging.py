@@ -10,10 +10,10 @@ from dagster import (
     String,
     execute_pipeline,
     logger,
-    pipeline,
     reconstructable,
     seven,
 )
+from dagster.legacy import pipeline
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import safe_tempfile_path
 

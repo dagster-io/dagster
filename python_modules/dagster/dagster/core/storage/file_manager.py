@@ -171,12 +171,9 @@ def local_file_manager(init_context):
 
         import tempfile
 
-        from dagster import ModeDefinition, local_file_manager, pipeline
-        from dagster.legacy import solid
+        from dagster import ModeDefinition, local_file_manager
+        from dagster.legacy import pipeline, solid
 
-        @solid(required_resource_keys={"file_manager"})
-        def write_files(context):
-            fh_1 = context.resources.file_manager.write_data(b"foo")
 
         @solid(required_resource_keys={"file_manager"})
         def write_files(context):
@@ -189,6 +186,7 @@ def local_file_manager(init_context):
 
             return (fh_1, fh_2)
 
+
         @solid(required_resource_keys={"file_manager"})
         def read_files(context, file_handles):
             fh_1, fh_2 = file_handles
@@ -196,6 +194,7 @@ def local_file_manager(init_context):
             fd = context.resources.file_manager.read(fh_2, mode="r")
             assert fd.read() == "foo"
             fd.close()
+
 
         @pipeline(mode_defs=[ModeDefinition(resource_defs={"file_manager": local_file_manager})])
         def files_pipeline():

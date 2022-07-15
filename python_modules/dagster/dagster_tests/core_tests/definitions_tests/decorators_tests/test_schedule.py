@@ -17,11 +17,11 @@ from dagster import (
     job,
     monthly_schedule,
     op,
-    pipeline,
     schedule,
     validate_run_config,
     weekly_schedule,
 )
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster.utils import merge_dicts

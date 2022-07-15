@@ -9,10 +9,10 @@ from dagster import (
     fs_io_manager,
     job,
     op,
-    pipeline,
     reconstructable,
     reexecute_pipeline,
 )
+from dagster.legacy import pipeline
 from dagster.core.definitions.events import Output
 from dagster.core.definitions.output import DynamicOut, Out
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError

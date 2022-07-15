@@ -15,10 +15,10 @@ from dagster import (
     dagster_type_loader,
     dagster_type_materializer,
     execute_pipeline,
-    pipeline,
     resource,
     usable_as_dagster_type,
 )
+from dagster.legacy import pipeline
 from dagster.core.definitions.configurable import configured
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError

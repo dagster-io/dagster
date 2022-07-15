@@ -8,8 +8,8 @@ from dagster import (
     OutputDefinition,
     composite_solid,
     execute_pipeline,
-    pipeline,
 )
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 

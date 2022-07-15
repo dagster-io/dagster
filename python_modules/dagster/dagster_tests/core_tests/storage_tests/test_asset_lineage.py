@@ -10,8 +10,8 @@ from dagster import (
     OutputDefinition,
     execute_pipeline,
     io_manager,
-    pipeline,
 )
+from dagster.legacy import pipeline
 from dagster.core.definitions.events import AssetLineageInfo
 from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster.core.errors import DagsterInvariantViolationError

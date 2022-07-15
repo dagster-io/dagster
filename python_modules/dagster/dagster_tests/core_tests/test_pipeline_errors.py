@@ -14,7 +14,13 @@ from dagster import (
     SolidDefinition,
 )
 from dagster import _check as check
-from dagster import execute_pipeline, execute_solid, lambda_solid, pipeline
+from dagster import (
+    execute_pipeline,
+    execute_solid,
+    lambda_solid,
+)
+
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 

@@ -4,9 +4,9 @@ from dagster import (
     ModeDefinition,
     OutputDefinition,
     String,
-    pipeline,
     repository,
 )
+from dagster.legacy import pipeline
 from dagster.core.storage.memoizable_io_manager import versioned_filesystem_io_manager
 from dagster.legacy import solid
 

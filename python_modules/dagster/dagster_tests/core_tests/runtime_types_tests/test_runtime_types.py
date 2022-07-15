@@ -17,8 +17,8 @@ from dagster import (
     String,
     Tuple,
     lambda_solid,
-    pipeline,
 )
+from dagster.legacy import pipeline
 from dagster.core.types.dagster_type import (
     ALL_RUNTIME_BUILTINS,
     DagsterType,

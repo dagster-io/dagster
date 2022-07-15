@@ -10,8 +10,8 @@ from dagster import (
     Nothing,
     OutputDefinition,
     fs_io_manager,
-    pipeline,
 )
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 from dagster.utils.partitions import DEFAULT_DATE_FORMAT
 

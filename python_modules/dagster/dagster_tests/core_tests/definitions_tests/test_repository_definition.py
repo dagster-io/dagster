@@ -31,12 +31,12 @@ from dagster import (
     lambda_solid,
     logger,
     op,
-    pipeline,
     repository,
     resource,
     schedule,
     sensor,
 )
+from dagster.legacy import pipeline
 from dagster._check import CheckError
 from dagster.core.definitions.executor_definition import (
     default_executors,

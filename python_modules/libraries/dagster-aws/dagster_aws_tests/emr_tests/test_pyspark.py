@@ -17,9 +17,9 @@ from dagster import (
     ModeDefinition,
     OutputDefinition,
     execute_pipeline,
-    pipeline,
     reconstructable,
 )
+from dagster.legacy import pipeline
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.test_utils import instance_for_test

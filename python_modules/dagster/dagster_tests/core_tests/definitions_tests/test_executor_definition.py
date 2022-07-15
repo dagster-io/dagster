@@ -9,9 +9,9 @@ from dagster import (
     fs_io_manager,
     in_process_executor,
     multiprocess_executor,
-    pipeline,
     reconstructable,
 )
+from dagster.legacy import pipeline
 from dagster.core.definitions.executor_definition import executor
 from dagster.core.errors import (
     DagsterInvalidConfigError,

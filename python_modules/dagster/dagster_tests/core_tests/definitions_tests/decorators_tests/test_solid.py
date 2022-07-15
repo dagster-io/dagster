@@ -18,8 +18,8 @@ from dagster import (
     graph,
     lambda_solid,
     op,
-    pipeline,
 )
+from dagster.legacy import pipeline
 from dagster.core.utility_solids import define_stub_solid
 from dagster.legacy import solid
 
