@@ -23,8 +23,8 @@ from dagster.core.host_representation.grpc_server_registry import ProcessGrpcSer
 from dagster.core.instance import DagsterInstance
 from dagster.core.workspace import IWorkspace
 from dagster.core.workspace.load_target import WorkspaceLoadTarget
-from dagster.utils.interrupts import raise_interrupts_as
-from dagster.utils.log import configure_loggers
+from dagster._utils.interrupts import raise_interrupts_as
+from dagster._utils.log import configure_loggers
 
 from .workspace import DaemonWorkspace
 

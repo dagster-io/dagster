@@ -26,7 +26,7 @@ from dagster._serdes.serdes import (
     register_serdes_tuple_fallbacks,
     whitelist_for_serdes,
 )
-from dagster.utils import frozentags
+from dagster._utils import frozentags
 
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer

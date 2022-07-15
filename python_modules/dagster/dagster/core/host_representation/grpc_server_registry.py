@@ -16,7 +16,7 @@ from dagster.core.host_representation.origin import (
     RepositoryLocationOrigin,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 
 class GrpcServerEndpoint(

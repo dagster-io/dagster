@@ -18,7 +18,7 @@ from dagster.core.definitions.partition import (
     ScheduleType,
 )
 from dagster._seven.compat.pendulum import create_pendulum_time
-from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE
+from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE
 
 
 def assert_expected_partitions(

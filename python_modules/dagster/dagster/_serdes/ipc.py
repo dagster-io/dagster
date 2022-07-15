@@ -13,7 +13,7 @@ from dagster._serdes import (
     serialize_dagster_namedtuple,
     whitelist_for_serdes,
 )
-from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 
 def write_unary_input(input_file, obj):

@@ -6,7 +6,7 @@ import yaml
 from dagster import _check as check
 from dagster._config import StringSource
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils import mkdir_p
+from dagster._utils import mkdir_p
 
 from .base_storage import DagsterStorage
 from .event_log.base import EventLogStorage

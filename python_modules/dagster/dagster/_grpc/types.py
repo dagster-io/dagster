@@ -13,8 +13,8 @@ from dagster.core.host_representation.origin import (
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.origin import PipelinePythonOrigin, get_python_environment_entry_point
 from dagster._serdes import serialize_dagster_namedtuple, whitelist_for_serdes
-from dagster.utils import frozenlist
-from dagster.utils.error import SerializableErrorInfo
+from dagster._utils import frozenlist
+from dagster._utils.error import SerializableErrorInfo
 
 
 @whitelist_for_serdes

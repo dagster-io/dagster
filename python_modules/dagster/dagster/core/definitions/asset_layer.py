@@ -22,7 +22,7 @@ import dagster._check as check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster.core.selector.subset_selector import AssetSelectionData
-from dagster.utils.backcompat import ExperimentalWarning
+from dagster._utils.backcompat import ExperimentalWarning
 
 from ..errors import DagsterInvalidSubsetError
 from .config import ConfigMapping

@@ -19,7 +19,7 @@ from dagster.core.decorator_utils import format_docstring_for_description
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.configurable import AnonymousConfigurableDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
-from dagster.utils.backcompat import experimental_arg_warning
+from dagster._utils.backcompat import experimental_arg_warning
 
 from ..decorator_utils import (
     get_function_params,

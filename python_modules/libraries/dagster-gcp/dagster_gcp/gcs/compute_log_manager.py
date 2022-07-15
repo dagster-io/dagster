@@ -15,7 +15,7 @@ from dagster.core.storage.compute_log_manager import (
 )
 from dagster.core.storage.local_compute_log_manager import IO_TYPE_EXTENSION, LocalComputeLogManager
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils import ensure_dir, ensure_file
+from dagster._utils import ensure_dir, ensure_file
 
 
 class GCSComputeLogManager(ComputeLogManager, ConfigurableClass):

@@ -4,7 +4,7 @@ from tqdm import tqdm
 from dagster import AssetKey
 from dagster.core.events.log import EventLogEntry
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
-from dagster.utils import utc_datetime_from_timestamp
+from dagster._utils import utc_datetime_from_timestamp
 
 SECONDARY_INDEX_ASSET_KEY = "asset_key_table"  # builds the asset key table from the event log
 ASSET_KEY_INDEX_COLS = "asset_key_index_columns"  # extracts index columns from the asset_keys table

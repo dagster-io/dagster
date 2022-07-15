@@ -4,7 +4,7 @@ from typing import Any, Mapping, NamedTuple, Optional
 import dagster._check as check
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster._serdes.serdes import register_serdes_enum_fallbacks, whitelist_for_serdes
-from dagster.utils.error import SerializableErrorInfo
+from dagster._utils.error import SerializableErrorInfo
 
 
 @whitelist_for_serdes

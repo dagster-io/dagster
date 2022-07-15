@@ -20,8 +20,8 @@ from dagster.core.definitions.metadata import MetadataUserInput
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
 from dagster.core.errors import DagsterInvalidInvocationError
-from dagster.utils import merge_dicts
-from dagster.utils.backcompat import ExperimentalWarning, deprecation_warning
+from dagster._utils import merge_dicts
+from dagster._utils.backcompat import ExperimentalWarning, deprecation_warning
 
 from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKeyPrefix

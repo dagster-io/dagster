@@ -8,8 +8,8 @@ from dagster._config import Field, Permissive, ScalarUnion, Selector, validate_c
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.storage.config import mysql_config, pg_config
 from dagster._serdes import class_from_code_pointer
-from dagster.utils import merge_dicts
-from dagster.utils.yaml_utils import load_yaml_from_globs
+from dagster._utils import merge_dicts
+from dagster._utils.yaml_utils import load_yaml_from_globs
 
 if TYPE_CHECKING:
     from dagster.core.definitions.run_request import InstigatorType

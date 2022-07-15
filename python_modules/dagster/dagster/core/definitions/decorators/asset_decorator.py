@@ -22,7 +22,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.io_manager import IOManagerDefinition
 from dagster.core.types.dagster_type import DagsterType
 from dagster._seven import funcsigs
-from dagster.utils.backcompat import (
+from dagster._utils.backcompat import (
     ExperimentalWarning,
     canonicalize_backcompat_args,
     deprecation_warning,

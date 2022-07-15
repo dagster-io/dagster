@@ -6,7 +6,7 @@ from dagster.core.execution.compute_logs import (
     mirror_stream_to_file,
     should_disable_io_stream_redirect,
 )
-from dagster.utils.test import get_temp_file_name
+from dagster._utils.test import get_temp_file_name
 
 
 @pytest.mark.skipif(

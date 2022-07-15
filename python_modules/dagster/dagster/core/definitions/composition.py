@@ -24,7 +24,7 @@ from dagster.core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster.utils import frozentags
+from dagster._utils import frozentags
 
 from .config import ConfigMapping
 from .dependency import (

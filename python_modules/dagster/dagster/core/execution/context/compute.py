@@ -24,8 +24,8 @@ from dagster.core.events import DagsterEvent
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import DagsterRun, PipelineRun
-from dagster.utils.backcompat import deprecation_warning
-from dagster.utils.forked_pdb import ForkedPdb
+from dagster._utils.backcompat import deprecation_warning
+from dagster._utils.forked_pdb import ForkedPdb
 
 from .system import StepExecutionContext
 

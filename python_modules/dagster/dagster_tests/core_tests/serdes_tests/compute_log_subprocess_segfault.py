@@ -3,7 +3,7 @@
 import sys
 
 from dagster.core.execution.compute_logs import mirror_stream_to_file
-from dagster.utils import segfault
+from dagster._utils import segfault
 
 if __name__ == "__main__":
     stdout_pids_file, stderr_pids_file = (sys.argv[1], sys.argv[2])

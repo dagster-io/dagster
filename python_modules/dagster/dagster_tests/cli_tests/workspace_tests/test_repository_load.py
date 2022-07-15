@@ -9,7 +9,7 @@ from dagster._cli.workspace.cli_target import (
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import instance_for_test
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 def load_repository_via_cli_runner(cli_args, repo_assert_fn=None):

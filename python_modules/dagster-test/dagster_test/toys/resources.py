@@ -8,7 +8,7 @@ from dagster import (
     resource,
 )
 from dagster._legacy import pipeline, solid
-from dagster.utils import merge_dicts
+from dagster._utils import merge_dicts
 
 
 def define_resource(num):

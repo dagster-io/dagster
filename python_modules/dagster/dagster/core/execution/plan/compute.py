@@ -19,7 +19,7 @@ from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.system import StepExecutionContext
 from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster.utils import iterate_with_context
+from dagster._utils import iterate_with_context
 
 from .outputs import StepOutput, StepOutputProperties
 from .utils import solid_execution_error_boundary

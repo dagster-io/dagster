@@ -10,7 +10,7 @@ from dagster.core.execution.context.system import PlanOrchestrationContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .defaults import task_default_priority, task_default_queue
 from .make_app import make_app

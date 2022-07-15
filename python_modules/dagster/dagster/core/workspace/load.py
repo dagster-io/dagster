@@ -11,7 +11,7 @@ from dagster.core.host_representation.origin import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.utils import load_yaml_from_path
+from dagster._utils import load_yaml_from_path
 
 from .config_schema import ensure_workspace_config
 

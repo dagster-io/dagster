@@ -15,7 +15,7 @@ from dagster._config import (
     ScalarUnion,
     Selector,
 )
-from dagster.utils.backcompat import ExperimentalWarning
+from dagster._utils.backcompat import ExperimentalWarning
 
 from .config_schema import dagster_type_loader, dagster_type_materializer
 

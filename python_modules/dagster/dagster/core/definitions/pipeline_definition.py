@@ -26,8 +26,8 @@ from dagster.core.errors import (
 )
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.utils import str_format_set
-from dagster.utils import frozentags, merge_dicts
-from dagster.utils.backcompat import experimental_class_warning
+from dagster._utils import frozentags, merge_dicts
+from dagster._utils.backcompat import experimental_class_warning
 
 from .asset_layer import AssetLayer
 from .dependency import (

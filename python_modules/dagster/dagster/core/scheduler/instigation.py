@@ -16,8 +16,8 @@ from dagster._serdes.serdes import (
     unpack_inner_value,
     whitelist_for_serdes,
 )
-from dagster.utils import merge_dicts
-from dagster.utils.error import SerializableErrorInfo
+from dagster._utils import merge_dicts
+from dagster._utils.error import SerializableErrorInfo
 
 
 @whitelist_for_serdes

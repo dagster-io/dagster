@@ -52,8 +52,8 @@ from dagster._serdes import (
     register_serdes_tuple_fallbacks,
     whitelist_for_serdes,
 )
-from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from dagster.utils.timing import format_duration
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.timing import format_duration
 
 if TYPE_CHECKING:
     from dagster.core.definitions.events import ObjectStoreOperation

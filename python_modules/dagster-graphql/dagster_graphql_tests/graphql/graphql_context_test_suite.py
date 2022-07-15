@@ -29,9 +29,9 @@ from dagster.core.workspace.load_target import (
     PythonFileTarget,
     WorkspaceFileTarget,
 )
-from dagster.utils import merge_dicts
-from dagster.utils.test import FilesystemTestScheduler
-from dagster.utils.test.postgres_instance import TestPostgresInstance
+from dagster._utils import merge_dicts
+from dagster._utils.test import FilesystemTestScheduler
+from dagster._utils.test.postgres_instance import TestPostgresInstance
 
 
 def get_main_loadable_target_origin():

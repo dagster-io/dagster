@@ -33,8 +33,8 @@ from dagster._serdes import (
     whitelist_for_serdes,
 )
 from dagster._serdes.ipc import IPCErrorMessage, ipc_write_stream, open_ipc_subprocess
-from dagster.utils import find_free_port, frozenlist, safe_tempfile_path_unmanaged
-from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils import find_free_port, frozenlist, safe_tempfile_path_unmanaged
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from .__generated__ import api_pb2
 from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServicer_to_server

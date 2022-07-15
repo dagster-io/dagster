@@ -53,8 +53,8 @@ from dagster.core.origin import RepositoryPythonOrigin
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._serdes import deserialize_as
 from dagster._seven.compat.pendulum import PendulumDateTime
-from dagster.utils import merge_dicts
-from dagster.utils.hosted_user_process import external_repo_from_def
+from dagster._utils import merge_dicts
+from dagster._utils.hosted_user_process import external_repo_from_def
 
 from .selector import PipelineSelector
 

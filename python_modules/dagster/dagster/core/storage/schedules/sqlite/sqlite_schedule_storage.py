@@ -14,7 +14,7 @@ from dagster.core.storage.sql import (
 )
 from dagster.core.storage.sqlite import create_db_conn_string, get_sqlite_version
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils import mkdir_p
+from dagster._utils import mkdir_p
 
 from ..schema import ScheduleStorageSqlMetadata
 from ..sql_schedule_storage import SqlScheduleStorage

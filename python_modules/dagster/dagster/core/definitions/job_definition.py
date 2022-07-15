@@ -42,7 +42,7 @@ from dagster.core.selector.subset_selector import (
     parse_op_selection,
 )
 from dagster.core.utils import str_format_set
-from dagster.utils import merge_dicts
+from dagster._utils import merge_dicts
 
 from .asset_layer import AssetLayer, build_asset_selection_job
 from .config import ConfigMapping

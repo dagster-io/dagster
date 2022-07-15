@@ -9,7 +9,7 @@ from dagster_test.test_project import get_test_project_environments_path
 
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import poll_for_finished_run
-from dagster.utils import load_yaml_from_path, merge_dicts
+from dagster._utils import load_yaml_from_path, merge_dicts
 
 
 def log_run_events(instance, run_id):

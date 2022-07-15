@@ -19,7 +19,7 @@ from dagster._config import (
     SelectorTypeErrorData,
 )
 from dagster.core.host_representation.represented import RepresentedPipeline
-from dagster.utils.error import SerializableErrorInfo
+from dagster._utils.error import SerializableErrorInfo
 
 from ..config_types import GrapheneConfigTypeField
 from ..util import non_null_list

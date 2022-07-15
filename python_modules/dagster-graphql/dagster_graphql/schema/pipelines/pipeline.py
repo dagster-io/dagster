@@ -10,8 +10,8 @@ from dagster.core.host_representation.external import ExternalExecutionPlan, Ext
 from dagster.core.host_representation.external_data import ExternalPresetData
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunRecord, RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
-from dagster.utils import datetime_as_float
-from dagster.utils.yaml_utils import dump_run_config_yaml
+from dagster._utils import datetime_as_float
+from dagster._utils.yaml_utils import dump_run_config_yaml
 
 from ...implementation.events import from_event_record
 from ...implementation.fetch_assets import get_assets_for_run_id, get_unique_asset_id

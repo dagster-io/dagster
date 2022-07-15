@@ -20,7 +20,7 @@ from dagster.core.storage.sql import (
 )
 from dagster.core.storage.sqlite import create_db_conn_string
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils import mkdir_p
+from dagster._utils import mkdir_p
 
 from ..schema import SqlEventLogStorageMetadata
 from ..sql_event_log import SqlEventLogStorage

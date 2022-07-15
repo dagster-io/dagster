@@ -21,8 +21,8 @@ from dagster.core.test_utils import environ, instance_for_test, new_cwd
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
 from dagster._seven import get_system_temp_directory
-from dagster.utils import file_relative_path, find_free_port
-from dagster.utils.error import SerializableErrorInfo
+from dagster._utils import file_relative_path, find_free_port
+from dagster._utils.error import SerializableErrorInfo
 
 
 def _get_ipc_output_file():

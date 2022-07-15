@@ -22,7 +22,7 @@ from dagster.core.types.dagster_type import (
     is_dynamic_output_annotation,
     resolve_dagster_type,
 )
-from dagster.utils.backcompat import experimental_arg_warning
+from dagster._utils.backcompat import experimental_arg_warning
 
 from .inference import InferredOutputProps
 from .input import NoValueSentinel

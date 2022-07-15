@@ -34,7 +34,7 @@ from dagster._serdes import (
     serialize_dagster_namedtuple,
 )
 from dagster._seven import JSONDecodeError
-from dagster.utils import merge_dicts, utc_datetime_from_timestamp
+from dagster._utils import merge_dicts, utc_datetime_from_timestamp
 
 from ..pipeline_run import (
     DagsterRunStatus,

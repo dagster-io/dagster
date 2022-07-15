@@ -2,7 +2,7 @@ from typing import Any, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster.core.definitions.events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
-from dagster.utils.backcompat import canonicalize_backcompat_args
+from dagster._utils.backcompat import canonicalize_backcompat_args
 
 from .partition_mapping import PartitionMapping
 

@@ -13,7 +13,7 @@ from dagster.core.workspace.autodiscovery import (
     loadable_targets_from_python_module,
     loadable_targets_from_python_package,
 )
-from dagster.utils import alter_sys_path, file_relative_path, restore_sys_modules
+from dagster._utils import alter_sys_path, file_relative_path, restore_sys_modules
 
 
 def test_single_repository():

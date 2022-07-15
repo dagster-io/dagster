@@ -23,8 +23,8 @@ from dagster import (
 )
 from dagster._legacy import pipeline, solid
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
-from dagster.utils import merge_dicts
-from dagster.utils.partitions import (
+from dagster._utils import merge_dicts
+from dagster._utils.partitions import (
     DEFAULT_DATE_FORMAT,
     DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
     DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE,

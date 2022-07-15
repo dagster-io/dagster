@@ -22,7 +22,7 @@ from dagster.core.utility_solids import (
     define_stub_solid,
     input_set,
 )
-from dagster.utils.test import execute_solid
+from dagster._utils.test import execute_solid
 
 
 def test_single_solid_in_isolation():

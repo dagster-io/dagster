@@ -8,7 +8,7 @@ from dagster.core.container_context import process_shared_container_context_conf
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.utils import parse_env_var
-from dagster.utils import make_readonly_value, merge_dicts
+from dagster._utils import make_readonly_value, merge_dicts
 
 if TYPE_CHECKING:
     from . import K8sRunLauncher

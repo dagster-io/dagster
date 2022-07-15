@@ -20,7 +20,7 @@ from dagster_test.test_project import (
 
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.core.test_utils import environ, poll_for_finished_run, poll_for_step_start
-from dagster.utils.yaml_utils import merge_yamls
+from dagster._utils.yaml_utils import merge_yamls
 
 from . import IS_BUILDKITE, docker_postgres_instance
 

@@ -833,7 +833,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         is_supported_runtime_python_builtin,
         remap_python_builtin_for_runtime,
     )
-    from dagster.utils.typing_api import is_typing_type
+    from dagster._utils.typing_api import is_typing_type
 
     from .python_dict import Dict as DDict
     from .python_dict import PythonDict

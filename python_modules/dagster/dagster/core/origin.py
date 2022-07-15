@@ -3,7 +3,7 @@ from typing import Any, Dict, List, NamedTuple, Optional
 import dagster._check as check
 from dagster.core.code_pointer import CodePointer
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
-from dagster.utils import frozenlist
+from dagster._utils import frozenlist
 
 DEFAULT_DAGSTER_ENTRY_POINT = frozenlist(["dagster"])
 

@@ -23,7 +23,7 @@ from dagster.core.scheduler.instigation import (
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._seven.compat.pendulum import create_pendulum_time
-from dagster.utils import Counter, traced_counter
+from dagster._utils import Counter, traced_counter
 
 from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
 

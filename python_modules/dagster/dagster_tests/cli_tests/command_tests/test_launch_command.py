@@ -8,7 +8,7 @@ from dagster._cli.pipeline import execute_launch_command, pipeline_launch_comman
 from dagster.core.errors import DagsterRunAlreadyExists
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import new_cwd
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 from .test_cli_commands import (
     default_cli_test_instance,

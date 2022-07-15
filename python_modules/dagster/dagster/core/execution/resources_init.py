@@ -41,9 +41,9 @@ from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.system_config.objects import ResolvedRunConfig, ResourceConfig
 from dagster.core.utils import toposort
-from dagster.utils import EventGenerationManager, ensure_gen
-from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.timing import format_duration, time_execution_scope
+from dagster._utils import EventGenerationManager, ensure_gen
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.timing import format_duration, time_execution_scope
 
 from .context.init import InitResourceContext
 

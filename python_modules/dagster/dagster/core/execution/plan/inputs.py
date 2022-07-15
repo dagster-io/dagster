@@ -30,7 +30,7 @@ from dagster.core.errors import (
 from dagster.core.storage.io_manager import IOManager
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster._serdes import whitelist_for_serdes
-from dagster.utils import ensure_gen
+from dagster._utils import ensure_gen
 
 from .objects import TypeCheckData
 from .outputs import StepOutputHandle, UnresolvedStepOutputHandle

@@ -57,7 +57,7 @@ from dagster.core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLo
 from dagster.core.test_utils import create_run_for_test, instance_for_test
 from dagster.core.utils import make_new_run_id
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
-from dagster.utils import datetime_as_float
+from dagster._utils import datetime_as_float
 
 TEST_TIMEOUT = 5
 

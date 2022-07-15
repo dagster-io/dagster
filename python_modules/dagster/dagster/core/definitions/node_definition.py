@@ -14,7 +14,7 @@ from typing import (
 import dagster._check as check
 from dagster.core.definitions.configurable import NamedConfigurableDefinition
 from dagster.core.definitions.policy import RetryPolicy
-from dagster.utils import frozendict, frozenlist
+from dagster._utils import frozendict, frozenlist
 
 from .hook_definition import HookDefinition
 from .utils import check_valid_name, validate_tags

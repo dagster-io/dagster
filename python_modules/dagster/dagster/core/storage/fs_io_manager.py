@@ -12,7 +12,7 @@ from dagster.core.execution.context.input import InputContext
 from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.io_manager import IOManager, io_manager
 from dagster.core.storage.memoizable_io_manager import MemoizableIOManager
-from dagster.utils import PICKLE_PROTOCOL, mkdir_p
+from dagster._utils import PICKLE_PROTOCOL, mkdir_p
 
 
 @io_manager(

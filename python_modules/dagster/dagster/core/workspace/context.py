@@ -33,7 +33,7 @@ from dagster.core.host_representation.grpc_server_state_subscriber import (
 )
 from dagster.core.host_representation.origin import GrpcServerRepositoryLocationOrigin
 from dagster.core.instance import DagsterInstance
-from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from .load_target import WorkspaceLoadTarget
 from .permissions import get_user_permissions

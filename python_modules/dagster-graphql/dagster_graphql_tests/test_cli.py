@@ -10,7 +10,7 @@ from dagster_graphql.cli import ui
 from dagster import _seven
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 @contextmanager

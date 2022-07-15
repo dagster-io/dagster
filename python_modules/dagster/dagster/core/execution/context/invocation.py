@@ -37,8 +37,8 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.types.dagster_type import DagsterType
-from dagster.utils import merge_dicts
-from dagster.utils.forked_pdb import ForkedPdb
+from dagster._utils import merge_dicts
+from dagster._utils.forked_pdb import ForkedPdb
 
 from .compute import OpExecutionContext
 from .system import StepExecutionContext, TypeCheckContext

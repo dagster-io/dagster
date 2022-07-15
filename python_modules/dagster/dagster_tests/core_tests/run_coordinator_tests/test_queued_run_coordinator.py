@@ -7,7 +7,7 @@ from dagster.core.run_coordinator import SubmitRunContext
 from dagster.core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
-from dagster.utils import merge_dicts
+from dagster._utils import merge_dicts
 
 
 class TestQueuedRunCoordinator:

@@ -9,7 +9,7 @@ from dagster.core.definitions.metadata import MetadataEntry, MetadataValue
 from dagster.core.execution.context.input import InputContext
 from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.io_manager import IOManager, io_manager
-from dagster.utils import mkdir_p
+from dagster._utils import mkdir_p
 
 
 class OutputNotebookIOManager(IOManager):

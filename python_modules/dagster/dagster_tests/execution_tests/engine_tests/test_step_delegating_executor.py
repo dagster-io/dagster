@@ -13,7 +13,7 @@ from dagster.core.executor.step_delegating import (
     StepHandler,
 )
 from dagster.core.test_utils import instance_for_test
-from dagster.utils import merge_dicts
+from dagster._utils import merge_dicts
 
 
 class TestStepHandler(StepHandler):

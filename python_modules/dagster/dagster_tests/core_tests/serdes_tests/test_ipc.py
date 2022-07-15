@@ -10,7 +10,7 @@ from dagster._serdes.ipc import (
     interrupt_ipc_subprocess_pid,
     open_ipc_subprocess,
 )
-from dagster.utils import file_relative_path, process_is_alive, safe_tempfile_path
+from dagster._utils import file_relative_path, process_is_alive, safe_tempfile_path
 
 
 def wait_for_file(path, timeout=5):

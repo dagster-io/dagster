@@ -19,9 +19,9 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.base import Executor
 from dagster.core.instance import DagsterInstance
-from dagster.utils import start_termination_thread
-from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.timing import format_duration, time_execution_scope
+from dagster._utils import start_termination_thread
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.timing import format_duration, time_execution_scope
 
 from .child_process_executor import (
     ChildProcessCommand,

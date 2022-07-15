@@ -21,7 +21,7 @@ from dagster._annotations import experimental
 import dagster._seven as _seven
 from dagster.core.errors import DagsterInvalidMetadata
 from dagster._serdes import whitelist_for_serdes
-from dagster.utils.backcompat import (
+from dagster._utils.backcompat import (
     canonicalize_backcompat_args,
     deprecation_warning,
     experimental_class_warning,

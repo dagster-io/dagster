@@ -9,7 +9,7 @@ import pytest
 from dagster import DagsterType, _seven
 from dagster.core.types.dagster_type import ListType
 from dagster._seven import is_subclass
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 def test_is_ascii():

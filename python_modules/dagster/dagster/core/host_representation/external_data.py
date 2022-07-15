@@ -38,7 +38,7 @@ from dagster.core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.snap import PipelineSnapshot
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
-from dagster.utils.error import SerializableErrorInfo
+from dagster._utils.error import SerializableErrorInfo
 
 
 @whitelist_for_serdes

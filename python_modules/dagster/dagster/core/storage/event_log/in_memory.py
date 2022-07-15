@@ -10,7 +10,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log.base import AssetEntry, AssetRecord
 from dagster._serdes import ConfigurableClass
-from dagster.utils import utc_datetime_from_timestamp
+from dagster._utils import utc_datetime_from_timestamp
 
 from .base import (
     EventLogConnection,

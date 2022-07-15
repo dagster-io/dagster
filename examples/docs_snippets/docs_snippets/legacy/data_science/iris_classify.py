@@ -1,4 +1,4 @@
-from dagster.utils import script_relative_path
+from dagster._utils import script_relative_path
 
 # isort: split
 # start

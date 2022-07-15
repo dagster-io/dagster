@@ -22,9 +22,9 @@ from dagster._serdes import (
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import register_serdes_tuple_fallbacks
 from dagster._seven import JSONDecodeError
-from dagster.utils import utc_datetime_from_timestamp
-from dagster.utils.backcompat import deprecation_warning
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster._utils import utc_datetime_from_timestamp
+from dagster._utils.backcompat import deprecation_warning
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 from ..decorator_utils import get_function_params
 from .graph_definition import GraphDefinition

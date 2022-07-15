@@ -28,7 +28,7 @@ from dagster.core.workspace.load_target import (
     PythonFileTarget,
     WorkspaceFileTarget,
 )
-from dagster.utils.hosted_user_process import recon_repository_from_origin
+from dagster._utils.hosted_user_process import recon_repository_from_origin
 
 if TYPE_CHECKING:
     from dagster.core.workspace.context import WorkspaceProcessContext

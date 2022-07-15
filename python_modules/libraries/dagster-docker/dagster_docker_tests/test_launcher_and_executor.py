@@ -13,8 +13,8 @@ from dagster_test.test_project import (
 
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import poll_for_finished_run
-from dagster.utils.merger import merge_dicts
-from dagster.utils.yaml_utils import load_yaml_from_path, merge_yamls
+from dagster._utils.merger import merge_dicts
+from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
 
 from . import IS_BUILDKITE, docker_postgres_instance
 

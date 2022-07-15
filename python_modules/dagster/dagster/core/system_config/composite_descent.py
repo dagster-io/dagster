@@ -14,7 +14,7 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.system_config.objects import SolidConfig
-from dagster.utils.merger import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 
 class SolidConfigEntry(

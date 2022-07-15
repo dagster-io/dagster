@@ -13,7 +13,7 @@ from dagster.core.executor.child_process_executor import (
     ChildProcessSystemErrorEvent,
     execute_child_process_command,
 )
-from dagster.utils import segfault
+from dagster._utils import segfault
 
 
 class DoubleAStringChildProcessCommand(ChildProcessCommand):

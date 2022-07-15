@@ -13,7 +13,7 @@ from dagster._daemon.controller import (
 )
 from dagster.core.test_utils import instance_for_test
 from dagster.core.workspace.load_target import EmptyWorkspaceTarget
-from dagster.utils.error import SerializableErrorInfo
+from dagster._utils.error import SerializableErrorInfo
 
 
 def test_healthy():

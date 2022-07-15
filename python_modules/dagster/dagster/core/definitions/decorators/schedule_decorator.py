@@ -16,8 +16,8 @@ from dagster.core.errors import (
     ScheduleExecutionError,
     user_code_error_boundary,
 )
-from dagster.utils import ensure_gen
-from dagster.utils.partitions import (
+from dagster._utils import ensure_gen
+from dagster._utils.partitions import (
     DEFAULT_DATE_FORMAT,
     DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
     DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE,

@@ -23,7 +23,7 @@ from dagster.core.scheduler import DagsterDaemonScheduler
 from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.test_utils import ExplodingRunLauncher, environ
-from dagster.utils import find_free_port
+from dagster._utils import find_free_port
 
 from .integration_utils import IS_BUILDKITE, check_output
 

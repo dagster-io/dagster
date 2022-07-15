@@ -34,7 +34,7 @@ from dagster._serdes import (
     ConfigurableClassData,
     deserialize_json_to_dagster_namedtuple,
 )
-from dagster.utils import mkdir_p
+from dagster._utils import mkdir_p
 
 from ..schema import SqlEventLogStorageMetadata, SqlEventLogStorageTable
 from ..sql_event_log import RunShardedEventsCursor, SqlEventLogStorage

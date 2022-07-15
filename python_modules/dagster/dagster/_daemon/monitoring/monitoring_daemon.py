@@ -10,7 +10,7 @@ from dagster.core.storage.pipeline_run import (
     PipelineRunStatus,
     RunsFilter,
 )
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 RESUME_RUN_LOG_MESSAGE = "Launching a new run worker to resume run"
 

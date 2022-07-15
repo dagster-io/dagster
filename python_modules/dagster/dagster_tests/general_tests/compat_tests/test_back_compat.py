@@ -37,8 +37,8 @@ from dagster._serdes.serdes import (
     serialize_dagster_namedtuple,
     serialize_value,
 )
-from dagster.utils.error import SerializableErrorInfo
-from dagster.utils.test import copy_directory
+from dagster._utils.error import SerializableErrorInfo
+from dagster._utils.test import copy_directory
 
 
 def _migration_regex(warning, current_revision, expected_revision=None):

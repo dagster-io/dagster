@@ -15,7 +15,7 @@ from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.snap import ExecutionPlanSnapshot
 from dagster.core.utils import toposort
 from dagster._serdes import create_snapshot_id
-from dagster.utils.schedules import schedule_execution_time_iterator
+from dagster._utils.schedules import schedule_execution_time_iterator
 
 from .external_data import (
     ExternalAssetNode,

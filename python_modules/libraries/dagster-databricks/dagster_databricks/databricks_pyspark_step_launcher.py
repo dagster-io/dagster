@@ -24,7 +24,7 @@ from dagster.core.execution.plan.external_step import (
     step_context_to_step_run_ref,
 )
 from dagster._serdes import deserialize_value
-from dagster.utils.backoff import backoff
+from dagster._utils.backoff import backoff
 
 from .configs import (
     define_databricks_env_variables,

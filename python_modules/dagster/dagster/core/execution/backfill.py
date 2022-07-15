@@ -26,8 +26,8 @@ from dagster.core.telemetry import BACKFILL_RUN_CREATED, hash_name, log_action
 from dagster.core.utils import make_new_run_id
 from dagster.core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
-from dagster.utils import merge_dicts
-from dagster.utils.error import SerializableErrorInfo
+from dagster._utils import merge_dicts
+from dagster._utils.error import SerializableErrorInfo
 
 
 @whitelist_for_serdes

@@ -14,8 +14,8 @@ from dagster._cli.workspace.cli_target import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.workspace.context import WorkspaceProcessContext
-from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
-from dagster.utils.log import get_stack_trace_array
+from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
+from dagster._utils.log import get_stack_trace_array
 
 from .client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from .schema import create_schema

@@ -10,7 +10,7 @@ from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.host_representation import GrpcServerRepositoryLocationOrigin
 from dagster.core.test_utils import environ
 from dagster.core.workspace.load import location_origins_from_config
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 @pytest.mark.skipif(_seven.IS_WINDOWS, reason="no named sockets on Windows")

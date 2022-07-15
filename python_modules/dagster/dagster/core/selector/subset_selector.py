@@ -23,7 +23,7 @@ from typing_extensions import Literal, TypeAlias
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.definitions.events import AssetKey
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
-from dagster.utils import check
+from dagster._utils import check
 
 if TYPE_CHECKING:
     from dagster.core.definitions.assets import AssetsDefinition

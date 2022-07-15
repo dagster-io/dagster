@@ -13,7 +13,7 @@ import dagster._check as check
 from dagster.core.host_representation import ExternalPartitionSet, RepositoryHandle
 from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster.utils import merge_dicts
+from dagster._utils import merge_dicts
 
 from .backfill import GraphenePartitionBackfill
 from .errors import (

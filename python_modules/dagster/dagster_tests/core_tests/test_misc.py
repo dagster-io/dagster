@@ -7,7 +7,7 @@ from dagster.core.definitions.utils import (
     config_from_yaml_strings,
 )
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 def test_check_valid_name():

@@ -20,8 +20,8 @@ from dagster.core.scheduler.instigation import (
     InstigatorStatus,
     SensorInstigatorData,
 )
-from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.yaml_utils import dump_run_config_yaml
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.yaml_utils import dump_run_config_yaml
 
 
 @click.group(name="sensor")

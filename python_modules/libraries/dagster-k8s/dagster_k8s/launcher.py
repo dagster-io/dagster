@@ -13,8 +13,8 @@ from dagster.core.launcher.base import CheckRunHealthResult, WorkerStatus
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils import frozentags, merge_dicts
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster._utils import frozentags, merge_dicts
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .container_context import K8sContainerContext
 from .job import (

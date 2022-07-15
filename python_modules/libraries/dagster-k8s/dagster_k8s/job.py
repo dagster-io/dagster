@@ -15,7 +15,7 @@ from dagster._config import Permissive, Shape, validate_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.utils import parse_env_var
 from dagster._serdes import whitelist_for_serdes
-from dagster.utils import frozentags, merge_dicts
+from dagster._utils import frozentags, merge_dicts
 
 from .models import k8s_model_from_dict, k8s_snake_case_dict
 from .utils import sanitize_k8s_label

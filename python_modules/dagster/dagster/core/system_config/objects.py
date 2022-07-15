@@ -22,7 +22,7 @@ from dagster.core.definitions.executor_definition import (
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.errors import DagsterInvalidConfigError
-from dagster.utils import ensure_single_item
+from dagster._utils import ensure_single_item
 
 
 class SolidConfig(

@@ -12,7 +12,7 @@ from dagster.core.host_representation.repository_location import GrpcServerRepos
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import GRPC_INFO_TAG
 from dagster._serdes import ConfigurableClass, deserialize_as, deserialize_json_to_dagster_namedtuple
-from dagster.utils import merge_dicts
+from dagster._utils import merge_dicts
 
 from .base import LaunchRunContext, RunLauncher
 

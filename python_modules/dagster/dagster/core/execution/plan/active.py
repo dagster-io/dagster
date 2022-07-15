@@ -12,7 +12,7 @@ from dagster.core.execution.context.system import PlanOrchestrationContext
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.retries import RetryMode
 from dagster.core.storage.tags import PRIORITY_TAG
-from dagster.utils.interrupts import pop_captured_interrupt
+from dagster._utils.interrupts import pop_captured_interrupt
 
 from .outputs import StepOutputData, StepOutputHandle
 from .plan import ExecutionPlan

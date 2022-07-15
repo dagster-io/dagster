@@ -2,8 +2,8 @@ import sys
 from typing import Any, Dict, List, Optional, cast
 
 import dagster._check as check
-from dagster.utils import ensure_single_item, frozendict, frozenlist
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster._utils import ensure_single_item, frozendict, frozenlist
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .config_type import ConfigType, ConfigTypeKind
 from .errors import EvaluationError, PostProcessingError, create_failed_post_processing_error

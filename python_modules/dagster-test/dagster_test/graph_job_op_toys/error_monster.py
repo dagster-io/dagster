@@ -13,7 +13,7 @@ from dagster import (
     op,
 )
 from dagster.core.definitions.executor_definition import in_process_executor
-from dagster.utils import segfault
+from dagster._utils import segfault
 
 
 class ExampleException(Exception):

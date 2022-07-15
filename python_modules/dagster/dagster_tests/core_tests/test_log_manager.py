@@ -16,7 +16,7 @@ from dagster.core.log_manager import (
     DagsterMessageProps,
     construct_log_string,
 )
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 
 def test_construct_log_string_for_event():

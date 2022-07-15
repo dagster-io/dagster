@@ -19,7 +19,7 @@ from typing import (
 
 import dagster._check as check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.utils import merge_dicts
+from dagster._utils import merge_dicts
 
 from .events import AssetKey
 from .executor_definition import ExecutorDefinition

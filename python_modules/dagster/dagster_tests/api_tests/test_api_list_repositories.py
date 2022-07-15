@@ -12,7 +12,7 @@ from dagster._grpc.types import LoadableRepositorySymbol
 from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer, PackageCodePointer
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 def test_sync_list_python_file_grpc():

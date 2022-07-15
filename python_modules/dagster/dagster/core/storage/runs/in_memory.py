@@ -17,7 +17,7 @@ from dagster.core.snap import (
     create_pipeline_snapshot_id,
 )
 from dagster.core.storage.tags import PARTITION_NAME_TAG
-from dagster.utils import EPOCH, frozendict, merge_dicts
+from dagster._utils import EPOCH, frozendict, merge_dicts
 
 from ..pipeline_run import (
     JobBucket,

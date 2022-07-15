@@ -31,7 +31,7 @@ from dagster.core.debug import DebugRunPayload
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._seven import json
-from dagster.utils import Counter, traced_counter
+from dagster._utils import Counter, traced_counter
 
 from .graphql import GraphQLServer
 from .version import __version__

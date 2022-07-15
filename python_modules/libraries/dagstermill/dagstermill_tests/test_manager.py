@@ -18,7 +18,7 @@ from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
 from dagster.core.utils import make_new_run_id
 from dagster._serdes import pack_value
-from dagster.utils import safe_tempfile_path
+from dagster._utils import safe_tempfile_path
 
 
 @contextlib.contextmanager

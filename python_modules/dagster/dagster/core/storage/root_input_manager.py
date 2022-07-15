@@ -9,7 +9,7 @@ from dagster.core.definitions.definition_config_schema import (
 )
 from dagster.core.definitions.resource_definition import ResourceDefinition, is_context_provided
 from dagster.core.storage.input_manager import IInputManagerDefinition, InputManager
-from dagster.utils.backcompat import deprecation_warning
+from dagster._utils.backcompat import deprecation_warning
 
 
 class RootInputManagerDefinition(ResourceDefinition, IInputManagerDefinition):

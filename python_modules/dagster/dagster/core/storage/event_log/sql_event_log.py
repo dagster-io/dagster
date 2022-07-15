@@ -21,7 +21,7 @@ from dagster._serdes import (
     serialize_dagster_namedtuple,
 )
 from dagster._serdes.errors import DeserializationError
-from dagster.utils import datetime_as_float, utc_datetime_from_naive, utc_datetime_from_timestamp
+from dagster._utils import datetime_as_float, utc_datetime_from_naive, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRunStatsSnapshot
 from .base import (

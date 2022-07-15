@@ -8,7 +8,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import DagsterRunStatus, PipelineRun, RunRecord
 from dagster.core.storage.tags import MAX_RETRIES_TAG, RETRY_NUMBER_TAG, RETRY_STRATEGY_TAG
 from dagster.core.workspace.workspace import IWorkspace
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 DEFAULT_REEXECUTION_POLICY = ReexecutionStrategy.FROM_FAILURE
 

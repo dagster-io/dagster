@@ -1,7 +1,7 @@
 from google.cloud import storage  # type: ignore
 
 from dagster import Field, Noneable, StringSource, resource
-from dagster.utils.merger import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from .file_manager import GCSFileManager
 

@@ -17,7 +17,7 @@ from dagster.core.storage.sql import (
 )
 from dagster.core.storage.sqlite import create_db_conn_string, get_sqlite_version
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils import mkdir_p
+from dagster._utils import mkdir_p
 
 from ..schema import InstanceInfo, RunStorageSqlMetadata, RunTagsTable, RunsTable
 from ..sql_run_storage import SqlRunStorage
