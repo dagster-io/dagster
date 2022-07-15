@@ -7,7 +7,7 @@ from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.retries import RetryState
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import DagsterRun
-from dagster.serdes import whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes

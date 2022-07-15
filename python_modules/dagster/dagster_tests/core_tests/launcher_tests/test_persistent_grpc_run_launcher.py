@@ -8,7 +8,7 @@ from dagster_tests.core_tests.launcher_tests.test_default_run_launcher import (
     slow_pipeline,
 )
 
-from dagster import file_relative_path, seven
+from dagster import file_relative_path, _seven
 from dagster._grpc.server import GrpcServerProcess
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -185,7 +185,7 @@ def test_server_down():
                 instance.add_run_tags(
                     pipeline_run.run_id,
                     {
-                        GRPC_INFO_TAG: seven.json.dumps(
+                        GRPC_INFO_TAG: _seven.json.dumps(
                             merge_dicts({"host": "localhost"}, {"port": find_free_port()})
                         )
                     },

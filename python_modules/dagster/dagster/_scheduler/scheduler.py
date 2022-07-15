@@ -26,7 +26,7 @@ from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, Ru
 from dagster.core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster.core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster.core.workspace import IWorkspace
-from dagster.seven.compat.pendulum import to_timezone
+from dagster._seven.compat.pendulum import to_timezone
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.log import default_date_format_string

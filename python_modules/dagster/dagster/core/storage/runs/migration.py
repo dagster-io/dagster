@@ -4,7 +4,7 @@ import sqlalchemy as db
 from tqdm import tqdm
 
 import dagster._check as check
-from dagster.serdes import deserialize_as
+from dagster._serdes import deserialize_as
 
 from ...execution.backfill import PartitionBackfill
 from ...execution.bulk_actions import BulkActionType

@@ -4,7 +4,7 @@ from typing import Dict, NamedTuple, Optional, Sequence
 import yaml
 
 import dagster._check as check
-from dagster.serdes import ConfigurableClassData, class_from_code_pointer, whitelist_for_serdes
+from dagster._serdes import ConfigurableClassData, class_from_code_pointer, whitelist_for_serdes
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_instance_config
 

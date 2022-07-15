@@ -10,7 +10,7 @@ from typing import Dict, NamedTuple, Optional
 import pendulum
 
 import dagster._check as check
-import dagster.seven as seven
+import dagster._seven as _seven
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData
 from dagster.core.definitions.utils import validate_tags
@@ -628,7 +628,7 @@ def _evaluate_sensor(
         skipped_count = len(skipped_runs)
         context.logger.info(
             f"Skipping {skipped_count} {'run' if skipped_count == 1 else 'runs'} for sensor "
-            f"{external_sensor.name} already completed with run keys: {seven.json.dumps(run_keys)}"
+            f"{external_sensor.name} already completed with run keys: {_seven.json.dumps(run_keys)}"
         )
 
     if context.run_count:

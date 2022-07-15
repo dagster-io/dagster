@@ -10,13 +10,13 @@ from grpc_health.v1 import health_pb2
 from grpc_health.v1.health_pb2_grpc import HealthStub
 
 import dagster._check as check
-import dagster.seven as seven
+import dagster._seven as _seven
 from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.events import EngineEventData
 from dagster.core.host_representation.origin import ExternalRepositoryOrigin
 from dagster.core.instance import DagsterInstance
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.serdes import serialize_dagster_namedtuple
+from dagster._serdes import serialize_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .__generated__ import DagsterApiStub, api_pb2
@@ -62,7 +62,7 @@ class DagsterGrpcClient:
         self._ssl_creds = grpc.ssl_channel_credentials() if use_ssl else None
 
         check.invariant(
-            port is not None if seven.IS_WINDOWS else True,
+            port is not None if _seven.IS_WINDOWS else True,
             "You must pass a valid `port` on Windows: `socket` not supported.",
         )
         check.invariant(

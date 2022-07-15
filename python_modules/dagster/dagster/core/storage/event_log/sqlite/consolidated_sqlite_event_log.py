@@ -19,7 +19,7 @@ from dagster.core.storage.sql import (
     stamp_alembic_rev,
 )
 from dagster.core.storage.sqlite import create_db_conn_string
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import mkdir_p
 
 from ..schema import SqlEventLogStorageMetadata

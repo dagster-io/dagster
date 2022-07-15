@@ -301,7 +301,7 @@ from dagster.core.types.decorator import (
 from dagster.core.types.python_dict import Dict
 from dagster.core.types.python_set import Set
 from dagster.core.types.python_tuple import Tuple
-from dagster.serdes import deserialize_value, serialize_value
+from dagster._serdes import deserialize_value, serialize_value
 from dagster.utils import file_relative_path
 from dagster.utils.alert import make_email_on_run_failure_sensor
 from dagster.utils.backcompat import ExperimentalWarning, deprecation_warning, rename_warning

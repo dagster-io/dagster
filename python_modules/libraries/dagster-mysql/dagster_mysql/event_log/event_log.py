@@ -16,7 +16,7 @@ from dagster.core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from ..utils import (
     MYSQL_POOL_RECYCLE,

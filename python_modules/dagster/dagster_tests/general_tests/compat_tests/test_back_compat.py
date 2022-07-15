@@ -28,8 +28,8 @@ from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster.core.storage.migration.utils import upgrading_instance
 from dagster.core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster.core.storage.tags import REPOSITORY_LABEL_TAG
-from dagster.serdes import DefaultNamedTupleSerializer, create_snapshot_id
-from dagster.serdes.serdes import (
+from dagster._serdes import DefaultNamedTupleSerializer, create_snapshot_id
+from dagster._serdes.serdes import (
     WhitelistMap,
     _deserialize_json,
     _whitelist_for_serdes,
@@ -692,7 +692,7 @@ def test_external_job_origin_instigator_origin():
         job_name="simple_schedule",
     )
     job_origin_str = serialize_value(job_origin, legacy_env)
-    from dagster.serdes.serdes import _WHITELIST_MAP
+    from dagster._serdes.serdes import _WHITELIST_MAP
 
     job_to_instigator = deserialize_json_to_dagster_namedtuple(job_origin_str)
     assert isinstance(job_to_instigator, ExternalInstigatorOrigin)

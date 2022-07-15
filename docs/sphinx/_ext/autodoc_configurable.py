@@ -5,7 +5,7 @@ from typing import Any, List
 from dagster import BoolSource, Field, IntSource, StringSource
 from dagster._config import ConfigType, ConfigTypeKind
 from dagster.core.definitions.configurable import ConfigurableDefinition
-from dagster.serdes import ConfigurableClass
+from dagster._serdes import ConfigurableClass
 from sphinx.ext.autodoc import DataDocumenter  # pylint: disable=import-error,no-name-in-module
 
 

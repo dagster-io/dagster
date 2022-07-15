@@ -17,7 +17,7 @@ from dagster.core.scheduler.instigation import (
     TickStatus,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.seven import get_current_datetime_in_utc
+from dagster._seven import get_current_datetime_in_utc
 from dagster.utils.error import SerializableErrorInfo
 
 

@@ -12,10 +12,10 @@ from dagster_test.dagster_core_docker_buildkite import (
 )
 
 import dagster._check as check
-import dagster.seven as seven
+import dagster._seven as _seven
 from dagster._grpc.client import DagsterGrpcClient
 from dagster.core.errors import DagsterUserCodeUnreachableError
-from dagster.seven import nullcontext
+from dagster._seven import nullcontext
 from dagster.utils import file_relative_path
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
@@ -24,7 +24,7 @@ HARDCODED_PORT = 8090
 # Suggested workaround in https://bugs.python.org/issue37380 for subprocesses
 # failing to open sporadically on windows after other subprocesses were closed.
 # Fixed in later versions of Python but never back-ported, see the bug for details.
-if seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6:
+if _seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6:
     subprocess._cleanup = lambda: None  # type: ignore # pylint: disable=protected-access
 
 

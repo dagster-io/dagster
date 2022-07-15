@@ -25,10 +25,10 @@ from warnings import warn
 import yaml
 
 import dagster._check as check
-import dagster.seven as seven
+import dagster._seven as _seven
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster.seven import IS_WINDOWS
-from dagster.seven.abc import Mapping
+from dagster._seven import IS_WINDOWS
+from dagster._seven.abc import Mapping
 
 from .merger import merge_dicts
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path

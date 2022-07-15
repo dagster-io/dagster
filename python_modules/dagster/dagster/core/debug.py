@@ -4,7 +4,7 @@ import dagster._check as check
 from dagster.core.events.log import EventLogEntry
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.serdes import serialize_dagster_namedtuple, whitelist_for_serdes
+from dagster._serdes import serialize_dagster_namedtuple, whitelist_for_serdes
 
 
 @whitelist_for_serdes

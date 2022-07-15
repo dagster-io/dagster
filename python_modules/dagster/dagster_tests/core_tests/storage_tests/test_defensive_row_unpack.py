@@ -4,7 +4,7 @@ from unittest import mock
 
 from dagster._legacy import pipeline, solid
 from dagster.core.storage.runs.sql_run_storage import defensively_unpack_pipeline_snapshot_query
-from dagster.serdes import serialize_dagster_namedtuple
+from dagster._serdes import serialize_dagster_namedtuple
 
 
 def test_defensive_pipeline_not_a_string():

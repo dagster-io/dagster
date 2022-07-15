@@ -4,7 +4,7 @@ import dagster._check as check
 from dagster.core.definitions.metadata import MetadataEntry
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
-from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
+from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
 
 def build_dagster_type_namespace_snapshot(

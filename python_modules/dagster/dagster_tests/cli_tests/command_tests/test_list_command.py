@@ -5,7 +5,7 @@ import pytest
 from click import UsageError
 from click.testing import CliRunner
 
-from dagster import seven
+from dagster import _seven
 from dagster._cli.job import job_list_command
 from dagster._cli.pipeline import execute_list_command, pipeline_list_command
 from dagster._grpc.server import GrpcServerProcess
@@ -95,7 +95,7 @@ def assert_correct_job_list_extra_repository_output(result):
     )
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="no named sockets on Windows")
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="no named sockets on Windows")
 def test_list_command_grpc_socket():
     with instance_for_test():
         runner = CliRunner()

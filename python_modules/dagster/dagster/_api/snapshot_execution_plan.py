@@ -11,7 +11,7 @@ from dagster.core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshot,
     ExecutionPlanSnapshotErrorData,
 )
-from dagster.serdes import deserialize_as
+from dagster._serdes import deserialize_as
 
 if TYPE_CHECKING:
     from dagster._grpc.client import DagsterGrpcClient

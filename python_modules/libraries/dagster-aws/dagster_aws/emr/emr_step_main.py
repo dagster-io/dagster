@@ -14,7 +14,7 @@ from dagster.core.execution.plan.external_step import (
     external_instance_from_step_run_ref,
     run_step_from_ref,
 )
-from dagster.serdes import serialize_value
+from dagster._serdes import serialize_value
 
 DONE = object()
 

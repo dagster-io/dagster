@@ -7,7 +7,7 @@ from tqdm import tqdm
 from dagster import DagsterInstance
 from dagster.core.debug import DebugRunPayload
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
-from dagster.serdes import deserialize_as
+from dagster._serdes import deserialize_as
 
 
 def _recent_failed_runs_text(instance):

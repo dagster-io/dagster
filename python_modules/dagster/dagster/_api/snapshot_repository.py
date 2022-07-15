@@ -6,7 +6,7 @@ from dagster.core.host_representation.external_data import (
     ExternalRepositoryData,
     ExternalRepositoryErrorData,
 )
-from dagster.serdes import deserialize_as
+from dagster._serdes import deserialize_as
 
 if TYPE_CHECKING:
     from dagster._grpc.client import DagsterGrpcClient

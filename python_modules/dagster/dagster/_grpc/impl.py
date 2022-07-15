@@ -40,9 +40,9 @@ from dagster.core.snap.execution_plan_snapshot import (
     snapshot_from_execution_plan,
 )
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.serdes import deserialize_as
-from dagster.serdes.ipc import IPCErrorMessage
-from dagster.seven import nullcontext
+from dagster._serdes import deserialize_as
+from dagster._serdes.ipc import IPCErrorMessage
+from dagster._seven import nullcontext
 from dagster.utils import start_termination_thread
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.interrupts import capture_interrupts

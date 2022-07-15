@@ -23,9 +23,9 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster.core.definitions.target import ExecutableDefinition
-from dagster.serdes import whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 
-from ...seven.compat.pendulum import PendulumDateTime, to_timezone
+from ..._seven.compat.pendulum import PendulumDateTime, to_timezone
 from ...utils import frozenlist, merge_dicts
 from ...utils.schedules import schedule_execution_time_iterator
 from ..decorator_utils import get_function_params

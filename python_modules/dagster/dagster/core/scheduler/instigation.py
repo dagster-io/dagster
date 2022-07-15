@@ -6,8 +6,8 @@ import dagster._check as check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation.origin import ExternalInstigatorOrigin
 from dagster.core.host_representation.selector import InstigatorSelector, RepositorySelector
-from dagster.serdes import create_snapshot_id
-from dagster.serdes.serdes import (
+from dagster._serdes import create_snapshot_id
+from dagster._serdes.serdes import (
     DefaultNamedTupleSerializer,
     WhitelistMap,
     register_serdes_enum_fallbacks,

@@ -57,8 +57,8 @@ from dagster.core.storage.pipeline_run import (
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, RESUME_RETRY_TAG, ROOT_RUN_ID_TAG
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import str_format_list
-from dagster.serdes import ConfigurableClass
-from dagster.seven import get_current_datetime_in_utc
+from dagster._serdes import ConfigurableClass
+from dagster._seven import get_current_datetime_in_utc
 from dagster.utils import merge_dicts, traced
 from dagster.utils.backcompat import experimental_functionality_warning
 from dagster.utils.error import serializable_error_info_from_exc_info

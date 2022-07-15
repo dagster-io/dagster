@@ -4,7 +4,7 @@ import sqlalchemy as db
 from tqdm import tqdm
 
 from dagster.core.scheduler.instigation import InstigatorState
-from dagster.serdes import deserialize_as
+from dagster._serdes import deserialize_as
 
 from ..schedules.schema import InstigatorsTable, JobTable, JobTickTable
 

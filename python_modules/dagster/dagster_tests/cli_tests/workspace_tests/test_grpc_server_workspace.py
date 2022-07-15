@@ -3,7 +3,7 @@ from contextlib import ExitStack
 import pytest
 import yaml
 
-from dagster import seven
+from dagster import _seven
 from dagster._check import CheckError
 from dagster._grpc.server import GrpcServerProcess
 from dagster.core.errors import DagsterUserCodeUnreachableError
@@ -13,7 +13,7 @@ from dagster.core.workspace.load import location_origins_from_config
 from dagster.utils import file_relative_path
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="no named sockets on Windows")
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="no named sockets on Windows")
 def test_grpc_socket_workspace():
     first_server_process = GrpcServerProcess()
     with first_server_process.create_ephemeral_client() as first_server:

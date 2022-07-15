@@ -23,7 +23,7 @@ from dagster.core.storage.pipeline_run import (
     RunsFilter,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.serdes import deserialize_as, serialize_dagster_namedtuple
+from dagster._serdes import deserialize_as, serialize_dagster_namedtuple
 
 
 def test_queued_pipeline_origin_check():

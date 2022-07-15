@@ -5,7 +5,7 @@ from contextlib import ExitStack
 
 import pytest
 
-from dagster.serdes.ipc import (
+from dagster._serdes.ipc import (
     interrupt_ipc_subprocess,
     interrupt_ipc_subprocess_pid,
     open_ipc_subprocess,

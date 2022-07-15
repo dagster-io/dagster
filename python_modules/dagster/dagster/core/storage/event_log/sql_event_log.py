@@ -8,19 +8,19 @@ import pendulum
 import sqlalchemy as db
 
 import dagster._check as check
-import dagster.seven as seven
+import dagster._seven as _seven
 from dagster.core.assets import AssetDetails
 from dagster.core.definitions.events import AssetKey, AssetMaterialization
 from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import MARKER_EVENTS, DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.stats import build_run_step_stats_from_events
-from dagster.serdes import (
+from dagster._serdes import (
     deserialize_as,
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
 )
-from dagster.serdes.errors import DeserializationError
+from dagster._serdes.errors import DeserializationError
 from dagster.utils import datetime_as_float, utc_datetime_from_naive, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRunStatsSnapshot
@@ -297,7 +297,7 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                 )
                 last_record_id = record_id
-        except (seven.JSONDecodeError, DeserializationError) as err:
+        except (_seven.JSONDecodeError, DeserializationError) as err:
             raise DagsterEventLogInvalidForRun(run_id=run_id) from err
 
         if last_record_id is not None:
@@ -369,7 +369,7 @@ class SqlEventLogStorage(EventLogStorage):
                 start_time=datetime_as_float(start_time) if start_time else None,
                 end_time=datetime_as_float(end_time) if end_time else None,
             )
-        except (seven.JSONDecodeError, DeserializationError) as err:
+        except (_seven.JSONDecodeError, DeserializationError) as err:
             raise DagsterEventLogInvalidForRun(run_id=run_id) from err
 
     def get_step_stats_for_run(self, run_id, step_keys=None):
@@ -426,7 +426,7 @@ class SqlEventLogStorage(EventLogStorage):
                 for (json_str,) in results
             ]
             return build_run_step_stats_from_events(run_id, records)
-        except (seven.JSONDecodeError, DeserializationError) as err:
+        except (_seven.JSONDecodeError, DeserializationError) as err:
             raise DagsterEventLogInvalidForRun(run_id=run_id) from err
 
     def _apply_migration(self, migration_name, migration_fn, print_fn, force):
@@ -705,7 +705,7 @@ class SqlEventLogStorage(EventLogStorage):
                     event_records.append(
                         EventLogRecord(storage_id=row_id, event_log_entry=event_record)
                     )
-            except seven.JSONDecodeError:
+            except _seven.JSONDecodeError:
                 logging.warning("Could not parse event record id `%s`.", row_id)
 
         return event_records
@@ -758,7 +758,7 @@ class SqlEventLogStorage(EventLogStorage):
                 json_str,
             ) in results:
                 events[record_id] = deserialize_as(json_str, EventLogEntry)
-        except (seven.JSONDecodeError, check.CheckError):
+        except (_seven.JSONDecodeError, check.CheckError):
             logging.warning("Could not parse event record id `%s`.", record_id)
 
         return events
@@ -1065,7 +1065,7 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
         if prefix:
-            prefix_str = seven.dumps(prefix)[:-1]
+            prefix_str = _seven.dumps(prefix)[:-1]
             query = query.where(AssetKeyTable.c.asset_key.startswith(prefix_str))
 
         if cursor:

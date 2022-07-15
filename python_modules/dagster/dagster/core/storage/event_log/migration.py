@@ -3,7 +3,7 @@ from tqdm import tqdm
 
 from dagster import AssetKey
 from dagster.core.events.log import EventLogEntry
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster._serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
 
 SECONDARY_INDEX_ASSET_KEY = "asset_key_table"  # builds the asset key table from the event log
@@ -73,7 +73,7 @@ def migrate_asset_key_data(event_log_storage, print_fn=None):
 
 def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
     from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
-    from dagster.serdes import serialize_dagster_namedtuple
+    from dagster._serdes import serialize_dagster_namedtuple
 
     from .schema import AssetKeyTable, SqlEventLogStorageTable
 

@@ -14,7 +14,7 @@ from dagster.core.definitions import (
 from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
-from dagster.seven.typing import get_args
+from dagster._seven.typing import get_args
 
 from ..context.compute import OpExecutionContext
 

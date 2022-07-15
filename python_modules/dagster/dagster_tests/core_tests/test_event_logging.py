@@ -6,7 +6,7 @@ from dagster._legacy import pipeline
 from dagster._loggers import colored_console_logger
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry, construct_event_logger
-from dagster.serdes import deserialize_as
+from dagster._serdes import deserialize_as
 
 
 def mode_def(event_callback):

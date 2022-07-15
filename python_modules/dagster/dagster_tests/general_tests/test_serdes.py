@@ -6,10 +6,10 @@ from typing import NamedTuple, Set
 
 import pytest
 
-from dagster import seven
+from dagster import _seven
 from dagster._check import ParameterCheckError, inst_param, set_param
-from dagster.serdes.errors import DeserializationError, SerdesUsageError, SerializationError
-from dagster.serdes.serdes import (
+from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
+from dagster._serdes.serdes import (
     DefaultEnumSerializer,
     DefaultNamedTupleSerializer,
     EnumSerializer,
@@ -25,7 +25,7 @@ from dagster.serdes.serdes import (
     serialize_value,
     unpack_inner_value,
 )
-from dagster.serdes.utils import hash_str
+from dagster._serdes.utils import hash_str
 
 
 def test_deserialize_value_ok():
@@ -699,7 +699,7 @@ def test_namedtuple_name_map():
     thing = Thing("foo")
 
     thing_serialized = _serialize_dagster_namedtuple(thing, wmap)
-    assert seven.json.loads(thing_serialized)["__class__"] == "SerializedThing"
+    assert _seven.json.loads(thing_serialized)["__class__"] == "SerializedThing"
 
     with pytest.raises(DeserializationError):
         _deserialize_json(thing_serialized, wmap)

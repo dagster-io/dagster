@@ -22,7 +22,7 @@ from dagster import (
     weekly_schedule,
 )
 from dagster._legacy import pipeline, solid
-from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster.utils import merge_dicts
 from dagster.utils.partitions import (
     DEFAULT_DATE_FORMAT,

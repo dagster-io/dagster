@@ -13,8 +13,8 @@ from dagster.core.test_utils import (
     get_crash_signals,
     get_logger_output_from_capfd,
 )
-from dagster.seven import IS_WINDOWS
-from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._seven import IS_WINDOWS
+from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
 from .test_backfill import default_repo, instance_for_context, workspace_load_target
 

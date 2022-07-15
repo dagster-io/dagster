@@ -51,8 +51,8 @@ from dagster.core.host_representation.origin import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryPythonOrigin
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
-from dagster.serdes import deserialize_as
-from dagster.seven.compat.pendulum import PendulumDateTime
+from dagster._serdes import deserialize_as
+from dagster._seven.compat.pendulum import PendulumDateTime
 from dagster.utils import merge_dicts
 from dagster.utils.hosted_user_process import external_repo_from_def
 

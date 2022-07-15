@@ -1,7 +1,7 @@
 from json import JSONDecodeError
 
 import dagster._check as check
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster._serdes import deserialize_json_to_dagster_namedtuple
 
 
 def filter_dagster_events_from_cli_logs(log_lines):

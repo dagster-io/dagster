@@ -31,7 +31,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import DagsterRun, PipelineRunStatus
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
-from dagster.serdes import unpack_value
+from dagster._serdes import unpack_value
 from dagster.utils import EventGenerationManager, ensure_gen
 
 from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext

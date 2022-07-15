@@ -4,7 +4,7 @@ import dagster._check as check
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent
 from dagster.core.utils import coerce_valid_log_level
-from dagster.serdes.serdes import (
+from dagster._serdes.serdes import (
     DefaultNamedTupleSerializer,
     WhitelistMap,
     deserialize_json_to_dagster_namedtuple,

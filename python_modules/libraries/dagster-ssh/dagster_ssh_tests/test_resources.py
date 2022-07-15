@@ -10,7 +10,7 @@ from dagster_ssh.resources import ssh_resource as sshresource
 
 from dagster import Field, ModeDefinition, execute_solid
 from dagster._legacy import solid
-from dagster.seven import get_system_temp_directory
+from dagster._seven import get_system_temp_directory
 
 
 def generate_ssh_key():

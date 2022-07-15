@@ -17,7 +17,7 @@ from dagster.core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
-from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
+from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
 
 from ..utils import (

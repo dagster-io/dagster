@@ -1,7 +1,7 @@
 import time
 from typing import cast
 
-import dagster.seven as seven
+import dagster._seven as _seven
 from dagster import Bool, Field
 from dagster import _check as check
 from dagster._grpc.client import DagsterGrpcClient
@@ -11,7 +11,7 @@ from dagster.core.host_representation.grpc_server_registry import ProcessGrpcSer
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import GRPC_INFO_TAG
-from dagster.serdes import ConfigurableClass, deserialize_as, deserialize_json_to_dagster_namedtuple
+from dagster._serdes import ConfigurableClass, deserialize_as, deserialize_json_to_dagster_namedtuple
 from dagster.utils import merge_dicts
 
 from .base import LaunchRunContext, RunLauncher
@@ -54,7 +54,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         instance.add_run_tags(
             run.run_id,
             {
-                GRPC_INFO_TAG: seven.json.dumps(
+                GRPC_INFO_TAG: _seven.json.dumps(
                     merge_dicts(
                         {"host": grpc_client.host},
                         (
@@ -128,7 +128,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         if GRPC_INFO_TAG not in tags:
             return None
 
-        grpc_info = seven.json.loads(tags.get(GRPC_INFO_TAG))
+        grpc_info = _seven.json.loads(tags.get(GRPC_INFO_TAG))
 
         return DagsterGrpcClient(
             port=grpc_info.get("port"),

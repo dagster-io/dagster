@@ -20,7 +20,7 @@ from typing import (
 import dagster._check as check
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.serdes.serdes import (
+from dagster._serdes.serdes import (
     DefaultNamedTupleSerializer,
     WhitelistMap,
     register_serdes_tuple_fallbacks,

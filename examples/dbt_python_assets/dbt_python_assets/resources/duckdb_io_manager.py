@@ -4,7 +4,7 @@ import pandas as pd
 from dagster import Field, IOManager
 from dagster import _check as check
 from dagster import io_manager
-from dagster.seven.temp_dir import get_system_temp_directory
+from dagster._seven.temp_dir import get_system_temp_directory
 
 
 class DuckDBCSVIOManager(IOManager):

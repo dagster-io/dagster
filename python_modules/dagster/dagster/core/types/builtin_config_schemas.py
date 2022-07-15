@@ -2,7 +2,7 @@ import pickle
 import warnings
 
 import dagster._check as check
-import dagster.seven as seven
+import dagster._seven as _seven
 from dagster._config import (
     ConfigAnyInstance,
     ConfigBoolInstance,
@@ -37,7 +37,7 @@ def load_type_input_schema_dict(value):
         return file_options
     elif file_type == "json":
         with open(file_options["path"], "r", encoding="utf8") as ff:
-            value_dict = seven.json.load(ff)
+            value_dict = _seven.json.load(ff)
             return value_dict["value"]
     elif file_type == "pickle":
         with open(file_options["path"], "rb") as ff:
@@ -100,7 +100,7 @@ def define_builtin_scalar_output_schema(scalar_name):
 
         if file_type == "json":
             json_file_path = file_options["path"]
-            json_value = seven.json.dumps({"value": runtime_value})
+            json_value = _seven.json.dumps({"value": runtime_value})
             with open(json_file_path, "w", encoding="utf8") as ff:
                 ff.write(json_value)
             return AssetMaterialization.file(json_file_path)

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Mapping, Sequence, Tuple
 
 import coloredlogs
 
-from dagster import seven
+from dagster import _seven
 from dagster._config import Field
 from dagster.core.definitions.logger_definition import LoggerDefinition, logger
 from dagster.core.utils import coerce_valid_log_level
@@ -103,7 +103,7 @@ def json_console_logger(init_context: "InitLoggerContext") -> logging.Logger:
 
     class JsonFormatter(logging.Formatter):
         def format(self, record):
-            return seven.json.dumps(record.__dict__)
+            return _seven.json.dumps(record.__dict__)
 
     handler.setFormatter(JsonFormatter())
     logger_.addHandler(handler)

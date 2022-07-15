@@ -8,7 +8,7 @@ import pkg_resources
 import yaml
 
 import dagster._check as check
-import dagster.seven as seven
+import dagster._seven as _seven
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.storage.tags import check_reserved_tags
 from dagster.utils import frozentags
@@ -95,12 +95,12 @@ def validate_tags(tags: Optional[Mapping[str, Any]], allow_reserved_tags=True) -
             err_reason = 'Could not JSON encode value "{}"'.format(value)
             str_val = None
             try:
-                str_val = seven.json.dumps(value)
+                str_val = _seven.json.dumps(value)
                 err_reason = 'JSON encoding "{json}" of value "{val}" is not equivalent to original value'.format(
                     json=str_val, val=value
                 )
 
-                valid = seven.json.loads(str_val) == value
+                valid = _seven.json.loads(str_val) == value
             except Exception:
                 pass
 

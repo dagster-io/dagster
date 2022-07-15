@@ -42,7 +42,7 @@ from dagster.core.definitions.pipeline_definition import (
     PipelineSubsetDefinition,
 )
 from dagster.core.utils import toposort_flatten
-from dagster.serdes import (
+from dagster._serdes import (
     DefaultNamedTupleSerializer,
     create_snapshot_id,
     deserialize_value,

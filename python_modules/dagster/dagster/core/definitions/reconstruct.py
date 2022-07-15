@@ -5,8 +5,8 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, NamedTuple, Optional, Union, overload
 
 import dagster._check as check
-import dagster.seven as seven
 from dagster._annotations import experimental
+import dagster._seven as _seven
 from dagster.core.code_pointer import (
     CodePointer,
     CustomPointer,
@@ -21,7 +21,7 @@ from dagster.core.origin import (
     RepositoryPythonOrigin,
 )
 from dagster.core.selector import parse_solid_selection
-from dagster.serdes import pack_value, unpack_value, whitelist_for_serdes
+from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster.utils import frozenlist, make_readonly_value
 
 from .events import AssetKey
@@ -170,7 +170,7 @@ class ReconstructablePipeline(
 
     @property
     def solid_selection(self) -> Optional[List[str]]:
-        return seven.json.loads(self.solid_selection_str) if self.solid_selection_str else None
+        return _seven.json.loads(self.solid_selection_str) if self.solid_selection_str else None
 
     @lru_cache(maxsize=1)
     def get_definition(self):
@@ -225,7 +225,7 @@ class ReconstructablePipeline(
             return ReconstructablePipeline(
                 repository=self.repository,
                 pipeline_name=self.pipeline_name,
-                solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
+                solid_selection_str=_seven.json.dumps(solid_selection) if solid_selection else None,
                 solids_to_execute=None,
                 asset_selection=asset_selection,
             )
@@ -240,7 +240,7 @@ class ReconstructablePipeline(
             return ReconstructablePipeline(
                 repository=self.repository,
                 pipeline_name=self.pipeline_name,
-                solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
+                solid_selection_str=_seven.json.dumps(solid_selection) if solid_selection else None,
                 solids_to_execute=frozenset(solids_to_execute) if solids_to_execute else None,
             )
         else:
@@ -392,7 +392,7 @@ def reconstructable(target):
     """
     from dagster.core.definitions import JobDefinition, PipelineDefinition
 
-    if not seven.is_function_or_decorator_instance_of(target, PipelineDefinition):
+    if not _seven.is_function_or_decorator_instance_of(target, PipelineDefinition):
         if isinstance(target, JobDefinition):
             raise DagsterInvariantViolationError(
                 "Reconstructable target was not a function returning a job definition, or a job "
@@ -407,14 +407,14 @@ def reconstructable(target):
             "by a decorated function, got {type}.".format(type=type(target)),
         )
 
-    if seven.is_lambda(target):
+    if _seven.is_lambda(target):
         raise DagsterInvariantViolationError(
             "Reconstructable target can not be a lambda. Use a function or "
             "decorated function defined at module scope instead, or use "
             "build_reconstructable_job."
         )
 
-    if seven.qualname_differs(target):
+    if _seven.qualname_differs(target):
         raise DagsterInvariantViolationError(
             'Reconstructable target "{target.__name__}" has a different '
             '__qualname__ "{target.__qualname__}" indicating it is not '
@@ -619,7 +619,7 @@ def def_from_pointer(
     # if its a function invoke it - otherwise we are pointing to a
     # artifact in module scope, likely decorator output
 
-    if seven.get_arg_names(target):
+    if _seven.get_arg_names(target):
         raise DagsterInvariantViolationError(
             "Error invoking function at {target} with no arguments. "
             "Reconstructable target must be callable with no arguments".format(

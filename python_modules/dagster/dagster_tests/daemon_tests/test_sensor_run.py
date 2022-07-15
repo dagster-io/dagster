@@ -44,7 +44,7 @@ from dagster.core.test_utils import (
     wait_for_futures,
 )
 from dagster.core.workspace.load_target import PythonFileTarget
-from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
 
 @solid

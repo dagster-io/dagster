@@ -7,7 +7,7 @@ import uuid
 
 import pytest
 
-from dagster import seven
+from dagster import _seven
 from dagster._api.list_repositories import sync_list_repositories_grpc
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import open_server_process, wait_for_grpc_server
@@ -19,8 +19,8 @@ from dagster.core.host_representation.origin import (
 )
 from dagster.core.test_utils import environ, instance_for_test, new_cwd
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
-from dagster.seven import get_system_temp_directory
+from dagster._serdes import deserialize_json_to_dagster_namedtuple
+from dagster._seven import get_system_temp_directory
 from dagster.utils import file_relative_path, find_free_port
 from dagster.utils.error import SerializableErrorInfo
 
@@ -307,7 +307,7 @@ def test_load_with_non_existant_file(capfd):
 
     _, err = capfd.readouterr()
 
-    if seven.IS_WINDOWS:
+    if _seven.IS_WINDOWS:
         assert "The system cannot find the file specified" in err
     else:
         assert "No such file or directory" in err
@@ -375,7 +375,7 @@ def test_load_with_empty_working_directory(capfd):
                 process.terminate()
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="Crashes in subprocesses crash test runs on Windows")
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Crashes in subprocesses crash test runs on Windows")
 def test_crash_during_load():
     port = find_free_port()
     python_file = file_relative_path(__file__, "crashy_grpc_repo.py")

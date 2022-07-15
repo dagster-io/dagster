@@ -8,7 +8,7 @@ from dagit.app import create_app_from_workspace_process_context
 from dagit.cli import dagit, host_dagit_ui_with_workspace_process_context
 from starlette.testclient import TestClient
 
-from dagster import seven
+from dagster import _seven
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, UPDATE_REPO_STATS, hash_name
 from dagster.core.test_utils import instance_for_test
@@ -243,7 +243,7 @@ def test_dagit_logs(_, caplog):
             for record in caplog.records:
                 try:
                     message = json.loads(record.getMessage())
-                except seven.JSONDecodeError:
+                except _seven.JSONDecodeError:
                     continue
 
                 records.append(record)

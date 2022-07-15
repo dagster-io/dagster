@@ -26,8 +26,8 @@ from dagster.core.snap import (
     snapshot_from_execution_plan,
 )
 from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
-from dagster.serdes import ConfigurableClass
-from dagster.serdes.config_class import ConfigurableClassData
+from dagster._serdes import ConfigurableClass
+from dagster._serdes.config_class import ConfigurableClassData
 
 
 def test_get_run_by_id():

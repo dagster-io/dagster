@@ -4,7 +4,7 @@ from typing import List, NamedTuple, Optional
 import dagster._check as check
 from dagster._config import ConfigFieldSnap, snap_from_field
 from dagster.core.definitions import LoggerDefinition, ModeDefinition, ResourceDefinition
-from dagster.serdes import whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 
 
 def build_mode_def_snap(mode_def, root_config_key):

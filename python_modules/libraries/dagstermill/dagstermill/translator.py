@@ -1,6 +1,6 @@
 import papermill
 
-from dagster import seven
+from dagster import _seven
 
 RESERVED_INPUT_NAMES = [
     "__dm_context",
@@ -50,7 +50,7 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
         )
 
         for key in pipeline_context_args:
-            pipeline_context_args[key] = seven.json.dumps(pipeline_context_args[key])
+            pipeline_context_args[key] = _seven.json.dumps(pipeline_context_args[key])
 
         content = INJECTED_BOILERPLATE.format(pipeline_context_args=pipeline_context_args)
 

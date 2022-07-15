@@ -20,7 +20,7 @@ from dagster.core.execution.plan.execute_plan import dagster_event_sequence_for_
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
-from dagster.serdes import deserialize_value
+from dagster._serdes import deserialize_value
 
 PICKLED_EVENTS_FILE_NAME = "events.pkl"
 PICKLED_STEP_RUN_REF_FILE_NAME = "step_run_ref.pkl"

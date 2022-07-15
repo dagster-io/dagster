@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 
 import dagster._check as check
-import dagster.seven as seven
+import dagster._seven as _seven
 
 
 def format_duration(milliseconds):
@@ -42,7 +42,7 @@ def format_duration(milliseconds):
 
 class TimerResult:
     def __init__(self):
-        self.start_time = seven.time_fn()
+        self.start_time = _seven.time_fn()
         self.end_time = None
 
     @property
@@ -72,4 +72,4 @@ def time_execution_scope():
 
     timer_result = TimerResult()
     yield timer_result
-    timer_result.end_time = seven.time_fn()
+    timer_result.end_time = _seven.time_fn()

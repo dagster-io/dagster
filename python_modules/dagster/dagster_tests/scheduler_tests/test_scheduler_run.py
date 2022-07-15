@@ -47,9 +47,9 @@ from dagster.core.test_utils import (
     mock_system_timezone,
 )
 from dagster.core.workspace.load_target import EmptyWorkspaceTarget, GrpcServerTarget, ModuleTarget
-from dagster.scheduler.scheduler import launch_scheduled_runs
-from dagster.seven import wait_for_process
-from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._scheduler.scheduler import launch_scheduled_runs
+from dagster._seven import wait_for_process
+from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster.utils import find_free_port
 from dagster.utils.partitions import DEFAULT_DATE_FORMAT
 

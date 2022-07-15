@@ -18,7 +18,7 @@ from dagster.core.execution.plan.step import (
     UnresolvedCollectExecutionStep,
     UnresolvedMappedExecutionStep,
 )
-from dagster.serdes import create_snapshot_id, whitelist_for_serdes
+from dagster._serdes import create_snapshot_id, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
 # Can be incremented on breaking changes to the snapshot (since it is used to reconstruct

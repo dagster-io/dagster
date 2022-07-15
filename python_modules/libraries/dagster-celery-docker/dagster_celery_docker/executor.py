@@ -15,7 +15,7 @@ from dagster.core.events import EngineEventData
 from dagster.core.events.utils import filter_dagster_events_from_cli_logs
 from dagster.core.execution.retries import RetryMode
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.serdes import pack_value, serialize_dagster_namedtuple, unpack_value
+from dagster._serdes import pack_value, serialize_dagster_namedtuple, unpack_value
 from dagster.utils import merge_dicts
 
 CELERY_DOCKER_CONFIG_KEY = "celery-docker"

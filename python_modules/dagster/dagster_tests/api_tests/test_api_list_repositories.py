@@ -3,7 +3,7 @@ import sys
 import pytest
 from dagster_test.dagster_core_docker_buildkite import get_test_project_docker_image
 
-from dagster import seven
+from dagster import _seven
 from dagster._api.list_repositories import (
     sync_list_repositories_ephemeral_grpc,
     sync_list_repositories_grpc,
@@ -11,7 +11,7 @@ from dagster._api.list_repositories import (
 from dagster._grpc.types import LoadableRepositorySymbol
 from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer, PackageCodePointer
 from dagster.core.errors import DagsterUserCodeProcessError
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster._serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils import file_relative_path
 
 
@@ -223,7 +223,7 @@ def test_sync_list_python_package_attribute_grpc():
     )
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="Depends on Docker, so skip running in Windows")
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Depends on Docker, so skip running in Windows")
 def test_sync_list_container_grpc(docker_grpc_client):
     response = sync_list_repositories_grpc(docker_grpc_client)
 

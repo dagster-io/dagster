@@ -21,7 +21,7 @@ from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
 
-from ...serdes import whitelist_for_serdes
+from ..._serdes import whitelist_for_serdes
 from ...utils import ensure_gen, merge_dicts
 from ...utils.schedules import is_valid_cron_string
 from ..decorator_utils import get_function_params

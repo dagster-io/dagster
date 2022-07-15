@@ -20,7 +20,7 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id
-from dagster.serdes.serdes import (
+from dagster._serdes.serdes import (
     DefaultNamedTupleSerializer,
     EnumSerializer,
     WhitelistMap,

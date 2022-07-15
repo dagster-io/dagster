@@ -23,7 +23,7 @@ from dagster.core.errors import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
-from dagster.serdes import whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 
 from ..decorator_utils import get_function_params
 from .events import AssetKey

@@ -6,7 +6,7 @@ from dagster.core.definitions.sensor_definition import SensorExecutionData
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.external_data import ExternalSensorExecutionErrorData
 from dagster.core.host_representation.handle import RepositoryHandle
-from dagster.serdes import deserialize_as
+from dagster._serdes import deserialize_as
 
 if TYPE_CHECKING:
     from dagster._grpc.client import DagsterGrpcClient

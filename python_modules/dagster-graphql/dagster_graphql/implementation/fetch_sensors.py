@@ -4,7 +4,7 @@ import dagster._check as check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, SensorSelector
 from dagster.core.scheduler.instigation import InstigatorState, SensorInstigatorData
-from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
+from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 
 from .utils import UserFacingGraphQLError, capture_error
 

@@ -46,7 +46,7 @@ from dagster.core.execution.plan.objects import StepFailureData, StepRetryData, 
 from dagster.core.execution.plan.outputs import StepOutputData
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.serdes import (
+from dagster._serdes import (
     DefaultNamedTupleSerializer,
     WhitelistMap,
     register_serdes_tuple_fallbacks,

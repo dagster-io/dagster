@@ -17,8 +17,8 @@ from dagster._builtins import BuiltinEnum
 from dagster.core.definitions.events import DynamicOutput, Output, TypeCheck
 from dagster.core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.serdes import whitelist_for_serdes
-from dagster.seven import is_subclass
+from dagster._serdes import whitelist_for_serdes
+from dagster._seven import is_subclass
 
 from ..definitions.resource_requirement import (
     RequiresResources,
@@ -256,7 +256,7 @@ class DagsterType(RequiresResources):
 
 
 def _validate_type_check_fn(fn: t.Callable, name: t.Optional[str]) -> bool:
-    from dagster.seven import get_arg_names
+    from dagster._seven import get_arg_names
 
     args = get_arg_names(fn)
 

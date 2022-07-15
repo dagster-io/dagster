@@ -17,7 +17,7 @@ from dagster.core.scheduler.instigation import (
 )
 from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
-from dagster.seven.compat.pendulum import to_timezone
+from dagster._seven.compat.pendulum import to_timezone
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.utils.yaml_utils import dump_run_config_yaml
 

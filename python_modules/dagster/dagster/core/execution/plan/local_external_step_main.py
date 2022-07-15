@@ -10,7 +10,7 @@ from dagster.core.execution.plan.external_step import (
     run_step_from_ref,
 )
 from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
-from dagster.serdes import serialize_value
+from dagster._serdes import serialize_value
 
 
 def main(step_run_ref_path: str) -> None:

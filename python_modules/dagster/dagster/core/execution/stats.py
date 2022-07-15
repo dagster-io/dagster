@@ -7,7 +7,7 @@ from dagster.core.definitions import ExpectationResult
 from dagster.core.events import MARKER_EVENTS, DagsterEventType, StepExpectationResultData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot
-from dagster.serdes import whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 from dagster.utils import datetime_as_float
 
 

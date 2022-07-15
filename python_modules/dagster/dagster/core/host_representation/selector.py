@@ -2,7 +2,7 @@ from typing import List, NamedTuple, Optional
 
 import dagster._check as check
 from dagster.core.definitions.events import AssetKey
-from dagster.serdes import create_snapshot_id, whitelist_for_serdes
+from dagster._serdes import create_snapshot_id, whitelist_for_serdes
 
 
 class PipelineSelector(

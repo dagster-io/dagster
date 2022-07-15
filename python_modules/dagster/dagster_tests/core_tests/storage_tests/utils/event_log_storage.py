@@ -56,7 +56,7 @@ from dagster.core.storage.event_log.migration import (
 from dagster.core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
 from dagster.core.test_utils import create_run_for_test, instance_for_test
 from dagster.core.utils import make_new_run_id
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster._serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils import datetime_as_float
 
 TEST_TIMEOUT = 5
@@ -974,14 +974,14 @@ class TestEventLogStorage:
                 stack.enter_context(
                     mock.patch(
                         "dagster.core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",
-                        side_effect=seven.JSONDecodeError("error", "", 0),
+                        side_effect=_seven.JSONDecodeError("error", "", 0),
                     )
                 )
                 # for sqlite event log storage, which overrides the record fetching implementation
                 stack.enter_context(
                     mock.patch(
                         "dagster.core.storage.event_log.sqlite.sqlite_event_log.deserialize_json_to_dagster_namedtuple",
-                        side_effect=seven.JSONDecodeError("error", "", 0),
+                        side_effect=_seven.JSONDecodeError("error", "", 0),
                     )
                 )
                 assert asset_key in set(storage.all_asset_keys())

@@ -19,7 +19,7 @@ from dagster.core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
-from dagster.serdes import ConfigurableClass, ConfigurableClassData, deserialize_as
+from dagster._serdes import ConfigurableClass, ConfigurableClassData, deserialize_as
 
 from ..utils import (
     create_pg_connection,

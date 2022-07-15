@@ -21,7 +21,7 @@ from dagster.core.decorator_utils import get_function_params, get_valid_name_per
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.io_manager import IOManagerDefinition
 from dagster.core.types.dagster_type import DagsterType
-from dagster.seven import funcsigs
+from dagster._seven import funcsigs
 from dagster.utils.backcompat import (
     ExperimentalWarning,
     canonicalize_backcompat_args,

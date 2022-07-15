@@ -1,7 +1,7 @@
 import inspect
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Type
 
-from dagster.seven import funcsigs, is_module_available
+from dagster._seven import funcsigs, is_module_available
 
 from .utils import NoValueSentinel
 

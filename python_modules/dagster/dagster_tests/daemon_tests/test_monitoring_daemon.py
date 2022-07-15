@@ -19,7 +19,7 @@ from dagster.core.test_utils import (
     instance_for_test,
 )
 from dagster.core.workspace.load_target import EmptyWorkspaceTarget
-from dagster.serdes import ConfigurableClass
+from dagster._serdes import ConfigurableClass
 
 
 class TestRunLauncher(RunLauncher, ConfigurableClass):
