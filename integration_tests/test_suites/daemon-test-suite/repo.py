@@ -1,4 +1,6 @@
-from dagster import RunRequest, pipeline, repository, schedule, sensor
+from dagster import RunRequest, repository
+
+from dagster.legacy import pipeline, schedule, sensor
 from dagster.legacy import solid
 
 

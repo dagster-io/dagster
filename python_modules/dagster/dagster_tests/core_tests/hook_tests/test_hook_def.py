@@ -11,10 +11,10 @@ from dagster import (
     graph,
     job,
     op,
-    pipeline,
     reconstructable,
     resource,
 )
+from dagster.legacy import pipeline
 from dagster.core.definitions import NodeHandle, PresetDefinition, failure_hook, success_hook
 from dagster.core.definitions.decorators.hook_decorator import event_list_hook
 from dagster.core.definitions.events import HookExecutionResult

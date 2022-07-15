@@ -14,10 +14,10 @@ from dagster import (
     ModeDefinition,
     execute_pipeline,
     fs_io_manager,
-    pipeline,
     reconstructable,
     resource,
 )
+from dagster.legacy import pipeline
 from dagster.core.execution.compute_logs import should_disable_io_stream_redirect
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType

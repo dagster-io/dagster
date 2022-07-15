@@ -8,9 +8,9 @@ from dagster import (
     String,
     composite_solid,
     execute_pipeline,
-    pipeline,
     root_input_manager,
 )
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 

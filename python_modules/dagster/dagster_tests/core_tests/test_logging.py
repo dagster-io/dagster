@@ -8,7 +8,9 @@ import pytest
 
 from dagster import DagsterInvalidConfigError, ModeDefinition, PipelineRun
 from dagster import _check as check
-from dagster import execute_pipeline, execute_solid, pipeline, resource
+from dagster import execute_pipeline, execute_solid, 
+
+from dagster.legacy import pipeline resource
 from dagster.core.definitions import NodeHandle
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.logger import InitLoggerContext

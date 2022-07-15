@@ -1,4 +1,6 @@
-from dagster import composite_solid, pipeline
+from dagster import composite_solid, 
+
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 

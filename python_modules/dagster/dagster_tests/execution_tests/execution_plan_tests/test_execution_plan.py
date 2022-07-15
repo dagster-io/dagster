@@ -2,7 +2,13 @@ import pytest
 
 from dagster import DagsterInstance, Int, Output, OutputDefinition
 from dagster import _check as check
-from dagster import composite_solid, execute_pipeline, lambda_solid, pipeline
+from dagster import (
+    composite_solid,
+    execute_pipeline,
+    lambda_solid,
+)
+
+from dagster.legacy import pipeline
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import (
     DagsterInvalidConfigError,

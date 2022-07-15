@@ -1,4 +1,6 @@
-from dagster import PresetDefinition, pipeline
+from dagster import PresetDefinition, 
+
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 

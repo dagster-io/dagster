@@ -1,4 +1,9 @@
-from dagster import Array, Output, pipeline
+from dagster import (
+    Array,
+    Output,
+)
+
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 

@@ -1,4 +1,9 @@
-from dagster import composite_solid, execute_pipeline, pipeline
+from dagster import (
+    composite_solid,
+    execute_pipeline,
+)
+
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 

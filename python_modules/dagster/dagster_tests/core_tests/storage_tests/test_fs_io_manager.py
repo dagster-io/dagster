@@ -16,8 +16,8 @@ from dagster import (
     execute_pipeline,
     graph,
     op,
-    pipeline,
 )
+from dagster.legacy import pipeline
 from dagster.core.definitions import AssetGroup, AssetIn, asset, build_assets_job, multi_asset
 from dagster.core.definitions.version_strategy import VersionStrategy
 from dagster.core.errors import DagsterInvariantViolationError

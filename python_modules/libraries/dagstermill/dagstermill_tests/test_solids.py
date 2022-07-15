@@ -11,7 +11,11 @@ from dagstermill.compat import ExecutionError
 from jupyter_client.kernelspec import NoSuchKernel
 from nbconvert.preprocessors import ExecutePreprocessor
 
-from dagster import execute_pipeline, pipeline
+from dagster import (
+    execute_pipeline,
+)
+
+from dagster.legacy import pipeline
 from dagster._check import CheckError
 from dagster.core.definitions.metadata import PathMetadataValue
 from dagster.core.definitions.reconstruct import ReconstructablePipeline

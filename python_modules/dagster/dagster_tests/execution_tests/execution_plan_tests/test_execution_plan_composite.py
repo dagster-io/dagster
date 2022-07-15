@@ -1,4 +1,11 @@
-from dagster import Field, Int, String, composite_solid, pipeline
+from dagster import (
+    Field,
+    Int,
+    String,
+    composite_solid,
+)
+
+from dagster.legacy import pipeline
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance

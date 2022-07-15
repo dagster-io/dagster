@@ -1,4 +1,5 @@
-from dagster import InputDefinition, List, Optional, execute_pipeline, lambda_solid, pipeline
+from dagster import InputDefinition, List, Optional, execute_pipeline, lambda_solid
+from dagster.legacy import pipeline
 
 
 def test_from_intermediates_from_multiple_outputs():

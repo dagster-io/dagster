@@ -77,50 +77,52 @@ def create_databricks_job_solid(
     required_resource_keys=frozenset(["databricks_client"]),
 ):
     """
-    Creates a solid that launches a databricks job.
+        Creates a solid that launches a databricks job.
 
-    As config, the solid accepts a blob of the form described in Databricks' job API:
-    https://docs.databricks.com/dev-tools/api/latest/jobs.html.
+        As config, the solid accepts a blob of the form described in Databricks' job API:
+        https://docs.databricks.com/dev-tools/api/latest/jobs.html.
 
-    Returns:
-        SolidDefinition: A solid definition.
+        Returns:
+            SolidDefinition: A solid definition.
 
-    Example:
+        Example:
 
-        .. code-block:: python
+            .. code-block:: python
 
-            from dagster import ModeDefinition, pipeline
-            from dagster_databricks import create_databricks_job_solid, databricks_client
+                from dagster import ModeDefinition,
 
-            sparkpi = create_databricks_job_solid().configured(
-                {
-                    "job": {
-                        "name": "SparkPi Python job",
-                        "new_cluster": {
-                            "spark_version": "7.3.x-scala2.12",
-                            "node_type_id": "i3.xlarge",
-                            "num_workers": 2,
-                        },
-                        "spark_python_task": {"python_file": "dbfs:/docs/pi.py", "parameters": ["10"]},
-                    }
-                },
-                name="sparkspi",
-            )
+    from dagster.legacy import pipeline
+                from dagster_databricks import create_databricks_job_solid, databricks_client
 
-
-            @pipeline(
-                mode_defs=[
-                    ModeDefinition(
-                        resource_defs={
-                            "databricks_client": databricks_client.configured(
-                                {"host": "my.workspace.url", "token": "my.access.token"}
-                            )
+                sparkpi = create_databricks_job_solid().configured(
+                    {
+                        "job": {
+                            "name": "SparkPi Python job",
+                            "new_cluster": {
+                                "spark_version": "7.3.x-scala2.12",
+                                "node_type_id": "i3.xlarge",
+                                "num_workers": 2,
+                            },
+                            "spark_python_task": {"python_file": "dbfs:/docs/pi.py", "parameters": ["10"]},
                         }
-                    )
-                ]
-            )
-            def my_pipeline():
-                sparkpi()
+                    },
+                    name="sparkspi",
+                )
+
+
+                @pipeline(
+                    mode_defs=[
+                        ModeDefinition(
+                            resource_defs={
+                                "databricks_client": databricks_client.configured(
+                                    {"host": "my.workspace.url", "token": "my.access.token"}
+                                )
+                            }
+                        )
+                    ]
+                )
+                def my_pipeline():
+                    sparkpi()
     """
     return core_create_databricks_job(
         dagster_decorator=solid,

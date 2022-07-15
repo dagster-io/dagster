@@ -10,9 +10,9 @@ from dagster import (
     PresetDefinition,
     default_executors,
     file_relative_path,
-    pipeline,
     repository,
 )
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 

@@ -4,9 +4,9 @@ from dagster import (
     OutputDefinition,
     daily_schedule,
     lambda_solid,
-    pipeline,
     repository,
 )
+from dagster.legacy import pipeline
 from dagster.core.test_utils import today_at_midnight
 
 

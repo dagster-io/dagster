@@ -1,6 +1,8 @@
 import datetime
 
-from dagster import daily_schedule, pipeline, repository
+from dagster import daily_schedule, repository
+
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 
@@ -17,11 +19,7 @@ def do_it_all():
 @daily_schedule(pipeline_name="do_it_all", start_date=datetime.datetime(2020, 1, 1))
 def do_it_all_schedule(date):
     return {
-        "solids": {
-            "do_something_with_config": {
-                "config": {"date": date.strftime("%Y-%m-%d %H")}
-            }
-        }
+        "solids": {"do_something_with_config": {"config": {"date": date.strftime("%Y-%m-%d %H")}}}
     }
 
 

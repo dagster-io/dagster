@@ -4,9 +4,11 @@ from dagster import (
     ModeDefinition,
     ResourceDefinition,
     execute_pipeline,
-    pipeline,
+    
+
     resource,
 )
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 

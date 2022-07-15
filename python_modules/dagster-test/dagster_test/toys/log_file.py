@@ -1,6 +1,14 @@
 import os
 
-from dagster import AssetKey, AssetMaterialization, Field, MetadataValue, Output, pipeline
+from dagster import (
+    AssetKey,
+    AssetMaterialization,
+    Field,
+    MetadataValue,
+    Output,
+)
+
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 

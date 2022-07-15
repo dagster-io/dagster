@@ -4,9 +4,9 @@ from dagster import (
     DagsterInvariantViolationError,
     ModeDefinition,
     execute_pipeline,
-    pipeline,
     resource,
 )
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 

@@ -14,7 +14,13 @@ import sqlalchemy as db
 
 from dagster import AssetKey, AssetMaterialization, Output
 from dagster import _check as check
-from dagster import execute_pipeline, file_relative_path, job, pipeline
+from dagster import (
+    execute_pipeline,
+    file_relative_path,
+    job,
+)
+
+from dagster.legacy import pipeline
 from dagster.cli.debug import DebugRunPayload
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.events import DagsterEvent

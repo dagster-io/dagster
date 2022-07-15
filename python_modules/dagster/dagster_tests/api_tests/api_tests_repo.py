@@ -8,10 +8,10 @@ from dagster import (
     ScheduleDefinition,
     lambda_solid,
     op,
-    pipeline,
     repository,
     usable_as_dagster_type,
 )
+from dagster.legacy import pipeline
 from dagster.core.definitions.decorators.sensor_decorator import sensor
 from dagster.core.definitions.sensor_definition import RunRequest
 from dagster.core.errors import DagsterError

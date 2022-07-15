@@ -12,9 +12,9 @@ from dagster import (
     execute_pipeline,
     job,
     op,
-    pipeline,
     reconstructable,
 )
+from dagster.legacy import pipeline
 from dagster.core.errors import DagsterExecutionStepNotFoundError
 from dagster.core.execution.api import create_execution_plan, reexecute_pipeline
 from dagster.core.execution.plan.state import KnownExecutionState

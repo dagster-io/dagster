@@ -11,8 +11,8 @@ from dagster import (
     Int,
     PipelineDefinition,
     execute_pipeline,
-    pipeline,
 )
+from dagster.legacy import pipeline
 from dagster.config import Enum as ConfigEnum
 from dagster.config.validate import validate_config
 from dagster.legacy import solid

@@ -28,10 +28,10 @@ from dagster import (
     graph,
     job,
     op,
-    pipeline,
     reexecute_pipeline,
     resource,
 )
+from dagster.legacy import pipeline
 from dagster._check import CheckError
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.time_window_partitions import DailyPartitionsDefinition

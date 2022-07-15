@@ -7,7 +7,11 @@ from dagit.graphql import GraphQLWS
 from dagit.webserver import DagitWebserver
 from starlette.testclient import TestClient
 
-from dagster import execute_pipeline, pipeline
+from dagster import (
+    execute_pipeline,
+)
+
+from dagster.legacy import pipeline
 from dagster.core.test_utils import environ, instance_for_test
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import WorkspaceFileTarget

@@ -28,9 +28,9 @@ from dagster import (
     composite_solid,
     execute_solid,
     op,
-    pipeline,
     resource,
 )
+from dagster.legacy import pipeline
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,

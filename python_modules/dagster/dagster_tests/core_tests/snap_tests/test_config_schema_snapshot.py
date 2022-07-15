@@ -8,9 +8,9 @@ from dagster import (
     ScalarUnion,
     Selector,
     Shape,
-    pipeline,
     resource,
 )
+from dagster.legacy import pipeline
 from dagster.config.config_type import ConfigTypeKind
 from dagster.config.field import resolve_to_config_type
 from dagster.config.field_utils import Map

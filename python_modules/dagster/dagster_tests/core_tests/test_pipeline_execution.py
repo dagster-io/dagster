@@ -23,10 +23,10 @@ from dagster import _check as check
 from dagster import (
     execute_pipeline,
     execute_pipeline_iterator,
-    pipeline,
     reconstructable,
     reexecute_pipeline,
 )
+from dagster.legacy import pipeline
 from dagster.core.definitions import Node
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.definitions.graph_definition import _create_adjacency_lists

@@ -4,9 +4,9 @@ from dagster import (
     OutputDefinition,
     ScheduleDefinition,
     lambda_solid,
-    pipeline,
     repository,
 )
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 

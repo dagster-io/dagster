@@ -21,9 +21,9 @@ from dagster import (
     OutputDefinition,
     execute_pipeline,
     fs_io_manager,
-    pipeline,
     reconstructable,
 )
+from dagster.legacy import pipeline
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.test_utils import instance_for_test
 from dagster.legacy import solid

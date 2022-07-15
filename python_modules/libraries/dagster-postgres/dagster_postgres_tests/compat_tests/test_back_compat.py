@@ -17,9 +17,9 @@ from dagster import (
     execute_pipeline,
     job,
     op,
-    pipeline,
     reconstructable,
 )
+from dagster.legacy import pipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster.core.storage.pipeline_run import RunsFilter

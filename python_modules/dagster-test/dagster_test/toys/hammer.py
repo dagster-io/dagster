@@ -8,8 +8,8 @@ from dagster import (
     Output,
     OutputDefinition,
     fs_io_manager,
-    pipeline,
 )
+from dagster.legacy import pipeline
 from dagster.core.definitions.executor_definition import default_executors
 from dagster.legacy import solid
 

@@ -15,8 +15,8 @@ from dagster import (
     execute_pipeline,
     graph,
     lambda_solid,
-    pipeline,
 )
+from dagster.legacy import pipeline
 from dagster.legacy import solid
 
 
