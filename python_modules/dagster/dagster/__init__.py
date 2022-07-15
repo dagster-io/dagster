@@ -308,7 +308,6 @@ from dagster.config.source import BoolSource, StringSource, IntSource  # isort:s
 
 if typing.TYPE_CHECKING:
     # pylint:disable=reimported
-    from dagster.core.definitions import AssetGroup
     from dagster.core.definitions import DagsterAssetMetadataValue as DagsterAssetMetadataEntryData
     from dagster.core.definitions import (
         DagsterPipelineRunMetadataValue as DagsterPipelineRunMetadataEntryData,
@@ -329,14 +328,6 @@ if typing.TYPE_CHECKING:
     from dagster.core.definitions import UrlMetadataValue as UrlMetadataEntryData
 
     # pylint:enable=reimported
-
-_DEPRECATED = {
-    "AssetGroup": (
-        "dagster.core.definitions",
-        "0.16.0",
-        "Instead, place a set of assets wrapped with `with_resources` directly on a repository.",
-    ),
-}
 
 _DEPRECATED_RENAMED = {
     "EventMetadataEntry": (MetadataEntry, "0.16.0"),
@@ -397,7 +388,6 @@ pep562(__name__)
 
 __all__ = [
     # Definition
-    "AssetGroup",
     "AssetKey",
     "AssetIn",
     "AssetMaterialization",
