@@ -25,7 +25,6 @@ from dagster import (
     op,
     repository,
 )
-from dagster.legacy import pipeline
 from dagster.cli import ENV_PREFIX, cli
 from dagster.cli.job import job_execute_command
 from dagster.cli.pipeline import pipeline_execute_command
@@ -38,7 +37,7 @@ from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
-from dagster.legacy import solid
+from dagster.legacy import pipeline, solid
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.version import __version__
 

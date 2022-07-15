@@ -15,13 +15,8 @@ import pandas as pd
 import pytest
 from dagster_mlflow.resources import MlFlow, mlflow_tracking
 
-from dagster import (
-    ModeDefinition,
-    execute_pipeline,
-)
-
-from dagster.legacy import pipeline
-from dagster.legacy import solid
+from dagster import ModeDefinition, execute_pipeline
+from dagster.legacy import pipeline, solid
 
 
 @pytest.fixture

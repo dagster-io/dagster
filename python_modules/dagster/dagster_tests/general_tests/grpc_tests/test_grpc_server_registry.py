@@ -5,8 +5,6 @@ import time
 import pytest
 
 from dagster import file_relative_path, repository
-
-from dagster.legacy import pipeline
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.host_representation.origin import (
@@ -15,6 +13,7 @@ from dagster.core.host_representation.origin import (
 )
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster.legacy import pipeline
 
 
 @pipeline

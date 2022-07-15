@@ -1,9 +1,4 @@
-from dagster import (
-    Failure,
-    MetadataEntry,
-    execute_pipeline,
-    lambda_solid,
-)
+from dagster import Failure, MetadataEntry, execute_pipeline, lambda_solid
 from dagster.legacy import pipeline
 
 

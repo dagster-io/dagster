@@ -1,7 +1,5 @@
-from dagster import Output, OutputDefinition, composite_solid, 
-
-from dagster.legacy import pipeline
-from dagster.legacy import solid
+from dagster import Output, OutputDefinition, composite_solid
+from dagster.legacy import pipeline, solid
 
 
 @solid

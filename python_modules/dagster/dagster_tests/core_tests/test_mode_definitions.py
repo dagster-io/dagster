@@ -19,10 +19,9 @@ from dagster import (
     logger,
     resource,
 )
-from dagster.legacy import pipeline
 from dagster._check import CheckError
 from dagster.core.utils import coerce_valid_log_level
-from dagster.legacy import solid
+from dagster.legacy import pipeline, solid
 from dagster.utils.test import execute_solids_within_pipeline
 
 

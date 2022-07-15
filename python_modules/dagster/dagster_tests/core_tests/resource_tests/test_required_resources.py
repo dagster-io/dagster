@@ -18,13 +18,12 @@ from dagster import (
     resource,
     usable_as_dagster_type,
 )
-from dagster.legacy import pipeline
 from dagster.core.definitions.configurable import configured
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster.core.execution.api import create_execution_plan, execute_run
 from dagster.core.types.dagster_type import create_any_type
-from dagster.legacy import solid
+from dagster.legacy import pipeline, solid
 
 
 def get_resource_init_pipeline(resources_initted):

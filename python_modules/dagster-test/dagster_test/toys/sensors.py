@@ -4,10 +4,7 @@ from slack_sdk.web.client import WebClient
 
 from dagster import AssetKey, PipelineFailureSensorContext, RunRequest, SkipReason
 from dagster import _check as check
-from dagster import (
-    asset_sensor,
-)
-
+from dagster import asset_sensor
 from dagster.legacy import pipeline_failure_sensor, sensor
 
 

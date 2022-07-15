@@ -13,8 +13,7 @@ from dagster import (
     sensor,
     usable_as_dagster_type,
 )
-from dagster.legacy import pipeline
-from dagster.legacy import solid
+from dagster.legacy import pipeline, solid
 
 
 @lambda_solid

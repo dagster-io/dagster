@@ -3,11 +3,9 @@ import time
 from dagster_graphql.test.utils import define_out_of_process_context, execute_dagster_graphql
 
 from dagster import PresetDefinition, repository
-
-from dagster.legacy import pipeline
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
-from dagster.legacy import solid
+from dagster.legacy import pipeline, solid
 
 RUNS_QUERY = """
 query RunsQuery {

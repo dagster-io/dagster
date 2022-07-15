@@ -1,7 +1,5 @@
 from dagster import RunRequest, repository
-
-from dagster.legacy import pipeline, schedule, sensor
-from dagster.legacy import solid
+from dagster.legacy import pipeline, schedule, sensor, solid
 
 
 @solid()

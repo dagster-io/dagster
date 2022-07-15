@@ -1,7 +1,7 @@
 import os
 import time
 
-from dagster import pipeline, repository
+from dagster import repository
 from dagster.legacy import solid
 
 

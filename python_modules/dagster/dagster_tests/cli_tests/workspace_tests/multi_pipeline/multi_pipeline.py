@@ -1,4 +1,4 @@
-from dagster import pipeline, repository
+from dagster import repository
 
 
 @pipeline

@@ -1,9 +1,7 @@
 import pandas as pd
 
-from dagster import ModeDefinition, execute_pipeline, io_manager, 
-
-from dagster.legacy import pipeline
-from dagster.legacy import solid
+from dagster import ModeDefinition, execute_pipeline, io_manager
+from dagster.legacy import pipeline, solid
 from docs_snippets.concepts.assets.materialization_io_managers import (
     PandasCsvIOManager,
     PandasCsvIOManagerWithAsset,

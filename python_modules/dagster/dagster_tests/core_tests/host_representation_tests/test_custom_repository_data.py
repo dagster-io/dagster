@@ -3,14 +3,13 @@ import sys
 import pytest
 
 from dagster import file_relative_path, lambda_solid, repository
-
-from dagster.legacy import pipeline
 from dagster.core.definitions.repository_definition import RepositoryData
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace import WorkspaceProcessContext
 from dagster.core.workspace.load_target import GrpcServerTarget
 from dagster.grpc.server import GrpcServerProcess
+from dagster.legacy import pipeline
 
 
 def define_do_something(num_calls):
