@@ -20,6 +20,7 @@ from typing import (
 import dagster._check as check
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.utils.backcompat import deprecation_warning
 from dagster.serdes.serdes import (
     DefaultNamedTupleSerializer,
     WhitelistMap,
@@ -637,6 +638,10 @@ class DependencyDefinition(
         description: Optional[str] = None,
         node: Optional[str] = None,
     ):
+        if solid:
+            deprecation_warning(
+                "solid", "1.1.0", additional_warn_txt="Use the node argument instead."
+            )
         if solid and node:
             raise DagsterInvalidDefinitionError(
                 "Both ``node`` and legacy ``solid`` arguments provided to DependencyDefinition. Please use one or the other."
