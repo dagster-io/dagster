@@ -737,16 +737,6 @@ class DagsterRunMetadataValue(
         return self.run_id
 
 
-class DagsterPipelineRunMetadataValue(DagsterRunMetadataValue):
-    def __new__(cls, run_id: str):
-        deprecation_warning(
-            "DagsterPipelineRunMetadataValue", "1.1.0", "Use DagsterRunMetadataValue instead."
-        )
-        return super(DagsterPipelineRunMetadataValue, cls).__new__(
-            cls, check.str_param(run_id, "run_id")
-        )
-
-
 @whitelist_for_serdes(storage_name="DagsterAssetMetadataEntryData")
 class DagsterAssetMetadataValue(
     NamedTuple("_DagsterAssetMetadataValue", [("asset_key", "AssetKey")]), MetadataValue

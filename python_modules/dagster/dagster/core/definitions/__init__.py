@@ -76,7 +76,7 @@ from .materialize import materialize, materialize_to_memory
 from .metadata import (
     BoolMetadataValue,
     DagsterAssetMetadataValue,
-    DagsterPipelineRunMetadataValue,
+    DagsterRunMetadataValue,
     FloatMetadataValue,
     IntMetadataValue,
     JsonMetadataValue,
