@@ -482,7 +482,9 @@ def get_step_input_source(
     ):
         if input_def.root_manager_key or input_def.input_manager_key:
             return FromRootInputManager(solid_handle=handle, input_name=input_name)
-        elif asset_layer.asset_key_for_input(handle, input_handle.input_name):
+        elif asset_layer.has_assets_defs and asset_layer.asset_key_for_input(
+            handle, input_handle.input_name
+        ):
             return FromSourceAsset(solid_handle=handle, input_name=input_name)
 
     if dependency_structure.has_direct_dep(input_handle):
