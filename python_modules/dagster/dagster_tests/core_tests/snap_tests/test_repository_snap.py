@@ -1,7 +1,7 @@
 from dagster import repository
 from dagster.core.host_representation import ExternalPipelineData, external_repository_data_from_def
 from dagster.core.snap import PipelineSnapshot
-from dagster.legacy import solid
+from dagster.legacy import pipeline, solid
 
 
 def test_repository_snap_all_props():
