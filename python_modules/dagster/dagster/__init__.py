@@ -39,7 +39,7 @@ from dagster._config import (
     Shape,
     StringSource,
 )
-from dagster.builtins import Any, Bool, Float, Int, Nothing, String
+from dagster._builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.core.definitions import (
     AllPartitionMapping,
     AssetIn,

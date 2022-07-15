@@ -13,7 +13,7 @@ from typing_compat import get_args, get_origin
 import dagster._check as check
 from dagster._config import Array, ConfigType
 from dagster._config import Noneable as ConfigNoneable
-from dagster.builtins import BuiltinEnum
+from dagster._builtins import BuiltinEnum
 from dagster.core.definitions.events import DynamicOutput, Output, TypeCheck
 from dagster.core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError

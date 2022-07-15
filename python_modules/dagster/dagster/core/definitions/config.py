@@ -8,7 +8,7 @@ from dagster._config import (
     resolve_defaults,
     validate_config,
 )
-from dagster.builtins import BuiltinEnum
+from dagster._builtins import BuiltinEnum
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster.core.errors import DagsterInvalidConfigError
 
