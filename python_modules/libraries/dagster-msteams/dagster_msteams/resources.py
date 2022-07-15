@@ -32,17 +32,15 @@ def msteams_resource(context):
 
         import os
 
-    from dagster import ModeDefinition, execute_pipeline, pipeline
-    from dagster.legacy import solid
-    from dagster_msteams import Card, msteams_resource
-
+        from dagster import ModeDefinition, execute_pipeline, pipeline
+        from dagster.legacy import solid
+        from dagster_msteams import Card, msteams_resource
 
         @solid(required_resource_keys={"msteams"})
         def teams_solid(context):
             card = Card()
             card.add_attachment(text_message="Hello There !!")
             context.resources.msteams.post_message(payload=card.payload)
-
 
         @pipeline(
             mode_defs=[ModeDefinition(resource_defs={"msteams": msteams_resource})],
