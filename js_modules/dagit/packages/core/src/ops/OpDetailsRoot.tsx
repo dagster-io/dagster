@@ -4,7 +4,7 @@ import styled from 'styled-components/macro';
 
 import {
   SidebarOpDefinition,
-  SIDEBAR_SOLID_DEFINITION_FRAGMENT,
+  SIDEBAR_OP_DEFINITION_FRAGMENT,
 } from '../pipelines/SidebarOpDefinition';
 import {SidebarOpInvocationInfo} from '../pipelines/SidebarOpHelpers';
 import {Loading} from '../ui/Loading';
@@ -89,7 +89,7 @@ const USED_SOLID_DETAILS_QUERY = gql`
   }
 
   ${OP_CARD_SOLID_DEFINITION_FRAGMENT}
-  ${SIDEBAR_SOLID_DEFINITION_FRAGMENT}
+  ${SIDEBAR_OP_DEFINITION_FRAGMENT}
 `;
 
 export const OpDetailScrollContainer = styled.div`

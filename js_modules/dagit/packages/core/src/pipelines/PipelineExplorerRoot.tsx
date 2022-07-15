@@ -117,7 +117,7 @@ export const PipelineExplorerContainer: React.FC<{
             setOptions={setOptions}
             explorerPath={explorerPath}
             onChangeExplorerPath={onChangeExplorerPath}
-            pipelineOrGraph={result}
+            container={result}
             repoAddress={repoAddress}
             handles={displayedHandles}
             parentHandle={parentHandle ? parentHandle : undefined}

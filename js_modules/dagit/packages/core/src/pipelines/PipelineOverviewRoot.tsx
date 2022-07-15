@@ -5,11 +5,10 @@ import {useTrackPageView} from '../app/analytics';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {buildPipelineSelector, isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {GraphExplorerJobContext} from './GraphExplorerJobContext';
 import {PipelineExplorerContainer} from './PipelineExplorerRoot';
 import {
   explorerPathFromString,
@@ -17,7 +16,6 @@ import {
   ExplorerPath,
   useStripSnapshotFromPath,
 } from './PipelinePathUtils';
-import {SidebarPipelineOrJobOverview} from './SidebarPipelineOrJobOverview';
 import {useJobTitle} from './useJobTitle';
 
 interface Props {
@@ -35,7 +33,6 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
   const explorerPath = explorerPathFromString(params['0']);
 
   const repo = useRepository(repoAddress);
-  const pipelineSelector = buildPipelineSelector(repoAddress, explorerPath.pipelineName);
   const isJob = isThisThingAJob(repo, explorerPath.pipelineName);
 
   useJobTitle(explorerPath, isJob);
@@ -74,17 +71,11 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
   );
 
   return (
-    <GraphExplorerJobContext.Provider
-      value={{
-        sidebarTab: <SidebarPipelineOrJobOverview pipelineSelector={pipelineSelector} />,
-      }}
-    >
-      <PipelineExplorerContainer
-        repoAddress={repoAddress}
-        explorerPath={explorerPath}
-        onChangeExplorerPath={onChangeExplorerPath}
-        onNavigateToForeignNode={onNavigateToForeignNode}
-      />
-    </GraphExplorerJobContext.Provider>
+    <PipelineExplorerContainer
+      repoAddress={repoAddress}
+      explorerPath={explorerPath}
+      onChangeExplorerPath={onChangeExplorerPath}
+      onNavigateToForeignNode={onNavigateToForeignNode}
+    />
   );
 };
