@@ -14,8 +14,8 @@ from dagster_buildkite.steps.trigger import build_trigger_step
 from dagster_buildkite.steps.wait import build_wait_step
 from dagster_buildkite.utils import BuildkiteStep, is_feature_branch, is_release_branch, safe_getenv
 
-_DAGIT_PATHES = ("js_modules/dagit",)
-_DOCS_PATHES = ("examples", "docs")
+_DAGIT_PATHS = ("js_modules/dagit",)
+_DOCS_PATHS = ("examples", "docs")
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)-8s %(message)s",
@@ -31,16 +31,16 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
     build_creator_email = os.getenv("BUILDKITE_BUILD_CREATOR_EMAIL")
     oss_contribution = os.getenv("OSS_CONTRIBUTION")
     do_coverage = DO_COVERAGE
-    dagit_ui_only_diff = _is_path_only_diff(paths=_DAGIT_PATHES)
-    docs_only_diff = _is_path_only_diff(paths=_DOCS_PATHES)
+    dagit_ui_only_diff = _is_path_only_diff(paths=_DAGIT_PATHS)
+    docs_only_diff = _is_path_only_diff(paths=_DOCS_PATHS)
 
     steps: List[BuildkiteStep] = []
 
     # Trigger a build on the internal pipeline for Elementl dev PRs. Feature branches use the
     # `oss-internal-compatibility` pipeline, master/release branches use the full `internal`
     # pipeline. Feature branches use internal' `master` branch by default, but this can be
-    # overridden by setting the `INTERNAL_COMPATIBILITY_BRANCH` environment variable or passing
-    # `[INTERNAL_COMPATIBILITY_BRANCH=<branch>]` in the commit message. Master/release branches
+    # overridden by setting the `INTERNAL_BRANCH` environment variable or passing
+    # `[INTERNAL_BRANCH=<branch>]` in the commit message. Master/release branches
     # always run on the matching internal branch.
     if (
         build_creator_email
@@ -112,10 +112,10 @@ def _is_path_only_diff(paths: Tuple[str, ...]) -> bool:
 
 
 def _get_internal_branch_specifier() -> Optional[str]:
-    direct_specifier = os.getenv("INTERNAL_COMPATIBILITY_BRANCH")
+    direct_specifier = os.getenv("INTERNAL_BRANCH")
     commit_message = safe_getenv("BUILDKITE_MESSAGE")
     if direct_specifier:
         return direct_specifier
     else:
-        m = re.search(r"\[INTERNAL_COMPATIBILITY_BRANCH=(\S+)\]", commit_message)
+        m = re.search(r"\[INTERNAL_BRANCH=(\S+)\]", commit_message)
         return m.group(1) if m else None
