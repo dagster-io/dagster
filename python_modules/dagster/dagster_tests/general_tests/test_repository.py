@@ -11,8 +11,10 @@ from dagster import (
     repository,
     resource,
 )
+from dagster._check import CheckError
 from dagster.legacy import solid
 from dagster.utils import file_relative_path
+import pytest
 
 
 def define_empty_pipeline():
@@ -116,3 +118,11 @@ def test_repository_construction():
 @repository
 def empty_repository():
     return []
+
+
+def test_invalid_repository():
+    with pytest.raises(CheckError):
+
+        @repository
+        def invalid_repository(invalid_arg: str):
+            return []

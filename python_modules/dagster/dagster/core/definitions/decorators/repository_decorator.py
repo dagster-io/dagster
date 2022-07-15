@@ -2,6 +2,7 @@ from functools import update_wrapper
 from typing import Any, Callable, List, Mapping, Optional, Union, overload
 
 import dagster._check as check
+from dagster.core.decorator_utils import get_function_params
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 from ..executor_definition import ExecutorDefinition
@@ -277,6 +278,7 @@ def repository(
     """
     if callable(name):
         check.invariant(description is None)
+        check.invariant(len(get_function_params(name)) == 0)
 
         return _Repository()(name)
 
