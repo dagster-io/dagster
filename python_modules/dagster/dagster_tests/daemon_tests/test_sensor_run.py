@@ -43,7 +43,7 @@ from dagster.core.test_utils import (
 from dagster.core.workspace.load_target import PythonFileTarget
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 

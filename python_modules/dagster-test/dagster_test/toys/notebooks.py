@@ -1,6 +1,6 @@
 from dagstermill import define_dagstermill_solid
 
-from dagster.legacy import pipeline
+from dagster._legacy import pipeline
 from dagster.utils import file_relative_path
 
 hello_world_notebook_solid = define_dagstermill_solid(

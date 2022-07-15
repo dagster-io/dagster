@@ -19,7 +19,7 @@ For simple pipelines, the new APIs just have different names. Here's a pipeline 
 
 ```python file=/guides/dagster/graph_job_op/simple_pipeline.py
 from dagster import pipeline
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 @solid
@@ -76,7 +76,7 @@ With pipelines, supplying resources involves defining a mode:
 
 ```python file=/guides/dagster/graph_job_op/pipeline_with_resources.py
 from dagster import ModeDefinition, pipeline, resource
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 @resource
@@ -131,7 +131,7 @@ from dagster import (
     pipeline,
     resource,
 )
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 @resource
@@ -282,7 +282,7 @@ With the pipeline APIs, if you want to specify config definition time (as oppose
 
 ```python file=/guides/dagster/graph_job_op/pipeline_with_preset.py
 from dagster import PresetDefinition, pipeline
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 @solid(config_schema={"param": str})
@@ -359,7 +359,7 @@ Both the schedule and its targeted pipeline need to be provided to a repository 
 
 ```python file=/guides/dagster/graph_job_op/pipeline_with_schedule.py
 from dagster import ScheduleDefinition, pipeline, repository
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 @solid
@@ -411,7 +411,7 @@ With the pipeline APIs, if you want to schedule runs with config that depends on
 
 ```python file=/guides/dagster/graph_job_op/pipeline_with_schedule_return_config.py
 from dagster import pipeline, schedule
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 @solid(config_schema={"date": str})
@@ -462,7 +462,7 @@ With the pipeline APIs, if you want to have the same config available for manual
 
 ```python file=/guides/dagster/graph_job_op/pipeline_with_preset_and_schedule.py
 from dagster import PresetDefinition, pipeline, schedule
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 @solid(config_schema={"param": str})
@@ -516,7 +516,7 @@ In order to declare a partitioned schedule using the pipeline-centric APIs, you 
 import datetime
 
 from dagster import daily_schedule, pipeline, repository
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 @solid(config_schema={"date": str})
@@ -586,7 +586,7 @@ With the solid API, you define inputs and outputs using the <PyObject object="In
 
 ```python file=/guides/dagster/graph_job_op/solid_input_output_def.py
 from dagster import InputDefinition, OutputDefinition
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 @solid(
@@ -632,7 +632,7 @@ With the pipeline APIs, if you want multiple layers of composition, you define a
 
 ```python file=/guides/dagster/graph_job_op/composite_solid.py
 from dagster import composite_solid, pipeline
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 @solid
@@ -707,7 +707,7 @@ With the pipeline APIs, if you want to pass inputs into and return outputs from 
 ```python file=/guides/dagster/graph_job_op/composite_solid_ins_out.py
 from dagster import OutputDefinition, composite_solid, pipeline
 from dagster.core.definitions.input import InputDefinition
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 @solid
@@ -793,7 +793,7 @@ With the pipeline APIs, if you want to have multiple outputs from a composite so
 
 ```python file=/guides/dagster/graph_job_op/composite_solid_multi_out.py
 from dagster import Output, OutputDefinition, composite_solid, pipeline
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 @solid

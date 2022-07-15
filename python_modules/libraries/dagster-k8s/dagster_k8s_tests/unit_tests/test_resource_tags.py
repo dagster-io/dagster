@@ -10,7 +10,7 @@ from dagster import DynamicOutput, DynamicOutputDefinition
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 # CPU units are millicpu

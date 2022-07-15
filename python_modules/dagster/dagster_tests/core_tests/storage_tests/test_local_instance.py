@@ -26,7 +26,7 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
 from dagster.core.test_utils import environ
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 def test_fs_stores():

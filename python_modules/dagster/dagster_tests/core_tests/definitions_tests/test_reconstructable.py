@@ -13,7 +13,7 @@ from dagster.core.origin import (
     RepositoryPythonOrigin,
 )
 from dagster.core.snap import PipelineSnapshot, create_pipeline_snapshot_id
-from dagster.legacy import pipeline
+from dagster._legacy import pipeline
 from dagster.utils import file_relative_path
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 

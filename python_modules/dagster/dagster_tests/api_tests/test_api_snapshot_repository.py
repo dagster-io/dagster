@@ -12,7 +12,7 @@ from dagster.core.host_representation import (
 )
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.legacy import pipeline
+from dagster._legacy import pipeline
 
 from .utils import get_bar_repo_repository_location
 

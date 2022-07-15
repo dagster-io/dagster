@@ -1,5 +1,5 @@
 from dagster import Output, OutputDefinition, composite_solid
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 @solid
@@ -13,9 +13,7 @@ def return_multi():
     yield Output(2, "two")
 
 
-@composite_solid(
-    output_defs=[OutputDefinition(int, "one"), OutputDefinition(int, "two")]
-)
+@composite_solid(output_defs=[OutputDefinition(int, "one"), OutputDefinition(int, "two")])
 def do_two_things():
     do_something()
     one, two = return_multi()

@@ -8,7 +8,7 @@ from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.multiprocess import MultiprocessExecutor
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 @resource

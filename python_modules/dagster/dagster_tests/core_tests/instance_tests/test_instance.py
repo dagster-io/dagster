@@ -25,7 +25,7 @@ from dagster.core.snap import (
     snapshot_from_execution_plan,
 )
 from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 from dagster.serdes import ConfigurableClass
 from dagster.serdes.config_class import ConfigurableClassData
 

@@ -5,7 +5,7 @@ from dagster.core.host_representation import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 from dagster.serdes import serialize_pp
 
 

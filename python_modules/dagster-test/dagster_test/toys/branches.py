@@ -9,7 +9,7 @@ from dagster import (
     PresetDefinition,
     fs_io_manager,
 )
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 @solid(

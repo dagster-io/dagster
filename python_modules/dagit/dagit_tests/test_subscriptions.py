@@ -11,7 +11,7 @@ from dagster import execute_pipeline
 from dagster.core.test_utils import environ, instance_for_test
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import WorkspaceFileTarget
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 from dagster.utils import file_relative_path
 
 EVENT_LOG_SUBSCRIPTION = """

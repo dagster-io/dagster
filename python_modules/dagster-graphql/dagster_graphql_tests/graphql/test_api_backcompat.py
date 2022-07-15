@@ -5,7 +5,7 @@ from dagster_graphql.test.utils import define_out_of_process_context, execute_da
 from dagster import PresetDefinition, repository
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 RUNS_QUERY = """
 query RunsQuery {

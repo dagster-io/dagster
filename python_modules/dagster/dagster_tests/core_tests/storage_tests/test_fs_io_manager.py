@@ -24,7 +24,7 @@ from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.fs_io_manager import fs_io_manager
 from dagster.core.test_utils import instance_for_test
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 def define_pipeline(io_manager):

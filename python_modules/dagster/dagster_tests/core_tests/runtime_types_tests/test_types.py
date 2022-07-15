@@ -32,7 +32,7 @@ from dagster.core.types.dagster_type import (
     PythonObjectDagsterType,
     resolve_dagster_type,
 )
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 class BarObj:

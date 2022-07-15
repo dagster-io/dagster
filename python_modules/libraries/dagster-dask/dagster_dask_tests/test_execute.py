@@ -25,7 +25,7 @@ from dagster.core.definitions.executor_definition import default_executors
 from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.events import DagsterEventType
 from dagster.core.test_utils import instance_for_test, nesting_composite_pipeline
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 from dagster.utils import send_interrupt
 
 

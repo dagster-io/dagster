@@ -3,7 +3,7 @@
 import datetime
 
 from dagster import InputDefinition, RunRequest, daily_schedule, job, repository, sensor
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 @solid

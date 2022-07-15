@@ -12,7 +12,7 @@ from dagster.core.execution.resources_init import (
 from dagster.core.execution.retries import RetryMode
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 def test_generator_exit():

@@ -18,7 +18,7 @@ from dagster import (
 )
 from dagster.core.definitions.inference import infer_input_props, infer_output_props
 from dagster.core.types.dagster_type import DagsterTypeKind
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 def test_infer_solid_description_from_docstring():

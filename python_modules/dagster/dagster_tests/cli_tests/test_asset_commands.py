@@ -4,7 +4,7 @@ from click.testing import CliRunner
 from dagster import AssetKey, AssetMaterialization, Output, execute_pipeline
 from dagster.cli.asset import asset_wipe_command
 from dagster.core.instance import DagsterInstance
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 from dagster.seven import json
 
 

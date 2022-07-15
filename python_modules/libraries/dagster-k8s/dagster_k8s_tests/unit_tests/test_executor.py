@@ -20,7 +20,7 @@ from dagster.core.executor.step_delegating.step_handler.base import StepHandlerC
 from dagster.core.storage.fs_io_manager import fs_io_manager
 from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
 from dagster.grpc.types import ExecuteStepArgs
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 def _get_pipeline(name, solid_tags=None):

@@ -10,7 +10,7 @@ from dagster.core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 def test_event_list_hook_invocation():

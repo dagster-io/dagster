@@ -24,7 +24,7 @@ from dagster.core.types.dagster_type import (
     DagsterTypeKind,
     resolve_dagster_type,
 )
-from dagster.legacy import pipeline
+from dagster._legacy import pipeline
 
 
 def inner_type_key_set(dagster_type):

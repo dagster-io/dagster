@@ -37,7 +37,7 @@ from dagster import (
 )
 from dagster.core.definitions.decorators import daily_schedule, schedule
 from dagster.core.test_utils import nesting_composite_pipeline
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 from dagster.utils import merge_dicts, segfault
 from dagster.utils.yaml_utils import merge_yamls
 

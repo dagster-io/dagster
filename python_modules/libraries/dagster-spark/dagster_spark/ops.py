@@ -1,7 +1,7 @@
 from dagster import InputDefinition, Nothing, OutputDefinition
 from dagster import _check as check
 from dagster import op
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 from .configs import define_spark_config
 

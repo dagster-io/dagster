@@ -23,7 +23,7 @@ from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster.core.execution.api import create_execution_plan, execute_run
 from dagster.core.types.dagster_type import create_any_type
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 def get_resource_init_pipeline(resources_initted):

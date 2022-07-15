@@ -20,7 +20,7 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.step import StepKind
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.types.dagster_type import create_any_type
-from dagster.legacy import solid
+from dagster._legacy import solid
 from dagster.utils.test import get_temp_file_name, get_temp_file_names
 
 

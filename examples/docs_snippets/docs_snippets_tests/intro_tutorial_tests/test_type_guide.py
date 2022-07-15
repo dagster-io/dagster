@@ -18,7 +18,7 @@ from dagster import (
     make_python_type_usable_as_dagster_type,
     usable_as_dagster_type,
 )
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 from dagster.utils import safe_tempfile_path
 
 
@@ -44,9 +44,7 @@ def test_basic_even_type():
     with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(double_even, input_values={"num": 3})
 
-    assert not execute_solid(
-        double_even, input_values={"num": 3}, raise_on_error=False
-    ).success
+    assert not execute_solid(double_even, input_values={"num": 3}, raise_on_error=False).success
 
 
 def test_basic_even_type_no_annotations():
@@ -70,9 +68,7 @@ def test_basic_even_type_no_annotations():
     with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(double_even, input_values={"num": 3})
 
-    assert not execute_solid(
-        double_even, input_values={"num": 3}, raise_on_error=False
-    ).success
+    assert not execute_solid(double_even, input_values={"num": 3}, raise_on_error=False).success
 
 
 def test_python_object_dagster_type():
@@ -155,9 +151,7 @@ def test_even_type_materialization_config():
                 metadata={"path": path},
             )
 
-    EvenDagsterType = PythonObjectDagsterType(
-        EvenType, materializer=save_to_file_materialization
-    )
+    EvenDagsterType = PythonObjectDagsterType(EvenType, materializer=save_to_file_materialization)
 
     @solid
     def double_even(even_num: EvenDagsterType) -> EvenDagsterType:

@@ -3,7 +3,7 @@ from dagster.config.field import resolve_to_config_type
 from dagster.config.iterate_types import config_schema_snapshot_from_config_type
 from dagster.config.snap import get_recursive_type_keys, snap_from_config_type
 from dagster.config.type_printer import print_config_type_to_string
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 def assert_inner_types(parent_type, *dagster_types):

@@ -15,7 +15,7 @@ from dagster.core.execution.plan.plan import should_skip_step
 from dagster.core.execution.retries import RetryMode
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.utils import make_new_run_id
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 def define_diamond_pipeline():

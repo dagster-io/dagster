@@ -16,7 +16,7 @@ from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.test_utils import instance_for_test
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 from dagster.loggers import colored_console_logger, json_console_logger
 from dagster.utils.error import SerializableErrorInfo
 

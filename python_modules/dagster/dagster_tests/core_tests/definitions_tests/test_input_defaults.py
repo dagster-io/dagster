@@ -13,7 +13,7 @@ from dagster import (
     lambda_solid,
     op,
 )
-from dagster.legacy import pipeline
+from dagster._legacy import pipeline
 
 
 def test_none():

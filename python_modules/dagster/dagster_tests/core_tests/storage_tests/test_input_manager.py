@@ -27,7 +27,7 @@ from dagster import (
 from dagster.core.definitions.events import Failure, RetryRequested
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.instance import InstanceRef
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 ### input manager tests
 

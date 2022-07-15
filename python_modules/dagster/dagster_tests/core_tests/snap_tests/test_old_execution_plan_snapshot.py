@@ -4,7 +4,7 @@ import pytest
 
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.legacy import pipeline
+from dagster._legacy import pipeline
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 OLD_EXECUTION_PLAN_SNAPSHOT = """{

@@ -3,7 +3,7 @@ from dagster_slack.hooks import slack_on_failure, slack_on_success
 from mock import patch
 
 from dagster import ModeDefinition, execute_pipeline
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 class SomeUserException(Exception):

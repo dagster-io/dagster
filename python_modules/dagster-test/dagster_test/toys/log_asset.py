@@ -1,5 +1,5 @@
 from dagster import Array, Output
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 @solid(config_schema={"asset_key": Array(str), "pipeline": str})

@@ -21,7 +21,7 @@ from dagster import (
     lambda_solid,
 )
 from dagster.core.execution.api import create_execution_plan
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 def _define_nothing_dep_pipeline():

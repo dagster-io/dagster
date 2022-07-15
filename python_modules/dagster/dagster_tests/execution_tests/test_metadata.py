@@ -29,7 +29,7 @@ from dagster.core.definitions.metadata.table import (
     TableRecord,
     TableSchema,
 )
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 from dagster.utils import frozendict
 
 

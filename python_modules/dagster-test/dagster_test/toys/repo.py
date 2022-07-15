@@ -17,7 +17,7 @@ from dagster_test.toys.sleepy import sleepy_pipeline
 from dagster_test.toys.unreliable import unreliable_pipeline
 
 from dagster import AssetMaterialization, Output, repository
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 from .schedules import get_toys_schedules
 from .sensors import get_toys_sensors

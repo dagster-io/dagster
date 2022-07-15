@@ -1,5 +1,5 @@
 from dagster import schedule
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 @solid(config_schema={"date": str})

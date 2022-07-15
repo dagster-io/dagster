@@ -15,7 +15,7 @@ from dagster import (
 )
 from dagster import _check as check
 from dagster import execute_pipeline, execute_solid, lambda_solid
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 def create_root_success_solid(name):

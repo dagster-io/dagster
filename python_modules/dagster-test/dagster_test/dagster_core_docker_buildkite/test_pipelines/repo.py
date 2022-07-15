@@ -10,7 +10,7 @@ from dagster import (
     repository,
     usable_as_dagster_type,
 )
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 @lambda_solid

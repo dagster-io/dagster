@@ -25,7 +25,7 @@ from dagster.core.definitions.run_config import (
     define_solid_dictionary_cls,
 )
 from dagster.core.system_config.objects import ResolvedRunConfig, ResourceConfig, SolidConfig
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 from dagster.loggers import default_loggers
 
 

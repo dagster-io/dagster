@@ -12,7 +12,7 @@ from dagster.core.definitions.events import HookExecutionResult
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvalidDefinitionError
 from dagster.core.test_utils import instance_for_test
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 class SomeUserException(Exception):

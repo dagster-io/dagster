@@ -40,7 +40,7 @@ from dagster.core.errors import (
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckDidNotPass,
 )
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 def test_solid_invocation_no_arg():

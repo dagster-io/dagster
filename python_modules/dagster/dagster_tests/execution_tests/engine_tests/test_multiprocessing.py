@@ -22,7 +22,7 @@ from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 from dagster.utils import safe_tempfile_path, segfault
 
 

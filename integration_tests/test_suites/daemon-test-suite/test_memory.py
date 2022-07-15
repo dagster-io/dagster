@@ -9,7 +9,7 @@ from dagster import RunRequest, repository
 from dagster.core.test_utils import instance_for_test
 from dagster.core.workspace.load_target import PythonFileTarget
 from dagster.daemon.controller import daemon_controller_from_instance
-from dagster.legacy import pipeline, schedule, sensor, solid
+from dagster._legacy import pipeline, schedule, sensor, solid
 
 
 @solid()

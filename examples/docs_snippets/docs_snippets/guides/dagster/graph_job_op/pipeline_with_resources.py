@@ -1,5 +1,5 @@
 from dagster import ModeDefinition, resource
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 @resource
@@ -12,8 +12,6 @@ def do_something():
     ...
 
 
-@pipeline(
-    mode_defs=[ModeDefinition(resource_defs={"external_service": external_service})]
-)
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"external_service": external_service})])
 def do_it_all():
     do_something()

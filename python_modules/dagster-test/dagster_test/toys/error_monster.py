@@ -13,7 +13,7 @@ from dagster import (
     execute_pipeline,
     io_manager,
 )
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 from dagster.utils import segfault
 
 

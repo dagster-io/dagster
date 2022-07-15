@@ -27,7 +27,7 @@ from dagster import _check as check
 from dagster import repository
 from dagster.core.definitions.utils import VALID_NAME_REGEX, validate_tags
 from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 class DagsterAirflowError(Exception):

@@ -10,7 +10,7 @@ from dagster.core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster.core.utils import coerce_valid_log_level
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 def test_logger_invocation_arguments():

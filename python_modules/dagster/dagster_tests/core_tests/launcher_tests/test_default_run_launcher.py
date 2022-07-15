@@ -33,7 +33,7 @@ from dagster.core.workspace.load_target import GrpcServerTarget, PythonFileTarge
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import GrpcServerProcess
 from dagster.grpc.types import CancelExecutionRequest
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 

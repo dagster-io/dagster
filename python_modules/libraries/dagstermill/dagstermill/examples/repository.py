@@ -22,7 +22,7 @@ from dagster import (
     resource,
 )
 from dagster.core.storage.file_manager import local_file_manager
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 from dagster.utils import PICKLE_PROTOCOL, file_relative_path
 
 try:

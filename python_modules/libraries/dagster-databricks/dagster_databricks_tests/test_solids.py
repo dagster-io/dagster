@@ -11,7 +11,7 @@ from dagster_databricks.solids import create_ui_url
 from dagster_databricks.types import DatabricksRunLifeCycleState, DatabricksRunResultState
 
 from dagster import ModeDefinition, execute_pipeline
-from dagster.legacy import pipeline
+from dagster._legacy import pipeline
 
 
 @pytest.mark.parametrize("job_creator", [create_databricks_job_solid, create_databricks_job_op])

@@ -25,7 +25,7 @@ from dagster.core.execution.api import execute_run
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.test_utils import instance_for_test
-from dagster.legacy import pipeline
+from dagster._legacy import pipeline
 from dagster.utils import Counter, traced_counter
 
 RUNS_QUERY = """

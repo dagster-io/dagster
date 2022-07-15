@@ -12,7 +12,7 @@ from pandas import read_csv
 
 from dagster import InputDefinition, ModeDefinition, Output, execute_pipeline, reconstructable
 from dagster.core.test_utils import instance_for_test
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 from dagster.utils import file_relative_path
 
 

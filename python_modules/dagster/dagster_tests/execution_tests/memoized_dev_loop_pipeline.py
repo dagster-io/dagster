@@ -1,6 +1,6 @@
 from dagster import Field, InputDefinition, ModeDefinition, OutputDefinition, String, repository
 from dagster.core.storage.memoizable_io_manager import versioned_filesystem_io_manager
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 @solid(

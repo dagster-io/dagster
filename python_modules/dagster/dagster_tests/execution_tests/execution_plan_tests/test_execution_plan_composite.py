@@ -2,7 +2,7 @@ from dagster import Field, Int, String, composite_solid
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 @solid(config_schema={"foo": Field(String)})

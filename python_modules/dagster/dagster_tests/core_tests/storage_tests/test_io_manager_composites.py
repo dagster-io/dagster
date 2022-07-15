@@ -11,7 +11,7 @@ from dagster import (
     root_input_manager,
 )
 from dagster.core.storage.io_manager import IOManager, io_manager
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 def named_io_manager(storage_dict, name):

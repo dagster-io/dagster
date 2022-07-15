@@ -20,7 +20,7 @@ from dagster.core.errors import (
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.retries import RetryMode
 from dagster.core.test_utils import instance_for_test
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 def assert_pipeline_runs_with_executor(executor_defs, execution_config, instance=None):

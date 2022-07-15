@@ -2,7 +2,7 @@ import pytest
 
 from dagster import validate_run_config
 from dagster.core.errors import DagsterInvalidConfigError
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 def test_validate_run_config():

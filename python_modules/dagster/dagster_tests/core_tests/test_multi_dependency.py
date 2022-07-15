@@ -17,7 +17,7 @@ from dagster import (
 )
 from dagster.core.definitions.composition import MappedInputPlaceholder
 from dagster.core.definitions.solid_definition import CompositeSolidDefinition
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 def test_simple_values():

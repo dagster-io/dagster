@@ -1,4 +1,4 @@
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 def test_solid_tags():

@@ -18,7 +18,7 @@ from dagster.core.test_utils import (
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.types import ExecuteRunArgs
-from dagster.legacy import pipeline
+from dagster._legacy import pipeline
 from dagster.utils import merge_dicts
 from dagster.utils.hosted_user_process import external_pipeline_from_recon_pipeline
 

@@ -27,7 +27,7 @@ from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster.core.storage.migration.utils import upgrading_instance
 from dagster.core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster.core.storage.tags import REPOSITORY_LABEL_TAG
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 from dagster.serdes import DefaultNamedTupleSerializer, create_snapshot_id
 from dagster.serdes.serdes import (
     WhitelistMap,

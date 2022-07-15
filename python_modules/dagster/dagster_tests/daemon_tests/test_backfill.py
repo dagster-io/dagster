@@ -37,7 +37,7 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace.load_target import PythonFileTarget
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.backfill import execute_backfill_iteration
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 from dagster.seven import IS_WINDOWS, get_system_temp_directory
 from dagster.utils import touch_file
 from dagster.utils.error import SerializableErrorInfo

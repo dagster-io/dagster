@@ -6,7 +6,7 @@ from dagster import (
     lambda_solid,
     repository,
 )
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))

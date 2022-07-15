@@ -28,7 +28,7 @@ from dagster.core.instance.ref import InstanceRef
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.root_input_manager import root_input_manager
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 from dagster.utils import file_relative_path
 from dagster.utils.test import copy_directory
 

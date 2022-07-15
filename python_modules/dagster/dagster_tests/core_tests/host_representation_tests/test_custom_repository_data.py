@@ -9,7 +9,7 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace import WorkspaceProcessContext
 from dagster.core.workspace.load_target import GrpcServerTarget
 from dagster.grpc.server import GrpcServerProcess
-from dagster.legacy import pipeline
+from dagster._legacy import pipeline
 
 
 def define_do_something(num_calls):

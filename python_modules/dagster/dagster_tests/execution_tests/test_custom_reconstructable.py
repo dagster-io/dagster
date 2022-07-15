@@ -6,7 +6,7 @@ import pytest
 from dagster import reconstructable
 from dagster.core.definitions import ReconstructablePipeline, build_reconstructable_pipeline
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.legacy import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 @solid
