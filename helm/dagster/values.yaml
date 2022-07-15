@@ -683,6 +683,11 @@ postgresql:
   # https://github.com/helm/charts/issues/12836#issuecomment-524552358
   postgresqlPassword: test
 
+  # Used by dagit to refrence postgres password from postgresql secret
+  # New bitnami charts use postgres as key, currently used one uses 
+  # postgresql-password as key.
+  postgresqlSecretKeyRefKey: postgresql-password
+
   postgresqlDatabase: test
 
   # set postgresql parameter keywords for the connection string.

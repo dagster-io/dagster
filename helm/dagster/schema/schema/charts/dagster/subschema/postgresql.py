@@ -15,6 +15,7 @@ class PostgreSQL(BaseModel):
     postgresqlHost: str
     postgresqlUsername: str
     postgresqlPassword: str
+    postgresqlSecretKeyRefKey: str
     postgresqlDatabase: str
     postgresqlParams: dict
     postgresqlScheme: Optional[str]

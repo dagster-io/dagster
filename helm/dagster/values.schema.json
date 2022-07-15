@@ -667,6 +667,10 @@
                     "title": "Postgresqlpassword",
                     "type": "string"
                 },
+                "postgresqlSecretKeyRefKey": {
+                    "title": "Postgresqlsecretkeyrefkey",
+                    "type": "string"
+                },
                 "postgresqlDatabase": {
                     "title": "Postgresqldatabase",
                     "type": "string"
