@@ -11,7 +11,6 @@ from dagster import (
     OutputDefinition,
     StaticPartitionsDefinition,
     asset,
-    build_assets_job,
     build_input_context,
     execute_pipeline,
     io_manager,
@@ -24,7 +23,7 @@ from dagster.core.definitions.events import AssetLineageInfo
 from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.storage.io_manager import IOManager
-from dagster.legacy import pipeline, solid
+from dagster.legacy import build_assets_job, pipeline, solid
 
 
 def n_asset_keys(path, n):

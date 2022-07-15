@@ -66,7 +66,6 @@ from dagster import (
 from dagster import _check as check
 from dagster import (
     asset,
-    build_assets_job,
     composite_solid,
     dagster_type_loader,
     dagster_type_materializer,
@@ -95,7 +94,7 @@ from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import default_mode_def_for_test, today_at_midnight
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import PythonFileTarget
-from dagster.legacy import AssetGroup, pipeline, solid
+from dagster.legacy import AssetGroup, build_assets_job, pipeline, solid
 from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, segfault
 

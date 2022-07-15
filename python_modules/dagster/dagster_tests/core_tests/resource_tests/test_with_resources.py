@@ -9,7 +9,7 @@ from dagster import (
     mem_io_manager,
     resource,
 )
-from dagster.core.definitions import AssetsDefinition, SourceAsset, asset, build_assets_job
+from dagster.core.definitions import AssetsDefinition, SourceAsset, asset
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -18,6 +18,7 @@ from dagster.core.errors import (
 )
 from dagster.core.execution.with_resources import with_resources
 from dagster.core.storage.mem_io_manager import InMemoryIOManager
+from dagster.legacy import build_assets_job
 
 # pylint: disable=comparison-with-callable,unbalanced-tuple-unpacking
 

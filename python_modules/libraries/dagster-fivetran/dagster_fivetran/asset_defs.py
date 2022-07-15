@@ -20,52 +20,54 @@ def build_fivetran_assets(
 ) -> List[AssetsDefinition]:
 
     """
-    Build a set of assets for a given Fivetran connector.
+        Build a set of assets for a given Fivetran connector.
 
-    Returns an AssetsDefintion which connects the specified ``asset_keys`` to the computation that
-    will update them. Internally, executes a Fivetran sync for a given ``connector_id``, and
-    polls until that sync completes, raising an error if it is unsuccessful. Requires the use of the
-    :py:class:`~dagster_fivetran.fivetran_resource`, which allows it to communicate with the
-    Fivetran API.
+        Returns an AssetsDefintion which connects the specified ``asset_keys`` to the computation that
+        will update them. Internally, executes a Fivetran sync for a given ``connector_id``, and
+        polls until that sync completes, raising an error if it is unsuccessful. Requires the use of the
+        :py:class:`~dagster_fivetran.fivetran_resource`, which allows it to communicate with the
+        Fivetran API.
 
-    Args:
-        connector_id (str): The Fivetran Connector ID that this op will sync. You can retrieve this
-            value from the "Setup" tab of a given connector in the Fivetran UI.
-        destination_tables (List[str]): `schema_name.table_name` for each table that you want to be
-            represented in the Dagster asset graph for this connection.
-        poll_interval (float): The time (in seconds) that will be waited between successive polls.
-        poll_timeout (Optional[float]): The maximum time that will waited before this operation is
-            timed out. By default, this will never time out.
-        io_manager_key (Optional[str]): The io_manager to be used to handle each of these assets.
-        asset_key_prefix (Optional[List[str]]): A prefix for the asset keys inside this asset.
-            If left blank, assets will have a key of `AssetKey([schema_name, table_name])`.
+        Args:
+            connector_id (str): The Fivetran Connector ID that this op will sync. You can retrieve this
+                value from the "Setup" tab of a given connector in the Fivetran UI.
+            destination_tables (List[str]): `schema_name.table_name` for each table that you want to be
+                represented in the Dagster asset graph for this connection.
+            poll_interval (float): The time (in seconds) that will be waited between successive polls.
+            poll_timeout (Optional[float]): The maximum time that will waited before this operation is
+                timed out. By default, this will never time out.
+            io_manager_key (Optional[str]): The io_manager to be used to handle each of these assets.
+            asset_key_prefix (Optional[List[str]]): A prefix for the asset keys inside this asset.
+                If left blank, assets will have a key of `AssetKey([schema_name, table_name])`.
 
-    Examples:
+        Examples:
 
-    .. code-block:: python
+        .. code-block:: python
 
-        from dagster import AssetKey, build_assets_job
+            from dagster import AssetKey,
 
-        from dagster_fivetran import fivetran_resource
-        from dagster_fivetran.assets import build_fivetran_assets
+    from dagster.legacy import build_assets_job
 
-        my_fivetran_resource = fivetran_resource.configured(
-            {
-                "api_key": {"env": "FIVETRAN_API_KEY"},
-                "api_secret": {"env": "FIVETRAN_API_SECRET"},
-            }
-        )
+            from dagster_fivetran import fivetran_resource
+            from dagster_fivetran.assets import build_fivetran_assets
 
-        fivetran_assets = build_fivetran_assets(
-            connector_id="foobar",
-            table_names=["schema1.table1", "schema2.table2"],
-        ])
+            my_fivetran_resource = fivetran_resource.configured(
+                {
+                    "api_key": {"env": "FIVETRAN_API_KEY"},
+                    "api_secret": {"env": "FIVETRAN_API_SECRET"},
+                }
+            )
 
-        my_fivetran_job = build_assets_job(
-            "my_fivetran_job",
-            assets=[fivetran_assets],
-            resource_defs={"fivetran": my_fivetran_resource}
-        )
+            fivetran_assets = build_fivetran_assets(
+                connector_id="foobar",
+                table_names=["schema1.table1", "schema2.table2"],
+            ])
+
+            my_fivetran_job = build_assets_job(
+                "my_fivetran_job",
+                assets=[fivetran_assets],
+                resource_defs={"fivetran": my_fivetran_resource}
+            )
 
     """
 

@@ -23,7 +23,7 @@ from dagster import (
     RetryRequested,
 )
 from dagster import _check as check
-from dagster import asset, build_assets_job, op, resource, seven
+from dagster import asset, op
 from dagster.core.assets import AssetDetails
 from dagster.core.definitions import ExpectationResult
 from dagster.core.definitions.dependency import NodeHandle
@@ -53,7 +53,7 @@ from dagster.core.storage.event_log.migration import (
 from dagster.core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
 from dagster.core.test_utils import create_run_for_test, instance_for_test
 from dagster.core.utils import make_new_run_id
-from dagster.legacy import AssetGroup, pipeline, solid
+from dagster.legacy import AssetGroup, build_assets_job, pipeline, resource, seven, solid
 from dagster.loggers import colored_console_logger
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils import datetime_as_float

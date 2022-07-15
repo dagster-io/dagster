@@ -5,12 +5,12 @@ from dagster import (
     Out,
     Output,
     asset,
-    build_assets_job,
     job,
     multi_asset,
     op,
 )
 from dagster.core.test_utils import instance_for_test
+from dagster.legacy import build_assets_job
 
 
 def test_asset_materialization_planned_event_yielded():

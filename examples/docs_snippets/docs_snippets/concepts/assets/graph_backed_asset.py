@@ -10,12 +10,11 @@ from dagster import (
     Output,
     ResourceDefinition,
     asset,
-    build_assets_job,
     graph,
     op,
     repository,
 )
-from dagster.legacy import AssetGroup
+from dagster.legacy import AssetGroup, build_assets_job
 
 
 def create_db_connection():
