@@ -306,3 +306,34 @@ def test_dagit_scheduler_name_override(deployment_template: HelmTemplate):
 
     [dagit_deployment] = deployment_template.render(helm_values)
     assert dagit_deployment.spec.template.spec.scheduler_name == "myscheduler"
+
+
+def test_dagit_security_context(deployment_template: HelmTemplate):
+    security_context = {
+        "allowPrivilegeEscalation": False,
+        "runAsNonRoot": True,
+        "runAsUser": 1000,
+        "privileged": False,
+        "capabilities": {
+            "drop": ["ALL"],
+        },
+        "seccompProfile": {
+            "type": "RuntimeDefault",
+        },
+    }
+    helm_values = DagsterHelmValues.construct(
+        dagit=Dagit.construct(securityContext=security_context)
+    )
+
+    [dagit_deployment] = deployment_template.render(helm_values)
+
+    assert len(dagit_deployment.spec.template.spec.init_containers) == 2
+
+    assert all(
+        container.security_context
+        == k8s_model_from_dict(
+            k8s_client.models.V1SecurityContext,
+            k8s_snake_case_dict(k8s_client.models.V1SecurityContext, security_context),
+        )
+        for container in dagit_deployment.spec.template.spec.init_containers
+    )
