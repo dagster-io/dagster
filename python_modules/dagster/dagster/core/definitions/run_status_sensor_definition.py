@@ -248,7 +248,7 @@ def pipeline_failure_sensor(
             sensor_name = name
 
         if pipeline_selection:
-            deprecation_warning("pipeline_selection", "0.16.0", "Use monitored_pipelines instead.")
+            deprecation_warning("pipeline_selection", "1.0.0", "Use monitored_pipelines instead.")
         pipelines = monitored_pipelines if monitored_pipelines else pipeline_selection
 
         @run_status_sensor(
@@ -332,11 +332,11 @@ def run_failure_sensor(
             sensor_name = name
 
         if pipeline_selection:
-            deprecation_warning("pipeline_selection", "0.16.0", "Use monitored_pipelines instead.")
+            deprecation_warning("pipeline_selection", "1.0.0", "Use monitored_pipelines instead.")
         pipelines = monitored_pipelines if monitored_pipelines else pipeline_selection
 
         if job_selection:
-            deprecation_warning("job_selection", "0.16.0", "Use monitored_jobs instead.")
+            deprecation_warning("job_selection", "1.0.0", "Use monitored_jobs instead.")
         jobs = monitored_jobs if monitored_jobs else job_selection
 
         @run_status_sensor(
@@ -687,7 +687,7 @@ def run_status_sensor(
         sensor_name = name or fn.__name__
 
         if pipeline_run_status:
-            deprecation_warning("pipeline_run_status", "0.16.0", "Use run_status instead.")
+            deprecation_warning("pipeline_run_status", "1.0.0", "Use run_status instead.")
 
         run_status_final = run_status if run_status else pipeline_run_status
         if not run_status_final:
@@ -696,11 +696,11 @@ def run_status_sensor(
             )
 
         if pipeline_selection:
-            deprecation_warning("pipeline_selection", "0.16.0", "Use monitored_pipelines instead.")
+            deprecation_warning("pipeline_selection", "1.0.0", "Use monitored_pipelines instead.")
         pipelines = monitored_pipelines if monitored_pipelines else pipeline_selection
 
         if job_selection:
-            deprecation_warning("job_selection", "0.16.0", "Use monitored_jobs instead.")
+            deprecation_warning("job_selection", "1.0.0", "Use monitored_jobs instead.")
         jobs = monitored_jobs if monitored_jobs else job_selection
 
         return RunStatusSensorDefinition(

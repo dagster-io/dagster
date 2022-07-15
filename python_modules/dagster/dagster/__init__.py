@@ -334,37 +334,37 @@ if typing.TYPE_CHECKING:
 _DEPRECATED = {
     "AssetGroup": (
         "dagster.core.definitions",
-        "0.16.0",
+        "1.0.0",
         "Instead, place a set of assets wrapped with `with_resources` directly on a repository.",
     ),
 }
 
 _DEPRECATED_RENAMED = {
-    "EventMetadataEntry": (MetadataEntry, "0.16.0"),
-    "EventMetadata": (MetadataValue, "0.16.0"),
-    "TextMetadataEntryData": (TextMetadataValue, "0.16.0"),
-    "UrlMetadataEntryData": (UrlMetadataValue, "0.16.0"),
-    "PathMetadataEntryData": (PathMetadataValue, "0.16.0"),
-    "JsonMetadataEntryData": (JsonMetadataValue, "0.16.0"),
-    "MarkdownMetadataEntryData": (MarkdownMetadataValue, "0.16.0"),
+    "EventMetadataEntry": (MetadataEntry, "1.0.0"),
+    "EventMetadata": (MetadataValue, "1.0.0"),
+    "TextMetadataEntryData": (TextMetadataValue, "1.0.0"),
+    "UrlMetadataEntryData": (UrlMetadataValue, "1.0.0"),
+    "PathMetadataEntryData": (PathMetadataValue, "1.0.0"),
+    "JsonMetadataEntryData": (JsonMetadataValue, "1.0.0"),
+    "MarkdownMetadataEntryData": (MarkdownMetadataValue, "1.0.0"),
     "PythonArtifactMetadataEntryData": (
         PythonArtifactMetadataValue,
-        "0.16.0",
+        "1.0.0",
     ),
-    "FloatMetadataEntryData": (FloatMetadataValue, "0.16.0"),
-    "IntMetadataEntryData": (IntMetadataValue, "0.16.0"),
+    "FloatMetadataEntryData": (FloatMetadataValue, "1.0.0"),
+    "IntMetadataEntryData": (IntMetadataValue, "1.0.0"),
     "DagsterPipelineRunMetadataEntryData": (
         DagsterPipelineRunMetadataValue,
-        "0.16.0",
+        "1.0.0",
     ),
     "DagsterAssetMetadataEntryData": (
         DagsterAssetMetadataValue,
-        "0.16.0",
+        "1.0.0",
     ),
-    "TableMetadataEntryData": (TableMetadataValue, "0.16.0"),
+    "TableMetadataEntryData": (TableMetadataValue, "1.0.0"),
     "TableSchemaMetadataEntryData": (
         TableSchemaMetadataValue,
-        "0.16.0",
+        "1.0.0",
     ),
 }
 
