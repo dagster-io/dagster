@@ -349,7 +349,7 @@ def test_input_manager_class():
 
 
 ##################################################
-# root input manager tests (deprecate in 0.16.0) #
+# root input manager tests (deprecate in 1.0.0) #
 ##################################################
 
 

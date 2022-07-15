@@ -129,7 +129,7 @@ class InputDefinition:
         if root_manager_key:
             deprecation_warning(
                 "root_manager_key",
-                "0.16.0",
+                "1.0.0",
                 additional_warn_txt="Use an InputManager with input_manager_key instead.",
             )
 
@@ -453,7 +453,7 @@ class In(
         if root_manager_key:
             deprecation_warning(
                 "root_manager_key",
-                "0.16.0",
+                "1.0.0",
                 additional_warn_txt="Use an InputManager with input_manager_key instead.",
             )
 
