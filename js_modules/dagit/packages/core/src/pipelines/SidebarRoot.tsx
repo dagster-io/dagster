@@ -13,7 +13,7 @@ import {GraphExplorerJobContext} from './GraphExplorerJobContext';
 import {ExplorerPath} from './PipelinePathUtils';
 import {SidebarOpContainer} from './SidebarOpContainer';
 import {SidebarOpContainerInfo, SIDEBAR_OP_CONTAINER_INFO_FRAGMENT} from './SidebarPipelineInfo';
-import {SidebarTabbedContainerPipelineFragment} from './types/SidebarTabbedContainerPipelineFragment';
+import {SidebarRootContainerFragment} from './types/SidebarRootContainerFragment';
 
 type TabKey = 'types' | 'info';
 
@@ -23,10 +23,10 @@ interface TabDefinition {
   content: () => React.ReactNode;
 }
 
-interface ISidebarTabbedContainerProps {
+interface SidebarRootProps {
   tab?: TabKey;
   typeName?: string;
-  pipeline: SidebarTabbedContainerPipelineFragment;
+  container: SidebarRootContainerFragment;
   explorerPath: ExplorerPath;
   opHandleID?: string;
   parentOpHandleID?: string;
@@ -37,11 +37,11 @@ interface ISidebarTabbedContainerProps {
   isGraph: boolean;
 }
 
-export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (props) => {
+export const SidebarRoot: React.FC<SidebarRootProps> = (props) => {
   const {
     tab,
     typeName,
-    pipeline,
+    container,
     explorerPath,
     opHandleID,
     getInvocations,
@@ -87,7 +87,7 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
         ) : jobContext ? (
           jobContext.sidebarTab
         ) : (
-          <SidebarOpContainerInfo isGraph={!!isGraph} pipeline={pipeline} key={pipeline.name} />
+          <SidebarOpContainerInfo isGraph={isGraph} container={container} key={container.name} />
         ),
     },
     {
@@ -125,8 +125,8 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
   );
 };
 
-export const SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT = gql`
-  fragment SidebarTabbedContainerPipelineFragment on SolidContainer {
+export const SIDEBAR_ROOT_CONTAINER_FRAGMENT = gql`
+  fragment SidebarRootContainerFragment on SolidContainer {
     id
     name
     ...SidebarOpContainerInfoFragment
