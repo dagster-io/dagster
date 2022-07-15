@@ -160,62 +160,61 @@ class FileManager(ABC):  # pylint: disable=no-init
 def local_file_manager(init_context):
     """FileManager that provides abstract access to a local filesystem.
 
-        By default, files will be stored in `<local_artifact_storage>/storage/file_manager` where
-        `<local_artifact_storage>` can be configured the ``dagster.yaml`` file in ``$DAGSTER_HOME``.
+    By default, files will be stored in `<local_artifact_storage>/storage/file_manager` where
+    `<local_artifact_storage>` can be configured the ``dagster.yaml`` file in ``$DAGSTER_HOME``.
 
-        Implements the :py:class:`~dagster.core.storage.file_manager.FileManager` API.
+    Implements the :py:class:`~dagster.core.storage.file_manager.FileManager` API.
 
-        Examples:
+    Examples:
 
-        .. code-block:: python
+    .. code-block:: python
 
-            import tempfile
+        import tempfile
 
-            from dagster import ModeDefinition, local_file_manager, pipeline,
-
-    from dagster.legacy import solid
-
-
-            @solid(required_resource_keys={"file_manager"})
-            def write_files(context):
-                fh_1 = context.resources.file_manager.write_data(b"foo")
-
-                with tempfile.NamedTemporaryFile("w+") as fd:
-                    fd.write("bar")
-                    fd.seek(0)
-                    fh_2 = context.resources.file_manager.write(fd, mode="w", ext=".txt")
-
-                return (fh_1, fh_2)
+        from dagster import ModeDefinition, local_file_manager, pipeline
+        from dagster.legacy import solid
 
 
-            @solid(required_resource_keys={"file_manager"})
-            def read_files(context, file_handles):
-                fh_1, fh_2 = file_handles
-                assert context.resources.file_manager.read_data(fh_2) == b"bar"
-                fd = context.resources.file_manager.read(fh_2, mode="r")
-                assert fd.read() == "foo"
-                fd.close()
+        @solid(required_resource_keys={"file_manager"})
+        def write_files(context):
+            fh_1 = context.resources.file_manager.write_data(b"foo")
+
+            with tempfile.NamedTemporaryFile("w+") as fd:
+                fd.write("bar")
+                fd.seek(0)
+                fh_2 = context.resources.file_manager.write(fd, mode="w", ext=".txt")
+
+            return (fh_1, fh_2)
 
 
-            @pipeline(mode_defs=[ModeDefinition(resource_defs={"file_manager": local_file_manager})])
-            def files_pipeline():
-                read_files(write_files())
+        @solid(required_resource_keys={"file_manager"})
+        def read_files(context, file_handles):
+            fh_1, fh_2 = file_handles
+            assert context.resources.file_manager.read_data(fh_2) == b"bar"
+            fd = context.resources.file_manager.read(fh_2, mode="r")
+            assert fd.read() == "foo"
+            fd.close()
 
-        Or to specify the file directory:
 
-        .. code-block:: python
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"file_manager": local_file_manager})])
+        def files_pipeline():
+            read_files(write_files())
 
-            @pipeline(
-                mode_defs=[
-                    ModeDefinition(
-                        resource_defs={
-                            "file_manager": local_file_manager.configured({"base_dir": "/my/base/dir"})
-                        }
-                    )
-                ]
-            )
-            def files_pipeline():
-                read_files(write_files())
+    Or to specify the file directory:
+
+    .. code-block:: python
+
+        @pipeline(
+            mode_defs=[
+                ModeDefinition(
+                    resource_defs={
+                        "file_manager": local_file_manager.configured({"base_dir": "/my/base/dir"})
+                    }
+                )
+            ]
+        )
+        def files_pipeline():
+            read_files(write_files())
 
     """
 
