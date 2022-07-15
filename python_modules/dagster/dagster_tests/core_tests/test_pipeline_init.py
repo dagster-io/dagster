@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import DagsterInstance, ModeDefinition, PipelineDefinition, resource, solid
+from dagster import DagsterInstance, ModeDefinition, PipelineDefinition, resource
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.context_creation_pipeline import PlanExecutionContextManager
@@ -12,6 +12,7 @@ from dagster.core.execution.resources_init import (
 from dagster.core.execution.retries import RetryMode
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.system_config.objects import ResolvedRunConfig
+from dagster.legacy import solid
 
 
 def test_generator_exit():

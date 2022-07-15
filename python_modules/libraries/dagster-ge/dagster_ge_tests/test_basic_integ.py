@@ -17,9 +17,9 @@ from dagster import (
     execute_pipeline,
     pipeline,
     reconstructable,
-    solid,
 )
 from dagster.core.test_utils import instance_for_test
+from dagster.legacy import solid
 from dagster.utils import file_relative_path
 
 

@@ -10,7 +10,6 @@ from dagster import (
     Shape,
     pipeline,
     resource,
-    solid,
 )
 from dagster.config.config_type import ConfigTypeKind
 from dagster.config.field import resolve_to_config_type
@@ -20,6 +19,7 @@ from dagster.core.snap import (
     build_config_schema_snapshot,
     snap_from_config_type,
 )
+from dagster.legacy import solid
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
     deserialize_value,

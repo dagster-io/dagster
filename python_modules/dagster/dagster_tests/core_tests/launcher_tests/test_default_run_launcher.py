@@ -17,7 +17,6 @@ from dagster import (
     pipeline,
     repository,
     seven,
-    solid,
 )
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -35,6 +34,7 @@ from dagster.core.workspace.load_target import GrpcServerTarget, PythonFileTarge
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import GrpcServerProcess
 from dagster.grpc.types import CancelExecutionRequest
+from dagster.legacy import solid
 
 default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 

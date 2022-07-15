@@ -19,9 +19,9 @@ from dagster import (
     lambda_solid,
     op,
     pipeline,
-    solid,
 )
 from dagster.core.utility_solids import define_stub_solid
+from dagster.legacy import solid
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
 # pylint: disable=unused-variable, unused-argument, redefined-outer-name

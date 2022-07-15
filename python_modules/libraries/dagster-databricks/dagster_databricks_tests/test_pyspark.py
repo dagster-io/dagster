@@ -23,10 +23,10 @@ from dagster import (
     fs_io_manager,
     pipeline,
     reconstructable,
-    solid,
 )
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.test_utils import instance_for_test
+from dagster.legacy import solid
 from dagster.utils.merger import deep_merge_dicts
 
 S3_BUCKET = "dagster-databricks-tests"

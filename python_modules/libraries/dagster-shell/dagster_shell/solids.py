@@ -12,7 +12,8 @@ from dagster import (
     Permissive,
 )
 from dagster import _check as check
-from dagster import op, solid
+from dagster import op
+from dagster.legacy import solid
 
 from .utils import execute, execute_script_file
 

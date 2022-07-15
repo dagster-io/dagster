@@ -1,6 +1,7 @@
 import os
 
-from dagster import AssetKey, AssetMaterialization, Field, MetadataValue, Output, pipeline, solid
+from dagster import AssetKey, AssetMaterialization, Field, MetadataValue, Output, pipeline
+from dagster.legacy import solid
 
 
 @solid(

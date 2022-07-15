@@ -9,9 +9,9 @@ from dagster import (
     OutputDefinition,
     fs_io_manager,
     pipeline,
-    solid,
 )
 from dagster.core.definitions.executor_definition import default_executors
+from dagster.legacy import solid
 
 
 def get_executor_defs():

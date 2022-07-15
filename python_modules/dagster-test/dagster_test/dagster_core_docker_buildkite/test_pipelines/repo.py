@@ -9,9 +9,9 @@ from dagster import (
     lambda_solid,
     pipeline,
     repository,
-    solid,
     usable_as_dagster_type,
 )
+from dagster.legacy import solid
 
 
 @lambda_solid

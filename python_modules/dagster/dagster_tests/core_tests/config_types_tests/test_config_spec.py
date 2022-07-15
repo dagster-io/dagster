@@ -6,8 +6,8 @@ from dagster import (
     Permissive,
     Selector,
     execute_solid,
-    solid,
 )
+from dagster.legacy import solid
 
 
 def test_kitchen_sink():

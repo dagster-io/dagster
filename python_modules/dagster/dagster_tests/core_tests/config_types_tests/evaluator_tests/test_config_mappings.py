@@ -16,8 +16,8 @@ from dagster import (
     graph,
     lambda_solid,
     pipeline,
-    solid,
 )
+from dagster.legacy import solid
 
 
 # have to use "pipe" solid since "result_for_solid" doesnt work with composite mappings

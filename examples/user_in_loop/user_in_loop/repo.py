@@ -1,7 +1,8 @@
 import os
 import time
 
-from dagster import pipeline, repository, solid
+from dagster import pipeline, repository
+from dagster.legacy import solid
 
 
 # start_loop_marker_0

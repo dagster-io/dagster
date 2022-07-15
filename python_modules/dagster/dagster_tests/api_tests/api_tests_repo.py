@@ -10,13 +10,13 @@ from dagster import (
     op,
     pipeline,
     repository,
-    solid,
     usable_as_dagster_type,
 )
 from dagster.core.definitions.decorators.sensor_decorator import sensor
 from dagster.core.definitions.sensor_definition import RunRequest
 from dagster.core.errors import DagsterError
 from dagster.core.test_utils import default_mode_def_for_test
+from dagster.legacy import solid
 
 
 @lambda_solid

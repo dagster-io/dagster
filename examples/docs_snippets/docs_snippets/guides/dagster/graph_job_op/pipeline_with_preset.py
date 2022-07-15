@@ -1,4 +1,5 @@
-from dagster import PresetDefinition, pipeline, solid
+from dagster import PresetDefinition, pipeline
+from dagster.legacy import solid
 
 
 @solid(config_schema={"param": str})
