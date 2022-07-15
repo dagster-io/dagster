@@ -49,9 +49,9 @@ class AssetIn(
         partition_mapping: Optional[PartitionMapping] = None,
     ):
         key_prefix = canonicalize_backcompat_args(
-            key_prefix, "key_prefix", namespace, "namespace", "0.16.0"
+            key_prefix, "key_prefix", namespace, "namespace", "1.0.0"
         )
-        key = canonicalize_backcompat_args(key, "key", asset_key, "asset_key", "0.16.0")
+        key = canonicalize_backcompat_args(key, "key", asset_key, "asset_key", "1.0.0")
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
 

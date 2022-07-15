@@ -132,8 +132,20 @@ export const TicksTable = ({
   });
   const {data} = queryResult;
 
-  if (!data || data.instigationStateOrError.__typename === 'PythonError') {
+  if (!data) {
     return null;
+  }
+
+  if (data.instigationStateOrError.__typename === 'PythonError') {
+    return <PythonErrorInfo error={data.instigationStateOrError} />;
+  }
+
+  if (data.instigationStateOrError.__typename === 'InstigationStateNotFoundError') {
+    return (
+      <Box padding={{vertical: 32}} flex={{justifyContent: 'center'}}>
+        <NonIdealState icon="no-results" title="No ticks to display" />
+      </Box>
+    );
   }
 
   const {ticks, instigationType} = data.instigationStateOrError;
@@ -290,6 +302,9 @@ export const TickHistoryTimeline = ({
 
   if (data.instigationStateOrError.__typename === 'PythonError') {
     return <PythonErrorInfo error={data.instigationStateOrError} />;
+  }
+  if (data.instigationStateOrError.__typename === 'InstigationStateNotFoundError') {
+    return null;
   }
 
   const {ticks, nextTick} = data.instigationStateOrError;

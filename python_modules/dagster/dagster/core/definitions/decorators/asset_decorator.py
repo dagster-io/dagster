@@ -164,7 +164,7 @@ def asset(
         "key_prefix",
         namespace,
         "namespace",
-        "0.16.0",
+        "1.0.0",
         additional_warn_txt="key_prefix applies only to the output AssetKey. If you want to modify "
         "the prefix of the input AssetKeys as well, you can do this by explicitly setting the ins "
         "parameter of this asset to a dictionary of the form "
@@ -174,7 +174,7 @@ def asset(
     if partition_mappings is not None:
         deprecation_warning(
             "The partition_mappings argument of @asset",
-            "0.16.0",
+            "1.0.0",
             "Use the partition_mapping argument on AssetIn instead.",
         )
 
@@ -424,7 +424,7 @@ def multi_asset(
         if isinstance(out, Out) and not isinstance(out, AssetOut):
             deprecation_warning(
                 "Passing Out objects as values for the out argument of @multi_asset",
-                "0.16.0",
+                "1.0.0",
                 additional_warn_txt="Use AssetOut instead.",
             )
 

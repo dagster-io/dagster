@@ -431,7 +431,7 @@ class AssetsDefinition(ResourceAddable):
     @property
     def asset_key(self) -> AssetKey:
         deprecation_warning(
-            "AssetsDefinition.asset_key", "0.16.0", "Use AssetsDefinition.key instead."
+            "AssetsDefinition.asset_key", "1.0.0", "Use AssetsDefinition.key instead."
         )
         return self.key
 
@@ -446,7 +446,7 @@ class AssetsDefinition(ResourceAddable):
     @property
     def asset_keys(self) -> AbstractSet[AssetKey]:
         deprecation_warning(
-            "AssetsDefinition.asset_keys", "0.16.0", "Use AssetsDefinition.keys instead."
+            "AssetsDefinition.asset_keys", "1.0.0", "Use AssetsDefinition.keys instead."
         )
         return self.keys
 

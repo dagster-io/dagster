@@ -231,12 +231,8 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
   };
 
   const onRemoveExtraPaths = (paths: string[]) => {
-    let runConfigData = '';
     try {
-      // Note: parsing `` returns null rather than an empty object,
-      // which is preferable for representing empty config.
-      runConfigData = yaml.parse(currentSession.runConfigYaml || '') || {};
-
+      const runConfigData = yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml));
       for (const path of paths) {
         deletePropertyPath(runConfigData, path);
       }
@@ -255,10 +251,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
   const onScaffoldMissingConfig = () => {
     const config = runConfigSchema ? scaffoldPipelineConfig(runConfigSchema) : {};
     try {
-      // Note: parsing `` returns null rather than an empty object,
-      // which is preferable for representing empty config.
-      const runConfigData = yaml.parse(currentSession.runConfigYaml || '') || {};
-
+      const runConfigData = yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml));
       const updatedRunConfigData = merge(config, runConfigData);
       const runConfigYaml = yaml.stringify(updatedRunConfigData);
       onSaveSession({runConfigYaml});
@@ -272,10 +265,10 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
       return;
     }
 
+    const configYamlOrEmpty = sanitizeConfigYamlString(currentSession.runConfigYaml);
+
     try {
-      // Note: parsing `` returns null rather than an empty object,
-      // which is preferable for representing empty config.
-      yaml.parse(currentSession.runConfigYaml || '') || {};
+      yaml.parse(configYamlOrEmpty);
     } catch (err) {
       showCustomAlert({title: 'Invalid YAML', body: YAML_SYNTAX_INVALID});
       return;
@@ -283,7 +276,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
 
     return {
       executionParams: {
-        runConfigData: currentSession.runConfigYaml || {},
+        runConfigData: configYamlOrEmpty,
         selector: pipelineSelector,
         mode: currentSession.mode || 'default',
         executionMetadata: {
@@ -338,7 +331,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     // is in flight, in which case completion of this async method should not set loading=false.
     previewCounter.current += 1;
     const currentPreviewCount = previewCounter.current;
-    const configYamlOrEmpty = configYaml.trim() || '{}';
+    const configYamlOrEmpty = sanitizeConfigYamlString(configYaml);
 
     dispatch({type: 'preview-loading', payload: true});
 
@@ -720,6 +713,8 @@ const deletePropertyPath = (obj: any, path: string) => {
     delete obj[lastKey];
   }
 };
+
+const sanitizeConfigYamlString = (yamlString: string) => (yamlString || '').trim() || '{}';
 
 const PREVIEW_CONFIG_QUERY = gql`
   query PreviewConfigQuery(

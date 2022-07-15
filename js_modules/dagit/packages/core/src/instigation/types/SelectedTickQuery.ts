@@ -9,8 +9,8 @@ import { InstigationSelector, InstigationTickStatus } from "./../../types/global
 // GraphQL query operation: SelectedTickQuery
 // ====================================================
 
-export interface SelectedTickQuery_instigationStateOrError_PythonError {
-  __typename: "PythonError";
+export interface SelectedTickQuery_instigationStateOrError_InstigationStateNotFoundError {
+  __typename: "InstigationStateNotFoundError" | "PythonError";
 }
 
 export interface SelectedTickQuery_instigationStateOrError_InstigationState_tick_error_causes {
@@ -44,7 +44,7 @@ export interface SelectedTickQuery_instigationStateOrError_InstigationState {
   tick: SelectedTickQuery_instigationStateOrError_InstigationState_tick | null;
 }
 
-export type SelectedTickQuery_instigationStateOrError = SelectedTickQuery_instigationStateOrError_PythonError | SelectedTickQuery_instigationStateOrError_InstigationState;
+export type SelectedTickQuery_instigationStateOrError = SelectedTickQuery_instigationStateOrError_InstigationStateNotFoundError | SelectedTickQuery_instigationStateOrError_InstigationState;
 
 export interface SelectedTickQuery {
   instigationStateOrError: SelectedTickQuery_instigationStateOrError;
