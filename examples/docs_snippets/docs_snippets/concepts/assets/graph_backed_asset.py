@@ -1,34 +1,36 @@
-from unittest import mock
-
-from pandas import DataFrame
-
+# isort: skip_file
 from dagster import (
-    AssetGroup,
     AssetKey,
+    load_assets_from_current_module,
     AssetsDefinition,
+    with_resources,
     GraphOut,
     Out,
     Output,
     ResourceDefinition,
+    AssetSelection,
     asset,
-    build_assets_job,
+    define_asset_job,
     graph,
     op,
     repository,
 )
+from mock import MagicMock
 
 
 def create_db_connection():
-    return "yay"
+    return MagicMock()
 
 
 # start example
+import pandas as pd
+from dagster import AssetsDefinition, asset, graph, op
 
 
 @op(required_resource_keys={"slack"})
-def fetch_files_from_slack(context) -> DataFrame:
+def fetch_files_from_slack(context) -> pd.DataFrame:
     files = context.resources.slack.files_list(channel="#random")
-    return DataFrame(
+    return pd.DataFrame(
         [
             {
                 "id": file.get("id"),
@@ -55,12 +57,11 @@ graph_asset = AssetsDefinition.from_graph(store_slack_files_in_sql)
 
 # end example
 
-slack_mock = mock.MagicMock()
+slack_mock = MagicMock()
 
-store_slack_files = AssetGroup(
-    [graph_asset],
-    resource_defs={"slack": ResourceDefinition.hardcoded_resource(slack_mock)},
-).build_job("store_slack_files")
+store_slack_files = define_asset_job(
+    "store_slack_files", selection=AssetSelection.assets(graph_asset)
+)
 
 
 @op
@@ -69,6 +70,7 @@ def add_one(input_num):
 
 
 # start_basic_dependencies
+from dagster import AssetsDefinition, asset, graph
 
 
 @asset
@@ -91,8 +93,9 @@ def downstream_asset(middle_asset):
 
 # end_basic_dependencies
 
-basic_deps_job = build_assets_job(
-    "basic_deps_job", [upstream_asset, middle_asset, downstream_asset]
+basic_deps_job = define_asset_job(
+    "basic_deps_job",
+    AssetSelection.assets(upstream_asset, middle_asset, downstream_asset),
 )
 
 
@@ -103,6 +106,7 @@ def two_outputs(upstream):
 
 
 # start_basic_dependencies_2
+from dagster import AssetsDefinition, GraphOut, graph
 
 
 @graph(out={"first_asset": GraphOut(), "second_asset": GraphOut()})
@@ -115,11 +119,12 @@ two_assets = AssetsDefinition.from_graph(two_assets_graph)
 
 # end_basic_dependencies_2
 
-second_basic_deps_job = build_assets_job(
-    "second_basic_deps_job", [upstream_asset, two_assets]
+second_basic_deps_job = define_asset_job(
+    "second_basic_deps_job", AssetSelection.assets(upstream_asset, two_assets)
 )
 
 # start_explicit_dependencies
+from dagster import AssetsDefinition, GraphOut, graph
 
 
 @graph(out={"one": GraphOut(), "two": GraphOut()})
@@ -130,8 +135,8 @@ def return_one_and_two(zero):
 
 explicit_deps_asset = AssetsDefinition.from_graph(
     return_one_and_two,
-    asset_keys_by_input_name={"zero": AssetKey("upstream_asset")},
-    asset_keys_by_output_name={
+    keys_by_input_name={"zero": AssetKey("upstream_asset")},
+    keys_by_output_name={
         "one": AssetKey("asset_one"),
         "two": AssetKey("asset_two"),
     },
@@ -139,11 +144,20 @@ explicit_deps_asset = AssetsDefinition.from_graph(
 
 # end_explicit_dependencies
 
-explicit_deps_job = build_assets_job(
-    "explicit_deps_job", [upstream_asset, explicit_deps_asset]
+explicit_deps_job = define_asset_job(
+    "explicit_deps_job", AssetSelection.assets(upstream_asset, explicit_deps_asset)
 )
 
 
 @repository
 def my_repo():
-    return [basic_deps_job, store_slack_files, second_basic_deps_job, explicit_deps_job]
+    return [
+        basic_deps_job,
+        store_slack_files,
+        second_basic_deps_job,
+        explicit_deps_job,
+        *with_resources(
+            load_assets_from_current_module(),
+            {"slack": ResourceDefinition.hardcoded_resource(slack_mock)},
+        ),
+    ]
