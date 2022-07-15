@@ -28,13 +28,8 @@ from dagster import (
     Tuple,
 )
 from dagster import _check as check
-from dagster import (
-    execute_pipeline,
-    execute_solid,
-)
-
-from dagster.legacy import pipeline
-from dagster.legacy import solid
+from dagster import execute_pipeline, execute_solid
+from dagster.legacy import pipeline, solid
 
 
 @solid

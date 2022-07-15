@@ -1,7 +1,6 @@
-from dagster import ModeDefinition, logger, 
-
-from dagster.legacy import pipeline resource
+from dagster import ModeDefinition, logger, resource
 from dagster.core.snap import PipelineSnapshot
+from dagster.legacy import pipeline
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
 

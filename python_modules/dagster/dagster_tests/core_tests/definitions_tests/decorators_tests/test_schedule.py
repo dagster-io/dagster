@@ -21,8 +21,7 @@ from dagster import (
     validate_run_config,
     weekly_schedule,
 )
-from dagster.legacy import pipeline
-from dagster.legacy import solid
+from dagster.legacy import pipeline, solid
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster.utils import merge_dicts
 from dagster.utils.partitions import (

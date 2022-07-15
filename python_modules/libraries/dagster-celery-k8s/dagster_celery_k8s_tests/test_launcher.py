@@ -12,7 +12,7 @@ from dagster_k8s.client import DEFAULT_WAIT_TIMEOUT
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
 from dagster_test.test_project import get_test_project_workspace_and_external_pipeline
 
-from dagster import pipeline, reconstructable
+from dagster import reconstructable
 from dagster._check import CheckError
 from dagster.core.host_representation import RepositoryHandle
 from dagster.core.launcher import LaunchRunContext

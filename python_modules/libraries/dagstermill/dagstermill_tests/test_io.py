@@ -3,12 +3,9 @@ import os
 import pytest
 from dagstermill.examples.repository import hello_world
 
-from dagster import (
-    FileHandle,
-)
-
-from dagster.legacy import pipeline
+from dagster import FileHandle
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.legacy import pipeline
 
 from .test_solids import exec_for_test
 

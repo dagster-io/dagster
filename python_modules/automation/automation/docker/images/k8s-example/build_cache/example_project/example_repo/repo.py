@@ -12,8 +12,7 @@ from dagster import (
     file_relative_path,
     repository,
 )
-from dagster.legacy import pipeline
-from dagster.legacy import solid
+from dagster.legacy import pipeline, solid
 
 
 @solid(input_defs=[InputDefinition("word", str)], config_schema={"factor": int})

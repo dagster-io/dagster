@@ -1,13 +1,7 @@
 from random import random
 
-from dagster import (
-    Field,
-    ModeDefinition,
-    fs_io_manager,
-)
-
-from dagster.legacy import pipeline
-from dagster.legacy import solid
+from dagster import Field, ModeDefinition, fs_io_manager
+from dagster.legacy import pipeline, solid
 
 DEFAULT_EXCEPTION_RATE = 0.3
 

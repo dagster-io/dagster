@@ -7,8 +7,7 @@ from dagster import (
     OutputDefinition,
     composite_solid,
 )
-from dagster.legacy import pipeline
-from dagster.legacy import solid
+from dagster.legacy import pipeline, solid
 
 
 @solid(output_defs=[DynamicOutputDefinition()])

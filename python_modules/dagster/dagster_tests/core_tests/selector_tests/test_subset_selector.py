@@ -1,13 +1,6 @@
 import pytest
 
-from dagster import (
-    AssetGroup,
-    InputDefinition,
-    asset,
-    lambda_solid,
-)
-
-from dagster.legacy import pipeline
+from dagster import AssetGroup, InputDefinition, asset, lambda_solid
 from dagster.core.definitions.executor_definition import execute_in_process_executor
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster.core.selector.subset_selector import (
@@ -20,6 +13,7 @@ from dagster.core.selector.subset_selector import (
     parse_step_selection,
 )
 from dagster.core.test_utils import default_mode_def_for_test
+from dagster.legacy import pipeline
 
 
 @lambda_solid

@@ -13,8 +13,7 @@ from dagster import (
     lambda_solid,
     usable_as_dagster_type,
 )
-from dagster.legacy import pipeline
-from dagster.legacy import solid
+from dagster.legacy import pipeline, solid
 
 
 def builder(graph):

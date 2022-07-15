@@ -6,7 +6,7 @@ def solid(_):
     pass
 
 
-@dagster.pipeline
+@dagster.legacy.pipeline
 def pipeline():
     solid()
 

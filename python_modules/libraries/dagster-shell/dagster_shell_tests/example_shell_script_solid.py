@@ -1,10 +1,7 @@
 # pylint: disable=no-value-for-parameter
 from dagster_shell import create_shell_script_solid
 
-from dagster import (
-    file_relative_path,
-)
-
+from dagster import file_relative_path
 from dagster.legacy import pipeline
 
 

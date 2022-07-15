@@ -20,13 +20,7 @@ from dagster import (
     String,
 )
 from dagster import _check as check
-from dagster import (
-    execute_pipeline,
-    execute_pipeline_iterator,
-    reconstructable,
-    reexecute_pipeline,
-)
-from dagster.legacy import pipeline
+from dagster import execute_pipeline, execute_pipeline_iterator, reconstructable, reexecute_pipeline
 from dagster.core.definitions import Node
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.definitions.graph_definition import _create_adjacency_lists
@@ -45,7 +39,7 @@ from dagster.core.utility_solids import (
     input_set,
 )
 from dagster.core.workspace.load import location_origin_from_python_file
-from dagster.legacy import solid
+from dagster.legacy import pipeline, solid
 from dagster.utils.test import execute_solid_within_pipeline
 
 # protected members

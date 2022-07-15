@@ -9,9 +9,8 @@ from dagster import (
     resource,
     usable_as_dagster_type,
 )
-from dagster.legacy import pipeline
 from dagster.core.types.dagster_type import create_any_type
-from dagster.legacy import solid
+from dagster.legacy import pipeline, solid
 
 
 class UserError(Exception):

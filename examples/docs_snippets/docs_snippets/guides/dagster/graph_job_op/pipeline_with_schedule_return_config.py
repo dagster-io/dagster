@@ -1,4 +1,4 @@
-from dagster import pipeline, schedule
+from dagster import schedule
 from dagster.legacy import solid
 
 

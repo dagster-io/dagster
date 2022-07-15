@@ -6,12 +6,7 @@ import pytest
 import yaml
 from dagster_spark import create_spark_op, create_spark_solid, spark_resource
 
-from dagster import (
-    ModeDefinition,
-    execute_pipeline,
-    job,
-)
-
+from dagster import ModeDefinition, execute_pipeline, job
 from dagster.legacy import pipeline
 
 CONFIG = """

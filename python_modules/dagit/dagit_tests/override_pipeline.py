@@ -1,5 +1,4 @@
 from dagster import InputDefinition, Int, OutputDefinition, lambda_solid, repository
-
 from dagster.legacy import pipeline
 
 

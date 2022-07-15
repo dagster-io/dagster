@@ -3,9 +3,7 @@ from dagster_msteams.resources import msteams_resource
 from mock import patch
 
 from dagster import ModeDefinition, execute_pipeline
-
-from dagster.legacy import pipeline
-from dagster.legacy import solid
+from dagster.legacy import pipeline, solid
 
 
 class SomeUserException(Exception):

@@ -36,7 +36,6 @@ from dagster import (
     schedule,
     sensor,
 )
-from dagster.legacy import pipeline
 from dagster._check import CheckError
 from dagster.core.definitions.executor_definition import (
     default_executors,
@@ -44,7 +43,7 @@ from dagster.core.definitions.executor_definition import (
 )
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster.core.errors import DagsterInvalidSubsetError
-from dagster.legacy import solid
+from dagster.legacy import pipeline, solid
 from dagster.loggers import default_loggers
 
 # pylint: disable=comparison-with-callable
