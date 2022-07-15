@@ -136,7 +136,10 @@ class OutputContext:
         self._step_context = step_context
         self._asset_info = asset_info
         self._warn_on_step_context_use = warn_on_step_context_use
-        self._partition_key = partition_key
+        if self._step_context and self._step_context.has_partition_key:
+            self._partition_key = self._step_context.partition_key
+        else:
+            self._partition_key = partition_key
 
         if isinstance(resources, Resources):
             self._resources_cm = None
@@ -341,10 +344,7 @@ class OutputContext:
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
-        if self._step_context:
-            return self.step_context.has_partition_key
-        else:
-            return self._partition_key is not None
+        return self._partition_key is not None
 
     @property
     def partition_key(self) -> str:
@@ -360,10 +360,7 @@ class OutputContext:
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
-        if self._step_context:
-            return self._step_context.partition_key
-        else:
-            return self._partition_key
+        return self._partition_key
 
     @property
     def has_asset_partitions(self) -> bool:
