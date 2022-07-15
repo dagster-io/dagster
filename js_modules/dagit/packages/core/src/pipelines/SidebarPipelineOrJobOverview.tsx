@@ -12,7 +12,10 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {Description} from './Description';
 import {NonIdealPipelineQueryResult} from './NonIdealPipelineQueryResult';
 import {SidebarSection} from './SidebarComponents';
-import {SidebarModeSection, SIDEBAR_MODE_INFO_FRAGMENT} from './SidebarModeSection';
+import {
+  SidebarResourcesSection,
+  SIDEBAR_RESOURCES_SECTION_FRAGMENT,
+} from './SidebarResourcesSection';
 import {
   JobOverviewSidebarQuery,
   JobOverviewSidebarQueryVariables,
@@ -62,7 +65,7 @@ export const SidebarPipelineOrJobOverview: React.FC<{
             <SidebarSection title="Resources">
               <Box padding={{vertical: 16, horizontal: 24}}>
                 {modes.map((mode) => (
-                  <SidebarModeSection mode={mode} key={mode.name} />
+                  <SidebarResourcesSection mode={mode} key={mode.name} isGraph={isJob} />
                 ))}
               </Box>
             </SidebarSection>
@@ -87,7 +90,7 @@ const JOB_OVERVIEW_SIDEBAR_QUERY = gql`
         description
         modes {
           id
-          ...SidebarModeInfoFragment
+          ...SidebarResourcesSectionFragment
         }
         metadataEntries {
           ...MetadataEntryFragment
@@ -103,6 +106,6 @@ const JOB_OVERVIEW_SIDEBAR_QUERY = gql`
     }
   }
   ${METADATA_ENTRY_FRAGMENT}
-  ${SIDEBAR_MODE_INFO_FRAGMENT}
+  ${SIDEBAR_RESOURCES_SECTION_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
 `;

@@ -23,10 +23,7 @@ import {
   LoadingNotice,
 } from './GraphNotices';
 import {ExplorerPath} from './PipelinePathUtils';
-import {
-  SidebarTabbedContainer,
-  SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT,
-} from './SidebarTabbedContainer';
+import {SidebarRoot, SIDEBAR_ROOT_CONTAINER_FRAGMENT} from './SidebarRoot';
 import {GraphExplorerFragment} from './types/GraphExplorerFragment';
 import {GraphExplorerSolidHandleFragment} from './types/GraphExplorerSolidHandleFragment';
 
@@ -291,8 +288,8 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
           <Route
             // eslint-disable-next-line react/no-children-prop
             children={({location}: {location: any}) => (
-              <SidebarTabbedContainer
-                pipeline={pipelineOrGraph}
+              <SidebarRoot
+                container={pipelineOrGraph}
                 explorerPath={explorerPath}
                 opHandleID={selectedHandle && selectedHandle.handleID}
                 parentOpHandleID={parentHandle && parentHandle.handleID}
@@ -316,9 +313,9 @@ export const GRAPH_EXPLORER_FRAGMENT = gql`
     id
     name
     description
-    ...SidebarTabbedContainerPipelineFragment
+    ...SidebarRootContainerFragment
   }
-  ${SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT}
+  ${SIDEBAR_ROOT_CONTAINER_FRAGMENT}
 `;
 
 export const GRAPH_EXPLORER_ASSET_NODE_FRAGMENT = gql`

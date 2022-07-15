@@ -6,36 +6,39 @@ import {breakOnUnderscores} from '../app/Util';
 
 import {Description} from './Description';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from './SidebarComponents';
-import {SidebarModeSection, SIDEBAR_MODE_INFO_FRAGMENT} from './SidebarModeSection';
+import {
+  SidebarResourcesSection,
+  SIDEBAR_RESOURCES_SECTION_FRAGMENT,
+} from './SidebarResourcesSection';
 import {SidebarOpContainerInfoFragment} from './types/SidebarOpContainerInfoFragment';
 
 const NO_DESCRIPTION = '';
 
 interface ISidebarOpContainerInfoProps {
   isGraph: boolean;
-  pipeline: SidebarOpContainerInfoFragment;
+  container: SidebarOpContainerInfoFragment;
 }
 
 export const SidebarOpContainerInfo: React.FC<ISidebarOpContainerInfoProps> = ({
   isGraph,
-  pipeline,
+  container,
 }) => {
   return (
     <div>
       <Box padding={{vertical: 16, horizontal: 24}}>
         <SidebarSubhead>{isGraph ? 'Graph' : 'Pipeline'}</SidebarSubhead>
-        <SidebarTitle>{breakOnUnderscores(pipeline.name)}</SidebarTitle>
+        <SidebarTitle>{breakOnUnderscores(container.name)}</SidebarTitle>
       </Box>
       <SidebarSection title="Description">
         <Box padding={{vertical: 16, horizontal: 24}}>
-          <Description description={pipeline ? pipeline.description : NO_DESCRIPTION} />
+          <Description description={container ? container.description : NO_DESCRIPTION} />
         </Box>
       </SidebarSection>
       {!isGraph && (
         <SidebarSection title="Modes" collapsedByDefault={true}>
           <Box padding={{vertical: 16, horizontal: 24}}>
-            {pipeline.modes.map((mode) => (
-              <SidebarModeSection key={mode.name} mode={mode} />
+            {container.modes.map((mode) => (
+              <SidebarResourcesSection key={mode.name} mode={mode} isGraph={false} />
             ))}
           </Box>
         </SidebarSection>
@@ -51,9 +54,9 @@ export const SIDEBAR_OP_CONTAINER_INFO_FRAGMENT = gql`
     description
     modes {
       id
-      ...SidebarModeInfoFragment
+      ...SidebarResourcesSectionFragment
     }
   }
 
-  ${SIDEBAR_MODE_INFO_FRAGMENT}
+  ${SIDEBAR_RESOURCES_SECTION_FRAGMENT}
 `;
