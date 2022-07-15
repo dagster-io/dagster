@@ -12,13 +12,18 @@ sys.meta_path.insert(
     _module_alias_map.AliasedModuleFinder(
         {
             "dagster.api": "dagster._api",
+            "dagster.builtins": "dagster._builtins",
             "dagster.check": "dagster._check",
             "dagster.cli": "dagster._cli",
             "dagster.config": "dagster._config",
             "dagster.daemon": "dagster._daemon",
+            "dagster.experimental": "dagster._experimental",
             "dagster.generate": "dagster._generate",
             "dagster.grpc": "dagster._grpc",
             "dagster.loggers": "dagster._loggers",
+            "dagster.serdes": "dagster._serdes",
+            "dagster.seven": "dagster._seven",
+            "dagster.utils": "dagster._utils",
         }
     ),
 )
