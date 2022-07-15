@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING, List, Optional
 
 import dagster._check as check
+from dagster._grpc.types import PipelineSubsetSnapshotArgs
 from dagster.core.definitions.events import AssetKey
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.external_data import ExternalPipelineSubsetResult
 from dagster.core.host_representation.origin import ExternalPipelineOrigin
-from dagster._grpc.types import PipelineSubsetSnapshotArgs
 from dagster.serdes import deserialize_as
 
 if TYPE_CHECKING:

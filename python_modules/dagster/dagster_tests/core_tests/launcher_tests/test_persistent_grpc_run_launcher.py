@@ -9,6 +9,7 @@ from dagster_tests.core_tests.launcher_tests.test_default_run_launcher import (
 )
 
 from dagster import file_relative_path, seven
+from dagster._grpc.server import GrpcServerProcess
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import GRPC_INFO_TAG
@@ -16,7 +17,6 @@ from dagster.core.test_utils import instance_for_test, poll_for_finished_run, po
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import GrpcServerTarget, PythonFileTarget
-from dagster._grpc.server import GrpcServerProcess
 from dagster.utils import find_free_port, merge_dicts
 
 

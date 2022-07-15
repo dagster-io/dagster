@@ -32,13 +32,13 @@ from dagster.serdes.serdes import WhitelistMap, unpack_inner_value
 from .selector import PartitionSetSelector, RepositorySelector
 
 if TYPE_CHECKING:
+    from dagster._grpc.client import DagsterGrpcClient
     from dagster.core.host_representation.repository_location import (
         GrpcServerRepositoryLocation,
         InProcessRepositoryLocation,
         RepositoryLocation,
     )
     from dagster.core.instance import DagsterInstance
-    from dagster._grpc.client import DagsterGrpcClient
 
 # This is a hard-coded name for the special "in-process" location.
 # This is typically only used for test, although we may allow

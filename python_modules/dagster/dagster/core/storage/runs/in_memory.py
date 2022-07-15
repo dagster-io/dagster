@@ -2,6 +2,7 @@ from collections import OrderedDict, defaultdict
 from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union, cast
 
 import dagster._check as check
+from dagster._daemon.types import DaemonHeartbeat
 from dagster.core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunNotFoundError,
@@ -16,7 +17,6 @@ from dagster.core.snap import (
     create_pipeline_snapshot_id,
 )
 from dagster.core.storage.tags import PARTITION_NAME_TAG
-from dagster.daemon.types import DaemonHeartbeat
 from dagster.utils import EPOCH, frozendict, merge_dicts
 
 from ..pipeline_run import (

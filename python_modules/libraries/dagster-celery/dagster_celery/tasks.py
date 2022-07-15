@@ -1,9 +1,9 @@
 from dagster import DagsterInstance, MetadataEntry
 from dagster import _check as check
+from dagster._grpc.types import ExecuteStepArgs
 from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
-from dagster._grpc.types import ExecuteStepArgs
 from dagster.serdes import serialize_dagster_namedtuple, unpack_value
 
 from .core_execution_loop import DELEGATE_MARKER

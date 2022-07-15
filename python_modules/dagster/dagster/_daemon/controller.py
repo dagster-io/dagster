@@ -9,20 +9,20 @@ from typing import Callable, ContextManager, Iterator, Sequence, Tuple
 import pendulum
 
 import dagster._check as check
-from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
-from dagster.core.instance import DagsterInstance
-from dagster.core.workspace import IWorkspace
-from dagster.core.workspace.load_target import WorkspaceLoadTarget
-from dagster.daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
-from dagster.daemon.daemon import (
+from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
+from dagster._daemon.daemon import (
     BackfillDaemon,
     DagsterDaemon,
     MonitoringDaemon,
     SchedulerDaemon,
     SensorDaemon,
 )
-from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
-from dagster.daemon.types import DaemonHeartbeat, DaemonStatus
+from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
+from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
+from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster.core.instance import DagsterInstance
+from dagster.core.workspace import IWorkspace
+from dagster.core.workspace.load_target import WorkspaceLoadTarget
 from dagster.utils.interrupts import raise_interrupts_as
 from dagster.utils.log import configure_loggers
 

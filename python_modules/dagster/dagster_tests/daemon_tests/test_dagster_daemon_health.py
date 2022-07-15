@@ -4,8 +4,6 @@ import pendulum
 import pytest
 
 from dagster import DagsterInvariantViolationError
-from dagster.core.test_utils import instance_for_test
-from dagster.core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._daemon.controller import (
     DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
     all_daemons_healthy,
@@ -13,6 +11,8 @@ from dagster._daemon.controller import (
     daemon_controller_from_instance,
     get_daemon_statuses,
 )
+from dagster.core.test_utils import instance_for_test
+from dagster.core.workspace.load_target import EmptyWorkspaceTarget
 from dagster.utils.error import SerializableErrorInfo
 
 

@@ -720,7 +720,7 @@ def _get_or_create_sensor_run(
 def _create_sensor_run(
     instance, repo_location, external_sensor, external_pipeline, run_request, target_data
 ):
-    from dagster.daemon.daemon import get_telemetry_daemon_session_id
+    from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
     external_execution_plan = repo_location.get_external_execution_plan(
         external_pipeline,

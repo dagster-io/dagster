@@ -20,6 +20,16 @@ from dagster._api.snapshot_pipeline import sync_get_external_pipeline_subset_grp
 from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
 from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
+from dagster._grpc.impl import (
+    get_external_schedule_execution,
+    get_external_sensor_execution,
+    get_notebook_data,
+    get_partition_config,
+    get_partition_names,
+    get_partition_set_execution_param_data,
+    get_partition_tags,
+)
+from dagster._grpc.types import GetCurrentImageResult
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.errors import DagsterInvariantViolationError
@@ -41,16 +51,6 @@ from dagster.core.host_representation.origin import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryPythonOrigin
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
-from dagster._grpc.impl import (
-    get_external_schedule_execution,
-    get_external_sensor_execution,
-    get_notebook_data,
-    get_partition_config,
-    get_partition_names,
-    get_partition_set_execution_param_data,
-    get_partition_tags,
-)
-from dagster._grpc.types import GetCurrentImageResult
 from dagster.serdes import deserialize_as
 from dagster.seven.compat.pendulum import PendulumDateTime
 from dagster.utils import merge_dicts

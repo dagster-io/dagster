@@ -3,7 +3,7 @@ import os
 import click
 
 from dagster._annotations import experimental
-from dagster.generate import generate_new_project
+from dagster._generate import generate_new_project
 
 
 @click.command(name="new-project")

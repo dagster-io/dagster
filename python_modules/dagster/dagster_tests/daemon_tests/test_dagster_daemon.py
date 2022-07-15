@@ -1,12 +1,12 @@
 import pytest
 from click.testing import CliRunner
 
-from dagster.core.test_utils import instance_for_test
-from dagster.core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._daemon.cli import run_command
 from dagster._daemon.controller import daemon_controller_from_instance
 from dagster._daemon.daemon import SchedulerDaemon
 from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
+from dagster.core.test_utils import instance_for_test
+from dagster.core.workspace.load_target import EmptyWorkspaceTarget
 
 
 def test_scheduler_instance():

@@ -1,12 +1,12 @@
 from typing import TYPE_CHECKING, Any
 
 import dagster._check as check
+from dagster._grpc.types import ExternalScheduleExecutionArgs
 from dagster.core.definitions.schedule_definition import ScheduleExecutionData
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.external_data import ExternalScheduleExecutionErrorData
 from dagster.core.host_representation.handle import RepositoryHandle
 from dagster.core.instance import DagsterInstance
-from dagster._grpc.types import ExternalScheduleExecutionArgs
 from dagster.serdes import deserialize_as
 from dagster.seven.compat.pendulum import PendulumDateTime
 

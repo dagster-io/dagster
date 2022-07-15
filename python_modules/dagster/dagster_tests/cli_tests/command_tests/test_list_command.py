@@ -8,9 +8,9 @@ from click.testing import CliRunner
 from dagster import seven
 from dagster._cli.job import job_list_command
 from dagster._cli.pipeline import execute_list_command, pipeline_list_command
+from dagster._grpc.server import GrpcServerProcess
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._grpc.server import GrpcServerProcess
 from dagster.utils import file_relative_path
 
 

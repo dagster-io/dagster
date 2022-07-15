@@ -19,13 +19,13 @@ from dagster import (
 )
 from dagster._config import ConfigTypeKind, process_config
 from dagster._legacy import pipeline, solid
+from dagster._loggers import default_loggers
 from dagster.core.definitions import create_run_config_schema
 from dagster.core.definitions.run_config import (
     RunConfigSchemaCreationData,
     define_solid_dictionary_cls,
 )
 from dagster.core.system_config.objects import ResolvedRunConfig, ResourceConfig, SolidConfig
-from dagster._loggers import default_loggers
 
 
 def create_creation_data(pipeline_def):
