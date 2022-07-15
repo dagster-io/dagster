@@ -599,7 +599,7 @@ class AssetLayer:
 
     @property
     def has_assets_defs(self) -> bool:
-        return len(self.assets_defs_by_key) != 0
+        return len(self.assets_defs_by_key) > 0
 
     def assets_def_for_asset(self, asset_key: AssetKey) -> "AssetsDefinition":
         return self._assets_defs_by_key[asset_key]
