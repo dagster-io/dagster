@@ -8,6 +8,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -66,6 +67,11 @@ if TYPE_CHECKING:
 
 
 class JobDefinition(PipelineDefinition):
+
+    _cached_partition_set: Optional["PartitionSetDefinition"]
+    _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]]
+    _input_values: Mapping[str, object]
+
     def __init__(
         self,
         graph_def: GraphDefinition,
@@ -76,16 +82,16 @@ class JobDefinition(PipelineDefinition):
         partitioned_config: Optional[PartitionedConfig] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        preset_defs: Optional[List[PresetDefinition]] = None,
-        tags: Optional[Dict[str, Any]] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        preset_defs: Optional[Sequence[PresetDefinition]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
         _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]] = None,
         asset_layer: Optional[AssetLayer] = None,
         _input_values: Optional[Mapping[str, object]] = None,
-        _metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         _executor_def_specified: bool = False,
         _logger_defs_specified: bool = False,
     ):
@@ -165,12 +171,12 @@ class JobDefinition(PipelineDefinition):
 
     def execute_in_process(
         self,
-        run_config: Optional[Dict[str, Any]] = None,
+        run_config: Optional[Mapping[str, Any]] = None,
         instance: Optional["DagsterInstance"] = None,
         partition_key: Optional[str] = None,
         raise_on_error: bool = True,
-        op_selection: Optional[List[str]] = None,
-        asset_selection: Optional[List[AssetKey]] = None,
+        op_selection: Optional[Sequence[str]] = None,
+        asset_selection: Optional[Sequence[AssetKey]] = None,
         run_id: Optional[str] = None,
         input_values: Optional[Mapping[str, object]] = None,
     ) -> "ExecuteInProcessResult":
@@ -182,7 +188,7 @@ class JobDefinition(PipelineDefinition):
 
 
         Args:
-            run_config (Optional[Dict[str, Any]]:
+            run_config (Optional[Mapping[str, Any]]:
                 The configuration for the run
             instance (Optional[DagsterInstance]):
                 The instance to execute against, an ephemeral one will be used if none provided.
@@ -191,7 +197,7 @@ class JobDefinition(PipelineDefinition):
                 to select run config for jobs with partitioned config.
             raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
                 Defaults to ``True``.
-            op_selection (Optional[List[str]]): A list of op selection queries (including single op
+            op_selection (Optional[Sequence[str]]): A list of op selection queries (including single op
                 names) to execute. For example:
                 * ``['some_op']``: selects ``some_op`` itself.
                 * ``['*some_op']``: select ``some_op`` and all its ancestors (upstream dependencies).
@@ -208,9 +214,9 @@ class JobDefinition(PipelineDefinition):
         from dagster.core.definitions.executor_definition import execute_in_process_executor
         from dagster.core.execution.execute_in_process import core_execute_in_process
 
-        run_config = check.opt_dict_param(run_config, "run_config")
-        op_selection = check.opt_list_param(op_selection, "op_selection", str)
-        asset_selection = check.opt_list_param(asset_selection, "asset_selection", AssetKey)
+        run_config = check.opt_mapping_param(run_config, "run_config")
+        op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
+        asset_selection = check.opt_sequence_param(asset_selection, "asset_selection", AssetKey)
 
         check.invariant(
             not (op_selection and asset_selection),
@@ -299,7 +305,7 @@ class JobDefinition(PipelineDefinition):
 
     def get_job_def_for_subset_selection(
         self,
-        op_selection: Optional[List[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ):
         check.invariant(
@@ -358,7 +364,7 @@ class JobDefinition(PipelineDefinition):
 
     def _get_job_def_for_op_selection(
         self,
-        op_selection: Optional[List[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
     ) -> "JobDefinition":
         if not op_selection:
             return self
@@ -440,7 +446,7 @@ class JobDefinition(PipelineDefinition):
         self,
         partition_key: str,
         run_key: Optional[str],
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ) -> RunRequest:
         partition_set = self.get_partition_set_def()
         if not partition_set:
@@ -582,7 +588,7 @@ def _dep_key_of(node: Node) -> NodeInvocation:
 
 def get_subselected_graph_definition(
     graph: GraphDefinition,
-    resolved_op_selection_dict: Dict,
+    resolved_op_selection_dict: Mapping,
     parent_handle: Optional[NodeHandle] = None,
 ) -> SubselectedGraphDefinition:
     deps: Dict[
@@ -599,9 +605,10 @@ def get_subselected_graph_definition(
             continue
 
         # rebuild graph if any nodes inside the graph are selected
+        definition: Union[SubselectedGraphDefinition, NodeDefinition]
         if node.is_graph and resolved_op_selection_dict[node.name] is not LeafNodeSelection:
             definition = get_subselected_graph_definition(
-                node.definition,
+                cast(GraphDefinition, node.definition),  # guaranteed by node.is_graph
                 resolved_op_selection_dict[node.name],
                 parent_handle=node_handle,
             )

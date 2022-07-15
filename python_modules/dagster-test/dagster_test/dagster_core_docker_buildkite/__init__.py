@@ -64,7 +64,7 @@ def get_default_docker_image_tag():
 
 def get_test_project_docker_image():
     docker_repository = os.getenv("DAGSTER_DOCKER_REPOSITORY")
-    image_name = os.getenv("DAGSTER_DOCKER_IMAGE", "buildkite-test-image-core")
+    image_name = os.getenv("DAGSTER_DOCKER_IMAGE", "test-project-core")
     docker_image_tag = os.getenv("DAGSTER_DOCKER_IMAGE_TAG")
 
     if IS_BUILDKITE:

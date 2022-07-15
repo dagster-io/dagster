@@ -324,12 +324,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         return True
 
     @abstractmethod
-    def get_run_partition_data(
-        self,
-        partition_set_name: str,
-        job_name: str,
-        repository_label: str,
-    ) -> List[RunPartitionData]:
+    def get_run_partition_data(self, runs_filter: RunsFilter) -> List[RunPartitionData]:
         """Get run partition data for a given partitioned job."""
 
     def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):

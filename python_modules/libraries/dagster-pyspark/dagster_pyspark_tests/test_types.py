@@ -11,8 +11,8 @@ from dagster import (
     OutputDefinition,
     execute_solid,
     file_relative_path,
-    solid,
 )
+from dagster.legacy import solid
 from dagster.utils import dict_without_keys
 from dagster.utils.test import get_temp_dir
 

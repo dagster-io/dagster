@@ -1,7 +1,11 @@
+from typing import Optional
+
 import pendulum
 import pytest
 
 from dagster import (
+    AllPartitionMapping,
+    AssetIn,
     AssetMaterialization,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
@@ -9,6 +13,7 @@ from dagster import (
     HourlyPartitionsDefinition,
     IOManager,
     IOManagerDefinition,
+    LastPartitionMapping,
     Out,
     Output,
     PartitionsDefinition,
@@ -72,7 +77,9 @@ def test_filter_mapping_partitions_dep():
         def get_upstream_partitions_for_partition_range(
             self,
             downstream_partition_key_range: PartitionKeyRange,
-            downstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+            downstream_partitions_def: Optional[
+                PartitionsDefinition
+            ],  # pylint: disable=unused-argument
             upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
         ) -> PartitionKeyRange:
             return PartitionKeyRange(
@@ -83,7 +90,9 @@ def test_filter_mapping_partitions_dep():
         def get_downstream_partitions_for_partition_range(
             self,
             upstream_partition_key_range: PartitionKeyRange,
-            downstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+            downstream_partitions_def: Optional[
+                PartitionsDefinition
+            ],  # pylint: disable=unused-argument
             upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
         ) -> PartitionKeyRange:
             return PartitionKeyRange(
@@ -97,7 +106,11 @@ def test_filter_mapping_partitions_dep():
 
     @asset(
         partitions_def=downstream_partitions_def,
-        partition_mappings={"upstream_asset": HemisphereFilteringPartitionMapping("southern")},
+        ins={
+            "upstream_asset": AssetIn(
+                partition_mapping=HemisphereFilteringPartitionMapping("southern")
+            )
+        },
     )
     def downstream_asset(upstream_asset):
         assert upstream_asset
@@ -123,6 +136,7 @@ def test_single_partitioned_asset_job():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             assert context.asset_partition_key == "b"
+            assert context.asset_partitions_def == partitions_def
 
         def load_input(self, context):
             assert False, "shouldn't get here"
@@ -188,7 +202,7 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
         def get_upstream_partitions_for_partition_range(
             self,
             downstream_partition_key_range: PartitionKeyRange,
-            downstream_partitions_def: PartitionsDefinition,
+            downstream_partitions_def: Optional[PartitionsDefinition],
             upstream_partitions_def: PartitionsDefinition,
         ) -> PartitionKeyRange:
             assert downstream_partitions_def
@@ -200,7 +214,7 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
         def get_downstream_partitions_for_partition_range(
             self,
             upstream_partition_key_range: PartitionKeyRange,
-            downstream_partitions_def: PartitionsDefinition,
+            downstream_partitions_def: Optional[PartitionsDefinition],
             upstream_partitions_def: PartitionsDefinition,
         ) -> PartitionKeyRange:
             raise NotImplementedError()
@@ -212,6 +226,7 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
         def load_input(self, context):
             start, end = context.asset_partition_key_range
             assert start, end == ("1", "2")
+            assert context.asset_partitions_def == upstream_partitions_def
 
     @asset(partitions_def=upstream_partitions_def)
     def upstream_asset(context):
@@ -219,7 +234,7 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
 
     @asset(
         partitions_def=downstream_partitions_def,
-        partition_mappings={"upstream_asset": TrailingWindowPartitionMapping()},
+        ins={"upstream_asset": AssetIn(partition_mapping=TrailingWindowPartitionMapping())},
     )
     def downstream_asset(context, upstream_asset):
         assert context.asset_partition_key_for_output() == "2"
@@ -254,7 +269,10 @@ def test_access_partition_keys_from_context_only_one_asset_partitioned():
                 assert False
 
         def load_input(self, context):
-            assert not context.has_asset_partitions
+            if context.op_def.name == "double_downstream_asset":
+                assert not context.has_asset_partitions
+            else:
+                assert context.has_asset_partitions
 
     @asset(partitions_def=upstream_partitions_def)
     def upstream_asset(context):
@@ -344,7 +362,7 @@ def test_asset_partitions_time_window_non_identity_partition_mapping():
         def get_upstream_partitions_for_partition_range(
             self,
             downstream_partition_key_range: PartitionKeyRange,
-            downstream_partitions_def: PartitionsDefinition,
+            downstream_partitions_def: Optional[PartitionsDefinition],
             upstream_partitions_def: PartitionsDefinition,
         ) -> PartitionKeyRange:
             del downstream_partitions_def, upstream_partitions_def
@@ -357,7 +375,7 @@ def test_asset_partitions_time_window_non_identity_partition_mapping():
         def get_downstream_partitions_for_partition_range(
             self,
             upstream_partition_key_range: PartitionKeyRange,
-            downstream_partitions_def: PartitionsDefinition,
+            downstream_partitions_def: Optional[PartitionsDefinition],
             upstream_partitions_def: PartitionsDefinition,
         ) -> PartitionKeyRange:
             raise NotImplementedError()
@@ -379,7 +397,7 @@ def test_asset_partitions_time_window_non_identity_partition_mapping():
 
     @asset(
         partitions_def=downstream_partitions_def,
-        partition_mappings={"upstream_asset": TrailingWindowPartitionMapping()},
+        ins={"upstream_asset": AssetIn(partition_mapping=TrailingWindowPartitionMapping())},
     )
     def downstream_asset(upstream_asset):
         assert upstream_asset is None
@@ -582,7 +600,7 @@ def test_multi_asset_non_identity_partition_mapping():
         def get_upstream_partitions_for_partition_range(
             self,
             downstream_partition_key_range: PartitionKeyRange,
-            downstream_partitions_def: PartitionsDefinition,
+            downstream_partitions_def: Optional[PartitionsDefinition],
             upstream_partitions_def: PartitionsDefinition,
         ) -> PartitionKeyRange:
             assert downstream_partitions_def
@@ -594,7 +612,7 @@ def test_multi_asset_non_identity_partition_mapping():
         def get_downstream_partitions_for_partition_range(
             self,
             upstream_partition_key_range: PartitionKeyRange,
-            downstream_partitions_def: PartitionsDefinition,
+            downstream_partitions_def: Optional[PartitionsDefinition],
             upstream_partitions_def: PartitionsDefinition,
         ) -> PartitionKeyRange:
             raise NotImplementedError()
@@ -621,7 +639,7 @@ def test_multi_asset_non_identity_partition_mapping():
 
     @asset(
         partitions_def=downstream_partitions_def,
-        partition_mappings={"upstream_asset_1": TrailingWindowPartitionMapping()},
+        ins={"upstream_asset_1": AssetIn(partition_mapping=TrailingWindowPartitionMapping())},
     )
     def downstream_asset_1(context, upstream_asset_1):
         assert context.asset_partition_key_for_output() == "2"
@@ -629,7 +647,7 @@ def test_multi_asset_non_identity_partition_mapping():
 
     @asset(
         partitions_def=downstream_partitions_def,
-        partition_mappings={"upstream_asset_2": TrailingWindowPartitionMapping()},
+        ins={"upstream_asset_2": AssetIn(partition_mapping=TrailingWindowPartitionMapping())},
     )
     def downstream_asset_2(context, upstream_asset_2):
         assert context.asset_partition_key_for_output() == "2"
@@ -664,7 +682,9 @@ def test_from_graph():
         def get_upstream_partitions_for_partition_range(
             self,
             downstream_partition_key_range: PartitionKeyRange,
-            downstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+            downstream_partitions_def: Optional[
+                PartitionsDefinition
+            ],  # pylint: disable=unused-argument
             upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
         ) -> PartitionKeyRange:
             self.upstream_calls += 1
@@ -673,7 +693,9 @@ def test_from_graph():
         def get_downstream_partitions_for_partition_range(
             self,
             upstream_partition_key_range: PartitionKeyRange,
-            downstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+            downstream_partitions_def: Optional[
+                PartitionsDefinition
+            ],  # pylint: disable=unused-argument
             upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
         ) -> PartitionKeyRange:
             self.downstream_calls += 1
@@ -740,3 +762,73 @@ def test_config_with_partitions():
     ).resolve([asset1], [])
 
     assert the_job.execute_in_process(partition_key="2020-01-01").success
+
+
+def test_non_partitioned_depends_on_last_partition():
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
+    def upstream():
+        pass
+
+    @asset(ins={"upstream": AssetIn(partition_mapping=LastPartitionMapping())})
+    def downstream(upstream):
+        assert upstream is None
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            if context.asset_key == AssetKey("upstream"):
+                assert context.has_asset_partitions
+                assert context.asset_partition_key == "b"
+            else:
+                assert not context.has_asset_partitions
+
+        def load_input(self, context):
+            assert context.has_asset_partitions
+            assert context.asset_partition_key == "d"
+
+    my_job = build_assets_job(
+        "my_job",
+        assets=[upstream, downstream],
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    )
+    result = my_job.execute_in_process(partition_key="b")
+    assert result.asset_materializations_for_node("upstream") == [
+        AssetMaterialization(AssetKey(["upstream"]), partition="b")
+    ]
+    assert result.asset_materializations_for_node("downstream") == [
+        AssetMaterialization(AssetKey(["downstream"]))
+    ]
+
+
+def test_non_partitioned_depends_on_all_partitions():
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
+    def upstream():
+        pass
+
+    @asset(ins={"upstream": AssetIn(partition_mapping=AllPartitionMapping())})
+    def downstream(upstream):
+        assert upstream is None
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            if context.asset_key == AssetKey("upstream"):
+                assert context.has_asset_partitions
+                assert context.asset_partition_key == "b"
+            else:
+                assert not context.has_asset_partitions
+
+        def load_input(self, context):
+            assert context.has_asset_partitions
+            assert context.asset_partition_key_range == PartitionKeyRange("a", "d")
+
+    my_job = build_assets_job(
+        "my_job",
+        assets=[upstream, downstream],
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    )
+    result = my_job.execute_in_process(partition_key="b")
+    assert result.asset_materializations_for_node("upstream") == [
+        AssetMaterialization(AssetKey(["upstream"]), partition="b")
+    ]
+    assert result.asset_materializations_for_node("downstream") == [
+        AssetMaterialization(AssetKey(["downstream"]))
+    ]

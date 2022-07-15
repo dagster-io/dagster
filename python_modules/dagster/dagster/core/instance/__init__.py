@@ -1314,13 +1314,9 @@ class DagsterInstance:
         return self._run_storage.supports_bucket_queries
 
     @traced
-    def get_run_partition_data(
-        self, partition_set_name: str, job_name: str, repository_label: str
-    ) -> List[RunPartitionData]:
+    def get_run_partition_data(self, runs_filter: RunsFilter) -> List[RunPartitionData]:
         """Get run partition data for a given partitioned job."""
-        return self._run_storage.get_run_partition_data(
-            partition_set_name, job_name, repository_label
-        )
+        return self._run_storage.get_run_partition_data(runs_filter)
 
     def wipe(self):
         self._run_storage.wipe()
@@ -2036,6 +2032,13 @@ class DagsterInstance:
         return get_daemon_statuses(
             self, daemon_types=daemon_types or self.get_required_daemon_types(), ignore_errors=True
         )
+
+    @property
+    def daemon_skip_heartbeats_without_errors(self):
+        # If enabled, daemon threads won't write heartbeats unless they encounter an error. This is
+        # enabled in cloud, where we don't need to use heartbeats to check if daemons are running, but
+        # do need to surface errors to users. This is an optimization to reduce DB writes.
+        return False
 
     # backfill
     def get_backfills(self, status=None, cursor=None, limit=None):

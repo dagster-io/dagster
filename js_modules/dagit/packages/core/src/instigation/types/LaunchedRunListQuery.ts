@@ -58,7 +58,7 @@ export interface LaunchedRunListQuery_pipelineRunsOrError_InvalidPipelineRunsFil
   message: string;
 }
 
-export interface LaunchedRunListQuery_pipelineRunsOrError_PythonError_cause {
+export interface LaunchedRunListQuery_pipelineRunsOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -68,7 +68,7 @@ export interface LaunchedRunListQuery_pipelineRunsOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: LaunchedRunListQuery_pipelineRunsOrError_PythonError_cause | null;
+  causes: LaunchedRunListQuery_pipelineRunsOrError_PythonError_causes[];
 }
 
 export type LaunchedRunListQuery_pipelineRunsOrError = LaunchedRunListQuery_pipelineRunsOrError_Runs | LaunchedRunListQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | LaunchedRunListQuery_pipelineRunsOrError_PythonError;

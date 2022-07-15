@@ -1,10 +1,11 @@
 from datetime import datetime
 
-from dagster import ModeDefinition, PresetDefinition, daily_schedule, pipeline, repository, solid
+from dagster import ModeDefinition, PresetDefinition, daily_schedule, pipeline, repository
 from dagster.core.host_representation import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
+from dagster.legacy import solid
 from dagster.serdes import serialize_pp
 
 

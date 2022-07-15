@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
+from dagster.utils.backcompat import experimental
 
 
+@experimental
 class PartitionMapping(ABC):
     """Defines a correspondence between the partitions in an asset and the partitions in an asset
     that it depends on.
@@ -13,7 +16,7 @@ class PartitionMapping(ABC):
     def get_upstream_partitions_for_partition_range(
         self,
         downstream_partition_key_range: PartitionKeyRange,
-        downstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionKeyRange:
         """Returns the range of partition keys in the upstream asset that include data necessary
@@ -32,7 +35,7 @@ class PartitionMapping(ABC):
     def get_downstream_partitions_for_partition_range(
         self,
         upstream_partition_key_range: PartitionKeyRange,
-        downstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: Optional[PartitionsDefinition],
         upstream_partitions_def: PartitionsDefinition,
     ) -> PartitionKeyRange:
         """Returns the range of partition keys in the downstream asset that use the data in the given
@@ -48,11 +51,14 @@ class PartitionMapping(ABC):
         """
 
 
+@experimental
 class IdentityPartitionMapping(PartitionMapping):
     def get_upstream_partitions_for_partition_range(
         self,
         downstream_partition_key_range: PartitionKeyRange,
-        downstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+        downstream_partitions_def: Optional[
+            PartitionsDefinition
+        ],  # pylint: disable=unused-argument
         upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
     ) -> PartitionKeyRange:
         return downstream_partition_key_range
@@ -60,7 +66,59 @@ class IdentityPartitionMapping(PartitionMapping):
     def get_downstream_partitions_for_partition_range(
         self,
         upstream_partition_key_range: PartitionKeyRange,
-        downstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+        downstream_partitions_def: Optional[
+            PartitionsDefinition
+        ],  # pylint: disable=unused-argument
         upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
     ) -> PartitionKeyRange:
         return upstream_partition_key_range
+
+
+@experimental
+class AllPartitionMapping(PartitionMapping):
+    def get_upstream_partitions_for_partition_range(
+        self,
+        downstream_partition_key_range: PartitionKeyRange,
+        downstream_partitions_def: Optional[
+            PartitionsDefinition
+        ],  # pylint: disable=unused-argument
+        upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+    ) -> PartitionKeyRange:
+        return PartitionKeyRange(
+            upstream_partitions_def.get_first_partition_key(),
+            upstream_partitions_def.get_last_partition_key(),
+        )
+
+    def get_downstream_partitions_for_partition_range(
+        self,
+        upstream_partition_key_range: PartitionKeyRange,  # pylint: disable=unused-argument
+        downstream_partitions_def: Optional[
+            PartitionsDefinition
+        ],  # pylint: disable=unused-argument
+        upstream_partitions_def: PartitionsDefinition,
+    ) -> PartitionKeyRange:
+        raise NotImplementedError()
+
+
+@experimental
+class LastPartitionMapping(PartitionMapping):
+    def get_upstream_partitions_for_partition_range(
+        self,
+        downstream_partition_key_range: PartitionKeyRange,  # pylint: disable=unused-argument
+        downstream_partitions_def: Optional[
+            PartitionsDefinition
+        ],  # pylint: disable=unused-argument
+        upstream_partitions_def: PartitionsDefinition,
+    ) -> PartitionKeyRange:
+        last_partition_key = upstream_partitions_def.get_last_partition_key()
+        return PartitionKeyRange(last_partition_key, last_partition_key)
+
+    def get_downstream_partitions_for_partition_range(
+        self,
+        upstream_partition_key_range: PartitionKeyRange,
+        downstream_partitions_def: Optional[
+            PartitionsDefinition
+        ],  # pylint: disable=unused-argument
+        upstream_partitions_def: PartitionsDefinition,  # pylint: disable=unused-argument
+    ) -> PartitionKeyRange:
+        raise NotImplementedError()

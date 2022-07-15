@@ -15,10 +15,6 @@ def get_upstream_partitions_for_partition_range(
     """Returns the range of partition keys in the upstream asset that include data necessary
     to compute the contents of the given partition key range in the downstream asset.
     """
-
-    if downstream_assets_def.partitions_def is None:
-        check.failed("downstream asset is not partitioned")
-
     if upstream_partitions_def is None:
         check.failed("upstream asset is not partitioned")
 

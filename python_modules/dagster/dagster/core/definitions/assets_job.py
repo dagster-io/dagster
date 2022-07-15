@@ -33,8 +33,8 @@ def build_assets_job(
     source_assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
-    config: Optional[Union[ConfigMapping, Dict[str, Any], PartitionedConfig]] = None,
-    tags: Optional[Dict[str, Any]] = None,
+    config: Optional[Union[ConfigMapping, Mapping[str, object], PartitionedConfig]] = None,
+    tags: Optional[Mapping[str, object]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     _asset_selection_data: Optional[AssetSelectionData] = None,
@@ -188,6 +188,7 @@ def build_node_deps(
     for node_handle, assets_def in assets_defs_by_node_handle.items():
         # the key that we'll use to reference the node inside this AssetsDefinition
         node_def_name = assets_def.node_def.name
+        node_key: Union[NodeInvocation, str]
         if node_handle.name != node_def_name:
             node_key = NodeInvocation(node_def_name, alias=node_handle.name)
         else:

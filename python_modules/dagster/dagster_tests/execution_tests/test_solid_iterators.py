@@ -1,4 +1,5 @@
-from dagster import AssetMaterialization, Output, execute_solid, solid
+from dagster import AssetMaterialization, Output, execute_solid
+from dagster.legacy import solid
 from dagster.utils.backcompat import experimental
 
 

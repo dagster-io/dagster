@@ -12,9 +12,9 @@ from dagster import (
     pipeline,
     reconstructable,
     resource,
-    solid,
 )
 from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
+from dagster.legacy import solid
 
 
 def _reset_logging():

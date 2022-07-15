@@ -1,14 +1,8 @@
 import tempfile
 
-from dagster import (
-    ModeDefinition,
-    execute_pipeline,
-    fs_io_manager,
-    pipeline,
-    reconstructable,
-    solid,
-)
+from dagster import ModeDefinition, execute_pipeline, fs_io_manager, pipeline, reconstructable
 from dagster.core.test_utils import instance_for_test
+from dagster.legacy import solid
 
 
 @solid

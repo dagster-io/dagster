@@ -103,8 +103,10 @@ def _step_output_error_checked_user_event_sequence(
             output = Output(
                 value=output.value,
                 output_name=output.output_name,
-                metadata_entries=output.metadata_entries
-                + normalize_metadata(cast(Dict[str, Any], metadata), []),
+                metadata_entries=[
+                    *output.metadata_entries,
+                    *normalize_metadata(cast(Dict[str, Any], metadata), []),
+                ],
             )
         else:
             if not output_def.is_dynamic:
@@ -124,8 +126,10 @@ def _step_output_error_checked_user_event_sequence(
             output = DynamicOutput(
                 value=output.value,
                 output_name=output.output_name,
-                metadata_entries=output.metadata_entries
-                + normalize_metadata(cast(Dict[str, Any], metadata), []),
+                metadata_entries=[
+                    *output.metadata_entries,
+                    *normalize_metadata(cast(Dict[str, Any], metadata), []),
+                ],
                 mapping_key=output.mapping_key,
             )
 
@@ -483,7 +487,7 @@ def _get_output_asset_materializations(
     io_manager_metadata_entries: List[Union[MetadataEntry, PartitionMetadataEntry]],
 ) -> Iterator[AssetMaterialization]:
 
-    all_metadata = output.metadata_entries + io_manager_metadata_entries
+    all_metadata = [*output.metadata_entries, *io_manager_metadata_entries]
 
     if asset_partitions:
         metadata_mapping: Dict[str, List[Union[MetadataEntry, PartitionMetadataEntry]]] = {
@@ -654,8 +658,8 @@ def _create_type_materializations(
             continue
 
         for output_spec in solid_config.outputs.type_materializer_specs:
-            check.invariant(len(output_spec) == 1)
-            config_output_name, output_spec = list(output_spec.items())[0]
+            check.invariant(len(output_spec) == 1)  # type: ignore
+            config_output_name, output_spec = list(output_spec.items())[0]  # type: ignore
             if config_output_name == output_name:
                 step_output = step.step_output_named(output_name)
                 with user_code_error_boundary(

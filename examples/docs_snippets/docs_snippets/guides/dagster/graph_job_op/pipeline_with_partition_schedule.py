@@ -1,6 +1,7 @@
 import datetime
 
-from dagster import daily_schedule, pipeline, repository, solid
+from dagster import daily_schedule, pipeline, repository
+from dagster.legacy import solid
 
 
 @solid(config_schema={"date": str})

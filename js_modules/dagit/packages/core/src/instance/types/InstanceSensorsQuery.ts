@@ -9,7 +9,7 @@ import { InstigationType, InstigationStatus, RunStatus, InstigationTickStatus } 
 // GraphQL query operation: InstanceSensorsQuery
 // ====================================================
 
-export interface InstanceSensorsQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause {
+export interface InstanceSensorsQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -19,7 +19,7 @@ export interface InstanceSensorsQuery_instance_daemonHealth_allDaemonStatuses_la
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceSensorsQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause | null;
+  causes: InstanceSensorsQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes[];
 }
 
 export interface InstanceSensorsQuery_instance_daemonHealth_allDaemonStatuses {
@@ -84,7 +84,7 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_n
   updateTime: number | null;
 }
 
-export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_error_cause {
+export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -94,7 +94,7 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_n
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_error_cause | null;
+  causes: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_error_causes[];
 }
 
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks {
@@ -168,7 +168,7 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection {
   nodes: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes[];
 }
 
-export interface InstanceSensorsQuery_repositoriesOrError_PythonError_cause {
+export interface InstanceSensorsQuery_repositoriesOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -178,7 +178,7 @@ export interface InstanceSensorsQuery_repositoriesOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceSensorsQuery_repositoriesOrError_PythonError_cause | null;
+  causes: InstanceSensorsQuery_repositoriesOrError_PythonError_causes[];
 }
 
 export type InstanceSensorsQuery_repositoriesOrError = InstanceSensorsQuery_repositoriesOrError_RepositoryConnection | InstanceSensorsQuery_repositoriesOrError_PythonError;
@@ -206,7 +206,7 @@ export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_Instiga
   updateTime: number | null;
 }
 
-export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_cause {
+export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -216,7 +216,7 @@ export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_Instiga
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_cause | null;
+  causes: InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_causes[];
 }
 
 export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks {
@@ -251,7 +251,7 @@ export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_Instiga
   results: InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results[];
 }
 
-export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_PythonError_cause {
+export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -261,7 +261,7 @@ export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_PythonE
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceSensorsQuery_unloadableInstigationStatesOrError_PythonError_cause | null;
+  causes: InstanceSensorsQuery_unloadableInstigationStatesOrError_PythonError_causes[];
 }
 
 export type InstanceSensorsQuery_unloadableInstigationStatesOrError = InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates | InstanceSensorsQuery_unloadableInstigationStatesOrError_PythonError;

@@ -5,19 +5,20 @@ import pytest
 from dagster import (
     DagsterInstance,
     DagsterInvariantViolationError,
-    ScheduleEvaluationContext,
-    ScheduleExecutionContext,
     build_schedule_context,
     daily_schedule,
     schedule,
+)
+from dagster.core.definitions.schedule_definition import (
+    ScheduleEvaluationContext,
+    ScheduleExecutionContext,
 )
 from dagster.core.errors import DagsterInvalidInvocationError
 from dagster.core.test_utils import instance_for_test
 
 
 def test_schedule_context_backcompat():
-    # If an instance of ScheduleEvaluationContext is a ScheduleExecutionContext, then annotating as
-    # ScheduleExecutionContext and passing in a ScheduleEvaluationContext should pass mypy
+    # ScheduleExecutionContext is a literal alias of ScheduleEvaluationContext
     assert isinstance(ScheduleEvaluationContext(None, None), ScheduleExecutionContext)
 
 

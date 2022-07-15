@@ -9,22 +9,6 @@ import { BulkActionStatus, BackfillStatus, RunStatus } from "./../../types/globa
 // GraphQL query operation: InstanceBackfillsQuery
 // ====================================================
 
-export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionRunStats {
-  __typename: "BackfillRunStats";
-  numQueued: number;
-  numInProgress: number;
-  numSucceeded: number;
-  numFailed: number;
-  numPartitionsWithRuns: number;
-  numTotalRuns: number;
-}
-
-export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_unfinishedRuns {
-  __typename: "Run";
-  id: string;
-  canTerminate: boolean;
-}
-
 export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
@@ -41,7 +25,7 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   repositoryOrigin: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet_repositoryOrigin;
 }
 
-export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error_cause {
+export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -51,21 +35,20 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error_cause | null;
+  causes: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error_causes[];
 }
 
-export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs_tags {
-  __typename: "PipelineTag";
-  key: string;
-  value: string;
-}
-
-export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs {
-  __typename: "Run";
+export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionStatuses_results {
+  __typename: "PartitionStatus";
   id: string;
-  canTerminate: boolean;
-  status: RunStatus;
-  tags: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs_tags[];
+  partitionName: string;
+  runId: string | null;
+  runStatus: RunStatus | null;
+}
+
+export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionStatuses {
+  __typename: "PartitionStatuses";
+  results: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionStatuses_results[];
 }
 
 export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results {
@@ -74,15 +57,13 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   status: BulkActionStatus;
   backfillStatus: BackfillStatus;
   numRequested: number;
-  partitionNames: string[];
   numPartitions: number;
-  partitionRunStats: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionRunStats;
-  unfinishedRuns: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_unfinishedRuns[];
   timestamp: number;
   partitionSetName: string;
   partitionSet: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet | null;
   error: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_error | null;
-  runs: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_runs[];
+  partitionNames: string[];
+  partitionStatuses: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionStatuses;
 }
 
 export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills {
@@ -90,7 +71,7 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackf
   results: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results[];
 }
 
-export interface InstanceBackfillsQuery_partitionBackfillsOrError_PythonError_cause {
+export interface InstanceBackfillsQuery_partitionBackfillsOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -100,7 +81,7 @@ export interface InstanceBackfillsQuery_partitionBackfillsOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceBackfillsQuery_partitionBackfillsOrError_PythonError_cause | null;
+  causes: InstanceBackfillsQuery_partitionBackfillsOrError_PythonError_causes[];
 }
 
 export type InstanceBackfillsQuery_partitionBackfillsOrError = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills | InstanceBackfillsQuery_partitionBackfillsOrError_PythonError;

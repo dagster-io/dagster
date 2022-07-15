@@ -9,9 +9,9 @@ from dagster import (
     composite_solid,
     execute_pipeline,
     pipeline,
-    solid,
 )
 from dagster.core.storage.io_manager import IOManager, io_manager
+from dagster.legacy import solid
 
 
 def named_io_manager(storage_dict, name):

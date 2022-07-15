@@ -1,5 +1,4 @@
 import os
-import sys
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from inspect import Parameter
@@ -231,11 +230,7 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
             "working_directory": self.loadable_target_origin.working_directory,
             "attribute": self.loadable_target_origin.attribute,
             "package_name": self.loadable_target_origin.package_name,
-            "executable_path": (
-                self.loadable_target_origin.executable_path
-                if self.loadable_target_origin.executable_path != sys.executable
-                else None
-            ),
+            "executable_path": self.loadable_target_origin.executable_path,
         }
         return {key: value for key, value in metadata.items() if value is not None}
 

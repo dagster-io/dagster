@@ -39,7 +39,7 @@ if __name__ == "__main__":
             "pandas",
             "requests",
             "attrs",
-            "agate < 1.6.2",
+            "agate",
         ],
         extras_require={
             "test": [

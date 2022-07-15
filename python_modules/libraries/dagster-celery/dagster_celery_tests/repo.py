@@ -14,9 +14,9 @@ from dagster import (
     fs_io_manager,
     lambda_solid,
     pipeline,
-    solid,
 )
 from dagster.core.test_utils import nesting_composite_pipeline
+from dagster.legacy import solid
 
 celery_mode_defs = [
     ModeDefinition(

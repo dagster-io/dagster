@@ -19,13 +19,13 @@ from dagster import (
     job,
     op,
     pipeline,
-    solid,
 )
 from dagster._check import CheckError
 from dagster.core.definitions.events import AssetLineageInfo
 from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.storage.io_manager import IOManager
+from dagster.legacy import solid
 
 
 def n_asset_keys(path, n):

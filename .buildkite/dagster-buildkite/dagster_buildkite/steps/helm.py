@@ -40,7 +40,7 @@ def _build_lint_steps() -> List[CommandStep]:
             "pip install yamllint",
             "make yamllint",
         )
-        .on_integration_image(AvailablePythonVersion.get_default())
+        .on_test_image(AvailablePythonVersion.get_default())
         .build(),
         CommandStepBuilder("dagster-json-schema")
         .run(
@@ -48,13 +48,13 @@ def _build_lint_steps() -> List[CommandStep]:
             "dagster-helm schema apply",
             "git diff --exit-code",
         )
-        .on_integration_image(AvailablePythonVersion.get_default())
+        .on_test_image(AvailablePythonVersion.get_default())
         .build(),
         CommandStepBuilder(":lint-roller: dagster")
         .run(
             "helm lint helm/dagster --with-subcharts --strict",
         )
-        .on_integration_image(AvailablePythonVersion.get_default())
+        .on_test_image(AvailablePythonVersion.get_default())
         .with_retry(2)
         .build(),
         CommandStepBuilder("dagster dependency build")
@@ -63,6 +63,6 @@ def _build_lint_steps() -> List[CommandStep]:
             "helm repo add bitnami-pre-2022 https://raw.githubusercontent.com/bitnami/charts/eb5f9a9513d987b519f0ecd732e7031241c50328/bitnami",
             "helm dependency build helm/dagster",
         )
-        .on_integration_image(AvailablePythonVersion.get_default())
+        .on_test_image(AvailablePythonVersion.get_default())
         .build(),
     ]

@@ -3,12 +3,13 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
-    Dict,
     Iterator,
     List,
+    Mapping,
     Optional,
     Sequence,
     Tuple,
+    TypeVar,
     Union,
     cast,
 )
@@ -100,6 +101,12 @@ class SolidDefinition(NodeDefinition):
             )
     """
 
+    _compute_fn: Union[Callable[..., Any], "DecoratedSolidFunction"]
+    _config_schema: IDefinitionConfigSchema
+    _required_resource_keys: AbstractSet[str]
+    _version: Optional[str]
+    _retry_policy: Optional[RetryPolicy]
+
     def __init__(
         self,
         name: str,
@@ -108,7 +115,7 @@ class SolidDefinition(NodeDefinition):
         output_defs: Sequence[OutputDefinition],
         config_schema: Optional[Union[UserConfigSchema, IDefinitionConfigSchema]] = None,
         description: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         required_resource_keys: Optional[AbstractSet[str]] = None,
         version: Optional[str] = None,
         retry_policy: Optional[RetryPolicy] = None,
@@ -116,9 +123,8 @@ class SolidDefinition(NodeDefinition):
         from .decorators.solid_decorator import DecoratedSolidFunction
 
         if isinstance(compute_fn, DecoratedSolidFunction):
-            self._compute_fn: Union[Callable[..., Any], DecoratedSolidFunction] = compute_fn
+            self._compute_fn = compute_fn
         else:
-            compute_fn = cast(Callable[..., Any], compute_fn)
             self._compute_fn = check.callable_param(compute_fn, "compute_fn")
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
         self._required_resource_keys = frozenset(
@@ -213,6 +219,19 @@ class SolidDefinition(NodeDefinition):
     def compute_fn(self) -> Union[Callable[..., Any], "DecoratedSolidFunction"]:
         return self._compute_fn
 
+    def is_from_decorator(self) -> bool:
+        from .decorators.solid_decorator import DecoratedSolidFunction
+
+        return isinstance(self._compute_fn, DecoratedSolidFunction)
+
+    def get_output_annotation(self) -> Any:
+        if not self.is_from_decorator():
+            raise DagsterInvalidInvocationError(
+                f"Attempted to get output annotation for {self.node_type_str} '{self.name}', "
+                "which was not constructed from a decorated function."
+            )
+        return cast("DecoratedSolidFunction", self.compute_fn).get_output_annotation()
+
     @property
     def config_schema(self) -> IDefinitionConfigSchema:
         return self._config_schema
@@ -234,9 +253,11 @@ class SolidDefinition(NodeDefinition):
     def iterate_solid_defs(self) -> Iterator["SolidDefinition"]:
         yield self
 
+    T_Handle = TypeVar("T_Handle", bound=Optional[NodeHandle])
+
     def resolve_output_to_origin(
-        self, output_name: str, handle: NodeHandle
-    ) -> Tuple[OutputDefinition, NodeHandle]:
+        self, output_name: str, handle: T_Handle
+    ) -> Tuple[OutputDefinition, T_Handle]:
         return self.output_def_named(output_name), handle
 
     def get_inputs_must_be_resolved_top_level(
@@ -260,7 +281,7 @@ class SolidDefinition(NodeDefinition):
                 unresolveable_input_defs.append(input_def)
         return unresolveable_input_defs
 
-    def input_has_default(self, input_name: str) -> InputDefinition:
+    def input_has_default(self, input_name: str) -> bool:
         return self.input_def_named(input_name).has_default_value
 
     def default_value_for_input(self, input_name: str) -> InputDefinition:
@@ -356,12 +377,12 @@ class CompositeSolidDefinition(GraphDefinition):
             configuration for the composite solid, and a configuration mapping function, which
             is called to map the configuration of the composite solid into the configuration that
             is applied to any child solids.
-        dependencies (Optional[Dict[Union[str, NodeInvocation], Dict[str, DependencyDefinition]]]):
+        dependencies (Optional[Mapping[Union[str, NodeInvocation], Mapping[str, DependencyDefinition]]]):
             A structure that declares where each solid gets its inputs. The keys at the top
             level dict are either string names of solids or NodeInvocations. The values
             are dicts that map input names to DependencyDefinitions.
         description (Optional[str]): Human readable description of this composite solid.
-        tags (Optional[Dict[str, Any]]): Arbitrary metadata for the solid. Frameworks may
+        tags (Optional[Mapping[str, Any]]): Arbitrary metadata for the solid. Frameworks may
             expect and require certain metadata to be attached to a solid. Users should generally
             not set metadata directly. Values that are not strings will be json encoded and must meet
             the criteria that `json.loads(json.dumps(value)) == value`.
@@ -392,16 +413,16 @@ class CompositeSolidDefinition(GraphDefinition):
     def __init__(
         self,
         name: str,
-        solid_defs: List[NodeDefinition],
-        input_mappings: Optional[List[InputMapping]] = None,
-        output_mappings: Optional[List[OutputMapping]] = None,
+        solid_defs: Sequence[NodeDefinition],
+        input_mappings: Optional[Sequence[InputMapping]] = None,
+        output_mappings: Optional[Sequence[OutputMapping]] = None,
         config_mapping: Optional[ConfigMapping] = None,
         dependencies: Optional[
-            Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]
+            Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
         ] = None,
         description: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
-        positional_inputs: Optional[List[str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        positional_inputs: Optional[Sequence[str]] = None,
     ):
         _check_io_managers_on_composite_solid(name, input_mappings, output_mappings)
 
@@ -455,7 +476,7 @@ class CompositeSolidDefinition(GraphDefinition):
         )
 
     @property
-    def node_type_str(self):
+    def node_type_str(self) -> str:
         return "composite solid"
 
     @property
@@ -465,9 +486,9 @@ class CompositeSolidDefinition(GraphDefinition):
 
 def _check_io_managers_on_composite_solid(
     name: str,
-    input_mappings: Optional[List[InputMapping]],
-    output_mappings: Optional[List[OutputMapping]],
-):
+    input_mappings: Optional[Sequence[InputMapping]],
+    output_mappings: Optional[Sequence[OutputMapping]],
+) -> None:
     # Ban input_manager_key on composite solids
     if input_mappings:
         for input_mapping in input_mappings:

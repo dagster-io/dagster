@@ -10,8 +10,8 @@ from dagster import (
     execute_pipeline,
     input_manager,
     pipeline,
-    solid,
 )
+from dagster.legacy import solid
 
 
 def test_basic_solid_with_config():

@@ -7,7 +7,7 @@
 // GraphQL query operation: RunStatsQuery
 // ====================================================
 
-export interface RunStatsQuery_pipelineRunOrError_PythonError_cause {
+export interface RunStatsQuery_pipelineRunOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -17,7 +17,7 @@ export interface RunStatsQuery_pipelineRunOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: RunStatsQuery_pipelineRunOrError_PythonError_cause | null;
+  causes: RunStatsQuery_pipelineRunOrError_PythonError_causes[];
 }
 
 export interface RunStatsQuery_pipelineRunOrError_RunNotFoundError {
@@ -34,7 +34,7 @@ export interface RunStatsQuery_pipelineRunOrError_Run_stats_RunStatsSnapshot {
   materializations: number;
 }
 
-export interface RunStatsQuery_pipelineRunOrError_Run_stats_PythonError_cause {
+export interface RunStatsQuery_pipelineRunOrError_Run_stats_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -44,7 +44,7 @@ export interface RunStatsQuery_pipelineRunOrError_Run_stats_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: RunStatsQuery_pipelineRunOrError_Run_stats_PythonError_cause | null;
+  causes: RunStatsQuery_pipelineRunOrError_Run_stats_PythonError_causes[];
 }
 
 export type RunStatsQuery_pipelineRunOrError_Run_stats = RunStatsQuery_pipelineRunOrError_Run_stats_RunStatsSnapshot | RunStatsQuery_pipelineRunOrError_Run_stats_PythonError;

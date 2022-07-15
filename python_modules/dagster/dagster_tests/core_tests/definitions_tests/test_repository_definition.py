@@ -36,7 +36,6 @@ from dagster import (
     resource,
     schedule,
     sensor,
-    solid,
 )
 from dagster._check import CheckError
 from dagster.core.definitions.executor_definition import (
@@ -45,6 +44,7 @@ from dagster.core.definitions.executor_definition import (
 )
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster.core.errors import DagsterInvalidSubsetError
+from dagster.legacy import solid
 from dagster.loggers import default_loggers
 
 # pylint: disable=comparison-with-callable
@@ -840,6 +840,24 @@ def test_direct_assets():
         AssetKey(["asset2"]),
     }
     assert my_repo.get_all_jobs()[0].resource_defs["foo"] == foo_resource
+
+
+def test_direct_assets_duplicate_keys():
+    def make_asset():
+        @asset
+        def asset1():
+            pass
+
+        return asset1
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r"Duplicate asset key: AssetKey\(\['asset1'\]\)",
+    ):
+
+        @repository
+        def my_repo():
+            return [make_asset(), make_asset()]
 
 
 def test_direct_asset_unsatified_resource():

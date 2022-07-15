@@ -450,7 +450,6 @@ export const AssetGraphExplorerWithData: React.FC<
                   ? selectedGraphNodes
                   : Object.values(assetGraphData.nodes).filter((a) => !isSourceAsset(a.definition))
                 ).map((n) => n.assetKey)}
-                liveDataByNode={liveDataByNode}
                 preferredJobName={explorerPath.pipelineName}
               />
             </Box>

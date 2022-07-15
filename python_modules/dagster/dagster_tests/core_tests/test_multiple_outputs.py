@@ -13,9 +13,9 @@ from dagster import (
     execute_solid,
     pipeline,
     reconstructable,
-    solid,
 )
 from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
+from dagster.legacy import solid
 
 
 def test_multiple_outputs():
@@ -197,7 +197,4 @@ def test_warning_for_conditional_output(capsys):
 
     result = execute_solid(maybe, run_config={"solids": {"maybe": {"config": {"return": False}}}})
     assert result.success
-    assert (
-        "when you want the downstream solids to execute, and do not yield it when you want downstream solids to skip"
-        in capsys.readouterr().err
-    )
+    assert "This value will be passed to downstream solids" in capsys.readouterr().err

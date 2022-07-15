@@ -12,8 +12,8 @@ from dagster import (
     execute_pipeline,
     pipeline,
     resource,
-    solid,
 )
+from dagster.legacy import solid
 
 
 def create_spark_session():

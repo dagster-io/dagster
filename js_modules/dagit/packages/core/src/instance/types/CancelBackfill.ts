@@ -16,7 +16,7 @@ export interface CancelBackfill_cancelPartitionBackfill_CancelBackfillSuccess {
   backfillId: string;
 }
 
-export interface CancelBackfill_cancelPartitionBackfill_PythonError_cause {
+export interface CancelBackfill_cancelPartitionBackfill_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -26,7 +26,7 @@ export interface CancelBackfill_cancelPartitionBackfill_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: CancelBackfill_cancelPartitionBackfill_PythonError_cause | null;
+  causes: CancelBackfill_cancelPartitionBackfill_PythonError_causes[];
 }
 
 export type CancelBackfill_cancelPartitionBackfill = CancelBackfill_cancelPartitionBackfill_UnauthorizedError | CancelBackfill_cancelPartitionBackfill_CancelBackfillSuccess | CancelBackfill_cancelPartitionBackfill_PythonError;

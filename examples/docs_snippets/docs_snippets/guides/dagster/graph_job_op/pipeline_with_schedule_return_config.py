@@ -1,4 +1,5 @@
-from dagster import pipeline, schedule, solid
+from dagster import pipeline, schedule
+from dagster.legacy import solid
 
 
 @solid(config_schema={"date": str})

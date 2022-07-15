@@ -91,10 +91,11 @@ def test_runtime_metadata_fn():
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 4
-    assert materializations[0].metadata_entries == [
+    for entry in [
         MetadataEntry("op_name", value=dbt_assets[0].op.name),
         MetadataEntry("dbt_model", value=materializations[0].asset_key.path[-1]),
-    ]
+    ]:
+        assert entry in materializations[0].metadata_entries
 
 
 def assert_assets_match_project(dbt_assets, prefix=None):
@@ -211,11 +212,16 @@ def test_basic(
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     if fail_test:
-        # the test will fail after the first model is completed, so others will not be emitted
-        assert len(materializations) == 1
-        assert materializations[0].asset_key == AssetKey(["sort_by_calories"])
+        # the test will fail after the first seed/model is completed, so others will not be emitted
+        assert len(materializations) == 2
+        asset_keys = {mat.asset_key for mat in materializations}
+        assert asset_keys == {AssetKey(["cereals"]), AssetKey(["sort_by_calories"])}
     else:
-        assert len(materializations) == 4
+        if use_build:
+            # the seed / snapshot will be counted as assets
+            assert len(materializations) == 6
+        else:
+            assert len(materializations) == 4
     observations = [
         event.event_specific_data.asset_observation
         for event in result.events_for_node(dbt_assets[0].op.name)
@@ -225,6 +231,24 @@ def test_basic(
         assert len(observations) == 17
     else:
         assert len(observations) == 0
+
+
+def test_custom_groups(
+    dbt_seed, conn_string, test_project_dir, dbt_config_dir
+):  # pylint: disable=unused-argument
+    def _node_info_to_group(node_info):
+        return node_info["tags"][0]
+
+    dbt_assets = load_assets_from_dbt_project(
+        test_project_dir, dbt_config_dir, node_info_to_group_fn=_node_info_to_group
+    )
+
+    assert dbt_assets[0].group_names_by_key == {
+        AssetKey(["cold_schema", "sort_cold_cereals_by_calories"]): "foo",
+        AssetKey(["sort_by_calories"]): "foo",
+        AssetKey(["sort_hot_cereals_by_calories"]): "bar",
+        AssetKey(["subdir_schema", "least_caloric"]): "bar",
+    }
 
 
 def test_partitions(
@@ -428,8 +452,12 @@ def test_node_info_to_asset_key(
         for event in result.events_for_node(dbt_assets[0].op.name)
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
-    assert len(materializations) == 4
-    assert materializations[0].asset_key == AssetKey(["foo", "sort_by_calories"])
+    if use_build:
+        assert len(materializations) == 6
+        assert materializations[0].asset_key == AssetKey(["foo", "cereals"])
+    else:
+        assert len(materializations) == 4
+        assert materializations[0].asset_key == AssetKey(["foo", "sort_by_calories"])
     observations = [
         event.event_specific_data.asset_observation
         for event in result.events_for_node(dbt_assets[0].op.name)

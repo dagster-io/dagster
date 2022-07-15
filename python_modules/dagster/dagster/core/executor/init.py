@@ -1,4 +1,4 @@
-from typing import Dict, NamedTuple
+from typing import Mapping, NamedTuple
 
 import dagster._check as check
 from dagster.core.definitions import ExecutorDefinition, IPipeline
@@ -11,7 +11,7 @@ class InitExecutorContext(
         [
             ("job", IPipeline),
             ("executor_def", ExecutorDefinition),
-            ("executor_config", Dict[str, object]),
+            ("executor_config", Mapping[str, object]),
             ("instance", DagsterInstance),
         ],
     )
@@ -30,14 +30,14 @@ class InitExecutorContext(
         cls,
         job: IPipeline,
         executor_def: ExecutorDefinition,
-        executor_config: Dict[str, object],
+        executor_config: Mapping[str, object],
         instance: DagsterInstance,
     ):
         return super(InitExecutorContext, cls).__new__(
             cls,
             job=check.inst_param(job, "job", IPipeline),
             executor_def=check.inst_param(executor_def, "executor_def", ExecutorDefinition),
-            executor_config=check.dict_param(executor_config, "executor_config", key_type=str),
+            executor_config=check.mapping_param(executor_config, "executor_config", key_type=str),
             instance=check.inst_param(instance, "instance", DagsterInstance),
         )
 

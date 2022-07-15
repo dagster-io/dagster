@@ -12,9 +12,9 @@ from dagster import (
     pipeline,
     repository,
     sensor,
-    solid,
     usable_as_dagster_type,
 )
+from dagster.legacy import solid
 
 
 @lambda_solid

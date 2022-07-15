@@ -577,3 +577,81 @@ def test_group_name_requirements():
         @asset(group_name="bad*name")  # regex mismatch
         def bad_name():
             return 2
+
+
+def test_from_graph_w_key_prefix():
+    @op
+    def foo():
+        return 1
+
+    @op
+    def bar(i):
+        return i + 1
+
+    @graph
+    def silly_graph():
+        return bar(foo())
+
+    the_asset = AssetsDefinition.from_graph(
+        graph_def=silly_graph,
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey(["the", "asset"])},
+        key_prefix=["this", "is", "a", "prefix"],
+    )
+
+    assert the_asset.keys_by_output_name["result"].path == [
+        "this",
+        "is",
+        "a",
+        "prefix",
+        "the",
+        "asset",
+    ]
+
+    str_prefix = AssetsDefinition.from_graph(
+        graph_def=silly_graph,
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey(["the", "asset"])},
+        key_prefix="prefix",
+    )
+
+    assert str_prefix.keys_by_output_name["result"].path == [
+        "prefix",
+        "the",
+        "asset",
+    ]
+
+
+def test_from_op_w_key_prefix():
+    @op
+    def foo():
+        return 1
+
+    the_asset = AssetsDefinition.from_op(
+        op_def=foo,
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey(["the", "asset"])},
+        key_prefix=["this", "is", "a", "prefix"],
+    )
+
+    assert the_asset.keys_by_output_name["result"].path == [
+        "this",
+        "is",
+        "a",
+        "prefix",
+        "the",
+        "asset",
+    ]
+
+    str_prefix = AssetsDefinition.from_op(
+        op_def=foo,
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey(["the", "asset"])},
+        key_prefix="prefix",
+    )
+
+    assert str_prefix.keys_by_output_name["result"].path == [
+        "prefix",
+        "the",
+        "asset",
+    ]

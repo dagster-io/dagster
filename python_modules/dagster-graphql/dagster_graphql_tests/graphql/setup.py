@@ -82,7 +82,6 @@ from dagster import (
     pipeline,
     repository,
     resource,
-    solid,
     usable_as_dagster_type,
     weekly_schedule,
 )
@@ -98,6 +97,7 @@ from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import default_mode_def_for_test, today_at_midnight
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import PythonFileTarget
+from dagster.legacy import solid
 from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, segfault
 
@@ -530,7 +530,13 @@ def pipeline_with_enum_config():
 def naughty_programmer_pipeline():
     @lambda_solid
     def throw_a_thing():
-        raise Exception("bad programmer, bad")
+        try:
+            try:
+                raise Exception("bad programmer, bad")
+            except Exception as e:
+                raise Exception("Outer exception") from e
+        except Exception as e:
+            raise Exception("Even more outer exception") from e
 
     throw_a_thing()
 

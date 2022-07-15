@@ -8,6 +8,8 @@ from typing import Mapping
 from typing import Optional as TypingOptional
 from typing import Sequence, cast
 
+from typing_compat import get_args, get_origin
+
 import dagster._check as check
 from dagster.builtins import BuiltinEnum
 from dagster.config.config_type import Array, ConfigType
@@ -831,26 +833,26 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         is_supported_runtime_python_builtin,
         remap_python_builtin_for_runtime,
     )
-    from dagster.seven.typing import get_args
     from dagster.utils.typing_api import is_typing_type
 
-    from .python_dict import Dict, PythonDict
+    from .python_dict import Dict as DDict
+    from .python_dict import PythonDict
     from .python_set import DagsterSetApi, PythonSet
     from .python_tuple import DagsterTupleApi, PythonTuple
     from .transform_typing import transform_typing_type
 
     check.invariant(
-        not is_subclass(dagster_type, ConfigType),
+        not (isinstance(dagster_type, type) and is_subclass(dagster_type, ConfigType)),
         "Cannot resolve a config type to a runtime type",
     )
 
     check.invariant(
-        not is_subclass(dagster_type, DagsterType),
+        not (isinstance(dagster_type, type) and is_subclass(dagster_type, DagsterType)),
         "Do not pass runtime type classes. Got {}".format(dagster_type),
     )
 
     # First, check to see if we're using Dagster's generic output type to do the type catching.
-    if _is_generic_output_annotation(dagster_type):
+    if is_generic_output_annotation(dagster_type):
         type_args = get_args(dagster_type)
         # If no inner type was provided, forward Any type.
         dagster_type = type_args[0] if len(type_args) == 1 else Any
@@ -889,7 +891,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     if dagster_type is None:
         return Any
 
-    if dagster_type is Dict:
+    if dagster_type is DDict:
         return PythonDict
     if isinstance(dagster_type, DagsterTupleApi):
         return PythonTuple
@@ -909,15 +911,14 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
 
 
 def is_dynamic_output_annotation(dagster_type: object) -> bool:
-    from dagster.seven.typing import get_args, get_origin
 
     check.invariant(
-        not is_subclass(dagster_type, ConfigType),
+        not (isinstance(dagster_type, type) and is_subclass(dagster_type, ConfigType)),
         "Cannot resolve a config type to a runtime type",
     )
 
     check.invariant(
-        not is_subclass(dagster_type, DagsterType),
+        not (isinstance(dagster_type, type) and is_subclass(dagster_type, ConfigType)),
         "Do not pass runtime type classes. Got {}".format(dagster_type),
     )
 
@@ -932,8 +933,7 @@ def is_dynamic_output_annotation(dagster_type: object) -> bool:
     return False
 
 
-def _is_generic_output_annotation(dagster_type: object) -> bool:
-    from dagster.seven.typing import get_origin
+def is_generic_output_annotation(dagster_type: object) -> bool:
 
     return dagster_type == Output or get_origin(dagster_type) == Output
 

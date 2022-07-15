@@ -10,8 +10,8 @@ from dagster import (
     PipelineDefinition,
     String,
     execute_pipeline,
-    solid,
 )
+from dagster.legacy import solid
 
 
 def test_string_from_inputs():

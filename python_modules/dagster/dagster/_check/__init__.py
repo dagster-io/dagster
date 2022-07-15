@@ -92,7 +92,7 @@ def opt_bool_param(
     return default if obj is None else obj
 
 
-def bool_elem(ddict: Dict, key: str, additional_message: Optional[str] = None) -> bool:
+def bool_elem(ddict: Mapping, key: str, additional_message: Optional[str] = None) -> bool:
     dict_param(ddict, "ddict")
     str_param(key, "key")
 
@@ -351,7 +351,7 @@ def opt_two_dim_dict_param(
 
 
 def dict_elem(
-    obj: Dict,
+    obj: Mapping,
     key: str,
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
@@ -373,7 +373,7 @@ def dict_elem(
 
 
 def opt_dict_elem(
-    obj: Dict[str, Any],
+    obj: Mapping[str, Any],
     key: str,
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
@@ -395,7 +395,7 @@ def opt_dict_elem(
 
 
 def opt_nullable_dict_elem(
-    obj: Dict[str, Any],
+    obj: Mapping[str, Any],
     key: str,
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
@@ -472,7 +472,7 @@ def opt_float_param(
     return default if obj is None else obj
 
 
-def float_elem(ddict: Dict, key: str, additional_message: Optional[str] = None) -> float:
+def float_elem(ddict: Mapping, key: str, additional_message: Optional[str] = None) -> float:
     dict_param(ddict, "ddict")
     str_param(key, "key")
 
@@ -483,7 +483,7 @@ def float_elem(ddict: Dict, key: str, additional_message: Optional[str] = None) 
 
 
 def opt_float_elem(
-    ddict: Dict, key: str, additional_message: Optional[str] = None
+    ddict: Mapping, key: str, additional_message: Optional[str] = None
 ) -> Optional[float]:
     dict_param(ddict, "ddict")
     str_param(key, "key")
@@ -595,7 +595,7 @@ def int_value_param(
     return obj
 
 
-def int_elem(ddict: Dict, key: str, additional_message: Optional[str] = None) -> int:
+def int_elem(ddict: Mapping, key: str, additional_message: Optional[str] = None) -> int:
     dict_param(ddict, "ddict")
     str_param(key, "key")
 
@@ -605,7 +605,9 @@ def int_elem(ddict: Dict, key: str, additional_message: Optional[str] = None) ->
     return value
 
 
-def opt_int_elem(ddict: Dict, key: str, additional_message: Optional[str] = None) -> Optional[int]:
+def opt_int_elem(
+    ddict: Mapping, key: str, additional_message: Optional[str] = None
+) -> Optional[int]:
     dict_param(ddict, "ddict")
     str_param(key, "key")
 
@@ -641,6 +643,17 @@ def opt_inst_param(
     obj: Optional[T],
     param_name: str,
     ttype: TypeOrTupleOfTypes,
+    default: None = ...,
+    additional_message: Optional[str] = None,
+) -> Optional[T]:
+    ...
+
+
+@overload
+def opt_inst_param(
+    obj: Optional[T],
+    param_name: str,
+    ttype: TypeOrTupleOfTypes,
     default: T,
     additional_message: Optional[str] = None,
 ) -> T:
@@ -659,7 +672,7 @@ def opt_inst_param(
 
 
 def opt_inst_param(
-    obj: T,
+    obj: Optional[T],
     param_name: str,
     ttype: TypeOrTupleOfTypes,
     default: Optional[T] = None,
@@ -697,7 +710,7 @@ def list_param(
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> List:
+) -> List[Any]:
     from dagster.utils import frozenlist
 
     if not isinstance(obj, (frozenlist, list)):
@@ -716,7 +729,7 @@ def opt_list_param(
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> List:
+) -> List[Any]:
     """Ensures argument obj is a list or None; in the latter case, instantiates an empty list
     and returns it.
 
@@ -804,7 +817,7 @@ def two_dim_list_param(
 
 
 def list_elem(
-    ddict: Dict,
+    ddict: Mapping,
     key: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
@@ -825,7 +838,7 @@ def list_elem(
 
 
 def opt_list_elem(
-    ddict: Dict,
+    ddict: Mapping,
     key: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
@@ -1279,7 +1292,7 @@ def opt_nonempty_str_param(
     return default if obj is None or obj == "" else obj
 
 
-def str_elem(ddict: Dict, key: str, additional_message: Optional[str] = None) -> str:
+def str_elem(ddict: Mapping, key: str, additional_message: Optional[str] = None) -> str:
     dict_param(ddict, "ddict")
     str_param(key, "key")
 
@@ -1289,7 +1302,9 @@ def str_elem(ddict: Dict, key: str, additional_message: Optional[str] = None) ->
     return value
 
 
-def opt_str_elem(ddict: Dict, key: str, additional_message: Optional[str] = None) -> Optional[str]:
+def opt_str_elem(
+    ddict: Mapping, key: str, additional_message: Optional[str] = None
+) -> Optional[str]:
     dict_param(ddict, "ddict")
     str_param(key, "key")
 
@@ -1501,7 +1516,7 @@ class NotImplementedCheckError(CheckError):
 def _element_check_error(
     key: object,
     value: object,
-    ddict: Dict,
+    ddict: Mapping,
     ttype: TypeOrTupleOfTypes,
     additional_message: Optional[str] = None,
 ) -> ElementCheckError:

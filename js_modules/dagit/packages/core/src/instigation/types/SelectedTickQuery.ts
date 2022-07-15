@@ -13,7 +13,7 @@ export interface SelectedTickQuery_instigationStateOrError_PythonError {
   __typename: "PythonError";
 }
 
-export interface SelectedTickQuery_instigationStateOrError_InstigationState_tick_error_cause {
+export interface SelectedTickQuery_instigationStateOrError_InstigationState_tick_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -23,7 +23,7 @@ export interface SelectedTickQuery_instigationStateOrError_InstigationState_tick
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: SelectedTickQuery_instigationStateOrError_InstigationState_tick_error_cause | null;
+  causes: SelectedTickQuery_instigationStateOrError_InstigationState_tick_error_causes[];
 }
 
 export interface SelectedTickQuery_instigationStateOrError_InstigationState_tick {

@@ -120,7 +120,7 @@ export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locatio
   repositories: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories[];
 }
 
-export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_cause {
+export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -130,7 +130,7 @@ export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace_locatio
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_cause | null;
+  causes: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_causes[];
 }
 
 export type InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError = InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation | InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError;
@@ -149,7 +149,7 @@ export interface InstanceOverviewInitialQuery_workspaceOrError_Workspace {
   locationEntries: InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries[];
 }
 
-export interface InstanceOverviewInitialQuery_workspaceOrError_PythonError_cause {
+export interface InstanceOverviewInitialQuery_workspaceOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -159,7 +159,7 @@ export interface InstanceOverviewInitialQuery_workspaceOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceOverviewInitialQuery_workspaceOrError_PythonError_cause | null;
+  causes: InstanceOverviewInitialQuery_workspaceOrError_PythonError_causes[];
 }
 
 export type InstanceOverviewInitialQuery_workspaceOrError = InstanceOverviewInitialQuery_workspaceOrError_Workspace | InstanceOverviewInitialQuery_workspaceOrError_PythonError;

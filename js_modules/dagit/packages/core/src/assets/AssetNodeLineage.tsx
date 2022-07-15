@@ -82,7 +82,6 @@ export const AssetNodeLineage: React.FC<{
         {Object.values(assetGraphData.nodes).length > 1 ? (
           <LaunchAssetExecutionButton
             assetKeys={Object.values(assetGraphData.nodes).map((n) => n.assetKey)}
-            liveDataByNode={liveDataByNode}
             intent="none"
             context="all"
           />

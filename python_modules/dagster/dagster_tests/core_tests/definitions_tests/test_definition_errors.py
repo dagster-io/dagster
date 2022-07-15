@@ -12,9 +12,10 @@ from dagster import (
     PipelineDefinition,
     ResourceDefinition,
     SolidDefinition,
-    solid,
 )
+from dagster._check import ParameterCheckError
 from dagster.core.utility_solids import define_stub_solid
+from dagster.legacy import solid
 
 
 def solid_a_b_list():
@@ -36,11 +37,11 @@ def solid_a_b_list():
 
 def test_create_pipeline_with_bad_solids_list():
     with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match='"nodes" arg to "a_pipeline" is not a list. Got',
+        ParameterCheckError,
+        match=r'Param "node_defs" is not one of \[\'Sequence\'\]',
     ):
         PipelineDefinition(
-            name="a_pipeline", solid_defs=define_stub_solid("stub", [{"a key": "a value"}])
+            name="a_pipeline", solid_defs=define_stub_solid("stub", [{"a key": "a value"}])  # type: ignore
         )
 
 

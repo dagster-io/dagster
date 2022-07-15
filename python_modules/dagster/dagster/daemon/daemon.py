@@ -111,7 +111,11 @@ class DagsterDaemon(AbstractContextManager):
                     daemon_generator.close()
 
     def _check_add_heartbeat(
-        self, instance, daemon_uuid, heartbeat_interval_seconds, error_interval_seconds
+        self,
+        instance: DagsterInstance,
+        daemon_uuid,
+        heartbeat_interval_seconds,
+        error_interval_seconds,
     ):
         error_max_time = pendulum.now("UTC").subtract(seconds=error_interval_seconds)
 
@@ -120,6 +124,10 @@ class DagsterDaemon(AbstractContextManager):
             if earliest_timestamp >= error_max_time:
                 break
             self._errors.pop()
+
+        if instance.daemon_skip_heartbeats_without_errors and not self._errors:
+            # no errors to report, so we don't write a heartbeat
+            return
 
         curr_time = pendulum.now("UTC")
 

@@ -10,8 +10,8 @@ from dagster import (
     pipeline,
     repository,
     sensor,
-    solid,
 )
+from dagster.legacy import solid
 
 
 @solid

@@ -116,6 +116,12 @@ from .partition import (
     dynamic_partitioned_config,
     static_partitioned_config,
 )
+from .partition_mapping import (
+    AllPartitionMapping,
+    IdentityPartitionMapping,
+    LastPartitionMapping,
+    PartitionMapping,
+)
 from .partitioned_schedule import build_schedule_from_partitioned_job, schedule_from_partitions
 from .pipeline_base import IPipeline
 from .pipeline_definition import PipelineDefinition

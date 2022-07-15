@@ -106,12 +106,16 @@ def asset(
 
     Args:
         name (Optional[str]): The name of the asset.  If not provided, defaults to the name of the
-            decorated function.
+            decorated function. The asset's name must be a valid name in dagster (ie only contains
+            letters, numbers, and _) and may not contain python reserved keywords.
         namespace (Optional[Sequence[str]]): **Deprecated (use `key_prefix`)**. The namespace that
-            the asset resides in.  The namespace + the name forms the asset key.
+            the asset resides in.  The concatenation of namespace and name forms the asset key. Each
+            item in namespace must be a valid name in dagster (ie only contains letters, numbers,
+            and _) and may not contain python reserved keywords.
         key_prefix (Optional[Union[str, Sequence[str]]]): If provided, the asset's key is the
             concatenation of the key_prefix and the asset's name, which defaults to the name of
-            the decorated function.
+            the decorated function. Each item in key_prefix must be a valid name in dagster (ie only
+            contains letters, numbers, and _) and may not contain python reserved keywords.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
             and namespaces.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Set of asset keys that are
@@ -133,12 +137,6 @@ def asset(
             will be executed on the output of the decorated function after it runs.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
-        partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
-            keys for this asset to partition keys of upstream assets. Each key in the dictionary
-            correponds to one of the input assets, and each value is a PartitionMapping.
-            If no entry is provided for a particular asset dependency, the partition mapping defaults
-            to the default partition mapping for the partitions definition, which is typically maps
-            partition keys to the same partition keys in upstream assets.
         op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the asset.
             Frameworks may expect and require certain metadata to be attached to a op. Values that
             are not strings will be json encoded and must meet the criteria that
@@ -172,6 +170,13 @@ def asset(
         "parameter of this asset to a dictionary of the form "
         "'input_name': AssetIn(key_prefix=...).",
     )
+
+    if partition_mappings is not None:
+        deprecation_warning(
+            "The partition_mappings argument of @asset",
+            "0.16.0",
+            "Use the partition_mapping argument on AssetIn instead.",
+        )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         check.invariant(
@@ -304,17 +309,31 @@ class _Asset:
         keys_by_input_name = {
             input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
         }
+        partition_mappings_by_key_from_asset_ins = {
+            keys_by_input_name[input_name]: asset_in.partition_mapping
+            for input_name, asset_in in self.ins.items()
+            if asset_in.partition_mapping
+        }
+        if partition_mappings_by_key_from_asset_ins:
+            check.invariant(
+                not self.partition_mappings,
+                "If providing partition mappings on AssetIns, can't also provide partition_mappings "
+                "argument on @asset decorator",
+            )
+
+            partition_mappings = partition_mappings_by_key_from_asset_ins
+        else:
+            partition_mappings = {
+                keys_by_input_name[input_name]: partition_mapping
+                for input_name, partition_mapping in (self.partition_mappings or {}).items()
+            }
+
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name={"result": out_asset_key},
             node_def=op,
             partitions_def=self.partitions_def,
-            partition_mappings={
-                keys_by_input_name[input_name]: partition_mapping
-                for input_name, partition_mapping in self.partition_mappings.items()
-            }
-            if self.partition_mappings
-            else None,
+            partition_mappings=partition_mappings if partition_mappings else None,
             resource_defs=self.resource_defs,
             group_names_by_key={out_asset_key: self.group_name} if self.group_name else None,
         )
@@ -335,6 +354,7 @@ def multi_asset(
     op_tags: Optional[Dict[str, Any]] = None,
     can_subset: bool = False,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    group_name: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
     upstream assets.
@@ -381,6 +401,8 @@ def multi_asset(
             A mapping of resource keys to resource definitions. These resources
             will be initialized during execution, and can be accessed from the
             context within the body of the function.
+        group_name (Optional[str]): A string name used to organize multiple assets into groups. This
+            group name will be applied to all assets produced by this multi_asset.
     """
     asset_deps = check.opt_dict_param(
         internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
@@ -459,6 +481,23 @@ def multi_asset(
         keys_by_output_name = {
             output_name: asset_key for asset_key, (output_name, _) in asset_outs.items()
         }
+
+        # source group names from the AssetOuts (if any)
+        group_names_by_key = {
+            keys_by_output_name[output_name]: out.group_name
+            for output_name, out in outs.items()
+            if isinstance(out, AssetOut) and out.group_name is not None
+        }
+        if group_name:
+            check.invariant(
+                not group_names_by_key,
+                "Cannot set group_name parameter on multi_asset if one or more of the AssetOuts "
+                "supplied to this multi_asset have a group_name defined.",
+            )
+            group_names_by_key = {
+                asset_key: group_name for asset_key in keys_by_output_name.values()
+            }
+
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name=keys_by_output_name,
@@ -473,6 +512,7 @@ def multi_asset(
             else None,
             can_subset=can_subset,
             resource_defs=resource_defs,
+            group_names_by_key=group_names_by_key,
         )
 
     return inner

@@ -34,10 +34,10 @@ if TYPE_CHECKING:
 
 RawMetadataValue = Union[
     "MetadataValue",
-    dict,
+    Dict[Any, Any],
     float,
     int,
-    list,
+    List[Any],
     str,
 ]
 
@@ -58,7 +58,7 @@ def normalize_metadata(
     metadata: Mapping[str, RawMetadataValue],
     metadata_entries: Sequence[Union["MetadataEntry", "PartitionMetadataEntry"]],
     allow_invalid: bool = False,
-) -> List[Union["MetadataEntry", "PartitionMetadataEntry"]]:
+) -> Sequence[Union["MetadataEntry", "PartitionMetadataEntry"]]:
     if metadata and metadata_entries:
         raise DagsterInvalidMetadata(
             "Attempted to provide both `metadata` and `metadata_entries` arguments to an event. "

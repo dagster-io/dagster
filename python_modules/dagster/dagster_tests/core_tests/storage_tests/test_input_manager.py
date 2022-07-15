@@ -379,5 +379,3 @@ def test_input_manager_with_failure():
         result = simple.execute_in_process(instance=instance, raise_on_error=False)
 
         assert not result.success
-
-

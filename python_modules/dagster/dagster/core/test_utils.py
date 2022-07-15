@@ -14,7 +14,7 @@ import yaml
 
 from dagster import ModeDefinition, Shape
 from dagster import _check as check
-from dagster import composite_solid, fs_io_manager, pipeline, solid
+from dagster import composite_solid, fs_io_manager, pipeline
 from dagster.config import Field
 from dagster.config.config_type import Array
 from dagster.core.host_representation.origin import (
@@ -29,6 +29,7 @@ from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import WorkspaceLoadTarget
 from dagster.daemon.controller import create_daemon_grpc_server_registry
 from dagster.daemon.workspace import DaemonWorkspace
+from dagster.legacy import solid
 from dagster.serdes import ConfigurableClass
 from dagster.seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
 from dagster.utils import Counter, merge_dicts, traced, traced_counter

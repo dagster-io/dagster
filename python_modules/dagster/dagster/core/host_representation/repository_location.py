@@ -1,4 +1,5 @@
 import datetime
+import sys
 import threading
 from abc import abstractmethod
 from contextlib import AbstractContextManager
@@ -256,7 +257,7 @@ class RepositoryLocation(AbstractContextManager):
 
         code_pointer = self.repository_code_pointer_dict[repository_name]
         return RepositoryPythonOrigin(
-            executable_path=self.executable_path,
+            executable_path=self.executable_path or sys.executable,
             code_pointer=code_pointer,
             container_image=self.container_image,
             entry_point=self.entry_point,

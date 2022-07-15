@@ -35,7 +35,7 @@ def core_execute_in_process(
     instance: Optional[DagsterInstance],
     output_capturing_enabled: bool,
     raise_on_error: bool,
-    run_tags: Optional[Dict[str, Any]] = None,
+    run_tags: Optional[Mapping[str, object]] = None,
     run_id: Optional[str] = None,
     asset_selection: Optional[FrozenSet[AssetKey]] = None,
 ) -> ExecuteInProcessResult:

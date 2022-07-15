@@ -1,6 +1,7 @@
 from dagster import Field, InputDefinition, Nothing, OutputDefinition, Permissive
 from dagster import _check as check
-from dagster import op, solid
+from dagster import op
+from dagster.legacy import solid
 
 from .databricks import wait_for_run_to_complete
 

@@ -1,7 +1,7 @@
 import dagster
 
 
-@dagster.solid
+@dagster.legacy.solid
 def solid(_):
     pass
 

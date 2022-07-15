@@ -175,10 +175,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               <QueryRefreshCountdown refreshState={refreshState} />
             </Box>
             {definition && definition.jobNames.length > 0 && repoAddress && upstream && (
-              <LaunchAssetExecutionButton
-                assetKeys={[definition.assetKey]}
-                liveDataByNode={liveDataByNode}
-              />
+              <LaunchAssetExecutionButton assetKeys={[definition.assetKey]} />
             )}
           </Box>
         }

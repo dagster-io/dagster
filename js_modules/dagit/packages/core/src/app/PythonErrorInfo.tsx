@@ -20,7 +20,7 @@ interface IPythonErrorInfoProps {
 export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
   const message = props.error.message;
   const stack = (props.error as PythonErrorFragment).stack;
-  const cause = (props.error as PythonErrorFragment).cause;
+  const causes = (props.error as PythonErrorFragment).causes;
 
   const Wrapper = props.centered ? ErrorWrapperCentered : ErrorWrapper;
   const context = props.errorSource ? <ErrorContext errorSource={props.errorSource} /> : null;
@@ -37,13 +37,13 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
           </div>
         ) : null}
         {stack ? <Trace>{stack.join('')}</Trace> : null}
-        {cause ? (
+        {causes.map((cause) => (
           <>
             <CauseHeader>The above exception was caused by the following exception:</CauseHeader>
             <ErrorHeader>{cause.message}</ErrorHeader>
             {stack ? <Trace>{cause.stack.join('')}</Trace> : null}
           </>
-        ) : null}
+        ))}
         {props.showReload && (
           <Button icon={<Icon name="refresh" />} onClick={() => window.location.reload()}>
             Reload
@@ -76,7 +76,7 @@ export const PYTHON_ERROR_FRAGMENT = gql`
     __typename
     message
     stack
-    cause {
+    causes {
       message
       stack
     }

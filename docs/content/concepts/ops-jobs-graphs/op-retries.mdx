@@ -34,7 +34,7 @@ def problematic():
 
 ### RetryPolicy
 
-To get this solid to retry when an exception occurs, we can attach a <PyObject module="dagster" object="RetryRequested" />.
+To get this solid to retry when an exception occurs, we can attach a <PyObject module="dagster" object="RetryPolicy" />.
 
 ```python file=/concepts/ops_jobs_graphs/retries.py startafter=policy_start endbefore=policy_end
 @op(retry_policy=RetryPolicy())

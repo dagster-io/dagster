@@ -1,9 +1,10 @@
-from dagster import composite_solid, solid
+from dagster import composite_solid
 from dagster.core.snap import (
     CompositeSolidDefSnap,
     DependencyStructureIndex,
     build_composite_solid_def_snap,
 )
+from dagster.legacy import solid
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
 

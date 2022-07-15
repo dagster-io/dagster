@@ -10,7 +10,6 @@ from dagster import (
     OutputDefinition,
     fs_io_manager,
     pipeline,
-    solid,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan, execute_run
@@ -30,6 +29,7 @@ from dagster.core.instance.ref import InstanceRef
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.core.storage.input_manager import input_manager
 from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.legacy import solid
 from dagster.utils import file_relative_path
 from dagster.utils.test import copy_directory
 

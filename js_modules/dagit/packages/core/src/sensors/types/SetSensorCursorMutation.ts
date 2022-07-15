@@ -37,7 +37,7 @@ export interface SetSensorCursorMutation_setSensorCursor_Sensor {
   sensorState: SetSensorCursorMutation_setSensorCursor_Sensor_sensorState;
 }
 
-export interface SetSensorCursorMutation_setSensorCursor_PythonError_cause {
+export interface SetSensorCursorMutation_setSensorCursor_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -47,7 +47,7 @@ export interface SetSensorCursorMutation_setSensorCursor_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: SetSensorCursorMutation_setSensorCursor_PythonError_cause | null;
+  causes: SetSensorCursorMutation_setSensorCursor_PythonError_causes[];
 }
 
 export type SetSensorCursorMutation_setSensorCursor = SetSensorCursorMutation_setSensorCursor_SensorNotFoundError | SetSensorCursorMutation_setSensorCursor_Sensor | SetSensorCursorMutation_setSensorCursor_PythonError;

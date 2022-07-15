@@ -7,8 +7,8 @@ from dagster import (
     pipeline,
     reconstructable,
     resource,
-    solid,
 )
+from dagster.legacy import solid
 from dagster.utils import merge_dicts
 
 

@@ -12,7 +12,8 @@ from dagster import (
     PresetDefinition,
 )
 from dagster import _check as check
-from dagster import execute_pipeline, lambda_solid, pipeline, solid
+from dagster import execute_pipeline, lambda_solid, pipeline
+from dagster.legacy import solid
 from dagster.utils import file_relative_path
 
 

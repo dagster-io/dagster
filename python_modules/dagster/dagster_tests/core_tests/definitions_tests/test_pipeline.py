@@ -12,9 +12,9 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     pipeline,
-    solid,
     usable_as_dagster_type,
 )
+from dagster.legacy import solid
 
 
 def builder(graph):

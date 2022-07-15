@@ -392,7 +392,7 @@ class BoundHookContext(HookContext):
 
 
 def build_hook_context(
-    resources: Optional[Dict[str, Any]] = None,
+    resources: Optional[Mapping[str, Any]] = None,
     mode_def: Optional[ModeDefinition] = None,
     solid: Optional[Union[SolidDefinition, PendingNodeInvocation]] = None,
     op: Optional[Union[OpDefinition, PendingNodeInvocation]] = None,
@@ -432,12 +432,12 @@ def build_hook_context(
 
     op = check.opt_inst_param(op, "op", (OpDefinition, PendingNodeInvocation))
     solid = check.opt_inst_param(solid, "solid", (SolidDefinition, PendingNodeInvocation))
-    op = op or solid
+    op_or_solid = op or solid
 
     return UnboundHookContext(
         resources=check.opt_dict_param(resources, "resources", key_type=str),
         mode_def=check.opt_inst_param(mode_def, "mode_def", ModeDefinition),
-        op=op,
+        op=op_or_solid,  # type: ignore[arg-type] # (mypy bug)
         run_id=check.opt_str_param(run_id, "run_id"),
         job_name=check.opt_str_param(job_name, "job_name"),
         op_exception=check.opt_inst_param(op_exception, "op_exception", Exception),

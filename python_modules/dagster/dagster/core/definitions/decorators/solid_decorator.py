@@ -56,6 +56,11 @@ class DecoratedSolidFunction(NamedTuple):
         # var keyword arg has to be the last argument
         return len(params) > 0 and param_is_var_keyword(params[-1])
 
+    def get_output_annotation(self) -> Any:
+        from ..inference import infer_output_props
+
+        return infer_output_props(self.decorated_fn).annotation
+
 
 class NoContextDecoratedSolidFunction(DecoratedSolidFunction):
     """Wrapper around a decorated solid function, when the decorator does not permit a context
@@ -305,7 +310,7 @@ def resolve_checked_solid_fn_inputs(
     decorator_name: str,
     fn_name: str,
     compute_fn: DecoratedSolidFunction,
-    explicit_input_defs: List[InputDefinition],
+    explicit_input_defs: Sequence[InputDefinition],
     exclude_nothing: bool,
 ) -> List[InputDefinition]:
     """
