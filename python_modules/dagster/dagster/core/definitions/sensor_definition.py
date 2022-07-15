@@ -445,14 +445,17 @@ class SensorDefinition:
 
     @property
     def pipeline_name(self) -> Optional[str]:
+        deprecation_warning("pipeline_name", "1.1.0")
         return self._target.pipeline_name if self._target else None
 
     @property
     def solid_selection(self) -> Optional[Sequence[str]]:
+        deprecation_warning("solid_selection", "1.1.0")
         return self._target.solid_selection if self._target else None
 
     @property
     def mode(self) -> Optional[str]:
+        deprecation_warning("mode", "1.1.0")
         return self._target.mode if self._target else None
 
     @property
