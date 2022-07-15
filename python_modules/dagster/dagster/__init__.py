@@ -320,6 +320,14 @@ from dagster.utils.test import (
 
 from .version import __version__
 
+# isort: split
+from dagster._loggers import (
+    colored_console_logger,
+    default_loggers,
+    default_system_loggers,
+    json_console_logger,
+)
+
 # ########################
 # ##### DEPRECATED ALIASES
 # ########################
