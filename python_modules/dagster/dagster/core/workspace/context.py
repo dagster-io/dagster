@@ -8,7 +8,6 @@ from contextlib import ExitStack
 from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
 
 import dagster._check as check
-from dagster._grpc.server_watcher import create_grpc_watch_thread
 from dagster.core.errors import (
     DagsterRepositoryLocationLoadError,
     DagsterRepositoryLocationNotFoundError,
@@ -515,6 +514,8 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             subscriber.handle_event(event)
 
     def _start_watch_thread(self, origin: GrpcServerRepositoryLocationOrigin) -> None:
+        from dagster._grpc.server_watcher import create_grpc_watch_thread
+
         location_name = origin.location_name
         check.invariant(location_name not in self._watch_thread_shutdown_events)
         client = origin.create_client()

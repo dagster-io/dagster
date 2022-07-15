@@ -64,7 +64,7 @@ class EventLogConsumerDaemon(IntervalDaemon):
             events.extend(events_by_log_id_for_type.values())
 
             # calculate the new cursor for this event type
-            new_cursor = _get_new_cursor(
+            new_cursor = get_new_cursor(
                 persisted_cursor,
                 overall_max_event_id,
                 self._event_log_fetch_limit,
@@ -145,7 +145,7 @@ def _persist_cursors(instance: DagsterInstance, cursors: Dict[DagsterEventType, 
         )
 
 
-def _get_new_cursor(
+def get_new_cursor(
     persisted_cursor: int,
     overall_max_event_id: Optional[int],
     fetch_limit: int,

@@ -11,8 +11,8 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
-from dagster.-daemon import get_default_daemon_logger
-from dagster.-daemon.sensor import execute_sensor_iteration
+from dagster._daemon import get_default_daemon_logger
+from dagster._daemon.sensor import execute_sensor_iteration
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,

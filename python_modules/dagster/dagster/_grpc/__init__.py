@@ -8,5 +8,32 @@ The GRPC layer is not intended to supplant the dagster-graphql layer, which shou
 drive web frontends like dagit.
 """
 
-from .client import DagsterGrpcClient, ephemeral_grpc_api_client
-from .server import DagsterGrpcServer
+from .client import DagsterGrpcClient, client_heartbeat_thread, ephemeral_grpc_api_client
+from .impl import core_execute_run
+from .server import DagsterGrpcServer, GrpcServerProcess
+from .types import (
+    CanCancelExecutionRequest,
+    CanCancelExecutionResult,
+    CancelExecutionRequest,
+    CancelExecutionResult,
+    ExecuteExternalPipelineArgs,
+    ExecuteRunArgs,
+    ExecuteStepArgs,
+    ExecutionPlanSnapshotArgs,
+    ExternalJobArgs,
+    ExternalScheduleExecutionArgs,
+    GetCurrentImageResult,
+    ListRepositoriesInput,
+    ListRepositoriesResponse,
+    LoadableRepositorySymbol,
+    NotebookPathArgs,
+    PartitionArgs,
+    PartitionNamesArgs,
+    PartitionSetExecutionParamArgs,
+    PipelineSubsetSnapshotArgs,
+    ResumeRunArgs,
+    SensorExecutionArgs,
+    ShutdownServerResult,
+    StartRunResult,
+)
+from .utils import get_loadable_targets

@@ -28,7 +28,6 @@ from dagster.core.origin import (
     get_python_environment_entry_point,
 )
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.test_utils import mock_system_timezone
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.utils import coerce_valid_log_level
 from dagster.serdes import deserialize_as, serialize_dagster_namedtuple
@@ -568,6 +567,8 @@ def grpc_command(
     container_context=None,
     **kwargs,
 ):
+    from dagster.core.test_utils import mock_system_timezone
+
     if seven.IS_WINDOWS and port is None:
         raise click.UsageError(
             "You must pass a valid --port/-p on Windows: --socket/-s not supported."
