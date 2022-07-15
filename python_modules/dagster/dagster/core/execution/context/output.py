@@ -137,7 +137,7 @@ class OutputContext:
         self._asset_info = asset_info
         self._warn_on_step_context_use = warn_on_step_context_use
         if self._step_context and self._step_context.has_partition_key:
-            self._partition_key = self._step_context.partition_key
+            self._partition_key: Optional[str] = self._step_context.partition_key
         else:
             self._partition_key = partition_key
 
@@ -360,7 +360,11 @@ class OutputContext:
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
-        return self._partition_key
+        check.invariant(
+            self._partition_key is not None,
+            "Tried to access partition_key on a non-partitioned run.",
+        )
+        return cast(str, self._partition_key)
 
     @property
     def has_asset_partitions(self) -> bool:
