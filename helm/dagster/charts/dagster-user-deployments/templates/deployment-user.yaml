@@ -50,7 +50,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ include "dagsterUserDeployments.postgresql.secretName" $ }}
-                  key: postgresql-password
+                  key: {{ $.Values.postgresqlSecretKeyRefKey }}
             {{- $includeConfigInLaunchedRuns := $deployment.includeConfigInLaunchedRuns | default (dict "enabled" true) }}
             {{- if $includeConfigInLaunchedRuns.enabled }}
             # uses the auto_envvar_prefix of the dagster cli to set the --container-context arg

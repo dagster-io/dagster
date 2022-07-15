@@ -7,6 +7,7 @@ global:
 
 dagsterHome: "/opt/dagster/dagster_home"
 postgresqlSecretName: "dagster-postgresql-secret"
+postgresqlSecretKeyRefKey: postgresql-password
 celeryConfigSecretName: "dagster-celery-config-secret"
 
 ####################################################################################################
@@ -147,3 +148,4 @@ rbacEnabled: true
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
 ####################################################################################################
 extraManifests: []
+

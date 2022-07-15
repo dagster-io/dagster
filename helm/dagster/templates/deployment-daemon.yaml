@@ -77,7 +77,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ include "dagster.postgresql.secretName" $ | quote }}
-                  key: postgresql-password
+                  key: {{ .Values.postgresql.postgresqlSecretKeyRefKey }}
             - name: DAGSTER_DAEMON_HEARTBEAT_TOLERANCE
               value: "{{ .Values.dagsterDaemon.heartbeatTolerance }}"
           envFrom:
