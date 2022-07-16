@@ -2,6 +2,8 @@
 Repository of test pipelines
 """
 
+import pytest
+
 from dagster import (
     Int,
     ModeDefinition,
@@ -14,7 +16,6 @@ from dagster import (
 from dagster._check import CheckError
 from dagster.legacy import solid
 from dagster.utils import file_relative_path
-import pytest
 
 
 def define_empty_pipeline():
@@ -124,5 +125,5 @@ def test_invalid_repository():
     with pytest.raises(CheckError):
 
         @repository
-        def invalid_repository(invalid_arg: str):
+        def invalid_repository(_invalid_arg: str):
             return []
