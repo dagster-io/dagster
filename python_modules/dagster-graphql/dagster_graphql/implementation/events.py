@@ -3,7 +3,7 @@ from math import isnan
 from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
 
 import dagster._check as check
-import dagster._seven as _seven
+import dagster._seven as seven
 from dagster import (
     BoolMetadataValue,
     DagsterAssetMetadataValue,
@@ -57,7 +57,7 @@ def iterate_metadata_entries(metadata_entries):
             yield GrapheneJsonMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
-                jsonString=_seven.json.dumps(metadata_entry.entry_data.data),
+                jsonString=seven.json.dumps(metadata_entry.entry_data.data),
             )
         elif isinstance(metadata_entry.entry_data, TextMetadataValue):
             yield GrapheneTextMetadataEntry(
@@ -134,7 +134,7 @@ def iterate_metadata_entries(metadata_entries):
                 table=GrapheneTable(
                     schema=metadata_entry.entry_data.schema,
                     records=[
-                        _seven.json.dumps(record.data)
+                        seven.json.dumps(record.data)
                         for record in metadata_entry.entry_data.records
                     ],
                 ),

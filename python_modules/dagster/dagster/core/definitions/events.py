@@ -19,7 +19,7 @@ from typing import (
 )
 
 import dagster._check as check
-import dagster._seven as _seven
+import dagster._seven as seven
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
 from .metadata import (
@@ -111,7 +111,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
             return None
         if legacy:
             return ASSET_KEY_LEGACY_DELIMITER.join(self.path)
-        return _seven.json.dumps(self.path)
+        return seven.json.dumps(self.path)
 
     def to_user_string(self) -> str:
         """
@@ -130,8 +130,8 @@ class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
         if asset_key_string[0] == "[":
             # is a json string
             try:
-                path = _seven.json.loads(asset_key_string)
-            except _seven.JSONDecodeError:
+                path = seven.json.loads(asset_key_string)
+            except seven.JSONDecodeError:
                 path = parse_asset_key_string(asset_key_string)
         else:
             path = parse_asset_key_string(asset_key_string)
@@ -142,7 +142,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
         check.list_param(path, "path", of_type=str)
         if legacy:
             return ASSET_KEY_LEGACY_DELIMITER.join(path)
-        return _seven.json.dumps(path)[:-2]  # strip trailing '"]' from json string
+        return seven.json.dumps(path)[:-2]  # strip trailing '"]' from json string
 
     @staticmethod
     def from_graphql_input(asset_key: Mapping[str, List[str]]) -> Optional["AssetKey"]:

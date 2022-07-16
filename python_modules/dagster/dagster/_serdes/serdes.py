@@ -35,7 +35,7 @@ from typing import (
 )
 
 import dagster._check as check
-import dagster._seven as _seven
+import dagster._seven as seven
 
 from .errors import DeserializationError, SerdesUsageError, SerializationError
 
@@ -346,12 +346,12 @@ def serialize_dagster_namedtuple(nt: tuple, **json_kwargs) -> str:
 
 
 def _serialize_dagster_namedtuple(nt: tuple, whitelist_map: WhitelistMap, **json_kwargs) -> str:
-    return _seven.json.dumps(pack_inner_value(nt, whitelist_map, _root(nt)), **json_kwargs)
+    return seven.json.dumps(pack_inner_value(nt, whitelist_map, _root(nt)), **json_kwargs)
 
 
 def serialize_value(val: Any, whitelist_map: WhitelistMap = _WHITELIST_MAP) -> str:
     """Serialize a value to a json encoded string."""
-    return _seven.json.dumps(
+    return seven.json.dumps(
         pack_inner_value(val, whitelist_map=whitelist_map, descent_path=_root(val))
     )
 
@@ -463,14 +463,14 @@ def opt_deserialize_as(json_str: Optional[str], cls: Type[T]) -> Optional[T]:
 
 
 def _deserialize_json(json_str: str, whitelist_map: WhitelistMap):
-    value = _seven.json.loads(json_str)
+    value = seven.json.loads(json_str)
     return unpack_inner_value(value, whitelist_map=whitelist_map, descent_path=_root(value))
 
 
 def deserialize_value(val: str, whitelist_map: WhitelistMap = _WHITELIST_MAP) -> Any:
     """Deserialize a json encoded string in to its original value"""
     return unpack_inner_value(
-        _seven.json.loads(check.str_param(val, "val")),
+        seven.json.loads(check.str_param(val, "val")),
         whitelist_map=whitelist_map,
         descent_path="",
     )

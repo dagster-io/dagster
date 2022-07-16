@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Dict, Mapping
 
 from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader
 
-import dagster._seven as _seven
+import dagster._seven as seven
 from dagster import AssetKey, DagsterEventType, EventRecordsFilter
 from dagster import _check as check
 from dagster.core.events import ASSET_EVENTS
@@ -22,8 +22,8 @@ def _normalize_asset_cursor_str(cursor_string):
         return cursor_string
 
     try:
-        return _seven.json.dumps(_seven.json.loads(cursor_string))
-    except _seven.JSONDecodeError:
+        return seven.json.dumps(seven.json.loads(cursor_string))
+    except seven.JSONDecodeError:
         return cursor_string
 
 

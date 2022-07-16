@@ -8,7 +8,7 @@ from airflow.models.baseoperator import BaseOperator
 from dagster_airflow.operators.util import check_storage_specified
 
 import dagster._check as check
-import dagster._seven as _seven
+import dagster._seven as seven
 from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance, is_dagster_home_set
@@ -179,7 +179,7 @@ def _make_airflow_dag(
         if is_dagster_home_set():
             instance = DagsterInstance.get()
         else:
-            instance = DagsterInstance.local_temp(tempdir=_seven.get_system_temp_directory())
+            instance = DagsterInstance.local_temp(tempdir=seven.get_system_temp_directory())
 
     check.inst_param(instance, "instance", DagsterInstance)
 

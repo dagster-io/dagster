@@ -5,7 +5,7 @@ import time
 import pytest
 
 import dagster._check as check
-import dagster._seven as _seven
+import dagster._seven as seven
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer, ephemeral_grpc_api_client
 from dagster._grpc.server import GrpcServerProcess, open_server_process
 from dagster.core.errors import DagsterUserCodeUnreachableError
@@ -21,7 +21,7 @@ def server_thread_runnable(**kwargs):
     return _runnable
 
 
-@pytest.mark.skipif(not _seven.IS_WINDOWS, reason="Windows-only test")
+@pytest.mark.skipif(not seven.IS_WINDOWS, reason="Windows-only test")
 def test_server_socket_on_windows():
     with safe_tempfile_path() as skt:
         with pytest.raises(check.CheckError, match=re.escape("`socket` not supported")):
@@ -37,7 +37,7 @@ def test_server_port_and_socket():
             DagsterGrpcServer(socket=skt, port=find_free_port())
 
 
-@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Unix-only test")
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Unix-only test")
 def test_server_socket():
     with safe_tempfile_path() as skt:
         server_process = open_server_process(port=None, socket=skt)
@@ -47,7 +47,7 @@ def test_server_socket():
             interrupt_ipc_subprocess_pid(server_process.pid)
 
 
-@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Unix-only test")
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Unix-only test")
 def test_process_killed_after_client_finished():
 
     server_process = GrpcServerProcess()
@@ -85,7 +85,7 @@ def test_client_bad_port():
     assert "failed to connect to all addresses" in str(exc_info.getrepr())
 
 
-@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Unix-only test")
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Unix-only test")
 def test_client_bad_socket():
     with safe_tempfile_path() as bad_socket:
         with pytest.raises(DagsterUserCodeUnreachableError) as exc_info:
@@ -93,7 +93,7 @@ def test_client_bad_socket():
         assert "failed to connect to all addresses" in str(exc_info.getrepr())
 
 
-@pytest.mark.skipif(not _seven.IS_WINDOWS, reason="Windows-only test")
+@pytest.mark.skipif(not seven.IS_WINDOWS, reason="Windows-only test")
 def test_client_socket_on_windows():
     with safe_tempfile_path() as skt:
         with pytest.raises(check.CheckError, match=re.escape("`socket` not supported.")):
@@ -111,7 +111,7 @@ def test_client_port_bad_host():
         DagsterGrpcClient(port=port, host=None)
 
 
-@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Unix-only test")
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Unix-only test")
 def test_client_socket():
     with safe_tempfile_path() as skt:
         assert DagsterGrpcClient(socket=skt)
@@ -175,7 +175,7 @@ def test_detect_server_restart():
     finally:
         interrupt_ipc_subprocess_pid(server_process.pid)
 
-    _seven.wait_for_process(server_process, timeout=5)
+    seven.wait_for_process(server_process, timeout=5)
     with pytest.raises(DagsterUserCodeUnreachableError):
         api_client.get_server_id()
 

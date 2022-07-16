@@ -15,7 +15,7 @@ from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 import dagster._check as check
-import dagster._seven as _seven
+import dagster._seven as seven
 from dagster._config import StringSource
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
@@ -334,7 +334,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                         )
                     if limit and len(event_records) >= limit:
                         break
-                except _seven.JSONDecodeError:
+                except seven.JSONDecodeError:
                     logging.warning("Could not parse event record id `%s`.", row_id)
 
             if limit and len(event_records) >= limit:

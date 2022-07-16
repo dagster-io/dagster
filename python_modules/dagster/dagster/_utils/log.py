@@ -9,7 +9,7 @@ import coloredlogs
 import pendulum
 
 import dagster._check as check
-import dagster._seven as _seven
+import dagster._seven as seven
 from dagster._config import Enum, EnumValue
 from dagster.core.definitions.logger_definition import logger
 from dagster.core.utils import PYTHON_LOGGING_LEVELS_MAPPING, coerce_valid_log_level
@@ -42,7 +42,7 @@ class JsonFileHandler(logging.Handler):
             log_dict.update(dagster_meta_dict)
 
             with open(self.json_path, "a", encoding="utf8") as ff:
-                text_line = _seven.json.dumps(log_dict)
+                text_line = seven.json.dumps(log_dict)
                 ff.write(text_line + "\n")
         # Need to catch Exception here, so disabling lint
         except Exception as e:  # pylint: disable=W0703
@@ -90,7 +90,7 @@ class JsonEventLoggerHandler(logging.Handler):
         try:
             event_record = self.construct_event_record(record)
             with open(self.json_path, "a", encoding="utf8") as ff:
-                text_line = _seven.json.dumps(event_record.to_dict())
+                text_line = seven.json.dumps(event_record.to_dict())
                 ff.write(text_line + "\n")
 
         # Need to catch Exception here, so disabling lint

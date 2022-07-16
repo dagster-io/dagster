@@ -4,7 +4,7 @@ from contextlib import contextmanager
 import boto3
 from botocore.errorfactory import ClientError
 
-import dagster._seven as _seven
+import dagster._seven as seven
 from dagster import Field, StringSource
 from dagster import _check as check
 from dagster.core.storage.compute_log_manager import (
@@ -42,7 +42,7 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
     Args:
         bucket (str): The name of the s3 bucket to which to log.
         local_dir (Optional[str]): Path to the local directory in which to stage logs. Default:
-            ``dagster.seven.get_system_temp_directory()``.
+            ``dagster._seven.get_system_temp_directory()``.
         prefix (Optional[str]): Prefix for the log file keys.
         use_ssl (Optional[bool]): Whether or not to use SSL. Default True.
         verify (Optional[bool]): Whether or not to verify SSL certificates. Default True.
@@ -75,7 +75,7 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
 
         # proxy calls to local compute log manager (for subscriptions, etc)
         if not local_dir:
-            local_dir = _seven.get_system_temp_directory()
+            local_dir = seven.get_system_temp_directory()
 
         self.local_manager = LocalComputeLogManager(local_dir)
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)

@@ -5,7 +5,7 @@ import requests
 from graphql import graphql
 
 import dagster._check as check
-import dagster._seven as _seven
+import dagster._seven as seven
 from dagster import __version__ as dagster_version
 from dagster._cli.workspace import workspace_target_argument
 from dagster._cli.workspace.cli_target import (
@@ -75,9 +75,9 @@ def execute_query_from_cli(workspace_process_context, query, variables=None, out
     result_dict = execute_query(
         workspace_process_context,
         query,
-        variables=_seven.json.loads(variables) if variables else None,
+        variables=seven.json.loads(variables) if variables else None,
     )
-    str_res = _seven.json.dumps(result_dict)
+    str_res = seven.json.dumps(result_dict)
 
     # Since this the entry point for CLI execution, some tests depend on us putting the result on
     # stdout

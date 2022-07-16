@@ -1,7 +1,7 @@
 import time
 from typing import cast
 
-import dagster._seven as _seven
+import dagster._seven as seven
 from dagster import Bool, Field
 from dagster import _check as check
 from dagster._grpc.client import DagsterGrpcClient
@@ -54,7 +54,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         instance.add_run_tags(
             run.run_id,
             {
-                GRPC_INFO_TAG: _seven.json.dumps(
+                GRPC_INFO_TAG: seven.json.dumps(
                     merge_dicts(
                         {"host": grpc_client.host},
                         (
@@ -128,7 +128,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         if GRPC_INFO_TAG not in tags:
             return None
 
-        grpc_info = _seven.json.loads(tags.get(GRPC_INFO_TAG))
+        grpc_info = seven.json.loads(tags.get(GRPC_INFO_TAG))
 
         return DagsterGrpcClient(
             port=grpc_info.get("port"),

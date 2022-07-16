@@ -15,7 +15,7 @@ import grpc
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 import dagster._check as check
-import dagster._seven as _seven
+import dagster._seven as seven
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.errors import DagsterUserCodeUnreachableError
@@ -809,7 +809,7 @@ class DagsterGrpcServer:
         check.opt_int_param(max_workers, "max_workers")
         check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
         check.invariant(
-            port is not None if _seven.IS_WINDOWS else True,
+            port is not None if seven.IS_WINDOWS else True,
             "You must pass a valid `port` on Windows: `socket` not supported.",
         )
         check.invariant(
@@ -1102,7 +1102,7 @@ class GrpcServerProcess:
             "If set to None, the server will use the gRPC default.",
         )
 
-        if _seven.IS_WINDOWS or force_port:
+        if seven.IS_WINDOWS or force_port:
             self.server_process, self.port = open_server_process_on_dynamic_port(
                 max_retries=max_retries,
                 loadable_target_origin=loadable_target_origin,
@@ -1135,7 +1135,7 @@ class GrpcServerProcess:
 
     def wait(self, timeout=30):
         if self.server_process.poll() is None:
-            _seven.wait_for_process(self.server_process, timeout=timeout)
+            seven.wait_for_process(self.server_process, timeout=timeout)
 
     def create_ephemeral_client(self):
         from dagster._grpc.client import EphemeralDagsterGrpcClient

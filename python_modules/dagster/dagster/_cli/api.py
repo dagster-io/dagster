@@ -31,7 +31,6 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.utils import coerce_valid_log_level
 from dagster._serdes import deserialize_as, serialize_dagster_namedtuple
-from dagster._seven import nullcontext
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_pipeline_from_origin
 from dagster._utils.interrupts import capture_interrupts
@@ -609,7 +608,7 @@ def grpc_command(
     with (
         mock_system_timezone(override_system_timezone)
         if override_system_timezone
-        else nullcontext()
+        else seven.nullcontext()
     ):
         server = DagsterGrpcServer(
             port=port,
@@ -683,7 +682,7 @@ def grpc_command(
     help="Whether to connect to the gRPC server over SSL",
 )
 def grpc_health_check_command(port=None, socket=None, host="localhost", use_ssl=False):
-    if _seven.IS_WINDOWS and port is None:
+    if seven.IS_WINDOWS and port is None:
         raise click.UsageError(
             "You must pass a valid --port/-p on Windows: --socket/-s not supported."
         )

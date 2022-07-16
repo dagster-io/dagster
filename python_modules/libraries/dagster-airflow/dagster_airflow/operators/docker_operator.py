@@ -7,7 +7,7 @@ from dagster_airflow.vendor.docker_operator import DockerOperator
 from docker import APIClient, from_env
 
 import dagster._check as check
-import dagster._seven as _seven
+import dagster._seven as seven
 from dagster._grpc.types import ExecuteStepArgs
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.plan import should_skip_step
@@ -40,7 +40,7 @@ class DagsterDockerOperator(DockerOperator):
     def __init__(self, dagster_operator_parameters, *args):
         kwargs = dagster_operator_parameters.op_kwargs
         tmp_dir = kwargs.pop("tmp_dir", DOCKER_TEMPDIR)
-        host_tmp_dir = kwargs.pop("host_tmp_dir", _seven.get_system_temp_directory())
+        host_tmp_dir = kwargs.pop("host_tmp_dir", seven.get_system_temp_directory())
         self.host_tmp_dir = host_tmp_dir
         self.docker_conn_id_set = kwargs.get("docker_conn_id") is not None
         self.run_config = dagster_operator_parameters.run_config
@@ -101,7 +101,7 @@ class DagsterDockerOperator(DockerOperator):
         if self.force_pull or len(self.cli.images(name=self.image)) == 0:
             self.log.info("Pulling docker image %s", self.image)
             for l in self.cli.pull(self.image, stream=True):
-                output = _seven.json.loads(l.decode("utf-8").strip())
+                output = seven.json.loads(l.decode("utf-8").strip())
                 if "status" in output:
                     self.log.info("%s", output["status"])
 
