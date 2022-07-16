@@ -1,26 +1,75 @@
-# -*- coding: utf-8 -*-
-#
-# Configuration file for the Sphinx documentation builder.
-#
-# This file does only contain a selection of the most common options. For a
-# full list see the documentation:
-# http://www.sphinx-doc.org/en/master/config
+# For a full of config options see:
+#   https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 # -- Path setup --------------------------------------------------------------
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+# We add two kinds of packages to `sys.path`:
+# 
+# - Targets for `autodoc` (referenced via e.g. `automodule` in our doc source rst files).
+#   `autodoc` runs in python and actually imports its targets, so they must be available on
+#   `sys.path`.
+# - Custom sphinx extensions (autodoc_configurable).
+
+import os
+import sys
+
+sys.path.append(os.path.abspath("./_ext"))
+
+paths = [
+    ### dagster packages
+    "../python_modules/automation",
+    "../python_modules/dagster",
+    "../python_modules/dagster-graphql",
+    "../python_modules/dagit",
+    "../python_modules/libraries/dagster-airbyte",
+    "../python_modules/libraries/dagster-airflow",
+    "../python_modules/libraries/dagster-aws",
+    "../python_modules/libraries/dagster-azure",
+    "../python_modules/libraries/dagster-celery",
+    "../python_modules/libraries/dagster-celery-docker",
+    "../python_modules/libraries/dagster-dask",
+    "../python_modules/libraries/dagster-datadog",
+    "../python_modules/libraries/dagster-datahub",
+    "../python_modules/libraries/dagster-docker",
+    "../python_modules/libraries/dagster-fivetran",
+    "../python_modules/libraries/dagster-github",
+    "../python_modules/libraries/dagster-k8s",
+    "../python_modules/libraries/dagster-mlflow",
+    "../python_modules/libraries/dagster-msteams",
+    "../python_modules/libraries/dagster-mysql",
+    "../python_modules/libraries/dagster-pagerduty",
+    "../python_modules/libraries/dagster-pandas",
+    "../python_modules/libraries/dagster-papertrail",
+    "../python_modules/libraries/dagster-postgres",
+    "../python_modules/libraries/dagster-prometheus",
+    "../python_modules/libraries/dagster-shell",
+    "../python_modules/libraries/dagster-slack",
+    "../python_modules/libraries/dagster-snowflake",
+    "../python_modules/libraries/dagster-snowflake-pandas",
+    "../python_modules/libraries/dagster-spark",
+    "../python_modules/libraries/dagster-ssh",
+    "../python_modules/libraries/dagster-twilio",
+    "../python_modules/libraries/dagstermill",
+    "../python_modules/libraries/dagster-celery-k8s",
+    "../python_modules/libraries/dagster-dbt",
+    "../python_modules/libraries/dagster-ge",
+    "../python_modules/libraries/dagster-gcp",
+    "../python_modules/libraries/dagster-pyspark",
+    "../python_modules/libraries/dagster-databricks",
+
+    ### autodoc_configurable extension
+    "./_ext",
+
+]
+
+for path in paths:
+    sys.path.insert(0, os.path.abspath(path))
 
 # -- Project information -----------------------------------------------------
 
-project = "Dagster"
-copyright = " 2019, Elementl, Inc"  # pylint: disable=W0622
-author = "The Dagster Team"
+project = 'Dagster'
+copyright = '2019, Elementl, Inc'  # pylint: disable=redefined-builtin
+author = 'The Dagster Team'
 
 # The short X.Y version
 version = ""
@@ -29,26 +78,25 @@ release = ""
 
 # -- General configuration ---------------------------------------------------
 
-# If your documentation needs a minimal Sphinx version, state it here.
-#
-# needs_sphinx = '1.0'
-
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
-import os
-import sys
-
-sys.path.append(os.path.abspath("./_ext"))
-
+# NOTE: `sphinx.ext.*` extensions are built-in to sphinx-- all others are supplied by other
+# packages. Docs for all builtin extensions here:
+#   https://www.sphinx-doc.org/en/master/usage/extensions/index.html
 extensions = [
+    # Automatically generate docs from docstrings.
     "sphinx.ext.autodoc",
-    "sphinx.ext.ifconfig",
-    "sphinx.ext.intersphinx",
-    "sphinx.ext.viewcode",
-    "nbsphinx",
+
+    # Allows direct references to doc sections by title
     "sphinx.ext.autosectionlabel",
-    "recommonmark",
+
+    # Conditionally build sections of docs
+    "sphinx.ext.ifconfig",
+
+    # Supplements autodoc with the ability to parse numpy and google-style docstrings (dagster
+    # uses google style).
+    "sphinx.ext.napoleon",
+
+    # Adds links to source code for autodoc objects
+    "sphinx.ext.viewcode",
 
     # Directives for automatically documenting CLIS built with the `click` package.
     "sphinx_click.ext",
@@ -60,11 +108,17 @@ extensions = [
     "sphinx_toolbox.collapse",
 ]
 
-# https://stackoverflow.com/a/54843636/324449
-autosectionlabel_prefix_document = True
+# List of patterns, relative to source directory, that match files and
+# directories to ignore when looking for source files.
+# This pattern also affects html_static_path and html_extra_path.
+exclude_patterns = []
 
-autodoc_typehints = "none"
-
+# List of all packages that should be mocked when autodoc is running. Autodoc is going to import
+# dagster packages, which in turn import various third-party packages. The vast majority of those
+# packages are not actually needed to build the docs, but autodoc will nonetheless choke if it can't
+# resolve their imports. By mocking them, we let autodoc do its work while keeping the build
+# environment simple. If a build fails due to a failed import, try adding the root package for that
+# import (e.g. `foo` for `foo.bar`) here.
 autodoc_mock_imports = [
     "airflow",
     "azure",
@@ -100,154 +154,11 @@ autodoc_mock_imports = [
     "yaml",
 ]
 
-# To add a new intersphinx mapping and find the right intersphinx inv file, add a new record with
-# the inv field set to None, e.g.
-#
-# 'mylib': ('https://www.mylib.org/docs/', None)
-#
-# Then when building the docs, you'll see:
-#
-# loading intersphinx inventory from https://www.mylib.org/docs/objects.inv...
-#
-# You should download this file and put it under the intersphinx/ directory.
-intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", "intersphinx/python.inv"),
-    "airflow": ("https://airflow.apache.org", "intersphinx/airflow.inv"),
-    "dask": ("https://distributed.dask.org/en/latest/", "intersphinx/dask.inv"),
-    "celery": ("https://docs.celeryq.dev/en/stable/", "intersphinx/celery.inv"),
-    "boto3": ("https://boto3.amazonaws.com/v1/documentation/api/latest/", "intersphinx/boto3.inv"),
-    "psycopg2": ("https://www.psycopg.org/docs/", "intersphinx/psycopg2.inv"),
-}
+# ????
+autodoc_typehints = "none"
 
-# Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
-
-# The suffix(es) of source filenames.
-# You can specify multiple suffix as a list of string:
-#
-# source_suffix = ['.rst', '.md']
-source_suffix = [".rst", ".md"]
-
-# The master toctree document.
-master_doc = "index"
-
-# The language for content autogenerated by Sphinx. Refer to documentation
-# for a list of supported languages.
-#
-# This is also used if you do content translation via gettext catalogs.
-# Usually you set "language" from the command line for these cases.
-language = None
-
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "gatsby/**", "next/**", "node_modules"]
-
-# The name of the Pygments (syntax highlighting) style to use.
-pygments_style = "sphinx"
-
-# -- Options for HTML output -------------------------------------------------
-
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-#
-html_theme = "alabaster"
-html_title = "Dagster"
-
-
-def setup(app):
-    app.add_css_file("css/custom.css")
-
-
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-#
-html_theme_options = {
-    "font_family": "Roboto",
-    "body_max_width": "auto",
-    "page_width": "80%",
-    "code_font_size": "0.8em",
-    "fixed_sidebar": False,
-}
-
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
-
-# Custom sidebar templates, must be a dictionary that maps document names
-# to template names.
-#
-# The default sidebars (for documents that don't match any pattern) are
-# defined by theme itself.  Builtin themes are using these templates by
-# default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
-# 'searchbox.html']``.
-#
-html_sidebars = {}
-
-# -- Options for HTMLHelp output ---------------------------------------------
-
-# Output file base name for HTML help builder.
-htmlhelp_basename = "Dagsterdoc"
-
-# -- Options for LaTeX output ------------------------------------------------
-
-latex_elements = {
-    # The paper size ('letterpaper' or 'a4paper').
-    #
-    # 'papersize': 'letterpaper',
-    # The font size ('10pt', '11pt' or '12pt').
-    #
-    # 'pointsize': '10pt',
-    # Additional stuff for the LaTeX preamble.
-    #
-    # 'preamble': '',
-    # Latex figure (float) alignment
-    #
-    # 'figure_align': 'htbp',
-}
-
-# Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title,
-#  author, documentclass [howto, manual, or own class]).
-latex_documents = [(master_doc, "Dagster.tex", "Dagster Documentation", "Elementl", "manual")]
-
-# -- Options for manual page output ------------------------------------------
-
-# One entry per manual page. List of tuples
-# (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "dagster", "Dagster Documentation", [author], 1)]
-
-# -- Options for Texinfo output ----------------------------------------------
-
-# Grouping the document tree into Texinfo files. List of tuples
-# (source start file, target name, title, author,
-#  dir menu entry, description, category)
-texinfo_documents = [
-    (
-        master_doc,
-        "Dagster",
-        "Dagster Documentation",
-        author,
-        "Dagster",
-        "One line description of project.",
-        "Miscellaneous",
-    )
-]
-
-# -- Extension configuration -------------------------------------------------
-
-extensions = extensions + ["sphinx.ext.napoleon", "sphinx_click.ext"]
-
-html_sidebars = {"**": ["globaltoc.html", "searchbox.html"]}
-
-html_context = {
-    "display_github": True,  # Integrate GitHub
-    "github_user": "dagster-io",  # Username
-    "github_repo": "dagster",  # Repo name
-    "github_version": "master",  # Version
-    "conf_py_path": "/docs/",  # Path in the checkout to the docs root,
-    "theme_show_relbar_top": True,
-    "theme_show_relbar_bottom": True,
-}
+# From https://www.sphinx-doc.org/en/master/usage/extensions/autosectionlabel.html#confval-autosectionlabel_prefix_document
+#   "Prefix each section label with the name of the document it is in, followed by a colon. For
+#   example, index:Introduction for a section called Introduction that appears in document index.rst.
+#   Useful for avoiding ambiguity when the same section heading appears in different documents."
+autosectionlabel_prefix_document = True

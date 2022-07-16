@@ -6,11 +6,10 @@
 -e ../python_modules/dagster-graphql
 -e ../python_modules/libraries/dagster-celery
 -e ../python_modules/dagit
-Sphinx==3.5.2
-sphinx-click==2.5.0
-sphinx-toolbox
+Sphinx==5.0.2
+sphinx-click==4.3.0
 recommonmark==0.7.1
-nbsphinx==0.8.2
+nbsphinx==0.8.r
 pendulum==1.4.4
 pyspark>=3.0.0
 google-cloud-bigquery>=1.19.*,<3
