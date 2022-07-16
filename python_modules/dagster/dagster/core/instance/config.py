@@ -1,6 +1,6 @@
 import os
 import warnings
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Mapping, Optional
 
 from dagster import Array, Bool
 from dagster import _check as check
@@ -18,14 +18,14 @@ if TYPE_CHECKING:
 DAGSTER_CONFIG_YAML_FILENAME = "dagster.yaml"
 
 
-def is_dagster_home_set():
+def is_dagster_home_set() -> bool:
     return bool(os.getenv("DAGSTER_HOME"))
 
 
 def dagster_instance_config(
-    base_dir,
-    config_filename=DAGSTER_CONFIG_YAML_FILENAME,
-    overrides=None,
+    base_dir: str,
+    config_filename: str=DAGSTER_CONFIG_YAML_FILENAME,
+    overrides: Optional[Mapping[str, object]]=None,
 ):
     check.str_param(base_dir, "base_dir")
     check.invariant(os.path.isdir(base_dir), "base_dir should be a directory")
@@ -102,11 +102,11 @@ def dagster_instance_config(
     return (dagster_config.value, custom_instance_class)
 
 
-def config_field_for_configurable_class():
+def config_field_for_configurable_class() -> Field:
     return Field(configurable_class_schema(), is_required=False)
 
 
-def storage_config_schema():
+def storage_config_schema() -> Field:
     return Field(
         Selector(
             {
@@ -120,11 +120,11 @@ def storage_config_schema():
     )
 
 
-def configurable_class_schema():
+def configurable_class_schema() -> Mapping[str, object]:
     return {"module": str, "class": str, "config": Field(Permissive())}
 
 
-def python_logs_config_schema():
+def python_logs_config_schema() -> Field:
     return Field(
         {
             "managed_python_loggers": Field(Array(str), is_required=False),
@@ -146,7 +146,7 @@ DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT = 60
 
 def get_default_tick_retention_settings(
     instigator_type: "InstigatorType",
-) -> Dict["TickStatus", int]:
+) -> Mapping["TickStatus", int]:
     from dagster.core.definitions.run_request import InstigatorType
     from dagster.core.scheduler.instigation import TickStatus
 
@@ -166,7 +166,7 @@ def get_default_tick_retention_settings(
     }
 
 
-def _tick_retention_config_schema():
+def _tick_retention_config_schema() -> Field:
     return Field(
         {
             "purge_after_days": ScalarUnion(
@@ -183,7 +183,7 @@ def _tick_retention_config_schema():
     )
 
 
-def retention_config_schema():
+def retention_config_schema() -> Field:
     return Field(
         {
             "schedule": _tick_retention_config_schema(),
@@ -194,9 +194,9 @@ def retention_config_schema():
 
 
 def get_tick_retention_settings(
-    settings: Optional[Dict],
-    default_retention_settings: Dict["TickStatus", int],
-) -> Dict["TickStatus", int]:
+    settings: Optional[Mapping],
+    default_retention_settings: Mapping["TickStatus", int],
+) -> Mapping["TickStatus", int]:
     if not settings or not settings.get("purge_after_days"):
         return default_retention_settings
 
@@ -215,7 +215,7 @@ def get_tick_retention_settings(
         return default_retention_settings
 
 
-def sensors_daemon_config():
+def sensors_daemon_config() -> Field:
     return Field(
         {
             "use_threads": Field(Bool, is_required=False, default_value=False),
@@ -225,7 +225,7 @@ def sensors_daemon_config():
     )
 
 
-def dagster_instance_config_schema():
+def dagster_instance_config_schema() -> Mapping[str, object]:
     return {
         "local_artifact_storage": config_field_for_configurable_class(),
         "compute_logs": config_field_for_configurable_class(),
