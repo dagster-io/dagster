@@ -1,15 +1,14 @@
 -e ../python_modules/automation
 # Packages that import constants that can't be auto-mocked
--e ../python_modules/libraries/dagster-datahub
+# -e ../python_modules/libraries/dagster-datahub
 # Packages that use sphinx-click can't use auto-mock
--e ../python_modules/dagster[test]
+# needed for autodoc-configurable
+-e ../python_modules/dagster
 -e ../python_modules/dagster-graphql
--e ../python_modules/libraries/dagster-celery
 -e ../python_modules/dagit
+# -e ../python_modules/libraries/dagster-celery
 Sphinx==5.0.2
 sphinx-click==4.3.0
-recommonmark==0.7.1
-nbsphinx==0.8.r
 pendulum==1.4.4
 pyspark>=3.0.0
 google-cloud-bigquery>=1.19.*,<3
