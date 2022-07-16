@@ -1,11 +1,12 @@
+from dagster._builtins import Bool, Float, Int, String
 import dagster._check as check
 
-from ._builtins import Bool, Float, Int, String
-from .core.types.dagster_type import Any as RuntimeAny
-from .core.types.dagster_type import List
-from .core.types.python_dict import PythonDict
-from .core.types.python_set import PythonSet
-from .core.types.python_tuple import PythonTuple
+from dagster._builtins import Bool, Float, Int, String
+from .dagster_type import Any as RuntimeAny
+from .dagster_type import List
+from .python_dict import PythonDict
+from .python_set import PythonSet
+from .python_tuple import PythonTuple
 
 # Type-ignores below are due to mypy bug tracking names imported from module's named "types".
 SUPPORTED_RUNTIME_BUILTINS = {

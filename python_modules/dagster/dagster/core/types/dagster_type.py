@@ -830,7 +830,7 @@ class TypeHintInferredDagsterType(DagsterType):
 def resolve_dagster_type(dagster_type: object) -> DagsterType:
     # circular dep
     from dagster._utils.typing_api import is_typing_type
-    from dagster.primitive_mapping import (
+    from .primitive_mapping import (
         is_supported_runtime_python_builtin,
         remap_python_builtin_for_runtime,
     )
