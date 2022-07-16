@@ -3,6 +3,7 @@ from collections import OrderedDict
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union, cast
 
 import dagster._check as check
+from dagster._utils import load_yaml_from_path
 from dagster.core.code_pointer import rebase_file
 from dagster.core.host_representation.origin import (
     GrpcServerRepositoryLocationOrigin,
@@ -11,7 +12,6 @@ from dagster.core.host_representation.origin import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._utils import load_yaml_from_path
 
 from .config_schema import ensure_workspace_config
 

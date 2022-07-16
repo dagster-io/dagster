@@ -2,6 +2,7 @@ from typing import NamedTuple, Optional
 
 import dagster._check as check
 from dagster._config import EvaluateValueResult, process_config
+from dagster._utils.merger import merge_dicts
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.graph_definition import GraphDefinition
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
@@ -14,7 +15,6 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.system_config.objects import SolidConfig
-from dagster._utils.merger import merge_dicts
 
 
 class SolidConfigEntry(

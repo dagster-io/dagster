@@ -6,6 +6,7 @@ from dagster_k8s.launcher import K8sRunLauncher
 from dagster import Field, IntSource, StringSource
 from dagster import _check as check
 from dagster import executor
+from dagster._utils import frozentags, merge_dicts
 from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.events import DagsterEvent, EngineEventData, MetadataEntry
@@ -18,7 +19,6 @@ from dagster.core.executor.step_delegating import (
     StepHandler,
     StepHandlerContext,
 )
-from dagster._utils import frozentags, merge_dicts
 
 from .container_context import K8sContainerContext
 from .job import (

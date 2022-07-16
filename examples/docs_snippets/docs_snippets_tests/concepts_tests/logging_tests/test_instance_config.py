@@ -1,6 +1,6 @@
 from dagster import DagsterInstance
-from dagster.core.instance import InstanceRef
 from dagster._utils import file_relative_path
+from dagster.core.instance import InstanceRef
 
 
 def test_valid_managed_loggers_instance_yaml():

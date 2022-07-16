@@ -1,9 +1,6 @@
 from typing import Any, Dict, NamedTuple, Optional, Union
 
 import dagster._check as check
-from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.events import DagsterEvent
-from dagster.core.utils import coerce_valid_log_level
 from dagster._serdes.serdes import (
     DefaultNamedTupleSerializer,
     WhitelistMap,
@@ -19,6 +16,9 @@ from dagster._utils.log import (
     StructuredLoggerMessage,
     construct_single_handler_logger,
 )
+from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.events import DagsterEvent
+from dagster.core.utils import coerce_valid_log_level
 
 
 class EventLogEntrySerializer(DefaultNamedTupleSerializer):

@@ -4,13 +4,13 @@ from graphql.execution.base import ResolveInfo
 from rx import Observable
 
 import dagster._check as check
+from dagster._serdes import serialize_dagster_namedtuple
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster.core.events import DagsterEventType, EngineEventData
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.event_log.base import EventLogCursor
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
-from dagster._serdes import serialize_dagster_namedtuple
-from dagster._utils.error import serializable_error_info_from_exc_info
 
 from ..external import ExternalPipeline, ensure_valid_config, get_external_pipeline_or_raise
 from ..fetch_runs import is_config_valid

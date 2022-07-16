@@ -1,12 +1,12 @@
 from typing import Optional
 
 from dagster import _check as check
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.base_storage import DagsterStorage
 from dagster.core.storage.config import pg_config
 from dagster.core.storage.event_log import EventLogStorage
 from dagster.core.storage.runs import RunStorage
 from dagster.core.storage.schedules import ScheduleStorage
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from .event_log import PostgresEventLogStorage
 from .run_storage import PostgresRunStorage

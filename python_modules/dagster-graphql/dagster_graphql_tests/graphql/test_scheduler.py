@@ -11,6 +11,8 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
+from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._utils import Counter, traced_counter
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
@@ -22,8 +24,6 @@ from dagster.core.scheduler.instigation import (
     ScheduleInstigatorData,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._seven.compat.pendulum import create_pendulum_time
-from dagster._utils import Counter, traced_counter
 
 from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
 

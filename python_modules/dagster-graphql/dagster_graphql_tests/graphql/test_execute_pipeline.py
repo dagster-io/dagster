@@ -11,10 +11,10 @@ from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_s
 from graphql import parse
 
 from dagster import PipelineRunStatus
-from dagster.core.storage.pipeline_run import RunsFilter
-from dagster.core.test_utils import wait_for_runs_to_finish
 from dagster._utils import file_relative_path
 from dagster._utils.test import get_temp_file_name
+from dagster.core.storage.pipeline_run import RunsFilter
+from dagster.core.test_utils import wait_for_runs_to_finish
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,

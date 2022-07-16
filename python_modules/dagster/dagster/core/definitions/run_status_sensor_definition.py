@@ -5,15 +5,6 @@ from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Union, c
 import pendulum
 
 import dagster._check as check
-from dagster.core.errors import (
-    DagsterInvalidDefinitionError,
-    DagsterInvalidInvocationError,
-    RunStatusSensorExecutionError,
-    user_code_error_boundary,
-)
-from dagster.core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent
-from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import DagsterRun, DagsterRunStatus, PipelineRun, RunsFilter
 from dagster._serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
@@ -25,6 +16,15 @@ from dagster._seven import JSONDecodeError
 from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster.core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    RunStatusSensorExecutionError,
+    user_code_error_boundary,
+)
+from dagster.core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent
+from dagster.core.instance import DagsterInstance
+from dagster.core.storage.pipeline_run import DagsterRun, DagsterRunStatus, PipelineRun, RunsFilter
 
 from ..decorator_utils import get_function_params
 from .graph_definition import GraphDefinition

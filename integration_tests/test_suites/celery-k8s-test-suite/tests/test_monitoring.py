@@ -10,10 +10,10 @@ from dagster_k8s_test_infra.integration_utils import image_pull_policy, launch_r
 from dagster_test.test_project import get_test_project_environments_path
 from marks import mark_monitoring
 
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.test_utils import poll_for_finished_run
 from dagster._utils import merge_dicts
 from dagster._utils.yaml_utils import merge_yamls
+from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.test_utils import poll_for_finished_run
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

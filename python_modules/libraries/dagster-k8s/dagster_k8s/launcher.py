@@ -7,14 +7,14 @@ from dagster import Field, MetadataEntry, StringSource
 from dagster import _check as check
 from dagster._cli.api import ExecuteRunArgs
 from dagster._grpc.types import ResumeRunArgs
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._utils import frozentags, merge_dicts
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster.core.events import EngineEventData
 from dagster.core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher
 from dagster.core.launcher.base import CheckRunHealthResult, WorkerStatus
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import frozentags, merge_dicts
-from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .container_context import K8sContainerContext
 from .job import (

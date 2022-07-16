@@ -3,10 +3,10 @@ import datetime
 import pendulum
 
 from dagster import Partition, PartitionSetDefinition, ScheduleEvaluationContext
-from dagster.core.definitions.schedule_definition import ScheduleExecutionData
-from dagster.core.test_utils import instance_for_test
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils.partitions import date_partition_range
+from dagster.core.definitions.schedule_definition import ScheduleExecutionData
+from dagster.core.test_utils import instance_for_test
 
 
 def test_multirun_partition_schedule_definition():

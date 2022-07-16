@@ -2,10 +2,10 @@ from typing import Any, Dict, List, NamedTuple, Optional
 
 from dagster import DagsterEvent, DagsterEventType, IntSource, String
 from dagster import _check as check
-from dagster._config import Array, Field, Noneable, ScalarUnion, Shape
 from dagster._builtins import Bool
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._config import Array, Field, Noneable, ScalarUnion, Shape
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 
 from .base import RunCoordinator, SubmitRunContext
 

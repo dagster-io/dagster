@@ -1,6 +1,7 @@
 import os
 
 import dagster._check as check
+from dagster._utils.timing import format_duration, time_execution_scope
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.api import ExecuteRunWithPlanIterable
 from dagster.core.execution.context.system import PlanOrchestrationContext
@@ -8,7 +9,6 @@ from dagster.core.execution.context_creation_pipeline import PlanExecutionContex
 from dagster.core.execution.plan.execute_plan import inner_plan_execution_iterator
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import RetryMode
-from dagster._utils.timing import format_duration, time_execution_scope
 
 from .base import Executor
 

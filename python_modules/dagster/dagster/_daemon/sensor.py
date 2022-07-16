@@ -11,6 +11,8 @@ import pendulum
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._utils import merge_dicts
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData
 from dagster.core.definitions.utils import validate_tags
@@ -28,8 +30,6 @@ from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, Ru
 from dagster.core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster.core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster.core.workspace import IWorkspace
-from dagster._utils import merge_dicts
-from dagster._utils.error import serializable_error_info_from_exc_info
 
 MIN_INTERVAL_LOOP_TIME = 5
 

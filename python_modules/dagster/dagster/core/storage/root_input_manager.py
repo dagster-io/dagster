@@ -3,13 +3,13 @@ from functools import update_wrapper
 
 import dagster._check as check
 from dagster._annotations import experimental
+from dagster._utils.backcompat import deprecation_warning
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
 from dagster.core.definitions.resource_definition import ResourceDefinition, is_context_provided
 from dagster.core.storage.input_manager import IInputManagerDefinition, InputManager
-from dagster._utils.backcompat import deprecation_warning
 
 
 class RootInputManagerDefinition(ResourceDefinition, IInputManagerDefinition):

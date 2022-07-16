@@ -3,9 +3,6 @@ from inspect import Parameter
 from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Type, Union
 
 import dagster._check as check
-from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.host_representation.origin import ExternalInstigatorOrigin
-from dagster.core.host_representation.selector import InstigatorSelector, RepositorySelector
 from dagster._serdes import create_snapshot_id
 from dagster._serdes.serdes import (
     DefaultNamedTupleSerializer,
@@ -18,6 +15,9 @@ from dagster._serdes.serdes import (
 )
 from dagster._utils import merge_dicts
 from dagster._utils.error import SerializableErrorInfo
+from dagster.core.definitions.run_request import InstigatorType
+from dagster.core.host_representation.origin import ExternalInstigatorOrigin
+from dagster.core.host_representation.selector import InstigatorSelector, RepositorySelector
 
 
 @whitelist_for_serdes

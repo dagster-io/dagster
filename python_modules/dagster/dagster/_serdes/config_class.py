@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 from typing import NamedTuple
 
 import dagster._check as check
-
 from dagster._utils.yaml_utils import load_run_config_yaml
+
 from .serdes import whitelist_for_serdes
 
 

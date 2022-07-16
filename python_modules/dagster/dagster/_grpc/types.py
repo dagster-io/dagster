@@ -1,6 +1,9 @@
 from typing import Any, Dict, FrozenSet, List, Mapping, NamedTuple, Optional
 
 import dagster._check as check
+from dagster._serdes import serialize_dagster_namedtuple, whitelist_for_serdes
+from dagster._utils import frozenlist
+from dagster._utils.error import SerializableErrorInfo
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.events import AssetKey
 from dagster.core.execution.plan.state import KnownExecutionState
@@ -12,9 +15,6 @@ from dagster.core.host_representation.origin import (
 )
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.origin import PipelinePythonOrigin, get_python_environment_entry_point
-from dagster._serdes import serialize_dagster_namedtuple, whitelist_for_serdes
-from dagster._utils import frozenlist
-from dagster._utils.error import SerializableErrorInfo
 
 
 @whitelist_for_serdes

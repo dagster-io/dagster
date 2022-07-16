@@ -7,6 +7,8 @@ from sqlalchemy.pool import NullPool
 
 from dagster import StringSource
 from dagster import _check as check
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._utils import mkdir_p
 from dagster.core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -16,8 +18,6 @@ from dagster.core.storage.sql import (
     stamp_alembic_rev,
 )
 from dagster.core.storage.sqlite import create_db_conn_string, get_sqlite_version
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import mkdir_p
 
 from ..schema import InstanceInfo, RunStorageSqlMetadata, RunTagsTable, RunsTable
 from ..sql_run_storage import SqlRunStorage

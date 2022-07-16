@@ -8,6 +8,7 @@ import pytest
 
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.monitoring.monitoring_daemon import monitor_started_run, monitor_starting_run
+from dagster._serdes import ConfigurableClass
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.launcher import CheckRunHealthResult, RunLauncher, WorkerStatus
@@ -19,7 +20,6 @@ from dagster.core.test_utils import (
     instance_for_test,
 )
 from dagster.core.workspace.load_target import EmptyWorkspaceTarget
-from dagster._serdes import ConfigurableClass
 
 
 class TestRunLauncher(RunLauncher, ConfigurableClass):

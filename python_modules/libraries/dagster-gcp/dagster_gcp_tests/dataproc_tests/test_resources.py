@@ -6,7 +6,7 @@ from unittest import mock
 import httplib2
 from dagster_gcp import dataproc_op, dataproc_resource
 
-from dagster import job, _seven
+from dagster import _seven, job
 
 PROJECT_ID = os.getenv("GCP_PROJECT_ID", "default_project")
 CLUSTER_NAME = "test-%s" % uuid.uuid4().hex

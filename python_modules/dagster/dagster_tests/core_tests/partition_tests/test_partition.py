@@ -12,13 +12,13 @@ from dagster import (
     StaticPartitionsDefinition,
 )
 from dagster._check import CheckError
+from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE
 from dagster.core.definitions.partition import (
     Partition,
     ScheduleTimeBasedPartitionsDefinition,
     ScheduleType,
 )
-from dagster._seven.compat.pendulum import create_pendulum_time
-from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE
 
 
 def assert_expected_partitions(

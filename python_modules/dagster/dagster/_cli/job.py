@@ -22,12 +22,12 @@ from dagster._cli.workspace.cli_target import (
     python_job_target_argument,
     python_pipeline_or_job_config_argument,
 )
-from dagster.core.execution.api import create_execution_plan
-from dagster.core.instance import DagsterInstance
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster._utils.hosted_user_process import recon_pipeline_from_origin
 from dagster._utils.interrupts import capture_interrupts
+from dagster.core.execution.api import create_execution_plan
+from dagster.core.instance import DagsterInstance
+from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 
 from .utils import get_instance_for_service
 

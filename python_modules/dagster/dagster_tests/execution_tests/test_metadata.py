@@ -18,6 +18,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._legacy import pipeline, solid
+from dagster._utils import frozendict
 from dagster.core.definitions.metadata import (
     DagsterInvalidMetadata,
     MetadataEntry,
@@ -30,7 +31,6 @@ from dagster.core.definitions.metadata.table import (
     TableRecord,
     TableSchema,
 )
-from dagster._utils import frozendict
 
 
 def solid_events_for_type(result, solid_name, event_type):

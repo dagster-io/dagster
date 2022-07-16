@@ -5,8 +5,8 @@ from click.testing import CliRunner
 
 from dagster._cli.job import job_backfill_command
 from dagster._cli.pipeline import execute_backfill_command
-from dagster.core.test_utils import instance_for_test
 from dagster._utils import file_relative_path, merge_dicts
+from dagster.core.test_utils import instance_for_test
 
 from .test_cli_commands import backfill_command_contexts
 

@@ -16,6 +16,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._utils import merge_dicts
 from dagster.core.definitions.composition import MappedInputPlaceholder
 from dagster.core.definitions.dependency import (
     DependencyDefinition,
@@ -42,7 +43,6 @@ from dagster.core.selector.subset_selector import (
     parse_op_selection,
 )
 from dagster.core.utils import str_format_set
-from dagster._utils import merge_dicts
 
 from .asset_layer import AssetLayer, build_asset_selection_job
 from .config import ConfigMapping

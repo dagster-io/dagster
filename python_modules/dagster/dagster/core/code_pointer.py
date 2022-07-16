@@ -7,10 +7,10 @@ from types import ModuleType
 from typing import Callable, List, NamedTuple, Optional, cast
 
 import dagster._check as check
-from dagster.core.errors import DagsterImportError, DagsterInvariantViolationError
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven import get_import_error_message, import_module_from_path
 from dagster._utils import alter_sys_path, frozenlist
+from dagster.core.errors import DagsterImportError, DagsterInvariantViolationError
 
 
 class CodePointer(ABC):

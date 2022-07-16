@@ -1,6 +1,7 @@
 import sqlalchemy as db
 
 import dagster._check as check
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.config import mysql_config
 from dagster.core.storage.event_log import (
     AssetKeyTable,
@@ -16,7 +17,6 @@ from dagster.core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from ..utils import (
     MYSQL_POOL_RECYCLE,

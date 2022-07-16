@@ -6,10 +6,10 @@ from typing import Callable, Mapping, NamedTuple, Optional, Sequence, cast
 from graphql.execution.base import ResolveInfo
 
 import dagster._check as check
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster.core.definitions.events import AssetKey
 from dagster.core.host_representation import GraphSelector, PipelineSelector
 from dagster.core.workspace.context import BaseWorkspaceRequestContext
-from dagster._utils.error import serializable_error_info_from_exc_info
 
 
 def check_permission(permission):

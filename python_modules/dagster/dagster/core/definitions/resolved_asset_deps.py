@@ -1,9 +1,9 @@
 from collections import defaultdict
 from typing import AbstractSet, Dict, Iterable, List, Mapping, Tuple, cast
 
+from dagster._utils.backcompat import experimental_warning
 from dagster.core.definitions.events import AssetKey
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster._utils.backcompat import experimental_warning
 
 from .assets import AssetsDefinition
 from .source_asset import SourceAsset

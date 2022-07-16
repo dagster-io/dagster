@@ -11,6 +11,7 @@ from dagster import _check as check
 from dagster import execute_pipeline, execute_solid, resource
 from dagster._legacy import pipeline, solid
 from dagster._loggers import colored_console_logger, json_console_logger
+from dagster._utils.error import SerializableErrorInfo
 from dagster.core.definitions import NodeHandle
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.logger import InitLoggerContext
@@ -18,7 +19,6 @@ from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.test_utils import instance_for_test
-from dagster._utils.error import SerializableErrorInfo
 
 REGEX_UUID = r"[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}"
 REGEX_TS = r"\d{4}\-\d{2}\-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}"

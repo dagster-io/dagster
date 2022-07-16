@@ -7,10 +7,10 @@ import responses
 from click.testing import CliRunner
 
 from dagster._cli.pipeline import pipeline_execute_command
+from dagster._utils import pushd, script_relative_path
 from dagster.core.telemetry import cleanup_telemetry_logger
 from dagster.core.telemetry_upload import get_dagster_telemetry_url, upload_logs
 from dagster.core.test_utils import environ, instance_for_test
-from dagster._utils import pushd, script_relative_path
 
 
 def path_to_file(path):

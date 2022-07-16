@@ -1,8 +1,8 @@
 import dagster._check as check
-from dagster.core.execution.api import execute_run
-from dagster.core.launcher import LaunchRunContext, RunLauncher
 from dagster._serdes import ConfigurableClass
 from dagster._utils.hosted_user_process import recon_pipeline_from_origin
+from dagster.core.execution.api import execute_run
+from dagster.core.launcher import LaunchRunContext, RunLauncher
 
 
 class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):

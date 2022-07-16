@@ -26,6 +26,7 @@ import click
 import yaml
 
 import dagster._check as check
+from dagster._utils import merge_dicts
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.reconstruct import (
     ReconstructablePipeline,
@@ -34,7 +35,6 @@ from dagster.core.definitions.reconstruct import (
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
-from dagster._utils import merge_dicts
 from dagster.version import __version__ as dagster_module_version
 
 TELEMETRY_STR = ".telemetry"

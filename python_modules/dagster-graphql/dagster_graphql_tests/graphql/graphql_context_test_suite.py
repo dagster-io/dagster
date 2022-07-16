@@ -11,6 +11,9 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 import dagster._check as check
 from dagster import file_relative_path
 from dagster._grpc.server import GrpcServerProcess
+from dagster._utils import merge_dicts
+from dagster._utils.test import FilesystemTestScheduler
+from dagster._utils.test.postgres_instance import TestPostgresInstance
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.run_coordinator import DefaultRunCoordinator
@@ -29,9 +32,6 @@ from dagster.core.workspace.load_target import (
     PythonFileTarget,
     WorkspaceFileTarget,
 )
-from dagster._utils import merge_dicts
-from dagster._utils.test import FilesystemTestScheduler
-from dagster._utils.test.postgres_instance import TestPostgresInstance
 
 
 def get_main_loadable_target_origin():

@@ -1,6 +1,7 @@
 from typing import Dict, Iterator, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
+from dagster._utils import merge_dicts
 from dagster.core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster.core.definitions.metadata import (
     MetadataEntry,
@@ -24,7 +25,6 @@ from dagster.core.definitions.utils import (
 )
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster.core.storage.io_manager import IOManagerDefinition
-from dagster._utils import merge_dicts
 
 
 class SourceAsset(

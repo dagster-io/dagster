@@ -2,11 +2,11 @@ from typing import TYPE_CHECKING, Any, Dict, List, Mapping, NamedTuple, Optional
 
 from dagster import Array, Field, Permissive, StringSource
 from dagster import _check as check
-from dagster._config.validate import process_config
+from dagster._config import process_config
+from dagster._utils import merge_dicts
 from dagster.core.container_context import process_shared_container_context_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster._utils import merge_dicts
 
 if TYPE_CHECKING:
     from . import DockerRunLauncher

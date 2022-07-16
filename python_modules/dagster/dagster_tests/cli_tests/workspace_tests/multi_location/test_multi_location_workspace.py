@@ -5,6 +5,7 @@ import pytest
 import yaml
 
 from dagster import DagsterInstance
+from dagster._utils import file_relative_path
 from dagster.core.host_representation import GrpcServerRepositoryLocation
 from dagster.core.test_utils import instance_for_test
 from dagster.core.workspace import WorkspaceProcessContext
@@ -12,7 +13,6 @@ from dagster.core.workspace.load import (
     load_workspace_process_context_from_yaml_paths,
     location_origins_from_config,
 )
-from dagster._utils import file_relative_path
 
 
 def test_multi_location_workspace_foo():

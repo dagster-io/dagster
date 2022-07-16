@@ -15,10 +15,10 @@ from typing import (
 
 import dagster._check as check
 from dagster._config import UserConfigSchema
+from dagster._seven import funcsigs
 from dagster.core.decorator_utils import format_docstring_for_description
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterTypeKind
-from dagster._seven import funcsigs
 
 from ...decorator_utils import (
     get_function_params,

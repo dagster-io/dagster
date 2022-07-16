@@ -14,6 +14,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._utils.backcompat import experimental_arg_warning
 from dagster.core.definitions.events import AssetKey, DynamicAssetKey
 from dagster.core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
@@ -22,7 +23,6 @@ from dagster.core.types.dagster_type import (
     is_dynamic_output_annotation,
     resolve_dagster_type,
 )
-from dagster._utils.backcompat import experimental_arg_warning
 
 from .inference import InferredOutputProps
 from .input import NoValueSentinel

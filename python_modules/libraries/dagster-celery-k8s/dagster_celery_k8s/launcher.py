@@ -13,6 +13,9 @@ from dagster_k8s.utils import delete_job
 from dagster import DagsterInvariantViolationError, MetadataEntry
 from dagster import _check as check
 from dagster._config import process_config, resolve_to_config_type
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._utils import frozentags, merge_dicts
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import RetryMode
 from dagster.core.launcher import LaunchRunContext, RunLauncher
@@ -20,9 +23,6 @@ from dagster.core.launcher.base import CheckRunHealthResult, WorkerStatus
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import frozentags, merge_dicts
-from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
 

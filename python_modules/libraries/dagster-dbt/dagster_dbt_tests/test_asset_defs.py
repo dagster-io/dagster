@@ -20,8 +20,8 @@ from dagster import (
     io_manager,
     repository,
 )
-from dagster.core.definitions import build_assets_job
 from dagster._utils import file_relative_path
+from dagster.core.definitions import build_assets_job
 
 
 @pytest.mark.parametrize(

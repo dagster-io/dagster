@@ -12,8 +12,8 @@ from dagster import (
     io_manager,
     op,
 )
-from dagster.core.definitions.executor_definition import in_process_executor
 from dagster._utils import segfault
+from dagster.core.definitions.executor_definition import in_process_executor
 
 
 class ExampleException(Exception):

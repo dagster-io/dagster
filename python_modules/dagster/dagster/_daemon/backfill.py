@@ -3,6 +3,7 @@ import sys
 import time
 
 import dagster._check as check
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster.core.errors import DagsterBackfillFailedError
 from dagster.core.execution.backfill import (
     BulkActionStatus,
@@ -13,7 +14,6 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, RunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG
 from dagster.core.workspace import IWorkspace
-from dagster._utils.error import serializable_error_info_from_exc_info
 
 # out of abundance of caution, sleep at checkpoints in case we are pinning CPU by submitting lots
 # of jobs all at once

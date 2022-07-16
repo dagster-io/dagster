@@ -3,6 +3,7 @@ from typing import Optional
 import sqlalchemy as db
 
 import dagster._check as check
+from dagster._serdes import ConfigurableClass, ConfigurableClassData, deserialize_as
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.config import pg_config
 from dagster.core.storage.event_log import (
@@ -19,7 +20,6 @@ from dagster.core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
-from dagster._serdes import ConfigurableClass, ConfigurableClassData, deserialize_as
 
 from ..utils import (
     create_pg_connection,

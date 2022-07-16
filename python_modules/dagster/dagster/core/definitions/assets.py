@@ -14,14 +14,14 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._utils import merge_dicts
+from dagster._utils.backcompat import deprecation_warning
 from dagster.core.decorator_utils import get_function_params
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.metadata import MetadataUserInput
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
 from dagster.core.errors import DagsterInvalidInvocationError
-from dagster._utils import merge_dicts
-from dagster._utils.backcompat import ExperimentalWarning, deprecation_warning
 
 from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKeyPrefix

@@ -2,8 +2,8 @@ import re
 from typing import NamedTuple, Optional, Union, cast
 
 import dagster._check as check
-from dagster.core.definitions.dependency import NodeHandle
 from dagster._serdes import whitelist_for_serdes
+from dagster.core.definitions.dependency import NodeHandle
 
 
 @whitelist_for_serdes

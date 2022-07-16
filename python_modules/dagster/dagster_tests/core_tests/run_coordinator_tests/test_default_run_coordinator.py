@@ -2,11 +2,11 @@ import pytest
 from dagster_tests.api_tests.utils import get_bar_workspace
 
 from dagster._check import CheckError
+from dagster._utils import merge_dicts
 from dagster.core.run_coordinator import SubmitRunContext
 from dagster.core.run_coordinator.default_run_coordinator import DefaultRunCoordinator
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import create_run_for_test, instance_for_test
-from dagster._utils import merge_dicts
 
 
 @pytest.fixture()

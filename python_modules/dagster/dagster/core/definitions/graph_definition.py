@@ -21,6 +21,7 @@ from toposort import CircularDependencyError, toposort_flatten
 
 import dagster._check as check
 from dagster._config import ConfigType, Field, Shape, validate_config
+from dagster._utils import merge_dicts
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster.core.definitions.policy import RetryPolicy
@@ -34,7 +35,6 @@ from dagster.core.types.dagster_type import (
     DagsterTypeKind,
     construct_dagster_type_dictionary,
 )
-from dagster._utils import merge_dicts
 
 from .dependency import (
     DependencyStructure,

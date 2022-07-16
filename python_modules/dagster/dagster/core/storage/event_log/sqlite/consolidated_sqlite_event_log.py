@@ -9,6 +9,8 @@ from watchdog.observers import Observer
 
 import dagster._check as check
 from dagster._config import StringSource
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._utils import mkdir_p
 from dagster.core.storage.event_log.base import EventLogCursor
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.sql import (
@@ -19,8 +21,6 @@ from dagster.core.storage.sql import (
     stamp_alembic_rev,
 )
 from dagster.core.storage.sqlite import create_db_conn_string
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import mkdir_p
 
 from ..schema import SqlEventLogStorageMetadata
 from ..sql_event_log import SqlEventLogStorage

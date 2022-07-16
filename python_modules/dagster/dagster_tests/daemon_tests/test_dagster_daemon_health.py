@@ -11,9 +11,9 @@ from dagster._daemon.controller import (
     daemon_controller_from_instance,
     get_daemon_statuses,
 )
+from dagster._utils.error import SerializableErrorInfo
 from dagster.core.test_utils import instance_for_test
 from dagster.core.workspace.load_target import EmptyWorkspaceTarget
-from dagster._utils.error import SerializableErrorInfo
 
 
 def test_healthy():
