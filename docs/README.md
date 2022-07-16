@@ -38,17 +38,19 @@ Open http://localhost:3001/concepts/ops-jobs-graphs/ops in your browser, and the
 
 ### Editing API Docs
 
-The API documentation is authored separately in the `dagster/docs/sphinx` folder using [Sphinx](https://www.sphinx-doc.org/en/master/), a Python document generator. We use Sphinx because it has built-in functionality to document Python methods and classes by parsing the docstrings.
+The API documentation is authored separately in the `dagster/docs/sphinx` folder using [Sphinx](https://www.sphinx-doc.org/en/master/), a Python document generator. We use Sphinx because it has built-in functionality (the [autodoc extension](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html)) to document Python methods and classes by parsing the docstrings.
 
 If you update the API documentation in the `dagster/docs/sphinx` folder, you need to rebuild the output from Sphinx in order to see your changes reflected in the documentation site.
 
 To rebuild the docs site, run in the docs dir:
 
 ```
-tox -vv -e py38-sphinx
+tox -vv -e py39-sphinx
 ```
 
-Sphinx requires all the modules for which it is building API docs to be installed, but doesn't require their dependencies to be installed, as long as the Dagster modules can be imported. We create the docs environment for Sphinx by first installing from `docs-dagster-requirements.txt` with no dependencies, then installing any required dependencies from `docs-build-requirements.txt`. Most dependencies imported by dagster can go in the list of mocked imports in `autodoc_mock_imports` in `docs/sphinx/conf.py`, since they're not actually needed to build the docs, but the relatively small number of dependencies that are actually needed to import the dagster packages and build the docs can be found in `docs-build-requirements.txt`.
+The Python environment in which Sphinx runs requires all targeted modules to be available on `sys.path`. This is because sphinx actually imports the modules during build. However, it provides an API (`autodoc_mock_imports`) to mock imports to arbitrary non-target packages. So long as a third-party dependency is listed in `autodoc_mock_imports`, it does not need to be installed in our sphinx environment.
+
+We create the docs environment for Sphinx by first installing from `docs-dagster-requirements.txt` with no dependencies, then installing any required dependencies from `docs-build-requirements.txt`. Most dependencies imported by dagster can go in the list of mocked imports in `autodoc_mock_imports` in `docs/sphinx/conf.py`, since they're not actually needed to build the docs, but the relatively small number of dependencies that are actually needed to import the dagster packages and build the docs can be found in `docs-build-requirements.txt`.
 
 If you don't build the API documentation and include the changes in your diff, you will see a build error reminding you to do so.
 
