@@ -736,4 +736,8 @@ __all__ = [
     "MEMOIZED_RUN_TAG",
     "MemoizableIOManager",
     "SourceHashVersionStrategy",
+    "colored_console_logger",
+    "default_loggers",
+    "default_system_loggers",
+    "json_console_logger",
 ]
