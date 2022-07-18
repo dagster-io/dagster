@@ -1,3 +1,4 @@
+import warnings
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -20,7 +21,7 @@ from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
 from dagster.core.errors import DagsterInvalidInvocationError
 from dagster.utils import merge_dicts
-from dagster.utils.backcompat import deprecation_warning
+from dagster.utils.backcompat import ExperimentalWarning, deprecation_warning
 
 from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKeyPrefix
@@ -489,12 +490,15 @@ class AssetsDefinition(ResourceAddable):
         return self._metadata_by_key
 
     def get_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
-        return self._partition_mappings.get(
-            in_asset_key,
-            self._partitions_def.get_default_partition_mapping()
-            if self._partitions_def
-            else AllPartitionMapping(),
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+
+            return self._partition_mappings.get(
+                in_asset_key,
+                self._partitions_def.get_default_partition_mapping()
+                if self._partitions_def
+                else AllPartitionMapping(),
+            )
 
     def with_prefix_or_group(
         self,
