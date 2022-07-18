@@ -140,8 +140,8 @@ dagit -f complex_job.py
 <Image
 alt="complex_pipeline_figure_one.png"
 src="/images/tutorial/complex_pipeline_figure_one.png"
-width={1680}
-height={946}
+width={1331}
+height={874}
 />
 
 When you execute this example from Dagit, you'll see that `download_cereals` executes first, followed by `find_highest_calorie_cereal` and `find_highest_protein_cereal` executing in parallel, since they don't depend on each other's outputs. Finally, `display_results` executes last, only after `find_highest_calorie_cereal` and `find_highest_protein_cereal` have both executed (because `display_results` depends on both of their outputs).
