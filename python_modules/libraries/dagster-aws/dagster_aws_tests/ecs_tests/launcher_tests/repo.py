@@ -1,12 +1,12 @@
 import dagster
 
 
-@dagster.legacy.solid
+@dagster._legacy.solid
 def solid(_):
     pass
 
 
-@dagster.legacy.pipeline
+@dagster._legacy.pipeline
 def pipeline():
     solid()
 
