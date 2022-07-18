@@ -88,9 +88,6 @@ extensions = [
     # Allows direct references to doc sections by title
     "sphinx.ext.autosectionlabel",
 
-    # Conditionally build sections of docs
-    "sphinx.ext.ifconfig",
-
     # Supplements autodoc with the ability to parse numpy and google-style docstrings (dagster
     # uses google style).
     "sphinx.ext.napoleon",
@@ -108,21 +105,22 @@ extensions = [
     "sphinx_toolbox.collapse",
 ]
 
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+# -- Extension configuration -------------------------------------------------
+
+# -- autodoc
+
+# Full list of options here:
+#   https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
 
 # List of all packages that should be mocked when autodoc is running. Autodoc is going to import
 # dagster packages, which in turn import various third-party packages. The vast majority of those
 # packages are not actually needed to build the docs, but autodoc will nonetheless choke if it can't
 # resolve their imports. By mocking them, we let autodoc do its work while keeping the build
 # environment simple. If a build fails due to a failed import, try adding the root package for that
-# import (e.g. `foo` for `foo.bar`) here.
+# import (e.g. `foo` for `foo.bar`) here. See `docs/README.md` for more details.
 autodoc_mock_imports = [
     "airflow",
     "azure",
-    "celery",
     "coloredlogs",
     "croniter",
     "dask",
@@ -132,9 +130,7 @@ autodoc_mock_imports = [
     "docker_image",
     "gevent",
     "great_expectations",
-    "graphql",
     "grpc_health",
-    "gql",
     "jwt",
     "kombu",
     "kubernetes",
@@ -142,7 +138,6 @@ autodoc_mock_imports = [
     "mlflow",
     "mysql",
     "oauth2client",
-    "pep562",
     "prometheus_client",
     "psycopg2",
     "pypd",
@@ -151,8 +146,6 @@ autodoc_mock_imports = [
     "sshtunnel",
     "toposort",
     "twilio",
-    "typing_compat",
-    "yaml",
 ]
 
 # ????
@@ -163,3 +156,6 @@ autodoc_typehints = "none"
 #   example, index:Introduction for a section called Introduction that appears in document index.rst.
 #   Useful for avoiding ambiguity when the same section heading appears in different documents."
 autosectionlabel_prefix_document = True
+
+# Only support Google-style docstrings
+napoleon_numpy_docstring = False

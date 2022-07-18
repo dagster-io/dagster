@@ -4,9 +4,6 @@ import re
 import shutil
 from typing import Any, Dict, List
 
-from dagster._utils import file_relative_path
-
-
 def read_json(filename: str) -> Dict[str, object]:
     with open(filename, encoding="utf8") as f:
         data = json.load(f)
@@ -89,14 +86,19 @@ def pack_directory_json(path_to_folder: str):
     return root_data
 
 
-def copy_searchindex(src_dir: str, dest_dir: str, src_file: str="searchindex.json", dest_file: str="searchindex.json") -> None:
+def copy_searchindex(
+    src_dir: str,
+    dest_dir: str,
+    src_file: str = "searchindex.json",
+    dest_file: str = "searchindex.json",
+) -> None:
     """Copy searchindex.json built by Sphinx to the next directory."""
     write_json(os.path.join(src_dir, src_file), read_json(os.path.join(dest_dir, dest_file)))
 
 
 def main() -> None:
-    json_directory = file_relative_path(__file__, "sphinx/_build/json")
-    content_dir = file_relative_path(__file__, "./content/api")
+    json_directory = os.path.join(os.path.dirname(__file__), "../sphinx/_build/json")
+    content_dir = os.path.join(os.path.dirname(__file__), "../content/api")
 
     directories_to_pack = {
         os.path.join(json_directory, "sections"): "sections.json",
@@ -112,7 +114,7 @@ def main() -> None:
     # objects.inv
     shutil.copyfile(
         os.path.join(json_directory, "objects.inv"),
-        file_relative_path(__file__, "next/public/objects.inv"),
+        os.path.join(os.path.dirname(__file__), "../next/public/objects.inv"),
     )
 
 
