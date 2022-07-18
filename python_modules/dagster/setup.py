@@ -109,14 +109,16 @@ if __name__ == "__main__":
                 "snapshottest==0.6.0",
                 "tox==3.25.0",
                 "yamllint",
-                "astroid",  # let pylint determine the version
-                "pylint==2.13.7",
             ],
             "black": [
                 "black[jupyter]==22.3.0",
             ],
             "isort": [
                 "isort==5.10.1",
+            ],
+            "pylint": [
+                "dagster-pylint",
+                "pylint==2.13.7",
             ],
             "mypy": [
                 "mypy==0.950",

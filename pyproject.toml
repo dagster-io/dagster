@@ -119,7 +119,7 @@ show_error_codes = true
 py-version = 3.6
 
 # Contains assorted Dagster-specific checks (for dev purposes, not users).
-load-plugins=['dagster.utils.linter']
+load-plugins=['dagster_pylint']
 
 [tool.pylint.messages-control]
 disable=[
