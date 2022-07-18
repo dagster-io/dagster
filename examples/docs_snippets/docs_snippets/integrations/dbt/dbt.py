@@ -2,15 +2,15 @@
 
 
 def scope_load_assets_from_dbt_project():
-    # start_marker_load_assets_from_dbt_project
+    # start_load_assets_from_dbt_project
     from dagster_dbt import load_assets_from_dbt_project
 
     dbt_assets = load_assets_from_dbt_project(project_dir="path/to/dbt/project")
-    # end_marker_load_assets_from_dbt_project
+    # end_load_assets_from_dbt_project
 
 
 def scope_load_assets_from_dbt_manifest():
-    # start_marker_load_assets_from_dbt_manifest
+    # start_load_assets_from_dbt_manifest
     import json
 
     from dagster_dbt import load_assets_from_dbt_manifest
@@ -18,7 +18,7 @@ def scope_load_assets_from_dbt_manifest():
     dbt_assets = load_assets_from_dbt_manifest(
         json.load("path/to/dbt/manifest.json", encoding="utf8"),
     )
-    # end_marker_load_assets_from_dbt_manifest
+    # end_load_assets_from_dbt_manifest
 
 
 def scope_dbt_cli_resource_config():
