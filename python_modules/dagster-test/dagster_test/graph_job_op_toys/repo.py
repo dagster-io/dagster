@@ -23,6 +23,7 @@ from dagster_test.graph_job_op_toys.error_monster import (
     error_monster_failing_job,
     error_monster_passing_job,
 )
+from dagster_test.graph_job_op_toys.graph_backed_assets import graph_backed_group
 from dagster_test.graph_job_op_toys.hammer import hammer_default_executor_job
 from dagster_test.graph_job_op_toys.input_managers import df_stats_job
 from dagster_test.graph_job_op_toys.log_asset import log_asset_job
@@ -144,3 +145,8 @@ def downstream_assets_repository1():
 @repository
 def downstream_assets_repository2():
     return [downstream_asset_group2]
+
+
+@repository
+def graph_backed_asset_repository():
+    return [graph_backed_group]

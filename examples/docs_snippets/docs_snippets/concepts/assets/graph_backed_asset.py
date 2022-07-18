@@ -48,7 +48,7 @@ def store_files(files):
 
 @graph
 def store_slack_files_in_sql():
-    store_files(fetch_files_from_slack())
+    return store_files(fetch_files_from_slack())
 
 
 graph_asset = AssetsDefinition.from_graph(store_slack_files_in_sql)
