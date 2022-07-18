@@ -1,4 +1,5 @@
 import re
+from typing import Dict, Mapping, Optional
 
 import dagster._check as check
 from dagster.core.definitions.version_strategy import OpVersionContext, ResourceVersionContext
@@ -21,7 +22,7 @@ def check_valid_version(version: str) -> None:
         )
 
 
-def resolve_config_version(config_value: object):
+def resolve_config_version(config_value: object) -> Optional[str]:
     """Resolve a configuration value into a hashed version.
 
     If a None value is passed in, we return the result of an empty join_and_hash.
@@ -44,7 +45,9 @@ def resolve_config_version(config_value: object):
         )
 
 
-def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
+def resolve_step_versions(
+    pipeline_def, execution_plan, resolved_run_config
+) -> Mapping[str, Optional[str]]:
     """Resolves the version of each step in an execution plan.
 
     Execution plan provides execution steps for analysis. It returns dict[str, str] where each key
@@ -66,14 +69,14 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
                 and the solid's version definition.
 
     Returns:
-        Dict[str, Optional[str]]: A dictionary that maps the key of an execution step to a version.
-            If a step has no computed version, then the step key maps to None.
+        A dictionary that maps the key of an execution step to a version. If a step has no computed
+        version, then the step key maps to None.
     """
 
     resource_versions = {}
     resource_defs = pipeline_def.get_mode_definition(resolved_run_config.mode).resource_defs
 
-    step_versions = {}  # step_key (str) -> version (str)
+    step_versions: Dict[str, Optional[str]] = {}  # step_key (str) -> version (str)
 
     for step in execution_plan.get_all_steps_in_topo_order():
         # do not compute versions for steps that are not executable
@@ -104,8 +107,8 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
         if solid_def.version is not None:
             solid_def_version = solid_def.version
         elif pipeline_def.version_strategy is not None:
-            version_context = OpVersionContext(op_def=solid_def, op_config=solid_config)
-            solid_def_version = pipeline_def.version_strategy.get_op_version(version_context)
+            op_version_context = OpVersionContext(op_def=solid_def, op_config=solid_config)
+            solid_def_version = pipeline_def.version_strategy.get_op_version(op_version_context)
 
         if solid_def_version is None:
             raise DagsterInvariantViolationError(
@@ -130,11 +133,11 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
                 if resource_def.version is not None:
                     resource_def_version = resource_def.version
                 else:
-                    version_context = ResourceVersionContext(
+                    resource_version_context = ResourceVersionContext(
                         resource_def=resource_def, resource_config=resource_config
                     )
                     resource_def_version = pipeline_def.version_strategy.get_resource_version(
-                        version_context
+                        resource_version_context
                     )
 
                 if resource_def_version is not None:
@@ -163,7 +166,9 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
     return step_versions
 
 
-def resolve_step_output_versions(pipeline_def, execution_plan, resolved_run_config):
+def resolve_step_output_versions(
+    pipeline_def, execution_plan, resolved_run_config
+) -> Mapping[StepOutputHandle, Optional[str]]:
     step_versions = resolve_step_versions(pipeline_def, execution_plan, resolved_run_config)
     return {
         StepOutputHandle(step.key, output_name): join_and_hash(output_name, step_versions[step.key])
