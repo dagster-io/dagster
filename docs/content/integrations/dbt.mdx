@@ -33,7 +33,9 @@ These similarities make it natural to interact with dbt models as SDAs. Dagster 
 For smaller dbt projects, where compilation time is not a concern, the simplest way to load your dbt assets into Dagster is the following:
 
 ```python startafter=start_load_assets_from_dbt_project endbefore=end_load_assets_from_dbt_project file=/integrations/dbt/dbt.py dedent=4
-No match for startAfter value "start_load_assets_from_dbt_project"
+from dagster_dbt import load_assets_from_dbt_project
+
+dbt_assets = load_assets_from_dbt_project(project_dir="path/to/dbt/project")
 ```
 
 The `load_assets_from_dbt_project` function:
@@ -45,7 +47,13 @@ The `load_assets_from_dbt_project` function:
 For larger projects, the overhead involved with recompiling the entire project may be a concern. In these cases, you can load dbt models from an existing dbt `manifest.json` file:
 
 ```python startafter=start_load_assets_from_dbt_manifest endbefore=end_load_assets_from_dbt_manifest file=/integrations/dbt/dbt.py dedent=4
-No match for startAfter value "start_load_assets_from_dbt_manifest"
+import json
+
+from dagster_dbt import load_assets_from_dbt_manifest
+
+dbt_assets = load_assets_from_dbt_manifest(
+    json.load("path/to/dbt/manifest.json", encoding="utf8"),
+)
 ```
 
 **Note:** if you make any changes to your dbt project that change the structure of the project (such as changing the dependencies of a model or adding a new one), you'll need to regenerate your manifest file for those changes to be reflected in Dagster.
