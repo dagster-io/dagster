@@ -1,16 +1,9 @@
-from typing import Any, List, Mapping, Optional, Sequence, Union, cast
+from typing import Any, Mapping, Optional, Sequence
 
 import dagster._check as check
-from dagster._core.definitions import JobDefinition, NodeDefinition, NodeHandle
-from dagster._core.definitions.events import AssetMaterialization, AssetObservation, Materialization
-from dagster._core.definitions.utils import DEFAULT_OUTPUT
-from dagster._core.errors import DagsterError, DagsterInvariantViolationError
-from dagster._core.events import (
-    AssetObservationData,
-    DagsterEvent,
-    DagsterEventType,
-    StepMaterializationData,
-)
+from dagster._core.definitions import JobDefinition, NodeHandle
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.events import DagsterEvent
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.storage.pipeline_run import DagsterRun
 
@@ -59,14 +52,9 @@ class ExecuteInProcessResult(ExecutionResult):
     def run_id(self) -> str:
         return self.dagster_run.run_id
 
-    @property
-    def run_id(self) -> str:
-        """str: The run id for the executed run"""
-        return self._dagster_run.run_id
-
-    def _get_output_for_handle(self, node_handle: NodeHandle, output_name: str) -> Any:
+    def _get_output_for_handle(self, handle: NodeHandle, output_name: str) -> Any:
         mapped_outputs = {}
-        step_key = str(node_handle)
+        step_key = str(handle)
         output_found = False
         for step_output_handle, value in self._output_capture.items():
 
@@ -94,6 +82,6 @@ class ExecuteInProcessResult(ExecutionResult):
 
         if not output_found:
             raise DagsterInvariantViolationError(
-                f"No outputs found for output '{output_name}' from node '{node_handle}'."
+                f"No outputs found for output '{output_name}' from node '{handle}'."
             )
         return mapped_outputs

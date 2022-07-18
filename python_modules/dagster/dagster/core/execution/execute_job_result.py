@@ -1,19 +1,9 @@
-from abc import ABC, abstractmethod
-from typing import Any, List, Mapping, Optional, Sequence, Union, cast
+from typing import Any, Sequence
 
 import dagster._check as check
-from dagster.core.definitions import JobDefinition, NodeDefinition, NodeHandle
-from dagster.core.definitions.events import AssetMaterialization, AssetObservation, Materialization
-from dagster.core.definitions.utils import DEFAULT_OUTPUT
-from dagster.core.errors import DagsterError, DagsterInvariantViolationError
-from dagster.core.events import (
-    AssetObservationData,
-    DagsterEvent,
-    DagsterEventType,
-    StepMaterializationData,
-)
-from dagster.core.execution.context.system import PlanExecutionContext
-from dagster.core.execution.plan.outputs import StepOutputHandle
+from dagster.core.definitions import JobDefinition, NodeHandle
+from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.events import DagsterEvent
 from dagster.core.execution.plan.step import StepKind
 from dagster.core.execution.plan.utils import build_resources_for_manager
 from dagster.core.storage.pipeline_run import DagsterRun

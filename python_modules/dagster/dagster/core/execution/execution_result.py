@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, List, Mapping, Optional, Sequence, Union, cast
+from typing import Any, Callable, List, Sequence, Union, cast
 
 import dagster._check as check
-from dagster.core.definitions import JobDefinition, NodeDefinition, NodeHandle
+from dagster.core.definitions import JobDefinition, NodeHandle
 from dagster.core.definitions.events import AssetMaterialization, AssetObservation, Materialization
 from dagster.core.definitions.utils import DEFAULT_OUTPUT
 from dagster.core.errors import DagsterError, DagsterInvariantViolationError
@@ -12,7 +12,6 @@ from dagster.core.events import (
     DagsterEventType,
     StepMaterializationData,
 )
-from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.storage.pipeline_run import DagsterRun
 
 
@@ -63,7 +62,7 @@ class ExecutionResult(ABC):
         return step_events
 
     @abstractmethod
-    def _get_output_for_handle(self, node_handle: NodeHandle, output_name: str) -> Any:
+    def _get_output_for_handle(self, handle: NodeHandle, output_name: str) -> Any:
         raise NotImplementedError()
 
     def _filter_events_by_handle(self, handle: NodeHandle) -> Sequence[DagsterEvent]:

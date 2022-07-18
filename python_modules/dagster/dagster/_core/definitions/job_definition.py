@@ -276,7 +276,6 @@ class JobDefinition(PipelineDefinition):
             tags = partition_set.tags_for_partition(partition)
 
         return core_execute_in_process(
-            node=self._graph_def,
             ephemeral_pipeline=ephemeral_job,
             run_config=run_config,
             instance=instance,
