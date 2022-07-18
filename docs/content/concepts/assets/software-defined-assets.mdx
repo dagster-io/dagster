@@ -204,7 +204,7 @@ In this example, Dagster doesn’t need to load data from `upstream_asset` to su
 
 Graph-backed assets are useful if you have an existing graph that produces and consumes assets. Wrapping your graph inside a software-defined asset gives you all the benefits of software-defined assets — like cross-job lineage — without requiring you to change the code inside your graph.
 
-To define a graph-backed asset, use the `from_graph` attribute on the `AssetsDefinition` object:
+To define a graph-backed asset, use the `from_graph` attribute on the <PyObject object="AssetsDefinition" /> object. The value returned from the graph that becomes the graph-backed asset will be stored in persistent storage as the asset:
 
 ```python file=/concepts/assets/graph_backed_asset.py startafter=start example endbefore=end example
 @op(required_resource_keys={"slack"})
@@ -230,13 +230,13 @@ def store_files(files):
 
 @graph
 def store_slack_files_in_sql():
-    store_files(fetch_files_from_slack())
+    return store_files(fetch_files_from_slack())
 
 
 graph_asset = AssetsDefinition.from_graph(store_slack_files_in_sql)
 ```
 
-**Note**: All output assets must be selected when using a graph-backed asset to create a job. Dagster will select all graph output automatically upon creating a job.
+**Note**: All output assets must be selected when using a graph-backed asset to create a job. Dagster will select all graph outputs automatically upon creating a job.
 
 #### Defining basic dependencies for graph-backed assets
 
