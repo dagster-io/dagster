@@ -149,6 +149,7 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
     def downstream_asset(context, upstream_asset):
         assert context.asset_partition_key_for_output() == "2"
         assert upstream_asset is None
+        assert context.asset_partitions_def_for_input("upstream_asset") == upstream_partitions_def
 
     my_job = build_assets_job(
         "my_job",
