@@ -17,18 +17,12 @@
         "path": "/getting-started/telemetry"
       },
       {
+        "title": "Installation",
+        "path": "/getting-started/installation"
+      },
+      {
         "title": "Creating a project",
-        "path": "/getting-started/create-new-project",
-        "children": [
-          {
-            "title": "Using Open Source",
-            "path": "/getting-started/using-dagster-open-source"
-          },
-          {
-            "title": "Using Cloud",
-            "path": "/getting-started/using-dagster-cloud"
-          }
-        ]
+        "path": "/getting-started/create-new-project"
       }
     ]
   },
@@ -60,130 +54,6 @@
           {
             "title": "Testing and logging",
             "path": "/building#testing-and-logging"
-          }
-        ]
-      },
-      {
-        "title": "Ops",
-        "children": [
-          {
-            "title": "Ops",
-            "path": "/concepts/ops-jobs-graphs/ops"
-          },
-          {
-            "title": "Op Events",
-            "path": "/concepts/ops-jobs-graphs/op-events"
-          },
-          {
-            "title": "Op Hooks",
-            "path": "/concepts/ops-jobs-graphs/op-hooks"
-          },
-          {
-            "title": "Op Retries",
-            "path": "/concepts/ops-jobs-graphs/op-retries"
-          }
-        ]
-      },
-      {
-        "title": "Graphs",
-        "children": [
-          {
-            "title": "Graphs",
-            "path": "/concepts/ops-jobs-graphs/graphs"
-          },
-          {
-            "title": "Nesting Graphs",
-            "path": "/concepts/ops-jobs-graphs/nesting-graphs"
-          },
-          {
-            "title": "Dynamic Graphs",
-            "path": "/concepts/ops-jobs-graphs/dynamic-graphs"
-          }
-        ]
-      },
-      {
-        "title": "Jobs",
-        "children": [
-          {
-            "title": "Jobs",
-            "path": "/concepts/ops-jobs-graphs/jobs"
-          },
-          {
-            "title": "Job Execution",
-            "path": "/concepts/ops-jobs-graphs/job-execution"
-          },
-          {
-            "title": "Metadata & Tags",
-            "path": "/concepts/ops-jobs-graphs/metadata-tags"
-          }
-        ]
-      },
-      {
-        "title": "Schedules, Sensors, & Partitions",
-        "children": [
-          {
-            "title": "Schedules",
-            "path": "/concepts/partitions-schedules-sensors/schedules"
-          },
-          {
-            "title": "Sensors",
-            "path": "/concepts/partitions-schedules-sensors/sensors"
-          },
-          {
-            "title": "Partitions",
-            "path": "/concepts/partitions-schedules-sensors/partitions"
-          },
-          {
-            "title": "Backfills",
-            "path": "/concepts/partitions-schedules-sensors/backfills"
-          }
-        ]
-      },
-      {
-        "title": "IO Management",
-        "children": [
-          {
-            "title": "IO Managers",
-            "path": "/concepts/io-management/io-managers"
-          },
-          {
-            "title": "Unconnected Inputs",
-            "path": "/concepts/io-management/unconnected-inputs"
-          }
-        ]
-      },
-      {
-        "title": "Configuration",
-        "children": [
-          {
-            "title": "Run Configuration",
-            "path": "/concepts/configuration/config-schema"
-          },
-          {
-            "title": "Configured API",
-            "path": "/concepts/configuration/configured"
-          }
-        ]
-      },
-      {
-        "title": "Repositories & Workspaces",
-        "children": [
-          {
-            "title": "Repositories",
-            "path": "/concepts/repositories-workspaces/repositories"
-          },
-          {
-            "title": "Workspaces",
-            "path": "/concepts/repositories-workspaces/workspaces"
-          }
-        ]
-      },
-      {
-        "title": "Resources",
-        "children": [
-          {
-            "title": "Resources",
-            "path": "/concepts/resources"
           }
         ]
       },
