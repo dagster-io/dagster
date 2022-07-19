@@ -116,6 +116,7 @@ from .partition import (
     dynamic_partitioned_config,
     static_partitioned_config,
 )
+from .partition_key_range import PartitionKeyRange
 from .partition_mapping import (
     AllPartitionMapping,
     IdentityPartitionMapping,
