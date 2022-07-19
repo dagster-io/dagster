@@ -714,7 +714,7 @@ const deletePropertyPath = (obj: any, path: string) => {
   }
 };
 
-const sanitizeConfigYamlString = (yamlString: string) => (yamlString || '').trim() || '{}';
+export const sanitizeConfigYamlString = (yamlString: string) => (yamlString || '').trim() || '{}';
 
 const PREVIEW_CONFIG_QUERY = gql`
   query PreviewConfigQuery(

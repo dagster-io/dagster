@@ -10,6 +10,7 @@ import {usePermissions} from '../app/Permissions';
 import {isSourceAsset} from '../asset-graph/Utils';
 import {useLaunchWithTelemetry} from '../launchpad/LaunchRootExecutionButton';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
+import {sanitizeConfigYamlString} from '../launchpad/LaunchpadSession';
 import {DagsterTag} from '../runs/RunTag';
 import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
@@ -21,13 +22,13 @@ import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDi
 import {AssetKey} from './types';
 import {LaunchAssetExecutionAssetNodeFragment} from './types/LaunchAssetExecutionAssetNodeFragment';
 import {
+  LaunchAssetLoaderConfigResourceQuery,
+  LaunchAssetLoaderConfigResourceQueryVariables,
+} from './types/LaunchAssetLoaderConfigResourceQuery';
+import {
   LaunchAssetLoaderQuery,
   LaunchAssetLoaderQueryVariables,
 } from './types/LaunchAssetLoaderQuery';
-import {
-  LaunchAssetLoaderResourceQuery,
-  LaunchAssetLoaderResourceQueryVariables,
-} from './types/LaunchAssetLoaderResourceQuery';
 
 type LaunchAssetsState =
   | {type: 'none'}
@@ -203,10 +204,10 @@ async function stateForLaunchingAssets(
   }
 
   const resourceResult = await client.query<
-    LaunchAssetLoaderResourceQuery,
-    LaunchAssetLoaderResourceQueryVariables
+    LaunchAssetLoaderConfigResourceQuery,
+    LaunchAssetLoaderConfigResourceQueryVariables
   >({
-    query: LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
+    query: LAUNCH_ASSET_LOADER_CONFIG_RESOURCE_QUERY,
     variables: {
       pipelineSelector: {
         pipelineName: jobName,
@@ -228,6 +229,7 @@ async function stateForLaunchingAssets(
   );
   const anyResourcesHaveConfig = resources.some((r) => r.configField);
   const anyResourcesHaveRequiredConfig = resources.some((r) => r.configField?.isRequired);
+  const defaultJobConfig = pipeline.presets[0] ? pipeline.presets[0].runConfigYaml : '';
 
   const anyAssetsHaveConfig = assets.some((a) => configSchemaForAssetNode(a));
   if ((anyAssetsHaveConfig || anyResourcesHaveRequiredConfig) && partitionDefinition) {
@@ -270,7 +272,7 @@ async function stateForLaunchingAssets(
   }
   return {
     type: 'single-run',
-    executionParams: executionParamsForAssetJob(repoAddress, jobName, assets, []),
+    executionParams: executionParamsForAssetJob(repoAddress, jobName, assets, [], defaultJobConfig),
   };
 }
 
@@ -279,6 +281,7 @@ export function executionParamsForAssetJob(
   jobName: string,
   assets: {assetKey: AssetKey; opNames: string[]}[],
   tags: {key: string; value: string}[],
+  defaultJobConfig = '',
 ): LaunchPipelineExecutionVariables['executionParams'] {
   return {
     mode: 'default',
@@ -291,7 +294,7 @@ export function executionParamsForAssetJob(
         },
       ],
     },
-    runConfigData: {},
+    runConfigData: sanitizeConfigYamlString(defaultJobConfig),
     selector: {
       repositoryLocationName: repoAddress.location,
       repositoryName: repoAddress.name,
@@ -342,8 +345,8 @@ const LAUNCH_ASSET_LOADER_QUERY = gql`
   ${LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT}
 `;
 
-const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
-  query LaunchAssetLoaderResourceQuery($pipelineSelector: PipelineSelector!) {
+const LAUNCH_ASSET_LOADER_CONFIG_RESOURCE_QUERY = gql`
+  query LaunchAssetLoaderConfigResourceQuery($pipelineSelector: PipelineSelector!) {
     pipelineOrError(params: $pipelineSelector) {
       ... on Pipeline {
         id
@@ -363,6 +366,10 @@ const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
               }
             }
           }
+        }
+        presets {
+          __typename
+          runConfigYaml
         }
       }
     }
