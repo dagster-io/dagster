@@ -192,15 +192,22 @@ export const AssetGraphExplorerWithData: React.FC<
       let nextOpsNameSelection = token;
 
       if (e.shiftKey || e.metaKey) {
-        const existing = explorerPath.opNames[0].split(',');
-        const added =
-          e.shiftKey && lastSelectedNode && node
-            ? opsInRange({graph: assetGraphData, from: lastSelectedNode, to: node})
-            : [token];
+        let tokensToAdd = [token];
+        if (e.shiftKey && lastSelectedNode && node) {
+          const tokensInRange = opsInRange({
+            graph: assetGraphData,
+            from: lastSelectedNode,
+            to: node,
+          });
+          if (tokensInRange.length) {
+            tokensToAdd = tokensInRange;
+          }
+        }
 
+        const existing = explorerPath.opNames[0].split(',');
         nextOpsNameSelection = (existing.includes(token)
           ? without(existing, token)
-          : uniq([...existing, ...added])
+          : uniq([...existing, ...tokensToAdd])
         ).join(',');
       }
 
