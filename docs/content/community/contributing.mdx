@@ -7,6 +7,8 @@ description: Contributions are welcome and are greatly appreciated. Here's the c
 
 We love to see our community members get involved! If you are planning to contribute to Dagster, you will first need to set up a local development environment.
 
+---
+
 ## Environment Setup
 
 ### Apple M1-specific setup
@@ -105,14 +107,44 @@ After sourcing this file, you can ensure that the correct version of `homebrew` 
    python -m pytest python_modules/dagster/dagster_tests
    ```
 
+---
+
 ## Developing Dagster
 
 Some notes on developing in Dagster:
 
 - **Black/Pylint**: We use [black](https://github.com/python/black) to enforce a consistent code style, along with [pylint](https://www.pylint.org/). We test these in our CI/CD pipeline.
-- **Line Width**: We use a line width of 100.
+- **Line width**: We use a line width of 100.
 - **IDE**: We recommend setting up your IDE to format with black on save and check pylint, but you can always run `make black` and `make pylint` in the root Dagster directory before submitting a pull request. If you're also using VS Code, you can see what we're using for our `settings.json` [here](https://gist.github.com/natekupp/7a17a9df8d2064e5389cc84aa118a896).
 - **Docker**: Some tests require [Docker Desktop](https://www.docker.com/products/docker-desktop) to be able to run them locally.
+
+---
+
+## Adding or changing public APIs
+
+We don’t want to thrash users, so we want to be careful about changing and adding public APIs.
+
+### What counts as a public API?
+
+- Anything that’s importable via `from dagster import`
+- Anything that’s importable via `from dagster-<subpackage> import`
+- The Dagster command-line interface.
+
+### What to do before changing, deprecating, or adding a public API
+
+- Make an issue in Github describing the change. Some things that are helpful to include:
+  - Usage examples, compared with previous state.
+  - A rationale for the change.
+  - A rollout timeline, including deprecation, if applicable.
+- Post a link to the issue in the #proposed-api-changes channel.
+- If adding an API, consider marking it “experimental”, which means it can change in point releases without warning.
+
+### What to do after changing a public API
+
+- Update CHANGES.md
+  - Make sure to include the rationale for the change.
+
+---
 
 ## Developing Dagit
 
@@ -138,7 +170,9 @@ During development, you might find these commands useful. Run them from `dagster
 
 To run all of them together, run `yarn test`.
 
-## Developing Docs
+---
+
+## Developing docs
 
 To run the Dagster documentation website locally, run the following commands:
 
@@ -157,7 +191,9 @@ If you change any `.rst` files, be sure to run the following command in the `doc
 make build
 ```
 
-## Picking a Github Issue
+---
+
+## Picking a Github issue
 
 We encourage you to start with an issue labeled with the tag [`good first issue`](https://github.com/dagster-io/dagster/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) on the [Github issue board](https://github.com/dagster-io/dagster/issues), to get familiar with our codebase as a first-time contributor.
 
@@ -165,7 +201,9 @@ Then, you can work on the issue labeled as [`good second issue`](https://github.
 
 When you are ready for more of a challenge, you can tackle issues with the [most 👍 reactions](https://github.com/dagster-io/dagster/issues?q=is%3Aissue+is%3Aopen+sort%3Areactions-%2B1-desc). We factor engagement into prioritization of the issues. You can also explore other labels and pick any issue based on your interest.
 
-## Submit Your Code
+---
+
+## Submitting your code
 
 To submit your code, [fork the Dagster repository](https://help.github.com/en/articles/fork-a-repo), create a [new branch](https://help.github.com/en/desktop/contributing-to-projects/creating-a-branch-for-your-work) on your fork, and open [a Pull Request (PR)](https://help.github.com/en/articles/creating-a-pull-request-from-a-fork) once your work is ready for review.
 

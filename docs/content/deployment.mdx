@@ -4,41 +4,173 @@ title: Deployment | Dagster
 
 # Deployment
 
-## How to use the Deployment section
+## Dagster Open Source
 
-The Deployment section includes explanations of Dagster's architecture and guides on how to deploy Dagster. Start on the [Overview](/deployment/overview) page to get an introduction to Dagster's architecture.
+### Understanding Open Source deployments
 
-### Understanding Dagster Deployments
+<div class="category-container">
+	<div class="category-inner-container">
+		<ul class="article-list">
+			<li>
+				<a href="/guides/deployment/aws">Overview</a>
+			</li>
+			<li>
+				<a href="/guides/deployment/celery">Setting up your Dagster instance</a>
+			</li>
+			<li>
+				<a href="/guides/deployment/dagster-daemon">Using and configuring Dagster Daemon</a>
+			</li>
+			<li>
+				<a href="/guides/deployment/dask">Customizing run launchers</a>
+			</li>
+			<li>
+				<a href="/guides/deployment/docker">Customozing executors</a>
+			</li>
+			<li>
+				<a href="/guides/deployment/gcp">Google Cloud Platform (GCP)</a>
+			</li>
+			<li>
+				<a href="/guides/deployment/kubernetes">Configuring and debugging run coordinators</a>
+			</li>
+		</ul>
+	</div>
+</div>
 
-| Name                                                                       | Description                                                                                                    |
-| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| [Overview](/deployment/overview)                                           | General information about deploying Dagster.                                                                   |
-| [Dagster Instance](/deployment/dagster-instance)                           | This page explains how to set up your Dagster Instance.                                                        |
-| [Dagster Daemon](/deployment/dagster-daemon)                               | This page explains when to use Dagster Daemon and how to configure it.                                         |
-| [Run Launchers](/deployment/run-launcher)                                  | This page lists the available run launchers and how to customize one on your own.                              |
-| [Executors](/deployment/executors)                                         | This page lists the available executors and how to customize one on your own.                                  |
-| [Run Coordinators - Limiting Run Concurrency](/deployment/run-coordinator) | This page includes how to configure and debug the Run Coordinator, including options to limit run concurrency. |
+### Deploying and executing Open Source
 
-### Hands-on Guides to Deploying Dagster on Kubernetes
+<div class="category-container">
+	<div class="category-inner-container">
+		<ul class="article-list">
+			<li>
+				<a href="/guides/deployment/aws">Amazon Web Services (AWS)</a>
+			</li>
+			<li>
+				<a href="/guides/deployment/celery">Celery</a>
+			</li>
+			<li>
+				<a href="/guides/deployment/dagster-daemon">Dagster Daemon</a>
+			</li>
+			<li>
+				<a href="/guides/deployment/dask">Dask</a>
+			</li>
+			<li>
+				<a href="/guides/deployment/docker">Docker</a>
+			</li>
+			<li>
+				<a href="/guides/deployment/gcp">Google Cloud Platform (GCP)</a>
+			</li>
+			<li>
+				<a href="/guides/deployment/kubernetes">Kubernetes</a>
+			</li>
+		</ul>
+	</div>
+</div>
 
-This section provides a series of hands-on guides to walk you through Dagster deployment, using Helm.
+---
 
-| Name                                                                                                | Description                                                                                     |
-| --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| [Deploying Dagster with Helm](/deployment/guides/kubernetes/deploying-with-helm)                    | This guide explains how to install and deploy Dagster using Helm.                               |
-| [Deploying Dagster with Helm, Advanced](/deployment/guides/kubernetes/deploying-with-helm-advanced) | This guide explains how to install and deploy Dagster with Celery using Helm.                   |
-| [Customizing your Kubernetes Deployment](/deployment/guides/kubernetes/customizing-your-deployment) | This guide explains common ways to customize your Helm release.                                 |
-| [How to Migrate Your Instance](/deployment/guides/kubernetes/how-to-migrate-your-instance)          | This guide explains how to migrate your Dagster Instance while you upgrade the Dagster version. |
+## Dagster Cloud
 
-### Hands-on Guides to Deploying Dagster
+### Developing and testing
 
-This section provides a series of hands-on guides to walk you through Dagster deployment and execution. The deploying guides focus on the basics of setting up Dagster, including running the Dagit web server. The executing guides focus on submitting to different compute substrates for more advanced job execution. These can be mixed and matched- for example you could have the Dagit server deployed on AWS EC2, and execute your jobs on a Dask cluster.
+<div class="category-container">
+  <div class="category-inner-container">
+    <ul class="article-list">
+      <li>
+        <a href="/guides/cloud/authentication">Dagster Cloud architecture</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Adding code to Dagster Cloud</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Setting up CI/CD</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Developing and testing Dagster jobs</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Using code previews with Dagster jobs</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Using the Dagster Cloud CLI</a>
+      </li>
+    </ul>
+  </div>
+</div>
 
-| Name                                                       | Description                                                                              |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| [Running Dagster as a Service](/deployment/guides/service) | This guide explains how to run Dagster as a service, including running Dagit and Daemon. |
-| [Deploying Dagster to Docker](/deployment/guides/docker)   | This guide explains how to install and deploy Dagster on a single node using Docker.     |
-| [Deploying Dagster to AWS](/deployment/guides/aws)         | This guide explains how to install and deploy Dagster to AWS EC2 or ECS.                 |
-| [Deploying Dagster to GCP](/deployment/guides/gcp)         | This guide explains how to install and deploy Dagster to GCP GCE.                        |
-| [Executing on Celery](/deployment/guides/celery)           | This guide explains how to execute Dagster on Celery.                                    |
-| [Executing on Dask](/deployment/guides/dask)               | This guide explains how to execute Dagster on Dask.                                      |
+### Adding an agent
+
+<div class="category-container">
+  <div class="category-inner-container">
+    <ul class="article-list">
+      <li>
+        <a href="/guides/cloud/authentication">Local agents</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Kubernetes agents</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">ECS agents</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Docker agents</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Customizing agent settings</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Running multiple agents</a>
+        <Experimental />
+      </li>
+    </ul>
+  </div>
+</div>
+
+### Configuring authentication
+
+<div class="category-container">
+  <div class="category-inner-container">
+    <ul class="article-list">
+      <li>
+        <a href="/guides/cloud/authentication">
+          Azure Active Directory single sign-on
+        </a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">
+          Google Workspace single sign-on
+        </a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">OneLogin single sign-on</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Okta single sign-on</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">PingOne single sign-on</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+### Managing instances and users
+
+<div class="category-container">
+  <div class="category-inner-container">
+    <ul class="article-list">
+      <li>
+        <a href="/guides/cloud/authentication">
+          Setting up monitoring and alerting
+        </a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">Managing users</a>
+      </li>
+      <li>
+        <a href="/guides/cloud/authentication">
+          Using role-based access control
+        </a>
+      </li>
+    </ul>
+  </div>
+</div>
