@@ -1,4 +1,4 @@
-from typing import Mapping, Union
+from typing import Mapping, Union, cast
 
 import pandas as pd
 from dagster_snowflake import DbTypeHandler
@@ -20,7 +20,7 @@ def _connect_snowflake(context: Union[InputContext, OutputContext], table_slice:
         dict(
             schema=table_slice.schema,
             connector="sqlalchemy",
-            **no_schema_config,
+            **cast(Mapping[str, str], no_schema_config),
         ),
         context.log,
     ).get_connection(raw_conn=False)
