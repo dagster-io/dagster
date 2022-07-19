@@ -11,10 +11,9 @@ from dagster import (
     composite_solid,
     execute_pipeline,
     lambda_solid,
-    pipeline,
     usable_as_dagster_type,
 )
-from dagster.legacy import solid
+from dagster._legacy import pipeline, solid
 
 
 def builder(graph):

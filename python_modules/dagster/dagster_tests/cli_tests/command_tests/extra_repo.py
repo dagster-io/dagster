@@ -1,4 +1,5 @@
-from dagster import job, lambda_solid, pipeline, repository
+from dagster import job, lambda_solid, repository
+from dagster._legacy import pipeline
 
 
 @lambda_solid

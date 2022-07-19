@@ -17,7 +17,7 @@ from dagster import (
 )
 from dagster import _check as check
 from dagster import op, resource
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 try:
     # ge < v0.13.0

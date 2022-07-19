@@ -14,7 +14,7 @@ from dagster import (
     resource,
 )
 from dagster._check import CheckError
-from dagster.legacy import solid
+from dagster._legacy import solid
 from dagster.utils import file_relative_path
 
 

@@ -79,12 +79,12 @@ from dagster import (
     logger,
     monthly_schedule,
     op,
-    pipeline,
     repository,
     resource,
     usable_as_dagster_type,
     weekly_schedule,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.decorators.sensor_decorator import sensor
 from dagster.core.definitions.executor_definition import in_process_executor
 from dagster.core.definitions.metadata import MetadataValue
@@ -97,7 +97,6 @@ from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import default_mode_def_for_test, today_at_midnight
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import PythonFileTarget
-from dagster.legacy import solid
 from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, segfault
 

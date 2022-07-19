@@ -11,8 +11,8 @@ from dagster import (
     Output,
     OutputDefinition,
 )
+from dagster._legacy import solid
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.legacy import solid
 
 
 def test_flex_inputs():

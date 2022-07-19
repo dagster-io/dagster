@@ -17,14 +17,13 @@ from dagster import (
     execute_pipeline,
     job,
     op,
-    pipeline,
     reconstructable,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster.legacy import solid
 from dagster.utils import file_relative_path
 
 

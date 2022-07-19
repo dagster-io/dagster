@@ -12,14 +12,13 @@ from dagster import (
     execute_pipeline,
     job,
     op,
-    pipeline,
     reconstructable,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.errors import DagsterExecutionStepNotFoundError
 from dagster.core.execution.api import create_execution_plan, reexecute_pipeline
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster.legacy import solid
 from dagster.utils import merge_dicts
 
 

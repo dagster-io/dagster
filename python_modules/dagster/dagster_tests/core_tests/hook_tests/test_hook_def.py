@@ -5,23 +5,14 @@ import pytest
 
 from dagster import DagsterEventType, ModeDefinition, NodeInvocation, PipelineDefinition
 from dagster import _check as check
-from dagster import (
-    build_hook_context,
-    execute_pipeline,
-    graph,
-    job,
-    op,
-    pipeline,
-    reconstructable,
-    resource,
-)
+from dagster import build_hook_context, execute_pipeline, graph, job, op, reconstructable, resource
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions import NodeHandle, PresetDefinition, failure_hook, success_hook
 from dagster.core.definitions.decorators.hook_decorator import event_list_hook
 from dagster.core.definitions.events import HookExecutionResult
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvalidDefinitionError
 from dagster.core.test_utils import instance_for_test
-from dagster.legacy import solid
 
 
 class SomeUserException(Exception):

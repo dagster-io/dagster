@@ -11,11 +11,10 @@ from dagster import (
     Int,
     PipelineDefinition,
     execute_pipeline,
-    pipeline,
 )
+from dagster._legacy import pipeline, solid
 from dagster.config import Enum as ConfigEnum
 from dagster.config.validate import validate_config
-from dagster.legacy import solid
 
 
 def define_test_enum_type():

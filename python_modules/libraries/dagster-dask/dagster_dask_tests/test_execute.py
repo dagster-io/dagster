@@ -19,14 +19,13 @@ from dagster import (
     fs_io_manager,
     job,
     op,
-    pipeline,
     reconstructable,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.executor_definition import default_executors
 from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.events import DagsterEventType
 from dagster.core.test_utils import instance_for_test, nesting_composite_pipeline
-from dagster.legacy import solid
 from dagster.utils import send_interrupt
 
 

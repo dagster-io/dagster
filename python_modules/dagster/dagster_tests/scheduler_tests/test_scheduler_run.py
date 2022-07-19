@@ -17,10 +17,10 @@ from dagster import (
     hourly_schedule,
     job,
     op,
-    pipeline,
     repository,
     schedule,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.run_request import RunRequest
 from dagster.core.host_representation import (
     ExternalInstigatorOrigin,
@@ -47,7 +47,6 @@ from dagster.core.workspace.load_target import EmptyWorkspaceTarget, GrpcServerT
 from dagster.daemon import get_default_daemon_logger
 from dagster.grpc.client import EphemeralDagsterGrpcClient
 from dagster.grpc.server import open_server_process
-from dagster.legacy import solid
 from dagster.scheduler.scheduler import launch_scheduled_runs
 from dagster.seven import wait_for_process
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone

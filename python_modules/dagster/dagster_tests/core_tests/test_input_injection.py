@@ -11,7 +11,7 @@ from dagster import (
     String,
     execute_pipeline,
 )
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 def test_string_from_inputs():

@@ -21,14 +21,13 @@ from dagster import (
     io_manager,
     job,
     op,
-    pipeline,
     resource,
     root_input_manager,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.events import Failure, RetryRequested
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.instance import InstanceRef
-from dagster.legacy import solid
 
 ### input manager tests
 

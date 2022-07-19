@@ -4,11 +4,10 @@ from dagster import (
     ModeDefinition,
     execute_pipeline,
     fs_io_manager,
-    pipeline,
     reconstructable,
     resource,
 )
-from dagster.legacy import solid
+from dagster._legacy import pipeline, solid
 from dagster.utils import merge_dicts
 
 

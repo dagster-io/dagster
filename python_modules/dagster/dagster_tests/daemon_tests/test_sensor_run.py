@@ -17,11 +17,11 @@ from dagster import (
     Field,
     Output,
     graph,
-    pipeline,
     pipeline_failure_sensor,
     repository,
     run_failure_sensor,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.decorators.sensor_decorator import asset_sensor, sensor
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.run_status_sensor_definition import run_status_sensor
@@ -44,7 +44,6 @@ from dagster.core.test_utils import (
 from dagster.core.workspace.load_target import PythonFileTarget
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
-from dagster.legacy import solid
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 

@@ -6,8 +6,9 @@ from dagster_tests.api_tests.utils import get_bar_workspace
 
 from dagster import PipelineDefinition
 from dagster import _check as check
-from dagster import execute_pipeline, pipeline
+from dagster import execute_pipeline
 from dagster._check import CheckError
+from dagster._legacy import pipeline, solid
 from dagster.config import Field
 from dagster.core.errors import (
     DagsterHomeNotSetError,
@@ -25,7 +26,6 @@ from dagster.core.snap import (
     snapshot_from_execution_plan,
 )
 from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
-from dagster.legacy import solid
 from dagster.serdes import ConfigurableClass
 from dagster.serdes.config_class import ConfigurableClassData
 

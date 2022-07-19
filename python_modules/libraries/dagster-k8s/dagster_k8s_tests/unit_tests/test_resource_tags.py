@@ -6,11 +6,11 @@ from dagster_k8s.job import (
     get_user_defined_k8s_config,
 )
 
-from dagster import DynamicOutput, DynamicOutputDefinition, pipeline
+from dagster import DynamicOutput, DynamicOutputDefinition
+from dagster._legacy import pipeline, solid
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.legacy import solid
 
 
 # CPU units are millicpu

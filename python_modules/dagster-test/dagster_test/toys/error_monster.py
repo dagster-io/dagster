@@ -12,9 +12,8 @@ from dagster import (
     String,
     execute_pipeline,
     io_manager,
-    pipeline,
 )
-from dagster.legacy import solid
+from dagster._legacy import pipeline, solid
 from dagster.utils import segfault
 
 

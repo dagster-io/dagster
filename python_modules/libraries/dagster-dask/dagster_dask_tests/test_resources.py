@@ -1,9 +1,9 @@
 from dagster_dask import dask_resource
 from dask.distributed import Client
 
-from dagster import Dict, ModeDefinition, Output, OutputDefinition, execute_pipeline, pipeline
+from dagster import Dict, ModeDefinition, Output, OutputDefinition, execute_pipeline
+from dagster._legacy import pipeline, solid
 from dagster.core.test_utils import instance_for_test
-from dagster.legacy import solid
 
 
 @solid(

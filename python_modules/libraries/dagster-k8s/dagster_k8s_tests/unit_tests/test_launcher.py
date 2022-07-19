@@ -6,7 +6,8 @@ from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, UserDefinedDagsterK8sCo
 from kubernetes.client.models.v1_job import V1Job
 from kubernetes.client.models.v1_job_status import V1JobStatus
 
-from dagster import pipeline, reconstructable
+from dagster import reconstructable
+from dagster._legacy import pipeline
 from dagster.core.host_representation import RepositoryHandle
 from dagster.core.launcher import LaunchRunContext
 from dagster.core.launcher.base import WorkerStatus

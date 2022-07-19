@@ -10,7 +10,7 @@ from dagster_dbt import (
 )
 
 from dagster import ModeDefinition, execute_solid
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 def test_url(client):

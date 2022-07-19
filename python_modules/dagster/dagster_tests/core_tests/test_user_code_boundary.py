@@ -6,12 +6,11 @@ from dagster import (
     dagster_type_loader,
     dagster_type_materializer,
     execute_pipeline,
-    pipeline,
     resource,
     usable_as_dagster_type,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.types.dagster_type import create_any_type
-from dagster.legacy import solid
 
 
 class UserError(Exception):

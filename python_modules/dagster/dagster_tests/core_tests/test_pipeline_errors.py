@@ -14,8 +14,8 @@ from dagster import (
     SolidDefinition,
 )
 from dagster import _check as check
-from dagster import execute_pipeline, execute_solid, lambda_solid, pipeline
-from dagster.legacy import solid
+from dagster import execute_pipeline, execute_solid, lambda_solid
+from dagster._legacy import pipeline, solid
 
 
 def create_root_success_solid(name):

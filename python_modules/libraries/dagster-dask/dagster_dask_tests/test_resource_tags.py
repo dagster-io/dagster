@@ -1,6 +1,6 @@
 from dagster_dask.executor import get_dask_resource_requirements
 
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 def test_resource_tags():

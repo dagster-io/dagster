@@ -2,8 +2,7 @@ import csv
 
 import requests
 
-from dagster import pipeline
-from dagster.legacy import solid
+from dagster._legacy import pipeline, solid
 
 
 @solid

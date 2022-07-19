@@ -4,7 +4,7 @@ from dagster_dbt.cli.types import DbtCliOutput
 from dagstermill import define_dagstermill_solid
 
 from dagster import Array, InputDefinition, Nothing, OutputDefinition
-from dagster.legacy import solid
+from dagster._legacy import solid
 from dagster.utils import file_relative_path
 
 CEREAL_DATASET_URL = "https://gist.githubusercontent.com/mgasner/bd2c0f66dff4a9f01855cfa6870b1fce/raw/2de62a57fb08da7c58d6480c987077cf91c783a1/cereal.csv"

@@ -4,10 +4,9 @@ from dagster import (
     OutputDefinition,
     ScheduleDefinition,
     lambda_solid,
-    pipeline,
     repository,
 )
-from dagster.legacy import solid
+from dagster._legacy import pipeline, solid
 
 
 @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))

@@ -22,11 +22,11 @@ from dagster import (
     fs_io_manager,
     job,
     op,
-    pipeline,
     reconstructable,
     reexecute_pipeline,
     resource,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan
@@ -42,7 +42,6 @@ from dagster.core.execution.retries import RetryMode
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.test_utils import instance_for_test
-from dagster.legacy import solid
 from dagster.utils import safe_tempfile_path, send_interrupt
 from dagster.utils.merger import deep_merge_dicts, merge_dicts
 

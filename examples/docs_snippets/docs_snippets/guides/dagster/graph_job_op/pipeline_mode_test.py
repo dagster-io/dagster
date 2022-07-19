@@ -1,13 +1,7 @@
 from unittest.mock import MagicMock
 
-from dagster import (
-    ModeDefinition,
-    ResourceDefinition,
-    execute_pipeline,
-    pipeline,
-    resource,
-)
-from dagster.legacy import solid
+from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, resource
+from dagster._legacy import pipeline, solid
 
 
 @resource
