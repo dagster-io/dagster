@@ -52,16 +52,10 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
 class SnowflakeDbClient(DbClient):
     @staticmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
-        no_schema_config = (
-            {k: v for k, v in context.resource_config.items() if k != "schema"}
-            if context.resource_config
-            else {}
-        )
         with SnowflakeConnection(
-            dict(schema=table_slice.schema, **no_schema_config), context.log  # type: ignore
+            dict(schema=table_slice.schema, **(context.resource_config or {})), context.log  # type: ignore
         ).get_connection() as con:
-            if con.cursor().execute(_check_table_exists_statement(table_slice)).fetchone()[0]:
-                con.execute_string(_get_cleanup_statement(table_slice))
+            con.execute_string(_get_cleanup_statement(table_slice))
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
@@ -73,10 +67,6 @@ class SnowflakeDbClient(DbClient):
             )
         else:
             return f"""SELECT {col_str} FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"""
-
-
-def _check_table_exists_statement(table_slice: TableSlice) -> str:
-    return f"SELECT EXISTS (SELECT * FROM information_schema.tables WHERE table_schema = '{table_slice.schema}' AND table_name = '{table_slice.table}');"
 
 
 def _get_cleanup_statement(table_slice: TableSlice) -> str:

@@ -1,4 +1,4 @@
-from typing import Mapping, Union
+from typing import Mapping, Union, cast
 
 import pandas as pd
 from dagster_snowflake import DbTypeHandler
@@ -11,16 +11,11 @@ from dagster.core.definitions.metadata import RawMetadataValue
 
 
 def _connect_snowflake(context: Union[InputContext, OutputContext], table_slice: TableSlice):
-    no_schema_config = (
-        {k: v for k, v in context.resource_config.items() if k != "schema"}
-        if context.resource_config
-        else {}
-    )
     return SnowflakeConnection(
         dict(
             schema=table_slice.schema,
             connector="sqlalchemy",
-            **no_schema_config,
+            **cast(Mapping[str, str], context.resource_config),
         ),
         context.log,
     ).get_connection(raw_conn=False)
