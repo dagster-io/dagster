@@ -26,6 +26,7 @@ import {filterByQuery} from '../app/GraphQueryImpl';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
+import {useIsMounted} from '../hooks/useIsMounted';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {
   LaunchPartitionBackfill,
@@ -97,14 +98,6 @@ export const BackfillPartitionSelector: React.FC<{
       fetchPolicy: 'network-only',
     },
   );
-
-  const mounted = React.useRef(true);
-  React.useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, [onLaunch]);
 
   const onSuccess = (backfillId: string) => {
     showBackfillSuccessToast(history, backfillId);
@@ -379,18 +372,11 @@ const LaunchBackfillButton: React.FC<{
   repoAddress,
 }) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
-  const mounted = React.useRef(true);
+  const mounted = useIsMounted();
   const [launchBackfill, {loading}] = useMutation<
     LaunchPartitionBackfill,
     LaunchPartitionBackfillVariables
   >(LAUNCH_PARTITION_BACKFILL_MUTATION);
-
-  React.useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, [onSuccess]);
 
   const onLaunch = async () => {
     onSubmit();

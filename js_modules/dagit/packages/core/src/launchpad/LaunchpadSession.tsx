@@ -32,6 +32,7 @@ import {
   CONFIG_EDITOR_VALIDATION_FRAGMENT,
   responseToYamlValidationResult,
 } from '../configeditor/ConfigEditorUtils';
+import {useIsMounted} from '../hooks/useIsMounted';
 import {DagsterTag} from '../runs/RunTag';
 import {RepositorySelector} from '../types/globalTypes';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -170,7 +171,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
   const client = useApolloClient();
   const [state, dispatch] = React.useReducer(reducer, initialState);
 
-  const mounted = React.useRef<boolean>(false);
+  const mounted = useIsMounted();
   const editor = React.useRef<ConfigEditor | null>(null);
   const editorSplitPanelContainer = React.useRef<SplitPanelContainer | null>(null);
   const previewCounter = React.useRef(0);
@@ -194,13 +195,6 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
   });
 
   const configSchemaOrError = configResult?.data?.runConfigSchemaOrError;
-
-  React.useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  });
 
   const onSaveSession = (changes: IExecutionSessionChanges) => {
     onSave(changes);

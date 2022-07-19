@@ -27,6 +27,7 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {useViewport} from '../gantt/useViewport';
+import {useIsMounted} from '../hooks/useIsMounted';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/BackfillUtils';
 import {
   LaunchPartitionBackfill,
@@ -104,14 +105,6 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     window.addEventListener('mouseup', resetSelectionRange);
     return () => window.removeEventListener('mouseup', resetSelectionRange);
   });
-
-  const mounted = React.useRef(true);
-  React.useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, [onLaunch]);
 
   const {loading, data} = useQuery<
     PartitionsBackfillSelectorQuery,
@@ -552,18 +545,12 @@ const LaunchBackfillButton: React.FC<{
   repoAddress,
 }) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
-  const mounted = React.useRef(true);
   const [launchBackfill, {loading}] = useMutation<
     LaunchPartitionBackfill,
     LaunchPartitionBackfillVariables
   >(LAUNCH_PARTITION_BACKFILL_MUTATION);
 
-  React.useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, [onSuccess]);
+  const mounted = useIsMounted();
 
   const onLaunch = async () => {
     onSubmit();
