@@ -1,0 +1,40 @@
+- id: partitioned-asset.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_asset.py
+  route: /instance/assets/my_daily_partitioned_asset?view=definition
+
+- id: rematerialize-partition.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_asset.py
+  route: /instance/assets/my_daily_partitioned_asset?view=definition
+  steps:
+    - Click "Materialize"
+
+- id: materialized-partitioned-asset.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_asset.py
+  route: /instance/assets/my_daily_partitioned_asset?view=definition
+  steps:
+    - Click "Materialize"
+    - Launch a run
+    - Wait for the run to complete
+    - Refresh the page
+
+- id: materialized-partitioned-asset_activity.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_asset.py
+  route: /instance/assets/my_daily_partitioned_asset?view=definition
+  steps:
+    - Click "Materialize"
+    - Launch a run
+    - Wait for the run to complete
+    - Refresh the page
+    - Navigate to the activity tag
+
+- id: partitioned-job.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_job.py
+  route: /workspace/__repository__do_stuff_partitioned@partitioned_job.py/jobs/do_stuff_partitioned/partitions
+  page_load_sleep: 5
+
+
+- id: launchpad.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_job.py
+  route: /workspace/__repository__do_stuff_partitioned@partitioned_job.py/jobs/do_stuff_partitioned/playground
+  steps:
+    - Select 2020-01-02 partition

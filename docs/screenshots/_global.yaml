@@ -1,0 +1,246 @@
+#################
+# Tutorial
+#################
+
+- id: tutorial/hello_cereal_figure_one.png
+  workspace: examples/docs_snippets/docs_snippets/intro_tutorial/basics/single_solid_pipeline/hello_cereal.py
+  route: /
+
+- id: tutorial/hello_cereal_figure_two.png
+  workspace: examples/docs_snippets/docs_snippets/intro_tutorial/basics/single_solid_pipeline/hello_cereal.py
+  route: /workspace/__repository__hello_cereal_job@hello_cereal.py/jobs/hello_cereal_job/playground
+
+- id: tutorial/hello_cereal_figure_three.png
+  workspace: examples/docs_snippets/docs_snippets/intro_tutorial/basics/single_solid_pipeline/hello_cereal.py
+  route: /workspace/__repository__hello_cereal_job@hello_cereal.py/jobs/hello_cereal_job/playground
+  steps:
+    - Click the Launch Run button
+
+- id: tutorial/serial_pipeline_figure_one.png
+  workspace: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/serial_pipeline.py
+  route: /
+
+- id: tutorial/complex_pipeline_figure_one.png
+  workspace: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/complex_pipeline.py
+  route: /
+
+#################
+# Asset tutorial
+#################
+
+- id: guides/asset-tutorial/defining_an_asset.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/cereal.py
+  route: /instance/assets/cereals?view=activity
+
+- id: guides/asset-tutorial/asset_run.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/cereal.py
+  route: /
+  steps:
+    - launch a run and click on the run
+
+- id: guides/asset-tutorial/asset_details.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/cereal.py
+  route: /instance/assets/cereals
+  steps:
+    - hit the materialize button and then close the run toast
+
+- id: guides/asset-tutorial/serial_asset_graph.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/serial_asset_graph.py
+  route: /
+  steps:
+    - Click asset, navigate to Lineage tab
+
+- id: guides/asset-tutorial/complex_asset_graph.png
+  workspace: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/complex_asset_graph.py
+  route: /
+  steps:
+    - Click asset, navigate to Lineage tab
+
+
+#################
+# Concepts: misc
+#################
+
+- id: concepts/repo-dagit.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/repositories_workspaces/repository_definition.py
+  route: /
+  width: 1536
+  height: 1152
+  steps:
+    - open left sidebar
+
+- id: concepts/config-dagit.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/configuration/configurable_op_asset_resource.py
+  route: http://localhost:3000/workspace/repo@configurable_op_asset_resource.py/jobs/job_using_config/playground
+  steps:
+    - Paste the content of `docs_snippets/concepts/configuration/good.yaml` into the launchpad
+
+- id: concepts/solids-pipelines/pipeline-def.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py
+  route: /
+  vetted: false
+
+- id: concepts/solids-pipelines/pipeline-run.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py
+  steps:
+    - launch run
+    - open run page
+  vetted: false
+
+- id: concepts/solids-pipelines/solid-selection.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py
+  steps:
+    - enter op selection into the op selection bar
+  vetted: false
+
+- id: concepts/assets/asset-materialization.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/assets/materialization_ops.py
+  steps:
+    - run the job
+    - click on the run
+  vetted: false
+
+- id: concepts/assets/observation.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/assets/observations.py
+  steps:
+    - run my_observation_job
+    - click on the run
+  vetted: false
+
+- id: concepts/assets/asset-activity-observation.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/assets/observations.py
+  steps:
+    - run my_dataset_job
+    - View the asset details page for "my_dataset"
+  vetted: false
+
+- id: concepts/logging/job-log-dagit.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/logging/builtin_logger.py
+  steps:
+    - run the job
+    - navigate to the run page
+  vetted: false
+
+- id: concepts/logging/job-dagit-error.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/logging/builtin_logger.py
+  steps:
+    - run the job
+    - navigate to the run page
+  vetted: false
+
+- id: concepts/logging/job-dagit-filter.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/logging/builtin_logger.py
+  steps:
+    - run the job
+    - navigate to the run page
+  vetted: false
+
+- id: concepts/partitions-schedules-sensors/sensors/sensor-A.png
+  route: https://demo.elementl.show/workspace/hacker_news_prod@hacker-news/sensors/story_recommender_on_hn_tables_updated
+  vetted: false
+
+- id: concepts/partitions-schedules-sensors/sensors/all-sensors.png
+  route: https://demo.elementl.show/workspace/hacker_news_prod@hacker-news/sensors
+  vetted: false
+
+- id: concepts/partitions-schedules-sensors/partitions-page.png
+  route: https://demo.elementl.show/workspace/hacker_news_prod@hacker-news/jobs/hacker_news_api_download/partitions
+  vetted: false
+
+- id: concepts/partitions-schedules-sensors/backfills-launch-modal.png
+  route: https://demo.elementl.show/workspace/hacker_news_prod@hacker-news/jobs/hacker_news_api_download/partitions
+  steps:
+    - open the "launch backfill" modal
+  vetted: false
+
+- id: concepts/partitions-schedules-sensors/partitions-playground.png
+  route: https://demo.elementl.show/workspace/hacker_news_prod@hacker-news/jobs/hacker_news_api_download/playground
+  steps:
+    - select a partition from the partition selector
+  vetted: false
+
+- id: concepts/ops-jobs-graphs/job-metadata.png
+  route: /workspace/toys_repository@dagster_test.graph_job_op_toys.repo/jobs/with_metadata
+  vetted: false
+
+##################
+# Concepts: Dagit
+##################
+
+- id: concepts/dagit/solid-definition.png
+  workspace: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/complex_pipeline.py
+  route: http://localhost:3000/workspace/__repository__diamond@complex_pipeline.py/jobs/diamond/find_highest_calorie_cereal
+
+- id: concepts/dagit/playground.png
+  workspace: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/complex_pipeline.py
+  route: http://localhost:3000/workspace/__repository__diamond@complex_pipeline.py/jobs/diamond/playground
+
+- id: concepts/dagit/runs-tab.png
+  workspace: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/complex_pipeline.py
+  route: http://localhost:3000/workspace/__repository__diamond@complex_pipeline.py/jobs/diamond/playground
+  steps:
+    - kick off a few runs
+
+- id: concepts/dagit/sensors.png
+  route: https://demo.elementl.show/workspace/hacker_news_prod@hacker-news/sensors
+  vetted: false
+
+- id: concepts/dagit/single-run.png
+  route: https://demo.elementl.show/instance/runs/606af723-9aed-4a12-aba3-f2bdb7d53616
+  vetted: false
+
+- id: concepts/dagit/all-runs.png
+  route: https://demo.elementl.show/instance/runs
+  vetted: false
+
+- id: concepts/dagit/schedules.png
+  route: https://demo.elementl.show/workspace/hacker_news_prod@hacker-news/schedules
+  vetted: false
+
+- id: concepts/dagit/all-assets.png
+  route: https://demo.elementl.show/instance/assets
+  vetted: false
+
+- id: concepts/dagit/status-instance.png
+  route: https://demo.elementl.show/instance/health
+  vetted: false
+
+- id: concepts/dagit/re-execution.png
+  route: https://demo.elementl.show/instance/runs/57ea168a-3e2d-4137-8a4c-beb93122c684?logKey=build_comment_stories&logs=query%3Arecommender_model_perf&selection=recommender_model_perf
+  vetted: false
+
+- id: concepts/dagit/asset.png
+  route: https://demo.elementl.show/instance/assets/snowflake/hackernews/comment_stories
+  vetted: false
+
+##################
+# Guides
+##################
+
+- id: guides/data_science/iris_pipeline.png
+  vetted: false
+
+- id: guides/data_science/tags.png
+  vetted: false
+
+- id: guides/data_science/parameters.png
+  vetted: false
+
+- id: guides/dagster_pandas/tutorial1.png
+  vetted: false
+
+- id: guides/dagster_pandas/tutorial2.png
+  vetted: false
+
+- id: guides/dagster_pandera/schema.png
+  workspace: examples/docs_snippets/docs_snippets/integrations/pandera/example.py
+  route: http://localhost:3000/workspace/__repository__stocks_job@example.py/jobs/stocks_job/?tab=types&typeName=StockPrices
+  vetted: false
+
+- id: guides/dagster_pandera/error-report.png
+  workspace: examples/docs_snippets/docs_snippets/integrations/pandera/example.py
+  route: http://localhost:3000/workspace/__repository__stocks_job@example.py/jobs/stocks_job/playground
+  vetted: false
+  steps:
+    - launch run
+    - click on failed "Step Output"
