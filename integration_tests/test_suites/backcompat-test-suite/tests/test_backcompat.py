@@ -177,14 +177,6 @@ def graphql_client(release_test_map, retrying_requests):
         yield DagsterGraphQLClient(dagit_host, port_number=3000)
 
 
-def test_backcompat_deployed_pipeline(graphql_client):
-    assert_runs_and_exists(graphql_client, "the_pipeline")
-
-
-def test_backcompat_deployed_pipeline_subset(graphql_client):
-    assert_runs_and_exists(graphql_client, "the_pipeline", subset_selection=["my_solid"])
-
-
 def test_backcompat_deployed_job(graphql_client):
     assert_runs_and_exists(graphql_client, "the_job")
 
