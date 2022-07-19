@@ -28,7 +28,6 @@ from dagster import (
     execute_solid,
 )
 from dagster._check import ParameterCheckError
-from dagster._legacy import pipeline, solid
 from dagster._config import (
     DagsterEvaluationErrorReason,
     Map,
@@ -37,6 +36,7 @@ from dagster._config import (
     process_config,
     validate_config,
 )
+from dagster._legacy import pipeline, solid
 
 
 def test_noop_config():

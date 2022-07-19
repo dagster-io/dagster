@@ -10,8 +10,8 @@ from dagster import (
     Shape,
     resource,
 )
-from dagster._legacy import pipeline, solid
 from dagster._config import ConfigTypeKind, Map, resolve_to_config_type
+from dagster._legacy import pipeline, solid
 from dagster.core.snap import (
     ConfigEnumValueSnap,
     build_config_schema_snapshot,

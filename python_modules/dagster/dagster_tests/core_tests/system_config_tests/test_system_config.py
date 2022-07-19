@@ -17,8 +17,8 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
 )
-from dagster._legacy import pipeline, solid
 from dagster._config import ConfigTypeKind, process_config
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions import create_run_config_schema
 from dagster.core.definitions.run_config import (
     RunConfigSchemaCreationData,

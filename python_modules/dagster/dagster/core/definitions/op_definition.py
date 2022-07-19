@@ -12,7 +12,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster.config.config_schema import UserConfigSchema
+from dagster._config.config_schema import UserConfigSchema
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvariantViolationError
 
