@@ -1,5 +1,5 @@
-import dagster._legacy as legacy  # pylint: disable=protected-access
 import dagster
+import dagster._legacy as legacy  # pylint: disable=protected-access
 
 
 @legacy.solid
