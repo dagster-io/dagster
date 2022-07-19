@@ -479,7 +479,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         pytest_tox_factors=["papermill1", "papermill2"],
     ),
     PackageSpec(
-        ".buildkite/dagster-buildkite",
+        "python_modules/tools/dagster-buildkite",
         run_pytest=False,
     ),
     PackageSpec("scripts", run_pytest=False),

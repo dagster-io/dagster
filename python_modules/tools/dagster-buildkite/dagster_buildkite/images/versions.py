@@ -2,14 +2,11 @@ import os
 
 import yaml
 
+from dagster_buildkite.defines import GIT_REPO_ROOT
 
 def get_image_version(image_name: str) -> str:
     root_images_path = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)),
-        "..",
-        "..",
-        "..",
-        "..",
+        GIT_REPO_ROOT,
         "python_modules",
         "automation",
         "automation",
