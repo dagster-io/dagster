@@ -3,7 +3,7 @@ from functools import wraps
 from typing import Callable, Type, TypeVar, cast
 
 import dagster._check as check
-from dagster.utils.backcompat import (
+from dagster._utils.backcompat import (
     experimental_class_warning,
     experimental_decorator_warning,
     experimental_fn_warning,

@@ -23,7 +23,7 @@ class LogTestFileHandler(logging.Handler):
 
     def emit(self, record):
         with open(self.file_path, "a", encoding="utf8") as fd:
-            fd.write(_seven.json.dumps(record.__dict__) + "\n")
+            fd.write(seven.json.dumps(record.__dict__) + "\n")
 
 
 @logger(config_schema={"name": String, "log_level": String, "file_path": String})

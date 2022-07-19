@@ -24,8 +24,8 @@ from dagster import (
     RetryRequested,
 )
 from dagster import _check as check
+from dagster import _seven as seven
 from dagster import asset, build_assets_job, op, resource
-from dagster import seven as _seven
 from dagster._legacy import pipeline, solid
 from dagster._loggers import colored_console_logger
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
@@ -975,14 +975,14 @@ class TestEventLogStorage:
                 stack.enter_context(
                     mock.patch(
                         "dagster.core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",
-                        side_effect=_seven.JSONDecodeError("error", "", 0),
+                        side_effect=seven.JSONDecodeError("error", "", 0),
                     )
                 )
                 # for sqlite event log storage, which overrides the record fetching implementation
                 stack.enter_context(
                     mock.patch(
                         "dagster.core.storage.event_log.sqlite.sqlite_event_log.deserialize_json_to_dagster_namedtuple",
-                        side_effect=_seven.JSONDecodeError("error", "", 0),
+                        side_effect=seven.JSONDecodeError("error", "", 0),
                     )
                 )
                 assert asset_key in set(storage.all_asset_keys())

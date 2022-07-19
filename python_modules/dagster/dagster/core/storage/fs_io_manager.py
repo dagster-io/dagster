@@ -6,7 +6,6 @@ import dagster._check as check
 from dagster._annotations import experimental
 from dagster._config import Field, StringSource
 from dagster._utils import PICKLE_PROTOCOL, mkdir_p
-from dagster._utils.backcompat import experimental
 from dagster.core.definitions.events import AssetKey, AssetMaterialization
 from dagster.core.definitions.metadata import MetadataEntry, MetadataValue
 from dagster.core.errors import DagsterInvariantViolationError

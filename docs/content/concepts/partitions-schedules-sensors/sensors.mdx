@@ -483,8 +483,8 @@ slack_on_run_failure = make_slack_on_run_failure_sensor(
 )
 ```
 
-<PyObject object="make_email_on_run_failure_sensor" /> helps
-you create a job failure sensor that will send emails via the SMTP protocol:
+<PyObject object="make_email_on_run_failure_sensor" /> helps you create a job failure
+sensor that will send emails via the SMTP protocol:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_email_marker endbefore=end_email_marker
 from dagster import make_email_on_run_failure_sensor

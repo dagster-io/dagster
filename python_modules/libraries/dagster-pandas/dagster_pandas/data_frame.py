@@ -21,7 +21,6 @@ from dagster._annotations import experimental
 from dagster._check import CheckError
 from dagster._config import Selector
 from dagster._utils import dict_without_keys
-from dagster._utils.backcompat import experimental
 from dagster.core.definitions.metadata import normalize_metadata
 from dagster.core.errors import DagsterInvalidMetadata
 
