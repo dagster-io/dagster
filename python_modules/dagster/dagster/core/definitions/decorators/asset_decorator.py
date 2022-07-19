@@ -297,13 +297,7 @@ class _Asset:
                     **({"kind": self.compute_kind} if self.compute_kind else {}),
                     **(self.op_tags or {}),
                 },
-                config_schema={
-                    "assets": {
-                        "input_partitions": Field(dict, is_required=False),
-                        "output_partitions": Field(dict, is_required=False),
-                    },
-                    **self.config_schema,
-                },
+                config_schema=self.config_schema,
             )(fn)
 
         keys_by_input_name = {
