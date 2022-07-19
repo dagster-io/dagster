@@ -8,11 +8,11 @@ apidoc-watch-build:
 		--recursive \
 		sphinx
 
-docs_dev_install:
-	cd next; yarn; cd ..;
+next-dev-install:
+	yarn --cwd=next install
 
-dev:
-	cd next; yarn dev;
+next-watch-build:
+	yarn --cwd=next dev
 
-snapshot:
-	cd next; yarn snapshot; cd ..;
+mdx-format:
+	yarn --cwd=next mdx-format
