@@ -1,0 +1,45 @@
+- id: solid-definition.png
+  workspace: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/complex_pipeline.py
+  route: http://localhost:3000/workspace/__repository__diamond@complex_pipeline.py/jobs/diamond/find_highest_calorie_cereal
+
+- id: playground.png
+  workspace: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/complex_pipeline.py
+  route: http://localhost:3000/workspace/__repository__diamond@complex_pipeline.py/jobs/diamond/playground
+
+- id: runs-tab.png
+  workspace: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/complex_pipeline.py
+  route: http://localhost:3000/workspace/__repository__diamond@complex_pipeline.py/jobs/diamond/playground
+  steps:
+    - kick off a few runs
+
+- id: sensors.png
+  route: https://demo.elementl.show/workspace/hacker_news_prod@hacker-news/sensors
+  vetted: false
+
+- id: single-run.png
+  route: https://demo.elementl.show/instance/runs/606af723-9aed-4a12-aba3-f2bdb7d53616
+  vetted: false
+
+- id: all-runs.png
+  route: https://demo.elementl.show/instance/runs
+  vetted: false
+
+- id: schedules.png
+  route: https://demo.elementl.show/workspace/hacker_news_prod@hacker-news/schedules
+  vetted: false
+
+- id: all-assets.png
+  route: https://demo.elementl.show/instance/assets
+  vetted: false
+
+- id: status-instance.png
+  route: https://demo.elementl.show/instance/health
+  vetted: false
+
+- id: re-execution.png
+  route: https://demo.elementl.show/instance/runs/57ea168a-3e2d-4137-8a4c-beb93122c684?logKey=build_comment_stories&logs=query%3Arecommender_model_perf&selection=recommender_model_perf
+  vetted: false
+
+- id: asset.png
+  route: https://demo.elementl.show/instance/assets/snowflake/hackernews/comment_stories
+  vetted: false

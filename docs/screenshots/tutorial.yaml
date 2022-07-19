@@ -1,0 +1,22 @@
+- id: hello_cereal_figure_one.png
+  workspace: examples/docs_snippets/docs_snippets/intro_tutorial/basics/single_solid_pipeline/hello_cereal.py
+  route: /
+
+- id: hello_cereal_figure_two.png
+  workspace: examples/docs_snippets/docs_snippets/intro_tutorial/basics/single_solid_pipeline/hello_cereal.py
+  route: /workspace/__repository__hello_cereal_job@hello_cereal.py/jobs/hello_cereal_job/playground
+
+- id: hello_cereal_figure_three.png
+  workspace: examples/docs_snippets/docs_snippets/intro_tutorial/basics/single_solid_pipeline/hello_cereal.py
+  route: /workspace/__repository__hello_cereal_job@hello_cereal.py/jobs/hello_cereal_job/playground
+  steps:
+    - Click the Launch Run button
+
+- id: serial_pipeline_figure_one.png
+  workspace: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/serial_pipeline.py
+  route: /
+
+- id: complex_pipeline_figure_one.png
+  workspace: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/complex_pipeline.py
+  route: /
+

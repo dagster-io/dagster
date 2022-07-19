@@ -1,0 +1,18 @@
+- id: pipeline-def.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py
+  route: /
+  vetted: false
+
+- id: pipeline-run.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py
+  steps:
+    - launch run
+    - open run page
+  vetted: false
+
+- id: solid-selection.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py
+  steps:
+    - enter op selection into the op selection bar
+  vetted: false
+

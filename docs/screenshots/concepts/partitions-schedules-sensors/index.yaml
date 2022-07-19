@@ -1,0 +1,15 @@
+- id: partitions-page.png
+  route: https://demo.elementl.show/workspace/hacker_news_prod@hacker-news/jobs/hacker_news_api_download/partitions
+  vetted: false
+
+- id: backfills-launch-modal.png
+  route: https://demo.elementl.show/workspace/hacker_news_prod@hacker-news/jobs/hacker_news_api_download/partitions
+  steps:
+    - open the "launch backfill" modal
+  vetted: false
+
+- id: partitions-playground.png
+  route: https://demo.elementl.show/workspace/hacker_news_prod@hacker-news/jobs/hacker_news_api_download/playground
+  steps:
+    - select a partition from the partition selector
+  vetted: false

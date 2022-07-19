@@ -1,0 +1,7 @@
+- id: sensor-A.png
+  route: https://demo.elementl.show/workspace/hacker_news_prod@hacker-news/sensors/story_recommender_on_hn_tables_updated
+  vetted: false
+
+- id: all-sensors.png
+  route: https://demo.elementl.show/workspace/hacker_news_prod@hacker-news/sensors
+  vetted: false

@@ -1,0 +1,20 @@
+- id: job-log-dagit.png
+  workspace: examples/docs_snippets/docs_snippets/builtin_logger.py
+  steps:
+    - run the job
+    - navigate to the run page
+  vetted: false
+
+- id: job-dagit-error.png
+  workspace: examples/docs_snippets/docs_snippets/builtin_logger.py
+  steps:
+    - run the job
+    - navigate to the run page
+  vetted: false
+
+- id: job-dagit-filter.png
+  workspace: examples/docs_snippets/docs_snippets/builtin_logger.py
+  steps:
+    - run the job
+    - navigate to the run page
+  vetted: false

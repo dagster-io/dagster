@@ -1,0 +1,13 @@
+- id: repo-dagit.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/repositories_workspaces/repository_definition.py
+  route: /
+  width: 1536
+  height: 1152
+  steps:
+    - open left sidebar
+
+- id: config-dagit.png
+  workspace: examples/docs_snippets/docs_snippets/concepts/configuration/configurable_op_asset_resource.py
+  route: http://localhost:3000/workspace/repo@configurable_op_asset_resource.py/jobs/job_using_config/playground
+  steps:
+    - Paste the content of `docs_snippets/concepts/configuration/good.yaml` into the launchpad

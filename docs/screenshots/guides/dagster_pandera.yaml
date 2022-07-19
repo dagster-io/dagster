@@ -1,0 +1,12 @@
+- id: schema.png
+  workspace: examples/docs_snippets/docs_snippets/integrations/pandera/example.py
+  route: http://localhost:3000/workspace/__repository__stocks_job@example.py/jobs/stocks_job/?tab=types&typeName=StockPrices
+  vetted: false
+
+- id: error-report.png
+  workspace: examples/docs_snippets/docs_snippets/integrations/pandera/example.py
+  route: http://localhost:3000/workspace/__repository__stocks_job@example.py/jobs/stocks_job/playground
+  vetted: false
+  steps:
+    - launch run
+    - click on failed "Step Output"

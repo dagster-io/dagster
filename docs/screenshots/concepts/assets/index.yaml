@@ -1,0 +1,21 @@
+- id: asset-materialization.png
+  workspace: examples/docs_snippets/docs_snippets/materialization_ops.py
+  steps:
+    - run the job
+    - click on the run
+  vetted: false
+
+- id: observation.png
+  workspace: examples/docs_snippets/docs_snippets/observations.py
+  steps:
+    - run my_observation_job
+    - click on the run
+  vetted: false
+
+- id: asset-activity-observation.png
+  workspace: examples/docs_snippets/docs_snippets/observations.py
+  steps:
+    - run my_dataset_job
+    - View the asset details page for "my_dataset"
+  vetted: false
+

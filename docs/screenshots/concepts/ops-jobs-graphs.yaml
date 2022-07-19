@@ -1,0 +1,3 @@
+- id: job-metadata.png
+  route: /workspace/toys_repository@dagster_test.graph_job_op_toys.repo/jobs/with_metadata
+  vetted: false
