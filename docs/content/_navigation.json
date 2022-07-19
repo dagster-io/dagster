@@ -413,7 +413,7 @@
       },
       {
         "title": "Development to Production Workflow",
-        "path":"/guides/dagster/local_to_prod_tutorial"
+        "path":"/guides/dagster/local_to_production_tutorial"
       },
       {
         "title": "Versioning and Memoization (Experimental)",

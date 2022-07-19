@@ -176,15 +176,15 @@ Let’s write some tests! We don’t want to rely on external calls to the Hacke
 
 <Note>
 
-At Dagster we believe one of the main barriers to testing data applications is that business logic depends on external, heavy-weight dependencies that are difficult to run in a testing scenario. This is why we developed the concept of \[resources]\(link to resources concept page).
+At Dagster we believe one of the main barriers to testing data applications is that business logic depends on external, heavy-weight dependencies that are difficult to run in a testing scenario. This is why we developed the concept of [resources](/concepts/resources).
 
-When testing an asset or op with an external dependency (either a resource or IO manager), we recommend using a lightweight version of the resource that implements all of the methods used in the asset. You can use a Dagster-provided resource (like the in memory IO manager), or write your own implementation.
+When testing an asset or op with an external dependency (either a resource or IO manager), we recommend using a lightweight version of the resource that implements all of the methods used in the asset or op. You can use a Dagster-provided resource (like the in memory IO manager), or write your own implementation.
 
-For more information and recommendations on testing, see our \[testing documentation]\(link to docs)
+For more information and recommendations on testing, see our [testing documentation](/concepts/testing).
 
 </Note>
 
-We want to ensure that the version of the Hacker News Client we write for testing follows the API of the real Hacker News Client, so at this point, it would be a good idea to write an interface for this resource and `HNAPIClient` to implement:
+We want to ensure that the version of the Hacker News Client we write for testing follows the API of the real Hacker News Client, so at this point, it would be a good idea to write an interface for the testing resource and `HNAPIClient` to implement:
 
 ```python file=/guides/dagster/local_to_prod_tutorial/resources/resources_v2.py startafter=start_abc endbefore=end_abc
 # resources.py
@@ -247,7 +247,7 @@ def mock_hn_client():
     return MockHNClient()
 ```
 
-Now, let’s write tests to verify that the assets produce the outputs we expect:
+Now, let’s write tests to verify that the assets produce the datasets we expect:
 
 ```python file=/guides/dagster/local_to_prod_tutorial/test_assets.py startafter=start endbefore=end
 # test_assets.py
@@ -286,7 +286,7 @@ def test_stories():
 
 ### Part Three: Production
 
-Now that our assets work locally and can be tested, let’s set up for the production environment. We want to store the assets in a production Snowflake database, so we need to update the configuration for the `snowflake_io_manager`
+Now that our assets work locally and can be tested, let’s set up for the production environment. We want to store the assets in a production Snowflake database, so we need to update the configuration for the `snowflake_io_manager`:
 
 ```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v3.py startafter=start endbefore=end
 # repository.py
@@ -309,7 +309,7 @@ def repo():
     return [*with_resources([items, comments, stories], resource_defs=resource_defs)]
 ```
 
-Here we run into an issue. The next time a developer wants to work on the assets, they will have to remember to change the configuration for the `snowflake_io_manager`. This leaves room for a developer to accidentally override the production asset during local development. Instead we can set up the repository to attach resources to assets based on the environment
+Here we run into an issue. The next time a developer wants to work on the assets, they will have to remember to change the configuration for the `snowflake_io_manager`. This leaves room for a developer to accidentally override the production asset during local development. Instead we can set up the repository to attach resources to assets based on the environment:
 
 ```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v4.py startafter=start endbefore=end
 # repository.py
@@ -359,7 +359,7 @@ We still have some problems with this setup:
 2. Passwords are being stored in code.
 3. If we want to change the database where we store development or production data, we need to make a code change.
 
-We can easily solve all of these problems because the snowflake IO manager accepts configuration from environment variables using the `StringSource` (link) configuration type. This allows us to store configuration values as environment variables, and point dagster to those environment variables in the run configuration.
+We can easily solve all of these problems because the snowflake IO manager accepts configuration from environment variables using the <PyObject object="StringSource" /> configuration type. This allows us to store configuration values as environment variables, and point dagster to those environment variables in the run configuration:
 
 ```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v5.py startafter=start endbefore=end
 # repository.py
@@ -391,3 +391,5 @@ Since all of the snowflake IO manager configuration is being set through environ
 ### Conclusion
 
 This example demonstrates how we recommend that you write your assets and jobs so that they transition from local development to testing to production without requiring code changes at each step. While we focused on assets in this example, the same concepts and APIs can be used to swap out resources and run configuration for jobs.
+
+If you'd like to see the full code from this example, you can find it in our examples [here](https://github.com/dagster-io/dagster/tree/master/examples/local_to_production)
