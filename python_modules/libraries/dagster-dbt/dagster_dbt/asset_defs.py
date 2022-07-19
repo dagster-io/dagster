@@ -165,14 +165,13 @@ def _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types):
     for unique_id in selected_unique_ids:
         node_info = dbt_nodes[unique_id]
         node_resource_type = node_info["resource_type"]
-        node_parent_unique_ids = node_info["depends_on"]["nodes"]
 
-        # skip non-asset resources, such as tests
+        # skip non-asset resources, such as tests and sources
         if node_resource_type not in asset_resource_types:
             continue
 
         asset_deps[unique_id] = set()
-        for parent_unique_id in node_parent_unique_ids:
+        for parent_unique_id in node_info["depends_on"]["nodes"]:
             parent_node_info = dbt_nodes[parent_unique_id]
             parent_resource_type = parent_node_info["resource_type"]
 
