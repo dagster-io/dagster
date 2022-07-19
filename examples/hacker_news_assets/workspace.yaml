@@ -1,2 +1,2 @@
 load_from:
-  - python_package: hacker_news_assets
+  - python_package: hacker_news_assets.repository

@@ -1,7 +1,7 @@
 import tempfile
 
 from dagster_pyspark import pyspark_resource
-from hacker_news_assets.core import assets
+from hacker_news_assets.assets import core
 from hacker_news_assets.resources.hn_resource import hn_snapshot_client
 from hacker_news_assets.resources.parquet_io_manager import local_partitioned_parquet_io_manager
 
@@ -17,7 +17,7 @@ from dagster import (
 def test_download():
     with tempfile.TemporaryDirectory() as temp_dir:
         result = materialize(
-            load_assets_from_package_module(assets),
+            load_assets_from_package_module(core),
             resources={
                 "io_manager": fs_io_manager.configured({"base_dir": temp_dir}),
                 "partition_start": ResourceDefinition.string_resource(),
