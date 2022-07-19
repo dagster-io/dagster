@@ -3,7 +3,6 @@ from contextlib import ExitStack
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
-    Any,
     Callable,
     Iterator,
     List,
@@ -142,7 +141,7 @@ SensorExecutionContext = SensorEvaluationContext
 
 RawSensorEvaluationFunctionReturn = Union[
     Iterator[Union[SkipReason, RunRequest]],
-    List[RunRequest],
+    Sequence[RunRequest],
     SkipReason,
     RunRequest,
     PipelineRunReaction,
@@ -175,7 +174,7 @@ class SensorDefinition:
         name (Optional[str]): The name of the sensor to create. Defaults to name of evaluation_fn
         pipeline_name (Optional[str]): (legacy) The name of the pipeline to execute when the sensor
             fires. Cannot be used in conjunction with `job` or `jobs` parameters.
-        solid_selection (Optional[List[str]]): (legacy) A list of solid subselection (including single
+        solid_selection (Optional[Sequence[str]]): (legacy) A list of solid subselection (including single
             solid names) to execute when the sensor runs. e.g. ``['*some_solid+', 'other_solid']``.
             Cannot be used in conjunction with `job` or `jobs` parameters.
         mode (Optional[str]): (legacy) The mode to apply when executing runs triggered by this
@@ -195,7 +194,7 @@ class SensorDefinition:
         name: Optional[str] = None,
         evaluation_fn: Optional[RawSensorEvaluationFunction] = None,
         pipeline_name: Optional[str] = None,
-        solid_selection: Optional[List[Any]] = None,
+        solid_selection: Optional[Sequence[str]] = None,
         mode: Optional[str] = None,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
@@ -239,7 +238,7 @@ class SensorDefinition:
                 RepoRelativeTarget(
                     pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
                     mode=check.opt_str_param(mode, "mode") or DEFAULT_MODE_NAME,
-                    solid_selection=check.opt_nullable_list_param(
+                    solid_selection=check.opt_nullable_sequence_param(
                         solid_selection, "solid_selection", of_type=str
                     ),
                 )
@@ -326,7 +325,7 @@ class SensorDefinition:
         return self._min_interval
 
     @property
-    def targets(self) -> List[Union[DirectTarget, RepoRelativeTarget]]:
+    def targets(self) -> Sequence[Union[DirectTarget, RepoRelativeTarget]]:
         return self._targets
 
     @property
@@ -408,14 +407,14 @@ class SensorDefinition:
 
     def load_targets(
         self,
-    ) -> List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
+    ) -> Sequence[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
         targets = []
         for target in self._targets:
             if isinstance(target, DirectTarget):
                 targets.append(target.load())
         return targets
 
-    def check_valid_run_requests(self, run_requests: List[RunRequest]):
+    def check_valid_run_requests(self, run_requests: Sequence[RunRequest]):
         has_multiple_targets = len(self._targets) > 1
         target_names = [target.pipeline_name for target in self._targets]
 
@@ -448,7 +447,7 @@ class SensorDefinition:
         return self._target.pipeline_name if self._target else None
 
     @property
-    def solid_selection(self) -> Optional[List[Any]]:
+    def solid_selection(self) -> Optional[Sequence[str]]:
         return self._target.solid_selection if self._target else None
 
     @property
@@ -465,19 +464,19 @@ class SensorExecutionData(
     NamedTuple(
         "_SensorExecutionData",
         [
-            ("run_requests", Optional[List[RunRequest]]),
+            ("run_requests", Optional[Sequence[RunRequest]]),
             ("skip_message", Optional[str]),
             ("cursor", Optional[str]),
-            ("pipeline_run_reactions", Optional[List[PipelineRunReaction]]),
+            ("pipeline_run_reactions", Optional[Sequence[PipelineRunReaction]]),
         ],
     )
 ):
     def __new__(
         cls,
-        run_requests: Optional[List[RunRequest]] = None,
+        run_requests: Optional[Sequence[RunRequest]] = None,
         skip_message: Optional[str] = None,
         cursor: Optional[str] = None,
-        pipeline_run_reactions: Optional[List[PipelineRunReaction]] = None,
+        pipeline_run_reactions: Optional[Sequence[PipelineRunReaction]] = None,
     ):
         check.opt_list_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
@@ -562,7 +561,7 @@ def build_sensor_context(
 
 
 AssetMaterializationFunctionReturn = Union[
-    Iterator[Union[RunRequest, SkipReason]], List[RunRequest], RunRequest, SkipReason
+    Iterator[Union[RunRequest, SkipReason]], Sequence[RunRequest], RunRequest, SkipReason
 ]
 AssetMaterializationFunction = Callable[
     ["SensorExecutionContext", "EventLogEntry"],
@@ -586,7 +585,7 @@ class AssetSensorDefinition(SensorDefinition):
 
             This function must return a generator, which must yield either a single SkipReason
             or one or more RunRequest objects.
-        solid_selection (Optional[List[str]]): (legacy) A list of solid subselection (including single
+        solid_selection (Optional[Sequence[str]]): (legacy) A list of solid subselection (including single
             solid names) to execute when the sensor runs. e.g. ``['*some_solid+', 'other_solid']``.
             Cannot be used in conjunction with `job` or `jobs` parameters.
         mode (Optional[str]): (legacy) The mode to apply when executing runs triggered by this sensor.
@@ -610,7 +609,7 @@ class AssetSensorDefinition(SensorDefinition):
             ["SensorExecutionContext", "EventLogEntry"],
             RawSensorEvaluationFunctionReturn,
         ],
-        solid_selection: Optional[List[str]] = None,
+        solid_selection: Optional[Sequence[str]] = None,
         mode: Optional[str] = None,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,

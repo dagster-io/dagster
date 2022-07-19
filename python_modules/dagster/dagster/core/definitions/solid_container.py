@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Set, Tuple, Union
 
 import dagster._check as check
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -13,8 +13,10 @@ if TYPE_CHECKING:
 
 
 def validate_dependency_dict(
-    dependencies: Optional[Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]],
-) -> Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]:
+    dependencies: Optional[
+        Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
+    ],
+) -> Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]:
     prelude = (
         'The expected type for "dependencies" is Dict[Union[str, NodeInvocation], Dict[str, '
         "DependencyDefinition]]. "
@@ -72,10 +74,10 @@ def validate_dependency_dict(
 
 
 def create_execution_structure(
-    solid_defs: List["NodeDefinition"],
-    dependencies_dict: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]],
+    solid_defs: Sequence["NodeDefinition"],
+    dependencies_dict: Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]],
     graph_definition: "GraphDefinition",
-) -> Tuple[DependencyStructure, Dict[str, Node]]:
+) -> Tuple[DependencyStructure, Mapping[str, Node]]:
     """This builder takes the dependencies dictionary specified during creation of the
     PipelineDefinition object and builds (1) the execution structure and (2) a solid dependency
     dictionary.
@@ -165,11 +167,11 @@ def create_execution_structure(
 
 
 def _build_pipeline_solid_dict(
-    solid_defs: List["NodeDefinition"],
-    name_to_aliases: Dict[str, Set[str]],
-    alias_to_solid_instance: Dict[str, NodeInvocation],
+    solid_defs: Sequence["NodeDefinition"],
+    name_to_aliases: Mapping[str, Set[str]],
+    alias_to_solid_instance: Mapping[str, NodeInvocation],
     graph_definition,
-) -> Dict[str, Node]:
+) -> Mapping[str, Node]:
     pipeline_solids = []
     for solid_def in solid_defs:
         uses_of_solid = name_to_aliases.get(solid_def.name, {solid_def.name})

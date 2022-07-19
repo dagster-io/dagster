@@ -12,12 +12,12 @@ from dagster import (
     pipeline,
     reconstructable,
     reexecute_pipeline,
-    solid,
 )
 from dagster.core.definitions.events import Output
 from dagster.core.definitions.output import DynamicOut, Out
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
+from dagster.legacy import solid
 
 
 @solid

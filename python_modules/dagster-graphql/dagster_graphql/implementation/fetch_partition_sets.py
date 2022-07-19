@@ -172,24 +172,39 @@ def _apply_cursor_limit_reverse(items, cursor, limit, reverse):
 def get_partition_set_partition_statuses(
     graphene_info, repository_handle, partition_set_name, job_name
 ):
-    from ..schema.partition_sets import GraphenePartitionStatus, GraphenePartitionStatuses
-
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(partition_set_name, "partition_set_name")
-    partition_data_by_name = {
-        partition_data.partition: partition_data
-        for partition_data in graphene_info.context.instance.run_storage.get_run_partition_data(
-            partition_set_name, job_name, repository_handle.get_external_origin().get_id()
+    check.str_param(job_name, "job_name")
+
+    run_partition_data = graphene_info.context.instance.run_storage.get_run_partition_data(
+        runs_filter=RunsFilter(
+            pipeline_name=job_name,
         )
-    }
+    )
     names_result = graphene_info.context.get_external_partition_names(
         repository_handle, partition_set_name
     )
-    status_results = []
 
-    for name in names_result.partition_names:
+    return partition_statuses_from_run_partition_data(
+        partition_set_name, run_partition_data, names_result.partition_names
+    )
+
+
+def partition_statuses_from_run_partition_data(
+    partition_set_name, run_partition_data, partition_names, backfill_id=None
+):
+    from ..schema.partition_sets import GraphenePartitionStatus, GraphenePartitionStatuses
+
+    partition_data_by_name = {
+        partition_data.partition: partition_data for partition_data in run_partition_data
+    }
+
+    suffix = f":{backfill_id}" if backfill_id else ""
+
+    results = []
+    for name in partition_names:
         if not partition_data_by_name.get(name):
-            status_results.append(
+            results.append(
                 GraphenePartitionStatus(
                     id=f"{partition_set_name}:{name}",
                     partitionName=name,
@@ -197,10 +212,11 @@ def get_partition_set_partition_statuses(
             )
             continue
         partition_data = partition_data_by_name[name]
-        status_results.append(
+        results.append(
             GraphenePartitionStatus(
-                id=f"{partition_set_name}:{name}",
+                id=f"{partition_set_name}:{name}{suffix}",
                 partitionName=name,
+                runId=partition_data.run_id,
                 runStatus=partition_data.status,
                 runDuration=partition_data.end_time - partition_data.start_time
                 if partition_data.end_time and partition_data.start_time
@@ -208,7 +224,7 @@ def get_partition_set_partition_statuses(
             )
         )
 
-    return GraphenePartitionStatuses(results=status_results)
+    return GraphenePartitionStatuses(results=results)
 
 
 def get_partition_set_partition_runs(graphene_info, partition_set):

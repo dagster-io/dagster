@@ -689,6 +689,7 @@ type PythonError implements Error {
   className: String
   stack: [String!]!
   cause: PythonError
+  causes: [PythonError!]!
 }
 
 interface Error {
@@ -1677,6 +1678,7 @@ type PartitionStatuses {
 type PartitionStatus {
   id: String!
   partitionName: String!
+  runId: String
   runStatus: RunStatus
   runDuration: Float
 }
@@ -1703,6 +1705,7 @@ type PartitionBackfill {
   unfinishedRuns(limit: Int): [Run!]!
   error: PythonError
   partitionRunStats: BackfillRunStats!
+  partitionStatuses: PartitionStatuses!
 }
 
 enum BulkActionStatus {
@@ -1985,7 +1988,12 @@ type Sensors {
   results: [Sensor!]!
 }
 
-union InstigationStateOrError = InstigationState | PythonError
+union InstigationStateOrError = InstigationState | InstigationStateNotFoundError | PythonError
+
+type InstigationStateNotFoundError implements Error {
+  message: String!
+  name: String!
+}
 
 """
 This type represents the fields necessary to identify a schedule or sensor.

@@ -17,7 +17,7 @@ from dagster import (
     op,
     resource,
 )
-from dagster.core.asset_defs.assets import AssetsDefinition
+from dagster.core.definitions.assets import AssetsDefinition
 from dagster.core.test_utils import instance_for_test
 
 

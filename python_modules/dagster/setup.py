@@ -81,7 +81,7 @@ if __name__ == "__main__":
             "tabulate",
             "tqdm",
             "typing_compat",
-            "typing_extensions>=3.10",
+            "typing_extensions>=4.0.1",
             "sqlalchemy>=1.0",
             "toposort>=1.0",
             "watchdog>=0.8.3",
@@ -96,7 +96,7 @@ if __name__ == "__main__":
                 "coverage==5.3",
                 "docker",
                 "freezegun>=0.3.15",
-                "grpcio-tools==1.32.0",
+                "grpcio-tools",
                 "mock==3.0.5",
                 "objgraph",
                 "protobuf==3.13.0",  # without this, pip will install the most up-to-date protobuf
@@ -106,7 +106,7 @@ if __name__ == "__main__":
                 "pytest-rerunfailures==10.0",
                 "pytest-runner==5.2",
                 "pytest-xdist==2.1.0",
-                "pytest==6.1.1",
+                "pytest==7.0.1",  # last version supporting python 3.6
                 "responses==0.10.*",
                 "snapshottest==0.6.0",
                 "tox==3.25.0",

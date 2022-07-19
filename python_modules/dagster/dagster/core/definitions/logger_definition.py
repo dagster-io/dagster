@@ -1,13 +1,16 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast, overload
 
 import dagster._check as check
-from dagster.core.definitions.config import is_callable_valid_config_arg
-from dagster.core.definitions.configurable import AnonymousConfigurableDefinition
 from dagster.core.errors import DagsterInvalidInvocationError
 
 from ..decorator_utils import get_function_params
-from .definition_config_schema import convert_user_facing_definition_config_schema
+from .config import is_callable_valid_config_arg
+from .configurable import AnonymousConfigurableDefinition
+from .definition_config_schema import (
+    CoercableToConfigSchema,
+    convert_user_facing_definition_config_schema,
+)
 
 if TYPE_CHECKING:
     from dagster.core.definitions import JobDefinition, PipelineDefinition
@@ -103,8 +106,23 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
         )
 
 
+@overload
 def logger(
-    config_schema: Any = None, description: Optional[str] = None
+    config_schema: CoercableToConfigSchema, description: Optional[str] = ...
+) -> Callable[["InitLoggerFunction"], "LoggerDefinition"]:
+    ...
+
+
+@overload
+def logger(
+    config_schema: "InitLoggerFunction", description: Optional[str] = ...
+) -> "LoggerDefinition":
+    ...
+
+
+def logger(
+    config_schema: Union[CoercableToConfigSchema, "InitLoggerFunction"] = None,
+    description: Optional[str] = None,
 ) -> Union["LoggerDefinition", Callable[["InitLoggerFunction"], "LoggerDefinition"]]:
     """Define a logger.
 
@@ -120,7 +138,7 @@ def logger(
     # This case is for when decorator is used bare, without arguments.
     # E.g. @logger versus @logger()
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
-        return LoggerDefinition(logger_fn=config_schema)
+        return LoggerDefinition(logger_fn=cast("InitLoggerFunction", config_schema))
 
     def _wrap(logger_fn: "InitLoggerFunction") -> "LoggerDefinition":
         return LoggerDefinition(

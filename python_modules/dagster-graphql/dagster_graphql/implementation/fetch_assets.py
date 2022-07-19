@@ -185,3 +185,18 @@ def get_assets_for_run_id(graphene_info, run_id):
         if record.is_dagster_event and record.dagster_event.asset_key
     ]
     return [GrapheneAsset(key=asset_key) for asset_key in asset_keys]
+
+
+def get_unique_asset_id(
+    asset_key: AssetKey, repository_location_name: str = None, repository_name: str = None
+) -> str:
+    repository_identifier = (
+        f"{repository_location_name}.{repository_name}"
+        if repository_location_name and repository_name
+        else ""
+    )
+    return (
+        f"{repository_identifier}.{asset_key.to_string()}"
+        if repository_identifier
+        else f"{asset_key.to_string()}"
+    )

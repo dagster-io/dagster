@@ -24,7 +24,7 @@ from dagster import (
     RetryRequested,
 )
 from dagster import _check as check
-from dagster import asset, build_assets_job, op, pipeline, resource, seven, solid
+from dagster import asset, build_assets_job, op, pipeline, resource, seven
 from dagster.core.assets import AssetDetails
 from dagster.core.definitions import ExpectationResult
 from dagster.core.definitions.dependency import NodeHandle
@@ -54,6 +54,7 @@ from dagster.core.storage.event_log.migration import (
 from dagster.core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
 from dagster.core.test_utils import create_run_for_test, instance_for_test
 from dagster.core.utils import make_new_run_id
+from dagster.legacy import solid
 from dagster.loggers import colored_console_logger
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils import datetime_as_float
@@ -1985,6 +1986,8 @@ class TestEventLogStorage:
                     )
                     records = storage.get_asset_records([my_asset_key])
                     assert len(records) == 1
+                    records = storage.get_asset_records([])  # should select no assets
+                    assert len(records) == 0
                     records = storage.get_asset_records()  # should select all assets
                     assert len(records) == 2
 

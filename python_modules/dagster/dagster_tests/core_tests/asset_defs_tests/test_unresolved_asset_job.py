@@ -21,8 +21,8 @@ from dagster import (
     schedule_from_partitions,
 )
 from dagster._check import CheckError
-from dagster.core.asset_defs import asset, multi_asset
-from dagster.core.asset_defs.load_assets_from_modules import prefix_assets
+from dagster.core.definitions import asset, multi_asset
+from dagster.core.definitions.load_assets_from_modules import prefix_assets
 from dagster.core.definitions.partition import StaticPartitionsDefinition, static_partitioned_config
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster.core.execution.with_resources import with_resources
@@ -424,7 +424,6 @@ def foo():
     return 1
 
 
-@pytest.mark.skip()
 def test_executor_def():
     job = define_asset_job("with_exec", executor_def=in_process_executor).resolve([foo], [])
     assert job.executor_def == in_process_executor  # pylint: disable=comparison-with-callable

@@ -14,7 +14,7 @@ from dagster.utils import datetime_as_float
 from dagster.utils.yaml_utils import dump_run_config_yaml
 
 from ...implementation.events import from_event_record
-from ...implementation.fetch_assets import get_assets_for_run_id
+from ...implementation.fetch_assets import get_assets_for_run_id, get_unique_asset_id
 from ...implementation.fetch_pipelines import get_pipeline_reference_or_raise
 from ...implementation.fetch_runs import get_runs, get_stats, get_step_stats
 from ...implementation.fetch_schedules import get_schedules_for_pipeline
@@ -123,7 +123,15 @@ class GrapheneAsset(graphene.ObjectType):
         self._definition = definition
 
     def resolve_id(self, _):
-        return self.key
+        # If the asset is not a SDA asset (has no definition), the id is the asset key
+        # Else, return a unique idenitifer containing the repository location and name
+        if self._definition:
+            return get_unique_asset_id(
+                self.key,
+                self._definition.repository_location.name,
+                self._definition.external_repository.name,
+            )
+        return get_unique_asset_id(self.key)
 
     def resolve_assetMaterializations(self, graphene_info, **kwargs):
         from ...implementation.fetch_assets import get_asset_materializations

@@ -1,8 +1,17 @@
-import {Box, Checkbox, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
+import {
+  Box,
+  Checkbox,
+  Colors,
+  Icon,
+  Mono,
+  NonIdealState,
+  SplitPanelContainer,
+} from '@dagster-io/ui';
 import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import React from 'react';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {GraphQueryItem} from '../app/GraphQueryImpl';
@@ -12,12 +21,12 @@ import {
   QueryRefreshState,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
+import {withMiddleTruncation} from '../app/Util';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection} from '../graph/common';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {
   GraphExplorerOptions,
   OptionsOverlay,
@@ -36,6 +45,8 @@ import {SidebarPipelineOrJobOverview} from '../pipelines/SidebarPipelineOrJobOve
 import {useDidLaunchEvent} from '../runs/RunUtils';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
+import {buildRepoPath} from '../workspace/buildRepoAddress';
+import {workspacePath} from '../workspace/workspacePath';
 
 import {AssetConnectedEdges} from './AssetEdges';
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
@@ -62,13 +73,14 @@ interface Props {
   setOptions?: (options: GraphExplorerOptions) => void;
 
   fetchOptions: AssetGraphFetchScope;
+  fetchOptionFilters?: React.ReactNode;
 
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   onNavigateToForeignNode: (node: AssetLocation) => void;
 }
 
-export const EXPERIMENTAL_MINI_SCALE = 0.5;
+export const MINIMAL_SCALE = 0.5;
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const {
@@ -83,7 +95,6 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(graphAssetKeys);
   const liveDataRefreshState = useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS);
 
-  useDocumentTitle('Assets');
   useDidLaunchEvent(liveResult.refetch);
 
   return (
@@ -296,6 +307,69 @@ export const AssetGraphExplorerWithData: React.FC<
                 <SVGContainer width={layout.width} height={layout.height}>
                   <AssetConnectedEdges highlighted={highlighted} edges={layout.edges} />
 
+                  {Object.values(layout.groups)
+                    .sort((a, b) => a.id.length - b.id.length)
+                    .map(
+                      ({
+                        id,
+                        bounds,
+                        groupName,
+                        repositoryName,
+                        repositoryLocationName,
+                        repositoryDisambiguationRequired,
+                      }) => (
+                        <foreignObject
+                          x={bounds.x}
+                          y={bounds.y}
+                          width={bounds.width}
+                          height={bounds.height}
+                          key={id}
+                        >
+                          <Mono
+                            style={{
+                              opacity: _scale > MINIMAL_SCALE ? (_scale - MINIMAL_SCALE) / 0.2 : 0,
+                              fontWeight: 600,
+                              display: 'flex',
+                              gap: 6,
+                            }}
+                          >
+                            <Icon name="asset_group" size={20} />
+                            <Box flex={{direction: 'column'}}>
+                              <Link
+                                style={{color: Colors.Gray900}}
+                                onClick={(e) => e.stopPropagation()}
+                                to={workspacePath(
+                                  repositoryName,
+                                  repositoryLocationName,
+                                  `/asset-groups/${groupName}`,
+                                )}
+                              >
+                                {groupName}
+                              </Link>
+                              {repositoryDisambiguationRequired && (
+                                <GroupRepoName>
+                                  {withMiddleTruncation(
+                                    buildRepoPath(repositoryName, repositoryLocationName),
+                                    {maxLength: 45},
+                                  )}
+                                </GroupRepoName>
+                              )}
+                            </Box>
+                          </Mono>
+
+                          <GroupOutline
+                            style={{
+                              top: repositoryDisambiguationRequired ? 24 + 18 : 24,
+                              border: `${Math.max(2, 2 / _scale)}px dashed ${Colors.Gray300}`,
+                              background: `rgba(223, 223, 223, ${
+                                0.4 - Math.max(0, _scale - MINIMAL_SCALE) * 0.3
+                              })`,
+                            }}
+                          />
+                        </foreignObject>
+                      ),
+                    )}
+
                   {Object.values(layout.nodes).map(({id, bounds}) => {
                     const graphNode = assetGraphData.nodes[id];
                     const path = JSON.parse(id);
@@ -315,7 +389,7 @@ export const AssetGraphExplorerWithData: React.FC<
                       >
                         {!graphNode || !graphNode.definition.opNames.length ? (
                           <ForeignNode assetKey={{path}} />
-                        ) : _scale < EXPERIMENTAL_MINI_SCALE ? (
+                        ) : _scale < MINIMAL_SCALE ? (
                           <AssetNodeMinimal
                             definition={graphNode.definition}
                             selected={selectedGraphNodes.includes(graphNode)}
@@ -376,12 +450,13 @@ export const AssetGraphExplorerWithData: React.FC<
                   ? selectedGraphNodes
                   : Object.values(assetGraphData.nodes).filter((a) => !isSourceAsset(a.definition))
                 ).map((n) => n.assetKey)}
-                liveDataByNode={liveDataByNode}
                 preferredJobName={explorerPath.pipelineName}
               />
             </Box>
           </Box>
           <QueryOverlay>
+            {props.fetchOptionFilters}
+
             <GraphQueryInput
               items={graphQueryItems}
               value={explorerPath.opsQuery}
@@ -417,6 +492,18 @@ export const AssetGraphExplorerWithData: React.FC<
 const SVGContainer = styled.svg`
   overflow: visible;
   border-radius: 0;
+`;
+
+const GroupOutline = styled.div`
+  inset: 0;
+  position: absolute;
+  border-radius: 10px;
+  pointer-events: none;
+`;
+
+const GroupRepoName = styled.div`
+  font-size: 0.8rem;
+  line-height: 0.7rem;
 `;
 
 // Helpers

@@ -1,0 +1,8 @@
+rules:
+  - apiGroups: ["batch"]
+      resources: ["jobs", "jobs/status"]
+      verbs: ["*"]
+  # The empty arg "" corresponds to the core API group
+  - apiGroups: [""]
+      resources: ["pods", "pods/log", "pods/status"]
+      verbs: ["*"]'

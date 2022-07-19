@@ -21,10 +21,10 @@ from dagster import (
     reconstructable,
     resource,
     seven,
-    solid,
 )
 from dagster.core.errors import DagsterExecutionInterruptedError, raise_execution_interrupts
 from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
+from dagster.legacy import solid
 from dagster.utils import safe_tempfile_path, send_interrupt
 from dagster.utils.interrupts import capture_interrupts, check_captured_interrupt
 

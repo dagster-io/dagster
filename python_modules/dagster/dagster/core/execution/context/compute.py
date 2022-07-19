@@ -337,7 +337,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
     def output_asset_partition_key(self, output_name: str = "result") -> str:
         deprecation_warning(
             "OpExecutionContext.output_asset_partition_key",
-            "0.16.0",
+            "1.0.0",
             additional_warn_txt="Use OpExecutionContext.asset_partition_key_for_output instead.",
         )
 
@@ -352,7 +352,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
     def output_asset_partitions_time_window(self, output_name: str = "result") -> TimeWindow:
         deprecation_warning(
             "OpExecutionContext.output_asset_partitions_time_window",
-            "0.16.0",
+            "1.0.0",
             additional_warn_txt="Use OpExecutionContext.asset_partitions_time_window_for_output instead.",
         )
 
@@ -366,6 +366,12 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
         """
         return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
+
+    def asset_partition_key_for_input(self, input_name: str) -> str:
+        """Returns the asset partition key for the given output. Defaults to "result", which is the
+        name of the default output.
+        """
+        return self._step_execution_context.asset_partition_key_for_input(input_name)
 
     def has_tag(self, key: str) -> bool:
         """Check if a logging tag is set.

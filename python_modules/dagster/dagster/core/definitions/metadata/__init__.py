@@ -34,10 +34,10 @@ if TYPE_CHECKING:
 
 RawMetadataValue = Union[
     "MetadataValue",
-    dict,
+    Dict[Any, Any],
     float,
     int,
-    list,
+    List[Any],
     str,
 ]
 
@@ -58,7 +58,7 @@ def normalize_metadata(
     metadata: Mapping[str, RawMetadataValue],
     metadata_entries: Sequence[Union["MetadataEntry", "PartitionMetadataEntry"]],
     allow_invalid: bool = False,
-) -> List[Union["MetadataEntry", "PartitionMetadataEntry"]]:
+) -> Sequence[Union["MetadataEntry", "PartitionMetadataEntry"]]:
     if metadata and metadata_entries:
         raise DagsterInvalidMetadata(
             "Attempted to provide both `metadata` and `metadata_entries` arguments to an event. "
@@ -68,7 +68,7 @@ def normalize_metadata(
     if metadata_entries:
         deprecation_warning(
             'Argument "metadata_entries"',
-            "0.16.0",
+            "1.0.0",
             additional_warn_txt="Use argument `metadata` instead. The `MetadataEntry` `description` attribute is also deprecated-- argument `metadata` takes a label: value dictionary.",
             stacklevel=4,  # to get the caller of `normalize_metadata`
         )
@@ -88,7 +88,7 @@ def normalize_metadata(
             except DagsterInvalidMetadata:
                 deprecation_warning(
                     "Support for arbitrary metadata values",
-                    "0.16.0",
+                    "1.0.0",
                     additional_warn_txt=f"In the future, all user-supplied metadata values must be one of {RawMetadataValue}",
                     stacklevel=4,  # to get the caller of `normalize_metadata`
                 )
@@ -852,7 +852,7 @@ def deprecated_metadata_entry_constructor(fn):
     def wrapper(*args, **kwargs):
         deprecation_warning(
             f"Function `MetadataEntry.{fn.__name__}`",
-            "0.16.0",
+            "1.0.0",
             additional_warn_txt=re.sub(
                 r"\n\s*",
                 " ",
@@ -912,7 +912,7 @@ class MetadataEntry(
         if description is not None:
             deprecation_warning(
                 'The "description" attribute on "MetadataEntry"',
-                "0.16.0",
+                "1.0.0",
             )
         value = cast(
             RawMetadataValue,
@@ -921,7 +921,7 @@ class MetadataEntry(
                 new_arg="value",
                 old_val=entry_data,
                 old_arg="entry_data",
-                breaking_version="0.16.0",
+                breaking_version="1.0.0",
             ),
         )
         value = normalize_metadata_value(value)

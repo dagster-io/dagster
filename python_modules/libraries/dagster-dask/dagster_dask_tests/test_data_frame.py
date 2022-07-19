@@ -5,7 +5,8 @@ from dagster_dask.data_frame import DataFrameReadTypes, DataFrameToTypes
 from dagster_dask.utils import DataFrameUtilities
 from dask.dataframe.utils import assert_eq
 
-from dagster import InputDefinition, execute_solid, file_relative_path, solid
+from dagster import InputDefinition, execute_solid, file_relative_path
+from dagster.legacy import solid
 
 
 def create_dask_df():

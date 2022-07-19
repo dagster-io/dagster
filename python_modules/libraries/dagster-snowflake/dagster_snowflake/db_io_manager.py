@@ -16,6 +16,7 @@ import dagster._check as check
 from dagster import IOManager, InputContext, OutputContext
 from dagster.core.definitions.metadata import RawMetadataValue
 from dagster.core.definitions.time_window_partitions import TimeWindow
+from dagster.core.errors import DagsterInvalidDefinitionError
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -115,11 +116,27 @@ class DbIOManager(IOManager):
     ) -> TableSlice:
         output_context_metadata = output_context.metadata or {}
 
+        schema: str
+        table: str
+        time_window: Optional[TimeWindow]
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
             table = asset_key_path[-1]
-            if len(asset_key_path) > 1:
+            if (
+                len(asset_key_path) > 1
+                and context.resource_config
+                and context.resource_config.get("schema")
+            ):
+                raise DagsterInvalidDefinitionError(
+                    f"Asset {asset_key_path} specifies a schema with "
+                    f"its key prefixes {asset_key_path[:-1]}, but schema  "
+                    f"{context.resource_config.get('schema')} was also provided via run config. "
+                    "Schema can only be specified one way."
+                )
+            elif len(asset_key_path) > 1:
                 schema = asset_key_path[-2]
+            elif context.resource_config and context.resource_config.get("schema"):
+                schema = cast(str, context.resource_config["schema"])
             else:
                 schema = "public"
             time_window = (
@@ -127,11 +144,27 @@ class DbIOManager(IOManager):
             )
         else:
             table = output_context.name
-            schema = output_context_metadata.get("schema", "public")
+            if (
+                output_context_metadata.get("schema")
+                and output_context.resource_config
+                and output_context.resource_config.get("schema")
+            ):
+                raise DagsterInvalidDefinitionError(
+                    f"Schema {output_context_metadata.get('schema')} "
+                    "specified via output metadata, but conflicting schema "
+                    f"{output_context.resource_config.get('schema')} was provided via run_config. "
+                    "Schema can only be specified one way."
+                )
+            elif output_context.resource_config and output_context_metadata.get("schema"):
+                schema = cast(str, output_context_metadata["schema"])
+            elif output_context.resource_config and output_context.resource_config.get("schema"):
+                schema = cast(str, output_context.resource_config["schema"])
+            else:
+                schema = "public"
             time_window = None
 
         if time_window is not None:
-            partition_expr = output_context_metadata.get("partition_expr")
+            partition_expr = cast(str, output_context_metadata.get("partition_expr"))
             if partition_expr is None:
                 raise ValueError(
                     f"Asset '{context.asset_key}' has partitions, but no 'partition_expr' metadata "
@@ -149,5 +182,5 @@ class DbIOManager(IOManager):
             schema=schema,
             database=cast(Mapping[str, str], context.resource_config)["database"],
             partition=partition,
-            columns=(context.metadata or {}).get("columns"),
+            columns=(context.metadata or {}).get("columns"),  # type: ignore  # (mypy bug)
         )

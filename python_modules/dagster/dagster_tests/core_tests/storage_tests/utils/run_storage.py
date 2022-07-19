@@ -1126,7 +1126,12 @@ class TestRunStorage:
             },
         )
         storage.add_run(three)
-        partition_data = storage.get_run_partition_data("foo_set", "foo_pipeline", "fake@fake")
+        partition_data = storage.get_run_partition_data(
+            runs_filter=RunsFilter(
+                pipeline_name="foo_pipeline",
+                tags={PARTITION_SET_TAG: "foo_set"},
+            )
+        )
         assert len(partition_data) == 3
         assert {_.partition for _ in partition_data} == {"one", "two", "three"}
         assert {_.run_id for _ in partition_data} == {one.run_id, two_retried.run_id, three.run_id}

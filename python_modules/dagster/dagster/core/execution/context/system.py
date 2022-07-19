@@ -59,7 +59,6 @@ from .output import OutputContext, get_output_context
 if TYPE_CHECKING:
     from dagster.core.definitions.dependency import Node, NodeHandle
     from dagster.core.definitions.resource_definition import Resources
-    from dagster.core.events import DagsterEvent
     from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.execution.plan.state import KnownExecutionState
     from dagster.core.instance import DagsterInstance
@@ -729,12 +728,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return (
             upstream_asset_key is not None
             and assets_def is not None
-            and assets_def.partitions_def is not None
             and asset_layer.partitions_def_for_asset(upstream_asset_key) is not None
         )
 
     def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
-        from dagster.core.asset_defs.asset_partitions import (
+        from dagster.core.definitions.asset_partitions import (
             get_upstream_partitions_for_partition_range,
         )
 
@@ -745,11 +743,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         if upstream_asset_key is not None:
             upstream_asset_partitions_def = asset_layer.partitions_def_for_asset(upstream_asset_key)
 
-            if (
-                assets_def is not None
-                and assets_def.partitions_def is not None
-                and upstream_asset_partitions_def is not None
-            ):
+            if assets_def is not None and upstream_asset_partitions_def is not None:
                 return get_upstream_partitions_for_partition_range(
                     assets_def,
                     upstream_asset_partitions_def,

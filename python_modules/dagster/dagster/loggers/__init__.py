@@ -1,22 +1,39 @@
 import logging
+from typing import TYPE_CHECKING, Mapping, Sequence, Tuple
 
 import coloredlogs
 
 from dagster import seven
 from dagster.config import Field
-from dagster.core.definitions.logger_definition import logger
+from dagster.core.definitions.logger_definition import LoggerDefinition, logger
 from dagster.core.utils import coerce_valid_log_level
 from dagster.utils.log import default_date_format_string, default_format_string
 
+if TYPE_CHECKING:
+    from dagster.core.execution.context.logger import InitLoggerContext
+
 
 @logger(
-    {
-        "log_level": Field(str, is_required=False, default_value="INFO"),
-        "name": Field(str, is_required=False, default_value="dagster"),
-    },
+    Field(
+        {
+            "log_level": Field(
+                str,
+                is_required=False,
+                default_value="INFO",
+                description="The logger's threshold.",
+            ),
+            "name": Field(
+                str,
+                is_required=False,
+                default_value="dagster",
+                description="The name of your logger.",
+            ),
+        },
+        description="The default colored console logger.",
+    ),
     description="The default colored console logger.",
 )
-def colored_console_logger(init_context):
+def colored_console_logger(init_context: "InitLoggerContext") -> logging.Logger:
     """This logger provides support for sending Dagster logs to stdout in a colored format. It is
     included by default on jobs which do not otherwise specify loggers.
     """
@@ -37,13 +54,26 @@ def colored_console_logger(init_context):
 
 
 @logger(
-    {
-        "log_level": Field(str, is_required=False, default_value="INFO"),
-        "name": Field(str, is_required=False, default_value="dagster"),
-    },
-    description="A JSON-formatted console logger",
+    Field(
+        {
+            "log_level": Field(
+                str,
+                is_required=False,
+                default_value="INFO",
+                description="The logger's threshold.",
+            ),
+            "name": Field(
+                str,
+                is_required=False,
+                default_value="dagster",
+                description="The name of your logger.",
+            ),
+        },
+        description="A JSON-formatted console logger.",
+    ),
+    description="A JSON-formatted console logger.",
 )
-def json_console_logger(init_context):
+def json_console_logger(init_context: "InitLoggerContext") -> logging.Logger:
     """This logger provides support for sending Dagster logs to stdout in json format.
 
     Example:
@@ -81,7 +111,7 @@ def json_console_logger(init_context):
     return logger_
 
 
-def default_system_loggers():
+def default_system_loggers() -> Sequence[Tuple["LoggerDefinition", Mapping[str, object]]]:
     """If users don't provide configuration for any loggers, we instantiate these loggers with the
     default config.
 
@@ -90,5 +120,5 @@ def default_system_loggers():
     return [(colored_console_logger, {"name": "dagster", "log_level": "DEBUG"})]
 
 
-def default_loggers():
+def default_loggers() -> Mapping[str, "LoggerDefinition"]:
     return {"console": colored_console_logger}

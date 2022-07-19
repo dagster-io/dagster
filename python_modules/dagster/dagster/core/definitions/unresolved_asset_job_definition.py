@@ -3,19 +3,22 @@ from functools import reduce
 from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
-from dagster.core.definitions.asset_layer import build_asset_selection_job
-from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.run_request import RunRequest
 from dagster.core.selector.subset_selector import parse_clause
 
+from .asset_layer import build_asset_selection_job
+from .config import ConfigMapping
+
 if TYPE_CHECKING:
-    from dagster.core.asset_defs import AssetsDefinition, SourceAsset
-    from dagster.core.asset_defs.asset_selection import AssetSelection
     from dagster.core.definitions import (
+        AssetSelection,
+        AssetsDefinition,
+        ExecutorDefinition,
         JobDefinition,
         PartitionSetDefinition,
         PartitionedConfig,
         PartitionsDefinition,
+        SourceAsset,
     )
 
 
@@ -29,6 +32,7 @@ class UnresolvedAssetJobDefinition(
             ("description", Optional[str]),
             ("tags", Optional[Dict[str, Any]]),
             ("partitions_def", Optional["PartitionsDefinition"]),
+            ("executor_def", Optional["ExecutorDefinition"]),
         ],
     )
 ):
@@ -40,9 +44,13 @@ class UnresolvedAssetJobDefinition(
         description: Optional[str] = None,
         tags: Optional[Dict[str, Any]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
+        executor_def: Optional["ExecutorDefinition"] = None,
     ):
-        from dagster.core.asset_defs.asset_selection import AssetSelection
-        from dagster.core.definitions import PartitionsDefinition
+        from dagster.core.definitions import (
+            AssetSelection,
+            ExecutorDefinition,
+            PartitionsDefinition,
+        )
 
         return super(UnresolvedAssetJobDefinition, cls).__new__(
             cls,
@@ -54,6 +62,7 @@ class UnresolvedAssetJobDefinition(
             partitions_def=check.opt_inst_param(
                 partitions_def, "partitions_def", PartitionsDefinition
             ),
+            executor_def=check.opt_inst_param(executor_def, "partitions_def", ExecutorDefinition),
         )
 
     def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
@@ -103,7 +112,10 @@ class UnresolvedAssetJobDefinition(
         return RunRequest(run_key=run_key, run_config=run_config, tags=run_request_tags)
 
     def resolve(
-        self, assets: Sequence["AssetsDefinition"], source_assets: Sequence["SourceAsset"]
+        self,
+        assets: Sequence["AssetsDefinition"],
+        source_assets: Sequence["SourceAsset"],
+        default_executor_def: Optional["ExecutorDefinition"] = None,
     ) -> "JobDefinition":
         """
         Resolve this UnresolvedAssetJobDefinition into a JobDefinition.
@@ -117,11 +129,12 @@ class UnresolvedAssetJobDefinition(
             tags=self.tags,
             asset_selection=self.selection.resolve([*assets, *source_assets]),
             partitions_def=self.partitions_def,
+            executor_def=self.executor_def or default_executor_def,
         )
 
 
 def _selection_from_string(string: str) -> "AssetSelection":
-    from dagster.core.asset_defs.asset_selection import AssetSelection
+    from dagster.core.definitions import AssetSelection
 
     if string == "*":
         return AssetSelection.all()
@@ -146,6 +159,7 @@ def define_asset_job(
     description: Optional[str] = None,
     tags: Optional[Dict[str, Any]] = None,
     partitions_def: Optional["PartitionsDefinition"] = None,
+    executor_def: Optional["ExecutorDefinition"] = None,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will materialize a selection of assets. This will only be
     resolved to a JobDefinition once placed in a repository.
@@ -184,6 +198,11 @@ def define_asset_job(
         partitions_def (Optional[PartitionsDefinition]):
             Defines the set of partitions for this job. All AssetDefinitions selected for this job
             must have a matching PartitionsDefinition.
+        executor_def (Optional[ExecutorDefinition]):
+            How this Job will be executed. Defaults to :py:class:`multi_or_in_process_executor`,
+            which can be switched between multi-process and in-process modes of execution. The
+            default mode of execution is multi-process.
+
 
     Returns:
         UnresolvedAssetJobDefinition: The job, which can be placed inside a repository.
@@ -221,7 +240,7 @@ def define_asset_job(
                     define_asset_job("all_assets"),
                 ]
     """
-    from dagster.core.asset_defs.asset_selection import AssetSelection
+    from dagster.core.definitions import AssetSelection
 
     selection = check.opt_inst_param(
         selection, "selection", (str, list, AssetSelection), default=AssetSelection.all()
@@ -240,4 +259,5 @@ def define_asset_job(
         description=description,
         tags=tags,
         partitions_def=partitions_def,
+        executor_def=executor_def,
     )

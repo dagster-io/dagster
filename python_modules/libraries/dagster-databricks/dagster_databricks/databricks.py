@@ -70,13 +70,16 @@ class DatabricksClient:
 
         self.client.dbfs.close(handle=handle)  # pylint: disable=no-member
 
+    def get_run(self, databricks_run_id):
+        return self.client.jobs.get_run(databricks_run_id)  # pylint: disable=no-member
+
     def get_run_state(self, databricks_run_id):
         """Get the state of a run by Databricks run ID (_not_ dagster run ID).
 
         Return a `DatabricksRunState` object. Note that the `result_state`
         attribute may be `None` if the run hasn't yet terminated.
         """
-        run = self.client.jobs.get_run(databricks_run_id)  # pylint: disable=no-member
+        run = self.get_run(databricks_run_id)
         state = run["state"]
         result_state = state.get("result_state")
         if result_state:

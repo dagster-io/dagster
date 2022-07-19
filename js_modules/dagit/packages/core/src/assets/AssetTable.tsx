@@ -106,10 +106,7 @@ export const AssetTable = ({
               </Button>
             </Tooltip>
           ) : (
-            <LaunchAssetExecutionButton
-              assetKeys={checkedAssets.map((c) => c.key)}
-              liveDataByNode={liveDataByNode}
-            />
+            <LaunchAssetExecutionButton assetKeys={checkedAssets.map((c) => c.key)} />
           )}
           <MoreActionsDropdown selected={checkedAssets} clearSelection={() => onToggleAll(false)} />
         </Box>

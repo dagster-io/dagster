@@ -11,7 +11,7 @@ export interface AssetJobPartitionSetsQuery_partitionSetsOrError_PipelineNotFoun
   __typename: "PipelineNotFoundError";
 }
 
-export interface AssetJobPartitionSetsQuery_partitionSetsOrError_PythonError_cause {
+export interface AssetJobPartitionSetsQuery_partitionSetsOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -21,7 +21,7 @@ export interface AssetJobPartitionSetsQuery_partitionSetsOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: AssetJobPartitionSetsQuery_partitionSetsOrError_PythonError_cause | null;
+  causes: AssetJobPartitionSetsQuery_partitionSetsOrError_PythonError_causes[];
 }
 
 export interface AssetJobPartitionSetsQuery_partitionSetsOrError_PartitionSets_results {

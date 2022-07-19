@@ -16,7 +16,6 @@ from dagster import (
     UrlMetadataValue,
     execute_pipeline,
     pipeline,
-    solid,
 )
 from dagster._check import CheckError
 from dagster.core.definitions.metadata import (
@@ -31,6 +30,7 @@ from dagster.core.definitions.metadata.table import (
     TableRecord,
     TableSchema,
 )
+from dagster.legacy import solid
 from dagster.utils import frozendict
 
 

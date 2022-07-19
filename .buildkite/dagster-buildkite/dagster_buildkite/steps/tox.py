@@ -65,7 +65,7 @@ def build_tox_step(
         .with_retry(retries)
         .with_dependencies(dependencies)
         .with_queue(queue)
-        .on_integration_image(python_version, env_vars or [])
+        .on_test_image(python_version, env_vars or [])
     ).build()
 
 

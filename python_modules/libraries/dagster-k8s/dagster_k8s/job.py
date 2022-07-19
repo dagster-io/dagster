@@ -282,15 +282,13 @@ class DagsterK8sJobConfig(
         return super(DagsterK8sJobConfig, cls).__new__(
             cls,
             job_image=check.opt_str_param(job_image, "job_image"),
-            dagster_home=check.opt_str_param(
-                dagster_home, "dagster_home", default=DAGSTER_HOME_DEFAULT
-            ),
+            dagster_home=check.opt_str_param(dagster_home, "dagster_home"),
             image_pull_policy=check.opt_str_param(image_pull_policy, "image_pull_policy", "Always"),
             image_pull_secrets=check.opt_list_param(
                 image_pull_secrets, "image_pull_secrets", of_type=dict
             ),
             service_account_name=check.opt_str_param(service_account_name, "service_account_name"),
-            instance_config_map=check.str_param(instance_config_map, "instance_config_map"),
+            instance_config_map=check.opt_str_param(instance_config_map, "instance_config_map"),
             postgres_password_secret=check.opt_str_param(
                 postgres_password_secret, "postgres_password_secret"
             ),
@@ -542,6 +540,7 @@ def construct_dagster_k8s_job(
     component=None,
     labels=None,
     env_vars=None,
+    command=None,
 ):
     """Constructs a Kubernetes Job object for a dagster-graphql invocation.
 
@@ -603,7 +602,11 @@ def construct_dagster_k8s_job(
     additional_labels = {k: sanitize_k8s_label(v) for k, v in (labels or {}).items()}
     dagster_labels = merge_dicts(k8s_common_labels, additional_labels)
 
-    env = [{"name": "DAGSTER_HOME", "value": job_config.dagster_home}]
+    env = (
+        [{"name": "DAGSTER_HOME", "value": job_config.dagster_home}]
+        if job_config.dagster_home
+        else []
+    )
     if job_config.postgres_password_secret:
         env.append(
             {
@@ -648,6 +651,7 @@ def construct_dagster_k8s_job(
         {
             "name": "dagster",
             "image": job_image,
+            "command": command,
             "args": args,
             "image_pull_policy": job_config.image_pull_policy,
             "env": env + job_config.env + additional_k8s_env_vars,

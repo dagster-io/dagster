@@ -105,7 +105,7 @@ if TYPE_CHECKING:
     from dagster.core.storage.runs import RunStorage
     from dagster.core.storage.schedules import ScheduleStorage
     from dagster.core.workspace.workspace import IWorkspace
-    from dagster.daemon.types import DaemonHeartbeat
+    from dagster.daemon.types import DaemonHeartbeat, DaemonStatus
 
 
 def _check_run_equality(
@@ -1314,13 +1314,9 @@ class DagsterInstance:
         return self._run_storage.supports_bucket_queries
 
     @traced
-    def get_run_partition_data(
-        self, partition_set_name: str, job_name: str, repository_label: str
-    ) -> List[RunPartitionData]:
+    def get_run_partition_data(self, runs_filter: RunsFilter) -> List[RunPartitionData]:
         """Get run partition data for a given partitioned job."""
-        return self._run_storage.get_run_partition_data(
-            partition_set_name, job_name, repository_label
-        )
+        return self._run_storage.get_run_partition_data(runs_filter)
 
     def wipe(self):
         self._run_storage.wipe()
@@ -2022,6 +2018,27 @@ class DagsterInstance:
         if self.run_retries_enabled:
             daemons.append(EventLogConsumerDaemon.daemon_type())
         return daemons
+
+    def get_daemon_statuses(
+        self, daemon_types: Optional[List[str]] = None
+    ) -> Dict[str, "DaemonStatus"]:
+        """
+        Get the current status of the daemons. If daemon_types aren't provided, defaults to all
+        required types. Returns a dict of daemon type to status.
+        """
+        from dagster.daemon.controller import get_daemon_statuses
+
+        check.opt_list_param(daemon_types, "daemon_types", of_type=str)
+        return get_daemon_statuses(
+            self, daemon_types=daemon_types or self.get_required_daemon_types(), ignore_errors=True
+        )
+
+    @property
+    def daemon_skip_heartbeats_without_errors(self):
+        # If enabled, daemon threads won't write heartbeats unless they encounter an error. This is
+        # enabled in cloud, where we don't need to use heartbeats to check if daemons are running, but
+        # do need to surface errors to users. This is an optimization to reduce DB writes.
+        return False
 
     # backfill
     def get_backfills(self, status=None, cursor=None, limit=None):

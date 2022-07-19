@@ -28,12 +28,14 @@ def test_build_op(
     dbt_results = list(test_op(build_op_context(resources={"dbt": dbt_resource})))
 
     if yield_asset_events:
-        # includes asset materializations and observations
-        assert len(dbt_results) == 1 + 4 + 17
+        # 1 Output, 6 Materializations, 17 Observations
+        assert len(dbt_results) == 1 + 6 + 17
     else:
+        # 1 Output
         assert len(dbt_results) == 1
 
-    assert len(dbt_results[-1].value.result["results"]) == 1 + 4 + 17
+    # 6 Materializations, 17 Observations
+    assert len(dbt_results[-1].value.result["results"]) == 6 + 17
 
 
 def test_run_op(

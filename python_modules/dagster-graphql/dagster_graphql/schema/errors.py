@@ -23,6 +23,22 @@ class GraphenePythonError(graphene.ObjectType):
     stack = non_null_list(graphene.String)
     cause = graphene.Field(lambda: GraphenePythonError)
 
+    """
+    A list of all recursive errors deeper in the exception stack that caused this error to be
+    raised. For example, in a block of code like:
+    ```
+        try:
+            try:
+                raise Exception("Inner")
+            except Exception as e:
+                raise Exception("Middle") from e
+        except Exception as e:
+            raise Exception("Outer") from e
+    ```
+    The PythonError returned will correspond to Outer, with two causes - Middle and then Inner
+    """
+    causes = non_null_list("dagster_graphql.schema.errors.GraphenePythonError")
+
     def __init__(self, error_info):
         super().__init__()
         check.inst_param(error_info, "error_info", SerializableErrorInfo)
@@ -30,6 +46,14 @@ class GraphenePythonError(graphene.ObjectType):
         self.stack = error_info.stack
         self.cause = error_info.cause
         self.className = error_info.cls_name
+
+    def resolve_causes(self, _graphene_info):
+        causes = []
+        current_error = self.cause
+        while current_error and len(causes) < 10:  # Sanity check the depth of the causes
+            causes.append(GraphenePythonError(current_error))
+            current_error = current_error.cause
+        return causes
 
 
 class GrapheneSchedulerNotDefinedError(graphene.ObjectType):

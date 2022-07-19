@@ -18,7 +18,7 @@ from dagster import (
     resource,
 )
 from dagster._check import CheckError
-from dagster.core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
+from dagster.core.definitions import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster.core.storage.mem_io_manager import InMemoryIOManager
 from dagster.core.test_utils import instance_for_test
@@ -534,6 +534,39 @@ def test_graph_backed_asset_io_manager():
         ]
 
 
+def test_invalid_graph_backed_assets():
+    @op
+    def a():
+        return 1
+
+    @op
+    def validate(inp):
+        return inp == 1
+
+    @graph
+    def foo():
+        a_val = a()
+        validate(a_val)
+        return a_val
+
+    @graph
+    def bar():
+        return foo()
+
+    @graph
+    def baz():
+        return a(), bar(), a()
+
+    with pytest.raises(CheckError, match=r"leaf nodes.*validate"):
+        AssetsDefinition.from_graph(foo)
+
+    with pytest.raises(CheckError, match=r"leaf nodes.*bar\.validate"):
+        AssetsDefinition.from_graph(bar)
+
+    with pytest.raises(CheckError, match=r"leaf nodes.*baz\.bar\.validate"):
+        AssetsDefinition.from_graph(baz)
+
+
 def test_group_name_requirements():
     @asset(group_name="float")  # reserved python keywords allowed
     def good_name():
@@ -544,3 +577,81 @@ def test_group_name_requirements():
         @asset(group_name="bad*name")  # regex mismatch
         def bad_name():
             return 2
+
+
+def test_from_graph_w_key_prefix():
+    @op
+    def foo():
+        return 1
+
+    @op
+    def bar(i):
+        return i + 1
+
+    @graph
+    def silly_graph():
+        return bar(foo())
+
+    the_asset = AssetsDefinition.from_graph(
+        graph_def=silly_graph,
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey(["the", "asset"])},
+        key_prefix=["this", "is", "a", "prefix"],
+    )
+
+    assert the_asset.keys_by_output_name["result"].path == [
+        "this",
+        "is",
+        "a",
+        "prefix",
+        "the",
+        "asset",
+    ]
+
+    str_prefix = AssetsDefinition.from_graph(
+        graph_def=silly_graph,
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey(["the", "asset"])},
+        key_prefix="prefix",
+    )
+
+    assert str_prefix.keys_by_output_name["result"].path == [
+        "prefix",
+        "the",
+        "asset",
+    ]
+
+
+def test_from_op_w_key_prefix():
+    @op
+    def foo():
+        return 1
+
+    the_asset = AssetsDefinition.from_op(
+        op_def=foo,
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey(["the", "asset"])},
+        key_prefix=["this", "is", "a", "prefix"],
+    )
+
+    assert the_asset.keys_by_output_name["result"].path == [
+        "this",
+        "is",
+        "a",
+        "prefix",
+        "the",
+        "asset",
+    ]
+
+    str_prefix = AssetsDefinition.from_op(
+        op_def=foo,
+        keys_by_input_name={},
+        keys_by_output_name={"result": AssetKey(["the", "asset"])},
+        key_prefix="prefix",
+    )
+
+    assert str_prefix.keys_by_output_name["result"].path == [
+        "prefix",
+        "the",
+        "asset",
+    ]

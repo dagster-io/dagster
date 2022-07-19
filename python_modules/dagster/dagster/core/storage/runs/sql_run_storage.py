@@ -815,17 +815,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return defensively_unpack_pipeline_snapshot_query(logging, row) if row else None
 
-    def get_run_partition_data(
-        self, partition_set_name: str, job_name: str, repository_label: str
-    ) -> List[RunPartitionData]:
+    def get_run_partition_data(self, runs_filter: RunsFilter) -> List[RunPartitionData]:
         if self.has_built_index(RUN_PARTITIONS) and self.has_run_stats_index_cols():
             query = self._runs_query(
-                filters=RunsFilter(
-                    pipeline_name=job_name,
-                    tags={
-                        PARTITION_SET_TAG: partition_set_name,
-                    },
-                ),
+                filters=runs_filter,
                 columns=["run_id", "status", "start_time", "end_time", "partition"],
             )
             rows = self.fetchall(query)
@@ -846,14 +839,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
             return list(_partition_data_by_partition.values())
         else:
-            query = self._runs_query(
-                filters=RunsFilter(
-                    pipeline_name=job_name,
-                    tags={
-                        PARTITION_SET_TAG: partition_set_name,
-                    },
-                ),
-            )
+            query = self._runs_query(filters=runs_filter)
             rows = self.fetchall(query)
             _partition_data_by_partition = {}
             for row in rows:

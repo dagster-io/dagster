@@ -1,7 +1,7 @@
 import pytest
 
 from dagster import AssetKey, AssetsDefinition, GraphOut, In, Out, define_asset_job, graph, job, op
-from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
+from dagster.core.definitions import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
 from dagster.core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.host_representation.external_data import (
@@ -672,6 +672,74 @@ def test_used_source_asset():
             job_names=["job1"],
             output_name="result",
             output_description=None,
+            group_name=DEFAULT_GROUP_NAME,
+        ),
+    ]
+
+
+def test_graph_output_metadata():
+    from dagster.core.definitions.metadata import normalize_metadata
+
+    metadata = {"foo": 1, "bar": "baz"}
+
+    @op
+    def add_one(i):
+        return i + 1
+
+    @graph
+    def three(zero):
+        return add_one(add_one(add_one(zero)))
+
+    @asset
+    def zero():
+        return 0
+
+    three_asset = AssetsDefinition.from_graph(three, metadata_by_output_name={"result": metadata})
+
+    assets_job = build_assets_job("assets_job", [zero, three_asset])
+
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
+
+    # sort so that test is deterministic
+    sorted_nodes = sorted(
+        [
+            node._replace(
+                dependencies=sorted(node.dependencies, key=lambda d: d.upstream_asset_key),
+                depended_by=sorted(node.depended_by, key=lambda d: d.downstream_asset_key),
+                op_names=sorted(node.op_names),
+            )
+            for node in external_asset_nodes
+        ],
+        key=lambda n: n.asset_key,
+    )
+
+    assert sorted_nodes == [
+        ExternalAssetNode(
+            asset_key=AssetKey(["three"]),
+            dependencies=[ExternalAssetDependency(AssetKey(["zero"]))],
+            depended_by=[],
+            op_name="three",
+            node_definition_name="add_one",
+            graph_name="three",
+            op_names=["three.add_one", "three.add_one_2", "three.add_one_3"],
+            op_description=None,
+            job_names=["assets_job"],
+            output_name="result",
+            metadata_entries=normalize_metadata(metadata, []),
+            group_name=DEFAULT_GROUP_NAME,
+        ),
+        ExternalAssetNode(
+            asset_key=AssetKey(["zero"]),
+            dependencies=[],
+            depended_by=[ExternalAssetDependedBy(AssetKey(["three"]))],
+            op_name="zero",
+            node_definition_name="zero",
+            graph_name=None,
+            op_names=["zero"],
+            op_description=None,
+            job_names=["assets_job"],
+            output_name="result",
+            metadata_entries=[],
             group_name=DEFAULT_GROUP_NAME,
         ),
     ]

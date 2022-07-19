@@ -1,5 +1,5 @@
 import copy
-from typing import Mapping
+from typing import Dict, Mapping, TypeVar
 
 import dagster._check as check
 
@@ -36,7 +36,10 @@ def deep_merge_dicts(onto_dict: dict, from_dict: Mapping) -> dict:
     return _deep_merge_dicts(onto_dict, from_dict)
 
 
-def merge_dicts(*args: Mapping) -> dict:
+K, V = TypeVar("K"), TypeVar("V")
+
+
+def merge_dicts(*args: Mapping) -> Dict:
     """
     Returns a dictionary with with all the keys in all of the input dictionaries.
 

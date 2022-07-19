@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 import graphene
-from dagster_graphql.implementation.fetch_runs import get_assets_live_info
+from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
 
 import dagster._check as check
 from dagster.core.definitions.events import AssetKey
@@ -614,7 +614,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
             if node.assetKey in asset_keys
         }
 
-        return get_assets_live_info(graphene_info, step_keys_by_asset)
+        return get_assets_latest_info(graphene_info, step_keys_by_asset)
 
     def resolve_logsForRun(self, graphene_info, runId, afterCursor=None, limit=None):
         return get_logs_for_run(graphene_info, runId, afterCursor, limit)

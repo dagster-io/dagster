@@ -4,13 +4,16 @@ import time
 
 from dagster import DagsterEvent, DagsterEventType, EventLogEntry, PipelineRunStatus
 from dagster.core.execution.api import create_execution_plan
+from dagster.core.execution.plan.resume_retry import ReexecutionStrategy
+from dagster.core.instance import DagsterInstance
 from dagster.core.snap import snapshot_from_execution_plan
 from dagster.core.storage.pipeline_run import RunsFilter
-from dagster.core.storage.tags import MAX_RETRIES_TAG
+from dagster.core.storage.tags import MAX_RETRIES_TAG, RETRY_STRATEGY_TAG
 from dagster.core.test_utils import create_run_for_test, instance_for_test
 from dagster.daemon.auto_run_reexecution.auto_run_reexecution import (
     consume_new_runs_for_automatic_reexecution,
     filter_runs_to_should_retry,
+    get_reexecution_strategy,
 )
 from dagster.daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
 
@@ -246,3 +249,32 @@ def test_daemon_enabled(instance):
         )
 
     assert EventLogConsumerDaemon.daemon_type() in instance.get_required_daemon_types()
+
+
+def test_strategy(instance: DagsterInstance):
+    run = create_run(
+        instance,
+        status=PipelineRunStatus.FAILURE,
+    )
+    assert get_reexecution_strategy(run, instance) == None
+
+    run = create_run(
+        instance,
+        status=PipelineRunStatus.FAILURE,
+        tags={RETRY_STRATEGY_TAG: "FROM_FAILURE"},
+    )
+    assert get_reexecution_strategy(run, instance) == ReexecutionStrategy.FROM_FAILURE
+
+    run = create_run(
+        instance,
+        status=PipelineRunStatus.FAILURE,
+        tags={RETRY_STRATEGY_TAG: "ALL_STEPS"},
+    )
+    assert get_reexecution_strategy(run, instance) == ReexecutionStrategy.ALL_STEPS
+
+    run = create_run(
+        instance,
+        status=PipelineRunStatus.FAILURE,
+        tags={RETRY_STRATEGY_TAG: "not a strategy"},
+    )
+    assert get_reexecution_strategy(run, instance) == None

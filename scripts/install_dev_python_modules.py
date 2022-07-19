@@ -1,10 +1,23 @@
 # pylint: disable=print-call
-import os
+import argparse
 import subprocess
 import sys
+from typing import List
+
+# We allow extra packages to be passed in via the command line because pip's version resolution
+# requires everything to be installed at the same time.
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-q", "--quiet", action="count")
+parser.add_argument(
+    "packages",
+    type=str,
+    nargs="*",
+    help="Additional packages (with optional version reqs) to pass to `pip install`",
+)
 
 
-def main(quiet):
+def main(quiet: bool, extra_packages: List[str]) -> None:
     """
     Especially on macOS, there may be missing wheels for new major Python versions, which means that
     some dependencies may have to be built from source. You may find yourself needing to install
@@ -16,7 +29,16 @@ def main(quiet):
     # build errors, try this first. For context, there is a lengthy discussion here:
     # https://github.com/pypa/pip/issues/5599
 
-    install_targets = [
+    install_targets: List[str] = [
+        *extra_packages,
+    ]
+
+    # Not all libs are supported on all Python versions. Consult `dagster_buildkite.steps.packages`
+    # as the source of truth on which packages support which Python versions. The building of
+    # `install_targets` below should use `sys.version_info` checks to reflect this.
+
+    # Supported on all Python versions.
+    install_targets += [
         "-e python_modules/dagster[black,isort,mypy,test]",
         "-e python_modules/dagster-graphql",
         "-e python_modules/dagster-test",
@@ -30,7 +52,7 @@ def main(quiet):
         '-e "python_modules/libraries/dagster-dask[yarn,pbs,kube]"',
         "-e python_modules/libraries/dagster-databricks",
         "-e python_modules/libraries/dagster-datadog",
-        "-e python_modules/libraries/dagster-dbt",
+        "-e python_modules/libraries/dagster-datahub",
         "-e python_modules/libraries/dagster-docker",
         "-e python_modules/libraries/dagster-gcp",
         "-e python_modules/libraries/dagster-fivetran",
@@ -41,15 +63,12 @@ def main(quiet):
         "-e python_modules/libraries/dagster-mysql",
         "-e python_modules/libraries/dagster-pagerduty",
         "-e python_modules/libraries/dagster-pandas",
-        "-e python_modules/libraries/dagster-pandera",
         "-e python_modules/libraries/dagster-papertrail",
         "-e python_modules/libraries/dagster-postgres",
         "-e python_modules/libraries/dagster-prometheus",
         "-e python_modules/libraries/dagster-pyspark",
         "-e python_modules/libraries/dagster-shell",
         "-e python_modules/libraries/dagster-slack",
-        "-e python_modules/libraries/dagster-snowflake",
-        "-e python_modules/libraries/dagster-snowflake-pandas",
         "-e python_modules/libraries/dagster-spark",
         "-e python_modules/libraries/dagster-ssh",
         "-e python_modules/libraries/dagster-twilio",
@@ -60,18 +79,37 @@ def main(quiet):
         "-e helm/dagster/schema[test]",
     ]
 
+    if sys.version_info > (3, 7):
+        install_targets += [
+            "-e python_modules/libraries/dagster-dbt",
+            "-e python_modules/libraries/dagster-pandera",
+            "-e python_modules/libraries/dagster-snowflake",
+            "-e python_modules/libraries/dagster-snowflake-pandas",
+        ]
+
+    if sys.version_info > (3, 6) and sys.version_info < (3, 10):
+        install_targets += [
+            "-e python_modules/libraries/dagster-dbt",
+        ]
+
+    # NOTE: `dagster-ge` is out of date and does not support recent versions of great expectations.
+    # Because of this, it has second-order dependencies on old versions of popular libraries like
+    # numpy which conflict with the requirements of our other libraries. For this reason, until
+    # dagster-ge is updated we won't install `dagster-ge` in the common dev environment or
+    # pre-install its dependencies in our BK images (which this script is used for).
+    #
     # dagster-ge depends on a great_expectations version that does not install on Windows
     # https://github.com/dagster-io/dagster/issues/3319
-    if not os.name == "nt":
-        install_targets += ["-e python_modules/libraries/dagster-ge"]
+    # if sys.version_info >= (3, 7) and os.name != "nt":
+    #     install_targets += ["-e python_modules/libraries/dagster-ge"]
 
     # NOTE: These need to be installed as one long pip install command, otherwise pip will install
     # conflicting dependencies, which will break pip freeze snapshot creation during the integration
     # image build!
     cmd = ["pip", "install"] + install_targets
 
-    if quiet:
-        cmd.append(quiet)
+    if quiet is not None:
+        cmd.append(f'-{"q" * quiet}')
 
     p = subprocess.Popen(
         " ".join(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True
@@ -86,4 +124,5 @@ def main(quiet):
 
 
 if __name__ == "__main__":
-    main(quiet=sys.argv[1] if len(sys.argv) > 1 else "")
+    args = parser.parse_args()
+    main(quiet=args.quiet, extra_packages=args.packages)

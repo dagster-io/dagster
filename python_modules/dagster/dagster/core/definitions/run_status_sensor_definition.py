@@ -5,15 +5,6 @@ from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Union, c
 import pendulum
 
 import dagster._check as check
-from dagster.core.definitions import GraphDefinition, JobDefinition, PipelineDefinition
-from dagster.core.definitions.sensor_definition import (
-    DefaultSensorStatus,
-    PipelineRunReaction,
-    SensorDefinition,
-    SensorEvaluationContext,
-    SkipReason,
-    is_context_provided,
-)
 from dagster.core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -36,6 +27,18 @@ from dagster.utils.backcompat import deprecation_warning
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from ..decorator_utils import get_function_params
+from .graph_definition import GraphDefinition
+from .job_definition import JobDefinition
+from .pipeline_definition import PipelineDefinition
+from .sensor_definition import (
+    DefaultSensorStatus,
+    PipelineRunReaction,
+    SensorDefinition,
+    SensorEvaluationContext,
+    SkipReason,
+    is_context_provided,
+)
+from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 
 @whitelist_for_serdes
@@ -245,7 +248,7 @@ def pipeline_failure_sensor(
             sensor_name = name
 
         if pipeline_selection:
-            deprecation_warning("pipeline_selection", "0.16.0", "Use monitored_pipelines instead.")
+            deprecation_warning("pipeline_selection", "1.0.0", "Use monitored_pipelines instead.")
         pipelines = monitored_pipelines if monitored_pipelines else pipeline_selection
 
         @run_status_sensor(
@@ -272,9 +275,13 @@ def run_failure_sensor(
     name: Optional[Union[Callable[..., Any], str]] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
-    monitored_jobs: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
+    monitored_jobs: Optional[
+        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+    ] = None,
     monitored_pipelines: Optional[List[str]] = None,
-    job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
+    job_selection: Optional[
+        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+    ] = None,
     pipeline_selection: Optional[List[str]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
@@ -295,7 +302,7 @@ def run_failure_sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition]]]): The jobs that
+        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]]): The jobs that
             will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails.
         monitored_pipelines (Optional[List[str]]): (legacy) Names of the pipelines that will be monitored by
@@ -325,11 +332,11 @@ def run_failure_sensor(
             sensor_name = name
 
         if pipeline_selection:
-            deprecation_warning("pipeline_selection", "0.16.0", "Use monitored_pipelines instead.")
+            deprecation_warning("pipeline_selection", "1.0.0", "Use monitored_pipelines instead.")
         pipelines = monitored_pipelines if monitored_pipelines else pipeline_selection
 
         if job_selection:
-            deprecation_warning("job_selection", "0.16.0", "Use monitored_jobs instead.")
+            deprecation_warning("job_selection", "1.0.0", "Use monitored_jobs instead.")
         jobs = monitored_jobs if monitored_jobs else job_selection
 
         @run_status_sensor(
@@ -372,7 +379,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition]]]): The jobs that
+        monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]]): The jobs that
             will be monitored by this sensor. Defaults to None, which means the alert will be sent
             when any job in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
@@ -393,7 +400,9 @@ class RunStatusSensorDefinition(SensorDefinition):
         monitored_pipelines: Optional[List[str]] = None,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
-        monitored_jobs: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
+        monitored_jobs: Optional[
+            List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+        ] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
         request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
@@ -408,7 +417,9 @@ class RunStatusSensorDefinition(SensorDefinition):
         check.opt_int_param(minimum_interval_seconds, "minimum_interval_seconds")
         check.opt_str_param(description, "description")
         check.opt_list_param(
-            monitored_jobs, "monitored_jobs", (PipelineDefinition, GraphDefinition)
+            monitored_jobs,
+            "monitored_jobs",
+            (PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition),
         )
         check.inst_param(default_status, "default_status", DefaultSensorStatus)
 
@@ -620,8 +631,12 @@ def run_status_sensor(
     name: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
-    monitored_jobs: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
-    job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
+    monitored_jobs: Optional[
+        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+    ] = None,
+    job_selection: Optional[
+        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+    ] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
@@ -650,9 +665,9 @@ def run_status_sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): Jobs that will
-            be monitored by this sensor. Defaults to None, which means the alert will be sent when
-            any job in the repository matches the requested run_status.
+        monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]]):
+            Jobs that will be monitored by this sensor. Defaults to None, which means the alert will
+            be sent when any job in the repository matches the requested run_status.
         job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): (deprecated in favor of monitored_jobs)
             Jobs that will be monitored by this sensor. Defaults to None, which means the alert will be sent when
             any job in the repository matches the requested run_status.
@@ -672,7 +687,7 @@ def run_status_sensor(
         sensor_name = name or fn.__name__
 
         if pipeline_run_status:
-            deprecation_warning("pipeline_run_status", "0.16.0", "Use run_status instead.")
+            deprecation_warning("pipeline_run_status", "1.0.0", "Use run_status instead.")
 
         run_status_final = run_status if run_status else pipeline_run_status
         if not run_status_final:
@@ -681,11 +696,11 @@ def run_status_sensor(
             )
 
         if pipeline_selection:
-            deprecation_warning("pipeline_selection", "0.16.0", "Use monitored_pipelines instead.")
+            deprecation_warning("pipeline_selection", "1.0.0", "Use monitored_pipelines instead.")
         pipelines = monitored_pipelines if monitored_pipelines else pipeline_selection
 
         if job_selection:
-            deprecation_warning("job_selection", "0.16.0", "Use monitored_jobs instead.")
+            deprecation_warning("job_selection", "1.0.0", "Use monitored_jobs instead.")
         jobs = monitored_jobs if monitored_jobs else job_selection
 
         return RunStatusSensorDefinition(

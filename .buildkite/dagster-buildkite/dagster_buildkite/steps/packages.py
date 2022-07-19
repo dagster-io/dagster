@@ -5,7 +5,10 @@ from typing import List, Optional
 from dagster_buildkite.defines import GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
 from dagster_buildkite.package_spec import PackageSpec
 from dagster_buildkite.python_version import AvailablePythonVersion
-from dagster_buildkite.steps.test_images import core_test_image_depends_fn, test_image_depends_fn
+from dagster_buildkite.steps.test_project import (
+    test_project_core_depends_fn,
+    test_project_depends_fn,
+)
 from dagster_buildkite.utils import (
     BuildkiteStep,
     connect_sibling_docker_container,
@@ -230,7 +233,7 @@ def dagster_extra_cmds(version: str, _) -> List[str]:
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
         "aws ecr get-login --no-include-email --region us-west-2 | sh",
-        "export IMAGE_NAME=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/buildkite-test-image-core:$${BUILDKITE_BUILD_ID}-"
+        "export IMAGE_NAME=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com/test-project-core:$${BUILDKITE_BUILD_ID}-"
         + version,
         "pushd python_modules/dagster/dagster_tests",
         "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
@@ -317,7 +320,7 @@ postgres_extra_cmds = [
 EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/airflow_ingest",
-        unsupported_python_versions=[AvailablePythonVersion.V3_9],
+        unsupported_python_versions=[AvailablePythonVersion.V3_9, AvailablePythonVersion.V3_10],
     ),
     PackageSpec(
         "examples/bollinger",
@@ -332,6 +335,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # dependency on dagster-dbt
             AvailablePythonVersion.V3_6,
+            AvailablePythonVersion.V3_10,
         ],
     ),
     PackageSpec(
@@ -339,6 +343,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # dependency on dagster-dbt
             AvailablePythonVersion.V3_6,
+            AvailablePythonVersion.V3_10,
         ],
     ),
     PackageSpec(
@@ -360,14 +365,8 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # dependency on dagster-ge
             AvailablePythonVersion.V3_6,
-        ],
-    ),
-    PackageSpec(
-        "examples/hacker_news",
-        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
-        unsupported_python_versions=[
-            # dependency on dagster-dbt
-            AvailablePythonVersion.V3_6,
+            # Issue with pinned of great_expectations
+            AvailablePythonVersion.V3_10,
         ],
     ),
     PackageSpec(
@@ -387,7 +386,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "python_modules/dagster",
         pytest_extra_cmds=dagster_extra_cmds,
         env_vars=["AWS_ACCOUNT_ID"],
-        pytest_step_dependencies=core_test_image_depends_fn,
+        pytest_step_dependencies=test_project_core_depends_fn,
         pytest_tox_factors=[
             "api_tests",
             "cli_tests",
@@ -424,9 +423,10 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-dbt",
         pytest_extra_cmds=dbt_extra_cmds,
-        # dbt-core no longer supports python 3.6
+        # dbt-core no longer supports python 3.6 and does not yet support python 3.10
         unsupported_python_versions=[
             AvailablePythonVersion.V3_6,
+            AvailablePythonVersion.V3_10,
         ],
     ),
     PackageSpec(
@@ -434,6 +434,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         # omit python 3.9 until we add support
         unsupported_python_versions=[
             AvailablePythonVersion.V3_9,
+            AvailablePythonVersion.V3_10,
         ],
         env_vars=[
             "AIRFLOW_HOME",
@@ -444,7 +445,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "GOOGLE_APPLICATION_CREDENTIALS",
         ],
         pytest_extra_cmds=airflow_extra_cmds,
-        pytest_step_dependencies=test_image_depends_fn,
+        pytest_step_dependencies=test_project_depends_fn,
         pytest_tox_factors=["default", "requiresairflowdb"],
     ),
     PackageSpec(
@@ -459,13 +460,13 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "python_modules/libraries/dagster-celery",
         env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
         pytest_extra_cmds=celery_extra_cmds,
-        pytest_step_dependencies=test_image_depends_fn,
+        pytest_step_dependencies=test_project_depends_fn,
     ),
     PackageSpec(
         "python_modules/libraries/dagster-celery-docker",
         env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
         pytest_extra_cmds=celery_docker_extra_cmds,
-        pytest_step_dependencies=test_image_depends_fn,
+        pytest_step_dependencies=test_project_depends_fn,
     ),
     PackageSpec(
         "python_modules/libraries/dagster-dask",
@@ -478,7 +479,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "python_modules/libraries/dagster-docker",
         env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
         pytest_extra_cmds=docker_extra_cmds,
-        pytest_step_dependencies=test_image_depends_fn,
+        pytest_step_dependencies=test_project_depends_fn,
     ),
     PackageSpec(
         "python_modules/libraries/dagster-gcp",
@@ -501,7 +502,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "BUILDKITE_SECRETS_BUCKET",
         ],
         pytest_extra_cmds=k8s_extra_cmds,
-        pytest_step_dependencies=test_image_depends_fn,
+        pytest_step_dependencies=test_project_depends_fn,
     ),
     PackageSpec("python_modules/libraries/dagster-mlflow", upload_coverage=False),
     PackageSpec("python_modules/libraries/dagster-mysql", pytest_extra_cmds=mysql_extra_cmds),

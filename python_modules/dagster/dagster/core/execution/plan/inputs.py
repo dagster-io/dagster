@@ -2,6 +2,7 @@ import hashlib
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Dict,
     Iterator,
@@ -64,7 +65,7 @@ class StepInputData(
         return super(StepInputData, cls).__new__(
             cls,
             input_name=check.str_param(input_name, "input_name"),
-            type_check_data=check.opt_inst_param(type_check_data, "type_check_data", TypeCheckData),
+            type_check_data=check.inst_param(type_check_data, "type_check_data", TypeCheckData),
         )
 
 
@@ -92,7 +93,7 @@ class StepInput(
         return self.source.step_output_handle_dependencies
 
 
-def join_and_hash(*args) -> Optional[str]:
+def join_and_hash(*args: Optional[str]) -> Optional[str]:
     lst = [check.opt_str_param(elem, "elem") for elem in args]
     if None in lst:
         return None
@@ -115,9 +116,9 @@ class StepInputSource(ABC):
 
     @abstractmethod
     def load_input_object(self, step_context: "StepExecutionContext", input_def: InputDefinition):
-        raise NotImplementedError()
+        ...
 
-    def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
+    def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> AbstractSet[str]:
         return set()
 
     def get_asset_lineage(
@@ -296,7 +297,7 @@ class FromRootInputManager(
         solid_config = step_context.resolved_run_config.solids.get(str(self.solid_handle))
         config_data = solid_config.inputs.get(self.input_name) if solid_config else None
 
-        input_manager_key = (
+        input_manager_key = check.not_none(
             input_def.root_manager_key
             if input_def.root_manager_key
             else input_def.input_manager_key
@@ -326,11 +327,16 @@ class FromRootInputManager(
             ],
         )
 
-    def compute_version(self, step_versions, pipeline_def, resolved_run_config) -> Optional[str]:
+    def compute_version(
+        self,
+        step_versions: Dict[str, Optional[str]],
+        pipeline_def: PipelineDefinition,
+        resolved_run_config: ResolvedRunConfig,
+    ) -> Optional[str]:
         from ..resolve_versions import check_valid_version, resolve_config_version
 
         solid = pipeline_def.get_solid(self.solid_handle)
-        input_manager_key = (
+        input_manager_key: str = check.not_none(
             solid.input_def_named(self.input_name).root_manager_key
             if solid.input_def_named(self.input_name).root_manager_key
             else solid.input_def_named(self.input_name).input_manager_key
@@ -339,9 +345,11 @@ class FromRootInputManager(
             resolved_run_config.mode
         ).resource_defs[input_manager_key]
 
-        solid_config = resolved_run_config.solids.get(solid.name)
+        solid_config = resolved_run_config.solids[solid.name]
         input_config = solid_config.inputs.get(self.input_name)
-        resource_config = resolved_run_config.resources.get(input_manager_key).config
+        resource_config = check.not_none(
+            resolved_run_config.resources.get(input_manager_key)
+        ).config
 
         version_context = ResourceVersionContext(
             resource_def=input_manager_def,
@@ -372,7 +380,7 @@ class FromRootInputManager(
     def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
         input_def = pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
 
-        input_manager_key = (
+        input_manager_key: str = check.not_none(
             input_def.root_manager_key
             if input_def.root_manager_key
             else input_def.input_manager_key
@@ -623,16 +631,12 @@ class FromConfig(
         ):
             dagster_type = self.get_associated_input_def(step_context.pipeline_def).dagster_type
             config_data = self.get_associated_config(step_context.resolved_run_config)
+            loader = check.not_none(dagster_type.loader)
+            return loader.construct_from_config_value(step_context, config_data)
 
-            return dagster_type.loader.construct_from_config_value(step_context, config_data)
-
-    def required_resource_keys(self, pipeline_def: PipelineDefinition) -> Set[str]:
-        input_def = self.get_associated_input_def(pipeline_def)
-        return (
-            input_def.dagster_type.loader.required_resource_keys()
-            if input_def.dagster_type.loader
-            else set()
-        )
+    def required_resource_keys(self, pipeline_def: PipelineDefinition) -> AbstractSet[str]:
+        dagster_type = self.get_associated_input_def(pipeline_def).dagster_type
+        return dagster_type.loader.required_resource_keys() if dagster_type.loader else set()
 
     def compute_version(
         self,
@@ -644,8 +648,9 @@ class FromConfig(
         config_data = self.get_associated_config(resolved_run_config)
         input_def = self.get_associated_input_def(pipeline_def)
         dagster_type = input_def.dagster_type
+        loader = check.not_none(dagster_type.loader)
 
-        return dagster_type.loader.compute_loaded_input_version(config_data)
+        return loader.compute_loaded_input_version(config_data)
 
 
 @whitelist_for_serdes

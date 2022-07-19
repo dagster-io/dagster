@@ -12,61 +12,58 @@ const path = require('path');
 const dagitCorePath = path.resolve('../core/src');
 const dagitUIPath = path.resolve('../ui/src');
 
+const noncePlaceholder = 'NONCE-PLACEHOLDER';
+
 module.exports = {
   /**
-  * Proxy origin, probably defined via env var, e.g. `process.env.REACT_APP_BACKEND_ORIGIN`.
-  */
+   * Proxy origin, probably defined via env var, e.g. `process.env.REACT_APP_BACKEND_ORIGIN`.
+   */
   proxyOrigin: process.env.REACT_APP_BACKEND_ORIGIN,
 
   /**
-  * Modules that must be deduped for the Webpack build, e.g. `react`. Ex:
-  *
-  * {
-  *   react: path.resolve(pathToLocalDagit, 'node_modules/react'),
-  * }
-  */
+   * Nonce placeholder string, to be replaced at runtime by server.
+   */
+  noncePlaceholder,
+
+  /**
+   * Modules that must be deduped for the Webpack build, e.g. `react`. Ex:
+   *
+   * {
+   *   react: path.resolve(pathToLocalDagit, 'node_modules/react'),
+   * }
+   */
   moduleAliases: {
     '@dagster-io/dagit-core': dagitCorePath,
     '@dagster-io/ui': dagitUIPath,
   },
 
   /**
-  * `src` paths that must be babelified by Webpack, e.g. linked packages that are also
-  * development targets, but are outside of the CRA's own `src` directory. Ex:
-  *
-  * [
-  *   path.resolve(pathToLocalDagit, 'packages/core/src'),
-  * ]
-  */
+   * `src` paths that must be babelified by Webpack, e.g. linked packages that are also
+   * development targets, but are outside of the CRA's own `src` directory. Ex:
+   *
+   * [
+   *   path.resolve(pathToLocalDagit, 'packages/core/src'),
+   * ]
+   */
   srcPaths: [dagitCorePath, dagitUIPath],
 
   /**
-  * CSP Configuration. Receives the webpack environment to return the appropriate CSP
-  * values based on prod/dev/etc. Values are supplied to `CspHtmlWebpackPlugin`.
-  */
+   * CSP Configuration. Receives the webpack environment to return the appropriate CSP
+   * values based on prod/dev/etc. Values are supplied to `CspHtmlWebpackPlugin`.
+   */
   csp: (webpackEnv) => {
-    const isEnvDevelopment = webpackEnv === 'development';
     return {
+      // https://csp.withgoogle.com/docs/strict-csp.html
       policy: {
-        'default-src': `'none'`,
-        'base-uri': `'self'`,
-        // It shouldn't be necessary to specify WS here, but Safari is broken.
-        // https://bugs.webkit.org/show_bug.cgi?id=201591
-        'connect-src': [`'self'`, 'ws:', 'wss:'],
-        'font-src': [`'self'`, 'data:'],
-        'frame-src': isEnvDevelopment ? [`http://localhost:*`, `'self'`] : `'self'`,
-        'img-src': [`'self'`, 'data:'],
-        'manifest-src': `'self'`,
-        // Allow inline `script` and `style` in development because we don't generate a
-        // nonce when running Webpack devserver.
-        'script-src': isEnvDevelopment
-          ? [`'unsafe-inline'`, `'self'`, `'unsafe-eval'`]
-          : [`'self'`, `'nonce-NONCE-PLACEHOLDER'`],
-        'style-src': isEnvDevelopment
-          ? [`'unsafe-inline'`, `'self'`, `'unsafe-eval'`]
-          : [`'self'`, `'nonce-NONCE-PLACEHOLDER'`],
-        // `frame-ancestors` is not supported in `meta` tags.
-        ...(isEnvDevelopment ? {} : {'frame-ancestors': `'none'`}),
+        'base-uri': `'none'`,
+        'object-src': `'none'`,
+        'script-src': [
+          `'nonce-${noncePlaceholder}'`,
+          `'unsafe-inline'`,
+          `'strict-dynamic'`,
+          `https:`,
+          'http:',
+        ],
       },
       options: {
         hashEnabled: {

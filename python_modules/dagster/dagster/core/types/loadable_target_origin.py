@@ -1,4 +1,3 @@
-import sys
 from typing import List, NamedTuple, Optional
 
 import dagster._check as check
@@ -10,7 +9,7 @@ class LoadableTargetOrigin(
     NamedTuple(
         "LoadableTargetOrigin",
         [
-            ("executable_path", str),
+            ("executable_path", Optional[str]),
             ("python_file", Optional[str]),
             ("module_name", Optional[str]),
             ("working_directory", Optional[str]),
@@ -30,7 +29,7 @@ class LoadableTargetOrigin(
     ):
         return super(LoadableTargetOrigin, cls).__new__(
             cls,
-            executable_path=check.opt_str_param(executable_path, "executable_path", sys.executable),
+            executable_path=check.opt_str_param(executable_path, "executable_path"),
             python_file=check.opt_str_param(python_file, "python_file"),
             module_name=check.opt_str_param(module_name, "module_name"),
             working_directory=check.opt_str_param(working_directory, "working_directory"),

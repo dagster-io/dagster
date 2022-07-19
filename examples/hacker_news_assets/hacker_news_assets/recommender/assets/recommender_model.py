@@ -9,7 +9,7 @@ from dagster import AssetIn, MetadataValue, Output, asset
 from .user_story_matrix import IndexedCooMatrix
 
 
-@asset
+@asset(key_prefix=["s3", "recommender"])
 def recommender_model(user_story_matrix: IndexedCooMatrix) -> Output[TruncatedSVD]:
     """
     An SVD model for collaborative filtering-based recommendation.
@@ -30,8 +30,11 @@ def recommender_model(user_story_matrix: IndexedCooMatrix) -> Output[TruncatedSV
 
 
 @asset(
-    ins={"stories": AssetIn(key_prefix="core", metadata={"columns": ["id", "title"]})},
+    ins={
+        "stories": AssetIn(key_prefix=["snowflake", "core"], metadata={"columns": ["id", "title"]})
+    },
     io_manager_key="warehouse_io_manager",
+    key_prefix=["snowflake", "recommender"],
 )
 def component_top_stories(
     recommender_model: TruncatedSVD, user_story_matrix: IndexedCooMatrix, stories: DataFrame

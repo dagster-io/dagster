@@ -5,13 +5,14 @@ import sys
 import time
 import uuid
 from base64 import standard_b64encode as b64
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 import requests
 
 from dagster import Failure, Field, IntSource, RetryRequested, StringSource
 from dagster import _check as check
 from dagster import resource
+from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.utils import coerce_valid_log_level
 
 from ..dbt_resource import DbtResource
@@ -635,6 +636,8 @@ def dbt_rpc_sync_resource(
     )
 
 
-local_dbt_rpc_resource = dbt_rpc_resource.configured({"host": "0.0.0.0", "port": 8580})
+local_dbt_rpc_resource = cast(
+    ResourceDefinition, dbt_rpc_resource.configured({"host": "0.0.0.0", "port": 8580})
+)
 local_dbt_rpc_resource.__doc__ = """This resource defines a dbt RPC client for an RPC server running
 on 0.0.0.0:8580."""

@@ -226,7 +226,7 @@ class Output(Generic[T]):
         self._metadata_entries = normalize_metadata(metadata, metadata_entries)
 
     @property
-    def metadata_entries(self) -> List[Union[PartitionMetadataEntry, MetadataEntry]]:
+    def metadata_entries(self) -> Sequence[Union[PartitionMetadataEntry, MetadataEntry]]:
         return self._metadata_entries
 
     @property
@@ -292,7 +292,7 @@ class DynamicOutput(Generic[T]):
         self._value = value
 
     @property
-    def metadata_entries(self) -> List[Union[PartitionMetadataEntry, MetadataEntry]]:
+    def metadata_entries(self) -> Sequence[Union[PartitionMetadataEntry, MetadataEntry]]:
         return self._metadata_entries
 
     @property
@@ -388,7 +388,7 @@ class AssetMaterialization(
         [
             ("asset_key", AssetKey),
             ("description", Optional[str]),
-            ("metadata_entries", List[Union[MetadataEntry, PartitionMetadataEntry]]),
+            ("metadata_entries", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
             ("partition", Optional[str]),
         ],
     )

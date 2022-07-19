@@ -17,7 +17,6 @@ from dagster import (
     graph,
     pipeline,
     repository,
-    solid,
 )
 from dagster.core.definitions import Partition, PartitionSetDefinition
 from dagster.core.execution.api import execute_pipeline
@@ -39,6 +38,7 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace.load_target import PythonFileTarget
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.backfill import execute_backfill_iteration
+from dagster.legacy import solid
 from dagster.seven import IS_WINDOWS, get_system_temp_directory
 from dagster.utils import touch_file
 from dagster.utils.error import SerializableErrorInfo
@@ -121,28 +121,30 @@ def config_pipeline():
     config_solid()
 
 
-simple_partition_set = PartitionSetDefinition(
+# Type-ignores due to mypy bug with inference and lambdas
+
+simple_partition_set: PartitionSetDefinition = PartitionSetDefinition(
     name="simple_partition_set",
     pipeline_name="the_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
 )
 
-conditionally_fail_partition_set = PartitionSetDefinition(
+conditionally_fail_partition_set: PartitionSetDefinition = PartitionSetDefinition(
     name="conditionally_fail_partition_set",
     pipeline_name="conditional_failure_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
 )
 
-partial_partition_set = PartitionSetDefinition(
+partial_partition_set: PartitionSetDefinition = PartitionSetDefinition(
     name="partial_partition_set",
     pipeline_name="partial_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
 )
 
-parallel_failure_partition_set = PartitionSetDefinition(
+parallel_failure_partition_set: PartitionSetDefinition = PartitionSetDefinition(
     name="parallel_failure_partition_set",
     pipeline_name="parallel_failure_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
 )
 
 
@@ -168,7 +170,7 @@ def _large_partition_config(_):
 large_partition_set = PartitionSetDefinition(
     name="large_partition_set",
     pipeline_name="config_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
     run_config_fn_for_partition=_large_partition_config,
 )
 

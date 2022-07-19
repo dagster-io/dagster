@@ -11,7 +11,7 @@ export interface Delete_deletePipelineRun_DeletePipelineRunSuccess {
   __typename: "DeletePipelineRunSuccess";
 }
 
-export interface Delete_deletePipelineRun_PythonError_cause {
+export interface Delete_deletePipelineRun_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -21,7 +21,7 @@ export interface Delete_deletePipelineRun_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: Delete_deletePipelineRun_PythonError_cause | null;
+  causes: Delete_deletePipelineRun_PythonError_causes[];
 }
 
 export interface Delete_deletePipelineRun_UnauthorizedError {

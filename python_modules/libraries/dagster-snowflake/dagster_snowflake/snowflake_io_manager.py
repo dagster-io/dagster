@@ -40,6 +40,7 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
             "user": StringSource,
             "password": StringSource,
             "warehouse": Field(StringSource, is_required=False),
+            "schema": Field(StringSource, is_required=False),
         }
     )
     def snowflake_io_manager():
@@ -52,7 +53,7 @@ class SnowflakeDbClient(DbClient):
     @staticmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
         with SnowflakeConnection(
-            dict(**(context.resource_config or {}), schema=table_slice.schema), context.log
+            dict(schema=table_slice.schema, **(context.resource_config or {})), context.log  # type: ignore
         ).get_connection() as con:
             con.execute_string(_get_cleanup_statement(table_slice))
 

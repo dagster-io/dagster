@@ -29,6 +29,7 @@ from schema.charts.dagster.subschema.daemon import (
 )
 from schema.charts.dagster.subschema.postgresql import PostgreSQL, Service
 from schema.charts.dagster.subschema.python_logs import PythonLogs
+from schema.charts.dagster.subschema.retention import Retention, TickRetention, TickRetentionByType
 from schema.charts.dagster.subschema.run_launcher import (
     CeleryK8sRunLauncherConfig,
     K8sRunLauncherConfig,
@@ -40,6 +41,7 @@ from schema.charts.dagster.subschema.telemetry import Telemetry
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.utils.helm_template import HelmTemplate
 
+from dagster.core.instance.config import retention_config_schema
 from dagster.core.run_coordinator import QueuedRunCoordinator
 
 
@@ -663,3 +665,39 @@ def test_run_coordinator_has_schema(json_schema_model, run_coordinator_class):
     run_coordinator_fields = set(map(to_camel_case, run_coordinator_class.config_type().keys()))
 
     assert json_schema_fields == run_coordinator_fields
+
+
+def test_retention(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        retention=Retention.construct(
+            enabled=True,
+            schedule=TickRetention.construct(
+                purgeAfterDays=30,
+            ),
+            sensor=TickRetention.construct(
+                purgeAfterDays=TickRetentionByType(
+                    skipped=7,
+                    success=30,
+                    failure=30,
+                    started=30,
+                ),
+            ),
+        )
+    )
+
+    configmaps = template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    retention_config = instance["retention"]
+    assert retention_config.keys() == retention_config_schema().config_type.fields.keys()
+    assert instance["retention"]["schedule"]["purge_after_days"] == 30
+    assert instance["retention"]["sensor"]["purge_after_days"]["skipped"] == 7
+    assert instance["retention"]["sensor"]["purge_after_days"]["success"] == 30
+    assert instance["retention"]["sensor"]["purge_after_days"]["failure"] == 30
+
+
+def test_retention_backcompat(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct()
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    assert not instance.get("retention")

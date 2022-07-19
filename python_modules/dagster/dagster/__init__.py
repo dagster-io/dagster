@@ -19,27 +19,16 @@ from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
 from dagster.config.config_schema import ConfigSchema
 from dagster.config.config_type import Array, Noneable, ScalarUnion
-from dagster.core.asset_defs import (
-    AssetIn,
-    AssetOut,
-    AssetSelection,
-    AssetsDefinition,
-    SourceAsset,
-    asset,
-    build_assets_job,
-    load_assets_from_current_module,
-    load_assets_from_modules,
-    load_assets_from_package_module,
-    load_assets_from_package_name,
-    materialize,
-    materialize_to_memory,
-    multi_asset,
-)
 from dagster.core.definitions import (
+    AllPartitionMapping,
+    AssetIn,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    AssetOut,
+    AssetSelection,
     AssetSensorDefinition,
+    AssetsDefinition,
     BoolMetadataValue,
     CompositeSolidDefinition,
     ConfigMapping,
@@ -63,12 +52,14 @@ from dagster.core.definitions import (
     GraphOut,
     HookDefinition,
     HourlyPartitionsDefinition,
+    IdentityPartitionMapping,
     In,
     InputDefinition,
     InputMapping,
     IntMetadataValue,
     JobDefinition,
     JsonMetadataValue,
+    LastPartitionMapping,
     LoggerDefinition,
     MarkdownMetadataValue,
     Materialization,
@@ -84,6 +75,7 @@ from dagster.core.definitions import (
     OutputDefinition,
     OutputMapping,
     Partition,
+    PartitionMapping,
     PartitionScheduleDefinition,
     PartitionSetDefinition,
     PartitionedConfig,
@@ -110,6 +102,7 @@ from dagster.core.definitions import (
     SkipReason,
     SolidDefinition,
     SolidInvocation,
+    SourceAsset,
     StaticPartitionsDefinition,
     TableColumn,
     TableColumnConstraints,
@@ -124,7 +117,9 @@ from dagster.core.definitions import (
     TypeCheck,
     UrlMetadataValue,
     WeeklyPartitionsDefinition,
+    asset,
     asset_sensor,
+    build_assets_job,
     build_init_logger_context,
     build_reconstructable_job,
     build_schedule_from_partitioned_job,
@@ -142,10 +137,17 @@ from dagster.core.definitions import (
     in_process_executor,
     job,
     lambda_solid,
+    load_assets_from_current_module,
+    load_assets_from_modules,
+    load_assets_from_package_module,
+    load_assets_from_package_name,
     logger,
     make_values_resource,
+    materialize,
+    materialize_to_memory,
     monthly_partitioned_config,
     monthly_schedule,
+    multi_asset,
     multi_or_in_process_executor,
     multiple_process_executor_requirements,
     multiprocess_executor,
@@ -306,9 +308,8 @@ from dagster.config.source import BoolSource, StringSource, IntSource  # isort:s
 # in `_DEPRECATED` is required  for us to generate the deprecation warning.
 
 if typing.TYPE_CHECKING:
-    from dagster.core.asset_defs import AssetGroup
-
     # pylint:disable=reimported
+    from dagster.core.definitions import AssetGroup
     from dagster.core.definitions import DagsterAssetMetadataValue as DagsterAssetMetadataEntryData
     from dagster.core.definitions import (
         DagsterPipelineRunMetadataValue as DagsterPipelineRunMetadataEntryData,
@@ -332,38 +333,38 @@ if typing.TYPE_CHECKING:
 
 _DEPRECATED = {
     "AssetGroup": (
-        "dagster.core.asset_defs",
-        "0.16.0",
+        "dagster.core.definitions",
+        "1.0.0",
         "Instead, place a set of assets wrapped with `with_resources` directly on a repository.",
     ),
 }
 
 _DEPRECATED_RENAMED = {
-    "EventMetadataEntry": (MetadataEntry, "0.16.0"),
-    "EventMetadata": (MetadataValue, "0.16.0"),
-    "TextMetadataEntryData": (TextMetadataValue, "0.16.0"),
-    "UrlMetadataEntryData": (UrlMetadataValue, "0.16.0"),
-    "PathMetadataEntryData": (PathMetadataValue, "0.16.0"),
-    "JsonMetadataEntryData": (JsonMetadataValue, "0.16.0"),
-    "MarkdownMetadataEntryData": (MarkdownMetadataValue, "0.16.0"),
+    "EventMetadataEntry": (MetadataEntry, "1.0.0"),
+    "EventMetadata": (MetadataValue, "1.0.0"),
+    "TextMetadataEntryData": (TextMetadataValue, "1.0.0"),
+    "UrlMetadataEntryData": (UrlMetadataValue, "1.0.0"),
+    "PathMetadataEntryData": (PathMetadataValue, "1.0.0"),
+    "JsonMetadataEntryData": (JsonMetadataValue, "1.0.0"),
+    "MarkdownMetadataEntryData": (MarkdownMetadataValue, "1.0.0"),
     "PythonArtifactMetadataEntryData": (
         PythonArtifactMetadataValue,
-        "0.16.0",
+        "1.0.0",
     ),
-    "FloatMetadataEntryData": (FloatMetadataValue, "0.16.0"),
-    "IntMetadataEntryData": (IntMetadataValue, "0.16.0"),
+    "FloatMetadataEntryData": (FloatMetadataValue, "1.0.0"),
+    "IntMetadataEntryData": (IntMetadataValue, "1.0.0"),
     "DagsterPipelineRunMetadataEntryData": (
         DagsterPipelineRunMetadataValue,
-        "0.16.0",
+        "1.0.0",
     ),
     "DagsterAssetMetadataEntryData": (
         DagsterAssetMetadataValue,
-        "0.16.0",
+        "1.0.0",
     ),
-    "TableMetadataEntryData": (TableMetadataValue, "0.16.0"),
+    "TableMetadataEntryData": (TableMetadataValue, "1.0.0"),
     "TableSchemaMetadataEntryData": (
         TableSchemaMetadataValue,
-        "0.16.0",
+        "1.0.0",
     ),
 }
 
@@ -481,6 +482,7 @@ __all__ = [
     "lambda_solid",
     "logger",
     "multi_asset",
+    "multi_or_in_process_executor",
     "op",
     "pipeline",
     "repository",
@@ -578,6 +580,7 @@ __all__ = [
     "config_from_yaml_strings",
     "configured",
     "build_assets_job",
+    "define_asset_job",
     "load_assets_from_modules",
     "load_assets_from_current_module",
     "load_assets_from_package_module",
@@ -652,6 +655,10 @@ __all__ = [
     "PartitionsDefinition",
     "PartitionScheduleDefinition",
     "PartitionSetDefinition",
+    "PartitionMapping",
+    "IdentityPartitionMapping",
+    "LastPartitionMapping",
+    "AllPartitionMapping",
     "RunRequest",
     "ScheduleDefinition",
     "ScheduleEvaluationContext",

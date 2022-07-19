@@ -10,8 +10,8 @@ from dagster import (
     file_relative_path,
     fs_io_manager,
     pipeline,
-    solid,
 )
+from dagster.legacy import solid
 
 MARKDOWN_EXAMPLE = "markdown_example.md"
 

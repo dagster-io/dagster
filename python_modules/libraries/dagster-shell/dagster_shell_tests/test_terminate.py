@@ -4,11 +4,12 @@ from contextlib import contextmanager
 import psutil
 from dagster_shell.utils import execute
 
-from dagster import pipeline, repository, solid
+from dagster import pipeline, repository
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test, poll_for_finished_run, poll_for_step_start
 from dagster.core.workspace import WorkspaceProcessContext
 from dagster.core.workspace.load_target import PythonFileTarget
+from dagster.legacy import solid
 from dagster.utils import file_relative_path
 
 

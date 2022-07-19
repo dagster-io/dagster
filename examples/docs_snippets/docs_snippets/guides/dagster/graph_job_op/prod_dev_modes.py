@@ -1,4 +1,5 @@
-from dagster import ModeDefinition, pipeline, repository, solid
+from dagster import ModeDefinition, pipeline, repository
+from dagster.legacy import solid
 
 from .prod_dev_resources import dev_external_service, prod_external_service
 
