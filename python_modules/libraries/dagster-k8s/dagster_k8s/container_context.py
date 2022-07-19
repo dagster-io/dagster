@@ -35,6 +35,7 @@ class K8sContainerContext(
             ("labels", Dict[str, str]),
             ("namespace", Optional[str]),
             ("resources", Dict[str, Any]),
+            ("tolerations", Optional[List[Dict[str, Any]]]),
         ],
     )
 ):
@@ -56,6 +57,7 @@ class K8sContainerContext(
         labels: Optional[Dict[str, str]] = None,
         namespace: Optional[str] = None,
         resources: Optional[Dict[str, Any]] = None,
+        tolerations: Optional[List[Dict[str, Any]]] = None,
     ):
         return super(K8sContainerContext, cls).__new__(
             cls,
@@ -76,6 +78,7 @@ class K8sContainerContext(
             labels=check.opt_dict_param(labels, "labels"),
             namespace=check.opt_str_param(namespace, "namespace"),
             resources=check.opt_dict_param(resources, "resources"),
+            tolerations=check.opt_list_param(tolerations, "tolerations"),
         )
 
     def merge(self, other: "K8sContainerContext") -> "K8sContainerContext":
@@ -99,6 +102,7 @@ class K8sContainerContext(
             labels=merge_dicts(other.labels, self.labels),
             namespace=other.namespace if other.namespace else self.namespace,
             resources=other.resources if other.resources else self.resources,
+            tolerations=other.tolerations if other.tolerations else self.tolerations,
         )
 
     def get_environment_dict(self) -> Dict[str, str]:
@@ -125,6 +129,7 @@ class K8sContainerContext(
                     labels=run_launcher.labels,
                     namespace=run_launcher.job_namespace,
                     resources=run_launcher.resources,
+                    tolerations=run_launcher.tolerations,
                 )
             )
 
@@ -173,6 +178,7 @@ class K8sContainerContext(
             labels=processed_context_value.get("labels"),
             namespace=processed_context_value.get("namespace"),
             resources=processed_context_value.get("resources"),
+            tolerations=processed_context_value.get("tolerations"),
         )
 
     def get_k8s_job_config(self, job_image, run_launcher) -> DagsterK8sJobConfig:
@@ -191,4 +197,5 @@ class K8sContainerContext(
             volumes=self.volumes,
             labels=self.labels,
             resources=self.resources,
+            tolerations=self.tolerations,
         )

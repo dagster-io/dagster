@@ -69,6 +69,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         labels=None,
         fail_pod_on_run_failure=None,
         resources=None,
+        tolerations=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.job_namespace = check.str_param(job_namespace, "job_namespace")
@@ -113,6 +114,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             fail_pod_on_run_failure, "fail_pod_on_run_failure"
         )
         self._resources = check.opt_dict_param(resources, "resources")
+        self._tolerations = check.opt_dict_param(tolerations, "tolerations")
 
         super().__init__()
 

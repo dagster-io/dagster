@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 import kubernetes
 
 import dagster._check as check
-from dagster import Array, BoolSource, Field, Noneable, StringSource
+from dagster import Array, BoolSource, Field, Map, Noneable, StringSource
 from dagster import __version__ as dagster_version
 from dagster.config.field_utils import Permissive, Shape
 from dagster.config.validate import validate_config
@@ -211,7 +211,7 @@ class DagsterK8sJobConfig(
         "_K8sJobTaskConfig",
         "job_image dagster_home image_pull_policy image_pull_secrets service_account_name "
         "instance_config_map postgres_password_secret env_config_maps env_secrets env_vars "
-        "volume_mounts volumes labels resources",
+        "volume_mounts volumes labels resources tolerations",
     )
 ):
     """Configuration parameters for launching Dagster Jobs on Kubernetes.
@@ -257,6 +257,8 @@ class DagsterK8sJobConfig(
             https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
         resources (Optional[Dict[str, Any]]) Compute resource requirements for the container. See:
             https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        tolerations (Optional[Dict[str, Any]]) Tolerations for the container. See:
+            https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
     """
 
     def __new__(
@@ -275,6 +277,7 @@ class DagsterK8sJobConfig(
         volumes=None,
         labels=None,
         resources=None,
+        tolerations=None,
     ):
         return super(DagsterK8sJobConfig, cls).__new__(
             cls,
@@ -304,6 +307,7 @@ class DagsterK8sJobConfig(
             ],
             labels=check.opt_dict_param(labels, "labels", key_type=str, value_type=str),
             resources=check.opt_dict_param(resources, "resources", key_type=str),
+            tolerations=check.opt_list_param(tolerations, "tolerations", of_type=Dict),
         )
 
     @classmethod
@@ -472,6 +476,12 @@ class DagsterK8sJobConfig(
                 description="Compute resource requirements for the container. See: "
                 "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
             ),
+            "tolerations": Field(
+                Noneable(Array(Map(str, Any))),
+                is_required=False,
+                description="Tolerations for the container. See: "
+                "https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/",
+            ),
         }
 
     @classmethod
@@ -540,7 +550,7 @@ def construct_dagster_k8s_job(
             Job object.
         args (List[str]): CLI arguments to use with dagster-graphql in this Job.
         job_name (str): The name of the Job. Note that this name must be <= 63 characters in length.
-        resources (Dict[str, Dict[str, str]]): The resource requirements for the container
+        user_defined_k8s_config (Optional[Dict]) Additional user-defined k8s config
         pod_name (str, optional): The name of the Pod. Note that this name must be <= 63 characters
             in length. Defaults to "<job_name>-pod".
         component (str, optional): The name of the component, used to provide the Job label
@@ -653,6 +663,9 @@ def construct_dagster_k8s_job(
 
     volumes = job_config.volumes + user_defined_volumes
 
+    user_defined_toleraions = pod_spec_config.pop("tolerations", {})
+    tolerations = user_defined_toleraions if user_defined_toleraions else job_config.tolerations
+
     # If the user has defined custom labels, remove them from the pod_template_spec_metadata
     # key and merge them with the dagster labels
     pod_template_spec_metadata = copy.deepcopy(user_defined_k8s_config.pod_template_spec_metadata)
@@ -682,6 +695,7 @@ def construct_dagster_k8s_job(
                 "restart_policy": "Never",
                 "containers": [container_config] + user_defined_containers,
                 "volumes": volumes,
+                "tolerations": tolerations,
             },
         ),
     }
