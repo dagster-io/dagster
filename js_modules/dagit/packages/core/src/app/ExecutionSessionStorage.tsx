@@ -3,6 +3,7 @@ import * as React from 'react';
 import {getJSONForKey, useStateWithStorage} from '../hooks/useStateWithStorage';
 import {LaunchpadSessionPartitionSetsFragment} from '../launchpad/types/LaunchpadSessionPartitionSetsFragment';
 import {LaunchpadSessionPipelineFragment} from '../launchpad/types/LaunchpadSessionPipelineFragment';
+import {AssetKeyInput} from '../types/globalTypes';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
@@ -37,6 +38,7 @@ export interface IExecutionSession {
   base: SessionBase | null;
   mode: string | null;
   needsRefresh: boolean;
+  assetSelection: {assetKey: AssetKeyInput; opNames: string[]}[] | null;
   solidSelection: string[] | null;
   solidSelectionQuery: string | null;
   flattenGraphs: boolean;
@@ -88,6 +90,7 @@ export const createSingleSession = (initial: IExecutionSessionChanges = {}, key?
     mode: null,
     base: null,
     needsRefresh: false,
+    assetSelection: null,
     solidSelection: null,
     solidSelectionQuery: '*',
     flattenGraphs: false,
