@@ -1,4 +1,5 @@
 # isort: skip_file
+# pylint: disable=reimported
 from dagster import (
     AssetKey,
     load_assets_from_current_module,

@@ -207,10 +207,14 @@ Graph-backed assets are useful if you have an existing graph that produces and c
 To define a graph-backed asset, use the `from_graph` attribute on the <PyObject object="AssetsDefinition" /> object. The value returned from the graph that becomes the graph-backed asset will be stored in persistent storage as the asset:
 
 ```python file=/concepts/assets/graph_backed_asset.py startafter=start example endbefore=end example
+import pandas as pd
+from dagster import AssetsDefinition, asset, graph, op
+
+
 @op(required_resource_keys={"slack"})
-def fetch_files_from_slack(context) -> DataFrame:
+def fetch_files_from_slack(context) -> pd.DataFrame:
     files = context.resources.slack.files_list(channel="#random")
-    return DataFrame(
+    return pd.DataFrame(
         [
             {
                 "id": file.get("id"),
@@ -245,6 +249,9 @@ The `from_graph` attribute on the `AssetsDefinition` object infers upstream and 
 In the example below, Dagster creates an asset with key `middle_asset` from the `middle_asset` graph. Just like assets defined via <PyObject object="asset" decorator />, each argument to the decorated graph function is an upstream asset name. `middle_asset` depends on `upstream_asset`, and `downstream_asset` depends on `middle_asset`:
 
 ```python file=/concepts/assets/graph_backed_asset.py startafter=start_basic_dependencies endbefore=end_basic_dependencies
+from dagster import AssetsDefinition, asset, graph
+
+
 @asset
 def upstream_asset():
     return 1
@@ -266,6 +273,9 @@ def downstream_asset(middle_asset):
 When your graph returns multiple outputs, Dagster infers each output name to be the outputted asset key. In the below example, `two_assets_graph` accepts `upstream_asset` and outputs two assets, `first_asset` and `second_asset`:
 
 ```python file=/concepts/assets/graph_backed_asset.py startafter=start_basic_dependencies_2 endbefore=end_basic_dependencies_2
+from dagster import AssetsDefinition, GraphOut, graph
+
+
 @graph(out={"first_asset": GraphOut(), "second_asset": GraphOut()})
 def two_assets_graph(upstream_asset):
     one, two = two_outputs(upstream_asset)
@@ -280,6 +290,9 @@ two_assets = AssetsDefinition.from_graph(two_assets_graph)
 You can also define dependencies for graph-backed assets explicitly via the `asset_keys_by_input_name` and `asset_keys_by_output_name` arguments to `from_graph`:
 
 ```python file=/concepts/assets/graph_backed_asset.py startafter=start_explicit_dependencies endbefore=end_explicit_dependencies
+from dagster import AssetsDefinition, GraphOut, graph
+
+
 @graph(out={"one": GraphOut(), "two": GraphOut()})
 def return_one_and_two(zero):
     one, two = two_outputs(zero)
@@ -288,8 +301,8 @@ def return_one_and_two(zero):
 
 explicit_deps_asset = AssetsDefinition.from_graph(
     return_one_and_two,
-    asset_keys_by_input_name={"zero": AssetKey("upstream_asset")},
-    asset_keys_by_output_name={
+    keys_by_input_name={"zero": AssetKey("upstream_asset")},
+    keys_by_output_name={
         "one": AssetKey("asset_one"),
         "two": AssetKey("asset_two"),
     },
