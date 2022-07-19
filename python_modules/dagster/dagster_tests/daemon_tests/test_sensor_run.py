@@ -21,9 +21,9 @@ from dagster import (
     repository,
     run_failure_sensor,
 )
-from dagster._legacy import pipeline, solid
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.decorators.sensor_decorator import asset_sensor, sensor
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.run_status_sensor_definition import run_status_sensor

@@ -17,10 +17,10 @@ from dagster import (
     repository,
     seven,
 )
-from dagster._legacy import pipeline, solid
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import GrpcServerProcess
 from dagster._grpc.types import CancelExecutionRequest
+from dagster._legacy import pipeline, solid
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import GRPC_INFO_TAG

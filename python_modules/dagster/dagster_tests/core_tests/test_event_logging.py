@@ -1,20 +1,9 @@
 import logging
 from collections import defaultdict
 
-<<<<<<< HEAD
 from dagster import DagsterEvent, ModeDefinition, PipelineDefinition, execute_pipeline, lambda_solid
 from dagster._legacy import pipeline
-=======
-from dagster import (
-    DagsterEvent,
-    ModeDefinition,
-    PipelineDefinition,
-    execute_pipeline,
-    lambda_solid,
-    pipeline,
-)
 from dagster._loggers import colored_console_logger
->>>>>>> 57b1517b70 (fixes)
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry, construct_event_logger
 from dagster.serdes import deserialize_as

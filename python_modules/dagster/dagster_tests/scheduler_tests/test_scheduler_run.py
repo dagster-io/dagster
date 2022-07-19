@@ -20,10 +20,10 @@ from dagster import (
     repository,
     schedule,
 )
-from dagster._legacy import pipeline, solid
 from dagster._daemon import get_default_daemon_logger
 from dagster._grpc.client import EphemeralDagsterGrpcClient
 from dagster._grpc.server import open_server_process
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.run_request import RunRequest
 from dagster.core.host_representation import (
     ExternalInstigatorOrigin,

@@ -17,9 +17,9 @@ from dagster import (
     graph,
     repository,
 )
-from dagster._legacy import pipeline, solid
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions import Partition, PartitionSetDefinition
 from dagster.core.execution.api import execute_pipeline
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill

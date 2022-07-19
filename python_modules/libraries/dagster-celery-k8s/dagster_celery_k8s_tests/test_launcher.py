@@ -14,11 +14,8 @@ from dagster_test.test_project import get_test_project_workspace_and_external_pi
 
 from dagster import reconstructable
 from dagster._check import CheckError
-<<<<<<< HEAD
-from dagster._legacy import pipeline
-=======
 from dagster._grpc.types import ExecuteRunArgs
->>>>>>> 57b1517b70 (fixes)
+from dagster._legacy import pipeline
 from dagster.core.host_representation import RepositoryHandle
 from dagster.core.launcher import LaunchRunContext
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
