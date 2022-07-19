@@ -1,27 +1,25 @@
 import os
 
+from hacker_news_assets.assets import (
+    ACTIVITY_ANALYTICS,
+    CORE,
+    RECOMMENDER,
+    activity_analytics_assets,
+    core_assets,
+    dbt_assets,
+    recommender_assets,
+)
+from hacker_news_assets.partitions import hourly_partitions
+from hacker_news_assets.resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
+from hacker_news_assets.sensors import make_hn_tables_updated_sensor, make_slack_on_failure_sensor
 
 from dagster import (
-    repository,
-    with_resources,
     AssetSelection,
     build_schedule_from_partitioned_job,
     define_asset_job,
+    repository,
+    with_resources,
 )
-
-from hacker_news_assets.assets import (
-    activity_analytics_assets,
-    ACTIVITY_ANALYTICS,
-    core_assets,
-    CORE,
-    recommender_assets,
-    RECOMMENDER,
-    dbt_assets,
-)
-from hacker_news_assets.resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
-from hacker_news_assets.sensors import make_slack_on_failure_sensor, make_hn_tables_updated_sensor
-from hacker_news_assets.partitions import hourly_partitions
-
 
 # TBD: is it a good practice to put all sensors and sensors live inside repository?
 # * pros:
