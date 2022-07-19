@@ -356,7 +356,7 @@ _DEPRECATED_RENAMED = {
     "FloatMetadataEntryData": (FloatMetadataValue, "1.0.0"),
     "IntMetadataEntryData": (IntMetadataValue, "1.0.0"),
     "DagsterPipelineRunMetadataEntryData": (
-        DagsterPipelineRunMetadataValue,
+        DagsterRunMetadataValue,
         "1.0.0",
     ),
     "DagsterAssetMetadataEntryData": (
