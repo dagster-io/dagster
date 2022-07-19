@@ -70,7 +70,7 @@ export const SearchDialog: React.FC<{searchPlaceholder: string}> = ({searchPlace
   const numRenderedResults = renderedResults.length;
 
   const openSearch = React.useCallback(() => {
-    trackEvent('userOpenSearch');
+    trackEvent('searchOpen');
     performBootstrapQuery();
     dispatch({type: 'show-dialog'});
   }, [performBootstrapQuery, trackEvent]);
