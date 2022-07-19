@@ -24,7 +24,8 @@ from dagster import (
     RetryRequested,
 )
 from dagster import _check as check
-from dagster import asset, build_assets_job, op, resource, seven as _seven
+from dagster import asset, build_assets_job, op, resource
+from dagster import seven as _seven
 from dagster._legacy import pipeline, solid
 from dagster._loggers import colored_console_logger
 from dagster._serdes import deserialize_json_to_dagster_namedtuple

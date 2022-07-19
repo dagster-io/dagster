@@ -21,8 +21,8 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._legacy import pipeline, solid
-from dagster.core.utils import coerce_valid_log_level
 from dagster._utils.test import execute_solids_within_pipeline
+from dagster.core.utils import coerce_valid_log_level
 
 
 def test_default_mode_definition():

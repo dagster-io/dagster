@@ -17,17 +17,6 @@ from dagster import _check as check
 from dagster import execute_pipeline, file_relative_path, job
 from dagster._cli.debug import DebugRunPayload
 from dagster._legacy import pipeline, solid
-from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.events import DagsterEvent
-from dagster.core.events.log import EventLogEntry
-from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster.core.instance import DagsterInstance, InstanceRef
-from dagster.core.scheduler.instigation import InstigatorState, InstigatorTick
-from dagster.core.storage.event_log.migration import migrate_event_log_data
-from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
-from dagster.core.storage.migration.utils import upgrading_instance
-from dagster.core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
-from dagster.core.storage.tags import REPOSITORY_LABEL_TAG
 from dagster._serdes import DefaultNamedTupleSerializer, create_snapshot_id
 from dagster._serdes.serdes import (
     WhitelistMap,
@@ -39,6 +28,17 @@ from dagster._serdes.serdes import (
 )
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.test import copy_directory
+from dagster.core.definitions.dependency import NodeHandle
+from dagster.core.events import DagsterEvent
+from dagster.core.events.log import EventLogEntry
+from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster.core.instance import DagsterInstance, InstanceRef
+from dagster.core.scheduler.instigation import InstigatorState, InstigatorTick
+from dagster.core.storage.event_log.migration import migrate_event_log_data
+from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
+from dagster.core.storage.migration.utils import upgrading_instance
+from dagster.core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
+from dagster.core.storage.tags import REPOSITORY_LABEL_TAG
 
 
 def _migration_regex(warning, current_revision, expected_revision=None):

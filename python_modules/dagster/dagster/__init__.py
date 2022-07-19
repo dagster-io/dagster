@@ -46,21 +46,6 @@ from dagster._config import (
     StringSource,
 )
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._utils import file_relative_path
-from dagster._utils.alert import make_email_on_run_failure_sensor
-from dagster._utils.backcompat import ExperimentalWarning, deprecation_warning, rename_warning
-from dagster._utils.log import get_dagster_logger
-from dagster._utils.partitions import (
-    create_offset_partition_selector,
-    date_partition_range,
-    identity_partition_selector,
-)
-from dagster._utils.test import (
-    check_dagster_type,
-    execute_solid,
-    execute_solid_within_pipeline,
-    execute_solids_within_pipeline,
-)
 from dagster.core.definitions import (
     AllPartitionMapping,
     AssetIn,
@@ -331,6 +316,21 @@ from dagster._loggers import (
     default_loggers,
     default_system_loggers,
     json_console_logger,
+)
+from dagster._utils import file_relative_path
+from dagster._utils.alert import make_email_on_run_failure_sensor
+from dagster._utils.backcompat import ExperimentalWarning, deprecation_warning, rename_warning
+from dagster._utils.log import get_dagster_logger
+from dagster._utils.partitions import (
+    create_offset_partition_selector,
+    date_partition_range,
+    identity_partition_selector,
+)
+from dagster._utils.test import (
+    check_dagster_type,
+    execute_solid,
+    execute_solid_within_pipeline,
+    execute_solids_within_pipeline,
 )
 
 # ########################
