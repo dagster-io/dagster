@@ -152,7 +152,7 @@ def test_docker_monitoring():
                     ).stop()
 
                     # daemon resumes the run
-                    poll_for_finished_run(instance, run.run_id, timeout=90)
+                    poll_for_finished_run(instance, run.run_id, timeout=300)
                     assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
 
 
