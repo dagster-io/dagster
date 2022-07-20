@@ -359,6 +359,7 @@ class JobDefinition(PipelineDefinition):
             tags=self.tags,
             asset_selection=asset_selection,
             asset_selection_data=asset_selection_data,
+            config=self.config_mapping,
         )
         return new_job
 

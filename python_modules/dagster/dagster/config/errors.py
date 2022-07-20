@@ -297,6 +297,8 @@ def create_missing_required_field_error(
     missing_field_type = context.config_schema_snapshot.get_config_snap(
         context.config_type_snap.get_field(expected_field).type_key
     )
+    print("snapshot")
+    print(context.config_schema_snapshot)
 
     return EvaluationError(
         stack=context.stack,
