@@ -14,6 +14,7 @@ from typing import (
     Union,
     cast,
 )
+from dagster.core.storage.io_manager import io_manager
 
 import dagster._check as check
 from dagster._core.definitions.composition import MappedInputPlaceholder
@@ -78,11 +79,10 @@ class JobDefinition(PipelineDefinition):
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
-        config_mapping: Optional[ConfigMapping] = None,
-        partitioned_config: Optional[PartitionedConfig] = None,
         name: Optional[str] = None,
+        config: Optional[Union[ConfigMapping, Mapping[str, object], PartitionedConfig]] = None,
         description: Optional[str] = None,
-        preset_defs: Optional[Sequence[PresetDefinition]] = None,
+        partitions_def: Optional[PartitionsDefinition] = None,
         tags: Optional[Mapping[str, Any]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
@@ -94,7 +94,51 @@ class JobDefinition(PipelineDefinition):
         _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         _executor_def_specified: bool = False,
         _logger_defs_specified: bool = False,
+        _preset_defs: Optional[Sequence[PresetDefinition]] = None,
     ):
+        if resource_defs and DEFAULT_IO_MANAGER_KEY in resource_defs:
+            resource_defs_with_defaults = resource_defs
+        else:
+            resource_defs_with_defaults = merge_dicts(
+                {DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs or {}
+            )
+
+        presets = []
+        config_mapping = None
+        partitioned_config = None
+
+        if partitions_def:
+            check.inst_param(partitions_def, "partitions_def", PartitionsDefinition)
+            if isinstance(config, (ConfigMapping, PartitionedConfig)):
+                check.failed(
+                    "Can't supply a ConfigMapping or PartitionedConfig for 'config' when 'partitions_def' is supplied."
+                )
+            hardcoded_config = config if config else {}
+            partitioned_config = PartitionedConfig(partitions_def, lambda _: hardcoded_config)
+
+        if isinstance(config, ConfigMapping):
+            config_mapping = config
+        elif isinstance(config, PartitionedConfig):
+            partitioned_config = config
+        elif isinstance(config, dict):
+            check.invariant(
+                len(_preset_defs) == 0,
+                "Bad state: attempted to pass preset definitions to job alongside config dictionary.",
+            )
+            presets = [PresetDefinition(name="default", run_config=config)]
+            # Using config mapping here is a trick to make it so that the preset will be used even
+            # when no config is supplied for the job.
+            config_mapping = _config_mapping_with_default_value(
+                self._get_config_schema(resource_defs_with_defaults, executor_def, logger_defs),
+                config,
+                job_name,
+                self.name,
+            )
+        elif config is not None:
+            check.failed(
+                f"config param must be a ConfigMapping, a PartitionedConfig, or a dictionary, but "
+                f"is an object of type {type(config)}"
+            )
 
         # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
         mode_def = ModeDefinition(
@@ -127,7 +171,7 @@ class JobDefinition(PipelineDefinition):
             name=name,
             description=description,
             mode_defs=[mode_def],
-            preset_defs=preset_defs,
+            preset_defs=presets or _preset_defs,
             tags=tags,
             metadata=metadata,
             metadata_entries=_metadata_entries,
@@ -692,3 +736,13 @@ def get_direct_input_values_from_job(target: PipelineDefinition) -> Mapping[str,
         return cast(JobDefinition, target)._input_values  # pylint: disable=protected-access
     else:
         return {}
+
+
+@io_manager(
+    description="Built-in filesystem IO manager that stores and retrieves values using pickling."
+)
+def default_job_io_manager(init_context: "InitResourceContext"):
+    from dagster.core.storage.fs_io_manager import PickledObjectFilesystemIOManager
+
+    instance = check.not_none(init_context.instance)
+    return PickledObjectFilesystemIOManager(base_dir=instance.storage_directory())
