@@ -33,7 +33,9 @@ class ExecuteJobResult(ExecutionResult):
         return self
 
     def __exit__(self, *exc):
-        return self._reconstruct_context.__exit__(*exc)
+        exit_result = self._reconstruct_context.__exit__(*exc)
+        self._context = None
+        return exit_result
 
     @property
     def job_def(self) -> JobDefinition:
@@ -97,7 +99,7 @@ class ExecuteJobResult(ExecutionResult):
 
         node = self.job_def.get_solid(handle)
         raise DagsterInvariantViolationError(
-            f"Did not find result {output_name} in {node.describe_node()} " "execution result"
+            f"Did not find result {output_name} in {node.describe_node()}"
         )
 
     def _get_value(self, context, step_output_data, dagster_type):

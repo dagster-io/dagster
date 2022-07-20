@@ -120,5 +120,14 @@ def test_op_selection(instance):
     ) as result:
         assert result.success
         assert result.output_for_node("nested.returns_six") == 6
-        with pytest.raises(check.CheckError):
+        with pytest.raises(DagsterInvariantViolationError):
             result.output_for_node("conditional_return")
+
+
+def test_result_output_access(instance):
+    result = execute_job(reconstructable(emit_job), instance)
+    with result:
+        assert result.output_for_node("conditional_return")
+
+    with pytest.raises(DagsterInvariantViolationError):
+        result.output_for_node("conditional_return")

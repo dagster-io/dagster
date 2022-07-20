@@ -169,8 +169,7 @@ def execute_run(
     pipeline_run: PipelineRun,
     instance: DagsterInstance,
     raise_on_error: bool = False,
-    _from_execute_job: bool = False,
-) -> Union[PipelineExecutionResult, ExecuteJobResult]:
+) -> PipelineExecutionResult:
     """Executes an existing pipeline run synchronously.
 
     Synchronous version of execute_run_iterator.
@@ -260,19 +259,7 @@ def execute_run(
     event_list = list(_execute_run_iterable)
 
     pipeline_def = pipeline.get_definition()
-    if _from_execute_job:
-        return ExecuteJobResult(
-            job_def=pipeline.get_definition(),
-            reconstruct_context=scoped_pipeline_context(
-                execution_plan,
-                pipeline,
-                pipeline_run.run_config,
-                pipeline_run,
-                instance,
-            ),
-            event_list=event_list,
-            dagster_run=instance.get_run_by_id(pipeline_run.run_id),
-        )
+
     return PipelineExecutionResult(
         pipeline.get_definition(),
         pipeline_run.run_id,
@@ -380,34 +367,27 @@ def execute_job(
     raise_on_error: bool = True,
     op_selection: Optional[List[str]] = None,
 ) -> ExecuteJobResult:
-    """Execute a pipeline synchronously.
+    """Execute a job synchronously.
 
-    Users will typically call this API when testing pipeline execution, or running standalone
+    Users will typically call this API when testing job execution, or running standalone
     scripts.
 
     Parameters:
-        pipeline (Union[IPipeline, PipelineDefinition]): The pipeline to execute.
-        run_config (Optional[dict]): The configuration that parametrizes this run,
-            as a dict.
-        mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
-            and ``preset``.
-        preset (Optional[str]): The name of the pipeline preset to use. You may not set both
-            ``mode`` and ``preset``.
-        tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
-            logs.
-        instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
-            an ephemeral instance will be used, and no artifacts will be persisted from the run.
+        job (ReconstructableJob): The job to execute.
+        instance (DagsterInstance): The instance to execute against.
+        run_config (Optional[dict]): The configuration that parametrizes this run, as a dict.
+        tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to run logs.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
             Defaults to ``True``, since this is the most useful behavior in test.
-        solid_selection (Optional[List[str]]): A list of solid selection queries (including single
-            solid names) to execute. For example:
+        op_selection (Optional[List[str]]): A list of op selection queries (including single
+            op names) to execute. For example:
 
-            - ``['some_solid']``: selects ``some_solid`` itself.
-            - ``['*some_solid']``: select ``some_solid`` and all its ancestors (upstream dependencies).
-            - ``['*some_solid+++']``: select ``some_solid``, all its ancestors, and its descendants
+            - ``['some_op']``: selects ``some_op`` itself.
+            - ``['*some_op']``: select ``some_op`` and all its ancestors (upstream dependencies).
+            - ``['*some_op+++']``: select ``some_op``, all its ancestors, and its descendants
               (downstream dependencies) within 3 levels down.
-            - ``['*some_solid', 'other_solid_a', 'other_solid_b+']``: select ``some_solid`` and all its
-              ancestors, ``other_solid_a`` itself, and ``other_solid_b`` and its direct child solids.
+            - ``['*some_op', 'other_op_a', 'other_op_b+']``: select ``some_op`` and all its
+              ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
 
     Returns:
       :py:class:`JobExecutionResult`: The result of job execution.
@@ -423,9 +403,15 @@ def execute_job(
         tags=tags,
         solid_selection=op_selection,
         raise_on_error=raise_on_error,
-        _from_execute_job=True,
     )
-    return cast(ExecuteJobResult, result)
+
+    # We use PipelineExecutionResult to construct the JobExecutionResult.
+    return ExecuteJobResult(
+        job_def=job.get_definition(),
+        reconstruct_context=result.reconstruct_context(),
+        event_list=result.event_list,
+        dagster_run=instance.get_run_by_id(result.run_id),
+    )
 
 
 def execute_pipeline(
@@ -496,8 +482,7 @@ def _logged_execute_pipeline(
     tags: Optional[Dict[str, Any]] = None,
     solid_selection: Optional[List[str]] = None,
     raise_on_error: bool = True,
-    _from_execute_job: bool = False,
-) -> Union[PipelineExecutionResult, ExecuteJobResult]:
+) -> PipelineExecutionResult:
     check.inst_param(instance, "instance", DagsterInstance)
     (
         pipeline,
@@ -534,7 +519,6 @@ def _logged_execute_pipeline(
         pipeline_run,
         instance,
         raise_on_error=raise_on_error,
-        _from_execute_job=_from_execute_job,
     )
 
 
