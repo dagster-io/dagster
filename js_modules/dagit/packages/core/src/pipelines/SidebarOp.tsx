@@ -7,20 +7,17 @@ import {LoadingSpinner} from '../ui/Loading';
 import {RepoAddress} from '../workspace/types';
 
 import {ExplorerPath} from './PipelinePathUtils';
-import {SidebarOpDefinition, SIDEBAR_SOLID_DEFINITION_FRAGMENT} from './SidebarOpDefinition';
+import {SidebarOpDefinition, SIDEBAR_OP_DEFINITION_FRAGMENT} from './SidebarOpDefinition';
 import {SidebarOpExecutionGraphs} from './SidebarOpExecutionGraphs';
-import {SidebarOpInvocation, SIDEBAR_SOLID_INVOCATION_FRAGMENT} from './SidebarOpInvocation';
+import {SidebarOpInvocation, SIDEBAR_OP_INVOCATION_FRAGMENT} from './SidebarOpInvocation';
+import {SidebarGraphOpQuery, SidebarGraphOpQueryVariables} from './types/SidebarGraphOpQuery';
+import {SidebarOpFragment} from './types/SidebarOpFragment';
 import {
-  SidebarGraphSolidQuery,
-  SidebarGraphSolidQueryVariables,
-} from './types/SidebarGraphSolidQuery';
-import {SidebarOpContainerFragment} from './types/SidebarOpContainerFragment';
-import {
-  SidebarPipelineSolidQuery,
-  SidebarPipelineSolidQueryVariables,
-} from './types/SidebarPipelineSolidQuery';
+  SidebarPipelineOpQuery,
+  SidebarPipelineOpQueryVariables,
+} from './types/SidebarPipelineOpQuery';
 
-interface SidebarOpContainerProps {
+interface SidebarOpProps {
   handleID: string;
   explorerPath: ExplorerPath;
   showingSubgraph: boolean;
@@ -38,8 +35,8 @@ const useSidebarOpQuery = (
   isGraph: boolean,
   repoAddress?: RepoAddress,
 ) => {
-  const pipelineResult = useQuery<SidebarPipelineSolidQuery, SidebarPipelineSolidQueryVariables>(
-    SIDEBAR_PIPELINE_SOLID_QUERY,
+  const pipelineResult = useQuery<SidebarPipelineOpQuery, SidebarPipelineOpQueryVariables>(
+    SIDEBAR_PIPELINE_OP_QUERY,
     {
       variables: {
         selector: {
@@ -54,8 +51,8 @@ const useSidebarOpQuery = (
     },
   );
 
-  const graphResult = useQuery<SidebarGraphSolidQuery, SidebarGraphSolidQueryVariables>(
-    SIDEBAR_GRAPH_SOLID_QUERY,
+  const graphResult = useQuery<SidebarGraphOpQuery, SidebarGraphOpQueryVariables>(
+    SIDEBAR_GRAPH_OP_QUERY,
     {
       variables: {
         selector: {
@@ -72,7 +69,7 @@ const useSidebarOpQuery = (
 
   if (isGraph) {
     const {error, data, loading} = graphResult;
-    const solidContainer: SidebarOpContainerFragment | undefined =
+    const solidContainer: SidebarOpFragment | undefined =
       data?.graphOrError.__typename === 'Graph' ? data.graphOrError : undefined;
     return {
       error,
@@ -82,7 +79,7 @@ const useSidebarOpQuery = (
   }
 
   const {error, data, loading} = pipelineResult;
-  const solidContainer: SidebarOpContainerFragment | undefined =
+  const solidContainer: SidebarOpFragment | undefined =
     data?.pipelineOrError.__typename === 'Pipeline' ? data.pipelineOrError : undefined;
   return {
     error,
@@ -91,7 +88,7 @@ const useSidebarOpQuery = (
   };
 };
 
-export const SidebarOpContainer: React.FC<SidebarOpContainerProps> = ({
+export const SidebarOp: React.FC<SidebarOpProps> = ({
   handleID,
   explorerPath,
   getInvocations,
@@ -159,8 +156,8 @@ export const SidebarOpContainer: React.FC<SidebarOpContainerProps> = ({
   );
 };
 
-const SIDEBAR_SOLID_CONTAINER_FRAGMENT = gql`
-  fragment SidebarOpContainerFragment on SolidContainer {
+const SIDEBAR_OP_FRAGMENT = gql`
+  fragment SidebarOpFragment on SolidContainer {
     id
     name
     solidHandle(handleID: $handleID) {
@@ -174,32 +171,32 @@ const SIDEBAR_SOLID_CONTAINER_FRAGMENT = gql`
       }
     }
   }
-  ${SIDEBAR_SOLID_INVOCATION_FRAGMENT}
-  ${SIDEBAR_SOLID_DEFINITION_FRAGMENT}
+  ${SIDEBAR_OP_INVOCATION_FRAGMENT}
+  ${SIDEBAR_OP_DEFINITION_FRAGMENT}
 `;
 
-const SIDEBAR_PIPELINE_SOLID_QUERY = gql`
-  query SidebarPipelineSolidQuery($selector: PipelineSelector!, $handleID: String!) {
+const SIDEBAR_PIPELINE_OP_QUERY = gql`
+  query SidebarPipelineOpQuery($selector: PipelineSelector!, $handleID: String!) {
     pipelineOrError(params: $selector) {
       __typename
       ... on Pipeline {
         id
-        ...SidebarOpContainerFragment
+        ...SidebarOpFragment
       }
     }
   }
-  ${SIDEBAR_SOLID_CONTAINER_FRAGMENT}
+  ${SIDEBAR_OP_FRAGMENT}
 `;
 
-const SIDEBAR_GRAPH_SOLID_QUERY = gql`
-  query SidebarGraphSolidQuery($selector: GraphSelector!, $handleID: String!) {
+const SIDEBAR_GRAPH_OP_QUERY = gql`
+  query SidebarGraphOpQuery($selector: GraphSelector!, $handleID: String!) {
     graphOrError(selector: $selector) {
       __typename
       ... on Graph {
         id
-        ...SidebarOpContainerFragment
+        ...SidebarOpFragment
       }
     }
   }
-  ${SIDEBAR_SOLID_CONTAINER_FRAGMENT}
+  ${SIDEBAR_OP_FRAGMENT}
 `;

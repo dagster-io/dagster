@@ -77,7 +77,7 @@ export const SidebarOpInvocation: React.FC<ISidebarOpInvocationProps> = (props) 
   );
 };
 
-export const SIDEBAR_SOLID_INVOCATION_FRAGMENT = gql`
+export const SIDEBAR_OP_INVOCATION_FRAGMENT = gql`
   fragment SidebarOpInvocationFragment on Solid {
     name
     inputs {

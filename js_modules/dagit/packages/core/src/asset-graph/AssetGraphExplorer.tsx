@@ -41,7 +41,6 @@ import {
   LoadingNotice,
 } from '../pipelines/GraphNotices';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
-import {SidebarPipelineOrJobOverview} from '../pipelines/SidebarPipelineOrJobOverview';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
@@ -49,6 +48,7 @@ import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 
 import {AssetConnectedEdges} from './AssetEdges';
+import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
 import {ForeignNode} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
@@ -487,7 +487,7 @@ export const AssetGraphExplorerWithData: React.FC<
         ) : fetchOptions.pipelineSelector ? (
           <RightInfoPanel>
             <RightInfoPanelContent>
-              <SidebarPipelineOrJobOverview pipelineSelector={fetchOptions.pipelineSelector} />
+              <AssetGraphJobSidebar pipelineSelector={fetchOptions.pipelineSelector} />
             </RightInfoPanelContent>
           </RightInfoPanel>
         ) : null

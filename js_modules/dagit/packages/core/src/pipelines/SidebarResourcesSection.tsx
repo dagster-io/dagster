@@ -13,11 +13,11 @@ const NO_DESCRIPTION = '';
 
 export const SidebarResourcesSection: React.FC<{
   mode: SidebarResourcesSectionFragment;
-  isGraph: boolean;
-}> = ({mode, isGraph}) => {
+  showModeName?: boolean;
+}> = ({mode, showModeName}) => {
   return (
     <SectionItemContainer key={mode.name}>
-      {!isGraph && (
+      {showModeName && (
         <Box padding={{bottom: 16}}>
           <SectionHeader>{mode.name}</SectionHeader>
           <Description description={mode.description || NO_DESCRIPTION} />
