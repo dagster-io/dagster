@@ -4,10 +4,10 @@ from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
 
 import dagster._check as check
 import dagster.seven as seven
-from dagster.core.definitions.metadata import (
+from dagster import (
     BoolMetadataValue,
     DagsterAssetMetadataValue,
-    DagsterRunMetadataValue,
+    DagsterPipelineRunMetadataValue,
     FloatMetadataValue,
     IntMetadataValue,
     JsonMetadataValue,
@@ -115,7 +115,7 @@ def iterate_metadata_entries(metadata_entries):
                 description=metadata_entry.description,
                 boolValue=metadata_entry.entry_data.value,
             )
-        elif isinstance(metadata_entry.entry_data, DagsterRunMetadataValue):
+        elif isinstance(metadata_entry.entry_data, DagsterPipelineRunMetadataValue):
             yield GraphenePipelineRunMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
