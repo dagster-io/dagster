@@ -493,7 +493,8 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert run_stats.get("queued") == 0
         assert run_stats.get("in_progress") == 0
         assert run_stats.get("success") == 3
-        assert run_stats.get("failure") == 1
+        assert run_stats.get("failure") == 0
+        assert run_stats.get("canceled") == 1
 
         assert result.data["partitionBackfillOrError"]["backfillStatus"] == "INCOMPLETE"
 
