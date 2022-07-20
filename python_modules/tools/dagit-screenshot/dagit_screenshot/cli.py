@@ -43,7 +43,12 @@ def dagit_screenshot(ctx, output_root: str, spec_db: str, workspace_root: str) -
     workspace files exist. Optionally verify that corresponding output files exist.
     """
 )
-@click.option("--verify-outputs/--no-verify-outputs", type=click.BOOL, default=False, help="If set, then the existence of output screenshots in the output root will also be checked.")
+@click.option(
+    "--verify-outputs/--no-verify-outputs",
+    type=click.BOOL,
+    default=False,
+    help="If set, then the existence of output screenshots in the output root will also be checked.",
+)
 @click.pass_context
 def audit(ctx, verify_outputs) -> None:
     output_root = ctx.obj["output_root"]
@@ -71,11 +76,16 @@ def capture(ctx, spec_id: str, output_path: str) -> None:
     spec = load_spec(spec_id, ctx.obj["spec_db"])
     _capture(spec, output_path)
 
+
 @dagit_screenshot.command(help="Dump the contents of a screenshot DB to the terminal as YAML.")
-@click.option('--prefix', help="If provided, only specs with ids starting with the passed value will be dumped.")
+@click.option(
+    "--prefix",
+    help="If provided, only specs with ids starting with the passed value will be dumped.",
+)
 @click.pass_context
 def show(ctx, prefix: Optional[str]):
-    _show(ctx.obj['spec_db'], prefix)
+    _show(ctx.obj["spec_db"], prefix)
+
 
 def main():
     dagit_screenshot(obj={})

@@ -71,7 +71,8 @@ def load_spec_db(spec_db_path: str) -> SpecDB:
         db += _load_yaml(spec_db_path)
     else:
         yaml_files = [
-            os.path.relpath(p, start=spec_db_path) for p in glob(f"{spec_db_path}/**/*.yaml", recursive=True)
+            os.path.relpath(p, start=spec_db_path)
+            for p in glob(f"{spec_db_path}/**/*.yaml", recursive=True)
         ]
 
         for p in yaml_files:
@@ -93,11 +94,17 @@ def _normalize_spec(raw_spec: RawScreenshotSpec, filepath: str) -> ScreenshotSpe
 def _is_single_file_spec_db(spec_db_path: str) -> bool:
     return not os.path.isdir(spec_db_path)
 
+
 def _load_yaml(path: str):
     with open(path, "r", encoding="utf8") as f:
         return yaml.safe_load(f)
 
+<<<<<<< HEAD
 def _load_spec_from_yaml(spec_id: str, yaml_path: str) -> RawScreenshotSpec:
+=======
+
+def _load_spec_from_yaml(spec_id: str, yaml_path: str) -> ScreenshotSpec:
+>>>>>>> 8b0fdb435b ([dagit-screenshot] formatting)
     specs = _load_yaml(yaml_path)
     matches = [spec for spec in specs if spec["id"] == spec_id]
     if len(matches) == 0:

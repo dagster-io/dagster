@@ -24,5 +24,5 @@ setup(
         "console_scripts": [
             "dagit-screenshot = dagit_screenshot.cli:main",
         ]
-    }
+    },
 )
