@@ -83,7 +83,9 @@ my_email_failure_sensor(run_failure_sensor_context)
 # start_slack_marker
 from dagster_slack import make_slack_on_run_failure_sensor
 
-slack_on_run_failure = make_slack_on_run_failure_sensor("#my_channel", os.getenv("MY_SLACK_TOKEN"))
+slack_on_run_failure = make_slack_on_run_failure_sensor(
+    "#my_channel", os.getenv("MY_SLACK_TOKEN")
+)
 
 
 # end_slack_marker
