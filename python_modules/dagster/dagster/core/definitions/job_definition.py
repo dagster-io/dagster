@@ -303,6 +303,12 @@ class JobDefinition(PipelineDefinition):
             else None
         )
 
+    @property
+    def is_subset_pipeline(self) -> bool:
+        if self._subset_selection_data:
+            return True
+        return False
+
     def get_job_def_for_subset_selection(
         self,
         op_selection: Optional[Sequence[str]] = None,
@@ -359,6 +365,7 @@ class JobDefinition(PipelineDefinition):
             tags=self.tags,
             asset_selection=asset_selection,
             asset_selection_data=asset_selection_data,
+            config=self.config_mapping,
         )
         return new_job
 

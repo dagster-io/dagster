@@ -807,8 +807,18 @@ def _create_run_config_schema(
     # When executing with a subset pipeline, include the missing solids
     # from the original pipeline as ignored to allow execution with
     # run config that is valid for the original
-    if isinstance(pipeline_def.graph, SubselectedGraphDefinition):
-        ignored_solids = pipeline_def.graph.get_top_level_omitted_nodes()
+    if pipeline_def.is_job and pipeline_def.is_subset_pipeline:
+        if pipeline_def.op_selection_data:
+            ignored_solids = pipeline_def.graph.get_top_level_omitted_nodes()
+        elif pipeline_def.asset_selection_data:
+            parent_job = pipeline_def
+            while parent_job.is_subset_pipeline:
+                parent_job = parent_job.asset_selection_data.parent_job_def
+
+            selected_solids = pipeline_def.graph.solids
+            ignored_solids = [
+                solid for solid in parent_job.graph.solids if solid not in selected_solids
+            ]
     elif pipeline_def.is_subset_pipeline:
         if pipeline_def.parent_pipeline_def is None:
             check.failed("Unexpected subset pipeline state")

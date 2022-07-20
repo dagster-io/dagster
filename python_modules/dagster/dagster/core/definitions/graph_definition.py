@@ -49,7 +49,7 @@ from .dependency import (
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .logger_definition import LoggerDefinition
-from .metadata import RawMetadataValue
+from .metadata import RawMetadataValue, MetadataEntry, PartitionMetadataEntry
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .preset import PresetDefinition
@@ -527,7 +527,7 @@ class GraphDefinition(NodeDefinition):
         asset_layer: Optional["AssetLayer"] = None,
         input_values: Optional[Mapping[str, object]] = None,
         _asset_selection_data: Optional[AssetSelectionData] = None,
-        _executor_def_specified: bool = False,
+        _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
     ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -597,6 +597,8 @@ class GraphDefinition(NodeDefinition):
         tags = check.opt_dict_param(tags, "tags", key_type=str)
         executor_def_specified = executor_def is not None
         logger_defs_specified = logger_defs is not None
+        metadata_entries = check.opt_sequence_param(_metadata_entries, "_metadata_entries")
+
         executor_def = check.opt_inst_param(
             executor_def, "executor_def", ExecutorDefinition, default=multi_or_in_process_executor
         )
@@ -665,6 +667,7 @@ class GraphDefinition(NodeDefinition):
             _subset_selection_data=_asset_selection_data,
             _executor_def_specified=executor_def_specified,
             _logger_defs_specified=logger_defs_specified,
+            _metadata_entries=metadata_entries,
         ).get_job_def_for_subset_selection(op_selection)
 
     def coerce_to_job(self):
