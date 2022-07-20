@@ -484,6 +484,10 @@ class PipelineRun(
         # Compat
         return self.parent_run_id
 
+    @property
+    def job_name(self) -> str:
+        return self.pipeline_name
+
     @staticmethod
     def tags_for_schedule(schedule):
         return {SCHEDULE_NAME_TAG: schedule.name}
