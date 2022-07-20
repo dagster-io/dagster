@@ -4,6 +4,7 @@ import yaml
 
 from dagster_buildkite.defines import GIT_REPO_ROOT
 
+
 def get_image_version(image_name: str) -> str:
     root_images_path = os.path.join(
         GIT_REPO_ROOT,

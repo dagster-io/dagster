@@ -22,7 +22,7 @@ setup(
         "test": [
             "dagster[test]",
             # remove pin once minimum supported kubernetes version is 1.19
-            "kubernetes<22.6.0"
+            "kubernetes<22.6.0",
         ]
     },
     entry_points={
