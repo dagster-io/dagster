@@ -1,4 +1,5 @@
 import json
+import os
 from unittest.mock import MagicMock
 
 import psycopg2
@@ -648,6 +649,24 @@ def test_source_key_prefix(
     }
 
     assert dbt_assets[0].keys_by_output_name["cleaned_users"] == AssetKey(["dbt", "cleaned_users"])
+
+
+def test_source_tag_selection(
+    conn_string, test_python_project_dir, dbt_python_config_dir
+):  # pylint: disable=unused-argument
+    dbt_assets = load_assets_from_dbt_project(
+        test_python_project_dir, dbt_python_config_dir, select="tag:events"
+    )
+
+    assert len(dbt_assets[0].keys) == 2
+
+    manifest_path = os.path.join(test_python_project_dir, "target", "manifest.json")
+    with open(manifest_path, "r", encoding="utf8") as f:
+        manifest_json = json.load(f)
+
+    dbt_assets = load_assets_from_dbt_manifest(manifest_json, select="tag:events")
+
+    assert len(dbt_assets[0].keys) == 2
 
 
 def test_python_interleaving(
