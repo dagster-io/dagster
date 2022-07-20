@@ -1,6 +1,5 @@
 import pytest
 
-import dagster._check as check
 from dagster import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
