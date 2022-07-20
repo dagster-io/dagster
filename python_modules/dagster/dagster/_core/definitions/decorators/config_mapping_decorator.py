@@ -36,7 +36,7 @@ def config_mapping(
 
 @overload
 def config_mapping(
-    config_fn: None = ...,
+    *,
     config_schema: UserConfigSchema = ...,
     receive_processed_config_values: Optional[bool] = ...,
 ) -> Union[_ConfigMapping, ConfigMapping]:
@@ -45,6 +45,7 @@ def config_mapping(
 
 def config_mapping(
     config_fn: Optional[Callable[..., Any]] = None,
+    *,
     config_schema: Optional[UserConfigSchema] = None,
     receive_processed_config_values: Optional[bool] = None,
 ) -> Union[ConfigMapping, _ConfigMapping]:
@@ -84,7 +85,7 @@ def config_mapping(
 
     """
     # This case is for when decorator is used bare, without arguments. e.g. @config_mapping versus @config_mapping()
-    if callable(config_fn):
+    if config_fn is not None:
         check.invariant(config_schema is None)
         check.invariant(receive_processed_config_values is None)
 

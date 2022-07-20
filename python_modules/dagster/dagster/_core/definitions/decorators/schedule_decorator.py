@@ -48,6 +48,7 @@ if TYPE_CHECKING:
 
 
 def schedule(
+    *,
     cron_schedule: str,
     job_name: Optional[str] = None,
     name: Optional[str] = None,
@@ -185,6 +186,7 @@ def schedule(
 
 
 def monthly_schedule(
+    *,
     pipeline_name: Optional[str],
     start_date: datetime.datetime,
     name: Optional[str] = None,
@@ -346,6 +348,7 @@ def my_schedule_definition(_):
 
 
 def weekly_schedule(
+    *,
     pipeline_name: Optional[str],
     start_date: datetime.datetime,
     name: Optional[str] = None,
@@ -502,6 +505,7 @@ def my_schedule_definition(_):
 
 
 def daily_schedule(
+    *,
     pipeline_name: Optional[str],
     start_date: datetime.datetime,
     name: Optional[str] = None,
@@ -645,6 +649,7 @@ def my_schedule_definition(_):
 
 
 def hourly_schedule(
+    *,
     pipeline_name: Optional[str],
     start_date: datetime.datetime,
     name: Optional[str] = None,

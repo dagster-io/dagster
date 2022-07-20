@@ -241,6 +241,7 @@ class ScheduleDefinition:
 
     def __init__(
         self,
+        *,
         name: Optional[str] = None,
         cron_schedule: Optional[str] = None,
         job_name: Optional[str] = None,

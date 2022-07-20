@@ -83,6 +83,7 @@ class JobDefinition(PipelineDefinition):
 
     def __init__(
         self,
+        *,
         graph_def: GraphDefinition,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,

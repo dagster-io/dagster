@@ -78,6 +78,7 @@ class AssetsDefinition(ResourceAddable):
 
     def __init__(
         self,
+        *,
         keys_by_input_name: Mapping[str, AssetKey],
         keys_by_output_name: Mapping[str, AssetKey],
         node_def: NodeDefinition,
@@ -187,6 +188,7 @@ class AssetsDefinition(ResourceAddable):
     @staticmethod
     def from_graph(
         graph_def: "GraphDefinition",
+        *,
         keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
@@ -255,6 +257,7 @@ class AssetsDefinition(ResourceAddable):
     @staticmethod
     def from_op(
         op_def: OpDefinition,
+        *,
         keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
@@ -314,6 +317,7 @@ class AssetsDefinition(ResourceAddable):
     @staticmethod
     def _from_node(
         node_def: Union[OpDefinition, "GraphDefinition"],
+        *,
         keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,

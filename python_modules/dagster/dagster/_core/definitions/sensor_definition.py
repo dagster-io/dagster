@@ -201,6 +201,7 @@ class SensorDefinition:
 
     def __init__(
         self,
+        *,
         name: Optional[str] = None,
         evaluation_fn: Optional[RawSensorEvaluationFunction] = None,
         job_name: Optional[str] = None,

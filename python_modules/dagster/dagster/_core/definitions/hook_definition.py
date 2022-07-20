@@ -33,6 +33,7 @@ class HookDefinition(
 
     def __new__(
         cls,
+        *,
         name: str,
         hook_fn: Callable[..., Any],
         required_resource_keys: Optional[AbstractSet[str]] = None,
