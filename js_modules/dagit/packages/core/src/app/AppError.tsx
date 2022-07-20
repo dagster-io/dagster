@@ -1,5 +1,7 @@
 import {ErrorResponse, onError} from '@apollo/client/link/error';
-import {Toaster, FontFamily} from '@dagster-io/ui';
+import {ServerError} from '@apollo/client/link/utils';
+import {Observable} from '@apollo/client/utilities';
+import {FontFamily, Toaster} from '@dagster-io/ui';
 import {GraphQLError} from 'graphql';
 import * as React from 'react';
 
@@ -30,8 +32,18 @@ export const errorLink = onError((response: ErrorResponse) => {
     graphQLErrors.forEach((error) => showGraphQLError(error as DagsterGraphQLError, operationName));
   }
   if (response.networkError) {
+    // if we have a network error but there is still graphql data
+    // the payload should contain a meaningful error for the product to handle
+    const serverError = response.networkError as ServerError;
+    if (serverError.result && serverError.result.data) {
+      // we can return an observable here (normally used to perform retries)
+      // to flow the error payload to the product
+      return Observable.from([serverError.result]);
+    }
+    // otherwise just log it
     console.error('[Network error]', response.networkError);
   }
+  return;
 });
 
 interface AppStackTraceLinkProps {
