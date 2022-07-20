@@ -1,4 +1,3 @@
-from dagster_buildkite.pipelines.dagster_oss_integration import build_dagster_oss_integration_steps
 from dagster_buildkite.pipelines.dagster_oss_main import build_dagster_oss_main_steps
 
 from .utils import buildkite_yaml_for_steps
@@ -11,11 +10,5 @@ a pipeline.
 
 def dagster() -> None:
     steps = build_dagster_oss_main_steps()
-    buildkite_yaml = buildkite_yaml_for_steps(steps)
-    print(buildkite_yaml)  # pylint: disable=print-call
-
-
-def integration() -> None:
-    steps = build_dagster_oss_integration_steps()
     buildkite_yaml = buildkite_yaml_for_steps(steps)
     print(buildkite_yaml)  # pylint: disable=print-call
