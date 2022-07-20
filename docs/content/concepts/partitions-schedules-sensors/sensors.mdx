@@ -397,7 +397,9 @@ def report_status_sensor(context):
     # this condition prevents the sensor from triggering status_reporting_job again after it succeeds
     if context.dagster_run.job_name != status_reporting_job.name:
         run_config = {
-            "ops": {"status_report": {"config": {"job_name": context.dagster_run.job_name}}}
+            "ops": {
+                "status_report": {"config": {"job_name": context.dagster_run.job_name}}
+            }
         }
         return RunRequest(run_key=None, run_config=run_config)
     else:
@@ -444,7 +446,9 @@ Dagster provides a set of special run status sensor decorators for defining sens
 ```python file=concepts/partitions_schedules_sensors/sensors/run_status_run_requests.py startafter=start_job_failure endbefore=end_job_failure
 @run_failure_sensor(request_job=status_reporting_job)
 def report_failure_sensor(context):
-    run_config = {"ops": {"status_report": {"config": {"job_name": context.dagster_run.job_name}}}}
+    run_config = {
+        "ops": {"status_report": {"config": {"job_name": context.dagster_run.job_name}}}
+    }
     return RunRequest(run_key=None, run_config=run_config)
 ```
 
@@ -474,7 +478,9 @@ you create a job failure sensor that will message a given Slack channel:
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_slack_marker endbefore=end_slack_marker
 from dagster_slack import make_slack_on_run_failure_sensor
 
-slack_on_run_failure = make_slack_on_run_failure_sensor("#my_channel", os.getenv("MY_SLACK_TOKEN"))
+slack_on_run_failure = make_slack_on_run_failure_sensor(
+    "#my_channel", os.getenv("MY_SLACK_TOKEN")
+)
 ```
 
 <PyObject module="dagster.utils" object="make_email_on_run_failure_sensor" /> helps
