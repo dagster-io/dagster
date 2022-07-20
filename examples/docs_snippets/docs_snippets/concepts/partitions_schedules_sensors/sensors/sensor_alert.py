@@ -13,7 +13,7 @@ def my_slack_on_run_failure(context: RunFailureSensorContext):
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=f'Job "{context.pipeline_run.pipeline_name}" failed. Error: {context.failure_event.message}',
+        message=f'Job "{context.dagster_run.job_name}" failed. Error: {context.failure_event.message}',
     )
 
 
@@ -29,7 +29,7 @@ def email_alert(_):
 
 @run_failure_sensor
 def my_email_failure_sensor(context: RunFailureSensorContext):
-    message = f'Job "{context.pipeline_run.pipeline_name}" failed. Error: {context.failure_event.message}'
+    message = f'Job "{context.dagster_run.job_name}" failed. Error: {context.failure_event.message}'
     email_alert(message)
 
 
@@ -83,9 +83,7 @@ my_email_failure_sensor(run_failure_sensor_context)
 # start_slack_marker
 from dagster_slack import make_slack_on_run_failure_sensor
 
-slack_on_run_failure = make_slack_on_run_failure_sensor(
-    "#my_channel", os.getenv("MY_SLACK_TOKEN")
-)
+slack_on_run_failure = make_slack_on_run_failure_sensor("#my_channel", os.getenv("MY_SLACK_TOKEN"))
 
 
 # end_slack_marker
@@ -107,13 +105,13 @@ email_on_run_failure = make_email_on_run_failure_sensor(
 from dagster import run_status_sensor, RunStatusSensorContext, DagsterRunStatus
 
 
-@run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS)
+@run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
 def my_slack_on_run_success(context: RunStatusSensorContext):
     slack_client = WebClient(token=os.environ["SLACK_DAGSTER_ETL_BOT_TOKEN"])
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=f'Job "{context.pipeline_run.pipeline_name}" succeeded.',
+        message=f'Job "{context.dagster_run.job_name}" succeeded.',
     )
 
 
@@ -122,9 +120,9 @@ def my_slack_on_run_success(context: RunStatusSensorContext):
 # start_simple_success_sensor
 
 
-@run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS)
+@run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
 def my_email_sensor(context: RunStatusSensorContext):
-    message = f'Job "{context.pipeline_run.pipeline_name}" succeeded.'
+    message = f'Job "{context.dagster_run.job_name}" succeeded.'
     email_alert(message)
 
 
