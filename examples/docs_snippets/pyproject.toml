@@ -6,7 +6,7 @@
 
 [tool.black]
 line-length = 88
-required-version = "22.3.0"
+required-version = "22.6.0"
 target-version = ['py36', 'py37', 'py38', 'py39', 'py310']
 
 [tool.isort]
