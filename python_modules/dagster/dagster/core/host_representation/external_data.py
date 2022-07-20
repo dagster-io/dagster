@@ -884,7 +884,11 @@ def external_asset_graph_from_defs(
         asset_metadata_entries = (
             cast(
                 Sequence,
-                normalize_metadata(metadata=metadata_by_asset_key[asset_key], metadata_entries=[]),
+                normalize_metadata(
+                    metadata=metadata_by_asset_key[asset_key],
+                    metadata_entries=[],
+                    allow_invalid=True,
+                ),
             )
             if asset_key in metadata_by_asset_key
             else cast(Sequence, output_def.metadata_entries)
