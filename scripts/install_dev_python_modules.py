@@ -33,13 +33,25 @@ def main(quiet: bool, extra_packages: List[str]) -> None:
         *extra_packages,
     ]
 
+    # Dev tools.
+    install_targets += [
+        "-r python_envs/requirements-black.txt",
+        "-r python_envs/requirements-docker.txt",
+        "-r python_envs/requirements-grpc.txt",
+        "-r python_envs/requirements-isort.txt",
+        "-r python_envs/requirements-mypy.txt",
+        "-r python_envs/requirements-pylint.txt",
+        "-r python_envs/requirements-tox.txt",
+        "-r python_envs/requirements-yamllint.txt",
+    ]
+
     # Not all libs are supported on all Python versions. Consult `dagster_buildkite.steps.packages`
     # as the source of truth on which packages support which Python versions. The building of
     # `install_targets` below should use `sys.version_info` checks to reflect this.
 
     # Supported on all Python versions.
     install_targets += [
-        "-e python_modules/dagster[black,isort,mypy,test]",
+        "-e python_modules/dagster[test]",
         "-e python_modules/dagster-graphql",
         "-e python_modules/dagster-test",
         "-e python_modules/dagit",
