@@ -36,7 +36,7 @@ isort:
       ':!:examples/docs_snippets' \
       ':!:*/snapshots/*.py'`
 	isort \
-   `git ls-files 'examples/docs_snippets/*.py'`
+    `git ls-files 'examples/docs_snippets/*.py'`
 
 check_isort:
 	isort --check \
