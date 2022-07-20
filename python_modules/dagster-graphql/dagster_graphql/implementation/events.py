@@ -7,7 +7,7 @@ import dagster.seven as seven
 from dagster.core.definitions.metadata import (
     BoolMetadataValue,
     DagsterAssetMetadataValue,
-    DagsterPipelineRunMetadataValue,
+    DagsterRunMetadataValue,
     FloatMetadataValue,
     IntMetadataValue,
     JsonMetadataValue,
@@ -115,7 +115,7 @@ def iterate_metadata_entries(metadata_entries):
                 description=metadata_entry.description,
                 boolValue=metadata_entry.entry_data.value,
             )
-        elif isinstance(metadata_entry.entry_data, DagsterPipelineRunMetadataValue):
+        elif isinstance(metadata_entry.entry_data, DagsterRunMetadataValue):
             yield GraphenePipelineRunMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
