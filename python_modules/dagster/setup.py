@@ -90,7 +90,6 @@ if __name__ == "__main__":
             "docstring-parser",
         ],
         extras_require={
-            "docker": ["docker"],
             "test": [
                 "coverage==5.3",
                 "docker",
@@ -109,16 +108,17 @@ if __name__ == "__main__":
                 "snapshottest==0.6.0",
                 "tox==3.25.0",
                 "yamllint",
+            "docker": [
+                "docker"
             ],
             "black": [
                 "black[jupyter]==22.3.0",
             ],
+            "grpc": [
+                "grpcio-tools",
+            ],
             "isort": [
                 "isort==5.10.1",
-            ],
-            "pylint": [
-                "dagster-pylint",
-                "pylint==2.13.7",
             ],
             "mypy": [
                 "mypy==0.950",
@@ -142,6 +142,32 @@ if __name__ == "__main__":
                 "types-tzlocal",  # version will be resolved against tzlocal
                 "types-toml",  # version will be resolved against toml
             ],
+            "pylint": [
+                "dagster-pylint",
+                "pylint==2.13.7",
+            ],
+            "pytest": [
+                "coverage==5.3",
+                "docker",
+                "freezegun>=0.3.15",
+                "mock==3.0.5",
+                "objgraph",
+                "pytest==7.0.1",  # last version supporting python 3.6
+                "pytest-cov==2.10.1",
+                "pytest-dependency==0.5.1",
+                "pytest-mock==3.3.1",
+                "pytest-rerunfailures==10.0",
+                "pytest-runner==5.2",
+                "pytest-xdist==2.1.0",
+                "responses==0.10.*",
+                "snapshottest==0.6.0",
+            ],
+            "tox": [
+                "tox==3.25.0",
+            ],
+            "yamllint": [
+                "yamllint",
+            ]
         },
         entry_points={
             "console_scripts": [
