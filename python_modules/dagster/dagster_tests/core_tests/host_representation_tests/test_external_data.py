@@ -2,6 +2,7 @@ import pytest
 
 from dagster import AssetKey, AssetsDefinition, GraphOut, In, Out, define_asset_job, graph, job, op
 from dagster.core.definitions import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
+from dagster.core.definitions.metadata import MetadataValue, normalize_metadata
 from dagster.core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.host_representation.external_data import (
@@ -155,7 +156,9 @@ def test_input_name_matches_output_name():
 
 
 def test_assets_excluded_from_subset_not_in_job():
-    @multi_asset(outs={"a": Out(), "b": Out(), "c": Out()}, can_subset=True)
+    out_metadata = {"a": 1, "b": "c", "d": None}
+
+    @multi_asset(outs={"a": Out(metadata=out_metadata), "b": Out(), "c": Out()}, can_subset=True)
     def abc():
         pass
 
@@ -185,6 +188,7 @@ def test_assets_excluded_from_subset_not_in_job():
             job_names=["as_job"],  # the important line
             output_name="a",
             group_name=DEFAULT_GROUP_NAME,
+            metadata_entries=normalize_metadata(out_metadata, [], allow_invalid=True),
         )
         in external_asset_nodes
     )
@@ -678,11 +682,22 @@ def test_used_source_asset():
 
 
 def test_graph_output_metadata():
-    from dagster.core.definitions.metadata import normalize_metadata
+    asset_metadata = {
+        "int": 1,
+        "string": "baz",
+        "some_list": [1, 2, 3],
+        "none": None,
+        "md": MetadataValue.md("#123"),
+        "float": MetadataValue.float(1.23),
+        "_asd_123_sdas": MetadataValue.python_artifact(MetadataValue),
+    }
 
-    metadata = {"foo": 1, "bar": "baz"}
+    out_metadata = {
+        "out_none": None,
+        "out_list": [1, 2, 3],
+    }
 
-    @op
+    @op(out=Out(metadata=out_metadata))
     def add_one(i):
         return i + 1
 
@@ -694,7 +709,9 @@ def test_graph_output_metadata():
     def zero():
         return 0
 
-    three_asset = AssetsDefinition.from_graph(three, metadata_by_output_name={"result": metadata})
+    three_asset = AssetsDefinition.from_graph(
+        three, metadata_by_output_name={"result": asset_metadata}
+    )
 
     assets_job = build_assets_job("assets_job", [zero, three_asset])
 
@@ -707,6 +724,7 @@ def test_graph_output_metadata():
                 dependencies=sorted(node.dependencies, key=lambda d: d.upstream_asset_key),
                 depended_by=sorted(node.depended_by, key=lambda d: d.downstream_asset_key),
                 op_names=sorted(node.op_names),
+                metadata_entries=sorted(node.metadata_entries),
             )
             for node in external_asset_nodes
         ],
@@ -725,7 +743,9 @@ def test_graph_output_metadata():
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
-            metadata_entries=normalize_metadata(metadata, []),
+            metadata_entries=sorted(
+                normalize_metadata({**asset_metadata, **out_metadata}, [], allow_invalid=True)
+            ),
             group_name=DEFAULT_GROUP_NAME,
         ),
         ExternalAssetNode(
