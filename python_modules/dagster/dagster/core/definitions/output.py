@@ -445,7 +445,9 @@ class Out(
             asset_partitions_def=output_def.asset_partitions_def,  # pylint: disable=protected-access
         )
 
-    def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
+    def to_definition(
+        self, annotation_type: Optional[type], name: Optional[str]
+    ) -> "OutputDefinition":
         dagster_type = (
             self.dagster_type if self.dagster_type is not NoValueSentinel else annotation_type
         )
@@ -501,7 +503,9 @@ class DynamicOut(Out):
                 summarize_directory(file_results.collect())
     """
 
-    def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
+    def to_definition(
+        self, annotation_type: Optional[type], name: Optional[str]
+    ) -> "OutputDefinition":
         dagster_type = (
             self.dagster_type if self.dagster_type is not NoValueSentinel else annotation_type
         )

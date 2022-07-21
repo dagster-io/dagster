@@ -32,6 +32,15 @@ from dagster._legacy import solid
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.dagster_type import Int, String
+from dagster.seven import funcsigs
+import inspect
+
+
+def some_fn(a):
+    return a
+
+
+the_lambda = lambda a: a
 
 
 def execute_op_in_graph(an_op, instance=None):

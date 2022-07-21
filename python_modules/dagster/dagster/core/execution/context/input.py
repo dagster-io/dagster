@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence,
 import dagster._check as check
 from dagster.core.definitions.events import AssetKey, AssetObservation
 from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
-from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.time_window_partitions import (
     TimeWindow,
@@ -18,6 +17,7 @@ if TYPE_CHECKING:
     from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.log_manager import DagsterLogManager
     from dagster.core.types.dagster_type import DagsterType
+    from dagster.core.definitions.op_definition import OpDefinition
 
     from .output import OutputContext
 
@@ -143,6 +143,8 @@ class InputContext:
 
     @property
     def op_def(self) -> "OpDefinition":
+        from dagster.core.definitions import OpDefinition
+
         if self._solid_def is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access op_def, "
@@ -432,7 +434,7 @@ def build_input_context(
     dagster_type: Optional["DagsterType"] = None,
     resource_config: Optional[Dict[str, Any]] = None,
     resources: Optional[Dict[str, Any]] = None,
-    op_def: Optional[OpDefinition] = None,
+    op_def: Optional["OpDefinition"] = None,
     step_context: Optional["StepExecutionContext"] = None,
 ) -> "InputContext":
     """Builds input context from provided parameters.
@@ -472,6 +474,7 @@ def build_input_context(
     from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.execution.context_creation_pipeline import initialize_console_manager
     from dagster.core.types.dagster_type import DagsterType
+    from dagster.core.definitions import OpDefinition
 
     name = check.opt_str_param(name, "name")
     metadata = check.opt_dict_param(metadata, "metadata", key_type=str)

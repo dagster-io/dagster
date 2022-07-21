@@ -23,7 +23,6 @@ from dagster.core.definitions.events import (
     PartitionMetadataEntry,
 )
 from dagster.core.definitions.metadata import RawMetadataValue
-from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.time_window_partitions import TimeWindow
@@ -31,6 +30,7 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.utils import build_resources_for_manager
 
 if TYPE_CHECKING:
+    from dagster.core.definitions.op_definition import OpDefinition
     from dagster.core.definitions import PartitionsDefinition, PipelineDefinition
     from dagster.core.definitions.resource_definition import Resources
     from dagster.core.events import DagsterEvent
@@ -233,6 +233,8 @@ class OutputContext:
 
     @property
     def op_def(self) -> "OpDefinition":
+        from dagster.core.definitions import OpDefinition
+
         if self._solid_def is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access op_def, "
@@ -753,7 +755,7 @@ def build_output_context(
     resource_config: Optional[Mapping[str, object]] = None,
     resources: Optional[Mapping[str, object]] = None,
     solid_def: Optional[SolidDefinition] = None,
-    op_def: Optional[OpDefinition] = None,
+    op_def: Optional["OpDefinition"] = None,
     asset_key: Optional[Union[AssetKey, str]] = None,
     partition_key: Optional[str] = None,
 ) -> "OutputContext":
@@ -796,6 +798,7 @@ def build_output_context(
     """
     from dagster.core.execution.context_creation_pipeline import initialize_console_manager
     from dagster.core.types.dagster_type import DagsterType
+    from dagster.core.definitions import OpDefinition
 
     step_key = check.opt_str_param(step_key, "step_key")
     name = check.opt_str_param(name, "name")

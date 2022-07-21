@@ -1,8 +1,35 @@
-from typing import Dict
+from typing import (
+    Dict,
+    Mapping,
+    Optional,
+    Union,
+    List,
+    TYPE_CHECKING,
+    cast,
+    Callable,
+    Any,
+    AbstractSet,
+    Sequence,
+)
 
 from .input import In
 from .output import Out
 from .solid_definition import SolidDefinition
+from .output import OutputDefinition
+from .input import InputDefinition
+from ...seven.typing import get_origin
+from dagster.config.config_schema import UserConfigSchema
+from .definition_config_schema import IDefinitionConfigSchema
+
+
+import dagster._check as check
+from dagster.core.errors import DagsterInvariantViolationError
+from .inference import InferredOutputProps, infer_output_props
+from dagster.core.definitions.policy import RetryPolicy
+
+
+if TYPE_CHECKING:
+    from .decorators.solid_decorator import DecoratedSolidFunction
 
 
 class OpDefinition(SolidDefinition):
@@ -58,6 +85,98 @@ class OpDefinition(SolidDefinition):
             )
     """
 
+    def __init__(
+        self,
+        compute_fn: Union[Callable[..., Any], "DecoratedSolidFunction"],
+        name: str,
+        description: Optional[str],
+        ins: Optional[Mapping[str, In]],
+        out: Optional[Union[Out, Mapping[str, Out]]],
+        config_schema: Optional[Union[UserConfigSchema, IDefinitionConfigSchema]] = None,
+        required_resource_keys: Optional[AbstractSet[str]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
+        version: Optional[str] = None,
+        retry_policy: Optional[RetryPolicy] = None,
+        input_defs: Optional[Sequence[InputDefinition]] = None,
+        output_defs: Optional[Sequence[OutputDefinition]] = None,
+    ):
+        from .decorators.solid_decorator import (
+            resolve_checked_solid_fn_inputs,
+            DecoratedSolidFunction,
+        )
+
+        self._ins = ins
+        self._out = out
+
+        if input_defs is not None and ins is not None:
+            check.failed("Values cannot be provided for both the 'input_defs' and 'ins' arguments")
+
+        if output_defs is not None and out is not None:
+            check.failed("Values cannot be provided for both the 'output_defs' and 'out' arguments")
+
+        if ins is not None:
+            input_defs = [
+                inp.to_definition(name)
+                for name, inp in sorted(ins.items(), key=lambda input: input[0])
+            ]  # sort so that input definition order is deterministic
+        else:
+            input_defs = check.opt_list_param(input_defs, "input_defs", of_type=InputDefinition)
+
+        if isinstance(compute_fn, DecoratedSolidFunction):
+            resolved_input_defs = resolve_checked_solid_fn_inputs(
+                decorator_name="@op",
+                fn_name=name,
+                compute_fn=cast(DecoratedSolidFunction, compute_fn),
+                explicit_input_defs=input_defs,
+                exclude_nothing=True,
+            )
+        else:
+            resolved_input_defs = input_defs
+
+        if isinstance(compute_fn, DecoratedSolidFunction):
+            inferred_out = infer_output_props(cast(DecoratedSolidFunction, compute_fn).decorated_fn)
+        else:
+            inferred_out = None
+
+        if out is not None:
+            resolved_output_defs: Optional[
+                Sequence[OutputDefinition]
+            ] = _resolve_output_defs_from_outs(
+                inferred_out=cast(InferredOutputProps, inferred_out), out=out
+            )
+        else:
+            resolved_output_defs = output_defs
+
+        if resolved_output_defs is None:
+            if inferred_out:
+                resolved_output_defs = [
+                    OutputDefinition.create_from_inferred(cast(InferredOutputProps, inferred_out))
+                ]
+            else:
+                raise DagsterInvariantViolationError(
+                    "Error when constructing OpDefinition: an Out must be explicitly provided when constructing an OpDefinition, but none were provided."
+                )
+        elif len(resolved_output_defs) == 1:
+            if inferred_out:
+                resolved_output_defs = [resolved_output_defs[0].combine_with_inferred(inferred_out)]
+            else:
+                raise DagsterInvariantViolationError(
+                    "Error when constructing OpDefinition: an Out must be explicitly provided when constructing an OpDefinition, but none were provided."
+                )
+
+        super(OpDefinition, self).__init__(
+            compute_fn=compute_fn,
+            name=name,
+            description=description,
+            config_schema=config_schema,
+            required_resource_keys=required_resource_keys,
+            tags=tags,
+            version=version,
+            retry_policy=retry_policy,
+            input_defs=resolved_input_defs,
+            output_defs=resolved_output_defs,
+        )
+
     @property
     def node_type_str(self) -> str:
         return "op"
@@ -73,3 +192,40 @@ class OpDefinition(SolidDefinition):
     @property
     def outs(self) -> Dict[str, Out]:
         return {output_def.name: Out.from_definition(output_def) for output_def in self.output_defs}
+
+
+def _resolve_output_defs_from_outs(
+    inferred_out: Optional[InferredOutputProps], out: Union[Out, Mapping[str, Out]]
+) -> Optional[Sequence[OutputDefinition]]:
+    annotation = inferred_out.annotation if inferred_out else None
+    if isinstance(out, Out):
+        return [out.to_definition(annotation, name=None)]
+    else:
+        check.mapping_param(out, "out", key_type=str, value_type=Out)
+
+        # If only a single entry has been provided to the out dict, then slurp the
+        # annotation into the entry.
+        if len(out) == 1:
+            name = list(out.keys())[0]
+            only_out = out[name]
+            return [only_out.to_definition(annotation, name)]
+
+        output_defs = []
+
+        # Introspection on type annotations is experimental, so checking
+        # metaclass is the best we can do.
+        if annotation and not get_origin(annotation) == tuple:
+            raise DagsterInvariantViolationError(
+                "Expected Tuple annotation for multiple outputs, but received non-tuple annotation."
+            )
+        if annotation and not len(annotation.__args__) == len(out):
+            raise DagsterInvariantViolationError(
+                "Expected Tuple annotation to have number of entries matching the "
+                f"number of outputs for more than one output. Expected {len(out)} "
+                f"outputs but annotation has {len(annotation.__args__)}."
+            )
+        for idx, (name, cur_out) in enumerate(out.items()):
+            annotation_type = annotation.__args__[idx] if annotation else None
+            output_defs.append(cur_out.to_definition(annotation_type, name=name))
+
+        return output_defs
