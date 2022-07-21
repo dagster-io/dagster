@@ -41,9 +41,13 @@ from dagster_test.graph_job_op_toys.retries import retry_job
 from dagster_test.graph_job_op_toys.run_status_sensors import (
     fails_job,
     fails_sensor,
+    return_multi_run_request_success_sensor,
+    return_run_request_succeeds_sensor,
     status_job,
     succeeds_job,
-    succeeds_sensor,
+    success_sensor_with_pipeline_run_reaction,
+    yield_multi_run_request_success_sensor,
+    yield_run_request_succeeds_sensor,
 )
 from dagster_test.graph_job_op_toys.sleepy import sleepy_job
 from dagster_test.graph_job_op_toys.software_defined_assets import software_defined_assets
@@ -99,11 +103,15 @@ def toys_repository():
             software_defined_assets,
             with_metadata,
             succeeds_job,
-            succeeds_sensor,
+            return_run_request_succeeds_sensor,
+            yield_run_request_succeeds_sensor,
             fails_job,
             fails_sensor,
             status_job,
             df_stats_job,
+            yield_multi_run_request_success_sensor,
+            return_multi_run_request_success_sensor,
+            success_sensor_with_pipeline_run_reaction,
         ]
         + get_toys_schedules()
         + get_toys_sensors()
