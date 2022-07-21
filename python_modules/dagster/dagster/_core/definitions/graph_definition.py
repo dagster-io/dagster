@@ -20,22 +20,17 @@ from typing import (
 from toposort import CircularDependencyError, toposort_flatten
 
 import dagster._check as check
-from dagster._config import Field, Shape
-from dagster._config.config_type import ConfigType
-from dagster._config.validate import validate_config
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.utils import check_valid_name
-from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._core.types.dagster_type import (
     DagsterType,
     DagsterTypeKind,
     construct_dagster_type_dictionary,
 )
-from dagster._utils import merge_dicts
 
 from .dependency import (
     DependencyStructure,
@@ -51,10 +46,8 @@ from .logger_definition import LoggerDefinition
 from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
-from .preset import PresetDefinition
 from .resource_requirement import ResourceRequirement
 from .solid_container import create_execution_structure, validate_dependency_dict
-from .utils import DEFAULT_IO_MANAGER_KEY
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
@@ -587,7 +580,6 @@ class GraphDefinition(NodeDefinition):
         Returns:
             JobDefinition
         """
-        from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
         from .job_definition import JobDefinition
         from .partition import PartitionedConfig, PartitionsDefinition
 
@@ -608,10 +600,10 @@ class GraphDefinition(NodeDefinition):
         op_selection = check.opt_list_param(op_selection, "op_selection", of_type=str)
 
         return JobDefinition(
-            name=job_name,
+            name=name,
             description=description or self.description,
             graph_def=self,
-            resource_defs=resource_defs_with_defaults,
+            resource_defs=resource_defs,
             logger_defs=logger_defs,
             executor_def=executor_def,
             config=config,
@@ -622,7 +614,7 @@ class GraphDefinition(NodeDefinition):
             version_strategy=version_strategy,
             op_retry_policy=op_retry_policy,
             asset_layer=asset_layer,
-            _input_values=input_values,
+            input_values=input_values,
             _subset_selection_data=_asset_selection_data,
             _executor_def_specified=executor_def_specified,
             _logger_defs_specified=logger_defs_specified,
@@ -638,28 +630,6 @@ class GraphDefinition(NodeDefinition):
                 f"Failed attempting to coerce Graph {self.name} in to a Job. "
                 "Use to_job instead, passing the required information."
             ) from err
-
-    def _get_config_schema(
-        self,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]],
-        executor_def: "ExecutorDefinition",
-        logger_defs: Optional[Mapping[str, LoggerDefinition]],
-        asset_layer: Optional["AssetLayer"],
-    ) -> ConfigType:
-        from .job_definition import JobDefinition
-
-        return (
-            JobDefinition(
-                name=self.name,
-                graph_def=self,
-                resource_defs=resource_defs,
-                executor_def=executor_def,
-                logger_defs=logger_defs,
-                asset_layer=asset_layer,
-            )
-            .get_run_config_schema("default")
-            .run_config_schema_type
-        )
 
     def execute_in_process(
         self,
@@ -717,7 +687,7 @@ class GraphDefinition(NodeDefinition):
             graph_def=self,
             executor_def=execute_in_process_executor,
             resource_defs=resource_defs,
-            _input_values=input_values,
+            input_values=input_values,
         ).get_job_def_for_subset_selection(op_selection)
 
         run_config = run_config if run_config is not None else {}
@@ -1025,55 +995,3 @@ def _validate_out_mappings(
                 )
             )
     return output_mappings
-
-
-def _config_mapping_with_default_value(
-    inner_schema: ConfigType,
-    default_config: Dict[str, Any],
-    job_name: str,
-    graph_name: str,
-) -> ConfigMapping:
-    if not isinstance(inner_schema, Shape):
-        check.failed("Only Shape (dictionary) config_schema allowed on Job ConfigMapping")
-
-    def config_fn(x):
-        return x
-
-    updated_fields = {}
-    field_aliases = inner_schema.field_aliases
-    for name, field in inner_schema.fields.items():
-        if name in default_config:
-            updated_fields[name] = Field(
-                config=field.config_type,
-                default_value=default_config[name],
-                description=field.description,
-            )
-        elif name in field_aliases and field_aliases[name] in default_config:
-            updated_fields[name] = Field(
-                config=field.config_type,
-                default_value=default_config[field_aliases[name]],
-                description=field.description,
-            )
-        else:
-            updated_fields[name] = field
-
-    config_schema = Shape(
-        fields=updated_fields,
-        description=(
-            "This run config schema was automatically populated with default values "
-            "from `default_config`."
-        ),
-        field_aliases=inner_schema.field_aliases,
-    )
-
-    config_evr = validate_config(config_schema, default_config)
-    if not config_evr.success:
-        raise DagsterInvalidConfigError(
-            f"Error in config when building job '{job_name}' from graph '{graph_name}' ",
-            config_evr.errors,
-            default_config,
-        )
-
-    return ConfigMapping(
-        config_fn=config_fn, config_schema=config_schema, receive_processed_config_values=False
-    )
