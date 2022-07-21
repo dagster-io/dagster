@@ -18,13 +18,13 @@ from dagster import (
     Output,
     ResourceDefinition,
     StaticPartitionsDefinition,
+    define_asset_job,
     graph,
     io_manager,
     materialize_to_memory,
     multi_asset,
     op,
     resource,
-    define_asset_job,
 )
 from dagster.config.source import StringSource
 from dagster.core.definitions import AssetGroup, AssetIn, SourceAsset, asset, build_assets_job
@@ -1329,20 +1329,20 @@ def test_job_preserved_with_asset_subset():
     asset_one = AssetsDefinition.from_op(one)
 
     @asset(config_schema={"bar": int})
-    def two(context, one):
+    def two(context, one):  # pylint: disable=unused-argument
         assert context.op_config["bar"] == 2
 
     @asset(config_schema={"baz": int})
-    def three(context, two):
+    def three(context, two):  # pylint: disable=unused-argument
         assert context.op_config["baz"] == 3
 
     foo_job = define_asset_job(
         "foo_job",
         config={
-            'ops': {
-                'one': {'config': {'foo': 1}},
-                'two': {'config': {'bar': 2}},
-                'three': {'config': {'baz': 3}},
+            "ops": {
+                "one": {"config": {"foo": 1}},
+                "two": {"config": {"bar": 2}},
+                "three": {"config": {"baz": 3}},
             }
         },
         description="my cool job",
@@ -1351,7 +1351,7 @@ def test_job_preserved_with_asset_subset():
 
     result = foo_job.execute_in_process(asset_selection=[AssetKey("one")])
     assert result.success
-    assert result.dagster_run.tags == {'yay': '1'}
+    assert result.dagster_run.tags == {"yay": "1"}
 
 
 def test_raise_error_on_incomplete_graph_asset_subset():

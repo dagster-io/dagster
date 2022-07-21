@@ -49,7 +49,7 @@ from .dependency import (
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .logger_definition import LoggerDefinition
-from .metadata import RawMetadataValue, MetadataEntry, PartitionMetadataEntry
+from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .preset import PresetDefinition
