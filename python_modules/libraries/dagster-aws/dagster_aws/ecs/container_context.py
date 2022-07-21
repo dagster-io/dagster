@@ -1,8 +1,9 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, NamedTuple, Optional, cast
 
 from dagster import Array, Field, Noneable, Shape, StringSource
 from dagster import _check as check
 from dagster.config.validate import process_config
+from dagster.core.container_context import process_shared_container_context_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.utils import parse_env_var
@@ -112,13 +113,20 @@ class EcsContainerContext(
         return context.merge(EcsContainerContext.create_from_config(run_container_context))
 
     @staticmethod
-    def create_from_config(run_container_context):
+    def create_from_config(run_container_context) -> "EcsContainerContext":
+        processed_shared_container_context = process_shared_container_context_config(
+            run_container_context or {}
+        )
+        shared_container_context = EcsContainerContext(
+            env_vars=processed_shared_container_context.get("env_vars", [])
+        )
+
         run_ecs_container_context = (
             run_container_context.get("ecs", {}) if run_container_context else {}
         )
 
         if not run_ecs_container_context:
-            return EcsContainerContext()
+            return shared_container_context
 
         processed_container_context = process_config(
             ECS_CONTAINER_CONTEXT_SCHEMA, run_ecs_container_context
@@ -131,10 +139,12 @@ class EcsContainerContext(
                 run_ecs_container_context,
             )
 
-        processed_context_value = processed_container_context.value
+        processed_context_value = cast(Mapping[str, Any], processed_container_context.value)
 
-        return EcsContainerContext(
-            secrets=processed_context_value.get("secrets"),
-            secrets_tags=processed_context_value.get("secrets_tags"),
-            env_vars=processed_context_value.get("env_vars"),
+        return shared_container_context.merge(
+            EcsContainerContext(
+                secrets=processed_context_value.get("secrets"),
+                secrets_tags=processed_context_value.get("secrets_tags"),
+                env_vars=processed_context_value.get("env_vars"),
+            )
         )

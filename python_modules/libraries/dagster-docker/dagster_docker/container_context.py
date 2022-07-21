@@ -1,8 +1,9 @@
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, NamedTuple, Optional, cast
 
 from dagster import Array, Field, Permissive, StringSource
 from dagster import _check as check
 from dagster.config.validate import process_config
+from dagster.core.container_context import process_shared_container_context_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils import merge_dicts
@@ -119,12 +120,19 @@ class DockerContainerContext(
 
     @staticmethod
     def create_from_config(run_container_context):
+        processed_shared_container_context = process_shared_container_context_config(
+            run_container_context or {}
+        )
+        shared_container_context = DockerContainerContext(
+            env_vars=processed_shared_container_context.get("env_vars", [])
+        )
+
         run_docker_container_context = (
             run_container_context.get("docker", {}) if run_container_context else {}
         )
 
         if not run_docker_container_context:
-            return DockerContainerContext()
+            return shared_container_context
 
         processed_container_context = process_config(
             DOCKER_CONTAINER_CONTEXT_SCHEMA, run_docker_container_context
@@ -137,11 +145,13 @@ class DockerContainerContext(
                 run_docker_container_context,
             )
 
-        processed_context_value = processed_container_context.value
+        processed_context_value = cast(Mapping[str, Any], processed_container_context.value)
 
-        return DockerContainerContext(
-            registry=processed_context_value.get("registry"),
-            env_vars=processed_context_value.get("env_vars", []),
-            networks=processed_context_value.get("networks", []),
-            container_kwargs=processed_context_value.get("container_kwargs"),
+        return shared_container_context.merge(
+            DockerContainerContext(
+                registry=processed_context_value.get("registry"),
+                env_vars=processed_context_value.get("env_vars", []),
+                networks=processed_context_value.get("networks", []),
+                container_kwargs=processed_context_value.get("container_kwargs"),
+            )
         )
