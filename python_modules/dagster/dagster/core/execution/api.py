@@ -744,6 +744,7 @@ def _get_execution_plan_from_run(
     if (
         # need to rebuild execution plan so it matches the subsetted graph
         pipeline.solids_to_execute is None
+        and pipeline_run.asset_selection is None
         and pipeline_run.execution_plan_snapshot_id
     ):
         execution_plan_snapshot = instance.get_execution_plan_snapshot(
