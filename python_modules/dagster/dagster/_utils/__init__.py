@@ -23,6 +23,7 @@ from typing import Optional, Type, TypeVar, Union, cast, overload
 from warnings import warn
 
 import yaml
+from typing_extensions import Literal
 
 import dagster._check as check
 import dagster._seven as seven
@@ -51,7 +52,7 @@ PICKLE_PROTOCOL = 4
 DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
 
 
-def convert_dagster_submodule_name(name: str, mode: str) -> str:
+def convert_dagster_submodule_name(name: str, mode: Literal["private", "public"]) -> str:
     """This function was introduced when all Dagster submodules were marked private by
     underscore-prefixing the root submodules (e.g. `dagster._core`). The function provides
     backcompatibility by converting modules between the old and new (i.e. public and private) forms.

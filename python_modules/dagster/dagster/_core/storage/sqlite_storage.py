@@ -67,6 +67,7 @@ class DagsterSqliteStorage(DagsterStorage, ConfigurableClass):
 
     @staticmethod
     def from_config_value(inst_data, config_value):
+        print(inst_data)
         return DagsterSqliteStorage.from_local(inst_data=inst_data, **config_value)
 
     @classmethod

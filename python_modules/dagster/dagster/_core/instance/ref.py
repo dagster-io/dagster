@@ -5,7 +5,6 @@ import yaml
 
 import dagster._check as check
 from dagster._serdes import ConfigurableClassData, class_from_code_pointer, whitelist_for_serdes
-from dagster._utils import convert_dagster_submodule_name
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_instance_config
 
@@ -28,7 +27,7 @@ def _schedule_directory(base):
 
 def configurable_class_data(config_field):
     return ConfigurableClassData(
-        convert_dagster_submodule_name(check.str_elem(config_field, "module"), "private"),
+        check.str_elem(config_field, "module"),
         check.str_elem(config_field, "class"),
         yaml.dump(check.opt_dict_elem(config_field, "config"), default_flow_style=False),
     )

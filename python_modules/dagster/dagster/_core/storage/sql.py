@@ -15,7 +15,7 @@ from dagster._utils.log import quieten
 create_engine = db.create_engine  # exported
 
 
-ALEMBIC_SCRIPTS_LOCATION = "dagster:core/storage/alembic"
+ALEMBIC_SCRIPTS_LOCATION = "dagster:_core/storage/alembic"
 
 
 @lru_cache(maxsize=3)  # run, event, and schedule storages

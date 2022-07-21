@@ -22,24 +22,25 @@ class ConfigurableClassDataSerializer(DefaultNamedTupleSerializer):
         dct["module_name"] = convert_dagster_submodule_name(value.module_name, "public")  # type: ignore
         return dct
 
-    @classmethod
-    def value_from_storage_dict(
-        cls,
-        storage_dict: Dict[str, Any],
-        klass: Type,
-        args_for_class: Mapping[str, Parameter],
-        whitelist_map: WhitelistMap,
-        descent_path: str,
-    ) -> NamedTuple:
-        storage_dict["module_name"] = convert_dagster_submodule_name(
-            storage_dict["module_name"], "private"
-        )
-        return super().value_from_storage_dict(
-            storage_dict, klass, args_for_class, whitelist_map, descent_path
-        )
+    # @classmethod
+    # def value_from_storage_dict(
+    #     cls,
+    #     storage_dict: Dict[str, Any],
+    #     klass: Type,
+    #     args_for_class: Mapping[str, Parameter],
+    #     whitelist_map: WhitelistMap,
+    #     descent_path: str,
+    # ) -> NamedTuple:
+    #     storage_dict["module_name"] = convert_dagster_submodule_name(
+    #         storage_dict["module_name"], "private"
+    #     )
+    #     return super().value_from_storage_dict(
+    #         storage_dict, klass, args_for_class, whitelist_map, descent_path
+    #     )
 
 
-@whitelist_for_serdes(serializer=ConfigurableClassDataSerializer)
+# @whitelist_for_serdes(serializer=ConfigurableClassDataSerializer)
+@whitelist_for_serdes
 class ConfigurableClassData(
     NamedTuple(
         "_ConfigurableClassData",
@@ -62,7 +63,7 @@ class ConfigurableClassData(
     def __new__(cls, module_name, class_name, config_yaml):
         return super(ConfigurableClassData, cls).__new__(
             cls,
-            check.str_param(module_name, "module_name"),
+            convert_dagster_submodule_name(check.str_param(module_name, "module_name"), "private"),
             check.str_param(class_name, "class_name"),
             check.str_param(config_yaml, "config_yaml"),
         )
