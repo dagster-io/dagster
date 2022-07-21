@@ -1,5 +1,36 @@
 # Changelog
 
+# 0.15.7
+
+### New
+
+* `DagsterRun` now has a `job_name` property, which should be used instead of `pipeline_name`.
+* `TimeWindowPartitionsDefinition` now has a `get_partition_keys_in_range` method which returns a sequence of all the partition keys between two partition keys.
+* `OpExecutionContext` now has `asset_partitions_def_for_output` and `asset_partitions_def_for_input` methods.
+* Dagster now errors immediately with an informative message when two `AssetsDefinition` objects with the same key are provided to the same repository.
+* `build_output_context` now accepts a `partition_key` argument that can be used when testing the `handle_output` method of an IO manager.
+
+### Bugfixes
+
+* Fixed a bug that made it impossible to load inputs using a DagsterTypeLoader if the InputDefinition had an `asset_key` set.
+* Ops created with the `@asset` and `@multi_asset` decorators no longer have a top-level “assets” entry in their config schema. This entry was unused.
+* In 0.15.6, a bug was introduced that made it impossible to load repositories if assets that had non-standard metadata attached to them were present. This has been fixed.
+* [dagster-dbt] In some cases, using `load_assets_from_dbt_manifest` with a `select` parameter that included sources would result in an error. This has been fixed.
+* [dagit] Fixed an error where a race condition of a sensor/schedule page load and the sensor/schedule removal caused a GraphQL exception to be raised.
+* [dagit] The “Materialize” button no longer changes to “Rematerialize” in some scenarios
+* [dagit] The live overlays on asset views, showing latest materialization and run info, now load faster
+* [dagit] Typing whitespace into the launchpad Yaml editor no longer causes execution to fail to start
+* [dagit] The explorer sidebar no longer displays “mode” label and description for jobs, since modes are deprecated.
+
+### Community Contributions
+
+* An error will now be raised if a `@repository` decorated function expects parameters. Thanks @roeij!
+
+### Documentation
+
+* The non-asset version of the Hacker News example, which lived inside `examples/hacker_news/`, has been removed, because it hadn’t received updates in a long time and had drifted from best practices. The asset version is still there and has an updated README. Check it out [here](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news_assets)
+
+
 # 0.15.6
 
 ### New
