@@ -1704,7 +1704,6 @@ type PartitionBackfill {
   runs(limit: Int): [Run!]!
   unfinishedRuns(limit: Int): [Run!]!
   error: PythonError
-  partitionRunStats: BackfillRunStats!
   partitionStatuses: PartitionStatuses!
 }
 
@@ -1722,15 +1721,6 @@ enum BackfillStatus {
   IN_PROGRESS
   COMPLETED
   INCOMPLETE
-}
-
-type BackfillRunStats {
-  numQueued: Int!
-  numInProgress: Int!
-  numSucceeded: Int!
-  numFailed: Int!
-  numPartitionsWithRuns: Int!
-  numTotalRuns: Int!
 }
 
 type FutureInstigationTicks {
