@@ -1333,11 +1333,11 @@ def my_resource_2():
 
 
 @multi_asset(
-    name=f"fivetran_sync",
+    name="fivetran_sync",
     outs={key: Out(asset_key=AssetKey(key)) for key in ["a", "b", "c"]},
     resource_defs={"my_resource": my_resource},
 )
-def fivetran_asset(context):
+def fivetran_asset():
     return 1, 2, 3
 
 
