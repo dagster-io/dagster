@@ -6,7 +6,7 @@ from dagster_fivetran.utils import generate_materializations
 from dagster import AssetKey, AssetsDefinition, Out, Output
 from dagster import _check as check
 from dagster import multi_asset
-from dagster.utils.backcompat import experimental
+from dagster._annotations import experimental
 
 
 @experimental

@@ -3,6 +3,7 @@ import pickle
 from typing import Union
 
 import dagster._check as check
+from dagster._annotations import experimental
 from dagster.config import Field
 from dagster.config.source import StringSource
 from dagster.core.definitions.events import AssetKey, AssetMaterialization
@@ -13,7 +14,6 @@ from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.io_manager import IOManager, io_manager
 from dagster.core.storage.memoizable_io_manager import MemoizableIOManager
 from dagster.utils import PICKLE_PROTOCOL, mkdir_p
-from dagster.utils.backcompat import experimental
 
 
 @io_manager(

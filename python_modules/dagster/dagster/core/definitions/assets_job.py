@@ -4,11 +4,11 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, 
 from toposort import CircularDependencyError, toposort
 
 import dagster._check as check
+from dagster._annotations import experimental
 from dagster.core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.utils import merge_dicts
-from dagster.utils.backcompat import experimental
 
 from .asset_layer import AssetLayer
 from .assets import AssetsDefinition

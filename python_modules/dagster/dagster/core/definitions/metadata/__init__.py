@@ -18,12 +18,12 @@ from typing import (
 
 import dagster._check as check
 import dagster.seven as seven
+from dagster._annotations import experimental
 from dagster.core.errors import DagsterInvalidMetadata
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.backcompat import (
     canonicalize_backcompat_args,
     deprecation_warning,
-    experimental,
     experimental_class_warning,
 )
 
