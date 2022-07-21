@@ -163,6 +163,7 @@ from .sensor_definition import (
 from .solid_container import create_execution_structure
 from .solid_definition import CompositeSolidDefinition, NodeDefinition, SolidDefinition
 from .source_asset import SourceAsset
+from .time_window_partition_mapping import TimeWindowPartitionMapping
 from .time_window_partitions import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
