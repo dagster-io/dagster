@@ -5,7 +5,7 @@ import mock
 import pytest
 from dagster_tests.core_tests.storage_tests.utils.run_storage import TestRunStorage
 
-from dagster.core.storage.runs import InMemoryRunStorage, SqliteRunStorage
+from dagster._core.storage.runs import InMemoryRunStorage, SqliteRunStorage
 
 
 @contextmanager

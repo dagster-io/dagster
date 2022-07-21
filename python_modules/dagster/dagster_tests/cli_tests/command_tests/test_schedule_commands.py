@@ -14,9 +14,9 @@ from dagster._cli.schedule import (
     schedule_stop_command,
     schedule_wipe_command,
 )
-from dagster.core.host_representation import ExternalRepository
-from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import environ
+from dagster._core.host_representation import ExternalRepository
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import environ
 
 from .test_cli_commands import schedule_command_contexts
 

@@ -26,8 +26,8 @@ from dagster import (
     resource,
 )
 from dagster._legacy import pipeline, solid
-from dagster.core.test_utils import default_mode_def_for_test
-from dagster.core.types.dagster_type import (
+from dagster._core.test_utils import default_mode_def_for_test
+from dagster._core.types.dagster_type import (
     DagsterType,
     ListType,
     PythonObjectDagsterType,

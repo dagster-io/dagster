@@ -16,23 +16,23 @@ from dagster import _check as check
 from dagster._loggers import colored_console_logger
 from dagster._serdes import unpack_value
 from dagster._utils import EventGenerationManager, ensure_gen
-from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.definitions.events import RetryRequested
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.definitions.reconstruct import ReconstructablePipeline
-from dagster.core.definitions.resource_definition import ScopedResourcesBuilder
-from dagster.core.events import DagsterEvent
-from dagster.core.execution.api import scoped_pipeline_context
-from dagster.core.execution.plan.outputs import StepOutputHandle
-from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.execution.resources_init import (
+from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.definitions.events import RetryRequested
+from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
+from dagster._core.events import DagsterEvent
+from dagster._core.execution.api import scoped_pipeline_context
+from dagster._core.execution.plan.outputs import StepOutputHandle
+from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.resources_init import (
     get_required_resource_keys_to_init,
     resource_initialization_event_generator,
 )
-from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import DagsterRun, PipelineRunStatus
-from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster.core.utils import make_new_run_id
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.pipeline_run import DagsterRun, PipelineRunStatus
+from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.utils import make_new_run_id
 
 from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
 from .errors import DagstermillError

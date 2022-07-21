@@ -13,10 +13,10 @@ from dagster import (
     reexecute_pipeline,
 )
 from dagster._legacy import pipeline, solid
-from dagster.core.definitions.events import Output
-from dagster.core.definitions.output import DynamicOut, Out
-from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
-from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
+from dagster._core.definitions.events import Output
+from dagster._core.definitions.output import DynamicOut, Out
+from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
+from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 
 
 @solid

@@ -3,10 +3,10 @@ from typing import Callable, Dict, Iterator, List, Optional
 
 import dagster._check as check
 from dagster import DagsterEventType
-from dagster.core.events.log import EventLogEntry
-from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import RunRecord, RunsFilter
-from dagster.core.workspace.workspace import IWorkspace
+from dagster._core.events.log import EventLogEntry
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.pipeline_run import RunRecord, RunsFilter
+from dagster._core.workspace.workspace import IWorkspace
 
 from ..daemon import IntervalDaemon
 from .auto_run_reexecution import consume_new_runs_for_automatic_reexecution

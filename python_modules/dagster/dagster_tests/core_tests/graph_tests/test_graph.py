@@ -26,20 +26,20 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._loggers import json_console_logger
-from dagster.core.definitions.graph_definition import GraphDefinition
-from dagster.core.definitions.partition import (
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.partition import (
     Partition,
     PartitionedConfig,
     StaticPartitionsDefinition,
 )
-from dagster.core.definitions.pipeline_definition import PipelineSubsetDefinition
-from dagster.core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
-from dagster.core.errors import (
+from dagster._core.definitions.pipeline_definition import PipelineSubsetDefinition
+from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
+from dagster._core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
 )
-from dagster.core.test_utils import instance_for_test
+from dagster._core.test_utils import instance_for_test
 
 
 def get_ops():

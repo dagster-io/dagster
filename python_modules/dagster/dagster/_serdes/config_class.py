@@ -49,7 +49,7 @@ class ConfigurableClassData(
 
     def rehydrate(self):
         from dagster._config import process_config, resolve_to_config_type
-        from dagster.core.errors import DagsterInvalidConfigError
+        from dagster._core.errors import DagsterInvalidConfigError
 
         try:
             module = importlib.import_module(self.module_name)

@@ -4,7 +4,7 @@ import pytest
 
 from dagster import DagsterInvalidDefinitionError, Dict, List, Noneable, Optional
 from dagster._legacy import solid
-from dagster.core.errors import DagsterInvalidConfigDefinitionError
+from dagster._core.errors import DagsterInvalidConfigDefinitionError
 
 
 def test_invalid_optional_in_config():

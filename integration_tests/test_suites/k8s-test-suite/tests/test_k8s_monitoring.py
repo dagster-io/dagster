@@ -8,8 +8,8 @@ from dagster_k8s_test_infra.integration_utils import image_pull_policy, launch_r
 from dagster_test.test_project import get_test_project_environments_path
 
 from dagster._utils import load_yaml_from_path, merge_dicts
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.test_utils import poll_for_finished_run
+from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.test_utils import poll_for_finished_run
 
 
 def log_run_events(instance, run_id):

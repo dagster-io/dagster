@@ -1,9 +1,9 @@
 import graphene
 
 import dagster._check as check
-from dagster.core.events import AssetLineageInfo, DagsterEventType
-from dagster.core.execution.plan.objects import ErrorSource
-from dagster.core.execution.stats import RunStepKeyStatsSnapshot
+from dagster._core.events import AssetLineageInfo, DagsterEventType
+from dagster._core.execution.plan.objects import ErrorSource
+from dagster._core.execution.stats import RunStepKeyStatsSnapshot
 
 from ...implementation.events import construct_basic_params
 from ...implementation.fetch_runs import get_run_by_id, get_step_stats

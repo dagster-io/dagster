@@ -12,8 +12,8 @@ from marks import mark_monitoring
 
 from dagster._utils import merge_dicts
 from dagster._utils.yaml_utils import merge_yamls
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.test_utils import poll_for_finished_run
+from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.test_utils import poll_for_finished_run
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

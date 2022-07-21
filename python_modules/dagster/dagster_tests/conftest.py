@@ -16,7 +16,7 @@ import dagster._seven as seven
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._seven import nullcontext
 from dagster._utils import file_relative_path
-from dagster.core.errors import DagsterUserCodeUnreachableError
+from dagster._core.errors import DagsterUserCodeUnreachableError
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 HARDCODED_PORT = 8090

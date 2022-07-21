@@ -14,19 +14,19 @@ from dagster._grpc.server import GrpcServerProcess
 from dagster._utils import merge_dicts
 from dagster._utils.test import FilesystemTestScheduler
 from dagster._utils.test.postgres_instance import TestPostgresInstance
-from dagster.core.instance import DagsterInstance, InstanceType
-from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-from dagster.core.run_coordinator import DefaultRunCoordinator
-from dagster.core.storage.event_log import InMemoryEventLogStorage
-from dagster.core.storage.event_log.sqlite import ConsolidatedSqliteEventLogStorage
-from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
-from dagster.core.storage.root import LocalArtifactStorage
-from dagster.core.storage.runs import InMemoryRunStorage
-from dagster.core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
-from dagster.core.test_utils import ExplodingRunLauncher, instance_for_test
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.core.workspace import WorkspaceProcessContext
-from dagster.core.workspace.load_target import (
+from dagster._core.instance import DagsterInstance, InstanceType
+from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
+from dagster._core.run_coordinator import DefaultRunCoordinator
+from dagster._core.storage.event_log import InMemoryEventLogStorage
+from dagster._core.storage.event_log.sqlite import ConsolidatedSqliteEventLogStorage
+from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
+from dagster._core.storage.root import LocalArtifactStorage
+from dagster._core.storage.runs import InMemoryRunStorage
+from dagster._core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
+from dagster._core.test_utils import ExplodingRunLauncher, instance_for_test
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.workspace import WorkspaceProcessContext
+from dagster._core.workspace.load_target import (
     GrpcServerTarget,
     ModuleTarget,
     PythonFileTarget,

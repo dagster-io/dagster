@@ -10,14 +10,14 @@ from dagster import Array, Field, Noneable, ScalarUnion, StringSource
 from dagster import _check as check
 from dagster._grpc.types import ExecuteRunArgs
 from dagster._serdes import ConfigurableClass
-from dagster.core.events import EngineEventData, MetadataEntry
-from dagster.core.launcher.base import (
+from dagster._core.events import EngineEventData, MetadataEntry
+from dagster._core.launcher.base import (
     CheckRunHealthResult,
     LaunchRunContext,
     RunLauncher,
     WorkerStatus,
 )
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import PipelineRun
 
 from ..secretsmanager import get_secrets_from_arns
 from .container_context import SHARED_ECS_SCHEMA, EcsContainerContext

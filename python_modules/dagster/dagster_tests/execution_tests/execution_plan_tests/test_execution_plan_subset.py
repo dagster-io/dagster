@@ -8,9 +8,9 @@ from dagster import (
     lambda_solid,
 )
 from dagster._legacy import solid
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.instance import DagsterInstance
+from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.execution.api import create_execution_plan, execute_plan
+from dagster._core.instance import DagsterInstance
 
 
 def define_two_int_pipeline():

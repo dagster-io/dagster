@@ -22,7 +22,7 @@ from queue import Empty, Queue
 from threading import Thread
 
 from dagster._serdes import serialize_value
-from dagster.core.execution.plan.external_step import (
+from dagster._core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
     external_instance_from_step_run_ref,
     run_step_from_ref,

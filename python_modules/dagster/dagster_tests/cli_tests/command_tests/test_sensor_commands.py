@@ -13,9 +13,9 @@ from dagster._cli.sensor import (
     sensor_start_command,
     sensor_stop_command,
 )
-from dagster.core.host_representation import ExternalRepository
-from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import environ
+from dagster._core.host_representation import ExternalRepository
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import environ
 
 from .test_cli_commands import sensor_command_contexts
 

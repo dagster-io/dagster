@@ -10,10 +10,10 @@ from dagster_aws.ecs.launcher import RUNNING_STATUSES, STOPPED_STATUSES
 from dagster_aws.ecs.tasks import TaskMetadata
 
 from dagster._check import CheckError
-from dagster.core.code_pointer import FileCodePointer
-from dagster.core.events import MetadataEntry
-from dagster.core.launcher.base import WorkerStatus
-from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster._core.code_pointer import FileCodePointer
+from dagster._core.events import MetadataEntry
+from dagster._core.launcher.base import WorkerStatus
+from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 
 
 @pytest.mark.parametrize("task_long_arn_format", ["enabled", "disabled"])

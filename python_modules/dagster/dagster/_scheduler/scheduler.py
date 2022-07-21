@@ -12,12 +12,12 @@ from dagster._seven.compat.pendulum import to_timezone
 from dagster._utils import merge_dicts
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import default_date_format_string
-from dagster.core.definitions.schedule_definition import DefaultScheduleStatus
-from dagster.core.definitions.utils import validate_tags
-from dagster.core.errors import DagsterUserCodeUnreachableError
-from dagster.core.host_representation import ExternalSchedule, PipelineSelector
-from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.instigation import (
+from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
+from dagster._core.definitions.utils import validate_tags
+from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.host_representation import ExternalSchedule, PipelineSelector
+from dagster._core.instance import DagsterInstance
+from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
     InstigatorType,
@@ -25,11 +25,11 @@ from dagster.core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
-from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
-from dagster.core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
-from dagster.core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
-from dagster.core.workspace import IWorkspace
+from dagster._core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
+from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
+from dagster._core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
+from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
+from dagster._core.workspace import IWorkspace
 
 
 class _ScheduleLaunchContext:

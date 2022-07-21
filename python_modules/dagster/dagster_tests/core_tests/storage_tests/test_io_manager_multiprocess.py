@@ -2,7 +2,7 @@ import tempfile
 
 from dagster import ModeDefinition, execute_pipeline, fs_io_manager, reconstructable
 from dagster._legacy import pipeline, solid
-from dagster.core.test_utils import instance_for_test
+from dagster._core.test_utils import instance_for_test
 
 
 @solid

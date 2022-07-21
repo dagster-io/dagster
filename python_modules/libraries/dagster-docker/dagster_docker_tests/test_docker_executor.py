@@ -13,8 +13,8 @@ from dagster_test.test_project import (
 
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import merge_yamls
-from dagster.core.execution.api import execute_pipeline
-from dagster.core.test_utils import environ
+from dagster._core.execution.api import execute_pipeline
+from dagster._core.test_utils import environ
 
 from . import IS_BUILDKITE, docker_postgres_instance
 

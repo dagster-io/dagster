@@ -4,17 +4,17 @@ import sqlalchemy as db
 
 import dagster._check as check
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, deserialize_as
-from dagster.core.events.log import EventLogEntry
-from dagster.core.storage.config import pg_config
-from dagster.core.storage.event_log import (
+from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.config import pg_config
+from dagster._core.storage.event_log import (
     AssetKeyTable,
     SqlEventLogStorage,
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
-from dagster.core.storage.event_log.base import EventLogCursor
-from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
-from dagster.core.storage.sql import (
+from dagster._core.storage.event_log.base import EventLogCursor
+from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._core.storage.sql import (
     check_alembic_revision,
     create_engine,
     run_alembic_upgrade,

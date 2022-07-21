@@ -5,7 +5,7 @@ import mock
 import pytest
 
 from dagster._utils.test.schedule_storage import TestScheduleStorage
-from dagster.core.storage.schedules import SqliteScheduleStorage
+from dagster._core.storage.schedules import SqliteScheduleStorage
 
 
 @contextmanager

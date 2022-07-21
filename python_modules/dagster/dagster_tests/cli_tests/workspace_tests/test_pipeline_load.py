@@ -7,9 +7,9 @@ from dagster._cli.workspace.cli_target import (
     pipeline_target_argument,
 )
 from dagster._utils import file_relative_path
-from dagster.core.host_representation import ExternalPipeline
-from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import instance_for_test
+from dagster._core.host_representation import ExternalPipeline
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import instance_for_test
 
 
 def load_pipeline_via_cli_runner(cli_args):

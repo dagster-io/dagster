@@ -10,7 +10,7 @@ import boto3
 from dagster_aws.s3.file_manager import S3FileHandle, S3FileManager
 
 from dagster._serdes import serialize_value
-from dagster.core.execution.plan.external_step import (
+from dagster._core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
     external_instance_from_step_run_ref,
     run_step_from_ref,

@@ -23,7 +23,7 @@ from dagster import (
 )
 from dagster._legacy import pipeline, solid
 from dagster._utils import PICKLE_PROTOCOL, file_relative_path
-from dagster.core.storage.file_manager import local_file_manager
+from dagster._core.storage.file_manager import local_file_manager
 
 try:
     from dagster_pandas import DataFrame

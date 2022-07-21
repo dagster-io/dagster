@@ -12,17 +12,17 @@ to be the case.
 from typing import TYPE_CHECKING
 
 import dagster._check as check
-from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
-from dagster.core.host_representation import ExternalPipeline, ExternalRepository
-from dagster.core.host_representation.external_data import (
+from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
+from dagster._core.host_representation import ExternalPipeline, ExternalRepository
+from dagster._core.host_representation.external_data import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
-from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 
 if TYPE_CHECKING:
-    from dagster.core.definitions.repository_definition import RepositoryDefinition
-    from dagster.core.host_representation.handle import RepositoryHandle
+    from dagster._core.definitions.repository_definition import RepositoryDefinition
+    from dagster._core.host_representation.handle import RepositoryHandle
 
 
 def recon_pipeline_from_origin(origin: PipelinePythonOrigin) -> ReconstructablePipeline:

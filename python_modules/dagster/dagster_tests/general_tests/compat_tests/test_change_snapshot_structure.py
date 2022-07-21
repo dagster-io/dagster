@@ -1,8 +1,8 @@
 from dagster._utils import file_relative_path
 from dagster._utils.test import copy_directory
-from dagster.core.host_representation import ExternalExecutionPlan
-from dagster.core.instance import DagsterInstance, InstanceRef
-from dagster.core.snap import create_execution_plan_snapshot_id, create_pipeline_snapshot_id
+from dagster._core.host_representation import ExternalExecutionPlan
+from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.snap import create_execution_plan_snapshot_id, create_pipeline_snapshot_id
 
 
 # a change of schema in the snapshot hierarchy caused hashes to be different

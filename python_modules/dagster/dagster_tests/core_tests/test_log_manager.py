@@ -6,11 +6,11 @@ import pytest
 
 from dagster import DagsterEvent
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.errors import DagsterUserCodeExecutionError, user_code_error_boundary
-from dagster.core.execution.plan.objects import ErrorSource, StepFailureData
-from dagster.core.execution.plan.outputs import StepOutputData, StepOutputHandle
-from dagster.core.log_manager import (
+from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.errors import DagsterUserCodeExecutionError, user_code_error_boundary
+from dagster._core.execution.plan.objects import ErrorSource, StepFailureData
+from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
+from dagster._core.log_manager import (
     DagsterLogHandler,
     DagsterLogManager,
     DagsterLoggingMetadata,

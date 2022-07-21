@@ -1,13 +1,13 @@
 import pendulum
 
 import dagster._check as check
-from dagster.core.execution.backfill import (
+from dagster._core.execution.backfill import (
     BulkActionStatus,
     PartitionBackfill,
     submit_backfill_runs,
 )
-from dagster.core.host_representation import RepositorySelector
-from dagster.core.utils import make_new_backfill_id
+from dagster._core.host_representation import RepositorySelector
+from dagster._core.utils import make_new_backfill_id
 
 from ..utils import capture_error
 

@@ -4,7 +4,7 @@ from dagster_k8s.client import DEFAULT_WAIT_TIMEOUT
 
 from dagster import Field, Float, Noneable, StringSource
 from dagster._utils import merge_dicts
-from dagster.core.host_representation import IN_PROCESS_NAME
+from dagster._core.host_representation import IN_PROCESS_NAME
 
 CELERY_K8S_CONFIG_KEY = "celery-k8s"
 

@@ -12,9 +12,9 @@ from dagster_airflow.dagster_pipeline_factory import make_dagster_pipeline_from_
 
 from dagster import DagsterEventType, execute_pipeline
 from dagster._seven import get_current_datetime_in_utc
-from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR
-from dagster.core.storage.compute_log_manager import ComputeIOType
-from dagster.core.test_utils import instance_for_test
+from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
+from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.test_utils import instance_for_test
 
 default_args = {
     "owner": "dagster",

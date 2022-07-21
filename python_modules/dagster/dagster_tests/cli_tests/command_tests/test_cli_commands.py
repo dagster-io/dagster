@@ -32,13 +32,13 @@ from dagster._cli.run import run_delete_command, run_list_command, run_wipe_comm
 from dagster._grpc.server import GrpcServerProcess
 from dagster._legacy import pipeline, solid
 from dagster._utils import file_relative_path, merge_dicts
-from dagster.core.definitions.decorators.sensor_decorator import sensor
-from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
-from dagster.core.definitions.sensor_definition import RunRequest
-from dagster.core.storage.memoizable_io_manager import versioned_filesystem_io_manager
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG
-from dagster.core.test_utils import instance_for_test
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.definitions.decorators.sensor_decorator import sensor
+from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
+from dagster._core.definitions.sensor_definition import RunRequest
+from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
+from dagster._core.storage.tags import MEMOIZED_RUN_TAG
+from dagster._core.test_utils import instance_for_test
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.version import __version__
 
 

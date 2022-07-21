@@ -25,9 +25,9 @@ from dagster._cli.workspace.cli_target import (
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster._utils.hosted_user_process import recon_pipeline_from_origin
 from dagster._utils.interrupts import capture_interrupts
-from dagster.core.execution.api import create_execution_plan
-from dagster.core.instance import DagsterInstance
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG
+from dagster._core.execution.api import create_execution_plan
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 
 from .utils import get_instance_for_service
 

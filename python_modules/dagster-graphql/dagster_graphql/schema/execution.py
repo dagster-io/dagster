@@ -1,8 +1,8 @@
 import graphene
 
 import dagster._check as check
-from dagster.core.host_representation import ExternalExecutionPlan
-from dagster.core.snap import ExecutionStepInputSnap, ExecutionStepOutputSnap, ExecutionStepSnap
+from dagster._core.host_representation import ExternalExecutionPlan
+from dagster._core.snap import ExecutionStepInputSnap, ExecutionStepOutputSnap, ExecutionStepSnap
 
 from .metadata import GrapheneMetadataItemDefinition
 from .util import non_null_list

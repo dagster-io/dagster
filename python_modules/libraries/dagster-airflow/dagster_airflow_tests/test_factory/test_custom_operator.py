@@ -9,7 +9,7 @@ from dagster_airflow_tests.test_fixtures import (  # pylint: disable=unused-impo
 from dagster_test.dagster_airflow.custom_operator import CustomOperator
 from dagster_test.test_project import get_test_project_environments_path
 
-from dagster.core.definitions.reconstruct import ReconstructableRepository
+from dagster._core.definitions.reconstruct import ReconstructableRepository
 
 
 @requires_airflow_db

@@ -12,22 +12,22 @@ from dagster._config import Field
 from dagster._legacy import pipeline, solid
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from dagster.core.errors import (
+from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
 )
-from dagster.core.execution.api import create_execution_plan
-from dagster.core.instance import DagsterInstance, InstanceRef
-from dagster.core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
-from dagster.core.launcher import LaunchRunContext, RunLauncher
-from dagster.core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
-from dagster.core.snap import (
+from dagster._core.execution.api import create_execution_plan
+from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
+from dagster._core.launcher import LaunchRunContext, RunLauncher
+from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
+from dagster._core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
     snapshot_from_execution_plan,
 )
-from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
+from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
 
 
 def test_get_run_by_id():

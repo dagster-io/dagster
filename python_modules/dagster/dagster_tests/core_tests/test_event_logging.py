@@ -5,8 +5,8 @@ from dagster import DagsterEvent, ModeDefinition, PipelineDefinition, execute_pi
 from dagster._legacy import pipeline
 from dagster._loggers import colored_console_logger
 from dagster._serdes import deserialize_as
-from dagster.core.events import DagsterEventType
-from dagster.core.events.log import EventLogEntry, construct_event_logger
+from dagster._core.events import DagsterEventType
+from dagster._core.events.log import EventLogEntry, construct_event_logger
 
 
 def mode_def(event_callback):

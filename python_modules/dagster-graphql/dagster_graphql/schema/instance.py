@@ -4,8 +4,8 @@ import graphene
 
 import dagster._check as check
 from dagster._daemon.types import DaemonStatus
-from dagster.core.instance import DagsterInstance, is_dagit_telemetry_enabled
-from dagster.core.launcher.base import RunLauncher
+from dagster._core.instance import DagsterInstance, is_dagit_telemetry_enabled
+from dagster._core.launcher.base import RunLauncher
 
 from .errors import GraphenePythonError
 from .util import non_null_list
@@ -117,7 +117,7 @@ class GrapheneInstance(graphene.ObjectType):
         )
 
     def resolve_runQueuingSupported(self, _graphene_info):
-        from dagster.core.run_coordinator import QueuedRunCoordinator
+        from dagster._core.run_coordinator import QueuedRunCoordinator
 
         return isinstance(self._instance.run_coordinator, QueuedRunCoordinator)
 

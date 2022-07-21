@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING, List, Optional
 import dagster._check as check
 from dagster._grpc.types import PipelineSubsetSnapshotArgs
 from dagster._serdes import deserialize_as
-from dagster.core.definitions.events import AssetKey
-from dagster.core.errors import DagsterUserCodeProcessError
-from dagster.core.host_representation.external_data import ExternalPipelineSubsetResult
-from dagster.core.host_representation.origin import ExternalPipelineOrigin
+from dagster._core.definitions.events import AssetKey
+from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.host_representation.external_data import ExternalPipelineSubsetResult
+from dagster._core.host_representation.origin import ExternalPipelineOrigin
 
 if TYPE_CHECKING:
     from dagster._grpc.client import DagsterGrpcClient

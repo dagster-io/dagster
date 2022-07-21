@@ -10,7 +10,7 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster._legacy import pipeline, solid
-from dagster.core.types.dagster_type import create_any_type
+from dagster._core.types.dagster_type import create_any_type
 
 
 class UserError(Exception):

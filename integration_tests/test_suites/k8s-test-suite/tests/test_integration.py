@@ -21,8 +21,8 @@ from dagster import DagsterEventType
 from dagster import _check as check
 from dagster._utils import load_yaml_from_path, merge_dicts
 from dagster._utils.yaml_utils import merge_yamls
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.storage.tags import DOCKER_IMAGE_TAG
+from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 
 
 @pytest.mark.integration

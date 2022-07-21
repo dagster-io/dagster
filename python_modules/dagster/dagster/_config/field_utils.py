@@ -3,7 +3,7 @@ import hashlib
 from typing import TYPE_CHECKING, Any, Dict, List
 
 import dagster._check as check
-from dagster.core.errors import DagsterInvalidConfigDefinitionError
+from dagster._core.errors import DagsterInvalidConfigDefinitionError
 
 from .config_type import Array, ConfigType, ConfigTypeKind
 

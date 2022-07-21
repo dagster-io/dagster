@@ -7,7 +7,7 @@ from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
 from scipy import optimize
 
 from dagster import AssetIn, asset, load_assets_from_current_module, repository
-from dagster.core.execution.with_resources import with_resources
+from dagster._core.execution.with_resources import with_resources
 
 from .constants import *  # pylint: disable=wildcard-import,unused-wildcard-import
 from .pandas_io_manager import numpy_io_manager, pandas_io_manager

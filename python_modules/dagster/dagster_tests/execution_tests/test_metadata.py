@@ -19,12 +19,12 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._legacy import pipeline, solid
 from dagster._utils import frozendict
-from dagster.core.definitions.metadata import (
+from dagster._core.definitions.metadata import (
     DagsterInvalidMetadata,
     MetadataEntry,
     normalize_metadata,
 )
-from dagster.core.definitions.metadata.table import (
+from dagster._core.definitions.metadata.table import (
     TableColumn,
     TableColumnConstraints,
     TableConstraints,

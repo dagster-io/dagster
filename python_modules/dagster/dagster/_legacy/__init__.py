@@ -1,1 +1,1 @@
-from dagster.core.definitions import pipeline, solid
+from dagster._core.definitions import pipeline, solid

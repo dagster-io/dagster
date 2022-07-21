@@ -14,9 +14,9 @@ from typing import (
 
 import dagster._check as check
 from dagster import IOManager, InputContext, OutputContext
-from dagster.core.definitions.metadata import RawMetadataValue
-from dagster.core.definitions.time_window_partitions import TimeWindow
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.errors import DagsterInvalidDefinitionError
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 

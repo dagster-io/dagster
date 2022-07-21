@@ -1,4 +1,4 @@
-from dagster.core.utils import check_dagster_package_version
+from dagster._core.utils import check_dagster_package_version
 
 from .data_frame import DataFrame
 from .executor import dask_executor

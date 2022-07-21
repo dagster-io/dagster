@@ -5,7 +5,7 @@ from click import UsageError
 
 import dagster._check as check
 from dagster._cli.workspace.cli_target import get_working_directory_from_kwargs
-from dagster.core.definitions.reconstruct import ReconstructableRepository
+from dagster._core.definitions.reconstruct import ReconstructableRepository
 
 
 def _cli_load_invariant(condition, msg=None):

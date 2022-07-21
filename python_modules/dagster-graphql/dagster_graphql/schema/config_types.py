@@ -4,7 +4,7 @@ import graphene
 
 import dagster._check as check
 from dagster._config import ConfigTypeKind, get_recursive_type_keys
-from dagster.core.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
+from dagster._core.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
 
 from .util import non_null_list
 

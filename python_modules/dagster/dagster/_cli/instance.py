@@ -3,7 +3,7 @@ import os
 import click
 
 import dagster._check as check
-from dagster.core.instance import DagsterInstance
+from dagster._core.instance import DagsterInstance
 
 
 @click.group(name="instance")

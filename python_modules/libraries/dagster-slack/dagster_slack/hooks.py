@@ -1,7 +1,7 @@
 from typing import Callable, Optional
 
-from dagster.core.definitions import failure_hook, success_hook
-from dagster.core.execution.context.hook import HookContext
+from dagster._core.definitions import failure_hook, success_hook
+from dagster._core.execution.context.hook import HookContext
 
 
 def _default_status_message(context: HookContext, status: str) -> str:

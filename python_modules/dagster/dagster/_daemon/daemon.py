@@ -18,8 +18,8 @@ from dagster._daemon.sensor import execute_sensor_iteration_loop
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._scheduler.scheduler import execute_scheduler_iteration_loop
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from dagster.core.telemetry import DAEMON_ALIVE, log_action
-from dagster.core.workspace import IWorkspace
+from dagster._core.telemetry import DAEMON_ALIVE, log_action
+from dagster._core.workspace import IWorkspace
 
 
 def get_default_daemon_logger(daemon_name):
@@ -65,7 +65,7 @@ class DagsterDaemon(AbstractContextManager):
         heartbeat_interval_seconds: int,
         error_interval_seconds: int,
     ):
-        from dagster.core.telemetry_upload import uploading_logging_thread
+        from dagster._core.telemetry_upload import uploading_logging_thread
 
         # Each loop runs in its own thread with its own instance and IWorkspace
         with context_fn() as (instance, workspace):

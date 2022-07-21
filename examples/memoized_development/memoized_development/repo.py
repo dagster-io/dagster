@@ -5,8 +5,8 @@ from memoized_development.solids.tree import emit_tree
 
 from dagster import ModeDefinition, repository
 from dagster._legacy import pipeline
-from dagster.core.storage.memoizable_io_manager import versioned_filesystem_io_manager
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG
+from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
+from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 
 
 @pipeline(

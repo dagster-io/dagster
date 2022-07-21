@@ -1,8 +1,8 @@
 from dagster._grpc.server import ExecuteExternalPipelineArgs
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
-from dagster.core.host_representation.handle import PipelineHandle
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.test_utils import instance_for_test, poll_for_event, poll_for_finished_run
+from dagster._core.host_representation.handle import PipelineHandle
+from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.test_utils import instance_for_test, poll_for_event, poll_for_finished_run
 
 from .utils import get_bar_repo_repository_location
 

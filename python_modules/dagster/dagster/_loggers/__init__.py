@@ -6,11 +6,11 @@ import coloredlogs
 from dagster import _seven
 from dagster._config import Field
 from dagster._utils.log import default_date_format_string, default_format_string
-from dagster.core.definitions.logger_definition import LoggerDefinition, logger
-from dagster.core.utils import coerce_valid_log_level
+from dagster._core.definitions.logger_definition import LoggerDefinition, logger
+from dagster._core.utils import coerce_valid_log_level
 
 if TYPE_CHECKING:
-    from dagster.core.execution.context.logger import InitLoggerContext
+    from dagster._core.execution.context.logger import InitLoggerContext
 
 
 @logger(

@@ -22,11 +22,11 @@ from dagster import (
 )
 from dagster._legacy import pipeline
 from dagster._utils import Counter, traced_counter
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.execution.api import execute_run
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
-from dagster.core.test_utils import instance_for_test
+from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.execution.api import execute_run
+from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
+from dagster._core.test_utils import instance_for_test
 
 RUNS_QUERY = """
 query PipelineRunsRootQuery($selector: PipelineSelector!) {

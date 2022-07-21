@@ -9,8 +9,8 @@ from starlette.testclient import TestClient
 from dagster._cli.pipeline import pipeline_execute_command
 from dagster._cli.workspace import get_workspace_process_context_from_kwargs
 from dagster._utils import check_script, pushd, script_relative_path
-from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import instance_for_test
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import instance_for_test
 
 PIPELINES_OR_ERROR_QUERY = """
 {

@@ -1,13 +1,13 @@
 import pytest
 
 from dagster._utils import file_relative_path
-from dagster.core.definitions.utils import (
+from dagster._core.definitions.utils import (
     check_valid_name,
     config_from_files,
     config_from_pkg_resources,
     config_from_yaml_strings,
 )
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
 
 def test_check_valid_name():

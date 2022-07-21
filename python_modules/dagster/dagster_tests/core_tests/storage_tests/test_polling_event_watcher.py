@@ -4,10 +4,10 @@ from contextlib import contextmanager
 from typing import Callable, Union
 
 import dagster._check as check
-from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
-from dagster.core.events.log import EventLogEntry
-from dagster.core.storage.event_log import SqlPollingEventWatcher, SqliteEventLogStorage
-from dagster.core.storage.event_log.base import EventLogCursor
+from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
+from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.event_log import SqlPollingEventWatcher, SqliteEventLogStorage
+from dagster._core.storage.event_log.base import EventLogCursor
 
 
 class SqlitePollingEventLogStorage(SqliteEventLogStorage):

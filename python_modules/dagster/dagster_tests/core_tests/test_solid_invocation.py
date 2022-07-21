@@ -31,7 +31,7 @@ from dagster import (
     resource,
 )
 from dagster._legacy import pipeline, solid
-from dagster.core.errors import (
+from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,

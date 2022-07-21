@@ -7,7 +7,7 @@ from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, TableSlice
 from snowflake.connector.pandas_tools import pd_writer
 
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster.core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.metadata import RawMetadataValue
 
 
 def _connect_snowflake(context: Union[InputContext, OutputContext], table_slice: TableSlice):

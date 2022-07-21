@@ -20,21 +20,21 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_pipeline_from_origin
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.log import configure_loggers
-from dagster.core.definitions.metadata import MetadataEntry
-from dagster.core.errors import DagsterExecutionInterruptedError
-from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
-from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
-from dagster.core.execution.context_creation_pipeline import create_context_free_log_manager
-from dagster.core.execution.run_cancellation_thread import start_run_cancellation_thread
-from dagster.core.instance import DagsterInstance
-from dagster.core.origin import (
+from dagster._core.definitions.metadata import MetadataEntry
+from dagster._core.errors import DagsterExecutionInterruptedError
+from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
+from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
+from dagster._core.execution.context_creation_pipeline import create_context_free_log_manager
+from dagster._core.execution.run_cancellation_thread import start_run_cancellation_thread
+from dagster._core.instance import DagsterInstance
+from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     PipelinePythonOrigin,
     get_python_environment_entry_point,
 )
-from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.core.utils import coerce_valid_log_level
+from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.utils import coerce_valid_log_level
 
 
 @click.group(name="api", hidden=True)
@@ -566,7 +566,7 @@ def grpc_command(
     container_context=None,
     **kwargs,
 ):
-    from dagster.core.test_utils import mock_system_timezone
+    from dagster._core.test_utils import mock_system_timezone
 
     if seven.IS_WINDOWS and port is None:
         raise click.UsageError(

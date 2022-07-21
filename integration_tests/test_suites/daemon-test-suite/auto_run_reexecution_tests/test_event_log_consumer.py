@@ -6,8 +6,8 @@ from dagster._daemon.auto_run_reexecution.event_log_consumer import (
     EventLogConsumerDaemon,
     get_new_cursor,
 )
-from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import create_run_for_test
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import create_run_for_test
 
 TEST_EVENT_LOG_FETCH_LIMIT = 10
 

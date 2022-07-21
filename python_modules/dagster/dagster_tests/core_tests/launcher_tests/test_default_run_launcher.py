@@ -21,19 +21,19 @@ from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import GrpcServerProcess
 from dagster._grpc.types import CancelExecutionRequest
 from dagster._legacy import pipeline, solid
-from dagster.core.errors import DagsterLaunchFailedError
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.storage.tags import GRPC_INFO_TAG
-from dagster.core.test_utils import (
+from dagster._core.errors import DagsterLaunchFailedError
+from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.tags import GRPC_INFO_TAG
+from dagster._core.test_utils import (
     environ,
     instance_for_test,
     poll_for_event,
     poll_for_finished_run,
     poll_for_step_start,
 )
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.core.workspace import WorkspaceProcessContext
-from dagster.core.workspace.load_target import GrpcServerTarget, PythonFileTarget
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.workspace import WorkspaceProcessContext
+from dagster._core.workspace.load_target import GrpcServerTarget, PythonFileTarget
 
 default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 

@@ -19,15 +19,15 @@ from dagster._seven import get_system_temp_directory
 from dagster._utils import mkdir_p, safe_tempfile_path
 from dagster._utils.backcompat import rename_warning
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster.core.definitions.events import AssetMaterialization, Failure, RetryRequested
-from dagster.core.definitions.metadata import MetadataValue
-from dagster.core.definitions.reconstruct import ReconstructablePipeline
-from dagster.core.definitions.utils import validate_tags
-from dagster.core.execution.context.compute import SolidExecutionContext
-from dagster.core.execution.context.input import build_input_context
-from dagster.core.execution.context.system import StepExecutionContext
-from dagster.core.execution.plan.outputs import StepOutputHandle
-from dagster.core.storage.file_manager import FileHandle
+from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.utils import validate_tags
+from dagster._core.execution.context.compute import SolidExecutionContext
+from dagster._core.execution.context.input import build_input_context
+from dagster._core.execution.context.system import StepExecutionContext
+from dagster._core.execution.plan.outputs import StepOutputHandle
+from dagster._core.storage.file_manager import FileHandle
 
 from .compat import ExecutionError
 from .engine import DagstermillEngine

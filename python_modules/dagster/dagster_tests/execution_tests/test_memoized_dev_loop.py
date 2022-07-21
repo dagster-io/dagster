@@ -14,11 +14,11 @@ from dagster import (
     resource,
     root_input_manager,
 )
-from dagster.core.definitions.version_strategy import VersionStrategy
-from dagster.core.execution.api import create_execution_plan
-from dagster.core.storage.memoizable_io_manager import versioned_filesystem_io_manager
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG
-from dagster.core.test_utils import instance_for_test
+from dagster._core.definitions.version_strategy import VersionStrategy
+from dagster._core.execution.api import create_execution_plan
+from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
+from dagster._core.storage.tags import MEMOIZED_RUN_TAG
+from dagster._core.test_utils import instance_for_test
 
 from .memoized_dev_loop_pipeline import asset_pipeline
 

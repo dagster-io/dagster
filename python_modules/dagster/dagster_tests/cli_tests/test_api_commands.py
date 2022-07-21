@@ -6,12 +6,12 @@ from dagster import DagsterEventType
 from dagster._cli import api
 from dagster._cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
 from dagster._serdes import serialize_dagster_namedtuple
-from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.core.execution.retries import RetryState
-from dagster.core.execution.stats import RunStepKeyStatsSnapshot
-from dagster.core.host_representation import PipelineHandle
-from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import create_run_for_test, instance_for_test
+from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.execution.retries import RetryState
+from dagster._core.execution.stats import RunStepKeyStatsSnapshot
+from dagster._core.host_representation import PipelineHandle
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import create_run_for_test, instance_for_test
 
 
 def runner_execute_run(runner, cli_args):

@@ -21,13 +21,13 @@ from dagster import (
     schedule_from_partitions,
 )
 from dagster._check import CheckError
-from dagster.core.definitions import asset, multi_asset
-from dagster.core.definitions.load_assets_from_modules import prefix_assets
-from dagster.core.definitions.partition import StaticPartitionsDefinition, static_partitioned_config
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
-from dagster.core.execution.with_resources import with_resources
-from dagster.core.storage.tags import PARTITION_NAME_TAG
-from dagster.core.test_utils import instance_for_test
+from dagster._core.definitions import asset, multi_asset
+from dagster._core.definitions.load_assets_from_modules import prefix_assets
+from dagster._core.definitions.partition import StaticPartitionsDefinition, static_partitioned_config
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
+from dagster._core.execution.with_resources import with_resources
+from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._core.test_utils import instance_for_test
 
 
 def _all_asset_keys(result):

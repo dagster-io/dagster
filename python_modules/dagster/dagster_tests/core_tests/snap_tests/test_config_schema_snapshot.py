@@ -18,7 +18,7 @@ from dagster._serdes import (
     serialize_dagster_namedtuple,
     serialize_pp,
 )
-from dagster.core.snap import (
+from dagster._core.snap import (
     ConfigEnumValueSnap,
     build_config_schema_snapshot,
     snap_from_config_type,

@@ -18,8 +18,8 @@ from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster._utils.merger import merge_dicts
 from dagster._utils.test.postgres_instance import postgres_instance_for_test
 from dagster._utils.yaml_utils import load_yaml_from_path
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.test_utils import instance_for_test, poll_for_finished_run
+from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.test_utils import instance_for_test, poll_for_finished_run
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
