@@ -4,7 +4,7 @@ T_Callable = TypeVar("T_Callable", bound=Callable)
 
 
 def public(fn: T_Callable) -> T_Callable:
-    fn._public = True  # pylint: disable = protected-access
+    setattr(fn, "_public", True)
     return fn
 
 
@@ -13,7 +13,7 @@ def is_public(fn: Callable) -> bool:
 
 
 def deprecated(fn: T_Callable) -> T_Callable:
-    fn._deprecated = True  # pylint: disable = protected-access
+    setattr(fn, "_deprecated", True)
     return fn
 
 
