@@ -33,6 +33,8 @@ from .pipeline_definition import PipelineDefinition
 from .sensor_definition import (
     DefaultSensorStatus,
     PipelineRunReaction,
+    RawSensorEvaluationFunctionReturn,
+    RunRequest,
     SensorDefinition,
     SensorEvaluationContext,
     SkipReason,
@@ -394,9 +396,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         self,
         name: str,
         run_status: DagsterRunStatus,
-        run_status_sensor_fn: Callable[
-            [RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]
-        ],
+        run_status_sensor_fn: Callable[[RunStatusSensorContext], RawSensorEvaluationFunctionReturn],
         monitored_pipelines: Optional[List[str]] = None,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
@@ -546,7 +546,13 @@ class RunStatusSensorDefinition(SensorDefinition):
                                     update_timestamp=update_timestamp.isoformat(),
                                 ).to_json()
                             )
-                            yield from sensor_return
+
+                            if isinstance(
+                                sensor_return, (RunRequest, SkipReason, PipelineRunReaction)
+                            ):
+                                yield sensor_return
+                            else:
+                                yield from sensor_return
                             return
                 except RunStatusSensorExecutionError as run_status_sensor_execution_error:
                     # When the user code errors, we report error to the sensor tick not the original run.
@@ -641,7 +647,7 @@ def run_status_sensor(
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
 ) -> Callable[
-    [Callable[[RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]]],
+    [Callable[[RunStatusSensorContext], RawSensorEvaluationFunctionReturn]],
     RunStatusSensorDefinition,
 ]:
     """
@@ -680,7 +686,7 @@ def run_status_sensor(
     """
 
     def inner(
-        fn: Callable[["RunStatusSensorContext"], Union[SkipReason, PipelineRunReaction]]
+        fn: Callable[["RunStatusSensorContext"], RawSensorEvaluationFunctionReturn]
     ) -> RunStatusSensorDefinition:
 
         check.callable_param(fn, "fn")
