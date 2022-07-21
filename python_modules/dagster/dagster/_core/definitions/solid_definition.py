@@ -16,11 +16,11 @@ from typing import (
 
 import dagster._check as check
 from dagster._config import UserConfigSchema
-from dagster._utils.backcompat import experimental_arg_warning
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
+from dagster._utils.backcompat import experimental_arg_warning
 
 from ..decorator_utils import get_function_params
 from .config import ConfigMapping

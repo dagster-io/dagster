@@ -9,12 +9,12 @@ from dagster_airflow.operators.util import check_storage_specified
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._utils.backcompat import canonicalize_backcompat_args
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DagsterInstance, is_dagster_home_set
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot, snapshot_from_execution_plan
+from dagster._utils.backcompat import canonicalize_backcompat_args
 
 from .compile import coalesce_execution_steps
 from .operators.docker_operator import DagsterDockerOperator

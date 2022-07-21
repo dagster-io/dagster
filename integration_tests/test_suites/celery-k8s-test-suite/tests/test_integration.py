@@ -18,10 +18,10 @@ from dagster_test.test_project import cleanup_memoized_results, get_test_project
 from dagster_test.test_project.test_pipelines.repo import define_memoization_pipeline
 
 from dagster import DagsterEventType
-from dagster._utils.merger import deep_merge_dicts, merge_dicts
-from dagster._utils.yaml_utils import merge_yamls
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
+from dagster._utils.merger import deep_merge_dicts, merge_dicts
+from dagster._utils.yaml_utils import merge_yamls
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

@@ -1,7 +1,11 @@
 from typing import Any, Mapping, NamedTuple, Optional, Sequence, Type, Union
 
 import dagster._check as check
-from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
+from dagster._core.definitions.events import (
+    AssetKey,
+    CoercibleToAssetKey,
+    CoercibleToAssetKeyPrefix,
+)
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.metadata import MetadataUserInput
 from dagster._core.definitions.output import Out

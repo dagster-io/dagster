@@ -1,7 +1,7 @@
+from dagster._core.definitions.run_status_sensor_definition import RunStatusSensorCursor
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import deserialize_as, deserialize_json_to_dagster_namedtuple
 from dagster._utils.error import SerializableErrorInfo
-from dagster._core.definitions.run_status_sensor_definition import RunStatusSensorCursor
 
 
 def test_error_backcompat():

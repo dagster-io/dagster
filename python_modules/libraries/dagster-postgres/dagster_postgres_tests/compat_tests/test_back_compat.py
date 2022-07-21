@@ -19,12 +19,12 @@ from dagster import (
     op,
     reconstructable,
 )
-from dagster._legacy import pipeline, solid
-from dagster._utils import file_relative_path
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster._legacy import pipeline, solid
+from dagster._utils import file_relative_path
 
 
 def get_columns(instance, table_name: str):

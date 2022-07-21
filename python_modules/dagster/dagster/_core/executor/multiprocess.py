@@ -5,9 +5,6 @@ from typing import List, Optional
 
 from dagster import MetadataEntry
 from dagster import _check as check
-from dagster._utils import start_termination_thread
-from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.timing import format_duration, time_execution_scope
 from dagster._core.errors import (
     DagsterExecutionInterruptedError,
     DagsterSubprocessError,
@@ -22,6 +19,9 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
+from dagster._utils import start_termination_thread
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.timing import format_duration, time_execution_scope
 
 from .child_process_executor import (
     ChildProcessCommand,

@@ -15,7 +15,6 @@ from dagster import (
 )
 from dagster import _check as check
 from dagster import execute_pipeline
-from dagster._legacy import pipeline, solid
 from dagster._core.definitions.events import RetryRequested
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
@@ -27,6 +26,7 @@ from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import environ
+from dagster._legacy import pipeline, solid
 
 
 def test_fs_stores():

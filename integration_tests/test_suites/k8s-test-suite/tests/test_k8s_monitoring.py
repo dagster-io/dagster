@@ -7,9 +7,9 @@ from dagster_k8s.utils import delete_job
 from dagster_k8s_test_infra.integration_utils import image_pull_policy, launch_run_over_graphql
 from dagster_test.test_project import get_test_project_environments_path
 
-from dagster._utils import load_yaml_from_path, merge_dicts
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.test_utils import poll_for_finished_run
+from dagster._utils import load_yaml_from_path, merge_dicts
 
 
 def log_run_events(instance, run_id):

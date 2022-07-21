@@ -19,10 +19,10 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._utils.backcompat import ExperimentalWarning
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataUserInput, RawMetadataValue
 from dagster._core.selector.subset_selector import AssetSelectionData
+from dagster._utils.backcompat import ExperimentalWarning
 
 from ..errors import DagsterInvalidSubsetError
 from .config import ConfigMapping
@@ -36,8 +36,8 @@ from .resource_definition import ResourceDefinition
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster.core.definitions.resolved_asset_defs import ResolvedAssetDependencies
     from dagster._core.execution.context.output import OutputContext
+    from dagster.core.definitions.resolved_asset_defs import ResolvedAssetDependencies
 
     from .partition import PartitionedConfig, PartitionsDefinition
 

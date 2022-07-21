@@ -2,12 +2,12 @@ from collections import defaultdict
 from typing import Dict, List, NamedTuple, Optional, Set, cast
 
 import dagster._check as check
-from dagster._serdes import whitelist_for_serdes
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.retries import RetryState
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun
+from dagster._serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes

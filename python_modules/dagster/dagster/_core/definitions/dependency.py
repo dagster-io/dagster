@@ -18,6 +18,8 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes.serdes import (
     DefaultNamedTupleSerializer,
     WhitelistMap,
@@ -25,8 +27,6 @@ from dagster._serdes.serdes import (
     whitelist_for_serdes,
 )
 from dagster._utils import frozentags
-from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.errors import DagsterInvalidDefinitionError
 
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer

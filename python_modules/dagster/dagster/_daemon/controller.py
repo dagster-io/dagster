@@ -9,6 +9,10 @@ from typing import Callable, ContextManager, Iterator, Sequence, Tuple
 import pendulum
 
 import dagster._check as check
+from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster._core.instance import DagsterInstance
+from dagster._core.workspace import IWorkspace
+from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
 from dagster._daemon.daemon import (
     BackfillDaemon,
@@ -21,10 +25,6 @@ from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import Queued
 from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
 from dagster._utils.interrupts import raise_interrupts_as
 from dagster._utils.log import configure_loggers
-from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
-from dagster._core.instance import DagsterInstance
-from dagster._core.workspace import IWorkspace
-from dagster._core.workspace.load_target import WorkspaceLoadTarget
 
 from .workspace import DaemonWorkspace
 

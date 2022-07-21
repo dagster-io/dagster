@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
 
-from dagster._daemon.types import DaemonHeartbeat
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.instance import MayHaveInstanceWeakref
@@ -14,6 +13,7 @@ from dagster._core.storage.pipeline_run import (
     RunsFilter,
     TagBucket,
 )
+from dagster._daemon.types import DaemonHeartbeat
 
 
 class RunStorage(ABC, MayHaveInstanceWeakref):

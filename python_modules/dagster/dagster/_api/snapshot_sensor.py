@@ -1,16 +1,16 @@
 from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
-from dagster._grpc.types import SensorExecutionArgs
-from dagster._serdes import deserialize_as
 from dagster._core.definitions.sensor_definition import SensorExecutionData
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.external_data import ExternalSensorExecutionErrorData
 from dagster._core.host_representation.handle import RepositoryHandle
+from dagster._grpc.types import SensorExecutionArgs
+from dagster._serdes import deserialize_as
 
 if TYPE_CHECKING:
-    from dagster._grpc.client import DagsterGrpcClient
     from dagster._core.instance import DagsterInstance
+    from dagster._grpc.client import DagsterGrpcClient
 
 
 def sync_get_external_sensor_execution_data_ephemeral_grpc(

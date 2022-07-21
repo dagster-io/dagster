@@ -3,9 +3,6 @@ import multiprocessing
 import pendulum
 import pytest
 
-from dagster._scheduler.scheduler import launch_scheduled_runs
-from dagster._seven import IS_WINDOWS
-from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.pipeline_run import PipelineRunStatus
@@ -16,6 +13,9 @@ from dagster._core.test_utils import (
     get_crash_signals,
     get_terminate_signal,
 )
+from dagster._scheduler.scheduler import launch_scheduled_runs
+from dagster._seven import IS_WINDOWS
+from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
 from .conftest import workspace_load_target
 from .test_scheduler_run import (

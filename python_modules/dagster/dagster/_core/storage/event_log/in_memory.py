@@ -4,13 +4,13 @@ from collections import OrderedDict, defaultdict
 from typing import Dict, Iterable, Mapping, Optional, Sequence, Set, cast
 
 import dagster._check as check
-from dagster._serdes import ConfigurableClass
-from dagster._utils import utc_datetime_from_timestamp
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.events import AssetKey
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.event_log.base import AssetEntry, AssetRecord
+from dagster._serdes import ConfigurableClass
+from dagster._utils import utc_datetime_from_timestamp
 
 from .base import (
     EventLogConnection,

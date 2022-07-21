@@ -10,7 +10,6 @@ from dagster import (
     execute_pipeline,
     io_manager,
 )
-from dagster._legacy import pipeline, solid
 from dagster._core.storage.memoizable_io_manager import (
     MemoizableIOManager,
     VersionedPickledObjectFilesystemIOManager,
@@ -18,6 +17,7 @@ from dagster._core.storage.memoizable_io_manager import (
 )
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.test_utils import instance_for_test
+from dagster._legacy import pipeline, solid
 
 
 def test_versioned_pickled_object_filesystem_io_manager():

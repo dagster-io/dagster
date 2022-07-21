@@ -17,12 +17,6 @@ from watchdog.observers import Observer
 import dagster._check as check
 import dagster._seven as seven
 from dagster._config import StringSource
-from dagster._serdes import (
-    ConfigurableClass,
-    ConfigurableClassData,
-    deserialize_json_to_dagster_namedtuple,
-)
-from dagster._utils import mkdir_p
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
@@ -35,6 +29,12 @@ from dagster._core.storage.sql import (
     stamp_alembic_rev,
 )
 from dagster._core.storage.sqlite import create_db_conn_string
+from dagster._serdes import (
+    ConfigurableClass,
+    ConfigurableClassData,
+    deserialize_json_to_dagster_namedtuple,
+)
+from dagster._utils import mkdir_p
 
 from ..schema import SqlEventLogStorageMetadata, SqlEventLogStorageTable
 from ..sql_event_log import RunShardedEventsCursor, SqlEventLogStorage

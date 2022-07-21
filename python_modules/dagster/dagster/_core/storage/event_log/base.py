@@ -5,8 +5,6 @@ from enum import Enum
 from typing import Callable, Iterable, List, Mapping, NamedTuple, Optional, Sequence, Set, Union
 
 import dagster._check as check
-from dagster._serdes import whitelist_for_serdes
-from dagster._seven import json
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.events import AssetKey
 from dagster._core.events import DagsterEventType
@@ -18,6 +16,8 @@ from dagster._core.execution.stats import (
 )
 from dagster._core.instance import MayHaveInstanceWeakref
 from dagster._core.storage.pipeline_run import PipelineRunStatsSnapshot
+from dagster._serdes import whitelist_for_serdes
+from dagster._seven import json
 
 
 class RunShardedEventsCursor(NamedTuple):

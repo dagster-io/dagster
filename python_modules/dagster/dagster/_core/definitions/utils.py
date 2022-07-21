@@ -9,10 +9,10 @@ import yaml
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._utils import frozentags
-from dagster._utils.yaml_utils import merge_yaml_strings, merge_yamls
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import check_reserved_tags
+from dagster._utils import frozentags
+from dagster._utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 DEFAULT_OUTPUT = "result"
 DEFAULT_GROUP_NAME = "default"  # asset group_name used when none is provided

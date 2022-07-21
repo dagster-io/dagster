@@ -14,11 +14,11 @@ import dagster._check as check
 from dagster._builtins import BuiltinEnum
 from dagster._config import Array, ConfigType
 from dagster._config import Noneable as ConfigNoneable
-from dagster._serdes import whitelist_for_serdes
-from dagster._seven import is_subclass
 from dagster._core.definitions.events import DynamicOutput, Output, TypeCheck
 from dagster._core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._serdes import whitelist_for_serdes
+from dagster._seven import is_subclass
 
 from ..definitions.resource_requirement import (
     RequiresResources,

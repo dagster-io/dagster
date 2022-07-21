@@ -46,7 +46,6 @@ from dagster._config import (
     Shape,
     StringSource,
 )
-from dagster._serdes import deserialize_value, serialize_value
 from dagster._core.definitions import (
     AllPartitionMapping,
     AssetIn,
@@ -308,6 +307,7 @@ from dagster._core.types.decorator import (
 from dagster._core.types.python_dict import Dict
 from dagster._core.types.python_set import Set
 from dagster._core.types.python_tuple import Tuple
+from dagster._serdes import deserialize_value, serialize_value
 
 from .version import __version__
 

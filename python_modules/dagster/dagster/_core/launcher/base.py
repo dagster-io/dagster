@@ -2,11 +2,11 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import NamedTuple, Optional
 
-from dagster._serdes import whitelist_for_serdes
 from dagster._core.instance import MayHaveInstanceWeakref
 from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._core.workspace.workspace import IWorkspace
+from dagster._serdes import whitelist_for_serdes
 
 
 class LaunchRunContext(NamedTuple):

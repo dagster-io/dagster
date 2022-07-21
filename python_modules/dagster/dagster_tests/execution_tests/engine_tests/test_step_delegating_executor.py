@@ -3,7 +3,6 @@ import time
 
 from dagster import executor, job, op, reconstructable
 from dagster._config import Permissive
-from dagster._utils import merge_dicts
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_pipeline
@@ -14,6 +13,7 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
 )
 from dagster._core.test_utils import instance_for_test
+from dagster._utils import merge_dicts
 
 
 class TestStepHandler(StepHandler):

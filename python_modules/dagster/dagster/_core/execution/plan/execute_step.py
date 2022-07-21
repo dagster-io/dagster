@@ -4,9 +4,6 @@ from collections import defaultdict
 from typing import AbstractSet, Any, Dict, Iterator, List, Optional, Set, Tuple, Union, cast
 
 import dagster._check as check
-from dagster._utils import ensure_gen, iterate_with_context
-from dagster._utils.backcompat import ExperimentalWarning, experimental_functionality_warning
-from dagster._utils.timing import time_execution_scope
 from dagster._core.definitions import (
     AssetKey,
     AssetMaterialization,
@@ -44,6 +41,9 @@ from dagster._core.execution.resolve_versions import resolve_step_output_version
 from dagster._core.storage.io_manager import IOManager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
+from dagster._utils import ensure_gen, iterate_with_context
+from dagster._utils.backcompat import ExperimentalWarning, experimental_functionality_warning
+from dagster._utils.timing import time_execution_scope
 
 from .compute import SolidOutputUnion
 from .compute_generator import create_solid_compute_wrapper

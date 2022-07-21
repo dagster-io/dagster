@@ -15,8 +15,8 @@ from dagster import (
     lambda_solid,
     mem_io_manager,
 )
-from dagster._legacy import pipeline, solid
 from dagster._core.system_config.composite_descent import composite_descent
+from dagster._legacy import pipeline, solid
 
 
 def test_single_level_pipeline():

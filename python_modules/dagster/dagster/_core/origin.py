@@ -1,9 +1,9 @@
 from typing import Any, Dict, List, NamedTuple, Optional
 
 import dagster._check as check
+from dagster._core.code_pointer import CodePointer
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
 from dagster._utils import frozenlist
-from dagster._core.code_pointer import CodePointer
 
 DEFAULT_DAGSTER_ENTRY_POINT = frozenlist(["dagster"])
 

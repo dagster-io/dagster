@@ -12,14 +12,6 @@ from dagster._cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,
 )
-from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
-from dagster._grpc.impl import core_execute_run
-from dagster._grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
-from dagster._serdes import deserialize_as, serialize_dagster_namedtuple
-from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.hosted_user_process import recon_pipeline_from_origin
-from dagster._utils.interrupts import capture_interrupts
-from dagster._utils.log import configure_loggers
 from dagster._core.definitions.metadata import MetadataEntry
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
@@ -35,6 +27,14 @@ from dagster._core.origin import (
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import coerce_valid_log_level
+from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
+from dagster._grpc.impl import core_execute_run
+from dagster._grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
+from dagster._serdes import deserialize_as, serialize_dagster_namedtuple
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.hosted_user_process import recon_pipeline_from_origin
+from dagster._utils.interrupts import capture_interrupts
+from dagster._utils.log import configure_loggers
 
 
 @click.group(name="api", hidden=True)

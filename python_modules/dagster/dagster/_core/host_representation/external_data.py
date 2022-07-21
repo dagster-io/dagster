@@ -11,8 +11,6 @@ from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tup
 
 from dagster import StaticPartitionsDefinition
 from dagster import _check as check
-from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
-from dagster._utils.error import SerializableErrorInfo
 from dagster._core.definitions import (
     JobDefinition,
     PartitionSetDefinition,
@@ -39,6 +37,8 @@ from dagster._core.definitions.time_window_partitions import TimeWindowPartition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.snap import PipelineSnapshot
+from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
+from dagster._utils.error import SerializableErrorInfo
 
 
 @whitelist_for_serdes

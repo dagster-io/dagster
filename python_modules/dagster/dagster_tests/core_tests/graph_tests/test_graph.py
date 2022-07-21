@@ -25,7 +25,6 @@ from dagster import (
     success_hook,
 )
 from dagster._check import CheckError
-from dagster._loggers import json_console_logger
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.partition import (
     Partition,
@@ -40,6 +39,7 @@ from dagster._core.errors import (
     DagsterInvalidDefinitionError,
 )
 from dagster._core.test_utils import instance_for_test
+from dagster._loggers import json_console_logger
 
 
 def get_ops():

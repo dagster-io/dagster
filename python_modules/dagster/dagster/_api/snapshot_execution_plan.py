@@ -1,8 +1,6 @@
 from typing import TYPE_CHECKING, Any, FrozenSet, List, Mapping, Optional
 
 import dagster._check as check
-from dagster._grpc.types import ExecutionPlanSnapshotArgs
-from dagster._serdes import deserialize_as
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.execution.plan.state import KnownExecutionState
@@ -12,6 +10,8 @@ from dagster._core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshot,
     ExecutionPlanSnapshotErrorData,
 )
+from dagster._grpc.types import ExecutionPlanSnapshotArgs
+from dagster._serdes import deserialize_as
 
 if TYPE_CHECKING:
     from dagster._grpc.client import DagsterGrpcClient

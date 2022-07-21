@@ -3,8 +3,6 @@ from collections import OrderedDict
 from typing import TYPE_CHECKING, List, Optional, Sequence, Union
 
 import dagster._check as check
-from dagster._serdes import create_snapshot_id
-from dagster._utils.schedules import schedule_execution_time_iterator
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
@@ -16,6 +14,8 @@ from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, S
 from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.utils import toposort
+from dagster._serdes import create_snapshot_id
+from dagster._utils.schedules import schedule_execution_time_iterator
 
 from .external_data import (
     ExternalAssetNode,

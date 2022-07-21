@@ -1,9 +1,9 @@
 from dagster import Executor, Field, Noneable, Permissive, StringSource
 from dagster import _check as check
 from dagster import executor, multiple_process_executor_requirements
+from dagster._core.execution.retries import RetryMode, get_retries_config
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._serdes import pack_value
-from dagster._core.execution.retries import RetryMode, get_retries_config
 
 from .config import DEFAULT_CONFIG, dict_wrapper
 from .defaults import broker_url, result_backend

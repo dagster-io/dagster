@@ -18,8 +18,8 @@ from dagster._config import (
     RuntimeMismatchErrorData,
     SelectorTypeErrorData,
 )
-from dagster._utils.error import SerializableErrorInfo
 from dagster._core.host_representation.represented import RepresentedPipeline
+from dagster._utils.error import SerializableErrorInfo
 
 from ..config_types import GrapheneConfigTypeField
 from ..util import non_null_list

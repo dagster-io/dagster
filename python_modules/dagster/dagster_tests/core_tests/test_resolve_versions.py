@@ -27,7 +27,6 @@ from dagster import (
     root_input_manager,
     usable_as_dagster_type,
 )
-from dagster._legacy import pipeline, solid
 from dagster._core.definitions import InputDefinition
 from dagster._core.definitions.version_strategy import VersionStrategy
 from dagster._core.execution.api import create_execution_plan
@@ -37,6 +36,7 @@ from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import instance_for_test
+from dagster._legacy import pipeline, solid
 
 
 class VersionedInMemoryIOManager(MemoizableIOManager):

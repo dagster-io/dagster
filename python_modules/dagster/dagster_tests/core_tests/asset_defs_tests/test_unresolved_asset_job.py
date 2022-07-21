@@ -23,7 +23,10 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions import asset, multi_asset
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
-from dagster._core.definitions.partition import StaticPartitionsDefinition, static_partitioned_config
+from dagster._core.definitions.partition import (
+    StaticPartitionsDefinition,
+    static_partitioned_config,
+)
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.storage.tags import PARTITION_NAME_TAG

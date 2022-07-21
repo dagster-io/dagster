@@ -4,8 +4,6 @@ import time
 import pendulum
 import pytest
 
-from dagster._seven import get_current_datetime_in_utc
-from dagster._utils.error import SerializableErrorInfo
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
@@ -19,6 +17,8 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._seven import get_current_datetime_in_utc
+from dagster._utils.error import SerializableErrorInfo
 
 
 class TestScheduleStorage:

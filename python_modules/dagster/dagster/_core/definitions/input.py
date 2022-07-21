@@ -14,7 +14,6 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._utils.backcompat import deprecation_warning, experimental_arg_warning
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
     MetadataEntry,
@@ -27,6 +26,7 @@ from dagster._core.types.dagster_type import (  # BuiltinScalarDagsterType,
     DagsterType,
     resolve_dagster_type,
 )
+from dagster._utils.backcompat import deprecation_warning, experimental_arg_warning
 
 from .inference import InferredInputProps
 from .utils import NoValueSentinel, check_valid_name

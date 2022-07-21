@@ -9,8 +9,8 @@ from dagster import (
     monthly_schedule,
     weekly_schedule,
 )
-from dagster._utils.partitions import date_partition_range
 from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._utils.partitions import date_partition_range
 
 
 def _fetch_runs_by_partition(instance, partition_set_def, status_filters=None):

@@ -9,6 +9,7 @@ from dagster._utils.yaml_utils import load_run_config_yaml
 
 from .serdes import DefaultNamedTupleSerializer, WhitelistMap, whitelist_for_serdes
 
+
 class ConfigurableClassDataSerializer(DefaultNamedTupleSerializer):
     @classmethod
     def value_to_storage_dict(

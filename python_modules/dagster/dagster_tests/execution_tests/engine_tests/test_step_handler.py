@@ -1,5 +1,3 @@
-from dagster._grpc.types import ExecuteStepArgs
-from dagster._legacy import pipeline
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanData, PlanOrchestrationContext
@@ -8,6 +6,8 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating import StepHandlerContext
 from dagster._core.test_utils import create_run_for_test, instance_for_test
+from dagster._grpc.types import ExecuteStepArgs
+from dagster._legacy import pipeline
 
 from .test_step_delegating_executor import test_step_delegating_executor
 

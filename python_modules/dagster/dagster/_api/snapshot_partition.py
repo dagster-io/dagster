@@ -1,8 +1,6 @@
 from typing import TYPE_CHECKING, List
 
 import dagster._check as check
-from dagster._grpc.types import PartitionArgs, PartitionNamesArgs, PartitionSetExecutionParamArgs
-from dagster._serdes import deserialize_as
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.external_data import (
     ExternalPartitionConfigData,
@@ -12,6 +10,8 @@ from dagster._core.host_representation.external_data import (
     ExternalPartitionTagsData,
 )
 from dagster._core.host_representation.handle import RepositoryHandle
+from dagster._grpc.types import PartitionArgs, PartitionNamesArgs, PartitionSetExecutionParamArgs
+from dagster._serdes import deserialize_as
 
 if TYPE_CHECKING:
     from dagster._grpc.client import DagsterGrpcClient

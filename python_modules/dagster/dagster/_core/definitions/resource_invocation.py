@@ -51,7 +51,10 @@ def _check_invocation_requirements(
     resource_def: "ResourceDefinition", init_context: Optional["UnboundInitResourceContext"]
 ) -> "InitResourceContext":
     from dagster._core.definitions.resource_definition import is_context_provided
-    from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
+    from dagster._core.execution.context.init import (
+        InitResourceContext,
+        build_init_resource_context,
+    )
 
     context_provided = is_context_provided(resource_def.resource_fn)
     if context_provided and resource_def.required_resource_keys and init_context is None:

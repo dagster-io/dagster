@@ -4,7 +4,6 @@ import pytest
 
 import dagster._check as check
 from dagster._check import CheckError
-from dagster._serdes import deserialize_as, serialize_dagster_namedtuple
 from dagster._core.code_pointer import ModuleCodePointer
 from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
@@ -24,6 +23,7 @@ from dagster._core.storage.pipeline_run import (
     RunsFilter,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._serdes import deserialize_as, serialize_dagster_namedtuple
 
 
 def test_queued_pipeline_origin_check():

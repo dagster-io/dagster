@@ -6,11 +6,11 @@ import pytest
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer, ephemeral_grpc_api_client
 from dagster._grpc.server import GrpcServerProcess, open_server_process
 from dagster._serdes.ipc import interrupt_ipc_subprocess_pid
 from dagster._utils import find_free_port, safe_tempfile_path
-from dagster._core.errors import DagsterUserCodeUnreachableError
 
 
 def server_thread_runnable(**kwargs):

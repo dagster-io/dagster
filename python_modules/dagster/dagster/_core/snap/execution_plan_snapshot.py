@@ -1,8 +1,6 @@
 from typing import Dict, List, NamedTuple, Optional
 
 import dagster._check as check
-from dagster._serdes import create_snapshot_id, whitelist_for_serdes
-from dagster._utils.error import SerializableErrorInfo
 from dagster._core.definitions import NodeHandle
 from dagster._core.execution.plan.inputs import (
     StepInput,
@@ -20,6 +18,8 @@ from dagster._core.execution.plan.step import (
     UnresolvedCollectExecutionStep,
     UnresolvedMappedExecutionStep,
 )
+from dagster._serdes import create_snapshot_id, whitelist_for_serdes
+from dagster._utils.error import SerializableErrorInfo
 
 # Can be incremented on breaking changes to the snapshot (since it is used to reconstruct
 # the ExecutionPlan during execution). Every time you need to bump this, consider

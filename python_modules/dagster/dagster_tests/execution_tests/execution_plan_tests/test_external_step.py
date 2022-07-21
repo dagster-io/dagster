@@ -26,9 +26,6 @@ from dagster import (
     reexecute_pipeline,
     resource,
 )
-from dagster._legacy import pipeline, solid
-from dagster._utils import safe_tempfile_path, send_interrupt
-from dagster._utils.merger import deep_merge_dicts, merge_dicts
 from dagster._core.definitions.no_step_launcher import no_step_launcher
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan
@@ -44,6 +41,9 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._core.test_utils import instance_for_test
+from dagster._legacy import pipeline, solid
+from dagster._utils import safe_tempfile_path, send_interrupt
+from dagster._utils.merger import deep_merge_dicts, merge_dicts
 
 RUN_CONFIG_BASE = {"solids": {"return_two": {"config": {"a": "b"}}}}
 

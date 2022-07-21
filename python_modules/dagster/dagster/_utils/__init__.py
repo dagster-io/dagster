@@ -50,6 +50,7 @@ PICKLE_PROTOCOL = 4
 
 DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
 
+
 def convert_dagster_submodule_name(name: str, mode: str) -> str:
     """This function was introduced when all Dagster submodules were marked private by
     underscore-prefixing the root submodules (e.g. `dagster._core`). The function provides
@@ -62,6 +63,7 @@ def convert_dagster_submodule_name(name: str, mode: str) -> str:
         return re.sub(r"^dagster._", "dagster.", name)
     else:
         check.failed("`mode` must be 'private' or 'public'")
+
 
 # Back-compat after make_email_on_pipeline_failure_sensor and make_email_on_run_failure_sensor
 # were moved to avoid circular-dependency issues

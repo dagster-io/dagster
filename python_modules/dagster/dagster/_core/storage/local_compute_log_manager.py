@@ -9,10 +9,10 @@ from watchdog.observers.polling import PollingObserver
 
 from dagster import Field, Float, StringSource
 from dagster import _check as check
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import ensure_dir, touch_file
 from dagster._core.execution.compute_logs import mirror_stream_to_file
 from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._utils import ensure_dir, touch_file
 
 from .compute_log_manager import (
     MAX_BYTES_FILE_READ,

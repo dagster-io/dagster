@@ -18,6 +18,9 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
+from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import (
     DefaultNamedTupleSerializer,
     create_snapshot_id,
@@ -25,20 +28,17 @@ from dagster._serdes import (
     whitelist_for_serdes,
 )
 from dagster._serdes.serdes import WhitelistMap, unpack_inner_value
-from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
-from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 
 from .selector import PartitionSetSelector, RepositorySelector
 
 if TYPE_CHECKING:
-    from dagster._grpc.client import DagsterGrpcClient
     from dagster._core.host_representation.repository_location import (
         GrpcServerRepositoryLocation,
         InProcessRepositoryLocation,
         RepositoryLocation,
     )
     from dagster._core.instance import DagsterInstance
+    from dagster._grpc.client import DagsterGrpcClient
 
 # This is a hard-coded name for the special "in-process" location.
 # This is typically only used for test, although we may allow
@@ -193,7 +193,9 @@ class InProcessRepositoryLocationOrigin(
         return {}
 
     def create_location(self) -> "InProcessRepositoryLocation":
-        from dagster._core.host_representation.repository_location import InProcessRepositoryLocation
+        from dagster._core.host_representation.repository_location import (
+            InProcessRepositoryLocation,
+        )
 
         return InProcessRepositoryLocation(self)
 

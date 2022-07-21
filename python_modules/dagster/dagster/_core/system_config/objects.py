@@ -14,7 +14,6 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._utils import ensure_single_item
 from dagster._core.definitions.configurable import ConfigurableDefinition
 from dagster._core.definitions.executor_definition import (
     ExecutorDefinition,
@@ -23,6 +22,7 @@ from dagster._core.definitions.executor_definition import (
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidConfigError
+from dagster._utils import ensure_single_item
 
 
 class SolidConfig(

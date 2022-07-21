@@ -3,11 +3,11 @@ from typing import Dict, Iterator, List, NamedTuple, Optional
 
 from dagster import DagsterInstance
 from dagster import _check as check
-from dagster._grpc.types import ExecuteStepArgs
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.system import IStepContext, PlanOrchestrationContext
 from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._grpc.types import ExecuteStepArgs
 
 
 class StepHandlerContext:

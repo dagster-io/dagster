@@ -10,8 +10,8 @@ from dagster import (
     execute_pipeline,
     logger,
 )
-from dagster._legacy import pipeline
 from dagster._core.utils import coerce_valid_log_level
+from dagster._legacy import pipeline
 
 
 def assert_pipeline_runs_with_logger(logger_def, logger_config):

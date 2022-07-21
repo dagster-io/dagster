@@ -19,14 +19,6 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._serdes import (
-    DefaultNamedTupleSerializer,
-    WhitelistMap,
-    register_serdes_tuple_fallbacks,
-    whitelist_for_serdes,
-)
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from dagster._utils.timing import format_duration
 from dagster._core.definitions import (
     AssetKey,
     AssetMaterialization,
@@ -54,6 +46,14 @@ from dagster._core.execution.plan.objects import StepFailureData, StepRetryData,
 from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._serdes import (
+    DefaultNamedTupleSerializer,
+    WhitelistMap,
+    register_serdes_tuple_fallbacks,
+    whitelist_for_serdes,
+)
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.timing import format_duration
 
 if TYPE_CHECKING:
     from dagster._core.definitions.events import ObjectStoreOperation

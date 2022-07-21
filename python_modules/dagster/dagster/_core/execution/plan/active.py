@@ -2,7 +2,6 @@ import time
 from typing import Callable, Dict, Iterator, List, Optional, Set, cast
 
 import dagster._check as check
-from dagster._utils.interrupts import pop_captured_interrupt
 from dagster._core.errors import (
     DagsterExecutionInterruptedError,
     DagsterInvariantViolationError,
@@ -13,6 +12,7 @@ from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
 from dagster._core.storage.tags import PRIORITY_TAG
+from dagster._utils.interrupts import pop_captured_interrupt
 
 from .outputs import StepOutputData, StepOutputHandle
 from .plan import ExecutionPlan

@@ -4,9 +4,9 @@ from graphql.execution.base import ResolveInfo
 
 import dagster._check as check
 from dagster._config import validate_config_from_snap
-from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._core.host_representation import ExternalPipeline, PipelineSelector, RepositorySelector
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .utils import UserFacingGraphQLError, capture_error
 

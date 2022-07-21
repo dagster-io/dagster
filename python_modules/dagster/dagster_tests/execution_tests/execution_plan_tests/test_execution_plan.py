@@ -3,7 +3,6 @@ import pytest
 from dagster import DagsterInstance, Int, Output, OutputDefinition
 from dagster import _check as check
 from dagster import composite_solid, execute_pipeline, lambda_solid
-from dagster._legacy import pipeline, solid
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import (
     DagsterInvalidConfigError,
@@ -16,6 +15,7 @@ from dagster._core.execution.plan.plan import should_skip_step
 from dagster._core.execution.retries import RetryMode
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._core.utils import make_new_run_id
+from dagster._legacy import pipeline, solid
 
 
 def define_diamond_pipeline():

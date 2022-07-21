@@ -1,7 +1,7 @@
 from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_ephemeral_grpc
-from dagster._seven import get_current_datetime_in_utc
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.test_utils import instance_for_test
+from dagster._seven import get_current_datetime_in_utc
 
 from .utils import get_bar_repo_handle
 

@@ -11,10 +11,10 @@ from dagster_test.test_project import (
     get_test_project_workspace_and_external_pipeline,
 )
 
-from dagster._utils.merger import merge_dicts
-from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.test_utils import poll_for_finished_run
+from dagster._utils.merger import merge_dicts
+from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
 
 from . import IS_BUILDKITE, docker_postgres_instance
 

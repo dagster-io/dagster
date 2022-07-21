@@ -6,6 +6,7 @@ from dagster import AssetKey, Out, Output
 from dagster import _check as check
 from dagster._annotations import experimental
 from dagster._core.definitions import AssetsDefinition, multi_asset
+from dagster._utils.backcompat import experimental
 
 
 @experimental

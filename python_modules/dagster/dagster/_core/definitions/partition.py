@@ -22,11 +22,11 @@ from dateutil.relativedelta import relativedelta
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._core.definitions.target import ExecutableDefinition
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
 from dagster._utils import frozenlist, merge_dicts
 from dagster._utils.schedules import schedule_execution_time_iterator
-from dagster._core.definitions.target import ExecutableDefinition
 
 from ..decorator_utils import get_function_params
 from ..errors import (

@@ -15,11 +15,11 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
 )
-from dagster._legacy import pipeline, solid
 from dagster._core.definitions.decorators.hook_decorator import event_list_hook, success_hook
 from dagster._core.definitions.events import DynamicOutput, HookExecutionResult
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
+from dagster._legacy import pipeline, solid
 
 
 def builder(graph):

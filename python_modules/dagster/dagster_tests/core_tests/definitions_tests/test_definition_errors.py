@@ -14,8 +14,8 @@ from dagster import (
     SolidDefinition,
 )
 from dagster._check import ParameterCheckError
-from dagster._legacy import solid
 from dagster._core.utility_solids import define_stub_solid
+from dagster._legacy import solid
 
 
 def solid_a_b_list():

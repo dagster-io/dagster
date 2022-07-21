@@ -11,11 +11,11 @@ from dagster import (
     execute_pipeline,
     io_manager,
 )
-from dagster._legacy import pipeline, solid
 from dagster._core.definitions.events import AssetLineageInfo
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.io_manager import IOManager
+from dagster._legacy import pipeline, solid
 
 
 def n_asset_keys(path, n):

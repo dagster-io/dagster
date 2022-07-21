@@ -4,8 +4,6 @@ from typing import Dict
 
 from dagster import DagsterEvent, DagsterEventType
 from dagster import _check as check
-from dagster._daemon.daemon import IntervalDaemon
-from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -15,6 +13,8 @@ from dagster._core.storage.pipeline_run import (
 )
 from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._core.workspace import IWorkspace
+from dagster._daemon.daemon import IntervalDaemon
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 
 class _TagConcurrencyLimitsCounter:

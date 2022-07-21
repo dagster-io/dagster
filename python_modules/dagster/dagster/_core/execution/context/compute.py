@@ -2,8 +2,6 @@ from abc import ABC, abstractmethod
 from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, cast
 
 import dagster._check as check
-from dagster._utils.backcompat import deprecation_warning
-from dagster._utils.forked_pdb import ForkedPdb
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import (
     AssetKey,
@@ -26,6 +24,8 @@ from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import DagsterRun, PipelineRun
+from dagster._utils.backcompat import deprecation_warning
+from dagster._utils.forked_pdb import ForkedPdb
 
 from .system import StepExecutionContext
 

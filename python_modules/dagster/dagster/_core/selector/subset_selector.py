@@ -20,10 +20,10 @@ from typing import (
 
 from typing_extensions import Literal, TypeAlias
 
-from dagster._utils import check
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
+from dagster._utils import check
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition

@@ -4,9 +4,6 @@ from typing import List, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._config import Field, IntSource
-from dagster._serdes import ConfigurableClass
-from dagster._seven import get_current_datetime_in_utc
-from dagster._utils import mkdir_p
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.errors import DagsterError
 from dagster._core.host_representation import ExternalSchedule
@@ -16,6 +13,9 @@ from dagster._core.scheduler.instigation import (
     InstigatorStatus,
     ScheduleInstigatorData,
 )
+from dagster._serdes import ConfigurableClass
+from dagster._seven import get_current_datetime_in_utc
+from dagster._utils import mkdir_p
 
 
 class DagsterSchedulerError(DagsterError):

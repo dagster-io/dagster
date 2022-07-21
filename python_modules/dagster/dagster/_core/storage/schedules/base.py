@@ -3,7 +3,12 @@ from typing import Callable, Iterable, List, Mapping, Optional, Sequence
 
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import MayHaveInstanceWeakref
-from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick, TickData, TickStatus
+from dagster._core.scheduler.instigation import (
+    InstigatorState,
+    InstigatorTick,
+    TickData,
+    TickStatus,
+)
 
 
 class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):

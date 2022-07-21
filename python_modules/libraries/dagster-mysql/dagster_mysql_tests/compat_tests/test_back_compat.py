@@ -7,9 +7,9 @@ import tempfile
 from sqlalchemy import create_engine, inspect
 
 from dagster import AssetKey, AssetObservation, Output, job, op
-from dagster._utils import file_relative_path
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._utils import file_relative_path
 
 
 def get_columns(instance, table_name: str):

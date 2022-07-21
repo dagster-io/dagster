@@ -13,9 +13,6 @@ from dagster import (
     TypeCheck,
 )
 from dagster import _check as check
-from dagster._loggers import colored_console_logger
-from dagster._serdes import unpack_value
-from dagster._utils import EventGenerationManager, ensure_gen
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import RetryRequested
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
@@ -33,6 +30,9 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun, PipelineRunStatus
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.utils import make_new_run_id
+from dagster._loggers import colored_console_logger
+from dagster._serdes import unpack_value
+from dagster._utils import EventGenerationManager, ensure_gen
 
 from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
 from .errors import DagstermillError

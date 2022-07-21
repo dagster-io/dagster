@@ -10,7 +10,6 @@ from dagster._config import (
     Shape,
     iterate_config_types,
 )
-from dagster._utils import check
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.executor_definition import (
     ExecutorDefinition,
@@ -23,6 +22,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.output_manager import IOutputManagerDefinition
 from dagster._core.storage.root_input_manager import IInputManagerDefinition
 from dagster._core.types.dagster_type import ALL_RUNTIME_BUILTINS, construct_dagster_type_dictionary
+from dagster._utils import check
 
 from .configurable import ConfigurableDefinition
 from .definition_config_schema import IDefinitionConfigSchema

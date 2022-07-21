@@ -16,14 +16,6 @@ from dagster import ModeDefinition, Shape
 from dagster import _check as check
 from dagster import composite_solid, fs_io_manager
 from dagster._config import Array, Field
-from dagster._daemon.controller import create_daemon_grpc_server_registry
-from dagster._daemon.workspace import DaemonWorkspace
-from dagster._legacy import pipeline, solid
-from dagster._serdes import ConfigurableClass
-from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
-from dagster._utils import Counter, merge_dicts, traced, traced_counter
-from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.log import configure_loggers
 from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
     InProcessRepositoryLocationOrigin,
@@ -34,6 +26,14 @@ from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
+from dagster._daemon.controller import create_daemon_grpc_server_registry
+from dagster._daemon.workspace import DaemonWorkspace
+from dagster._legacy import pipeline, solid
+from dagster._serdes import ConfigurableClass
+from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
+from dagster._utils import Counter, merge_dicts, traced, traced_counter
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.log import configure_loggers
 
 
 def step_output_event_filter(pipe_iterator):

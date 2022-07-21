@@ -16,12 +16,12 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
 )
-from dagster._legacy import solid
-from dagster._utils.test import get_temp_file_name, get_temp_file_names
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.step import StepKind
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import create_any_type
+from dagster._legacy import solid
+from dagster._utils.test import get_temp_file_name, get_temp_file_names
 
 
 def single_int_output_pipeline():

@@ -11,7 +11,6 @@ from dagster import (
     multiprocess_executor,
     reconstructable,
 )
-from dagster._legacy import pipeline, solid
 from dagster._core.definitions.executor_definition import executor
 from dagster._core.errors import (
     DagsterInvalidConfigError,
@@ -21,6 +20,7 @@ from dagster._core.errors import (
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.retries import RetryMode
 from dagster._core.test_utils import instance_for_test
+from dagster._legacy import pipeline, solid
 
 
 def assert_pipeline_runs_with_executor(executor_defs, execution_config, instance=None):

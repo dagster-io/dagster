@@ -10,8 +10,8 @@ from dagster import (
     execute_pipeline,
     root_input_manager,
 )
-from dagster._legacy import pipeline, solid
 from dagster._core.storage.io_manager import IOManager, io_manager
+from dagster._legacy import pipeline, solid
 
 
 def named_io_manager(storage_dict, name):

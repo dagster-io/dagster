@@ -4,12 +4,12 @@ from typing import Any, List, Optional
 
 import dagster._check as check
 from dagster._config import Field
-from dagster._utils import mkdir_p
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataEntry, MetadataValue
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import IOManager, io_manager
+from dagster._utils import mkdir_p
 
 
 class OutputNotebookIOManager(IOManager):

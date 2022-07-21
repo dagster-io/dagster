@@ -2,8 +2,6 @@ from typing import Mapping, NamedTuple, Optional, Sequence, Set, Union
 
 import dagster._check as check
 from dagster._config import ConfigFieldSnap, snap_from_field
-from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import DefaultNamedTupleSerializer
 from dagster._core.definitions import (
     GraphDefinition,
     InputDefinition,
@@ -14,6 +12,8 @@ from dagster._core.definitions import (
     SolidDefinition,
 )
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
+from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.serdes import DefaultNamedTupleSerializer
 
 from .dep_snapshot import (
     DependencyStructureSnapshot,

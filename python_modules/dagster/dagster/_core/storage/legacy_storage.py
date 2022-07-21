@@ -21,7 +21,6 @@ from .runs.base import RunStorage
 from .schedules.base import ScheduleStorage
 
 if TYPE_CHECKING:
-    from dagster._daemon.types import DaemonHeartbeat
     from dagster._core.definitions.events import AssetKey
     from dagster._core.definitions.run_request import InstigatorType
     from dagster._core.events import DagsterEvent, DagsterEventType
@@ -44,6 +43,7 @@ if TYPE_CHECKING:
         RunsFilter,
         TagBucket,
     )
+    from dagster._daemon.types import DaemonHeartbeat
 
 
 class CompositeStorage(DagsterStorage, ConfigurableClass):

@@ -11,8 +11,8 @@ from dagster._config import (
     StringSource,
     process_config,
 )
-from dagster._utils import merge_dicts
 from dagster._core.errors import DagsterInvalidConfigError
+from dagster._utils import merge_dicts
 
 
 def process_workspace_config(

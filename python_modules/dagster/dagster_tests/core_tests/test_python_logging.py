@@ -6,8 +6,8 @@ import mock
 import pytest
 
 from dagster import ModeDefinition, execute_pipeline, get_dagster_logger, reconstructable, resource
-from dagster._legacy import pipeline, solid
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
+from dagster._legacy import pipeline, solid
 
 
 def _reset_logging():

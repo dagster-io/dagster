@@ -16,8 +16,6 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._utils import frozentags, merge_dicts
-from dagster._utils.backcompat import experimental_class_warning
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.solid_definition import NodeDefinition
@@ -28,6 +26,8 @@ from dagster._core.errors import (
 )
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.utils import str_format_set
+from dagster._utils import frozentags, merge_dicts
+from dagster._utils.backcompat import experimental_class_warning
 
 from .asset_layer import AssetLayer
 from .dependency import (

@@ -26,7 +26,6 @@ from dagster import (
     reconstructable,
     resource,
 )
-from dagster._legacy import solid
 from dagster._core.definitions import pipeline
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.resource_definition import make_values_resource
@@ -36,6 +35,7 @@ from dagster._core.execution.api import create_execution_plan, execute_plan, exe
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import coerce_valid_log_level
+from dagster._legacy import solid
 
 
 def define_string_resource():

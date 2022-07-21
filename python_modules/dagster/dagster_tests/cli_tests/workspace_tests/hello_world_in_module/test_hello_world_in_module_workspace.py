@@ -1,7 +1,7 @@
 from dagster import DagsterInstance
-from dagster._utils import file_relative_path
 from dagster._core.workspace import WorkspaceProcessContext
 from dagster._core.workspace.load import load_workspace_process_context_from_yaml_paths
+from dagster._utils import file_relative_path
 
 
 def test_load_in_process_location_hello_world_terse():
