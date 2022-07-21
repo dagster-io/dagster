@@ -846,8 +846,22 @@ class TableSchemaMetadataValue(
 # ##### METADATA ENTRY
 # ########################
 
+METADATA_ENTRY_DEPRECATION_WARNING = """
+**NOTE**: MetadataEntry static constructors are deprecated. Instead you should use:
+`MetadataEntry(<label>, value=MetadataValue.<type>(<value>))
+""".strip().replace(
+    "\n", " "
+)
+
 
 def deprecated_metadata_entry_constructor(fn):
+
+    fn.__doc__ = (
+        METADATA_ENTRY_DEPRECATION_WARNING + "\n\n" + fn.__doc__
+        if fn.__doc__
+        else METADATA_ENTRY_DEPRECATION_WARNING
+    )
+
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
         deprecation_warning(
