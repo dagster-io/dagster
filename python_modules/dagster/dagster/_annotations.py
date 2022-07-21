@@ -21,13 +21,13 @@ def public(obj: T_Callable) -> T_Callable:
     not intended for user access. Only `public` methods of a class are rendered in the docs.
     """
     check.callable_param(obj, "obj")
-    setattr(obj, "_public", True)
+    setattr(obj, "_is_public", True)
     return obj
 
 
 def is_public(fn: Callable) -> bool:
     check.callable_param(fn, "fn")
-    return hasattr(fn, "_public") and getattr(fn, "_public")
+    return hasattr(fn, "_is_public") and getattr(fn, "_is_public")
 
 
 ##### DEPRECATED
@@ -41,13 +41,13 @@ def deprecated(obj: T_Callable) -> T_Callable:
     Note that this decorator does not add any warnings-- they should be added separately.
     """
     check.callable_param(obj, "obj")
-    setattr(obj, "_deprecated", True)
+    setattr(obj, "_is_deprecated", True)
     return obj
 
 
 def is_deprecated(fn: Callable) -> bool:
     check.callable_param(fn, "fn")
-    return hasattr(fn, "_deprecated") and getattr(fn, "_deprecated")
+    return hasattr(fn, "_is_deprecated") and getattr(fn, "_is_deprecated")
 
 
 ##### EXPERIMENTAL
@@ -74,7 +74,7 @@ def experimental(obj: T_Callable, *, decorator: bool = False) -> T_Callable:
                 pass
     """
     check.callable_param(obj, "fn")
-    setattr(obj, "_experimental", True)
+    setattr(obj, "_is_experimental", True)
 
     if inspect.isfunction(obj):
 
@@ -110,4 +110,4 @@ def experimental(obj: T_Callable, *, decorator: bool = False) -> T_Callable:
 
 def is_experimental(obj: Callable) -> bool:
     check.callable_param(obj, "obj")
-    return hasattr(obj, "_experimental") and getattr(obj, "_experimental")
+    return hasattr(obj, "_is_experimental") and getattr(obj, "_is_experimental")
