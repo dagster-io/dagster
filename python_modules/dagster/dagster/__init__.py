@@ -33,7 +33,7 @@ from dagster.core.definitions import (
     CompositeSolidDefinition,
     ConfigMapping,
     DagsterAssetMetadataValue,
-    DagsterPipelineRunMetadataValue,
+    DagsterRunMetadataValue,
     DailyPartitionsDefinition,
     DefaultScheduleStatus,
     DefaultSensorStatus,
@@ -313,8 +313,9 @@ if typing.TYPE_CHECKING:
     from dagster.core.definitions import AssetGroup
     from dagster.core.definitions import DagsterAssetMetadataValue as DagsterAssetMetadataEntryData
     from dagster.core.definitions import (
-        DagsterPipelineRunMetadataValue as DagsterPipelineRunMetadataEntryData,
+        DagsterRunMetadataValue as DagsterPipelineRunMetadataEntryData,
     )
+    from dagster.core.definitions import DagsterRunMetadataValue as DagsterPipelineRunMetadataValue
     from dagster.core.definitions import FloatMetadataValue as FloatMetadataEntryData
     from dagster.core.definitions import IntMetadataValue as IntMetadataEntryData
     from dagster.core.definitions import JsonMetadataValue as JsonMetadataEntryData
@@ -355,7 +356,7 @@ _DEPRECATED_RENAMED = {
     "FloatMetadataEntryData": (FloatMetadataValue, "1.0.0"),
     "IntMetadataEntryData": (IntMetadataValue, "1.0.0"),
     "DagsterPipelineRunMetadataEntryData": (
-        DagsterPipelineRunMetadataValue,
+        DagsterRunMetadataValue,
         "1.0.0",
     ),
     "DagsterAssetMetadataEntryData": (
@@ -367,6 +368,7 @@ _DEPRECATED_RENAMED = {
         TableSchemaMetadataValue,
         "1.0.0",
     ),
+    "DagsterPipelineRunMetadataValue": (DagsterRunMetadataValue, "1.0.0"),
 }
 
 
@@ -409,7 +411,7 @@ __all__ = [
     "AssetSensorDefinition",
     "AssetsDefinition",
     "DagsterAssetMetadataValue",
-    "DagsterPipelineRunMetadataValue",
+    "DagsterRunMetadataValue",
     "TableColumn",
     "TableColumnConstraints",
     "TableConstraints",

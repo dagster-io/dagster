@@ -382,12 +382,12 @@ class MetadataValue(ABC):
         return BoolMetadataValue(value)
 
     @staticmethod
-    def pipeline_run(run_id: str) -> "DagsterPipelineRunMetadataValue":
+    def pipeline_run(run_id: str) -> "DagsterRunMetadataValue":
         check.str_param(run_id, "run_id")
-        return DagsterPipelineRunMetadataValue(run_id)
+        return DagsterRunMetadataValue(run_id)
 
     @staticmethod
-    def dagster_run(run_id: str) -> "DagsterPipelineRunMetadataValue":
+    def dagster_run(run_id: str) -> "DagsterRunMetadataValue":
         """Static constructor for a metadata value wrapping a reference to a Dagster run.
 
         Args:
@@ -714,25 +714,23 @@ class BoolMetadataValue(
 
 
 @whitelist_for_serdes(storage_name="DagsterPipelineRunMetadataEntryData")
-class DagsterPipelineRunMetadataValue(
+class DagsterRunMetadataValue(
     NamedTuple(
-        "_DagsterPipelineRunMetadataValue",
+        "_DagsterRunMetadataValue",
         [
             ("run_id", str),
         ],
     ),
     MetadataValue,
 ):
-    """Representation of a dagster pipeline run.
+    """Representation of a dagster run.
 
     Args:
-        run_id (str): The pipeline run id
+        run_id (str): The run id
     """
 
     def __new__(cls, run_id: str):
-        return super(DagsterPipelineRunMetadataValue, cls).__new__(
-            cls, check.str_param(run_id, "run_id")
-        )
+        return super(DagsterRunMetadataValue, cls).__new__(cls, check.str_param(run_id, "run_id"))
 
     @property
     def value(self) -> str:
@@ -1156,7 +1154,7 @@ class MetadataEntry(
     @deprecated_metadata_entry_constructor
     def pipeline_run(run_id: str, label: str, description: Optional[str] = None) -> "MetadataEntry":
         check.str_param(run_id, "run_id")
-        return MetadataEntry(label, description, DagsterPipelineRunMetadataValue(run_id))
+        return MetadataEntry(label, description, DagsterRunMetadataValue(run_id))
 
     @staticmethod
     @deprecated_metadata_entry_constructor

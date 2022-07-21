@@ -10,7 +10,7 @@ from dagster.core.definitions.events import Output
 from dagster.core.definitions.input import InputDefinition
 from dagster.core.definitions.metadata import (
     DagsterAssetMetadataValue,
-    DagsterPipelineRunMetadataValue,
+    DagsterRunMetadataValue,
     FloatMetadataValue,
     IntMetadataValue,
     JsonMetadataValue,
@@ -54,8 +54,12 @@ METADATA_DEPRECATIONS = {
     "FloatMetadataEntryData": ("FloatMetadataValue", FloatMetadataValue),
     "IntMetadataEntryData": ("IntMetadataValue", IntMetadataValue),
     "DagsterPipelineRunMetadataEntryData": (
-        "DagsterPipelineRunMetadataValue",
-        DagsterPipelineRunMetadataValue,
+        "DagsterRunMetadataValue",
+        DagsterRunMetadataValue,
+    ),
+    "DagsterPipelineRunMetadataValue": (
+        "DagsterRunMetadataValue",
+        DagsterRunMetadataValue,
     ),
     "DagsterAssetMetadataEntryData": ("DagsterAssetMetadataValue", DagsterAssetMetadataValue),
     "TableMetadataEntryData": ("TableMetadataValue", TableMetadataValue),

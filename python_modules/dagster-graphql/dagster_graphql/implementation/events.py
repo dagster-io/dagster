@@ -4,7 +4,7 @@ from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
 
 import dagster._check as check
 import dagster.seven as seven
-from dagster.core.definitions.metadata import (
+from dagster import (
     BoolMetadataValue,
     DagsterAssetMetadataValue,
     DagsterPipelineRunMetadataValue,
