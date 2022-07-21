@@ -8,7 +8,7 @@
 * `TimeWindowPartitionsDefinition` now has a `get_partition_keys_in_range` method which returns a sequence of all the partition keys between two partition keys.
 * `OpExecutionContext` now has `asset_partitions_def_for_output` and `asset_partitions_def_for_input` methods.
 * Dagster now errors immediately with an informative message when two `AssetsDefinition` objects with the same key are provided to the same repository.
-* `partition_key` argument on `build_output_context`, for use when testing the `handle_output` method of an IO manager.
+* `build_output_context` now accepts a `partition_key` argument that can be used when testing the `handle_output` method of an IO manager.
 
 ### Bugfixes
 
@@ -28,7 +28,7 @@
 
 ### Documentation
 
-* The non-asset version of the Hacker News example, which lived inside `examples/hacker_news/`, has been removed, because it hadn’t received updates in a long time and had drifted from best practices. The asset version is still there and has an updated README.
+* The non-asset version of the Hacker News example, which lived inside `examples/hacker_news/`, has been removed, because it hadn’t received updates in a long time and had drifted from best practices. The asset version is still there and has an updated README. Check it out [here](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news_assets)
 
 
 # 0.15.6
