@@ -1388,6 +1388,7 @@ def reconstruct_asset_job():
 def test_asset_selection_reconstructable():
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=ExperimentalWarning)
+        warnings.simplefilter("ignore", category=DeprecationWarning)
         with instance_for_test() as instance:
             run = instance.create_run_for_pipeline(
                 pipeline_def=my_job, asset_selection=frozenset([AssetKey("f")])
