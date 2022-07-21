@@ -8,9 +8,8 @@ from dagster import (
     OutputDefinition,
     PresetDefinition,
     fs_io_manager,
-    pipeline,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 
 
 @solid(

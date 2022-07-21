@@ -10,8 +10,8 @@ from dagster import (
     InputDefinition,
     Output,
     OutputDefinition,
-    solid,
 )
+from dagster._legacy import solid
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 

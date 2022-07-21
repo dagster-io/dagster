@@ -14,9 +14,8 @@ from dagster import (
     composite_solid,
     execute_pipeline,
     lambda_solid,
-    pipeline,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.composition import MappedInputPlaceholder
 from dagster.core.definitions.solid_definition import CompositeSolidDefinition
 

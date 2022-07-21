@@ -1,4 +1,5 @@
-from dagster import execute_pipeline, pipeline, reconstructable, solid
+from dagster import execute_pipeline, reconstructable
+from dagster._legacy import pipeline, solid
 from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
 
 

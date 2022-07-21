@@ -7,7 +7,7 @@ for that.
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime
-from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union
+from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union, cast
 
 from dagster import StaticPartitionsDefinition
 from dagster import _check as check
@@ -24,7 +24,7 @@ from dagster.core.definitions import (
 from dagster.core.definitions.asset_layer import AssetOutputInfo
 from dagster.core.definitions.dependency import NodeOutputHandle
 from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.metadata import MetadataEntry
+from dagster.core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster.core.definitions.mode import DEFAULT_MODE_NAME
 from dagster.core.definitions.partition import PartitionScheduleDefinition, ScheduleType
 from dagster.core.definitions.schedule_definition import DefaultScheduleStatus
@@ -801,6 +801,7 @@ def external_asset_graph_from_defs(
         AssetKey, List[Tuple[NodeOutputHandle, PipelineDefinition]]
     ] = defaultdict(list)
     asset_info_by_asset_key: Dict[AssetKey, AssetOutputInfo] = dict()
+    metadata_by_asset_key: Dict[AssetKey, MetadataUserInput] = dict()
 
     deps: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependency]] = defaultdict(dict)
     dep_by: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependedBy]] = defaultdict(dict)
@@ -810,6 +811,7 @@ def external_asset_graph_from_defs(
 
     for pipeline_def in pipelines:
         asset_info_by_node_output = pipeline_def.asset_layer.asset_info_by_node_output_handle
+
         for node_output_handle, asset_info in asset_info_by_node_output.items():
             if not asset_info.is_required:
                 continue
@@ -825,6 +827,7 @@ def external_asset_graph_from_defs(
             all_upstream_asset_keys.update(upstream_asset_keys)
             node_defs_by_asset_key[output_key].append((node_output_handle, pipeline_def))
             asset_info_by_asset_key[output_key] = asset_info
+
             for upstream_key in upstream_asset_keys:
                 deps[output_key][upstream_key] = ExternalAssetDependency(
                     upstream_asset_key=upstream_key
@@ -833,6 +836,8 @@ def external_asset_graph_from_defs(
                     downstream_asset_key=output_key
                 )
 
+        for assets_def in pipeline_def.asset_layer.assets_defs_by_key.values():
+            metadata_by_asset_key.update(assets_def.metadata_by_key)
         group_names.update(pipeline_def.asset_layer.group_names_by_assets())
 
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
@@ -875,6 +880,19 @@ def external_asset_graph_from_defs(
         output_def = node_def.output_def_named(node_output_handle.output_name)
 
         asset_info = asset_info_by_asset_key[asset_key]
+
+        asset_metadata_entries = (
+            cast(
+                Sequence,
+                normalize_metadata(
+                    metadata=metadata_by_asset_key[asset_key],
+                    metadata_entries=[],
+                    allow_invalid=True,
+                ),
+            )
+            if asset_key in metadata_by_asset_key
+            else cast(Sequence, output_def.metadata_entries)
+        )
 
         job_names = [job_def.name for _, job_def in node_tuple_list]
 
@@ -924,7 +942,7 @@ def external_asset_graph_from_defs(
                 partitions_def_data=partitions_def_data,
                 output_name=output_def.name,
                 output_description=output_def.description,
-                metadata_entries=output_def.metadata_entries,
+                metadata_entries=asset_metadata_entries,
                 # assets defined by Out(asset_key="k") do not have any group
                 # name specified we default to DEFAULT_GROUP_NAME here to ensure
                 # such assets are part of the default group

@@ -17,12 +17,11 @@ from dagster import (
     Field,
     Output,
     graph,
-    pipeline,
     pipeline_failure_sensor,
     repository,
     run_failure_sensor,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.decorators.sensor_decorator import asset_sensor, sensor
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.run_status_sensor_definition import run_status_sensor

@@ -29,16 +29,11 @@ PARTITION_PROGRESS_QUERY = """
         fromFailure
         reexecutionSteps
         backfillStatus
-        partitionRunStats {
-          numQueued
-          numInProgress
-          numSucceeded
-          numFailed
-          numPartitionsWithRuns
-        }
-        unfinishedRuns {
-          id
-          canTerminate
+        partitionStatuses {
+          results {
+            partitionName
+            runStatus
+          }
         }
       }
       ... on PythonError {
@@ -103,6 +98,25 @@ def _seed_runs(graphql_context, partition_runs: List[Tuple[str, PipelineRunStatu
             status=status,
             tags={**PipelineRun.tags_for_backfill_id(backfill_id), PARTITION_NAME_TAG: partition},
         )
+
+
+def _get_run_stats(partition_statuses):
+    return {
+        "total": len(partition_statuses),
+        "queued": len([status for status in partition_statuses if status["runStatus"] == "QUEUED"]),
+        "in_progress": len(
+            [status for status in partition_statuses if status["runStatus"] == "STARTED"]
+        ),
+        "success": len(
+            [status for status in partition_statuses if status["runStatus"] == "SUCCESS"]
+        ),
+        "failure": len(
+            [status for status in partition_statuses if status["runStatus"] == "FAILURE"]
+        ),
+        "canceled": len(
+            [status for status in partition_statuses if status["runStatus"] == "CANCELED"]
+        ),
+    }
 
 
 class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
@@ -351,15 +365,15 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
         assert result.data["partitionBackfillOrError"]["numPartitions"] == 4
         assert result.data["partitionBackfillOrError"]["backfillStatus"] == "REQUESTED"
-        assert result.data["partitionBackfillOrError"]["partitionRunStats"] == {
-            "numPartitionsWithRuns": 4,
-            "numQueued": 0,
-            "numInProgress": 1,  # "5"
-            "numSucceeded": 1,  # "4"
-            "numFailed": 2,  # "2,3"
-        }
-
-        assert len(result.data["partitionBackfillOrError"]["unfinishedRuns"]) == 4
+        run_stats = _get_run_stats(
+            result.data["partitionBackfillOrError"]["partitionStatuses"]["results"]
+        )
+        assert run_stats.get("total") == 4
+        assert run_stats.get("queued") == 0
+        assert run_stats.get("in_progress") == 1
+        assert run_stats.get("success") == 1
+        assert run_stats.get("failure") == 1
+        assert run_stats.get("canceled") == 1
 
         backfill = graphql_context.instance.get_backfill(backfill_id)
 
@@ -417,13 +431,14 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["partitionBackfillOrError"]["status"] == "COMPLETED"
         assert result.data["partitionBackfillOrError"]["numPartitions"] == 4
 
-        assert result.data["partitionBackfillOrError"]["partitionRunStats"] == {
-            "numPartitionsWithRuns": 4,
-            "numQueued": 0,
-            "numInProgress": 0,
-            "numSucceeded": 4,
-            "numFailed": 0,
-        }
+        run_stats = _get_run_stats(
+            result.data["partitionBackfillOrError"]["partitionStatuses"]["results"]
+        )
+        assert run_stats.get("total") == 4
+        assert run_stats.get("queued") == 0
+        assert run_stats.get("in_progress") == 0
+        assert run_stats.get("success") == 4
+        assert run_stats.get("failure") == 0
 
         assert result.data["partitionBackfillOrError"]["backfillStatus"] == "COMPLETED"
 
@@ -471,14 +486,15 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
         assert result.data["partitionBackfillOrError"]["status"] == "COMPLETED"
         assert result.data["partitionBackfillOrError"]["numPartitions"] == 4
-
-        assert result.data["partitionBackfillOrError"]["partitionRunStats"] == {
-            "numPartitionsWithRuns": 4,
-            "numQueued": 0,
-            "numInProgress": 0,
-            "numSucceeded": 3,
-            "numFailed": 1,
-        }
+        run_stats = _get_run_stats(
+            result.data["partitionBackfillOrError"]["partitionStatuses"]["results"]
+        )
+        assert run_stats.get("total") == 4
+        assert run_stats.get("queued") == 0
+        assert run_stats.get("in_progress") == 0
+        assert run_stats.get("success") == 3
+        assert run_stats.get("failure") == 0
+        assert run_stats.get("canceled") == 1
 
         assert result.data["partitionBackfillOrError"]["backfillStatus"] == "INCOMPLETE"
 

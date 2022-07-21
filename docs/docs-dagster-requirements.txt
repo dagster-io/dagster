@@ -9,6 +9,7 @@
 -e ../python_modules/libraries/dagster-celery-docker
 -e ../python_modules/libraries/dagster-dask
 -e ../python_modules/libraries/dagster-datadog
+-e ../python_modules/libraries/dagster-datahub
 -e ../python_modules/libraries/dagster-docker
 -e ../python_modules/libraries/dagster-fivetran
 -e ../python_modules/libraries/dagster-github

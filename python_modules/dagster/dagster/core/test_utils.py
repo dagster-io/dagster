@@ -14,7 +14,8 @@ import yaml
 
 from dagster import ModeDefinition, Shape
 from dagster import _check as check
-from dagster import composite_solid, fs_io_manager, pipeline, solid
+from dagster import composite_solid, fs_io_manager
+from dagster._legacy import pipeline, solid
 from dagster.config import Field
 from dagster.config.config_type import Array
 from dagster.core.host_representation.origin import (

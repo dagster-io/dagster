@@ -597,6 +597,10 @@ class AssetLayer:
     def assets_defs_by_key(self) -> Mapping[AssetKey, "AssetsDefinition"]:
         return self._assets_defs_by_key
 
+    @property
+    def has_assets_defs(self) -> bool:
+        return len(self.assets_defs_by_key) > 0
+
     def assets_def_for_asset(self, asset_key: AssetKey) -> "AssetsDefinition":
         return self._assets_defs_by_key[asset_key]
 
@@ -618,7 +622,7 @@ class AssetLayer:
                 else None
             )
         elif asset_key in self._assets_defs_by_key:
-            return self._assets_defs_by_key[asset_key].metadata_by_asset_key[asset_key]
+            return self._assets_defs_by_key[asset_key].metadata_by_key[asset_key]
         else:
             check.failed(f"Couldn't find key {asset_key}")
 

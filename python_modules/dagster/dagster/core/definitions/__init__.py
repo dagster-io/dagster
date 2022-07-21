@@ -76,7 +76,7 @@ from .materialize import materialize, materialize_to_memory
 from .metadata import (
     BoolMetadataValue,
     DagsterAssetMetadataValue,
-    DagsterPipelineRunMetadataValue,
+    DagsterRunMetadataValue,
     FloatMetadataValue,
     IntMetadataValue,
     JsonMetadataValue,
@@ -115,6 +115,13 @@ from .partition import (
     StaticPartitionsDefinition,
     dynamic_partitioned_config,
     static_partitioned_config,
+)
+from .partition_key_range import PartitionKeyRange
+from .partition_mapping import (
+    AllPartitionMapping,
+    IdentityPartitionMapping,
+    LastPartitionMapping,
+    PartitionMapping,
 )
 from .partitioned_schedule import build_schedule_from_partitioned_job, schedule_from_partitions
 from .pipeline_base import IPipeline

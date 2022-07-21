@@ -16,9 +16,8 @@ from dagster import (
     OutputDefinition,
     Partition,
     PartitionSetDefinition,
-    pipeline,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 from dagster.core.storage.io_manager import io_manager
 

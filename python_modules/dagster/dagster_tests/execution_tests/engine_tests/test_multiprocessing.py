@@ -16,10 +16,9 @@ from dagster import (
     String,
     execute_pipeline,
     lambda_solid,
-    pipeline,
     reconstructable,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType

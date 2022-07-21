@@ -179,21 +179,17 @@
 # Concepts: Dagit
 ##################
 
-- path: concepts/dagit/pipeline-definition.png
-  defs_file: examples/hacker_news/workspace.yaml
-  url: http://127.0.0.1:3000/workspace/hacker_news_prod@hacker_news/jobs/story_recommender
-
 - path: concepts/dagit/solid-definition.png
-  defs_file: examples/hacker_news/workspace.yaml
-  url: http://127.0.0.1:3000/workspace/hacker_news_prod@hacker_news/jobs/story_recommender/build_user_story_matrix
+  defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/complex_pipeline.py
+  url: http://localhost:3000/workspace/__repository__diamond@complex_pipeline.py/jobs/diamond/find_highest_calorie_cereal
 
 - path: concepts/dagit/playground.png
-  defs_file: examples/hacker_news/workspace.yaml
-  url: http://127.0.0.1:3000/workspace/hacker_news_prod@hacker_news/jobs/story_recommender/playground
+  defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/complex_pipeline.py
+  url: http://localhost:3000/workspace/__repository__diamond@complex_pipeline.py/jobs/diamond/playground
 
 - path: concepts/dagit/runs-tab.png
-  defs_file: examples/hacker_news/workspace.yaml
-  url: http://127.0.0.1:3000/workspace/hacker_news_prod@hacker_news/jobs/story_recommender/runs
+  defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/complex_pipeline.py
+  url: http://localhost:3000/workspace/__repository__diamond@complex_pipeline.py/jobs/diamond/playground
   steps:
     - kick off a few runs
 

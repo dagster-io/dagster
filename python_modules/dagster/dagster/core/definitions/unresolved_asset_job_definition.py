@@ -32,6 +32,7 @@ class UnresolvedAssetJobDefinition(
             ("description", Optional[str]),
             ("tags", Optional[Dict[str, Any]]),
             ("partitions_def", Optional["PartitionsDefinition"]),
+            ("executor_def", Optional["ExecutorDefinition"]),
         ],
     )
 ):
@@ -43,8 +44,13 @@ class UnresolvedAssetJobDefinition(
         description: Optional[str] = None,
         tags: Optional[Dict[str, Any]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
+        executor_def: Optional["ExecutorDefinition"] = None,
     ):
-        from dagster.core.definitions import AssetSelection, PartitionsDefinition
+        from dagster.core.definitions import (
+            AssetSelection,
+            ExecutorDefinition,
+            PartitionsDefinition,
+        )
 
         return super(UnresolvedAssetJobDefinition, cls).__new__(
             cls,
@@ -56,6 +62,7 @@ class UnresolvedAssetJobDefinition(
             partitions_def=check.opt_inst_param(
                 partitions_def, "partitions_def", PartitionsDefinition
             ),
+            executor_def=check.opt_inst_param(executor_def, "partitions_def", ExecutorDefinition),
         )
 
     def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
@@ -108,7 +115,7 @@ class UnresolvedAssetJobDefinition(
         self,
         assets: Sequence["AssetsDefinition"],
         source_assets: Sequence["SourceAsset"],
-        executor_def: Optional["ExecutorDefinition"] = None,
+        default_executor_def: Optional["ExecutorDefinition"] = None,
     ) -> "JobDefinition":
         """
         Resolve this UnresolvedAssetJobDefinition into a JobDefinition.
@@ -122,7 +129,7 @@ class UnresolvedAssetJobDefinition(
             tags=self.tags,
             asset_selection=self.selection.resolve([*assets, *source_assets]),
             partitions_def=self.partitions_def,
-            executor_def=executor_def,
+            executor_def=self.executor_def or default_executor_def,
         )
 
 
@@ -152,6 +159,7 @@ def define_asset_job(
     description: Optional[str] = None,
     tags: Optional[Dict[str, Any]] = None,
     partitions_def: Optional["PartitionsDefinition"] = None,
+    executor_def: Optional["ExecutorDefinition"] = None,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will materialize a selection of assets. This will only be
     resolved to a JobDefinition once placed in a repository.
@@ -190,6 +198,11 @@ def define_asset_job(
         partitions_def (Optional[PartitionsDefinition]):
             Defines the set of partitions for this job. All AssetDefinitions selected for this job
             must have a matching PartitionsDefinition.
+        executor_def (Optional[ExecutorDefinition]):
+            How this Job will be executed. Defaults to :py:class:`multi_or_in_process_executor`,
+            which can be switched between multi-process and in-process modes of execution. The
+            default mode of execution is multi-process.
+
 
     Returns:
         UnresolvedAssetJobDefinition: The job, which can be placed inside a repository.
@@ -246,4 +259,5 @@ def define_asset_job(
         description=description,
         tags=tags,
         partitions_def=partitions_def,
+        executor_def=executor_def,
     )

@@ -2,7 +2,8 @@ import sys
 
 import pytest
 
-from dagster import file_relative_path, lambda_solid, pipeline, repository
+from dagster import file_relative_path, lambda_solid, repository
+from dagster._legacy import pipeline
 from dagster.core.definitions.repository_definition import RepositoryData
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin

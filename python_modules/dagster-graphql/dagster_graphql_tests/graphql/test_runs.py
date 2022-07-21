@@ -18,9 +18,9 @@ from dagster import (
     job,
     lambda_solid,
     op,
-    pipeline,
     repository,
 )
+from dagster._legacy import pipeline
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import execute_run
 from dagster.core.storage.pipeline_run import PipelineRunStatus

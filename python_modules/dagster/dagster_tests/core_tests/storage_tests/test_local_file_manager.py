@@ -2,7 +2,8 @@ import os
 import tempfile
 from contextlib import contextmanager
 
-from dagster import LocalFileHandle, ModeDefinition, execute_pipeline, pipeline, solid
+from dagster import LocalFileHandle, ModeDefinition, execute_pipeline
+from dagster._legacy import pipeline, solid
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileManager, local_file_manager
 from dagster.core.test_utils import instance_for_test

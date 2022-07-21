@@ -622,6 +622,7 @@ def build_op_context(
         instance (Optional[DagsterInstance]): The dagster instance configured for the context.
             Defaults to DagsterInstance.ephemeral().
         mapping_key (Optional[str]): A key representing the mapping key from an upstream dynamic output. Can be accessed using ``context.get_mapping_key()``.
+        partition_key (Optional[str]): String value representing partition key to execute with.
 
     Examples:
         .. code-block:: python

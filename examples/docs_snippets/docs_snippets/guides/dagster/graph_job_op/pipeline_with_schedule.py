@@ -1,4 +1,5 @@
-from dagster import ScheduleDefinition, pipeline, repository, solid
+from dagster import ScheduleDefinition, repository
+from dagster._legacy import pipeline, solid
 
 
 @solid

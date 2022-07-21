@@ -21,10 +21,9 @@ from dagster import (
     OutputDefinition,
     execute_pipeline,
     fs_io_manager,
-    pipeline,
     reconstructable,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.test_utils import instance_for_test
 from dagster.utils.merger import deep_merge_dicts

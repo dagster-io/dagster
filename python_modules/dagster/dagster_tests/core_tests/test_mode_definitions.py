@@ -17,11 +17,10 @@ from dagster import (
     String,
     execute_pipeline,
     logger,
-    pipeline,
     resource,
-    solid,
 )
 from dagster._check import CheckError
+from dagster._legacy import pipeline, solid
 from dagster.core.utils import coerce_valid_log_level
 from dagster.utils.test import execute_solids_within_pipeline
 

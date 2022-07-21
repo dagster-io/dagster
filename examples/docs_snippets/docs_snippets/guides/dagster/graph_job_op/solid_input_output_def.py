@@ -1,4 +1,5 @@
-from dagster import InputDefinition, OutputDefinition, solid
+from dagster import InputDefinition, OutputDefinition
+from dagster._legacy import solid
 
 
 @solid(

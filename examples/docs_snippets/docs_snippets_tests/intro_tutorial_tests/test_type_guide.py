@@ -16,10 +16,9 @@ from dagster import (
     execute_pipeline,
     execute_solid,
     make_python_type_usable_as_dagster_type,
-    pipeline,
-    solid,
     usable_as_dagster_type,
 )
+from dagster._legacy import pipeline, solid
 from dagster.utils import safe_tempfile_path
 
 

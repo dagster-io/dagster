@@ -21,11 +21,10 @@ from dagster import (
     io_manager,
     job,
     op,
-    pipeline,
     resource,
     root_input_manager,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.events import Failure, RetryRequested
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.instance import InstanceRef
@@ -349,7 +348,7 @@ def test_input_manager_class():
 
 
 ##################################################
-# root input manager tests (deprecate in 0.16.0) #
+# root input manager tests (deprecate in 1.0.0) #
 ##################################################
 
 

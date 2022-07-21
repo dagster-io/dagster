@@ -31,7 +31,7 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.utils import build_resources_for_manager
 
 if TYPE_CHECKING:
-    from dagster.core.definitions import PipelineDefinition
+    from dagster.core.definitions import PartitionsDefinition, PipelineDefinition
     from dagster.core.definitions.resource_definition import Resources
     from dagster.core.events import DagsterEvent
     from dagster.core.execution.context.system import StepExecutionContext
@@ -113,6 +113,7 @@ class OutputContext:
         op_def: Optional["OpDefinition"] = None,
         asset_info: Optional[AssetOutputInfo] = None,
         warn_on_step_context_use: bool = False,
+        partition_key: Optional[str] = None,
     ):
         from dagster.core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster.core.execution.build_resources import build_resources
@@ -135,6 +136,10 @@ class OutputContext:
         self._step_context = step_context
         self._asset_info = asset_info
         self._warn_on_step_context_use = warn_on_step_context_use
+        if self._step_context and self._step_context.has_partition_key:
+            self._partition_key: Optional[str] = self._step_context.partition_key
+        else:
+            self._partition_key = partition_key
 
         if isinstance(resources, Resources):
             self._resources_cm = None
@@ -299,6 +304,18 @@ class OutputContext:
         return self._asset_info.key
 
     @property
+    def asset_partitions_def(self) -> "PartitionsDefinition":
+        """The PartitionsDefinition on the upstream asset corresponding to this input."""
+        asset_key = self.asset_key
+        result = self.step_context.pipeline_def.asset_layer.partitions_def_for_asset(asset_key)
+        if result is None:
+            raise DagsterInvariantViolationError(
+                f"Attempting to access partitions def for asset {asset_key}, but it is not partitioned"
+            )
+
+        return result
+
+    @property
     def step_context(self) -> "StepExecutionContext":
         if self._warn_on_step_context_use:
             warnings.warn(
@@ -327,7 +344,7 @@ class OutputContext:
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
-        return self.step_context.has_partition_key
+        return self._partition_key is not None
 
     @property
     def partition_key(self) -> str:
@@ -343,7 +360,11 @@ class OutputContext:
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
-        return self.step_context.partition_key
+        check.invariant(
+            self._partition_key is not None,
+            "Tried to access partition_key on a non-partitioned run.",
+        )
+        return cast(str, self._partition_key)
 
     @property
     def has_asset_partitions(self) -> bool:
@@ -734,6 +755,7 @@ def build_output_context(
     solid_def: Optional[SolidDefinition] = None,
     op_def: Optional[OpDefinition] = None,
     asset_key: Optional[Union[AssetKey, str]] = None,
+    partition_key: Optional[str] = None,
 ) -> "OutputContext":
     """Builds output context from provided parameters.
 
@@ -760,6 +782,7 @@ def build_output_context(
         op_def (Optional[OpDefinition]): The definition of the op that produced the output.
         asset_key: Optional[Union[AssetKey, Sequence[str], str]]: The asset key corresponding to the
             output.
+        partition_key: Optional[str]: String value representing partition key to execute with.
 
     Examples:
 
@@ -786,6 +809,7 @@ def build_output_context(
     solid_def = check.opt_inst_param(solid_def, "solid_def", SolidDefinition)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
     asset_key = AssetKey.from_coerceable(asset_key) if asset_key else None
+    partition_key = check.opt_str_param(partition_key, "partition_key")
 
     return OutputContext(
         step_key=step_key,
@@ -804,4 +828,5 @@ def build_output_context(
         step_context=None,
         op_def=op_def,
         asset_info=AssetOutputInfo(key=asset_key) if asset_key else None,
+        partition_key=partition_key,
     )

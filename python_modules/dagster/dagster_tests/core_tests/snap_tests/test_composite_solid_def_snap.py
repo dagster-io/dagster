@@ -1,4 +1,5 @@
-from dagster import composite_solid, solid
+from dagster import composite_solid
+from dagster._legacy import solid
 from dagster.core.snap import (
     CompositeSolidDefSnap,
     DependencyStructureIndex,

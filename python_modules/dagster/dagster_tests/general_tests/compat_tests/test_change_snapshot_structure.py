@@ -39,7 +39,7 @@ def test_run_created_in_0_7_9_snapshot_id_change():
 
 # Scripts to create this (run against 0.7.9)
 #
-# from dagster import pipeline, solid, DagsterInstance, execute_pipeline
+# from dagster importsolid, DagsterInstance, execute_pipeline
 # from dagster.core.snap.utils import create_snapshot_id
 #
 # from dagster.serdes import serialize_pp

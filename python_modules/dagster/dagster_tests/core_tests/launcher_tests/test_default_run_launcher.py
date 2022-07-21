@@ -14,11 +14,10 @@ from dagster import (
     ModeDefinition,
     file_relative_path,
     fs_io_manager,
-    pipeline,
     repository,
     seven,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import GRPC_INFO_TAG

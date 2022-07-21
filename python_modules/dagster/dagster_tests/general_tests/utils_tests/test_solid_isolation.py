@@ -13,8 +13,8 @@ from dagster import (
     composite_solid,
     lambda_solid,
     resource,
-    solid,
 )
+from dagster._legacy import solid
 from dagster.core.test_utils import nesting_composite_pipeline
 from dagster.core.utility_solids import (
     create_root_solid,

@@ -12,9 +12,9 @@ from dagster import (
     PipelineDefinition,
     ResourceDefinition,
     SolidDefinition,
-    solid,
 )
 from dagster._check import ParameterCheckError
+from dagster._legacy import solid
 from dagster.core.utility_solids import define_stub_solid
 
 

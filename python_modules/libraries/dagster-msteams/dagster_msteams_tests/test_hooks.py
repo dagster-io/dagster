@@ -2,7 +2,8 @@ from dagster_msteams.hooks import teams_on_failure, teams_on_success
 from dagster_msteams.resources import msteams_resource
 from mock import patch
 
-from dagster import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster import ModeDefinition, execute_pipeline
+from dagster._legacy import pipeline, solid
 
 
 class SomeUserException(Exception):

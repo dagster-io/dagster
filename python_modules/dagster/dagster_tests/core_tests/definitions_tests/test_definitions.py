@@ -14,8 +14,8 @@ from dagster import (
     PipelineDefinition,
     String,
     lambda_solid,
-    solid,
 )
+from dagster._legacy import solid
 from dagster.core.definitions import AssetMaterialization, Node, create_run_config_schema
 from dagster.core.definitions.dependency import NodeHandle, SolidOutputHandle
 from dagster.core.errors import DagsterInvalidDefinitionError

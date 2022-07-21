@@ -134,6 +134,26 @@ class AssetComputeStatus(Enum):
     OUT_OF_DATE = "OUT_OF_DATE"
 
 
+def add_all_upstream_keys(
+    all_asset_nodes: Mapping[AssetKey, "GrapheneAssetNode"],
+    requested_asset_keys: KeysView[AssetKey],
+):
+    required: Dict[AssetKey, bool] = {}
+
+    def append_key_and_upstream(key: AssetKey):
+        if required.get(key):
+            return
+        required[key] = True
+        asset_node = all_asset_nodes[key].external_asset_node
+        for dep in asset_node.dependencies:
+            append_key_and_upstream(dep.upstream_asset_key)
+
+    for asset_key in requested_asset_keys:
+        append_key_and_upstream(asset_key)
+
+    return required.keys()
+
+
 def get_upstream_changed_by_asset(
     all_asset_nodes: Mapping[AssetKey, "GrapheneAssetNode"],
     all_asset_records: Iterable[AssetRecord],
@@ -196,7 +216,7 @@ def get_upstream_changed_by_asset(
     return final
 
 
-def get_assets_live_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, List[str]]):
+def get_assets_latest_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, List[str]]):
     from ..schema.asset_graph import GrapheneAssetLatestInfo
     from ..schema.logs.events import GrapheneMaterializationEvent
     from ..schema.pipelines.pipeline import GrapheneRun
@@ -204,7 +224,11 @@ def get_assets_live_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, Li
     instance = graphene_info.context.instance
 
     asset_nodes = get_asset_nodes_by_asset_key(graphene_info)
-    asset_records = instance.get_asset_records(asset_nodes.keys())
+    asset_record_keys_needed = add_all_upstream_keys(asset_nodes, step_keys_by_asset.keys())
+    if not asset_record_keys_needed:
+        return []
+
+    asset_records = instance.get_asset_records(asset_record_keys_needed)
     upstream_changed_by_asset = get_upstream_changed_by_asset(
         asset_nodes, asset_records, step_keys_by_asset.keys()
     )

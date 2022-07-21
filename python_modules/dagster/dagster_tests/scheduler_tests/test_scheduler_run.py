@@ -17,11 +17,10 @@ from dagster import (
     hourly_schedule,
     job,
     op,
-    pipeline,
     repository,
     schedule,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.run_request import RunRequest
 from dagster.core.host_representation import (
     ExternalInstigatorOrigin,

@@ -130,6 +130,9 @@ def test_backcompat_asset_materializations():
             c_mat = storage.get_latest_materialization_events([c]).get(c)
             _validate_materialization(c, c_mat)
 
+            mat_by_key = storage.get_latest_materialization_events([])
+            assert len(mat_by_key) == 0
+
             mat_by_key = storage.get_latest_materialization_events([a, b, c])
             assert mat_by_key.get(a) is None
             _validate_materialization(b, mat_by_key.get(b))

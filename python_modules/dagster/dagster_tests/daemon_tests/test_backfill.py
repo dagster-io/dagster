@@ -15,10 +15,9 @@ from dagster import (
     daily_partitioned_config,
     fs_io_manager,
     graph,
-    pipeline,
     repository,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions import Partition, PartitionSetDefinition
 from dagster.core.execution.api import execute_pipeline
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill

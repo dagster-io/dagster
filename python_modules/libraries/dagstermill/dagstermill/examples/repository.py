@@ -18,11 +18,10 @@ from dagster import (
     composite_solid,
     fs_io_manager,
     job,
-    pipeline,
     repository,
     resource,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.storage.file_manager import local_file_manager
 from dagster.utils import PICKLE_PROTOCOL, file_relative_path
 

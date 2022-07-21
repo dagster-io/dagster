@@ -1,12 +1,5 @@
-from dagster import (
-    InputDefinition,
-    Int,
-    OutputDefinition,
-    daily_schedule,
-    lambda_solid,
-    pipeline,
-    repository,
-)
+from dagster import InputDefinition, Int, OutputDefinition, daily_schedule, lambda_solid, repository
+from dagster._legacy import pipeline
 from dagster.core.test_utils import today_at_midnight
 
 

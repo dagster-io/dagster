@@ -22,12 +22,11 @@ from dagster import (
     fs_io_manager,
     job,
     op,
-    pipeline,
     reconstructable,
     reexecute_pipeline,
     resource,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan

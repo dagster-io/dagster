@@ -7,7 +7,8 @@ from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.executor import K8sStepHandler, k8s_job_executor
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
 
-from dagster import PipelineDefinition, execute_pipeline, solid
+from dagster import PipelineDefinition, execute_pipeline
+from dagster._legacy import solid
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.reconstruct import reconstructable
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError

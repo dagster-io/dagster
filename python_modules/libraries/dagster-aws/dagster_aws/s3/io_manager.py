@@ -23,7 +23,7 @@ class PickledObjectS3IOManager(MemoizableIOManager):
         s3_prefix=None,
     ):
         self.bucket = check.str_param(s3_bucket, "s3_bucket")
-        self.s3_prefix = check.str_param(s3_prefix, "s3_prefix")
+        self.s3_prefix = check.opt_str_param(s3_prefix, "s3_prefix")
         self.s3 = s3_session
         self.s3.list_objects(Bucket=self.bucket, Prefix=self.s3_prefix, MaxKeys=1)
 

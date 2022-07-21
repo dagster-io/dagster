@@ -6,7 +6,8 @@ from dagster_airflow.factory import DagsterOperatorParameters
 from dagster_airflow.operators.docker_operator import DagsterDockerOperator
 from dagster_airflow_tests.marks import requires_airflow_db
 
-from dagster import pipeline, repository, solid
+from dagster import repository
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.snap import snapshot_from_execution_plan

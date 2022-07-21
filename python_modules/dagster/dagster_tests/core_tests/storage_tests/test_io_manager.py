@@ -28,12 +28,11 @@ from dagster import (
     graph,
     job,
     op,
-    pipeline,
     reexecute_pipeline,
     resource,
-    solid,
 )
 from dagster._check import CheckError
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster.core.execution.api import create_execution_plan, execute_plan

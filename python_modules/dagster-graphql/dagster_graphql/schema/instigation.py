@@ -24,7 +24,7 @@ from dagster.utils.yaml_utils import dump_run_config_yaml
 from ..implementation.fetch_schedules import get_schedule_next_tick
 from ..implementation.fetch_sensors import get_sensor_next_tick
 from ..implementation.loader import RepositoryScopedBatchLoader
-from .errors import GraphenePythonError
+from .errors import GrapheneError, GraphenePythonError
 from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
 from .util import non_null_list
@@ -447,10 +447,27 @@ class GrapheneInstigationStates(graphene.ObjectType):
         name = "InstigationStates"
 
 
+class GrapheneInstigationStateNotFoundError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "InstigationStateNotFoundError"
+
+    name = graphene.NonNull(graphene.String)
+
+    def __init__(self, name):
+        super().__init__()
+        self.name = check.str_param(name, "name")
+        self.message = f"Could not find `{name}` in the currently loaded repository."
+
+
 class GrapheneInstigationStateOrError(graphene.Union):
     class Meta:
         name = "InstigationStateOrError"
-        types = (GrapheneInstigationState, GraphenePythonError)
+        types = (
+            GrapheneInstigationState,
+            GrapheneInstigationStateNotFoundError,
+            GraphenePythonError,
+        )
 
 
 class GrapheneInstigationStatesOrError(graphene.Union):
@@ -464,6 +481,7 @@ types = [
     GrapheneFutureInstigationTicks,
     GrapheneInstigationTypeSpecificData,
     GrapheneInstigationState,
+    GrapheneInstigationStateNotFoundError,
     GrapheneInstigationStateOrError,
     GrapheneInstigationStates,
     GrapheneInstigationStatesOrError,

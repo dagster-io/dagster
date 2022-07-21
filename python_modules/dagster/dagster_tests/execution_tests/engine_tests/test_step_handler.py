@@ -1,4 +1,4 @@
-from dagster import pipeline
+from dagster._legacy import pipeline
 from dagster.core.definitions.reconstruct import reconstructable
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.context.system import PlanData, PlanOrchestrationContext

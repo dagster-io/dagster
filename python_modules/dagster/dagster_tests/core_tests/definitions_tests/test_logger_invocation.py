@@ -2,8 +2,9 @@ import logging
 
 import pytest
 
-from dagster import Field, build_init_logger_context, graph, logger, op, pipeline, solid
+from dagster import Field, build_init_logger_context, graph, logger, op
 from dagster._check import CheckError
+from dagster._legacy import pipeline, solid
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidInvocationError,

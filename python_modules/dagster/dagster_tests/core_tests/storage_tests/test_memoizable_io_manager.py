@@ -9,9 +9,8 @@ from dagster import (
     build_output_context,
     execute_pipeline,
     io_manager,
-    pipeline,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.storage.memoizable_io_manager import (
     MemoizableIOManager,
     VersionedPickledObjectFilesystemIOManager,

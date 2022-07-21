@@ -1,3 +1,4 @@
+import warnings
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -20,14 +21,14 @@ from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
 from dagster.core.errors import DagsterInvalidInvocationError
 from dagster.utils import merge_dicts
-from dagster.utils.backcompat import deprecation_warning
+from dagster.utils.backcompat import ExperimentalWarning, deprecation_warning
 
 from .dependency import NodeHandle
-from .events import AssetKey
+from .events import AssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
 from .partition import PartitionsDefinition
-from .partition_mapping import PartitionMapping
+from .partition_mapping import AllPartitionMapping, PartitionMapping
 from .resource_definition import ResourceDefinition
 from .resource_requirement import (
     ResourceAddable,
@@ -68,7 +69,7 @@ class AssetsDefinition(ResourceAddable):
     _group_names_by_key: Mapping[AssetKey, str]
     _selected_asset_keys: AbstractSet[AssetKey]
     _can_subset: bool
-    _metadata_by_asset_key: Mapping[AssetKey, MetadataUserInput]
+    _metadata_by_key: Mapping[AssetKey, MetadataUserInput]
 
     def __init__(
         self,
@@ -82,6 +83,7 @@ class AssetsDefinition(ResourceAddable):
         can_subset: bool = False,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
+        metadata_by_key: Optional[Mapping[AssetKey, MetadataUserInput]] = None,
         # if adding new fields, make sure to handle them in the with_prefix_or_group
         # and from_graph methods
     ):
@@ -138,10 +140,14 @@ class AssetsDefinition(ResourceAddable):
             self._selected_asset_keys = all_asset_keys
         self._can_subset = can_subset
 
-        self._metadata_by_asset_key = {
-            asset_key: node_def.resolve_output_to_origin(output_name, None)[0].metadata
-            for output_name, asset_key in keys_by_output_name.items()
-        }
+        self._metadata_by_key = check.opt_dict_param(
+            metadata_by_key, "metadata_by_key", key_type=AssetKey, value_type=dict
+        )
+        for output_name, asset_key in keys_by_output_name.items():
+            self._metadata_by_key[asset_key] = merge_dicts(
+                node_def.resolve_output_to_origin(output_name, None)[0].metadata,
+                self._metadata_by_key.get(asset_key, {}),
+            )
 
     def __call__(self, *args, **kwargs):
         from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
@@ -177,11 +183,13 @@ class AssetsDefinition(ResourceAddable):
         graph_def: "GraphDefinition",
         keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
+        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
+        metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from a GraphDefinition.
@@ -194,6 +202,10 @@ class AssetsDefinition(ResourceAddable):
             keys_by_output_name (Optional[Mapping[str, AssetKey]]): A mapping of the output
                 names of the decorated graph to their corresponding asset keys. If not provided,
                 the output asset keys will be created from the graph output names.
+            key_prefix (Optional[Union[str, Sequence[str]]]): If provided, key_prefix will be prepended
+                to each key in keys_by_output_name. Each item in key_prefix must be a valid name in
+                dagster (ie only contains letters, numbers, and _) and may not contain python
+                reserved keywords.
             internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
                 that all assets produced by the graph depend on all assets that are consumed by that
                 graph. If this default is not correct, you pass in a map of output names to a
@@ -213,6 +225,10 @@ class AssetsDefinition(ResourceAddable):
                 If no entry is provided for a particular asset dependency, the partition mapping defaults
                 to the default partition mapping for the partitions definition, which is typically maps
                 partition keys to the same partition keys in upstream assets.
+            metadata_by_output_name (Optional[Mapping[str, MetadataUserInput]]): Defines metadata to
+                be associated with each of the output assets for this node. Keys are names of the
+                outputs, and values are dictionaries of metadata to be associated with the related
+                asset.
         """
         return AssetsDefinition._from_node(
             graph_def,
@@ -223,6 +239,8 @@ class AssetsDefinition(ResourceAddable):
             group_name,
             resource_defs,
             partition_mappings,
+            metadata_by_output_name,
+            key_prefix=key_prefix,
         )
 
     @staticmethod
@@ -230,10 +248,12 @@ class AssetsDefinition(ResourceAddable):
         op_def: OpDefinition,
         keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
+        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         group_name: Optional[str] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
+        metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
     ) -> "AssetsDefinition":
         """
         Constructs an AssetsDefinition from an OpDefinition.
@@ -246,6 +266,10 @@ class AssetsDefinition(ResourceAddable):
             keys_by_output_name (Optional[Mapping[str, AssetKey]]): A mapping of the output
                 names of the decorated op to their corresponding asset keys. If not provided,
                 the output asset keys will be created from the op output names.
+            key_prefix (Optional[Union[str, Sequence[str]]]): If provided, key_prefix will be prepended
+                to each key in keys_by_output_name. Each item in key_prefix must be a valid name in
+                dagster (ie only contains letters, numbers, and _) and may not contain python
+                reserved keywords.
             internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
                 that all assets produced by the op depend on all assets that are consumed by that
                 op. If this default is not correct, you pass in a map of output names to a
@@ -261,6 +285,10 @@ class AssetsDefinition(ResourceAddable):
                 If no entry is provided for a particular asset dependency, the partition mapping defaults
                 to the default partition mapping for the partitions definition, which is typically maps
                 partition keys to the same partition keys in upstream assets.
+            metadata_by_output_name (Optional[Mapping[str, MetadataUserInput]]): Defines metadata to
+                be associated with each of the output assets for this node. Keys are names of the
+                outputs, and values are dictionaries of metadata to be associated with the related
+                asset.
         """
         return AssetsDefinition._from_node(
             op_def,
@@ -270,6 +298,8 @@ class AssetsDefinition(ResourceAddable):
             partitions_def,
             group_name,
             partition_mappings=partition_mappings,
+            metadata_by_output_name=metadata_by_output_name,
+            key_prefix=key_prefix,
         )
 
     @staticmethod
@@ -282,6 +312,8 @@ class AssetsDefinition(ResourceAddable):
         group_name: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
+        metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
+        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ) -> "AssetsDefinition":
         from .graph_definition import GraphDefinition
 
@@ -316,6 +348,15 @@ class AssetsDefinition(ResourceAddable):
 
         keys_by_output_name = _infer_keys_by_output_names(node_def, keys_by_output_name or {})
 
+        keys_by_output_name_with_prefix: Dict[str, AssetKey] = {}
+        key_prefix_list = [key_prefix] if isinstance(key_prefix, str) else key_prefix
+        for output_name, key in keys_by_output_name.items():
+            # add key_prefix to the beginning of each asset key
+            key_with_key_prefix = AssetKey(
+                list(filter(None, [*(key_prefix_list or []), *key.path]))
+            )
+            keys_by_output_name_with_prefix[output_name] = key_with_key_prefix
+
         # For graph backed assets, we assign all assets to the same group_name, if specified.
         # To assign to different groups, use .with_prefix_or_groups.
         group_names_by_key = (
@@ -326,7 +367,7 @@ class AssetsDefinition(ResourceAddable):
 
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
-            keys_by_output_name=keys_by_output_name,
+            keys_by_output_name=keys_by_output_name_with_prefix,
             node_def=node_def,
             asset_deps=transformed_internal_asset_deps or None,
             partitions_def=check.opt_inst_param(
@@ -341,6 +382,12 @@ class AssetsDefinition(ResourceAddable):
                 for input_name, partition_mapping in partition_mappings.items()
             }
             if partition_mappings
+            else None,
+            metadata_by_key={
+                keys_by_output_name[output_name]: metadata
+                for output_name, metadata in metadata_by_output_name.items()
+            }
+            if metadata_by_output_name
             else None,
         )
 
@@ -385,7 +432,7 @@ class AssetsDefinition(ResourceAddable):
     @property
     def asset_key(self) -> AssetKey:
         deprecation_warning(
-            "AssetsDefinition.asset_key", "0.16.0", "Use AssetsDefinition.key instead."
+            "AssetsDefinition.asset_key", "1.0.0", "Use AssetsDefinition.key instead."
         )
         return self.key
 
@@ -400,7 +447,7 @@ class AssetsDefinition(ResourceAddable):
     @property
     def asset_keys(self) -> AbstractSet[AssetKey]:
         deprecation_warning(
-            "AssetsDefinition.asset_keys", "0.16.0", "Use AssetsDefinition.keys instead."
+            "AssetsDefinition.asset_keys", "1.0.0", "Use AssetsDefinition.keys instead."
         )
         return self.keys
 
@@ -439,17 +486,19 @@ class AssetsDefinition(ResourceAddable):
         return self._partitions_def
 
     @property
-    def metadata_by_asset_key(self):
-        return self._metadata_by_asset_key
+    def metadata_by_key(self):
+        return self._metadata_by_key
 
     def get_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
-        if self._partitions_def is None:
-            check.failed("Asset is not partitioned")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
 
-        return self._partition_mappings.get(
-            in_asset_key,
-            self._partitions_def.get_default_partition_mapping(),
-        )
+            return self._partition_mappings.get(
+                in_asset_key,
+                self._partitions_def.get_default_partition_mapping()
+                if self._partitions_def
+                else AllPartitionMapping(),
+            )
 
     def with_prefix_or_group(
         self,

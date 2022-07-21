@@ -1,5 +1,85 @@
 # Changelog
 
+# 0.15.7
+
+### New
+
+* `DagsterRun` now has a `job_name` property, which should be used instead of `pipeline_name`.
+* `TimeWindowPartitionsDefinition` now has a `get_partition_keys_in_range` method which returns a sequence of all the partition keys between two partition keys.
+* `OpExecutionContext` now has `asset_partitions_def_for_output` and `asset_partitions_def_for_input` methods.
+* Dagster now errors immediately with an informative message when two `AssetsDefinition` objects with the same key are provided to the same repository.
+* `build_output_context` now accepts a `partition_key` argument that can be used when testing the `handle_output` method of an IO manager.
+
+### Bugfixes
+
+* Fixed a bug that made it impossible to load inputs using a DagsterTypeLoader if the InputDefinition had an `asset_key` set.
+* Ops created with the `@asset` and `@multi_asset` decorators no longer have a top-level “assets” entry in their config schema. This entry was unused.
+* In 0.15.6, a bug was introduced that made it impossible to load repositories if assets that had non-standard metadata attached to them were present. This has been fixed.
+* [dagster-dbt] In some cases, using `load_assets_from_dbt_manifest` with a `select` parameter that included sources would result in an error. This has been fixed.
+* [dagit] Fixed an error where a race condition of a sensor/schedule page load and the sensor/schedule removal caused a GraphQL exception to be raised.
+* [dagit] The “Materialize” button no longer changes to “Rematerialize” in some scenarios
+* [dagit] The live overlays on asset views, showing latest materialization and run info, now load faster
+* [dagit] Typing whitespace into the launchpad Yaml editor no longer causes execution to fail to start
+* [dagit] The explorer sidebar no longer displays “mode” label and description for jobs, since modes are deprecated.
+
+### Community Contributions
+
+* An error will now be raised if a `@repository` decorated function expects parameters. Thanks @roeij!
+
+### Documentation
+
+* The non-asset version of the Hacker News example, which lived inside `examples/hacker_news/`, has been removed, because it hadn’t received updates in a long time and had drifted from best practices. The asset version is still there and has an updated README. Check it out [here](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news_assets)
+
+
+# 0.15.6
+
+### New
+
+* When an exception is wrapped by another exception and raised within an op, Dagit will now display the full chain of exceptions, instead of stopping after a single exception level.
+* A `default_logger_defs` argument has been added to the `@repository` decorator. Check out [the docs](https://docs.dagster.io/concepts/logging/loggers#specifying-default-repository-loggers) on specifying default loggers to learn more.
+* `AssetsDefinition.from_graph` and `AssetsDefinition.from_op` now both accept a `partition_mappings` argument.
+* `AssetsDefinition.from_graph` and `AssetsDefinition.from_op` now both accept a `metadata_by_output_name` argument.
+* `define_asset_job` now accepts an `executor_def` argument.
+* Removed package pin for `gql` in `dagster-graphql`.
+* You can now apply a group name to assets produced with the `@multi_asset` decorator, either by supplying a `group_name` argument (which will apply to all of the output assets), or by setting the `group_name` argument on individual `AssetOut`s.
+* `InputContext` and `OutputContext` now each have an `asset_partitions_def` property, which returns the `PartitionsDefinition` of the asset that’s being loaded or stored.
+* `build_schedule_from_partitioned_job` now raises a more informative error when provided a non-partitioned asset job
+* `PartitionMapping`, `IdentityPartitionMapping`, `AllPartitionMapping`, and `LastPartitionMapping` are exposed at the top-level `dagster` package. They're currently marked experimental.
+* When a non-partitioned asset depends on a partitioned asset, you can now control which partitions of the upstream asset are used by the downstream asset, by supplying a `PartitionMapping`.
+* You can now set `PartitionMappings` on `AssetIn`.
+* [dagit] Made performance improvements to the loading of the partitions and backfill pages.
+* [dagit] The Global Asset Graph is back by popular demand, and can be reached via a new “View global asset lineage ”link on asset group and asset catalog pages! The global graph keeps asset in the same group visually clustered together and the query bar allows you to visualize a custom slice of your asset graph.
+* [dagit] Simplified the Content Security Policy and removed `frame-ancestors` restriction.
+* [dagster-dbt] `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` now support a `node_info_to_group_name_fn` parameter, allowing you to customize which group Dagster will assign each dbt asset to.
+* [dagster-dbt] When you supply a `runtime_metadata_fn` when loading dbt assets, this metadata is added to the default metadata that dagster-dbt generates, rather than replacing it entirely.
+* [dagster-dbt] When you load dbt assets with `use_build_command=True`, seeds and snapshots will now be represented as Dagster assets. Previously, only models would be loaded as assets.
+
+### Bugfixes
+
+* Fixed an issue where runs that were launched using the `DockerRunLauncher` would sometimes use Dagit’s Python environment as the entrypoint to launch the run, even if that environment did not exist in the container.
+* Dagster no longer raises a “Duplicate definition found” error when a schedule definition targets a partitioned asset job.
+* Silenced some erroneous warnings that arose when using software-defined assets.
+* When returning multiple outputs as a tuple, empty list values no longer cause unexpected exceptions.
+* [dagit] Fixed an issue with graph-backed assets causing a GraphQL error when graph inputs were type-annotated.
+* [dagit] Fixed an issue where attempting to materialize graph-backed assets caused a graphql error.
+* [dagit] Fixed an issue where partitions could not be selected when materializing partitioned assets with associated resources.
+* [dagit] Attempting to materialize assets with required resources now only presents the launchpad modal if at least one resource defines a config schema.
+
+### Breaking Changes
+
+* An op with a non-optional DynamicOutput will now error if no outputs are returned or yielded for that dynamic output.
+* If an `Output` object is used to type annotate the return of an op, an Output object must be returned or an error will result.
+
+### Community Contributions
+
+* Dagit now displays the path of the output handled by `PickledObjectS3IOManager` in run logs and Asset view. Thanks @danielgafni
+
+### Documentation
+
+* The Hacker News example now uses stable 0.15+ asset APIs, instead of the deprecated 0.14.x asset APIs.
+* Fixed the build command in the instructions for contributing docs changes.
+* [dagster-dbt] The dagster-dbt integration guide now contains information on using dbt with Software-Defined Assets.
+
 # 0.15.5
 
 ### New

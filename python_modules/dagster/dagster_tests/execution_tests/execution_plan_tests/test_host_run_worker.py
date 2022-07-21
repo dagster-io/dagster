@@ -1,14 +1,7 @@
 import os
 
-from dagster import (
-    ModeDefinition,
-    executor,
-    fs_io_manager,
-    pipeline,
-    reconstructable,
-    resource,
-    solid,
-)
+from dagster import ModeDefinition, executor, fs_io_manager, reconstructable, resource
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.host_mode import execute_run_host_mode

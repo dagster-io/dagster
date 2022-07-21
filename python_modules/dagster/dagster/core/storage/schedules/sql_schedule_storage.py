@@ -120,7 +120,7 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
             )
 
-    def add_instigator_state(self, state):
+    def add_instigator_state(self, state) -> InstigatorState:
         check.inst_param(state, "state", InstigatorState)
         with self.connect() as conn:
             try:
@@ -144,7 +144,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
         return state
 
-    def update_instigator_state(self, state):
+    def update_instigator_state(self, state) -> InstigatorState:
         check.inst_param(state, "state", InstigatorState)
         if not self.get_instigator_state(state.instigator_origin_id, state.selector_id):
             raise DagsterInvariantViolationError(
@@ -169,6 +169,8 @@ class SqlScheduleStorage(ScheduleStorage):
             )
             if self._has_instigators_table(conn):
                 self._add_or_update_instigators_table(conn, state)
+
+        return state
 
     def delete_instigator_state(self, origin_id, selector_id):
         check.str_param(origin_id, "origin_id")

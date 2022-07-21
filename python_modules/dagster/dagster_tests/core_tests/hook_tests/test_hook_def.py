@@ -5,17 +5,8 @@ import pytest
 
 from dagster import DagsterEventType, ModeDefinition, NodeInvocation, PipelineDefinition
 from dagster import _check as check
-from dagster import (
-    build_hook_context,
-    execute_pipeline,
-    graph,
-    job,
-    op,
-    pipeline,
-    reconstructable,
-    resource,
-    solid,
-)
+from dagster import build_hook_context, execute_pipeline, graph, job, op, reconstructable, resource
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions import NodeHandle, PresetDefinition, failure_hook, success_hook
 from dagster.core.definitions.decorators.hook_decorator import event_list_hook
 from dagster.core.definitions.events import HookExecutionResult

@@ -295,7 +295,10 @@ class BatchMaterializationLoader:
 
     def _fetch(self):
         self._fetched = True
-        self._materializations = self._instance.get_latest_materialization_events(self._asset_keys)
+        self._materializations = {
+            record.asset_entry.asset_key: record.asset_entry.last_materialization
+            for record in self._instance.get_asset_records(self._asset_keys)
+        }
 
 
 class CrossRepoAssetDependedByLoader:

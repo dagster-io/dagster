@@ -1,4 +1,6 @@
 -e ../python_modules/automation
+# Packages that import constants that can't be auto-mocked
+-e ../python_modules/libraries/dagster-datahub
 # Packages that use sphinx-click can't use auto-mock
 -e ../python_modules/dagster[test]
 -e ../python_modules/dagster-graphql

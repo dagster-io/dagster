@@ -14,11 +14,12 @@ from dagster.core.definitions.events import (
 from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.definitions.time_window_partitions import TimeWindow
-from dagster.core.errors import DagsterInvalidPropertyError
+from dagster.core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
@@ -337,7 +338,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
     def output_asset_partition_key(self, output_name: str = "result") -> str:
         deprecation_warning(
             "OpExecutionContext.output_asset_partition_key",
-            "0.16.0",
+            "1.0.0",
             additional_warn_txt="Use OpExecutionContext.asset_partition_key_for_output instead.",
         )
 
@@ -352,7 +353,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
     def output_asset_partitions_time_window(self, output_name: str = "result") -> TimeWindow:
         deprecation_warning(
             "OpExecutionContext.output_asset_partitions_time_window",
-            "0.16.0",
+            "1.0.0",
             additional_warn_txt="Use OpExecutionContext.asset_partitions_time_window_for_output instead.",
         )
 
@@ -372,6 +373,32 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         name of the default output.
         """
         return self._step_execution_context.asset_partition_key_for_input(input_name)
+
+    def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
+        """The PartitionsDefinition on the upstream asset corresponding to this input."""
+        asset_key = self.asset_key_for_output(output_name)
+        result = self._step_execution_context.pipeline_def.asset_layer.partitions_def_for_asset(
+            asset_key
+        )
+        if result is None:
+            raise DagsterInvariantViolationError(
+                f"Attempting to access partitions def for asset {asset_key}, but it is not partitioned"
+            )
+
+        return result
+
+    def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
+        """The PartitionsDefinition on the upstream asset corresponding to this input."""
+        asset_key = self.asset_key_for_input(input_name)
+        result = self._step_execution_context.pipeline_def.asset_layer.partitions_def_for_asset(
+            asset_key
+        )
+        if result is None:
+            raise DagsterInvariantViolationError(
+                f"Attempting to access partitions def for asset {asset_key}, but it is not partitioned"
+            )
+
+        return result
 
     def has_tag(self, key: str) -> bool:
         """Check if a logging tag is set.

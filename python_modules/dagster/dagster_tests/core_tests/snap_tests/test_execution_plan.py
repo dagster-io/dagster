@@ -1,4 +1,5 @@
-from dagster import InputDefinition, OutputDefinition, composite_solid, pipeline, solid
+from dagster import InputDefinition, OutputDefinition, composite_solid
+from dagster._legacy import pipeline, solid
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.snap import create_pipeline_snapshot_id, snapshot_from_execution_plan
 from dagster.serdes import serialize_pp

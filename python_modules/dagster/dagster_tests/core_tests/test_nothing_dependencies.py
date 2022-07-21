@@ -19,8 +19,8 @@ from dagster import (
     PipelineDefinition,
     execute_pipeline,
     lambda_solid,
-    solid,
 )
+from dagster._legacy import solid
 from dagster.core.execution.api import create_execution_plan
 
 

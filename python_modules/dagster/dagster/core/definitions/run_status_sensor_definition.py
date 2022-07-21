@@ -13,7 +13,7 @@ from dagster.core.errors import (
 )
 from dagster.core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import DagsterRun, PipelineRun, PipelineRunStatus, RunsFilter
+from dagster.core.storage.pipeline_run import DagsterRun, DagsterRunStatus, PipelineRun, RunsFilter
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
@@ -33,6 +33,8 @@ from .pipeline_definition import PipelineDefinition
 from .sensor_definition import (
     DefaultSensorStatus,
     PipelineRunReaction,
+    RawSensorEvaluationFunctionReturn,
+    RunRequest,
     SensorDefinition,
     SensorEvaluationContext,
     SkipReason,
@@ -248,11 +250,11 @@ def pipeline_failure_sensor(
             sensor_name = name
 
         if pipeline_selection:
-            deprecation_warning("pipeline_selection", "0.16.0", "Use monitored_pipelines instead.")
+            deprecation_warning("pipeline_selection", "1.0.0", "Use monitored_pipelines instead.")
         pipelines = monitored_pipelines if monitored_pipelines else pipeline_selection
 
         @run_status_sensor(
-            run_status=PipelineRunStatus.FAILURE,
+            run_status=DagsterRunStatus.FAILURE,
             monitored_pipelines=pipelines,
             name=sensor_name,
             minimum_interval_seconds=minimum_interval_seconds,
@@ -332,15 +334,15 @@ def run_failure_sensor(
             sensor_name = name
 
         if pipeline_selection:
-            deprecation_warning("pipeline_selection", "0.16.0", "Use monitored_pipelines instead.")
+            deprecation_warning("pipeline_selection", "1.0.0", "Use monitored_pipelines instead.")
         pipelines = monitored_pipelines if monitored_pipelines else pipeline_selection
 
         if job_selection:
-            deprecation_warning("job_selection", "0.16.0", "Use monitored_jobs instead.")
+            deprecation_warning("job_selection", "1.0.0", "Use monitored_jobs instead.")
         jobs = monitored_jobs if monitored_jobs else job_selection
 
         @run_status_sensor(
-            run_status=PipelineRunStatus.FAILURE,
+            run_status=DagsterRunStatus.FAILURE,
             name=sensor_name,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
@@ -369,7 +371,7 @@ class RunStatusSensorDefinition(SensorDefinition):
 
     Args:
         name (str): The name of the sensor. Defaults to the name of the decorated function.
-        run_status (PipelineRunStatus): The status of a run which will be
+        run_status (DagsterRunStatus): The status of a run which will be
             monitored by the sensor.
         run_status_sensor_fn (Callable[[RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]]): The core
             evaluation function for the sensor. Takes a :py:class:`~dagster.RunStatusSensorContext`.
@@ -393,10 +395,8 @@ class RunStatusSensorDefinition(SensorDefinition):
     def __init__(
         self,
         name: str,
-        run_status: PipelineRunStatus,
-        run_status_sensor_fn: Callable[
-            [RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]
-        ],
+        run_status: DagsterRunStatus,
+        run_status_sensor_fn: Callable[[RunStatusSensorContext], RawSensorEvaluationFunctionReturn],
         monitored_pipelines: Optional[List[str]] = None,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
@@ -411,7 +411,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         from dagster.core.storage.event_log.base import EventRecordsFilter, RunShardedEventsCursor
 
         check.str_param(name, "name")
-        check.inst_param(run_status, "run_status", PipelineRunStatus)
+        check.inst_param(run_status, "run_status", DagsterRunStatus)
         check.callable_param(run_status_sensor_fn, "run_status_sensor_fn")
         check.opt_list_param(monitored_pipelines, "monitored_pipelines", str)
         check.opt_int_param(minimum_interval_seconds, "minimum_interval_seconds")
@@ -546,7 +546,13 @@ class RunStatusSensorDefinition(SensorDefinition):
                                     update_timestamp=update_timestamp.isoformat(),
                                 ).to_json()
                             )
-                            yield from sensor_return
+
+                            if isinstance(
+                                sensor_return, (RunRequest, SkipReason, PipelineRunReaction)
+                            ):
+                                yield sensor_return
+                            else:
+                                yield from sensor_return
                             return
                 except RunStatusSensorExecutionError as run_status_sensor_execution_error:
                     # When the user code errors, we report error to the sensor tick not the original run.
@@ -624,8 +630,8 @@ class RunStatusSensorDefinition(SensorDefinition):
 
 
 def run_status_sensor(
-    run_status: Optional[PipelineRunStatus] = None,
-    pipeline_run_status: Optional[PipelineRunStatus] = None,
+    run_status: Optional[DagsterRunStatus] = None,
+    pipeline_run_status: Optional[DagsterRunStatus] = None,
     monitored_pipelines: Optional[List[str]] = None,
     pipeline_selection: Optional[List[str]] = None,
     name: Optional[str] = None,
@@ -641,7 +647,7 @@ def run_status_sensor(
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
 ) -> Callable[
-    [Callable[[RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]]],
+    [Callable[[RunStatusSensorContext], RawSensorEvaluationFunctionReturn]],
     RunStatusSensorDefinition,
 ]:
     """
@@ -651,9 +657,9 @@ def run_status_sensor(
     Takes a :py:class:`~dagster.RunStatusSensorContext`.
 
     Args:
-        run_status (Optional[PipelineRunStatus]): The status of run execution which will be
+        run_status (Optional[DagsterRunStatus]): The status of run execution which will be
             monitored by the sensor. One of run_status or pipeline_run_status must be provided
-        pipeline_run_status (Optional[PipelineRunStatus]): (deprecated in favor of run_status) The status of
+        pipeline_run_status (Optional[DagsterRunStatus]): (deprecated in favor of run_status) The status of
             pipeline execution which will be monitored by the sensor.
         monitored_pipelines (Optional[List[str]]): Names of the pipelines that will be monitored by
             this sensor. Defaults to None, which means the alert will be sent when any pipeline in
@@ -680,14 +686,14 @@ def run_status_sensor(
     """
 
     def inner(
-        fn: Callable[["RunStatusSensorContext"], Union[SkipReason, PipelineRunReaction]]
+        fn: Callable[["RunStatusSensorContext"], RawSensorEvaluationFunctionReturn]
     ) -> RunStatusSensorDefinition:
 
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
         if pipeline_run_status:
-            deprecation_warning("pipeline_run_status", "0.16.0", "Use run_status instead.")
+            deprecation_warning("pipeline_run_status", "1.0.0", "Use run_status instead.")
 
         run_status_final = run_status if run_status else pipeline_run_status
         if not run_status_final:
@@ -696,11 +702,11 @@ def run_status_sensor(
             )
 
         if pipeline_selection:
-            deprecation_warning("pipeline_selection", "0.16.0", "Use monitored_pipelines instead.")
+            deprecation_warning("pipeline_selection", "1.0.0", "Use monitored_pipelines instead.")
         pipelines = monitored_pipelines if monitored_pipelines else pipeline_selection
 
         if job_selection:
-            deprecation_warning("job_selection", "0.16.0", "Use monitored_jobs instead.")
+            deprecation_warning("job_selection", "1.0.0", "Use monitored_jobs instead.")
         jobs = monitored_jobs if monitored_jobs else job_selection
 
         return RunStatusSensorDefinition(

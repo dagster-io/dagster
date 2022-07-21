@@ -913,7 +913,7 @@ class SqlEventLogStorage(EventLogStorage):
             result.extend(rows)
             should_query = bool(has_more) and bool(limit) and len(result) < cast(int, limit)
 
-        is_partial_query = bool(asset_keys) or bool(prefix) or bool(limit) or bool(cursor)
+        is_partial_query = asset_keys is not None or bool(prefix) or bool(limit) or bool(cursor)
         if not is_partial_query and self._can_mark_assets_as_migrated(rows):
             self.enable_secondary_index(ASSET_KEY_INDEX_COLS)
 
@@ -945,7 +945,7 @@ class SqlEventLogStorage(EventLogStorage):
                 ]
             )
 
-        is_partial_query = bool(asset_keys) or bool(prefix) or bool(limit) or bool(cursor)
+        is_partial_query = asset_keys is not None or bool(prefix) or bool(limit) or bool(cursor)
         if self.has_asset_key_index_cols() and not is_partial_query:
             # if the schema has been migrated, fetch the last_materialization_timestamp to see if
             # we can lazily migrate the data table
@@ -1059,7 +1059,7 @@ class SqlEventLogStorage(EventLogStorage):
         limit=None,
         cursor=None,
     ):
-        if asset_keys:
+        if asset_keys is not None:
             query = query.where(
                 AssetKeyTable.c.asset_key.in_([asset_key.to_string() for asset_key in asset_keys])
             )

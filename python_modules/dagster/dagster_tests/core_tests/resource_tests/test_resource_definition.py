@@ -25,8 +25,8 @@ from dagster import (
     op,
     reconstructable,
     resource,
-    solid,
 )
+from dagster._legacy import solid
 from dagster.core.definitions import pipeline
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.resource_definition import make_values_resource

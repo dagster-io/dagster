@@ -22,13 +22,12 @@ from dagster import (
     io_manager,
     job,
     op,
-    pipeline,
     reconstructable,
     resource,
     root_input_manager,
-    solid,
     usable_as_dagster_type,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions import InputDefinition
 from dagster.core.definitions.version_strategy import VersionStrategy
 from dagster.core.execution.api import create_execution_plan

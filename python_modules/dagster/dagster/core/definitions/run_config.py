@@ -208,7 +208,12 @@ def get_inputs_field(
         has_upstream = input_has_upstream(dependency_structure, inp_handle, solid, name)
         if inp.input_manager_key:
             input_field = get_input_manager_input_field(solid, inp, resource_defs)
-        elif asset_layer.asset_key_for_input(handle, name) and not has_upstream:
+        elif (
+            # if you have asset definitions, input will be loaded from the source asset
+            asset_layer.has_assets_defs
+            and asset_layer.asset_key_for_input(handle, name)
+            and not has_upstream
+        ):
             input_field = None
         elif name in direct_inputs and not has_upstream:
             input_field = None

@@ -171,7 +171,8 @@ def local_file_manager(init_context):
 
         import tempfile
 
-        from dagster import ModeDefinition, local_file_manager, pipeline, solid
+        from dagster import ModeDefinition, local_file_manager
+        from dagster._legacy import pipeline, solid
 
 
         @solid(required_resource_keys={"file_manager"})

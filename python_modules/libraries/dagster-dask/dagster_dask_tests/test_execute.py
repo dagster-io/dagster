@@ -19,10 +19,9 @@ from dagster import (
     fs_io_manager,
     job,
     op,
-    pipeline,
     reconstructable,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.executor_definition import default_executors
 from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.events import DagsterEventType

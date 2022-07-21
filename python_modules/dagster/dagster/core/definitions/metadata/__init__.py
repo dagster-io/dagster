@@ -68,7 +68,7 @@ def normalize_metadata(
     if metadata_entries:
         deprecation_warning(
             'Argument "metadata_entries"',
-            "0.16.0",
+            "1.0.0",
             additional_warn_txt="Use argument `metadata` instead. The `MetadataEntry` `description` attribute is also deprecated-- argument `metadata` takes a label: value dictionary.",
             stacklevel=4,  # to get the caller of `normalize_metadata`
         )
@@ -88,7 +88,7 @@ def normalize_metadata(
             except DagsterInvalidMetadata:
                 deprecation_warning(
                     "Support for arbitrary metadata values",
-                    "0.16.0",
+                    "1.0.0",
                     additional_warn_txt=f"In the future, all user-supplied metadata values must be one of {RawMetadataValue}",
                     stacklevel=4,  # to get the caller of `normalize_metadata`
                 )
@@ -382,12 +382,12 @@ class MetadataValue(ABC):
         return BoolMetadataValue(value)
 
     @staticmethod
-    def pipeline_run(run_id: str) -> "DagsterPipelineRunMetadataValue":
+    def pipeline_run(run_id: str) -> "DagsterRunMetadataValue":
         check.str_param(run_id, "run_id")
-        return DagsterPipelineRunMetadataValue(run_id)
+        return DagsterRunMetadataValue(run_id)
 
     @staticmethod
-    def dagster_run(run_id: str) -> "DagsterPipelineRunMetadataValue":
+    def dagster_run(run_id: str) -> "DagsterRunMetadataValue":
         """Static constructor for a metadata value wrapping a reference to a Dagster run.
 
         Args:
@@ -714,25 +714,23 @@ class BoolMetadataValue(
 
 
 @whitelist_for_serdes(storage_name="DagsterPipelineRunMetadataEntryData")
-class DagsterPipelineRunMetadataValue(
+class DagsterRunMetadataValue(
     NamedTuple(
-        "_DagsterPipelineRunMetadataValue",
+        "_DagsterRunMetadataValue",
         [
             ("run_id", str),
         ],
     ),
     MetadataValue,
 ):
-    """Representation of a dagster pipeline run.
+    """Representation of a dagster run.
 
     Args:
-        run_id (str): The pipeline run id
+        run_id (str): The run id
     """
 
     def __new__(cls, run_id: str):
-        return super(DagsterPipelineRunMetadataValue, cls).__new__(
-            cls, check.str_param(run_id, "run_id")
-        )
+        return super(DagsterRunMetadataValue, cls).__new__(cls, check.str_param(run_id, "run_id"))
 
     @property
     def value(self) -> str:
@@ -852,7 +850,7 @@ def deprecated_metadata_entry_constructor(fn):
     def wrapper(*args, **kwargs):
         deprecation_warning(
             f"Function `MetadataEntry.{fn.__name__}`",
-            "0.16.0",
+            "1.0.0",
             additional_warn_txt=re.sub(
                 r"\n\s*",
                 " ",
@@ -895,6 +893,9 @@ class MetadataEntry(
     For other event types, passing a dict with `MetadataValue` values to the `metadata` argument
     is preferred.
 
+    **NOTE**: MetadataEntry static constructors are deprecated. Instead you should use:
+    MetadataEntry(<label>, value=MetadataValue.<type>(<value>)).
+
     Args:
         label (str): Short display label for this metadata entry.
         description (Optional[str]): A human-readable description of this metadata entry.
@@ -912,7 +913,7 @@ class MetadataEntry(
         if description is not None:
             deprecation_warning(
                 'The "description" attribute on "MetadataEntry"',
-                "0.16.0",
+                "1.0.0",
             )
         value = cast(
             RawMetadataValue,
@@ -921,7 +922,7 @@ class MetadataEntry(
                 new_arg="value",
                 old_val=entry_data,
                 old_arg="entry_data",
-                breaking_version="0.16.0",
+                breaking_version="1.0.0",
             ),
         )
         value = normalize_metadata_value(value)
@@ -1030,7 +1031,7 @@ class MetadataEntry(
         Args:
             path (Optional[str]): The path contained by this metadata entry.
             label (Optional[str]): Short display label for this metadata entry. Defaults to the
-                base name of the path.
+              base name of the path.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
         if not label:
@@ -1156,7 +1157,7 @@ class MetadataEntry(
     @deprecated_metadata_entry_constructor
     def pipeline_run(run_id: str, label: str, description: Optional[str] = None) -> "MetadataEntry":
         check.str_param(run_id, "run_id")
-        return MetadataEntry(label, description, DagsterPipelineRunMetadataValue(run_id))
+        return MetadataEntry(label, description, DagsterRunMetadataValue(run_id))
 
     @staticmethod
     @deprecated_metadata_entry_constructor
@@ -1230,10 +1231,10 @@ class MetadataEntry(
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
             schema (Optional[TableSchema]): A schema for the table. If none is provided, one will be
-                automatically generated by examining the first record. The schema will include as columns all
-                field names present in the first record, with a type of `"string"`, `"int"`,
-                `"bool"` or `"float"` inferred from the first record's values. If a value does
-                not directly match one of the above types, it will be treated as a string.
+              automatically generated by examining the first record. The schema will include as columns all
+              field names present in the first record, with a type of `"string"`, `"int"`,
+              `"bool"` or `"float"` inferred from the first record's values. If a value does
+              not directly match one of the above types, it will be treated as a string.
         """
         return MetadataEntry(label, description, TableMetadataValue(records, schema))
 

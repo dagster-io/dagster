@@ -2,7 +2,8 @@ import * as React from 'react';
 import {useLocation, useRouteMatch} from 'react-router-dom';
 
 export interface GenericAnalytics {
-  identify?: (userId: string) => void;
+  group?: (groupId: string, traits?: Record<string, any>) => void;
+  identify?: (userId: string, traits?: Record<string, any>) => void;
   page: (path: string, specificPath: string) => void;
   track: (eventName: string, properties?: Record<string, any>) => void;
 }
@@ -27,9 +28,14 @@ const useAnalytics = () => {
 };
 
 export const dummyAnalytics = () => ({
-  identify: (id: string) => {
+  group: (groupId: string, traits?: Record<string, any>) => {
     if (process.env.NODE_ENV !== 'production') {
-      console.log('[Identify]', id);
+      console.log('[Group]', groupId, traits);
+    }
+  },
+  identify: (id: string, traits?: Record<string, any>) => {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Identify]', id, traits);
     }
   },
   page: (path: string, specificPath: string) => {

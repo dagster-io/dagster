@@ -10,10 +10,9 @@ from dagster import (
     PresetDefinition,
     default_executors,
     file_relative_path,
-    pipeline,
     repository,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 
 
 @solid(input_defs=[InputDefinition("word", str)], config_schema={"factor": int})

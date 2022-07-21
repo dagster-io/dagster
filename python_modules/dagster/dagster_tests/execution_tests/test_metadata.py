@@ -15,10 +15,9 @@ from dagster import (
     TextMetadataValue,
     UrlMetadataValue,
     execute_pipeline,
-    pipeline,
-    solid,
 )
 from dagster._check import CheckError
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.metadata import (
     DagsterInvalidMetadata,
     MetadataEntry,

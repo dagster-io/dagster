@@ -20,6 +20,7 @@ from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Sh
 from dagster.config.config_schema import ConfigSchema
 from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.definitions import (
+    AllPartitionMapping,
     AssetIn,
     AssetKey,
     AssetMaterialization,
@@ -32,7 +33,7 @@ from dagster.core.definitions import (
     CompositeSolidDefinition,
     ConfigMapping,
     DagsterAssetMetadataValue,
-    DagsterPipelineRunMetadataValue,
+    DagsterRunMetadataValue,
     DailyPartitionsDefinition,
     DefaultScheduleStatus,
     DefaultSensorStatus,
@@ -51,12 +52,14 @@ from dagster.core.definitions import (
     GraphOut,
     HookDefinition,
     HourlyPartitionsDefinition,
+    IdentityPartitionMapping,
     In,
     InputDefinition,
     InputMapping,
     IntMetadataValue,
     JobDefinition,
     JsonMetadataValue,
+    LastPartitionMapping,
     LoggerDefinition,
     MarkdownMetadataValue,
     Materialization,
@@ -72,6 +75,8 @@ from dagster.core.definitions import (
     OutputDefinition,
     OutputMapping,
     Partition,
+    PartitionKeyRange,
+    PartitionMapping,
     PartitionScheduleDefinition,
     PartitionSetDefinition,
     PartitionedConfig,
@@ -308,8 +313,9 @@ if typing.TYPE_CHECKING:
     from dagster.core.definitions import AssetGroup
     from dagster.core.definitions import DagsterAssetMetadataValue as DagsterAssetMetadataEntryData
     from dagster.core.definitions import (
-        DagsterPipelineRunMetadataValue as DagsterPipelineRunMetadataEntryData,
+        DagsterRunMetadataValue as DagsterPipelineRunMetadataEntryData,
     )
+    from dagster.core.definitions import DagsterRunMetadataValue as DagsterPipelineRunMetadataValue
     from dagster.core.definitions import FloatMetadataValue as FloatMetadataEntryData
     from dagster.core.definitions import IntMetadataValue as IntMetadataEntryData
     from dagster.core.definitions import JsonMetadataValue as JsonMetadataEntryData
@@ -330,38 +336,39 @@ if typing.TYPE_CHECKING:
 _DEPRECATED = {
     "AssetGroup": (
         "dagster.core.definitions",
-        "0.16.0",
+        "1.0.0",
         "Instead, place a set of assets wrapped with `with_resources` directly on a repository.",
     ),
 }
 
 _DEPRECATED_RENAMED = {
-    "EventMetadataEntry": (MetadataEntry, "0.16.0"),
-    "EventMetadata": (MetadataValue, "0.16.0"),
-    "TextMetadataEntryData": (TextMetadataValue, "0.16.0"),
-    "UrlMetadataEntryData": (UrlMetadataValue, "0.16.0"),
-    "PathMetadataEntryData": (PathMetadataValue, "0.16.0"),
-    "JsonMetadataEntryData": (JsonMetadataValue, "0.16.0"),
-    "MarkdownMetadataEntryData": (MarkdownMetadataValue, "0.16.0"),
+    "EventMetadataEntry": (MetadataEntry, "1.0.0"),
+    "EventMetadata": (MetadataValue, "1.0.0"),
+    "TextMetadataEntryData": (TextMetadataValue, "1.0.0"),
+    "UrlMetadataEntryData": (UrlMetadataValue, "1.0.0"),
+    "PathMetadataEntryData": (PathMetadataValue, "1.0.0"),
+    "JsonMetadataEntryData": (JsonMetadataValue, "1.0.0"),
+    "MarkdownMetadataEntryData": (MarkdownMetadataValue, "1.0.0"),
     "PythonArtifactMetadataEntryData": (
         PythonArtifactMetadataValue,
-        "0.16.0",
+        "1.0.0",
     ),
-    "FloatMetadataEntryData": (FloatMetadataValue, "0.16.0"),
-    "IntMetadataEntryData": (IntMetadataValue, "0.16.0"),
+    "FloatMetadataEntryData": (FloatMetadataValue, "1.0.0"),
+    "IntMetadataEntryData": (IntMetadataValue, "1.0.0"),
     "DagsterPipelineRunMetadataEntryData": (
-        DagsterPipelineRunMetadataValue,
-        "0.16.0",
+        DagsterRunMetadataValue,
+        "1.0.0",
     ),
     "DagsterAssetMetadataEntryData": (
         DagsterAssetMetadataValue,
-        "0.16.0",
+        "1.0.0",
     ),
-    "TableMetadataEntryData": (TableMetadataValue, "0.16.0"),
+    "TableMetadataEntryData": (TableMetadataValue, "1.0.0"),
     "TableSchemaMetadataEntryData": (
         TableSchemaMetadataValue,
-        "0.16.0",
+        "1.0.0",
     ),
+    "DagsterPipelineRunMetadataValue": (DagsterRunMetadataValue, "1.0.0"),
 }
 
 
@@ -404,7 +411,7 @@ __all__ = [
     "AssetSensorDefinition",
     "AssetsDefinition",
     "DagsterAssetMetadataValue",
-    "DagsterPipelineRunMetadataValue",
+    "DagsterRunMetadataValue",
     "TableColumn",
     "TableColumnConstraints",
     "TableConstraints",
@@ -643,6 +650,7 @@ __all__ = [
     "DailyPartitionsDefinition",
     "HourlyPartitionsDefinition",
     "MonthlyPartitionsDefinition",
+    "PartitionKeyRange",
     "TimeWindow",
     "TimeWindowPartitionsDefinition",
     "WeeklyPartitionsDefinition",
@@ -651,6 +659,10 @@ __all__ = [
     "PartitionsDefinition",
     "PartitionScheduleDefinition",
     "PartitionSetDefinition",
+    "PartitionMapping",
+    "IdentityPartitionMapping",
+    "LastPartitionMapping",
+    "AllPartitionMapping",
     "RunRequest",
     "ScheduleDefinition",
     "ScheduleEvaluationContext",

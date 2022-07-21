@@ -132,7 +132,7 @@ def root_input_manager(
     """
     deprecation_warning(
         "root_input_manager",
-        "0.16.0",
+        "1.0.0",
         additional_warn_txt="Use an InputManager instead.",
     )
 

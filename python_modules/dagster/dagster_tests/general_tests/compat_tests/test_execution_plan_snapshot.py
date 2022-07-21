@@ -9,9 +9,8 @@ from dagster import (
     Output,
     OutputDefinition,
     fs_io_manager,
-    pipeline,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import create_execution_plan, execute_run
 from dagster.core.execution.plan.inputs import (

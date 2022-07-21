@@ -1,5 +1,5 @@
 from datetime import datetime, time
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
+from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Sequence, Union, cast
 
 import pendulum
 
@@ -15,6 +15,7 @@ from .partition import (
     ScheduleType,
     get_cron_schedule,
 )
+from .partition_key_range import PartitionKeyRange
 
 
 class TimeWindow(NamedTuple):
@@ -70,55 +71,31 @@ class TimeWindowPartitionsDefinition(
 
     def get_partitions(
         self, current_time: Optional[datetime] = None
-    ) -> List[Partition[TimeWindow]]:
+    ) -> Sequence[Partition[TimeWindow]]:
         current_timestamp = (
             pendulum.instance(current_time, tz=self.timezone)
             if current_time
             else pendulum.now(self.timezone)
         ).timestamp()
 
-        time_of_day = time(self.hour_offset, self.minute_offset)
-
-        start_timestamp = pendulum.instance(self.start, tz=self.timezone).timestamp()
-        iterator = schedule_execution_time_iterator(
-            start_timestamp=start_timestamp,
-            cron_schedule=get_cron_schedule(
-                schedule_type=self.schedule_type,
-                time_of_day=time_of_day,
-                execution_day=self.day_offset,
-            ),
-            execution_timezone=self.timezone,
-        )
-
-        partitions: List[Partition[TimeWindow]] = []
-        prev_time = next(iterator)
-        while prev_time.timestamp() < start_timestamp:
-            prev_time = next(iterator)
-
-        end_offset = self.end_offset
         partitions_past_current_time = 0
-        while True:
-            next_time = next(iterator)
+        partitions: List[Partition[TimeWindow]] = []
+        for time_window in self._iterate_time_windows(self.start):
             if (
-                next_time.timestamp() <= current_timestamp
-                or partitions_past_current_time < end_offset
+                time_window.end.timestamp() <= current_timestamp
+                or partitions_past_current_time < self.end_offset
             ):
                 partitions.append(
-                    Partition(
-                        value=TimeWindow(prev_time, next_time),
-                        name=prev_time.strftime(self.fmt),
-                    )
+                    Partition(value=time_window, name=time_window.start.strftime(self.fmt))
                 )
 
-                if next_time.timestamp() > current_timestamp:
+                if time_window.end.timestamp() > current_timestamp:
                     partitions_past_current_time += 1
             else:
                 break
 
-            prev_time = next_time
-
-        if end_offset < 0:
-            partitions = partitions[:end_offset]
+        if self.end_offset < 0:
+            partitions = partitions[: self.end_offset]
 
         return partitions
 
@@ -130,18 +107,7 @@ class TimeWindowPartitionsDefinition(
 
     def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
         start = self.start_time_for_partition_key(partition_key)
-        time_of_day = time(self.hour_offset, self.minute_offset)
-        iterator = schedule_execution_time_iterator(
-            start_timestamp=start.timestamp(),
-            cron_schedule=get_cron_schedule(
-                schedule_type=self.schedule_type,
-                time_of_day=time_of_day,
-                execution_day=self.day_offset,
-            ),
-            execution_timezone=self.timezone,
-        )
-
-        return TimeWindow(next(iterator), next(iterator))
+        return next(iter(self._iterate_time_windows(start)))
 
     def start_time_for_partition_key(self, partition_key: str) -> datetime:
         return pendulum.instance(datetime.strptime(partition_key, self.fmt), tz=self.timezone)
@@ -152,6 +118,45 @@ class TimeWindowPartitionsDefinition(
         )
 
         return TimeWindowPartitionMapping()
+
+    def get_partition_keys_in_range(self, partition_key_range: PartitionKeyRange) -> Sequence[str]:
+        start_time = self.start_time_for_partition_key(partition_key_range.start)
+        end_time = self.start_time_for_partition_key(partition_key_range.end)
+
+        result: List[str] = []
+        for time_window in self._iterate_time_windows(start_time):
+            if time_window.start <= end_time:
+                result.append(time_window.start.strftime(self.fmt))
+            else:
+                break
+
+        return result
+
+    def _iterate_time_windows(self, start: datetime) -> Iterable[TimeWindow]:
+        """
+        Returns an infinite generator of time windows after the given start time.
+        """
+        time_of_day = time(self.hour_offset, self.minute_offset)
+
+        start_timestamp = pendulum.instance(start, tz=self.timezone).timestamp()
+        iterator = schedule_execution_time_iterator(
+            start_timestamp=start_timestamp,
+            cron_schedule=get_cron_schedule(
+                schedule_type=self.schedule_type,
+                time_of_day=time_of_day,
+                execution_day=self.day_offset,
+            ),
+            execution_timezone=self.timezone,
+        )
+
+        prev_time = next(iterator)
+        while prev_time.timestamp() < start_timestamp:
+            prev_time = next(iterator)
+
+        while True:
+            next_time = next(iterator)
+            yield TimeWindow(prev_time, next_time)
+            prev_time = next_time
 
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):

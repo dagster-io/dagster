@@ -8,8 +8,8 @@ from dagster import (
     OutputDefinition,
     Permissive,
     StringSource,
-    solid,
 )
+from dagster._legacy import solid
 from dagster.config.field import Field
 from dagster.utils.backcompat import experimental
 

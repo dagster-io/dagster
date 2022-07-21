@@ -8,8 +8,8 @@ from dagster import (
     PipelineDefinition,
     execute_pipeline,
     lambda_solid,
-    solid,
 )
+from dagster._legacy import solid
 
 
 def test_aliased_solids():

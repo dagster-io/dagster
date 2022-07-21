@@ -32,11 +32,10 @@ from dagster import (
     job,
     lambda_solid,
     op,
-    pipeline,
     repository,
     resource,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.decorators import daily_schedule, schedule
 from dagster.core.test_utils import nesting_composite_pipeline
 from dagster.utils import merge_dicts, segfault

@@ -94,12 +94,10 @@ def stop_sensor(graphene_info, instigator_origin_id, instigator_selector_id):
         for repository in repository_location.get_repositories().values()
         for sensor in repository.get_external_sensors()
     }
-    instance.stop_sensor(
-        instigator_origin_id, instigator_selector_id, external_sensors.get(instigator_origin_id)
-    )
-    state = graphene_info.context.instance.get_instigator_state(
+    state = instance.stop_sensor(
         instigator_origin_id,
         instigator_selector_id,
+        external_sensors.get(instigator_origin_id),
     )
     return GrapheneStopSensorMutationResult(state)
 

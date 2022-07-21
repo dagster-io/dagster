@@ -7,11 +7,10 @@ from dagster import (
     PartitionSetDefinition,
     ScheduleDefinition,
     lambda_solid,
-    pipeline,
     repository,
-    solid,
     usable_as_dagster_type,
 )
+from dagster._legacy import pipeline, solid
 
 
 @lambda_solid

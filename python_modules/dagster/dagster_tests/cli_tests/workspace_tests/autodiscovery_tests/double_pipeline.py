@@ -1,4 +1,4 @@
-from dagster import pipeline
+from dagster._legacy import pipeline
 
 
 @pipeline
