@@ -4,11 +4,11 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, 
 from toposort import CircularDependencyError, toposort
 
 import dagster._check as check
+from dagster._annotations import experimental
 from dagster.core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.utils import merge_dicts
-from dagster.utils.backcompat import experimental
 
 from .asset_layer import AssetLayer
 from .assets import AssetsDefinition
@@ -120,6 +120,23 @@ def build_assets_job(
     )
 
     all_resource_defs = get_all_resource_defs(assets, resolved_source_assets, resource_defs)
+
+    if _asset_selection_data:
+        original_job = _asset_selection_data.parent_job_def
+        return graph.to_job(
+            resource_defs=all_resource_defs,
+            config=config,
+            tags=tags,
+            executor_def=executor_def,
+            partitions_def=partitions_def,
+            asset_layer=asset_layer,
+            _asset_selection_data=_asset_selection_data,
+            _metadata_entries=original_job._metadata_entries,  # pylint: disable=protected-access
+            logger_defs=original_job.get_mode_definition().loggers,
+            hooks=original_job.hook_defs,
+            op_retry_policy=original_job._solid_retry_policy,  # pylint: disable=protected-access
+            version_strategy=original_job.version_strategy,
+        )
 
     return graph.to_job(
         resource_defs=all_resource_defs,

@@ -390,17 +390,15 @@ Here is an example of a run status sensor that launches a run of `status_reporti
 
 ```python file=concepts/partitions_schedules_sensors/sensors/run_status_run_requests.py startafter=start endbefore=end
 @run_status_sensor(
-    pipeline_run_status=DagsterRunStatus.SUCCESS,
+    run_status=DagsterRunStatus.SUCCESS,
     request_job=status_reporting_job,
 )
 def report_status_sensor(context):
     # this condition prevents the sensor from triggering status_reporting_job again after it succeeds
-    if context.dagster_run.pipeline_name != status_reporting_job.name:
+    if context.dagster_run.job_name != status_reporting_job.name:
         run_config = {
             "ops": {
-                "status_report": {
-                    "config": {"job_name": context.dagster_run.pipeline_name}
-                }
+                "status_report": {"config": {"job_name": context.dagster_run.job_name}}
             }
         }
         return RunRequest(run_key=None, run_config=run_config)
@@ -418,13 +416,13 @@ Here is an example of a sensor that reports job success in a Slack message:
 from dagster import run_status_sensor, RunStatusSensorContext, DagsterRunStatus
 
 
-@run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS)
+@run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
 def my_slack_on_run_success(context: RunStatusSensorContext):
     slack_client = WebClient(token=os.environ["SLACK_DAGSTER_ETL_BOT_TOKEN"])
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=f'Job "{context.pipeline_run.pipeline_name}" succeeded.',
+        message=f'Job "{context.dagster_run.job_name}" succeeded.',
     )
 ```
 
@@ -449,9 +447,7 @@ Dagster provides a set of special run status sensor decorators for defining sens
 @run_failure_sensor(request_job=status_reporting_job)
 def report_failure_sensor(context):
     run_config = {
-        "ops": {
-            "status_report": {"config": {"job_name": context.dagster_run.pipeline_name}}
-        }
+        "ops": {"status_report": {"config": {"job_name": context.dagster_run.job_name}}}
     }
     return RunRequest(run_key=None, run_config=run_config)
 ```
@@ -470,7 +466,7 @@ def my_slack_on_run_failure(context: RunFailureSensorContext):
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=f'Job "{context.pipeline_run.pipeline_name}" failed. Error: {context.failure_event.message}',
+        message=f'Job "{context.dagster_run.job_name}" failed. Error: {context.failure_event.message}',
     )
 ```
 
@@ -510,9 +506,9 @@ As with other sensors, you can directly invoke run status sensors. However, the 
 If you had written a status sensor like this (assuming you implemented the function `email_alert` elsewhere)
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_simple_success_sensor endbefore=end_simple_success_sensor
-@run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS)
+@run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
 def my_email_sensor(context: RunStatusSensorContext):
-    message = f'Job "{context.pipeline_run.pipeline_name}" succeeded.'
+    message = f'Job "{context.dagster_run.job_name}" succeeded.'
     email_alert(message)
 ```
 
@@ -561,7 +557,7 @@ We can use the same pattern to build the context for <PyObject object="run_failu
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_simple_fail_sensor endbefore=end_simple_fail_sensor
 @run_failure_sensor
 def my_email_failure_sensor(context: RunFailureSensorContext):
-    message = f'Job "{context.pipeline_run.pipeline_name}" failed. Error: {context.failure_event.message}'
+    message = f'Job "{context.dagster_run.job_name}" failed. Error: {context.failure_event.message}'
     email_alert(message)
 ```
 

@@ -95,6 +95,19 @@ class KnownExecutionState(
         ready_outputs: Optional[Set[StepOutputHandle]] = None,
         parent_state: Optional[PastExecutionState] = None,
     ):
+        dynamic_mappings = check.opt_dict_param(
+            dynamic_mappings,
+            "dynamic_mappings",
+            key_type=str,
+            value_type=dict,
+        )
+        for step_key, outputs in dynamic_mappings.items():
+            for outname, mapping_keys in outputs.items():
+                check.is_list(
+                    mapping_keys,
+                    of_type=str,
+                    additional_message=f"Bad mapping_keys at {step_key}.{outname}",
+                )
 
         return super(KnownExecutionState, cls).__new__(
             cls,
@@ -104,12 +117,7 @@ class KnownExecutionState(
                 key_type=str,
                 value_type=int,
             ),
-            check.opt_dict_param(
-                dynamic_mappings,
-                "dynamic_mappings",
-                key_type=str,
-                value_type=dict,
-            ),
+            dynamic_mappings,
             check.opt_list_param(
                 step_output_versions, "step_output_versions", of_type=StepOutputVersionData
             ),
@@ -145,9 +153,10 @@ class KnownExecutionState(
                 target_run.run_id, of_type=DagsterEventType.STEP_OUTPUT
             ):
                 output_data = output_record.get_dagster_event().step_output_data
-                dynamic_outputs[output_record.step_key][output_data.output_name].append(
-                    output_data.mapping_key
-                )
+                if output_data.mapping_key:
+                    dynamic_outputs[output_record.step_key][output_data.output_name].append(
+                        output_data.mapping_key
+                    )
                 output_set.add(output_data.step_output_handle)
 
             parent_parent_run = None

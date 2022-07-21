@@ -21,12 +21,14 @@ from dagster import (
     ResourceDefinition,
     StaticPartitionsDefinition,
     build_reconstructable_job,
+    define_asset_job,
     graph,
     io_manager,
     materialize_to_memory,
     multi_asset,
     op,
     resource,
+    with_resources,
 )
 from dagster.config.source import StringSource
 from dagster.core.definitions import AssetGroup, AssetIn, SourceAsset, asset, build_assets_job
@@ -1335,7 +1337,6 @@ def my_resource_2():
 @multi_asset(
     name="fivetran_sync",
     outs={key: Out(asset_key=AssetKey(key)) for key in ["a", "b", "c"]},
-    resource_defs={"my_resource": my_resource},
 )
 def fivetran_asset():
     return 1, 2, 3
@@ -1343,7 +1344,6 @@ def fivetran_asset():
 
 @op(
     name="dbt",
-    tags={"kind": "dbt"},
     ins={
         "a": In(Nothing),
         "b": In(Nothing),
@@ -1370,13 +1370,14 @@ dbt_asset_def = AssetsDefinition(
         AssetKey("e"): {AssetKey("d"), AssetKey("b")},
         AssetKey("f"): {AssetKey("d"), AssetKey("e")},
     },
-    resource_defs={"my_resource_2": my_resource_2},
 )
 
-my_job = build_assets_job(
-    "foo",
-    [dbt_asset_def, fivetran_asset],
-    resource_defs={"my_resource": my_resource, "my_resource_2": my_resource_2},
+my_job = define_asset_job("foo", selection=["a", "b", "c", "d", "e", "f"]).resolve(
+    with_resources(
+        [dbt_asset_def, fivetran_asset],
+        resource_defs={"my_resource": my_resource, "my_resource_2": my_resource_2},
+    ),
+    [],
 )
 
 
@@ -1385,25 +1386,63 @@ def reconstruct_asset_job():
 
 
 def test_asset_selection_reconstructable():
-    with instance_for_test() as instance:
-        run = instance.create_run_for_pipeline(
-            pipeline_def=my_job, asset_selection=frozenset([AssetKey("f")])
-        )
-        reconstructable_foo_job = build_reconstructable_job(
-            "dagster_tests.core_tests.asset_defs_tests.test_assets_job",
-            "reconstruct_asset_job",
-            reconstructable_args=tuple(),
-            reconstructable_kwargs={},
-        ).subset_for_execution(asset_selection=frozenset([AssetKey("f")]))
-        events = list(execute_run_iterator(reconstructable_foo_job, run, instance=instance))
-        assert len([event for event in events if event.is_pipeline_success]) == 1
-
-        materialization_planned = list(
-            instance.get_event_records(
-                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=ExperimentalWarning)
+        with instance_for_test() as instance:
+            run = instance.create_run_for_pipeline(
+                pipeline_def=my_job, asset_selection=frozenset([AssetKey("f")])
             )
-        )
-        assert len(materialization_planned) == 1
+            reconstructable_foo_job = build_reconstructable_job(
+                "dagster_tests.core_tests.asset_defs_tests.test_assets_job",
+                "reconstruct_asset_job",
+                reconstructable_args=tuple(),
+                reconstructable_kwargs={},
+            ).subset_for_execution(asset_selection=frozenset([AssetKey("f")]))
+
+            events = list(execute_run_iterator(reconstructable_foo_job, run, instance=instance))
+            assert len([event for event in events if event.is_pipeline_success]) == 1
+
+            materialization_planned = list(
+                instance.get_event_records(
+                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+                )
+            )
+            assert len(materialization_planned) == 1
+
+
+def test_job_preserved_with_asset_subset():
+    # Assert that default config is used for asset subset
+
+    @op(config_schema={"foo": int})
+    def one(context):
+        assert context.op_config["foo"] == 1
+
+    asset_one = AssetsDefinition.from_op(one)
+
+    @asset(config_schema={"bar": int})
+    def two(context, one):  # pylint: disable=unused-argument
+        assert context.op_config["bar"] == 2
+
+    @asset(config_schema={"baz": int})
+    def three(context, two):  # pylint: disable=unused-argument
+        assert context.op_config["baz"] == 3
+
+    foo_job = define_asset_job(
+        "foo_job",
+        config={
+            "ops": {
+                "one": {"config": {"foo": 1}},
+                "two": {"config": {"bar": 2}},
+                "three": {"config": {"baz": 3}},
+            }
+        },
+        description="my cool job",
+        tags={"yay": 1},
+    ).resolve([asset_one, two, three], [])
+
+    result = foo_job.execute_in_process(asset_selection=[AssetKey("one")])
+    assert result.success
+    assert result.dagster_run.tags == {"yay": "1"}
 
 
 def test_raise_error_on_incomplete_graph_asset_subset():

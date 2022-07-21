@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, NamedTuple, Option
 
 import dagster._check as check
 import dagster.seven as seven
+from dagster._annotations import experimental
 from dagster.core.code_pointer import (
     CodePointer,
     CustomPointer,
@@ -22,7 +23,6 @@ from dagster.core.origin import (
 from dagster.core.selector import parse_solid_selection
 from dagster.serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster.utils import frozenlist, make_readonly_value
-from dagster.utils.backcompat import experimental
 
 from .events import AssetKey
 from .pipeline_base import IPipeline
