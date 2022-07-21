@@ -108,7 +108,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         max_concurrent_runs = run_queue_config.max_concurrent_runs
         tag_concurrency_limits = run_queue_config.tag_concurrency_limits
 
-        in_progress_runs = self._get_in_progress_runs(instance)
+        in_progress_runs = self.get_in_progress_runs(instance)
 
         max_concurrent_runs_enabled = max_concurrent_runs != -1  # setting to -1 disables the limit
         if max_concurrent_runs_enabled:
@@ -123,7 +123,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                 )
                 return
 
-        queued_runs = self._get_queued_runs(instance)
+        queued_runs = self.get_queued_runs(instance)
 
         if not queued_runs:
             self._logger.debug("Poll returned no queued runs.")
@@ -149,7 +149,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             error_info = None
 
             try:
-                self._dequeue_run(instance, run, workspace)
+                self.dequeue_run(instance, run, workspace)
             except Exception:
                 error_info = serializable_error_info_from_exc_info(sys.exc_info())
 
@@ -174,7 +174,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         if num_dequeued_runs > 0:
             self._logger.info("Launched %d runs.", num_dequeued_runs)
 
-    def _get_queued_runs(self, instance):
+    def get_queued_runs(self, instance):
         queued_runs_filter = RunsFilter(statuses=[PipelineRunStatus.QUEUED])
 
         # Reversed for fifo ordering
@@ -182,7 +182,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         runs = instance.get_runs(filters=queued_runs_filter)[::-1]
         return runs
 
-    def _get_in_progress_runs(self, instance):
+    def get_in_progress_runs(self, instance):
         # Note: should add a maximum fetch limit https://github.com/dagster-io/dagster/issues/3339
         return instance.get_runs(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
 
@@ -197,7 +197,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         # sorted is stable, so fifo is maintained
         return sorted(runs, key=get_priority, reverse=True)
 
-    def _dequeue_run(self, instance, run, workspace):
+    def dequeue_run(self, instance, run, workspace):
         # double check that the run is still queued before dequeing
         reloaded_run = instance.get_run_by_id(run.run_id)
 
