@@ -1,7 +1,6 @@
 import importlib
 from abc import ABC, abstractmethod
-from inspect import Parameter
-from typing import Any, Dict, Mapping, NamedTuple, Type
+from typing import Any, Dict, NamedTuple
 
 import dagster._check as check
 from dagster._utils import convert_dagster_submodule_name
@@ -22,25 +21,8 @@ class ConfigurableClassDataSerializer(DefaultNamedTupleSerializer):
         dct["module_name"] = convert_dagster_submodule_name(value.module_name, "public")  # type: ignore
         return dct
 
-    # @classmethod
-    # def value_from_storage_dict(
-    #     cls,
-    #     storage_dict: Dict[str, Any],
-    #     klass: Type,
-    #     args_for_class: Mapping[str, Parameter],
-    #     whitelist_map: WhitelistMap,
-    #     descent_path: str,
-    # ) -> NamedTuple:
-    #     storage_dict["module_name"] = convert_dagster_submodule_name(
-    #         storage_dict["module_name"], "private"
-    #     )
-    #     return super().value_from_storage_dict(
-    #         storage_dict, klass, args_for_class, whitelist_map, descent_path
-    #     )
 
-
-# @whitelist_for_serdes(serializer=ConfigurableClassDataSerializer)
-@whitelist_for_serdes
+@whitelist_for_serdes(serializer=ConfigurableClassDataSerializer)
 class ConfigurableClassData(
     NamedTuple(
         "_ConfigurableClassData",

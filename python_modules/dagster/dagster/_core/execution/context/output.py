@@ -233,7 +233,7 @@ class OutputContext:
 
     @property
     def op_def(self) -> "OpDefinition":
-        from dagster.core.definitions import OpDefinition
+        from dagster._core.definitions import OpDefinition
 
         if self._solid_def is None:
             raise DagsterInvariantViolationError(
@@ -796,14 +796,9 @@ def build_output_context(
                 do_something
 
     """
-<<<<<<< HEAD:python_modules/dagster/dagster/core/execution/context/output.py
-    from dagster.core.definitions import OpDefinition
-    from dagster.core.execution.context_creation_pipeline import initialize_console_manager
-    from dagster.core.types.dagster_type import DagsterType
-=======
+    from dagster._core.definitions import OpDefinition
     from dagster._core.execution.context_creation_pipeline import initialize_console_manager
     from dagster._core.types.dagster_type import DagsterType
->>>>>>> 5b22df9b1f (rename core):python_modules/dagster/dagster/_core/execution/context/output.py
 
     step_key = check.opt_str_param(step_key, "step_key")
     name = check.opt_str_param(name, "name")

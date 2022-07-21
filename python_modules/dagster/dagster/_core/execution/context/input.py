@@ -143,7 +143,7 @@ class InputContext:
 
     @property
     def op_def(self) -> "OpDefinition":
-        from dagster.core.definitions import OpDefinition
+        from dagster._core.definitions import OpDefinition
 
         if self._solid_def is None:
             raise DagsterInvariantViolationError(
@@ -470,18 +470,11 @@ def build_input_context(
             with build_input_context(resources={"foo": context_manager_resource}) as context:
                 do_something
     """
-<<<<<<< HEAD:python_modules/dagster/dagster/core/execution/context/input.py
-    from dagster.core.definitions import OpDefinition
-    from dagster.core.execution.context.output import OutputContext
-    from dagster.core.execution.context.system import StepExecutionContext
-    from dagster.core.execution.context_creation_pipeline import initialize_console_manager
-    from dagster.core.types.dagster_type import DagsterType
-=======
+    from dagster._core.definitions import OpDefinition
     from dagster._core.execution.context.output import OutputContext
     from dagster._core.execution.context.system import StepExecutionContext
     from dagster._core.execution.context_creation_pipeline import initialize_console_manager
     from dagster._core.types.dagster_type import DagsterType
->>>>>>> 5b22df9b1f (rename core):python_modules/dagster/dagster/_core/execution/context/input.py
 
     name = check.opt_str_param(name, "name")
     metadata = check.opt_dict_param(metadata, "metadata", key_type=str)

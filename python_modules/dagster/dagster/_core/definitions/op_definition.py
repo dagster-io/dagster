@@ -13,8 +13,8 @@ from typing import (
 
 import dagster._check as check
 from dagster._config.config_schema import UserConfigSchema
-from dagster.core.definitions.policy import RetryPolicy
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.errors import DagsterInvariantViolationError
 
 from ..._seven.typing import get_origin
 from .definition_config_schema import IDefinitionConfigSchema

@@ -1,7 +1,7 @@
 Errors
 =========
 
-.. automodule:: dagster.core.errors
+.. automodule:: dagster._core.errors
 
 .. currentmodule:: dagster
 

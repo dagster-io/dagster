@@ -5,7 +5,6 @@ from typing import Union
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._config import Field, StringSource
-from dagster._utils import PICKLE_PROTOCOL, mkdir_p
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.metadata import MetadataEntry, MetadataValue
 from dagster._core.errors import DagsterInvariantViolationError
@@ -13,6 +12,7 @@ from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import IOManager, io_manager
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
+from dagster._utils import PICKLE_PROTOCOL, mkdir_p
 
 
 @io_manager(

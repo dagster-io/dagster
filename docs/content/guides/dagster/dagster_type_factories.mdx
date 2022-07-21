@@ -274,7 +274,7 @@ Let's see what happens when we run without setting `clean`:
 ```python file=/guides/dagster/dagster_type_factories/job_2_execution.py startafter=execution_1 endbefore=execution_2
 generate_trip_distribution_plot.execute_in_process()
 # => ...
-# => dagster.core.errors.DagsterTypeCheckDidNotPass: Type check failed for step output "result" - expected type "TripsDataFrame".
+# => dagster._core.errors.DagsterTypeCheckDidNotPass: Type check failed for step output "result" - expected type "TripsDataFrame".
 # => ...
 ```
 
