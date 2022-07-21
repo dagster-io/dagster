@@ -1,4 +1,11 @@
-from dagster._annotations import deprecated, is_deprecated, is_public, public
+from dagster._annotations import (
+    deprecated,
+    experimental,
+    is_deprecated,
+    is_experimental,
+    is_public,
+    public,
+)
 
 
 def test_public_annotation():
@@ -17,3 +24,12 @@ def test_deprecated():
             pass
 
     assert is_deprecated(Foo.bar)
+
+
+def test_experimental():
+    class Foo:
+        @experimental
+        def bar(self):
+            pass
+
+    assert is_experimental(Foo.bar)

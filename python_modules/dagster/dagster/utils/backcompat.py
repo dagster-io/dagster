@@ -1,7 +1,5 @@
-import inspect
 import warnings
-from functools import wraps
-from typing import Callable, Optional, Type, TypeVar, cast
+from typing import Callable, Optional, TypeVar, cast
 
 import dagster._check as check
 
@@ -202,77 +200,3 @@ def experimental_class_param_warning(param_name: str, class_name: str, stackleve
         ExperimentalWarning,
         stacklevel=stacklevel,
     )
-
-
-F = TypeVar("F", bound=Callable)
-
-
-def experimental(callable_: F) -> F:
-    """
-    Spews an "experimental" warning whenever the given callable is called. If the argument is a
-    class, this means the warning will be emitted when the class is instantiated.
-
-    Usage:
-
-        .. code-block:: python
-
-            @experimental
-            def my_experimental_function(my_arg):
-                do_stuff()
-
-            @experimental
-            class MyExperimentalClass:
-                pass
-    """
-    check.callable_param(callable_, "callable_")
-
-    if inspect.isfunction(callable_):
-
-        @wraps(callable_)
-        def _inner(*args, **kwargs):
-            experimental_fn_warning(callable_.__name__, stacklevel=3)
-            return callable_(*args, **kwargs)
-
-        return cast(F, _inner)
-
-    elif inspect.isclass(callable_):
-
-        undecorated_init = callable_.__init__
-
-        def __init__(self, *args, **kwargs):
-            experimental_class_warning(callable_.__name__, stacklevel=3)
-            # Tuples must be handled differently, because the undecorated_init does not take any
-            # arguments-- they're assigned in __new__.
-            if issubclass(cast(Type, callable_), tuple):
-                undecorated_init(self)
-            else:
-                undecorated_init(self, *args, **kwargs)
-
-        callable_.__init__ = __init__
-
-        return cast(F, callable_)
-
-    else:
-        check.failed("callable_ must be a function or a class")
-
-
-def experimental_decorator(decorator: F) -> F:
-    """
-    Spews an "experimental" warning whenever the given decorator is invoked.
-
-    Usage:
-
-        .. code-block:: python
-
-            @experimental_decorator
-            def my_experimental_decorator(...):
-                ...
-    """
-    check.callable_param(decorator, "decorator")
-
-    @wraps(decorator)
-    def _inner(*args, **kwargs):
-        experimental_decorator_warning(decorator.__name__, stacklevel=3)
-        return decorator(*args, **kwargs)
-
-    return cast(F, _inner)

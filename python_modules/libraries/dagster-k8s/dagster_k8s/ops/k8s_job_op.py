@@ -3,8 +3,8 @@ import time
 import kubernetes
 
 from dagster import Field, In, Noneable, Nothing, Permissive, StringSource, op
+from dagster._annotations import experimental
 from dagster.utils import merge_dicts
-from dagster.utils.backcompat import experimental
 
 from ..container_context import K8sContainerContext
 from ..job import (
