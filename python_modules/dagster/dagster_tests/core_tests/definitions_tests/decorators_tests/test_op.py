@@ -32,8 +32,6 @@ from dagster._legacy import solid
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.dagster_type import Int, String
-from dagster.seven import funcsigs
-import inspect
 
 
 def some_fn(a):
@@ -50,6 +48,16 @@ def execute_op_in_graph(an_op, instance=None):
 
     result = my_graph.execute_in_process(instance=instance)
     return result
+
+
+def test_no_outs():
+    @op(output_defs=[])
+    def the_op():
+        pass
+
+    assert len(the_op.output_defs) == 0
+    result = execute_op_in_graph(the_op)
+    assert result.success
 
 
 def test_op():

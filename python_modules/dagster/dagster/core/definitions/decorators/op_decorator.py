@@ -16,11 +16,12 @@ from typing import (
 import dagster._check as check
 from dagster.config.config_schema import UserConfigSchema
 from dagster.core.decorator_utils import format_docstring_for_description
+from dagster.core.errors import DagsterInvariantViolationError
 
-from ....seven.typing import get_origin
 from ..input import In, InputDefinition
 from ..output import Out, OutputDefinition
 from ..policy import RetryPolicy
+from ..utils import DEFAULT_OUTPUT
 from .solid_decorator import DecoratedSolidFunction, NoContextDecoratedSolidFunction
 
 if TYPE_CHECKING:
@@ -78,10 +79,26 @@ class _Op:
             else NoContextDecoratedSolidFunction(decorated_fn=fn)
         )
 
+        if self.ins and self.input_defs:
+            raise DagsterInvariantViolationError(
+                f"Error constructing op '{self.name}': cannot provide both ins and input_defs arguments."
+            )
+
+        if self.out and self.output_defs:
+            raise DagsterInvariantViolationError(
+                f"Error constructing op '{self.name}': cannot provide both out and output_defs arguments."
+            )
+
+        outs: Optional[Mapping[str, Out]] = None
+        if self.out and isinstance(self.out, Out):
+            outs = {DEFAULT_OUTPUT: self.out}
+        elif self.out:
+            outs = check.mapping_param(self.out, "out", key_type=str, value_type=Out)
+
         op_def = OpDefinition(
             name=self.name,
             ins=self.ins,
-            out=self.out,
+            outs=outs,
             compute_fn=compute_fn,
             config_schema=self.config_schema,
             description=self.description or format_docstring_for_description(fn),
@@ -89,6 +106,8 @@ class _Op:
             tags=self.tags,
             version=self.version,
             retry_policy=self.retry_policy,
+            input_defs=self.input_defs,
+            output_defs=self.output_defs,
         )
         update_wrapper(op_def, compute_fn.decorated_fn)
         return op_def

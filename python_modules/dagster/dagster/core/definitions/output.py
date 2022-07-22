@@ -234,7 +234,9 @@ class OutputDefinition:
         return OutputMapping(self, OutputPointer(solid_name, output_name))
 
     @staticmethod
-    def create_from_inferred(inferred: InferredOutputProps) -> "OutputDefinition":
+    def create_from_inferred(inferred: Optional[InferredOutputProps]) -> "OutputDefinition":
+        if not inferred:
+            return OutputDefinition()
         if is_dynamic_output_annotation(inferred.annotation):
             return DynamicOutputDefinition(
                 dagster_type=_checked_inferred_type(inferred.annotation),
@@ -445,9 +447,7 @@ class Out(
             asset_partitions_def=output_def.asset_partitions_def,  # pylint: disable=protected-access
         )
 
-    def to_definition(
-        self, annotation_type: Optional[type], name: Optional[str]
-    ) -> "OutputDefinition":
+    def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
         dagster_type = (
             self.dagster_type if self.dagster_type is not NoValueSentinel else annotation_type
         )
@@ -503,9 +503,7 @@ class DynamicOut(Out):
                 summarize_directory(file_results.collect())
     """
 
-    def to_definition(
-        self, annotation_type: Optional[type], name: Optional[str]
-    ) -> "OutputDefinition":
+    def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
         dagster_type = (
             self.dagster_type if self.dagster_type is not NoValueSentinel else annotation_type
         )

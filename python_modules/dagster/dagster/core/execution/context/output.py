@@ -30,8 +30,8 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.utils import build_resources_for_manager
 
 if TYPE_CHECKING:
-    from dagster.core.definitions.op_definition import OpDefinition
     from dagster.core.definitions import PartitionsDefinition, PipelineDefinition
+    from dagster.core.definitions.op_definition import OpDefinition
     from dagster.core.definitions.resource_definition import Resources
     from dagster.core.events import DagsterEvent
     from dagster.core.execution.context.system import StepExecutionContext
@@ -796,9 +796,9 @@ def build_output_context(
                 do_something
 
     """
+    from dagster.core.definitions import OpDefinition
     from dagster.core.execution.context_creation_pipeline import initialize_console_manager
     from dagster.core.types.dagster_type import DagsterType
-    from dagster.core.definitions import OpDefinition
 
     step_key = check.opt_str_param(step_key, "step_key")
     name = check.opt_str_param(name, "name")

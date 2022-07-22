@@ -12,12 +12,12 @@ from dagster.core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
     from dagster.core.definitions import PartitionsDefinition, SolidDefinition
+    from dagster.core.definitions.op_definition import OpDefinition
     from dagster.core.definitions.resource_definition import Resources
     from dagster.core.events import DagsterEvent
     from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.log_manager import DagsterLogManager
     from dagster.core.types.dagster_type import DagsterType
-    from dagster.core.definitions.op_definition import OpDefinition
 
     from .output import OutputContext
 
@@ -470,11 +470,11 @@ def build_input_context(
             with build_input_context(resources={"foo": context_manager_resource}) as context:
                 do_something
     """
+    from dagster.core.definitions import OpDefinition
     from dagster.core.execution.context.output import OutputContext
     from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.execution.context_creation_pipeline import initialize_console_manager
     from dagster.core.types.dagster_type import DagsterType
-    from dagster.core.definitions import OpDefinition
 
     name = check.opt_str_param(name, "name")
     metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
