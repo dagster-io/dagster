@@ -1,28 +1,22 @@
 import inspect
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Callable, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Callable, List, Optional, Sequence
 
 import dagster._check as check
-from dagster.core.definitions.sensor_definition import (
-    DefaultSensorStatus,
-    RunRequest,
-    SensorDefinition,
-    SkipReason,
-)
 from dagster.core.errors import DagsterInvariantViolationError
 
 from ...errors import DagsterInvariantViolationError
 from ..events import AssetKey
-from ..graph_definition import GraphDefinition
-from ..job_definition import JobDefinition
 from ..sensor_definition import (
     AssetMaterializationFunction,
     AssetSensorDefinition,
+    DefaultSensorStatus,
     RawSensorEvaluationFunction,
     RunRequest,
     SensorDefinition,
     SkipReason,
 )
+from ..target import ExecutableDefinition
 
 if TYPE_CHECKING:
     from ...events.log import EventLogEntry
@@ -35,8 +29,8 @@ def sensor(
     mode: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
-    job: Optional[Union[GraphDefinition, JobDefinition]] = None,
-    jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+    job: Optional[ExecutableDefinition] = None,
+    jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> Callable[[RawSensorEvaluationFunction], SensorDefinition]:
     """
@@ -66,8 +60,10 @@ def sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        job (Optional[Union[GraphDefinition, JobDefinition]]): The job to be executed when the sensor fires.
-        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental) A list of jobs to be executed when the sensor fires.
+        job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]):
+            The job to be executed when the sensor fires.
+        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
+            (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
     """
@@ -104,8 +100,8 @@ def asset_sensor(
     mode: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
-    job: Optional[Union[GraphDefinition, JobDefinition]] = None,
-    jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+    job: Optional[ExecutableDefinition] = None,
+    jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> Callable[[AssetMaterializationFunction,], AssetSensorDefinition,]:
     """
@@ -136,8 +132,10 @@ def asset_sensor(
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        job (Optional[Union[GraphDefinition, JobDefinition]]): The job to be executed when the sensor fires.
-        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental) A list of jobs to be executed when the sensor fires.
+        job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The
+            job to be executed when the sensor fires.
+        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
+            (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
     """
