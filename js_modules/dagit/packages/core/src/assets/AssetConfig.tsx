@@ -28,6 +28,7 @@ export const ASSET_NODE_CONFIG_FRAGMENT = gql`
     id
     configField {
       name
+      isRequired
       configType {
         ...ConfigTypeSchemaFragment
         recursiveConfigTypes {
