@@ -90,9 +90,9 @@ class _Op:
             )
 
         outs: Optional[Mapping[str, Out]] = None
-        if self.out and isinstance(self.out, Out):
+        if self.out is not None and isinstance(self.out, Out):
             outs = {DEFAULT_OUTPUT: self.out}
-        elif self.out:
+        elif self.out is not None:
             outs = check.mapping_param(self.out, "out", key_type=str, value_type=Out)
 
         op_def = OpDefinition(

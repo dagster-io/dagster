@@ -59,6 +59,12 @@ def test_no_outs():
     result = execute_op_in_graph(the_op)
     assert result.success
 
+    @op(out={})
+    def the_out_op():
+        pass
+
+    assert len(the_op.outs) == 0
+
 
 def test_op():
     @op

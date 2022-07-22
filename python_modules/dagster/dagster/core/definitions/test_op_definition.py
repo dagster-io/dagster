@@ -1,4 +1,4 @@
-from dagster import OpDefinition, In, Out, job, Output
+from dagster import In, OpDefinition, Out, Output, job
 
 
 def test_op_def_direct():
