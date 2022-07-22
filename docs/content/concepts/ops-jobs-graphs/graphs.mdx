@@ -318,11 +318,10 @@ ops:
 
 You can programmatically generate a GraphDefinition from this YAML:
 
-```python file=/concepts/ops_jobs_graphs/dep_dsl.py
+```python file=/concepts/ops_jobs_graphs/dep_dsl.py startafter=start
 import os
 
 from dagster import DependencyDefinition, GraphDefinition, NodeInvocation, op
-from dagster.utils.yaml_utils import load_yaml_from_path
 
 
 @op

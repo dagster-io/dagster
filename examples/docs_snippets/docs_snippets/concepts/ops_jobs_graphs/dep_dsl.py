@@ -1,7 +1,11 @@
+from dagster.utils.yaml_utils import load_yaml_from_path
+
+# isort: split
+
+# start
 import os
 
 from dagster import DependencyDefinition, GraphDefinition, NodeInvocation, op
-from dagster.utils.yaml_utils import load_yaml_from_path
 
 
 @op
