@@ -12,6 +12,7 @@ from dagster import (
     Int,
     List,
     ModeDefinition,
+    Out,
     OutputDefinition,
     ResourceDefinition,
     String,
@@ -23,6 +24,8 @@ from dagster import (
 )
 from dagster._core.storage.file_manager import local_file_manager
 from dagster._legacy import pipeline, solid
+from dagster._core.definitions.utils import DEFAULT_OUTPUT
+from dagster._core.storage.file_manager import local_file_manager
 from dagster._utils import PICKLE_PROTOCOL, file_relative_path
 
 try:
@@ -72,13 +75,13 @@ def test_nb_solid(name, **kwargs):
 
 
 def test_nb_op(name, path, **kwargs):
-    output_defs = kwargs.pop("output_defs", [OutputDefinition(is_required=False)])
+    outs = kwargs.pop("outs", {DEFAULT_OUTPUT: Out(is_required=False)})
 
     return dagstermill.define_dagstermill_op(
         name=name,
         notebook_path=path,
         output_notebook_name="notebook",
-        output_defs=output_defs,
+        outs=outs,
         **kwargs,
     )
 
@@ -104,7 +107,7 @@ def hello_world_pipeline():
 hello_world_op = test_nb_op(
     "hello_world_op",
     nb_test_path("hello_world"),
-    output_defs=[],
+    outs={},
 )
 
 
