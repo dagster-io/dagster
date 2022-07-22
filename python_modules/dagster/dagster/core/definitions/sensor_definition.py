@@ -28,11 +28,10 @@ from dagster.serdes import whitelist_for_serdes
 from ..decorator_utils import get_function_params
 from .events import AssetKey
 from .graph_definition import GraphDefinition
-from .job_definition import JobDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
 from .run_request import PipelineRunReaction, RunRequest, SkipReason
-from .target import DirectTarget, RepoRelativeTarget
+from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
 
@@ -198,10 +197,8 @@ class SensorDefinition:
         mode: Optional[str] = None,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
-        job: Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]] = None,
-        jobs: Optional[
-            Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]
-        ] = None,
+        job: Optional[ExecutableDefinition] = None,
+        jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
         if evaluation_fn is None:
@@ -594,8 +591,10 @@ class AssetSensorDefinition(SensorDefinition):
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
-        job (Optional[Union[GraphDefinition, JobDefinition]]): The job object to target with this sensor.
-        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental) A list of jobs to be executed when the sensor fires.
+        job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job
+            object to target with this sensor.
+        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
+            (experimental) A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
     """
@@ -613,10 +612,8 @@ class AssetSensorDefinition(SensorDefinition):
         mode: Optional[str] = None,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
-        job: Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]] = None,
-        jobs: Optional[
-            Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]
-        ] = None,
+        job: Optional[ExecutableDefinition] = None,
+        jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
         self._asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
