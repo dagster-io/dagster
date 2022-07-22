@@ -1,7 +1,11 @@
+from dagster.utils import script_relative_path
+
+# isort: split
+# start
+
 from urllib.request import urlretrieve
 
 from dagster import Field, OutputDefinition, String, op
-from dagster.utils import script_relative_path
 
 
 @op(
