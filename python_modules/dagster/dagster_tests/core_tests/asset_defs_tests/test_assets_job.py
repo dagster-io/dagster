@@ -26,7 +26,7 @@ from dagster import (
     op,
     resource,
 )
-from dagster.config.source import StringSource
+from dagster._config import StringSource
 from dagster.core.definitions import AssetGroup, AssetIn, SourceAsset, asset, build_assets_job
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.executor_definition import in_process_executor

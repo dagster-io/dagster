@@ -4,7 +4,7 @@ import click
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
-from dagster.cli.pipeline import (
+from dagster._cli.pipeline import (
     add_step_to_table,
     execute_backfill_command,
     execute_execute_command,
@@ -14,7 +14,7 @@ from dagster.cli.pipeline import (
     execute_scaffold_command,
     get_run_config_from_file_list,
 )
-from dagster.cli.workspace.cli_target import (
+from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
     get_pipeline_or_job_python_origin_from_kwargs,
     job_repository_target_argument,

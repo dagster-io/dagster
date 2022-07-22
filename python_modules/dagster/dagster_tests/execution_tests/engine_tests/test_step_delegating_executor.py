@@ -2,7 +2,7 @@ import subprocess
 import time
 
 from dagster import executor, job, op, reconstructable
-from dagster.config.field_utils import Permissive
+from dagster._config import Permissive
 from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import execute_pipeline

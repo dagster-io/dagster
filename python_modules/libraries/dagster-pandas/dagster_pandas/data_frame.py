@@ -19,7 +19,7 @@ from dagster import _check as check
 from dagster import dagster_type_loader, dagster_type_materializer
 from dagster._annotations import experimental
 from dagster._check import CheckError
-from dagster.config.field_utils import Selector
+from dagster._config import Selector
 from dagster.core.definitions.metadata import normalize_metadata
 from dagster.core.errors import DagsterInvalidMetadata
 from dagster.utils import dict_without_keys

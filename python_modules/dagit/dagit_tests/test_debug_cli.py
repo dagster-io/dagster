@@ -5,8 +5,8 @@ from click.testing import CliRunner
 from dagit.debug import dagit_debug_command
 
 from dagster import execute_pipeline, lambda_solid
+from dagster._cli.debug import export_command
 from dagster._legacy import pipeline
-from dagster.cli.debug import export_command
 from dagster.core.test_utils import instance_for_test
 
 

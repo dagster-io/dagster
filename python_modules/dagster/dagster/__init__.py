@@ -11,14 +11,31 @@ sys.meta_path.insert(
     _module_alias_map.get_meta_path_insertion_index(),
     _module_alias_map.AliasedModuleFinder(
         {
+            "dagster.api": "dagster._api",
             "dagster.check": "dagster._check",
+            "dagster.cli": "dagster._cli",
+            "dagster.config": "dagster._config",
         }
     ),
 )
+
+from dagster._config import (
+    Array,
+    BoolSource,
+    ConfigSchema,
+    Enum,
+    EnumValue,
+    Field,
+    IntSource,
+    Map,
+    Noneable,
+    Permissive,
+    ScalarUnion,
+    Selector,
+    Shape,
+    StringSource,
+)
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
-from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
-from dagster.config.config_schema import ConfigSchema
-from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.definitions import (
     AllPartitionMapping,
     AssetIn,
@@ -298,8 +315,6 @@ from dagster.utils.test import (
 )
 
 from .version import __version__
-
-from dagster.config.source import BoolSource, StringSource, IntSource  # isort:skip
 
 # ########################
 # ##### DEPRECATED ALIASES

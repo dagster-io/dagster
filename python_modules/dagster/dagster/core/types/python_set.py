@@ -1,7 +1,7 @@
 import typing
 
 import dagster._check as check
-from dagster.config.config_type import Array
+from dagster._config import Array
 from dagster.core.types.dagster_type import DagsterTypeKind
 
 from .config_schema import DagsterTypeLoader

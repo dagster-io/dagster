@@ -15,7 +15,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster.config.config_schema import UserConfigSchema
+from dagster._config import UserConfigSchema
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError

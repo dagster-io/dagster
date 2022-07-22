@@ -7,7 +7,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import AssetKey, PipelineDefinition, PipelineRunStatus
 from dagster import _check as check
-from dagster.config.validate import validate_config
+from dagster._config import validate_config
 from dagster.core.definitions import create_run_config_schema
 from dagster.core.errors import DagsterRunNotFoundError
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus

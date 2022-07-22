@@ -6,8 +6,8 @@ import pytest
 from click import UsageError
 from click.testing import CliRunner
 
-from dagster.cli.job import job_execute_command
-from dagster.cli.pipeline import execute_execute_command, pipeline_execute_command
+from dagster._cli.job import job_execute_command
+from dagster._cli.pipeline import execute_execute_command, pipeline_execute_command
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.test_utils import instance_for_test, new_cwd
 from dagster.utils import file_relative_path, merge_dicts

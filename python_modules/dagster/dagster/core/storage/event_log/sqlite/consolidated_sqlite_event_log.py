@@ -8,7 +8,7 @@ from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 import dagster._check as check
-from dagster.config.source import StringSource
+from dagster._config import StringSource
 from dagster.core.storage.event_log.base import EventLogCursor
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.sql import (

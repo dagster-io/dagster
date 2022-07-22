@@ -4,8 +4,7 @@ from typing import TYPE_CHECKING, Dict, Optional
 
 from dagster import Array, Bool
 from dagster import _check as check
-from dagster.config import Field, Permissive, ScalarUnion, Selector
-from dagster.config.validate import validate_config
+from dagster._config import Field, Permissive, ScalarUnion, Selector, validate_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.storage.config import mysql_config, pg_config
 from dagster.serdes import class_from_code_pointer

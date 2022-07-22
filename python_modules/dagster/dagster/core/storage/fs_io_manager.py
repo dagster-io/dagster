@@ -4,8 +4,7 @@ from typing import Union
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster.config import Field
-from dagster.config.source import StringSource
+from dagster._config import Field, StringSource
 from dagster.core.definitions.events import AssetKey, AssetMaterialization
 from dagster.core.definitions.metadata import MetadataEntry, MetadataValue
 from dagster.core.errors import DagsterInvariantViolationError

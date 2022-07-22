@@ -8,8 +8,8 @@ from dagster import PipelineDefinition
 from dagster import _check as check
 from dagster import execute_pipeline
 from dagster._check import CheckError
+from dagster._config import Field
 from dagster._legacy import pipeline, solid
-from dagster.config import Field
 from dagster.core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidConfigError,

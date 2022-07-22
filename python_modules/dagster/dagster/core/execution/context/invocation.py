@@ -2,7 +2,7 @@
 from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Set, Union, cast
 
 import dagster._check as check
-from dagster.config import Shape
+from dagster._config import Shape
 from dagster.core.definitions.composition import PendingNodeInvocation
 from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster.core.definitions.dependency import Node, NodeHandle
@@ -310,7 +310,7 @@ def _validate_resource_requirements(
 
 def _resolve_bound_config(solid_config: Any, solid_def: SolidDefinition) -> Any:
     """Validate config against config schema, and return validated config."""
-    from dagster.config.validate import process_config
+    from dagster._config import process_config
 
     # Config processing system expects the top level config schema to be a dictionary, but solid
     # config schema can be scalar. Thus, we wrap it in another layer of indirection.

@@ -4,7 +4,7 @@ from typing import Optional
 import yaml
 
 from dagster import _check as check
-from dagster.config.source import StringSource
+from dagster._config import StringSource
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import mkdir_p
 

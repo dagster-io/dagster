@@ -1,5 +1,4 @@
-from dagster.config import Field, Permissive, Selector
-from dagster.config.source import IntSource, StringSource
+from dagster._config import Field, IntSource, Permissive, Selector, StringSource
 
 
 def mysql_config():

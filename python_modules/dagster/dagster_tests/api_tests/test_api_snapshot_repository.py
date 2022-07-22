@@ -4,8 +4,8 @@ from contextlib import contextmanager
 import pytest
 
 from dagster import lambda_solid, repository
+from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._legacy import pipeline
-from dagster.api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation import (
     ExternalRepositoryData,

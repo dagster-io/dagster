@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import click
 
 import dagster._check as check
-from dagster.cli.load_handle import recon_repo_for_cli_args
+from dagster._cli.load_handle import recon_repo_for_cli_args
 from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.indenting_printer import IndentingStringIoPrinter

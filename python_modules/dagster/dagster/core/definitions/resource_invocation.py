@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, cast
 import dagster._check as check
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidInvocationError
 
-from ...config import Shape
+from ..._config import Shape
 from .resource_requirement import ensure_requirements_satisfied
 
 if TYPE_CHECKING:
@@ -92,7 +92,7 @@ def _check_invocation_requirements(
 
 
 def _resolve_bound_config(resource_config: Any, resource_def: "ResourceDefinition") -> Any:
-    from dagster.config.validate import process_config
+    from dagster._config import process_config
 
     outer_config_shape = Shape({"config": resource_def.get_config_field()})
     config_evr = process_config(

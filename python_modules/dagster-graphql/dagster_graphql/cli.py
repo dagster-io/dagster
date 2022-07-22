@@ -7,8 +7,8 @@ from graphql import graphql
 import dagster._check as check
 import dagster.seven as seven
 from dagster import __version__ as dagster_version
-from dagster.cli.workspace import workspace_target_argument
-from dagster.cli.workspace.cli_target import (
+from dagster._cli.workspace import workspace_target_argument
+from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
     get_workspace_process_context_from_kwargs,
 )

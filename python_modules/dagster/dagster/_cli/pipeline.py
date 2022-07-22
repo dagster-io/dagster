@@ -12,7 +12,7 @@ import dagster._check as check
 from dagster import PipelineDefinition
 from dagster import __version__ as dagster_version
 from dagster import execute_pipeline
-from dagster.cli.workspace.cli_target import (
+from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
     get_external_pipeline_or_job_from_external_repo,
     get_external_pipeline_or_job_from_kwargs,

@@ -1,8 +1,8 @@
 from typing import Any, Union, overload
 
 import dagster._check as check
+from dagster._config import UserConfigSchema
 from dagster.builtins import BuiltinEnum
-from dagster.config.config_schema import UserConfigSchema
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster.serdes import serialize_value
 from dagster.seven import is_subclass
@@ -37,124 +37,139 @@ VALID_CONFIG_DESC = """
 
 
 @overload
-def resolve_to_config_type(dagster_type: Union[ConfigType, UserConfigSchema]) -> ConfigType:
+def resolve_to_config_type(obj: Union[ConfigType, UserConfigSchema]) -> ConfigType:
     pass
 
 
 @overload
-def resolve_to_config_type(dagster_type: object) -> Union[ConfigType, bool]:
+def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
     pass
 
 
-def resolve_to_config_type(dagster_type: object) -> Union[ConfigType, bool]:
+def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
     from .field_utils import convert_fields_to_dict_type
 
     # Short circuit if it's already a Config Type
-    if isinstance(dagster_type, ConfigType):
-        return dagster_type
+    if isinstance(obj, ConfigType):
+        return obj
 
-    if isinstance(dagster_type, dict):
+    if isinstance(obj, dict):
         # Dicts of the special form {type: value} are treated as Maps
         # mapping from the type to value type, otherwise treat as dict type
-        if len(dagster_type) == 1:
-            key = list(dagster_type.keys())[0]
+        if len(obj) == 1:
+            key = list(obj.keys())[0]
             key_type = resolve_to_config_type(key)
             if not isinstance(key, str):
                 if not key_type:
                     raise DagsterInvalidDefinitionError(
                         "Invalid key in map specification: {key} in map {collection}".format(
-                            key=repr(key), collection=dagster_type
+                            key=repr(key), collection=obj
                         )
                     )
 
                 if not key_type.kind == ConfigTypeKind.SCALAR:
                     raise DagsterInvalidDefinitionError(
                         "Non-scalar key in map specification: {key} in map {collection}".format(
-                            key=repr(key), collection=dagster_type
+                            key=repr(key), collection=obj
                         )
                     )
 
-                inner_type = resolve_to_config_type(dagster_type[key])
+                inner_type = resolve_to_config_type(obj[key])
 
                 if not inner_type:
                     raise DagsterInvalidDefinitionError(
                         "Invalid value in map specification: {value} in map {collection}".format(
-                            value=repr(dagster_type[str]), collection=dagster_type
+                            value=repr(obj[str]), collection=obj
                         )
                     )
                 return Map(key_type, inner_type)
-        return convert_fields_to_dict_type(dagster_type)
+        return convert_fields_to_dict_type(obj)
 
-    if isinstance(dagster_type, list):
-        if len(dagster_type) != 1:
+    if isinstance(obj, list):
+        if len(obj) != 1:
             raise DagsterInvalidDefinitionError("Array specifications must only be of length 1")
 
-        inner_type = resolve_to_config_type(dagster_type[0])
+        inner_type = resolve_to_config_type(obj[0])
 
         if not inner_type:
             raise DagsterInvalidDefinitionError(
                 "Invalid member of array specification: {value} in list {the_list}".format(
-                    value=repr(dagster_type[0]), the_list=dagster_type
+                    value=repr(obj[0]), the_list=obj
                 )
             )
         return Array(inner_type)
 
+    if BuiltinEnum.contains(obj):
+        return ConfigType.from_builtin_enum(obj)
+
+    from .primitive_mapping import (
+        is_supported_config_python_builtin,
+        remap_python_builtin_for_config,
+    )
+
+    if is_supported_config_python_builtin(obj):
+        return remap_python_builtin_for_config(obj)
+
+    if obj is None:
+        return ConfigAnyInstance
+
+    # Special error messages for passing a DagsterType
     from dagster.core.types.dagster_type import DagsterType, List, ListType
     from dagster.core.types.python_set import Set, _TypedPythonSet
     from dagster.core.types.python_tuple import Tuple, _TypedPythonTuple
 
-    if _is_config_type_class(dagster_type):
+    if _is_config_type_class(obj):
         check.param_invariant(
             False,
             "dagster_type",
-            f"Cannot pass config type class {dagster_type} to resolve_to_config_type. "
+            f"Cannot pass config type class {obj} to resolve_to_config_type. "
             "This error usually occurs when you pass a dagster config type class instead of a class instance into "
             'another dagster config type. E.g. "Noneable(Permissive)" should instead be "Noneable(Permissive())".',
         )
 
-    if isinstance(dagster_type, type) and is_subclass(dagster_type, DagsterType):
+    if isinstance(obj, type) and is_subclass(obj, DagsterType):
         raise DagsterInvalidDefinitionError(
             "You have passed a DagsterType class {dagster_type} to the config system. "
             "The DagsterType and config schema systems are separate. "
             "Valid config values are:\n{desc}".format(
-                dagster_type=repr(dagster_type),
+                dagster_type=repr(obj),
                 desc=VALID_CONFIG_DESC,
             )
         )
 
-    if is_closed_python_optional_type(dagster_type):
+    if is_closed_python_optional_type(obj):
         raise DagsterInvalidDefinitionError(
             "Cannot use typing.Optional as a config type. If you want this field to be "
             "optional, please use Field(<type>, is_required=False), and if you want this field to "
             "be required, but accept a value of None, use dagster.Noneable(<type>)."
         )
 
-    if is_typing_type(dagster_type):
+    if is_typing_type(obj):
         raise DagsterInvalidDefinitionError(
             (
                 "You have passed in {dagster_type} to the config system. Types from "
                 "the typing module in python are not allowed in the config system. "
                 "You must use types that are imported from dagster or primitive types "
                 "such as bool, int, etc."
-            ).format(dagster_type=dagster_type)
+            ).format(dagster_type=obj)
         )
 
-    if dagster_type is List or isinstance(dagster_type, ListType):
+    if obj is List or isinstance(obj, ListType):
         raise DagsterInvalidDefinitionError(
             "Cannot use List in the context of config. " + helpful_list_error_string()
         )
 
-    if dagster_type is Set or isinstance(dagster_type, _TypedPythonSet):
+    if obj is Set or isinstance(obj, _TypedPythonSet):
         raise DagsterInvalidDefinitionError(
             "Cannot use Set in the context of a config field. " + helpful_list_error_string()
         )
 
-    if dagster_type is Tuple or isinstance(dagster_type, _TypedPythonTuple):
+    if obj is Tuple or isinstance(obj, _TypedPythonTuple):
         raise DagsterInvalidDefinitionError(
             "Cannot use Tuple in the context of a config field. " + helpful_list_error_string()
         )
 
-    if isinstance(dagster_type, DagsterType):
+    if isinstance(obj, DagsterType):
         raise DagsterInvalidDefinitionError(
             (
                 "You have passed an instance of DagsterType {type_name} to the config "
@@ -162,32 +177,11 @@ def resolve_to_config_type(dagster_type: object) -> Union[ConfigType, bool]:
                 "The DagsterType and config schema systems are separate. "
                 "Valid config values are:\n{desc}"
             ).format(
-                type_name=dagster_type.display_name,
-                dagster_type=repr(dagster_type),
+                type_name=obj.display_name,
+                dagster_type=repr(obj),
                 desc=VALID_CONFIG_DESC,
             ),
         )
-
-    # If we are passed here either:
-    #  1) We have been passed a python builtin
-    #  2) We have been a dagster wrapping type that needs to be convert its config variant
-    #     e.g. dagster.List
-    #  2) We have been passed an invalid thing. We return False to signify this. It is
-    #     up to callers to report a reasonable error.
-
-    from dagster.primitive_mapping import (
-        is_supported_config_python_builtin,
-        remap_python_builtin_for_config,
-    )
-
-    if BuiltinEnum.contains(dagster_type):
-        return ConfigType.from_builtin_enum(dagster_type)
-
-    if is_supported_config_python_builtin(dagster_type):
-        return remap_python_builtin_for_config(dagster_type)
-
-    if dagster_type is None:
-        return ConfigAnyInstance
 
     # This means that this is an error and we are return False to a callsite
     # We do the error reporting there because those callsites have more context

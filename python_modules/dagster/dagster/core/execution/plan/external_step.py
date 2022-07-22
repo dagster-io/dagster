@@ -6,8 +6,7 @@ import sys
 from typing import TYPE_CHECKING, Iterator, Optional, cast
 
 import dagster._check as check
-from dagster.config.field import Field
-from dagster.config.source import StringSource
+from dagster._config import Field, StringSource
 from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
 from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster.core.definitions.resource_definition import resource

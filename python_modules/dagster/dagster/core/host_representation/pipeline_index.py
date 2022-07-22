@@ -1,7 +1,7 @@
 from typing import Any, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
-from dagster.config.snap import ConfigSchemaSnapshot
+from dagster._config import ConfigSchemaSnapshot
 from dagster.core.snap import (
     DependencyStructureIndex,
     PipelineSnapshot,

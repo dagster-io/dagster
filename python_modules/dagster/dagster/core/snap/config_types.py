@@ -1,5 +1,5 @@
 import dagster._check as check
-from dagster.config.snap import ConfigSchemaSnapshot, snap_from_config_type
+from dagster._config import ConfigSchemaSnapshot, snap_from_config_type
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.utils import merge_dicts
 

@@ -3,8 +3,7 @@ import sys
 from typing import List, Optional
 
 import dagster._check as check
-from dagster.config import Field
-from dagster.config.validate import process_config
+from dagster._config import Field, process_config
 from dagster.core.definitions.executor_definition import (
     ExecutorDefinition,
     check_cross_process_constraints,

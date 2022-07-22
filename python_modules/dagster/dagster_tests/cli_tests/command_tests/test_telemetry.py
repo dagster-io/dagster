@@ -5,7 +5,7 @@ from difflib import SequenceMatcher
 
 from click.testing import CliRunner
 
-from dagster.cli.pipeline import pipeline_execute_command
+from dagster._cli.pipeline import pipeline_execute_command
 from dagster.core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster.core.telemetry import (
     TELEMETRY_STR,

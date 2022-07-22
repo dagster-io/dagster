@@ -28,10 +28,15 @@ from dagster import (
     execute_solid,
 )
 from dagster._check import ParameterCheckError
+from dagster._config import (
+    DagsterEvaluationErrorReason,
+    Map,
+    Shape,
+    convert_potential_field,
+    process_config,
+    validate_config,
+)
 from dagster._legacy import pipeline, solid
-from dagster.config.errors import DagsterEvaluationErrorReason
-from dagster.config.field_utils import Map, Shape, convert_potential_field
-from dagster.config.validate import process_config, validate_config
 
 
 def test_noop_config():

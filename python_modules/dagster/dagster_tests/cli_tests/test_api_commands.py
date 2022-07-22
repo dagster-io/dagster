@@ -3,8 +3,8 @@ from click.testing import CliRunner
 from dagster_tests.api_tests.utils import get_bar_repo_handle, get_foo_pipeline_handle
 
 from dagster import DagsterEventType
-from dagster.cli import api
-from dagster.cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
+from dagster._cli import api
+from dagster._cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.retries import RetryState
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot
