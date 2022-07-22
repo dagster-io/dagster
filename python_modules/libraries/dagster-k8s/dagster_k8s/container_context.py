@@ -18,7 +18,7 @@ from .models import k8s_snake_case_dict
 
 
 def _dedupe_list(values):
-    return list(set([make_readonly_value(value) for value in values]))
+    return sorted(list(set([make_readonly_value(value) for value in values])), key=hash)
 
 
 class K8sContainerContext(
