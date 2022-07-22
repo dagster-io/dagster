@@ -157,7 +157,7 @@ const LineageDepthControl: React.FC<{
           All
         </Button>
       </JoinedButtons>
-      Layers shown
+      Graph depth
     </Box>
   );
 };
