@@ -5,6 +5,7 @@ from typing import (
     Dict,
     FrozenSet,
     List,
+    Mapping,
     NamedTuple,
     Optional,
     Sequence,
@@ -666,7 +667,7 @@ class ExecutionPlan(
         return list(self.step_dict.values())
 
     @property
-    def step_output_versions(self) -> Dict[StepOutputHandle, str]:
+    def step_output_versions(self) -> Mapping[StepOutputHandle, Optional[str]]:
         return StepOutputVersionData.get_version_dict_from_list(
             self.known_state.step_output_versions if self.known_state else []
         )
@@ -764,12 +765,9 @@ class ExecutionPlan(
         step_keys_to_execute: List[str],
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
-        step_output_versions=None,
+        step_output_versions: Optional[Mapping[StepOutputHandle, Optional[str]]] = None,
     ) -> "ExecutionPlan":
         check.list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
-        step_output_versions = check.opt_dict_param(
-            step_output_versions, "step_output_versions", key_type=StepOutputHandle, value_type=str
-        )
 
         step_handles_to_validate_set: Set[StepHandleUnion] = {
             StepHandle.parse_from_key(key) for key in step_keys_to_execute
@@ -820,7 +818,7 @@ class ExecutionPlan(
 
         # If step output versions were provided when constructing the subset plan, add them to the
         # known state.
-        if len(step_output_versions) > 0:
+        if step_output_versions:
             versions = StepOutputVersionData.get_version_list_from_dict(step_output_versions)
             if self.known_state:
                 known_state = self.known_state._replace(step_output_versions=versions)
@@ -933,7 +931,7 @@ class ExecutionPlan(
                     log_manager=log_manager,
                     step_context=None,
                     resources=resources,
-                    version=step_output_versions[step_output_handle],
+                    version=step_output_versions.get(step_output_handle),
                 )
                 if not io_manager.has_output(context):
                     unmemoized_step_keys.add(step_output_handle.step_key)
@@ -1305,7 +1303,7 @@ def _compute_artifacts_persisted(
     pipeline_def,
     resolved_run_config,
     executable_map,
-):
+) -> bool:
     """
     Check if all the border steps of the current run have non-in-memory IO managers for reexecution.
 

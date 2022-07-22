@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, List, NamedTuple, Optional, Set, cast
+from typing import Dict, List, Mapping, NamedTuple, Optional, Set, cast
 
 import dagster._check as check
 from dagster.core.events import DagsterEventType
@@ -13,11 +13,11 @@ from dagster.serdes import whitelist_for_serdes
 @whitelist_for_serdes
 class StepOutputVersionData(NamedTuple):
     step_output_handle: StepOutputHandle
-    version: str
+    version: Optional[str]
 
     @staticmethod
     def get_version_list_from_dict(
-        step_output_versions: Dict[StepOutputHandle, str]
+        step_output_versions: Mapping[StepOutputHandle, Optional[str]]
     ) -> List["StepOutputVersionData"]:
         return [
             StepOutputVersionData(step_output_handle=step_output_handle, version=version)
@@ -27,7 +27,7 @@ class StepOutputVersionData(NamedTuple):
     @staticmethod
     def get_version_dict_from_list(
         step_output_versions: List["StepOutputVersionData"],
-    ) -> Dict[StepOutputHandle, str]:
+    ) -> Mapping[StepOutputHandle, Optional[str]]:
         return {data.step_output_handle: data.version for data in step_output_versions}
 
 
