@@ -134,7 +134,7 @@ const LineageDepthControl: React.FC<{
           inputMode="numeric"
           style={{
             width: 40,
-            marginLeft: 2,
+            marginLeft: -1,
             textAlign: 'center',
             height: 32,
             padding: 6,
