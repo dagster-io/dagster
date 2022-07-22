@@ -46,14 +46,9 @@ from dagster._core.selector.subset_selector import (
     OpSelectionData,
     parse_op_selection,
 )
-<<<<<<< HEAD:python_modules/dagster/dagster/_core/definitions/job_definition.py
-from dagster._core.utils import str_format_set
-from dagster._utils import merge_dicts
-=======
 from dagster._core.storage.io_manager import io_manager
 from dagster._core.utils import str_format_set
-from dagster.utils import merge_dicts
->>>>>>> refactor JobDefinition creation:python_modules/dagster/dagster/core/definitions/job_definition.py
+from dagster._utils import merge_dicts
 
 from .asset_layer import AssetLayer, build_asset_selection_job
 from .config import ConfigMapping
@@ -73,16 +68,10 @@ from .utils import DEFAULT_IO_MANAGER_KEY
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
-<<<<<<< HEAD:python_modules/dagster/dagster/_core/definitions/job_definition.py
-    from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
-    from dagster._core.instance import DagsterInstance
-    from dagster._core.snap import PipelineSnapshot
-=======
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.execution.resources_init import InitResourceContext
     from dagster._core.instance import DagsterInstance
     from dagster._core.snap import PipelineSnapshot
->>>>>>> refactor JobDefinition creation:python_modules/dagster/dagster/core/definitions/job_definition.py
 
 
 class JobDefinition(PipelineDefinition):
@@ -114,7 +103,7 @@ class JobDefinition(PipelineDefinition):
         _logger_defs_specified: Optional[bool] = None,
         _preset_defs: Optional[Sequence[PresetDefinition]] = None,
     ):
-        from dagster.loggers import default_loggers
+        from dagster._loggers import default_loggers
 
         check.inst_param(graph_def, "graph_def", GraphDefinition)
         resource_defs = check.opt_mapping_param(
@@ -126,12 +115,12 @@ class JobDefinition(PipelineDefinition):
         # it directly. Once JobDefinition no longer subclasses
         # PipelineDefinition, we can change the default executor to be set
         # elsewhere to avoid the need for this check.
-        _executor_def_specified = (
+        self._executor_def_specified = (
             _executor_def_specified
             if _executor_def_specified is not None
             else executor_def is not None
         )
-        _logger_defs_specified = (
+        self._logger_defs_specified = (
             _logger_defs_specified
             if _logger_defs_specified is not None
             else logger_defs is not None
@@ -216,15 +205,13 @@ class JobDefinition(PipelineDefinition):
 
         # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
         mode_def = ModeDefinition(
-            resource_defs=resource_defs,
+            resource_defs=resource_defs_with_defaults,
             logger_defs=logger_defs,
             executor_defs=[executor_def] if executor_def else None,
             _config_mapping=config_mapping,
             _partitioned_config=partitioned_config,
         )
 
-        self._executor_def_specified = _executor_def_specified
-        self._logger_defs_specified = _logger_defs_specified
         self._cached_partition_set: Optional["PartitionSetDefinition"] = None
         self._subset_selection_data = _subset_selection_data
         self.input_values = input_values

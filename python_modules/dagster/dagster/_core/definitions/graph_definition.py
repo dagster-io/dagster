@@ -581,23 +581,6 @@ class GraphDefinition(NodeDefinition):
             JobDefinition
         """
         from .job_definition import JobDefinition
-        from .partition import PartitionedConfig, PartitionsDefinition
-
-        job_name = check_valid_name(name or self.name)
-
-        tags = check.opt_dict_param(tags, "tags", key_type=str)
-        executor_def_specified = executor_def is not None
-        logger_defs_specified = logger_defs is not None
-        metadata_entries = check.opt_sequence_param(_metadata_entries, "_metadata_entries")
-
-        executor_def = check.opt_inst_param(
-            executor_def, "executor_def", ExecutorDefinition, default=multi_or_in_process_executor
-        )
-        input_values = check.opt_mapping_param(input_values, "input_values")
-
-        hooks = check.opt_set_param(hooks, "hooks", of_type=HookDefinition)
-        op_retry_policy = check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy)
-        op_selection = check.opt_list_param(op_selection, "op_selection", of_type=str)
 
         return JobDefinition(
             name=name,
@@ -616,9 +599,7 @@ class GraphDefinition(NodeDefinition):
             asset_layer=asset_layer,
             input_values=input_values,
             _subset_selection_data=_asset_selection_data,
-            _executor_def_specified=executor_def_specified,
-            _logger_defs_specified=logger_defs_specified,
-            _metadata_entries=metadata_entries,
+            _metadata_entries=_metadata_entries,
         ).get_job_def_for_subset_selection(op_selection)
 
     def coerce_to_job(self):
