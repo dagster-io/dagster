@@ -266,6 +266,7 @@ def other_configured_secret(secrets_manager):
 @pytest.fixture
 def container_context_config(configured_secret):
     return {
+        "env_vars": ["SHARED_KEY=SHARED_VAL"],
         "ecs": {
             "secrets": [
                 {
@@ -275,13 +276,14 @@ def container_context_config(configured_secret):
             ],
             "secrets_tags": ["dagster"],
             "env_vars": ["FOO_ENV_VAR=BAR_VALUE"],
-        }
+        },
     }
 
 
 @pytest.fixture
 def other_container_context_config(other_configured_secret):
     return {
+        "env_vars": ["SHARED_OTHER_KEY=SHARED_OTHER_VAL"],
         "ecs": {
             "secrets": [
                 {
@@ -291,7 +293,7 @@ def other_container_context_config(other_configured_secret):
             ],
             "secrets_tags": ["other_secret_tag"],
             "env_vars": ["OTHER_FOO_ENV_VAR"],
-        }
+        },
     }
 
 

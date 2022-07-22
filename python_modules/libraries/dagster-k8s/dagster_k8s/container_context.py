@@ -4,6 +4,7 @@ import kubernetes
 
 import dagster._check as check
 from dagster.config.validate import process_config
+from dagster.core.container_context import process_shared_container_context_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.utils import parse_env_var
@@ -141,12 +142,19 @@ class K8sContainerContext(
 
     @staticmethod
     def create_from_config(run_container_context) -> "K8sContainerContext":
+        processed_shared_container_context = process_shared_container_context_config(
+            run_container_context or {}
+        )
+        shared_container_context = K8sContainerContext(
+            env_vars=processed_shared_container_context.get("env_vars", [])
+        )
+
         run_k8s_container_context = (
             run_container_context.get("k8s", {}) if run_container_context else {}
         )
 
         if not run_k8s_container_context:
-            return K8sContainerContext()
+            return shared_container_context
 
         processed_container_context = process_config(
             DagsterK8sJobConfig.config_type_container_context(), run_k8s_container_context
@@ -161,18 +169,20 @@ class K8sContainerContext(
 
         processed_context_value = cast(Dict, processed_container_context.value)
 
-        return K8sContainerContext(
-            image_pull_policy=processed_context_value.get("image_pull_policy"),
-            image_pull_secrets=processed_context_value.get("image_pull_secrets"),
-            service_account_name=processed_context_value.get("service_account_name"),
-            env_config_maps=processed_context_value.get("env_config_maps"),
-            env_secrets=processed_context_value.get("env_secrets"),
-            env_vars=processed_context_value.get("env_vars"),
-            volume_mounts=processed_context_value.get("volume_mounts"),
-            volumes=processed_context_value.get("volumes"),
-            labels=processed_context_value.get("labels"),
-            namespace=processed_context_value.get("namespace"),
-            resources=processed_context_value.get("resources"),
+        return shared_container_context.merge(
+            K8sContainerContext(
+                image_pull_policy=processed_context_value.get("image_pull_policy"),
+                image_pull_secrets=processed_context_value.get("image_pull_secrets"),
+                service_account_name=processed_context_value.get("service_account_name"),
+                env_config_maps=processed_context_value.get("env_config_maps"),
+                env_secrets=processed_context_value.get("env_secrets"),
+                env_vars=processed_context_value.get("env_vars"),
+                volume_mounts=processed_context_value.get("volume_mounts"),
+                volumes=processed_context_value.get("volumes"),
+                labels=processed_context_value.get("labels"),
+                namespace=processed_context_value.get("namespace"),
+                resources=processed_context_value.get("resources"),
+            )
         )
 
     def get_k8s_job_config(self, job_image, run_launcher) -> DagsterK8sJobConfig:
