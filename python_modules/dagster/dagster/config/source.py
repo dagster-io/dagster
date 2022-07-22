@@ -102,6 +102,6 @@ class BoolSourceType(ScalarUnion):
             ) from e
 
 
-StringSource = StringSourceType()
-IntSource = IntSourceType()
-BoolSource = BoolSourceType()
+StringSource: StringSourceType = StringSourceType()
+IntSource: IntSourceType = IntSourceType()
+BoolSource: BoolSourceType = BoolSourceType()
