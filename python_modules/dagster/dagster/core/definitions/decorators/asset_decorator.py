@@ -241,11 +241,7 @@ class _Asset:
             required_resource_keys, "required_resource_keys"
         )
         self.io_manager = io_manager
-        self.config_schema = check.opt_dict_param(
-            config_schema,
-            "config_schema",
-            additional_message="Only dicts are supported for asset config_schema.",
-        )
+        self.config_schema = config_schema
         self.compute_kind = compute_kind
         self.dagster_type = dagster_type
         self.partitions_def = partitions_def
