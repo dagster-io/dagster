@@ -1,5 +1,5 @@
 from enum import Enum, unique
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, NamedTuple, Optional
 
 if TYPE_CHECKING:
     from .context import WorkspaceProcessContext
@@ -55,8 +55,26 @@ EDITOR_PERMISSIONS: Dict[str, bool] = {
 }
 
 
-def get_user_permissions(context: "WorkspaceProcessContext") -> Dict[str, bool]:
+class PermissionResult(
+    NamedTuple("_PermissionResult", [("enabled", bool), ("disabled_reason", Optional[str])])
+):
+    def __bool__(self):
+        raise Exception(
+            "Don't check a PermissionResult for truthiness - check the `enabled` property instead"
+        )
+
+
+def _get_disabled_reason(enabled: bool):
+    return None if enabled else "Disabled by your administrator"
+
+
+def get_user_permissions(context: "WorkspaceProcessContext") -> Dict[str, PermissionResult]:
     if context.read_only:
-        return VIEWER_PERMISSIONS
+        perm_map = VIEWER_PERMISSIONS
     else:
-        return EDITOR_PERMISSIONS
+        perm_map = EDITOR_PERMISSIONS
+
+    return {
+        perm: PermissionResult(enabled=enabled, disabled_reason=_get_disabled_reason(enabled))
+        for perm, enabled in perm_map.items()
+    }

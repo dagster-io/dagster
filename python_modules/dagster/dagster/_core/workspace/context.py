@@ -36,7 +36,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from .load_target import WorkspaceLoadTarget
-from .permissions import get_user_permissions
+from .permissions import PermissionResult, get_user_permissions
 from .workspace import IWorkspace, WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 
 if TYPE_CHECKING:
@@ -91,7 +91,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
 
     @property
     @abstractmethod
-    def permissions(self) -> Dict[str, bool]:
+    def permissions(self) -> Dict[str, PermissionResult]:
         pass
 
     @abstractmethod
@@ -295,7 +295,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         return self._process_context.read_only
 
     @property
-    def permissions(self) -> Dict[str, bool]:
+    def permissions(self) -> Dict[str, PermissionResult]:
         return self._process_context.permissions
 
     def has_permission(self, permission: str) -> bool:
@@ -303,7 +303,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         check.invariant(
             permission in permissions, f"Permission {permission} not listed in permissions map"
         )
-        return permissions[permission]
+        return permissions[permission].enabled
 
     @property
     def source(self) -> Optional[object]:
@@ -501,7 +501,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         return self._read_only
 
     @property
-    def permissions(self) -> Dict[str, bool]:
+    def permissions(self) -> Dict[str, PermissionResult]:
         return get_user_permissions(self)
 
     @property
