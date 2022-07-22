@@ -150,7 +150,7 @@ export const RunActionsMenu: React.FC<{
                   }}
                 />
               </Tooltip>
-              {isFinished || !canTerminatePipelineExecution ? null : (
+              {isFinished || !canTerminatePipelineExecution.enabled ? null : (
                 <MenuItem
                   icon="cancel"
                   text="Terminate"
@@ -165,7 +165,7 @@ export const RunActionsMenu: React.FC<{
               download
               href={`${rootServerURI}/download_debug/${run.runId}`}
             />
-            {canDeletePipelineRun ? (
+            {canDeletePipelineRun.enabled ? (
               <MenuItem
                 icon="delete"
                 text="Delete"
@@ -184,7 +184,7 @@ export const RunActionsMenu: React.FC<{
       >
         <Button icon={<Icon name="expand_more" />} />
       </Popover>
-      {canTerminatePipelineExecution ? (
+      {canTerminatePipelineExecution.enabled ? (
         <TerminationDialog
           isOpen={visibleDialog === 'terminate'}
           onClose={closeDialogs}
@@ -192,7 +192,7 @@ export const RunActionsMenu: React.FC<{
           selectedRuns={{[run.id]: run.canTerminate}}
         />
       ) : null}
-      {canDeletePipelineRun ? (
+      {canDeletePipelineRun.enabled ? (
         <DeletionDialog
           isOpen={visibleDialog === 'delete'}
           onClose={closeDialogs}
@@ -249,7 +249,7 @@ export const RunBulkActionsMenu: React.FC<{
     'none' | 'terminate' | 'delete' | 'reexecute-from-failure' | 'reexecute'
   >('none');
 
-  if (!canTerminatePipelineExecution && !canDeletePipelineRun) {
+  if (!canTerminatePipelineExecution.enabled && !canDeletePipelineRun.enabled) {
     return null;
   }
 
@@ -286,7 +286,7 @@ export const RunBulkActionsMenu: React.FC<{
       <Popover
         content={
           <Menu>
-            {canTerminatePipelineExecution ? (
+            {canTerminatePipelineExecution.enabled ? (
               <MenuItem
                 icon="cancel"
                 text={`Terminate ${unfinishedIDs.length} ${
@@ -298,7 +298,7 @@ export const RunBulkActionsMenu: React.FC<{
                 }}
               />
             ) : null}
-            {canDeletePipelineRun ? (
+            {canDeletePipelineRun.enabled ? (
               <MenuItem
                 icon="delete"
                 intent="danger"
@@ -309,7 +309,7 @@ export const RunBulkActionsMenu: React.FC<{
                 }}
               />
             ) : null}
-            {canLaunchPipelineReexecution ? (
+            {canLaunchPipelineReexecution.enabled ? (
               <>
                 <MenuItem
                   icon="refresh"

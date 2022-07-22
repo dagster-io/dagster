@@ -1,7 +1,7 @@
 import {Button, Dialog, DialogBody, DialogFooter, Icon, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
+import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {
   reloadFnForWorkspace,
@@ -20,9 +20,9 @@ export const ReloadAllButton: React.FC<{label?: string}> = ({label = 'Reload all
   const [isOpen, setIsOpen] = React.useState(!!error);
   React.useEffect(() => setIsOpen(!!error), [error]);
 
-  if (!canReloadWorkspace) {
+  if (!canReloadWorkspace.enabled) {
     return (
-      <Tooltip content={DISABLED_MESSAGE}>
+      <Tooltip content={canReloadWorkspace.disabledReason}>
         <Button icon={<Icon name="refresh" />} disabled intent="none">
           {label}
         </Button>

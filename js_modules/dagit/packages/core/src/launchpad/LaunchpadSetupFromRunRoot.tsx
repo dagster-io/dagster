@@ -28,7 +28,7 @@ export const LaunchpadSetupFromRunRoot: React.FC<{repoAddress: RepoAddress}> = (
     runId: string;
   }>();
 
-  if (!canLaunchPipelineExecution) {
+  if (!canLaunchPipelineExecution.enabled) {
     return <Redirect to={`/workspace/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
   }
   return (

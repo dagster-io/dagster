@@ -68,7 +68,7 @@ export const BackfillTable = ({
   const candidateId = terminationBackfill?.backfillId;
 
   React.useEffect(() => {
-    if (canCancelPartitionBackfill && candidateId) {
+    if (canCancelPartitionBackfill.enabled && candidateId) {
       const [backfill] = backfills.filter((backfill) => backfill.backfillId === candidateId);
       setTerminationBackfill(backfill);
     }
@@ -251,7 +251,7 @@ const BackfillRow = ({
         <Popover
           content={
             <Menu>
-              {canCancelPartitionBackfill ? (
+              {canCancelPartitionBackfill.enabled ? (
                 <>
                   {backfill.numRequested < backfill.partitionStatuses.results.length &&
                   backfill.status === BulkActionStatus.REQUESTED ? (
@@ -272,7 +272,7 @@ const BackfillRow = ({
                   ) : null}
                 </>
               ) : null}
-              {canLaunchPartitionBackfill &&
+              {canLaunchPartitionBackfill.enabled &&
               backfill.status === BulkActionStatus.FAILED &&
               backfill.partitionSet ? (
                 <MenuItem
