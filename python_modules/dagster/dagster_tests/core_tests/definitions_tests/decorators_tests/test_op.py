@@ -34,6 +34,13 @@ from dagster.core.test_utils import instance_for_test
 from dagster.core.types.dagster_type import Int, String
 
 
+def some_fn(a):
+    return a
+
+
+the_lambda = lambda a: a
+
+
 def execute_op_in_graph(an_op, instance=None):
     @graph
     def my_graph():
@@ -41,6 +48,22 @@ def execute_op_in_graph(an_op, instance=None):
 
     result = my_graph.execute_in_process(instance=instance)
     return result
+
+
+def test_no_outs():
+    @op(output_defs=[])
+    def the_op():
+        pass
+
+    assert len(the_op.output_defs) == 0
+    result = execute_op_in_graph(the_op)
+    assert result.success
+
+    @op(out={})
+    def the_out_op():
+        pass
+
+    assert len(the_op.outs) == 0
 
 
 def test_op():

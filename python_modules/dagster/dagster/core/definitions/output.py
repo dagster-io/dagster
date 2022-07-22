@@ -234,7 +234,9 @@ class OutputDefinition:
         return OutputMapping(self, OutputPointer(solid_name, output_name))
 
     @staticmethod
-    def create_from_inferred(inferred: InferredOutputProps) -> "OutputDefinition":
+    def create_from_inferred(inferred: Optional[InferredOutputProps]) -> "OutputDefinition":
+        if not inferred:
+            return OutputDefinition()
         if is_dynamic_output_annotation(inferred.annotation):
             return DynamicOutputDefinition(
                 dagster_type=_checked_inferred_type(inferred.annotation),

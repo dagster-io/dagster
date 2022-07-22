@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence,
 import dagster._check as check
 from dagster.core.definitions.events import AssetKey, AssetObservation
 from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
-from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.time_window_partitions import (
     TimeWindow,
@@ -13,6 +12,7 @@ from dagster.core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
     from dagster.core.definitions import PartitionsDefinition, SolidDefinition
+    from dagster.core.definitions.op_definition import OpDefinition
     from dagster.core.definitions.resource_definition import Resources
     from dagster.core.events import DagsterEvent
     from dagster.core.execution.context.system import StepExecutionContext
@@ -143,6 +143,8 @@ class InputContext:
 
     @property
     def op_def(self) -> "OpDefinition":
+        from dagster.core.definitions import OpDefinition
+
         if self._solid_def is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access op_def, "
@@ -432,7 +434,7 @@ def build_input_context(
     dagster_type: Optional["DagsterType"] = None,
     resource_config: Optional[Dict[str, Any]] = None,
     resources: Optional[Dict[str, Any]] = None,
-    op_def: Optional[OpDefinition] = None,
+    op_def: Optional["OpDefinition"] = None,
     step_context: Optional["StepExecutionContext"] = None,
 ) -> "InputContext":
     """Builds input context from provided parameters.
@@ -468,6 +470,7 @@ def build_input_context(
             with build_input_context(resources={"foo": context_manager_resource}) as context:
                 do_something
     """
+    from dagster.core.definitions import OpDefinition
     from dagster.core.execution.context.output import OutputContext
     from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.execution.context_creation_pipeline import initialize_console_manager

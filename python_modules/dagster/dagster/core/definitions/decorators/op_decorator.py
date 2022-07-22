@@ -16,18 +16,13 @@ from typing import (
 import dagster._check as check
 from dagster.config.config_schema import UserConfigSchema
 from dagster.core.decorator_utils import format_docstring_for_description
+from dagster.core.errors import DagsterInvariantViolationError
 
-from ....seven.typing import get_origin
-from ...errors import DagsterInvariantViolationError
-from ..inference import InferredOutputProps, infer_output_props
 from ..input import In, InputDefinition
 from ..output import Out, OutputDefinition
 from ..policy import RetryPolicy
-from .solid_decorator import (
-    DecoratedSolidFunction,
-    NoContextDecoratedSolidFunction,
-    resolve_checked_solid_fn_inputs,
-)
+from ..utils import DEFAULT_OUTPUT
+from .solid_decorator import DecoratedSolidFunction, NoContextDecoratedSolidFunction
 
 if TYPE_CHECKING:
     from ..op_definition import OpDefinition
@@ -75,40 +70,8 @@ class _Op:
     def __call__(self, fn: Callable[..., Any]) -> "OpDefinition":
         from ..op_definition import OpDefinition
 
-        if self.input_defs is not None and self.ins is not None:
-            check.failed("Values cannot be provided for both the 'input_defs' and 'ins' arguments")
-
-        if self.output_defs is not None and self.out is not None:
-            check.failed("Values cannot be provided for both the 'output_defs' and 'out' arguments")
-
-        inferred_out = infer_output_props(fn)
-
-        if self.ins is not None:
-            input_defs = [
-                inp.to_definition(name)
-                for name, inp in sorted(self.ins.items(), key=lambda input: input[0])
-            ]  # sort so that input definition order is deterministic
-        else:
-            input_defs = check.opt_list_param(
-                self.input_defs, "input_defs", of_type=InputDefinition
-            )
-
-        output_defs_from_out = _resolve_output_defs_from_outs(
-            inferred_out=inferred_out, out=self.out
-        )
-        resolved_output_defs = (
-            output_defs_from_out if output_defs_from_out is not None else self.output_defs
-        )
-
         if not self.name:
             self.name = fn.__name__
-
-        if resolved_output_defs is None:
-            resolved_output_defs = [OutputDefinition.create_from_inferred(infer_output_props(fn))]
-        elif len(resolved_output_defs) == 1:
-            resolved_output_defs = [
-                resolved_output_defs[0].combine_with_inferred(infer_output_props(fn))
-            ]
 
         compute_fn = (
             DecoratedSolidFunction(decorated_fn=fn)
@@ -116,18 +79,26 @@ class _Op:
             else NoContextDecoratedSolidFunction(decorated_fn=fn)
         )
 
-        resolved_input_defs = resolve_checked_solid_fn_inputs(
-            decorator_name="@op",
-            fn_name=self.name,
-            compute_fn=compute_fn,
-            explicit_input_defs=input_defs,
-            exclude_nothing=True,
-        )
+        if self.ins and self.input_defs:
+            raise DagsterInvariantViolationError(
+                f"Error constructing op '{self.name}': cannot provide both ins and input_defs arguments."
+            )
+
+        if self.out and self.output_defs:
+            raise DagsterInvariantViolationError(
+                f"Error constructing op '{self.name}': cannot provide both out and output_defs arguments."
+            )
+
+        outs: Optional[Mapping[str, Out]] = None
+        if self.out is not None and isinstance(self.out, Out):
+            outs = {DEFAULT_OUTPUT: self.out}
+        elif self.out is not None:
+            outs = check.mapping_param(self.out, "out", key_type=str, value_type=Out)
 
         op_def = OpDefinition(
             name=self.name,
-            input_defs=resolved_input_defs,
-            output_defs=resolved_output_defs,
+            ins=self.ins,
+            outs=outs,
             compute_fn=compute_fn,
             config_schema=self.config_schema,
             description=self.description or format_docstring_for_description(fn),
@@ -135,49 +106,11 @@ class _Op:
             tags=self.tags,
             version=self.version,
             retry_policy=self.retry_policy,
+            input_defs=self.input_defs,
+            output_defs=self.output_defs,
         )
         update_wrapper(op_def, compute_fn.decorated_fn)
         return op_def
-
-
-def _resolve_output_defs_from_outs(
-    inferred_out: InferredOutputProps, out: Optional[Union[Out, Mapping]]
-) -> Optional[List[OutputDefinition]]:
-    if out is None:
-        return None
-    if isinstance(out, Out):
-        return [out.to_definition(inferred_out.annotation, name=None)]
-    else:
-        check.mapping_param(out, "out", key_type=str, value_type=Out)
-
-        # If only a single entry has been provided to the out dict, then slurp the
-        # annotation into the entry.
-        if len(out) == 1:
-            name = list(out.keys())[0]
-            only_out = out[name]
-            return [only_out.to_definition(inferred_out.annotation, name)]
-
-        output_defs = []
-
-        # Introspection on type annotations is experimental, so checking
-        # metaclass is the best we can do.
-        if inferred_out.annotation and not get_origin(inferred_out.annotation) == tuple:
-            raise DagsterInvariantViolationError(
-                "Expected Tuple annotation for multiple outputs, but received non-tuple annotation."
-            )
-        if inferred_out.annotation and not len(inferred_out.annotation.__args__) == len(out):
-            raise DagsterInvariantViolationError(
-                "Expected Tuple annotation to have number of entries matching the "
-                f"number of outputs for more than one output. Expected {len(out)} "
-                f"outputs but annotation has {len(inferred_out.annotation.__args__)}."
-            )
-        for idx, (name, cur_out) in enumerate(out.items()):
-            annotation_type = (
-                inferred_out.annotation.__args__[idx] if inferred_out.annotation else None
-            )
-            output_defs.append(cur_out.to_definition(annotation_type, name=name))
-
-        return output_defs
 
 
 @overload
