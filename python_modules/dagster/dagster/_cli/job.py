@@ -245,7 +245,7 @@ def job_list_versions_command(**kwargs):
 def execute_list_versions_command(instance: DagsterInstance, kwargs: Mapping[str, object]):
     check.inst_param(instance, "instance", DagsterInstance)
 
-    config = list(check.opt_tuple_param(kwargs.get("config"), "config", default=(), of_type=str))
+    config = list(check.opt_tuple_param(kwargs.get("config"), "config", of_type=str))
 
     job_origin = get_job_python_origin_from_kwargs(kwargs)
     job = recon_pipeline_from_origin(job_origin)

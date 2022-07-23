@@ -1,6 +1,7 @@
 import hashlib
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, AbstractSet, Callable, Iterator, Optional, Union, cast
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._config import ConfigType
@@ -172,21 +173,22 @@ class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
 def _create_type_loader_for_decorator(
     config_type: ConfigType,
     func,
-    required_resource_keys: AbstractSet[str],
-    loader_version=None,
-    external_version_fn=None,
+    required_resource_keys: Optional[AbstractSet[str]],
+    loader_version: Optional[str] = None,
+    external_version_fn: Optional[Callable[[object], str]] = None,
 ):
     return DagsterTypeLoaderFromDecorator(
         config_type, func, required_resource_keys, loader_version, external_version_fn
     )
 
+DagsterTypeLoaderFn: TypeAlias = Callable[[StepExecutionContext, object], object]
 
 def dagster_type_loader(
     config_schema: object,
-    required_resource_keys=None,
-    loader_version=None,
-    external_version_fn=None,
-):
+    required_resource_keys: Optional[AbstractSet[str]] = None,
+    loader_version: Optional[str] = None,
+    external_version_fn: Optional[Callable[[object], str]] = None,
+) -> Callable[[DagsterTypeLoaderFn], DagsterTypeLoaderFromDecorator]:
     """Create an dagster type loader that maps config data to a runtime value.
 
     The decorated function should take the execution context and parsed config value and return the
@@ -214,9 +216,10 @@ def dagster_type_loader(
     from dagster._config import resolve_to_config_type
 
     config_type = resolve_to_config_type(config_schema)
+    assert isinstance(config_type, ConfigType), f"{config_schema} could not be resolved to config type"
     EXPECTED_POSITIONALS = ["context", "*"]
 
-    def wrapper(func):
+    def wrapper(func: DagsterTypeLoaderFn) -> DagsterTypeLoaderFromDecorator:
         params = get_function_params(func)
         missing_positional = validate_expected_params(params, EXPECTED_POSITIONALS)
         if missing_positional:
@@ -229,7 +232,7 @@ def dagster_type_loader(
             )
 
         return _create_type_loader_for_decorator(
-            config_type, func, required_resource_keys, loader_version, external_version_fn
+            config_type, func, required_resource_keys, loader_version, external_version_fn  # type: ignore  # mypy bug
         )
 
     return wrapper

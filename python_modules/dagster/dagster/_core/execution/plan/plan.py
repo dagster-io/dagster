@@ -794,7 +794,7 @@ class ExecutionPlan(
         step_handles_to_validate_set: Set[StepHandleUnion] = {
             StepHandle.parse_from_key(key) for key in step_keys_to_execute
         }
-        step_handles_to_execute: List[StepHandleUnion] = []
+        step_handles_to_execute: Sequence[StepHandleUnion] = []
         bad_keys = []
 
         for handle in step_handles_to_validate_set:

@@ -66,7 +66,7 @@ from dagster._core.scheduler.scheduler import DagsterScheduleDoesNotExist, Dagst
 from dagster._core.snap import snapshot_from_execution_plan
 from dagster._core.storage.file_manager import LocalFileManager
 from dagster._core.storage.pipeline_run import PipelineRun
-from dagster._core.types.dagster_type import resolve_dagster_type
+from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster._core.utility_solids import define_stub_solid
 from dagster._core.utils import make_new_run_id
 from dagster._serdes import ConfigurableClass
@@ -277,15 +277,16 @@ def wrap_op_in_graph_and_execute(
 
 
 def execute_solid_within_pipeline(
-    pipeline_def,
-    solid_name,
-    inputs=None,
-    run_config=None,
-    mode=None,
-    preset=None,
-    tags=None,
-    instance=None,
-):
+    pipeline_def: PipelineDefinition,
+    solid_name: str,
+    inputs: Optional[Dict[str, object]] = None,
+    run_config: Optional[Dict[str, object]] = None,
+    mode: Optional[str] = None,
+    preset: Optional[str] = None,
+    tags: Optional[Dict[str, str]] = None,
+    instance: Optional[DagsterInstance] = None,
+) -> Union["CompositeSolidExecutionResult", "SolidExecutionResult"]:
+
     """Execute a single solid within an existing pipeline.
 
     Intended to support tests. Input values may be passed directly.
@@ -410,7 +411,6 @@ def execute_solid(
         raise_on_error=raise_on_error,
     )
     return result.result_for_handle(solid_def.name)
-
 
 @contextmanager
 def copy_directory(src):

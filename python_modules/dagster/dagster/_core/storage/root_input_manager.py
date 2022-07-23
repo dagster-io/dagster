@@ -1,14 +1,25 @@
 from abc import abstractmethod
 from functools import update_wrapper
+from typing import AbstractSet, Callable, Optional
+
+from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import experimental
+from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.definition_config_schema import (
+    CoercableToConfigSchema,
+    IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
-from dagster._core.definitions.resource_definition import ResourceDefinition, is_context_provided
-from dagster._core.storage.input_manager import IInputManagerDefinition, InputManager
+from dagster._core.definitions.resource_definition import (
+    ResourceDefinition,
+    ResourceFunction,
+    is_context_provided,
+)
+from dagster._core.execution.context.input import InputContext
+from dagster._core.storage.input_manager import IInputManagerDefinition, InputLoadFn, InputManager
 from dagster._utils.backcompat import deprecation_warning
 
 
@@ -24,14 +35,16 @@ class RootInputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
     :py:func:`@root_input_manager <root_input_manager>` decorator.
     """
 
+    _input_config_schema: IDefinitionConfigSchema
+
     def __init__(
         self,
-        resource_fn=None,
-        config_schema=None,
-        description=None,
-        input_config_schema=None,
-        required_resource_keys=None,
-        version=None,
+        resource_fn: ResourceFunction,
+        config_schema: Optional[CoercableToConfigSchema] = None,
+        description: Optional[str] = None,
+        input_config_schema: Optional[CoercableToConfigSchema] = None,
+        required_resource_keys: Optional[AbstractSet[str]] = None,
+        version: Optional[str] = None,
     ):
         self._input_config_schema = convert_user_facing_definition_config_schema(
             input_config_schema
@@ -45,10 +58,12 @@ class RootInputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
         )
 
     @property
-    def input_config_schema(self):
+    def input_config_schema(self) -> IDefinitionConfigSchema:
         return self._input_config_schema
 
-    def copy_for_configured(self, description, config_schema, _):
+    def copy_for_configured(
+        self, description: Optional[str], config_schema: CoercableToConfigSchema, _
+    ) -> "RootInputManagerDefinition":
         return RootInputManagerDefinition(
             config_schema=config_schema,
             description=description or self.description,
@@ -66,7 +81,7 @@ class RootInputManager(InputManager):
     """
 
     @abstractmethod
-    def load_input(self, context):
+    def load_input(self, context: InputContext) -> object:
         """The user-defined read method that loads data given its metadata.
 
         Args:
@@ -79,12 +94,12 @@ class RootInputManager(InputManager):
 
 @experimental
 def root_input_manager(
-    config_schema=None,
-    description=None,
-    input_config_schema=None,
-    required_resource_keys=None,
-    version=None,
-):
+    config_schema: CoercableToConfigSchema = None,
+    description: Optional[str] = None,
+    input_config_schema: CoercableToConfigSchema = None,
+    required_resource_keys: Optional[AbstractSet[str]] = None,
+    version: Optional[str] = None,
+) -> Callable[[InputLoadFn], RootInputManagerDefinition]:
     """Define a root input manager.
 
     Root input managers load op inputs that aren't connected to upstream outputs.
@@ -140,7 +155,7 @@ def root_input_manager(
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
         return _InputManagerDecoratorCallable()(config_schema)
 
-    def _wrap(load_fn):
+    def _wrap(load_fn: InputLoadFn) -> RootInputManagerDefinition:
         return _InputManagerDecoratorCallable(
             config_schema=config_schema,
             description=description,
@@ -153,21 +168,22 @@ def root_input_manager(
 
 
 class RootInputManagerWrapper(RootInputManager):
-    def __init__(self, load_fn):
+    def __init__(self, load_fn: InputLoadFn):
         self._load_fn = load_fn
 
-    def load_input(self, context):
-        return self._load_fn(context) if is_context_provided(self._load_fn) else self._load_fn()
+    def load_input(self, context: InputContext) -> object:
+        # type-ignore because function being used as attribute
+        return self._load_fn(context) if is_context_provided(self._load_fn) else self._load_fn()  # type: ignore
 
 
 class _InputManagerDecoratorCallable:
     def __init__(
         self,
-        config_schema=None,
-        description=None,
-        version=None,
-        input_config_schema=None,
-        required_resource_keys=None,
+        config_schema: CoercableToConfigSchema = None,
+        description: Optional[str] = None,
+        version: Optional[str] = None,
+        input_config_schema: CoercableToConfigSchema = None,
+        required_resource_keys: Optional[AbstractSet[str]] = None,
     ):
         self.config_schema = config_schema
         self.description = check.opt_str_param(description, "description")
@@ -175,7 +191,7 @@ class _InputManagerDecoratorCallable:
         self.input_config_schema = input_config_schema
         self.required_resource_keys = required_resource_keys
 
-    def __call__(self, load_fn):
+    def __call__(self, load_fn: InputLoadFn) -> RootInputManagerDefinition:
         check.callable_param(load_fn, "load_fn")
 
         def _resource_fn(_):

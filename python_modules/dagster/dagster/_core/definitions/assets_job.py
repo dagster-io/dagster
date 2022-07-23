@@ -90,10 +90,10 @@ def build_assets_job(
     source_assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
-    config: Optional[Union[ConfigMapping, Mapping[str, object], PartitionedConfig]] = None,
+    config: Optional[Union[ConfigMapping, Mapping[str, object], PartitionedConfig[object]]] = None,
     tags: Optional[Mapping[str, object]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
-    partitions_def: Optional[PartitionsDefinition] = None,
+    partitions_def: Optional[PartitionsDefinition[object]] = None,
     _asset_selection_data: Optional[AssetSelectionData] = None,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets.

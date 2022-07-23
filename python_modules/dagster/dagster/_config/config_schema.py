@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 # List/Dict elements of this union: `Dict[str, ConfigSchema]`, `List[ConfigSchema]`.
 UserConfigSchema: TypeAlias = Union[
     Type[Union[bool, float, int, str]],
-    Type[Union[dict, list]],
+    Type[Union[Dict[Any,Any], List[Any]]],
     "ConfigType",
     "Field",
     Mapping[str, Any],

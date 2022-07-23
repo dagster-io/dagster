@@ -637,7 +637,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
 
     @property
     def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
-        return cast(Dict[str, CodePointer], self._repository_code_pointer_dict)
+        return cast(Mapping[str, CodePointer], self._repository_code_pointer_dict)
 
     @property
     def executable_path(self) -> Optional[str]:
@@ -843,3 +843,4 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
     def get_external_notebook_data(self, notebook_path: str) -> bytes:
         check.str_param(notebook_path, "notebook_path")
         return sync_get_streaming_external_notebook_data_grpc(self.client, notebook_path)  # type: ignore
+

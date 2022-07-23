@@ -184,10 +184,10 @@ def _selection_from_string(string: str) -> "AssetSelection":
 def define_asset_job(
     name: str,
     selection: Optional[Union[str, Sequence[str], "AssetSelection"]] = None,
-    config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]] = None,
+    config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]"]] = None,
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
-    partitions_def: Optional["PartitionsDefinition"] = None,
+    partitions_def: Optional["PartitionsDefinition[object]"] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will materialize a selection of assets. This will only be

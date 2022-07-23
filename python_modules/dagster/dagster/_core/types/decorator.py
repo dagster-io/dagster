@@ -1,14 +1,20 @@
+from typing import TYPE_CHECKING, Callable, Optional, Type, TypeVar, Union
+
 import dagster._check as check
 
 from .dagster_type import PythonObjectDagsterType, make_python_type_usable_as_dagster_type
 
+if TYPE_CHECKING:
+    from dagster._core.types.config_schema import DagsterTypeLoader, DagsterTypeMaterializer
+
+T_Type = TypeVar("T_Type", bound=Type)
 
 def usable_as_dagster_type(
-    name=None,
-    description=None,
-    loader=None,
-    materializer=None,
-):
+    name: Optional[Union[str, T_Type]] = None,
+    description: Optional[str] = None,
+    loader: Optional[DagsterTypeLoader] = None,
+    materializer: Optional[DagsterTypeMaterializer] = None,
+) -> Union[T_Type, Callable[[T_Type], T_Type]]:
     """Decorate a Python class to make it usable as a Dagster Type.
 
     This is intended to make it straightforward to annotate existing business logic classes to
@@ -59,7 +65,16 @@ def usable_as_dagster_type(
                 return 's3://{bucket}/{key}'.format(bucket=self.s3_bucket, key=self.s3_key)
     """
 
-    def _with_args(bare_cls):
+    # check for no args, no parens case
+    if isinstance(name, type):
+        bare_cls = name  # with no parens, name is actually the decorated class
+        make_python_type_usable_as_dagster_type(
+            bare_cls,
+            PythonObjectDagsterType(python_type=bare_cls, name=bare_cls.__name__, description=None),
+        )
+        return bare_cls
+
+    def _with_args(bare_cls: T_Type) -> T_Type:
         check.class_param(bare_cls, "bare_cls")
         new_name = name if name else bare_cls.__name__
 
@@ -72,15 +87,6 @@ def usable_as_dagster_type(
                 loader=loader,
                 materializer=materializer,
             ),
-        )
-        return bare_cls
-
-    # check for no args, no parens case
-    if callable(name):
-        bare_cls = name  # with no parens, name is actually the decorated class
-        make_python_type_usable_as_dagster_type(
-            bare_cls,
-            PythonObjectDagsterType(python_type=bare_cls, name=bare_cls.__name__, description=None),
         )
         return bare_cls
 

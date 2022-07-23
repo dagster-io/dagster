@@ -27,13 +27,13 @@ class _Job:
         tags: Optional[Mapping[str, Any]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]] = None,
+        config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]"]] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
-        partitions_def: Optional["PartitionsDefinition"] = None,
+        partitions_def: Optional["PartitionsDefinition[object]"] = None,
         input_values: Optional[Mapping[str, object]] = None,
     ):
         self.name = name
@@ -116,7 +116,7 @@ def job(
     name: Optional[str] = ...,
     description: Optional[str] = ...,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
-    config: Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"] = ...,
+    config: Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]"] = ...,
     tags: Optional[Mapping[str, Any]] = ...,
     metadata: Optional[Mapping[str, RawMetadataValue]] = ...,
     logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
@@ -124,7 +124,7 @@ def job(
     hooks: Optional[AbstractSet[HookDefinition]] = ...,
     op_retry_policy: Optional[RetryPolicy] = ...,
     version_strategy: Optional[VersionStrategy] = ...,
-    partitions_def: Optional["PartitionsDefinition"] = ...,
+    partitions_def: Optional["PartitionsDefinition[object]"] = ...,
     input_values: Optional[Mapping[str, object]] = ...,
 ) -> _Job:
     ...
@@ -136,7 +136,7 @@ def job(
     name: Optional[str] = None,
     description: Optional[str] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-    config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]] = None,
+    config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig[object]"]] = None,
     tags: Optional[Mapping[str, Any]] = None,
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
@@ -144,7 +144,7 @@ def job(
     hooks: Optional[AbstractSet[HookDefinition]] = None,
     op_retry_policy: Optional[RetryPolicy] = None,
     version_strategy: Optional[VersionStrategy] = None,
-    partitions_def: Optional["PartitionsDefinition"] = None,
+    partitions_def: Optional["PartitionsDefinition[object]"] = None,
     input_values: Optional[Mapping[str, object]] = None,
 ) -> Union[JobDefinition, _Job]:
     """Creates a job with the specified parameters from the decorated graph/op invocation function.
