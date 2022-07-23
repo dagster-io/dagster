@@ -462,6 +462,8 @@ In Dagster, there are two ways to assign assets to groups:
 
 By default, assets that aren't assigned to a group will be placed in a group named `default`. Use Dagit to [view these assets](#viewing-asset-groups-in-dagit).
 
+Note that `group_name` if provided, should not be a blank value. Doing so will result in an error being raised.
+
 #### From assets in a sub-module
 
 **This recommended approach** constructs a group of assets from a specified module in your project. Using the `load_assets_from_package_module` function, you can import all assets in a module and apply a grouping:
