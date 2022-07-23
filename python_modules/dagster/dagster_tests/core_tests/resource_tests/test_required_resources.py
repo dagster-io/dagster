@@ -15,11 +15,10 @@ from dagster import (
     dagster_type_loader,
     dagster_type_materializer,
     execute_pipeline,
-    pipeline,
     resource,
-    solid,
     usable_as_dagster_type,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.configurable import configured
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
@@ -782,7 +781,7 @@ def test_root_input_manager_missing_fails():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"'missing_root_input_manager' is required by unsatisfied input 'root_input' of solid 'requires_missing_root_input_manager'",
+        match="input manager with key 'missing_root_input_manager' required by input 'root_input' of solid 'requires_missing_root_input_manager' was not provided",
     ):
 
         @pipeline
@@ -797,7 +796,7 @@ def test_io_manager_missing_fails():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"'missing_io_manager' is required by output 'result' of solid 'requires_missing_io_manager'",
+        match="io manager with key 'missing_io_manager' required by output 'result' of solid 'requires_missing_io_manager'' was not provided",
     ):
 
         @pipeline

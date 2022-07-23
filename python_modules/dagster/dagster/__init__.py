@@ -1,30 +1,66 @@
+import importlib
 import sys
 import typing
 
 from pep562 import pep562
 
-from dagster.builtins import Any, Bool, Float, Int, Nothing, String
-from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
-from dagster.config.config_schema import ConfigSchema
-from dagster.config.config_type import Array, Noneable, ScalarUnion
-from dagster.core.asset_defs import (
-    AssetGroup,
-    AssetIn,
-    AssetsDefinition,
-    SourceAsset,
-    asset,
-    build_assets_job,
-    multi_asset,
+import dagster._module_alias_map as _module_alias_map
+
+# Imports of a key will return the module named by the corresponding value.
+sys.meta_path.insert(
+    _module_alias_map.get_meta_path_insertion_index(),
+    _module_alias_map.AliasedModuleFinder(
+        {
+            "dagster.api": "dagster._api",
+            "dagster.builtins": "dagster._builtins",
+            "dagster.check": "dagster._check",
+            "dagster.cli": "dagster._cli",
+            "dagster.config": "dagster._config",
+            "dagster.daemon": "dagster._daemon",
+            "dagster.experimental": "dagster._experimental",
+            "dagster.generate": "dagster._generate",
+            "dagster.grpc": "dagster._grpc",
+            "dagster.loggers": "dagster._loggers",
+            "dagster.serdes": "dagster._serdes",
+            "dagster.seven": "dagster._seven",
+            "dagster.utils": "dagster._utils",
+        }
+    ),
 )
+
+from dagster._builtins import Any, Bool, Float, Int, Nothing, String
+from dagster._config import (
+    Array,
+    BoolSource,
+    ConfigSchema,
+    Enum,
+    EnumValue,
+    Field,
+    IntSource,
+    Map,
+    Noneable,
+    Permissive,
+    ScalarUnion,
+    Selector,
+    Shape,
+    StringSource,
+)
+from dagster._serdes import deserialize_value, serialize_value
 from dagster.core.definitions import (
+    AllPartitionMapping,
+    AssetIn,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    AssetOut,
+    AssetSelection,
     AssetSensorDefinition,
+    AssetsDefinition,
+    BoolMetadataValue,
     CompositeSolidDefinition,
     ConfigMapping,
     DagsterAssetMetadataValue,
-    DagsterPipelineRunMetadataValue,
+    DagsterRunMetadataValue,
     DailyPartitionsDefinition,
     DefaultScheduleStatus,
     DefaultSensorStatus,
@@ -43,12 +79,14 @@ from dagster.core.definitions import (
     GraphOut,
     HookDefinition,
     HourlyPartitionsDefinition,
+    IdentityPartitionMapping,
     In,
     InputDefinition,
     InputMapping,
     IntMetadataValue,
     JobDefinition,
     JsonMetadataValue,
+    LastPartitionMapping,
     LoggerDefinition,
     MarkdownMetadataValue,
     Materialization,
@@ -64,6 +102,8 @@ from dagster.core.definitions import (
     OutputDefinition,
     OutputMapping,
     Partition,
+    PartitionKeyRange,
+    PartitionMapping,
     PartitionScheduleDefinition,
     PartitionSetDefinition,
     PartitionedConfig,
@@ -90,6 +130,7 @@ from dagster.core.definitions import (
     SkipReason,
     SolidDefinition,
     SolidInvocation,
+    SourceAsset,
     StaticPartitionsDefinition,
     TableColumn,
     TableColumnConstraints,
@@ -99,10 +140,15 @@ from dagster.core.definitions import (
     TableSchema,
     TableSchemaMetadataValue,
     TextMetadataValue,
+    TimeWindow,
+    TimeWindowPartitionMapping,
+    TimeWindowPartitionsDefinition,
     TypeCheck,
     UrlMetadataValue,
     WeeklyPartitionsDefinition,
+    asset,
     asset_sensor,
+    build_assets_job,
     build_init_logger_context,
     build_reconstructable_job,
     build_schedule_from_partitioned_job,
@@ -120,10 +166,18 @@ from dagster.core.definitions import (
     in_process_executor,
     job,
     lambda_solid,
+    load_assets_from_current_module,
+    load_assets_from_modules,
+    load_assets_from_package_module,
+    load_assets_from_package_name,
     logger,
     make_values_resource,
+    materialize,
+    materialize_to_memory,
     monthly_partitioned_config,
     monthly_schedule,
+    multi_asset,
+    multi_or_in_process_executor,
     multiple_process_executor_requirements,
     multiprocess_executor,
     op,
@@ -148,6 +202,8 @@ from dagster.core.definitions.policy import Backoff, Jitter, RetryPolicy
 from dagster.core.definitions.run_status_sensor_definition import build_run_status_sensor_context
 from dagster.core.definitions.schedule_definition import build_schedule_context
 from dagster.core.definitions.sensor_definition import build_sensor_context
+from dagster.core.definitions.step_launcher import StepLauncher
+from dagster.core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster.core.definitions.utils import (
     config_from_files,
     config_from_pkg_resources,
@@ -158,11 +214,13 @@ from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterError,
     DagsterEventLogInvalidForRun,
+    DagsterExecutionInterruptedError,
     DagsterExecutionStepExecutionError,
     DagsterExecutionStepNotFoundError,
     DagsterInvalidConfigDefinitionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
     DagsterResourceFunctionError,
     DagsterRunNotFoundError,
@@ -174,6 +232,7 @@ from dagster.core.errors import (
     DagsterUnknownResourceError,
     DagsterUnmetExecutorRequirementsError,
     DagsterUserCodeExecutionError,
+    raise_execution_interrupts,
 )
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.api import (
@@ -192,12 +251,19 @@ from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.context.output import OutputContext, build_output_context
 from dagster.core.execution.context.system import TypeCheckContext
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster.core.execution.plan.external_step import (
+    external_instance_from_step_run_ref,
+    run_step_from_ref,
+    step_context_to_step_run_ref,
+    step_run_ref_to_step_context,
+)
 from dagster.core.execution.results import (
     CompositeSolidExecutionResult,
     PipelineExecutionResult,
     SolidExecutionResult,
 )
 from dagster.core.execution.validate_run_config import validate_run_config
+from dagster.core.execution.with_resources import with_resources
 from dagster.core.executor.base import Executor
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
@@ -210,8 +276,8 @@ from dagster.core.storage.event_log import (
     RunShardedEventsCursor,
 )
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
-from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
+from dagster.core.storage.input_manager import InputManager, input_manager
 from dagster.core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
 from dagster.core.storage.mem_io_manager import mem_io_manager
 from dagster.core.storage.memoizable_io_manager import MemoizableIOManager
@@ -241,25 +307,31 @@ from dagster.core.types.decorator import (
 from dagster.core.types.python_dict import Dict
 from dagster.core.types.python_set import Set
 from dagster.core.types.python_tuple import Tuple
-from dagster.utils import file_relative_path
-from dagster.utils.alert import make_email_on_run_failure_sensor
-from dagster.utils.backcompat import ExperimentalWarning, rename_warning
-from dagster.utils.log import get_dagster_logger
-from dagster.utils.partitions import (
+
+from .version import __version__
+
+# isort: split
+from dagster._loggers import (
+    colored_console_logger,
+    default_loggers,
+    default_system_loggers,
+    json_console_logger,
+)
+from dagster._utils import file_relative_path
+from dagster._utils.alert import make_email_on_run_failure_sensor
+from dagster._utils.backcompat import ExperimentalWarning, deprecation_warning, rename_warning
+from dagster._utils.log import get_dagster_logger
+from dagster._utils.partitions import (
     create_offset_partition_selector,
     date_partition_range,
     identity_partition_selector,
 )
-from dagster.utils.test import (
+from dagster._utils.test import (
     check_dagster_type,
     execute_solid,
     execute_solid_within_pipeline,
     execute_solids_within_pipeline,
 )
-
-from .version import __version__
-
-from dagster.config.source import BoolSource, StringSource, IntSource  # isort:skip
 
 # ########################
 # ##### DEPRECATED ALIASES
@@ -271,10 +343,12 @@ from dagster.config.source import BoolSource, StringSource, IntSource  # isort:s
 
 if typing.TYPE_CHECKING:
     # pylint:disable=reimported
+    from dagster.core.definitions import AssetGroup
     from dagster.core.definitions import DagsterAssetMetadataValue as DagsterAssetMetadataEntryData
     from dagster.core.definitions import (
-        DagsterPipelineRunMetadataValue as DagsterPipelineRunMetadataEntryData,
+        DagsterRunMetadataValue as DagsterPipelineRunMetadataEntryData,
     )
+    from dagster.core.definitions import DagsterRunMetadataValue as DagsterPipelineRunMetadataValue
     from dagster.core.definitions import FloatMetadataValue as FloatMetadataEntryData
     from dagster.core.definitions import IntMetadataValue as IntMetadataEntryData
     from dagster.core.definitions import JsonMetadataValue as JsonMetadataEntryData
@@ -293,38 +367,53 @@ if typing.TYPE_CHECKING:
     # pylint:enable=reimported
 
 _DEPRECATED = {
-    "EventMetadataEntry": (MetadataEntry, "0.15.0"),
-    "EventMetadata": (MetadataValue, "0.15.0"),
-    "TextMetadataEntryData": (TextMetadataValue, "0.15.0"),
-    "UrlMetadataEntryData": (UrlMetadataValue, "0.15.0"),
-    "PathMetadataEntryData": (PathMetadataValue, "0.15.0"),
-    "JsonMetadataEntryData": (JsonMetadataValue, "0.15.0"),
-    "MarkdownMetadataEntryData": (MarkdownMetadataValue, "0.15.0"),
-    "PythonArtifactMetadataEntryData": (
-        PythonArtifactMetadataValue,
-        "0.15.0",
-    ),
-    "FloatMetadataEntryData": (FloatMetadataValue, "0.15.0"),
-    "IntMetadataEntryData": (IntMetadataValue, "0.15.0"),
-    "DagsterPipelineRunMetadataEntryData": (
-        DagsterPipelineRunMetadataValue,
-        "0.15.0",
-    ),
-    "DagsterAssetMetadataEntryData": (
-        DagsterAssetMetadataValue,
-        "0.15.0",
-    ),
-    "TableMetadataEntryData": (TableMetadataValue, "0.15.0"),
-    "TableSchemaMetadataEntryData": (
-        TableSchemaMetadataValue,
-        "0.15.0",
+    "AssetGroup": (
+        "dagster.core.definitions",
+        "1.0.0",
+        "Instead, place a set of assets wrapped with `with_resources` directly on a repository.",
     ),
 }
 
+_DEPRECATED_RENAMED = {
+    "EventMetadataEntry": (MetadataEntry, "1.0.0"),
+    "EventMetadata": (MetadataValue, "1.0.0"),
+    "TextMetadataEntryData": (TextMetadataValue, "1.0.0"),
+    "UrlMetadataEntryData": (UrlMetadataValue, "1.0.0"),
+    "PathMetadataEntryData": (PathMetadataValue, "1.0.0"),
+    "JsonMetadataEntryData": (JsonMetadataValue, "1.0.0"),
+    "MarkdownMetadataEntryData": (MarkdownMetadataValue, "1.0.0"),
+    "PythonArtifactMetadataEntryData": (
+        PythonArtifactMetadataValue,
+        "1.0.0",
+    ),
+    "FloatMetadataEntryData": (FloatMetadataValue, "1.0.0"),
+    "IntMetadataEntryData": (IntMetadataValue, "1.0.0"),
+    "DagsterPipelineRunMetadataEntryData": (
+        DagsterRunMetadataValue,
+        "1.0.0",
+    ),
+    "DagsterAssetMetadataEntryData": (
+        DagsterAssetMetadataValue,
+        "1.0.0",
+    ),
+    "TableMetadataEntryData": (TableMetadataValue, "1.0.0"),
+    "TableSchemaMetadataEntryData": (
+        TableSchemaMetadataValue,
+        "1.0.0",
+    ),
+    "DagsterPipelineRunMetadataValue": (DagsterRunMetadataValue, "1.0.0"),
+}
 
-def __getattr__(name):
+
+def __getattr__(name: str) -> typing.Any:
     if name in _DEPRECATED:
-        value, breaking_version = _DEPRECATED[name]
+        module, breaking_version, additional_warn_text = _DEPRECATED[name]
+        value = getattr(importlib.import_module(module), name)
+        stacklevel = 3 if sys.version_info >= (3, 7) else 4
+        deprecation_warning(name, breaking_version, additional_warn_text, stacklevel=stacklevel)
+        return value
+    elif name in _DEPRECATED_RENAMED:
+        value, breaking_version = _DEPRECATED_RENAMED[name]
         stacklevel = 3 if sys.version_info >= (3, 7) else 4
         rename_warning(value.__name__, name, breaking_version, stacklevel=stacklevel)
         return value
@@ -332,7 +421,7 @@ def __getattr__(name):
         raise AttributeError("module '{}' has no attribute '{}'".format(__name__, name))
 
 
-def __dir__():
+def __dir__() -> typing.List[str]:
     return sorted(list(__all__) + list(_DEPRECATED.keys()))
 
 
@@ -350,10 +439,12 @@ __all__ = [
     "AssetIn",
     "AssetMaterialization",
     "AssetObservation",
+    "AssetOut",
+    "AssetSelection",
     "AssetSensorDefinition",
     "AssetsDefinition",
     "DagsterAssetMetadataValue",
-    "DagsterPipelineRunMetadataValue",
+    "DagsterRunMetadataValue",
     "TableColumn",
     "TableColumnConstraints",
     "TableConstraints",
@@ -382,6 +473,7 @@ __all__ = [
     "JsonMetadataValue",
     "LoggerDefinition",
     "build_init_logger_context",
+    "BoolMetadataValue",
     "MarkdownMetadataValue",
     "IntMetadataValue",
     "FloatMetadataValue",
@@ -426,6 +518,7 @@ __all__ = [
     "lambda_solid",
     "logger",
     "multi_asset",
+    "multi_or_in_process_executor",
     "op",
     "pipeline",
     "repository",
@@ -450,10 +543,15 @@ __all__ = [
     "InitLoggerContext",
     "InitResourceContext",
     "ExecuteInProcessResult",
+    "step_context_to_step_run_ref",
+    "external_instance_from_step_run_ref",
+    "step_run_ref_to_step_context",
+    "run_step_from_ref",
     "build_init_resource_context",
     "OpExecutionContext",
     "PipelineExecutionResult",
     "RetryRequested",
+    "with_resources",
     "build_resources",
     "SolidExecutionResult",
     "SolidExecutionContext",
@@ -486,9 +584,11 @@ __all__ = [
     "DagsterConfigMappingFunctionError",
     "DagsterError",
     "DagsterEventLogInvalidForRun",
+    "DagsterExecutionInterruptedError",
     "DagsterExecutionStepExecutionError",
     "DagsterExecutionStepNotFoundError",
     "DagsterInvalidConfigDefinitionError",
+    "DagsterInvalidInvocationError",
     "DagsterInvalidConfigError",
     "DagsterInvalidDefinitionError",
     "DagsterInvariantViolationError",
@@ -502,6 +602,7 @@ __all__ = [
     "DagsterUnknownResourceError",
     "DagsterUnmetExecutorRequirementsError",
     "DagsterUserCodeExecutionError",
+    "raise_execution_interrupts",
     # Logging
     "DagsterLogManager",
     "get_dagster_logger",
@@ -515,6 +616,13 @@ __all__ = [
     "config_from_yaml_strings",
     "configured",
     "build_assets_job",
+    "define_asset_job",
+    "load_assets_from_modules",
+    "load_assets_from_current_module",
+    "load_assets_from_package_module",
+    "load_assets_from_package_name",
+    "materialize",
+    "materialize_to_memory",
     # types
     "Any",
     "Bool",
@@ -559,6 +667,8 @@ __all__ = [
     # storage
     "EventRecordsFilter",
     "RunShardedEventsCursor",
+    "serialize_value",
+    "deserialize_value",
     # partitions and schedules
     "build_schedule_from_partitioned_job",
     "schedule_from_partitions",
@@ -573,12 +683,20 @@ __all__ = [
     "DailyPartitionsDefinition",
     "HourlyPartitionsDefinition",
     "MonthlyPartitionsDefinition",
+    "PartitionKeyRange",
+    "TimeWindow",
+    "TimeWindowPartitionsDefinition",
     "WeeklyPartitionsDefinition",
     "Partition",
     "PartitionedConfig",
     "PartitionsDefinition",
     "PartitionScheduleDefinition",
     "PartitionSetDefinition",
+    "PartitionMapping",
+    "IdentityPartitionMapping",
+    "LastPartitionMapping",
+    "AllPartitionMapping",
+    "TimeWindowPartitionMapping",
     "RunRequest",
     "ScheduleDefinition",
     "ScheduleEvaluationContext",
@@ -594,6 +712,7 @@ __all__ = [
     "RunStatusSensorContext",
     "build_sensor_context",
     "build_run_status_sensor_context",
+    "StepLauncher",
     "SkipReason",
     "daily_schedule",
     "hourly_schedule",
@@ -607,10 +726,11 @@ __all__ = [
     "IOManager",
     "IOManagerDefinition",
     "io_manager",
+    "input_manager",
+    "InputManager",
     "RootInputManager",
     "RootInputManagerDefinition",
     "root_input_manager",
-    "fs_asset_io_manager",
     "fs_io_manager",
     "mem_io_manager",
     "custom_path_fs_io_manager",
@@ -621,4 +741,8 @@ __all__ = [
     "MEMOIZED_RUN_TAG",
     "MemoizableIOManager",
     "SourceHashVersionStrategy",
+    "colored_console_logger",
+    "default_loggers",
+    "default_system_loggers",
+    "json_console_logger",
 ]

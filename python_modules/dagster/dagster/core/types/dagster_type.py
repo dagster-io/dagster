@@ -2,21 +2,36 @@ import typing as t
 from abc import abstractmethod
 from enum import Enum as PythonEnum
 from functools import partial
-from typing import cast
+from typing import AbstractSet as TypingAbstractSet
+from typing import Iterator as TypingIterator
+from typing import Mapping
+from typing import Optional as TypingOptional
+from typing import Sequence, cast
 
-from dagster import check
-from dagster.builtins import BuiltinEnum
-from dagster.config.config_type import Array, ConfigType
-from dagster.config.config_type import Noneable as ConfigNoneable
-from dagster.core.definitions.events import TypeCheck
+from typing_compat import get_args, get_origin
+
+import dagster._check as check
+from dagster._builtins import BuiltinEnum
+from dagster._config import Array, ConfigType
+from dagster._config import Noneable as ConfigNoneable
+from dagster._serdes import whitelist_for_serdes
+from dagster._seven import is_subclass
+from dagster.core.definitions.events import DynamicOutput, Output, TypeCheck
 from dagster.core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.serdes import whitelist_for_serdes
 
+from ..definitions.resource_requirement import (
+    RequiresResources,
+    ResourceRequirement,
+    TypeResourceRequirement,
+)
 from .builtin_config_schemas import BuiltinSchemas
 from .config_schema import DagsterTypeLoader, DagsterTypeMaterializer
 
 if t.TYPE_CHECKING:
+    from dagster.core.definitions.node_definition import (  # pylint: disable=unused-import
+        NodeDefinition,
+    )
     from dagster.core.execution.context.system import (  # pylint: disable=unused-import
         StepExecutionContext,
         TypeCheckContext,
@@ -35,7 +50,7 @@ class DagsterTypeKind(PythonEnum):
     REGULAR = "REGULAR"
 
 
-class DagsterType:
+class DagsterType(RequiresResources):
     """Define a type in dagster. These can be used in the inputs and outputs of ops.
 
     Args:
@@ -90,7 +105,7 @@ class DagsterType:
         description: t.Optional[str] = None,
         loader: t.Optional[DagsterTypeLoader] = None,
         materializer: t.Optional[DagsterTypeMaterializer] = None,
-        required_resource_keys: t.Set[str] = None,
+        required_resource_keys: t.Optional[t.Set[str]] = None,
         kind: DagsterTypeKind = DagsterTypeKind.REGULAR,
         typing_type: t.Any = None,
         metadata_entries: t.Optional[t.List[MetadataEntry]] = None,
@@ -122,7 +137,7 @@ class DagsterType:
             materializer, "materializer", DagsterTypeMaterializer
         )
 
-        self.required_resource_keys = check.opt_set_param(
+        self._required_resource_keys = check.opt_set_param(
             required_resource_keys,
             "required_resource_keys",
         )
@@ -176,6 +191,10 @@ class DagsterType:
         return self._metadata_entries  # type: ignore
 
     @property
+    def required_resource_keys(self) -> TypingAbstractSet[str]:
+        return self._required_resource_keys
+
+    @property
     def display_name(self) -> str:
         """Either the name or key (if name is `None`) of the type, overridden in many subclasses"""
         return cast(str, self._name or self.key)
@@ -225,11 +244,21 @@ class DagsterType:
             )
         )
 
+    def get_resource_requirements(
+        self, _outer_context: TypingOptional[object] = None
+    ) -> TypingIterator[ResourceRequirement]:
+        for resource_key in sorted(list(self.required_resource_keys)):
+            yield TypeResourceRequirement(key=resource_key, type_display_name=self.display_name)
+        if self.loader:
+            yield from self.loader.get_resource_requirements(outer_context=self.display_name)
+        if self.materializer:
+            yield from self.materializer.get_resource_requirements(outer_context=self.display_name)
+
 
 def _validate_type_check_fn(fn: t.Callable, name: t.Optional[str]) -> bool:
-    from dagster.seven import get_args
+    from dagster._seven import get_arg_names
 
-    args = get_args(fn)
+    args = get_arg_names(fn)
 
     # py2 doesn't filter out self
     if len(args) >= 1 and args[0] == "self":
@@ -800,31 +829,41 @@ class TypeHintInferredDagsterType(DagsterType):
 
 def resolve_dagster_type(dagster_type: object) -> DagsterType:
     # circular dep
-    from dagster.primitive_mapping import (
+    from dagster._utils.typing_api import is_typing_type
+
+    from .primitive_mapping import (
         is_supported_runtime_python_builtin,
         remap_python_builtin_for_runtime,
     )
-    from dagster.utils.typing_api import is_typing_type
-
-    from .python_dict import Dict, PythonDict
+    from .python_dict import Dict as DDict
+    from .python_dict import PythonDict
     from .python_set import DagsterSetApi, PythonSet
     from .python_tuple import DagsterTupleApi, PythonTuple
     from .transform_typing import transform_typing_type
 
     check.invariant(
-        not (isinstance(dagster_type, type) and issubclass(dagster_type, ConfigType)),
+        not (isinstance(dagster_type, type) and is_subclass(dagster_type, ConfigType)),
         "Cannot resolve a config type to a runtime type",
     )
 
     check.invariant(
-        not (isinstance(dagster_type, type) and issubclass(dagster_type, DagsterType)),
+        not (isinstance(dagster_type, type) and is_subclass(dagster_type, DagsterType)),
         "Do not pass runtime type classes. Got {}".format(dagster_type),
     )
 
-    # First check to see if it is part of python's typing library
+    # First, check to see if we're using Dagster's generic output type to do the type catching.
+    if is_generic_output_annotation(dagster_type):
+        type_args = get_args(dagster_type)
+        # If no inner type was provided, forward Any type.
+        dagster_type = type_args[0] if len(type_args) == 1 else Any
+    elif is_dynamic_output_annotation(dagster_type):
+        dynamic_out_annotation = get_args(dagster_type)[0]
+        type_args = get_args(dynamic_out_annotation)
+        dagster_type = type_args[0] if len(type_args) == 1 else Any
+
+    # Then, check to see if it is part of python's typing library
     if is_typing_type(dagster_type):
         dagster_type = transform_typing_type(dagster_type)
-
     if isinstance(dagster_type, DagsterType):
         return dagster_type
 
@@ -832,7 +871,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     # a dict where they meant to pass dict or Dict, etc.
     try:
         hash(dagster_type)
-    except TypeError:
+    except TypeError as e:
         raise DagsterInvalidDefinitionError(
             DAGSTER_INVALID_TYPE_ERROR_MESSAGE.format(
                 additional_msg=(
@@ -841,7 +880,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
                 ),
                 dagster_type=str(dagster_type),
             )
-        )
+        ) from e
 
     if BuiltinEnum.contains(dagster_type):
         return DagsterType.from_builtin_enum(dagster_type)
@@ -852,7 +891,7 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     if dagster_type is None:
         return Any
 
-    if dagster_type is Dict:
+    if dagster_type is DDict:
         return PythonDict
     if isinstance(dagster_type, DagsterTupleApi):
         return PythonTuple
@@ -869,6 +908,34 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
             dagster_type=str(dagster_type), additional_msg="."
         )
     )
+
+
+def is_dynamic_output_annotation(dagster_type: object) -> bool:
+
+    check.invariant(
+        not (isinstance(dagster_type, type) and is_subclass(dagster_type, ConfigType)),
+        "Cannot resolve a config type to a runtime type",
+    )
+
+    check.invariant(
+        not (isinstance(dagster_type, type) and is_subclass(dagster_type, ConfigType)),
+        "Do not pass runtime type classes. Got {}".format(dagster_type),
+    )
+
+    if dagster_type == DynamicOutput or get_origin(dagster_type) == DynamicOutput:
+        raise DagsterInvariantViolationError(
+            "Op annotated with return type DynamicOutput. DynamicOutputs can only be returned in the context of a List. If only one output is needed, use the Output API."
+        )
+
+    if get_origin(dagster_type) == list and len(get_args(dagster_type)) == 1:
+        list_inner_type = get_args(dagster_type)[0]
+        return list_inner_type == DynamicOutput or get_origin(list_inner_type) == DynamicOutput
+    return False
+
+
+def is_generic_output_annotation(dagster_type: object) -> bool:
+
+    return dagster_type == Output or get_origin(dagster_type) == Output
 
 
 def resolve_python_type_to_dagster_type(python_type: t.Type) -> DagsterType:
@@ -888,11 +955,18 @@ def resolve_python_type_to_dagster_type(python_type: t.Type) -> DagsterType:
 ALL_RUNTIME_BUILTINS = list(_RUNTIME_MAP.values())
 
 
-def construct_dagster_type_dictionary(solid_defs):
+def construct_dagster_type_dictionary(
+    node_defs: Sequence["NodeDefinition"],
+) -> Mapping[str, DagsterType]:
+    from dagster.core.definitions.graph_definition import GraphDefinition
+
     type_dict_by_name = {t.unique_name: t for t in ALL_RUNTIME_BUILTINS}
     type_dict_by_key = {t.key: t for t in ALL_RUNTIME_BUILTINS}
-    for solid_def in solid_defs:
-        for dagster_type in solid_def.all_dagster_types():
+
+    def process_node_def(node_def: "NodeDefinition"):
+        input_output_types = list(node_def.all_input_output_types())
+        for dagster_type in input_output_types:
+
             # We don't do uniqueness check on key because with classes
             # like Array, Noneable, etc, those are ephemeral objects
             # and it is perfectly fine to have many of them.
@@ -912,6 +986,13 @@ def construct_dagster_type_dictionary(solid_defs):
                         "Dagster types have must have unique names."
                     ).format(type_name=dagster_type.display_name)
                 )
+
+        if isinstance(node_def, GraphDefinition):
+            for child_node_def in node_def.node_defs:
+                process_node_def(child_node_def)
+
+    for node_def in node_defs:
+        process_node_def(node_def)
 
     return type_dict_by_key
 

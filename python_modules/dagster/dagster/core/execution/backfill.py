@@ -1,8 +1,11 @@
-from collections import namedtuple
 from enum import Enum
+from typing import Dict, List, NamedTuple, Optional
 
-from dagster import check
-from dagster.core.execution.plan.resume_retry import get_retry_steps_from_parent_run
+import dagster._check as check
+from dagster._serdes import whitelist_for_serdes
+from dagster._utils import merge_dicts
+from dagster._utils.error import SerializableErrorInfo
+from dagster.core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.host_representation import (
     ExternalPartitionSet,
@@ -20,15 +23,11 @@ from dagster.core.storage.tags import (
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
-    RESUME_RETRY_TAG,
     ROOT_RUN_ID_TAG,
 )
 from dagster.core.telemetry import BACKFILL_RUN_CREATED, hash_name, log_action
 from dagster.core.utils import make_new_run_id
 from dagster.core.workspace.workspace import IWorkspace
-from dagster.serdes import whitelist_for_serdes
-from dagster.utils import merge_dicts
-from dagster.utils.error import SerializableErrorInfo
 
 
 @whitelist_for_serdes
@@ -45,26 +44,34 @@ class BulkActionStatus(Enum):
 
 @whitelist_for_serdes
 class PartitionBackfill(
-    namedtuple(
+    NamedTuple(
         "_PartitionBackfill",
-        (
-            "backfill_id partition_set_origin status partition_names from_failure "
-            "reexecution_steps tags backfill_timestamp last_submitted_partition_name error"
-        ),
+        [
+            ("backfill_id", str),
+            ("partition_set_origin", ExternalPartitionSetOrigin),
+            ("status", BulkActionStatus),
+            ("partition_names", List[str]),
+            ("from_failure", bool),
+            ("reexecution_steps", List[str]),
+            ("tags", Dict[str, str]),
+            ("backfill_timestamp", float),
+            ("last_submitted_partition_name", Optional[str]),
+            ("error", Optional[SerializableErrorInfo]),
+        ],
     ),
 ):
     def __new__(
         cls,
-        backfill_id,
-        partition_set_origin,
-        status,
-        partition_names,
-        from_failure,
-        reexecution_steps,
-        tags,
-        backfill_timestamp,
-        last_submitted_partition_name=None,
-        error=None,
+        backfill_id: str,
+        partition_set_origin: ExternalPartitionSetOrigin,
+        status: BulkActionStatus,
+        partition_names: List[str],
+        from_failure: bool,
+        reexecution_steps: List[str],
+        tags: Dict[str, str],
+        backfill_timestamp: float,
+        last_submitted_partition_name: Optional[str] = None,
+        error: Optional[SerializableErrorInfo] = None,
     ):
         return super(PartitionBackfill, cls).__new__(
             cls,
@@ -81,6 +88,10 @@ class PartitionBackfill(
             check.opt_str_param(last_submitted_partition_name, "last_submitted_partition_name"),
             check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
+
+    @property
+    def selector_id(self):
+        return self.partition_set_origin.get_selector_id()
 
     def with_status(self, status):
         check.inst_param(status, "status", BulkActionStatus)
@@ -178,7 +189,7 @@ def submit_backfill_runs(instance, workspace, repo_location, backfill_job, parti
 def create_backfill_run(
     instance, repo_location, external_pipeline, external_partition_set, backfill_job, partition_data
 ):
-    from dagster.daemon.daemon import get_telemetry_daemon_session_id
+    from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(repo_location, "repo_location", RepositoryLocation)
@@ -186,6 +197,16 @@ def create_backfill_run(
     check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
     check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
     check.inst_param(partition_data, "partition_data", ExternalPartitionExecutionParamData)
+
+    log_action(
+        instance,
+        BACKFILL_RUN_CREATED,
+        metadata={
+            "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
+            "repo_hash": hash_name(repo_location.name),
+            "pipeline_name_hash": hash_name(external_pipeline.name),
+        },
+    )
 
     tags = merge_dicts(
         external_pipeline.tags,
@@ -209,21 +230,16 @@ def create_backfill_run(
         last_run = _fetch_last_run(instance, external_partition_set, partition_data.name)
         if not last_run or last_run.status != PipelineRunStatus.FAILURE:
             return None
-
-        parent_run_id = last_run.run_id
-        root_run_id = last_run.root_run_id or last_run.run_id
-        tags = merge_dicts(
-            tags,
-            {
-                RESUME_RETRY_TAG: "true",
-                PARENT_RUN_ID_TAG: parent_run_id,
-                ROOT_RUN_ID_TAG: root_run_id,
-            },
+        return instance.create_reexecuted_run(
+            last_run,
+            repo_location,
+            external_pipeline,
+            ReexecutionStrategy.FROM_FAILURE,
+            extra_tags=tags,
+            run_config=partition_data.run_config,
+            mode=external_partition_set.mode,
+            use_parent_run_tags=False,  # don't inherit tags from the previous run
         )
-        solids_to_execute = last_run.solids_to_execute
-        solid_selection = last_run.solid_selection
-
-        step_keys_to_execute, known_state = get_retry_steps_from_parent_run(instance, parent_run_id)
 
     elif backfill_job.reexecution_steps:
         last_run = _fetch_last_run(instance, external_partition_set, partition_data.name)
@@ -235,10 +251,10 @@ def create_backfill_run(
             )
         step_keys_to_execute = backfill_job.reexecution_steps
         if last_run and last_run.status == PipelineRunStatus.SUCCESS:
-            known_state = KnownExecutionState.for_reexecution(
-                instance.all_logs(parent_run_id),
-                step_keys_to_execute,
-            )
+            known_state = KnownExecutionState.build_for_reexecution(
+                instance,
+                last_run,
+            ).update_for_step_selection(step_keys_to_execute)
         else:
             known_state = None
 
@@ -253,16 +269,6 @@ def create_backfill_run(
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
         instance=instance,
-    )
-
-    log_action(
-        instance,
-        BACKFILL_RUN_CREATED,
-        metadata={
-            "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
-            "repo_hash": hash_name(repo_location.name),
-            "pipeline_name_hash": hash_name(external_pipeline.name),
-        },
     )
 
     return instance.create_run(

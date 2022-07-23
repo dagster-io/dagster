@@ -4,12 +4,15 @@ from dagster_graphql.test.utils import (
     infer_repository_selector,
 )
 
-from dagster.core.test_utils import create_test_daemon_workspace
-from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.sensor import execute_sensor_iteration
+from dagster._daemon import get_default_daemon_logger
+from dagster._daemon.sensor import execute_sensor_iteration
+from dagster.core.test_utils import (
+    SingleThreadPoolExecutor,
+    create_test_daemon_workspace,
+    wait_for_futures,
+)
 
-from .graphql_context_test_suite import GraphQLContextVariant  # get_dict_recon_repo,
-from .graphql_context_test_suite import make_graphql_context_test_suite
+from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 
 INSTIGATION_QUERY = """
 query JobQuery($instigationSelector: InstigationSelector!) {
@@ -32,20 +35,24 @@ query JobQuery($instigationSelector: InstigationSelector!) {
 
 def _create_sensor_tick(graphql_context):
     with create_test_daemon_workspace(
-        graphql_context.process_context.workspace_load_target
+        graphql_context.process_context.workspace_load_target,
+        graphql_context.instance,
     ) as workspace:
+        logger = get_default_daemon_logger("SensorDaemon")
+        futures = {}
         list(
             execute_sensor_iteration(
-                graphql_context.instance, get_default_daemon_logger("SensorDaemon"), workspace
+                graphql_context.instance,
+                logger,
+                workspace,
+                threadpool_executor=SingleThreadPoolExecutor(),
+                debug_futures=futures,
             )
         )
+        wait_for_futures(futures)
 
 
-class TestNextTickRepository(
-    make_graphql_context_test_suite(
-        context_variants=GraphQLContextVariant.all_non_launchable_variants(),
-    )
-):
+class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
     def test_schedule_next_tick(self, graphql_context):
         repository_selector = infer_repository_selector(graphql_context)
         external_repository = graphql_context.get_repository_location(

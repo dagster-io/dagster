@@ -2,15 +2,17 @@ import logging
 import sys
 from typing import List, Optional
 
-from dagster import check
-from dagster.config import Field
-from dagster.config.validate import process_config
+import dagster._check as check
+from dagster._config import Field, process_config
+from dagster._loggers import default_system_loggers
+from dagster._utils import ensure_single_item
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster.core.definitions.executor_definition import (
     ExecutorDefinition,
     check_cross_process_constraints,
     default_executors,
 )
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.definitions.run_config import selector_for_named_defs
 from dagster.core.errors import (
     DagsterError,
@@ -23,9 +25,6 @@ from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.loggers import default_system_loggers
-from dagster.utils import ensure_single_item
-from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .api import ExecuteRunWithPlanIterable, pipeline_execution_iterator
 from .context.logger import InitLoggerContext
@@ -184,10 +183,12 @@ def execute_run_host_mode(
         ),
     )
 
-    if pipeline_run.solids_to_execute:
-        pipeline = pipeline.subset_for_execution_from_existing_pipeline(
-            pipeline_run.solids_to_execute
-        )
+    pipeline = pipeline.subset_for_execution_from_existing_pipeline(
+        solids_to_execute=frozenset(pipeline_run.solids_to_execute)
+        if pipeline_run.solids_to_execute
+        else None,
+        asset_selection=pipeline_run.asset_selection,
+    )
 
     execution_plan_snapshot = instance.get_execution_plan_snapshot(
         pipeline_run.execution_plan_snapshot_id

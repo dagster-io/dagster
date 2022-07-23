@@ -5,6 +5,7 @@ from contextlib import contextmanager
 import pytest
 from dagster_tests.api_tests.utils import get_foo_pipeline_handle
 
+from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, PipelineRunStatus
 from dagster.core.storage.tags import PRIORITY_TAG
@@ -14,7 +15,6 @@ from dagster.core.test_utils import (
     instance_for_test,
 )
 from dagster.core.workspace.load_target import EmptyWorkspaceTarget
-from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 
 
 @contextmanager
@@ -54,13 +54,15 @@ def daemon_fixture():
 
 
 @pytest.fixture(name="workspace")
-def workspace_fixture():
-    with create_test_daemon_workspace(workspace_load_target=EmptyWorkspaceTarget()) as workspace:
+def workspace_fixture(instance):
+    with create_test_daemon_workspace(
+        workspace_load_target=EmptyWorkspaceTarget(), instance=instance
+    ) as workspace:
         yield workspace
 
 
 def create_run(instance, **kwargs):
-    with get_foo_pipeline_handle() as pipeline_handle:
+    with get_foo_pipeline_handle(instance) as pipeline_handle:
         create_run_for_test(
             instance,
             external_pipeline_origin=pipeline_handle.get_external_origin(),
@@ -138,6 +140,33 @@ def test_get_queued_runs_max_runs(num_in_progress_runs, workspace, daemon):
         list(daemon.run_iteration(instance, workspace))
 
         assert len(instance.run_launcher.queue()) == max(0, max_runs - num_in_progress_runs)
+
+
+def test_disable_max_concurrent_runs_limit(workspace, daemon):
+    with instance_for_queued_run_coordinator(max_concurrent_runs=-1) as instance:
+        # create ongoing runs
+        in_progress_run_ids = ["in_progress-run-{}".format(i) for i in range(5)]
+        for i, run_id in enumerate(in_progress_run_ids):
+            # get a selection of all in progress statuses
+            status = IN_PROGRESS_RUN_STATUSES[i % len(IN_PROGRESS_RUN_STATUSES)]
+            create_run(
+                instance,
+                run_id=run_id,
+                status=status,
+            )
+
+        # add more queued runs
+        queued_run_ids = ["queued-run-{}".format(i) for i in range(6)]
+        for run_id in queued_run_ids:
+            create_run(
+                instance,
+                run_id=run_id,
+                status=PipelineRunStatus.QUEUED,
+            )
+
+        list(daemon.run_iteration(instance, workspace))
+
+        assert len(instance.run_launcher.queue()) == 6
 
 
 def test_priority(instance, workspace, daemon):

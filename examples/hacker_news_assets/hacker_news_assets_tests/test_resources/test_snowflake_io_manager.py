@@ -2,10 +2,10 @@ import os
 import textwrap
 import uuid
 from contextlib import contextmanager
+from typing import Iterator
 
 import pytest
 from hacker_news_assets.resources.snowflake_io_manager import (
-    DB_SCHEMA,
     SHARED_SNOWFLAKE_CONF,
     connect_snowflake,
     snowflake_io_manager,
@@ -15,11 +15,17 @@ from pandas import DataFrame as PandasDataFrame
 from pyspark.sql import Row, SparkSession
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
-from dagster import asset, build_init_resource_context, build_input_context, build_output_context
+from dagster import (
+    AssetKey,
+    asset,
+    build_init_resource_context,
+    build_input_context,
+    build_output_context,
+)
 
 
-def mock_output_context(table_name):
-    @asset(name=table_name)
+def mock_output_context(asset_key):
+    @asset(name=asset_key.path[-1], key_prefix=asset_key.path[:-1])
     def my_asset():
         pass
 
@@ -33,16 +39,17 @@ def mock_input_context(upstream_output_context):
 
 
 @contextmanager
-def temporary_snowflake_table(contents: PandasDataFrame):
+def temporary_snowflake_table(contents: PandasDataFrame) -> Iterator[AssetKey]:
+    schema = "hackernews"
     snowflake_config = dict(database="TESTDB", **SHARED_SNOWFLAKE_CONF)
     table_name = "a" + str(uuid.uuid4()).replace("-", "_")
     with connect_snowflake(snowflake_config) as con:
-        contents.to_sql(name=table_name, con=con, index=False, schema=DB_SCHEMA)
+        contents.to_sql(name=table_name, con=con, index=False, schema=schema)
     try:
-        yield table_name
+        yield AssetKey([schema, table_name])
     finally:
         with connect_snowflake(snowflake_config) as conn:
-            conn.execute(f"drop table {DB_SCHEMA}.{table_name}")
+            conn.execute(f"drop table {schema}.{table_name}")
 
 
 @pytest.mark.skipif(
@@ -54,8 +61,8 @@ def test_handle_output_then_load_input_pandas():
     )
     contents1 = PandasDataFrame([{"col1": "a", "col2": 1}])  # just to get the types right
     contents2 = PandasDataFrame([{"col1": "b", "col2": 2}])  # contents we will insert
-    with temporary_snowflake_table(contents1) as temp_table_name:
-        output_context = mock_output_context(temp_table_name)
+    with temporary_snowflake_table(contents1) as temp_table_key:
+        output_context = mock_output_context(temp_table_key)
         list(snowflake_manager.handle_output(output_context, contents2))  # exhaust the iterator
 
         input_context = mock_input_context(output_context)
@@ -78,8 +85,8 @@ def test_handle_output_spark_then_load_input_pandas():
     schema = StructType([StructField("col1", StringType()), StructField("col2", IntegerType())])
     contents = spark.createDataFrame([Row(col1="Thom", col2=51)], schema)
 
-    with temporary_snowflake_table(PandasDataFrame([{"col1": "a", "col2": 1}])) as temp_table_name:
-        output_context = mock_output_context(temp_table_name)
+    with temporary_snowflake_table(PandasDataFrame([{"col1": "a", "col2": 1}])) as temp_table_key:
+        output_context = mock_output_context(temp_table_key)
 
         list(snowflake_manager.handle_output(output_context, contents))  # exhaust the iterator
 

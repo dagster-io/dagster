@@ -1,7 +1,7 @@
 import textwrap
 from typing import Any, Callable, List, Optional, Set
 
-from dagster.seven import funcsigs
+from dagster._seven import funcsigs
 
 
 def get_valid_name_permutations(param_name: str) -> Set[str]:
@@ -55,10 +55,14 @@ def positional_arg_name_list(params: List[funcsigs.Parameter]) -> List[str]:
     return [p.name for p in params if p.kind in accepted_param_types]
 
 
+def param_is_var_keyword(param: funcsigs.Parameter) -> bool:
+    return param.kind == funcsigs.Parameter.VAR_KEYWORD
+
+
 def format_docstring_for_description(fn: Callable) -> Optional[str]:
     if fn.__doc__ is not None:
         docstring = fn.__doc__
-        if docstring[0].isspace():
+        if len(docstring) > 0 and docstring[0].isspace():
             return textwrap.dedent(docstring).strip()
         else:
             first_newline_pos = docstring.find("\n")

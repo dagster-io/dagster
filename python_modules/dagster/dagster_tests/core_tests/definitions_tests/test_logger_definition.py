@@ -9,8 +9,8 @@ from dagster import (
     configured,
     execute_pipeline,
     logger,
-    pipeline,
 )
+from dagster._legacy import pipeline
 from dagster.core.utils import coerce_valid_log_level
 
 

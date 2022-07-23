@@ -1,5 +1,6 @@
 import copy
 import itertools
+import re
 import uuid
 from collections import defaultdict
 from operator import itemgetter
@@ -20,7 +21,7 @@ def stubbed(function):
     def method(self, **kwargs):
         self.stubber.add_response(
             method="method", # Name of the method being stubbed
-            service_response={}, # Stubber validates the resposne shape
+            service_response={}, # Stubber validates the response shape
             expected_params(**kwargs), # Stubber validates the params
         )
         self.client.method(**kwargs) # "super" (except we're not actually
@@ -73,7 +74,7 @@ class StubbedEcs:
     first created a task definition.
 
     We can't extend botocore.client.ECS directly. Eventually, we might want to
-    register these methods as events instead of maintaing our own StubbedEcs
+    register these methods as events instead of maintaining our own StubbedEcs
     class:
     https://boto3.amazonaws.com/v1/documentation/api/latest/guide/events.html
     """
@@ -258,12 +259,25 @@ class StubbedEcs:
     @stubbed
     def register_task_definition(self, **kwargs):
         family = kwargs.get("family")
+        # Family must be <= 255 characters. Alphanumeric, dash, and underscore only.
+        if len(family) > 255 or not re.match(r"^[\w\-]+$", family):
+            self.stubber.add_client_error(
+                method="register_task_definition", expected_params={**kwargs}
+            )
+
         # Revisions are 1 indexed
         revision = len(self.task_definitions[family]) + 1
         arn = self._task_definition_arn(family, revision)
 
         memory = kwargs.get("memory")
         cpu = kwargs.get("cpu")
+
+        # Container definitions default to empty secret lists
+        container_definitions = kwargs.get("containerDefinitions", [])
+        for container_definition in container_definitions:
+            if not container_definition.get("secrets"):
+                container_definition["secrets"] = []
+        kwargs["containerDefinitions"] = container_definitions
 
         if self._valid_cpu_and_memory(cpu=cpu, memory=memory):
             task_definition = {
@@ -328,6 +342,11 @@ class StubbedEcs:
                     raise StubbedEcsError
 
             overrides = kwargs.get("overrides", {})
+            # overrides is limited to 8192 characters including json formatting
+            # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html
+            if len(str(overrides)) > 8192:
+                self.stubber.add_client_error(method="run_task", expected_params={**kwargs})
+
             cpu = overrides.get("cpu") or task_definition.get("cpu")
             memory = overrides.get("memory") or task_definition.get("memory")
             if not self._valid_cpu_and_memory(cpu=cpu, memory=memory):

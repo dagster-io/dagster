@@ -1,8 +1,12 @@
 import graphene
 
-from ..errors import GrapheneGraphNotFoundError, GraphenePipelineNotFoundError, GraphenePythonError
+from ..errors import (
+    GrapheneGraphNotFoundError,
+    GrapheneInvalidSubsetError,
+    GraphenePipelineNotFoundError,
+    GraphenePythonError,
+)
 from ..pipelines.pipeline import GrapheneGraph, GraphenePipeline
-from ..pipelines.pipeline_errors import GrapheneInvalidSubsetError
 
 
 class GraphenePipelineOrError(graphene.Union):

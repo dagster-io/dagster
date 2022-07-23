@@ -1,11 +1,11 @@
-import {ColorsWIP, IconWIP, NonIdealState} from '@dagster-io/ui';
-import {capitalize} from 'lodash';
+import {Box, Colors, Icon, NonIdealState, Spinner} from '@dagster-io/ui';
+import capitalize from 'lodash/capitalize';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 export const LargeDAGNotice = ({nodeType}: {nodeType: 'op' | 'asset'}) => (
   <LargeDAGContainer>
-    <IconWIP name="arrow_upward" size={24} />
+    <Icon name="arrow_upward" size={24} />
     <LargeDAGInstructionBox>
       <p>
         This is a large DAG that may be difficult to visualize. Type <code>*</code> in the graph
@@ -63,11 +63,38 @@ export const EntirelyFilteredDAGNotice: React.FC<{nodeType: 'asset' | 'op'}> = (
   );
 };
 
+export const LoadingNotice: React.FC<{async: boolean; nodeType: 'asset' | 'op'}> = (props) => {
+  const {async} = props;
+  return (
+    <LoadingContainer>
+      {async ? (
+        <Box margin={{bottom: 24}}>Rendering a large number of {props.nodeType}s, please wait…</Box>
+      ) : null}
+      <Spinner purpose="page" />
+    </LoadingContainer>
+  );
+};
+
+const LoadingContainer = styled.div`
+  background-color: ${Colors.White};
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+`;
+
 const CenteredContainer = styled.div`
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  z-index: 2;
 `;
 
 const LargeDAGContainer = styled.div`
@@ -89,7 +116,7 @@ const LargeDAGInstructionBox = styled.div`
   padding: 15px 20px;
   border: 1px solid #fff5c3;
   margin-top: 20px;
-  color: ${ColorsWIP.Gray800};
+  color: ${Colors.Gray800};
   background: #fffbe5;
   text-align: left;
   line-height: 1.4rem;

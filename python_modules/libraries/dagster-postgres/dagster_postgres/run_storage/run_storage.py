@@ -1,20 +1,28 @@
+from typing import Dict
+
 import sqlalchemy as db
 
-from dagster import check
+import dagster._check as check
+from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
+from dagster._utils import utc_datetime_from_timestamp
+from dagster.core.storage.config import pg_config
 from dagster.core.storage.runs import (
     DaemonHeartbeatsTable,
     InstanceInfo,
     RunStorageSqlMetadata,
     SqlRunStorage,
 )
-from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
-from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
-from dagster.utils import utc_datetime_from_timestamp
+from dagster.core.storage.runs.schema import KeyValueStoreTable
+from dagster.core.storage.sql import (
+    check_alembic_revision,
+    create_engine,
+    run_alembic_upgrade,
+    stamp_alembic_rev,
+)
 
 from ..utils import (
     create_pg_connection,
     pg_alembic_config,
-    pg_config,
     pg_statement_timeout,
     pg_url_from_config,
     retry_pg_connection_fn,
@@ -32,7 +40,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     To use Postgres for run storage, you can add a block such as the following to your
     ``dagster.yaml``:
 
-    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg.yaml
+    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg-legacy.yaml
        :caption: dagster.yaml
        :lines: 1-10
        :language: YAML
@@ -114,11 +122,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         return PostgresRunStorage(postgres_url, should_autocreate_tables)
 
     def connect(self):
-        return create_pg_connection(
-            self._engine,
-            __file__,
-            "run",
-        )
+        return create_pg_connection(self._engine)
 
     def upgrade(self):
         with self.connect() as conn:
@@ -157,3 +161,25 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                     },
                 )
             )
+
+    def kvs_set(self, pairs: Dict[str, str]) -> None:
+        check.dict_param(pairs, "pairs", key_type=str, value_type=str)
+
+        # pg speciic on_conflict_do_update
+        insert_stmt = db.dialects.postgresql.insert(KeyValueStoreTable).values(
+            [{"key": k, "value": v} for k, v in pairs.items()]
+        )
+        upsert_stmt = insert_stmt.on_conflict_do_update(
+            index_elements=[
+                KeyValueStoreTable.c.key,
+            ],
+            set_={"value": insert_stmt.excluded.value},
+        )
+
+        with self.connect() as conn:
+            conn.execute(upsert_stmt)
+
+    def alembic_version(self):
+        alembic_config = pg_alembic_config(__file__)
+        with self.connect() as conn:
+            return check_alembic_revision(alembic_config, conn)

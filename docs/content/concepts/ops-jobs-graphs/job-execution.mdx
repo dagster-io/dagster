@@ -26,7 +26,7 @@ You can also launch jobs in other ways:
 
 ## Executing a Job
 
-```python file=/concepts/solids_pipelines/pipeline_execution.py startafter=start_pipeline_marker endbefore=end_pipeline_marker
+```python file=/concepts/ops_jobs_graphs/job_execution.py startafter=start_pipeline_marker endbefore=end_pipeline_marker
 from dagster import job, op
 
 
@@ -99,7 +99,7 @@ Dagster includes Python APIs for execution that are useful when writing tests or
 <PyObject object="JobDefinition" method="execute_in_process" /> executes a job and
 returns an <PyObject object="ExecuteInProcessResult" />.
 
-```python file=/concepts/solids_pipelines/pipeline_execution.py startafter=start_execute_marker endbefore=end_execute_marker
+```python file=/concepts/ops_jobs_graphs/job_execution.py startafter=start_execute_marker endbefore=end_execute_marker
 if __name__ == "__main__":
     result = my_job.execute_in_process()
 ```
@@ -136,7 +136,7 @@ It works as follows:
 
 You can use this selection syntax in the `op_selection` argument to the <PyObject object="JobDefinition" method="execute_in_process" />:
 
-```python file=/concepts/solids_pipelines/pipeline_execution.py startafter=start_solid_selection_marker endbefore=end_solid_selection_marker
+```python file=/concepts/ops_jobs_graphs/job_execution.py startafter=start_solid_selection_marker endbefore=end_solid_selection_marker
 my_job.execute_in_process(op_selection=["*add_two"])
 ```
 
@@ -148,3 +148,46 @@ src="/images/concepts/solids-pipelines/solid-selection.png"
 width={3808}
 height={2414}
 />
+
+## Controlling Job Execution
+
+Each <PyObject object="JobDefinition" /> contains an <PyObject object="ExecutorDefinition" /> that determines how it will be executed.
+
+This `executor_def` property can be set to allow for different types of isolation and parallelism, ranging from executing all the ops in the same process to executing each op in its own Kubernetes pod. See [Executors](/deployment/executors) for more details.
+
+### Default Job Executor
+
+The default job executor definition defaults to multiprocess execution. It also allows you to toggle between in process and multiprocess execution via config.
+
+Here is an example of run config as yaml you could provide in the dagit playground to do an in process execution.
+
+```python file=/concepts/ops_jobs_graphs/job_execution.py startafter=start_ip_yaml endbefore=end_ip_yaml
+execution:
+  config:
+    in_process:
+```
+
+Additional config options are available for multiprocess execution that can help with performance. This includes limiting the max concurrent subprocesses and controlling how those subprocess are spawned.
+
+The example below sets the run config directly on the job to explicitly set the max concurrent subprocesses to 4, and change the subprocess start method to use a forkserver.
+
+```python file=/concepts/ops_jobs_graphs/job_execution.py startafter=start_mp_cfg endbefore=end_mp_cfg
+@job(
+    config={
+        "execution": {
+            "config": {
+                "multiprocess": {
+                    "start_method": {
+                        "forkserver": {},
+                    },
+                    "max_concurrent": 4,
+                },
+            }
+        }
+    }
+)
+def forkserver_job():
+    multi_three(add_two(return_one()))
+```
+
+Using forkserver is a great way to reduce per process overhead during multiprocess execution, but can cause issues with certain libraries. More details can be found [here](https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods).

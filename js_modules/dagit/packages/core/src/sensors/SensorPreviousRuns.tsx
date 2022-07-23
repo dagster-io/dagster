@@ -1,12 +1,15 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, Group, NonIdealState, Subheading} from '@dagster-io/ui';
+import {Box, Colors, Group, NonIdealState, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
-import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from '../workspace/PreviousRunsSection';
 import {RepoAddress} from '../workspace/types';
 
-import {PreviousRunsForSensorQuery} from './types/PreviousRunsForSensorQuery';
+import {
+  PreviousRunsForSensorQuery,
+  PreviousRunsForSensorQueryVariables,
+} from './types/PreviousRunsForSensorQuery';
 import {SensorFragment} from './types/SensorFragment';
 
 const RUNS_LIMIT = 20;
@@ -14,26 +17,29 @@ const RUNS_LIMIT = 20;
 export const SensorPreviousRuns: React.FC<{
   sensor: SensorFragment;
   repoAddress: RepoAddress;
-  highlightedIds: string[];
-}> = ({sensor, highlightedIds}) => {
-  const {data, loading} = useQuery<PreviousRunsForSensorQuery>(PREVIOUS_RUNS_FOR_SENSOR_QUERY, {
-    fetchPolicy: 'cache-and-network',
-    variables: {
-      limit: RUNS_LIMIT,
-      filter: {
-        pipelineName: sensor.targets?.length === 1 ? sensor.targets[0].pipelineName : undefined,
-        tags: [{key: DagsterTag.SensorName, value: sensor.name}],
+  tabs?: React.ReactElement;
+  highlightedIds?: string[];
+}> = ({sensor, highlightedIds, tabs}) => {
+  const {data} = useQuery<PreviousRunsForSensorQuery, PreviousRunsForSensorQueryVariables>(
+    PREVIOUS_RUNS_FOR_SENSOR_QUERY,
+    {
+      fetchPolicy: 'cache-and-network',
+      variables: {
+        limit: RUNS_LIMIT,
+        filter: {
+          pipelineName: sensor.targets?.length === 1 ? sensor.targets[0].pipelineName : undefined,
+          tags: [{key: DagsterTag.SensorName, value: sensor.name}],
+        },
       },
     },
-  });
-
-  return (
-    <PreviousRunsSection
-      loading={loading}
-      data={data?.pipelineRunsOrError}
-      highlightedIds={highlightedIds}
-    />
   );
+
+  if (!data || data.pipelineRunsOrError.__typename !== 'Runs') {
+    return null;
+  }
+
+  const runs = data?.pipelineRunsOrError.results;
+  return <RunTable actionBarComponents={tabs} runs={runs} highlightedIds={highlightedIds} />;
 };
 
 export const NoTargetSensorPreviousRuns: React.FC<{
@@ -45,12 +51,12 @@ export const NoTargetSensorPreviousRuns: React.FC<{
     <Group direction="column" spacing={4}>
       <Box
         padding={{vertical: 16, horizontal: 24}}
-        border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}
+        border={{side: 'bottom', width: 1, color: Colors.Gray100}}
         flex={{direction: 'row'}}
       >
         <Subheading>Latest runs</Subheading>
       </Box>
-      <div style={{color: ColorsWIP.Gray400}}>
+      <div style={{color: Colors.Gray400}}>
         <Box margin={{vertical: 64}}>
           <NonIdealState
             icon="sensors"
@@ -67,8 +73,15 @@ const PREVIOUS_RUNS_FOR_SENSOR_QUERY = gql`
   query PreviousRunsForSensorQuery($filter: RunsFilter, $limit: Int) {
     pipelineRunsOrError(filter: $filter, limit: $limit) {
       __typename
-      ...PreviousRunsFragment
+      ... on Runs {
+        results {
+          id
+          ... on PipelineRun {
+            ...RunTableRunFragment
+          }
+        }
+      }
     }
   }
-  ${PREVIOUS_RUNS_FRAGMENT}
+  ${RUN_TABLE_RUN_FRAGMENT}
 `;

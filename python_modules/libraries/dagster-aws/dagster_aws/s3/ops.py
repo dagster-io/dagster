@@ -1,22 +1,23 @@
+from typing import Dict
+
 from dagster import (
     AssetMaterialization,
     Field,
     FileHandle,
     In,
-    MetadataEntry,
+    MetadataValue,
     Out,
     Output,
     StringSource,
-    check,
-    dagster_type_loader,
-    op,
 )
+from dagster import _check as check
+from dagster import dagster_type_loader, op
 from dagster.core.types.dagster_type import PythonObjectDagsterType
 
 from .file_manager import S3FileHandle
 
 
-def dict_with_fields(name, fields):
+def dict_with_fields(name: str, fields: Dict[str, object]):
     check.str_param(name, "name")
     check.dict_param(fields, "fields", key_type=str)
     field_names = set(fields.keys())
@@ -43,7 +44,7 @@ S3Coordinate = dict_with_fields(
 )
 
 
-def last_key(key):
+def last_key(key: str) -> str:
     if "/" not in key:
         return key
     comps = key.split("/")
@@ -74,7 +75,7 @@ def file_handle_to_s3(context, file_handle):
 
         yield AssetMaterialization(
             asset_key=s3_file_handle.s3_path,
-            metadata_entries=[MetadataEntry.path(s3_file_handle.s3_path, label=last_key(key))],
+            metadata={last_key(key): MetadataValue.path(s3_file_handle.s3_path)},
         )
 
         yield Output(value=s3_file_handle, output_name="s3_file_handle")

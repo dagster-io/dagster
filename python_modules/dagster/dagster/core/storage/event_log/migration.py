@@ -1,10 +1,10 @@
 import sqlalchemy as db
 from tqdm import tqdm
 
-from dagster import AssetKey, seven
+from dagster import AssetKey
+from dagster._serdes import deserialize_json_to_dagster_namedtuple
+from dagster._utils import utc_datetime_from_timestamp
 from dagster.core.events.log import EventLogEntry
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
-from dagster.utils import utc_datetime_from_timestamp
 
 SECONDARY_INDEX_ASSET_KEY = "asset_key_table"  # builds the asset key table from the event log
 ASSET_KEY_INDEX_COLS = "asset_key_index_columns"  # extracts index columns from the asset_keys table
@@ -30,9 +30,8 @@ def migrate_event_log_data(instance=None):
         return
 
     for run in instance.get_runs():
-        event_records_by_id = event_log_storage.get_logs_for_run_by_log_id(run.run_id)
-        for record_id, event in event_records_by_id.items():
-            event_log_storage.update_event_log_record(record_id, event)
+        for record in event_log_storage.get_records_for_run(run.run_id).records:
+            event_log_storage.update_event_log_record(record.storage_id, record.event_log_entry)
 
 
 def migrate_asset_key_data(event_log_storage, print_fn=None):
@@ -73,8 +72,8 @@ def migrate_asset_key_data(event_log_storage, print_fn=None):
 
 
 def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
+    from dagster._serdes import serialize_dagster_namedtuple
     from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
-    from dagster.serdes import serialize_dagster_namedtuple
 
     from .schema import AssetKeyTable, SqlEventLogStorageTable
 
@@ -143,14 +142,12 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                         wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp)
                         if wipe_timestamp
                         else None,
-                        tags=None,
                     )
                     .where(
                         AssetKeyTable.c.asset_key == asset_key.to_string(),
                     )
                 )
             else:
-                tags = event.dagster_event.step_materialization_data.materialization.tags
                 conn.execute(
                     AssetKeyTable.update()
                     .values(  # pylint: disable=no-value-for-parameter
@@ -159,7 +156,6 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
                         wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp)
                         if wipe_timestamp
                         else None,
-                        tags=seven.json.dumps(tags) if tags else None,
                     )
                     .where(
                         AssetKeyTable.c.asset_key == asset_key.to_string(),

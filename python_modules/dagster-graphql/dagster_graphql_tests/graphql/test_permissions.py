@@ -8,7 +8,7 @@ from dagster_graphql.implementation.utils import (
 )
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from dagster import check
+import dagster._check as check
 from dagster.core.workspace.permissions import EDITOR_PERMISSIONS, VIEWER_PERMISSIONS, Permissions
 
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix

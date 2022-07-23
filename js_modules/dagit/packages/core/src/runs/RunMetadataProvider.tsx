@@ -218,7 +218,14 @@ export function extractMetadataFromLogs(
       }
     }
 
-    if (log.__typename === 'EngineEvent' && !log.stepKey) {
+    if (
+      log.__typename === 'EngineEvent' ||
+      log.__typename === 'ResourceInitFailureEvent' ||
+      log.__typename === 'ResourceInitStartedEvent' ||
+      log.__typename === 'ResourceInitSuccessEvent' ||
+      log.__typename === 'StepWorkerStartedEvent' ||
+      log.__typename === 'StepWorkerStartingEvent'
+    ) {
       if (log.markerStart) {
         upsertMarker(metadata.globalMarkers, log.markerStart).start = timestamp;
       }
@@ -276,13 +283,6 @@ export function extractMetadataFromLogs(
         upsertState(step, timestamp + 1, IStepState.PREPARING);
       } else if (log.__typename === 'ExecutionStepRestartEvent') {
         upsertState(step, timestamp, IStepState.RUNNING);
-      } else if (log.__typename === 'EngineEvent') {
-        if (log.markerStart) {
-          upsertMarker(step.markers, log.markerStart).start = timestamp;
-        }
-        if (log.markerEnd) {
-          upsertMarker(step.markers, log.markerEnd).end = timestamp;
-        }
       } else if (log.__typename === 'ObjectStoreOperationEvent') {
         // this indicates the step was skipped and its previous intermediates were copied
         // so we will drop the step because we didn't execute it
@@ -302,21 +302,21 @@ export function extractMetadataFromLogs(
     step.transitions = step.transitions.sort((a, b) => a.time - b.time);
 
     // Build step "attempts" from transitions
-    let start = null;
+    // - Each time we see a "RUNNING" step transition, we create a new attempt box unless one is open already.
+    // - Each time we see a final step transition, we set it as the end state of the current attempt.
+
+    let attempt: IStepAttempt | null = null;
     for (const t of step.transitions) {
-      if (t.state === IStepState.RUNNING) {
-        start = t.time;
+      if ((!attempt || attempt.end) && t.state === IStepState.RUNNING) {
+        attempt = {start: t.time};
+        step.attempts.push(attempt);
       }
-      if (start && BOX_EXIT_STATES.includes(t.state)) {
-        step.attempts.push({start, end: t.time, exitState: t.state});
-        start = null;
+      if (attempt && BOX_EXIT_STATES.includes(t.state)) {
+        attempt.end = t.time;
+        attempt.exitState = t.state;
       }
-    }
-    if (start !== null) {
-      step.attempts.push({start});
     }
   }
-
   return metadata;
 }
 
@@ -343,7 +343,7 @@ export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
       timestamp
       stepKey
     }
-    ... on EngineEvent {
+    ... on MarkerEvent {
       markerStart
       markerEnd
     }

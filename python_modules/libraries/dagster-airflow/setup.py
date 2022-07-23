@@ -1,11 +1,11 @@
 from typing import Dict
 
-from setuptools import find_packages, setup  # type: ignore
+from setuptools import find_packages, setup
 
 
 def get_version() -> str:
     version: Dict[str, str] = {}
-    with open("dagster_airflow/version.py") as fp:
+    with open("dagster_airflow/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
     return version["__version__"]
@@ -14,7 +14,7 @@ def get_version() -> str:
 if __name__ == "__main__":
     ver = get_version()
     # dont pin dev installs to avoid pip dep resolver issues
-    pin = "" if ver == "dev" else f"=={ver}"
+    pin = "" if ver == "0+dev" else f"=={ver}"
     setup(
         name="dagster-airflow",
         version=ver,
@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=find_packages(exclude=["dagster_airflow_tests"]),
+        packages=find_packages(exclude=["dagster_airflow_tests*"]),
         install_requires=[
             f"dagster{pin}",
             "docker",
@@ -54,6 +54,9 @@ if __name__ == "__main__":
                 "kubernetes==10.0.1",
                 # New WTForms release breaks the version of airflow used by tests
                 "WTForms<3.0.0",
+                # pinned based on certain incompatible versions of Jinja2, which is itself pinned
+                # by apache-airflow==1.10.10
+                "markupsafe<=2.0.1",
             ],
         },
         entry_points={"console_scripts": ["dagster-airflow = dagster_airflow.cli:main"]},

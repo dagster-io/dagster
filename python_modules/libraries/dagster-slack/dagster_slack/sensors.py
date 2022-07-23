@@ -1,42 +1,46 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
-from slack_sdk import WebClient
+from slack_sdk.web.client import WebClient
 
 from dagster import DefaultSensorStatus
 from dagster.core.definitions import GraphDefinition, PipelineDefinition
 from dagster.core.definitions.run_status_sensor_definition import (
     PipelineFailureSensorContext,
     RunFailureSensorContext,
+    RunStatusSensorContext,
     pipeline_failure_sensor,
     run_failure_sensor,
 )
+from dagster.core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+
+T = TypeVar("T", bound=RunStatusSensorContext)
 
 
 def _build_slack_blocks_and_text(
-    context: RunFailureSensorContext,
-    text_fn: Callable[[RunFailureSensorContext], str],
-    blocks_fn: Optional[Callable[[RunFailureSensorContext], List[Dict]]],
+    context: T,
+    text_fn: Callable[[T], str],
+    blocks_fn: Optional[Callable[[T], List[Dict]]],
     dagit_base_url: Optional[str],
 ) -> Tuple[List[Dict[str, Any]], str]:
-    blocks: List[Dict[str, Any]] = [
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f'*Job "{context.pipeline_run.pipeline_name}" failed. `{context.pipeline_run.run_id.split("-")[0]}`*',
-            },
-        },
-    ]
     main_body_text = text_fn(context)
-
+    blocks: List[Dict[str, Any]] = []
     if blocks_fn:
         blocks.extend(blocks_fn(context))
     else:
-        blocks.append(
-            {
-                "type": "section",
-                "text": {"type": "mrkdwn", "text": main_body_text},
-            },
+        blocks.extend(
+            [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f'*Job "{context.pipeline_run.pipeline_name}" failed. `{context.pipeline_run.run_id.split("-")[0]}`*',
+                    },
+                },
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": main_body_text},
+                },
+            ]
         )
 
     if dagit_base_url:
@@ -55,7 +59,9 @@ def _build_slack_blocks_and_text(
     return blocks, main_body_text
 
 
-def _default_failure_message_text_fn(context: PipelineFailureSensorContext) -> str:
+def _default_failure_message_text_fn(
+    context: Union[PipelineFailureSensorContext, RunFailureSensorContext]
+) -> str:
     return f"Error: ```{context.failure_event.message}```"
 
 
@@ -63,8 +69,8 @@ def make_slack_on_pipeline_failure_sensor(
     channel: str,
     slack_token: str,
     text_fn: Callable[[PipelineFailureSensorContext], str] = _default_failure_message_text_fn,
-    blocks_fn: Callable[[PipelineFailureSensorContext], List[Dict]] = None,
-    pipeline_selection: List[str] = None,
+    blocks_fn: Optional[Callable[[PipelineFailureSensorContext], List[Dict]]] = None,
+    pipeline_selection: Optional[List[str]] = None,
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
@@ -147,10 +153,12 @@ def make_slack_on_run_failure_sensor(
     channel: str,
     slack_token: str,
     text_fn: Callable[[RunFailureSensorContext], str] = _default_failure_message_text_fn,
-    blocks_fn: Callable[[RunFailureSensorContext], List[Dict]] = None,
+    blocks_fn: Optional[Callable[[RunFailureSensorContext], List[Dict]]] = None,
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
-    job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
+    job_selection: Optional[
+        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+    ] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
     """Create a sensor on job failures that will message the given Slack channel.

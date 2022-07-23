@@ -1,30 +1,34 @@
 import {gql, useLazyQuery, useMutation} from '@apollo/client';
 import {
-  ButtonWIP,
-  HighlightedCodeBlock,
-  IconWIP,
-  MenuDividerWIP,
+  Button,
+  Icon,
+  MenuDivider,
   MenuExternalLink,
-  MenuItemWIP,
-  MenuLink,
-  MenuWIP,
+  MenuItem,
+  Menu,
   Popover,
   Tooltip,
+  DialogFooter,
+  Dialog,
+  StyledReadOnlyCodeMirror,
 } from '@dagster-io/ui';
-import qs from 'qs';
 import * as React from 'react';
-import * as yaml from 'yaml';
+import {useHistory} from 'react-router-dom';
 
 import {AppContext} from '../app/AppContext';
-import {showCustomAlert} from '../app/CustomAlertProvider';
+import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
+import {useCopyToClipboard} from '../app/browser';
+import {ReexecutionStrategy} from '../types/globalTypes';
+import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
-import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
+import {workspacePathFromRunDetails} from '../workspace/workspacePath';
 
 import {DeletionDialog} from './DeletionDialog';
+import {ReexecutionDialog} from './ReexecutionDialog';
 import {RUN_FRAGMENT_FOR_REPOSITORY_MATCH} from './RunFragments';
-import {doneStatuses} from './RunStatuses';
+import {doneStatuses, failedStatuses} from './RunStatuses';
 import {
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,
   RunsQueryRefetchContext,
@@ -32,29 +36,43 @@ import {
   handleLaunchResult,
 } from './RunUtils';
 import {TerminationDialog} from './TerminationDialog';
-import {LaunchPipelineReexecution} from './types/LaunchPipelineReexecution';
-import {PipelineEnvironmentYamlQuery} from './types/PipelineEnvironmentYamlQuery';
+import {
+  LaunchPipelineReexecution,
+  LaunchPipelineReexecutionVariables,
+} from './types/LaunchPipelineReexecution';
+import {
+  PipelineEnvironmentYamlQuery,
+  PipelineEnvironmentYamlQueryVariables,
+} from './types/PipelineEnvironmentYamlQuery';
 import {RunTableRunFragment} from './types/RunTableRunFragment';
 
 export const RunActionsMenu: React.FC<{
   run: RunTableRunFragment;
 }> = React.memo(({run}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
-  const [visibleDialog, setVisibleDialog] = React.useState<'none' | 'terminate' | 'delete'>('none');
+  const [visibleDialog, setVisibleDialog] = React.useState<
+    'none' | 'terminate' | 'delete' | 'config'
+  >('none');
 
-  const {basePath, rootServerURI} = React.useContext(AppContext);
+  const {rootServerURI} = React.useContext(AppContext);
   const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
+  const history = useHistory();
 
-  const [reexecute] = useMutation<LaunchPipelineReexecution>(LAUNCH_PIPELINE_REEXECUTION_MUTATION, {
-    onCompleted: refetch,
-  });
+  const copyConfig = useCopyToClipboard();
 
-  const [loadEnv, {called, loading, data}] = useLazyQuery<PipelineEnvironmentYamlQuery>(
-    PIPELINE_ENVIRONMENT_YAML_QUERY,
+  const [reexecute] = useMutation<LaunchPipelineReexecution, LaunchPipelineReexecutionVariables>(
+    LAUNCH_PIPELINE_REEXECUTION_MUTATION,
     {
-      variables: {runId: run.runId},
+      onCompleted: refetch,
     },
   );
+
+  const [loadEnv, {called, loading, data}] = useLazyQuery<
+    PipelineEnvironmentYamlQuery,
+    PipelineEnvironmentYamlQueryVariables
+  >(PIPELINE_ENVIRONMENT_YAML_QUERY, {
+    variables: {runId: run.runId},
+  });
 
   const closeDialogs = () => {
     setVisibleDialog('none');
@@ -72,43 +90,19 @@ export const RunActionsMenu: React.FC<{
   const isFinished = doneStatuses.has(run.status);
   const isJob = !!(repoMatch && isThisThingAJob(repoMatch?.match, run.pipelineName));
 
-  const launchpadPath = () => {
-    const path = `/playground/setup?${qs.stringify({
-      config: runConfigYaml,
-      solidSelection: run.solidSelection,
-    })}`;
-
-    if (repoMatch) {
-      return workspacePipelinePath({
-        repoName: repoMatch.match.repository.name,
-        repoLocation: repoMatch.match.repositoryLocation.name,
-        pipelineName: run.pipelineName,
-        isJob,
-        path,
-      });
-    }
-
-    return workspacePipelinePathGuessRepo(run.pipelineName, isJob, path);
-  };
-
   const infoReady = called ? !loading : false;
   return (
     <>
       <Popover
         content={
-          <MenuWIP>
-            <MenuItemWIP
+          <Menu>
+            <MenuItem
               text={loading ? 'Loading Configuration...' : 'View Configuration...'}
               disabled={!runConfigYaml}
               icon="open_in_new"
-              onClick={() =>
-                showCustomAlert({
-                  title: 'Config',
-                  body: <HighlightedCodeBlock value={runConfigYaml || ''} language="yaml" />,
-                })
-              }
+              onClick={() => setVisibleDialog('config')}
             />
-            <MenuDividerWIP />
+            <MenuDivider />
             <>
               <Tooltip
                 content={OPEN_LAUNCHPAD_UNKNOWN}
@@ -120,7 +114,13 @@ export const RunActionsMenu: React.FC<{
                   text="Open in Launchpad..."
                   disabled={!infoReady}
                   icon="edit"
-                  to={launchpadPath()}
+                  to={workspacePathFromRunDetails({
+                    id: run.id,
+                    pipelineName: run.pipelineName,
+                    repositoryName: repoMatch?.match.repository.name,
+                    repositoryLocationName: repoMatch?.match.repositoryLocation.name,
+                    isJob,
+                  })}
                 />
               </Tooltip>
               <Tooltip
@@ -129,34 +129,35 @@ export const RunActionsMenu: React.FC<{
                 disabled={infoReady && !!repoMatch}
                 targetTagName="div"
               >
-                <MenuItemWIP
+                <MenuItem
                   text="Re-execute"
                   disabled={!infoReady || !repoMatch}
                   icon="refresh"
                   onClick={async () => {
                     if (repoMatch && runConfigYaml) {
-                      const runConfig = yaml.parse(runConfigYaml);
                       const result = await reexecute({
                         variables: getReexecutionVariables({
-                          run: {...run, runConfig},
+                          run: {...run, runConfigYaml},
                           style: {type: 'all'},
                           repositoryLocationName: repoMatch.match.repositoryLocation.name,
                           repositoryName: repoMatch.match.repository.name,
                         }),
                       });
-                      handleLaunchResult(basePath, run.pipelineName, result, {});
+                      handleLaunchResult(run.pipelineName, result, history, {
+                        behavior: 'open',
+                      });
                     }
                   }}
                 />
               </Tooltip>
               {isFinished || !canTerminatePipelineExecution ? null : (
-                <MenuItemWIP
+                <MenuItem
                   icon="cancel"
                   text="Terminate"
                   onClick={() => setVisibleDialog('terminate')}
                 />
               )}
-              <MenuDividerWIP />
+              <MenuDivider />
             </>
             <MenuExternalLink
               text="Download Debug File"
@@ -165,14 +166,14 @@ export const RunActionsMenu: React.FC<{
               href={`${rootServerURI}/download_debug/${run.runId}`}
             />
             {canDeletePipelineRun ? (
-              <MenuItemWIP
+              <MenuItem
                 icon="delete"
                 text="Delete"
                 intent="danger"
                 onClick={() => setVisibleDialog('delete')}
               />
             ) : null}
-          </MenuWIP>
+          </Menu>
         }
         position="bottom-right"
         onOpening={() => {
@@ -181,7 +182,7 @@ export const RunActionsMenu: React.FC<{
           }
         }}
       >
-        <ButtonWIP icon={<IconWIP name="expand_more" />} />
+        <Button icon={<Icon name="expand_more" />} />
       </Popover>
       {canTerminatePipelineExecution ? (
         <TerminationDialog
@@ -200,6 +201,36 @@ export const RunActionsMenu: React.FC<{
           selectedRuns={{[run.id]: run.canTerminate}}
         />
       ) : null}
+      <Dialog
+        isOpen={visibleDialog === 'config'}
+        title="Config"
+        canOutsideClickClose
+        canEscapeKeyClose
+        onClose={closeDialogs}
+      >
+        <StyledReadOnlyCodeMirror
+          value={runConfigYaml || ''}
+          options={{lineNumbers: true, mode: 'yaml'}}
+        />
+        <DialogFooter topBorder>
+          <Button
+            intent="none"
+            onClick={() => {
+              copyConfig(runConfigYaml || '');
+              SharedToaster.show({
+                intent: 'success',
+                icon: 'copy_to_clipboard_done',
+                message: 'Copied!',
+              });
+            }}
+          >
+            Copy config
+          </Button>
+          <Button intent="primary" onClick={closeDialogs}>
+            OK
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </>
   );
 });
@@ -209,8 +240,14 @@ export const RunBulkActionsMenu: React.FC<{
   clearSelection: () => void;
 }> = React.memo(({selected, clearSelection}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
-  const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
-  const [visibleDialog, setVisibleDialog] = React.useState<'none' | 'terminate' | 'delete'>('none');
+  const {
+    canTerminatePipelineExecution,
+    canDeletePipelineRun,
+    canLaunchPipelineReexecution,
+  } = usePermissions();
+  const [visibleDialog, setVisibleDialog] = React.useState<
+    'none' | 'terminate' | 'delete' | 'reexecute-from-failure' | 'reexecute'
+  >('none');
 
   if (!canTerminatePipelineExecution && !canDeletePipelineRun) {
     return null;
@@ -226,6 +263,15 @@ export const RunBulkActionsMenu: React.FC<{
   const selectedIDs = selected.map((run) => run.runId);
   const deletionMap = selected.reduce((accum, run) => ({...accum, [run.id]: run.canTerminate}), {});
 
+  const failedRuns = selected.filter((r) => failedStatuses.has(r?.status));
+  const failedMap = failedRuns.reduce((accum, run) => ({...accum, [run.id]: run.id}), {});
+
+  const reexecutableRuns = selected.filter((r) => doneStatuses.has(r?.status));
+  const reexecutableMap = reexecutableRuns.reduce(
+    (accum, run) => ({...accum, [run.id]: run.id}),
+    {},
+  );
+
   const closeDialogs = () => {
     setVisibleDialog('none');
   };
@@ -239,9 +285,9 @@ export const RunBulkActionsMenu: React.FC<{
     <>
       <Popover
         content={
-          <MenuWIP>
+          <Menu>
             {canTerminatePipelineExecution ? (
-              <MenuItemWIP
+              <MenuItem
                 icon="cancel"
                 text={`Terminate ${unfinishedIDs.length} ${
                   unfinishedIDs.length === 1 ? 'run' : 'runs'
@@ -253,7 +299,7 @@ export const RunBulkActionsMenu: React.FC<{
               />
             ) : null}
             {canDeletePipelineRun ? (
-              <MenuItemWIP
+              <MenuItem
                 icon="delete"
                 intent="danger"
                 text={`Delete ${selectedIDs.length} ${selectedIDs.length === 1 ? 'run' : 'runs'}`}
@@ -263,13 +309,37 @@ export const RunBulkActionsMenu: React.FC<{
                 }}
               />
             ) : null}
-          </MenuWIP>
+            {canLaunchPipelineReexecution ? (
+              <>
+                <MenuItem
+                  icon="refresh"
+                  text={`Re-execute ${reexecutableRuns.length} ${
+                    reexecutableRuns.length === 1 ? 'run' : 'runs'
+                  }`}
+                  disabled={reexecutableRuns.length === 0}
+                  onClick={() => {
+                    setVisibleDialog('reexecute');
+                  }}
+                />
+                <MenuItem
+                  icon="refresh"
+                  text={`Re-execute ${failedRuns.length} ${
+                    failedRuns.length === 1 ? 'run' : 'runs'
+                  } from failure`}
+                  disabled={failedRuns.length === 0}
+                  onClick={() => {
+                    setVisibleDialog('reexecute-from-failure');
+                  }}
+                />
+              </>
+            ) : null}
+          </Menu>
         }
         position="bottom-right"
       >
-        <ButtonWIP disabled={selected.length === 0} rightIcon={<IconWIP name="expand_more" />}>
+        <Button disabled={selected.length === 0} rightIcon={<Icon name="expand_more" />}>
           Actions
-        </ButtonWIP>
+        </Button>
       </Popover>
       <TerminationDialog
         isOpen={visibleDialog === 'terminate'}
@@ -283,6 +353,20 @@ export const RunBulkActionsMenu: React.FC<{
         onComplete={onComplete}
         onTerminateInstead={() => setVisibleDialog('terminate')}
         selectedRuns={deletionMap}
+      />
+      <ReexecutionDialog
+        isOpen={visibleDialog === 'reexecute-from-failure'}
+        onClose={closeDialogs}
+        onComplete={onComplete}
+        selectedRuns={failedMap}
+        reexecutionStrategy={ReexecutionStrategy.FROM_FAILURE}
+      />
+      <ReexecutionDialog
+        isOpen={visibleDialog === 'reexecute'}
+        onClose={closeDialogs}
+        onComplete={onComplete}
+        selectedRuns={reexecutableMap}
+        reexecutionStrategy={ReexecutionStrategy.ALL_STEPS}
       />
     </>
   );

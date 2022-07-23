@@ -20,9 +20,9 @@ from dagster import (
     Permissive,
     RetryRequested,
     String,
-    check,
-    solid,
 )
+from dagster import _check as check
+from dagster._legacy import solid
 from dagster.core.execution.context.compute import SolidExecutionContext
 
 from ..errors import DagsterDbtRpcUnexpectedPollOutputError
@@ -907,7 +907,7 @@ def create_dbt_rpc_run_sql_solid(
         tags={"kind": "dbt"},
         **kwargs,
     )
-    def _dbt_rpc_run_sql(context: SolidExecutionContext, sql: String) -> DataFrame:
+    def _dbt_rpc_run_sql(context: SolidExecutionContext, sql: String) -> pd.DataFrame:
         out = context.resources.dbt_rpc.run_sql(sql=sql, name=context.solid_config["name"])
         context.log.debug(out.response.text)
         raise_for_rpc_error(context, out.response)

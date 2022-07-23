@@ -1,11 +1,13 @@
 import {
   FontFamily,
+  GlobalInter,
+  GlobalInconsolata,
   GlobalDialogStyle,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
   GlobalToasterStyle,
   GlobalTooltipStyle,
-  ColorsWIP,
+  Colors,
 } from '@dagster-io/ui';
 
 import * as React from 'react';
@@ -13,13 +15,15 @@ import {MemoryRouter} from 'react-router-dom';
 
 import {createGlobalStyle} from 'styled-components/macro';
 
+import '../src/app/blueprint.css';
+
 const GlobalStyle = createGlobalStyle`
   * {
     box-sizing: border-box;
   }
 
   html, body {
-    color: ${ColorsWIP.Gray800};
+    color: ${Colors.Gray800};
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -27,7 +31,7 @@ const GlobalStyle = createGlobalStyle`
   a,
   a:hover,
   a:active {
-    color: ${ColorsWIP.Link};
+    color: ${Colors.Link};
   }
 
   body {
@@ -47,21 +51,6 @@ const GlobalStyle = createGlobalStyle`
     font-family: ${FontFamily.monospace};
     font-size: 16px;
   }
-
-  .material-icons {
-    display: block;
-  }
-
-  /* todo dish: Remove these when we have buttons updated. */
-
-  .bp3-button .material-icons {
-    position: relative;
-    top: 1px;
-  }
-
-  .bp3-button:disabled .material-icons {
-    color: ${ColorsWIP.Gray300}
-  }
 `;
 
 // Global decorator to apply the styles to all stories
@@ -69,6 +58,8 @@ export const decorators = [
   (Story) => (
     <MemoryRouter>
       <GlobalStyle />
+      <GlobalInter />
+      <GlobalInconsolata />
       <GlobalToasterStyle />
       <GlobalTooltipStyle />
       <GlobalPopoverStyle />

@@ -1,8 +1,8 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Sequence
 
 import boto3
 
-from dagster import check
+import dagster._check as check
 
 from ..utils import construct_boto_client_retry_config
 
@@ -24,7 +24,7 @@ def construct_secretsmanager_client(
     return secrets_manager
 
 
-def get_tagged_secrets(secrets_manager, secrets_tag: str) -> Dict[str, str]:
+def get_tagged_secrets(secrets_manager, secrets_tags: Sequence[str]) -> Dict[str, str]:
     """
     Return a dictionary of AWS Secrets Manager names to arns
     for any secret tagged with `secrets_tag`.
@@ -32,16 +32,17 @@ def get_tagged_secrets(secrets_manager, secrets_tag: str) -> Dict[str, str]:
 
     secrets = {}
     paginator = secrets_manager.get_paginator("list_secrets")
-    for page in paginator.paginate(
-        Filters=[
-            {
-                "Key": "tag-key",
-                "Values": [secrets_tag],
-            },
-        ],
-    ):
-        for secret in page["SecretList"]:
-            secrets[secret["Name"]] = secret["ARN"]
+    for secrets_tag in secrets_tags:
+        for page in paginator.paginate(
+            Filters=[
+                {
+                    "Key": "tag-key",
+                    "Values": [secrets_tag],
+                },
+            ],
+        ):
+            for secret in page["SecretList"]:
+                secrets[secret["Name"]] = secret["ARN"]
 
     return secrets
 

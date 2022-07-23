@@ -1,27 +1,36 @@
-import sqlalchemy as db
+from typing import Dict
 
-from dagster import check
+import sqlalchemy as db
+from packaging.version import parse
+
+import dagster._check as check
+from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
+from dagster._utils import utc_datetime_from_timestamp
+from dagster.core.storage.config import mysql_config
 from dagster.core.storage.runs import (
     DaemonHeartbeatsTable,
     InstanceInfo,
     RunStorageSqlMetadata,
     SqlRunStorage,
 )
-from dagster.core.storage.sql import stamp_alembic_rev  # pylint: disable=unused-import
-from dagster.core.storage.sql import create_engine, run_alembic_upgrade
-from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
-from dagster.utils import utc_datetime_from_timestamp
-from dagster.utils.backcompat import experimental_class_warning
+from dagster.core.storage.runs.schema import KeyValueStoreTable
+from dagster.core.storage.sql import (
+    check_alembic_revision,
+    create_engine,
+    run_alembic_upgrade,
+    stamp_alembic_rev,
+)
 
 from ..utils import (
     MYSQL_POOL_RECYCLE,
     create_mysql_connection,
     mysql_alembic_config,
-    mysql_config,
     mysql_url_from_config,
     retry_mysql_connection_fn,
     retry_mysql_creation_fn,
 )
+
+MINIMUM_MYSQL_BUCKET_VERSION = "8.0.0"
 
 
 class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
@@ -32,7 +41,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
 
-    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-mysql.yaml
+    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-mysql-legacy.yaml
        :caption: dagster.yaml
        :start-after: start_marker_runs
        :end-before: end_marker_runs
@@ -43,7 +52,6 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
     """
 
     def __init__(self, mysql_url, inst_data=None):
-        experimental_class_warning("MySQLRunStorage")
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.mysql_url = mysql_url
 
@@ -66,6 +74,8 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
 
         elif "instance_info" not in table_names:
             InstanceInfo.create(self._engine)
+
+        self._mysql_version = self.get_server_version()
 
         super().__init__()
 
@@ -92,6 +102,13 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
     @classmethod
     def config_type(cls):
         return mysql_config()
+
+    def get_server_version(self):
+        row = self.fetchone("select version()")
+        if not row:
+            return None
+
+        return row[0]
 
     @staticmethod
     def from_config_value(inst_data, config_value):
@@ -130,6 +147,16 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         if migration_name in self._index_migration_cache:
             del self._index_migration_cache[migration_name]
 
+    @property
+    def supports_bucket_queries(self):
+        if not super().supports_bucket_queries:
+            return False
+
+        if not self._mysql_version:
+            return False
+
+        return parse(self._mysql_version) >= parse(MINIMUM_MYSQL_BUCKET_VERSION)
+
     def add_daemon_heartbeat(self, daemon_heartbeat):
         with self.connect() as conn:
             conn.execute(
@@ -146,3 +173,20 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
                     body=serialize_dagster_namedtuple(daemon_heartbeat),
                 )
             )
+
+    def kvs_set(self, pairs: Dict[str, str]) -> None:
+        check.dict_param(pairs, "pairs", key_type=str, value_type=str)
+        db_values = [{"key": k, "value": v} for k, v in pairs.items()]
+
+        with self.connect() as conn:
+            insert_stmt = db.dialects.mysql.insert(KeyValueStoreTable).values(db_values)
+            conn.execute(
+                insert_stmt.on_duplicate_key_update(
+                    value=insert_stmt.inserted.value,
+                )
+            )
+
+    def alembic_version(self):
+        alembic_config = mysql_alembic_config(__file__)
+        with self.connect() as conn:
+            return check_alembic_revision(alembic_config, conn)

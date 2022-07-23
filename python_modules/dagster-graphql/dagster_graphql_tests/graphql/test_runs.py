@@ -18,15 +18,15 @@ from dagster import (
     job,
     lambda_solid,
     op,
-    pipeline,
     repository,
 )
+from dagster._legacy import pipeline
+from dagster._utils import Counter, traced_counter
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import execute_run
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.test_utils import instance_for_test
-from dagster.utils import Counter, traced_counter
 
 RUNS_QUERY = """
 query PipelineRunsRootQuery($selector: PipelineSelector!) {
@@ -263,16 +263,15 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         assert len(runs) == 1
 
         tags = runs[0]["tags"]
-        assert len(tags) == 1
 
-        assert tags[0]["key"] == "fruit"
-        assert tags[0]["value"] == "apple"
+        tags_by_key = {tag["key"]: tag["value"] for tag in tags}
+
+        assert tags_by_key["fruit"] == "apple"
 
         origin = runs[0]["repositoryOrigin"]
         assert origin
         assert origin["repositoryLocationName"] == selector["repositoryLocationName"]
         assert origin["repositoryName"] == selector["repositoryName"]
-        assert origin["repositoryLocationMetadata"]
 
         payload_two = sync_execute_get_run_log_data(
             context=graphql_context,
@@ -296,13 +295,10 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
         all_tags_result = execute_dagster_graphql(read_context, ALL_TAGS_QUERY)
         tags = all_tags_result.data["pipelineRunTags"]
 
-        assert len(tags) == 2
         tags_dict = {item["key"]: item["values"] for item in tags}
 
-        assert tags_dict == {
-            "fruit": ["apple"],
-            "veggie": ["carrot"],
-        }
+        assert tags_dict["fruit"] == ["apple"]
+        assert tags_dict["veggie"] == ["carrot"]
 
         # delete the second run
         result = execute_dagster_graphql(

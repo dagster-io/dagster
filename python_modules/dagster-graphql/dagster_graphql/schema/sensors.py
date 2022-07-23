@@ -2,12 +2,17 @@ import graphene
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.implementation.utils import capture_error, check_permission
 
-from dagster import check
+import dagster._check as check
 from dagster.core.host_representation import ExternalSensor, ExternalTargetData, SensorSelector
 from dagster.core.scheduler.instigation import InstigatorState
 from dagster.core.workspace.permissions import Permissions
 
-from ..implementation.fetch_sensors import get_sensor_next_tick, start_sensor, stop_sensor
+from ..implementation.fetch_sensors import (
+    get_sensor_next_tick,
+    set_sensor_cursor,
+    start_sensor,
+    stop_sensor,
+)
 from .asset_key import GrapheneAssetKey
 from .errors import (
     GraphenePythonError,
@@ -117,6 +122,8 @@ class GrapheneSensorsOrError(graphene.Union):
 
 
 class GrapheneStartSensorMutation(graphene.Mutation):
+    """Enable a sensor to launch runs for a job based on external state change."""
+
     Output = graphene.NonNull(GrapheneSensorOrError)
 
     class Arguments:
@@ -126,7 +133,7 @@ class GrapheneStartSensorMutation(graphene.Mutation):
         name = "StartSensorMutation"
 
     @capture_error
-    @check_permission(Permissions.START_SENSOR)
+    @check_permission(Permissions.EDIT_SENSOR)
     def mutate(self, graphene_info, sensor_selector):
         return start_sensor(graphene_info, SensorSelector.from_graphql_input(sensor_selector))
 
@@ -144,9 +151,6 @@ class GrapheneStopSensorMutationResult(graphene.ObjectType):
         )
 
     def resolve_instigationState(self, _graphene_info):
-        if not self._instigator_state:
-            return None
-
         return GrapheneInstigationState(instigator_state=self._instigator_state)
 
 
@@ -157,18 +161,41 @@ class GrapheneStopSensorMutationResultOrError(graphene.Union):
 
 
 class GrapheneStopSensorMutation(graphene.Mutation):
+    """Disable a sensor from launching runs for a job."""
+
     Output = graphene.NonNull(GrapheneStopSensorMutationResultOrError)
 
     class Arguments:
         job_origin_id = graphene.NonNull(graphene.String)
+        job_selector_id = graphene.NonNull(graphene.String)
 
     class Meta:
         name = "StopSensorMutation"
 
     @capture_error
-    @check_permission(Permissions.STOP_SENSOR)
-    def mutate(self, graphene_info, job_origin_id):
-        return stop_sensor(graphene_info, job_origin_id)
+    @check_permission(Permissions.EDIT_SENSOR)
+    def mutate(self, graphene_info, job_origin_id, job_selector_id):
+        return stop_sensor(graphene_info, job_origin_id, job_selector_id)
+
+
+class GrapheneSetSensorCursorMutation(graphene.Mutation):
+    """Set a cursor for a sensor to track state across evaluations."""
+
+    Output = graphene.NonNull(GrapheneSensorOrError)
+
+    class Arguments:
+        sensor_selector = graphene.NonNull(GrapheneSensorSelector)
+        cursor = graphene.String()
+
+    class Meta:
+        name = "SetSensorCursorMutation"
+
+    @capture_error
+    @check_permission(Permissions.EDIT_SENSOR)
+    def mutate(self, graphene_info, sensor_selector, cursor=None):
+        return set_sensor_cursor(
+            graphene_info, SensorSelector.from_graphql_input(sensor_selector), cursor
+        )
 
 
 types = [
@@ -180,4 +207,5 @@ types = [
     GrapheneStopSensorMutationResult,
     GrapheneStopSensorMutationResultOrError,
     GrapheneStopSensorMutation,
+    GrapheneSetSensorCursorMutation,
 ]

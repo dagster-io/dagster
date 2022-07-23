@@ -1,6 +1,8 @@
 from typing import List, NamedTuple, Optional
 
-from dagster import check
+import dagster._check as check
+from dagster._serdes import create_snapshot_id, whitelist_for_serdes
+from dagster.core.definitions.events import AssetKey
 
 
 class PipelineSelector(
@@ -11,6 +13,7 @@ class PipelineSelector(
             ("repository_name", str),
             ("pipeline_name", str),
             ("solid_selection", Optional[List[str]]),
+            ("asset_selection", Optional[List[AssetKey]]),
         ],
     )
 ):
@@ -24,6 +27,7 @@ class PipelineSelector(
         repository_name: str,
         pipeline_name: str,
         solid_selection: Optional[List[str]],
+        asset_selection: Optional[List[AssetKey]] = None,
     ):
         return super(PipelineSelector, cls).__new__(
             cls,
@@ -31,6 +35,9 @@ class PipelineSelector(
             repository_name=check.str_param(repository_name, "repository_name"),
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
+            asset_selection=check.opt_nullable_list_param(
+                asset_selection, "asset_selection", AssetKey
+            ),
         )
 
     def to_graphql_input(self):
@@ -53,6 +60,7 @@ class PipelineSelector(
         )
 
 
+@whitelist_for_serdes
 class RepositorySelector(
     NamedTuple("_RepositorySelector", [("location_name", str), ("repository_name", str)])
 ):
@@ -68,6 +76,10 @@ class RepositorySelector(
             "repositoryLocationName": self.location_name,
             "repositoryName": self.repository_name,
         }
+
+    @property
+    def selector_id(self):
+        return create_snapshot_id(self)
 
     @staticmethod
     def from_graphql_input(graphql_data):
@@ -136,13 +148,14 @@ class SensorSelector(
         )
 
 
-class InstigationSelector(
+@whitelist_for_serdes
+class InstigatorSelector(
     NamedTuple(
-        "_InstigationSelector", [("location_name", str), ("repository_name", str), ("name", str)]
+        "_InstigatorSelector", [("location_name", str), ("repository_name", str), ("name", str)]
     )
 ):
     def __new__(cls, location_name: str, repository_name: str, name: str):
-        return super(InstigationSelector, cls).__new__(
+        return super(InstigatorSelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),
             repository_name=check.str_param(repository_name, "repository_name"),
@@ -158,7 +171,7 @@ class InstigationSelector(
 
     @staticmethod
     def from_graphql_input(graphql_data):
-        return InstigationSelector(
+        return InstigatorSelector(
             location_name=graphql_data["repositoryLocationName"],
             repository_name=graphql_data["repositoryName"],
             name=graphql_data["name"],
@@ -187,4 +200,31 @@ class GraphSelector(
             "repositoryLocationName": self.location_name,
             "repositoryName": self.repository_name,
             "graphName": self.graph_name,
+        }
+
+
+@whitelist_for_serdes
+class PartitionSetSelector(
+    NamedTuple(
+        "_PartitionSetSelector",
+        [("location_name", str), ("repository_name", str), ("partition_set_name", str)],
+    )
+):
+    """
+    The information needed to resolve a partition set within a host process.
+    """
+
+    def __new__(cls, location_name: str, repository_name: str, partition_set_name: str):
+        return super(PartitionSetSelector, cls).__new__(
+            cls,
+            location_name=check.str_param(location_name, "location_name"),
+            repository_name=check.str_param(repository_name, "repository_name"),
+            partition_set_name=check.str_param(partition_set_name, "partition_set_name"),
+        )
+
+    def to_graphql_input(self):
+        return {
+            "repositoryLocationName": self.location_name,
+            "repositoryName": self.repository_name,
+            "partitionSetName": self.partition_set_name,
         }

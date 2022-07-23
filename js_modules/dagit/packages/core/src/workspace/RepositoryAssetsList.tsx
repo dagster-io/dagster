@@ -1,17 +1,21 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, NonIdealState, Table} from '@dagster-io/ui';
+import {Box, Colors, NonIdealState, Table} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {displayNameForAssetKey} from '../app/Util';
+import {useTrackPageView} from '../app/analytics';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {RepositoryLink} from '../nav/RepositoryLink';
 
-import {__ASSET_GROUP} from './asset-graph/Utils';
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
-import {RepositoryAssetsListQuery} from './types/RepositoryAssetsListQuery';
+import {
+  RepositoryAssetsListQuery,
+  RepositoryAssetsListQueryVariables,
+} from './types/RepositoryAssetsListQuery';
 
 const REPOSITORY_ASSETS_LIST_QUERY = gql`
   query RepositoryAssetsListQuery($repositorySelector: RepositorySelector!) {
@@ -24,7 +28,7 @@ const REPOSITORY_ASSETS_LIST_QUERY = gql`
           assetKey {
             path
           }
-          opName
+          opNames
           description
           repository {
             id
@@ -48,10 +52,15 @@ interface Props {
 }
 
 export const RepositoryAssetsList: React.FC<Props> = (props) => {
+  useTrackPageView();
+
   const {repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const {data, error, loading} = useQuery<RepositoryAssetsListQuery>(REPOSITORY_ASSETS_LIST_QUERY, {
+  const {data, error, loading} = useQuery<
+    RepositoryAssetsListQuery,
+    RepositoryAssetsListQueryVariables
+  >(REPOSITORY_ASSETS_LIST_QUERY, {
     fetchPolicy: 'cache-and-network',
     variables: {repositorySelector},
   });
@@ -106,14 +115,14 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
           <tr key={asset.id}>
             <td>
               <Box flex={{direction: 'column', gap: 4}}>
-                <Link to={`/instance/assets/${asset.assetKey.path.join('/')}`}>
+                <Link to={assetDetailsPathForKey(asset.assetKey)}>
                   {displayNameForAssetKey(asset.assetKey)}
                 </Link>
                 <Description>{asset.description}</Description>
               </Box>
             </td>
             <td>
-              <Box flex={{direction: 'column', gap: 2}}>
+              <Box flex={{direction: 'column'}}>
                 <RepositoryLink
                   repoAddress={{
                     name: asset.repository.name,
@@ -130,6 +139,6 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
 };
 
 const Description = styled.div`
-  color: ${ColorsWIP.Gray400};
+  color: ${Colors.Gray400};
   font-size: 12px;
 `;

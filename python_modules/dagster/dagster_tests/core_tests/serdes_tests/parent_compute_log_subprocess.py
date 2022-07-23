@@ -3,9 +3,9 @@
 import sys
 import time
 
-from dagster.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
-from dagster.utils import file_relative_path
-from dagster.utils.interrupts import setup_interrupt_handlers
+from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
+from dagster._utils import file_relative_path
+from dagster._utils.interrupts import setup_interrupt_handlers
 
 if __name__ == "__main__":
     setup_interrupt_handlers()
@@ -27,12 +27,12 @@ if __name__ == "__main__":
             child_interrupt_sentinel,
         ]
     )
-    with open(child_opened_sentinel, "w") as fd:
+    with open(child_opened_sentinel, "w", encoding="utf8") as fd:
         fd.write("opened_ipc_subprocess")
     try:
         while True:
             time.sleep(0.1)
     except KeyboardInterrupt:
         interrupt_ipc_subprocess(child_process)
-        with open(parent_interrupt_sentinel, "w") as fd:
+        with open(parent_interrupt_sentinel, "w", encoding="utf8") as fd:
             fd.write("parent_received_keyboard_interrupt")

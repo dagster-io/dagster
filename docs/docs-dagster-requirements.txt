@@ -9,6 +9,7 @@
 -e ../python_modules/libraries/dagster-celery-docker
 -e ../python_modules/libraries/dagster-dask
 -e ../python_modules/libraries/dagster-datadog
+-e ../python_modules/libraries/dagster-datahub
 -e ../python_modules/libraries/dagster-docker
 -e ../python_modules/libraries/dagster-fivetran
 -e ../python_modules/libraries/dagster-github
@@ -24,6 +25,7 @@
 -e ../python_modules/libraries/dagster-shell
 -e ../python_modules/libraries/dagster-slack
 -e ../python_modules/libraries/dagster-snowflake
+-e ../python_modules/libraries/dagster-snowflake-pandas
 -e ../python_modules/libraries/dagster-spark
 -e ../python_modules/libraries/dagster-ssh
 -e ../python_modules/libraries/dagster-twilio

@@ -1,15 +1,30 @@
 import re
 import warnings
 from enum import Enum
-from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+    cast,
+)
 
-from dagster import check, seven
-from dagster.core.errors import DagsterInvalidAssetKey
-from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
-from dagster.utils.backcompat import experimental_class_param_warning
+import dagster._check as check
+import dagster._seven as seven
+from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
 from .metadata import (
     MetadataEntry,
+    MetadataValue,
     PartitionMetadataEntry,
     RawMetadataValue,
     last_file_comp,
@@ -17,16 +32,12 @@ from .metadata import (
 )
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
-ASSET_KEY_REGEX = re.compile("^[a-zA-Z0-9_.-]+$")  # alphanumeric, _, -, .
+if TYPE_CHECKING:
+    from dagster.core.execution.context.output import OutputContext
+
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
-ASSET_KEY_STRUCTURED_DELIMITER = "."
-
-
-def validate_asset_key_string(s: Optional[str]) -> str:
-    if not s or not ASSET_KEY_REGEX.match(s):
-        raise DagsterInvalidAssetKey()
-
-    return s
+ASSET_KEY_DELIMITER = "/"
+ASSET_KEY_LEGACY_DELIMITER = "."
 
 
 def parse_asset_key_string(s: str) -> List[str]:
@@ -34,7 +45,7 @@ def parse_asset_key_string(s: str) -> List[str]:
 
 
 @whitelist_for_serdes
-class AssetKey(NamedTuple("_AssetKey", [("path", Union[Tuple[str, ...], List[str]])])):
+class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
     """Object representing the structure of an asset key.  Takes in a sanitized string, list of
     strings, or tuple of strings.
 
@@ -66,17 +77,15 @@ class AssetKey(NamedTuple("_AssetKey", [("path", Union[Tuple[str, ...], List[str
             )
 
     Args:
-        path (Union[str, List[str], Tuple[str, ...]]): String, list of strings, or tuple of strings.  A list of strings
+        path (Sequence[str]): String, list of strings, or tuple of strings.  A list of strings
             represent the hierarchical structure of the asset_key.
     """
 
-    def __new__(cls, path: Optional[Union[str, List[str], Tuple[str, ...]]] = None):
+    def __new__(cls, path: Sequence[str]):
         if isinstance(path, str):
             path = [path]
-        elif isinstance(path, list):
-            path = check.list_param(path, "path", of_type=str)
         else:
-            path = check.tuple_param(path, "path", of_type=str)
+            path = list(check.sequence_param(path, "path", of_type=str))
 
         return super(AssetKey, cls).__new__(cls, path=path)
 
@@ -95,11 +104,24 @@ class AssetKey(NamedTuple("_AssetKey", [("path", Union[Tuple[str, ...], List[str
         return self.to_string() == other.to_string()
 
     def to_string(self, legacy: Optional[bool] = False) -> Optional[str]:
+        """
+        E.g. '["first_component", "second_component"]'
+        """
         if not self.path:
             return None
         if legacy:
-            return ASSET_KEY_STRUCTURED_DELIMITER.join(self.path)
+            return ASSET_KEY_LEGACY_DELIMITER.join(self.path)
         return seven.json.dumps(self.path)
+
+    def to_user_string(self) -> str:
+        """
+        E.g. "first_component/second_component"
+        """
+        return ASSET_KEY_DELIMITER.join(self.path)
+
+    @staticmethod
+    def from_user_string(asset_key_string: str) -> "AssetKey":
+        return AssetKey(asset_key_string.split(ASSET_KEY_DELIMITER))
 
     @staticmethod
     def from_db_string(asset_key_string: Optional[str]) -> Optional["AssetKey"]:
@@ -119,14 +141,34 @@ class AssetKey(NamedTuple("_AssetKey", [("path", Union[Tuple[str, ...], List[str
     def get_db_prefix(path: List[str], legacy: Optional[bool] = False):
         check.list_param(path, "path", of_type=str)
         if legacy:
-            return ASSET_KEY_STRUCTURED_DELIMITER.join(path)
+            return ASSET_KEY_LEGACY_DELIMITER.join(path)
         return seven.json.dumps(path)[:-2]  # strip trailing '"]' from json string
 
     @staticmethod
-    def from_graphql_input(asset_key: Dict[str, List[str]]) -> Optional["AssetKey"]:
+    def from_graphql_input(asset_key: Mapping[str, List[str]]) -> Optional["AssetKey"]:
         if asset_key and asset_key.get("path"):
-            return AssetKey(asset_key.get("path"))
+            return AssetKey(asset_key["path"])
         return None
+
+    @staticmethod
+    def from_coerceable(arg: "CoercibleToAssetKey") -> "AssetKey":
+        if isinstance(arg, AssetKey):
+            return check.inst_param(arg, "arg", AssetKey)
+        elif isinstance(arg, str):
+            return AssetKey([arg])
+        elif isinstance(arg, list):
+            check.list_param(arg, "arg", of_type=str)
+            return AssetKey(arg)
+        else:
+            check.tuple_param(arg, "arg", of_type=str)
+            return AssetKey(arg)
+
+
+CoercibleToAssetKey = Union[AssetKey, str, Sequence[str]]
+CoercibleToAssetKeyPrefix = Union[str, Sequence[str]]
+
+
+DynamicAssetKey = Callable[["OutputContext"], Optional[AssetKey]]
 
 
 @whitelist_for_serdes
@@ -139,16 +181,10 @@ class AssetLineageInfo(
         return super(AssetLineageInfo, cls).__new__(cls, asset_key=asset_key, partitions=partitions)
 
 
-class Output(
-    NamedTuple(
-        "_Output",
-        [
-            ("value", Any),
-            ("output_name", str),
-            ("metadata_entries", List[Union[PartitionMetadataEntry, MetadataEntry]]),
-        ],
-    )
-):
+T = TypeVar("T")
+
+
+class Output(Generic[T]):
     """Event corresponding to one of a op's outputs.
 
     Op compute functions must explicitly yield events of this type when they have more than
@@ -171,11 +207,11 @@ class Output(
             list, and one of the data classes returned by a MetadataValue static method.
     """
 
-    def __new__(
-        cls,
-        value: Any,
+    def __init__(
+        self,
+        value: T,
         output_name: Optional[str] = DEFAULT_OUTPUT,
-        metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         metadata: Optional[Dict[str, RawMetadataValue]] = None,
     ):
 
@@ -185,26 +221,32 @@ class Output(
             "metadata_entries",
             of_type=(MetadataEntry, PartitionMetadataEntry),
         )
+        self._value = value
+        self._output_name = check.str_param(output_name, "output_name")
+        self._metadata_entries = normalize_metadata(metadata, metadata_entries)
 
-        return super(Output, cls).__new__(
-            cls,
-            value,
-            check.str_param(output_name, "output_name"),
-            normalize_metadata(metadata, metadata_entries),
+    @property
+    def metadata_entries(self) -> Sequence[Union[PartitionMetadataEntry, MetadataEntry]]:
+        return self._metadata_entries
+
+    @property
+    def value(self) -> Any:
+        return self._value
+
+    @property
+    def output_name(self) -> str:
+        return self._output_name
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, Output)
+            and self.value == other.value
+            and self.output_name == other.output_name
+            and self.metadata_entries == other.metadata_entries
         )
 
 
-class DynamicOutput(
-    NamedTuple(
-        "_DynamicOutput",
-        [
-            ("value", Any),
-            ("mapping_key", str),
-            ("output_name", str),
-            ("metadata_entries", List[Union[PartitionMetadataEntry, MetadataEntry]]),
-        ],
-    )
-):
+class DynamicOutput(Generic[T]):
     """
     Variant of :py:class:`Output <dagster.Output>` used to support
     dynamic mapping & collect. Each ``DynamicOutput`` produced by an op represents
@@ -231,9 +273,9 @@ class DynamicOutput(
             list, and one of the data classes returned by a MetadataValue static method.
     """
 
-    def __new__(
-        cls,
-        value: Any,
+    def __init__(
+        self,
+        value: T,
         mapping_key: str,
         output_name: Optional[str] = DEFAULT_OUTPUT,
         metadata_entries: Optional[List[Union[PartitionMetadataEntry, MetadataEntry]]] = None,
@@ -244,13 +286,34 @@ class DynamicOutput(
         metadata_entries = check.opt_list_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
+        self._mapping_key = check_valid_name(check.str_param(mapping_key, "mapping_key"))
+        self._output_name = check.str_param(output_name, "output_name")
+        self._metadata_entries = normalize_metadata(metadata, metadata_entries)
+        self._value = value
 
-        return super(DynamicOutput, cls).__new__(
-            cls,
-            value=value,
-            mapping_key=check_valid_name(check.str_param(mapping_key, "mapping_key")),
-            output_name=check.str_param(output_name, "output_name"),
-            metadata_entries=normalize_metadata(metadata, metadata_entries),
+    @property
+    def metadata_entries(self) -> Sequence[Union[PartitionMetadataEntry, MetadataEntry]]:
+        return self._metadata_entries
+
+    @property
+    def mapping_key(self) -> str:
+        return self._mapping_key
+
+    @property
+    def value(self) -> T:
+        return self._value
+
+    @property
+    def output_name(self) -> str:
+        return self._output_name
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, DynamicOutput)
+            and self.value == other.value
+            and self.output_name == other.output_name
+            and self.mapping_key == other.mapping_key
+            and self.metadata_entries == other.metadata_entries
         )
 
 
@@ -325,9 +388,8 @@ class AssetMaterialization(
         [
             ("asset_key", AssetKey),
             ("description", Optional[str]),
-            ("metadata_entries", List[Union[MetadataEntry, PartitionMetadataEntry]]),
+            ("metadata_entries", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
             ("partition", Optional[str]),
-            ("tags", Dict[str, str]),
         ],
     )
 ):
@@ -349,9 +411,6 @@ class AssetMaterialization(
         metadata_entries (Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]]): Arbitrary metadata about the
             materialized value.
         partition (Optional[str]): The name of the partition that was materialized.
-        tags (Optional[Dict[str, str]]): (Experimental) Tag metadata for a given asset
-            materialization.  Used for search and organization of the asset entry in the asset
-            catalog in Dagit.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -360,30 +419,26 @@ class AssetMaterialization(
 
     def __new__(
         cls,
-        asset_key: Union[List[str], AssetKey, str],
+        asset_key: CoercibleToAssetKey,
         description: Optional[str] = None,
-        metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         partition: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
         elif isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
         elif isinstance(asset_key, list):
-            check.list_param(asset_key, "asset_key", of_type=str)
+            check.sequence_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
         else:
             check.tuple_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
-        if tags:
-            experimental_class_param_warning("tags", "AssetMaterialization")
-
-        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
-        metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
+        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+        metadata_entries = check.opt_sequence_param(
+            metadata_entries, "metadata_entries", of_type=(MetadataEntry, PartitionMetadataEntry)
         )
 
         return super(AssetMaterialization, cls).__new__(
@@ -392,7 +447,6 @@ class AssetMaterialization(
             description=check.opt_str_param(description, "description"),
             metadata_entries=normalize_metadata(metadata, metadata_entries),
             partition=check.opt_str_param(partition, "partition"),
-            tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
         )
 
     @property
@@ -417,7 +471,7 @@ class AssetMaterialization(
         return AssetMaterialization(
             asset_key=cast(Union[str, AssetKey, List[str]], asset_key),
             description=description,
-            metadata_entries=[MetadataEntry.fspath(path)],
+            metadata_entries=[MetadataEntry("path", value=MetadataValue.path(path))],
         )
 
 
@@ -439,7 +493,6 @@ class Materialization(
             ("metadata_entries", List[MetadataEntry]),
             ("asset_key", AssetKey),
             ("partition", Optional[str]),
-            ("tags", Dict[str, str]),
         ],
     )
 ):
@@ -461,19 +514,15 @@ class Materialization(
         asset_key (Optional[Union[str, AssetKey]]): An optional parameter to identify the materialized asset
             across runs
         partition (Optional[str]): The name of the partition that was materialized.
-        tags (Optional[Dict[str, str]]): (Experimental) Tag metadata for a given asset
-            materialization.  Used for search and organization of the asset entry in the asset
-            catalog in Dagit.
     """
 
     def __new__(
         cls,
-        label: str = None,
+        label: Optional[str] = None,
         description: Optional[str] = None,
         metadata_entries: Optional[List[MetadataEntry]] = None,
         asset_key: Optional[Union[str, AssetKey]] = None,
         partition: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
         skip_deprecation_warning: Optional[bool] = False,
     ):
         if asset_key and isinstance(asset_key, str):
@@ -506,7 +555,6 @@ class Materialization(
             ),
             asset_key=asset_key,
             partition=check.opt_str_param(partition, "partition"),
-            tags=check.opt_dict_param(tags, "tags"),
         )
 
     @staticmethod
@@ -524,7 +572,7 @@ class Materialization(
         return Materialization(
             label=last_file_comp(path),
             description=description,
-            metadata_entries=[MetadataEntry.fspath(path)],
+            metadata_entries=[MetadataEntry("path", value=MetadataValue.path(path))],
             asset_key=asset_key,
         )
 
@@ -689,8 +737,8 @@ class RetryRequested(Exception):
             def flakes():
                 try:
                     flakey_operation()
-                except:
-                    raise RetryRequested(max_retries=3)
+                except Exception as e:
+                    raise RetryRequested(max_retries=3) from e
     """
 
     def __init__(

@@ -1,10 +1,10 @@
 from graphql.execution.base import ResolveInfo
 
-from dagster import check
+import dagster._check as check
+from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, SensorSelector
-from dagster.core.scheduler.instigation import InstigatorState
-from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
+from dagster.core.scheduler.instigation import InstigatorState, SensorInstigatorData
 
 from .utils import UserFacingGraphQLError, capture_error
 
@@ -23,6 +23,7 @@ def get_sensors_or_error(graphene_info, repository_selector):
         state.name: state
         for state in graphene_info.context.instance.all_instigator_state(
             repository_origin_id=repository.get_external_origin_id(),
+            repository_selector_id=repository_selector.selector_id,
             instigator_type=InstigatorType.SENSOR,
         )
     }
@@ -51,7 +52,8 @@ def get_sensor_or_error(graphene_info, selector):
         raise UserFacingGraphQLError(GrapheneSensorNotFoundError(selector.sensor_name))
     external_sensor = repository.get_external_sensor(selector.sensor_name)
     sensor_state = graphene_info.context.instance.get_instigator_state(
-        external_sensor.get_external_origin_id()
+        external_sensor.get_external_origin_id(),
+        external_sensor.selector_id,
     )
 
     return GrapheneSensor(external_sensor, sensor_state)
@@ -72,13 +74,14 @@ def start_sensor(graphene_info, sensor_selector):
     external_sensor = repository.get_external_sensor(sensor_selector.sensor_name)
     graphene_info.context.instance.start_sensor(external_sensor)
     sensor_state = graphene_info.context.instance.get_instigator_state(
-        external_sensor.get_external_origin_id()
+        external_sensor.get_external_origin_id(),
+        external_sensor.selector_id,
     )
     return GrapheneSensor(external_sensor, sensor_state)
 
 
 @capture_error
-def stop_sensor(graphene_info, instigator_origin_id):
+def stop_sensor(graphene_info, instigator_origin_id, instigator_selector_id):
     from ..schema.sensors import GrapheneStopSensorMutationResult
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
@@ -91,8 +94,11 @@ def stop_sensor(graphene_info, instigator_origin_id):
         for repository in repository_location.get_repositories().values()
         for sensor in repository.get_external_sensors()
     }
-    instance.stop_sensor(instigator_origin_id, external_sensors.get(instigator_origin_id))
-    state = graphene_info.context.instance.get_instigator_state(instigator_origin_id)
+    state = instance.stop_sensor(
+        instigator_origin_id,
+        instigator_selector_id,
+        external_sensors.get(instigator_origin_id),
+    )
     return GrapheneStopSensorMutationResult(state)
 
 
@@ -146,7 +152,8 @@ def get_sensors_for_pipeline(graphene_info, pipeline_selector):
             continue
 
         sensor_state = graphene_info.context.instance.get_instigator_state(
-            external_sensor.get_external_origin_id()
+            external_sensor.get_external_origin_id(),
+            external_sensor.selector_id,
         )
         results.append(GrapheneSensor(external_sensor, sensor_state))
 
@@ -181,7 +188,9 @@ def get_sensor_next_tick(graphene_info, sensor_state):
     if not sensor_state.is_running:
         return None
 
-    ticks = graphene_info.context.instance.get_ticks(sensor_state.instigator_origin_id, limit=1)
+    ticks = graphene_info.context.instance.get_ticks(
+        sensor_state.instigator_origin_id, sensor_state.selector_id, limit=1
+    )
     if not ticks:
         return None
     latest_tick = ticks[0]
@@ -190,3 +199,40 @@ def get_sensor_next_tick(graphene_info, sensor_state):
     if next_timestamp < get_timestamp_from_utc_datetime(get_current_datetime_in_utc()):
         return None
     return GrapheneFutureInstigationTick(sensor_state, next_timestamp)
+
+
+@capture_error
+def set_sensor_cursor(graphene_info, selector, cursor):
+    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+    check.inst_param(selector, "selector", SensorSelector)
+    check.opt_str_param(cursor, "cursor")
+
+    from ..schema.errors import GrapheneSensorNotFoundError
+    from ..schema.sensors import GrapheneSensor
+
+    location = graphene_info.context.get_repository_location(selector.location_name)
+    repository = location.get_repository(selector.repository_name)
+
+    if not repository.has_external_sensor(selector.sensor_name):
+        raise UserFacingGraphQLError(GrapheneSensorNotFoundError(selector.sensor_name))
+    instance = graphene_info.context.instance
+    external_sensor = repository.get_external_sensor(selector.sensor_name)
+    stored_state = instance.get_instigator_state(
+        external_sensor.get_external_origin_id(),
+        external_sensor.selector_id,
+    )
+    sensor_state = external_sensor.get_current_instigator_state(stored_state)
+    updated_state = sensor_state.with_data(
+        SensorInstigatorData(
+            last_tick_timestamp=sensor_state.instigator_data.last_tick_timestamp,
+            last_run_key=sensor_state.instigator_data.last_run_key,
+            min_interval=external_sensor.min_interval_seconds,
+            cursor=cursor,
+        )
+    )
+    if not stored_state:
+        instance.add_instigator_state(updated_state)
+    else:
+        instance.update_instigator_state(updated_state)
+
+    return GrapheneSensor(external_sensor, updated_state)

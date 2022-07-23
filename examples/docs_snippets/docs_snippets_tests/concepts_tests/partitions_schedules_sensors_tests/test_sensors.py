@@ -1,5 +1,6 @@
-from dagster import job, op, repository
+from unittest import mock
 
+from dagster import build_sensor_context, job, op, repository
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert import (
     email_on_run_failure,
     my_slack_on_run_failure,
@@ -9,6 +10,7 @@ from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert im
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensors import (
     log_file_job,
     my_directory_sensor,
+    my_s3_sensor,
     sensor_A,
     sensor_B,
     test_my_directory_sensor_cursor,
@@ -69,3 +71,15 @@ def test_sensor_testing_example():
 
 def test_resource_sensor_example():
     uses_db_connection()
+
+
+def test_s3_sensor():
+    with mock.patch(
+        "docs_snippets.concepts.partitions_schedules_sensors.sensors.sensors.get_s3_keys"
+    ) as mock_s3_keys:
+        mock_s3_keys.return_value = ["a", "b", "c", "d", "e"]
+        context = build_sensor_context()
+        assert context.cursor is None
+        run_requests = my_s3_sensor(context)
+        assert len(list(run_requests)) == 5
+        assert context.cursor == "e"

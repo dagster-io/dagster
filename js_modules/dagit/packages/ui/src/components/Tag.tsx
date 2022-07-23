@@ -1,37 +1,84 @@
+// eslint-disable-next-line no-restricted-imports
+import {Tag as BlueprintTag} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components/macro';
 
-import {TagWIP} from './TagWIP';
+import {BaseTag} from './BaseTag';
+import {Colors} from './Colors';
+import {IconName, Icon} from './Icon';
 
-interface ITagProps {
-  tag: {
-    key: string;
-    value: string;
-  };
-  onClick?: (tag: {key: string; value: string}) => void;
-  isDagsterTag?: boolean;
+const intentToFillColor = (intent: React.ComponentProps<typeof BlueprintTag>['intent']) => {
+  switch (intent) {
+    case 'primary':
+      return Colors.Blue50;
+    case 'danger':
+      return Colors.Red50;
+    case 'success':
+      return Colors.Green50;
+    case 'warning':
+      return Colors.Yellow50;
+    case 'none':
+    default:
+      return Colors.Gray100;
+  }
+};
+
+const intentToTextColor = (intent: React.ComponentProps<typeof BlueprintTag>['intent']) => {
+  switch (intent) {
+    case 'primary':
+      return Colors.Blue700;
+    case 'danger':
+      return Colors.Red700;
+    case 'success':
+      return Colors.Green700;
+    case 'warning':
+      return Colors.Yellow700;
+    case 'none':
+    default:
+      return Colors.Gray900;
+  }
+};
+
+const intentToIconColor = (intent: React.ComponentProps<typeof BlueprintTag>['intent']) => {
+  switch (intent) {
+    case 'primary':
+      return Colors.Blue500;
+    case 'danger':
+      return Colors.Red500;
+    case 'success':
+      return Colors.Green500;
+    case 'warning':
+      return Colors.Yellow500;
+    case 'none':
+    default:
+      return Colors.Gray900;
+  }
+};
+
+interface Props extends Omit<React.ComponentProps<typeof BlueprintTag>, 'icon' | 'rightIcon'> {
+  icon?: IconName;
+  rightIcon?: IconName;
 }
 
-export const Tag = ({tag, onClick, isDagsterTag}: ITagProps) => {
-  const onTagClick = () => onClick && onClick(tag);
+export const Tag: React.FC<Props> = (props) => {
+  const {children, icon, rightIcon, intent, ...rest} = props;
+
+  const fillColor = intentToFillColor(intent);
+  const textColor = intentToTextColor(intent);
+  const iconColor = intentToIconColor(intent);
+
+  const iconWithColor = icon ? <Icon name={icon} color={iconColor} /> : null;
+  const rightIconWithColor = rightIcon ? <Icon name={rightIcon} color={iconColor} /> : null;
 
   return (
-    <TagButton onClick={onTagClick}>
-      <TagWIP intent={isDagsterTag ? 'none' : 'primary'} interactive>
-        {`${tag.key}: ${tag.value}`}
-      </TagWIP>
-    </TagButton>
+    <BaseTag
+      {...rest}
+      fillColor={fillColor}
+      textColor={textColor}
+      icon={iconWithColor}
+      rightIcon={rightIconWithColor}
+      label={children}
+    />
   );
 };
 
-const TagButton = styled.button`
-  border: none;
-  background: none;
-  padding: 0;
-  margin: 0;
-  text-align: left;
-
-  :focus {
-    outline: none;
-  }
-`;
+Tag.displayName = 'Tag';

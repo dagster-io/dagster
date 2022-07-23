@@ -2,23 +2,24 @@ import json
 import os
 import re
 import shutil
-from typing import Dict
+from typing import Any, Dict, List
 
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
-def read_json(filename):
-    with open(filename) as f:
+def read_json(filename: str) -> Dict[str, object]:
+    with open(filename, encoding="utf8") as f:
         data = json.load(f)
+        assert isinstance(data, dict)
         return data
 
 
-def write_json(filename, data):
-    with open(filename, "w") as f:
+def write_json(filename: str, data: object) -> None:
+    with open(filename, "w", encoding="utf8") as f:
         json.dump(data, f, sort_keys=True)
 
 
-def extract_route_from_path(path_to_folder, root, file):
+def extract_route_from_path(path_to_folder: str, root: str, file: str) -> List[str]:
     sub_path = root.replace(path_to_folder, "")[1:]
     route = sub_path.split("/") + [file.replace(".fjson", "")]
     return route
@@ -37,15 +38,16 @@ def add_data_at_route(root_data, route, data):
     curr[last] = data
 
 
-def rewrite_relative_links(root: str, file_data: Dict[str, str]):
+def rewrite_relative_links(root: str, file_data: Dict[str, object]) -> None:
     """Transform relative links generated from Sphinx to work with the actual _apidocs URL.
 
     This method mutate the `file_data` in place.
     """
 
     file_body = file_data.get("body")
+    assert isinstance(file_body, str)
     if not file_body:
-        return file_data
+        return
 
     if root.startswith("sphinx/_build/json/_modules"):
         transformed = re.sub(
@@ -74,7 +76,7 @@ def rewrite_relative_links(root: str, file_data: Dict[str, str]):
 
 
 def pack_directory_json(path_to_folder: str):
-    root_data = {}
+    root_data: Dict[str, Any] = {}
 
     for (root, _, files) in os.walk(path_to_folder):
         for filename in files:
@@ -87,12 +89,12 @@ def pack_directory_json(path_to_folder: str):
     return root_data
 
 
-def copy_searchindex(src_dir, dest_dir, src_file="searchindex.json", dest_file="searchindex.json"):
+def copy_searchindex(src_dir: str, dest_dir: str, src_file: str="searchindex.json", dest_file: str="searchindex.json") -> None:
     """Copy searchindex.json built by Sphinx to the next directory."""
     write_json(os.path.join(src_dir, src_file), read_json(os.path.join(dest_dir, dest_file)))
 
 
-def main():
+def main() -> None:
     json_directory = file_relative_path(__file__, "sphinx/_build/json")
     content_dir = file_relative_path(__file__, "./content/api")
 

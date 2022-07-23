@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, ColorsWIP, FontFamily, TagWIP} from '@dagster-io/ui';
+import {Box, Colors, FontFamily, Tag} from '@dagster-io/ui';
 import {Spacing} from '@dagster-io/ui/src/components/types';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -23,7 +23,7 @@ export const dagsterTypeKind = (type: {metadataEntries: MetadataEntryFragment[]}
 };
 
 export const DagsterTypeKindTag: React.FC<{type: DagsterTypeFragment}> = (kind) => {
-  return <TagWIP intent="primary">{kind}</TagWIP>;
+  return <Tag intent="primary">{kind}</Tag>;
 };
 
 const _DagsterTypeName: React.FC<{type: DagsterTypeFragment; className?: string}> = ({
@@ -66,7 +66,7 @@ export const DagsterTypeSummary: React.FC<{
       )}
       {tableSchemaEntry && (
         <Box
-          border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+          border={{side: 'top', width: 1, color: Colors.KeylineGray}}
           style={{overflowY: 'auto', marginBottom: -12}}
           margin={{top: 4}}
         >

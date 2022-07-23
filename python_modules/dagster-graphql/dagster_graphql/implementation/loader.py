@@ -1,14 +1,22 @@
 from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, Iterable, List, Optional, Set
+from functools import lru_cache
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Set, Tuple
 
-from dagster import DagsterInstance, check
+from dagster import DagsterInstance
+from dagster import _check as check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation import ExternalRepository
+from dagster.core.host_representation.external_data import (
+    ExternalAssetDependedBy,
+    ExternalAssetDependency,
+    ExternalAssetNode,
+)
 from dagster.core.scheduler.instigation import InstigatorType
 from dagster.core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
 from dagster.core.storage.tags import SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
+from dagster.core.workspace.context import WorkspaceRequestContext
 
 
 class RepositoryDataType(Enum):
@@ -17,6 +25,8 @@ class RepositoryDataType(Enum):
     SENSOR_RUNS = "sensor_runs"
     SCHEDULE_STATES = "schedule_states"
     SENSOR_STATES = "sensor_states"
+    SCHEDULE_TICKS = "schedule_ticks"
+    SENSOR_TICKS = "sensor_ticks"
 
 
 class RepositoryScopedBatchLoader:
@@ -127,6 +137,7 @@ class RepositoryScopedBatchLoader:
         elif data_type == RepositoryDataType.SCHEDULE_STATES:
             schedule_states = self._instance.all_instigator_state(
                 repository_origin_id=self._repository.get_external_origin_id(),
+                repository_selector_id=self._repository.selector_id,
                 instigator_type=InstigatorType.SCHEDULE,
             )
             for state in schedule_states:
@@ -135,10 +146,46 @@ class RepositoryScopedBatchLoader:
         elif data_type == RepositoryDataType.SENSOR_STATES:
             sensor_states = self._instance.all_instigator_state(
                 repository_origin_id=self._repository.get_external_origin_id(),
+                repository_selector_id=self._repository.selector_id,
                 instigator_type=InstigatorType.SENSOR,
             )
             for state in sensor_states:
                 fetched[state.name].append(state)
+
+        elif data_type == RepositoryDataType.SCHEDULE_TICKS:
+            if self._instance.supports_batch_tick_queries:
+                selector_ids = [
+                    schedule.selector_id for schedule in self._repository.get_external_schedules()
+                ]
+                ticks_by_selector = self._instance.get_batch_ticks(selector_ids, limit=limit)
+                for schedule in self._repository.get_external_schedules():
+                    fetched[schedule.get_external_origin_id()] = ticks_by_selector.get(
+                        schedule.selector_id, []
+                    )
+            else:
+                for schedule in self._repository.get_external_schedules():
+                    origin_id = schedule.get_external_origin_id()
+                    fetched[origin_id] = self._instance.get_ticks(
+                        origin_id, schedule.selector_id, limit=limit
+                    )
+
+        elif data_type == RepositoryDataType.SENSOR_TICKS:
+            if self._instance.supports_batch_tick_queries:
+                selector_ids = [
+                    schedule.selector_id for schedule in self._repository.get_external_sensors()
+                ]
+                ticks_by_selector = self._instance.get_batch_ticks(selector_ids, limit=limit)
+                for sensor in self._repository.get_external_sensors():
+                    fetched[sensor.get_external_origin_id()] = ticks_by_selector.get(
+                        sensor.selector_id, []
+                    )
+            else:
+                for sensor in self._repository.get_external_sensors():
+                    origin_id = sensor.get_external_origin_id()
+                    fetched[origin_id] = self._instance.get_ticks(
+                        origin_id, sensor.selector_id, limit=limit
+                    )
+
         else:
             check.failed(f"Unknown data type for {self.__class__.__name__}: {data_type}")
 
@@ -180,6 +227,20 @@ class RepositoryScopedBatchLoader:
         states = self._get(RepositoryDataType.SENSOR_STATES, sensor_state, 1)
         return states[0] if states else None
 
+    def get_sensor_ticks(self, origin_id, selector_id, limit):
+        check.invariant(
+            selector_id
+            in [sensor.selector_id for sensor in self._repository.get_external_sensors()]
+        )
+        return self._get(RepositoryDataType.SENSOR_TICKS, origin_id, limit)
+
+    def get_schedule_ticks(self, origin_id, selector_id, limit):
+        check.invariant(
+            selector_id
+            in [schedule.selector_id for schedule in self._repository.get_external_schedules()]
+        )
+        return self._get(RepositoryDataType.SCHEDULE_TICKS, origin_id, limit)
+
 
 class BatchRunLoader:
     """
@@ -218,17 +279,134 @@ class BatchMaterializationLoader:
         self._instance = instance
         self._asset_keys: List[AssetKey] = list(asset_keys)
         self._fetched = False
-        self._materializations: Dict[AssetKey, EventLogEntry] = {}
+        self._materializations: Mapping[AssetKey, Optional[EventLogEntry]] = {}
 
-    def get_latest_materialization_for_asset_key(self, asset_key: AssetKey) -> EventLogEntry:
+    def get_latest_materialization_for_asset_key(
+        self, asset_key: AssetKey
+    ) -> Optional[EventLogEntry]:
         if asset_key not in self._asset_keys:
             check.failed(
                 f"Asset key {asset_key} not recognized for this loader.  Expected one of: {self._asset_keys}"
             )
+
         if self._materializations.get(asset_key) is None:
             self._fetch()
         return self._materializations.get(asset_key)
 
     def _fetch(self):
         self._fetched = True
-        self._materializations = self._instance.get_latest_materialization_events(self._asset_keys)
+        self._materializations = {
+            record.asset_entry.asset_key: record.asset_entry.last_materialization
+            for record in self._instance.get_asset_records(self._asset_keys)
+        }
+
+
+class CrossRepoAssetDependedByLoader:
+    """
+    A batch loader that computes cross-repository asset dependencies. Locates source assets
+    within all workspace repositories, and determines if they are derived (defined) assets in
+    other repositories.
+
+    For each asset that contains cross-repo dependencies (every asset that is defined as a source
+    asset in another repository) a sink asset is any asset immediately downstream of the source
+    asset.
+
+    E.g. Asset A is defined in repo X and referenced in repo Y as source asset C (but contains the
+    same asset key as A). If within repo C has a downstream asset B, B is a sink asset of A (it
+    is external from A's repo but an edge exists from A to B).
+
+    The @lru_cache decorator enables the _build_cross_repo_deps method to cache its return value
+    to avoid recalculating the asset dependencies on repeated calls to the method.
+    """
+
+    def __init__(self, context: WorkspaceRequestContext):
+        self._context = context
+
+    @lru_cache(maxsize=1)
+    def _build_cross_repo_deps(
+        self,
+    ) -> Tuple[
+        Dict[AssetKey, ExternalAssetNode],
+        Dict[Tuple[str, str], Dict[AssetKey, List[ExternalAssetDependedBy]]],
+    ]:
+        """
+        This method constructs a sink asset as an ExternalAssetNode for every asset immediately
+        downstream of a source asset that is defined in another repository as a derived asset.
+
+        In Dagit, sink assets will display as ForeignAssets, which are external from the repository.
+
+        This method also stores a mapping from source asset key to ExternalAssetDependedBy nodes
+        that depend on the asset with that key. When get_cross_repo_dependent_assets is called with a derived
+        asset's asset key and its location, all dependent ExternalAssetDependedBy nodes are returned.
+        """
+        depended_by_assets_by_source_asset: Dict[AssetKey, List[ExternalAssetDependedBy]] = {}
+
+        map_defined_asset_to_location: Dict[
+            AssetKey, Tuple[str, str]
+        ] = {}  # key is asset key, value is tuple (location_name, repo_name)
+
+        external_asset_node_by_asset_key: Dict[
+            AssetKey, ExternalAssetNode
+        ] = {}  # only contains derived assets
+        for location in self._context.repository_locations:
+            repositories = location.get_repositories()
+            for repo_name, external_repo in repositories.items():
+                asset_nodes = external_repo.get_external_asset_nodes()
+                for asset_node in asset_nodes:
+                    if not asset_node.op_name:  # is source asset
+                        if asset_node.asset_key not in depended_by_assets_by_source_asset:
+                            depended_by_assets_by_source_asset[asset_node.asset_key] = []
+                        depended_by_assets_by_source_asset[asset_node.asset_key].extend(
+                            asset_node.depended_by
+                        )
+                    else:
+                        map_defined_asset_to_location[asset_node.asset_key] = (
+                            location.name,
+                            repo_name,
+                        )
+                        external_asset_node_by_asset_key[asset_node.asset_key] = asset_node
+
+        sink_assets: Dict[AssetKey, ExternalAssetNode] = {}
+        external_asset_deps: Dict[
+            Tuple[str, str], Dict[AssetKey, List[ExternalAssetDependedBy]]
+        ] = (
+            {}
+        )  # nested dict that maps dependedby assets by asset key by location tuple (repo_location.name, repo_name)
+
+        for source_asset, depended_by_assets in depended_by_assets_by_source_asset.items():
+            asset_def_location = map_defined_asset_to_location.get(source_asset, None)
+            if asset_def_location:  # source asset is defined as asset in another repository
+                if asset_def_location not in external_asset_deps:
+                    external_asset_deps[asset_def_location] = {}
+                if source_asset not in external_asset_deps[asset_def_location]:
+                    external_asset_deps[asset_def_location][source_asset] = []
+                external_asset_deps[asset_def_location][source_asset].extend(depended_by_assets)
+                for asset in depended_by_assets:
+                    # SourceAssets defined as ExternalAssetNodes contain no definition data (e.g.
+                    # no output or partition definition data) and no job_names. Dagit displays
+                    # all ExternalAssetNodes with no job_names as foreign assets, so sink assets
+                    # are defined as ExternalAssetNodes with no definition data.
+                    sink_assets[asset.downstream_asset_key] = ExternalAssetNode(
+                        asset_key=asset.downstream_asset_key,
+                        dependencies=[
+                            ExternalAssetDependency(
+                                upstream_asset_key=source_asset,
+                                input_name=asset.input_name,
+                                output_name=asset.output_name,
+                            )
+                        ],
+                        depended_by=[],
+                    )
+        return sink_assets, external_asset_deps
+
+    def get_sink_asset(self, asset_key: AssetKey) -> ExternalAssetNode:
+        sink_assets, _ = self._build_cross_repo_deps()
+        return sink_assets[asset_key]
+
+    def get_cross_repo_dependent_assets(
+        self, repository_location_name: str, repository_name: str, asset_key: AssetKey
+    ) -> List[ExternalAssetDependedBy]:
+        _, external_asset_deps = self._build_cross_repo_deps()
+        return external_asset_deps.get((repository_location_name, repository_name), {}).get(
+            asset_key, []
+        )

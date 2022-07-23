@@ -1,17 +1,17 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
-  ButtonWIP,
+  Button,
   ButtonLink,
-  ColorsWIP,
+  Colors,
   DialogBody,
   DialogFooter,
-  DialogWIP,
+  Dialog,
   Group,
-  IconWIP,
+  Icon,
   NonIdealState,
   Spinner,
-  TagWIP,
+  Tag,
   Body,
   Tooltip,
 } from '@dagster-io/ui';
@@ -27,26 +27,26 @@ import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
 import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/LaunchedRunListQuery';
 import {TickTagFragment} from './types/TickTagFragment';
 
-export const TickTag: React.FunctionComponent<{
+export const TickTag: React.FC<{
   tick: TickTagFragment;
   instigationType?: InstigationType;
 }> = ({tick, instigationType}) => {
   const [open, setOpen] = React.useState<boolean>(false);
   switch (tick.status) {
     case InstigationTickStatus.STARTED:
-      return <TagWIP>Started</TagWIP>;
+      return <Tag>Started</Tag>;
     case InstigationTickStatus.SUCCESS:
       if (!tick.runIds.length) {
-        return <TagWIP intent="primary">Requested</TagWIP>;
+        return <Tag intent="primary">Requested</Tag>;
       }
-      return (
+      const tag = (
         <>
-          <TagWIP intent="primary" interactive>
+          <Tag intent="primary" interactive>
             <ButtonLink underline="never" onClick={() => setOpen(true)}>
               {tick.runIds.length} Requested
             </ButtonLink>
-          </TagWIP>
-          <DialogWIP
+          </Tag>
+          <Dialog
             isOpen={open}
             onClose={() => setOpen(false)}
             style={{width: '90vw'}}
@@ -54,44 +54,67 @@ export const TickTag: React.FunctionComponent<{
           >
             <DialogBody>{open && <RunList runIds={tick.runIds} />}</DialogBody>
             <DialogFooter>
-              <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
+              <Button intent="primary" onClick={() => setOpen(false)}>
                 OK
-              </ButtonWIP>
+              </Button>
             </DialogFooter>
-          </DialogWIP>
+          </Dialog>
         </>
       );
-    case InstigationTickStatus.SKIPPED:
-      if (!tick.skipReason) {
-        return <TagWIP intent="warning">Skipped</TagWIP>;
+      if (tick.runKeys.length > tick.runIds.length) {
+        const message = `${tick.runKeys.length} runs requested, but ${
+          tick.runKeys.length - tick.runIds.length
+        } skipped because the runs already exist for those requested keys.`;
+        return (
+          <Tooltip position="right" content={message}>
+            {tag}
+          </Tooltip>
+        );
       }
-      return (
-        <Tooltip position="right" content={tick.skipReason} targetTagName="div">
-          <TagWIP intent="warning">Skipped</TagWIP>
-        </Tooltip>
-      );
+      return tag;
+
+    case InstigationTickStatus.SKIPPED:
+      if (tick.runKeys.length) {
+        const message = `${tick.runKeys.length} runs requested, but skipped because the runs already exist for the requested keys.`;
+        return (
+          <Tooltip position="right" content={message}>
+            <Tag intent="warning">Skipped</Tag>
+          </Tooltip>
+        );
+      }
+      if (tick.skipReason) {
+        return (
+          <Tooltip position="right" content={tick.skipReason} targetTagName="div">
+            <Tag intent="warning">Skipped</Tag>
+          </Tooltip>
+        );
+      }
+      return <Tag intent="warning">Skipped</Tag>;
     case InstigationTickStatus.FAILURE:
       if (!tick.error) {
-        return <TagWIP intent="danger">Failure</TagWIP>;
+        return <Tag intent="danger">Failure</Tag>;
       } else {
         const error = tick.error;
+        const showError = () =>
+          showCustomAlert({
+            title: instigationType
+              ? instigationType === InstigationType.SCHEDULE
+                ? 'Schedule Response'
+                : 'Sensor Response'
+              : 'Python Error',
+            body: <PythonErrorInfo error={error} />,
+          });
         return (
-          <LinkButton
-            onClick={() =>
-              showCustomAlert({
-                title: instigationType
-                  ? instigationType === InstigationType.SCHEDULE
-                    ? 'Schedule Response'
-                    : 'Sensor Response'
-                  : 'Python Error',
-                body: <PythonErrorInfo error={error} />,
-              })
-            }
-          >
-            <TagWIP minimal={true} intent="danger">
-              Failure
-            </TagWIP>
-          </LinkButton>
+          <>
+            <LinkButton onClick={showError}>
+              <Tag minimal={true} intent="danger">
+                Failure
+              </Tag>
+            </LinkButton>
+            <ButtonLink onClick={showError} style={{marginLeft: 8, fontSize: 14}}>
+              View error
+            </ButtonLink>
+          </>
         );
       }
     default:
@@ -99,7 +122,7 @@ export const TickTag: React.FunctionComponent<{
   }
 };
 
-export const RunList: React.FunctionComponent<{
+export const RunList: React.FC<{
   runIds: string[];
 }> = ({runIds}) => {
   const {data, loading} = useQuery<LaunchedRunListQuery, LaunchedRunListQueryVariables>(
@@ -128,12 +151,12 @@ export const RunList: React.FunctionComponent<{
   }
   return (
     <div>
-      <RunTable runs={data.pipelineRunsOrError.results} onSetFilter={() => {}} />
+      <RunTable runs={data.pipelineRunsOrError.results} />
     </div>
   );
 };
 
-export const FailedRunList: React.FunctionComponent<{
+export const FailedRunList: React.FC<{
   originRunIds?: string[];
 }> = ({originRunIds}) => {
   if (!originRunIds || !originRunIds.length) {
@@ -141,11 +164,11 @@ export const FailedRunList: React.FunctionComponent<{
   }
   return (
     <Group direction="column" spacing={16}>
-      <Box padding={12} border={{side: 'bottom', width: 1, color: ColorsWIP.Gray200}}>
+      <Box padding={12} border={{side: 'bottom', width: 1, color: Colors.Gray200}}>
         <Body>
           Failed Runs
           <Tooltip content="Failed runs this tick reacted on and reported back to.">
-            <IconWIP name="info" color={ColorsWIP.Gray500} />
+            <Icon name="info" color={Colors.Gray500} />
           </Tooltip>
         </Body>
 
@@ -155,7 +178,7 @@ export const FailedRunList: React.FunctionComponent<{
         <Body>
           Requested Runs
           <Tooltip content="Runs launched by the run requests in this tick.">
-            <IconWIP name="info" color={ColorsWIP.Gray500} />
+            <Icon name="info" color={Colors.Gray500} />
           </Tooltip>
         </Body>
         <NonIdealState
@@ -183,6 +206,7 @@ export const TICK_TAG_FRAGMENT = gql`
     timestamp
     skipReason
     runIds
+    runKeys
     error {
       ...PythonErrorFragment
     }
@@ -202,9 +226,7 @@ const LAUNCHED_RUN_LIST_QUERY = gql`
       ... on InvalidPipelineRunsFilterError {
         message
       }
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
+      ...PythonErrorFragment
     }
   }
   ${RUN_TABLE_RUN_FRAGMENT}

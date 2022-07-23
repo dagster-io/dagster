@@ -16,38 +16,14 @@ To host Dagster on a bare VM or in Docker on EC2, see [Running Dagster as a serv
 You can use a hosted RDS PostgreSQL database for your Dagster run/events data by configuring your `dagster.yaml` file.
 
 ```python file=/deploying/dagster-pg.yaml
-run_storage:
-  module: dagster_postgres.run_storage
-  class: PostgresRunStorage
-  config:
+storage:
+  postgres:
     postgres_db:
-      username: { username }
-      password: { password }
-      hostname: { hostname }
-      db_name: { database }
-      port: { port }
-
-event_log_storage:
-  module: dagster_postgres.event_log
-  class: PostgresEventLogStorage
-  config:
-    postgres_db:
-      username: { username }
-      password: { password }
-      hostname: { hostname }
-      db_name: { db_name }
-      port: { port }
-
-schedule_storage:
-  module: dagster_postgres.schedule_storage
-  class: PostgresScheduleStorage
-  config:
-    postgres_db:
-      username: { username }
-      password: { password }
-      hostname: { hostname }
-      db_name: { db_name }
-      port: { port }
+      username: my_username
+      password: my_password
+      hostname: my_hostname
+      db_name: my_database
+      port: 5432
 ```
 
 In this case, you'll want to ensure you provide the right connection strings for your RDS instance, and ensure that the node or container hosting Dagit is able to connect to RDS.
@@ -120,19 +96,21 @@ run_launcher:
 
 Any secret tagged with `my-tag-name` will be included in the environment.
 
-Additionally, you can pass specific secret ARNs:
+Additionally, you can pass specific secrets using the [same structure as the ECS API](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html):
 
 ```yaml
 run_launcher:
   module: "dagster_aws.ecs"
   class: "EcsRunLauncher"
   config:
-    secrets_tag: "my-tag-name"
     secrets:
-      - "arn:aws:secretsmanager:us-east-1:1234567890:secret:MY_SECRET"
+      - name: "MY_API_TOKEN"
+        valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::"
+      - name: "MY_PASSWORD"
+        valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::"
 ```
 
-Any secret tagged with `my-tag-name` will be included in the environment. `MY_SECRET` will also be included in the environment.
+Any secret tagged with `dagster` will be included in the environment. `MY_API_TOKEN` and `MY_PASSWORD` will also be included in the environment.
 
 ## Using S3 for IO Management
 
@@ -141,9 +119,10 @@ To enable parallel computation (e.g., with the multiprocessing or Dagster celery
 You'll first need to need to use <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/> as your IO Manager or customize your own persistent io managers (see [example](/concepts/io-management/io-managers#defining-an-io-manager)).
 
 ```python file=/deploying/aws/io_manager.py
-from dagster import Int, Out, job, op
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
 from dagster_aws.s3.resources import s3_resource
+
+from dagster import Int, Out, job, op
 
 
 @op(out=Out(Int))

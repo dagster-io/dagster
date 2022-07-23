@@ -1,8 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, PageHeader, Heading, Subheading} from '@dagster-io/ui';
+import {Box, Colors, PageHeader, Heading, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {POLL_INTERVAL} from '../runs/useCursorPaginatedQuery';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 
 import {DaemonList} from './DaemonList';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
@@ -10,18 +11,19 @@ import {InstanceTabs} from './InstanceTabs';
 import {InstanceHealthQuery} from './types/InstanceHealthQuery';
 
 export const InstanceHealthPage = () => {
+  useTrackPageView();
+
   const queryData = useQuery<InstanceHealthQuery>(INSTANCE_HEALTH_QUERY, {
     fetchPolicy: 'cache-and-network',
-    pollInterval: POLL_INTERVAL,
     notifyOnNetworkStatusChange: true,
   });
-
+  const refreshState = useQueryRefreshAtInterval(queryData, FIFTEEN_SECONDS);
   const {loading, data} = queryData;
 
   const daemonContent = () => {
     if (loading && !data?.instance) {
       return (
-        <Box padding={{horizontal: 24}} style={{color: ColorsWIP.Gray400}}>
+        <Box padding={{horizontal: 24}} style={{color: Colors.Gray400}}>
           Loading…
         </Box>
       );
@@ -35,7 +37,7 @@ export const InstanceHealthPage = () => {
     <>
       <PageHeader
         title={<Heading>Instance status</Heading>}
-        tabs={<InstanceTabs tab="health" queryData={queryData} />}
+        tabs={<InstanceTabs tab="health" refreshState={refreshState} />}
       />
       <Box padding={{vertical: 16, horizontal: 24}}>
         <Subheading>Daemon statuses</Subheading>

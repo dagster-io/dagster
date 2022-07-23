@@ -43,6 +43,12 @@ deployments:
       - "-f"
       - "/example_project/example_repo/repo.py"
     port: 3030
+
+    # Whether or not to include configuration specified for this user code deployment in the pods
+    # launched for runs from that deployment
+    includeConfigInLaunchedRuns:
+      enabled: true
+
     # Additional volumes that should be included in the Deployment's Pod. See:
     # https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
     #
@@ -133,6 +139,9 @@ serviceAccount:
   name: ""
 
   annotations: {}
+
+# Whether to bind a role to the service account that allows it to create Kubernetes jobs
+rbacEnabled: true
 
 ####################################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart

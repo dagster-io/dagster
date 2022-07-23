@@ -9,7 +9,7 @@ See:
 - https://docs.databricks.com/dev-tools/api/latest/clusters.html
 - https://docs.databricks.com/dev-tools/api/latest/libraries.html
 """
-from dagster import Bool, Field, Int, Permissive, Selector, Shape, String
+from dagster import Array, Bool, Enum, EnumValue, Field, Int, Permissive, Selector, Shape, String
 
 
 def _define_autoscale():
@@ -135,6 +135,83 @@ def _define_s3_storage_info():
             }
         ),
         description="S3 storage information",
+    )
+
+
+def _define_aws_attributes_conf():
+    return Field(
+        Permissive(
+            fields={
+                "first_on_demand": Field(
+                    Int,
+                    description="The first first_on_demand nodes of the cluster will be placed on on-demand instances. "
+                    "If this value is greater than 0, the cluster driver node will be placed on an on-demand instance. "
+                    "If this value is greater than or equal to the current cluster size, all nodes will be placed on on-demand instances. "
+                    "If this value is less than the current cluster size, first_on_demand nodes will be placed on on-demand instances and "
+                    "the remainder will be placed on availability instances. This value does not affect cluster size and cannot be mutated "
+                    "over the lifetime of a cluster.",
+                    is_required=False,
+                ),
+                "availability": Field(
+                    Enum(
+                        "AWSAvailability",
+                        [
+                            EnumValue("SPOT"),
+                            EnumValue("ON_DEMAND"),
+                            EnumValue("SPOT_WITH_FALLBACK"),
+                        ],
+                    ),
+                    description="Availability type used for all subsequent nodes past the first_on_demand ones. "
+                    "Note: If first_on_demand is zero, this availability type will be used for the entire cluster.",
+                    is_required=False,
+                ),
+                "zone_id": Field(
+                    String,
+                    description="Identifier for the availability zone/datacenter in which the cluster resides.",
+                    is_required=False,
+                ),
+                "instance_profile_arn": Field(
+                    String,
+                    description="Nodes for this cluster will only be placed on AWS instances with this instance profile.",
+                    is_required=False,
+                ),
+                "spot_bid_price_percent": Field(
+                    Int,
+                    description="The max price for AWS spot instances, as a percentage of the corresponding instance type's on-demand price.",
+                    is_required=False,
+                ),
+                "ebs_volume_type": Field(
+                    Enum(
+                        "EBSVolumeType",
+                        [EnumValue("GENERAL_PURPOSE_SSD"), EnumValue("THROUGHPUT_OPTIMIZED_HDD")],
+                    ),
+                    description="The type of EBS volumes that will be launched with this cluster.",
+                    is_required=False,
+                ),
+                "ebs_volume_count": Field(
+                    Int,
+                    description="The number of volumes launched for each instance. You can choose up to 10 volumes.",
+                    is_required=False,
+                ),
+                "ebs_volume_size": Field(
+                    Int,
+                    description="The size of each EBS volume (in GiB) launched for each instance.",
+                    is_required=False,
+                ),
+                "ebs_volume_iops": Field(
+                    Int, description="The number of IOPS per EBS gp3 volume.", is_required=False
+                ),
+                "ebs_volume_throughput": Field(
+                    Int,
+                    description="The throughput per EBS gp3 volume, in MiB per second.",
+                    is_required=False,
+                ),
+            }
+        ),
+        description="Attributes related to clusters running on Amazon Web Services. "
+        "If not specified at cluster creation, a set of default values is used. "
+        "See aws_attributes at https://docs.databricks.com/dev-tools/api/latest/clusters.html.",
+        is_required=False,
     )
 
 
@@ -264,6 +341,7 @@ def _define_new_cluster():
                 "spark_version": spark_version,
                 "spark_conf": spark_conf,
                 "nodes": _define_nodes(),
+                "aws_attributes": _define_aws_attributes_conf(),
                 "ssh_public_keys": ssh_public_keys,
                 "custom_tags": _define_custom_tags(),
                 "cluster_log_conf": _define_cluster_log_conf(),
@@ -589,20 +667,25 @@ def _define_adls2_storage_credentials():
     )
 
 
-def _define_storage_credentials():
-    return Selector(
-        {"s3": _define_s3_storage_credentials(), "adls2": _define_adls2_storage_credentials()},
-    )
-
-
 def define_databricks_storage_config():
     return Field(
         Selector(
-            {"s3": _define_s3_storage_credentials(), "adls2": _define_adls2_storage_credentials()}
+            {
+                "s3": _define_s3_storage_credentials(),
+                "adls2": _define_adls2_storage_credentials(),
+            }
         ),
         description="Databricks storage configuration for either S3 or ADLS2. If access credentials "
         "for your Databricks storage are stored in Databricks secrets, this config indicates the "
         "secret scope and the secret keys used to access either S3 or ADLS2.",
+        is_required=False,
+    )
+
+
+def define_databricks_env_variables():
+    return Field(
+        Permissive(),
+        description="Dictionary of arbitrary environment variables to be set on the databricks cluster.",
         is_required=False,
     )
 
@@ -623,4 +706,50 @@ def define_databricks_secrets_config():
         "variables must be stored as Databricks secrets and specified here, which will ensure "
         "they are re-exported as environment variables accessible to Dagster upon execution.",
         is_required=False,
+    )
+
+
+def _define_accessor():
+    return Selector(
+        {"group_name": str, "user_name": str},
+        description="Group or User that shall access the target.",
+    )
+
+
+def _define_databricks_job_permission():
+    job_permission_levels = [
+        "NO_PERMISSIONS",
+        "CAN_VIEW",
+        "CAN_MANAGE_RUN",
+        "IS_OWNER",
+        "CAN_MANAGE",
+    ]
+    return Field(
+        {
+            permission_level: Field(Array(_define_accessor()), is_required=False)
+            for permission_level in job_permission_levels
+        },
+        description="job permission spec; ref: https://docs.databricks.com/security/access-control/jobs-acl.html#job-permissions",
+        is_required=False,
+    )
+
+
+def _define_databricks_cluster_permission():
+    cluster_permission_levels = ["NO_PERMISSIONS", "CAN_ATTACH_TO", "CAN_RESTART", "CAN_MANAGE"]
+    return Field(
+        {
+            permission_level: Field(Array(_define_accessor()), is_required=False)
+            for permission_level in cluster_permission_levels
+        },
+        description="cluster permission spec; ref: https://docs.databricks.com/security/access-control/cluster-acl.html#cluster-level-permissions",
+        is_required=False,
+    )
+
+
+def define_databricks_permissions():
+    return Field(
+        {
+            "job_permissions": _define_databricks_job_permission(),
+            "cluster_permissions": _define_databricks_cluster_permission(),
+        }
     )

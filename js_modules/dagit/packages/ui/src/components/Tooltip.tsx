@@ -4,16 +4,16 @@ import deepmerge from 'deepmerge';
 import React from 'react';
 import styled, {createGlobalStyle, css} from 'styled-components/macro';
 
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 import {FontFamily} from './styles';
 
 export const GlobalTooltipStyle = createGlobalStyle`
   .dagit-tooltip .bp3-popover2-content {
-      background: ${ColorsWIP.Gray900};
+      background: ${Colors.Gray900};
       font-family: ${FontFamily.default};
       font-size: 12px;
       line-height: 16px;
-      color: ${ColorsWIP.Gray50};
+      color: ${Colors.Gray50};
       padding: 8px 16px;
   }
 
@@ -27,21 +27,32 @@ const overwriteMerge = (destination: any[], source: any[]) => source;
 
 interface Props extends Tooltip2Props {
   display?: React.CSSProperties['display'];
+  canShow?: boolean;
 }
 
-export const Tooltip: React.FC<Props> = (props) => (
-  <StyledTooltip
-    {...props}
-    minimal
-    $display={props.display}
-    popoverClassName={`dagit-tooltip ${props.popoverClassName}`}
-    modifiers={deepmerge(
-      {offset: {enabled: true, options: {offset: [0, 8]}}},
-      props.modifiers || {},
-      {arrayMerge: overwriteMerge},
-    )}
-  />
-);
+export const Tooltip: React.FC<Props> = (props) => {
+  const {children, display, canShow = true, ...rest} = props;
+
+  if (!canShow) {
+    return <>{children}</>;
+  }
+
+  return (
+    <StyledTooltip
+      {...rest}
+      minimal
+      $display={display}
+      popoverClassName={`dagit-tooltip ${props.popoverClassName}`}
+      modifiers={deepmerge(
+        {offset: {enabled: true, options: {offset: [0, 8]}}},
+        props.modifiers || {},
+        {arrayMerge: overwriteMerge},
+      )}
+    >
+      {children}
+    </StyledTooltip>
+  );
+};
 
 interface StyledTooltipProps {
   $display: React.CSSProperties['display'];

@@ -12,6 +12,7 @@ import { InstigationStatus } from "./../../types/globalTypes";
 export interface JobMetadataFragment_schedules_scheduleState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   status: InstigationStatus;
 }
 
@@ -21,6 +22,7 @@ export interface JobMetadataFragment_schedules {
   mode: string;
   name: string;
   cronSchedule: string;
+  executionTimezone: string | null;
   scheduleState: JobMetadataFragment_schedules_scheduleState;
 }
 
@@ -33,6 +35,7 @@ export interface JobMetadataFragment_sensors_targets {
 export interface JobMetadataFragment_sensors_sensorState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   status: InstigationStatus;
 }
 

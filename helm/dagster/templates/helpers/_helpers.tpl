@@ -33,7 +33,8 @@ If release name contains chart name it will be used as a full name.
   {{- $ := index . 0 }}
 
   {{- with index . 1 }}
-    {{- $tag := .tag | default $.Chart.Version }}
+    {{- /* Filter the tag to parse strings, string integers, and string floats. */}}
+    {{- $tag := .tag | default $.Chart.Version | toYaml | trimAll "\"" }}
     {{- printf "%s:%s" .repository $tag }}
   {{- end }}
 {{- end }}
@@ -43,6 +44,7 @@ If release name contains chart name it will be used as a full name.
 dagit -h 0.0.0.0 -p {{ .Values.dagit.service.port }}
 {{- if $userDeployments.enabled }} -w /dagster-workspace/workspace.yaml {{- end -}}
 {{- with .Values.dagit.dbStatementTimeout }} --db-statement-timeout {{ . }} {{- end -}}
+{{- with .Values.dagit.logLevel }} --log-level {{ . }} {{- end -}}
 {{- if .dagitReadOnly }} --read-only {{- end -}}
 {{- end -}}
 
@@ -205,3 +207,12 @@ DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY: "{{ .Values.pipelineRun.image.pullPo
   number: {{ .servicePort }}
   {{- end }}
 {{- end }}
+
+{{- define "dagit.workspace.configmapName" -}}
+{{- $dagitWorkspace := .Values.dagit.workspace }}
+{{- if and $dagitWorkspace.enabled $dagitWorkspace.externalConfigmap }}
+{{- $dagitWorkspace.externalConfigmap -}}
+{{- else -}}
+{{ template "dagster.fullname" . }}-workspace-yaml
+{{- end -}}
+{{- end -}}

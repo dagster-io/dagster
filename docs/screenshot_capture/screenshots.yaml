@@ -1,18 +1,4 @@
 #################
-# Getting started
-#################
-
-- path: getting-started/dagit-run.png
-  defs_file: examples/docs_snippets/docs_snippets/getting_started/hello_world.py
-  url: http://127.0.0.1:3000/
-  steps:
-    - launch job
-
-- path: getting-started/dagit-def.png
-  defs_file: examples/docs_snippets/docs_snippets/getting_started/hello_world.py
-  url: http://127.0.0.1:3000/
-
-#################
 # Tutorial
 #################
 
@@ -24,6 +10,12 @@
   defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/basics/single_solid_pipeline/hello_cereal.py
   url: http://127.0.0.1:3000/workspace/__repository__hello_cereal_job@hello_cereal.py/jobs/hello_cereal_job/playground
 
+- path: tutorial/hello_cereal_figure_three.png
+  defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/basics/single_solid_pipeline/hello_cereal.py
+  url: http://127.0.0.1:3000/workspace/__repository__hello_cereal_job@hello_cereal.py/jobs/hello_cereal_job/playground
+  steps:
+    - Click the Launch Run button
+
 - path: tutorial/serial_pipeline_figure_one.png
   defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/serial_pipeline.py
   url: http://127.0.0.1:3000/
@@ -32,37 +24,38 @@
   defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/complex_pipeline.py
   url: http://127.0.0.1:3000/
 
-- path: tutorial/config_filled_out.png
-  defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/advanced/configuring_ops/configurable_job.py
-  url: http://127.0.0.1:3000/workspace/__repository__configurable_job@configurable_job.py/jobs/configurable_job/playground
-  steps:
-    - fill out config
+#################
+# Asset tutorial
+#################
 
-- path: tutorial/inputs_figure_two.png
-  defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/advanced/configuring_ops/configurable_job.py
-  url: http://127.0.0.1:3000/workspace/__repository__configurable_job@configurable_job.py/jobs/configurable_job/playground
-  steps:
-    - hit Ctrl-space
+- path: guides/asset-tutorial/defining_an_asset.png
+  defs_file: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/cereal.py
+  url: http://127.0.0.1:3000/instance/assets/cereals?view=activity
 
-- path: tutorial/repos.png
-  defs_file: examples/docs_snippets/docs_snippets/concepts/repositories_workspaces/repository_definition.py
-  url: http://127.0.0.1:3000/
-  width: 1536
-  height: 1152
-
-- path: tutorial/materializations.png
-  vetted: false
-
-- path: tutorial/schedules.png
-  defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/advanced/scheduling/scheduler.py
+- path: guides/asset-tutorial/asset_run.png
+  defs_file: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/cereal.py
   url: http://127.0.0.1:3000/
   steps:
-    - bring up left nav
+    - launch a run and click on the run
 
-- path: tutorial/good_morning_schedule.png
-  defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/advanced/scheduling/scheduler.py
-  url: http://127.0.0.1:3000/workspace/hello_cereal_repository@scheduler.py/schedules/good_morning_schedule
-  vetted: false
+- path: guides/asset-tutorial/asset_details.png
+  defs_file: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/cereal.py
+  url: http://127.0.0.1:3000/instance/assets/cereals
+  steps:
+    - hit the materialize button and then close the run toast
+
+- path: guides/asset-tutorial/serial_asset_graph.png
+  defs_file: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/serial_asset_graph.py
+  url: http://127.0.0.1:3000/
+  steps:
+    - Click asset, navigate to Lineage tab
+
+- path: guides/asset-tutorial/complex_asset_graph.png
+  defs_file: examples/docs_snippets/docs_snippets/guides/dagster/asset_tutorial/complex_asset_graph.py
+  url: http://127.0.0.1:3000/
+  steps:
+    - Click asset, navigate to Lineage tab
+
 
 #################
 # Concepts: misc
@@ -73,6 +66,8 @@
   url: http://127.0.0.1:3000/
   width: 1536
   height: 1152
+  steps:
+    - open left sidebar
 
 - path: concepts/assets/software-defined-assets/catalog.png
   defs_file: examples/docs_snippets/docs_snippets/concepts/assets/asset_group.py
@@ -87,22 +82,25 @@
   url: http://127.0.0.1:3000/instance/asset-graph
 
 - path: concepts/config-dagit.png
-  vetted: false
+  defs_file: examples/docs_snippets/docs_snippets/concepts/configuration/configurable_op_asset_resource.py
+  url: http://localhost:3000/workspace/repo@configurable_op_asset_resource.py/jobs/job_using_config/playground
+  steps:
+    - Paste the content of `docs_snippets/concepts/configuration/good.yaml` into the launchpad
 
 - path: concepts/solids-pipelines/pipeline-def.png
-  defs_file: examples/docs_snippets/docs_snippets/concepts/solids_pipelines/pipeline_execution.py
+  defs_file: examples/docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py
   url: http://127.0.0.1:3000/
   vetted: false
 
 - path: concepts/solids-pipelines/pipeline-run.png
-  defs_file: examples/docs_snippets/docs_snippets/concepts/solids_pipelines/pipeline_execution.py
+  defs_file: examples/docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py
   steps:
     - launch run
     - open run page
   vetted: false
 
 - path: concepts/solids-pipelines/solid-selection.png
-  defs_file: examples/docs_snippets/docs_snippets/concepts/solids_pipelines/pipeline_execution.py
+  defs_file: examples/docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py
   steps:
     - enter op selection into the op selection bar
   vetted: false
@@ -126,10 +124,6 @@
   steps:
     - run my_dataset_job
     - View the asset details page for "my_dataset"
-  vetted: false
-
-- path: concepts/assets/asset-lineage.png
-  url: https://demo.elementl.show/instance/assets/snowflake/hackernews/comments
   vetted: false
 
 - path: concepts/logging/job-log-dagit.png
@@ -177,26 +171,25 @@
     - select a partition from the partition selector
   vetted: false
 
+- path: concepts/ops-jobs-graphs/job-metadata.png
+  url: http://127.0.0.1:3000/workspace/toys_repository@dagster_test.graph_job_op_toys.repo/jobs/with_metadata
+  vetted: false
 
 ##################
 # Concepts: Dagit
 ##################
 
-- path: concepts/dagit/pipeline-definition.png
-  defs_file: examples/hacker_news/workspace.yaml
-  url: http://127.0.0.1:3000/workspace/hacker_news_prod@hacker_news/jobs/story_recommender
-
 - path: concepts/dagit/solid-definition.png
-  defs_file: examples/hacker_news/workspace.yaml
-  url: http://127.0.0.1:3000/workspace/hacker_news_prod@hacker_news/jobs/story_recommender/build_user_story_matrix
+  defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/complex_pipeline.py
+  url: http://localhost:3000/workspace/__repository__diamond@complex_pipeline.py/jobs/diamond/find_highest_calorie_cereal
 
 - path: concepts/dagit/playground.png
-  defs_file: examples/hacker_news/workspace.yaml
-  url: http://127.0.0.1:3000/workspace/hacker_news_prod@hacker_news/jobs/story_recommender/playground
+  defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/complex_pipeline.py
+  url: http://localhost:3000/workspace/__repository__diamond@complex_pipeline.py/jobs/diamond/playground
 
 - path: concepts/dagit/runs-tab.png
-  defs_file: examples/hacker_news/workspace.yaml
-  url: http://127.0.0.1:3000/workspace/hacker_news_prod@hacker_news/jobs/story_recommender/runs
+  defs_file: examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/complex_pipeline.py
+  url: http://localhost:3000/workspace/__repository__diamond@complex_pipeline.py/jobs/diamond/playground
   steps:
     - kick off a few runs
 

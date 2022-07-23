@@ -1,12 +1,11 @@
 import {
   Box,
-  ButtonWIP,
-  ColorsWIP,
+  Button,
   DialogBody,
   DialogFooter,
-  DialogWIP,
+  Dialog,
   Group,
-  IconWIP,
+  Icon,
   TextInput,
   Tooltip,
 } from '@dagster-io/ui';
@@ -91,7 +90,7 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
   };
 
   return (
-    <DialogWIP
+    <Dialog
       icon="info"
       onClose={onRequestClose}
       style={{minWidth: 700}}
@@ -147,46 +146,42 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
                       value={value}
                       onChange={(e) => onTagEdit(key, e.target.value, idx)}
                     />
-                    <ButtonWIP
+                    <Button
                       disabled={editState.length === 1 && !key.trim() && !value.trim()}
                       onClick={() => onRemove(idx)}
-                      icon={<IconWIP name="delete" />}
+                      icon={<Icon name="delete" />}
                     >
                       Remove
-                    </ButtonWIP>
+                    </Button>
                   </div>
                 );
               })}
             </Box>
             <Box margin={{left: 2}} flex={{direction: 'row'}}>
-              <ButtonWIP onClick={addTagEntry} icon={<IconWIP name="add_circle" />}>
+              <Button onClick={addTagEntry} icon={<Icon name="add_circle" />}>
                 Add custom tag
-              </ButtonWIP>
+              </Button>
             </Box>
           </Box>
         </Group>
       </DialogBody>
       <DialogFooter>
-        <ButtonWIP onClick={onRequestClose}>Cancel</ButtonWIP>
+        <Button onClick={onRequestClose}>Cancel</Button>
         <ShortcutHandler
           shortcutLabel="⌥Enter"
-          shortcutFilter={(e) => e.keyCode === 13 && e.altKey}
+          shortcutFilter={(e) => e.code === 'Enter' && e.altKey}
           onShortcut={onSave}
         >
-          <ButtonWIP intent="primary" onClick={onSave} disabled={disabled}>
+          <Button intent="primary" onClick={onSave} disabled={disabled}>
             Apply
-          </ButtonWIP>
+          </Button>
         </ShortcutHandler>
       </DialogFooter>
-    </DialogWIP>
+    </Dialog>
   );
 };
 
-export const TagContainer = ({
-  tagsFromSession,
-  tagsFromDefinition,
-  onRequestEdit,
-}: ITagContainerProps) => {
+export const TagContainer = ({tagsFromSession, tagsFromDefinition}: ITagContainerProps) => {
   return (
     <Container>
       <TagList>
@@ -210,47 +205,19 @@ export const TagContainer = ({
           <RunTag tag={tag} key={idx} />
         ))}
       </TagList>
-      <TagEditorLink onRequestOpen={onRequestEdit}>
-        <Group direction="row" spacing={4} alignItems="center">
-          <IconWIP name="edit" color={ColorsWIP.Gray500} /> Edit Tags
-        </Group>
-      </TagEditorLink>
     </Container>
   );
 };
-
-interface ITagEditorLinkProps {
-  onRequestOpen: () => void;
-  children: React.ReactNode;
-}
-
-const TagEditorLink = ({onRequestOpen, children}: ITagEditorLinkProps) => (
-  <ShortcutHandler
-    shortcutLabel="⌥T"
-    shortcutFilter={(e) => e.keyCode === 84 && e.altKey}
-    onShortcut={onRequestOpen}
-  >
-    <Link onClick={onRequestOpen}>{children}</Link>
-  </ShortcutHandler>
-);
 
 const Container = styled.div`
   align-items: flex-start;
   display: flex;
   flex-direction: row;
 `;
+
 const TagList = styled.div`
   display: flex;
   flex: 1;
   flex-wrap: wrap;
   gap: 4px;
-`;
-const Link = styled.div`
-  color: #666;
-  cursor: pointer;
-  margin: 4px 12px;
-  font-size: 12px;
-  &:hover {
-    color: #aaa;
-  }
 `;

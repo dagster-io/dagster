@@ -1,10 +1,13 @@
 import sys
+import warnings
 
 import graphene
 import pendulum
-import yaml
 
-from dagster import check
+import dagster._check as check
+from dagster._seven.compat.pendulum import to_timezone
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.yaml_utils import dump_run_config_yaml
 from dagster.core.definitions.schedule_definition import ScheduleExecutionData
 from dagster.core.definitions.sensor_definition import RunRequest
 from dagster.core.scheduler.instigation import (
@@ -13,16 +16,15 @@ from dagster.core.scheduler.instigation import (
     InstigatorType,
     ScheduleInstigatorData,
     SensorInstigatorData,
+    TickStatus,
 )
 from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
-from dagster.seven.compat.pendulum import to_timezone
-from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from ..implementation.fetch_schedules import get_schedule_next_tick
 from ..implementation.fetch_sensors import get_sensor_next_tick
 from ..implementation.loader import RepositoryScopedBatchLoader
-from .errors import GraphenePythonError
+from .errors import GrapheneError, GraphenePythonError
 from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
 from .util import non_null_list
@@ -57,6 +59,7 @@ class GrapheneInstigationTickStatus(graphene.Enum):
 class GrapheneSensorData(graphene.ObjectType):
     lastTickTimestamp = graphene.Float()
     lastRunKey = graphene.String()
+    lastCursor = graphene.String()
 
     class Meta:
         name = "SensorData"
@@ -66,6 +69,7 @@ class GrapheneSensorData(graphene.ObjectType):
         super().__init__(
             lastTickTimestamp=instigator_data.last_tick_timestamp,
             lastRunKey=instigator_data.last_run_key,
+            lastCursor=instigator_data.cursor,
         )
 
 
@@ -95,6 +99,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
     status = graphene.NonNull(GrapheneInstigationTickStatus)
     timestamp = graphene.NonNull(graphene.Float)
     runIds = non_null_list(graphene.String)
+    runKeys = non_null_list(graphene.String)
     error = graphene.Field(GraphenePythonError)
     skipReason = graphene.String()
     cursor = graphene.String()
@@ -111,6 +116,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
             status=tick.status,
             timestamp=tick.timestamp,
             runIds=tick.run_ids,
+            runKeys=tick.run_keys,
             error=tick.error,
             skipReason=tick.skip_reason,
             originRunIds=tick.origin_run_ids,
@@ -241,7 +247,7 @@ class GrapheneRunRequest(graphene.ObjectType):
         ]
 
     def resolve_runConfigYaml(self, _graphene_info):
-        return yaml.dump(self._run_request.run_config, default_flow_style=False, allow_unicode=True)
+        return dump_run_config_yaml(self._run_request.run_config)
 
 
 class GrapheneFutureInstigationTicks(graphene.ObjectType):
@@ -254,9 +260,12 @@ class GrapheneFutureInstigationTicks(graphene.ObjectType):
 
 class GrapheneInstigationState(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
+    selectorId = graphene.NonNull(graphene.String)
     name = graphene.NonNull(graphene.String)
     instigationType = graphene.NonNull(GrapheneInstigationType)
     status = graphene.NonNull(GrapheneInstigationStatus)
+    repositoryName = graphene.NonNull(graphene.String)
+    repositoryLocationName = graphene.NonNull(graphene.String)
     repositoryOrigin = graphene.NonNull(GrapheneRepositoryOrigin)
     typeSpecificData = graphene.Field(GrapheneInstigationTypeSpecificData)
     runs = graphene.Field(
@@ -270,6 +279,8 @@ class GrapheneInstigationState(graphene.ObjectType):
         dayRange=graphene.Int(),
         dayOffset=graphene.Int(),
         limit=graphene.Int(),
+        cursor=graphene.String(),
+        statuses=graphene.List(graphene.NonNull(GrapheneInstigationTickStatus)),
     )
     nextTick = graphene.Field(GrapheneFutureInstigationTick)
     runningCount = graphene.NonNull(graphene.Int)  # remove with cron scheduler
@@ -293,6 +304,7 @@ class GrapheneInstigationState(graphene.ObjectType):
         )
         super().__init__(
             id=instigator_state.instigator_origin_id,
+            selectorId=instigator_state.selector_id,
             name=instigator_state.name,
             instigationType=instigator_state.instigator_type,
             status=(
@@ -305,6 +317,12 @@ class GrapheneInstigationState(graphene.ObjectType):
     def resolve_repositoryOrigin(self, _graphene_info):
         origin = self._instigator_state.origin.external_repository_origin
         return GrapheneRepositoryOrigin(origin)
+
+    def resolve_repositoryName(self, _graphene_info):
+        return self._instigator_state.repository_selector.repository_name
+
+    def resolve_repositoryLocationName(self, _graphene_info):
+        return self._instigator_state.repository_selector.location_name
 
     def resolve_typeSpecificData(self, _graphene_info):
         if not self._instigator_state.instigator_data:
@@ -354,23 +372,60 @@ class GrapheneInstigationState(graphene.ObjectType):
     def resolve_tick(self, graphene_info, timestamp):
         matches = graphene_info.context.instance.get_ticks(
             self._instigator_state.instigator_origin_id,
+            self._instigator_state.selector_id,
             before=timestamp + 1,
             after=timestamp - 1,
             limit=1,
         )
         return GrapheneInstigationTick(graphene_info, matches[0]) if matches else None
 
-    def resolve_ticks(self, graphene_info, dayRange=None, dayOffset=None, limit=None):
-        before = pendulum.now("UTC").subtract(days=dayOffset).timestamp() if dayOffset else None
+    def resolve_ticks(
+        self, graphene_info, dayRange=None, dayOffset=None, limit=None, cursor=None, statuses=None
+    ):
+        before = None
+        if dayOffset:
+            before = pendulum.now("UTC").subtract(days=dayOffset).timestamp()
+        elif cursor:
+            parts = cursor.split(":")
+            if parts:
+                try:
+                    before = float(parts[-1])
+                except (ValueError, IndexError):
+                    warnings.warn(f"Invalid cursor for {self.name} ticks: {cursor}")
+
         after = (
             pendulum.now("UTC").subtract(days=dayRange + (dayOffset or 0)).timestamp()
             if dayRange
             else None
         )
+        if statuses:
+            statuses = [TickStatus(status) for status in statuses]
+
+        if self._batch_loader and limit and not cursor and not before and not after:
+            ticks = (
+                self._batch_loader.get_sensor_ticks(
+                    self._instigator_state.instigator_origin_id,
+                    self._instigator_state.selector_id,
+                    limit,
+                )
+                if self._instigator_state.instigator_type == InstigatorType.SENSOR
+                else self._batch_loader.get_schedule_ticks(
+                    self._instigator_state.instigator_origin_id,
+                    self._instigator_state.selector_id,
+                    limit,
+                )
+            )
+            return [GrapheneInstigationTick(graphene_info, tick) for tick in ticks]
+
         return [
             GrapheneInstigationTick(graphene_info, tick)
             for tick in graphene_info.context.instance.get_ticks(
-                self._instigator_state.instigator_origin_id, before=before, after=after, limit=limit
+                self._instigator_state.instigator_origin_id,
+                self._instigator_state.selector_id,
+                before=before,
+                after=after,
+                limit=limit,
+                statuses=statuses,
             )
         ]
 
@@ -392,10 +447,27 @@ class GrapheneInstigationStates(graphene.ObjectType):
         name = "InstigationStates"
 
 
+class GrapheneInstigationStateNotFoundError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "InstigationStateNotFoundError"
+
+    name = graphene.NonNull(graphene.String)
+
+    def __init__(self, name):
+        super().__init__()
+        self.name = check.str_param(name, "name")
+        self.message = f"Could not find `{name}` in the currently loaded repository."
+
+
 class GrapheneInstigationStateOrError(graphene.Union):
     class Meta:
         name = "InstigationStateOrError"
-        types = (GrapheneInstigationState, GraphenePythonError)
+        types = (
+            GrapheneInstigationState,
+            GrapheneInstigationStateNotFoundError,
+            GraphenePythonError,
+        )
 
 
 class GrapheneInstigationStatesOrError(graphene.Union):
@@ -409,6 +481,7 @@ types = [
     GrapheneFutureInstigationTicks,
     GrapheneInstigationTypeSpecificData,
     GrapheneInstigationState,
+    GrapheneInstigationStateNotFoundError,
     GrapheneInstigationStateOrError,
     GrapheneInstigationStates,
     GrapheneInstigationStatesOrError,

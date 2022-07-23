@@ -5,7 +5,7 @@ from typing import NamedTuple, Optional
 
 from rx import Observable
 
-from dagster import check
+import dagster._check as check
 from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.storage.pipeline_run import PipelineRun
 

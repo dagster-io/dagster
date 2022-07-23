@@ -27,6 +27,8 @@ The following daemons are currently available:
 
 - The _sensor daemon_ is responsible for creating runs from any [sensors](/concepts/partitions-schedules-sensors/sensors) that are turned on. This daemon is always enabled.
 
+- The _run monitoring daemon_ is responsible for handling [run worker](/deployment/overview#job-execution-flow) failures. This daemon can be enabled with the [`run_monitoring`](/deployment/run-monitoring) field in your instance.
+
 ## Daemons in Dagit
 
 To check the status of your `dagster-daemon` process within Dagit, click on "Status" in the left nav. This will take you a page where you can see information about each daemon that's currently configured on your instance.

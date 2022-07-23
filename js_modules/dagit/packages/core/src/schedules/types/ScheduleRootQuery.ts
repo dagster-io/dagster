@@ -15,23 +15,10 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_partitionSet {
   name: string;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_repositoryOrigin_repositoryLocationMetadata {
-  __typename: "RepositoryMetadata";
-  key: string;
-  value: string;
-}
-
-export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_repositoryOrigin {
-  __typename: "RepositoryOrigin";
-  id: string;
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
-}
-
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData_ScheduleData {
@@ -46,9 +33,12 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_runs {
   id: string;
   runId: string;
   status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_error_cause {
+export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -58,7 +48,7 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_error_cause | null;
+  causes: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_error_causes[];
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks {
@@ -69,16 +59,19 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks 
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_error | null;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;
-  repositoryOrigin: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_repositoryOrigin;
+  repositoryName: string;
+  repositoryLocationName: string;
   typeSpecificData: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData | null;
   runs: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_runs[];
   ticks: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks[];
@@ -115,15 +108,22 @@ export interface ScheduleRootQuery_scheduleOrError_ScheduleNotFoundError {
   message: string;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_PythonError {
+export interface ScheduleRootQuery_scheduleOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
+export interface ScheduleRootQuery_scheduleOrError_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  causes: ScheduleRootQuery_scheduleOrError_PythonError_causes[];
+}
+
 export type ScheduleRootQuery_scheduleOrError = ScheduleRootQuery_scheduleOrError_Schedule | ScheduleRootQuery_scheduleOrError_ScheduleNotFoundError | ScheduleRootQuery_scheduleOrError_PythonError;
 
-export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause {
+export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -133,7 +133,7 @@ export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastH
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause | null;
+  causes: ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes[];
 }
 
 export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses {
@@ -146,10 +146,17 @@ export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses {
   lastHeartbeatTime: number | null;
 }
 
+export interface ScheduleRootQuery_instance_daemonHealth_daemonStatus {
+  __typename: "DaemonStatus";
+  id: string;
+  healthy: boolean | null;
+}
+
 export interface ScheduleRootQuery_instance_daemonHealth {
   __typename: "DaemonHealth";
   id: string;
   allDaemonStatuses: ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses[];
+  daemonStatus: ScheduleRootQuery_instance_daemonHealth_daemonStatus;
 }
 
 export interface ScheduleRootQuery_instance {

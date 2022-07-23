@@ -22,6 +22,7 @@ You can compile Dagster jobs into DAGs that can be understood by Airflow. Each o
 import csv
 
 import requests
+
 from dagster import job, op
 
 
@@ -121,6 +122,35 @@ dag, steps = make_airflow_dag_containerized(
 The `image` argument is the name of the Docker image. Running in a containerized context requires a persistent intermediate storage layer available to the Dagster containers, such as a network filesystem, S3, or GCS. You can pass `op_kwargs` through to the the **`DagsterDockerOperator`** to use custom TLS settings, the private registry of your choice, etc., just as you would configure the ordinary Airflow **`DockerOperator`**.
 
 If you want your containerized job to be available to Airflow operators running on other machines (for example, in environments where Airflow workers are running remotely) you'll need to push your Docker image to a Docker registry so that remote instances of Docker can pull the image by name, or otherwise ensure that the image is available on remote nodes.
+
+## Ingesting Airflow operators
+
+Dagster can convert Airflow operators to Dagster ops for any Airflow operators that require no instance-wide configuration via `airflow.cfg`. Using <PyObject module="dagster_airflow" object="airflow_operator_to_op"/>, you can convert instantiated Airflow operators to be executed within a Dagster op. Optionally, you can pass in a list of Airflow connection objects utilized by the operator:
+
+```python file=../../airflow_ingest/airflow_operator_to_op.py startafter=start_operator_to_op_1 endbefore=end_operator_to_op_1
+http_task = SimpleHttpOperator(task_id="http_task", method="GET", endpoint="images")
+connections = [Connection(conn_id="http_default", host="https://google.com")]
+dagster_op = airflow_operator_to_op(http_task, connections=connections)
+
+
+@job
+def my_http_job():
+    dagster_op()
+```
+
+To specify extra parameters to an instantiated Airflow connection, pass a JSON string into the `set_extra()` function of the Airflow connection object:
+
+```python file=../../airflow_ingest/airflow_operator_to_op.py startafter=start_operator_to_op_2 endbefore=end_operator_to_op_2
+s3_conn = Connection(conn_id="s3_conn", conn_type="s3")
+s3_conn.set_extra(
+    json.dumps(
+        {
+            "aws_access_key_id": "my_access_key",
+            "aws_secret_access_key": "my_secret_key",
+        }
+    )
+)
+```
 
 ## Ingesting DAGs from Airflow
 

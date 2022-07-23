@@ -12,7 +12,7 @@ import yaml
 
 
 def match_screenshots():
-    with open("./docs/screenshot_capture/screenshots.yaml", "r") as f:
+    with open("./docs/screenshot_capture/screenshots.yaml", "r", encoding="utf8") as f:
         screenshot_specs = yaml.load(f)
 
     for screenshot_spec in screenshot_specs:

@@ -1,5 +1,6 @@
-from dagster import job, op
 from dagster_celery import celery_executor
+
+from dagster import job, op
 
 
 @op

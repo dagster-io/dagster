@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {DaemonHealthFragment} from '../instance/types/DaemonHealthFragment';
 
-export const SchedulerInfo: React.FunctionComponent<{
+export const SchedulerInfo: React.FC<{
   daemonHealth: DaemonHealthFragment | undefined;
 }> = ({daemonHealth}) => {
   let healthy = false;

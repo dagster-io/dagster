@@ -1,11 +1,11 @@
 ---
 title: Types | Dagster
-description: The Dagster type system helps you describe what kind of values your ops accept and produce.
+description: The Dagster type system helps you describe what kind of values your assets and ops accept and produce.
 ---
 
 # Dagster Types
 
-The Dagster type system helps you describe what kind of values your ops accept and produce.
+The Dagster type system helps you describe what kind of values your software-defined assets and ops accept and produce.
 
 ## Relevant APIs
 
@@ -19,7 +19,7 @@ The Dagster type system helps you describe what kind of values your ops accept a
 
 ## Overview
 
-Each op input and output can be given a Dagster Type.
+Op inputs and outputs can be given Dagster Types. Assets can be given Dagster Types to validate their output types.
 
 The type system:
 
@@ -31,7 +31,7 @@ The type system:
 
 ### DagsterTypes vs Python Types (mypy type-checking)
 
-You should not use manually-defined <PyObject module="dagster" object="DagsterType" /> objects in your python type annotations. The simple rule of thumb is to annotate op bodies just as you would a regular function, and if you wish to use a <PyObject module="dagster" object="DagsterType" /> alongside your annotations (to perform more complex validation than the default runtime typechecks), you should include this information in the relevant <PyObject module="dagster" object="InputDefinition" /> or <PyObject module="dagster" object="OutputDefinition" />.
+You should not use manually-defined <PyObject module="dagster" object="DagsterType" /> objects in your python type annotations. The simple rule of thumb is to annotate op and asset bodies just as you would a regular function, and if you wish to use a <PyObject module="dagster" object="DagsterType" /> alongside your annotations (to perform more complex validation than the default runtime typechecks), you should include this information in the relevant <PyObject module="dagster" object="InputDefinition" /> or <PyObject module="dagster" object="OutputDefinition" />.
 
 You can see an example of this pattern [below](#using-dagster-types-with-pep-484-type-annotations).
 
@@ -44,7 +44,7 @@ The core API for defining Dagster types is <PyObject module="dagster" object="Da
 ```python file=/concepts/types/types.py startafter=start_basic_even_type endbefore=end_basic_even_type
 EvenDagsterType = DagsterType(
     name="EvenDagsterType",
-    type_check_fn=lambda _, value: isinstance(value, int) and value % 2 is 0,
+    type_check_fn=lambda _, value: isinstance(value, int) and value % 2 == 0,
 )
 ```
 
@@ -56,6 +56,14 @@ Once created, types can be attached to op <PyObject module="dagster" object="Inp
     out=Out(EvenDagsterType),
 )
 def double_even(num):
+    return num
+```
+
+Types can be passed into <PyObject object="asset" decorator /> decorated functions. Dagster will validate the outputted asset type after execution:
+
+```python file=/concepts/types/types.py startafter=start_asset_type endbefore=end_asset_type
+@asset(dagster_type=EvenDagsterType)
+def even_asset(num):
     return num
 ```
 
@@ -84,7 +92,7 @@ If the op in the above example returned an object that was not an instance of My
 
 ## The Nothing Type
 
-Dagster offers a special type called <PyObject object="Nothing" />, which is used when you need to model a dependency between ops where Dagster is passing no data along the edge. See details in the [Nothing dependencies](/concepts/ops-jobs-graphs/jobs-graphs#order-based-dependencies-nothing-dependencies) example.
+Dagster offers a special type called <PyObject object="Nothing" />, which is used when you need to model a dependency between ops where Dagster is passing no data along the edge. See details in the [Nothing dependencies](/concepts/ops-jobs-graphs/graphs#defining-nothing-dependencies) example.
 
 ## Testing a Dagster Type
 
@@ -114,67 +122,6 @@ def double_even_with_annotations(num: int) -> int:
     return num
 ```
 
-## Patterns
+## See it in action
 
-### Associating Dagster Types with Python Types
-
-As mentioned earlier, any Python type used to annotate an argument or return value of op-decorated function has a corresponding Dagster type that will be used for the corresponding input or output definition.
-
-By default, Dagster will generate Dagster types for Python types that it's not aware of, but you can also explicitly control the Dagster type that will be used for a particular Python type.
-
-There are two APIs:
-
-- <PyObject module="dagster" object="usable_as_dagster_type" decorator /> for direct
-  annotations of class declarations.
-- <PyObject module="dagster" object="make_python_type_usable_as_dagster_type" /> for
-  mapping existing classes.
-
-This is designed for importing python types libraries that cannot be altered and mapping them to Dagster types. Note that in the following examples, python types are being used in the annotations, not the corresponding `DagsterType`s
-
-#### Decorating class declarations
-
-```python file=/concepts/types/usable_as.py
-from dagster import op, usable_as_dagster_type
-
-
-@usable_as_dagster_type
-class EvenType:
-    def __init__(self, num):
-        assert num % 2 is 0
-        self.num = num
-
-
-@op
-def double_even(even_num: EvenType) -> EvenType:
-    return EvenType(even_num.num * 2)
-```
-
-#### Mapping existing classes
-
-```python file=/concepts/types/make_usable.py
-from dagster import PythonObjectDagsterType, make_python_type_usable_as_dagster_type, op
-
-
-class EvenType:
-    def __init__(self, num):
-        assert num % 2 is 0
-        self.num = num
-
-
-EvenDagsterType = PythonObjectDagsterType(EvenType, name="EvenDagsterType")
-
-make_python_type_usable_as_dagster_type(EvenType, EvenDagsterType)
-
-
-@op
-def double_even(even_num: EvenType) -> EvenType:
-    return EvenType(even_num.num * 2)
-```
-
-However, this approach does have downsides. Importing these types will causes a global side effect as there is an internal registry which manages these types. This can introduce challenges in terms of testability and also can cause changes in behavior based on import order.
-
-Additionally some of the most useful patterns in the ecosystem are to use type factories to programmatically create Dagster types, such as in our dagster-pandas module. In these cases a 1:1 mapping between dagster type and python type _no longer exists_. E.g. in dagster-pandas the python representation for all the dataframe variants is simply _pandas.DataFrame_.
-
-For clearly scoped business objects, the reduction in boilerplate is significant and eases mypy compliance, hence its inclusion in the public Dagster API.
-
-We do _not_ recommend that libraries use this pattern and instead rely on other techniques to achieve mypy compliance.
+For more examples of the dagster type system, check out our [Bollinger example](https://github.com/dagster-io/dagster/tree/master/examples/bollinger)

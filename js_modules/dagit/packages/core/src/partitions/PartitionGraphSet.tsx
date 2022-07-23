@@ -14,10 +14,23 @@ import {
   getStepExpectationRateForRun,
   getStepExpectationSuccessForRun,
   getStepMaterializationCountForRun,
-  PARTITION_GRAPH_FRAGMENT,
   StepSelector,
+  PARTITION_GRAPH_FRAGMENT,
 } from './PartitionGraphUtils';
 import {PartitionGraphSetRunFragment} from './types/PartitionGraphSetRunFragment';
+
+const _reverseSortRunCompare = (
+  a: PartitionGraphSetRunFragment,
+  b: PartitionGraphSetRunFragment,
+) => {
+  if (!a.stats || a.stats.__typename !== 'RunStatsSnapshot' || !a.stats.startTime) {
+    return 1;
+  }
+  if (!b.stats || b.stats.__typename !== 'RunStatsSnapshot' || !b.stats.startTime) {
+    return -1;
+  }
+  return b.stats.startTime - a.stats.startTime;
+};
 
 export const PartitionGraphSet: React.FC<{
   partitions: {name: string; runs: PartitionGraphSetRunFragment[]}[];
@@ -26,9 +39,35 @@ export const PartitionGraphSet: React.FC<{
   const allStepKeys = getStepKeys(partitions);
   const [hiddenStepKeys, setHiddenStepKeys] = React.useState<string[]>([]);
 
-  const runsByPartitionName = {};
+  const partitionNames = partitions.map((x) => x.name);
+
+  const jobDurationData = {};
+  const stepDurationData = {};
+  const jobMaterializationData = {};
+  const stepMaterializationData = {};
+  const jobExpectationSuccessData = {};
+  const stepExpectationSuccessData = {};
+  const jobExpectationFailureData = {};
+  const stepExpectationFailureData = {};
+  const jobExpectationRateData = {};
+  const stepExpectationRateData = {};
+
   partitions.forEach((partition) => {
-    runsByPartitionName[partition.name] = partition.runs;
+    if (partition.runs && partition.runs.length) {
+      const toSort = partition.runs.slice();
+      toSort.sort(_reverseSortRunCompare);
+      const latestRun = toSort[0];
+      jobDurationData[partition.name] = getPipelineDurationForRun(latestRun);
+      stepDurationData[partition.name] = getStepDurationsForRun(latestRun);
+      jobMaterializationData[partition.name] = getPipelineMaterializationCountForRun(latestRun);
+      stepMaterializationData[partition.name] = getStepMaterializationCountForRun(latestRun);
+      jobExpectationSuccessData[partition.name] = getPipelineExpectationSuccessForRun(latestRun);
+      stepExpectationSuccessData[partition.name] = getStepExpectationSuccessForRun(latestRun);
+      jobExpectationFailureData[partition.name] = getPipelineExpectationFailureForRun(latestRun);
+      stepExpectationFailureData[partition.name] = getStepExpectationFailureForRun(latestRun);
+      jobExpectationRateData[partition.name] = getPipelineExpectationRateForRun(latestRun);
+      stepExpectationRateData[partition.name] = getStepExpectationRateForRun(latestRun);
+    }
   });
 
   return (
@@ -45,45 +84,46 @@ export const PartitionGraphSet: React.FC<{
           isJob={isJob}
           title="Execution Time by Partition"
           yLabel="Execution time (secs)"
-          runsByPartitionName={runsByPartitionName}
-          getPipelineDataForRun={getPipelineDurationForRun}
-          getStepDataForRun={getStepDurationsForRun}
+          partitionNames={partitionNames}
+          jobDataByPartition={jobDurationData}
+          stepDataByPartition={stepDurationData}
           hiddenStepKeys={hiddenStepKeys}
         />
+
         <PartitionGraph
           isJob={isJob}
           title="Materialization Count by Partition"
           yLabel="Number of materializations"
-          runsByPartitionName={runsByPartitionName}
-          getPipelineDataForRun={getPipelineMaterializationCountForRun}
-          getStepDataForRun={getStepMaterializationCountForRun}
+          partitionNames={partitionNames}
+          jobDataByPartition={jobMaterializationData}
+          stepDataByPartition={stepMaterializationData}
           hiddenStepKeys={hiddenStepKeys}
         />
         <PartitionGraph
           isJob={isJob}
           title="Expectation Successes by Partition"
           yLabel="Number of successes"
-          runsByPartitionName={runsByPartitionName}
-          getPipelineDataForRun={getPipelineExpectationSuccessForRun}
-          getStepDataForRun={getStepExpectationSuccessForRun}
+          partitionNames={partitionNames}
+          jobDataByPartition={jobExpectationSuccessData}
+          stepDataByPartition={stepExpectationSuccessData}
           hiddenStepKeys={hiddenStepKeys}
         />
         <PartitionGraph
           isJob={isJob}
           title="Expectation Failures by Partition"
           yLabel="Number of failures"
-          runsByPartitionName={runsByPartitionName}
-          getPipelineDataForRun={getPipelineExpectationFailureForRun}
-          getStepDataForRun={getStepExpectationFailureForRun}
+          partitionNames={partitionNames}
+          jobDataByPartition={jobExpectationFailureData}
+          stepDataByPartition={stepExpectationFailureData}
           hiddenStepKeys={hiddenStepKeys}
         />
         <PartitionGraph
           isJob={isJob}
           title="Expectation Rate by Partition"
           yLabel="Rate of success"
-          runsByPartitionName={runsByPartitionName}
-          getPipelineDataForRun={getPipelineExpectationRateForRun}
-          getStepDataForRun={getStepExpectationRateForRun}
+          partitionNames={partitionNames}
+          jobDataByPartition={jobExpectationRateData}
+          stepDataByPartition={stepExpectationRateData}
           hiddenStepKeys={hiddenStepKeys}
         />
       </div>
@@ -94,7 +134,6 @@ export const PartitionGraphSet: React.FC<{
 export const PARTITION_GRAPH_SET_RUN_FRAGMENT = gql`
   fragment PartitionGraphSetRunFragment on PipelineRun {
     id
-    status
     tags {
       key
       value

@@ -1,18 +1,18 @@
 import os
 from typing import Dict
 
-from setuptools import find_packages, setup  # type: ignore
+from setuptools import find_packages, setup
 
 
 def long_description() -> str:
     here = os.path.abspath(os.path.dirname(__file__))
-    with open(os.path.join(here, "README.md"), "r") as fh:
+    with open(os.path.join(here, "README.md"), "r", encoding="utf8") as fh:
         return fh.read()
 
 
 def get_version() -> str:
     version: Dict[str, str] = {}
-    with open("dagster_pandas/version.py") as fp:
+    with open("dagster_pandas/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
     return version["__version__"]
@@ -21,7 +21,7 @@ def get_version() -> str:
 if __name__ == "__main__":
     ver = get_version()
     # dont pin dev installs to avoid pip dep resolver issues
-    pin = "" if ver == "dev" else f"=={ver}"
+    pin = "" if ver == "0+dev" else f"=={ver}"
     setup(
         name="dagster-pandas",
         version=ver,
@@ -43,7 +43,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=find_packages(exclude=["dagster_pandas_tests"]),
+        packages=find_packages(exclude=["dagster_pandas_tests*"]),
         include_package_data=True,
         install_requires=[f"dagster{pin}", "pandas"],
     )

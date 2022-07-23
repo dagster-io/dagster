@@ -1,13 +1,10 @@
 import os
 
-from slack_sdk import WebClient
+from slack_sdk.web.client import WebClient
 
-from dagster import AssetKey, RunRequest, SkipReason, check, sensor
-from dagster.core.definitions.decorators.sensor import asset_sensor
-from dagster.core.definitions.run_status_sensor_definition import (
-    PipelineFailureSensorContext,
-    pipeline_failure_sensor,
-)
+from dagster import AssetKey, PipelineFailureSensorContext, RunRequest, SkipReason
+from dagster import _check as check
+from dagster import asset_sensor, pipeline_failure_sensor, sensor
 
 
 def get_directory_files(directory_name, since=None):

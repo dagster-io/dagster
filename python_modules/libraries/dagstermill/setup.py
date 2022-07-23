@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 
 def get_version() -> str:
     version: Dict[str, str] = {}
-    with open("dagstermill/version.py") as fp:
+    with open("dagstermill/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
     return version["__version__"]
@@ -14,7 +14,7 @@ def get_version() -> str:
 if __name__ == "__main__":
     ver = get_version()
     # dont pin dev installs to avoid pip dep resolver issues
-    pin = "" if ver == "dev" else f"=={ver}"
+    pin = "" if ver == "0+dev" else f"=={ver}"
     setup(
         name="dagstermill",
         version=ver,
@@ -22,7 +22,7 @@ if __name__ == "__main__":
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
-        packages=find_packages(exclude=["dagstermill_tests"]),
+        packages=find_packages(exclude=["dagstermill_tests*"]),
         classifiers=[
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
@@ -38,9 +38,15 @@ if __name__ == "__main__":
             # https://github.com/nteract/papermill/issues/519,
             # https://github.com/ipython/ipykernel/issues/568
             "ipykernel>=4.9.0,!=5.4.0,!=5.4.1",
-            "scrapbook>=0.5.0",
+            # See: https://github.com/mu-editor/mu/pull/1844
+            # ipykernel<6 depends on ipython_genutils, but it isn't explicitly
+            # declared as a dependency. It also depends on traitlets, which
+            # incidentally brought ipython_genutils, but in v5.1 it was dropped, so as
+            # a workaround we need to manually specify it here
+            "ipython_genutils>=0.2.0",
             "packaging>=20.5",
             "papermill>=1.0.0",
+            "scrapbook>=0.5.0",
         ],
         extras_require={
             "test": [

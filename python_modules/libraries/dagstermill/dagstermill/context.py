@@ -1,6 +1,7 @@
-from typing import Any, Dict, Set
+from typing import Any, Dict, Mapping, Optional, Set, cast
 
-from dagster import PipelineDefinition, PipelineRun, SolidDefinition, check
+from dagster import PipelineDefinition, PipelineRun, SolidDefinition
+from dagster import _check as check
 from dagster.core.definitions.dependency import Node, NodeHandle
 from dagster.core.execution.context.compute import AbstractComputeExecutionContext
 from dagster.core.execution.context.system import PlanExecutionContext, StepExecutionContext
@@ -46,7 +47,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         check.str_param(key, "key")
         return self._pipeline_context.has_tag(key)
 
-    def get_tag(self, key: str) -> str:
+    def get_tag(self, key: str) -> Optional[str]:
         """Get a logging tag defined on the context.
 
         Args:
@@ -64,7 +65,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         return self._pipeline_context.run_id
 
     @property
-    def run_config(self) -> Dict[str, Any]:
+    def run_config(self) -> Mapping[str, Any]:
         """dict: The run_config for the context."""
         return self._pipeline_context.run_config
 
@@ -118,7 +119,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         In interactive contexts, this may be a dagstermill-specific shim, depending whether a
         solid definition was passed to ``dagstermill.get_context``.
         """
-        return self.pipeline_def.solid_def_named(self.solid_name)
+        return cast(SolidDefinition, self.pipeline_def.solid_def_named(self.solid_name))
 
     @property
     def solid(self) -> Node:

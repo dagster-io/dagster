@@ -1,7 +1,9 @@
 from collections import OrderedDict, defaultdict
-from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union, cast
 
-from dagster import check
+import dagster._check as check
+from dagster._daemon.types import DaemonHeartbeat
+from dagster._utils import EPOCH, frozendict, merge_dicts
 from dagster.core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunNotFoundError,
@@ -15,10 +17,16 @@ from dagster.core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
 )
-from dagster.daemon.types import DaemonHeartbeat
-from dagster.utils import EPOCH, frozendict, merge_dicts
+from dagster.core.storage.tags import PARTITION_NAME_TAG
 
-from ..pipeline_run import JobBucket, PipelineRun, RunRecord, RunsFilter, TagBucket
+from ..pipeline_run import (
+    JobBucket,
+    PipelineRun,
+    RunPartitionData,
+    RunRecord,
+    RunsFilter,
+    TagBucket,
+)
 from .base import RunStorage
 
 
@@ -40,7 +48,8 @@ def build_run_filter(filters: Optional[RunsFilter]) -> Callable[[PipelineRun], b
             return False
 
         if filters.tags and not all(
-            run.tags.get(key) == value for key, value in filters.tags.items()
+            (run.tags.get(key) == value if isinstance(value, str) else run.tags.get(key) in value)
+            for key, value in filters.tags.items()
         ):
             return False
 
@@ -113,9 +122,9 @@ class InMemoryRunStorage(RunStorage):
 
     def get_runs(
         self,
-        filters: RunsFilter = None,
-        cursor: str = None,
-        limit: int = None,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[PipelineRun]:
         check.opt_inst_param(filters, "filters", RunsFilter)
@@ -143,7 +152,7 @@ class InMemoryRunStorage(RunStorage):
             results.append(run)
         return results
 
-    def get_runs_count(self, filters: RunsFilter = None) -> int:
+    def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
         check.opt_inst_param(filters, "filters", RunsFilter)
 
         return len(self.get_runs(filters))
@@ -178,11 +187,11 @@ class InMemoryRunStorage(RunStorage):
 
     def get_run_records(
         self,
-        filters: RunsFilter = None,
-        limit: int = None,
-        order_by: str = None,
+        filters: Optional[RunsFilter] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[str] = None,
         ascending: bool = False,
-        cursor: str = None,
+        cursor: Optional[str] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[RunRecord]:
         check.opt_inst_param(filters, "filters", RunsFilter)
@@ -290,10 +299,13 @@ class InMemoryRunStorage(RunStorage):
         for curr_run in self._runs.values():
             if curr_run.root_run_id == root_run.run_id:
                 run_group.append(curr_run)
-        return (root_run.root_run_id, run_group)
+        return (cast(str, root_run.root_run_id), run_group)
 
     def get_run_groups(
-        self, filters: RunsFilter = None, cursor: str = None, limit: int = None
+        self,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         runs = self.get_runs(filters=filters, cursor=cursor, limit=limit)
         root_run_id_to_group: Dict[str, Dict[str, PipelineRun]] = defaultdict(dict)
@@ -327,6 +339,26 @@ class InMemoryRunStorage(RunStorage):
             for root_run_id, run_group in root_run_id_to_group.items()
         }
 
+    def get_run_partition_data(self, runs_filter: RunsFilter) -> List[RunPartitionData]:
+        """Get run partition data for a given partitioned job."""
+        run_filter = build_run_filter(runs_filter)
+        matching_runs = list(filter(run_filter, list(self._runs.values())[::-1]))
+        _partition_data_by_partition = {}
+        for run in matching_runs:
+            partition = run.tags.get(PARTITION_NAME_TAG)
+            if not partition or partition in _partition_data_by_partition:
+                continue
+
+            _partition_data_by_partition[partition] = RunPartitionData(
+                run_id=run.run_id,
+                partition=partition,
+                status=run.status,
+                start_time=None,
+                end_time=None,
+            )
+
+        return list(_partition_data_by_partition.values())
+
     # Daemon Heartbeats
 
     def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat):
@@ -335,9 +367,7 @@ class InMemoryRunStorage(RunStorage):
         )
 
     def get_daemon_heartbeats(self) -> Dict[str, DaemonHeartbeat]:
-        raise NotImplementedError(
-            "The dagster daemon lives in a separate process. It cannot use in memory storage."
-        )
+        return {}
 
     def wipe_daemon_heartbeats(self):
         raise NotImplementedError(
@@ -345,7 +375,10 @@ class InMemoryRunStorage(RunStorage):
         )
 
     def get_backfills(
-        self, status: BulkActionStatus = None, cursor: str = None, limit: int = None
+        self,
+        status: Optional[BulkActionStatus] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> List[PartitionBackfill]:
         check.opt_inst_param(status, "status", BulkActionStatus)
         backfills = [
@@ -366,3 +399,12 @@ class InMemoryRunStorage(RunStorage):
     def update_backfill(self, partition_backfill: PartitionBackfill):
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
         self._bulk_actions[partition_backfill.backfill_id] = partition_backfill
+
+    def supports_kvs(self):
+        return False
+
+    def kvs_get(self, keys: Set[str]) -> Dict[str, str]:
+        raise NotImplementedError()
+
+    def kvs_set(self, pairs: Dict[str, str]) -> None:
+        raise NotImplementedError()

@@ -32,7 +32,8 @@ If release name contains chart name it will be used as a full name.
   {{- $ := index . 0 }}
 
   {{- with index . 1 }}
-    {{- $tag := .tag | default $.Chart.Version }}
+    {{- /* Filter the tag to parse strings, string integers, and string floats. */}}
+    {{- $tag := .tag | default $.Chart.Version | toYaml | trimAll "\"" }}
     {{- printf "%s:%s" .repository $tag }}
   {{- end }}
 {{- end }}
@@ -90,4 +91,45 @@ DAGSTER_K8S_PG_PASSWORD_SECRET: {{ include "dagsterUserDeployments.postgresql.se
 DAGSTER_K8S_INSTANCE_CONFIG_MAP: "{{ template "dagster.fullname" .}}-instance"
 DAGSTER_K8S_PIPELINE_RUN_NAMESPACE: "{{ .Release.Namespace }}"
 DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pipeline-env"
+{{- end -}}
+
+
+{{- define "dagsterUserDeployments.k8sContainerContext" -}}
+  {{- $ := index . 0 }}
+  {{- with index . 1 }}
+  k8s:
+    image_pull_policy: {{ .image.pullPolicy }}
+    {{- if $.Values.imagePullSecrets }}
+    image_pull_secrets: {{- $.Values.imagePullSecrets | toYaml | nindent 6 }}
+    {{- end }}
+    env_config_maps:
+    - {{ include "dagster.fullname" $ }}-{{ .name }}-user-env
+    {{- range $envConfigMap := .envConfigMaps }}
+    {{- if hasKey $envConfigMap "name" }}
+    - {{ $envConfigMap.name }}
+    {{- end }}
+    {{- end }}
+    {{- if .envSecrets }}
+    env_secrets:
+    {{- range $envSecret := .envSecrets }}
+    {{- if hasKey $envSecret "name" }}
+    - {{ $envSecret.name }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    {{- if .volumeMounts }}
+    volume_mounts: {{- .volumeMounts | toYaml | nindent 6 }}
+    {{- end }}
+    {{- if .volumes }}
+    volumes: {{- .volumes | toYaml | nindent 6 }}
+    {{- end }}
+    {{- if .labels }}
+    labels: {{- .labels | toYaml | nindent 6 }}
+    {{- end }}
+    {{- if .resources }}
+    resources: {{- .resources | toYaml | nindent 6 }}
+    {{- end }}
+    namespace: {{ $.Release.Namespace }}
+    service_account_name: {{ include "dagsterUserDeployments.serviceAccountName" $ }}
+  {{- end }}
 {{- end -}}

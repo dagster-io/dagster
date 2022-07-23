@@ -18,6 +18,7 @@ from dagster import (
     In,
     InputDefinition,
     Int,
+    IntSource,
     List,
     ModeDefinition,
     Output,
@@ -31,15 +32,14 @@ from dagster import (
     job,
     lambda_solid,
     op,
-    pipeline,
     repository,
     resource,
-    solid,
 )
+from dagster._legacy import pipeline, solid
+from dagster._utils import merge_dicts, segfault
+from dagster._utils.yaml_utils import merge_yamls
 from dagster.core.definitions.decorators import daily_schedule, schedule
 from dagster.core.test_utils import nesting_composite_pipeline
-from dagster.utils import merge_dicts, segfault
-from dagster.utils.yaml_utils import merge_yamls
 
 IS_BUILDKITE = bool(os.getenv("BUILDKITE"))
 
@@ -100,13 +100,22 @@ def docker_mode_defs():
     ]
 
 
-@solid(input_defs=[InputDefinition("word", String)], config_schema={"factor": Int})
+@solid(
+    input_defs=[InputDefinition("word", String)],
+    config_schema={
+        "factor": IntSource,
+        "should_segfault": Field(bool, is_required=False, default_value=False),
+    },
+)
 def multiply_the_word(context, word):
+    if context.solid_config.get("should_segfault"):
+        segfault()
     return word * context.solid_config["factor"]
 
 
 @solid(
-    input_defs=[InputDefinition("word", String)], config_schema={"factor": Int, "sleep_time": Int}
+    input_defs=[InputDefinition("word", String)],
+    config_schema={"factor": IntSource, "sleep_time": IntSource},
 )
 def multiply_the_word_slow(context, word):
     time.sleep(context.solid_config["sleep_time"])
@@ -130,7 +139,7 @@ def always_fail(context, word):
 
 @op(
     ins={"word": In(String)},
-    config_schema={"factor": Int},
+    config_schema={"factor": IntSource},
 )
 def multiply_the_word_op(context, word):
     return word * context.solid_config["factor"]
@@ -153,6 +162,11 @@ def error_solid():
 def hanging_solid(_):
     while True:
         time.sleep(0.1)
+
+
+@solid(config_schema={"looking_for": str})
+def get_environment_solid(context):
+    return os.environ.get(context.solid_config["looking_for"])
 
 
 @pipeline(
@@ -236,19 +250,39 @@ def define_demo_job_celery():
     return demo_job_celery
 
 
+@solid(required_resource_keys={"buggy_resource"})
+def hello(context):
+    context.log.info("Hello, world from IMAGE 1")
+
+
 def define_docker_celery_pipeline():
     from dagster_celery_docker import celery_docker_executor
+
+    @resource
+    def resource_with_output():
+        print("writing to stdout")  # pylint: disable=print-call
+        return 42
+
+    @solid(required_resource_keys={"resource_with_output"})
+    def use_resource_with_output_solid():
+        pass
 
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                resource_defs={"s3": s3_resource, "io_manager": s3_pickle_io_manager},
+                resource_defs={
+                    "s3": s3_resource,
+                    "io_manager": s3_pickle_io_manager,
+                    "resource_with_output": resource_with_output,
+                },
                 executor_defs=default_executors + [celery_docker_executor],
             )
         ]
     )
     def docker_celery_pipeline():
         count_letters(multiply_the_word())
+        get_environment_solid()
+        use_resource_with_output_solid()
 
     return docker_celery_pipeline
 
@@ -612,7 +646,9 @@ def define_demo_k8s_executor_pipeline():
 
 @solid
 def check_volume_mount(context):
-    with open("/opt/dagster/test_mount_path/volume_mounted_file.yaml", "r") as mounted_file:
+    with open(
+        "/opt/dagster/test_mount_path/volume_mounted_file.yaml", "r", encoding="utf8"
+    ) as mounted_file:
         contents = mounted_file.read()
         context.log.info(f"Contents of mounted file: {contents}")
         assert contents == "BAR_CONTENTS"

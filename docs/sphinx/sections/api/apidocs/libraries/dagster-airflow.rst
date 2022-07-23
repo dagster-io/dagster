@@ -17,4 +17,6 @@ Airflow (dagster-airflow)
 
 .. autofunction:: make_dagster_repo_from_airflow_example_dags
 
+.. autofunction:: airflow_operator_to_op
+
 .. autofunction:: make_dagster_pipeline_from_airflow_dag

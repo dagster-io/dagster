@@ -6,9 +6,9 @@ from io import BytesIO
 import yaml
 
 from dagster import execute_pipeline
-from dagster.cli.pipeline import execute_list_versions_command
+from dagster._cli.pipeline import execute_list_versions_command
+from dagster._utils import file_relative_path
 from dagster.core.test_utils import instance_for_test
-from dagster.utils import file_relative_path
 
 from ...execution_tests.memoized_dev_loop_pipeline import asset_pipeline
 
@@ -40,7 +40,7 @@ def test_execute_display_command():
 
             # write run config to temp file
             # file is temp because io manager directory is temporary
-            with open(os.path.join(temp_dir, "pipeline_config.yaml"), "w") as f:
+            with open(os.path.join(temp_dir, "pipeline_config.yaml"), "w", encoding="utf8") as f:
                 f.write(yaml.dump(run_config))
 
             kwargs = {

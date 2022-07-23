@@ -60,6 +60,7 @@ export interface ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeCon
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType {

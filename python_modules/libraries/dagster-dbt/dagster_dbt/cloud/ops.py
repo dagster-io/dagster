@@ -81,12 +81,12 @@ def dbt_cloud_run_op(context):
     .. code-block:: python
 
         from dagster import job
-        from dagster_dbt import dbt_cloud_resource, run_dbt_cloud_op
+        from dagster_dbt import dbt_cloud_resource, dbt_cloud_run_op
 
         my_dbt_cloud_resource = dbt_cloud_resource.configured(
             {"auth_token": {"env": "DBT_CLOUD_AUTH_TOKEN"}, "account_id": 77777}
         )
-        run_dbt_nightly_sync = run_dbt_cloud_op.configured(
+        run_dbt_nightly_sync = dbt_cloud_run_op.configured(
             {"job_id": 54321}, name="run_dbt_nightly_sync"
         )
 

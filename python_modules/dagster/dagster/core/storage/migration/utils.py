@@ -2,15 +2,14 @@ from contextlib import contextmanager
 
 import sqlalchemy as db
 from alembic import op
-from sqlalchemy.engine import reflection
+from sqlalchemy import inspect
 
-from dagster import check
+import dagster._check as check
+from dagster.core.storage.sql import get_current_timestamp
 
 
 def get_inspector():
-    # pylint: disable=no-member
-    bind = op.get_context().bind
-    return reflection.Inspector.from_engine(bind)
+    return inspect(op.get_bind())
 
 
 def get_table_names():
@@ -28,12 +27,19 @@ def has_column(table_name, column_name):
     return column_name in columns
 
 
+def has_index(table_name, index_name):
+    if not has_table(table_name):
+        return False
+    indexes = [x.get("name") for x in get_inspector().get_indexes(table_name)]
+    return index_name in indexes
+
+
 _UPGRADING_INSTANCE = None
 
 
 @contextmanager
 def upgrading_instance(instance):
-    global _UPGRADING_INSTANCE  # pylint: disable=global-statement
+    global _UPGRADING_INSTANCE  # pylint: disable=global-statement,global-variable-not-assigned
     check.invariant(_UPGRADING_INSTANCE is None, "update already in progress")
     try:
         _UPGRADING_INSTANCE = instance
@@ -43,7 +49,7 @@ def upgrading_instance(instance):
 
 
 def get_currently_upgrading_instance():
-    global _UPGRADING_INSTANCE  # pylint: disable=global-statement
+    global _UPGRADING_INSTANCE  # pylint: disable=global-statement,global-variable-not-assigned
     check.invariant(_UPGRADING_INSTANCE is not None, "currently upgrading instance not set")
     return _UPGRADING_INSTANCE
 
@@ -199,6 +205,9 @@ def create_event_log_event_idx():
     if not has_table("event_logs"):
         return
 
+    if has_index("event_logs", "idx_event_type"):
+        return
+
     op.create_index(
         "idx_event_type",
         "event_logs",
@@ -210,19 +219,21 @@ def create_event_log_event_idx():
 def create_run_range_indices():
     if not has_table("runs"):
         return
-    indices = [x.get("name") for x in get_inspector().get_indexes("runs")]
-    if not "idx_run_range" in indices:
-        op.create_index(
-            "idx_run_range",
-            "runs",
-            ["status", "update_timestamp", "create_timestamp"],
-            unique=False,
-            mysql_length={
-                "status": 32,
-                "update_timestamp": 8,
-                "create_timestamp": 8,
-            },
-        )
+
+    if has_index("runs", "idx_run_range"):
+        return
+
+    op.create_index(
+        "idx_run_range",
+        "runs",
+        ["status", "update_timestamp", "create_timestamp"],
+        unique=False,
+        mysql_length={
+            "status": 32,
+            "update_timestamp": 8,
+            "create_timestamp": 8,
+        },
+    )
 
 
 def add_run_record_start_end_timestamps():
@@ -245,3 +256,54 @@ def drop_run_record_start_end_timestamps():
 
     op.drop_column("runs", "start_time")
     op.drop_column("runs", "end_time")
+
+
+def create_schedule_secondary_index_table():
+    if not has_table("jobs"):
+        return
+
+    if not has_table("secondary_indexes"):
+        op.create_table(
+            "secondary_indexes",
+            db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+            db.Column("name", db.String, unique=True),
+            db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
+            db.Column("migration_completed", db.DateTime),
+        )
+
+
+def create_instigators_table():
+    if not has_table("instigators") and not has_table("jobs"):
+        # not a schedule storage db
+        return
+
+    if not has_table("instigators"):
+        op.create_table(
+            "instigators",
+            db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+            db.Column("selector_id", db.String(255), unique=True),
+            db.Column("repository_selector_id", db.String(255)),
+            db.Column("status", db.String(63)),
+            db.Column("instigator_type", db.String(63), index=True),
+            db.Column("instigator_body", db.Text),
+            db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+            db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
+        )
+
+    if not has_column("jobs", "selector_id"):
+        op.add_column("jobs", db.Column("selector_id", db.String(255)))
+
+    if not has_column("job_ticks", "selector_id"):
+        op.add_column("job_ticks", db.Column("selector_id", db.String(255)))
+
+
+def create_tick_selector_index():
+    if not has_table("job_ticks"):
+        return
+
+    if has_index("job_ticks", "idx_tick_selector_timestamp"):
+        return
+
+    op.create_index(
+        "idx_tick_selector_timestamp", "job_ticks", ["selector_id", "timestamp"], unique=False
+    )

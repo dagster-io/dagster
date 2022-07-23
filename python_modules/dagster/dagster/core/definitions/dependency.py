@@ -6,7 +6,9 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
+    Iterator,
     List,
+    Mapping,
     NamedTuple,
     Optional,
     Tuple,
@@ -15,16 +17,16 @@ from typing import (
     cast,
 )
 
-from dagster import check
-from dagster.core.definitions.policy import RetryPolicy
-from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.serdes.serdes import (
+import dagster._check as check
+from dagster._serdes.serdes import (
     DefaultNamedTupleSerializer,
     WhitelistMap,
     register_serdes_tuple_fallbacks,
     whitelist_for_serdes,
 )
-from dagster.utils import frozentags
+from dagster._utils import frozentags
+from dagster.core.definitions.policy import RetryPolicy
+from dagster.core.errors import DagsterInvalidDefinitionError
 
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
@@ -32,9 +34,11 @@ from .output import OutputDefinition
 from .utils import DEFAULT_OUTPUT, struct_to_string, validate_tags
 
 if TYPE_CHECKING:
+    from .asset_layer import AssetLayer
     from .composition import MappedInputPlaceholder
     from .graph_definition import GraphDefinition
     from .node_definition import NodeDefinition
+    from .resource_requirement import ResourceRequirement
 
 
 class NodeInvocation(
@@ -67,6 +71,7 @@ class NodeInvocation(
     :py:func:`@job <job>` API:
 
     .. code-block:: python
+
         from dagster import job
 
         @job
@@ -80,8 +85,8 @@ class NodeInvocation(
         cls,
         name: str,
         alias: Optional[str] = None,
-        tags: Dict[str, str] = None,
-        hook_defs: AbstractSet[HookDefinition] = None,
+        tags: Optional[Dict[str, str]] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ):
         return super().__new__(
@@ -104,12 +109,21 @@ class Node:
     Node invocation within a graph. Identified by its name inside the graph.
     """
 
+    name: str
+    definition: "NodeDefinition"
+    graph_definition: "GraphDefinition"
+    _additional_tags: Dict[str, str]
+    _hook_defs: AbstractSet[HookDefinition]
+    _retry_policy: Optional[RetryPolicy]
+    _input_handles: Dict[str, "SolidInputHandle"]
+    _output_handles: Dict[str, "SolidOutputHandle"]
+
     def __init__(
         self,
         name: str,
         definition: "NodeDefinition",
         graph_definition: "GraphDefinition",
-        tags: Dict[str, str] = None,
+        tags: Optional[Dict[str, str]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ):
@@ -194,7 +208,8 @@ class Node:
 
     @property
     def tags(self) -> frozentags:
-        return self.definition.tags.updated_with(self._additional_tags)
+        # Type-ignore temporarily pending assessment of right data structure for `tags`
+        return self.definition.tags.updated_with(self._additional_tags)  # type: ignore
 
     def container_maps_input(self, input_name: str) -> bool:
         return (
@@ -239,6 +254,40 @@ class Node:
     @property
     def retry_policy(self) -> Optional[RetryPolicy]:
         return self._retry_policy
+
+    def get_resource_requirements(
+        self,
+        outer_container: "GraphDefinition",
+        parent_handle: Optional["NodeHandle"] = None,
+        asset_layer: Optional["AssetLayer"] = None,
+    ) -> Iterator["ResourceRequirement"]:
+        from .resource_requirement import InputManagerRequirement
+
+        cur_node_handle = NodeHandle(self.name, parent_handle)
+
+        if not self.is_graph:
+            solid_def = self.definition.ensure_solid_def()
+            for requirement in solid_def.get_resource_requirements((cur_node_handle, asset_layer)):
+                # If requirement is a root input manager requirement, but the corresponding node has an upstream output, then ignore the requirement.
+                if (
+                    isinstance(requirement, InputManagerRequirement)
+                    and outer_container.dependency_structure.has_deps(
+                        SolidInputHandle(self, solid_def.input_def_named(requirement.input_name))
+                    )
+                    and requirement.root_input
+                ):
+                    continue
+                yield requirement
+            for hook_def in self.hook_defs:
+                yield from hook_def.get_resource_requirements(self.describe_node())
+        else:
+            graph_def = self.definition.ensure_graph_def()
+            for node in graph_def.node_dict.values():
+                yield from node.get_resource_requirements(
+                    asset_layer=asset_layer,
+                    outer_container=graph_def,
+                    parent_handle=cur_node_handle,
+                )
 
 
 class NodeHandleSerializer(DefaultNamedTupleSerializer):
@@ -416,6 +465,22 @@ class NodeHandle(
         return NodeHandle(**{k: dict_repr[k] for k in ["name", "parent"]})
 
 
+class NodeInputHandle(
+    NamedTuple("_NodeInputHandle", [("node_handle", NodeHandle), ("input_name", str)])
+):
+    """
+    A structured object to uniquely identify inputs in the potentially recursive graph structure.
+    """
+
+
+class NodeOutputHandle(
+    NamedTuple("_NodeOutputHandle", [("node_handle", NodeHandle), ("output_name", str)])
+):
+    """
+    A structured object to uniquely identify outputs in the potentially recursive graph structure.
+    """
+
+
 # previous name for NodeHandle was SolidHandle
 register_serdes_tuple_fallbacks({"SolidHandle": NodeHandle})
 
@@ -446,8 +511,12 @@ class SolidInputHandle(
     def __hash__(self):
         return hash((self.solid.name, self.input_def.name))
 
-    def __eq__(self, other):
-        return self.solid.name == other.solid.name and self.input_def.name == other.input_def.name
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, SolidInputHandle)
+            and self.solid.name == other.solid.name
+            and self.input_def.name == other.input_def.name
+        )
 
     @property
     def solid_name(self) -> str:
@@ -704,12 +773,12 @@ InputToOutputHandleDict = Dict[SolidInputHandle, DepTypeAndOutputHandles]
 
 
 def _create_handle_dict(
-    solid_dict: Dict[str, Node],
-    dep_dict: Dict[str, Dict[str, IDependencyDefinition]],
+    solid_dict: Mapping[str, Node],
+    dep_dict: Mapping[str, Mapping[str, IDependencyDefinition]],
 ) -> InputToOutputHandleDict:
     from .composition import MappedInputPlaceholder
 
-    check.dict_param(solid_dict, "solid_dict", key_type=str, value_type=Node)
+    check.mapping_param(solid_dict, "solid_dict", key_type=str, value_type=Node)
     check.two_dim_dict_param(dep_dict, "dep_dict", value_type=IDependencyDefinition)
 
     handle_dict: InputToOutputHandleDict = {}
@@ -752,7 +821,7 @@ def _create_handle_dict(
 
 class DependencyStructure:
     @staticmethod
-    def from_definitions(solids: Dict[str, Node], dep_dict: Dict[str, Any]):
+    def from_definitions(solids: Mapping[str, Node], dep_dict: Mapping[str, Any]):
         return DependencyStructure(list(dep_dict.keys()), _create_handle_dict(solids, dep_dict))
 
     def __init__(self, solid_names: List[str], handle_dict: InputToOutputHandleDict):

@@ -10,7 +10,15 @@ from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
 import pendulum
 import sqlalchemy as db
 
-from dagster import check
+import dagster._check as check
+from dagster._daemon.types import DaemonHeartbeat
+from dagster._serdes import (
+    deserialize_as,
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+)
+from dagster._seven import JSONDecodeError
+from dagster._utils import merge_dicts, utc_datetime_from_timestamp
 from dagster.core.errors import (
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,
@@ -19,6 +27,7 @@ from dagster.core.errors import (
 )
 from dagster.core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEvent, DagsterEventType
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster.core.execution.bulk_actions import BulkActionType
 from dagster.core.snap import (
     ExecutionPlanSnapshot,
     PipelineSnapshot,
@@ -26,22 +35,23 @@ from dagster.core.snap import (
     create_pipeline_snapshot_id,
 )
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, ROOT_RUN_ID_TAG
-from dagster.daemon.types import DaemonHeartbeat
-from dagster.serdes import (
-    deserialize_as,
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
-)
-from dagster.seven import JSONDecodeError
-from dagster.utils import merge_dicts, utc_datetime_from_timestamp
 
-from ..pipeline_run import JobBucket, PipelineRun, RunRecord, RunsFilter, TagBucket
+from ..pipeline_run import (
+    DagsterRunStatus,
+    JobBucket,
+    PipelineRun,
+    RunPartitionData,
+    RunRecord,
+    RunsFilter,
+    TagBucket,
+)
 from .base import RunStorage
 from .migration import OPTIONAL_DATA_MIGRATIONS, REQUIRED_DATA_MIGRATIONS, RUN_PARTITIONS
 from .schema import (
     BulkActionsTable,
     DaemonHeartbeatsTable,
     InstanceInfo,
+    KeyValueStoreTable,
     RunTagsTable,
     RunsTable,
     SecondaryIndexMigrationTable,
@@ -114,12 +124,13 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             except db.exc.IntegrityError as exc:
                 raise DagsterRunAlreadyExists from exc
 
-            if pipeline_run.tags and len(pipeline_run.tags) > 0:
+            tags_to_insert = pipeline_run.tags_for_storage()
+            if tags_to_insert:
                 conn.execute(
                     RunTagsTable.insert(),  # pylint: disable=no-value-for-parameter
                     [
                         dict(run_id=pipeline_run.run_id, key=k, value=v)
-                        for k, v in pipeline_run.tags.items()
+                        for k, v in tags_to_insert.items()
                     ],
                 )
 
@@ -163,15 +174,20 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 RunsTable.update()  # pylint: disable=no-value-for-parameter
                 .where(RunsTable.c.run_id == run_id)
                 .values(
-                    status=new_pipeline_status.value,
                     run_body=serialize_dagster_namedtuple(run.with_status(new_pipeline_status)),
+                    status=new_pipeline_status.value,
                     update_timestamp=now,
                     **kwargs,
                 )
             )
 
-    def _row_to_run(self, row: Tuple) -> PipelineRun:
-        return deserialize_as(row[0], PipelineRun)
+    def _row_to_run(self, row) -> PipelineRun:
+        run = deserialize_as(row["run_body"], PipelineRun)
+        status = DagsterRunStatus(row["status"])
+        # NOTE: the status column is more trustworthy than the status in the run body, since concurrent
+        # writes (e.g.  handle_run_event and add_tags) can cause the status in the body to be out of
+        # overriden with an old value.
+        return run.with_status(status)
 
     def _rows_to_runs(self, rows: Iterable[Tuple]) -> List[PipelineRun]:
         return list(map(self._row_to_run, rows))
@@ -220,7 +236,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             query = query.where(
                 db.or_(
                     *(
-                        db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value)
+                        db.and_(
+                            RunTagsTable.c.key == key,
+                            (
+                                RunTagsTable.c.value == value
+                                if isinstance(value, str)
+                                else RunTagsTable.c.value.in_(value)
+                            ),
+                        )
                         for key, value in filters.tags.items()
                     )
                 )
@@ -240,6 +263,42 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return query
 
+    def _runs_query(
+        self,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+        columns: Optional[List[str]] = None,
+        order_by: Optional[str] = None,
+        ascending: bool = False,
+        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
+    ):
+        filters = check.opt_inst_param(filters, "filters", RunsFilter, default=RunsFilter())
+        check.opt_str_param(cursor, "cursor")
+        check.opt_int_param(limit, "limit")
+        check.opt_list_param(columns, "columns")
+        check.opt_str_param(order_by, "order_by")
+        check.opt_bool_param(ascending, "ascending")
+
+        if columns is None:
+            columns = ["run_body", "status"]
+
+        if bucket_by:
+            if limit or cursor:
+                check.failed("cannot specify bucket_by and limit/cursor at the same time")
+            return self._bucketed_runs_query(bucket_by, filters, columns, order_by, ascending)
+
+        query_columns = [getattr(RunsTable.c, column) for column in columns]
+        if filters.tags:
+            base_query = db.select(query_columns).select_from(
+                RunsTable.join(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
+            )
+        else:
+            base_query = db.select(query_columns).select_from(RunsTable)
+
+        base_query = self._add_filters_to_query(base_query, filters)
+        return self._add_cursor_limit_to_query(base_query, cursor, limit, order_by, ascending)
+
     def _bucket_rank_column(self, bucket_by, order_by, ascending):
         check.inst_param(bucket_by, "bucket_by", (JobBucket, TagBucket))
         check.invariant(
@@ -256,87 +315,85 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             .label("rank")
         )
 
-    def _runs_query(
+    def _bucketed_runs_query(
         self,
-        filters: RunsFilter = None,
-        cursor: str = None,
-        limit: int = None,
-        columns: List[str] = None,
-        order_by: str = None,
+        bucket_by: Union[JobBucket, TagBucket],
+        filters: RunsFilter,
+        columns: List[str],
+        order_by: Optional[str] = None,
         ascending: bool = False,
-        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ):
-        filters = check.opt_inst_param(filters, "filters", RunsFilter, default=RunsFilter())
-        check.opt_str_param(cursor, "cursor")
-        check.opt_int_param(limit, "limit")
-        check.opt_list_param(columns, "columns")
-        check.opt_str_param(order_by, "order_by")
-        check.opt_bool_param(ascending, "ascending")
+        bucket_rank = self._bucket_rank_column(bucket_by, order_by, ascending)
+        query_columns = [getattr(RunsTable.c, column) for column in columns] + [bucket_rank]
 
-        if columns is None:
-            columns = ["run_body"]
-
-        query_columns = [getattr(RunsTable.c, column) for column in columns]
-
-        if bucket_by:
-            if limit or cursor:
-                check.failed("cannot specify bucket_by and limit/cursor at the same time")
-
-            # this is a bucketed query, so we need to calculate rank to apply bucket-based limits
-            # and ordering
-            query_columns.append(self._bucket_rank_column(bucket_by, order_by, ascending))
-
-            if isinstance(bucket_by, JobBucket):
-                base_query = (
-                    db.select(query_columns)
-                    .select_from(
-                        RunsTable.join(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
-                        if filters.tags
-                        else RunsTable
-                    )
-                    .where(RunsTable.c.pipeline_name.in_(bucket_by.job_names))
+        if isinstance(bucket_by, JobBucket):
+            # bucketing by job
+            base_query = (
+                db.select(query_columns)
+                .select_from(
+                    RunsTable.join(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
+                    if filters.tags
+                    else RunsTable
                 )
-            else:
-                check.invariant(isinstance(bucket_by, TagBucket))
-                base_query = (
-                    db.select(query_columns)
-                    .select_from(
-                        RunsTable.join(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
-                    )
-                    .where(RunTagsTable.c.key == bucket_by.tag_key)
-                    .where(RunTagsTable.c.value.in_(bucket_by.tag_values))
-                )
-
+                .where(RunsTable.c.pipeline_name.in_(bucket_by.job_names))
+            )
             base_query = self._add_filters_to_query(base_query, filters)
-            subquery = base_query.subquery()
-            query = db.select(subquery).order_by(subquery.c.rank.asc())
-            if bucket_by.bucket_limit:
-                query = query.where(subquery.c.rank <= bucket_by.bucket_limit)
-        else:
-            if filters.tags:
-                base_query = db.select(query_columns).select_from(
+
+        elif not filters.tags:
+            # bucketing by tag, no tag filters
+            base_query = (
+                db.select(query_columns)
+                .select_from(
                     RunsTable.join(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
                 )
-            else:
-                base_query = db.select(query_columns).select_from(RunsTable)
+                .where(RunTagsTable.c.key == bucket_by.tag_key)
+                .where(RunTagsTable.c.value.in_(bucket_by.tag_values))
+            )
+            base_query = self._add_filters_to_query(base_query, filters)
 
-            query = self._add_filters_to_query(base_query, filters)
-            query = self._add_cursor_limit_to_query(query, cursor, limit, order_by, ascending)
+        else:
+            # there are tag filters as well as tag buckets, so we have to apply the tag filters in
+            # a separate join
+            filtered_query = db.select([RunsTable.c.run_id]).select_from(
+                RunsTable.join(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
+            )
+            filtered_query = self._add_filters_to_query(filtered_query, filters)
+            filtered_query = filtered_query.alias("filtered_query")
+
+            base_query = (
+                db.select(query_columns)
+                .select_from(
+                    RunsTable.join(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id).join(
+                        filtered_query, RunsTable.c.run_id == filtered_query.c.run_id
+                    )
+                )
+                .where(RunTagsTable.c.key == bucket_by.tag_key)
+                .where(RunTagsTable.c.value.in_(bucket_by.tag_values))
+            )
+
+        subquery = base_query.alias("subquery")
+
+        # select all the columns, but skip the bucket_rank column, which is only used for applying
+        # the limit / order
+        subquery_columns = [getattr(subquery.c, column) for column in columns]
+        query = db.select(subquery_columns).order_by(subquery.c.rank.asc())
+        if bucket_by.bucket_limit:
+            query = query.where(subquery.c.rank <= bucket_by.bucket_limit)
 
         return query
 
     def get_runs(
         self,
-        filters: RunsFilter = None,
-        cursor: str = None,
-        limit: int = None,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[PipelineRun]:
         query = self._runs_query(filters, cursor, limit, bucket_by=bucket_by)
         rows = self.fetchall(query)
         return self._rows_to_runs(rows)
 
-    def get_runs_count(self, filters: RunsFilter = None) -> int:
+    def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
         subquery = self._runs_query(filters=filters).alias("subquery")
 
         # We use an alias here because Postgres requires subqueries to be
@@ -359,23 +416,25 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         """
         check.str_param(run_id, "run_id")
 
-        query = db.select([RunsTable.c.run_body]).where(RunsTable.c.run_id == run_id)
+        query = db.select([RunsTable.c.run_body, RunsTable.c.status]).where(
+            RunsTable.c.run_id == run_id
+        )
         rows = self.fetchall(query)
-        return deserialize_as(rows[0][0], PipelineRun) if len(rows) else None
+        return self._row_to_run(rows[0]) if rows else None
 
     def get_run_records(
         self,
-        filters: RunsFilter = None,
-        limit: int = None,
-        order_by: str = None,
+        filters: Optional[RunsFilter] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[str] = None,
         ascending: bool = False,
-        cursor: str = None,
+        cursor: Optional[str] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[RunRecord]:
         filters = check.opt_inst_param(filters, "filters", RunsFilter, default=RunsFilter())
         check.opt_int_param(limit, "limit")
 
-        columns = ["id", "run_body", "create_timestamp", "update_timestamp"]
+        columns = ["id", "run_body", "status", "create_timestamp", "update_timestamp"]
 
         if self.has_run_stats_index_cols():
             columns += ["start_time", "end_time"]
@@ -394,9 +453,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return [
             RunRecord(
                 storage_id=check.int_param(row["id"], "id"),
-                pipeline_run=deserialize_as(
-                    check.str_param(row["run_body"], "run_body"), PipelineRun
-                ),
+                pipeline_run=self._row_to_run(row),
                 create_timestamp=check.inst(row["create_timestamp"], datetime),
                 update_timestamp=check.inst(row["update_timestamp"], datetime),
                 start_time=check.opt_inst(row["start_time"], float)
@@ -496,7 +553,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         )
         # get run group
         run_group_query = (
-            db.select([RunsTable.c.run_body])
+            db.select([RunsTable.c.run_body, RunsTable.c.status])
             .select_from(
                 root_to_run.join(
                     RunsTable,
@@ -514,11 +571,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return (root_run_id, [root_run] + run_group)
 
     def get_run_groups(
-        self, filters: RunsFilter = None, cursor: str = None, limit: int = None
+        self,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         # The runs that would be returned by calling RunStorage.get_runs with the same arguments
         runs = self._runs_query(
-            filters=filters, cursor=cursor, limit=limit, columns=["run_body", "run_id"]
+            filters=filters, cursor=cursor, limit=limit, columns=["run_body", "status", "run_id"]
         ).alias("runs")
 
         # Gets us the run_id and associated root_run_id for every run in storage that is a
@@ -612,6 +672,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             db.select(
                 [
                     RunsTable.c.run_body,
+                    RunsTable.c.status,
                     db.func.count(all_descendant_runs.c.id).label("child_counts"),
                 ]
             )
@@ -624,7 +685,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     isouter=True,
                 )
             )
-            .group_by(RunsTable.c.run_body)
+            .group_by(RunsTable.c.run_body, RunsTable.c.status)
             .order_by(db.desc(db.column("child_counts")))
         )
 
@@ -634,15 +695,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         # Postprocess: descendant runs get aggregated with their roots
         root_run_id_to_group: Dict[str, List[PipelineRun]] = defaultdict(list)
         root_run_id_to_count: Dict[str, int] = defaultdict(int)
-        for (run_body, count) in res:
-            row = (run_body,)
+        for row in res:
             pipeline_run = self._row_to_run(row)
             root_run_id = pipeline_run.get_root_run_id()
             if root_run_id is not None:
                 root_run_id_to_group[root_run_id].append(pipeline_run)
             else:
                 root_run_id_to_group[pipeline_run.run_id].append(pipeline_run)
-                root_run_id_to_count[pipeline_run.run_id] = count + 1
+                root_run_id_to_count[pipeline_run.run_id] = row["child_counts"] + 1
 
         return {
             root_run_id: {
@@ -755,6 +815,49 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return defensively_unpack_pipeline_snapshot_query(logging, row) if row else None
 
+    def get_run_partition_data(self, runs_filter: RunsFilter) -> List[RunPartitionData]:
+        if self.has_built_index(RUN_PARTITIONS) and self.has_run_stats_index_cols():
+            query = self._runs_query(
+                filters=runs_filter,
+                columns=["run_id", "status", "start_time", "end_time", "partition"],
+            )
+            rows = self.fetchall(query)
+
+            # dedup by partition
+            _partition_data_by_partition = {}
+            for row in rows:
+                if not row["partition"] or row["partition"] in _partition_data_by_partition:
+                    continue
+
+                _partition_data_by_partition[row["partition"]] = RunPartitionData(
+                    run_id=row["run_id"],
+                    partition=row["partition"],
+                    status=DagsterRunStatus[row["status"]],
+                    start_time=row["start_time"],
+                    end_time=row["end_time"],
+                )
+
+            return list(_partition_data_by_partition.values())
+        else:
+            query = self._runs_query(filters=runs_filter)
+            rows = self.fetchall(query)
+            _partition_data_by_partition = {}
+            for row in rows:
+                run = self._row_to_run(row)
+                partition = run.tags.get(PARTITION_NAME_TAG)
+                if not partition or partition in _partition_data_by_partition:
+                    continue
+
+                _partition_data_by_partition[partition] = RunPartitionData(
+                    run_id=run.run_id,
+                    partition=partition,
+                    status=run.status,
+                    start_time=None,
+                    end_time=None,
+                )
+
+            return list(_partition_data_by_partition.values())
+
     def _get_partition_runs(
         self, partition_set_name: str, partition_name: str
     ) -> List[PipelineRun]:
@@ -781,11 +884,13 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     # Tracking data migrations over secondary indexes
 
     def _execute_data_migrations(
-        self, migrations, print_fn: Callable = None, force_rebuild_all: bool = False
+        self, migrations, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False
     ):
         for migration_name, migration_fn in migrations.items():
             if self.has_built_index(migration_name):
                 if not force_rebuild_all:
+                    if print_fn:
+                        print_fn(f"Skipping already applied data migration: {migration_name}")
                     continue
             if print_fn:
                 print_fn(f"Starting data migration: {migration_name}")
@@ -794,10 +899,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             if print_fn:
                 print_fn(f"Finished data migration: {migration_name}")
 
-    def migrate(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+    def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
         self._execute_data_migrations(REQUIRED_DATA_MIGRATIONS, print_fn, force_rebuild_all)
 
-    def optimize(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+    def optimize(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
         self._execute_data_migrations(OPTIONAL_DATA_MIGRATIONS, print_fn, force_rebuild_all)
 
     def has_built_index(self, migration_name: str) -> bool:
@@ -835,6 +940,13 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         with self.connect() as conn:
             column_names = [x.get("name") for x in db.inspect(conn).get_columns(RunsTable.name)]
             return "start_time" in column_names and "end_time" in column_names
+
+    def has_bulk_actions_selector_cols(self):
+        with self.connect() as conn:
+            column_names = [
+                x.get("name") for x in db.inspect(conn).get_columns(BulkActionsTable.name)
+            ]
+            return "selector_id" in column_names
 
     # Daemon heartbeats
 
@@ -886,7 +998,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             conn.execute(DaemonHeartbeatsTable.delete())  # pylint: disable=no-value-for-parameter
 
     def get_backfills(
-        self, status: BulkActionStatus = None, cursor: str = None, limit: int = None
+        self,
+        status: Optional[BulkActionStatus] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> List[PartitionBackfill]:
         check.opt_inst_param(status, "status", BulkActionStatus)
         query = db.select([BulkActionsTable.c.body])
@@ -911,14 +1026,20 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def add_backfill(self, partition_backfill: PartitionBackfill):
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
+        values = dict(
+            key=partition_backfill.backfill_id,
+            status=partition_backfill.status.value,
+            timestamp=utc_datetime_from_timestamp(partition_backfill.backfill_timestamp),
+            body=serialize_dagster_namedtuple(partition_backfill),
+        )
+
+        if self.has_bulk_actions_selector_cols():
+            values["selector_id"] = partition_backfill.selector_id
+            values["action_type"] = BulkActionType.PARTITION_BACKFILL.value
+
         with self.connect() as conn:
             conn.execute(
-                BulkActionsTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    key=partition_backfill.backfill_id,
-                    status=partition_backfill.status.value,
-                    timestamp=utc_datetime_from_timestamp(partition_backfill.backfill_timestamp),
-                    body=serialize_dagster_namedtuple(partition_backfill),
-                )
+                BulkActionsTable.insert().values(**values)  # pylint: disable=no-value-for-parameter
             )
 
     def update_backfill(self, partition_backfill: PartitionBackfill):
@@ -937,6 +1058,32 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     body=serialize_dagster_namedtuple(partition_backfill),
                 )
             )
+
+    def supports_kvs(self):
+        return True
+
+    def kvs_get(self, keys: Set[str]) -> Dict[str, str]:
+        check.set_param(keys, "keys", of_type=str)
+
+        with self.connect() as conn:
+            rows = conn.execute(
+                db.select(KeyValueStoreTable.columns).where(KeyValueStoreTable.c.key.in_(keys)),
+            )
+            return {row.key: row.value for row in rows}
+
+    def kvs_set(self, pairs: Dict[str, str]) -> None:
+        check.dict_param(pairs, "pairs", key_type=str, value_type=str)
+        db_values = [{"key": k, "value": v} for k, v in pairs.items()]
+
+        with self.connect() as conn:
+            try:
+                conn.execute(KeyValueStoreTable.insert().values(db_values))
+            except db.exc.IntegrityError:
+                conn.execute(
+                    KeyValueStoreTable.update()  # pylint: disable=no-value-for-parameter
+                    .where(KeyValueStoreTable.c.key.in_(pairs.keys()))
+                    .values(value=db.sql.case(pairs, value=KeyValueStoreTable.c.key))
+                )
 
 
 GET_PIPELINE_SNAPSHOT_QUERY_ID = "get-pipeline-snapshot"

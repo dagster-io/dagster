@@ -2,7 +2,7 @@ from setuptools import setup  # type: ignore
 
 setup(
     name="software_defined_assets",
-    version="dev",
+    version="0+dev",
     author_email="hello@elementl.com",
     packages=["software_defined_assets"],  # same as name
     install_requires=["dagster"],  # external packages as dependencies

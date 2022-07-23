@@ -1,0 +1,2282 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 14.1
+-- Dumped by pg_dump version 14.1
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: test-schema; Type: SCHEMA; Schema: -; Owner: test
+--
+
+CREATE SCHEMA "test-schema";
+
+
+ALTER SCHEMA "test-schema" OWNER TO test;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: alembic_version; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.alembic_version (
+    version_num character varying(32) NOT NULL
+);
+
+
+ALTER TABLE public.alembic_version OWNER TO test;
+
+--
+-- Name: asset_keys; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.asset_keys (
+    id integer NOT NULL,
+    asset_key character varying(512),
+    last_materialization text,
+    last_run_id character varying(255),
+    asset_details text,
+    wipe_timestamp timestamp without time zone,
+    last_materialization_timestamp timestamp without time zone,
+    tags text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.asset_keys OWNER TO test;
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.asset_keys_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.asset_keys_id_seq OWNER TO test;
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.asset_keys_id_seq OWNED BY public.asset_keys.id;
+
+
+--
+-- Name: bulk_actions; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.bulk_actions (
+    id integer NOT NULL,
+    key character varying(32) NOT NULL,
+    status character varying(255) NOT NULL,
+    "timestamp" timestamp without time zone NOT NULL,
+    body text
+);
+
+
+ALTER TABLE public.bulk_actions OWNER TO test;
+
+--
+-- Name: bulk_actions_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.bulk_actions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.bulk_actions_id_seq OWNER TO test;
+
+--
+-- Name: bulk_actions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.bulk_actions_id_seq OWNED BY public.bulk_actions.id;
+
+
+--
+-- Name: daemon_heartbeats; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.daemon_heartbeats (
+    daemon_type character varying(255) NOT NULL,
+    daemon_id character varying(255),
+    "timestamp" timestamp without time zone NOT NULL,
+    body text
+);
+
+
+ALTER TABLE public.daemon_heartbeats OWNER TO test;
+
+--
+-- Name: event_logs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.event_logs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    event text NOT NULL,
+    dagster_event_type text,
+    "timestamp" timestamp without time zone,
+    step_key text,
+    asset_key text,
+    partition text
+);
+
+
+ALTER TABLE public.event_logs OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.event_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.event_logs_id_seq OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.event_logs_id_seq OWNED BY public.event_logs.id;
+
+
+--
+-- Name: instance_info; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.instance_info (
+    run_storage_id text
+);
+
+
+ALTER TABLE public.instance_info OWNER TO test;
+
+--
+-- Name: job_ticks; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.job_ticks (
+    id integer NOT NULL,
+    job_origin_id character varying(255),
+    status character varying(63),
+    type character varying(63),
+    "timestamp" timestamp without time zone,
+    tick_body text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.job_ticks OWNER TO test;
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.job_ticks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.job_ticks_id_seq OWNER TO test;
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.job_ticks_id_seq OWNED BY public.job_ticks.id;
+
+
+--
+-- Name: jobs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.jobs (
+    id integer NOT NULL,
+    job_origin_id character varying(255),
+    repository_origin_id character varying(255),
+    status character varying(63),
+    job_type character varying(63),
+    job_body text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.jobs OWNER TO test;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.jobs_id_seq OWNER TO test;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.jobs_id_seq OWNED BY public.jobs.id;
+
+
+--
+-- Name: run_tags; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.run_tags (
+    id integer NOT NULL,
+    run_id character varying(255),
+    key text,
+    value text
+);
+
+
+ALTER TABLE public.run_tags OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.run_tags_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.run_tags_id_seq OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.run_tags_id_seq OWNED BY public.run_tags.id;
+
+
+--
+-- Name: runs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.runs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    snapshot_id character varying(255),
+    pipeline_name text,
+    mode text,
+    status character varying(63),
+    run_body text,
+    partition text,
+    partition_set text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    start_time double precision,
+    end_time double precision
+);
+
+
+ALTER TABLE public.runs OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.runs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.runs_id_seq OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.runs_id_seq OWNED BY public.runs.id;
+
+
+--
+-- Name: secondary_indexes; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.secondary_indexes (
+    id integer NOT NULL,
+    name character varying(512),
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    migration_completed timestamp without time zone
+);
+
+
+ALTER TABLE public.secondary_indexes OWNER TO test;
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.secondary_indexes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.secondary_indexes_id_seq OWNER TO test;
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.secondary_indexes_id_seq OWNED BY public.secondary_indexes.id;
+
+
+--
+-- Name: snapshots; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.snapshots (
+    id integer NOT NULL,
+    snapshot_id character varying(255) NOT NULL,
+    snapshot_body bytea NOT NULL,
+    snapshot_type character varying(63) NOT NULL
+);
+
+
+ALTER TABLE public.snapshots OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.snapshots_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.snapshots_id_seq OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.snapshots_id_seq OWNED BY public.snapshots.id;
+
+
+--
+-- Name: cereals; Type: TABLE; Schema: test-schema; Owner: test
+--
+
+CREATE TABLE "test-schema".cereals (
+    name text,
+    mfr text,
+    type text,
+    calories integer,
+    protein integer,
+    fat integer,
+    sodium integer,
+    fiber double precision,
+    carbo double precision,
+    sugars integer,
+    potass integer,
+    vitamins integer,
+    shelf integer,
+    weight double precision,
+    cups double precision,
+    rating double precision
+);
+
+
+ALTER TABLE "test-schema".cereals OWNER TO test;
+
+--
+-- Name: sort_by_calories; Type: VIEW; Schema: test-schema; Owner: test
+--
+
+CREATE VIEW "test-schema".sort_by_calories AS
+ SELECT cereals.name,
+    cereals.mfr,
+    cereals.type,
+    cereals.calories,
+    cereals.protein,
+    cereals.fat,
+    cereals.sodium,
+    cereals.fiber,
+    cereals.carbo,
+    cereals.sugars,
+    cereals.potass,
+    cereals.vitamins,
+    cereals.shelf,
+    cereals.weight,
+    cereals.cups,
+    cereals.rating
+   FROM "test-schema".cereals
+  ORDER BY cereals.calories;
+
+
+ALTER TABLE "test-schema".sort_by_calories OWNER TO test;
+
+--
+-- Name: least_caloric; Type: VIEW; Schema: test-schema; Owner: test
+--
+
+CREATE VIEW "test-schema".least_caloric AS
+ SELECT sort_by_calories.name,
+    sort_by_calories.mfr,
+    sort_by_calories.type,
+    sort_by_calories.calories,
+    sort_by_calories.protein,
+    sort_by_calories.fat,
+    sort_by_calories.sodium,
+    sort_by_calories.fiber,
+    sort_by_calories.carbo,
+    sort_by_calories.sugars,
+    sort_by_calories.potass,
+    sort_by_calories.vitamins,
+    sort_by_calories.shelf,
+    sort_by_calories.weight,
+    sort_by_calories.cups,
+    sort_by_calories.rating
+   FROM "test-schema".sort_by_calories
+ LIMIT 1;
+
+
+ALTER TABLE "test-schema".least_caloric OWNER TO test;
+
+--
+-- Name: sort_cold_cereals_by_calories; Type: VIEW; Schema: test-schema; Owner: test
+--
+
+CREATE VIEW "test-schema".sort_cold_cereals_by_calories AS
+ SELECT sort_by_calories.name,
+    sort_by_calories.mfr,
+    sort_by_calories.type,
+    sort_by_calories.calories,
+    sort_by_calories.protein,
+    sort_by_calories.fat,
+    sort_by_calories.sodium,
+    sort_by_calories.fiber,
+    sort_by_calories.carbo,
+    sort_by_calories.sugars,
+    sort_by_calories.potass,
+    sort_by_calories.vitamins,
+    sort_by_calories.shelf,
+    sort_by_calories.weight,
+    sort_by_calories.cups,
+    sort_by_calories.rating
+   FROM "test-schema".sort_by_calories
+  WHERE (sort_by_calories.type = 'C'::text);
+
+
+ALTER TABLE "test-schema".sort_cold_cereals_by_calories OWNER TO test;
+
+--
+-- Name: sort_hot_cereals_by_calories; Type: VIEW; Schema: test-schema; Owner: test
+--
+
+CREATE VIEW "test-schema".sort_hot_cereals_by_calories AS
+ SELECT sort_by_calories.name,
+    sort_by_calories.mfr,
+    sort_by_calories.type,
+    sort_by_calories.calories,
+    sort_by_calories.protein,
+    sort_by_calories.fat,
+    sort_by_calories.sodium,
+    sort_by_calories.fiber,
+    sort_by_calories.carbo,
+    sort_by_calories.sugars,
+    sort_by_calories.potass,
+    sort_by_calories.vitamins,
+    sort_by_calories.shelf,
+    sort_by_calories.weight,
+    sort_by_calories.cups,
+    sort_by_calories.rating
+   FROM "test-schema".sort_by_calories
+  WHERE (sort_by_calories.type = 'H'::text);
+
+
+ALTER TABLE "test-schema".sort_hot_cereals_by_calories OWNER TO test;
+
+--
+-- Name: asset_keys id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys ALTER COLUMN id SET DEFAULT nextval('public.asset_keys_id_seq'::regclass);
+
+
+--
+-- Name: bulk_actions id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.bulk_actions ALTER COLUMN id SET DEFAULT nextval('public.bulk_actions_id_seq'::regclass);
+
+
+--
+-- Name: event_logs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs ALTER COLUMN id SET DEFAULT nextval('public.event_logs_id_seq'::regclass);
+
+
+--
+-- Name: job_ticks id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.job_ticks ALTER COLUMN id SET DEFAULT nextval('public.job_ticks_id_seq'::regclass);
+
+
+--
+-- Name: jobs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs ALTER COLUMN id SET DEFAULT nextval('public.jobs_id_seq'::regclass);
+
+
+--
+-- Name: run_tags id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags ALTER COLUMN id SET DEFAULT nextval('public.run_tags_id_seq'::regclass);
+
+
+--
+-- Name: runs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs ALTER COLUMN id SET DEFAULT nextval('public.runs_id_seq'::regclass);
+
+
+--
+-- Name: secondary_indexes id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes ALTER COLUMN id SET DEFAULT nextval('public.secondary_indexes_id_seq'::regclass);
+
+
+--
+-- Name: snapshots id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots ALTER COLUMN id SET DEFAULT nextval('public.snapshots_id_seq'::regclass);
+
+
+--
+-- Data for Name: alembic_version; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.alembic_version (version_num) FROM stdin;
+8d66aa722f94
+\.
+
+
+--
+-- Data for Name: asset_keys; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.asset_keys (id, asset_key, last_materialization, last_run_id, asset_details, wipe_timestamp, last_materialization_timestamp, tags, create_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: bulk_actions; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.bulk_actions (id, key, status, "timestamp", body) FROM stdin;
+\.
+
+
+--
+-- Data for Name: daemon_heartbeats; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.daemon_heartbeats (daemon_type, daemon_id, "timestamp", body) FROM stdin;
+\.
+
+
+--
+-- Data for Name: event_logs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.event_logs (id, run_id, event, dagster_event_type, "timestamp", step_key, asset_key, partition) FROM stdin;
+\.
+
+
+--
+-- Data for Name: instance_info; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.instance_info (run_storage_id) FROM stdin;
+ddaf9769-277f-41cd-a055-b8d3fbf3ef22
+\.
+
+
+--
+-- Data for Name: job_ticks; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.job_ticks (id, job_origin_id, status, type, "timestamp", tick_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: jobs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.jobs (id, job_origin_id, repository_origin_id, status, job_type, job_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: run_tags; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.run_tags (id, run_id, key, value) FROM stdin;
+\.
+
+
+--
+-- Data for Name: runs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.runs (id, run_id, snapshot_id, pipeline_name, mode, status, run_body, partition, partition_set, create_timestamp, update_timestamp, start_time, end_time) FROM stdin;
+\.
+
+
+--
+-- Data for Name: secondary_indexes; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.secondary_indexes (id, name, create_timestamp, migration_completed) FROM stdin;
+1	run_partitions	2022-03-23 19:49:42.829118	2022-03-23 19:49:42.824609
+2	run_start_end_overwritten	2022-03-23 19:49:42.854449	2022-03-23 19:49:42.851213
+3	asset_key_table	2022-03-23 19:49:42.937728	2022-03-23 19:49:42.934182
+4	asset_key_index_columns	2022-03-23 19:49:42.95131	2022-03-23 19:49:42.947981
+5	schedule_jobs_selector_id	2022-03-23 20:01:26.879727	2022-03-23 20:01:26.873178
+\.
+
+
+--
+-- Data for Name: snapshots; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.snapshots (id, snapshot_id, snapshot_body, snapshot_type) FROM stdin;
+\.
+
+
+--
+-- Data for Name: cereals; Type: TABLE DATA; Schema: test-schema; Owner: test
+--
+
+COPY "test-schema".cereals (name, mfr, type, calories, protein, fat, sodium, fiber, carbo, sugars, potass, vitamins, shelf, weight, cups, rating) FROM stdin;
+100% Bran	N	C	70	4	1	130	10	5	6	280	25	3	1	0.33	68.402973
+100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+All-Bran	K	C	70	4	1	260	9	7	5	320	25	3	1	0.33	59.425505
+All-Bran with Extra Fiber	K	C	50	4	0	140	14	8	0	330	25	3	1	0.5	93.704912
+Almond Delight	R	C	110	2	2	200	1	14	8	-1	25	3	1	0.75	34.384843
+Apple Cinnamon Cheerios	G	C	110	2	2	180	1.5	10.5	10	70	25	1	1	0.75	29.509541
+Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+Basic 4	G	C	130	3	2	210	2	18	8	100	25	3	1.33	0.75	37.038562
+Bran Chex	R	C	90	2	1	200	4	15	6	125	25	1	1	0.67	49.120253
+Bran Flakes	P	C	90	3	0	210	5	13	5	190	25	3	1	0.67	53.313813
+Cap'n'Crunch	Q	C	120	1	2	220	0	12	12	35	25	2	1	0.75	18.042851
+Cheerios	G	C	110	6	2	290	2	17	1	105	25	1	1	1.25	50.764999
+Cinnamon Toast Crunch	G	C	120	1	3	210	0	13	9	45	25	2	1	0.75	19.823573
+Clusters	G	C	110	3	2	140	2	13	7	105	25	3	1	0.5	40.400208
+Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+Cracklin' Oat Bran	K	C	110	3	3	140	4	10	7	160	25	3	1	0.5	40.448772
+Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+Crispy Wheat & Raisins	G	C	100	2	1	140	2	11	10	120	25	3	1	0.75	36.176196
+Double Chex	R	C	100	2	0	190	1	18	5	80	25	3	1	0.75	44.330856
+Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+Frosted Flakes	K	C	110	1	0	200	1	14	11	25	25	1	1	0.75	31.435973
+Frosted Mini-Wheats	K	C	100	3	0	0	3	14	7	100	25	2	1	0.8	58.345141
+Fruit & Fibre Dates; Walnuts; and Oats	P	C	120	3	2	160	5	12	10	200	25	3	1.25	0.67	40.917047
+Fruitful Bran	K	C	120	3	0	240	5	14	12	190	25	3	1.33	0.67	41.015492
+Fruity Pebbles	P	C	110	1	1	135	0	13	12	25	25	2	1	0.75	28.025765
+Golden Crisp	P	C	100	2	0	45	0	11	15	40	25	1	1	0.88	35.252444
+Golden Grahams	G	C	110	1	1	280	0	15	9	45	25	2	1	0.75	23.804043
+Grape Nuts Flakes	P	C	100	3	1	140	3	15	5	85	25	3	1	0.88	52.076897
+Grape-Nuts	P	C	110	3	0	170	3	17	3	90	25	3	1	0.25	53.371007
+Great Grains Pecan	P	C	120	3	3	75	3	13	4	100	25	3	1	0.33	45.811716
+Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+Honey Nut Cheerios	G	C	110	3	1	250	1.5	11.5	10	90	25	1	1	0.75	31.072217
+Honey-comb	P	C	110	1	0	180	0	14	11	35	25	1	1	1.33	28.742414
+Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+Just Right Fruit & Nut	K	C	140	3	1	170	2	20	9	95	100	3	1.3	0.75	36.471512
+Kix	G	C	110	2	1	260	0	21	3	40	25	2	1	1.5	39.241114
+Life	Q	C	100	4	2	150	2	12	6	95	25	2	1	0.67	45.328074
+Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+Mueslix Crispy Blend	K	C	160	3	2	150	3	17	13	160	25	3	1.5	0.67	30.313351
+Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+Nut&Honey Crunch	K	C	120	2	1	190	0	15	9	40	25	2	1	0.67	29.924285
+Nutri-Grain Almond-Raisin	K	C	140	3	2	220	3	21	7	130	25	3	1.33	0.67	40.69232
+Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+Oatmeal Raisin Crisp	G	C	130	3	2	170	1.5	13.5	10	120	25	3	1.25	0.5	30.450843
+Post Nat. Raisin Bran	P	C	120	3	1	200	6	11	14	260	25	3	1.33	0.67	37.840594
+Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+Quaker Oat Squares	Q	C	100	4	1	135	2	14	6	110	25	3	1	0.5	49.511874
+Quaker Oatmeal	Q	H	100	5	2	0	2.7	-1	-1	110	0	1	1	0.67	50.828392
+Raisin Bran	K	C	120	3	1	210	5	14	12	240	25	2	1.33	0.75	39.259197
+Raisin Nut Bran	G	C	100	3	2	140	2.5	10.5	8	140	25	3	1	0.5	39.7034
+Raisin Squares	K	C	90	2	0	0	2	15	6	110	25	3	1	0.5	55.333142
+Rice Chex	R	C	110	1	0	240	0	23	2	30	25	1	1	1.13	41.998933
+Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+Shredded Wheat 'n'Bran	N	C	90	3	0	0	4	19	0	140	0	1	1	0.67	74.472949
+Shredded Wheat spoon size	N	C	90	3	0	0	3	20	0	120	0	1	1	0.67	72.801787
+Smacks	K	C	110	2	1	70	1	9	15	40	25	2	1	0.75	31.230054
+Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+Triples	G	C	110	2	1	250	0	21	3	60	25	3	1	0.75	39.106174
+Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+Wheat Chex	R	C	100	3	1	230	3	17	3	115	25	1	1	0.67	49.787445
+Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+Wheaties Honey Gold	G	C	110	2	1	200	1	16	8	60	25	1	1	0.75	36.187559
+100% Bran	N	C	70	4	1	130	10	5	6	280	25	3	1	0.33	68.402973
+100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+All-Bran	K	C	70	4	1	260	9	7	5	320	25	3	1	0.33	59.425505
+All-Bran with Extra Fiber	K	C	50	4	0	140	14	8	0	330	25	3	1	0.5	93.704912
+Almond Delight	R	C	110	2	2	200	1	14	8	-1	25	3	1	0.75	34.384843
+Apple Cinnamon Cheerios	G	C	110	2	2	180	1.5	10.5	10	70	25	1	1	0.75	29.509541
+Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+Basic 4	G	C	130	3	2	210	2	18	8	100	25	3	1.33	0.75	37.038562
+Bran Chex	R	C	90	2	1	200	4	15	6	125	25	1	1	0.67	49.120253
+Bran Flakes	P	C	90	3	0	210	5	13	5	190	25	3	1	0.67	53.313813
+Cap'n'Crunch	Q	C	120	1	2	220	0	12	12	35	25	2	1	0.75	18.042851
+Cheerios	G	C	110	6	2	290	2	17	1	105	25	1	1	1.25	50.764999
+Cinnamon Toast Crunch	G	C	120	1	3	210	0	13	9	45	25	2	1	0.75	19.823573
+Clusters	G	C	110	3	2	140	2	13	7	105	25	3	1	0.5	40.400208
+Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+Cracklin' Oat Bran	K	C	110	3	3	140	4	10	7	160	25	3	1	0.5	40.448772
+Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+Crispy Wheat & Raisins	G	C	100	2	1	140	2	11	10	120	25	3	1	0.75	36.176196
+Double Chex	R	C	100	2	0	190	1	18	5	80	25	3	1	0.75	44.330856
+Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+Frosted Flakes	K	C	110	1	0	200	1	14	11	25	25	1	1	0.75	31.435973
+Frosted Mini-Wheats	K	C	100	3	0	0	3	14	7	100	25	2	1	0.8	58.345141
+Fruit & Fibre Dates; Walnuts; and Oats	P	C	120	3	2	160	5	12	10	200	25	3	1.25	0.67	40.917047
+Fruitful Bran	K	C	120	3	0	240	5	14	12	190	25	3	1.33	0.67	41.015492
+Fruity Pebbles	P	C	110	1	1	135	0	13	12	25	25	2	1	0.75	28.025765
+Golden Crisp	P	C	100	2	0	45	0	11	15	40	25	1	1	0.88	35.252444
+Golden Grahams	G	C	110	1	1	280	0	15	9	45	25	2	1	0.75	23.804043
+Grape Nuts Flakes	P	C	100	3	1	140	3	15	5	85	25	3	1	0.88	52.076897
+Grape-Nuts	P	C	110	3	0	170	3	17	3	90	25	3	1	0.25	53.371007
+Great Grains Pecan	P	C	120	3	3	75	3	13	4	100	25	3	1	0.33	45.811716
+Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+Honey Nut Cheerios	G	C	110	3	1	250	1.5	11.5	10	90	25	1	1	0.75	31.072217
+Honey-comb	P	C	110	1	0	180	0	14	11	35	25	1	1	1.33	28.742414
+Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+Just Right Fruit & Nut	K	C	140	3	1	170	2	20	9	95	100	3	1.3	0.75	36.471512
+Kix	G	C	110	2	1	260	0	21	3	40	25	2	1	1.5	39.241114
+Life	Q	C	100	4	2	150	2	12	6	95	25	2	1	0.67	45.328074
+Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+Mueslix Crispy Blend	K	C	160	3	2	150	3	17	13	160	25	3	1.5	0.67	30.313351
+Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+Nut&Honey Crunch	K	C	120	2	1	190	0	15	9	40	25	2	1	0.67	29.924285
+Nutri-Grain Almond-Raisin	K	C	140	3	2	220	3	21	7	130	25	3	1.33	0.67	40.69232
+Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+Oatmeal Raisin Crisp	G	C	130	3	2	170	1.5	13.5	10	120	25	3	1.25	0.5	30.450843
+Post Nat. Raisin Bran	P	C	120	3	1	200	6	11	14	260	25	3	1.33	0.67	37.840594
+Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+Quaker Oat Squares	Q	C	100	4	1	135	2	14	6	110	25	3	1	0.5	49.511874
+Quaker Oatmeal	Q	H	100	5	2	0	2.7	-1	-1	110	0	1	1	0.67	50.828392
+Raisin Bran	K	C	120	3	1	210	5	14	12	240	25	2	1.33	0.75	39.259197
+Raisin Nut Bran	G	C	100	3	2	140	2.5	10.5	8	140	25	3	1	0.5	39.7034
+Raisin Squares	K	C	90	2	0	0	2	15	6	110	25	3	1	0.5	55.333142
+Rice Chex	R	C	110	1	0	240	0	23	2	30	25	1	1	1.13	41.998933
+Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+Shredded Wheat 'n'Bran	N	C	90	3	0	0	4	19	0	140	0	1	1	0.67	74.472949
+Shredded Wheat spoon size	N	C	90	3	0	0	3	20	0	120	0	1	1	0.67	72.801787
+Smacks	K	C	110	2	1	70	1	9	15	40	25	2	1	0.75	31.230054
+Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+Triples	G	C	110	2	1	250	0	21	3	60	25	3	1	0.75	39.106174
+Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+Wheat Chex	R	C	100	3	1	230	3	17	3	115	25	1	1	0.67	49.787445
+Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+Wheaties Honey Gold	G	C	110	2	1	200	1	16	8	60	25	1	1	0.75	36.187559
+100% Bran	N	C	70	4	1	130	10	5	6	280	25	3	1	0.33	68.402973
+100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+All-Bran	K	C	70	4	1	260	9	7	5	320	25	3	1	0.33	59.425505
+All-Bran with Extra Fiber	K	C	50	4	0	140	14	8	0	330	25	3	1	0.5	93.704912
+Almond Delight	R	C	110	2	2	200	1	14	8	-1	25	3	1	0.75	34.384843
+Apple Cinnamon Cheerios	G	C	110	2	2	180	1.5	10.5	10	70	25	1	1	0.75	29.509541
+Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+Basic 4	G	C	130	3	2	210	2	18	8	100	25	3	1.33	0.75	37.038562
+Bran Chex	R	C	90	2	1	200	4	15	6	125	25	1	1	0.67	49.120253
+Bran Flakes	P	C	90	3	0	210	5	13	5	190	25	3	1	0.67	53.313813
+Cap'n'Crunch	Q	C	120	1	2	220	0	12	12	35	25	2	1	0.75	18.042851
+Cheerios	G	C	110	6	2	290	2	17	1	105	25	1	1	1.25	50.764999
+Cinnamon Toast Crunch	G	C	120	1	3	210	0	13	9	45	25	2	1	0.75	19.823573
+Clusters	G	C	110	3	2	140	2	13	7	105	25	3	1	0.5	40.400208
+Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+Cracklin' Oat Bran	K	C	110	3	3	140	4	10	7	160	25	3	1	0.5	40.448772
+Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+Crispy Wheat & Raisins	G	C	100	2	1	140	2	11	10	120	25	3	1	0.75	36.176196
+Double Chex	R	C	100	2	0	190	1	18	5	80	25	3	1	0.75	44.330856
+Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+Frosted Flakes	K	C	110	1	0	200	1	14	11	25	25	1	1	0.75	31.435973
+Frosted Mini-Wheats	K	C	100	3	0	0	3	14	7	100	25	2	1	0.8	58.345141
+Fruit & Fibre Dates; Walnuts; and Oats	P	C	120	3	2	160	5	12	10	200	25	3	1.25	0.67	40.917047
+Fruitful Bran	K	C	120	3	0	240	5	14	12	190	25	3	1.33	0.67	41.015492
+Fruity Pebbles	P	C	110	1	1	135	0	13	12	25	25	2	1	0.75	28.025765
+Golden Crisp	P	C	100	2	0	45	0	11	15	40	25	1	1	0.88	35.252444
+Golden Grahams	G	C	110	1	1	280	0	15	9	45	25	2	1	0.75	23.804043
+Grape Nuts Flakes	P	C	100	3	1	140	3	15	5	85	25	3	1	0.88	52.076897
+Grape-Nuts	P	C	110	3	0	170	3	17	3	90	25	3	1	0.25	53.371007
+Great Grains Pecan	P	C	120	3	3	75	3	13	4	100	25	3	1	0.33	45.811716
+Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+Honey Nut Cheerios	G	C	110	3	1	250	1.5	11.5	10	90	25	1	1	0.75	31.072217
+Honey-comb	P	C	110	1	0	180	0	14	11	35	25	1	1	1.33	28.742414
+Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+Just Right Fruit & Nut	K	C	140	3	1	170	2	20	9	95	100	3	1.3	0.75	36.471512
+Kix	G	C	110	2	1	260	0	21	3	40	25	2	1	1.5	39.241114
+Life	Q	C	100	4	2	150	2	12	6	95	25	2	1	0.67	45.328074
+Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+Mueslix Crispy Blend	K	C	160	3	2	150	3	17	13	160	25	3	1.5	0.67	30.313351
+Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+Nut&Honey Crunch	K	C	120	2	1	190	0	15	9	40	25	2	1	0.67	29.924285
+Nutri-Grain Almond-Raisin	K	C	140	3	2	220	3	21	7	130	25	3	1.33	0.67	40.69232
+Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+Oatmeal Raisin Crisp	G	C	130	3	2	170	1.5	13.5	10	120	25	3	1.25	0.5	30.450843
+Post Nat. Raisin Bran	P	C	120	3	1	200	6	11	14	260	25	3	1.33	0.67	37.840594
+Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+Quaker Oat Squares	Q	C	100	4	1	135	2	14	6	110	25	3	1	0.5	49.511874
+Quaker Oatmeal	Q	H	100	5	2	0	2.7	-1	-1	110	0	1	1	0.67	50.828392
+Raisin Bran	K	C	120	3	1	210	5	14	12	240	25	2	1.33	0.75	39.259197
+Raisin Nut Bran	G	C	100	3	2	140	2.5	10.5	8	140	25	3	1	0.5	39.7034
+Raisin Squares	K	C	90	2	0	0	2	15	6	110	25	3	1	0.5	55.333142
+Rice Chex	R	C	110	1	0	240	0	23	2	30	25	1	1	1.13	41.998933
+Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+Shredded Wheat 'n'Bran	N	C	90	3	0	0	4	19	0	140	0	1	1	0.67	74.472949
+Shredded Wheat spoon size	N	C	90	3	0	0	3	20	0	120	0	1	1	0.67	72.801787
+Smacks	K	C	110	2	1	70	1	9	15	40	25	2	1	0.75	31.230054
+Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+Triples	G	C	110	2	1	250	0	21	3	60	25	3	1	0.75	39.106174
+Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+Wheat Chex	R	C	100	3	1	230	3	17	3	115	25	1	1	0.67	49.787445
+Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+Wheaties Honey Gold	G	C	110	2	1	200	1	16	8	60	25	1	1	0.75	36.187559
+100% Bran	N	C	70	4	1	130	10	5	6	280	25	3	1	0.33	68.402973
+100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+All-Bran	K	C	70	4	1	260	9	7	5	320	25	3	1	0.33	59.425505
+All-Bran with Extra Fiber	K	C	50	4	0	140	14	8	0	330	25	3	1	0.5	93.704912
+Almond Delight	R	C	110	2	2	200	1	14	8	-1	25	3	1	0.75	34.384843
+Apple Cinnamon Cheerios	G	C	110	2	2	180	1.5	10.5	10	70	25	1	1	0.75	29.509541
+Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+Basic 4	G	C	130	3	2	210	2	18	8	100	25	3	1.33	0.75	37.038562
+Bran Chex	R	C	90	2	1	200	4	15	6	125	25	1	1	0.67	49.120253
+Bran Flakes	P	C	90	3	0	210	5	13	5	190	25	3	1	0.67	53.313813
+Cap'n'Crunch	Q	C	120	1	2	220	0	12	12	35	25	2	1	0.75	18.042851
+Cheerios	G	C	110	6	2	290	2	17	1	105	25	1	1	1.25	50.764999
+Cinnamon Toast Crunch	G	C	120	1	3	210	0	13	9	45	25	2	1	0.75	19.823573
+Clusters	G	C	110	3	2	140	2	13	7	105	25	3	1	0.5	40.400208
+Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+Cracklin' Oat Bran	K	C	110	3	3	140	4	10	7	160	25	3	1	0.5	40.448772
+Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+Crispy Wheat & Raisins	G	C	100	2	1	140	2	11	10	120	25	3	1	0.75	36.176196
+Double Chex	R	C	100	2	0	190	1	18	5	80	25	3	1	0.75	44.330856
+Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+Frosted Flakes	K	C	110	1	0	200	1	14	11	25	25	1	1	0.75	31.435973
+Frosted Mini-Wheats	K	C	100	3	0	0	3	14	7	100	25	2	1	0.8	58.345141
+Fruit & Fibre Dates; Walnuts; and Oats	P	C	120	3	2	160	5	12	10	200	25	3	1.25	0.67	40.917047
+Fruitful Bran	K	C	120	3	0	240	5	14	12	190	25	3	1.33	0.67	41.015492
+Fruity Pebbles	P	C	110	1	1	135	0	13	12	25	25	2	1	0.75	28.025765
+Golden Crisp	P	C	100	2	0	45	0	11	15	40	25	1	1	0.88	35.252444
+Golden Grahams	G	C	110	1	1	280	0	15	9	45	25	2	1	0.75	23.804043
+Grape Nuts Flakes	P	C	100	3	1	140	3	15	5	85	25	3	1	0.88	52.076897
+Grape-Nuts	P	C	110	3	0	170	3	17	3	90	25	3	1	0.25	53.371007
+Great Grains Pecan	P	C	120	3	3	75	3	13	4	100	25	3	1	0.33	45.811716
+Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+Honey Nut Cheerios	G	C	110	3	1	250	1.5	11.5	10	90	25	1	1	0.75	31.072217
+Honey-comb	P	C	110	1	0	180	0	14	11	35	25	1	1	1.33	28.742414
+Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+Just Right Fruit & Nut	K	C	140	3	1	170	2	20	9	95	100	3	1.3	0.75	36.471512
+Kix	G	C	110	2	1	260	0	21	3	40	25	2	1	1.5	39.241114
+Life	Q	C	100	4	2	150	2	12	6	95	25	2	1	0.67	45.328074
+Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+Mueslix Crispy Blend	K	C	160	3	2	150	3	17	13	160	25	3	1.5	0.67	30.313351
+Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+Nut&Honey Crunch	K	C	120	2	1	190	0	15	9	40	25	2	1	0.67	29.924285
+Nutri-Grain Almond-Raisin	K	C	140	3	2	220	3	21	7	130	25	3	1.33	0.67	40.69232
+Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+Oatmeal Raisin Crisp	G	C	130	3	2	170	1.5	13.5	10	120	25	3	1.25	0.5	30.450843
+Post Nat. Raisin Bran	P	C	120	3	1	200	6	11	14	260	25	3	1.33	0.67	37.840594
+Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+Quaker Oat Squares	Q	C	100	4	1	135	2	14	6	110	25	3	1	0.5	49.511874
+Quaker Oatmeal	Q	H	100	5	2	0	2.7	-1	-1	110	0	1	1	0.67	50.828392
+Raisin Bran	K	C	120	3	1	210	5	14	12	240	25	2	1.33	0.75	39.259197
+Raisin Nut Bran	G	C	100	3	2	140	2.5	10.5	8	140	25	3	1	0.5	39.7034
+Raisin Squares	K	C	90	2	0	0	2	15	6	110	25	3	1	0.5	55.333142
+Rice Chex	R	C	110	1	0	240	0	23	2	30	25	1	1	1.13	41.998933
+Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+Shredded Wheat 'n'Bran	N	C	90	3	0	0	4	19	0	140	0	1	1	0.67	74.472949
+Shredded Wheat spoon size	N	C	90	3	0	0	3	20	0	120	0	1	1	0.67	72.801787
+Smacks	K	C	110	2	1	70	1	9	15	40	25	2	1	0.75	31.230054
+Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+Triples	G	C	110	2	1	250	0	21	3	60	25	3	1	0.75	39.106174
+Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+Wheat Chex	R	C	100	3	1	230	3	17	3	115	25	1	1	0.67	49.787445
+Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+Wheaties Honey Gold	G	C	110	2	1	200	1	16	8	60	25	1	1	0.75	36.187559
+100% Bran	N	C	70	4	1	130	10	5	6	280	25	3	1	0.33	68.402973
+100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+All-Bran	K	C	70	4	1	260	9	7	5	320	25	3	1	0.33	59.425505
+All-Bran with Extra Fiber	K	C	50	4	0	140	14	8	0	330	25	3	1	0.5	93.704912
+Almond Delight	R	C	110	2	2	200	1	14	8	-1	25	3	1	0.75	34.384843
+Apple Cinnamon Cheerios	G	C	110	2	2	180	1.5	10.5	10	70	25	1	1	0.75	29.509541
+Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+Basic 4	G	C	130	3	2	210	2	18	8	100	25	3	1.33	0.75	37.038562
+Bran Chex	R	C	90	2	1	200	4	15	6	125	25	1	1	0.67	49.120253
+Bran Flakes	P	C	90	3	0	210	5	13	5	190	25	3	1	0.67	53.313813
+Cap'n'Crunch	Q	C	120	1	2	220	0	12	12	35	25	2	1	0.75	18.042851
+Cheerios	G	C	110	6	2	290	2	17	1	105	25	1	1	1.25	50.764999
+Cinnamon Toast Crunch	G	C	120	1	3	210	0	13	9	45	25	2	1	0.75	19.823573
+Clusters	G	C	110	3	2	140	2	13	7	105	25	3	1	0.5	40.400208
+Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+Cracklin' Oat Bran	K	C	110	3	3	140	4	10	7	160	25	3	1	0.5	40.448772
+Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+Crispy Wheat & Raisins	G	C	100	2	1	140	2	11	10	120	25	3	1	0.75	36.176196
+Double Chex	R	C	100	2	0	190	1	18	5	80	25	3	1	0.75	44.330856
+Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+Frosted Flakes	K	C	110	1	0	200	1	14	11	25	25	1	1	0.75	31.435973
+Frosted Mini-Wheats	K	C	100	3	0	0	3	14	7	100	25	2	1	0.8	58.345141
+Fruit & Fibre Dates; Walnuts; and Oats	P	C	120	3	2	160	5	12	10	200	25	3	1.25	0.67	40.917047
+Fruitful Bran	K	C	120	3	0	240	5	14	12	190	25	3	1.33	0.67	41.015492
+Fruity Pebbles	P	C	110	1	1	135	0	13	12	25	25	2	1	0.75	28.025765
+Golden Crisp	P	C	100	2	0	45	0	11	15	40	25	1	1	0.88	35.252444
+Golden Grahams	G	C	110	1	1	280	0	15	9	45	25	2	1	0.75	23.804043
+Grape Nuts Flakes	P	C	100	3	1	140	3	15	5	85	25	3	1	0.88	52.076897
+Grape-Nuts	P	C	110	3	0	170	3	17	3	90	25	3	1	0.25	53.371007
+Great Grains Pecan	P	C	120	3	3	75	3	13	4	100	25	3	1	0.33	45.811716
+Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+Honey Nut Cheerios	G	C	110	3	1	250	1.5	11.5	10	90	25	1	1	0.75	31.072217
+Honey-comb	P	C	110	1	0	180	0	14	11	35	25	1	1	1.33	28.742414
+Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+Just Right Fruit & Nut	K	C	140	3	1	170	2	20	9	95	100	3	1.3	0.75	36.471512
+Kix	G	C	110	2	1	260	0	21	3	40	25	2	1	1.5	39.241114
+Life	Q	C	100	4	2	150	2	12	6	95	25	2	1	0.67	45.328074
+Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+Mueslix Crispy Blend	K	C	160	3	2	150	3	17	13	160	25	3	1.5	0.67	30.313351
+Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+Nut&Honey Crunch	K	C	120	2	1	190	0	15	9	40	25	2	1	0.67	29.924285
+Nutri-Grain Almond-Raisin	K	C	140	3	2	220	3	21	7	130	25	3	1.33	0.67	40.69232
+Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+Oatmeal Raisin Crisp	G	C	130	3	2	170	1.5	13.5	10	120	25	3	1.25	0.5	30.450843
+Post Nat. Raisin Bran	P	C	120	3	1	200	6	11	14	260	25	3	1.33	0.67	37.840594
+Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+Quaker Oat Squares	Q	C	100	4	1	135	2	14	6	110	25	3	1	0.5	49.511874
+Quaker Oatmeal	Q	H	100	5	2	0	2.7	-1	-1	110	0	1	1	0.67	50.828392
+Raisin Bran	K	C	120	3	1	210	5	14	12	240	25	2	1.33	0.75	39.259197
+Raisin Nut Bran	G	C	100	3	2	140	2.5	10.5	8	140	25	3	1	0.5	39.7034
+Raisin Squares	K	C	90	2	0	0	2	15	6	110	25	3	1	0.5	55.333142
+Rice Chex	R	C	110	1	0	240	0	23	2	30	25	1	1	1.13	41.998933
+Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+Shredded Wheat 'n'Bran	N	C	90	3	0	0	4	19	0	140	0	1	1	0.67	74.472949
+Shredded Wheat spoon size	N	C	90	3	0	0	3	20	0	120	0	1	1	0.67	72.801787
+Smacks	K	C	110	2	1	70	1	9	15	40	25	2	1	0.75	31.230054
+Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+Triples	G	C	110	2	1	250	0	21	3	60	25	3	1	0.75	39.106174
+Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+Wheat Chex	R	C	100	3	1	230	3	17	3	115	25	1	1	0.67	49.787445
+Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+Wheaties Honey Gold	G	C	110	2	1	200	1	16	8	60	25	1	1	0.75	36.187559
+100% Bran	N	C	70	4	1	130	10	5	6	280	25	3	1	0.33	68.402973
+100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+All-Bran	K	C	70	4	1	260	9	7	5	320	25	3	1	0.33	59.425505
+All-Bran with Extra Fiber	K	C	50	4	0	140	14	8	0	330	25	3	1	0.5	93.704912
+Almond Delight	R	C	110	2	2	200	1	14	8	-1	25	3	1	0.75	34.384843
+Apple Cinnamon Cheerios	G	C	110	2	2	180	1.5	10.5	10	70	25	1	1	0.75	29.509541
+Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+Basic 4	G	C	130	3	2	210	2	18	8	100	25	3	1.33	0.75	37.038562
+Bran Chex	R	C	90	2	1	200	4	15	6	125	25	1	1	0.67	49.120253
+Bran Flakes	P	C	90	3	0	210	5	13	5	190	25	3	1	0.67	53.313813
+Cap'n'Crunch	Q	C	120	1	2	220	0	12	12	35	25	2	1	0.75	18.042851
+Cheerios	G	C	110	6	2	290	2	17	1	105	25	1	1	1.25	50.764999
+Cinnamon Toast Crunch	G	C	120	1	3	210	0	13	9	45	25	2	1	0.75	19.823573
+Clusters	G	C	110	3	2	140	2	13	7	105	25	3	1	0.5	40.400208
+Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+Cracklin' Oat Bran	K	C	110	3	3	140	4	10	7	160	25	3	1	0.5	40.448772
+Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+Crispy Wheat & Raisins	G	C	100	2	1	140	2	11	10	120	25	3	1	0.75	36.176196
+Double Chex	R	C	100	2	0	190	1	18	5	80	25	3	1	0.75	44.330856
+Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+Frosted Flakes	K	C	110	1	0	200	1	14	11	25	25	1	1	0.75	31.435973
+Frosted Mini-Wheats	K	C	100	3	0	0	3	14	7	100	25	2	1	0.8	58.345141
+Fruit & Fibre Dates; Walnuts; and Oats	P	C	120	3	2	160	5	12	10	200	25	3	1.25	0.67	40.917047
+Fruitful Bran	K	C	120	3	0	240	5	14	12	190	25	3	1.33	0.67	41.015492
+Fruity Pebbles	P	C	110	1	1	135	0	13	12	25	25	2	1	0.75	28.025765
+Golden Crisp	P	C	100	2	0	45	0	11	15	40	25	1	1	0.88	35.252444
+Golden Grahams	G	C	110	1	1	280	0	15	9	45	25	2	1	0.75	23.804043
+Grape Nuts Flakes	P	C	100	3	1	140	3	15	5	85	25	3	1	0.88	52.076897
+Grape-Nuts	P	C	110	3	0	170	3	17	3	90	25	3	1	0.25	53.371007
+Great Grains Pecan	P	C	120	3	3	75	3	13	4	100	25	3	1	0.33	45.811716
+Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+Honey Nut Cheerios	G	C	110	3	1	250	1.5	11.5	10	90	25	1	1	0.75	31.072217
+Honey-comb	P	C	110	1	0	180	0	14	11	35	25	1	1	1.33	28.742414
+Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+Just Right Fruit & Nut	K	C	140	3	1	170	2	20	9	95	100	3	1.3	0.75	36.471512
+Kix	G	C	110	2	1	260	0	21	3	40	25	2	1	1.5	39.241114
+Life	Q	C	100	4	2	150	2	12	6	95	25	2	1	0.67	45.328074
+Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+Mueslix Crispy Blend	K	C	160	3	2	150	3	17	13	160	25	3	1.5	0.67	30.313351
+Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+Nut&Honey Crunch	K	C	120	2	1	190	0	15	9	40	25	2	1	0.67	29.924285
+Nutri-Grain Almond-Raisin	K	C	140	3	2	220	3	21	7	130	25	3	1.33	0.67	40.69232
+Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+Oatmeal Raisin Crisp	G	C	130	3	2	170	1.5	13.5	10	120	25	3	1.25	0.5	30.450843
+Post Nat. Raisin Bran	P	C	120	3	1	200	6	11	14	260	25	3	1.33	0.67	37.840594
+Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+Quaker Oat Squares	Q	C	100	4	1	135	2	14	6	110	25	3	1	0.5	49.511874
+Quaker Oatmeal	Q	H	100	5	2	0	2.7	-1	-1	110	0	1	1	0.67	50.828392
+Raisin Bran	K	C	120	3	1	210	5	14	12	240	25	2	1.33	0.75	39.259197
+Raisin Nut Bran	G	C	100	3	2	140	2.5	10.5	8	140	25	3	1	0.5	39.7034
+Raisin Squares	K	C	90	2	0	0	2	15	6	110	25	3	1	0.5	55.333142
+Rice Chex	R	C	110	1	0	240	0	23	2	30	25	1	1	1.13	41.998933
+Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+Shredded Wheat 'n'Bran	N	C	90	3	0	0	4	19	0	140	0	1	1	0.67	74.472949
+Shredded Wheat spoon size	N	C	90	3	0	0	3	20	0	120	0	1	1	0.67	72.801787
+Smacks	K	C	110	2	1	70	1	9	15	40	25	2	1	0.75	31.230054
+Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+Triples	G	C	110	2	1	250	0	21	3	60	25	3	1	0.75	39.106174
+Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+Wheat Chex	R	C	100	3	1	230	3	17	3	115	25	1	1	0.67	49.787445
+Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+Wheaties Honey Gold	G	C	110	2	1	200	1	16	8	60	25	1	1	0.75	36.187559
+100% Bran	N	C	70	4	1	130	10	5	6	280	25	3	1	0.33	68.402973
+100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+All-Bran	K	C	70	4	1	260	9	7	5	320	25	3	1	0.33	59.425505
+All-Bran with Extra Fiber	K	C	50	4	0	140	14	8	0	330	25	3	1	0.5	93.704912
+Almond Delight	R	C	110	2	2	200	1	14	8	-1	25	3	1	0.75	34.384843
+Apple Cinnamon Cheerios	G	C	110	2	2	180	1.5	10.5	10	70	25	1	1	0.75	29.509541
+Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+Basic 4	G	C	130	3	2	210	2	18	8	100	25	3	1.33	0.75	37.038562
+Bran Chex	R	C	90	2	1	200	4	15	6	125	25	1	1	0.67	49.120253
+Bran Flakes	P	C	90	3	0	210	5	13	5	190	25	3	1	0.67	53.313813
+Cap'n'Crunch	Q	C	120	1	2	220	0	12	12	35	25	2	1	0.75	18.042851
+Cheerios	G	C	110	6	2	290	2	17	1	105	25	1	1	1.25	50.764999
+Cinnamon Toast Crunch	G	C	120	1	3	210	0	13	9	45	25	2	1	0.75	19.823573
+Clusters	G	C	110	3	2	140	2	13	7	105	25	3	1	0.5	40.400208
+Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+Cracklin' Oat Bran	K	C	110	3	3	140	4	10	7	160	25	3	1	0.5	40.448772
+Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+Crispy Wheat & Raisins	G	C	100	2	1	140	2	11	10	120	25	3	1	0.75	36.176196
+Double Chex	R	C	100	2	0	190	1	18	5	80	25	3	1	0.75	44.330856
+Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+Frosted Flakes	K	C	110	1	0	200	1	14	11	25	25	1	1	0.75	31.435973
+Frosted Mini-Wheats	K	C	100	3	0	0	3	14	7	100	25	2	1	0.8	58.345141
+Fruit & Fibre Dates; Walnuts; and Oats	P	C	120	3	2	160	5	12	10	200	25	3	1.25	0.67	40.917047
+Fruitful Bran	K	C	120	3	0	240	5	14	12	190	25	3	1.33	0.67	41.015492
+Fruity Pebbles	P	C	110	1	1	135	0	13	12	25	25	2	1	0.75	28.025765
+Golden Crisp	P	C	100	2	0	45	0	11	15	40	25	1	1	0.88	35.252444
+Golden Grahams	G	C	110	1	1	280	0	15	9	45	25	2	1	0.75	23.804043
+Grape Nuts Flakes	P	C	100	3	1	140	3	15	5	85	25	3	1	0.88	52.076897
+Grape-Nuts	P	C	110	3	0	170	3	17	3	90	25	3	1	0.25	53.371007
+Great Grains Pecan	P	C	120	3	3	75	3	13	4	100	25	3	1	0.33	45.811716
+Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+Honey Nut Cheerios	G	C	110	3	1	250	1.5	11.5	10	90	25	1	1	0.75	31.072217
+Honey-comb	P	C	110	1	0	180	0	14	11	35	25	1	1	1.33	28.742414
+Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+Just Right Fruit & Nut	K	C	140	3	1	170	2	20	9	95	100	3	1.3	0.75	36.471512
+Kix	G	C	110	2	1	260	0	21	3	40	25	2	1	1.5	39.241114
+Life	Q	C	100	4	2	150	2	12	6	95	25	2	1	0.67	45.328074
+Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+Mueslix Crispy Blend	K	C	160	3	2	150	3	17	13	160	25	3	1.5	0.67	30.313351
+Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+Nut&Honey Crunch	K	C	120	2	1	190	0	15	9	40	25	2	1	0.67	29.924285
+Nutri-Grain Almond-Raisin	K	C	140	3	2	220	3	21	7	130	25	3	1.33	0.67	40.69232
+Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+Oatmeal Raisin Crisp	G	C	130	3	2	170	1.5	13.5	10	120	25	3	1.25	0.5	30.450843
+Post Nat. Raisin Bran	P	C	120	3	1	200	6	11	14	260	25	3	1.33	0.67	37.840594
+Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+Quaker Oat Squares	Q	C	100	4	1	135	2	14	6	110	25	3	1	0.5	49.511874
+Quaker Oatmeal	Q	H	100	5	2	0	2.7	-1	-1	110	0	1	1	0.67	50.828392
+Raisin Bran	K	C	120	3	1	210	5	14	12	240	25	2	1.33	0.75	39.259197
+Raisin Nut Bran	G	C	100	3	2	140	2.5	10.5	8	140	25	3	1	0.5	39.7034
+Raisin Squares	K	C	90	2	0	0	2	15	6	110	25	3	1	0.5	55.333142
+Rice Chex	R	C	110	1	0	240	0	23	2	30	25	1	1	1.13	41.998933
+Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+Shredded Wheat 'n'Bran	N	C	90	3	0	0	4	19	0	140	0	1	1	0.67	74.472949
+Shredded Wheat spoon size	N	C	90	3	0	0	3	20	0	120	0	1	1	0.67	72.801787
+Smacks	K	C	110	2	1	70	1	9	15	40	25	2	1	0.75	31.230054
+Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+Triples	G	C	110	2	1	250	0	21	3	60	25	3	1	0.75	39.106174
+Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+Wheat Chex	R	C	100	3	1	230	3	17	3	115	25	1	1	0.67	49.787445
+Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+Wheaties Honey Gold	G	C	110	2	1	200	1	16	8	60	25	1	1	0.75	36.187559
+100% Bran	N	C	70	4	1	130	10	5	6	280	25	3	1	0.33	68.402973
+100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+All-Bran	K	C	70	4	1	260	9	7	5	320	25	3	1	0.33	59.425505
+All-Bran with Extra Fiber	K	C	50	4	0	140	14	8	0	330	25	3	1	0.5	93.704912
+Almond Delight	R	C	110	2	2	200	1	14	8	-1	25	3	1	0.75	34.384843
+Apple Cinnamon Cheerios	G	C	110	2	2	180	1.5	10.5	10	70	25	1	1	0.75	29.509541
+Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+Basic 4	G	C	130	3	2	210	2	18	8	100	25	3	1.33	0.75	37.038562
+Bran Chex	R	C	90	2	1	200	4	15	6	125	25	1	1	0.67	49.120253
+Bran Flakes	P	C	90	3	0	210	5	13	5	190	25	3	1	0.67	53.313813
+Cap'n'Crunch	Q	C	120	1	2	220	0	12	12	35	25	2	1	0.75	18.042851
+Cheerios	G	C	110	6	2	290	2	17	1	105	25	1	1	1.25	50.764999
+Cinnamon Toast Crunch	G	C	120	1	3	210	0	13	9	45	25	2	1	0.75	19.823573
+Clusters	G	C	110	3	2	140	2	13	7	105	25	3	1	0.5	40.400208
+Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+Cracklin' Oat Bran	K	C	110	3	3	140	4	10	7	160	25	3	1	0.5	40.448772
+Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+Crispy Wheat & Raisins	G	C	100	2	1	140	2	11	10	120	25	3	1	0.75	36.176196
+Double Chex	R	C	100	2	0	190	1	18	5	80	25	3	1	0.75	44.330856
+Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+Frosted Flakes	K	C	110	1	0	200	1	14	11	25	25	1	1	0.75	31.435973
+Frosted Mini-Wheats	K	C	100	3	0	0	3	14	7	100	25	2	1	0.8	58.345141
+Fruit & Fibre Dates; Walnuts; and Oats	P	C	120	3	2	160	5	12	10	200	25	3	1.25	0.67	40.917047
+Fruitful Bran	K	C	120	3	0	240	5	14	12	190	25	3	1.33	0.67	41.015492
+Fruity Pebbles	P	C	110	1	1	135	0	13	12	25	25	2	1	0.75	28.025765
+Golden Crisp	P	C	100	2	0	45	0	11	15	40	25	1	1	0.88	35.252444
+Golden Grahams	G	C	110	1	1	280	0	15	9	45	25	2	1	0.75	23.804043
+Grape Nuts Flakes	P	C	100	3	1	140	3	15	5	85	25	3	1	0.88	52.076897
+Grape-Nuts	P	C	110	3	0	170	3	17	3	90	25	3	1	0.25	53.371007
+Great Grains Pecan	P	C	120	3	3	75	3	13	4	100	25	3	1	0.33	45.811716
+Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+Honey Nut Cheerios	G	C	110	3	1	250	1.5	11.5	10	90	25	1	1	0.75	31.072217
+Honey-comb	P	C	110	1	0	180	0	14	11	35	25	1	1	1.33	28.742414
+Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+Just Right Fruit & Nut	K	C	140	3	1	170	2	20	9	95	100	3	1.3	0.75	36.471512
+Kix	G	C	110	2	1	260	0	21	3	40	25	2	1	1.5	39.241114
+Life	Q	C	100	4	2	150	2	12	6	95	25	2	1	0.67	45.328074
+Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+Mueslix Crispy Blend	K	C	160	3	2	150	3	17	13	160	25	3	1.5	0.67	30.313351
+Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+Nut&Honey Crunch	K	C	120	2	1	190	0	15	9	40	25	2	1	0.67	29.924285
+Nutri-Grain Almond-Raisin	K	C	140	3	2	220	3	21	7	130	25	3	1.33	0.67	40.69232
+Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+Oatmeal Raisin Crisp	G	C	130	3	2	170	1.5	13.5	10	120	25	3	1.25	0.5	30.450843
+Post Nat. Raisin Bran	P	C	120	3	1	200	6	11	14	260	25	3	1.33	0.67	37.840594
+Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+Quaker Oat Squares	Q	C	100	4	1	135	2	14	6	110	25	3	1	0.5	49.511874
+Quaker Oatmeal	Q	H	100	5	2	0	2.7	-1	-1	110	0	1	1	0.67	50.828392
+Raisin Bran	K	C	120	3	1	210	5	14	12	240	25	2	1.33	0.75	39.259197
+Raisin Nut Bran	G	C	100	3	2	140	2.5	10.5	8	140	25	3	1	0.5	39.7034
+Raisin Squares	K	C	90	2	0	0	2	15	6	110	25	3	1	0.5	55.333142
+Rice Chex	R	C	110	1	0	240	0	23	2	30	25	1	1	1.13	41.998933
+Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+Shredded Wheat 'n'Bran	N	C	90	3	0	0	4	19	0	140	0	1	1	0.67	74.472949
+Shredded Wheat spoon size	N	C	90	3	0	0	3	20	0	120	0	1	1	0.67	72.801787
+Smacks	K	C	110	2	1	70	1	9	15	40	25	2	1	0.75	31.230054
+Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+Triples	G	C	110	2	1	250	0	21	3	60	25	3	1	0.75	39.106174
+Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+Wheat Chex	R	C	100	3	1	230	3	17	3	115	25	1	1	0.67	49.787445
+Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+Wheaties Honey Gold	G	C	110	2	1	200	1	16	8	60	25	1	1	0.75	36.187559
+100% Bran	N	C	70	4	1	130	10	5	6	280	25	3	1	0.33	68.402973
+100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+All-Bran	K	C	70	4	1	260	9	7	5	320	25	3	1	0.33	59.425505
+All-Bran with Extra Fiber	K	C	50	4	0	140	14	8	0	330	25	3	1	0.5	93.704912
+Almond Delight	R	C	110	2	2	200	1	14	8	-1	25	3	1	0.75	34.384843
+Apple Cinnamon Cheerios	G	C	110	2	2	180	1.5	10.5	10	70	25	1	1	0.75	29.509541
+Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+Basic 4	G	C	130	3	2	210	2	18	8	100	25	3	1.33	0.75	37.038562
+Bran Chex	R	C	90	2	1	200	4	15	6	125	25	1	1	0.67	49.120253
+Bran Flakes	P	C	90	3	0	210	5	13	5	190	25	3	1	0.67	53.313813
+Cap'n'Crunch	Q	C	120	1	2	220	0	12	12	35	25	2	1	0.75	18.042851
+Cheerios	G	C	110	6	2	290	2	17	1	105	25	1	1	1.25	50.764999
+Cinnamon Toast Crunch	G	C	120	1	3	210	0	13	9	45	25	2	1	0.75	19.823573
+Clusters	G	C	110	3	2	140	2	13	7	105	25	3	1	0.5	40.400208
+Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+Cracklin' Oat Bran	K	C	110	3	3	140	4	10	7	160	25	3	1	0.5	40.448772
+Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+Crispy Wheat & Raisins	G	C	100	2	1	140	2	11	10	120	25	3	1	0.75	36.176196
+Double Chex	R	C	100	2	0	190	1	18	5	80	25	3	1	0.75	44.330856
+Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+Frosted Flakes	K	C	110	1	0	200	1	14	11	25	25	1	1	0.75	31.435973
+Frosted Mini-Wheats	K	C	100	3	0	0	3	14	7	100	25	2	1	0.8	58.345141
+Fruit & Fibre Dates; Walnuts; and Oats	P	C	120	3	2	160	5	12	10	200	25	3	1.25	0.67	40.917047
+Fruitful Bran	K	C	120	3	0	240	5	14	12	190	25	3	1.33	0.67	41.015492
+Fruity Pebbles	P	C	110	1	1	135	0	13	12	25	25	2	1	0.75	28.025765
+Golden Crisp	P	C	100	2	0	45	0	11	15	40	25	1	1	0.88	35.252444
+Golden Grahams	G	C	110	1	1	280	0	15	9	45	25	2	1	0.75	23.804043
+Grape Nuts Flakes	P	C	100	3	1	140	3	15	5	85	25	3	1	0.88	52.076897
+Grape-Nuts	P	C	110	3	0	170	3	17	3	90	25	3	1	0.25	53.371007
+Great Grains Pecan	P	C	120	3	3	75	3	13	4	100	25	3	1	0.33	45.811716
+Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+Honey Nut Cheerios	G	C	110	3	1	250	1.5	11.5	10	90	25	1	1	0.75	31.072217
+Honey-comb	P	C	110	1	0	180	0	14	11	35	25	1	1	1.33	28.742414
+Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+Just Right Fruit & Nut	K	C	140	3	1	170	2	20	9	95	100	3	1.3	0.75	36.471512
+Kix	G	C	110	2	1	260	0	21	3	40	25	2	1	1.5	39.241114
+Life	Q	C	100	4	2	150	2	12	6	95	25	2	1	0.67	45.328074
+Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+Mueslix Crispy Blend	K	C	160	3	2	150	3	17	13	160	25	3	1.5	0.67	30.313351
+Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+Nut&Honey Crunch	K	C	120	2	1	190	0	15	9	40	25	2	1	0.67	29.924285
+Nutri-Grain Almond-Raisin	K	C	140	3	2	220	3	21	7	130	25	3	1.33	0.67	40.69232
+Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+Oatmeal Raisin Crisp	G	C	130	3	2	170	1.5	13.5	10	120	25	3	1.25	0.5	30.450843
+Post Nat. Raisin Bran	P	C	120	3	1	200	6	11	14	260	25	3	1.33	0.67	37.840594
+Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+Quaker Oat Squares	Q	C	100	4	1	135	2	14	6	110	25	3	1	0.5	49.511874
+Quaker Oatmeal	Q	H	100	5	2	0	2.7	-1	-1	110	0	1	1	0.67	50.828392
+Raisin Bran	K	C	120	3	1	210	5	14	12	240	25	2	1.33	0.75	39.259197
+Raisin Nut Bran	G	C	100	3	2	140	2.5	10.5	8	140	25	3	1	0.5	39.7034
+Raisin Squares	K	C	90	2	0	0	2	15	6	110	25	3	1	0.5	55.333142
+Rice Chex	R	C	110	1	0	240	0	23	2	30	25	1	1	1.13	41.998933
+Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+Shredded Wheat 'n'Bran	N	C	90	3	0	0	4	19	0	140	0	1	1	0.67	74.472949
+Shredded Wheat spoon size	N	C	90	3	0	0	3	20	0	120	0	1	1	0.67	72.801787
+Smacks	K	C	110	2	1	70	1	9	15	40	25	2	1	0.75	31.230054
+Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+Triples	G	C	110	2	1	250	0	21	3	60	25	3	1	0.75	39.106174
+Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+Wheat Chex	R	C	100	3	1	230	3	17	3	115	25	1	1	0.67	49.787445
+Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+Wheaties Honey Gold	G	C	110	2	1	200	1	16	8	60	25	1	1	0.75	36.187559
+100% Bran	N	C	70	4	1	130	10	5	6	280	25	3	1	0.33	68.402973
+100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+All-Bran	K	C	70	4	1	260	9	7	5	320	25	3	1	0.33	59.425505
+All-Bran with Extra Fiber	K	C	50	4	0	140	14	8	0	330	25	3	1	0.5	93.704912
+Almond Delight	R	C	110	2	2	200	1	14	8	-1	25	3	1	0.75	34.384843
+Apple Cinnamon Cheerios	G	C	110	2	2	180	1.5	10.5	10	70	25	1	1	0.75	29.509541
+Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+Basic 4	G	C	130	3	2	210	2	18	8	100	25	3	1.33	0.75	37.038562
+Bran Chex	R	C	90	2	1	200	4	15	6	125	25	1	1	0.67	49.120253
+Bran Flakes	P	C	90	3	0	210	5	13	5	190	25	3	1	0.67	53.313813
+Cap'n'Crunch	Q	C	120	1	2	220	0	12	12	35	25	2	1	0.75	18.042851
+Cheerios	G	C	110	6	2	290	2	17	1	105	25	1	1	1.25	50.764999
+Cinnamon Toast Crunch	G	C	120	1	3	210	0	13	9	45	25	2	1	0.75	19.823573
+Clusters	G	C	110	3	2	140	2	13	7	105	25	3	1	0.5	40.400208
+Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+Cracklin' Oat Bran	K	C	110	3	3	140	4	10	7	160	25	3	1	0.5	40.448772
+Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+Crispy Wheat & Raisins	G	C	100	2	1	140	2	11	10	120	25	3	1	0.75	36.176196
+Double Chex	R	C	100	2	0	190	1	18	5	80	25	3	1	0.75	44.330856
+Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+Frosted Flakes	K	C	110	1	0	200	1	14	11	25	25	1	1	0.75	31.435973
+Frosted Mini-Wheats	K	C	100	3	0	0	3	14	7	100	25	2	1	0.8	58.345141
+Fruit & Fibre Dates; Walnuts; and Oats	P	C	120	3	2	160	5	12	10	200	25	3	1.25	0.67	40.917047
+Fruitful Bran	K	C	120	3	0	240	5	14	12	190	25	3	1.33	0.67	41.015492
+Fruity Pebbles	P	C	110	1	1	135	0	13	12	25	25	2	1	0.75	28.025765
+Golden Crisp	P	C	100	2	0	45	0	11	15	40	25	1	1	0.88	35.252444
+Golden Grahams	G	C	110	1	1	280	0	15	9	45	25	2	1	0.75	23.804043
+Grape Nuts Flakes	P	C	100	3	1	140	3	15	5	85	25	3	1	0.88	52.076897
+Grape-Nuts	P	C	110	3	0	170	3	17	3	90	25	3	1	0.25	53.371007
+Great Grains Pecan	P	C	120	3	3	75	3	13	4	100	25	3	1	0.33	45.811716
+Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+Honey Nut Cheerios	G	C	110	3	1	250	1.5	11.5	10	90	25	1	1	0.75	31.072217
+Honey-comb	P	C	110	1	0	180	0	14	11	35	25	1	1	1.33	28.742414
+Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+Just Right Fruit & Nut	K	C	140	3	1	170	2	20	9	95	100	3	1.3	0.75	36.471512
+Kix	G	C	110	2	1	260	0	21	3	40	25	2	1	1.5	39.241114
+Life	Q	C	100	4	2	150	2	12	6	95	25	2	1	0.67	45.328074
+Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+Mueslix Crispy Blend	K	C	160	3	2	150	3	17	13	160	25	3	1.5	0.67	30.313351
+Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+Nut&Honey Crunch	K	C	120	2	1	190	0	15	9	40	25	2	1	0.67	29.924285
+Nutri-Grain Almond-Raisin	K	C	140	3	2	220	3	21	7	130	25	3	1.33	0.67	40.69232
+Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+Oatmeal Raisin Crisp	G	C	130	3	2	170	1.5	13.5	10	120	25	3	1.25	0.5	30.450843
+Post Nat. Raisin Bran	P	C	120	3	1	200	6	11	14	260	25	3	1.33	0.67	37.840594
+Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+Quaker Oat Squares	Q	C	100	4	1	135	2	14	6	110	25	3	1	0.5	49.511874
+Quaker Oatmeal	Q	H	100	5	2	0	2.7	-1	-1	110	0	1	1	0.67	50.828392
+Raisin Bran	K	C	120	3	1	210	5	14	12	240	25	2	1.33	0.75	39.259197
+Raisin Nut Bran	G	C	100	3	2	140	2.5	10.5	8	140	25	3	1	0.5	39.7034
+Raisin Squares	K	C	90	2	0	0	2	15	6	110	25	3	1	0.5	55.333142
+Rice Chex	R	C	110	1	0	240	0	23	2	30	25	1	1	1.13	41.998933
+Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+Shredded Wheat 'n'Bran	N	C	90	3	0	0	4	19	0	140	0	1	1	0.67	74.472949
+Shredded Wheat spoon size	N	C	90	3	0	0	3	20	0	120	0	1	1	0.67	72.801787
+Smacks	K	C	110	2	1	70	1	9	15	40	25	2	1	0.75	31.230054
+Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+Triples	G	C	110	2	1	250	0	21	3	60	25	3	1	0.75	39.106174
+Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+Wheat Chex	R	C	100	3	1	230	3	17	3	115	25	1	1	0.67	49.787445
+Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+Wheaties Honey Gold	G	C	110	2	1	200	1	16	8	60	25	1	1	0.75	36.187559
+100% Bran	N	C	70	4	1	130	10	5	6	280	25	3	1	0.33	68.402973
+100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+All-Bran	K	C	70	4	1	260	9	7	5	320	25	3	1	0.33	59.425505
+All-Bran with Extra Fiber	K	C	50	4	0	140	14	8	0	330	25	3	1	0.5	93.704912
+Almond Delight	R	C	110	2	2	200	1	14	8	-1	25	3	1	0.75	34.384843
+Apple Cinnamon Cheerios	G	C	110	2	2	180	1.5	10.5	10	70	25	1	1	0.75	29.509541
+Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+Basic 4	G	C	130	3	2	210	2	18	8	100	25	3	1.33	0.75	37.038562
+Bran Chex	R	C	90	2	1	200	4	15	6	125	25	1	1	0.67	49.120253
+Bran Flakes	P	C	90	3	0	210	5	13	5	190	25	3	1	0.67	53.313813
+Cap'n'Crunch	Q	C	120	1	2	220	0	12	12	35	25	2	1	0.75	18.042851
+Cheerios	G	C	110	6	2	290	2	17	1	105	25	1	1	1.25	50.764999
+Cinnamon Toast Crunch	G	C	120	1	3	210	0	13	9	45	25	2	1	0.75	19.823573
+Clusters	G	C	110	3	2	140	2	13	7	105	25	3	1	0.5	40.400208
+Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+Cracklin' Oat Bran	K	C	110	3	3	140	4	10	7	160	25	3	1	0.5	40.448772
+Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+Crispy Wheat & Raisins	G	C	100	2	1	140	2	11	10	120	25	3	1	0.75	36.176196
+Double Chex	R	C	100	2	0	190	1	18	5	80	25	3	1	0.75	44.330856
+Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+Frosted Flakes	K	C	110	1	0	200	1	14	11	25	25	1	1	0.75	31.435973
+Frosted Mini-Wheats	K	C	100	3	0	0	3	14	7	100	25	2	1	0.8	58.345141
+Fruit & Fibre Dates; Walnuts; and Oats	P	C	120	3	2	160	5	12	10	200	25	3	1.25	0.67	40.917047
+Fruitful Bran	K	C	120	3	0	240	5	14	12	190	25	3	1.33	0.67	41.015492
+Fruity Pebbles	P	C	110	1	1	135	0	13	12	25	25	2	1	0.75	28.025765
+Golden Crisp	P	C	100	2	0	45	0	11	15	40	25	1	1	0.88	35.252444
+Golden Grahams	G	C	110	1	1	280	0	15	9	45	25	2	1	0.75	23.804043
+Grape Nuts Flakes	P	C	100	3	1	140	3	15	5	85	25	3	1	0.88	52.076897
+Grape-Nuts	P	C	110	3	0	170	3	17	3	90	25	3	1	0.25	53.371007
+Great Grains Pecan	P	C	120	3	3	75	3	13	4	100	25	3	1	0.33	45.811716
+Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+Honey Nut Cheerios	G	C	110	3	1	250	1.5	11.5	10	90	25	1	1	0.75	31.072217
+Honey-comb	P	C	110	1	0	180	0	14	11	35	25	1	1	1.33	28.742414
+Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+Just Right Fruit & Nut	K	C	140	3	1	170	2	20	9	95	100	3	1.3	0.75	36.471512
+Kix	G	C	110	2	1	260	0	21	3	40	25	2	1	1.5	39.241114
+Life	Q	C	100	4	2	150	2	12	6	95	25	2	1	0.67	45.328074
+Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+Mueslix Crispy Blend	K	C	160	3	2	150	3	17	13	160	25	3	1.5	0.67	30.313351
+Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+Nut&Honey Crunch	K	C	120	2	1	190	0	15	9	40	25	2	1	0.67	29.924285
+Nutri-Grain Almond-Raisin	K	C	140	3	2	220	3	21	7	130	25	3	1.33	0.67	40.69232
+Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+Oatmeal Raisin Crisp	G	C	130	3	2	170	1.5	13.5	10	120	25	3	1.25	0.5	30.450843
+Post Nat. Raisin Bran	P	C	120	3	1	200	6	11	14	260	25	3	1.33	0.67	37.840594
+Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+Quaker Oat Squares	Q	C	100	4	1	135	2	14	6	110	25	3	1	0.5	49.511874
+Quaker Oatmeal	Q	H	100	5	2	0	2.7	-1	-1	110	0	1	1	0.67	50.828392
+Raisin Bran	K	C	120	3	1	210	5	14	12	240	25	2	1.33	0.75	39.259197
+Raisin Nut Bran	G	C	100	3	2	140	2.5	10.5	8	140	25	3	1	0.5	39.7034
+Raisin Squares	K	C	90	2	0	0	2	15	6	110	25	3	1	0.5	55.333142
+Rice Chex	R	C	110	1	0	240	0	23	2	30	25	1	1	1.13	41.998933
+Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+Shredded Wheat 'n'Bran	N	C	90	3	0	0	4	19	0	140	0	1	1	0.67	74.472949
+Shredded Wheat spoon size	N	C	90	3	0	0	3	20	0	120	0	1	1	0.67	72.801787
+Smacks	K	C	110	2	1	70	1	9	15	40	25	2	1	0.75	31.230054
+Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+Triples	G	C	110	2	1	250	0	21	3	60	25	3	1	0.75	39.106174
+Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+Wheat Chex	R	C	100	3	1	230	3	17	3	115	25	1	1	0.67	49.787445
+Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+Wheaties Honey Gold	G	C	110	2	1	200	1	16	8	60	25	1	1	0.75	36.187559
+100% Bran	N	C	70	4	1	130	10	5	6	280	25	3	1	0.33	68.402973
+100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+All-Bran	K	C	70	4	1	260	9	7	5	320	25	3	1	0.33	59.425505
+All-Bran with Extra Fiber	K	C	50	4	0	140	14	8	0	330	25	3	1	0.5	93.704912
+Almond Delight	R	C	110	2	2	200	1	14	8	-1	25	3	1	0.75	34.384843
+Apple Cinnamon Cheerios	G	C	110	2	2	180	1.5	10.5	10	70	25	1	1	0.75	29.509541
+Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+Basic 4	G	C	130	3	2	210	2	18	8	100	25	3	1.33	0.75	37.038562
+Bran Chex	R	C	90	2	1	200	4	15	6	125	25	1	1	0.67	49.120253
+Bran Flakes	P	C	90	3	0	210	5	13	5	190	25	3	1	0.67	53.313813
+Cap'n'Crunch	Q	C	120	1	2	220	0	12	12	35	25	2	1	0.75	18.042851
+Cheerios	G	C	110	6	2	290	2	17	1	105	25	1	1	1.25	50.764999
+Cinnamon Toast Crunch	G	C	120	1	3	210	0	13	9	45	25	2	1	0.75	19.823573
+Clusters	G	C	110	3	2	140	2	13	7	105	25	3	1	0.5	40.400208
+Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+Cracklin' Oat Bran	K	C	110	3	3	140	4	10	7	160	25	3	1	0.5	40.448772
+Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+Crispy Wheat & Raisins	G	C	100	2	1	140	2	11	10	120	25	3	1	0.75	36.176196
+Double Chex	R	C	100	2	0	190	1	18	5	80	25	3	1	0.75	44.330856
+Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+Frosted Flakes	K	C	110	1	0	200	1	14	11	25	25	1	1	0.75	31.435973
+Frosted Mini-Wheats	K	C	100	3	0	0	3	14	7	100	25	2	1	0.8	58.345141
+Fruit & Fibre Dates; Walnuts; and Oats	P	C	120	3	2	160	5	12	10	200	25	3	1.25	0.67	40.917047
+Fruitful Bran	K	C	120	3	0	240	5	14	12	190	25	3	1.33	0.67	41.015492
+Fruity Pebbles	P	C	110	1	1	135	0	13	12	25	25	2	1	0.75	28.025765
+Golden Crisp	P	C	100	2	0	45	0	11	15	40	25	1	1	0.88	35.252444
+Golden Grahams	G	C	110	1	1	280	0	15	9	45	25	2	1	0.75	23.804043
+Grape Nuts Flakes	P	C	100	3	1	140	3	15	5	85	25	3	1	0.88	52.076897
+Grape-Nuts	P	C	110	3	0	170	3	17	3	90	25	3	1	0.25	53.371007
+Great Grains Pecan	P	C	120	3	3	75	3	13	4	100	25	3	1	0.33	45.811716
+Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+Honey Nut Cheerios	G	C	110	3	1	250	1.5	11.5	10	90	25	1	1	0.75	31.072217
+Honey-comb	P	C	110	1	0	180	0	14	11	35	25	1	1	1.33	28.742414
+Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+Just Right Fruit & Nut	K	C	140	3	1	170	2	20	9	95	100	3	1.3	0.75	36.471512
+Kix	G	C	110	2	1	260	0	21	3	40	25	2	1	1.5	39.241114
+Life	Q	C	100	4	2	150	2	12	6	95	25	2	1	0.67	45.328074
+Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+Mueslix Crispy Blend	K	C	160	3	2	150	3	17	13	160	25	3	1.5	0.67	30.313351
+Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+Nut&Honey Crunch	K	C	120	2	1	190	0	15	9	40	25	2	1	0.67	29.924285
+Nutri-Grain Almond-Raisin	K	C	140	3	2	220	3	21	7	130	25	3	1.33	0.67	40.69232
+Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+Oatmeal Raisin Crisp	G	C	130	3	2	170	1.5	13.5	10	120	25	3	1.25	0.5	30.450843
+Post Nat. Raisin Bran	P	C	120	3	1	200	6	11	14	260	25	3	1.33	0.67	37.840594
+Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+Quaker Oat Squares	Q	C	100	4	1	135	2	14	6	110	25	3	1	0.5	49.511874
+Quaker Oatmeal	Q	H	100	5	2	0	2.7	-1	-1	110	0	1	1	0.67	50.828392
+Raisin Bran	K	C	120	3	1	210	5	14	12	240	25	2	1.33	0.75	39.259197
+Raisin Nut Bran	G	C	100	3	2	140	2.5	10.5	8	140	25	3	1	0.5	39.7034
+Raisin Squares	K	C	90	2	0	0	2	15	6	110	25	3	1	0.5	55.333142
+Rice Chex	R	C	110	1	0	240	0	23	2	30	25	1	1	1.13	41.998933
+Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+Shredded Wheat 'n'Bran	N	C	90	3	0	0	4	19	0	140	0	1	1	0.67	74.472949
+Shredded Wheat spoon size	N	C	90	3	0	0	3	20	0	120	0	1	1	0.67	72.801787
+Smacks	K	C	110	2	1	70	1	9	15	40	25	2	1	0.75	31.230054
+Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+Triples	G	C	110	2	1	250	0	21	3	60	25	3	1	0.75	39.106174
+Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+Wheat Chex	R	C	100	3	1	230	3	17	3	115	25	1	1	0.67	49.787445
+Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+Wheaties Honey Gold	G	C	110	2	1	200	1	16	8	60	25	1	1	0.75	36.187559
+100% Bran	N	C	70	4	1	130	10	5	6	280	25	3	1	0.33	68.402973
+100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+All-Bran	K	C	70	4	1	260	9	7	5	320	25	3	1	0.33	59.425505
+All-Bran with Extra Fiber	K	C	50	4	0	140	14	8	0	330	25	3	1	0.5	93.704912
+Almond Delight	R	C	110	2	2	200	1	14	8	-1	25	3	1	0.75	34.384843
+Apple Cinnamon Cheerios	G	C	110	2	2	180	1.5	10.5	10	70	25	1	1	0.75	29.509541
+Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+Basic 4	G	C	130	3	2	210	2	18	8	100	25	3	1.33	0.75	37.038562
+Bran Chex	R	C	90	2	1	200	4	15	6	125	25	1	1	0.67	49.120253
+Bran Flakes	P	C	90	3	0	210	5	13	5	190	25	3	1	0.67	53.313813
+Cap'n'Crunch	Q	C	120	1	2	220	0	12	12	35	25	2	1	0.75	18.042851
+Cheerios	G	C	110	6	2	290	2	17	1	105	25	1	1	1.25	50.764999
+Cinnamon Toast Crunch	G	C	120	1	3	210	0	13	9	45	25	2	1	0.75	19.823573
+Clusters	G	C	110	3	2	140	2	13	7	105	25	3	1	0.5	40.400208
+Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+Cracklin' Oat Bran	K	C	110	3	3	140	4	10	7	160	25	3	1	0.5	40.448772
+Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+Crispy Wheat & Raisins	G	C	100	2	1	140	2	11	10	120	25	3	1	0.75	36.176196
+Double Chex	R	C	100	2	0	190	1	18	5	80	25	3	1	0.75	44.330856
+Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+Frosted Flakes	K	C	110	1	0	200	1	14	11	25	25	1	1	0.75	31.435973
+Frosted Mini-Wheats	K	C	100	3	0	0	3	14	7	100	25	2	1	0.8	58.345141
+Fruit & Fibre Dates; Walnuts; and Oats	P	C	120	3	2	160	5	12	10	200	25	3	1.25	0.67	40.917047
+Fruitful Bran	K	C	120	3	0	240	5	14	12	190	25	3	1.33	0.67	41.015492
+Fruity Pebbles	P	C	110	1	1	135	0	13	12	25	25	2	1	0.75	28.025765
+Golden Crisp	P	C	100	2	0	45	0	11	15	40	25	1	1	0.88	35.252444
+Golden Grahams	G	C	110	1	1	280	0	15	9	45	25	2	1	0.75	23.804043
+Grape Nuts Flakes	P	C	100	3	1	140	3	15	5	85	25	3	1	0.88	52.076897
+Grape-Nuts	P	C	110	3	0	170	3	17	3	90	25	3	1	0.25	53.371007
+Great Grains Pecan	P	C	120	3	3	75	3	13	4	100	25	3	1	0.33	45.811716
+Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+Honey Nut Cheerios	G	C	110	3	1	250	1.5	11.5	10	90	25	1	1	0.75	31.072217
+Honey-comb	P	C	110	1	0	180	0	14	11	35	25	1	1	1.33	28.742414
+Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+Just Right Fruit & Nut	K	C	140	3	1	170	2	20	9	95	100	3	1.3	0.75	36.471512
+Kix	G	C	110	2	1	260	0	21	3	40	25	2	1	1.5	39.241114
+Life	Q	C	100	4	2	150	2	12	6	95	25	2	1	0.67	45.328074
+Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+Mueslix Crispy Blend	K	C	160	3	2	150	3	17	13	160	25	3	1.5	0.67	30.313351
+Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+Nut&Honey Crunch	K	C	120	2	1	190	0	15	9	40	25	2	1	0.67	29.924285
+Nutri-Grain Almond-Raisin	K	C	140	3	2	220	3	21	7	130	25	3	1.33	0.67	40.69232
+Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+Oatmeal Raisin Crisp	G	C	130	3	2	170	1.5	13.5	10	120	25	3	1.25	0.5	30.450843
+Post Nat. Raisin Bran	P	C	120	3	1	200	6	11	14	260	25	3	1.33	0.67	37.840594
+Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+Quaker Oat Squares	Q	C	100	4	1	135	2	14	6	110	25	3	1	0.5	49.511874
+Quaker Oatmeal	Q	H	100	5	2	0	2.7	-1	-1	110	0	1	1	0.67	50.828392
+Raisin Bran	K	C	120	3	1	210	5	14	12	240	25	2	1.33	0.75	39.259197
+Raisin Nut Bran	G	C	100	3	2	140	2.5	10.5	8	140	25	3	1	0.5	39.7034
+Raisin Squares	K	C	90	2	0	0	2	15	6	110	25	3	1	0.5	55.333142
+Rice Chex	R	C	110	1	0	240	0	23	2	30	25	1	1	1.13	41.998933
+Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+Shredded Wheat 'n'Bran	N	C	90	3	0	0	4	19	0	140	0	1	1	0.67	74.472949
+Shredded Wheat spoon size	N	C	90	3	0	0	3	20	0	120	0	1	1	0.67	72.801787
+Smacks	K	C	110	2	1	70	1	9	15	40	25	2	1	0.75	31.230054
+Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+Triples	G	C	110	2	1	250	0	21	3	60	25	3	1	0.75	39.106174
+Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+Wheat Chex	R	C	100	3	1	230	3	17	3	115	25	1	1	0.67	49.787445
+Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+Wheaties Honey Gold	G	C	110	2	1	200	1	16	8	60	25	1	1	0.75	36.187559
+100% Bran	N	C	70	4	1	130	10	5	6	280	25	3	1	0.33	68.402973
+100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+All-Bran	K	C	70	4	1	260	9	7	5	320	25	3	1	0.33	59.425505
+All-Bran with Extra Fiber	K	C	50	4	0	140	14	8	0	330	25	3	1	0.5	93.704912
+Almond Delight	R	C	110	2	2	200	1	14	8	-1	25	3	1	0.75	34.384843
+Apple Cinnamon Cheerios	G	C	110	2	2	180	1.5	10.5	10	70	25	1	1	0.75	29.509541
+Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+Basic 4	G	C	130	3	2	210	2	18	8	100	25	3	1.33	0.75	37.038562
+Bran Chex	R	C	90	2	1	200	4	15	6	125	25	1	1	0.67	49.120253
+Bran Flakes	P	C	90	3	0	210	5	13	5	190	25	3	1	0.67	53.313813
+Cap'n'Crunch	Q	C	120	1	2	220	0	12	12	35	25	2	1	0.75	18.042851
+Cheerios	G	C	110	6	2	290	2	17	1	105	25	1	1	1.25	50.764999
+Cinnamon Toast Crunch	G	C	120	1	3	210	0	13	9	45	25	2	1	0.75	19.823573
+Clusters	G	C	110	3	2	140	2	13	7	105	25	3	1	0.5	40.400208
+Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+Cracklin' Oat Bran	K	C	110	3	3	140	4	10	7	160	25	3	1	0.5	40.448772
+Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+Crispy Wheat & Raisins	G	C	100	2	1	140	2	11	10	120	25	3	1	0.75	36.176196
+Double Chex	R	C	100	2	0	190	1	18	5	80	25	3	1	0.75	44.330856
+Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+Frosted Flakes	K	C	110	1	0	200	1	14	11	25	25	1	1	0.75	31.435973
+Frosted Mini-Wheats	K	C	100	3	0	0	3	14	7	100	25	2	1	0.8	58.345141
+Fruit & Fibre Dates; Walnuts; and Oats	P	C	120	3	2	160	5	12	10	200	25	3	1.25	0.67	40.917047
+Fruitful Bran	K	C	120	3	0	240	5	14	12	190	25	3	1.33	0.67	41.015492
+Fruity Pebbles	P	C	110	1	1	135	0	13	12	25	25	2	1	0.75	28.025765
+Golden Crisp	P	C	100	2	0	45	0	11	15	40	25	1	1	0.88	35.252444
+Golden Grahams	G	C	110	1	1	280	0	15	9	45	25	2	1	0.75	23.804043
+Grape Nuts Flakes	P	C	100	3	1	140	3	15	5	85	25	3	1	0.88	52.076897
+Grape-Nuts	P	C	110	3	0	170	3	17	3	90	25	3	1	0.25	53.371007
+Great Grains Pecan	P	C	120	3	3	75	3	13	4	100	25	3	1	0.33	45.811716
+Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+Honey Nut Cheerios	G	C	110	3	1	250	1.5	11.5	10	90	25	1	1	0.75	31.072217
+Honey-comb	P	C	110	1	0	180	0	14	11	35	25	1	1	1.33	28.742414
+Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+Just Right Fruit & Nut	K	C	140	3	1	170	2	20	9	95	100	3	1.3	0.75	36.471512
+Kix	G	C	110	2	1	260	0	21	3	40	25	2	1	1.5	39.241114
+Life	Q	C	100	4	2	150	2	12	6	95	25	2	1	0.67	45.328074
+Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+Mueslix Crispy Blend	K	C	160	3	2	150	3	17	13	160	25	3	1.5	0.67	30.313351
+Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+Nut&Honey Crunch	K	C	120	2	1	190	0	15	9	40	25	2	1	0.67	29.924285
+Nutri-Grain Almond-Raisin	K	C	140	3	2	220	3	21	7	130	25	3	1.33	0.67	40.69232
+Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+Oatmeal Raisin Crisp	G	C	130	3	2	170	1.5	13.5	10	120	25	3	1.25	0.5	30.450843
+Post Nat. Raisin Bran	P	C	120	3	1	200	6	11	14	260	25	3	1.33	0.67	37.840594
+Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+Quaker Oat Squares	Q	C	100	4	1	135	2	14	6	110	25	3	1	0.5	49.511874
+Quaker Oatmeal	Q	H	100	5	2	0	2.7	-1	-1	110	0	1	1	0.67	50.828392
+Raisin Bran	K	C	120	3	1	210	5	14	12	240	25	2	1.33	0.75	39.259197
+Raisin Nut Bran	G	C	100	3	2	140	2.5	10.5	8	140	25	3	1	0.5	39.7034
+Raisin Squares	K	C	90	2	0	0	2	15	6	110	25	3	1	0.5	55.333142
+Rice Chex	R	C	110	1	0	240	0	23	2	30	25	1	1	1.13	41.998933
+Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+Shredded Wheat 'n'Bran	N	C	90	3	0	0	4	19	0	140	0	1	1	0.67	74.472949
+Shredded Wheat spoon size	N	C	90	3	0	0	3	20	0	120	0	1	1	0.67	72.801787
+Smacks	K	C	110	2	1	70	1	9	15	40	25	2	1	0.75	31.230054
+Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+Triples	G	C	110	2	1	250	0	21	3	60	25	3	1	0.75	39.106174
+Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+Wheat Chex	R	C	100	3	1	230	3	17	3	115	25	1	1	0.67	49.787445
+Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+Wheaties Honey Gold	G	C	110	2	1	200	1	16	8	60	25	1	1	0.75	36.187559
+100% Bran	N	C	70	4	1	130	10	5	6	280	25	3	1	0.33	68.402973
+100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+All-Bran	K	C	70	4	1	260	9	7	5	320	25	3	1	0.33	59.425505
+All-Bran with Extra Fiber	K	C	50	4	0	140	14	8	0	330	25	3	1	0.5	93.704912
+Almond Delight	R	C	110	2	2	200	1	14	8	-1	25	3	1	0.75	34.384843
+Apple Cinnamon Cheerios	G	C	110	2	2	180	1.5	10.5	10	70	25	1	1	0.75	29.509541
+Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+Basic 4	G	C	130	3	2	210	2	18	8	100	25	3	1.33	0.75	37.038562
+Bran Chex	R	C	90	2	1	200	4	15	6	125	25	1	1	0.67	49.120253
+Bran Flakes	P	C	90	3	0	210	5	13	5	190	25	3	1	0.67	53.313813
+Cap'n'Crunch	Q	C	120	1	2	220	0	12	12	35	25	2	1	0.75	18.042851
+Cheerios	G	C	110	6	2	290	2	17	1	105	25	1	1	1.25	50.764999
+Cinnamon Toast Crunch	G	C	120	1	3	210	0	13	9	45	25	2	1	0.75	19.823573
+Clusters	G	C	110	3	2	140	2	13	7	105	25	3	1	0.5	40.400208
+Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+Cracklin' Oat Bran	K	C	110	3	3	140	4	10	7	160	25	3	1	0.5	40.448772
+Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+Crispy Wheat & Raisins	G	C	100	2	1	140	2	11	10	120	25	3	1	0.75	36.176196
+Double Chex	R	C	100	2	0	190	1	18	5	80	25	3	1	0.75	44.330856
+Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+Frosted Flakes	K	C	110	1	0	200	1	14	11	25	25	1	1	0.75	31.435973
+Frosted Mini-Wheats	K	C	100	3	0	0	3	14	7	100	25	2	1	0.8	58.345141
+Fruit & Fibre Dates; Walnuts; and Oats	P	C	120	3	2	160	5	12	10	200	25	3	1.25	0.67	40.917047
+Fruitful Bran	K	C	120	3	0	240	5	14	12	190	25	3	1.33	0.67	41.015492
+Fruity Pebbles	P	C	110	1	1	135	0	13	12	25	25	2	1	0.75	28.025765
+Golden Crisp	P	C	100	2	0	45	0	11	15	40	25	1	1	0.88	35.252444
+Golden Grahams	G	C	110	1	1	280	0	15	9	45	25	2	1	0.75	23.804043
+Grape Nuts Flakes	P	C	100	3	1	140	3	15	5	85	25	3	1	0.88	52.076897
+Grape-Nuts	P	C	110	3	0	170	3	17	3	90	25	3	1	0.25	53.371007
+Great Grains Pecan	P	C	120	3	3	75	3	13	4	100	25	3	1	0.33	45.811716
+Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+Honey Nut Cheerios	G	C	110	3	1	250	1.5	11.5	10	90	25	1	1	0.75	31.072217
+Honey-comb	P	C	110	1	0	180	0	14	11	35	25	1	1	1.33	28.742414
+Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+Just Right Fruit & Nut	K	C	140	3	1	170	2	20	9	95	100	3	1.3	0.75	36.471512
+Kix	G	C	110	2	1	260	0	21	3	40	25	2	1	1.5	39.241114
+Life	Q	C	100	4	2	150	2	12	6	95	25	2	1	0.67	45.328074
+Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+Mueslix Crispy Blend	K	C	160	3	2	150	3	17	13	160	25	3	1.5	0.67	30.313351
+Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+Nut&Honey Crunch	K	C	120	2	1	190	0	15	9	40	25	2	1	0.67	29.924285
+Nutri-Grain Almond-Raisin	K	C	140	3	2	220	3	21	7	130	25	3	1.33	0.67	40.69232
+Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+Oatmeal Raisin Crisp	G	C	130	3	2	170	1.5	13.5	10	120	25	3	1.25	0.5	30.450843
+Post Nat. Raisin Bran	P	C	120	3	1	200	6	11	14	260	25	3	1.33	0.67	37.840594
+Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+Quaker Oat Squares	Q	C	100	4	1	135	2	14	6	110	25	3	1	0.5	49.511874
+Quaker Oatmeal	Q	H	100	5	2	0	2.7	-1	-1	110	0	1	1	0.67	50.828392
+Raisin Bran	K	C	120	3	1	210	5	14	12	240	25	2	1.33	0.75	39.259197
+Raisin Nut Bran	G	C	100	3	2	140	2.5	10.5	8	140	25	3	1	0.5	39.7034
+Raisin Squares	K	C	90	2	0	0	2	15	6	110	25	3	1	0.5	55.333142
+Rice Chex	R	C	110	1	0	240	0	23	2	30	25	1	1	1.13	41.998933
+Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+Shredded Wheat 'n'Bran	N	C	90	3	0	0	4	19	0	140	0	1	1	0.67	74.472949
+Shredded Wheat spoon size	N	C	90	3	0	0	3	20	0	120	0	1	1	0.67	72.801787
+Smacks	K	C	110	2	1	70	1	9	15	40	25	2	1	0.75	31.230054
+Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+Triples	G	C	110	2	1	250	0	21	3	60	25	3	1	0.75	39.106174
+Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+Wheat Chex	R	C	100	3	1	230	3	17	3	115	25	1	1	0.67	49.787445
+Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+Wheaties Honey Gold	G	C	110	2	1	200	1	16	8	60	25	1	1	0.75	36.187559
+100% Bran	N	C	70	4	1	130	10	5	6	280	25	3	1	0.33	68.402973
+100% Natural Bran	Q	C	120	3	5	15	2	8	8	135	0	3	1	1	33.983679
+All-Bran	K	C	70	4	1	260	9	7	5	320	25	3	1	0.33	59.425505
+All-Bran with Extra Fiber	K	C	50	4	0	140	14	8	0	330	25	3	1	0.5	93.704912
+Almond Delight	R	C	110	2	2	200	1	14	8	-1	25	3	1	0.75	34.384843
+Apple Cinnamon Cheerios	G	C	110	2	2	180	1.5	10.5	10	70	25	1	1	0.75	29.509541
+Apple Jacks	K	C	110	2	0	125	1	11	14	30	25	2	1	1	33.174094
+Basic 4	G	C	130	3	2	210	2	18	8	100	25	3	1.33	0.75	37.038562
+Bran Chex	R	C	90	2	1	200	4	15	6	125	25	1	1	0.67	49.120253
+Bran Flakes	P	C	90	3	0	210	5	13	5	190	25	3	1	0.67	53.313813
+Cap'n'Crunch	Q	C	120	1	2	220	0	12	12	35	25	2	1	0.75	18.042851
+Cheerios	G	C	110	6	2	290	2	17	1	105	25	1	1	1.25	50.764999
+Cinnamon Toast Crunch	G	C	120	1	3	210	0	13	9	45	25	2	1	0.75	19.823573
+Clusters	G	C	110	3	2	140	2	13	7	105	25	3	1	0.5	40.400208
+Cocoa Puffs	G	C	110	1	1	180	0	12	13	55	25	2	1	1	22.736446
+Corn Chex	R	C	110	2	0	280	0	22	3	25	25	1	1	1	41.445019
+Corn Flakes	K	C	100	2	0	290	1	21	2	35	25	1	1	1	45.863324
+Corn Pops	K	C	110	1	0	90	1	13	12	20	25	2	1	1	35.782791
+Count Chocula	G	C	110	1	1	180	0	12	13	65	25	2	1	1	22.396513
+Cracklin' Oat Bran	K	C	110	3	3	140	4	10	7	160	25	3	1	0.5	40.448772
+Cream of Wheat (Quick)	N	H	100	3	0	80	1	21	0	-1	0	2	1	1	64.533816
+Crispix	K	C	110	2	0	220	1	21	3	30	25	3	1	1	46.895644
+Crispy Wheat & Raisins	G	C	100	2	1	140	2	11	10	120	25	3	1	0.75	36.176196
+Double Chex	R	C	100	2	0	190	1	18	5	80	25	3	1	0.75	44.330856
+Froot Loops	K	C	110	2	1	125	1	11	13	30	25	2	1	1	32.207582
+Frosted Flakes	K	C	110	1	0	200	1	14	11	25	25	1	1	0.75	31.435973
+Frosted Mini-Wheats	K	C	100	3	0	0	3	14	7	100	25	2	1	0.8	58.345141
+Fruit & Fibre Dates; Walnuts; and Oats	P	C	120	3	2	160	5	12	10	200	25	3	1.25	0.67	40.917047
+Fruitful Bran	K	C	120	3	0	240	5	14	12	190	25	3	1.33	0.67	41.015492
+Fruity Pebbles	P	C	110	1	1	135	0	13	12	25	25	2	1	0.75	28.025765
+Golden Crisp	P	C	100	2	0	45	0	11	15	40	25	1	1	0.88	35.252444
+Golden Grahams	G	C	110	1	1	280	0	15	9	45	25	2	1	0.75	23.804043
+Grape Nuts Flakes	P	C	100	3	1	140	3	15	5	85	25	3	1	0.88	52.076897
+Grape-Nuts	P	C	110	3	0	170	3	17	3	90	25	3	1	0.25	53.371007
+Great Grains Pecan	P	C	120	3	3	75	3	13	4	100	25	3	1	0.33	45.811716
+Honey Graham Ohs	Q	C	120	1	2	220	1	12	11	45	25	2	1	1	21.871292
+Honey Nut Cheerios	G	C	110	3	1	250	1.5	11.5	10	90	25	1	1	0.75	31.072217
+Honey-comb	P	C	110	1	0	180	0	14	11	35	25	1	1	1.33	28.742414
+Just Right Crunchy  Nuggets	K	C	110	2	1	170	1	17	6	60	100	3	1	1	36.523683
+Just Right Fruit & Nut	K	C	140	3	1	170	2	20	9	95	100	3	1.3	0.75	36.471512
+Kix	G	C	110	2	1	260	0	21	3	40	25	2	1	1.5	39.241114
+Life	Q	C	100	4	2	150	2	12	6	95	25	2	1	0.67	45.328074
+Lucky Charms	G	C	110	2	1	180	0	12	12	55	25	2	1	1	26.734515
+Maypo	A	H	100	4	1	0	0	16	3	95	25	2	1	1	54.850917
+Muesli Raisins; Dates; & Almonds	R	C	150	4	3	95	3	16	11	170	25	3	1	1	37.136863
+Muesli Raisins; Peaches; & Pecans	R	C	150	4	3	150	3	16	11	170	25	3	1	1	34.139765
+Mueslix Crispy Blend	K	C	160	3	2	150	3	17	13	160	25	3	1.5	0.67	30.313351
+Multi-Grain Cheerios	G	C	100	2	1	220	2	15	6	90	25	1	1	1	40.105965
+Nut&Honey Crunch	K	C	120	2	1	190	0	15	9	40	25	2	1	0.67	29.924285
+Nutri-Grain Almond-Raisin	K	C	140	3	2	220	3	21	7	130	25	3	1.33	0.67	40.69232
+Nutri-grain Wheat	K	C	90	3	0	170	3	18	2	90	25	3	1	1	59.642837
+Oatmeal Raisin Crisp	G	C	130	3	2	170	1.5	13.5	10	120	25	3	1.25	0.5	30.450843
+Post Nat. Raisin Bran	P	C	120	3	1	200	6	11	14	260	25	3	1.33	0.67	37.840594
+Product 19	K	C	100	3	0	320	1	20	3	45	100	3	1	1	41.50354
+Puffed Rice	Q	C	50	1	0	0	0	13	0	15	0	3	0.5	1	60.756112
+Puffed Wheat	Q	C	50	2	0	0	1	10	0	50	0	3	0.5	1	63.005645
+Quaker Oat Squares	Q	C	100	4	1	135	2	14	6	110	25	3	1	0.5	49.511874
+Quaker Oatmeal	Q	H	100	5	2	0	2.7	-1	-1	110	0	1	1	0.67	50.828392
+Raisin Bran	K	C	120	3	1	210	5	14	12	240	25	2	1.33	0.75	39.259197
+Raisin Nut Bran	G	C	100	3	2	140	2.5	10.5	8	140	25	3	1	0.5	39.7034
+Raisin Squares	K	C	90	2	0	0	2	15	6	110	25	3	1	0.5	55.333142
+Rice Chex	R	C	110	1	0	240	0	23	2	30	25	1	1	1.13	41.998933
+Rice Krispies	K	C	110	2	0	290	0	22	3	35	25	1	1	1	40.560159
+Shredded Wheat	N	C	80	2	0	0	3	16	0	95	0	1	0.83	1	68.235885
+Shredded Wheat 'n'Bran	N	C	90	3	0	0	4	19	0	140	0	1	1	0.67	74.472949
+Shredded Wheat spoon size	N	C	90	3	0	0	3	20	0	120	0	1	1	0.67	72.801787
+Smacks	K	C	110	2	1	70	1	9	15	40	25	2	1	0.75	31.230054
+Special K	K	C	110	6	0	230	1	16	3	55	25	1	1	1	53.131324
+Strawberry Fruit Wheats	N	C	90	2	0	15	3	15	5	90	25	2	1	1	59.363993
+Total Corn Flakes	G	C	110	2	1	200	0	21	3	35	100	3	1	1	38.839746
+Total Raisin Bran	G	C	140	3	1	190	4	15	14	230	100	3	1.5	1	28.592785
+Total Whole Grain	G	C	100	3	1	200	3	16	3	110	100	3	1	1	46.658844
+Triples	G	C	110	2	1	250	0	21	3	60	25	3	1	0.75	39.106174
+Trix	G	C	110	1	1	140	0	13	12	25	25	2	1	1	27.753301
+Wheat Chex	R	C	100	3	1	230	3	17	3	115	25	1	1	0.67	49.787445
+Wheaties	G	C	100	3	1	200	3	17	3	110	25	1	1	1	51.592193
+Wheaties Honey Gold	G	C	110	2	1	200	1	16	8	60	25	1	1	0.75	36.187559
+\.
+
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.asset_keys_id_seq', 1, false);
+
+
+--
+-- Name: bulk_actions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.bulk_actions_id_seq', 1, false);
+
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.event_logs_id_seq', 1, false);
+
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.job_ticks_id_seq', 1, false);
+
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.jobs_id_seq', 1, false);
+
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.run_tags_id_seq', 1, false);
+
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.runs_id_seq', 1, false);
+
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.secondary_indexes_id_seq', 5, true);
+
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.snapshots_id_seq', 1, false);
+
+
+--
+-- Name: alembic_version alembic_version_pkc; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.alembic_version
+    ADD CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num);
+
+
+--
+-- Name: asset_keys asset_keys_asset_key_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys
+    ADD CONSTRAINT asset_keys_asset_key_key UNIQUE (asset_key);
+
+
+--
+-- Name: asset_keys asset_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys
+    ADD CONSTRAINT asset_keys_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bulk_actions bulk_actions_key_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.bulk_actions
+    ADD CONSTRAINT bulk_actions_key_key UNIQUE (key);
+
+
+--
+-- Name: bulk_actions bulk_actions_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.bulk_actions
+    ADD CONSTRAINT bulk_actions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: daemon_heartbeats daemon_heartbeats_daemon_type_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.daemon_heartbeats
+    ADD CONSTRAINT daemon_heartbeats_daemon_type_key UNIQUE (daemon_type);
+
+
+--
+-- Name: event_logs event_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs
+    ADD CONSTRAINT event_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: job_ticks job_ticks_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.job_ticks
+    ADD CONSTRAINT job_ticks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: jobs jobs_job_origin_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs
+    ADD CONSTRAINT jobs_job_origin_id_key UNIQUE (job_origin_id);
+
+
+--
+-- Name: jobs jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs
+    ADD CONSTRAINT jobs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: run_tags run_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_run_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_run_id_key UNIQUE (run_id);
+
+
+--
+-- Name: secondary_indexes secondary_indexes_name_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes
+    ADD CONSTRAINT secondary_indexes_name_key UNIQUE (name);
+
+
+--
+-- Name: secondary_indexes secondary_indexes_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes
+    ADD CONSTRAINT secondary_indexes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snapshots snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snapshots snapshots_snapshot_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_snapshot_id_key UNIQUE (snapshot_id);
+
+
+--
+-- Name: idx_asset_key; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_asset_key ON public.event_logs USING btree (asset_key);
+
+
+--
+-- Name: idx_asset_partition; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_asset_partition ON public.event_logs USING btree (asset_key, partition);
+
+
+--
+-- Name: idx_bulk_actions; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_bulk_actions ON public.bulk_actions USING btree (key);
+
+
+--
+-- Name: idx_bulk_actions_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_bulk_actions_status ON public.bulk_actions USING btree (status);
+
+
+--
+-- Name: idx_event_type; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_event_type ON public.event_logs USING btree (dagster_event_type, id);
+
+
+--
+-- Name: idx_job_tick_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_job_tick_status ON public.job_ticks USING btree (job_origin_id, status);
+
+
+--
+-- Name: idx_job_tick_timestamp; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_job_tick_timestamp ON public.job_ticks USING btree (job_origin_id, "timestamp");
+
+
+--
+-- Name: idx_run_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_id ON public.event_logs USING btree (run_id);
+
+
+--
+-- Name: idx_run_partitions; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_partitions ON public.runs USING btree (partition_set, partition);
+
+
+--
+-- Name: idx_run_range; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_range ON public.runs USING btree (status, update_timestamp, create_timestamp);
+
+
+--
+-- Name: idx_run_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_status ON public.runs USING btree (status);
+
+
+--
+-- Name: idx_run_tags; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_tags ON public.run_tags USING btree (key, value);
+
+
+--
+-- Name: idx_step_key; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_step_key ON public.event_logs USING btree (step_key);
+
+
+--
+-- Name: ix_job_ticks_job_origin_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_job_ticks_job_origin_id ON public.job_ticks USING btree (job_origin_id);
+
+
+--
+-- Name: ix_jobs_job_type; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_jobs_job_type ON public.jobs USING btree (job_type);
+
+
+--
+-- Name: runs fk_runs_snapshot_id_snapshots_snapshot_id; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT fk_runs_snapshot_id_snapshots_snapshot_id FOREIGN KEY (snapshot_id) REFERENCES public.snapshots(snapshot_id);
+
+
+--
+-- Name: run_tags run_tags_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs(run_id) ON DELETE CASCADE;
+
+
+--
+-- PostgreSQL database dump complete
+--
+

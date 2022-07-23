@@ -2,17 +2,21 @@ import keyword
 import os
 import re
 from glob import glob
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 import pkg_resources
 import yaml
 
-from dagster import check, seven
+import dagster._check as check
+import dagster._seven as seven
+from dagster._utils import frozentags
+from dagster._utils.yaml_utils import merge_yaml_strings, merge_yamls
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.utils import frozentags
-from dagster.utils.yaml_utils import merge_yaml_strings, merge_yamls
+from dagster.core.storage.tags import check_reserved_tags
 
 DEFAULT_OUTPUT = "result"
+DEFAULT_GROUP_NAME = "default"  # asset group_name used when none is provided
+DEFAULT_IO_MANAGER_KEY = "io_manager"
 
 DISALLOWED_NAMES = set(
     [
@@ -43,48 +47,53 @@ class NoValueSentinel:
     """Sentinel value to distinguish unset from None"""
 
 
-def has_valid_name_chars(name):
+def has_valid_name_chars(name: str) -> bool:
     return bool(VALID_NAME_REGEX.match(name))
 
 
-def check_valid_name(name: str):
+def check_valid_name(name: str) -> str:
     check.str_param(name, "name")
     if name in DISALLOWED_NAMES:
         raise DagsterInvalidDefinitionError(
             f'"{name}" is not a valid name in Dagster. It conflicts with a Dagster or python reserved keyword.'
         )
 
-    if not has_valid_name_chars(name):
-        raise DagsterInvalidDefinitionError(
-            f'"{name}" is not a valid name in Dagster. Names must be in regex {VALID_NAME_REGEX_STR}.'
-        )
+    check_valid_chars(name)
 
     check.invariant(is_valid_name(name))
     return name
 
 
-def is_valid_name(name):
+def check_valid_chars(name: str):
+    if not has_valid_name_chars(name):
+        raise DagsterInvalidDefinitionError(
+            f'"{name}" is not a valid name in Dagster. Names must be in regex {VALID_NAME_REGEX_STR}.'
+        )
+
+
+def is_valid_name(name: str) -> bool:
     check.str_param(name, "name")
 
     return name not in DISALLOWED_NAMES and has_valid_name_chars(name)
 
 
-def _kv_str(key, value):
-    return '{key}="{value}"'.format(key=key, value=repr(value))
+def _kv_str(key: object, value: object) -> str:
+    return f'{key}="{repr(value)}"'
 
 
-def struct_to_string(name, **kwargs):
+def struct_to_string(name: str, **kwargs: object) -> str:
     # Sort the kwargs to ensure consistent representations across Python versions
     props_str = ", ".join([_kv_str(key, value) for key, value in sorted(kwargs.items())])
     return "{name}({props_str})".format(name=name, props_str=props_str)
 
 
-def validate_tags(tags: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+def validate_tags(tags: Optional[Mapping[str, Any]], allow_reserved_tags=True) -> frozentags:
     valid_tags = {}
     for key, value in check.opt_dict_param(tags, "tags", key_type=str).items():
         if not isinstance(value, str):
             valid = False
             err_reason = 'Could not JSON encode value "{}"'.format(value)
+            str_val = None
             try:
                 str_val = seven.json.dumps(value)
                 err_reason = 'JSON encoding "{json}" of value "{val}" is not equivalent to original value'.format(
@@ -107,7 +116,18 @@ def validate_tags(tags: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         else:
             valid_tags[key] = value
 
+    if not allow_reserved_tags:
+        check_reserved_tags(valid_tags)
+
     return frozentags(valid_tags)
+
+
+def validate_group_name(group_name: Optional[str]) -> str:
+    """Ensures a string name is valid and returns a default if no name provided."""
+    if group_name:
+        check_valid_chars(group_name)
+        return group_name
+    return DEFAULT_GROUP_NAME
 
 
 def config_from_files(config_files: List[str]) -> Dict[str, Any]:
@@ -132,7 +152,7 @@ def config_from_files(config_files: List[str]) -> Dict[str, Any]:
         globbed_files = glob(file_glob)
         if not globbed_files:
             raise DagsterInvariantViolationError(
-                'File or glob pattern "{file_glob}" for "config_files"'
+                'File or glob pattern "{file_glob}" for "config_files" '
                 "produced no results.".format(file_glob=file_glob)
             )
 

@@ -1,3 +1,4 @@
+import importlib.util
 import os
 import pickle
 import tempfile
@@ -10,33 +11,17 @@ from dagstermill.compat import ExecutionError
 from jupyter_client.kernelspec import NoSuchKernel
 from nbconvert.preprocessors import ExecutePreprocessor
 
-from dagster import execute_pipeline, pipeline
-from dagster.check import CheckError
+from dagster import execute_pipeline
+from dagster._check import CheckError
+from dagster._legacy import pipeline
+from dagster._utils import file_relative_path, safe_tempfile_path
 from dagster.core.definitions.metadata import PathMetadataValue
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.test_utils import instance_for_test
-from dagster.utils import file_relative_path, safe_tempfile_path
 
-try:
-    import dagster_pandas as _
-
-    DAGSTER_PANDAS_PRESENT = True
-except ImportError:
-    DAGSTER_PANDAS_PRESENT = False
-
-try:
-    import sklearn as _
-
-    SKLEARN_PRESENT = True
-except ImportError:
-    SKLEARN_PRESENT = False
-
-try:
-    import matplotlib as _
-
-    MATPLOTLIB_PRESENT = True
-except ImportError:
-    MATPLOTLIB_PRESENT = False
+DAGSTER_PANDAS_PRESENT = importlib.util.find_spec("dagster_pandas") is not None
+SKLEARN_PRESENT = importlib.util.find_spec("sklearn") is not None
+MATPLOTLIB_PRESENT = importlib.util.find_spec("matplotlib") is not None
 
 
 def get_path(materialization_event):
@@ -164,11 +149,11 @@ def test_reexecute_result_notebook():
             result_path = get_path(materialization_event)
 
         if result_path.endswith(".ipynb"):
-            with open(result_path) as fd:
+            with open(result_path, encoding="utf8") as fd:
                 nb = nbformat.read(fd, as_version=4)
             ep = ExecutePreprocessor()
             ep.preprocess(nb)
-            with open(result_path) as fd:
+            with open(result_path, encoding="utf8") as fd:
                 expected = _strip_execution_metadata(nb)
                 actual = _strip_execution_metadata(nbformat.read(fd, as_version=4))
                 assert actual == expected
@@ -309,7 +294,7 @@ def test_hello_world_reexecution():
         with tempfile.NamedTemporaryFile("w+", suffix=".py") as reexecution_notebook_file:
             reexecution_notebook_file.write(
                 (
-                    "from dagster import pipeline\n"
+                    "from dagster._legacy import pipeline\n"
                     "from dagstermill import define_dagstermill_solid\n\n\n"
                     "reexecution_solid = define_dagstermill_solid(\n"
                     "    'hello_world_reexecution', '{output_notebook_path}'\n"

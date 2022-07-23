@@ -14,12 +14,11 @@ from dagster import (
     graph,
     job,
     op,
-    pipeline,
     resource,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions import failure_hook, success_hook
-from dagster.core.definitions.decorators.hook import event_list_hook
+from dagster.core.definitions.decorators.hook_decorator import event_list_hook
 from dagster.core.definitions.events import Failure, HookExecutionResult
 from dagster.core.errors import DagsterInvalidDefinitionError
 
@@ -576,7 +575,8 @@ def test_hook_resource_mismatch():
         pass
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="resource key 'b' is required by hook 'a_hook'"
+        DagsterInvalidDefinitionError,
+        match="resource with key 'b' required by hook 'a_hook' attached to pipeline '_' was not provided",
     ):
 
         @a_hook
@@ -585,7 +585,8 @@ def test_hook_resource_mismatch():
             a_solid()
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="resource key 'b' is required by hook 'a_hook'"
+        DagsterInvalidDefinitionError,
+        match="resource with key 'b' required by hook 'a_hook' attached to solid 'a_solid' was not provided",
     ):
 
         @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])

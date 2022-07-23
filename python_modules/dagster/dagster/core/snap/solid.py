@@ -1,7 +1,9 @@
-from typing import Any, Dict, List, NamedTuple, Optional, Set, Union
+from typing import Mapping, NamedTuple, Optional, Sequence, Set, Union
 
-from dagster import check
-from dagster.config.snap import ConfigFieldSnap, snap_from_field
+import dagster._check as check
+from dagster._config import ConfigFieldSnap, snap_from_field
+from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.serdes import DefaultNamedTupleSerializer
 from dagster.core.definitions import (
     GraphDefinition,
     InputDefinition,
@@ -11,9 +13,7 @@ from dagster.core.definitions import (
     PipelineDefinition,
     SolidDefinition,
 )
-from dagster.core.definitions.metadata import MetadataEntry
-from dagster.serdes import whitelist_for_serdes
-from dagster.serdes.serdes import DefaultNamedTupleSerializer
+from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 
 from .dep_snapshot import (
     DependencyStructureSnapshot,
@@ -35,7 +35,7 @@ class InputDefSnap(
             ("name", str),
             ("dagster_type_key", str),
             ("description", Optional[str]),
-            ("metadata_entries", List[MetadataEntry]),
+            ("metadata_entries", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
         ],
     )
 ):
@@ -44,7 +44,7 @@ class InputDefSnap(
         name: str,
         dagster_type_key: str,
         description: Optional[str],
-        metadata_entries: Optional[List[MetadataEntry]] = None,
+        metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
     ):
         return super(InputDefSnap, cls).__new__(
             cls,
@@ -72,7 +72,7 @@ class OutputDefSnap(
             ("dagster_type_key", str),
             ("description", Optional[str]),
             ("is_required", bool),
-            ("metadata_entries", List[MetadataEntry]),
+            ("metadata_entries", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
             ("is_dynamic", bool),
         ],
     )
@@ -83,7 +83,7 @@ class OutputDefSnap(
         dagster_type_key: str,
         description: Optional[str],
         is_required: bool,
-        metadata_entries: Optional[List[MetadataEntry]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         is_dynamic: bool = False,
     ):
         return super(OutputDefSnap, cls).__new__(
@@ -92,7 +92,7 @@ class OutputDefSnap(
             dagster_type_key=check.str_param(dagster_type_key, "dagster_type_key"),
             description=check.opt_str_param(description, "description"),
             is_required=check.bool_param(is_required, "is_required"),
-            metadata_entries=check.opt_list_param(
+            metadata_entries=check.opt_sequence_param(
                 metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
             is_dynamic=check.bool_param(is_dynamic, "is_dynamic"),
@@ -187,10 +187,10 @@ def build_output_def_snap(output_def: OutputDefinition) -> OutputDefSnap:
 # instead.
 def _check_solid_def_header_args(
     name: str,
-    input_def_snaps: List[InputDefSnap],
-    output_def_snaps: List[OutputDefSnap],
+    input_def_snaps: Sequence[InputDefSnap],
+    output_def_snaps: Sequence[OutputDefSnap],
     description: Optional[str],
-    tags: Dict[str, Any],
+    tags: Mapping[str, object],
     config_field_snap: Optional[ConfigFieldSnap],
 ):
     return dict(
@@ -211,28 +211,28 @@ class CompositeSolidDefSnap(
         "_CompositeSolidDefSnap",
         [
             ("name", str),
-            ("input_def_snaps", List[InputDefSnap]),
-            ("output_def_snaps", List[OutputDefSnap]),
+            ("input_def_snaps", Sequence[InputDefSnap]),
+            ("output_def_snaps", Sequence[OutputDefSnap]),
             ("description", Optional[str]),
-            ("tags", Dict[str, Any]),
+            ("tags", Mapping[str, object]),
             ("config_field_snap", Optional[ConfigFieldSnap]),
             ("dep_structure_snapshot", DependencyStructureSnapshot),
-            ("input_mapping_snaps", List[InputMappingSnap]),
-            ("output_mapping_snaps", List[OutputMappingSnap]),
+            ("input_mapping_snaps", Sequence[InputMappingSnap]),
+            ("output_mapping_snaps", Sequence[OutputMappingSnap]),
         ],
     )
 ):
     def __new__(
         cls,
         name: str,
-        input_def_snaps: List[InputDefSnap],
-        output_def_snaps: List[OutputDefSnap],
+        input_def_snaps: Sequence[InputDefSnap],
+        output_def_snaps: Sequence[OutputDefSnap],
         description: Optional[str],
-        tags: Dict[str, Any],
+        tags: Mapping[str, object],
         config_field_snap: Optional[ConfigFieldSnap],
         dep_structure_snapshot: DependencyStructureSnapshot,
-        input_mapping_snaps: List[InputMappingSnap],
-        output_mapping_snaps: List[OutputMappingSnap],
+        input_mapping_snaps: Sequence[InputMappingSnap],
+        output_mapping_snaps: Sequence[OutputMappingSnap],
     ):
         return super(CompositeSolidDefSnap, cls).__new__(
             cls,
@@ -282,11 +282,11 @@ class SolidDefSnap(
         "_SolidDefMeta",
         [
             ("name", str),
-            ("input_def_snaps", List[InputDefSnap]),
-            ("output_def_snaps", List[OutputDefSnap]),
+            ("input_def_snaps", Sequence[InputDefSnap]),
+            ("output_def_snaps", Sequence[OutputDefSnap]),
             ("description", Optional[str]),
-            ("tags", Dict[str, Any]),
-            ("required_resource_keys", List[str]),
+            ("tags", Mapping[str, object]),
+            ("required_resource_keys", Sequence[str]),
             ("config_field_snap", Optional[ConfigFieldSnap]),
         ],
     )
@@ -294,11 +294,11 @@ class SolidDefSnap(
     def __new__(
         cls,
         name: str,
-        input_def_snaps: List[InputDefSnap],
-        output_def_snaps: List[OutputDefSnap],
+        input_def_snaps: Sequence[InputDefSnap],
+        output_def_snaps: Sequence[OutputDefSnap],
         description: Optional[str],
-        tags: Dict[str, Any],
-        required_resource_keys: List[str],
+        tags: Mapping[str, object],
+        required_resource_keys: Sequence[str],
         config_field_snap: Optional[ConfigFieldSnap],
     ):
         return super(SolidDefSnap, cls).__new__(
@@ -328,15 +328,15 @@ class SolidDefinitionsSnapshot(
     NamedTuple(
         "_SolidDefinitionsSnapshot",
         [
-            ("solid_def_snaps", List[SolidDefSnap]),
-            ("composite_solid_def_snaps", List[CompositeSolidDefSnap]),
+            ("solid_def_snaps", Sequence[SolidDefSnap]),
+            ("composite_solid_def_snaps", Sequence[CompositeSolidDefSnap]),
         ],
     )
 ):
     def __new__(
         cls,
-        solid_def_snaps: List[SolidDefSnap],
-        composite_solid_def_snaps: List[CompositeSolidDefSnap],
+        solid_def_snaps: Sequence[SolidDefSnap],
+        composite_solid_def_snaps: Sequence[CompositeSolidDefSnap],
     ):
         return super(SolidDefinitionsSnapshot, cls).__new__(
             cls,

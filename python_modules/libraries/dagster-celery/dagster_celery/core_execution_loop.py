@@ -3,14 +3,14 @@ import time
 
 from celery.exceptions import TaskRevokedError
 
-from dagster import check
+import dagster._check as check
+from dagster._serdes import deserialize_json_to_dagster_namedtuple
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.context.system import PlanOrchestrationContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.storage.tags import PRIORITY_TAG
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
-from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .defaults import task_default_priority, task_default_queue
 from .make_app import make_app
@@ -82,13 +82,13 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
                         step_events = result.get()
                     except TaskRevokedError:
                         step_events = []
+                        step = active_execution.get_step_by_key(step_key)
                         yield DagsterEvent.engine_event(
-                            pipeline_context,
+                            pipeline_context.for_step(step),
                             'celery task for running step "{step_key}" was revoked.'.format(
                                 step_key=step_key,
                             ),
                             EngineEventData(marker_end=DELEGATE_MARKER),
-                            step_handle=active_execution.get_step_by_key(step_key).handle,
                         )
                     except Exception:
                         # We will want to do more to handle the exception here.. maybe subclass Task
@@ -126,12 +126,11 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
                 try:
                     queue = step.tags.get(DAGSTER_CELERY_QUEUE_TAG, task_default_queue)
                     yield DagsterEvent.engine_event(
-                        pipeline_context,
+                        pipeline_context.for_step(step),
                         'Submitting celery task for step "{step_key}" to queue "{queue}".'.format(
                             step_key=step.key, queue=queue
                         ),
                         EngineEventData(marker_start=DELEGATE_MARKER),
-                        step_handle=step.handle,
                     )
 
                     # Get the Celery priority for this step
@@ -150,7 +149,7 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
                 except Exception:
                     yield DagsterEvent.engine_event(
                         pipeline_context,
-                        "Encountered error during celery task submission.".format(),
+                        "Encountered error during celery task submission.",
                         event_specific_data=EngineEventData.engine_error(
                             serializable_error_info_from_exc_info(sys.exc_info()),
                         ),

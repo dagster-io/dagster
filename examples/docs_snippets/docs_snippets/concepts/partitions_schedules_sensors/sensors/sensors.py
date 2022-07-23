@@ -1,6 +1,7 @@
-"""isort:skip_file"""
+# isort: skip_file
+# pylint: disable=unnecessary-ellipsis
 
-from dagster import repository, DefaultSensorStatus, SkipReason
+from dagster import repository, DefaultSensorStatus, SkipReason, asset, define_asset_job
 
 
 # start_sensor_job_marker
@@ -42,8 +43,25 @@ def my_directory_sensor():
 
 # end_directory_sensor_marker
 
+
+@asset
+def my_asset():
+    return 1
+
+
+# start_asset_job_sensor_marker
+asset_job = define_asset_job("asset_job", "*")
+
+
+@sensor(job=asset_job)
+def materializes_asset_sensor():
+    yield RunRequest(...)
+
+
+# end_asset_job_sensor_marker
+
 # start_running_in_code
-@sensor(job=log_file_job, default_status=DefaultSensorStatus.RUNNING)
+@sensor(job=asset_job, default_status=DefaultSensorStatus.RUNNING)
 def my_running_sensor():
     ...
 
@@ -195,7 +213,7 @@ def multi_asset_sensor(context):
     b_event_records = context.instance.get_event_records(
         EventRecordsFilter(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,
-            asset_key=AssetKey("table_a"),
+            asset_key=AssetKey("table_b"),
             after_cursor=b_cursor,
         ),
         ascending=False,
@@ -230,12 +248,14 @@ from dagster_aws.s3.sensor import get_s3_keys
 
 @sensor(job=my_job)
 def my_s3_sensor(context):
-    new_s3_keys = get_s3_keys("my_s3_bucket", since_key=context.last_run_key)
+    since_key = context.cursor or None
+    new_s3_keys = get_s3_keys("my_s3_bucket", since_key=since_key)
     if not new_s3_keys:
-        yield SkipReason("No new s3 files found for bucket my_s3_bucket.")
-        return
-    for s3_key in new_s3_keys:
-        yield RunRequest(run_key=s3_key, run_config={})
+        return SkipReason("No new s3 files found for bucket my_s3_bucket.")
+    last_key = new_s3_keys[-1]
+    run_requests = [RunRequest(run_key=s3_key, run_config={}) for s3_key in new_s3_keys]
+    context.update_cursor(last_key)
+    return run_requests
 
 
 # end_s3_sensors_marker

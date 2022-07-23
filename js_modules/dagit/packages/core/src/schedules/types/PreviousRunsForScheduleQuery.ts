@@ -9,15 +9,16 @@ import { RunsFilter, RunStatus } from "./../../types/globalTypes";
 // GraphQL query operation: PreviousRunsForScheduleQuery
 // ====================================================
 
-export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError {
-  __typename: "InvalidPipelineRunsFilterError" | "PythonError";
-}
-
 export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_repositoryOrigin {
   __typename: "RepositoryOrigin";
   id: string;
   repositoryName: string;
   repositoryLocationName: string;
+}
+
+export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_assetSelection {
+  __typename: "AssetKey";
+  path: string[];
 }
 
 export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_tags {
@@ -40,6 +41,7 @@ export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results {
   pipelineName: string;
   repositoryOrigin: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_repositoryOrigin | null;
   solidSelection: string[] | null;
+  assetSelection: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_assetSelection[] | null;
   tags: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_tags[];
   startTime: number | null;
   endTime: number | null;
@@ -51,7 +53,12 @@ export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs {
   results: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results[];
 }
 
-export type PreviousRunsForScheduleQuery_pipelineRunsOrError = PreviousRunsForScheduleQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs;
+export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError {
+  __typename: "InvalidPipelineRunsFilterError" | "PythonError";
+  message: string;
+}
+
+export type PreviousRunsForScheduleQuery_pipelineRunsOrError = PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs | PreviousRunsForScheduleQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError;
 
 export interface PreviousRunsForScheduleQuery {
   pipelineRunsOrError: PreviousRunsForScheduleQuery_pipelineRunsOrError;

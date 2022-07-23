@@ -5,8 +5,11 @@ from .config_types import (
     GrapheneEnumConfigType,
     GrapheneRegularConfigType,
 )
-from .errors import GraphenePipelineNotFoundError, GraphenePythonError
-from .pipelines.pipeline_errors import GrapheneConfigTypeNotFoundError
+from .errors import (
+    GrapheneConfigTypeNotFoundError,
+    GraphenePipelineNotFoundError,
+    GraphenePythonError,
+)
 
 
 class GrapheneConfigTypeOrError(graphene.Union):

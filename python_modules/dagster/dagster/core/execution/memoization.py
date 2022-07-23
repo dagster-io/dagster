@@ -1,5 +1,5 @@
-from dagster import check
-from dagster.core.errors import DagsterInvariantViolationError, DagsterRunNotFoundError
+import dagster._check as check
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.system import IPlanContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 
@@ -13,12 +13,6 @@ def validate_reexecution_memoization(
 
     if parent_run_id is None:
         return
-
-    if not plan_context.instance.has_run(parent_run_id):
-        raise DagsterRunNotFoundError(
-            "Run id {} set as parent run id was not found in instance".format(parent_run_id),
-            invalid_run_id=parent_run_id,
-        )
 
     # exclude full pipeline re-execution
     if len(execution_plan.step_keys_to_execute) == len(execution_plan.steps):

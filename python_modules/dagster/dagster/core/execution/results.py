@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions import GraphDefinition, Node, NodeHandle, PipelineDefinition
 from dagster.core.definitions.utils import DEFAULT_OUTPUT
 from dagster.core.errors import DagsterInvariantViolationError
@@ -530,7 +530,9 @@ class SolidExecutionResult:
                         if result is None:
                             result = {mapping_key: value}
                         else:
-                            result[mapping_key] = value
+                            result[
+                                mapping_key
+                            ] = value  # pylint:disable=unsupported-assignment-operation
                     else:
                         result = value
 

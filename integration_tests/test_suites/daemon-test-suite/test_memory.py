@@ -5,10 +5,11 @@ from contextlib import contextmanager
 
 import objgraph
 
-from dagster import RunRequest, pipeline, repository, schedule, sensor, solid
+from dagster import RunRequest, repository, schedule, sensor
+from dagster._daemon.controller import daemon_controller_from_instance
+from dagster._legacy import pipeline, solid
 from dagster.core.test_utils import instance_for_test
 from dagster.core.workspace.load_target import PythonFileTarget
-from dagster.daemon.controller import daemon_controller_from_instance
 
 
 @solid()
@@ -45,11 +46,11 @@ def example_repo():
 
 
 @contextmanager
-def get_example_repository_location():
+def get_example_repository_location(instance):
     load_target = workspace_load_target()
     origin = load_target.create_origins()[0]
 
-    with origin.create_single_location() as location:
+    with origin.create_single_location(instance) as location:
         yield location
 
 
@@ -63,8 +64,8 @@ def workspace_load_target():
 
 
 @contextmanager
-def get_example_repo():
-    with get_example_repository_location() as location:
+def get_example_repo(instance):
+    with get_example_repository_location(instance) as location:
         yield location.get_repository("example_repo")
 
 
@@ -83,44 +84,48 @@ def test_no_memory_leaks():
                 },
             },
         }
-    ) as instance, get_example_repo() as repo:
+    ) as instance:
+        with get_example_repo(instance) as repo:
 
-        external_schedule = repo.get_external_schedule("always_run_schedule")
-        external_sensor = repo.get_external_sensor("always_on_sensor")
+            external_schedule = repo.get_external_schedule("always_run_schedule")
+            external_sensor = repo.get_external_sensor("always_on_sensor")
 
-        instance.start_schedule(external_schedule)
-        instance.start_sensor(external_sensor)
+            instance.start_schedule(external_schedule)
+            instance.start_sensor(external_sensor)
 
-        with daemon_controller_from_instance(
-            instance, workspace_load_target=workspace_load_target(), wait_for_processes_on_exit=True
-        ) as controller:
-            start_time = time.time()
-
-            growth = objgraph.growth(
-                limit=10,
-                filter=lambda obj: inspect.getmodule(obj)
-                and "dagster" in inspect.getmodule(obj).__name__,
-            )
-            while True:
-                time.sleep(30)
-
-                controller.check_daemon_threads()
-                controller.check_daemon_heartbeats()
+            with daemon_controller_from_instance(
+                instance,
+                workspace_load_target=workspace_load_target(),
+                wait_for_processes_on_exit=True,
+            ) as controller:
+                start_time = time.time()
 
                 growth = objgraph.growth(
                     limit=10,
                     filter=lambda obj: inspect.getmodule(obj)
                     and "dagster" in inspect.getmodule(obj).__name__,
                 )
-                if not growth:
-                    print(  # pylint: disable=print-call
-                        f"Memory stopped growing after {int(time.time() - start_time)} seconds"
-                    )
-                    break
+                while True:
+                    time.sleep(30)
 
-                if (time.time() - start_time) > 300:
-                    raise Exception(
-                        "Memory still growing after 5 minutes. Most recent growth: " + str(growth)
-                    )
+                    controller.check_daemon_threads()
+                    controller.check_daemon_heartbeats()
 
-                print("Growth: " + str(growth))  # pylint: disable=print-call
+                    growth = objgraph.growth(
+                        limit=10,
+                        filter=lambda obj: inspect.getmodule(obj)
+                        and "dagster" in inspect.getmodule(obj).__name__,
+                    )
+                    if not growth:
+                        print(  # pylint: disable=print-call
+                            f"Memory stopped growing after {int(time.time() - start_time)} seconds"
+                        )
+                        break
+
+                    if (time.time() - start_time) > 300:
+                        raise Exception(
+                            "Memory still growing after 5 minutes. Most recent growth: "
+                            + str(growth)
+                        )
+
+                    print("Growth: " + str(growth))  # pylint: disable=print-call

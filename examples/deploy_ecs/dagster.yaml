@@ -10,6 +10,8 @@ run_coordinator:
 run_launcher:
   module: dagster_aws.ecs
   class: EcsRunLauncher
+  config:
+    include_sidecars: true
 
 run_storage:
   module: dagster_postgres.run_storage

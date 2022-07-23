@@ -1,7 +1,6 @@
 from enum import Enum
 from typing import Dict, List
 
-# pylint: disable=no-name-in-module
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Extra
 

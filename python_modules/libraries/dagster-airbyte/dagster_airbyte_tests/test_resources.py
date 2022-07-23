@@ -3,7 +3,11 @@ import responses
 from dagster_airbyte import AirbyteOutput, AirbyteState, airbyte_resource
 from dagster_airbyte.utils import generate_materializations
 
-from dagster import Failure, MetadataEntry, build_init_resource_context
+from dagster import Failure, MetadataEntry
+from dagster import _check as check
+from dagster import build_init_resource_context
+
+from .utils import get_sample_connection_json, get_sample_job_json
 
 
 @responses.activate
@@ -51,7 +55,7 @@ def test_sync_and_poll(state):
     responses.add(
         method=responses.POST,
         url=ab_resource.api_base_url + "/connections/get",
-        json={"name": "some_connection"},
+        json=get_sample_connection_json(),
         status=200,
     )
     responses.add(
@@ -66,22 +70,87 @@ def test_sync_and_poll(state):
         json={"job": {"id": 1, "status": state}},
         status=200,
     )
+    if state == "unrecognized":
+        responses.add(responses.POST, f"{ab_resource.api_base_url}/jobs/cancel", status=204)
 
     if state == AirbyteState.ERROR:
         with pytest.raises(Failure, match="Job failed"):
-            r = ab_resource.sync_and_poll("some_connection", 0)
+            ab_resource.sync_and_poll("some_connection", 0)
 
     elif state == AirbyteState.CANCELLED:
         with pytest.raises(Failure, match="Job was cancelled"):
-            r = ab_resource.sync_and_poll("some_connection", 0)
+            ab_resource.sync_and_poll("some_connection", 0)
 
     elif state == "unrecognized":
         with pytest.raises(Failure, match="unexpected state"):
-            r = ab_resource.sync_and_poll("some_connection", 0)
+            ab_resource.sync_and_poll("some_connection", 0)
 
     else:
-        r = ab_resource.sync_and_poll("some_connection", 0)
-        assert r == AirbyteOutput({"job": {"id": 1, "status": state}}, {"name": "some_connection"})
+        result = ab_resource.sync_and_poll("some_connection", 0)
+        assert result == AirbyteOutput(
+            job_details={"job": {"id": 1, "status": state}},
+            connection_details=get_sample_connection_json(),
+        )
+
+
+@responses.activate
+def test_start_sync_bad_out_fail():
+    ab_resource = airbyte_resource(
+        build_init_resource_context(
+            config={
+                "host": "some_host",
+                "port": "8000",
+            }
+        )
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/sync",
+        json=None,
+        status=204,
+    )
+    with pytest.raises(check.CheckError):
+        ab_resource.start_sync("some_connection")
+
+
+@responses.activate
+def test_get_connection_details_bad_out_fail():
+    ab_resource = airbyte_resource(
+        build_init_resource_context(
+            config={
+                "host": "some_host",
+                "port": "8000",
+            }
+        )
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/get",
+        json=None,
+        status=204,
+    )
+    with pytest.raises(check.CheckError):
+        ab_resource.get_connection_details("some_connection")
+
+
+@responses.activate
+def test_get_job_status_bad_out_fail():
+    ab_resource = airbyte_resource(
+        build_init_resource_context(
+            config={
+                "host": "some_host",
+                "port": "8000",
+            }
+        )
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/jobs/get",
+        json=None,
+        status=204,
+    )
+    with pytest.raises(check.CheckError):
+        ab_resource.get_job_status("some_connection")
 
 
 @responses.activate
@@ -155,6 +224,7 @@ def test_logging_multi_attempts(capsys):
         },
         status=200,
     )
+    responses.add(responses.POST, f"{ab_resource.api_base_url}/jobs/cancel", status=204)
     ab_resource.sync_and_poll("some_connection", 0, None)
     captured = capsys.readouterr()
     assert captured.out == "\n".join(["log1a", "log1b", "log1c", "log2a", "log2b"]) + "\n"
@@ -174,44 +244,7 @@ def test_assets():
     responses.add(
         method=responses.POST,
         url=ab_resource.api_base_url + "/connections/get",
-        json={
-            "name": "xyz",
-            "syncCatalog": {
-                "streams": [
-                    {
-                        "stream": {
-                            "name": "foo",
-                            "jsonSchema": {
-                                "properties": {"a": {"type": "str"}, "b": {"type": "int"}}
-                            },
-                        },
-                        "config": {"selected": True},
-                    },
-                    {
-                        "stream": {
-                            "name": "bar",
-                            "jsonSchema": {
-                                "properties": {
-                                    "c": {"type": "str"},
-                                }
-                            },
-                        },
-                        "config": {"selected": True},
-                    },
-                    {
-                        "stream": {
-                            "name": "baz",
-                            "jsonSchema": {
-                                "properties": {
-                                    "d": {"type": "str"},
-                                }
-                            },
-                        },
-                        "config": {"selected": False},
-                    },
-                ]
-            },
-        },
+        json=get_sample_connection_json(),
         status=200,
     )
     responses.add(
@@ -223,42 +256,18 @@ def test_assets():
     responses.add(
         method=responses.POST,
         url=ab_resource.api_base_url + "/jobs/get",
-        json={
-            "job": {"id": 1, "status": AirbyteState.SUCCEEDED},
-            "attempts": [
-                {
-                    "attempt": {
-                        "streamStats": [
-                            {
-                                "streamName": "foo",
-                                "stats": {
-                                    "bytesEmitted": 1234,
-                                    "recordsCommitted": 4321,
-                                },
-                            },
-                            {
-                                "streamName": "bar",
-                                "stats": {
-                                    "bytesEmitted": 1234,
-                                    "recordsCommitted": 4321,
-                                },
-                            },
-                        ]
-                    }
-                }
-            ],
-        },
+        json=get_sample_job_json(),
         status=200,
     )
+    responses.add(responses.POST, f"{ab_resource.api_base_url}/jobs/cancel", status=204)
 
     airbyte_output = ab_resource.sync_and_poll("some_connection", 0, None)
 
     materializations = list(generate_materializations(airbyte_output, []))
-    assert len(materializations) == 2
+    assert len(materializations) == 3
 
-    assert MetadataEntry.text("a,b", "columns") in materializations[0].metadata_entries
-    assert MetadataEntry.int(1234, "bytesEmitted") in materializations[0].metadata_entries
-    assert MetadataEntry.int(4321, "recordsCommitted") in materializations[0].metadata_entries
+    assert MetadataEntry("bytesEmitted", value=1234) in materializations[0].metadata_entries
+    assert MetadataEntry("recordsCommitted", value=4321) in materializations[0].metadata_entries
 
 
 @responses.activate
@@ -301,6 +310,7 @@ def test_sync_and_poll_timeout():
         json={"job": {"id": 1, "status": "running"}},
         status=200,
     )
+    responses.add(responses.POST, f"{ab_resource.api_base_url}/jobs/cancel", status=204)
     poll_wait_second = 2
     timeout = 1
     with pytest.raises(Failure, match="Timeout: Airbyte job"):

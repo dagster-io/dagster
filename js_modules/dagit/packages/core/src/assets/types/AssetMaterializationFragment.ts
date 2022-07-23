@@ -91,6 +91,13 @@ export interface AssetMaterializationFragment_metadataEntries_IntMetadataEntry {
   intRepr: string;
 }
 
+export interface AssetMaterializationFragment_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
+}
+
 export interface AssetMaterializationFragment_metadataEntries_PipelineRunMetadataEntry {
   __typename: "PipelineRunMetadataEntry";
   label: string;
@@ -182,7 +189,7 @@ export interface AssetMaterializationFragment_metadataEntries_TableSchemaMetadat
   schema: AssetMaterializationFragment_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type AssetMaterializationFragment_metadataEntries = AssetMaterializationFragment_metadataEntries_PathMetadataEntry | AssetMaterializationFragment_metadataEntries_JsonMetadataEntry | AssetMaterializationFragment_metadataEntries_UrlMetadataEntry | AssetMaterializationFragment_metadataEntries_TextMetadataEntry | AssetMaterializationFragment_metadataEntries_MarkdownMetadataEntry | AssetMaterializationFragment_metadataEntries_PythonArtifactMetadataEntry | AssetMaterializationFragment_metadataEntries_FloatMetadataEntry | AssetMaterializationFragment_metadataEntries_IntMetadataEntry | AssetMaterializationFragment_metadataEntries_PipelineRunMetadataEntry | AssetMaterializationFragment_metadataEntries_AssetMetadataEntry | AssetMaterializationFragment_metadataEntries_TableMetadataEntry | AssetMaterializationFragment_metadataEntries_TableSchemaMetadataEntry;
+export type AssetMaterializationFragment_metadataEntries = AssetMaterializationFragment_metadataEntries_PathMetadataEntry | AssetMaterializationFragment_metadataEntries_JsonMetadataEntry | AssetMaterializationFragment_metadataEntries_UrlMetadataEntry | AssetMaterializationFragment_metadataEntries_TextMetadataEntry | AssetMaterializationFragment_metadataEntries_MarkdownMetadataEntry | AssetMaterializationFragment_metadataEntries_PythonArtifactMetadataEntry | AssetMaterializationFragment_metadataEntries_FloatMetadataEntry | AssetMaterializationFragment_metadataEntries_IntMetadataEntry | AssetMaterializationFragment_metadataEntries_BoolMetadataEntry | AssetMaterializationFragment_metadataEntries_PipelineRunMetadataEntry | AssetMaterializationFragment_metadataEntries_AssetMetadataEntry | AssetMaterializationFragment_metadataEntries_TableMetadataEntry | AssetMaterializationFragment_metadataEntries_TableSchemaMetadataEntry;
 
 export interface AssetMaterializationFragment_assetLineage_assetKey {
   __typename: "AssetKey";
@@ -202,7 +209,7 @@ export interface AssetMaterializationFragment {
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  label: string;
+  label: string | null;
   description: string | null;
   metadataEntries: AssetMaterializationFragment_metadataEntries[];
   assetLineage: AssetMaterializationFragment_assetLineage[];

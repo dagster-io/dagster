@@ -364,6 +364,38 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'bar'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'foo_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'bar'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'baz'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'foo_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'baz'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'can_fail'
                 },
                 'invocations': [
@@ -461,6 +493,22 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'div_four.div_2'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'downstream_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'hanging_graph_asset_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'downstream_asset'
                         }
                     }
                 ]
@@ -644,6 +692,38 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'foo'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'foo_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'foo'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'foo_bar'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'foo_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'foo_bar'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'get_input_one'
                 },
                 'invocations': [
@@ -676,6 +756,54 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'grouped_asset_1'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'named_groups_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'grouped_asset_1'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'grouped_asset_2'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'named_groups_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'grouped_asset_2'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'grouped_asset_4'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'named_groups_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'grouped_asset_4'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'hanging_asset'
                 },
                 'invocations': [
@@ -685,6 +813,38 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'hanging_asset'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'hanging_graph'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'hanging_graph_asset_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'hanging_graph'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'hanging_op'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'hanging_graph_asset_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'hanging_graph.hanging_op'
                         }
                     }
                 ]
@@ -812,6 +972,30 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'my_op'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'hanging_graph_asset_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'hanging_graph.my_op'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'memoization_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'my_op'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'never_runs_asset'
                 },
                 'invocations': [
@@ -821,6 +1005,22 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'never_runs_asset'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'never_runs_op'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'hanging_graph_asset_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'hanging_graph.never_runs_op'
                         }
                     }
                 ]
@@ -1605,6 +1805,54 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'throw_a_thing'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'unconnected'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'foo_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'unconnected'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'ungrouped_asset_3'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'named_groups_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'ungrouped_asset_3'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'ungrouped_asset_5'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'named_groups_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'ungrouped_asset_5'
                         }
                     }
                 ]

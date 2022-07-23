@@ -1,7 +1,8 @@
+from azure.storage.filedatalake import DataLakeLeaseClient
 from dagster_azure.blob.utils import create_blob_client
 
 from dagster import Field, Selector, StringSource, resource
-from dagster.utils.merger import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from .file_manager import ADLS2FileManager
 from .utils import create_adls2_client
@@ -101,6 +102,7 @@ class ADLS2Resource:
     def __init__(self, storage_account, credential):
         self._adls2_client = create_adls2_client(storage_account, credential)
         self._blob_client = create_blob_client(storage_account, credential)
+        self._lease_client_constructor = DataLakeLeaseClient
 
     @property
     def adls2_client(self):
@@ -109,6 +111,10 @@ class ADLS2Resource:
     @property
     def blob_client(self):
         return self._blob_client
+
+    @property
+    def lease_client_constructor(self):
+        return self._lease_client_constructor
 
 
 def _adls2_resource_from_config(config):

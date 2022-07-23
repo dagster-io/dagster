@@ -8,7 +8,9 @@ from dagster_tests.core_tests.launcher_tests.test_default_run_launcher import (
     slow_pipeline,
 )
 
-from dagster import file_relative_path, seven
+from dagster import _seven, file_relative_path
+from dagster._grpc.server import GrpcServerProcess
+from dagster._utils import find_free_port, merge_dicts
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import GRPC_INFO_TAG
@@ -16,8 +18,6 @@ from dagster.core.test_utils import instance_for_test, poll_for_finished_run, po
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import GrpcServerTarget, PythonFileTarget
-from dagster.grpc.server import GrpcServerProcess
-from dagster.utils import find_free_port, merge_dicts
 
 
 def test_run_always_finishes():  # pylint: disable=redefined-outer-name
@@ -133,7 +133,6 @@ def test_terminate_after_shutdown():
             launcher = instance.run_launcher
 
             # Can terminate the run even after the shutdown event has been received
-            assert launcher.can_terminate(pipeline_run.run_id)
             assert launcher.terminate(pipeline_run.run_id)
 
 
@@ -179,7 +178,6 @@ def test_server_down():
                 poll_for_step_start(instance, pipeline_run.run_id)
 
                 launcher = instance.run_launcher
-                assert launcher.can_terminate(pipeline_run.run_id)
 
                 original_run_tags = instance.get_run_by_id(pipeline_run.run_id).tags[GRPC_INFO_TAG]
 
@@ -187,13 +185,11 @@ def test_server_down():
                 instance.add_run_tags(
                     pipeline_run.run_id,
                     {
-                        GRPC_INFO_TAG: seven.json.dumps(
+                        GRPC_INFO_TAG: _seven.json.dumps(
                             merge_dicts({"host": "localhost"}, {"port": find_free_port()})
                         )
                     },
                 )
-
-                assert not launcher.can_terminate(pipeline_run.run_id)
 
                 instance.add_run_tags(
                     pipeline_run.run_id,

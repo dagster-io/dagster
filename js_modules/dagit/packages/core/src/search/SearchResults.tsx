@@ -1,4 +1,4 @@
-import {ColorsWIP, IconName, IconWIP} from '@dagster-io/ui';
+import {Colors, IconName, Icon} from '@dagster-io/ui';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -57,10 +57,7 @@ const SearchResultItem: React.FC<ItemProps> = React.memo(({isHighlight, onClickR
   return (
     <Item isHighlight={isHighlight} ref={element}>
       <ResultLink to={item.href} onMouseDown={onClick}>
-        <IconWIP
-          name={iconForType(item.type)}
-          color={isHighlight ? ColorsWIP.Gray800 : ColorsWIP.Gray500}
-        />
+        <Icon name={iconForType(item.type)} color={isHighlight ? Colors.Gray800 : Colors.Gray500} />
         <div style={{marginLeft: '12px'}}>
           <Label isHighlight={isHighlight}>{item.label}</Label>
           <Description isHighlight={isHighlight}>{item.description}</Description>
@@ -88,7 +85,7 @@ export const SearchResults = (props: Props) => {
     <List hasResults={!!results.length}>
       {results.map((result, ii) => (
         <SearchResultItem
-          key={result.item.key}
+          key={result.item.href}
           isHighlight={highlight === ii}
           result={result}
           onClickResult={onClickResult}
@@ -99,7 +96,7 @@ export const SearchResults = (props: Props) => {
 };
 
 const NoResults = styled.div`
-  color: ${ColorsWIP.Gray500};
+  color: ${Colors.Gray500};
   font-size: 16px;
   padding: 16px;
 `;
@@ -122,10 +119,10 @@ interface HighlightableTextProps {
 
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
-  background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Gray100 : 'transparent')};
-  box-shadow: ${({isHighlight}) => (isHighlight ? ColorsWIP.HighlightGreen : 'transparent')} 4px 0 0
+  background-color: ${({isHighlight}) => (isHighlight ? Colors.Gray100 : 'transparent')};
+  box-shadow: ${({isHighlight}) => (isHighlight ? Colors.HighlightGreen : 'transparent')} 4px 0 0
     inset;
-  color: ${ColorsWIP.Gray700};
+  color: ${Colors.Gray700};
   display: flex;
   flex-direction: row;
   list-style: none;
@@ -133,7 +130,7 @@ const Item = styled.li<HighlightableTextProps>`
   user-select: none;
 
   &:hover {
-    background-color: ${ColorsWIP.Gray100};
+    background-color: ${Colors.Gray100};
   }
 `;
 
@@ -152,12 +149,12 @@ const ResultLink = styled(Link)`
 `;
 
 const Label = styled.div<HighlightableTextProps>`
-  color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Gray900 : ColorsWIP.Gray700)};
+  color: ${({isHighlight}) => (isHighlight ? Colors.Gray900 : Colors.Gray700)};
   font-weight: 500;
 `;
 
 const Description = styled.div<HighlightableTextProps>`
-  color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Gray900 : ColorsWIP.Gray700)};
+  color: ${({isHighlight}) => (isHighlight ? Colors.Gray900 : Colors.Gray700)};
   font-size: 12px;
   max-width: 530px;
   overflow-x: hidden;

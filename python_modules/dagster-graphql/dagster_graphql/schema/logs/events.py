@@ -1,6 +1,6 @@
 import graphene
 
-from dagster import check
+import dagster._check as check
 from dagster.core.events import AssetLineageInfo, DagsterEventType
 from dagster.core.execution.plan.objects import ErrorSource
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot
@@ -30,12 +30,27 @@ class GrapheneMessageEvent(graphene.Interface):
 
 
 class GrapheneDisplayableEvent(graphene.Interface):
-    label = graphene.NonNull(graphene.String)
+    label = graphene.String()
     description = graphene.String()
     metadataEntries = non_null_list(GrapheneMetadataEntry)
 
     class Meta:
         name = "DisplayableEvent"
+
+
+class GrapheneMarkerEvent(graphene.Interface):
+    markerStart = graphene.String()
+    markerEnd = graphene.String()
+
+    class Meta:
+        name = "MarkerEvent"
+
+
+class GrapheneErrorEvent(graphene.Interface):
+    error = graphene.Field(GraphenePythonError)
+
+    class Meta:
+        name = "ErrorEvent"
 
 
 class GrapheneMissingRunIdErrorEvent(graphene.ObjectType):
@@ -101,10 +116,8 @@ class GrapheneRunSuccessEvent(graphene.ObjectType):
 
 
 class GrapheneRunFailureEvent(graphene.ObjectType):
-    error = graphene.Field(GraphenePythonError)
-
     class Meta:
-        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent, GrapheneErrorEvent)
         name = "RunFailureEvent"
 
 
@@ -118,6 +131,12 @@ class GrapheneAlertSuccessEvent(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
         name = "AlertSuccessEvent"
+
+
+class GrapheneAlertFailureEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+        name = "AlertFailureEvent"
 
 
 class GrapheneStepEvent(graphene.Interface):
@@ -141,11 +160,10 @@ class GrapheneExecutionStepRestartEvent(graphene.ObjectType):
 
 
 class GrapheneExecutionStepUpForRetryEvent(graphene.ObjectType):
-    error = graphene.Field(GraphenePythonError)
     secondsToWait = graphene.Field(graphene.Int)
 
     class Meta:
-        interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
+        interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneErrorEvent)
         name = "ExecutionStepUpForRetryEvent"
 
 
@@ -241,10 +259,9 @@ class GrapheneExecutionStepSuccessEvent(graphene.ObjectType):
 
 class GrapheneExecutionStepFailureEvent(graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
+        interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneErrorEvent)
         name = "ExecutionStepFailureEvent"
 
-    error = graphene.Field(GraphenePythonError)
     errorSource = graphene.Field(graphene.Enum.from_enum(ErrorSource))
     failureMetadata = graphene.Field(GrapheneFailureMetadata)
 
@@ -263,10 +280,8 @@ class GrapheneHookSkippedEvent(graphene.ObjectType):
 
 class GrapheneHookErroredEvent(graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
+        interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneErrorEvent)
         name = "HookErroredEvent"
-
-    error = graphene.Field(GraphenePythonError)
 
 
 class GrapheneLogsCapturedEvent(graphene.ObjectType):
@@ -377,6 +392,25 @@ class GrapheneObservationEvent(graphene.ObjectType, AssetEventMixin):
         )
 
 
+class GrapheneAssetMaterializationPlannedEvent(graphene.ObjectType):
+    assetKey = graphene.Field(GrapheneAssetKey)
+    runOrError = graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GrapheneRunOrError")
+
+    class Meta:
+        name = "AssetMaterializationPlannedEvent"
+        interfaces = (GrapheneMessageEvent, GrapheneRunEvent)
+
+    def __init__(self, event):
+        self._event = event
+        super().__init__(**construct_basic_params(event))
+
+    def resolve_assetKey(self, _graphene_info):
+        return self._event.dagster_event.asset_materialization_planned_data
+
+    def resolve_runOrError(self, graphene_info):
+        return get_run_by_id(graphene_info, self._event.run_id)
+
+
 class GrapheneHandledOutputEvent(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneDisplayableEvent)
@@ -388,7 +422,7 @@ class GrapheneHandledOutputEvent(graphene.ObjectType):
 
 class GrapheneLoadedInputEvent(graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
+        interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneDisplayableEvent)
         name = "LoadedInputEvent"
 
     input_name = graphene.NonNull(graphene.String)
@@ -407,12 +441,70 @@ class GrapheneObjectStoreOperationEvent(graphene.ObjectType):
 
 class GrapheneEngineEvent(graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneMessageEvent, GrapheneDisplayableEvent, GrapheneStepEvent)
+        interfaces = (
+            GrapheneMessageEvent,
+            GrapheneDisplayableEvent,
+            GrapheneStepEvent,
+            GrapheneMarkerEvent,
+            GrapheneErrorEvent,
+        )
         name = "EngineEvent"
 
-    error = graphene.Field(GraphenePythonError)
-    marker_start = graphene.Field(graphene.String)
-    marker_end = graphene.Field(graphene.String)
+
+class GrapheneResourceInitFailureEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (
+            GrapheneMessageEvent,
+            GrapheneDisplayableEvent,
+            GrapheneStepEvent,
+            GrapheneMarkerEvent,
+            GrapheneErrorEvent,
+        )
+        name = "ResourceInitFailureEvent"
+
+
+class GrapheneResourceInitStartedEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (
+            GrapheneMessageEvent,
+            GrapheneDisplayableEvent,
+            GrapheneStepEvent,
+            GrapheneMarkerEvent,
+        )
+        name = "ResourceInitStartedEvent"
+
+
+class GrapheneResourceInitSuccessEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (
+            GrapheneMessageEvent,
+            GrapheneDisplayableEvent,
+            GrapheneStepEvent,
+            GrapheneMarkerEvent,
+        )
+        name = "ResourceInitSuccessEvent"
+
+
+class GrapheneStepWorkerStartedEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (
+            GrapheneMessageEvent,
+            GrapheneDisplayableEvent,
+            GrapheneStepEvent,
+            GrapheneMarkerEvent,
+        )
+        name = "StepWorkerStartedEvent"
+
+
+class GrapheneStepWorkerStartingEvent(graphene.ObjectType):
+    class Meta:
+        interfaces = (
+            GrapheneMessageEvent,
+            GrapheneDisplayableEvent,
+            GrapheneStepEvent,
+            GrapheneMarkerEvent,
+        )
+        name = "StepWorkerStartingEvent"
 
 
 class GrapheneStepExpectationResultEvent(graphene.ObjectType):
@@ -436,6 +528,9 @@ class GrapheneDagsterRunEvent(graphene.Union):
             GrapheneExecutionStepUpForRetryEvent,
             GrapheneExecutionStepRestartEvent,
             GrapheneLogMessageEvent,
+            GrapheneResourceInitFailureEvent,
+            GrapheneResourceInitStartedEvent,
+            GrapheneResourceInitSuccessEvent,
             GrapheneRunFailureEvent,
             GrapheneRunStartEvent,
             GrapheneRunEnqueuedEvent,
@@ -444,6 +539,8 @@ class GrapheneDagsterRunEvent(graphene.Union):
             GrapheneRunCancelingEvent,
             GrapheneRunCanceledEvent,
             GrapheneRunSuccessEvent,
+            GrapheneStepWorkerStartedEvent,
+            GrapheneStepWorkerStartingEvent,
             GrapheneHandledOutputEvent,
             GrapheneLoadedInputEvent,
             GrapheneLogsCapturedEvent,
@@ -457,6 +554,8 @@ class GrapheneDagsterRunEvent(graphene.Union):
             GrapheneHookErroredEvent,
             GrapheneAlertStartEvent,
             GrapheneAlertSuccessEvent,
+            GrapheneAlertFailureEvent,
+            GrapheneAssetMaterializationPlannedEvent,
         )
         name = "DagsterRunEvent"
 

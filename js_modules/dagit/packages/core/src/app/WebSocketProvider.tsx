@@ -1,20 +1,24 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
+
+import {useFeatureFlags} from './Flags';
 
 type Availability = 'attempting-to-connect' | 'unavailable' | 'available';
 
 export type WebSocketContextType = {
   availability: Availability;
   status: number;
+  disabled?: boolean;
   websocketClient?: SubscriptionClient;
 };
 
 export const WebSocketContext = React.createContext<WebSocketContextType>({
   availability: 'attempting-to-connect',
   status: WebSocket.CONNECTING,
+  disabled: false,
 });
 
 const WS_EVENTS = [
@@ -29,6 +33,11 @@ const WS_EVENTS = [
 // Delay informing listeners of websocket status change so that we don't thrash.
 const DEBOUNCE_TIME = 5000;
 
+// The amount of time we're willing to wait for the server to ack the WS connection
+// before we give up and call WebSockets unavailable. This can occur when the connection
+// just hangs but never closes or errors.
+const TIME_TO_WAIT_FOR_ACK = 10000;
+
 interface Props {
   websocketClient: SubscriptionClient;
 }
@@ -36,6 +45,8 @@ interface Props {
 export const WebSocketProvider: React.FC<Props> = (props) => {
   const {children, websocketClient} = props;
   const [status, setStatus] = React.useState(websocketClient.status);
+  const {flagDisableWebsockets: disabled} = useFeatureFlags();
+
   const [availability, setAvailability] = React.useState<Availability>(
     websocketClient.status === WebSocket.OPEN
       ? 'available'
@@ -49,8 +60,9 @@ export const WebSocketProvider: React.FC<Props> = (props) => {
       availability,
       status,
       websocketClient,
+      disabled,
     }),
-    [availability, status, websocketClient],
+    [availability, disabled, status, websocketClient],
   );
 
   const debouncedSetter = React.useMemo(() => debounce(setStatus, DEBOUNCE_TIME), []);
@@ -69,6 +81,7 @@ export const WebSocketProvider: React.FC<Props> = (props) => {
     const unlisten = () => {
       availabilityListeners.forEach((u) => u());
     };
+
     const setFinalAvailability = (value: Availability) => {
       unlisten();
       setAvailability(value);
@@ -89,6 +102,24 @@ export const WebSocketProvider: React.FC<Props> = (props) => {
     };
   }, [debouncedSetter, websocketClient]);
 
+  // Wait a little while for the server to ack the WebSocket connection. If it never
+  // acks, never closes, and never errors, we shouldn't keep the app waiting to connect
+  // forever. Instead, set WebSocket availability as `unavailable` and let use cases
+  // fall back to non-WS implementations.
+  React.useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    if (availability === 'attempting-to-connect') {
+      timeout = setTimeout(() => {
+        console.log('[WebSockets] Timed out waiting for WS connection.');
+        setAvailability('unavailable');
+      }, TIME_TO_WAIT_FOR_ACK);
+    }
+
+    return () => {
+      timeout && clearTimeout(timeout);
+    };
+  }, [availability]);
+
   return <WebSocketContext.Provider value={value}>{children}</WebSocketContext.Provider>;
 };
 
@@ -106,17 +137,15 @@ export const WebSocketStatus: React.FC = (props) => (
     {({status}) =>
       ({
         [WebSocket.CONNECTING]: (
-          <Circle style={{background: ColorsWIP.Green200}} title="Connecting..." {...props} />
+          <Circle style={{background: Colors.Green200}} title="Connecting..." {...props} />
         ),
         [WebSocket.OPEN]: (
-          <Circle style={{background: ColorsWIP.Green500}} title="Connected" {...props} />
+          <Circle style={{background: Colors.Green500}} title="Connected" {...props} />
         ),
         [WebSocket.CLOSING]: (
-          <Circle style={{background: ColorsWIP.Gray400}} title="Closing..." {...props} />
+          <Circle style={{background: Colors.Gray400}} title="Closing..." {...props} />
         ),
-      }[status] || (
-        <Circle style={{background: ColorsWIP.Gray400}} title="Disconnected" {...props} />
-      ))
+      }[status] || <Circle style={{background: Colors.Gray400}} title="Disconnected" {...props} />)
     }
   </WebSocketContext.Consumer>
 );

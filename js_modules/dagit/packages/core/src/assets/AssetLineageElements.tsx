@@ -1,11 +1,11 @@
 import {gql} from '@apollo/client';
 import {Box, ButtonLink, Tooltip} from '@dagster-io/ui';
-import qs from 'qs';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {Timestamp} from '../app/time/Timestamp';
 
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetLineageFragment} from './types/AssetLineageFragment';
 
 const AssetLineageInfoElement: React.FC<{
@@ -16,9 +16,7 @@ const AssetLineageInfoElement: React.FC<{
   const partition_list_str = lineage_info.partitions
     .map((partition) => `"${partition}"`)
     .join(', ');
-  const to = `/instance/assets/${lineage_info.assetKey.path
-    .map(encodeURIComponent)
-    .join('/')}?${qs.stringify({asOf: timestamp})}`;
+  const to = assetDetailsPathForKey(lineage_info.assetKey, {asOf: timestamp});
 
   return (
     <Box margin={{bottom: 4}}>
@@ -61,7 +59,7 @@ const AssetLineageInfoElement: React.FC<{
 
 const MAX_COLLAPSED = 5;
 
-export const AssetLineageElements: React.FunctionComponent<{
+export const AssetLineageElements: React.FC<{
   elements: AssetLineageFragment[];
   timestamp: string;
 }> = ({elements, timestamp}) => {

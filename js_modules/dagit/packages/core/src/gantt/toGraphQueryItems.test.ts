@@ -25,7 +25,7 @@ describe('toGraphQueryItems', () => {
             },
             {
               __typename: 'ExecutionStep',
-              key: 'b',
+              key: 'b[?]',
               kind: StepKind.UNRESOLVED_MAPPED,
               inputs: [
                 {
@@ -42,11 +42,16 @@ describe('toGraphQueryItems', () => {
             },
           ],
         },
-        {a: STATE_SUCCESS, b: STATE_SUCCESS},
+        {a: STATE_SUCCESS, 'b[1]': STATE_SUCCESS},
       ),
     ).toEqual([
-      {inputs: [], name: 'a', outputs: [{dependedBy: [{solid: {name: 'b'}}]}]},
-      {inputs: [{dependsOn: [{solid: {name: 'a'}}]}], name: 'b', outputs: []},
+      {
+        inputs: [],
+        name: 'a',
+        outputs: [{dependedBy: [{solid: {name: 'b[1]'}}, {solid: {name: 'b[?]'}}]}],
+      },
+      {inputs: [{dependsOn: [{solid: {name: 'a'}}]}], name: 'b[1]', outputs: []},
+      {inputs: [{dependsOn: [{solid: {name: 'a'}}]}], name: 'b[?]', outputs: []},
     ]);
   });
 
@@ -117,6 +122,11 @@ describe('toGraphQueryItems', () => {
                   name: 'b[2]',
                 },
               },
+              {
+                solid: {
+                  name: 'b[?]',
+                },
+              },
             ],
           },
         ],
@@ -167,6 +177,31 @@ describe('toGraphQueryItems', () => {
             dependsOn: [
               {
                 solid: {
+                  name: 'a',
+                },
+              },
+            ],
+          },
+        ],
+        name: 'b[?]',
+        outputs: [
+          {
+            dependedBy: [
+              {
+                solid: {
+                  name: 'c[?]',
+                },
+              },
+            ],
+          },
+        ],
+      },
+      {
+        inputs: [
+          {
+            dependsOn: [
+              {
+                solid: {
                   name: 'b[1]',
                 },
               },
@@ -174,6 +209,21 @@ describe('toGraphQueryItems', () => {
           },
         ],
         name: 'c[1]',
+        outputs: [],
+      },
+      {
+        inputs: [
+          {
+            dependsOn: [
+              {
+                solid: {
+                  name: 'b[?]',
+                },
+              },
+            ],
+          },
+        ],
+        name: 'c[?]',
         outputs: [],
       },
     ]);

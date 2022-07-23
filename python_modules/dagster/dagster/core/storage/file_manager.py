@@ -4,21 +4,18 @@ import shutil
 import uuid
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import BinaryIO, TextIO, Union
+from typing import BinaryIO, Optional, TextIO, Union
 
-from dagster import check
-from dagster.config import Field
-from dagster.config.source import StringSource
+import dagster._check as check
+from dagster._config import Field, StringSource
+from dagster._utils import mkdir_p
 from dagster.core.definitions.resource_definition import resource
 from dagster.core.instance import DagsterInstance
-from dagster.core.types.decorator import usable_as_dagster_type
-from dagster.utils import mkdir_p
 
 from .temp_file_manager import TempfileManager
 
 
 # pylint: disable=no-init
-@usable_as_dagster_type
 class FileHandle(ABC):
     """A reference to a file as manipulated by a FileManager
 
@@ -38,7 +35,6 @@ class FileHandle(ABC):
         raise NotImplementedError()
 
 
-@usable_as_dagster_type
 class LocalFileHandle(FileHandle):
     """A reference to a file on a local filesystem."""
 
@@ -128,7 +124,7 @@ class FileManager(ABC):  # pylint: disable=no-init
 
     @abstractmethod
     def write(
-        self, file_obj: Union[TextIO, BinaryIO], mode: str = "wb", ext: str = None
+        self, file_obj: Union[TextIO, BinaryIO], mode: str = "wb", ext: Optional[str] = None
     ) -> FileHandle:
         """Write the bytes contained within the given file object into the file manager.
 
@@ -145,7 +141,7 @@ class FileManager(ABC):  # pylint: disable=no-init
         raise NotImplementedError()
 
     @abstractmethod
-    def write_data(self, data: bytes, ext: str = None) -> FileHandle:
+    def write_data(self, data: bytes, ext: Optional[str] = None) -> FileHandle:
         """Write raw bytes into the file manager.
 
         Args:
@@ -174,7 +170,8 @@ def local_file_manager(init_context):
 
         import tempfile
 
-        from dagster import ModeDefinition, local_file_manager, pipeline, solid
+        from dagster import ModeDefinition, local_file_manager
+        from dagster._legacy import pipeline, solid
 
 
         @solid(required_resource_keys={"file_manager"})
@@ -265,7 +262,8 @@ class LocalFileManager(FileManager):
         check.str_param(mode, "mode")
         check.param_invariant(mode in {"r", "rb"}, "mode")
 
-        with open(file_handle.path, mode) as file_obj:
+        encoding = None if mode == "rb" else "utf8"
+        with open(file_handle.path, mode, encoding=encoding) as file_obj:
             yield file_obj
 
     def read_data(self, file_handle):
@@ -286,7 +284,8 @@ class LocalFileManager(FileManager):
             self.base_dir, str(uuid.uuid4()) + (("." + ext) if ext is not None else "")
         )
 
-        with open(dest_file_path, mode) as dest_file_obj:
+        encoding = None if "b" in mode else "utf8"
+        with open(dest_file_path, mode, encoding=encoding) as dest_file_obj:
             shutil.copyfileobj(file_obj, dest_file_obj)
             return LocalFileHandle(dest_file_path)
 

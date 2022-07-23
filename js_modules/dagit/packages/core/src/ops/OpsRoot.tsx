@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
-  ColorsWIP,
+  Colors,
   NonIdealState,
   SplitPanelContainer,
   SuggestionProvider,
@@ -17,6 +17,7 @@ import {useHistory, useLocation, useParams} from 'react-router-dom';
 import {AutoSizer, CellMeasurer, CellMeasurerCache, List} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
+import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -27,6 +28,7 @@ import {OpDetailScrollContainer, UsedSolidDetails} from './OpDetailsRoot';
 import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from './OpTypeSignature';
 import {
   OpsRootQuery,
+  OpsRootQueryVariables,
   OpsRootQuery_repositoryOrError_Repository_usedSolids,
 } from './types/OpsRootQuery';
 
@@ -116,13 +118,15 @@ interface Props {
 }
 
 export const OpsRoot: React.FC<Props> = (props) => {
+  useTrackPageView();
+  useDocumentTitle('Ops');
+
   const {name} = useParams<{name?: string}>();
   const {repoAddress} = props;
 
-  useDocumentTitle('Ops');
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const queryResult = useQuery<OpsRootQuery>(OPS_ROOT_QUERY, {
+  const queryResult = useQuery<OpsRootQuery, OpsRootQueryVariables>(OPS_ROOT_QUERY, {
     variables: {repositorySelector},
   });
 
@@ -203,7 +207,7 @@ const OpsRootWithData: React.FC<Props & {name?: string; usedSolids: Solid[]}> = 
           <OpListColumnContainer>
             <Box
               padding={{vertical: 12, horizontal: 24}}
-              border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
             >
               <TokenizingField
                 values={search}
@@ -261,7 +265,7 @@ interface OpListProps {
   onClickOp: (name: string) => void;
 }
 
-const OpList: React.FunctionComponent<OpListProps> = (props) => {
+const OpList: React.FC<OpListProps> = (props) => {
   const {items, selected} = props;
   const cache = React.useRef(new CellMeasurerCache({defaultHeight: 60, fixedWidth: true}));
 
@@ -338,10 +342,10 @@ const OPS_ROOT_QUERY = gql`
 `;
 
 const OpListItem = styled.div<{selected: boolean}>`
-  background: ${({selected}) => (selected ? ColorsWIP.Gray100 : ColorsWIP.White)};
-  box-shadow: ${({selected}) => (selected ? ColorsWIP.HighlightGreen : 'transparent')} 4px 0 0 inset,
-    ${ColorsWIP.KeylineGray} 0 -1px 0 inset;
-  color: ${ColorsWIP.Gray800};
+  background: ${({selected}) => (selected ? Colors.Gray100 : Colors.White)};
+  box-shadow: ${({selected}) => (selected ? Colors.HighlightGreen : 'transparent')} 4px 0 0 inset,
+    ${Colors.KeylineGray} 0 -1px 0 inset;
+  color: ${Colors.Gray800};
   cursor: pointer;
   font-size: 14px;
   display: flex;
@@ -350,7 +354,7 @@ const OpListItem = styled.div<{selected: boolean}>`
   user-select: none;
 
   & > code.bp3-code {
-    color: ${ColorsWIP.Gray800};
+    color: ${Colors.Gray800};
     background: transparent;
     font-family: ${FontFamily.monospace};
     padding: 5px 0 0 0;

@@ -1,12 +1,12 @@
 import {
   Box,
   ButtonLink,
-  ColorsWIP,
+  Colors,
   Group,
   NonIdealState,
   Spinner,
   Table,
-  TagWIP,
+  Tag,
   Caption,
   Tooltip,
 } from '@dagster-io/ui';
@@ -15,7 +15,10 @@ import React from 'react';
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {Timestamp} from '../app/time/Timestamp';
 import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationButton';
-import {useRepositoryLocationReload} from '../nav/useRepositoryLocationReload';
+import {
+  buildReloadFnForLocation,
+  useRepositoryLocationReload,
+} from '../nav/useRepositoryLocationReload';
 
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
 import {RepositoryRemoteLocationLink} from './RepositoryRemoteLocationLink';
@@ -29,20 +32,25 @@ const LocationStatus: React.FC<{
 }> = (props) => {
   const {location, locationOrError} = props;
   const [showDialog, setShowDialog] = React.useState(false);
-  const {reloading, tryReload} = useRepositoryLocationReload(location);
+
+  const reloadFn = React.useMemo(() => buildReloadFnForLocation(location), [location]);
+  const {reloading, tryReload} = useRepositoryLocationReload({
+    scope: 'location',
+    reloadFn,
+  });
 
   if (locationOrError.loadStatus === 'LOADING') {
     if (locationOrError.locationOrLoadError) {
       return (
-        <TagWIP minimal intent="primary">
+        <Tag minimal intent="primary">
           Updating...
-        </TagWIP>
+        </Tag>
       );
     } else {
       return (
-        <TagWIP minimal intent="primary">
+        <Tag minimal intent="primary">
           Loading...
-        </TagWIP>
+        </Tag>
       );
     }
   }
@@ -51,9 +59,9 @@ const LocationStatus: React.FC<{
     return (
       <>
         <Box flex={{alignItems: 'center', gap: 12}}>
-          <TagWIP minimal intent="danger">
+          <Tag minimal intent="danger">
             Failed
-          </TagWIP>
+          </Tag>
           <ButtonLink onClick={() => setShowDialog(true)}>
             <span style={{fontSize: '14px'}}>View error</span>
           </ButtonLink>
@@ -71,9 +79,9 @@ const LocationStatus: React.FC<{
   }
 
   return (
-    <TagWIP minimal intent="success">
+    <Tag minimal intent="success">
       Loaded
-    </TagWIP>
+    </Tag>
   );
 };
 
@@ -86,7 +94,7 @@ const ReloadButton: React.FC<{
   if (!canReloadRepositoryLocation) {
     return (
       <Tooltip content={DISABLED_MESSAGE}>
-        <ButtonLink color={ColorsWIP.Gray400}>Reload</ButtonLink>
+        <ButtonLink color={Colors.Gray400}>Reload</ButtonLink>
       </Tooltip>
     );
   }
@@ -156,7 +164,7 @@ export const RepositoryLocationsList = () => {
                       <div key={idx}>
                         <Caption style={{wordBreak: 'break-word'}}>
                           {`${name}: `}
-                          <span style={{color: ColorsWIP.Gray400}}>{display}</span>
+                          <span style={{color: Colors.Gray400}}>{display}</span>
                         </Caption>
                       </div>
                     );

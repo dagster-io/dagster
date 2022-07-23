@@ -11,10 +11,10 @@
 line-length = 100
 
 # Black will refuse to run if it's not this version.
-required-version = "22.1.0"
+required-version = "22.3.0"
 
 # Ensure black's output will be compatible with all listed versions.
-target_version = ['py36', 'py37', 'py38', 'py39', 'py310']
+target-version = ['py36', 'py37', 'py38', 'py39', 'py310']
 
 # ########################
 # ##### ISORT
@@ -25,7 +25,14 @@ target_version = ['py36', 'py37', 'py38', 'py39', 'py310']
 # [Config option reference]
 #   https://pycqa.github.io/isort/docs/configuration/options.html
 
+# NOTE: File inclusion//exclusion/skip options are set at the invocation site
+# and shouldn't be set in this config file.
+
 [tool.isort]
+
+# Ensures isort classifies imports from `dagster` as first-party in all environments. Without this
+# there can be differences between buildkite and local dev.
+known_first_party = ['dagster']
 
 # Sets a variety of default options for parentheses etc that are compatible with black.
 profile = "black"
@@ -33,8 +40,118 @@ profile = "black"
 # Sorts uppercase imports before lowercase improts.
 case_sensitive=true
 
-# Isort will read skip info from gitignore (including subdirectory gitignores)
-skip_gitignore=true
-
 # profile=black just sets defaults, it won't read our line-length override in black's config
 line_length=100
+
+# ########################
+# ##### MYPY
+# ########################
+
+# [Docs root]
+#   https://mypy.readthedocs.io/en/stable/index.html
+# [Config option reference]
+#   https://mypy.readthedocs.io/en/stable/config_file.html#the-mypy-configuration-file
+
+[tool.mypy]
+
+# Allow variables to be redefined with arbitrary types even if they already are typed.
+allow_redefinition = true
+
+# Ignore cases where mypy cannot resolve *the types* for a given import. Note that this is different
+# than not being able to resolve the import at runtime. A module can be installed, but mypy will
+# consider it unresolveable if it does not either (a) have a `py.typed` marker file; (b) have
+# a corresponding stub package (i.e. named `types-XXX`) available to mypy. Because Dagster uses
+# has several dependencies that do not satisfy either criterion, mypy will by default emit errors
+# when it encounters imports of those dependencies. Since there's no way to fix these, we silence
+# them.
+ignore_missing_imports = true
+
+# If a type stub package is missing from the environment but available on typeshed, automatically
+# install it. Note that without `--non-interactive` this will prompt the user.
+install_types = true
+
+# Allow PEP-420-style namespace packages. Without this enabled, different parts of a namespace
+# package will trigger "Duplicate module" errors.
+namespace_packages = true
+
+# Print codes (e.g. "[arg-type]") for each error in output.
+show_error_codes = true
+
+# ########################
+# ##### PYLINT
+# ########################
+
+# [Docs root]
+#   https://pylint.pycqa.org/en/latest/
+# [Rule/options reference]
+#   https://pylint.pycqa.org/en/latest/technical_reference/features.html 
+#   This is a comprehensive reference of all Pylint checkers/rules and seems to be one of the only
+#   docs pages that's actually maintained.
+# [Changelog]
+#   https://pylint.pycqa.org/en/latest/whatsnew/index.html
+#   Often contains up-to-date info that corrects incorrect stuff in the older docs.
+# [Github issues]
+#   https://github.com/PyCQA/pylint/issues
+#   Best places to find workarounds or discussion/explanation of weird behavior.
+
+# NOTE (2022-02-26): Pylint's docs are generally terrible, and googling often takes you on a wild
+# goose chase. The docs are frequently wrong, and stay wrong for years even when many people point
+# out the issue. If you encounter confusing behavior or want to figure out how something works, you
+# can't trust the most obvious source-- for instance, the "Configuration" page in the docs seems to
+# include a random set of info and doesn't even mention config files. For that, you have to look at
+# the "Running pylint" page. To get accurate info, you may have to look through
+# the Rule/option reference, Changelog, and Github issues linked above.
+
+# NOTE (2022-02-26): Running pylint in parallel (i.e. -j/--jobs option != 1) currently will not work
+# (with Dagster's configuration) on some platforms (specifically macOS, maybe others). This is
+# because of the `dagster.utils.linter` plugin, which contains extensions that can't be properly
+# pickled. There are open issues discussing this problem but it looks like the situation is likely
+# to persist for some time:
+#   https://pylint.pycqa.org/en/latest/user_guide/run.html#parallel-execution
+#   https://github.com/PyCQA/pylint/issues/4874
+
+# Pylint has many options that are divvied up by category. Each [SECTION] below corresponds to a
+# section in the "Rule/options reference" doc.
+
+[tool.pylint.master]
+
+# Minimum python version supported by Dagster.
+py-version = 3.6
+
+# Contains assorted Dagster-specific checks (for dev purposes, not users).
+load-plugins=['dagster.utils.linter']
+
+[tool.pylint.messages-control]
+disable=[
+
+  # [category] convention-related checks-- too much noise
+  'C',
+
+  # [category] refactoring-related checks-- too much noise
+  'R', 
+
+  # [checker] redundant with mypy
+  'typecheck',  
+
+  # There are many places where we want to catch a maximally generic exception.
+  'bare-except',
+  'broad-except',
+
+  # Sometimes it's useful to leave `TODO` comments in the code.
+  'fixme',
+
+  # Pylint is by default very strict on logging string interpolations, but the
+  # (performance-motivated) rules do not make sense for infrequent log messages (like error reports)
+  # and make messages less readable.
+  'logging-fstring-interpolation',
+  'logging-format-interpolation',
+  'logging-not-lazy',
+
+   # Maybe we should transition in the future, but right now there are many instances in Dagster
+   # code of manually wrapping outer exception text.
+  'raise-missing-from',
+
+  # This rule is incompatible with SDAs, which have parameters named the same as upstream assets.
+  'redefined-outer-name',
+
+]

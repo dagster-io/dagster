@@ -4,7 +4,6 @@ import os
 import sqlite3
 import threading
 import time
-import warnings
 from collections import defaultdict
 from contextlib import contextmanager
 from typing import Iterable, Optional
@@ -15,27 +14,27 @@ from tqdm import tqdm
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
-from dagster import check, seven
-from dagster.config.source import StringSource
+import dagster._check as check
+import dagster._seven as seven
+from dagster._config import StringSource
+from dagster._serdes import (
+    ConfigurableClass,
+    ConfigurableClassData,
+    deserialize_json_to_dagster_namedtuple,
+)
+from dagster._utils import mkdir_p
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
-from dagster.core.storage.event_log.base import EventLogRecord, EventRecordsFilter
+from dagster.core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.core.storage.sql import (
     check_alembic_revision,
     create_engine,
     get_alembic_config,
-    handle_schema_errors,
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
 from dagster.core.storage.sqlite import create_db_conn_string
-from dagster.serdes import (
-    ConfigurableClass,
-    ConfigurableClassData,
-    deserialize_json_to_dagster_namedtuple,
-)
-from dagster.utils import mkdir_p
 
 from ..schema import SqlEventLogStorageMetadata, SqlEventLogStorageTable
 from ..sql_event_log import RunShardedEventsCursor, SqlEventLogStorage
@@ -178,9 +177,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 else:
                     logging.info(
                         "SqliteEventLogStorage._initdb: Encountered apparent concurrent init, "
-                        "retrying ({retry_limit} retries left). Exception: {str_exc}".format(
-                            retry_limit=retry_limit, str_exc=err_msg
-                        )
+                        "retrying (%s retries left). Exception: %s",
+                        retry_limit,
+                        err_msg,
                     )
                     time.sleep(0.2)
                     retry_limit -= 1
@@ -200,12 +199,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             conn = engine.connect()
 
             try:
-                with handle_schema_errors(
-                    conn,
-                    get_alembic_config(__file__),
-                    msg="SqliteEventLogStorage for shard {shard}".format(shard=shard),
-                ):
-                    yield conn
+                yield conn
             finally:
                 conn.close()
             engine.dispose()
@@ -234,22 +228,25 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if event.is_dagster_event and event.dagster_event.asset_key:
             check.invariant(
                 event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
-                or event.dagster_event_type == DagsterEventType.ASSET_OBSERVATION,
-                "Can only store asset materializations and observations in index database",
+                or event.dagster_event_type == DagsterEventType.ASSET_OBSERVATION
+                or event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                "Can only store asset materializations, materialization_planned, and observations in index database",
             )
+
             # mirror the event in the cross-run index database
             with self.index_connection() as conn:
                 conn.execute(insert_event_statement)
 
-            if event.dagster_event.is_step_materialization:
-                # Currently, only materializations are stored in the asset catalog.
-                # We will store observations after adding a column migration to
-                # store latest asset observation timestamp in the asset key table.
-                self.store_asset(event)
+            if (
+                event.dagster_event.is_step_materialization
+                or event.dagster_event.is_asset_observation
+                or event.dagster_event.is_asset_materialization_planned
+            ):
+                self.store_asset_event(event)
 
     def get_event_records(
         self,
-        event_records_filter: Optional[EventRecordsFilter] = None,
+        event_records_filter: EventRecordsFilter,
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Iterable[EventLogRecord]:
@@ -274,20 +271,19 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             )
 
         query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
-        if event_records_filter and event_records_filter.asset_key:
+        if event_records_filter.asset_key:
             asset_details = next(iter(self._get_assets_details([event_records_filter.asset_key])))
         else:
             asset_details = None
 
-        if not event_records_filter or not (
-            isinstance(event_records_filter.after_cursor, RunShardedEventsCursor)
+        if event_records_filter.after_cursor != None and not isinstance(
+            event_records_filter.after_cursor, RunShardedEventsCursor
         ):
-            warnings.warn(
+            raise Exception(
                 """
-                Called `get_event_records` on a run-sharded event log storage with a query that
-                is not run aware (e.g. not using a RunShardedEventsCursor).  This likely has poor
-                performance characteristics.  Consider adding a RunShardedEventsCursor to your query
-                or switching your instance configuration to use a non-run sharded event log storage
+                Called `get_event_records` on a run-sharded event log storage with a cursor that
+                is not run-aware. Add a RunShardedEventsCursor to your query filter
+                or switch your instance configuration to use a non-run-sharded event log storage
                 (e.g. PostgresEventLogStorage, ConsolidatedSqliteEventLogStorage)
             """
             )
@@ -309,8 +305,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         # whose events may qualify the query, and then open run_connection per run_id at a time.
         run_updated_after = (
             event_records_filter.after_cursor.run_updated_after
-            if event_records_filter
-            and isinstance(event_records_filter.after_cursor, RunShardedEventsCursor)
+            if isinstance(event_records_filter.after_cursor, RunShardedEventsCursor)
             else None
         )
         run_records = self._instance.get_run_records(
@@ -330,9 +325,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     event_record = deserialize_json_to_dagster_namedtuple(json_str)
                     if not isinstance(event_record, EventLogEntry):
                         logging.warning(
-                            "Could not resolve event record as EventLogEntry for id `{}`.".format(
-                                row_id
-                            )
+                            "Could not resolve event record as EventLogEntry for id `%s`.", row_id
                         )
                         continue
                     else:
@@ -342,12 +335,15 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     if limit and len(event_records) >= limit:
                         break
                 except seven.JSONDecodeError:
-                    logging.warning("Could not parse event record id `{}`.".format(row_id))
+                    logging.warning("Could not parse event record id `%s`.", row_id)
 
             if limit and len(event_records) >= limit:
                 break
 
         return event_records[:limit]
+
+    def supports_event_consumer_queries(self):
+        return False
 
     def delete_events(self, run_id):
         with self.run_connection(run_id) as conn:
@@ -386,12 +382,12 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         super(SqliteEventLogStorage, self).wipe_asset(asset_key)
         self._delete_mirrored_events_for_asset_key(asset_key)
 
-    def watch(self, run_id, start_cursor, callback):
+    def watch(self, run_id, cursor, callback):
         if not self._obs:
             self._obs = Observer()
             self._obs.start()
 
-        watchdog = SqliteEventLogStorageWatchdog(self, run_id, callback, start_cursor)
+        watchdog = SqliteEventLogStorageWatchdog(self, run_id, callback, cursor)
         self._watchers[run_id][callback] = (
             watchdog,
             self._obs.schedule(watchdog, self._base_dir, True),
@@ -408,25 +404,33 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self._obs.stop()
             self._obs.join(timeout=15)
 
+    def alembic_version(self):
+        alembic_config = get_alembic_config(__file__)
+        with self.index_connection() as conn:
+            return check_alembic_revision(alembic_config, conn)
+
 
 class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
-    def __init__(self, event_log_storage, run_id, callback, start_cursor, **kwargs):
+    def __init__(self, event_log_storage, run_id, callback, cursor, **kwargs):
         self._event_log_storage = check.inst_param(
             event_log_storage, "event_log_storage", SqliteEventLogStorage
         )
         self._run_id = check.str_param(run_id, "run_id")
         self._cb = check.callable_param(callback, "callback")
         self._log_path = event_log_storage.path_for_shard(run_id)
-        self._cursor = start_cursor if start_cursor is not None else -1
+        self._cursor = cursor
         super(SqliteEventLogStorageWatchdog, self).__init__(patterns=[self._log_path], **kwargs)
 
     def _process_log(self):
-        events = self._event_log_storage.get_logs_for_run(self._run_id, self._cursor)
-        self._cursor += len(events)
-        for event in events:
+        connection = self._event_log_storage.get_records_for_run(self._run_id, self._cursor)
+        if connection.cursor:
+            self._cursor = connection.cursor
+        for record in connection.records:
             status = None
             try:
-                status = self._cb(event)
+                status = self._cb(
+                    record.event_log_entry, str(EventLogCursor.from_storage_id(record.storage_id))
+                )
             except Exception:
                 logging.exception("Exception in callback for event watch on run %s.", self._run_id)
 

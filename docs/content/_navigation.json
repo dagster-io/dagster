@@ -5,80 +5,63 @@
     "path": "/getting-started",
     "children": [
       {
-        "title": "Getting Started",
-        "children": [
-          {
-            "title": "Installation",
-            "path": "/getting-started/install"
-          },
-          {
-            "title": "Create a New Project",
-            "path": "/getting-started/create-new-project"
-          },
-          {
-            "title": "Telemetry",
-            "path": "/getting-started/telemetry"
-          },
-          {
-            "title": "Releases and Changes",
-            "path": "/getting-started/releases"
-          }
-        ]
+        "title": "Installation",
+        "path": "/getting-started/install"
+      },
+      {
+        "title": "Create a New Project",
+        "path": "/getting-started/create-new-project"
+      },
+      {
+        "title": "Telemetry",
+        "path": "/getting-started/telemetry"
+      },
+      {
+        "title": "Releases and Changes",
+        "path": "/getting-started/releases"
       }
     ]
   },
   {
-    "title": "Tutorial",
+    "title": "Tutorials",
     "icon": "AcademicCap",
     "path": "/tutorial",
     "children": [
       {
-        "title": "Intro Tutorial",
+        "title": "Setup",
+        "path": "/tutorial/setup"
+      },
+      {
+        "title": "Assets",
         "children": [
           {
-            "title": "Setup for the Tutorial",
-            "path": "/tutorial/intro-tutorial/setup"
+            "title": "Defining an Asset",
+            "path": "/tutorial/assets/defining-an-asset"
           },
           {
-            "title": "A Single-Op Job",
-            "path": "/tutorial/intro-tutorial/single-op-job"
+            "title": "Building Graphs of Assets",
+            "path": "/tutorial/assets/asset-graph"
           },
           {
-            "title": "Connecting Ops in Jobs",
-            "path": "/tutorial/intro-tutorial/connecting-ops"
-          },
-          {
-            "title": "Testing Ops and Jobs",
-            "path": "/tutorial/intro-tutorial/testable"
+            "title": "Testing Assets",
+            "path": "/tutorial/assets/testing-assets"
           }
         ]
       },
       {
-        "title": "Advanced Tutorials",
+        "title": "Ops and Jobs",
         "children": [
           {
-            "title": "Configuring Ops",
-            "path": "/tutorial/advanced-tutorial/configuring-ops"
+            "title": "Writing, Executing a Single-Op Job",
+            "path": "/tutorial/ops-jobs/single-op-job"
           },
           {
-            "title": "Dagster Types",
-            "path": "/tutorial/advanced-tutorial/types"
+            "title": "Connecting Ops In Jobs",
+            "path": "/tutorial/ops-jobs/connecting-ops"
           },
           {
-            "title": "Resources & Built-In Config",
-            "path": "/tutorial/advanced-tutorial/resources"
-          },
-          {
-            "title": "Materializations",
-            "path": "/tutorial/advanced-tutorial/materializations"
-          },
-          {
-            "title": "Organizing Jobs in Repositories & Workspaces",
-            "path": "/tutorial/advanced-tutorial/repositories"
-          },
-          {
-            "title": "Scheduling Job Runs",
-            "path": "/tutorial/advanced-tutorial/scheduling"
+            "title": "Testing Ops and Jobs",
+            "path": "/tutorial/ops-jobs/testable"
           }
         ]
       }
@@ -88,25 +71,35 @@
     "title": "Concepts",
     "icon": "Menu",
     "path": "/concepts",
+    "isDefaultOpen": true,
     "children": [
       {
-        "title": "Ops, Jobs, and Graphs",
+        "title": "Assets",
+        "children": [
+          {
+            "title": "Software-Defined Assets",
+            "path": "/concepts/assets/software-defined-assets"
+          },
+          {
+            "title": "Asset Materializations",
+            "path": "/concepts/assets/asset-materializations"
+          },
+          {
+            "title": "Asset Observations",
+            "path": "/concepts/assets/asset-observations"
+          },
+          {
+            "title": "Multi-Assets",
+            "path": "/concepts/assets/multi-assets"
+          }
+        ]
+      },
+      {
+        "title": "Ops",
         "children": [
           {
             "title": "Ops",
             "path": "/concepts/ops-jobs-graphs/ops"
-          },
-          {
-            "title": "Jobs & Graphs",
-            "path": "/concepts/ops-jobs-graphs/jobs-graphs"
-          },
-          {
-            "title": "Job Execution",
-            "path": "/concepts/ops-jobs-graphs/job-execution"
-          },
-          {
-            "title": "Nesting Graphs",
-            "path": "/concepts/ops-jobs-graphs/nesting-graphs"
           },
           {
             "title": "Op Events",
@@ -115,24 +108,78 @@
           {
             "title": "Op Hooks",
             "path": "/concepts/ops-jobs-graphs/op-hooks"
+          },
+          {
+            "title": "Op Retries",
+            "path": "/concepts/ops-jobs-graphs/op-retries"
           }
         ]
       },
       {
-        "title": "Resources",
+        "title": "Graphs",
         "children": [
           {
-            "title": "Resources",
-            "path": "/concepts/resources"
+            "title": "Graphs",
+            "path": "/concepts/ops-jobs-graphs/graphs"
+          },
+          {
+            "title": "Nesting Graphs",
+            "path": "/concepts/ops-jobs-graphs/nesting-graphs"
+          },
+          {
+            "title": "Dynamic Graphs",
+            "path": "/concepts/ops-jobs-graphs/dynamic-graphs"
           }
         ]
       },
       {
-        "title": "Testing",
+        "title": "Jobs",
         "children": [
           {
-            "title": "Testing",
-            "path": "/concepts/testing"
+            "title": "Jobs",
+            "path": "/concepts/ops-jobs-graphs/jobs"
+          },
+          {
+            "title": "Job Execution",
+            "path": "/concepts/ops-jobs-graphs/job-execution"
+          },
+          {
+            "title": "Metadata & Tags",
+            "path": "/concepts/ops-jobs-graphs/metadata-tags"
+          }
+        ]
+      },
+      {
+        "title": "Schedules, Sensors, & Partitions",
+        "children": [
+          {
+            "title": "Schedules",
+            "path": "/concepts/partitions-schedules-sensors/schedules"
+          },
+          {
+            "title": "Sensors",
+            "path": "/concepts/partitions-schedules-sensors/sensors"
+          },
+          {
+            "title": "Partitions",
+            "path": "/concepts/partitions-schedules-sensors/partitions"
+          },
+          {
+            "title": "Backfills",
+            "path": "/concepts/partitions-schedules-sensors/backfills"
+          }
+        ]
+      },
+      {
+        "title": "IO Management",
+        "children": [
+          {
+            "title": "IO Managers",
+            "path": "/concepts/io-management/io-managers"
+          },
+          {
+            "title": "Unconnected Inputs",
+            "path": "/concepts/io-management/unconnected-inputs"
           }
         ]
       },
@@ -150,24 +197,24 @@
         ]
       },
       {
-        "title": "Dagster Types",
+        "title": "Repositories & Workspaces",
         "children": [
           {
-            "title": "Dagster Types",
-            "path": "/concepts/types"
+            "title": "Repositories",
+            "path": "/concepts/repositories-workspaces/repositories"
+          },
+          {
+            "title": "Workspaces",
+            "path": "/concepts/repositories-workspaces/workspaces"
           }
         ]
       },
       {
-        "title": "IO Management",
+        "title": "Resources",
         "children": [
           {
-            "title": "IO Managers",
-            "path": "/concepts/io-management/io-managers"
-          },
-          {
-            "title": "Unconnected Inputs",
-            "path": "/concepts/io-management/unconnected-inputs"
+            "title": "Resources",
+            "path": "/concepts/resources"
           }
         ]
       },
@@ -189,15 +236,11 @@
         ]
       },
       {
-        "title": "Repositories & Workspaces",
+        "title": "Dagster Types",
         "children": [
           {
-            "title": "Repositories",
-            "path": "/concepts/repositories-workspaces/repositories"
-          },
-          {
-            "title": "Workspaces",
-            "path": "/concepts/repositories-workspaces/workspaces"
+            "title": "Dagster Types",
+            "path": "/concepts/types"
           }
         ]
       },
@@ -215,40 +258,11 @@
         ]
       },
       {
-        "title": "Partitions, Schedules, & Sensors",
+        "title": "Testing",
         "children": [
           {
-            "title": "Schedules",
-            "path": "/concepts/partitions-schedules-sensors/schedules"
-          },
-          {
-            "title": "Sensors",
-            "path": "/concepts/partitions-schedules-sensors/sensors"
-          },
-          {
-            "title": "Partitions",
-            "path": "/concepts/partitions-schedules-sensors/partitions"
-          },
-          {
-            "title": "Backfills",
-            "path": "/concepts/partitions-schedules-sensors/backfills"
-          }
-        ]
-      },
-      {
-        "title": "Assets",
-        "children": [
-          {
-            "title": "Software-Defined Assets",
-            "path": "/concepts/assets/software-defined-assets"
-          },
-          {
-            "title": "Asset Materializations",
-            "path": "/concepts/assets/asset-materializations"
-          },
-          {
-            "title": "Asset Observations",
-            "path": "/concepts/assets/asset-observations"
+            "title": "Testing",
+            "path": "/concepts/testing"
           }
         ]
       }
@@ -256,7 +270,7 @@
   },
   {
     "title": "Deployment",
-    "icon": "Cloud",
+    "icon": "CloudUpload",
     "path": "/deployment",
     "children": [
       {
@@ -285,6 +299,14 @@
           {
             "title": "Run Coordinators - Limiting Run Concurrency",
             "path": "/deployment/run-coordinator"
+          },
+          {
+            "title": "Run Monitoring - Detecting Failures",
+            "path": "/deployment/run-monitoring"
+          },
+          {
+            "title": "Run Retries",
+            "path": "/deployment/run-retries"
           }
         ]
       },
@@ -386,37 +408,36 @@
     "path": "/guides",
     "children": [
       {
-        "title": "Dagster Guides",
-        "children": [
-          {
-            "title": "Versioning and Memoization (Experimental)",
-            "path": "/guides/dagster/memoization"
-          },
-          {
-            "title": "Software-Defined Assets (Experimental)",
-            "path": "/guides/dagster/software-defined-assets"
-          },
-          {
-            "title": "Run Attribution (Experimental)",
-            "path": "/guides/dagster/run-attribution"
-          },
-          {
-            "title": "Migrating to Graphs, Jobs, and Ops",
-            "path": "/guides/dagster/graph_job_op"
-          },
-          {
-            "title": "Re-execution",
-            "path": "/guides/dagster/re-execution"
-          },
-          {
-            "title": "Fully-Featured Example Project",
-            "path": "/guides/dagster/example_project"
-          },
-          {
-            "title": "Validating Data with Dagster Type Factories",
-            "path": "/guides/dagster/dagster_type_factories"
-          }
-        ]
+        "title": "Upgrading to Software-Defined Assets",
+        "path": "/guides/dagster/enriching-with-software-defined-assets"
+      },
+      {
+        "title": "Versioning and Memoization (Experimental)",
+        "path": "/guides/dagster/memoization"
+      },
+      {
+        "title": "Software-Defined Assets with Pandas and PySpark",
+        "path": "/guides/dagster/software-defined-assets"
+      },
+      {
+        "title": "Run Attribution (Experimental)",
+        "path": "/guides/dagster/run-attribution"
+      },
+      {
+        "title": "Migrating to Graphs, Jobs, and Ops",
+        "path": "/guides/dagster/graph_job_op"
+      },
+      {
+        "title": "Re-execution",
+        "path": "/guides/dagster/re-execution"
+      },
+      {
+        "title": "Fully-Featured Example Project",
+        "path": "/guides/dagster/example_project"
+      },
+      {
+        "title": "Validating Data with Dagster Type Factories",
+        "path": "/guides/dagster/dagster_type_factories"
       }
     ]
   },
@@ -428,6 +449,10 @@
       {
         "title": "Core",
         "children": [
+          {
+            "title": "Software-Defined Assets",
+            "path": "/_apidocs/assets"
+          },
           {
             "title": "Jobs",
             "path": "/_apidocs/jobs"
@@ -495,10 +520,6 @@
           {
             "title": "Versioning & Memoization",
             "path": "/_apidocs/memoization"
-          },
-          {
-            "title": "Software-Defined Assets",
-            "path": "/_apidocs/assets"
           },
           {
             "title": "Utilities",
@@ -579,6 +600,10 @@
             "path": "/_apidocs/libraries/dagster-datadog"
           },
           {
+            "title": "Datahub (dagster-datahub)",
+            "path": "/_apidocs/libraries/dagster-datahub"
+          },
+          {
             "title": "dbt (dagster-dbt)",
             "path": "/_apidocs/libraries/dagster-dbt"
           },
@@ -655,6 +680,10 @@
             "path": "/_apidocs/libraries/dagster-snowflake"
           },
           {
+            "title": "Snowflake + Pandas (dagster-snowflake-pandas)",
+            "path": "/_apidocs/libraries/dagster-snowflake-pandas"
+          },
+          {
             "title": "Spark (dagster-spark)",
             "path": "/_apidocs/libraries/dagster-spark"
           },
@@ -676,22 +705,41 @@
     "path": "/community",
     "children": [
       {
-        "title": "Community",
-        "children": [
-          {
-            "title": "Code of Conduct",
-            "path": "/community/code-of-conduct"
-          },
-          {
-            "title": "Contributing",
-            "path": "/community/contributing"
-          },
-          {
-            "title": "Changing Public APIs",
-            "path": "/community/public-apis"
-          }
-        ]
+        "title": "Code of Conduct",
+        "path": "/community/code-of-conduct"
+      },
+      {
+        "title": "Contributing",
+        "path": "/community/contributing"
+      },
+      {
+        "title": "Changing Public APIs",
+        "path": "/community/public-apis"
       }
     ]
+  },
+  {
+    "title": "Changelog",
+    "icon": "Change",
+    "path": "/changelog",
+    "isUnversioned": true,
+    "children": [
+      {
+        "title": "Changelog",
+        "path": "/changelog",
+        "isUnversioned": true
+      },
+      {
+        "title": "Migration Guides",
+        "path": "/migration",
+        "isUnversioned": true
+      }
+    ]
+  },
+  {
+    "title": "Dagster Cloud Docs",
+    "icon": "Cloud",
+    "path": "https://docs.dagster.cloud/",
+    "isExternalLink": true
   }
 ]

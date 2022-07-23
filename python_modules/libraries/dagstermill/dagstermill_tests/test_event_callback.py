@@ -1,7 +1,7 @@
 import time
 from collections import defaultdict
 
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.api import execute_run
@@ -11,7 +11,7 @@ from dagster.core.test_utils import instance_for_test
 def test_event_callback_logging():
     events = defaultdict(list)
 
-    def _event_callback(record):
+    def _event_callback(record, _cursor):
         assert isinstance(record, EventLogEntry)
         if record.is_dagster_event:
             events[record.dagster_event.event_type].append(record)
@@ -24,7 +24,7 @@ def test_event_callback_logging():
     with instance_for_test() as instance:
         pipeline_run = instance.create_run_for_pipeline(pipeline_def)
 
-        instance.watch_event_logs(pipeline_run.run_id, -1, _event_callback)
+        instance.watch_event_logs(pipeline_run.run_id, None, _event_callback)
 
         res = execute_run(
             pipeline,

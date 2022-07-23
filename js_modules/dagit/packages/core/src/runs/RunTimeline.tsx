@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, Popover, Mono, FontFamily} from '@dagster-io/ui';
+import {Box, Colors, Popover, Mono, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -25,6 +25,7 @@ import {
   successStatuses,
 } from './RunStatuses';
 import {TimeElapsed} from './TimeElapsed';
+import {batchRunsForTimeline, overlap, RunBatch} from './batchRunsForTimeline';
 import {RunTimelineQuery, RunTimelineQueryVariables} from './types/RunTimelineQuery';
 
 const ROW_HEIGHT = 24;
@@ -304,7 +305,7 @@ const TimeDividers = (props: TimeDividersProps) => {
           <DividerLine key={marker.key} style={{left: `${marker.left.toPrecision(3)}%`}} />
         ))}
         {now >= start && now <= end ? (
-          <DividerLine style={{left: nowLeft, backgroundColor: ColorsWIP.Blue500, zIndex: 1}} />
+          <DividerLine style={{left: nowLeft, backgroundColor: Colors.Blue500, zIndex: 1}} />
         ) : null}
       </DividerLines>
     </DividerContainer>
@@ -317,7 +318,7 @@ const DividerContainer = styled.div`
   left: ${LABEL_WIDTH}px;
   right: 0;
   font-family: ${FontFamily.monospace};
-  color: ${ColorsWIP.Gray400};
+  color: ${Colors.Gray400};
 `;
 
 const DividerLabels = styled.div`
@@ -339,27 +340,16 @@ const DividerLines = styled.div`
   height: 100%;
   position: relative;
   width: 100%;
-  box-shadow: inset 1px 0 0 ${ColorsWIP.KeylineGray}, inset -1px 0 0 ${ColorsWIP.KeylineGray};
+  box-shadow: inset 1px 0 0 ${Colors.KeylineGray}, inset -1px 0 0 ${Colors.KeylineGray};
 `;
 
 const DividerLine = styled.div`
-  background-color: ${ColorsWIP.KeylineGray};
+  background-color: ${Colors.KeylineGray};
   height: 100%;
   position: absolute;
   top: 0;
   width: 1px;
 `;
-
-const overlap = (a: {start: number; end: number}, b: {start: number; end: number}) =>
-  !(a.end < b.start || b.end < a.start);
-
-type RunBatch = {
-  runs: TimelineRun[];
-  startTime: number;
-  endTime: number;
-  left: number;
-  width: number;
-};
 
 const mergeStatusToColor = (runs: TimelineRun[]) => {
   let anyInProgress = false;
@@ -383,22 +373,22 @@ const mergeStatusToColor = (runs: TimelineRun[]) => {
   });
 
   if (anyQueued) {
-    return ColorsWIP.Blue200;
+    return Colors.Blue200;
   }
   if (anyInProgress) {
-    return ColorsWIP.Blue500;
+    return Colors.Blue500;
   }
   if (anyFailed) {
-    return ColorsWIP.Red500;
+    return Colors.Red500;
   }
   if (anySucceeded) {
-    return ColorsWIP.Green500;
+    return Colors.Green500;
   }
   if (anyScheduled) {
-    return ColorsWIP.Blue200;
+    return Colors.Blue200;
   }
 
-  return ColorsWIP.Gray500;
+  return Colors.Gray500;
 };
 
 const MIN_CHUNK_WIDTH = 2;
@@ -417,73 +407,22 @@ const RunTimelineRow = ({
 }) => {
   // const {jobKey, jobLabel, jobPath, runs, top, range, width: containerWidth} = props;
   const [start, end] = range;
-  const rangeLength = end - start;
   const width = containerWidth - LABEL_WIDTH;
+  const {runs} = job;
 
   // Batch overlapping runs in this row.
   const batched = React.useMemo(() => {
-    const batches: RunBatch[] = job.runs
-      .map((run) => {
-        const startTime = run.startTime;
-        const endTime = run.endTime || Date.now();
-        const left = Math.max(0, Math.floor(((startTime - start) / rangeLength) * width));
-        const runWidth = Math.max(
-          MIN_CHUNK_WIDTH,
-          Math.min(
-            Math.ceil(((endTime - startTime) / rangeLength) * width),
-            Math.ceil(((endTime - start) / rangeLength) * width),
-          ),
-        );
+    const batches: RunBatch<TimelineRun>[] = batchRunsForTimeline({
+      runs,
+      start,
+      end,
+      width,
+      minChunkWidth: MIN_CHUNK_WIDTH,
+      minMultipleWidth: MIN_WIDTH_FOR_MULTIPLE,
+    });
 
-        return {
-          runs: [run],
-          startTime,
-          endTime,
-          left,
-          width: runWidth,
-        };
-      })
-      .sort((a, b) => b.left - a.left);
-
-    const consolidated = [];
-    while (batches.length) {
-      const current = batches.shift();
-      const next = batches[0];
-      if (current) {
-        if (
-          next &&
-          overlap(
-            {
-              start: current.left,
-              end: current.left + Math.max(current.width, MIN_WIDTH_FOR_MULTIPLE),
-            },
-            {start: next.left, end: next.left + Math.max(next.width, MIN_WIDTH_FOR_MULTIPLE)},
-          )
-        ) {
-          // Remove `next`, consolidate it with `current`, and unshift it back on.
-          // This way, we keep looking for batches to consolidate with.
-          batches.shift();
-          current.runs = [...current.runs, ...next.runs];
-          current.startTime = Math.min(current.startTime, next.startTime);
-          current.endTime = Math.max(current.endTime, next.endTime);
-          current.left = Math.min(current.left, next.left);
-          const right = Math.max(
-            current.left + MIN_WIDTH_FOR_MULTIPLE,
-            current.left + current.width,
-            next.left + next.width,
-          );
-          current.width = right - current.left;
-          batches.unshift(current);
-        } else {
-          // If the next batch doesn't overlap, we've consolidated this batch
-          // all we can. Move on!
-          consolidated.push(current);
-        }
-      }
-    }
-
-    return consolidated;
-  }, [rangeLength, job, start, width]);
+    return batches;
+  }, [runs, start, end, width]);
 
   if (!job.runs.length) {
     return null;
@@ -542,7 +481,7 @@ const Timeline = styled.div<{$height: number}>`
 
 const Row = styled.div<{$top: number}>`
   align-items: center;
-  box-shadow: inset 0 -1px 0 ${ColorsWIP.KeylineGray};
+  box-shadow: inset 0 -1px 0 ${Colors.KeylineGray};
   display: flex;
   flex-direction: row;
   width: 100%;
@@ -555,11 +494,11 @@ const Row = styled.div<{$top: number}>`
   ${({$top}) => `transform: translateY(${$top}px);`}
 
   :first-child, :hover {
-    box-shadow: inset 0 1px 0 ${ColorsWIP.KeylineGray}, inset 0 -1px 0 ${ColorsWIP.KeylineGray};
+    box-shadow: inset 0 1px 0 ${Colors.KeylineGray}, inset 0 -1px 0 ${Colors.KeylineGray};
   }
 
   :hover {
-    background-color: ${ColorsWIP.Gray10};
+    background-color: ${Colors.Gray10};
   }
 `;
 
@@ -604,7 +543,7 @@ const RunChunk = styled.div<ChunkProps>`
 `;
 
 const BatchCount = styled.div`
-  color: ${ColorsWIP.White};
+  color: ${Colors.White};
   cursor: default;
   font-size: 12px;
   user-select: none;
@@ -612,42 +551,44 @@ const BatchCount = styled.div`
 
 interface RunHoverContentProps {
   jobKey: string;
-  batch: RunBatch;
+  batch: RunBatch<TimelineRun>;
 }
 
 const RunHoverContent = (props: RunHoverContentProps) => {
   const {jobKey, batch} = props;
   return (
-    <Box padding={4} style={{width: '260px'}}>
-      <Box padding={8} border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}>
+    <Box style={{width: '260px'}}>
+      <Box padding={12} border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}>
         <HoverContentJobName>{jobKey}</HoverContentJobName>
       </Box>
-      {batch.runs.map((run, ii) => (
-        <Box
-          key={run.id}
-          border={ii > 0 ? {side: 'top', width: 1, color: ColorsWIP.KeylineGray} : null}
-          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-          padding={8}
-        >
-          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-            <RunStatusDot status={run.status} size={8} />
-            {run.status === 'SCHEDULED' ? (
-              'Scheduled'
-            ) : (
-              <Link to={`/instance/runs/${run.id}`}>
-                <Mono>{run.id.slice(0, 8)}</Mono>
-              </Link>
-            )}
+      <div style={{maxHeight: '240px', overflowY: 'auto'}}>
+        {batch.runs.map((run, ii) => (
+          <Box
+            key={run.id}
+            border={ii > 0 ? {side: 'top', width: 1, color: Colors.KeylineGray} : null}
+            flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+            padding={{vertical: 8, horizontal: 12}}
+          >
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+              <RunStatusDot status={run.status} size={8} />
+              {run.status === 'SCHEDULED' ? (
+                'Scheduled'
+              ) : (
+                <Link to={`/instance/runs/${run.id}`}>
+                  <Mono>{run.id.slice(0, 8)}</Mono>
+                </Link>
+              )}
+            </Box>
+            <Mono>
+              {run.status === 'SCHEDULED' ? (
+                <TimestampDisplay timestamp={run.startTime / 1000} />
+              ) : (
+                <TimeElapsed startUnix={run.startTime / 1000} endUnix={run.endTime / 1000} />
+              )}
+            </Mono>
           </Box>
-          <Mono>
-            {run.status === 'SCHEDULED' ? (
-              <TimestampDisplay timestamp={run.startTime / 1000} />
-            ) : (
-              <TimeElapsed startUnix={run.startTime / 1000} endUnix={run.endTime / 1000} />
-            )}
-          </Mono>
-        </Box>
-      ))}
+        ))}
+      </div>
     </Box>
   );
 };

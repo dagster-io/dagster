@@ -6,26 +6,19 @@ from contextlib import contextmanager
 
 import pytest
 
-from dagster import (
-    DagsterInvalidConfigError,
-    ModeDefinition,
-    PipelineRun,
-    check,
-    execute_pipeline,
-    execute_solid,
-    pipeline,
-    resource,
-    solid,
-)
+from dagster import DagsterInvalidConfigError, ModeDefinition, PipelineRun
+from dagster import _check as check
+from dagster import execute_pipeline, execute_solid, resource
+from dagster._legacy import pipeline, solid
+from dagster._loggers import colored_console_logger, json_console_logger
+from dagster._utils.error import SerializableErrorInfo
 from dagster.core.definitions import NodeHandle
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.outputs import StepOutputHandle
-from dagster.core.log_manager import DagsterLogManager, DagsterLoggingMetadata
+from dagster.core.log_manager import DagsterLogManager
 from dagster.core.test_utils import instance_for_test
-from dagster.loggers import colored_console_logger, json_console_logger
-from dagster.utils.error import SerializableErrorInfo
 
 REGEX_UUID = r"[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}"
 REGEX_TS = r"\d{4}\-\d{2}\-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}"
@@ -78,7 +71,9 @@ def test_logging_no_loggers_registered():
 def test_logging_basic():
     with _setup_logger("test") as (captured_results, logger):
 
-        dl = DagsterLogManager.create(loggers=[logger], pipeline_run=PipelineRun(run_id="123"))
+        dl = DagsterLogManager.create(
+            loggers=[logger], pipeline_run=PipelineRun(pipeline_name="system", run_id="123")
+        )
         dl.debug("test")
         dl.info("test")
         dl.warning("test")
@@ -91,7 +86,9 @@ def test_logging_basic():
 def test_logging_custom_log_levels():
     with _setup_logger("test", {"FOO": 3}) as (_captured_results, logger):
 
-        dl = DagsterLogManager.create(loggers=[logger], pipeline_run=PipelineRun(run_id="123"))
+        dl = DagsterLogManager.create(
+            loggers=[logger], pipeline_run=PipelineRun(pipeline_name="system", run_id="123")
+        )
         with pytest.raises(AttributeError):
             dl.foo("test")  # pylint: disable=no-member
 
@@ -99,14 +96,18 @@ def test_logging_custom_log_levels():
 def test_logging_integer_log_levels():
     with _setup_logger("test", {"FOO": 3}) as (_captured_results, logger):
 
-        dl = DagsterLogManager.create(loggers=[logger], pipeline_run=PipelineRun(run_id="123"))
+        dl = DagsterLogManager.create(
+            loggers=[logger], pipeline_run=PipelineRun(pipeline_name="system", run_id="123")
+        )
         dl.log(3, "test")  # pylint: disable=no-member
 
 
 def test_logging_bad_custom_log_levels():
     with _setup_logger("test") as (_, logger):
 
-        dl = DagsterLogManager.create(loggers=[logger], pipeline_run=PipelineRun(run_id="123"))
+        dl = DagsterLogManager.create(
+            loggers=[logger], pipeline_run=PipelineRun(pipeline_name="system", run_id="123")
+        )
         with pytest.raises(check.CheckError):
             dl.log(level="test", msg="foobar")
 
@@ -169,7 +170,7 @@ def _setup_test_two_handler_log_mgr():
     return DagsterLogManager.create(
         loggers=[],
         handlers=[test_info_handler, test_warn_handler],
-        pipeline_run=PipelineRun(run_id="123"),
+        pipeline_run=PipelineRun(pipeline_name="system", run_id="123"),
     )
 
 
@@ -206,7 +207,7 @@ class CaptureHandler(logging.Handler):
 
     def emit(self, record):
         if self.output:
-            print(self.output + record.msg)
+            print(self.output + record.msg)  # pylint: disable=print-call
         self.captured.append(record)
 
 
@@ -242,7 +243,7 @@ def test_default_context_logging():
     @solid(input_defs=[], output_defs=[])
     def default_context_solid(context):
         called["yes"] = True
-        for logger in context.log._dagster_handler._loggers:
+        for logger in context.log._dagster_handler._loggers:  # pylint: disable=protected-access
             assert logger.level == logging.DEBUG
 
     execute_solid(default_context_solid)

@@ -1,6 +1,6 @@
 from typing import List
 
-from pydantic import BaseModel, Field  # pylint: disable=no-name-in-module
+from pydantic import BaseModel, Field
 
 from ..dagster_user_deployments.subschema.user_deployments import UserDeployments
 from ..utils import kubernetes
@@ -27,5 +27,7 @@ class DagsterHelmValues(BaseModel):
     dagsterDaemon: subschema.Daemon
     busybox: subschema.Busybox
     migrate: subschema.Migrate
+    telemetry: subschema.Telemetry
     serviceAccount: subschema.ServiceAccount
     global_: subschema.Global = Field(..., alias="global")
+    retention: subschema.Retention

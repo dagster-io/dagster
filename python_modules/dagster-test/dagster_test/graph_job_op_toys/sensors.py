@@ -5,14 +5,11 @@ from dagster_test.graph_job_op_toys.error_monster import error_monster_failing_j
 from dagster_test.graph_job_op_toys.log_asset import log_asset_job
 from dagster_test.graph_job_op_toys.log_file import log_file_job
 from dagster_test.graph_job_op_toys.log_s3 import log_s3_job
-from slack_sdk import WebClient
+from slack_sdk.web.client import WebClient
 
-from dagster import AssetKey, RunRequest, SkipReason, check, sensor
-from dagster.core.definitions.decorators.sensor import asset_sensor
-from dagster.core.definitions.run_status_sensor_definition import (
-    RunFailureSensorContext,
-    run_failure_sensor,
-)
+from dagster import AssetKey, RunFailureSensorContext, RunRequest, SkipReason
+from dagster import _check as check
+from dagster import asset_sensor, run_failure_sensor, sensor
 
 
 def get_directory_files(directory_name, since=None):

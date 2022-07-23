@@ -5,10 +5,20 @@
 {{- end }}
 
 {{- if $userDeployments.enabled }}
+
+{{- $dagitWorkspace := .Values.dagit.workspace }}
+{{- $workspaceUseFixedServers := and $dagitWorkspace.enabled $dagitWorkspace.servers }}
+{{- $workspaceUseExternalConfigmap := and $dagitWorkspace.enabled $dagitWorkspace.externalConfigmap }}
+
+{{- if and $workspaceUseFixedServers $workspaceUseExternalConfigmap }}
+{{ fail "workspace.servers and workspace.externalConfigmap cannot both be set." }}
+{{- end }}
+
+{{- if not $workspaceUseExternalConfigmap }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "dagster.fullname" . }}-workspace-yaml
+  name: {{ include "dagit.workspace.configmapName" . }}
   labels:
     app: {{ template "dagster.name" . }}
     chart: {{ template "dagster.chart" . }}
@@ -16,7 +26,6 @@ metadata:
     heritage: {{ .Release.Service }}
 data:
   workspace.yaml: |
-    {{- $dagitWorkspace := .Values.dagit.workspace }}
     {{- $deployments := ternary $dagitWorkspace.servers $userDeployments.deployments $dagitWorkspace.enabled }}
     {{- if $deployments }}
     load_from:
@@ -34,4 +43,6 @@ data:
     {{- else }}
     load_from: []
     {{- end }}
+{{- end }}
+
 {{- end }}

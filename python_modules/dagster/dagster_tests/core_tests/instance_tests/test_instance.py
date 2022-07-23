@@ -4,9 +4,14 @@ import pytest
 import yaml
 from dagster_tests.api_tests.utils import get_bar_workspace
 
-from dagster import PipelineDefinition, check, execute_pipeline, pipeline, solid
-from dagster.check import CheckError
-from dagster.config import Field
+from dagster import PipelineDefinition
+from dagster import _check as check
+from dagster import execute_pipeline
+from dagster._check import CheckError
+from dagster._config import Field
+from dagster._legacy import pipeline, solid
+from dagster._serdes import ConfigurableClass
+from dagster._serdes.config_class import ConfigurableClassData
 from dagster.core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidConfigError,
@@ -14,6 +19,7 @@ from dagster.core.errors import (
 )
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance, InstanceRef
+from dagster.core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
 from dagster.core.launcher import LaunchRunContext, RunLauncher
 from dagster.core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster.core.snap import (
@@ -22,8 +28,6 @@ from dagster.core.snap import (
     snapshot_from_execution_plan,
 )
 from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
-from dagster.serdes import ConfigurableClass
-from dagster.serdes.config_class import ConfigurableClassData
 
 
 def test_get_run_by_id():
@@ -52,6 +56,34 @@ def do_test_single_write_read(instance):
 def test_filesystem_persist_one_run(tmpdir):
     with instance_for_test(temp_dir=str(tmpdir)) as instance:
         do_test_single_write_read(instance)
+
+
+def test_partial_storage(tmpdir):
+    with instance_for_test(
+        overrides={
+            "run_storage": {
+                "module": "dagster.core.storage.runs",
+                "class": "SqliteRunStorage",
+                "config": {
+                    "base_dir": str(tmpdir),
+                },
+            }
+        }
+    ) as _instance:
+        pass
+
+
+def test_unified_storage(tmpdir):
+    with instance_for_test(
+        overrides={
+            "storage": {
+                "sqlite": {
+                    "base_dir": str(tmpdir),
+                }
+            }
+        }
+    ) as _instance:
+        pass
 
 
 def test_in_memory_persist_one_run():
@@ -136,7 +168,7 @@ def test_submit_run():
 
 
 def test_get_required_daemon_types():
-    from dagster.daemon.daemon import (
+    from dagster._daemon.daemon import (
         BackfillDaemon,
         MonitoringDaemon,
         SchedulerDaemon,
@@ -190,9 +222,6 @@ class TestNonResumeRunLauncher(RunLauncher, ConfigurableClass):
     def join(self, timeout=30):
         raise NotImplementedError()
 
-    def can_terminate(self, run_id):
-        raise NotImplementedError()
-
     def terminate(self, run_id):
         raise NotImplementedError()
 
@@ -201,7 +230,20 @@ class TestNonResumeRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
 
-def test_run_monitoring(capsys):
+def test_grpc_default_settings():
+    with instance_for_test() as instance:
+        assert (
+            instance.code_server_process_startup_timeout
+            == DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
+        )
+
+
+def test_grpc_override_settings():
+    with instance_for_test(overrides={"code_servers": {"local_startup_timeout": 60}}) as instance:
+        assert instance.code_server_process_startup_timeout == 60
+
+
+def test_run_monitoring(capsys):  # pylint: disable=unused-argument
     with instance_for_test(
         overrides={
             "run_monitoring": {"enabled": True},
@@ -405,9 +447,6 @@ def test_instance_subclass():
 
 # class that doesn't implement needed methods on ConfigurableClass
 class InvalidRunLauncher(RunLauncher, ConfigurableClass):
-    def can_terminate(self, run_id):
-        return False
-
     def launch_run(self, context: LaunchRunContext) -> None:
         pass
 

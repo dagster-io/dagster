@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 
 def get_version():
     version = {}
-    with open("dagster_msteams/version.py") as fp:
+    with open("dagster_msteams/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
     return version["__version__"]
@@ -26,7 +26,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=find_packages(exclude=["test"]),
+        packages=find_packages(exclude=["dagster_msteams_tests*"]),
         install_requires=[
             "dagster",
             "requests>=2,<3",

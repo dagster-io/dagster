@@ -1,7 +1,5 @@
 # pylint chokes on the perfectly ok import from alembic.migration
-import sys
 import threading
-from contextlib import contextmanager
 from functools import lru_cache
 
 import sqlalchemy as db
@@ -11,17 +9,22 @@ from alembic.migration import MigrationContext  # pylint: disable=import-error
 from alembic.script import ScriptDirectory
 from sqlalchemy.ext.compiler import compiles
 
-from dagster.core.errors import DagsterInstanceMigrationRequired
-from dagster.utils import file_relative_path
-from dagster.utils.log import quieten
+from dagster._utils import file_relative_path
+from dagster._utils.log import quieten
 
 create_engine = db.create_engine  # exported
 
 
+ALEMBIC_SCRIPTS_LOCATION = "dagster:core/storage/alembic"
+
+
 @lru_cache(maxsize=3)  # run, event, and schedule storages
-def get_alembic_config(dunder_file, config_path="alembic/alembic.ini", script_path="alembic/"):
+def get_alembic_config(dunder_file, config_path="alembic/alembic.ini", script_location=None):
+    if not script_location:
+        script_location = ALEMBIC_SCRIPTS_LOCATION
+
     alembic_config = Config(file_relative_path(dunder_file, config_path))
-    alembic_config.set_main_option("script_location", file_relative_path(dunder_file, script_path))
+    alembic_config.set_main_option("script_location", script_location)
     return alembic_config
 
 
@@ -57,35 +60,6 @@ def check_alembic_revision(alembic_config, conn):
     return (db_revision, head_revision)
 
 
-@contextmanager
-def handle_schema_errors(conn, alembic_config, msg=None):
-    try:
-        yield
-    except (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError):
-        db_revision, head_revision = (None, None)
-
-        try:
-            with quieten():
-                db_revision, head_revision = check_alembic_revision(alembic_config, conn)
-        # If exceptions were raised during the revision check, we want to swallow them and
-        # allow the original exception to fall through
-        except Exception:
-            pass
-
-        if db_revision != head_revision:
-            # Disable exception chaining since the original exception is included in the
-            # message, and the fact that the instance needs migrating should be the first
-            # thing the user sees
-            raise DagsterInstanceMigrationRequired(
-                msg=msg,
-                db_revision=db_revision,
-                head_revision=head_revision,
-                original_exc_info=sys.exc_info(),
-            ) from None
-
-        raise
-
-
 def run_migrations_offline(context, config, target_metadata):
     """Run migrations in 'offline' mode.
 
@@ -98,6 +72,8 @@ def run_migrations_offline(context, config, target_metadata):
     script output.
 
     """
+    from sqlite3 import DatabaseError
+
     connectable = config.attributes.get("connection", None)
 
     if connectable is None:
@@ -106,15 +82,21 @@ def run_migrations_offline(context, config, target_metadata):
             "command line, STOP and read the README."
         )
 
-    context.configure(
-        url=connectable.url,
-        target_metadata=target_metadata,
-        literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
-    )
+    try:
+        context.configure(
+            url=connectable.url,
+            target_metadata=target_metadata,
+            literal_binds=True,
+            dialect_opts={"paramstyle": "named"},
+        )
 
-    with context.begin_transaction():
-        context.run_migrations()
+        with context.begin_transaction():
+            context.run_migrations()
+    except DatabaseError as exc:
+        # This is to deal with concurrent execution -- if this table already exists thanks to a
+        # race with another process, we are fine and can continue.
+        if not "table alembic_version already exists" in str(exc):
+            raise
 
 
 def run_migrations_online(context, config, target_metadata):
@@ -124,18 +106,28 @@ def run_migrations_online(context, config, target_metadata):
     and associate a connection with the context.
 
     """
-    connection = config.attributes.get("connection", None)
+    from sqlite3 import DatabaseError
 
-    if connection is None:
+    connectable = config.attributes.get("connection", None)
+
+    if connectable is None:
         raise Exception(
             "No connection set in alembic config. If you are trying to run this script from the "
             "command line, STOP and read the README."
         )
 
-    context.configure(connection=connection, target_metadata=target_metadata)
+    with connectable.connect() as connection:
+        try:
+            context.configure(connection=connection, target_metadata=target_metadata)
 
-    with context.begin_transaction():
-        context.run_migrations()
+            with context.begin_transaction():
+                context.run_migrations()
+
+        except DatabaseError as exc:
+            # This is to deal with concurrent execution -- if this table already exists thanks to a
+            # race with another process, we are fine and can continue.
+            if not "table alembic_version already exists" in str(exc):
+                raise
 
 
 # SQLAlchemy types, compiler directives, etc. to avoid pre-0.11.0 migrations

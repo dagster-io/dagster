@@ -15,13 +15,13 @@ from dagster import (
     dagster_type_materializer,
     execute_pipeline,
     lambda_solid,
-    solid,
 )
+from dagster._legacy import solid
+from dagster._utils.test import get_temp_file_name, get_temp_file_names
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.step import StepKind
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.types.dagster_type import create_any_type
-from dagster.utils.test import get_temp_file_name, get_temp_file_names
 
 
 def single_int_output_pipeline():
@@ -50,9 +50,9 @@ def multiple_output_pipeline():
 
 
 def single_int_named_output_pipeline():
-    @lambda_solid(output_def=OutputDefinition(Int, name="named"))
+    @solid(output_defs=[OutputDefinition(Int, name="named")])
     def return_named_one():
-        return Output(1, "named")
+        return 1
 
     return PipelineDefinition(
         name="single_int_named_output_pipeline", solid_defs=[return_named_one]
@@ -165,7 +165,7 @@ def test_basic_int_json_materialization():
 
         assert result.success
 
-        with open(filename, "r") as ff:
+        with open(filename, "r", encoding="utf8") as ff:
             value = json.loads(ff.read())
             assert value == {"value": 1}
 
@@ -190,7 +190,7 @@ def test_basic_materialization_event():
         assert mat.metadata_entries[0].path
         path = mat.metadata_entries[0].entry_data.path
 
-        with open(path, "r") as ff:
+        with open(path, "r", encoding="utf8") as ff:
             value = json.loads(ff.read())
             assert value == {"value": 1}
 
@@ -206,7 +206,7 @@ def test_basic_string_json_materialization():
 
         assert result.success
 
-        with open(filename, "r") as ff:
+        with open(filename, "r", encoding="utf8") as ff:
             value = json.loads(ff.read())
             assert value == {"value": "foo"}
 
@@ -233,17 +233,17 @@ def test_basic_int_and_string_json_materialization():
 
         assert result.success
 
-        with open(filename_one, "r") as ff_1:
+        with open(filename_one, "r", encoding="utf8") as ff_1:
             value = json.loads(ff_1.read())
             assert value == {"value": "foo"}
 
-        with open(filename_two, "r") as ff_2:
+        with open(filename_two, "r", encoding="utf8") as ff_2:
             value = json.loads(ff_2.read())
             assert value == {"value": 1}
 
 
 def read_file_contents(path):
-    with open(path, "r") as ff:
+    with open(path, "r", encoding="utf8") as ff:
         return ff.read()
 
 
@@ -273,19 +273,19 @@ def test_basic_int_and_string_json_multiple_materialization():
 
         assert result.success
 
-        with open(filename_one, "r") as ff:
+        with open(filename_one, "r", encoding="utf8") as ff:
             value = json.loads(ff.read())
             assert value == {"value": "foo"}
 
-        with open(filename_two, "r") as ff:
+        with open(filename_two, "r", encoding="utf8") as ff:
             value = json.loads(ff.read())
             assert value == {"value": "foo"}
 
-        with open(filename_three, "r") as ff:
+        with open(filename_three, "r", encoding="utf8") as ff:
             value = json.loads(ff.read())
             assert value == {"value": 1}
 
-        with open(filename_four, "r") as ff:
+        with open(filename_four, "r", encoding="utf8") as ff:
             value = json.loads(ff.read())
             assert value == {"value": 1}
 
@@ -320,11 +320,11 @@ def test_basic_int_json_multiple_materializations():
 
         assert result.success
 
-        with open(filename_one, "r") as ff:
+        with open(filename_one, "r", encoding="utf8") as ff:
             value = json.loads(ff.read())
             assert value == {"value": 1}
 
-        with open(filename_two, "r") as ff:
+        with open(filename_two, "r", encoding="utf8") as ff:
             value = json.loads(ff.read())
             assert value == {"value": 1}
 

@@ -9,6 +9,7 @@ class GraphenePipelineRunLogsSubscriptionSuccess(graphene.ObjectType):
     run = graphene.NonNull(GrapheneRun)
     messages = non_null_list(GrapheneDagsterRunEvent)
     hasMorePastEvents = graphene.NonNull(graphene.Boolean)
+    cursor = graphene.NonNull(graphene.String)
 
     class Meta:
         name = "PipelineRunLogsSubscriptionSuccess"

@@ -1,7 +1,8 @@
-from collections import namedtuple
 from typing import Dict, List, NamedTuple, Optional
 
-from dagster import check
+import dagster._check as check
+from dagster._serdes import create_snapshot_id, whitelist_for_serdes
+from dagster._utils.error import SerializableErrorInfo
 from dagster.core.definitions import NodeHandle
 from dagster.core.execution.plan.inputs import (
     StepInput,
@@ -19,8 +20,6 @@ from dagster.core.execution.plan.step import (
     UnresolvedCollectExecutionStep,
     UnresolvedMappedExecutionStep,
 )
-from dagster.serdes import create_snapshot_id, whitelist_for_serdes
-from dagster.utils.error import SerializableErrorInfo
 
 # Can be incremented on breaking changes to the snapshot (since it is used to reconstruct
 # the ExecutionPlan during execution). Every time you need to bump this, consider
@@ -216,8 +215,10 @@ class ExecutionStepOutputSnap(
 
 
 @whitelist_for_serdes
-class ExecutionPlanMetadataItemSnap(namedtuple("_ExecutionPlanMetadataItemSnap", "key value")):
-    def __new__(cls, key, value):
+class ExecutionPlanMetadataItemSnap(
+    NamedTuple("_ExecutionPlanMetadataItemSnap", [("key", str), ("value", str)])
+):
+    def __new__(cls, key: str, value: str):
         return super(ExecutionPlanMetadataItemSnap, cls).__new__(
             cls,
             check.str_param(key, "key"),

@@ -21,23 +21,10 @@ export interface RepositorySchedulesFragment_schedules_partitionSet {
   name: string;
 }
 
-export interface RepositorySchedulesFragment_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata {
-  __typename: "RepositoryMetadata";
-  key: string;
-  value: string;
-}
-
-export interface RepositorySchedulesFragment_schedules_scheduleState_repositoryOrigin {
-  __typename: "RepositoryOrigin";
-  id: string;
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: RepositorySchedulesFragment_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
-}
-
 export interface RepositorySchedulesFragment_schedules_scheduleState_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface RepositorySchedulesFragment_schedules_scheduleState_typeSpecificData_ScheduleData {
@@ -52,9 +39,12 @@ export interface RepositorySchedulesFragment_schedules_scheduleState_runs {
   id: string;
   runId: string;
   status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
-export interface RepositorySchedulesFragment_schedules_scheduleState_ticks_error_cause {
+export interface RepositorySchedulesFragment_schedules_scheduleState_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -64,7 +54,7 @@ export interface RepositorySchedulesFragment_schedules_scheduleState_ticks_error
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: RepositorySchedulesFragment_schedules_scheduleState_ticks_error_cause | null;
+  causes: RepositorySchedulesFragment_schedules_scheduleState_ticks_error_causes[];
 }
 
 export interface RepositorySchedulesFragment_schedules_scheduleState_ticks {
@@ -75,16 +65,19 @@ export interface RepositorySchedulesFragment_schedules_scheduleState_ticks {
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: RepositorySchedulesFragment_schedules_scheduleState_ticks_error | null;
 }
 
 export interface RepositorySchedulesFragment_schedules_scheduleState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;
-  repositoryOrigin: RepositorySchedulesFragment_schedules_scheduleState_repositoryOrigin;
+  repositoryName: string;
+  repositoryLocationName: string;
   typeSpecificData: RepositorySchedulesFragment_schedules_scheduleState_typeSpecificData | null;
   runs: RepositorySchedulesFragment_schedules_scheduleState_runs[];
   ticks: RepositorySchedulesFragment_schedules_scheduleState_ticks[];

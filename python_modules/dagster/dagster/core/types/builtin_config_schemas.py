@@ -1,8 +1,9 @@
 import pickle
 import warnings
 
-from dagster import check, seven
-from dagster.config.config_type import (
+import dagster._check as check
+import dagster._seven as seven
+from dagster._config import (
     ConfigAnyInstance,
     ConfigBoolInstance,
     ConfigFloatInstance,
@@ -10,11 +11,11 @@ from dagster.config.config_type import (
     ConfigStringInstance,
     ConfigType,
     ConfigTypeKind,
+    Field,
     ScalarUnion,
+    Selector,
 )
-from dagster.config.field import Field
-from dagster.config.field_utils import Selector
-from dagster.utils.backcompat import ExperimentalWarning
+from dagster._utils.backcompat import ExperimentalWarning
 
 from .config_schema import dagster_type_loader, dagster_type_materializer
 
@@ -35,7 +36,7 @@ def load_type_input_schema_dict(value):
     if file_type == "value":
         return file_options
     elif file_type == "json":
-        with open(file_options["path"], "r") as ff:
+        with open(file_options["path"], "r", encoding="utf8") as ff:
             value_dict = seven.json.load(ff)
             return value_dict["value"]
     elif file_type == "pickle":
@@ -100,7 +101,7 @@ def define_builtin_scalar_output_schema(scalar_name):
         if file_type == "json":
             json_file_path = file_options["path"]
             json_value = seven.json.dumps({"value": runtime_value})
-            with open(json_file_path, "w") as ff:
+            with open(json_file_path, "w", encoding="utf8") as ff:
                 ff.write(json_value)
             return AssetMaterialization.file(json_file_path)
         elif file_type == "pickle":

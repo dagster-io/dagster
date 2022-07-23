@@ -1,10 +1,10 @@
 import {
-  ButtonWIP,
-  ColorsWIP,
-  IconWIP,
+  Button,
+  Colors,
+  Icon,
   IconName,
-  MenuWIP,
-  MenuItemWIP,
+  Menu,
+  MenuItem,
   Popover,
   Spinner,
   Tooltip,
@@ -74,7 +74,7 @@ export const LaunchButton = ({config, runCount}: LaunchButtonProps) => {
     <ShortcutHandler
       onShortcut={onClick}
       shortcutLabel="⌥L"
-      shortcutFilter={(e) => e.keyCode === 76 && e.altKey}
+      shortcutFilter={(e) => e.code === 'KeyL' && e.altKey}
     >
       <ButtonWithConfiguration
         status={status}
@@ -118,7 +118,7 @@ export const LaunchButtonDropdown = ({
     <ShortcutHandler
       onShortcut={() => onConfigSelected(primary)}
       shortcutLabel="⌥L"
-      shortcutFilter={(e) => e.keyCode === 76 && e.altKey}
+      shortcutFilter={(e) => e.code === 'KeyL' && e.altKey}
     >
       <ButtonWithConfiguration
         status={status}
@@ -136,7 +136,7 @@ export const LaunchButtonDropdown = ({
         disabled={popoverDisabled}
         position="bottom-right"
         content={
-          <MenuWIP>
+          <Menu>
             {options.map((option, idx) => (
               <Tooltip
                 key={idx}
@@ -154,14 +154,14 @@ export const LaunchButtonDropdown = ({
                 />
               </Tooltip>
             ))}
-          </MenuWIP>
+          </Menu>
         }
       >
         <ButtonContainer
           role="button"
           status={status}
           style={{minWidth: 'initial'}}
-          icon={<IconWIP name="arrow_drop_down" />}
+          icon={<Icon name="arrow_drop_down" />}
           intent="primary"
           joined="left"
           disabled={popoverDisabled}
@@ -184,7 +184,7 @@ interface ButtonWithConfigurationProps {
 
 // Basic helper components
 
-const ButtonWithConfiguration: React.FunctionComponent<ButtonWithConfigurationProps> = ({
+const ButtonWithConfiguration: React.FC<ButtonWithConfigurationProps> = ({
   tooltip,
   icon,
   title,
@@ -206,9 +206,9 @@ const ButtonWithConfiguration: React.FunctionComponent<ButtonWithConfigurationPr
         disabled={disabled}
         icon={
           icon === 'dagster-spinner' ? (
-            <Spinner purpose="body-text" fillColor={ColorsWIP.White} />
+            <Spinner purpose="body-text" fillColor={Colors.White} />
           ) : typeof icon === 'string' ? (
-            <IconWIP name={icon} size={16} style={{textAlign: 'center', marginRight: 5}} />
+            <Icon name={icon} size={16} style={{textAlign: 'center', marginRight: 5}} />
           ) : (
             icon
           )
@@ -220,7 +220,7 @@ const ButtonWithConfiguration: React.FunctionComponent<ButtonWithConfigurationPr
   );
 };
 
-const ButtonContainer = styled(ButtonWIP)<{
+const ButtonContainer = styled(Button)<{
   status: LaunchButtonStatus;
   joined?: 'right' | 'left';
 }>`
@@ -240,6 +240,6 @@ const MaxwidthText = styled.div`
   max-width: 350px;
 `;
 
-const LaunchMenuItem = styled(MenuItemWIP)`
+const LaunchMenuItem = styled(MenuItem)`
   max-width: 200px;
 `;

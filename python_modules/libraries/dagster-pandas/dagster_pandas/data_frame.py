@@ -14,16 +14,15 @@ from dagster import (
     MetadataEntry,
     StringSource,
     TypeCheck,
-    check,
-    dagster_type_loader,
-    dagster_type_materializer,
 )
-from dagster.check import CheckError
-from dagster.config.field_utils import Selector
+from dagster import _check as check
+from dagster import dagster_type_loader, dagster_type_materializer
+from dagster._annotations import experimental
+from dagster._check import CheckError
+from dagster._config import Selector
+from dagster._utils import dict_without_keys
 from dagster.core.definitions.metadata import normalize_metadata
 from dagster.core.errors import DagsterInvalidMetadata
-from dagster.utils import dict_without_keys
-from dagster.utils.backcompat import experimental
 
 CONSTRAINT_BLACKLIST = {ColumnDTypeFnConstraint, ColumnDTypeInSetConstraint}
 
@@ -97,9 +96,9 @@ def df_type_check(_, value):
     return TypeCheck(
         success=True,
         metadata_entries=[
-            MetadataEntry.text(str(len(value)), "row_count", "Number of rows in DataFrame"),
+            MetadataEntry("row_count", value=str(len(value))),
             # string cast columns since they may be things like datetime
-            MetadataEntry.json({"columns": list(map(str, value.columns))}, "metadata"),
+            MetadataEntry("metadata", value={"columns": list(map(str, value.columns))}),
         ],
     )
 
@@ -293,9 +292,9 @@ def create_structured_dataframe_type(
             typechecks_succeeded = typechecks_succeeded and result_val
             result_dict = result.metadata_entries[0].entry_data.data
             metadata.append(
-                MetadataEntry.json(
-                    result_dict,
+                MetadataEntry(
                     "{}-constraint-metadata".format(key),
+                    value=result_dict,
                 )
             )
             constraint_clauses.append("{} failing constraints, {}".format(key, result.description))

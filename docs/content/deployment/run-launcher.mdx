@@ -19,7 +19,7 @@ The core abstraction in the launch process is the run launcher, which is configu
 
 ## Default Run Launcher
 
-The simplest run launcher is the built-in run launcher, <PyObject module="dagster.core.launcher" object="DefaultRunLauncher" />. This run launcher spawns a new process per run on the same node as the pipeline's repository location.
+The simplest run launcher is the built-in run launcher, <PyObject object="DefaultRunLauncher" />. This run launcher spawns a new process per run on the same node as the pipeline's repository location.
 
 ## Other Run Launchers
 
@@ -53,4 +53,4 @@ A few examples of when a custom run launcher is needed:
 - You have custom infrastructure or custom APIs for allocating nodes for execution.
 - You have custom logic for launching runs on different clusters, platforms, etc.
 
-Colloquially we refer to the process or computational resource created by the run launcher as the run worker. The run launcher only determines the behavior of the run worker. Once execution starts within the run worker, it is the _executor_ -- an in-memory abstraction in the run worker process -- that takes over management of computational resources.
+We refer to the process or computational resource created by the run launcher as the [run worker](/deployment/overview#job-execution-flow). The run launcher only determines the behavior of the run worker. Once execution starts within the run worker, it is the _executor_ -- an in-memory abstraction in the run worker process -- that takes over management of computational resources.

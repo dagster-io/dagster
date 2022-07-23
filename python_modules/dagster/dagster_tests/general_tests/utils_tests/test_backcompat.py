@@ -4,14 +4,12 @@ from typing import NamedTuple
 import pytest
 from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
 
-from dagster.check import CheckError
-from dagster.utils.backcompat import (
+from dagster._annotations import experimental
+from dagster._check import CheckError
+from dagster._utils.backcompat import (
     ExperimentalWarning,
     canonicalize_backcompat_args,
-    experimental,
     experimental_arg_warning,
-    experimental_class_warning,
-    experimental_fn_warning,
 )
 
 
@@ -67,8 +65,9 @@ def test_backcompat_both_set():
 
 
 def test_experimental_fn_warning():
+    @experimental
     def my_experimental_function():
-        experimental_fn_warning("my_experimental_function")
+        pass
 
     with pytest.warns(
         ExperimentalWarning,
@@ -81,9 +80,10 @@ def test_experimental_fn_warning():
 
 
 def test_experimental_class_warning():
+    @experimental
     class MyExperimentalClass:
         def __init__(self):
-            experimental_class_warning("MyExperimentalClass")
+            pass
 
     with pytest.warns(
         ExperimentalWarning,
@@ -95,38 +95,7 @@ def test_experimental_class_warning():
     assert warning[0].filename.endswith("test_backcompat.py")
 
 
-def test_experimental_arg_warning():
-    def stable_function(_stable_arg, _experimental_arg):
-        experimental_arg_warning("experimental_arg", "stable_function")
-
-    with pytest.warns(
-        ExperimentalWarning,
-        match='"experimental_arg" is an experimental argument to function "stable_function". '
-        "It may break in future versions, even between dot releases. ",
-    ) as warning:
-        stable_function(1, 2)
-
-    assert warning[0].filename.endswith("test_backcompat.py")
-
-
-def test_experimental_decorator_function():
-    @experimental
-    def my_experimental_function(arg):
-        return arg
-
-    assert my_experimental_function.__name__ == "my_experimental_function"
-
-    with pytest.warns(
-        ExperimentalWarning,
-        match='"my_experimental_function" is an experimental function. It may break in future'
-        " versions, even between dot releases. ",
-    ) as warning:
-        assert my_experimental_function(5) == 5
-
-    assert warning[0].filename.endswith("test_backcompat.py")
-
-
-def test_experimental_decorator_class():
+def test_experimental_class_with_methods():
     @experimental
     class ExperimentalClass:
         def __init__(self, salutation="hello"):
@@ -178,3 +147,17 @@ def test_experimental_decorator_class():
         match='"ExperimentalNamedTupleClass" is an experimental class. It may break in future versions, even between dot releases.',
     ):
         assert ExperimentalNamedTupleClass(salutation="howdy").salutation == "howdy"
+
+
+def test_experimental_arg_warning():
+    def stable_function(_stable_arg, _experimental_arg):
+        experimental_arg_warning("experimental_arg", "stable_function")
+
+    with pytest.warns(
+        ExperimentalWarning,
+        match='"experimental_arg" is an experimental argument to function "stable_function". '
+        "It may break in future versions, even between dot releases. ",
+    ) as warning:
+        stable_function(1, 2)
+
+    assert warning[0].filename.endswith("test_backcompat.py")

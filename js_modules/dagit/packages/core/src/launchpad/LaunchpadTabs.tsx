@@ -1,4 +1,4 @@
-import {Box, ColorsWIP, IconWIP, IconWrapper} from '@dagster-io/ui';
+import {Box, Colors, Icon, IconWrapper} from '@dagster-io/ui';
 import * as React from 'react';
 import styled, {css} from 'styled-components/macro';
 
@@ -72,7 +72,7 @@ const LaunchpadTab = (props: ExecutationTabProps) => {
       )}
       {canRemove && !editing && onRemove ? (
         <RemoveButton onClick={onClickRemove}>
-          <IconWIP name="close" color={ColorsWIP.Olive500} />
+          <Icon name="close" color={Colors.Olive500} />
         </RemoveButton>
       ) : null}
     </TabContainer>
@@ -111,7 +111,7 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
 
   return (
     <Box
-      border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+      border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
       padding={{horizontal: 12, top: 12}}
     >
       <LaunchpadTabsContainer>
@@ -155,20 +155,20 @@ const TabContainer = styled.div<{$active: boolean}>`
     $active
       ? css`
           font-weight: 600;
-          background-color: ${ColorsWIP.Gray100};
-          color: ${ColorsWIP.ForestGreen};
-          box-shadow: ${ColorsWIP.ForestGreen} 0 -2px 0 inset;
+          background-color: ${Colors.Gray100};
+          color: ${Colors.ForestGreen};
+          box-shadow: ${Colors.ForestGreen} 0 -2px 0 inset;
         `
       : css`
           font-weight: normal;
-          background-color: ${ColorsWIP.Gray50};
-          color: ${ColorsWIP.Gray300};
-          box-shadow: ${ColorsWIP.Olive200} 0 -1px 0 inset;
+          background-color: ${Colors.Gray50};
+          color: ${Colors.Gray300};
+          box-shadow: ${Colors.Olive200} 0 -1px 0 inset;
 
           &:hover {
-            background-color: ${ColorsWIP.Gray100};
-            box-shadow: ${ColorsWIP.Olive500} 0 -1px 0 inset;
-            color: ${ColorsWIP.Olive500};
+            background-color: ${Colors.Gray100};
+            box-shadow: ${Colors.Olive500} 0 -1px 0 inset;
+            color: ${Colors.Olive500};
           }
         `}
 
@@ -198,6 +198,6 @@ const RemoveButton = styled.button`
   }
 
   &:hover ${IconWrapper} {
-    background-color: ${ColorsWIP.Olive700};
+    background-color: ${Colors.Olive700};
   }
 `;

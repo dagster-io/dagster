@@ -5,11 +5,7 @@ ARG DAGSTER_VERSION
 
 # ==> Add Dagster layer
 RUN \
-# Cron
-       apt-get update -yqq \
-    && apt-get install -yqq cron \
-# Dagster
-    && pip install \
+    pip install \
         dagster==${DAGSTER_VERSION} \
         dagster-postgres==${DAGSTER_VERSION} \
         dagster-celery[flower,redis,kubernetes]==${DAGSTER_VERSION} \

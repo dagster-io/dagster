@@ -1,4 +1,4 @@
-import {Box, ButtonWIP, Group, IconName, IconWIP} from '@dagster-io/ui';
+import {Box, Button, Group, IconName, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
@@ -24,17 +24,15 @@ interface RunActionButtonsProps {
   onLaunch: (style: ReExecutionStyle) => Promise<void>;
 }
 
-const CancelRunButton: React.FC<{run: RunFragment | undefined; isFinalStatus: boolean}> = ({
-  run,
-  isFinalStatus,
-}) => {
+export const CancelRunButton: React.FC<{run: RunFragment}> = ({run}) => {
+  const {id: runId, canTerminate} = run;
   const [showDialog, setShowDialog] = React.useState<boolean>(false);
   const closeDialog = React.useCallback(() => setShowDialog(false), []);
 
   const onComplete = React.useCallback(
     (terminationState: TerminationState) => {
       const {errors} = terminationState;
-      const error = run?.id && errors[run.id];
+      const error = runId && errors[runId];
       if (error && 'message' in error) {
         SharedToaster.show({
           message: error.message,
@@ -43,30 +41,28 @@ const CancelRunButton: React.FC<{run: RunFragment | undefined; isFinalStatus: bo
         });
       }
     },
-    [run?.id],
+    [runId],
   );
 
-  if (!run) {
+  if (!runId) {
     return null;
   }
 
   return (
     <>
-      {!isFinalStatus ? (
-        <ButtonWIP
-          icon={<IconWIP name="cancel" />}
-          intent="danger"
-          disabled={showDialog}
-          onClick={() => setShowDialog(true)}
-        >
-          Terminate
-        </ButtonWIP>
-      ) : null}
+      <Button
+        icon={<Icon name="cancel" />}
+        intent="danger"
+        disabled={showDialog}
+        onClick={() => setShowDialog(true)}
+      >
+        Terminate
+      </Button>
       <TerminationDialog
         isOpen={showDialog}
         onClose={closeDialog}
         onComplete={onComplete}
-        selectedRuns={{[run.id]: run.canTerminate}}
+        selectedRuns={{[runId]: canTerminate}}
       />
     </>
   );
@@ -113,12 +109,16 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   const pipelineError = usePipelineAvailabilityErrorForRun(run);
 
   const selection = stepSelectionWithState(props.selection, metadata);
-  const selectionOfCurrentRun = stepSelectionFromRunTags(run, graph, metadata);
+
+  const currentRunSelection = stepSelectionFromRunTags(run, graph, metadata);
+  const currentRunIsFromFailure = run.tags?.some(
+    (t) => t.key === DagsterTag.IsResumeRetry && t.value === 'true',
+  );
 
   const full: LaunchButtonConfiguration = {
     icon: 'cached',
     scope: '*',
-    title: 'All Steps in Root Run',
+    title: 'All steps in root run',
     tooltip: 'Re-execute the pipeline run from scratch',
     disabled: !canRunAllSteps(run),
     onClick: () => onLaunch({type: 'all'}),
@@ -126,27 +126,26 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
 
   const same: LaunchButtonConfiguration = {
     icon: 'linear_scale',
-    scope: selectionOfCurrentRun?.query || '*',
-    title: 'Same Steps',
-    disabled:
-      !selectionOfCurrentRun || !(selectionOfCurrentRun.finished || selectionOfCurrentRun.failed),
+    scope: currentRunSelection?.query || '*',
+    title: 'Same steps',
+    disabled: !currentRunSelection || !(currentRunSelection.finished || currentRunSelection.failed),
     tooltip: (
       <div>
-        {!selectionOfCurrentRun || !selectionOfCurrentRun.present
+        {!currentRunSelection || !currentRunSelection.present
           ? 'Re-executes the same step subset used for this run if one was present.'
-          : !selectionOfCurrentRun.finished
+          : !currentRunSelection.finished
           ? 'Wait for all of the steps to finish to re-execute the same subset.'
           : 'Re-execute the same step subset used for this run:'}
-        <StepSelectionDescription selection={selectionOfCurrentRun} />
+        <StepSelectionDescription selection={currentRunSelection} />
       </div>
     ),
-    onClick: () => onLaunch({type: 'selection', selection: selectionOfCurrentRun!}),
+    onClick: () => onLaunch({type: 'selection', selection: currentRunSelection!}),
   };
 
   const selected: LaunchButtonConfiguration = {
     icon: 'op',
     scope: selection.query,
-    title: selection.keys.length > 1 ? 'Selected Steps' : 'Selected Step',
+    title: selection.keys.length > 1 ? 'Selected steps' : 'Selected step',
     disabled: !selection.present || !(selection.finished || selection.failed),
     tooltip: (
       <div>
@@ -163,7 +162,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
 
   const fromSelected: LaunchButtonConfiguration = {
     icon: 'arrow_forward',
-    title: 'From Selected',
+    title: 'From selected',
     disabled: !canRunAllSteps(run) || selection.keys.length !== 1,
     tooltip: 'Re-execute the pipeline downstream from the selected steps',
     onClick: () => {
@@ -190,7 +189,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
 
   const fromFailure: LaunchButtonConfiguration = {
     icon: 'arrow_forward',
-    title: 'From Failure',
+    title: 'From failure',
     disabled: !fromFailureEnabled,
     tooltip: !fromFailureEnabled
       ? 'Retry is only enabled when the pipeline has failed.'
@@ -209,9 +208,12 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
   const options = [full, same, selected, fromSelected, fromFailure];
   const preferredRerun = selection.present
     ? selected
-    : selectionOfCurrentRun?.present
+    : fromFailureEnabled && currentRunIsFromFailure
+    ? fromFailure
+    : currentRunSelection?.present
     ? same
     : null;
+
   const primary = artifactsPersisted && preferredRerun ? preferredRerun : full;
 
   const tooltip = () => {
@@ -228,13 +230,19 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
           runCount={1}
           primary={primary}
           options={options}
-          title={primary.scope === '*' ? `Re-execute All (*)` : `Re-execute (${primary.scope})`}
+          title={
+            primary.scope === '*'
+              ? `Re-execute all (*)`
+              : primary.scope
+              ? `Re-execute (${primary.scope})`
+              : `Re-execute ${primary.title}`
+          }
           tooltip={tooltip()}
           icon={pipelineError?.icon}
           disabled={pipelineError?.disabled || !canLaunchPipelineReexecution}
         />
       </Box>
-      <CancelRunButton run={run} isFinalStatus={canRunAllSteps(run)} />
+      {!doneStatuses.has(run.status) ? <CancelRunButton run={run} /> : null}
     </Group>
   );
 };
@@ -332,9 +340,7 @@ function usePipelineAvailabilityErrorForRun(
   };
 }
 
-const StepSelectionDescription: React.FunctionComponent<{selection: StepSelection | null}> = ({
-  selection,
-}) => (
+const StepSelectionDescription: React.FC<{selection: StepSelection | null}> = ({selection}) => (
   <div style={{paddingLeft: '10px'}}>
     {(selection?.keys || []).map((step) => (
       <span key={step} style={{display: 'block'}}>{`* ${step}`}</span>

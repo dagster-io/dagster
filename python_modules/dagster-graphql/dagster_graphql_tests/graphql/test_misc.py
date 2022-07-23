@@ -1,6 +1,7 @@
 import csv
 from collections import OrderedDict
 
+from dagster_graphql.schema.roots.mutation import execution_params_from_graphql
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from dagster import (
@@ -21,13 +22,13 @@ from .production_query import PRODUCTION_QUERY
 
 @dagster_type_loader(str)
 def df_input_schema(_context, path):
-    with open(path, "r") as fd:
+    with open(path, "r", encoding="utf8") as fd:
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
 @dagster_type_materializer(str)
 def df_output_schema(_context, path, value):
-    with open(path, "w") as fd:
+    with open(path, "w", encoding="utf8") as fd:
         writer = csv.DictWriter(fd, fieldnames=value[0].keys())
         writer.writeheader()
         writer.writerows(rowdicts=value)
@@ -209,3 +210,34 @@ def test_production_query(graphql_context):
 
     assert not result.errors
     assert result.data
+
+
+def test_params_from_graphql():
+    selector = {
+        "repositoryName": "repo",
+        "repositoryLocationName": "rl",
+        "jobName": "job",
+    }
+    assert execution_params_from_graphql(
+        {
+            "selector": selector,
+        }
+    )
+    assert execution_params_from_graphql(
+        {
+            "selector": selector,
+            "runConfigData": "{}",
+        }
+    )
+    assert execution_params_from_graphql(
+        {
+            "selector": selector,
+            "runConfigData": "\n\n",
+        }
+    )
+    assert execution_params_from_graphql(
+        {
+            "selector": selector,
+            "runConfigData": "",
+        }
+    )

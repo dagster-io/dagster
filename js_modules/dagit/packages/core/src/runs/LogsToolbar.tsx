@@ -1,23 +1,27 @@
 import {
   Box,
-  ButtonWIP,
+  Button,
   ButtonGroup,
   Checkbox,
   Group,
   IconName,
-  IconWIP,
-  MenuItemWIP,
-  SelectWIP,
+  Icon,
+  MenuItem,
+  Select,
   Spinner,
   Tab,
   Tabs,
-  TagWIP,
+  IconWrapper,
+  Colors,
+  Tooltip,
+  FontFamily,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {useCopyToClipboard} from '../app/browser';
 import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
+import {compactNumber} from '../ui/formatters';
 
 import {ExecutionStateDot} from './ExecutionStateDot';
 import {LogLevel} from './LogLevel';
@@ -40,6 +44,7 @@ export enum LogType {
 interface ILogsToolbarProps {
   steps: string[];
   metadata: IRunMetadataDict;
+  counts: LogLevelCounts;
 
   filter: LogFilter;
   onSetFilter: (filter: LogFilter) => void;
@@ -57,6 +62,7 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
   const {
     steps,
     metadata,
+    counts,
     filter,
     onSetFilter,
     logType,
@@ -83,7 +89,12 @@ export const LogsToolbar: React.FC<ILogsToolbarProps> = (props) => {
       />
       <OptionsDivider />
       {logType === 'structured' ? (
-        <StructuredLogToolbar filter={filter} onSetFilter={onSetFilter} steps={steps} />
+        <StructuredLogToolbar
+          counts={counts}
+          filter={filter}
+          onSetFilter={onSetFilter}
+          steps={steps}
+        />
       ) : (
         <ComputeLogToolbar
           steps={steps}
@@ -157,11 +168,11 @@ const ComputeLogToolbar = ({
       style={{flex: 1}}
     >
       <Group direction="row" spacing={24} alignItems="center">
-        <SelectWIP
+        <Select
           disabled={!steps.length}
           items={Object.keys(logCaptureSteps)}
           itemRenderer={(item: string, options: {handleClick: any; modifiers: any}) => (
-            <MenuItemWIP
+            <MenuItem
               key={item}
               onClick={options.handleClick}
               text={logKeyText(item)}
@@ -174,10 +185,10 @@ const ComputeLogToolbar = ({
             onSetComputeLogKey(logKey);
           }}
         >
-          <ButtonWIP disabled={!steps.length} rightIcon={<IconWIP name="expand_more" />}>
+          <Button disabled={!steps.length} rightIcon={<Icon name="expand_more" />}>
             {logKeyText(computeLogKey) || 'Select a step...'}
-          </ButtonWIP>
-        </SelectWIP>
+          </Button>
+        </Select>
         {isValidStepSelection ? (
           <Tabs selectedTabId={logType} onChange={onSetLogType} size="small">
             <Tab id={LogType.stdout} title="stdout" />
@@ -186,7 +197,7 @@ const ComputeLogToolbar = ({
         ) : null}
       </Group>
       {isValidStepSelection ? (
-        <Group direction="row" spacing={12} alignItems="center">
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
           {computeLogKey && logCaptureSteps[computeLogKey] ? (
             resolveState(metadata, logCaptureSteps[computeLogKey]) === IStepState.RUNNING ? (
               <Spinner purpose="body-text" />
@@ -195,30 +206,57 @@ const ComputeLogToolbar = ({
             )
           ) : null}
           {computeLogUrl ? (
-            <a
-              aria-label="Download link"
-              className="bp3-button bp3-minimal bp3-icon-download"
-              href={computeLogUrl}
-              title={
+            <Tooltip
+              placement="top-end"
+              content={
                 computeLogKey && logCaptureSteps[computeLogKey]?.stepKeys.length === 1
                   ? `Download ${logCaptureSteps[computeLogKey]?.stepKeys[0]} compute logs`
                   : `Download compute logs`
               }
-              download
-            ></a>
+            >
+              <DownloadLink aria-label="Download link" href={computeLogUrl} download>
+                <Icon name="download_for_offline" color={Colors.Gray600} />
+              </DownloadLink>
+            </Tooltip>
           ) : null}
-        </Group>
+        </Box>
       ) : null}
     </Box>
   );
 };
 
+const DownloadLink = styled.a`
+  border-radius: 4px;
+  display: block;
+  text-decoration: none;
+
+  ${IconWrapper} {
+    transition: background-color 100ms linear;
+  }
+
+  :hover ${IconWrapper} {
+    background-color: ${Colors.Gray800};
+  }
+
+  :active ${IconWrapper}, :focus ${IconWrapper} {
+    background-color: ${Colors.Dark};
+  }
+
+  :focus {
+    outline: none;
+  }
+`;
+
+export type LogLevelCounts = Record<LogLevel, number>;
+
 const StructuredLogToolbar = ({
   filter,
+  counts,
   onSetFilter,
   steps,
 }: {
   filter: LogFilter;
+  counts: LogLevelCounts;
   onSetFilter: (filter: LogFilter) => void;
   steps: string[];
 }) => {
@@ -279,46 +317,43 @@ const StructuredLogToolbar = ({
         />
       ) : null}
       <OptionsDivider />
-      <Group direction="row" spacing={4} alignItems="center">
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
         {Object.keys(LogLevel).map((level) => {
           const enabled = filter.levels[level];
           return (
-            <FilterButton
-              key={level}
-              onClick={() =>
-                onSetFilter({
-                  ...filter,
-                  levels: {
-                    ...filter.levels,
-                    [level]: !enabled,
-                  },
-                })
-              }
-            >
-              <TagWIP
-                key={level}
-                intent={enabled ? 'primary' : 'none'}
-                interactive
-                minimal={!enabled}
-                round
-              >
-                {level.toLowerCase()}
-              </TagWIP>
-            </FilterButton>
+            <FilterLabel key={level} $enabled={enabled}>
+              <Checkbox
+                format="switch"
+                size="small"
+                checked={!!enabled}
+                fillColor={enabled ? Colors.Blue500 : Colors.Gray200}
+                onChange={() =>
+                  onSetFilter({
+                    ...filter,
+                    levels: {
+                      ...filter.levels,
+                      [level]: !enabled,
+                    },
+                  })
+                }
+              />
+              <LogLabel $enabled={enabled}>{level.toLowerCase()}</LogLabel>
+              <LogCount $enabled={enabled}>{compactNumber(counts[level])}</LogCount>
+            </FilterLabel>
           );
         })}
-      </Group>
+      </Box>
       {selectedStep && <OptionsDivider />}
       <div style={{minWidth: 15, flex: 1}} />
-      <ButtonWIP
-        icon={<IconWIP name={copyIcon} />}
+      <Button
+        icon={<Icon name={copyIcon} />}
         onClick={() => {
           copyToClipboard(window.location.href);
           setCopyIcon('assignment_turned_in');
         }}
       >
         Copy URL
-      </ButtonWIP>
+      </Button>
     </>
   );
 };
@@ -331,15 +366,47 @@ const NonMatchCheckbox = styled(Checkbox)`
   white-space: nowrap;
 `;
 
-const FilterButton = styled.button`
-  background: none;
+const FilterLabel = styled.label<{$enabled: boolean}>`
+  background-color: ${({$enabled}) => ($enabled ? Colors.Blue50 : Colors.Gray100)};
   border: none;
-  padding: 0;
+  border-radius: 8px;
   margin: 0;
+  padding: 4px 6px;
+  overflow: hidden;
   cursor: pointer;
-  display: block;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 500;
+  gap: 6px;
+
+  box-shadow: transparent inset 0px 0px 0px 1px;
+  transition: background 50ms linear;
 
   :focus {
+    box-shadow: rgba(58, 151, 212, 0.6) 0 0 0 3px;
     outline: none;
   }
+
+  :focus:not(:focus-visible) {
+    box-shadow: transparent inset 0px 0px 0px 1px, rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
+  }
+`;
+
+const LogLabel = styled.span<{$enabled: boolean}>`
+  color: ${({$enabled}) => ($enabled ? Colors.Blue500 : Colors.Gray700)};
+  line-height: 16px;
+  transition: background 50ms linear;
+`;
+
+const LogCount = styled.span<{$enabled: boolean}>`
+  background-color: ${({$enabled}) => ($enabled ? Colors.Blue100 : Colors.Gray200)};
+  border-radius: 6px;
+  color: ${({$enabled}) => ($enabled ? Colors.Blue500 : Colors.Gray700)};
+  font-weight: 600;
+  font-family: ${FontFamily.monospace};
+  line-height: 16px;
+  padding: 1px 4px;
+  transition: background 50ms linear;
 `;

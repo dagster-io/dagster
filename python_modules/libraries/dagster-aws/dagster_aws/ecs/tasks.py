@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 import requests
 
-from dagster.utils import merge_dicts
-from dagster.utils.backoff import backoff
+from dagster._utils import merge_dicts
+from dagster._utils.backoff import backoff
 
 
 @dataclass
@@ -35,12 +35,14 @@ class EcsNoTasksFound(Exception):
 
 def default_ecs_task_definition(
     ecs,
+    family,
     metadata,
     image,
     container_name,
+    environment,
     command=None,
-    environment=None,
     secrets=None,
+    include_sidecars=False,
 ):
     # Start with the current process's task's definition but remove
     # extra keys that aren't useful for creating a new task definition
@@ -54,17 +56,6 @@ def default_ecs_task_definition(
         if key in metadata.task_definition.keys()
     )
 
-    environment_dict = (
-        {"environment": [{"key": key, "value": value} for key, value in environment.items()]}
-        if environment
-        else {}
-    )
-    secrets_dict = (
-        {"secrets": [{"name": key, "valueFrom": value} for key, value in secrets.items()]}
-        if secrets
-        else {}
-    )
-
     # The current process might not be running in a container that has the
     # pipeline's code installed. Inherit most of the process's container
     # definition (things like environment, dependencies, etc.) but replace
@@ -73,33 +64,34 @@ def default_ecs_task_definition(
     # entryPoint and containerOverrides are specified, they're concatenated
     # and the command will fail
     # https://aws.amazon.com/blogs/opensource/demystifying-entrypoint-cmd-docker/
-    container_definitions = task_definition["containerDefinitions"]
-    container_definitions.remove(metadata.container_definition)
-    container_definitions.append(
-        merge_dicts(
-            {
-                **metadata.container_definition,
-                "name": container_name,
-                "image": image,
-                "entryPoint": [],
-                "command": command if command else [],
-            },
-            environment_dict,
-            secrets_dict,
-        )
+    new_container_definition = merge_dicts(
+        {
+            **metadata.container_definition,
+            "name": container_name,
+            "image": image,
+            "entryPoint": [],
+            "command": command if command else [],
+        },
+        ({"environment": environment} if environment else {}),
+        secrets or {},
+        {} if include_sidecars else {"dependsOn": []},
     )
+
+    if include_sidecars:
+        container_definitions = metadata.task_definition.get("containerDefinitions")
+        container_definitions.remove(metadata.container_definition)
+        container_definitions.append(new_container_definition)
+    else:
+        container_definitions = [new_container_definition]
+
     task_definition = {
         **task_definition,
-        "family": "dagster-run",
+        "family": family,
         "containerDefinitions": container_definitions,
     }
 
     # Register the task overridden task definition as a revision to the
     # "dagster-run" family.
-    # TODO: Only register the task definition if a matching one doesn't
-    # already exist. Otherwise, we risk exhausting the revisions limit
-    # (1,000,000 per family) with unnecessary revisions:
-    # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-quotas.html
     ecs.register_task_definition(**task_definition)
 
     return task_definition

@@ -1,14 +1,21 @@
+import pendulum
 import sqlalchemy as db
 
-from dagster import check
+import dagster._check as check
+from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
+from dagster.core.storage.config import pg_config
 from dagster.core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
-from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
+from dagster.core.storage.schedules.schema import InstigatorsTable
+from dagster.core.storage.sql import (
+    check_alembic_revision,
+    create_engine,
+    run_alembic_upgrade,
+    stamp_alembic_rev,
+)
 
 from ..utils import (
     create_pg_connection,
     pg_alembic_config,
-    pg_config,
     pg_statement_timeout,
     pg_url_from_config,
     retry_pg_connection_fn,
@@ -26,7 +33,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     To use Postgres for schedule storage, you can add a block such as the following to your
     ``dagster.yaml``:
 
-    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg.yaml
+    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-pg-legacy.yaml
        :caption: dagster.yaml
        :lines: 23-32
        :language: YAML
@@ -62,6 +69,10 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             with conn.begin():
                 ScheduleStorageSqlMetadata.create_all(conn)
                 stamp_alembic_rev(pg_alembic_config(__file__), conn)
+
+        # mark all the data migrations as applied
+        self.migrate()
+        self.optimize()
 
     def optimize_for_dagit(self, statement_timeout):
         # When running in dagit, hold an open connection and set statement_timeout
@@ -100,9 +111,36 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         return PostgresScheduleStorage(postgres_url, should_autocreate_tables)
 
     def connect(self, run_id=None):  # pylint: disable=arguments-differ, unused-argument
-        return create_pg_connection(self._engine, __file__, "schedule")
+        return create_pg_connection(self._engine)
 
     def upgrade(self):
         alembic_config = pg_alembic_config(__file__)
         with self.connect() as conn:
             run_alembic_upgrade(alembic_config, conn)
+
+    def _add_or_update_instigators_table(self, conn, state):
+        selector_id = state.selector_id
+        conn.execute(
+            db.dialects.postgresql.insert(InstigatorsTable)
+            .values(  # pylint: disable=no-value-for-parameter
+                selector_id=selector_id,
+                repository_selector_id=state.repository_selector_id,
+                status=state.status.value,
+                instigator_type=state.instigator_type.value,
+                instigator_body=serialize_dagster_namedtuple(state),
+            )
+            .on_conflict_do_update(
+                index_elements=[InstigatorsTable.c.selector_id],
+                set_={
+                    "status": state.status.value,
+                    "instigator_type": state.instigator_type.value,
+                    "instigator_body": serialize_dagster_namedtuple(state),
+                    "update_timestamp": pendulum.now("UTC"),
+                },
+            )
+        )
+
+    def alembic_version(self):
+        alembic_config = pg_alembic_config(__file__)
+        with self.connect() as conn:
+            return check_alembic_revision(alembic_config, conn)

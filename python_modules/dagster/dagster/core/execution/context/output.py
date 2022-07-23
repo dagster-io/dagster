@@ -1,7 +1,19 @@
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ContextManager,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
-from dagster import check
+import dagster._check as check
+from dagster.core.definitions.asset_layer import AssetOutputInfo
 from dagster.core.definitions.events import (
     AssetKey,
     AssetMaterialization,
@@ -10,7 +22,7 @@ from dagster.core.definitions.events import (
     MetadataEntry,
     PartitionMetadataEntry,
 )
-from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.definitions.metadata import RawMetadataValue
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.time_window_partitions import TimeWindow
@@ -18,7 +30,8 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.utils import build_resources_for_manager
 
 if TYPE_CHECKING:
-    from dagster.core.definitions import PipelineDefinition
+    from dagster.core.definitions import PartitionsDefinition, PipelineDefinition
+    from dagster.core.definitions.op_definition import OpDefinition
     from dagster.core.definitions.resource_definition import Resources
     from dagster.core.events import DagsterEvent
     from dagster.core.execution.context.system import StepExecutionContext
@@ -32,6 +45,30 @@ RUN_ID_PLACEHOLDER = "__EPHEMERAL_RUN_ID"
 
 
 class OutputContext:
+
+    _step_key: Optional[str]
+    _name: Optional[str]
+    _pipeline_name: Optional[str]
+    _run_id: Optional[str]
+    _metadata: Optional[Mapping[str, RawMetadataValue]]
+    _mapping_key: Optional[str]
+    _config: object
+    _solid_def: Optional["SolidDefinition"]
+    _dagster_type: Optional["DagsterType"]
+    _log: Optional["DagsterLogManager"]
+    _version: Optional[str]
+    _resource_config: Optional[Mapping[str, object]]
+    _step_context: Optional["StepExecutionContext"]
+    _asset_info: Optional[AssetOutputInfo]
+    _warn_on_step_context_use: bool
+    _resources: Optional["Resources"]
+    _resources_cm: Optional[ContextManager["Resources"]]
+    _resources_contain_cm: Optional[bool]
+    _cm_scope_entered: Optional[bool]
+    _events: List["DagsterEvent"]
+    _user_events: List[Union[AssetMaterialization, AssetObservation, Materialization]]
+    _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]]
+
     """
     The context object that is available to the `handle_output` method of an :py:class:`IOManager`.
 
@@ -40,7 +77,7 @@ class OutputContext:
         name (Optional[str]): The name of the output that produced the output.
         pipeline_name (Optional[str]): The name of the pipeline definition.
         run_id (Optional[str]): The id of the run that produced the output.
-        metadata (Optional[Dict[str, Any]]): A dict of the metadata that is assigned to the
+        metadata (Optional[Mapping[str, RawMetadataValue]]): A dict of the metadata that is assigned to the
             OutputDefinition that produced the output.
         mapping_key (Optional[str]): The key that identifies a unique mapped output. None for regular outputs.
         config (Optional[Any]): The configuration for the output.
@@ -48,11 +85,13 @@ class OutputContext:
         dagster_type (Optional[DagsterType]): The type of this output.
         log (Optional[DagsterLogManager]): The log manager to use for this output.
         version (Optional[str]): (Experimental) The version of the output.
-        resource_config (Optional[Dict[str, Any]]): The config associated with the resource that
+        resource_config (Optional[Mapping[str, Any]]): The config associated with the resource that
             initializes the RootInputManager.
         resources (Optional[Resources]): The resources required by the output manager, specified by the
             `required_resource_keys` parameter.
         op_def (Optional[OpDefinition]): The definition of the op that produced the output.
+        asset_info: Optional[AssetOutputInfo]: (Experimental) Asset info corresponding to the
+            output.
     """
 
     def __init__(
@@ -61,17 +100,20 @@ class OutputContext:
         name: Optional[str] = None,
         pipeline_name: Optional[str] = None,
         run_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         mapping_key: Optional[str] = None,
-        config: Optional[Any] = None,
+        config: object = None,
         solid_def: Optional["SolidDefinition"] = None,
         dagster_type: Optional["DagsterType"] = None,
         log_manager: Optional["DagsterLogManager"] = None,
         version: Optional[str] = None,
-        resource_config: Optional[Dict[str, Any]] = None,
-        resources: Optional[Union["Resources", Dict[str, Any]]] = None,
+        resource_config: Optional[Mapping[str, object]] = None,
+        resources: Optional[Union["Resources", Mapping[str, object]]] = None,
         step_context: Optional["StepExecutionContext"] = None,
         op_def: Optional["OpDefinition"] = None,
+        asset_info: Optional[AssetOutputInfo] = None,
+        warn_on_step_context_use: bool = False,
+        partition_key: Optional[str] = None,
     ):
         from dagster.core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster.core.execution.build_resources import build_resources
@@ -92,6 +134,12 @@ class OutputContext:
         self._version = version
         self._resource_config = resource_config
         self._step_context = step_context
+        self._asset_info = asset_info
+        self._warn_on_step_context_use = warn_on_step_context_use
+        if self._step_context and self._step_context.has_partition_key:
+            self._partition_key: Optional[str] = self._step_context.partition_key
+        else:
+            self._partition_key = partition_key
 
         if isinstance(resources, Resources):
             self._resources_cm = None
@@ -104,9 +152,9 @@ class OutputContext:
             self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
             self._cm_scope_entered = False
 
-        self._events: List["DagsterEvent"] = []
-        self._user_events: List[Union[AssetMaterialization, AssetObservation, Materialization]] = []
-        self._metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None
+        self._events = []
+        self._user_events = []
+        self._metadata_entries = None
 
     def __enter__(self):
         if self._resources_cm:
@@ -162,7 +210,7 @@ class OutputContext:
         return self._run_id
 
     @property
-    def metadata(self) -> Optional[Dict[str, Any]]:
+    def metadata(self) -> Optional[Mapping[str, object]]:
         return self._metadata
 
     @property
@@ -185,6 +233,8 @@ class OutputContext:
 
     @property
     def op_def(self) -> "OpDefinition":
+        from dagster.core.definitions import OpDefinition
+
         if self._solid_def is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access op_def, "
@@ -218,7 +268,7 @@ class OutputContext:
         return self._version
 
     @property
-    def resource_config(self) -> Optional[Dict[str, Any]]:
+    def resource_config(self) -> Optional[Mapping[str, object]]:
         return self._resource_config
 
     @property
@@ -238,17 +288,45 @@ class OutputContext:
         return self._resources
 
     @property
-    def asset_key(self) -> Optional[AssetKey]:
-        matching_output_defs = [
-            output_def
-            for output_def in cast(SolidDefinition, self._solid_def).output_defs
-            if output_def.name == self.name
-        ]
-        check.invariant(len(matching_output_defs) == 1)
-        return matching_output_defs[0].get_asset_key(self)
+    def asset_info(self) -> Optional[AssetOutputInfo]:
+        return self._asset_info
+
+    @property
+    def has_asset_key(self) -> bool:
+        return self._asset_info is not None
+
+    @property
+    def asset_key(self) -> AssetKey:
+        if self._asset_info is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access asset_key, "
+                "but it was not provided when constructing the OutputContext"
+            )
+
+        return self._asset_info.key
+
+    @property
+    def asset_partitions_def(self) -> "PartitionsDefinition":
+        """The PartitionsDefinition on the upstream asset corresponding to this input."""
+        asset_key = self.asset_key
+        result = self.step_context.pipeline_def.asset_layer.partitions_def_for_asset(asset_key)
+        if result is None:
+            raise DagsterInvariantViolationError(
+                f"Attempting to access partitions def for asset {asset_key}, but it is not partitioned"
+            )
+
+        return result
 
     @property
     def step_context(self) -> "StepExecutionContext":
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.step_context"
+                "This use on upstream_output is deprecated and will fail in the future"
+                "Try to obtain what you need directly from InputContext"
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
         if self._step_context is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access step_context, "
@@ -260,7 +338,15 @@ class OutputContext:
     @property
     def has_partition_key(self) -> bool:
         """Whether the current run is a partitioned run"""
-        return self.step_context.has_partition_key
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.has_partition_key"
+                "This use on upstream_output is deprecated and will fail in the future"
+                "Try to obtain what you need directly from InputContext"
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
+        return self._partition_key is not None
 
     @property
     def partition_key(self) -> str:
@@ -268,10 +354,30 @@ class OutputContext:
 
         Raises an error if the current run is not a partitioned run.
         """
-        return self.step_context.partition_key
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.partition_key"
+                "This use on upstream_output is deprecated and will fail in the future"
+                "Try to obtain what you need directly from InputContext"
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
+        check.invariant(
+            self._partition_key is not None,
+            "Tried to access partition_key on a non-partitioned run.",
+        )
+        return cast(str, self._partition_key)
 
     @property
     def has_asset_partitions(self) -> bool:
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.has_asset_partitions"
+                "This use on upstream_output is deprecated and will fail in the future"
+                "Try to obtain what you need directly from InputContext"
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
         if self._step_context is not None:
             return self._step_context.has_asset_partitions_for_output(self.name)
         else:
@@ -284,6 +390,14 @@ class OutputContext:
         Raises an error if the output asset has no partitioning, or if the run covers a partition
         range for the output asset.
         """
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.asset_partition_key"
+                "This use on upstream_output is deprecated and will fail in the future"
+                "Try to obtain what you need directly from InputContext"
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
         return self.step_context.asset_partition_key_for_output(self.name)
 
     @property
@@ -292,6 +406,14 @@ class OutputContext:
 
         Raises an error if the output asset has no partitioning.
         """
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.asset_partition_key_range"
+                "This use on upstream_output is deprecated and will fail in the future"
+                "Try to obtain what you need directly from InputContext"
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
         return self.step_context.asset_partition_key_range_for_output(self.name)
 
     @property
@@ -302,9 +424,17 @@ class OutputContext:
         - The output asset has no partitioning.
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
         """
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.asset_partitions_time_window"
+                "This use on upstream_output is deprecated and will fail in the future"
+                "Try to obtain what you need directly from InputContext"
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
         return self.step_context.asset_partitions_time_window_for_output(self.name)
 
-    def get_run_scoped_output_identifier(self) -> List[str]:
+    def get_run_scoped_output_identifier(self) -> Sequence[str]:
         """Utility method to get a collection of identifiers that as a whole represent a unique
         step output.
 
@@ -318,12 +448,12 @@ class OutputContext:
         - ``name``: the name of the output. (default: 'result').
 
         Returns:
-            List[str, ...]: A list of identifiers, i.e. run id, step key, and output name
+            Sequence[str, ...]: A list of identifiers, i.e. run id, step key, and output name
         """
 
         warnings.warn(
             "`OutputContext.get_run_scoped_output_identifier` is deprecated. Use "
-            "`OutputContext.get_output_identifier` instead."
+            "`OutputContext.get_identifier` instead."
         )
         # if run_id is None and this is a re-execution, it means we failed to find its source run id
         check.invariant(
@@ -347,7 +477,7 @@ class OutputContext:
 
         return [run_id, step_key, name]
 
-    def get_output_identifier(self) -> List[str]:
+    def get_identifier(self) -> Sequence[str]:
         """Utility method to get a collection of identifiers that as a whole represent a unique
         step output.
 
@@ -364,7 +494,7 @@ class OutputContext:
         the ``run_id``.
 
         Returns:
-            List[str, ...]: A list of identifiers, i.e. (run_id or version), step_key, and output_name
+            Sequence[str, ...]: A list of identifiers, i.e. (run_id or version), step_key, and output_name
         """
         version = self.version
         step_key = self.step_key
@@ -383,6 +513,31 @@ class OutputContext:
                 identifier.append(self.mapping_key)
 
         return identifier
+
+    def get_output_identifier(self) -> Sequence[str]:
+        warnings.warn(
+            "`OutputContext.get_output_identifier` is deprecated. Use "
+            "`OutputContext.get_identifier` instead."
+        )
+
+        return self.get_identifier()
+
+    def get_asset_identifier(self) -> Sequence[str]:
+        if self.asset_key is not None:
+            if self.has_asset_partitions:
+                return self.asset_key.path + [self.asset_partition_key]
+            else:
+                return self.asset_key.path
+        else:
+            check.failed("Can't get asset output identifier for an output with no asset key")
+
+    def get_asset_output_identifier(self) -> Sequence[str]:
+        warnings.warn(
+            "`OutputContext.get_asset_output_identifier` is deprecated. Use "
+            "`OutputContext.get_asset_identifier` instead."
+        )
+
+        return self.get_asset_identifier()
 
     def log_event(
         self, event: Union[AssetObservation, AssetMaterialization, Materialization]
@@ -435,7 +590,7 @@ class OutputContext:
 
     def get_logged_events(
         self,
-    ) -> List[Union[AssetMaterialization, Materialization, AssetObservation]]:
+    ) -> Sequence[Union[AssetMaterialization, Materialization, AssetObservation]]:
         """Retrieve the list of user-generated events that were logged via the context.
 
 
@@ -462,13 +617,13 @@ class OutputContext:
 
         return self._user_events
 
-    def add_output_metadata(self, metadata: Dict[str, Any]) -> None:
+    def add_output_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> None:
         """Add a dictionary of metadata to the handled output.
 
         Metadata entries added will show up in the HANDLED_OUTPUT and ASSET_MATERIALIZATION events for the run.
 
         Args:
-            metadata (Dict[str, Any]): A metadata dictionary to log
+            metadata (Mapping[str, RawMetadataValue]): A metadata dictionary to log
 
         Examples:
 
@@ -486,13 +641,13 @@ class OutputContext:
 
     def get_logged_metadata_entries(
         self,
-    ) -> List[Union[MetadataEntry, PartitionMetadataEntry]]:
+    ) -> Sequence[Union[MetadataEntry, PartitionMetadataEntry]]:
         """Get the list of metadata entries that have been logged for use with this output."""
         return self._metadata_entries or []
 
     def consume_logged_metadata_entries(
         self,
-    ) -> List[Union[MetadataEntry, PartitionMetadataEntry]]:
+    ) -> Sequence[Union[MetadataEntry, PartitionMetadataEntry]]:
         """Pops and yields all user-generated metadata entries that have been recorded from this context.
 
         If consume_logged_metadata_entries has not yet been called, this will yield all logged events since the call to `handle_output`. If consume_logged_metadata_entries has been called, it will yield all events since the last time consume_logged_metadata_entries was called. Designed for internal use. Users should never need to invoke this method.
@@ -512,6 +667,7 @@ def get_output_context(
     step_context: Optional["StepExecutionContext"],
     resources: Optional["Resources"],
     version: Optional[str],
+    warn_on_step_context_use: bool = False,
 ) -> "OutputContext":
     """
     Args:
@@ -534,6 +690,11 @@ def get_output_context(
 
     io_manager_key = output_def.io_manager_key
     resource_config = resolved_run_config.resources[io_manager_key].config
+
+    node_handle = execution_plan.get_step_by_key(step.key).solid_handle
+    asset_info = pipeline_def.asset_layer.asset_info_for_output(
+        node_handle=node_handle, output_name=step_output.name
+    )
 
     if step_context:
         check.invariant(
@@ -559,6 +720,8 @@ def get_output_context(
         step_context=step_context,
         resource_config=resource_config,
         resources=resources,
+        asset_info=asset_info,
+        warn_on_step_context_use=warn_on_step_context_use,
     )
 
 
@@ -583,16 +746,18 @@ def step_output_version(
 def build_output_context(
     step_key: Optional[str] = None,
     name: Optional[str] = None,
-    metadata: Optional[Dict[str, Any]] = None,
+    metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     run_id: Optional[str] = None,
     mapping_key: Optional[str] = None,
     config: Optional[Any] = None,
     dagster_type: Optional["DagsterType"] = None,
     version: Optional[str] = None,
-    resource_config: Optional[Dict[str, Any]] = None,
-    resources: Optional[Dict[str, Any]] = None,
+    resource_config: Optional[Mapping[str, object]] = None,
+    resources: Optional[Mapping[str, object]] = None,
     solid_def: Optional[SolidDefinition] = None,
-    op_def: Optional[OpDefinition] = None,
+    op_def: Optional["OpDefinition"] = None,
+    asset_key: Optional[Union[AssetKey, str]] = None,
+    partition_key: Optional[str] = None,
 ) -> "OutputContext":
     """Builds output context from provided parameters.
 
@@ -603,20 +768,23 @@ def build_output_context(
     Args:
         step_key (Optional[str]): The step_key for the compute step that produced the output.
         name (Optional[str]): The name of the output that produced the output.
-        metadata (Optional[Dict[str, Any]]): A dict of the metadata that is assigned to the
+        metadata (Optional[Mapping[str, Any]]): A dict of the metadata that is assigned to the
             OutputDefinition that produced the output.
         mapping_key (Optional[str]): The key that identifies a unique mapped output. None for regular outputs.
         config (Optional[Any]): The configuration for the output.
         dagster_type (Optional[DagsterType]): The type of this output.
         version (Optional[str]): (Experimental) The version of the output.
-        resource_config (Optional[Dict[str, Any]]): The resource config to make available from the
+        resource_config (Optional[Mapping[str, Any]]): The resource config to make available from the
             input context. This usually corresponds to the config provided to the resource that
             loads the output manager.
         resources (Optional[Resources]): The resources to make available from the context.
             For a given key, you can provide either an actual instance of an object, or a resource
             definition.
         solid_def (Optional[SolidDefinition]): The definition of the solid that produced the output.
-        op_def (Optional[OpDefinition]): The definition of the solid that produced the output.
+        op_def (Optional[OpDefinition]): The definition of the op that produced the output.
+        asset_key: Optional[Union[AssetKey, Sequence[str], str]]: The asset key corresponding to the
+            output.
+        partition_key: Optional[str]: String value representing partition key to execute with.
 
     Examples:
 
@@ -628,6 +796,7 @@ def build_output_context(
                 do_something
 
     """
+    from dagster.core.definitions import OpDefinition
     from dagster.core.execution.context_creation_pipeline import initialize_console_manager
     from dagster.core.types.dagster_type import DagsterType
 
@@ -642,6 +811,8 @@ def build_output_context(
     resources = check.opt_dict_param(resources, "resources", key_type=str)
     solid_def = check.opt_inst_param(solid_def, "solid_def", SolidDefinition)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
+    asset_key = AssetKey.from_coerceable(asset_key) if asset_key else None
+    partition_key = check.opt_str_param(partition_key, "partition_key")
 
     return OutputContext(
         step_key=step_key,
@@ -659,4 +830,6 @@ def build_output_context(
         resources=resources,
         step_context=None,
         op_def=op_def,
+        asset_info=AssetOutputInfo(key=asset_key) if asset_key else None,
+        partition_key=partition_key,
     )

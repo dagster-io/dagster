@@ -1,12 +1,12 @@
 from typing import Dict, List, NamedTuple, Optional
 
 import pkg_resources
-import yaml
 
-from dagster import check
+import dagster._check as check
+from dagster._utils.merger import deep_merge_dicts
+from dagster._utils.yaml_utils import dump_run_config_yaml
 from dagster.core.definitions.utils import config_from_files, config_from_yaml_strings
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.utils.merger import deep_merge_dicts
 
 from .mode import DEFAULT_MODE_NAME
 from .utils import check_valid_name
@@ -19,8 +19,8 @@ class PresetDefinition(
             ("name", str),
             ("run_config", Optional[Dict[str, object]]),
             ("solid_selection", Optional[List[str]]),
-            ("mode", Optional[str]),
-            ("tags", Dict[str, object]),
+            ("mode", str),
+            ("tags", Dict[str, str]),
         ],
     )
 ):
@@ -57,7 +57,7 @@ class PresetDefinition(
         run_config: Optional[Dict[str, object]] = None,
         solid_selection: Optional[List[str]] = None,
         mode: Optional[str] = None,
-        tags: Dict[str, object] = None,
+        tags: Optional[Dict[str, object]] = None,
     ):
 
         return super(PresetDefinition, cls).__new__(
@@ -200,7 +200,7 @@ class PresetDefinition(
         Returns:
             str: The environment dict as YAML.
         """
-        return yaml.dump(self.run_config or {}, default_flow_style=False)
+        return dump_run_config_yaml(self.run_config or {})
 
     def with_additional_config(self, run_config):
         """Return a new PresetDefinition with additional config merged in to the existing config."""

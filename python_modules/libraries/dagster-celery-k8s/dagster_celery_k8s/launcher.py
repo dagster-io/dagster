@@ -1,4 +1,5 @@
 import sys
+from typing import cast
 
 import kubernetes
 from dagster_k8s.job import (
@@ -9,18 +10,19 @@ from dagster_k8s.job import (
 )
 from dagster_k8s.utils import delete_job
 
-from dagster import DagsterInvariantViolationError, MetadataEntry, check
-from dagster.config.field import resolve_to_config_type
-from dagster.config.validate import process_config
+from dagster import DagsterInvariantViolationError, MetadataEntry
+from dagster import _check as check
+from dagster._config import process_config, resolve_to_config_type
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._utils import frozentags, merge_dicts
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import RetryMode
 from dagster.core.launcher import LaunchRunContext, RunLauncher
 from dagster.core.launcher.base import CheckRunHealthResult, WorkerStatus
+from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils import frozentags, merge_dicts
-from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
 
@@ -158,7 +160,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         job_image_from_executor_config = exc_config.get("job_image")
 
-        pipeline_origin = context.pipeline_code_origin
+        pipeline_origin = cast(PipelinePythonOrigin, context.pipeline_code_origin)
         repository_origin = pipeline_origin.repository_origin
 
         job_image = repository_origin.container_image
@@ -196,7 +198,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         user_defined_k8s_config = get_user_defined_k8s_config(frozentags(run.tags))
 
-        from dagster.cli.api import ExecuteRunArgs
+        from dagster._cli.api import ExecuteRunArgs
 
         run_args = ExecuteRunArgs(
             pipeline_origin=pipeline_origin,
@@ -215,6 +217,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             env_vars=env_vars,
             labels={
                 "dagster/job": pipeline_origin.pipeline_name,
+                "dagster/run-id": run.run_id,
             },
         )
 
@@ -225,9 +228,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             run,
             EngineEventData(
                 [
-                    MetadataEntry.text(job_name, "Kubernetes Job name"),
-                    MetadataEntry.text(job_namespace, "Kubernetes Namespace"),
-                    MetadataEntry.text(run.run_id, "Run ID"),
+                    MetadataEntry("Kubernetes Job name", value=job_name),
+                    MetadataEntry("Kubernetes Namespace", value=job_namespace),
+                    MetadataEntry("Run ID", value=run.run_id),
                 ]
             ),
             cls=self.__class__,
@@ -239,9 +242,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             run,
             EngineEventData(
                 [
-                    MetadataEntry.text(job_name, "Kubernetes Job name"),
-                    MetadataEntry.text(job_namespace, "Kubernetes Namespace"),
-                    MetadataEntry.text(run.run_id, "Run ID"),
+                    MetadataEntry("Kubernetes Job name", value=job_name),
+                    MetadataEntry("Kubernetes Namespace", value=job_namespace),
+                    MetadataEntry("Run ID", value=run.run_id),
                 ]
             ),
             cls=self.__class__,

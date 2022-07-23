@@ -34,61 +34,65 @@ Metadata is attached to events at construction time. There are currently two ava
 
 Yielding events from within the body of an op is a useful way of communicating with the Dagster framework. The most critical event to the functionality of Dagster is the <PyObject object="Output"/> event, which allows output data to be passed on from one op to the next. However, we also provide interfaces to inform Dagster about external assets and data quality checks during the run of an op.
 
-### Outputs
+### Output Objects
 
-Because returning a value from an op is such a fundamental part of creating a data pipeline, we have a few different interfaces for this functionality, to help ease transition into writing Dagster-specific code.
+Because returning a value from an op is such a fundamental part of creating a data pipeline, we have a few different interfaces for this functionality.
 
-For ops with a single output, you can simply return a value directly from the `compute_fn`. Internally, this will be converted to a Dagster <PyObject object="Output"/> event with the default output name `result`:
+For many use cases, Dagster ops can be used directly with python's native type annotations without additional modification. Check out the docs on [Op Outputs](/concepts/ops-jobs-graphs/ops#outputs) to learn more about this functionality. Dagster also provides the <PyObject object="Output"/> object, which opens up additional functionality to outputs when using Dagster, such as [specifying output metadata](/concepts/ops-jobs-graphs/op-events#attaching-metadata-to-outputs) and [conditional branching](/concepts/ops-jobs-graphs/graphs#with-conditional-branching), all while maintaining coherent type annotations.
 
-```python file=/concepts/solids_pipelines/op_events.py startafter=start_op_output_1 endbefore=end_op_output_1
-from dagster import op
+<PyObject object="Output" /> objects can be either returned or yielded. The Output
+type is also generic, for use with return annotations:
 
+```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_op_output_4 endbefore=end_op_output_4
+from dagster import Output, op
+from typing import Tuple
 
+# Using Output as type annotation without inner type
 @op
-def my_simple_return_op(context):
-    return 1
+def my_output_op() -> Output:
+    return Output("some_value")
+
+
+# A single output with a parameterized type annotation
+@op
+def my_output_generic_op() -> Output[int]:
+    return Output(5)
+
+
+# Multiple outputs using parameterized type annotation
+@op(out={"int_out": Out(), "str_out": Out()})
+def my_multiple_generic_output_op() -> Tuple[Output[int], Output[str]]:
+    return (Output(5), Output("foo"))
 ```
 
-While this is perhaps the most intuitive way to return a value from a function, once you have multiple outputs defined on your op, or want to yield additional, non-output information from the body of your op, explicitly returning a value is no longer an option. In these cases, you'll want to explicitly yield <PyObject object="Output"/> events. With that in mind, the above example can be converted to the equivalent yield pattern like so:
+When <PyObject object="Output" /> objects are yielded, type annotations cannot be used. Instead, type information can be specified using the `out` argument of the op decorator.
 
-```python file=/concepts/solids_pipelines/op_events.py startafter=start_op_output_0 endbefore=end_op_output_0
+```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_yield_outputs endbefore=end_yield_outputs
 from dagster import Output, op
 
 
-@op
-def my_simple_yield_op(context):
-    yield Output(1)
+@op(out={"out1": Out(str), "out2": Out(int)})
+def my_op_yields():
+    yield Output(5, output_name="out2")
+    yield Output("foo", output_name="out1")
 ```
-
-or, if you have a specific output name other than the default `result`:
-
-```python file=/concepts/solids_pipelines/op_events.py startafter=start_op_output_2 endbefore=end_op_output_2
-from dagster import Output, op
-
-
-@op(out={"my_output": Out(int)})
-def my_named_yield_op(context):
-    yield Output(1, output_name="my_output")
-```
-
-Check out the docs on [Op Outputs](/concepts/ops-jobs-graphs/ops#outputs) to learn more.
 
 #### Attaching Metadata to Outputs <Experimental/>
 
-If there is information specific to an <PyObject object="Output"/> that you would like to log, you may optionally represent that by passing in a `metadata` parameter containing a mapping of string labels to metadata values.
+If there is information specific to an op output that you would like to log, you can use an <PyObject object="Output"/> object to attach metadata to the op's output. To do this, use the `metadata` parameter on the object, which expects a mapping of string labels to metadata values.
 
 The <PyObject object="EventMetadata" /> class contains a set of static wrappers to customize the display of certain types of structured metadata.
 
 The following example demonstrates how you might use this functionality:
 
-```python file=/concepts/solids_pipelines/op_events.py startafter=start_op_output_3 endbefore=end_op_output_3
+```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_op_output_3 endbefore=end_op_output_3
 from dagster import MetadataValue, Output, op
 
 
 @op
-def my_metadata_output(context):
+def my_metadata_output(context) -> Output:
     df = get_some_data()
-    yield Output(
+    return Output(
         df,
         metadata={
             "text_metadata": "Text-based metadata for this event",
@@ -108,7 +112,7 @@ to keep track of can be considered an asset.
 
 Generally, you'd want to send this event directly after you persist the asset to your external system. All <PyObject object="AssetMaterialization" /> events must define an `asset_key`, which is a unique identifier to describe the asset you are persisting.
 
-```python file=/concepts/solids_pipelines/op_events.py startafter=start_asset_op endbefore=end_asset_op
+```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_asset_op endbefore=end_asset_op
 from dagster import AssetMaterialization, op
 
 
@@ -129,7 +133,7 @@ def my_asset_op(context):
 
 Asset materializations can also be yielded:
 
-```python file=/concepts/solids_pipelines/op_events.py startafter=start_asset_op_yield endbefore=end_asset_op_yield
+```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_asset_op_yield endbefore=end_asset_op_yield
 from dagster import AssetMaterialization, Output, op
 
 
@@ -208,7 +212,7 @@ To learn more about asset observations, check out the [Asset Observation](/conce
 
 Ops can emit structured events to represent the results of a data quality test. The data quality event class is the <PyObject object="ExpectationResult" />. To generate an expectation result, we can log or yield an <PyObject object="ExpectationResult" /> event in our op.
 
-```python file=/concepts/solids_pipelines/op_events.py startafter=start_expectation_op endbefore=end_expectation_op
+```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_expectation_op endbefore=end_expectation_op
 from dagster import ExpectationResult, op
 
 
@@ -227,7 +231,7 @@ Like many other event types in Dagster, there are a variety of types of metadata
 
 This example shows metadata entries of different types attached to the same expectation result:
 
-```python file=/concepts/solids_pipelines/op_events.py startafter=start_metadata_expectation_op endbefore=end_metadata_expectation_op
+```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_metadata_expectation_op endbefore=end_metadata_expectation_op
 from dagster import ExpectationResult, MetadataValue, op
 
 
@@ -262,7 +266,7 @@ failed in an unrecoverable way, and that execution should stop. This may be usef
 if, in the body of your op, you detect an issue that would not raise an error on
 its own, but would still cause problems if the execution were to continue.
 
-```python file=/concepts/solids_pipelines/op_events.py startafter=start_failure_op endbefore=end_failure_op
+```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_failure_op endbefore=end_failure_op
 from dagster import Failure, op
 
 
@@ -285,7 +289,7 @@ def my_failure_op():
 
 As is the case with many Dagster-provided classes, you can attach a list <PyObject object="MetadataEntry"/> denoting an arbitrary set of metadata relevant to the failure.
 
-```python file=/concepts/solids_pipelines/op_events.py startafter=start_failure_metadata_op endbefore=end_failure_metadata_op
+```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_failure_metadata_op endbefore=end_failure_metadata_op
 from dagster import Failure, op
 
 
@@ -314,7 +318,7 @@ execution.
 
 You can configure the number of retries to be attempted with the `max_retries` parameter.
 
-```python file=/concepts/solids_pipelines/op_events.py startafter=start_retry_op endbefore=end_retry_op
+```python file=/concepts/ops_jobs_graphs/op_events.py startafter=start_retry_op endbefore=end_retry_op
 from dagster import RetryRequested, op
 
 

@@ -1,55 +1,59 @@
-import {Box} from '@dagster-io/ui';
+import {Box, Spinner} from '@dagster-io/ui';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
-import {AssetNode} from '../workspace/asset-graph/AssetNode';
-import {ForeignNode} from '../workspace/asset-graph/ForeignNode';
-import {LiveData} from '../workspace/asset-graph/Utils';
+import {AssetNode} from '../asset-graph/AssetNode';
+import {LiveData, toGraphId} from '../asset-graph/Utils';
+import {AssetGraphQuery_assetNodes} from '../asset-graph/types/AssetGraphQuery';
 
-import {AssetNodeDefinitionFragment_dependencies} from './types/AssetNodeDefinitionFragment';
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 
 export const AssetNodeList: React.FC<{
-  items: AssetNodeDefinitionFragment_dependencies[];
+  items: AssetGraphQuery_assetNodes[] | null;
   liveDataByNode: LiveData;
 }> = ({items, liveDataByNode}) => {
   const history = useHistory();
 
+  if (items === null) {
+    return (
+      <Container flex={{alignItems: 'center', justifyContent: 'center'}}>
+        <Spinner purpose="section" />
+      </Container>
+    );
+  }
+
   return (
-    <Box
-      flex={{gap: 5}}
-      padding={{horizontal: 12}}
-      style={{
-        height: 112,
-        overflowX: 'auto',
-        width: '100%',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {items.map(({asset}) => {
-        return (
-          <div
-            key={asset.id}
-            style={{position: 'relative', flexShrink: 0, width: 240, height: 90}}
-            onClick={(e) => {
-              e.stopPropagation();
-              history.push(`/instance/assets/${asset.assetKey.path.join('/')}?view=definition`);
-            }}
-          >
-            {asset.jobNames.length ? (
-              <AssetNode
-                definition={asset}
-                metadata={[]}
-                inAssetCatalog
-                jobName={asset.jobNames[0]}
-                selected={false}
-                liveData={liveDataByNode[asset.id]}
-              />
-            ) : (
-              <ForeignNode assetKey={asset.assetKey} />
-            )}
-          </div>
-        );
-      })}
-    </Box>
+    <Container flex={{gap: 4}} padding={{horizontal: 12}}>
+      {items.map((asset) => (
+        <AssetNodeWrapper
+          key={asset.id}
+          onClick={(e) => {
+            e.stopPropagation();
+            history.push(assetDetailsPathForKey(asset.assetKey, {view: 'definition'}));
+          }}
+        >
+          <AssetNode
+            definition={asset}
+            inAssetCatalog
+            selected={false}
+            liveData={liveDataByNode[toGraphId(asset.assetKey)]}
+          />
+        </AssetNodeWrapper>
+      ))}
+    </Container>
   );
 };
+
+const Container = styled(Box)`
+  height: 144px;
+  overflow-x: auto;
+  width: 100%;
+  white-space: nowrap;
+`;
+
+const AssetNodeWrapper = styled.div`
+  cursor: pointer;
+  width: 240px;
+  flex-shrink: 0;
+`;

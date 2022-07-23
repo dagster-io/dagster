@@ -19,9 +19,11 @@ from dagster_graphql.test.utils import (
 
 from dagster import (
     Any,
+    AssetGroup,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    AssetsDefinition,
     Bool,
     DagsterInstance,
     DefaultScheduleStatus,
@@ -52,6 +54,8 @@ from dagster import (
     ScheduleDefinition,
     ScheduleEvaluationContext,
     SolidExecutionContext,
+    SourceAsset,
+    SourceHashVersionStrategy,
     StaticPartitionsDefinition,
     String,
     TableColumn,
@@ -59,7 +63,11 @@ from dagster import (
     TableConstraints,
     TableRecord,
     TableSchema,
-    check,
+)
+from dagster import _check as check
+from dagster import (
+    asset,
+    build_assets_job,
     composite_solid,
     dagster_type_loader,
     dagster_type_materializer,
@@ -71,17 +79,18 @@ from dagster import (
     logger,
     monthly_schedule,
     op,
-    pipeline,
     repository,
     resource,
-    solid,
     usable_as_dagster_type,
     weekly_schedule,
 )
-from dagster.core.asset_defs import SourceAsset, asset, build_assets_job
-from dagster.core.definitions.decorators.sensor import sensor
+from dagster._legacy import pipeline, solid
+from dagster._seven import get_system_temp_directory
+from dagster._utils import file_relative_path, segfault
+from dagster.core.definitions.decorators.sensor_decorator import sensor
 from dagster.core.definitions.executor_definition import in_process_executor
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.definitions.metadata import MetadataValue
+from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.fs_io_manager import fs_io_manager
@@ -90,21 +99,19 @@ from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import default_mode_def_for_test, today_at_midnight
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import PythonFileTarget
-from dagster.seven import get_system_temp_directory
-from dagster.utils import file_relative_path, segfault
 
 LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 
 
 @dagster_type_loader(String)
 def df_input_schema(_context, path):
-    with open(path, "r") as fd:
+    with open(path, "r", encoding="utf8") as fd:
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
 @dagster_type_materializer(String)
 def df_output_schema(_context, path, value):
-    with open(path, "w") as fd:
+    with open(path, "w", encoding="utf8") as fd:
         writer = csv.DictWriter(fd, fieldnames=value[0].keys())
         writer.writeheader()
         writer.writerows(rowdicts=value)
@@ -194,7 +201,7 @@ def csv_hello_world_solids_config():
 
 @solid(config_schema={"file": Field(String)})
 def loop(context):
-    with open(context.solid_config["file"], "w") as ff:
+    with open(context.solid_config["file"], "w", encoding="utf8") as ff:
         ff.write("yup")
 
     while True:
@@ -238,7 +245,7 @@ def solid_partitioned_asset(_):
 
 @solid
 def tag_asset_solid(_):
-    yield AssetMaterialization(asset_key="a", tags={"foo": "FOO"})
+    yield AssetMaterialization(asset_key="a")
     yield Output(1)
 
 
@@ -522,7 +529,13 @@ def pipeline_with_enum_config():
 def naughty_programmer_pipeline():
     @lambda_solid
     def throw_a_thing():
-        raise Exception("bad programmer, bad")
+        try:
+            try:
+                raise Exception("bad programmer, bad")
+            except Exception as e:
+                raise Exception("Outer exception") from e
+        except Exception as e:
+            raise Exception("Even more outer exception") from e
 
     throw_a_thing()
 
@@ -694,28 +707,32 @@ def materialization_pipeline():
             asset_key="all_types",
             description="a materialization with all metadata types",
             metadata_entries=[
-                MetadataEntry.text("text is cool", "text"),
-                MetadataEntry.url("https://bigty.pe/neato", "url"),
-                MetadataEntry.fspath("/tmp/awesome", "path"),
-                MetadataEntry.json({"is_dope": True}, "json"),
-                MetadataEntry.python_artifact(MetadataEntry, "python class"),
-                MetadataEntry.python_artifact(file_relative_path, "python function"),
-                MetadataEntry.float(1.2, "float"),
-                MetadataEntry.int(1, "int"),
-                MetadataEntry.float(float("nan"), "float NaN"),
-                MetadataEntry.int(LONG_INT, "long int"),
-                MetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
-                MetadataEntry.asset(AssetKey("my_asset"), "my asset"),
-                MetadataEntry.table(
-                    label="table",
-                    records=[
-                        TableRecord(foo=1, bar=2),
-                        TableRecord(foo=3, bar=4),
-                    ],
+                MetadataEntry("text", value="text is cool"),
+                MetadataEntry("url", value=MetadataValue.url("https://bigty.pe/neato")),
+                MetadataEntry("path", value=MetadataValue.path("/tmp/awesome")),
+                MetadataEntry("json", value={"is_dope": True}),
+                MetadataEntry("python class", value=MetadataValue.python_artifact(MetadataEntry)),
+                MetadataEntry(
+                    "python function", value=MetadataValue.python_artifact(file_relative_path)
                 ),
-                MetadataEntry.table_schema(
-                    label="table_schema",
-                    schema=TableSchema(
+                MetadataEntry("float", value=1.2),
+                MetadataEntry("int", value=1),
+                MetadataEntry("float NaN", value=float("nan")),
+                MetadataEntry("long int", value=LONG_INT),
+                MetadataEntry("pipeline run", value=MetadataValue.pipeline_run("fake_run_id")),
+                MetadataEntry("my asset", value=AssetKey("my_asset")),
+                MetadataEntry(
+                    "table",
+                    value=MetadataValue.table(
+                        records=[
+                            TableRecord(foo=1, bar=2),
+                            TableRecord(foo=3, bar=4),
+                        ],
+                    ),
+                ),
+                MetadataEntry(
+                    "table_schema",
+                    value=TableSchema(
                         columns=[
                             TableColumn(
                                 name="foo",
@@ -1324,18 +1341,20 @@ def backcompat_materialization_pipeline():
             asset_key="all_types",
             description="a materialization with all metadata types",
             metadata_entries=[
-                MetadataEntry.text("text is cool", "text"),
-                MetadataEntry.url("https://bigty.pe/neato", "url"),
-                MetadataEntry.fspath("/tmp/awesome", "path"),
-                MetadataEntry.json({"is_dope": True}, "json"),
-                MetadataEntry.python_artifact(MetadataEntry, "python class"),
-                MetadataEntry.python_artifact(file_relative_path, "python function"),
-                MetadataEntry.float(1.2, "float"),
-                MetadataEntry.int(1, "int"),
-                MetadataEntry.float(float("nan"), "float NaN"),
-                MetadataEntry.int(LONG_INT, "long int"),
-                MetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
-                MetadataEntry.asset(AssetKey("my_asset"), "my asset"),
+                MetadataEntry("text", value="text is cool"),
+                MetadataEntry("url", value=MetadataValue.url("https://bigty.pe/neato")),
+                MetadataEntry("path", value=MetadataValue.path("/tmp/awesome")),
+                MetadataEntry("json", value={"is_dope": True}),
+                MetadataEntry("python class", value=MetadataValue.python_artifact(MetadataEntry)),
+                MetadataEntry(
+                    "python function", value=MetadataValue.python_artifact(file_relative_path)
+                ),
+                MetadataEntry("float", value=1.2),
+                MetadataEntry("int", value=1),
+                MetadataEntry("float NaN", value=float("nan")),
+                MetadataEntry("long int", value=LONG_INT),
+                MetadataEntry("pipeline run", value=MetadataValue.pipeline_run("fake_run_id")),
+                MetadataEntry("my asset", value=AssetKey("my_asset")),
             ],
         )
         yield Output(None)
@@ -1389,7 +1408,7 @@ def hanging_asset(context, first_asset):  # pylint: disable=redefined-outer-name
     """
     Asset that hangs forever, used to test in-progress ops.
     """
-    with open(context.resources.hanging_asset_resource, "w") as ff:
+    with open(context.resources.hanging_asset_resource, "w", encoding="utf8") as ff:
         ff.write("yup")
 
     while True:
@@ -1410,6 +1429,52 @@ hanging_job = build_assets_job(
         "hanging_asset_resource": hanging_asset_resource,
     },
 )
+
+
+@op
+def my_op():
+    return 1
+
+
+@op(required_resource_keys={"hanging_asset_resource"})
+def hanging_op(context, my_op):  # pylint: disable=unused-argument
+    with open(context.resources.hanging_asset_resource, "w", encoding="utf8") as ff:
+        ff.write("yup")
+
+    while True:
+        time.sleep(0.1)
+
+
+@op
+def never_runs_op(hanging_op):  # pylint: disable=unused-argument
+    pass
+
+
+@graph
+def hanging_graph():
+    return never_runs_op(hanging_op(my_op()))
+
+
+hanging_graph_asset = AssetsDefinition.from_graph(hanging_graph)
+
+
+@job(version_strategy=SourceHashVersionStrategy())
+def memoization_job():
+    my_op()
+
+
+@asset
+def downstream_asset(hanging_graph):  # pylint: disable=unused-argument
+    return 1
+
+
+hanging_graph_asset_job = AssetGroup(
+    [hanging_graph_asset, downstream_asset],
+    resource_defs={
+        "hanging_asset_resource": hanging_asset_resource,
+        "io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager()),
+    },
+).build_job("hanging_graph_asset_job")
 
 
 @asset
@@ -1548,6 +1613,70 @@ failure_assets_job = build_assets_job(
 )
 
 
+@asset
+def foo(context):
+    assert context.pipeline_def.asset_selection_data != None
+    return 5
+
+
+@asset
+def bar(context):
+    assert context.pipeline_def.asset_selection_data != None
+    return 10
+
+
+@asset
+def foo_bar(context, foo, bar):
+    assert context.pipeline_def.asset_selection_data != None
+    return foo + bar
+
+
+@asset
+def baz(context, foo_bar):
+    assert context.pipeline_def.asset_selection_data != None
+    return foo_bar
+
+
+@asset
+def unconnected(context):
+    assert context.pipeline_def.asset_selection_data != None
+
+
+asset_group_job = AssetGroup([foo, bar, foo_bar, baz, unconnected]).build_job("foo_job")
+
+
+@asset(group_name="group_1")
+def grouped_asset_1():
+    return 1
+
+
+@asset(group_name="group_1")
+def grouped_asset_2():
+    return 1
+
+
+@asset
+def ungrouped_asset_3():
+    return 1
+
+
+@asset(group_name="group_2")
+def grouped_asset_4():
+    return 1
+
+
+@asset
+def ungrouped_asset_5():
+    return 1
+
+
+# For now the only way to add assets to repositories is via AssetGroup
+# When AssetGroup is removed, these assets should be added directly to repository_with_named_groups
+named_groups_job = AssetGroup(
+    [grouped_asset_1, grouped_asset_2, ungrouped_asset_3, grouped_asset_4, ungrouped_asset_5]
+).build_job("named_groups_job")
+
+
 @repository
 def empty_repo():
     return []
@@ -1608,6 +1737,10 @@ def define_pipelines():
         partition_materialization_job,
         observation_job,
         failure_assets_job,
+        asset_group_job,
+        hanging_graph_asset_job,
+        named_groups_job,
+        memoization_job,
     ]
 
 

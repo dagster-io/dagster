@@ -1,19 +1,43 @@
 from enum import Enum as PyEnum
 from functools import update_wrapper
-from typing import Any, Dict, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    overload,
+)
 
-from dagster import check
-from dagster.builtins import Int
-from dagster.config import Field, Selector
+from typing_extensions import TypeAlias
+
+import dagster._check as check
+from dagster._builtins import Int
+from dagster._config import Field, Selector, UserConfigSchema
 from dagster.core.definitions.configurable import (
     ConfiguredDefinitionConfigSchema,
     NamedConfigurableDefinition,
 )
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.pipeline_base import IPipeline
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.retries import RetryMode, get_retries_config
 
-from .definition_config_schema import convert_user_facing_definition_config_schema
+from .definition_config_schema import (
+    IDefinitionConfigSchema,
+    convert_user_facing_definition_config_schema,
+)
+
+if TYPE_CHECKING:
+    from dagster.core.executor.base import Executor
+    from dagster.core.executor.in_process import InProcessExecutor
+    from dagster.core.executor.init import InitExecutorContext
+    from dagster.core.executor.multiprocess import MultiprocessExecutor
+    from dagster.core.instance import DagsterInstance
 
 
 class ExecutorRequirement(PyEnum):
@@ -33,12 +57,17 @@ class ExecutorRequirement(PyEnum):
     PERSISTENT_OUTPUTS = "PERSISTENT_OUTPUTS"
 
 
-def multiple_process_executor_requirements():
+def multiple_process_executor_requirements() -> List[ExecutorRequirement]:
     return [
         ExecutorRequirement.RECONSTRUCTABLE_JOB,
         ExecutorRequirement.NON_EPHEMERAL_INSTANCE,
         ExecutorRequirement.PERSISTENT_OUTPUTS,
     ]
+
+
+ExecutorConfig = Mapping[str, object]
+ExecutorCreationFunction: TypeAlias = Callable[["InitExecutorContext"], "Executor"]
+ExecutorRequirementsFunction: TypeAlias = Callable[[ExecutorConfig], Sequence[ExecutorRequirement]]
 
 
 class ExecutorDefinition(NamedConfigurableDefinition):
@@ -54,17 +83,21 @@ class ExecutorDefinition(NamedConfigurableDefinition):
             and return an instance of :py:class:`Executor`
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
             executor.
+        description (Optional[str]): A description of the executor.
     """
 
     def __init__(
         self,
-        name,
-        config_schema=None,
-        requirements=None,
-        executor_creation_fn=None,
-        description=None,
+        name: str,
+        config_schema: Optional[UserConfigSchema] = None,
+        requirements: Union[
+            ExecutorRequirementsFunction, Optional[List[ExecutorRequirement]]
+        ] = None,
+        executor_creation_fn: Optional[ExecutorCreationFunction] = None,
+        description: Optional[str] = None,
     ):
         self._name = check.str_param(name, "name")
+        self._requirements_fn: ExecutorRequirementsFunction
         if callable(requirements):
             self._requirements_fn = requirements
         else:
@@ -79,25 +112,27 @@ class ExecutorDefinition(NamedConfigurableDefinition):
         self._description = check.opt_str_param(description, "description")
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         return self._description
 
     @property
-    def config_schema(self):
+    def config_schema(self) -> IDefinitionConfigSchema:
         return self._config_schema
 
-    def get_requirements(self, executor_config: Dict[str, Any]):
+    def get_requirements(
+        self, executor_config: Mapping[str, object]
+    ) -> Sequence[ExecutorRequirement]:
         return self._requirements_fn(executor_config)
 
     @property
-    def executor_creation_fn(self):
+    def executor_creation_fn(self) -> Optional[ExecutorCreationFunction]:
         return self._executor_creation_fn
 
-    def copy_for_configured(self, name, description, config_schema, _):
+    def copy_for_configured(self, name, description, config_schema, _) -> "ExecutorDefinition":
         return ExecutorDefinition(
             name=name,
             config_schema=config_schema,
@@ -148,11 +183,25 @@ class ExecutorDefinition(NamedConfigurableDefinition):
         )
 
 
+@overload
+def executor(name: ExecutorCreationFunction) -> ExecutorDefinition:
+    ...
+
+
+@overload
 def executor(
-    name=None,
-    config_schema=None,
-    requirements=None,
-):
+    name: Optional[str] = ...,
+    config_schema: Optional[UserConfigSchema] = ...,
+    requirements: Optional[Union[ExecutorRequirementsFunction, List[ExecutorRequirement]]] = ...,
+) -> "_ExecutorDecoratorCallable":
+    ...
+
+
+def executor(
+    name: Union[ExecutorCreationFunction, Optional[str]] = None,
+    config_schema: Optional[UserConfigSchema] = None,
+    requirements: Optional[Union[ExecutorRequirementsFunction, List[ExecutorRequirement]]] = None,
+) -> Union[ExecutorDefinition, "_ExecutorDecoratorCallable"]:
     """Define an executor.
 
     The decorated function should accept an :py:class:`InitExecutorContext` and return an instance
@@ -181,7 +230,7 @@ class _ExecutorDecoratorCallable:
         self.config_schema = config_schema  # type check in definition
         self.requirements = requirements
 
-    def __call__(self, fn):
+    def __call__(self, fn: ExecutorCreationFunction) -> ExecutorDefinition:
         check.callable_param(fn, "fn")
 
         if not self.name:
@@ -199,20 +248,27 @@ class _ExecutorDecoratorCallable:
         return executor_def
 
 
-def _core_in_process_executor_creation(config: Dict[str, Any]):
+def _core_in_process_executor_creation(config: ExecutorConfig) -> "InProcessExecutor":
     from dagster.core.executor.in_process import InProcessExecutor
 
     return InProcessExecutor(
         # shouldn't need to .get() here - issue with defaults in config setup
-        retries=RetryMode.from_config(config["retries"]),
+        retries=RetryMode.from_config(check.dict_elem(config, "retries")),
         marker_to_close=config.get("marker_to_close"),
     )
 
 
-IN_PROC_CONFIG = {
-    "retries": get_retries_config(),
-    "marker_to_close": Field(str, is_required=False),
-}
+IN_PROC_CONFIG = Field(
+    {
+        "retries": get_retries_config(),
+        "marker_to_close": Field(
+            str,
+            is_required=False,
+            description="[DEPRECATED]",
+        ),
+    },
+    description="Execute all steps in a single process.",
+)
 
 
 @executor(
@@ -238,7 +294,7 @@ def in_process_executor(init_context):
 
 
 @executor(name="execute_in_process_executor")
-def execute_in_process_executor(_):
+def execute_in_process_executor(_) -> "InProcessExecutor":
     """Executor used by execute_in_process.
 
     Use of this executor triggers special behavior in the config system that ignores all incoming
@@ -253,52 +309,76 @@ def execute_in_process_executor(_):
     )
 
 
-def _core_multiprocess_executor_creation(config: Dict[str, Any]):
+def _core_multiprocess_executor_creation(config: ExecutorConfig) -> "MultiprocessExecutor":
     from dagster.core.executor.multiprocess import MultiprocessExecutor
 
     # unpack optional selector
     start_method = None
-    start_cfg = {}
-    start_selector = config.get("start_method")
+    start_cfg: Dict[str, object] = {}
+    start_selector = check.opt_dict_elem(config, "start_method")
     if start_selector:
         start_method, start_cfg = list(start_selector.items())[0]
 
     return MultiprocessExecutor(
-        max_concurrent=config["max_concurrent"],
-        retries=RetryMode.from_config(config["retries"]),
+        max_concurrent=check.int_elem(config, "max_concurrent"),
+        retries=RetryMode.from_config(check.dict_elem(config, "retries")),  # type: ignore
         start_method=start_method,
-        explicit_forkserver_preload=start_cfg.get("preload_modules"),
+        explicit_forkserver_preload=check.opt_list_elem(start_cfg, "preload_modules", of_type=str),
     )
 
 
-MULTI_PROC_CONFIG = {
-    "max_concurrent": Field(Int, is_required=False, default_value=0),
-    "start_method": Field(
-        Selector(
-            {
-                "spawn": {},
-                "forkserver": {
-                    "preload_modules": Field(
-                        [str],
-                        is_required=False,
-                        description="Explicit modules to preload in the forkserver.",
+MULTI_PROC_CONFIG = Field(
+    {
+        "max_concurrent": Field(
+            Int,
+            default_value=0,
+            description=(
+                "The number of processes that may run concurrently. "
+                "By default, this is set to be the return value of `multiprocessing.cpu_count()`."
+            ),
+        ),
+        "start_method": Field(
+            Selector(
+                fields={
+                    "spawn": Field(
+                        {},
+                        description=(
+                            "Configure the multiprocess executor to start subprocesses "
+                            "using `spawn`."
+                        ),
                     ),
-                },
-                # fork currently unsupported due to threads usage
-            }
+                    "forkserver": Field(
+                        {
+                            "preload_modules": Field(
+                                [str],
+                                is_required=False,
+                                description=(
+                                    "Explicitly specify the modules to preload in the forkserver. "
+                                    "Otherwise, there are two cases for default values if modules "
+                                    "are not specified. If the Dagster job was loaded from a module, "
+                                    "the same module will be preloaded. If not, the `dagster` module "
+                                    "is preloaded."
+                                ),
+                            ),
+                        },
+                        description=(
+                            "Configure the multiprocess executor to start subprocesses "
+                            "using `forkserver`."
+                        ),
+                    ),
+                    # fork currently unsupported due to threads usage
+                }
+            ),
+            is_required=False,
+            description=(
+                "Select how subprocesses are created. By default, `spawn` is selected. See "
+                "https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods."
+            ),
         ),
-        is_required=False,
-        description=(
-            "Select how subprocesses are created. Defaults to spawn.\n"
-            "When forkserver is selected, set_forkserver_preload will be called with either:\n"
-            "* the preload_modules list if provided by config\n"
-            "* the module containing the Job if it was loaded from a module\n"
-            "* dagster\n"
-            "https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods"
-        ),
-    ),
-    "retries": get_retries_config(),
-}
+        "retries": get_retries_config(),
+    },
+    description="Execute each step in an individual process.",
+)
 
 
 @executor(
@@ -311,13 +391,13 @@ def multiprocess_executor(init_context):
 
     Any job that does not specify custom executors will use the multiprocess_executor by default.
     For jobs or legacy pipelines, to configure the multiprocess executor, include a fragment such
-    as the following in your config:
+    as the following in your run config:
 
     .. code-block:: yaml
 
         execution:
-          multiprocess:
-            config:
+          config:
+            multiprocess:
               max_concurrent: 4
 
     The ``max_concurrent`` arg is optional and tells the execution engine how many processes may run
@@ -334,7 +414,7 @@ def multiprocess_executor(init_context):
 default_executors = [in_process_executor, multiprocess_executor]
 
 
-def check_cross_process_constraints(init_context):
+def check_cross_process_constraints(init_context: "InitExecutorContext") -> None:
     from dagster.core.executor.init import InitExecutorContext
 
     check.inst_param(init_context, "init_context", InitExecutorContext)
@@ -347,7 +427,7 @@ def check_cross_process_constraints(init_context):
         _check_non_ephemeral_instance(init_context.instance)
 
 
-def _check_intra_process_pipeline(pipeline):
+def _check_intra_process_pipeline(pipeline: IPipeline) -> None:
     from dagster.core.definitions import JobDefinition
 
     if not isinstance(pipeline, ReconstructablePipeline):
@@ -363,7 +443,7 @@ def _check_intra_process_pipeline(pipeline):
         )
 
 
-def _check_non_ephemeral_instance(instance):
+def _check_non_ephemeral_instance(instance: "DagsterInstance") -> None:
     if instance.is_ephemeral:
         raise DagsterUnmetExecutorRequirementsError(
             "You have attempted to use an executor that uses multiple processes with an "
@@ -375,7 +455,9 @@ def _check_non_ephemeral_instance(instance):
         )
 
 
-def _get_default_executor_requirements(executor_config):
+def _get_default_executor_requirements(
+    executor_config: ExecutorConfig,
+) -> List[ExecutorRequirement]:
     return multiple_process_executor_requirements() if "multiprocess" in executor_config else []
 
 
@@ -389,7 +471,7 @@ def _get_default_executor_requirements(executor_config):
     ),
     requirements=_get_default_executor_requirements,
 )
-def multi_or_in_process_executor(init_context):
+def multi_or_in_process_executor(init_context: "InitExecutorContext") -> "Executor":
     """The default executor for a job.
 
     This is the executor available by default on a :py:class:`JobDefinition`
@@ -410,12 +492,14 @@ def multi_or_in_process_executor(init_context):
 
     When using the multiprocess mode, ``max_concurrent`` and ``retries`` can also be configured.
 
+    .. code-block:: yaml
 
-          multiprocess:
-            config:
+        execution:
+          config:
+            multiprocess:
               max_concurrent: 4
               retries:
-                enabled:
+              enabled:
 
     The ``max_concurrent`` arg is optional and tells the execution engine how many processes may run
     concurrently. By default, or if you set ``max_concurrent`` to be 0, this is the return value of
@@ -428,6 +512,10 @@ def multi_or_in_process_executor(init_context):
     and negative numbers can be used.
     """
     if "multiprocess" in init_context.executor_config:
-        return _core_multiprocess_executor_creation(init_context.executor_config["multiprocess"])
+        return _core_multiprocess_executor_creation(
+            check.dict_elem(init_context.executor_config, "multiprocess")
+        )
     else:
-        return _core_in_process_executor_creation(init_context.executor_config["in_process"])
+        return _core_in_process_executor_creation(
+            check.dict_elem(init_context.executor_config, "in_process")
+        )

@@ -1,7 +1,7 @@
+import {CustomTooltipProvider} from '@dagster-io/ui';
 import {Meta} from '@storybook/react/types-6-0';
 import React, {useState} from 'react';
 
-import {CustomTooltipProvider} from '../app/CustomTooltipProvider';
 import {extractMetadataFromLogs} from '../runs/RunMetadataProvider';
 import {RunMetadataProviderMessageFragment} from '../runs/types/RunMetadataProviderMessageFragment';
 import {StorybookProvider} from '../testing/StorybookProvider';

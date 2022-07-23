@@ -7,8 +7,8 @@ from urllib.parse import urlparse
 import mysql.connector as mysql
 import sqlalchemy as db
 
-from dagster import Field, IntSource, Selector, StringSource, check
-from dagster.core.storage.sql import get_alembic_config, handle_schema_errors
+from dagster import _check as check
+from dagster.core.storage.sql import get_alembic_config
 
 # 1 hr - anything less than 8 hrs (MySQL's default `wait_timeout` should work)
 MYSQL_POOL_RECYCLE = 3600
@@ -29,21 +29,6 @@ def get_conn(conn_string):
     )
     # https://github.com/dagster-io/dagster/issues/3735
     return conn
-
-
-def mysql_config():
-    return Selector(
-        {
-            "mysql_url": StringSource,
-            "mysql_db": {
-                "username": StringSource,
-                "password": StringSource,
-                "hostname": StringSource,
-                "db_name": StringSource,
-                "port": Field(IntSource, is_required=False, default_value=3306),
-            },
-        }
-    )
 
 
 def mysql_url_from_config(config_value):
@@ -142,9 +127,7 @@ def wait_for_connection(conn_string, retry_limit=5, retry_wait=0.2):
 
 
 def mysql_alembic_config(dunder_file):
-    return get_alembic_config(
-        dunder_file, config_path="../alembic/alembic.ini", script_path="../alembic/"
-    )
+    return get_alembic_config(dunder_file, config_path="../alembic/alembic.ini")
 
 
 @contextmanager
@@ -162,12 +145,7 @@ def create_mysql_connection(engine, dunder_file, storage_type_desc=None):
     try:
         # Retry connection to gracefully handle transient connection issues
         conn = retry_mysql_connection_fn(engine.connect)
-        with handle_schema_errors(
-            conn,
-            mysql_alembic_config(dunder_file),
-            msg="MySQL {}storage requires migration".format(storage_type_desc),
-        ):
-            yield conn
+        yield conn
     finally:
         if conn:
             conn.close()

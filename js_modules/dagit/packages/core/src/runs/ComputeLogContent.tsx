@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {ColorsWIP, Group, IconWIP, Spinner, FontFamily} from '@dagster-io/ui';
+import {Colors, Group, Icon, Spinner, FontFamily} from '@dagster-io/ui';
 import Ansi from 'ansi-to-react';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components/macro';
@@ -84,7 +84,7 @@ export class ComputeLogContent extends React.Component<{
           onMouseOut={this.scheduleHideWarning}
         >
           <Group direction="row" spacing={8} alignItems="center">
-            <IconWIP name="arrow_upward" color={ColorsWIP.White} />
+            <Icon name="arrow_upward" color={Colors.White} />
             Scroll to top
           </Group>
         </ScrollToTop>
@@ -105,7 +105,7 @@ export class ComputeLogContent extends React.Component<{
     const warning = isTruncated ? (
       <FileWarning>
         <Group direction="row" spacing={8} alignItems="center">
-          <IconWIP name="warning" color={ColorsWIP.Yellow500} />
+          <Icon name="warning" color={Colors.Yellow500} />
           <div>
             This log has exceeded the 5MB limit.{' '}
             {downloadUrl ? (
@@ -298,7 +298,7 @@ const FileFooter = styled.div`
   flex-direction: row;
   align-items: center;
   height: 30px;
-  background-color: ${ColorsWIP.Gray900};
+  background-color: ${Colors.Gray900};
   border-top: 0.5px solid #5c7080;
   color: #aaaaaa;
   padding: 2px 5px;
@@ -309,11 +309,11 @@ const ContentContainer = styled.div`
   display: flex;
   flex-direction: row;
   min-height: 100%;
-  background-color: ${ColorsWIP.Gray900};
+  background-color: ${Colors.Gray900};
 `;
 const Content = styled.div`
   padding: 10px;
-  background-color: ${ColorsWIP.Gray900};
+  background-color: ${Colors.Gray900};
 `;
 const LineNumberContainer = styled.div`
   display: flex;
@@ -322,7 +322,7 @@ const LineNumberContainer = styled.div`
   border-right: 1px solid #5c7080;
   padding: 10px 10px 10px 20px;
   margin-right: 5px;
-  background-color: ${ColorsWIP.Gray900};
+  background-color: ${Colors.Gray900};
   opacity: 0.8;
   color: #858585;
   min-height: 100%;
@@ -412,6 +412,6 @@ const LoadingContainer = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
-  backgroundcolor: ${ColorsWIP.Gray800};
+  backgroundcolor: ${Colors.Gray800};
   opacity: 0.3;
 `;

@@ -10,8 +10,8 @@ from contextlib import contextmanager
 import kubernetes
 from kubernetes.client import Configuration
 
-from dagster import check
-from dagster.utils import safe_tempfile_path
+import dagster._check as check
+from dagster._utils import safe_tempfile_path
 
 from .cluster import ClusterConfig
 from .integration_utils import check_output, which_, within_docker

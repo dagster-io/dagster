@@ -5,18 +5,18 @@ from typing import Optional
 import click
 import uvicorn
 
-from dagster import check
-from dagster.cli.utils import get_instance_for_service
-from dagster.cli.workspace import (
+import dagster._check as check
+from dagster._cli.utils import get_instance_for_service
+from dagster._cli.workspace import (
     get_workspace_process_context_from_kwargs,
     workspace_target_argument,
 )
-from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
+from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
+from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
+from dagster._utils.log import configure_loggers
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, log_action
 from dagster.core.telemetry_upload import uploading_logging_thread
 from dagster.core.workspace import WorkspaceProcessContext
-from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
-from dagster.utils.log import configure_loggers
 
 from .app import create_app_from_workspace_process_context
 from .version import __version__
@@ -97,8 +97,26 @@ DEFAULT_DB_STATEMENT_TIMEOUT = 15000  # 15 sec
     help="Filter all warnings when hosting Dagit.",
     is_flag=True,
 )
+@click.option(
+    "--log-level",
+    help="Set the log level for the uvicorn web server.",
+    show_default=True,
+    default="warning",
+    type=click.Choice(
+        ["critical", "error", "warning", "info", "debug", "trace"], case_sensitive=False
+    ),
+)
 @click.version_option(version=__version__, prog_name="dagit")
-def dagit(host, port, path_prefix, db_statement_timeout, read_only, suppress_warnings, **kwargs):
+def dagit(
+    host,
+    port,
+    path_prefix,
+    db_statement_timeout,
+    read_only,
+    suppress_warnings,
+    log_level,
+    **kwargs,
+):
     if suppress_warnings:
         os.environ["PYTHONWARNINGS"] = "ignore"
 
@@ -117,6 +135,7 @@ def dagit(host, port, path_prefix, db_statement_timeout, read_only, suppress_war
                 host,
                 port,
                 path_prefix,
+                log_level,
             )
 
 
@@ -125,6 +144,7 @@ def host_dagit_ui_with_workspace_process_context(
     host: Optional[str],
     port: int,
     path_prefix: str,
+    log_level: str,
 ):
     check.inst_param(
         workspace_process_context, "workspace_process_context", WorkspaceProcessContext
@@ -149,8 +169,7 @@ def host_dagit_ui_with_workspace_process_context(
             app,
             host=host,
             port=port,
-            access_log=False,
-            log_level="warning",
+            log_level=log_level,
         )
 
 

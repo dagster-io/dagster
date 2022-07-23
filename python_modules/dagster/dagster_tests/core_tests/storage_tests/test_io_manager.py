@@ -28,12 +28,11 @@ from dagster import (
     graph,
     job,
     op,
-    pipeline,
     reexecute_pipeline,
     resource,
-    solid,
 )
-from dagster.check import CheckError
+from dagster._check import CheckError
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster.core.execution.api import create_execution_plan, execute_plan
@@ -374,18 +373,18 @@ def test_multi_materialization():
             self.values = {}
 
         def handle_output(self, context, obj):
-            keys = tuple(context.get_output_identifier())
+            keys = tuple(context.get_identifier())
             self.values[keys] = obj
 
             yield AssetMaterialization(asset_key="yield_one")
             yield AssetMaterialization(asset_key="yield_two")
 
         def load_input(self, context):
-            keys = tuple(context.upstream_output.get_output_identifier())
+            keys = tuple(context.upstream_output.get_identifier())
             return self.values[keys]
 
         def has_asset(self, context):
-            keys = tuple(context.get_output_identifier())
+            keys = tuple(context.get_identifier())
             return keys in self.values
 
     @io_manager
@@ -704,7 +703,7 @@ def test_output_identifier_dynamic_memoization():
         match="Mapping key and version both provided for output 'buzz' of step 'baz'. Dynamic "
         "mapping is not supported when using versioning.",
     ):
-        context.get_output_identifier()
+        context.get_identifier()
 
 
 def test_asset_key():
@@ -772,7 +771,7 @@ def test_context_logging_user_events():
             self.values = {}
 
         def handle_output(self, context, obj):
-            keys = tuple(context.get_output_identifier())
+            keys = tuple(context.get_identifier())
             self.values[keys] = obj
 
             context.log_event(AssetMaterialization(asset_key="first"))
@@ -781,7 +780,7 @@ def test_context_logging_user_events():
             context.log_event(AssetMaterialization(asset_key="second"))
 
         def load_input(self, context):
-            keys = tuple(context.upstream_output.get_output_identifier())
+            keys = tuple(context.upstream_output.get_identifier())
             return self.values[keys]
 
     @op
@@ -832,16 +831,16 @@ def test_context_logging_metadata():
                 self.values = {}
 
             def handle_output(self, context, obj):
-                keys = tuple(context.get_output_identifier())
+                keys = tuple(context.get_identifier())
                 self.values[keys] = obj
 
                 context.add_output_metadata({"foo": "bar"})
-                yield MetadataEntry.text(label="baz", text="baz")
+                yield MetadataEntry("baz", value="baz")
                 context.add_output_metadata({"bar": "bar"})
                 yield materialization
 
             def load_input(self, context):
-                keys = tuple(context.upstream_output.get_output_identifier())
+                keys = tuple(context.upstream_output.get_identifier())
                 return self.values[keys]
 
         @op(out=Out(asset_key=AssetKey("key_on_out")))
@@ -890,13 +889,13 @@ def test_metadata_dynamic_outputs():
             self.values = {}
 
         def handle_output(self, context, obj):
-            keys = tuple(context.get_output_identifier())
+            keys = tuple(context.get_identifier())
             self.values[keys] = obj
 
-            yield MetadataEntry.text(label="handle_output", text="I come from handle_output")
+            yield MetadataEntry("handle_output", value="I come from handle_output")
 
         def load_input(self, context):
-            keys = tuple(context.upstream_output.get_output_identifier())
+            keys = tuple(context.upstream_output.get_identifier())
             return self.values[keys]
 
     @op(out=DynamicOut(asset_key=AssetKey(["foo"])))

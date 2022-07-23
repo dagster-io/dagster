@@ -1,4 +1,4 @@
-import {ButtonWIP, DialogBody, DialogFooter, DialogWIP, IconWIP} from '@dagster-io/ui';
+import {Button, DialogBody, DialogFooter, Dialog, Icon} from '@dagster-io/ui';
 import startCase from 'lodash/startCase';
 import * as React from 'react';
 
@@ -23,10 +23,10 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
 
   return (
     <div>
-      <ButtonWIP icon={<IconWIP name="content_copy" />} onClick={() => setOpen(true)}>
+      <Button icon={<Icon name="content_copy" />} onClick={() => setOpen(true)}>
         View metadata
-      </ButtonWIP>
-      <DialogWIP
+      </Button>
+      <Dialog
         title={`Metadata: ${props.definition.name}`}
         isOpen={open}
         onClose={() => setOpen(false)}
@@ -59,9 +59,9 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
           </div>
         </DialogBody>
         <DialogFooter>
-          <ButtonWIP onClick={() => setOpen(false)}>Close</ButtonWIP>
+          <Button onClick={() => setOpen(false)}>Close</Button>
         </DialogFooter>
-      </DialogWIP>
+      </Dialog>
     </div>
   );
 };

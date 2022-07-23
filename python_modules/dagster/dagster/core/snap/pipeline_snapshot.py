@@ -1,36 +1,54 @@
-from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Union, cast
-
-from dagster import Field, Map, Permissive, Selector, Shape, check
-from dagster.config.config_type import (
-    Array,
-    ConfigTypeKind,
-    Enum,
-    EnumValue,
-    Noneable,
-    ScalarUnion,
-    get_builtin_scalar_by_name,
+from typing import (
+    AbstractSet,
+    Any,
+    Dict,
+    FrozenSet,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+    cast,
 )
-from dagster.config.field_utils import FIELD_NO_DEFAULT_PROVIDED
-from dagster.config.snap import (
+
+from dagster import _check as check
+from dagster._config import (
+    FIELD_NO_DEFAULT_PROVIDED,
+    Array,
     ConfigEnumValueSnap,
     ConfigFieldSnap,
     ConfigSchemaSnapshot,
     ConfigType,
+    ConfigTypeKind,
     ConfigTypeSnap,
+    Enum,
+    EnumValue,
+    Field,
+    Map,
+    Noneable,
+    Permissive,
+    ScalarUnion,
+    Selector,
+    Shape,
+    get_builtin_scalar_by_name,
 )
-from dagster.core.definitions.job_definition import JobDefinition
-from dagster.core.definitions.pipeline_definition import (
-    PipelineDefinition,
-    PipelineSubsetDefinition,
-)
-from dagster.core.utils import toposort_flatten
-from dagster.serdes import (
+from dagster._serdes import (
     DefaultNamedTupleSerializer,
     create_snapshot_id,
     deserialize_value,
     unpack_inner_value,
     whitelist_for_serdes,
 )
+from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.job_definition import JobDefinition
+from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
+from dagster.core.definitions.pipeline_definition import (
+    PipelineDefinition,
+    PipelineSubsetDefinition,
+)
+from dagster.core.utils import toposort_flatten
 
 from .config_types import build_config_schema_snapshot
 from .dagster_types import DagsterTypeNamespaceSnapshot, build_dagster_type_namespace_snapshot
@@ -53,6 +71,10 @@ def create_pipeline_snapshot_id(snapshot: "PipelineSnapshot") -> str:
 
 
 class PipelineSnapshotSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def skip_when_empty(cls) -> Set[str]:
+        return {"metadata"}  # Maintain stable snapshot ID for back-compat purposes
+
     @classmethod
     def value_from_storage_dict(
         cls,
@@ -82,6 +104,8 @@ def _pipeline_snapshot_from_storage(
     mode_def_snaps: List[ModeDefSnap],
     lineage_snapshot: Optional["PipelineSnapshotLineage"] = None,
     graph_def_name: Optional[str] = None,
+    metadata: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+    **kwargs,  # pylint: disable=unused-argument
 ) -> "PipelineSnapshot":
     """
     v0
@@ -89,14 +113,24 @@ def _pipeline_snapshot_from_storage(
         - lineage added
     v2:
         - graph_def_name
+    v3:
+        - metadata added
+    v4:
+        - add kwargs so that if future versions add new args, this version of deserialization will
+        be able to ignore them. previously, new args would be passed to old versions and cause
+        deserialization errors
     """
     if graph_def_name is None:
         graph_def_name = name
+
+    if metadata is None:
+        metadata = []
 
     return PipelineSnapshot(
         name=name,
         description=description,
         tags=tags,
+        metadata=metadata,
         config_schema_snapshot=config_schema_snapshot,
         dagster_type_namespace_snapshot=dagster_type_namespace_snapshot,
         solid_definitions_snapshot=solid_definitions_snapshot,
@@ -114,14 +148,15 @@ class PipelineSnapshot(
         [
             ("name", str),
             ("description", Optional[str]),
-            ("tags", Dict[str, Any]),
+            ("tags", Mapping[str, Any]),
             ("config_schema_snapshot", ConfigSchemaSnapshot),
             ("dagster_type_namespace_snapshot", DagsterTypeNamespaceSnapshot),
             ("solid_definitions_snapshot", SolidDefinitionsSnapshot),
             ("dep_structure_snapshot", DependencyStructureSnapshot),
-            ("mode_def_snaps", List[ModeDefSnap]),
+            ("mode_def_snaps", Sequence[ModeDefSnap]),
             ("lineage_snapshot", Optional["PipelineSnapshotLineage"]),
             ("graph_def_name", str),
+            ("metadata", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
         ],
     )
 ):
@@ -129,20 +164,21 @@ class PipelineSnapshot(
         cls,
         name: str,
         description: Optional[str],
-        tags: Optional[Dict[str, Any]],
+        tags: Optional[Mapping[str, Any]],
         config_schema_snapshot: ConfigSchemaSnapshot,
         dagster_type_namespace_snapshot: DagsterTypeNamespaceSnapshot,
         solid_definitions_snapshot: SolidDefinitionsSnapshot,
         dep_structure_snapshot: DependencyStructureSnapshot,
-        mode_def_snaps: List[ModeDefSnap],
+        mode_def_snaps: Sequence[ModeDefSnap],
         lineage_snapshot: Optional["PipelineSnapshotLineage"],
         graph_def_name: str,
+        metadata: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]],
     ):
         return super(PipelineSnapshot, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             description=check.opt_str_param(description, "description"),
-            tags=check.opt_dict_param(tags, "tags"),
+            tags=check.opt_mapping_param(tags, "tags"),
             config_schema_snapshot=check.inst_param(
                 config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
             ),
@@ -157,11 +193,14 @@ class PipelineSnapshot(
             dep_structure_snapshot=check.inst_param(
                 dep_structure_snapshot, "dep_structure_snapshot", DependencyStructureSnapshot
             ),
-            mode_def_snaps=check.list_param(mode_def_snaps, "mode_def_snaps", of_type=ModeDefSnap),
+            mode_def_snaps=check.sequence_param(
+                mode_def_snaps, "mode_def_snaps", of_type=ModeDefSnap
+            ),
             lineage_snapshot=check.opt_inst_param(
                 lineage_snapshot, "lineage_snapshot", PipelineSnapshotLineage
             ),
             graph_def_name=check.str_param(graph_def_name, "graph_def_name"),
+            metadata=check.opt_sequence_param(metadata, "metadata"),
         )
 
     @classmethod
@@ -169,7 +208,6 @@ class PipelineSnapshot(
         check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
         lineage = None
         if isinstance(pipeline_def, PipelineSubsetDefinition):
-
             lineage = PipelineSnapshotLineage(
                 parent_snapshot_id=create_pipeline_snapshot_id(
                     cls.from_pipeline_def(pipeline_def.parent_pipeline_def)
@@ -178,7 +216,6 @@ class PipelineSnapshot(
                 solids_to_execute=pipeline_def.solids_to_execute,
             )
         if isinstance(pipeline_def, JobDefinition) and pipeline_def.op_selection_data:
-
             lineage = PipelineSnapshotLineage(
                 parent_snapshot_id=create_pipeline_snapshot_id(
                     cls.from_pipeline_def(pipeline_def.op_selection_data.parent_job_def)
@@ -186,11 +223,19 @@ class PipelineSnapshot(
                 solid_selection=sorted(pipeline_def.op_selection_data.op_selection),
                 solids_to_execute=pipeline_def.op_selection_data.resolved_op_selection,
             )
+        if isinstance(pipeline_def, JobDefinition) and pipeline_def.asset_selection_data:
+            lineage = PipelineSnapshotLineage(
+                parent_snapshot_id=create_pipeline_snapshot_id(
+                    cls.from_pipeline_def(pipeline_def.asset_selection_data.parent_job_def)
+                ),
+                asset_selection=pipeline_def.asset_selection_data.asset_selection,
+            )
 
         return PipelineSnapshot(
             name=pipeline_def.name,
             description=pipeline_def.description,
             tags=pipeline_def.tags,
+            metadata=pipeline_def.metadata,
             config_schema_snapshot=build_config_schema_snapshot(pipeline_def),
             dagster_type_namespace_snapshot=build_dagster_type_namespace_snapshot(pipeline_def),
             solid_definitions_snapshot=build_solid_definitions_snapshot(pipeline_def),
@@ -422,6 +467,7 @@ class PipelineSnapshotLineage(
             ("parent_snapshot_id", str),
             ("solid_selection", Optional[List[str]]),
             ("solids_to_execute", Optional[AbstractSet[str]]),
+            ("asset_selection", Optional[FrozenSet[AssetKey]]),
         ],
     )
 ):
@@ -430,6 +476,7 @@ class PipelineSnapshotLineage(
         parent_snapshot_id: str,
         solid_selection: Optional[List[str]] = None,
         solids_to_execute: Optional[AbstractSet[str]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ):
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         return super(PipelineSnapshotLineage, cls).__new__(
@@ -437,4 +484,5 @@ class PipelineSnapshotLineage(
             check.str_param(parent_snapshot_id, parent_snapshot_id),
             solid_selection,
             solids_to_execute,
+            asset_selection,
         )

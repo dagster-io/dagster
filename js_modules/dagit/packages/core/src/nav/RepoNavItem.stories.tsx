@@ -130,18 +130,21 @@ export const ManyRepos = () => {
   const [selected, setSelected] = React.useState<RepoSelectorOption[]>([]);
 
   const onToggle = React.useCallback(
-    (address: RepoAddress) => {
-      const option = OPTIONS.find(
-        (r) => r.repository.name === address.name && r.repositoryLocation.name === address.location,
-      );
-      if (!option) {
-        return;
-      }
-      if (selected.includes(option)) {
-        setSelected(selected.filter((o) => o !== option));
-      } else {
-        setSelected([...selected, option]);
-      }
+    (addresses: RepoAddress[]) => {
+      addresses.forEach((address) => {
+        const option = OPTIONS.find(
+          (r) =>
+            r.repository.name === address.name && r.repositoryLocation.name === address.location,
+        );
+        if (!option) {
+          return;
+        }
+        if (selected.includes(option)) {
+          setSelected(selected.filter((o) => o !== option));
+        } else {
+          setSelected([...selected, option]);
+        }
+      });
     },
     [selected],
   );
@@ -163,18 +166,21 @@ export const OneRepo = () => {
   const [selected, setSelected] = React.useState<RepoSelectorOption[]>(ONE_REPO);
 
   const onToggle = React.useCallback(
-    (address: RepoAddress) => {
-      const option = OPTIONS.find(
-        (r) => r.repository.name === address.name && r.repositoryLocation.name === address.location,
-      );
-      if (!option) {
-        return;
-      }
-      if (selected.includes(option)) {
-        setSelected(selected.filter((o) => o !== option));
-      } else {
-        setSelected([...selected, option]);
-      }
+    (addresses: RepoAddress[]) => {
+      addresses.forEach((address) => {
+        const option = OPTIONS.find(
+          (r) =>
+            r.repository.name === address.name && r.repositoryLocation.name === address.location,
+        );
+        if (!option) {
+          return;
+        }
+        if (selected.includes(option)) {
+          setSelected(selected.filter((o) => o !== option));
+        } else {
+          setSelected([...selected, option]);
+        }
+      });
     },
     [selected],
   );

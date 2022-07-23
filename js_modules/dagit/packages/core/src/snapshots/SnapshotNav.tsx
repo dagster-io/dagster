@@ -1,13 +1,14 @@
 import {gql, useQuery} from '@apollo/client';
-import {PageHeader, Tab, Tabs, TagWIP, Heading, FontFamily} from '@dagster-io/ui';
+import {PageHeader, Tabs, Tag, Heading, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {explorerPathToString, ExplorerPath} from '../pipelines/PipelinePathUtils';
+import {TabLink} from '../ui/TabLink';
 import {useActivePipelineForName} from '../workspace/WorkspaceContext';
 import {workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
-import {SnapshotQuery} from './types/SnapshotQuery';
+import {SnapshotQuery, SnapshotQueryVariables} from './types/SnapshotQuery';
 
 const SNAPSHOT_PARENT_QUERY = gql`
   query SnapshotQuery($snapshotId: String!) {
@@ -27,7 +28,7 @@ interface SnapshotNavProps {
 
 export const SnapshotNav = (props: SnapshotNavProps) => {
   const {activeTab = '', explorerPath} = props;
-  const {pipelineName, snapshotId} = explorerPath;
+  const {pipelineName, snapshotId = ''} = explorerPath;
   const explorerPathString = explorerPathToString({
     ...explorerPath,
     opNames: [],
@@ -37,16 +38,16 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   const isJob = !!currentPipelineState?.isJob;
   const currentSnapshotID = currentPipelineState?.pipelineSnapshotId;
 
-  const {data, loading} = useQuery<SnapshotQuery>(SNAPSHOT_PARENT_QUERY, {
+  const {data, loading} = useQuery<SnapshotQuery, SnapshotQueryVariables>(SNAPSHOT_PARENT_QUERY, {
     variables: {snapshotId},
   });
 
   const tag = () => {
     if (loading) {
       return (
-        <TagWIP intent="none" minimal>
+        <Tag intent="none" minimal>
           ...
-        </TagWIP>
+        </Tag>
       );
     }
 
@@ -57,16 +58,16 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
         data?.pipelineSnapshotOrError?.parentSnapshotId !== currentSnapshotID)
     ) {
       return (
-        <TagWIP intent="warning" minimal>
+        <Tag intent="warning" minimal>
           Snapshot
-        </TagWIP>
+        </Tag>
       );
     }
 
     return (
-      <TagWIP intent="success" minimal>
+      <Tag intent="success" minimal>
         Current
-      </TagWIP>
+      </Tag>
     );
   };
 
@@ -92,12 +93,12 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
       }
       tags={
         <>
-          <TagWIP icon="schema">
+          <Tag icon="schema">
             Snapshot of{' '}
             <Link to={workspacePipelinePathGuessRepo(explorerPath.pipelineName, isJob)}>
               {explorerPath.pipelineName}
             </Link>
-          </TagWIP>
+          </Tag>
           {tag()}
         </>
       }
@@ -105,7 +106,7 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
         <Tabs selectedTabId={activeTab}>
           {tabs.map((tab) => {
             const {href, text, pathComponent} = tab;
-            return <Tab key={text} id={pathComponent} title={text} to={href} />;
+            return <TabLink key={text} id={pathComponent} title={text} to={href} />;
           })}
         </Tabs>
       }

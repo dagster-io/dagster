@@ -2,14 +2,12 @@ import datetime
 import os
 import random
 import string
-import warnings
 
 import pandas as pd
 
 from dagster import (
     Array,
     AssetKey,
-    ExperimentalWarning,
     Field,
     MetadataEntry,
     MetadataValue,
@@ -22,8 +20,6 @@ from dagster import (
 )
 from dagster.core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 from dagster.core.storage.io_manager import io_manager
-
-warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
 
 def get_date_partitions():
@@ -72,7 +68,7 @@ def metadata_for_actions(df):
 
 class MyDatabaseIOManager(PickledObjectFilesystemIOManager):
     def _get_path(self, context):
-        keys = context.get_output_identifier()
+        keys = context.get_identifier()
 
         return os.path.join("/tmp", *keys)
 
@@ -177,5 +173,3 @@ def asset_lineage():
 
 
 asset_lineage_job = asset_lineage.to_job(resource_defs={"my_db_io_manager": my_db_io_manager})
-
-warnings.resetwarnings()

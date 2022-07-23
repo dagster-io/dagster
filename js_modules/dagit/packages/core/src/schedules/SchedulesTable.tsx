@@ -1,23 +1,12 @@
-import {
-  Box,
-  ButtonWIP,
-  ColorsWIP,
-  IconWIP,
-  MenuLink,
-  MenuWIP,
-  Popover,
-  Table,
-  TagWIP,
-  Tooltip,
-} from '@dagster-io/ui';
+import {Box, Button, Colors, Icon, Menu, Popover, Table, Tag, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {timeZoneAbbr} from '../app/time/timestampToString';
 import {TickTag} from '../instigation/InstigationTick';
 import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
+import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -57,7 +46,7 @@ export const SchedulesTable: React.FC<{
             <Box flex={{gap: 8, alignItems: 'end'}}>
               Last tick
               <Tooltip position="top" content={lastTick}>
-                <IconWIP name="info" color={ColorsWIP.Gray400} />
+                <Icon name="info" color={Colors.Gray400} />
               </Tooltip>
             </Box>
           </th>
@@ -65,7 +54,7 @@ export const SchedulesTable: React.FC<{
             <Box flex={{gap: 8, alignItems: 'end'}}>
               Last run
               <Tooltip position="top" content={lastRun}>
-                <IconWIP name="info" color={ColorsWIP.Gray400} />
+                <Icon name="info" color={Colors.Gray400} />
               </Tooltip>
             </Box>
           </th>
@@ -73,7 +62,7 @@ export const SchedulesTable: React.FC<{
             <Box flex={{gap: 8, alignItems: 'end'}}>
               Partition Set
               <Tooltip position="top" content={partitionStatus}>
-                <IconWIP name="info" color={ColorsWIP.Gray400} />
+                <Icon name="info" color={Colors.Gray400} />
               </Tooltip>
             </Box>
           </th>
@@ -126,9 +115,9 @@ const errorDisplay = (status: InstigationStatus, runningScheduleCount: number) =
         </Box>
       }
     >
-      <TagWIP fill interactive intent="danger">
+      <Tag fill interactive intent="danger">
         Error
-      </TagWIP>
+      </Tag>
     </Popover>
   );
 };
@@ -178,13 +167,10 @@ const ScheduleRow: React.FC<{
       <td>
         {cronSchedule ? (
           <Tooltip position="bottom" content={cronSchedule}>
-            <span>
-              {humanCronString(cronSchedule)}
-              {executionTimezone ? ` ${timeZoneAbbr(executionTimezone)}` : ` UTC`}
-            </span>
+            <span>{humanCronString(cronSchedule, executionTimezone || 'UTC')}</span>
           </Tooltip>
         ) : (
-          <span style={{color: ColorsWIP.Gray300}}>None</span>
+          <span style={{color: Colors.Gray300}}>None</span>
         )}
       </td>
       <td>
@@ -195,14 +181,14 @@ const ScheduleRow: React.FC<{
             timeFormat={{showSeconds: false, showTimezone: true}}
           />
         ) : (
-          <span style={{color: ColorsWIP.Gray300}}>None</span>
+          <span style={{color: Colors.Gray300}}>None</span>
         )}
       </td>
       <td>
         {latestTick ? (
           <TickTag tick={latestTick} instigationType={InstigationType.SCHEDULE} />
         ) : (
-          <span style={{color: ColorsWIP.Gray300}}>None</span>
+          <span style={{color: Colors.Gray300}}>None</span>
         )}
       </td>
       <td>
@@ -212,14 +198,14 @@ const ScheduleRow: React.FC<{
         {schedule.partitionSet ? (
           <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
         ) : (
-          <div style={{color: ColorsWIP.Gray300}}>None</div>
+          <div style={{color: Colors.Gray300}}>None</div>
         )}
       </td>
       <td>
         {schedule.partitionSet ? (
           <Popover
             content={
-              <MenuWIP>
+              <Menu>
                 <MenuLink
                   text="View Partition History..."
                   icon="dynamic_feed"
@@ -238,11 +224,11 @@ const ScheduleRow: React.FC<{
                     `/${isJob ? 'jobs' : 'pipelines'}/${pipelineName}/partitions`,
                   )}
                 />
-              </MenuWIP>
+              </Menu>
             }
             position="bottom-left"
           >
-            <ButtonWIP icon={<IconWIP name="expand_more" />} />
+            <Button icon={<Icon name="expand_more" />} />
           </Popover>
         ) : null}
       </td>

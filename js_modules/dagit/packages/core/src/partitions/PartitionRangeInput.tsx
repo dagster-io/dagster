@@ -53,7 +53,7 @@ export function assembleIntoSpans(keys: string[], keyTestFn: (key: string) => bo
   for (let ii = 0; ii < keys.length; ii++) {
     const status = keyTestFn(keys[ii]);
     if (!spans.length || spans[spans.length - 1].status !== status) {
-      spans.push({startIdx: ii, endIdx: ii, status: status});
+      spans.push({startIdx: ii, endIdx: ii, status});
     } else {
       spans[spans.length - 1].endIdx = ii;
     }

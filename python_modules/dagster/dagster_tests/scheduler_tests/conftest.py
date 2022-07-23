@@ -36,7 +36,9 @@ def workspace_load_target(attribute="the_repo"):
 
 @pytest.fixture(name="workspace", scope="session")
 def workspace_fixture(instance_session_scoped):  # pylint: disable=unused-argument
-    with create_test_daemon_workspace(workspace_load_target=workspace_load_target()) as workspace:
+    with create_test_daemon_workspace(
+        workspace_load_target=workspace_load_target(), instance=instance_session_scoped
+    ) as workspace:
         yield workspace
 
 

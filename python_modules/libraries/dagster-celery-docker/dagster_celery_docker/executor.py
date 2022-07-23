@@ -7,22 +7,16 @@ from dagster_celery.core_execution_loop import DELEGATE_MARKER, core_celery_exec
 from dagster_celery.defaults import broker_url, result_backend
 from dagster_celery.executor import CELERY_CONFIG
 
-from dagster import (
-    DagsterInstance,
-    Executor,
-    Field,
-    MetadataEntry,
-    StringSource,
-    check,
-    executor,
-    multiple_process_executor_requirements,
-)
-from dagster.cli.api import ExecuteStepArgs
+from dagster import DagsterInstance, Executor, Field, MetadataEntry, Permissive, StringSource
+from dagster import _check as check
+from dagster import executor, multiple_process_executor_requirements
+from dagster._cli.api import ExecuteStepArgs
+from dagster._serdes import pack_value, serialize_dagster_namedtuple, unpack_value
+from dagster._utils import merge_dicts
 from dagster.core.events import EngineEventData
+from dagster.core.events.utils import filter_dagster_events_from_cli_logs
 from dagster.core.execution.retries import RetryMode
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.serdes import pack_value, serialize_dagster_namedtuple, unpack_value
-from dagster.utils import merge_dicts
 
 CELERY_DOCKER_CONFIG_KEY = "celery-docker"
 
@@ -55,6 +49,11 @@ def celery_docker_config():
                     is_required=False,
                     description="Name of the network this container will be connected to at creation time",
                 ),
+                "container_kwargs": Field(
+                    Permissive(),
+                    is_required=False,
+                    description="Additional keyword args for the docker container",
+                ),
             },
             is_required=True,
             description="The configuration for interacting with docker in the celery worker.",
@@ -77,7 +76,7 @@ def celery_docker_executor(init_context):
     the ``config_source`` key. This config corresponds to the "new lowercase settings" introduced
     in Celery version 4.0 and the object constructed from config will be passed to the
     :py:class:`celery.Celery` constructor as its ``config_source`` argument.
-    (See https://docs.celeryproject.org/en/latest/userguide/configuration.html for details.)
+    (See https://docs.celeryq.dev/en/stable/userguide/configuration.html for details.)
 
     The executor also exposes the ``broker``, `backend`, and ``include`` arguments to the
     :py:class:`celery.Celery` constructor.
@@ -93,7 +92,7 @@ def celery_docker_executor(init_context):
     .. code-block:: python
 
         from dagster import job
-        from dagster_celery_docker.executor import celery_executor
+        from dagster_celery_docker.executor import celery_docker_executor
 
         @job(executor_def=celery_docker_executor)
         def celery_enabled_job():
@@ -112,6 +111,9 @@ def celery_docker_executor(init_context):
                 username: 'my_user'
                 password: {env: 'DOCKER_PASSWORD'}
               env_vars: ["DAGSTER_HOME"] # environment vars to pass from celery worker to docker
+              container_kwargs: # keyword args to be passed to the container. example:
+                volumes: ['/home/user1/:/mnt/vol2','/var/www:/mnt/vol1']
+
             broker: 'pyamqp://guest@localhost//'  # Optional[str]: The URL of the Celery broker
             backend: 'rpc://' # Optional[str]: The URL of the Celery results backend
             include: ['my_module'] # Optional[List[str]]: Modules every worker should import
@@ -124,7 +126,7 @@ def celery_docker_executor(init_context):
     different broker than the one your workers are listening to, the workers will never be able to
     pick up tasks for execution.
 
-    In deployments where the celery_k8s_job_executor is used all appropriate celery and dagster_celery
+    In deployments where the celery_docker_job_executor is used all appropriate celery and dagster_celery
     commands must be invoked with the `-A dagster_celery_docker.app` argument.
     """
 
@@ -235,7 +237,7 @@ def create_docker_task(celery_app, **task_kwargs):
         docker_image = (
             docker_config["image"]
             if docker_config.get("image")
-            else execute_step_args.pipeline_origin.repository_origin.container_image
+            else pipeline_run.pipeline_code_origin.repository_origin.container_image
         )
 
         if not docker_image:
@@ -256,9 +258,9 @@ def create_docker_task(celery_app, **task_kwargs):
             pipeline_run,
             EngineEventData(
                 [
-                    MetadataEntry.text(step_keys_str, "Step keys"),
-                    MetadataEntry.text(docker_image, "Image"),
-                    MetadataEntry.text(self.request.hostname, "Celery worker"),
+                    MetadataEntry("Step keys", value=step_keys_str),
+                    MetadataEntry("Image", value=docker_image),
+                    MetadataEntry("Celery worker", value=self.request.hostname),
                 ],
                 marker_end=DELEGATE_MARKER,
             ),
@@ -272,28 +274,45 @@ def create_docker_task(celery_app, **task_kwargs):
         if docker_config.get("env_vars"):
             docker_env = {env_name: os.getenv(env_name) for env_name in docker_config["env_vars"]}
 
+        container_kwargs = check.opt_dict_param(
+            docker_config.get("container_kwargs"), "container_kwargs", key_type=str
+        )
+
+        # set defaults for detach and auto_remove
+        container_kwargs["detach"] = container_kwargs.get("detach", False)
+        container_kwargs["auto_remove"] = container_kwargs.get("auto_remove", True)
+
+        # if environment variables are provided via container_kwargs, merge with env_vars
+        if container_kwargs.get("environment") is not None:
+            e_vars = container_kwargs.get("environment")
+            if isinstance(e_vars, dict):
+                docker_env.update(e_vars)
+            else:
+                for v in e_vars:
+                    key, val = v.split("=")
+                    docker_env[key] = val
+            del container_kwargs["environment"]
+
         try:
             docker_response = client.containers.run(
                 docker_image,
                 command=command,
-                detach=False,
-                auto_remove=True,
                 # pass through this worker's environment for things like AWS creds etc.
                 environment=docker_env,
                 network=docker_config.get("network", None),
+                **container_kwargs,
             )
 
             res = docker_response.decode("utf-8")
         except docker.errors.ContainerError as err:
+            entries = [MetadataEntry("Job image", value=docker_image)]
+            if err.stderr is not None:
+                entries.append(MetadataEntry("Docker stderr", value=err.stderr))
+
             instance.report_engine_event(
                 "Failed to run steps {} in Docker container {}".format(step_keys_str, docker_image),
                 pipeline_run,
-                EngineEventData(
-                    [
-                        MetadataEntry.text(docker_image, "Job image"),
-                        MetadataEntry.text(err.stderr, "Docker stderr"),
-                    ],
-                ),
+                EngineEventData(entries),
                 CeleryDockerExecutor,
                 step_key=execute_step_args.step_keys_to_execute[0],
             )
@@ -302,7 +321,8 @@ def create_docker_task(celery_app, **task_kwargs):
             if res is None:
                 raise Exception("No response from execute_step in CeleryDockerExecutor")
 
-            serialized_events += [event for event in res.split("\n") if event]
+            events = filter_dagster_events_from_cli_logs(res.split("\n"))
+            serialized_events += [serialize_dagster_namedtuple(event) for event in events]
 
         return serialized_events
 

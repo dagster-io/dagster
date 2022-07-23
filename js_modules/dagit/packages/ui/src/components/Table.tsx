@@ -1,11 +1,12 @@
+// eslint-disable-next-line no-restricted-imports
 import {HTMLTable, IHTMLTableProps} from '@blueprintjs/core';
 import styled from 'styled-components/macro';
 
 import {StyledTag} from './BaseTag';
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 import {FontFamily} from './styles';
 
-interface TableProps extends IHTMLTableProps {
+export interface TableProps extends IHTMLTableProps {
   $compact?: boolean;
 }
 
@@ -15,11 +16,11 @@ export const Table = styled(HTMLTable)<TableProps>`
 
   & tr th,
   & tr td {
-    box-shadow: inset 0 1px 0 ${ColorsWIP.KeylineGray}, inset 1px 0 0 ${ColorsWIP.KeylineGray} !important;
+    box-shadow: inset 0 1px 0 ${Colors.KeylineGray}, inset 1px 0 0 ${Colors.KeylineGray} !important;
   }
 
   & tr th {
-    color: ${ColorsWIP.Gray500};
+    color: ${Colors.Gray500};
     font-family: ${FontFamily.default};
     font-size: 12px;
     font-weight: 400;
@@ -34,7 +35,7 @@ export const Table = styled(HTMLTable)<TableProps>`
   }
 
   & tr td {
-    color: ${ColorsWIP.Gray900};
+    color: ${Colors.Gray900};
     font-family: ${FontFamily.monospace};
     font-size: 16px;
     padding: ${({$compact}) => ($compact ? '8px' : '12px')};
@@ -45,8 +46,8 @@ export const Table = styled(HTMLTable)<TableProps>`
   }
 
   & tr:last-child td {
-    box-shadow: inset 0 1px 0 ${ColorsWIP.KeylineGray}, inset 1px 0 0 ${ColorsWIP.KeylineGray},
-      inset 0 -1px 0 ${ColorsWIP.KeylineGray} !important;
+    box-shadow: inset 0 1px 0 ${Colors.KeylineGray}, inset 1px 0 0 ${Colors.KeylineGray},
+      inset 0 -1px 0 ${Colors.KeylineGray} !important;
   }
 
   & tr td ${StyledTag} {

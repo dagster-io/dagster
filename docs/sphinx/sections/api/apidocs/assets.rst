@@ -1,28 +1,28 @@
 .. currentmodule:: dagster
 
-Software-Defined Assets (Experimental)
-======================================
+Software-Defined Assets
+=======================
 
-Software-defined assets sit on top of the graph/job/op APIs and enable a novel way of constructing Dagster jobs that puts assets at the forefront.
-
-Conceptually, software-defined assets invert the typical relationship between assets and computation. Instead of defining a graph of ops and recording which assets those ops end up materializing, you define a set of assets, each of which knows how to compute its contents from upstream assets.
-
-A software-defined asset combines:
-- An asset key, e.g. the name of a table.
-- A function, which can be run to compute the contents of the asset.
-- A set of upstream assets that are provided as inputs to the function when computing the asset.
+An asset is an object in persistent storage, such as a table, file, or persisted machine learning model. A software-defined asset is a Dagster object that couples an asset to the function and upstream assets that are used to produce its contents.
 
 .. autodecorator:: asset
-
-.. autoclass:: AssetGroup
-
-.. autodecorator:: multi_asset
-
-.. autofunction:: build_assets_job
 
 .. autoclass:: AssetIn
 
 .. autoclass:: SourceAsset
 
-.. autoconfigurable:: fs_asset_io_manager
-  :annotation: IOManagerDefinition
+.. autofunction:: define_asset_job
+
+.. autoclass:: AssetSelection
+
+.. autofunction:: load_assets_from_modules
+
+.. autofunction:: load_assets_from_current_module
+
+.. autofunction:: load_assets_from_package_module
+
+.. autofunction:: load_assets_from_package_name
+
+.. autoclass:: AssetsDefinition
+
+.. autodecorator:: multi_asset

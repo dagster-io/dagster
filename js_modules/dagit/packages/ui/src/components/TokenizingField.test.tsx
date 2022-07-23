@@ -2,11 +2,11 @@ import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
-import {TokenizingField} from './TokenizingField';
+import {SuggestionProvider, TokenizingField} from './TokenizingField';
 
 describe('TokenizingField', () => {
   const onChange = jest.fn();
-  const suggestions = [
+  const suggestions: SuggestionProvider[] = [
     {
       token: 'pipeline',
       values: () => ['airline_demo_ingest', 'airline_demo_warehouse', 'composition'],
@@ -16,11 +16,21 @@ describe('TokenizingField', () => {
       values: () => ['QUEUED', 'NOT_STARTED', 'STARTED', 'SUCCESS', 'FAILURE', 'MANAGED'],
     },
   ];
+  const suggestionsWithTokens: SuggestionProvider[] = [
+    ...suggestions,
+    {values: () => ['all_sensors', 'some_sensors']},
+  ];
+  const suggestionsWithCustomMatchLogic: SuggestionProvider[] = [
+    ...suggestions,
+    {
+      values: () => ['all_sensors', 'all'],
+      suggestionFilter: (q, s) => s.text === q,
+    },
+  ];
 
-  const expectOptions = (expected: string[]) => {
+  const getItems = () => {
     const items = screen.getAllByRole('listitem');
-    const actual = items.map((item) => item.textContent);
-    expect(actual).toEqual(expected);
+    return items.map((item) => item.textContent);
   };
 
   it('shows available autocompletion options when clicked', async () => {
@@ -31,7 +41,25 @@ describe('TokenizingField', () => {
     userEvent.click(input);
 
     await waitFor(() => {
-      expectOptions(['pipeline:', 'status:']);
+      expect(getItems()).toEqual(['pipeline:', 'status:']);
+    });
+  });
+
+  it('shows available autocompletion options when clicked, with raw tokens', async () => {
+    render(
+      <TokenizingField
+        values={[]}
+        onChange={onChange}
+        suggestionProviders={suggestionsWithTokens}
+      />,
+    );
+
+    const input = screen.getByRole('textbox');
+    expect(input).toBeVisible();
+    userEvent.click(input);
+
+    await waitFor(() => {
+      expect(getItems()).toEqual(['all_sensors', 'pipeline:', 'some_sensors', 'status:']);
     });
   });
 
@@ -43,7 +71,7 @@ describe('TokenizingField', () => {
     userEvent.type(input, 'pipeli');
 
     await waitFor(() => {
-      expectOptions([
+      expect(getItems()).toEqual([
         'pipeline:',
         'pipeline:airline_demo_ingest',
         'pipeline:airline_demo_warehouse',
@@ -55,7 +83,7 @@ describe('TokenizingField', () => {
     userEvent.type(input, 'pipeline');
 
     await waitFor(() => {
-      expectOptions([
+      expect(getItems()).toEqual([
         'pipeline:',
         'pipeline:airline_demo_ingest',
         'pipeline:airline_demo_warehouse',
@@ -67,7 +95,7 @@ describe('TokenizingField', () => {
     userEvent.type(input, 'pipeline:');
 
     await waitFor(() => {
-      expectOptions([
+      expect(getItems()).toEqual([
         'pipeline:airline_demo_ingest',
         'pipeline:airline_demo_warehouse',
         'pipeline:composition',
@@ -83,7 +111,46 @@ describe('TokenizingField', () => {
     userEvent.type(input, 'airline');
 
     await waitFor(() => {
-      expectOptions(['pipeline:airline_demo_ingest', 'pipeline:airline_demo_warehouse']);
+      expect(getItems()).toEqual([
+        'pipeline:airline_demo_ingest',
+        'pipeline:airline_demo_warehouse',
+      ]);
+    });
+  });
+
+  it('filters properly when typing a value with raw tokens', async () => {
+    render(
+      <TokenizingField
+        values={[]}
+        onChange={onChange}
+        suggestionProviders={suggestionsWithTokens}
+      />,
+    );
+
+    const input = screen.getByRole('textbox');
+    userEvent.click(input);
+    userEvent.type(input, 'aLl');
+
+    await waitFor(() => {
+      expect(getItems()).toEqual(['all_sensors']);
+    });
+  });
+
+  it('test custom filter logic', async () => {
+    render(
+      <TokenizingField
+        values={[]}
+        onChange={onChange}
+        suggestionProviders={suggestionsWithCustomMatchLogic}
+      />,
+    );
+
+    const input = screen.getByRole('textbox');
+    userEvent.click(input);
+    userEvent.type(input, 'ALL');
+
+    await waitFor(() => {
+      expect(getItems()).toEqual(['all']);
     });
   });
 });

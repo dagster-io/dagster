@@ -3,12 +3,11 @@ from typing import Any, Dict, Optional
 
 from dateutil.parser import isoparse
 
-from dagster import check, usable_as_dagster_type
+import dagster._check as check
 
 from ..types import DbtOutput
 
 
-@usable_as_dagster_type
 class DbtCloudOutput(DbtOutput):
     """The results of executing a dbt Cloud job, along with additional metadata produced from the
     job run.

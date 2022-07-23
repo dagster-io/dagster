@@ -6,12 +6,12 @@ from dagster import (
     HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition,
 )
-from dagster.core.asset_defs.asset_partitions import PartitionKeyRange
-from dagster.core.asset_defs.time_window_partition_mapping import (
+from dagster.core.definitions.partition import ScheduleType
+from dagster.core.definitions.partition_key_range import PartitionKeyRange
+from dagster.core.definitions.time_window_partition_mapping import (
     TimeWindowPartitionMapping,
     round_datetime_to_period,
 )
-from dagster.core.definitions.partition import ScheduleType
 
 
 def test_get_upstream_partitions_for_partition_range_same_partitioning():

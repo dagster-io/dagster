@@ -7,10 +7,10 @@ from dagster_mysql import MySQLEventLogStorage, MySQLRunStorage, MySQLScheduleSt
 from dagster_mysql.utils import get_conn
 from sqlalchemy.pool import NullPool
 
+from dagster._utils import file_relative_path
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.sql import create_engine, get_alembic_config, stamp_alembic_rev
 from dagster.core.test_utils import instance_for_test
-from dagster.utils import file_relative_path
 
 
 def full_mysql_config(hostname):
@@ -47,6 +47,18 @@ def full_mysql_config(hostname):
     """.format(
         hostname=hostname
     )
+
+
+def unified_mysql_config(hostname):
+    return f"""
+      storage:
+        mysql:
+          mysql_db:
+            username: test
+            password: test
+            hostname: {hostname}
+            db_name: test
+    """
 
 
 def test_connection_leak(hostname, conn_string):
@@ -93,6 +105,10 @@ def test_load_instance(conn_string, hostname):
 
     # Now load from scratch, verify it loads without errors
     with instance_for_test(overrides=yaml.safe_load(full_mysql_config(hostname))):
+        pass
+
+    # Now load from scratch, using unified storage config
+    with instance_for_test(overrides=yaml.safe_load(unified_mysql_config(hostname))):
         pass
 
 

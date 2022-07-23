@@ -56,7 +56,7 @@ Instance
 .. autoclass:: InstanceRef
    :members:
 
-.. currentmodule:: dagster.serdes
+.. currentmodule:: dagster._serdes
 
 .. autoclass:: ConfigurableClass
    :members:
@@ -68,6 +68,15 @@ Instance
 
 .. autoclass:: LocalArtifactStorage
    :members:
+
+----
+
+Storage
+-------
+
+.. currentmodule:: dagster.core.storage.base_storage
+
+.. autoclass:: DagsterStorage
 
 ----
 

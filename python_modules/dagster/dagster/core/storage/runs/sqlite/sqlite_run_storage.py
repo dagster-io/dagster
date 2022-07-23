@@ -5,24 +5,24 @@ from urllib.parse import urljoin, urlparse
 import sqlalchemy as db
 from sqlalchemy.pool import NullPool
 
-from dagster import StringSource, check
+from dagster import StringSource
+from dagster import _check as check
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._utils import mkdir_p
 from dagster.core.storage.sql import (
     check_alembic_revision,
     create_engine,
     get_alembic_config,
-    handle_schema_errors,
     run_alembic_downgrade,
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
 from dagster.core.storage.sqlite import create_db_conn_string, get_sqlite_version
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils import mkdir_p
 
 from ..schema import InstanceInfo, RunStorageSqlMetadata, RunTagsTable, RunsTable
 from ..sql_run_storage import SqlRunStorage
 
-MINIMUM_SQLITE_BUCKET_VERSION = "3.25.0"
+MINIMUM_SQLITE_BUCKET_VERSION = [3, 25, 0]
 
 
 class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
@@ -100,12 +100,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         engine = create_engine(self._conn_string, poolclass=NullPool)
         conn = engine.connect()
         try:
-            with handle_schema_errors(
-                conn,
-                get_alembic_config(__file__),
-                msg="Sqlite run storage requires migration",
-            ):
-                yield conn
+            yield conn
         finally:
             conn.close()
 
@@ -121,7 +116,18 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
 
     @property
     def supports_bucket_queries(self):
-        return get_sqlite_version() > MINIMUM_SQLITE_BUCKET_VERSION
+        parts = get_sqlite_version().split(".")
+        try:
+            for i in range(min(len(parts), len(MINIMUM_SQLITE_BUCKET_VERSION))):
+                curr = int(parts[i])
+                if curr < MINIMUM_SQLITE_BUCKET_VERSION[i]:
+                    return False
+                if curr > MINIMUM_SQLITE_BUCKET_VERSION[i]:
+                    return True
+        except ValueError:
+            return False
+
+        return False
 
     def upgrade(self):
         self._check_for_version_066_migration_and_perform()
@@ -153,3 +159,8 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         with self.connect() as conn:
             conn.execute(remove_tags)
             conn.execute(remove_run)
+
+    def alembic_version(self):
+        alembic_config = get_alembic_config(__file__)
+        with self.connect() as conn:
+            return check_alembic_revision(alembic_config, conn)

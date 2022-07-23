@@ -1,29 +1,27 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 import styled from 'styled-components/macro';
 
 import {colorHash} from '../app/Util';
 
-import {PartitionGraphFragment} from './types/PartitionGraphFragment';
-
 type PointValue = number | null | undefined;
 type Point = {x: string; y: PointValue};
 
 interface PartitionGraphProps {
-  runsByPartitionName: {[name: string]: PartitionGraphFragment[]};
-  getPipelineDataForRun: (run: PartitionGraphFragment) => PointValue;
-  getStepDataForRun: (run: PartitionGraphFragment) => {[key: string]: PointValue[]};
+  partitionNames: string[];
+  jobDataByPartition?: {[partitionName: string]: PointValue};
+  stepDataByPartition?: {[partitionName: string]: {[key: string]: PointValue[]}};
   title?: string;
   yLabel?: string;
   isJob: boolean;
-  hiddenStepKeys: string[];
+  hiddenStepKeys?: string[];
 }
 
 export const PartitionGraph = ({
-  runsByPartitionName,
-  getPipelineDataForRun,
-  getStepDataForRun,
+  partitionNames,
+  jobDataByPartition,
+  stepDataByPartition,
   title,
   yLabel,
   isJob,
@@ -91,47 +89,38 @@ export const PartitionGraph = ({
         },
       },
       onClick: onGraphClick,
+      maintainAspectRatio: false,
     };
   }, [onGraphClick, title, yLabel]);
 
-  const selectRun = (runs?: PartitionGraphFragment[]) => {
-    if (!runs || !runs.length) {
-      return null;
-    }
-
-    // get most recent run
-    const toSort = runs.slice();
-    toSort.sort(_reverseSortRunCompare);
-    return toSort[0];
-  };
-
   const buildDatasetData = () => {
-    const pipelineData: Point[] = [];
+    const jobData: Point[] = [];
     const stepData = {};
 
-    const partitionNames = Object.keys(runsByPartitionName);
     partitionNames.forEach((partitionName) => {
-      const run = selectRun(runsByPartitionName[partitionName]);
       const hidden = !!hiddenPartitions[partitionName];
-      pipelineData.push({
-        x: partitionName,
-        y: run && !hidden ? getPipelineDataForRun(run) : undefined,
-      });
-
-      if (!run) {
-        return;
+      if (jobDataByPartition) {
+        jobData.push({
+          x: partitionName,
+          y: !hidden ? jobDataByPartition[partitionName] : undefined,
+        });
       }
 
-      const stepDataforRun = getStepDataForRun(run);
-      Object.keys(stepDataforRun).forEach((stepKey) => {
-        if (hiddenStepKeys.includes(stepKey)) {
-          return;
-        }
-        stepData[stepKey] = [
-          ...(stepData[stepKey] || []),
-          {x: partitionName, y: !hidden ? stepDataforRun[stepKey] : undefined},
-        ];
-      });
+      if (stepDataByPartition) {
+        const stepDataByKey = stepDataByPartition[partitionName];
+        Object.keys(stepDataByKey || {}).forEach((stepKey) => {
+          if (hiddenStepKeys?.includes(stepKey) || !stepDataByKey[stepKey]) {
+            return;
+          }
+          stepData[stepKey] = [
+            ...(stepData[stepKey] || []),
+            {
+              x: partitionName,
+              y: !hidden ? stepDataByKey[stepKey] : undefined,
+            },
+          ];
+        });
+      }
     });
 
     // stepData may have holes due to missing runs or missing steps.  For these to
@@ -140,21 +129,21 @@ export const PartitionGraph = ({
       stepData[stepKey] = _fillPartitions(partitionNames, stepData[stepKey]);
     });
 
-    return {pipelineData, stepData};
+    return {jobData, stepData};
   };
 
-  const {pipelineData, stepData} = buildDatasetData();
+  const {jobData, stepData} = buildDatasetData();
   const allLabel = isJob ? 'Total job' : 'Total pipeline';
   const graphData = {
-    labels: Object.keys(runsByPartitionName),
+    labels: partitionNames,
     datasets: [
-      ...(hiddenStepKeys.includes(allLabel)
+      ...(!jobDataByPartition || (hiddenStepKeys && hiddenStepKeys.includes(allLabel))
         ? []
         : [
             {
               label: allLabel,
-              data: pipelineData,
-              borderColor: ColorsWIP.Gray500,
+              data: jobData,
+              borderColor: Colors.Gray500,
               backgroundColor: 'rgba(0,0,0,0)',
             },
           ]),
@@ -172,7 +161,7 @@ export const PartitionGraph = ({
   // We have a useMemo around the entire <PartitionGraphSet /> and there aren't many extra renders.
   return (
     <PartitionGraphContainer>
-      <Line type="line" data={() => graphData} height={100} options={defaultOptions} ref={chart} />
+      <Line type="line" data={() => graphData} height={300} options={defaultOptions} ref={chart} />
     </PartitionGraphContainer>
   );
 };
@@ -189,21 +178,9 @@ const _fillPartitions = (partitionNames: string[], points: Point[]) => {
   }));
 };
 
-const _reverseSortRunCompare = (a: PartitionGraphFragment, b: PartitionGraphFragment) => {
-  if (!a.stats || a.stats.__typename !== 'RunStatsSnapshot' || !a.stats.startTime) {
-    return 1;
-  }
-  if (!b.stats || b.stats.__typename !== 'RunStatsSnapshot' || !b.stats.startTime) {
-    return -1;
-  }
-  return b.stats.startTime - a.stats.startTime;
-};
-
 const PartitionGraphContainer = styled.div`
   display: flex;
-  color: ${ColorsWIP.Gray700};
-  border-left: 1px solid ${ColorsWIP.KeylineGray};
-  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+  color: ${Colors.Gray700};
   padding: 24px 12px;
   text-decoration: none;
 `;

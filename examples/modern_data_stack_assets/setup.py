@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="modern_data_stack_assets",
-    version="dev",
+    version="0+dev",
     author="Elementl",
     author_email="hello@elementl.com",
     classifiers=[
@@ -16,6 +16,7 @@ setup(
     package_data={"modern_data_stack_assets": ["mds_dbt/*"]},
     install_requires=[
         "dagster",
+        "dagit",
         "dagster-airbyte",
         "dagster-dbt",
         "dagster-postgres",

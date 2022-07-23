@@ -5,9 +5,39 @@ description: Ops are the core unit of computation in Dagster and contain the log
 
 # Ops
 
-Ops are the core unit of computation in Dagster. Multiple ops can be connected to create a [Graph](/concepts/ops-jobs-graphs/jobs-graphs).
+Ops are the core unit of computation in Dagster.
+
+An individual op should perform relatively simple tasks, such as:
+
+- Deriving a dataset from other datasets
+- Executing a database query
+- Initiating a Spark job in a remote cluster
+- Querying an API and storing the result in a data warehouse
+- Sending an email or Slack message
+
+The computational core of a [software-defined asset](/concepts/assets/software-defined-assets) is an op. Collections of ops can also be assembled to create a [graph](/concepts/ops-jobs-graphs/graphs).
 
 <Image alt="ops" src="/images/ops.png" width={3200} height={1040} />
+
+Ops support a variety of useful features for data orchestration, such as:
+
+- **Flexible execution strategies**: Painlessly transition from development to production with ops, as they are sealed units of logic independent of execution strategy. Collections of ops - called [graphs](/concepts/ops-jobs-graphs/graphs) - can be bound via [jobs](/concepts/ops-jobs-graphs/jobs) to an appropriate [executor](/deployment/executors) for single-process execution or distribution across a cluster.
+
+- **Pluggable external systems**: If your data pipeline interfaces with external systems, you may want to use local substitutes during development over a cloud-based production system. Dagster provides [resources](/concepts/resources) as an abstraction layer for this purpose.
+
+  Ops can be written against abstract resources (e.g. `database`), with resource definitions later bound at the [job](/concepts/ops-jobs-graphs/jobs) level. Op logic can thus remain uncoupled to any particular implementation of an external system.
+
+- **Input and output management**: Ops have defined [inputs and outputs](#inputs-and-outputs), analogous to the arguments and return value(s) of a Python function. An input or output can be annotated with a [Dagster type](/concepts/types) for arbitrarily complex runtime validation. Outputs can additionally be tagged with an [IO Manager](/concepts/io-management/io-managers) to manage storage of the associated data in between ops. This enables easy swapping of I/O strategy depending on the execution environment, as well as efficient caching of data intermediates.
+
+- **Configuration**: Operations in a data pipeline are often parameterized by both upstream data (e.g. a stream of database records) and configuration parameters independent of upstream data (e.g. a "chunk size" of incoming records to operate on). Define configuration parameters by providing an associated [config schema](/concepts/configuration/config-schema) to the op.
+
+- **Event streams**: Ops emit a stream of [events](/concepts/ops-jobs-graphs/op-events) during execution. Certain events are emitted by default - such as indicating the start of an op's execution - but op authors are additionally given access to an event API.
+
+  This can be used to report data asset creation or modification (<PyObject object="AssetMaterialization"/>), the result of a data quality check (<PyObject object="ExpectationResult"/>), or other arbitrary information. Event streams can be visualized by Dagster's browser UI [Dagit](/concepts/dagit/dagit). This rich log of execution facilitates debugging, inspection, and real-time monitoring of running jobs.
+
+- **Testability**: The properties that enable flexible execution of ops also facilitate versatile testing. Ops can be [tested](/concepts/testing) in isolation or as part of a pipeline. Further, the [resource](/concepts/resources) API allows external systems (e.g. databases) to be stubbed or substituted as needed.
+
+---
 
 ## Relevant APIs
 
@@ -19,32 +49,13 @@ Ops are the core unit of computation in Dagster. Multiple ops can be connected t
 | <PyObject object="OpExecutionContext"/> | An object exposing Dagster system APIs for resource access, logging, and more. Can be injected into an op by specifying `context` as the first argument of the compute function. |
 | <PyObject object="OpDefinition"  />     | Class for ops. You will rarely want to instantiate this class directly. Instead, you should use the <PyObject object="op" decorator />.                                          |
 
-## Overview
-
-Ops are Dagster's core unit of computation. Individual ops should perform relatively simple tasks. Collections of ops can then be assembled into [Graphs](/concepts/ops-jobs-graphs/jobs-graphs) to perform more complex tasks. Some examples of tasks appropriate for a single op:
-
-- Derive a dataset from other datasets.
-- Execute a database query.
-- Initiate a Spark job in a remote cluster.
-- Query an API and store the result in a data warehouse.
-- Send an email or Slack message.
-
-The op as computational unit enables many useful features for data orchestration:
-
-- **Flexible execution strategies**: Data pipelines are frequently developed locally and later deployed to production. Ops represent sealed units of logic independent of pipeline execution strategy, making the transition from development to production painless. Collections of ops (i.e. [Graphs](/concepts/ops-jobs-graphs/jobs-graphs)) can be bound via [Jobs](/concepts/ops-jobs-graphs/jobs-graphs) to an appropriate [Executor](/deployment/executors) for single-process execution or distribution across a cluster.
-- **Pluggable external systems**: Production data pipelines almost always interface with external systems. The availability of these systems varies across environments. During development, it may be desirable to use a local substitute (e.g. SQLite) in place of a production system (e.g. cloud-hosted Postgres). Dagster provides [Resources](/concepts/resources) as an abstraction layer for this purpose. Ops can be written against abstract resources (e.g. `database`), with resource definitions later bound at the [Job](/concepts/ops-jobs-graphs/jobs-graphs) level. Op logic can thus remain uncoupled to any particular implementation of an external system.
-- **Input and output management**: Ops have defined [inputs and outputs](#inputs-and-outputs), analogous to the arguments and return value(s) of a Python function. An input or output can be annotated with a [Dagster Type](/concepts/types) for arbitrarily complex runtime validation. Outputs can additionally be tagged with an [IO Manager](/concepts/io-management/io-managers) to manage storage of the associated data in between ops. This enables easy swapping of I/O strategy depending on the execution environment, as well as efficient caching of data intermediates.
-- **Configuration**: Operations in a data pipeline are often parameterized by both upstream data (e.g. a stream of database records) and "configuration" parameters independent of upstream data (e.g. a "chunk size" of incoming records to operate on). Ops can be given an associated [Config Schema](/concepts/configuration/config-schema) to define such configuration parameters.
-- **Event streams**: Ops emit a stream of [Events](/concepts/ops-jobs-graphs/op-events) during execution. Certain events are emitted by default (e.g. indicating the start of an op's execution), but op authors are additionally given access to an event API. This can be used to report data asset creation or modification (<PyObject object="AssetMaterialization"/>), the result of a data quality check (<PyObject object="ExpectationResult"/>), or other arbitrary information. Event streams can be visualized by Dagster's browser UI [Dagit](/concepts/dagit/dagit). This rich log of execution facilitates debugging, inspection, and real-time monitoring of running jobs.
-- **Testability**: The properties that enable flexible execution of ops also facilitate versatile testing. Ops can be [tested](/concepts/testing) in isolation or as part of a pipeline. Further, the [Resource](/concepts/resources) API allows external systems (e.g. databases) to be stubbed or substituted as needed.
-
 ---
 
 ## Defining an op
 
 To define an op, use the <PyObject object="op" decorator /> decorator. The decorated function is called the `compute_fn`.
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_op_marker endbefore=end_op_marker
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_op_marker endbefore=end_op_marker
 @op
 def my_op():
     return "hello"
@@ -58,7 +69,7 @@ Both definitions have a few important properties:
 
 - They are named.
 - They are optionally typed. These types are validated at runtime.
-- (Advanced) They can be linked to an <PyObject object="IOManager"/>, which defines how the output or input is stored and loaded. See the [IOManager concept page](/concepts/io-management/io-managers) for more info.
+- (Advanced) They can be linked to an <PyObject object="IOManager"/>, which defines how the output or input is stored and loaded. See the [IO manager concept page](/concepts/io-management/io-managers) for more info.
 
 #### Inputs
 
@@ -66,7 +77,7 @@ Inputs are passed as arguments to an op's `compute_fn`. The value of an input ca
 
 The most common way to define inputs is just to add arguments to the decorated function:
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_input_op_marker endbefore=end_input_op_marker
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_input_op_marker endbefore=end_input_op_marker
 @op
 def my_input_op(abc, xyz):
     pass
@@ -79,7 +90,7 @@ An op only starts to execute once all of its inputs have been resolved. Inputs c
 
 You can use a [Dagster Type](/concepts/types) to provide a function that validates an op's input every time the op runs. In this case, you use a dictionary of <PyObject object="In" pluralize /> corresponding to the decorated function arguments.
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_typed_input_op_marker endbefore=end_typed_input_op_marker
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_typed_input_op_marker endbefore=end_typed_input_op_marker
 MyDagsterType = DagsterType(
     type_check_fn=lambda _, value: value % 2 == 0, name="MyDagsterType"
 )
@@ -96,7 +107,7 @@ Outputs are yielded from an op's `compute_fn`. By default, all ops have a single
 
 When you have one output, you can return the output value directly.
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_output_op_marker endbefore=end_output_op_marker
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_output_op_marker endbefore=end_output_op_marker
 @op
 def my_output_op():
     return 5
@@ -104,15 +115,52 @@ def my_output_op():
 
 To define multiple outputs, or to use a different output name than "result", you can provide a dictionary of <PyObject object="Out" pluralize /> to the <PyObject object="op" decorator /> decorator.
 
-When you have more than one output, you can return a tuple of values, one for each output.
-
-```python file=/concepts/solids_pipelines/solids.py startafter=start_multi_output_op_marker endbefore=end_multi_output_op_marker
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_multi_output_op_marker endbefore=end_multi_output_op_marker
 @op(out={"first_output": Out(), "second_output": Out()})
 def my_multi_output_op():
     return 5, 6
 ```
 
+Return type annotations can be used directly on ops. For a single output, the return annotation will be used directly for type checking.
+
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_return_annotation endbefore=end_return_annotation
+from dagster import op
+
+
+@op
+def return_annotation_op() -> int:
+    return 5
+```
+
+If there are multiple outputs, a tuple annotation can be specified. Each inner type of the tuple annotation should correspond to an output in the op.
+
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_tuple_return endbefore=end_tuple_return
+from dagster import op
+from typing import Tuple
+
+
+@op(out={"int_output": Out(), "str_output": Out()})
+def my_multiple_output_annotation_op() -> Tuple[int, str]:
+    return (5, "foo")
+```
+
+Outputs are expected to follow the order they are specified in the op's `out` dictionary. In the above example, the `int` output corresponds to `int_output`, and the `str` output corresponds to `str_output`.
+
+Note that if you would like to specify a single tuple output and still utilize type annotations, this can be done by providing either a single <PyObject object="Out" /> to the op, or none.
+
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_single_output_tuple endbefore=end_single_output_tuple
+from dagster import op
+from typing import Tuple
+
+
+@op
+def my_single_tuple_output_op() -> Tuple[int, str]:
+    return (5, "foo")  # Will be viewed as one output
+```
+
 Like inputs, outputs can also have [Dagster Types](/concepts/types).
+
+While many use cases can be served using built-in python annotations, <PyObject object="Output"/> and <PyObject object="DynamicOutput"/> objects unlock additional functionality. Check out the docs on [Op Outputs](/concepts/ops-jobs-graphs/op-events#output-objects) to learn more.
 
 ### Op Context
 
@@ -120,7 +168,7 @@ When writing an op, users can optionally provide a first parameter, `context`. W
 
 For example, to access the logger and log a info message:
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_op_context_marker endbefore=end_op_context_marker
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_op_context_marker endbefore=end_op_context_marker
 @op(config_schema={"name": str})
 def context_op(context):
     name = context.op_config["name"]
@@ -133,9 +181,9 @@ All definitions in dagster expose a `config_schema`, making them configurable an
 
 Op definitions can specify a `config_schema` for the op's configuration. The configuration is accessible through the [op context](#op-context) at runtime. Therefore, op configuration can be used to specify op behavior at runtime, making ops more flexible and reusable.
 
-For example, we can define an op where the API endpoint it queries is define through it's configuration:
+For example, we can define an op where the API endpoint it queries is defined through its configuration:
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_configured_op_marker endbefore=end_configured_op_marker
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_configured_op_marker endbefore=end_configured_op_marker
 @op(config_schema={"api_endpoint": str})
 def my_configurable_op(context):
     api_endpoint = context.op_config["api_endpoint"]
@@ -145,7 +193,7 @@ def my_configurable_op(context):
 
 ## Using an op
 
-Ops are used within a [Job or Graph](/concepts/ops-jobs-graphs/jobs-graphs). You can also execute a single op, usually within a test context, by directly invoking it. More information can be found at [Testing ops](/concepts/testing#testing-ops).
+Ops are used within a [job](/concepts/ops-jobs-graphs/jobs) or [graph](/concepts/ops-jobs-graphs/graphs). You can also execute a single op, usually within a test context, by directly invoking it. More information can be found at [Testing ops](/concepts/testing#testing-ops).
 
 ## Patterns
 
@@ -155,16 +203,14 @@ You may find the need to create utilities that help generate ops. In most cases,
 
 To create an op factory, you define a function that returns an <PyObject object="OpDefinition"/>, either directly or by decorating a function with the op decorator.
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_op_factory_pattern_marker endbefore=end_op_factory_pattern_marker
-def x_op(
-    arg,
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_op_factory_pattern_marker endbefore=end_op_factory_pattern_marker
+def my_op_factory(
     name="default_name",
     ins=None,
     **kwargs,
 ):
     """
     Args:
-        args (any): One or more arguments used to generate the new op
         name (str): The name of the new op.
         ins (Dict[str, In]): Any Ins for the new op. Default: None.
 
@@ -173,9 +219,16 @@ def x_op(
     """
 
     @op(name=name, ins=ins or {"start": In(Nothing)}, **kwargs)
-    def _x_op():
+    def my_inner_op(**kwargs):
         # Op logic here
         pass
 
-    return _x_op
+    return my_inner_op
 ```
+
+## See it in action
+
+For more examples of ops, check out our [NYT example](https://github.com/dagster-io/dagster/blob/master/examples/nyt-feed/nyt_feed/nyt_feed_job.py), which includes:
+
+- An op that uses a resource.
+- An op with multiple <PyObject object="Out" pluralize />.

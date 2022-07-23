@@ -8,10 +8,9 @@ from dagster import (
     OutputDefinition,
     composite_solid,
     execute_pipeline,
-    pipeline,
     root_input_manager,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.storage.io_manager import IOManager, io_manager
 
 

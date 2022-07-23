@@ -4,9 +4,9 @@ from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_s
 from graphql import graphql
 from graphql.execution.executors.sync import SyncExecutor
 
-from dagster.cli.workspace import get_workspace_process_context_from_kwargs
+from dagster._cli.workspace import get_workspace_process_context_from_kwargs
+from dagster._utils import file_relative_path
 from dagster.core.test_utils import instance_for_test
-from dagster.utils import file_relative_path
 
 
 def test_execute_hammer_through_dagit():

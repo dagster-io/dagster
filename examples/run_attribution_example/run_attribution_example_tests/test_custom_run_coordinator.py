@@ -34,8 +34,6 @@ class TestCustomRunCoordinator(TestQueuedRunCoordinator):
 
             assert returned_run.run_id == run_id
             assert returned_run.status == PipelineRunStatus.QUEUED
-            tags = instance.get_run_tags()
-            assert len(tags) == 0
             mock_warnings.warn.assert_called_once()
             assert mock_warnings.warn.call_args.args[0].startswith("Couldn't decode JWT header")
 
@@ -65,8 +63,7 @@ class TestCustomRunCoordinator(TestQueuedRunCoordinator):
 
         assert returned_run.run_id == run_id
         assert returned_run.status == PipelineRunStatus.QUEUED
-        tags = instance.get_run_tags()
-        assert len(tags) == 1
-        (tag_name, set_of_tag_values) = tags[0]
-        assert tag_name == "user"
-        assert set_of_tag_values == {expected_email}
+
+        fetched_run = instance.get_run_by_id(run_id)
+        assert len(fetched_run.tags) == 1
+        assert fetched_run.tags["user"] == expected_email

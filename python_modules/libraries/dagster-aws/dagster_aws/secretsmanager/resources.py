@@ -1,8 +1,10 @@
 from contextlib import contextmanager
 
-from dagster import Array, Field, Noneable, check, resource
+from dagster import Array, Field, Noneable
+from dagster import _check as check
+from dagster import resource
+from dagster._utils.merger import merge_dicts
 from dagster.core.test_utils import environ
-from dagster.utils.merger import merge_dicts
 
 from .secrets import construct_secretsmanager_client, get_secrets_from_arns, get_tagged_secrets
 
@@ -49,7 +51,7 @@ def secretsmanager_resource(context):
                 )
 
             @job(resource_defs={'secretsmanager': secretsmanager_resource})
-            def example_job(context):
+            def example_job():
                 example_secretsmanager_op()
 
             example_job.execute_in_process(
@@ -139,7 +141,7 @@ def secretsmanager_secrets_resource(context):
                 return os.getenv("my-other-secret-name")
 
             @job(resource_defs={'secrets': secretsmanager_secrets_resource})
-            def example_job(context):
+            def example_job():
                 example_secretsmanager_secrets_op()
                 example_secretsmanager_secrets_op_2()
 
@@ -197,7 +199,7 @@ def secretsmanager_secrets_resource(context):
     )
 
     secret_arns = merge_dicts(
-        (get_tagged_secrets(secrets_manager, secrets_tag) if secrets_tag else {}),
+        (get_tagged_secrets(secrets_manager, [secrets_tag]) if secrets_tag else {}),
         get_secrets_from_arns(secrets_manager, secrets),
     )
 

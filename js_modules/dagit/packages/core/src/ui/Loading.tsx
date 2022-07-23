@@ -1,10 +1,11 @@
-import {QueryResult} from '@apollo/client';
+import {ApolloError, QueryResult} from '@apollo/client';
 import {Box, NonIdealState, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 
 interface ILoadingProps<TData> {
   queryResult: QueryResult<TData, any>;
   children: (data: TData) => React.ReactNode;
+  renderError?: (error: ApolloError) => React.ReactNode;
   allowStaleData?: boolean;
   purpose: 'section' | 'page';
 }
@@ -12,7 +13,7 @@ interface ILoadingProps<TData> {
 const BLANK_LOADING_DELAY_MSEC = 500;
 
 export const Loading = <TData extends Record<string, any>>(props: ILoadingProps<TData>) => {
-  const {children, purpose, allowStaleData = false} = props;
+  const {children, purpose, allowStaleData = false, renderError} = props;
   const {error, data, loading} = props.queryResult;
 
   const [blankLoading, setBlankLoading] = React.useState(true);
@@ -36,13 +37,17 @@ export const Loading = <TData extends Record<string, any>>(props: ILoadingProps<
 
   // either error.networkError or error.graphQLErrors is set,
   // so check that the error is not just a transient network error
-  if (error && !error.networkError) {
-    console.error(error);
-    return (
-      <Box padding={64} flex={{justifyContent: 'center'}}>
-        <NonIdealState icon="error" title="GraphQL Error - see console for details" />
-      </Box>
-    );
+  if (error) {
+    if (renderError) {
+      return <>{renderError(error)}</>;
+    }
+    if (!error.networkError) {
+      return (
+        <Box padding={64} flex={{justifyContent: 'center'}}>
+          <NonIdealState icon="error" title="GraphQL Error - see console for details" />
+        </Box>
+      );
+    }
   }
 
   if (isLoading) {

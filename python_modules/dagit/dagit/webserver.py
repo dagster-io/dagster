@@ -2,7 +2,7 @@ import gzip
 import io
 import uuid
 from os import path
-from typing import List
+from typing import Generic, List, TypeVar
 
 import nbformat
 from dagster_graphql import __version__ as dagster_graphql_version
@@ -25,13 +25,13 @@ from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
 from starlette.types import Message
 
+import dagster._check as check
 from dagster import __version__ as dagster_version
-from dagster import check
+from dagster._seven import json
+from dagster._utils import Counter, traced_counter
 from dagster.core.debug import DebugRunPayload
 from dagster.core.storage.compute_log_manager import ComputeIOType
-from dagster.core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
-from dagster.seven import json
-from dagster.utils import Counter, traced_counter
+from dagster.core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 
 from .graphql import GraphQLServer
 from .version import __version__
@@ -48,9 +48,14 @@ ROOT_ADDRESS_STATIC_RESOURCES = [
     "/robots.txt",
 ]
 
+T_IWorkspaceProcessContext = TypeVar("T_IWorkspaceProcessContext", bound=IWorkspaceProcessContext)
 
-class DagitWebserver(GraphQLServer):
-    def __init__(self, process_context: WorkspaceProcessContext, app_path_prefix: str = ""):
+
+class DagitWebserver(GraphQLServer, Generic[T_IWorkspaceProcessContext]):
+
+    _process_context: T_IWorkspaceProcessContext
+
+    def __init__(self, process_context: T_IWorkspaceProcessContext, app_path_prefix: str = ""):
         self._process_context = process_context
         super().__init__(app_path_prefix)
 
@@ -63,11 +68,36 @@ class DagitWebserver(GraphQLServer):
     def relative_path(self, rel: str) -> str:
         return path.join(path.dirname(__file__), rel)
 
-    def make_request_context(self, conn: HTTPConnection) -> WorkspaceRequestContext:
+    def make_request_context(self, conn: HTTPConnection) -> BaseWorkspaceRequestContext:
         return self._process_context.create_request_context(conn)
 
     def build_middleware(self) -> List[Middleware]:
         return [Middleware(DagsterTracedCounterMiddleware)]
+
+    def make_security_headers(self) -> dict:
+        return {
+            "Cache-Control": "no-store",
+            "Feature-Policy": "microphone 'none'; camera 'none'",
+            "Referrer-Policy": "strict-origin-when-cross-origin",
+            "X-Content-Type-Options": "nosniff",
+            "X-Frame-Options": "deny",
+        }
+
+    def make_csp_header(self, nonce: str) -> str:
+        csp_conf_path = self.relative_path("webapp/build/csp-header.conf")
+        try:
+            with open(csp_conf_path, encoding="utf8") as f:
+                csp_template = f.read()
+                return csp_template.replace("NONCE-PLACEHOLDER", nonce)
+        except FileNotFoundError:
+            raise Exception(
+                """
+                CSP configuration file could not be found.
+                If you are using dagit, then probably it's a corrupted installation or a bug.
+                However, if you are developing dagit locally, your problem can be fixed by running
+                "make rebuild_dagit" in the project root.
+                """
+            )
 
     async def dagit_info_endpoint(self, _request: Request):
         return JSONResponse(
@@ -108,7 +138,6 @@ class DagitWebserver(GraphQLServer):
         # parse content to HTML
         notebook = nbformat.reads(notebook_content, as_version=4)
         html_exporter = HTMLExporter()
-        html_exporter.template_file = "basic"
         (body, resources) = html_exporter.from_notebook_node(notebook)
         return HTMLResponse("<style>" + resources["inlining"]["css"][0] + "</style>" + body)
 
@@ -143,13 +172,19 @@ class DagitWebserver(GraphQLServer):
         index_path = self.relative_path("webapp/build/index.html")
 
         try:
-            with open(index_path) as f:
+            with open(index_path, encoding="utf8") as f:
                 rendered_template = f.read()
+                nonce = uuid.uuid4().hex
+                headers = {
+                    **{"Content-Security-Policy": self.make_csp_header(nonce)},
+                    **self.make_security_headers(),
+                }
                 return HTMLResponse(
                     rendered_template.replace('href="/', f'href="{self._app_path_prefix}/')
                     .replace('src="/', f'src="{self._app_path_prefix}/')
                     .replace("__PATH_PREFIX__", self._app_path_prefix)
-                    .replace("NONCE-PLACEHOLDER", uuid.uuid4().hex)
+                    .replace("NONCE-PLACEHOLDER", nonce),
+                    headers=headers,
                 )
         except FileNotFoundError:
             raise Exception(

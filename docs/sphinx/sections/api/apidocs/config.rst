@@ -20,6 +20,8 @@ builtin types above.
 
 .. autoclass:: Shape
 
+.. autoclass:: Map
+
 .. autoclass:: Array
 
 .. autoclass:: Noneable
@@ -53,13 +55,13 @@ builtin types above.
 
         secret_job.execute_in_process(
             run_config={
-                'graph': {'secret_op': {'config': 'test_value'}}
+                'ops': {'secret_op': {'config': 'test_value'}}
             }
         )
 
         secret_job.execute_in_process(
             run_config={
-                'graph': {'secret_op': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE'}}}
+                'ops': {'secret_op': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE'}}}
             }
         )
 
@@ -76,22 +78,22 @@ builtin types above.
         from dagster import job, op, IntSource
 
         @op(config_schema=IntSource)
-        def secret_int_op(context) -> str:
+        def secret_int_op(context) -> int:
             return context.op_config
 
         @job
         def secret_job():
-            secret_op()
+            secret_int_op()
 
         secret_job.execute_in_process(
             run_config={
-                'graph': {'secret_int_op': {'config': 'test_value'}}
+                'ops': {'secret_int_op': {'config': 1234}}
             }
         )
 
         secret_job.execute_in_process(
             run_config={
-                'graph': {'secret_int_op': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE_INT'}}}
+                'ops': {'secret_int_op': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE_INT'}}}
             }
         )
 
@@ -109,22 +111,22 @@ builtin types above.
         from dagster import job, op, BoolSource
 
         @op(config_schema=BoolSource)
-        def secret_bool_op(context) -> str:
+        def secret_bool_op(context) -> bool:
             return context.op_config
 
         @job
         def secret_job():
-            secret_op()
+            secret_bool_op()
 
         secret_job.execute_in_process(
             run_config={
-                'graph': {'secret_bool_op': {'config': 'test_value'}}
+                'ops': {'secret_bool_op': {'config': False}}
             }
         )
 
         secret_job.execute_in_process(
             run_config={
-                'graph': {'secret_bool_op': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE_BOOL'}}}
+                'ops': {'secret_bool_op': {'config': {'env': 'VERY_SECRET_ENV_VARIABLE_BOOL'}}}
             }
         )
 

@@ -1,15 +1,11 @@
-import logging
-import time
 from typing import Any, Dict, List, NamedTuple, Optional
 
-from dagster import DagsterEvent, DagsterEventType, IntSource, String, check
-from dagster.builtins import Bool
-from dagster.config import Field
-from dagster.config.config_type import Array, Noneable, ScalarUnion
-from dagster.config.field_utils import Shape
-from dagster.core.events.log import EventLogEntry
+from dagster import DagsterEvent, DagsterEventType, IntSource, String
+from dagster import _check as check
+from dagster._builtins import Bool
+from dagster._config import Array, Field, Noneable, ScalarUnion, Shape
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
 from .base import RunCoordinator, SubmitRunContext
 
@@ -39,6 +35,10 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self._max_concurrent_runs = check.opt_int_param(
             max_concurrent_runs, "max_concurrent_runs", 10
+        )
+        check.invariant(
+            self._max_concurrent_runs >= -1,
+            "Negative values other than -1 (which disables the limit) for max_concurrent_runs are disallowed.",
         )
         self._tag_concurrency_limits = check.opt_list_param(
             tag_concurrency_limits,
@@ -70,7 +70,9 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             "max_concurrent_runs": Field(
                 config=IntSource,
                 is_required=False,
-                description="The maximum number of runs that are allowed to be in progress at once",
+                description="The maximum number of runs that are allowed to be in progress at once. "
+                "Defaults to 10. Set to -1 to disable the limit. Set to 0 to stop any runs from launching. "
+                "Any other negative values are disallowed.",
             ),
             "tag_concurrency_limits": Field(
                 config=Noneable(
@@ -122,30 +124,12 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
             pipeline_name=pipeline_run.pipeline_name,
         )
-        event_record = EventLogEntry(
-            user_message="",
-            level=logging.INFO,
-            pipeline_name=pipeline_run.pipeline_name,
-            run_id=pipeline_run.run_id,
-            error_info=None,
-            timestamp=time.time(),
-            dagster_event=enqueued_event,
-        )
-        self._instance.handle_new_event(event_record)
+        self._instance.report_dagster_event(enqueued_event, run_id=pipeline_run.run_id)
 
         run = self._instance.get_run_by_id(pipeline_run.run_id)
         if run is None:
             check.failed(f"Failed to reload run {pipeline_run.run_id}")
         return run
-
-    def can_cancel_run(self, run_id):
-        run = self._instance.get_run_by_id(run_id)
-        if not run:
-            return False
-        if run.status == PipelineRunStatus.QUEUED:
-            return True
-        else:
-            return self._instance.run_launcher.can_terminate(run_id)
 
     def cancel_run(self, run_id):
         run = self._instance.get_run_by_id(run_id)

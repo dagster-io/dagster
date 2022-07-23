@@ -1,4 +1,4 @@
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 
 from dagster.core.execution.retries import RetryMode
 

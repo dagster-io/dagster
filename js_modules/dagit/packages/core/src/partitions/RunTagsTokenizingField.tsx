@@ -1,18 +1,13 @@
-import {
-  TokenizingField,
-  TokenizingFieldValue,
-  stringFromValue,
-  tokenizedValuesFromString,
-} from '@dagster-io/ui';
+import {TokenizingField, stringFromValue, tokenizedValuesFromString} from '@dagster-io/ui';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 
-import {RunFilterTokenType} from '../runs/RunsFilterInput';
+import {RunFilterToken, RunFilterTokenType} from '../runs/RunsFilterInput';
 
 interface RunTagsTokenizingFieldProps {
   runs: {tags: {key: string; value: string}[]}[];
-  tokens: TokenizingFieldValue[];
-  onChange: (tokens: TokenizingFieldValue[]) => void;
+  tokens: RunFilterToken[];
+  onChange: (tokens: RunFilterToken[]) => void;
 }
 
 // BG TODO: This should most likely be folded into RunsFilterInput, but that component loads autocompletions
@@ -40,7 +35,7 @@ export const RunTagsTokenizingField: React.FC<RunTagsTokenizingFieldProps> = ({
     <TokenizingField
       small
       values={search}
-      onChange={onChange}
+      onChange={(values) => onChange(values as RunFilterToken[])}
       placeholder="Filter partition runs..."
       suggestionProviders={suggestions}
       loading={false}

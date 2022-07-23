@@ -1,35 +1,28 @@
+# start_marker_storage_sqlite
 
-# start_marker_run_storage_sqlite
+# there are two ways to set storage to SqliteStorage
 
-# there are two ways to set run_storage to SqliteRunStorage
-
-# this config manually sets the directory (`base_dir`) for Sqlite to store run information in:
-run_storage:
-  module: dagster.core.storage.runs
-  class: SqliteRunStorage
-  config:
+# this config manually sets the directory (`base_dir`) for Sqlite to store data in:
+storage:
+  sqlite:
     base_dir: /path/to/dir
 
 # and this config grabs the directory from an environment variable
-run_storage:
-  module: dagster.core.storage.runs
-  class: SqliteRunStorage
-  config:
+storage:
+  sqlite:
     base_dir:
-      env: SQLITE_RUN_STORAGE_BASE_DIR
+      env: SQLITE_STORAGE_BASE_DIR
 
-# end_marker_run_storage_sqlite
+# end_marker_storage_sqlite
 
+# start_marker_storage_postgres
 
-# start_marker_run_storage_postgres
-
-# Postgres storage can be set using either credentials or a connection string
+# Postgres storage can be set using either credentials or a connection string.  This requires that
+# the `dagster-postgres` library be installed.
 
 # this config manually sets the Postgres credentials
-run_storage:
-  module: dagster_postgres.run_storage
-  class: PostgresRunStorage
-  config:
+storage:
+  postgres:
     postgres_db:
       username: { DAGSTER_PG_USERNAME }
       password: { DAGSTER_PG_PASSWORD }
@@ -38,10 +31,8 @@ run_storage:
       port: 5432
 
 # and this config grabs the database credentials from environment variables
-run_storage:
-  module: dagster_postgres.run_storage
-  class: PostgresRunStorage
-  config:
+storage:
+  postgres:
     postgres_db:
       username:
         env: DAGSTER_PG_USERNAME
@@ -54,44 +45,37 @@ run_storage:
       port: 5432
 
 # and this config sets the credentials via DB connection string / url:
-run_storage:
-  module: dagster_postgres.run_storage
-  class: PostgresRunStorage
-  config:
+storage:
+  postgres:
     postgres_url: { PG_DB_CONN_STRING }
 
 # This config gets the DB connection string / url via environment variables:
-run_storage:
-  module: dagster_postgres.run_storage
-  class: PostgresRunStorage
-  config:
+storage:
+  postgres:
     postgres_url:
       env: PG_DB_CONN_STRING
 
-# end_marker_run_storage_postgres
+# end_marker_storage_postgres
 
-# start_marker_run_storage_mysql
+# start_marker_storage_mysql
 
-# MySQL storage can be set using either credentials or a connection string
+# MySQL storage can be set using either credentials or a connection string.  This requires that the
+# `dagster-mysql` library be installed.
 
 # this config manually sets the MySQL credentials
-run_storage:
-  module: dagster_mysql.run_storage
-  class: MySQLRunStorage
-  config:
-  mysql_db:
-    username: { DAGSTER_MYSQL_USERNAME }
-    password: { DAGSTER_MYSQL_PASSWORD }
-    hostname: { DAGSTER_MYSQL_HOSTNAME }
-    db_name: { DAGSTER_MYSQL_DB }
-    port: 3306
+storage:
+  mysql:
+    mysql_db:
+      username: { DAGSTER_MYSQL_USERNAME }
+      password: { DAGSTER_MYSQL_PASSWORD }
+      hostname: { DAGSTER_MYSQL_HOSTNAME }
+      db_name: { DAGSTER_MYSQL_DB }
+      port: 3306
 
 
 # and this config grabs the database credentials from environment variables
-run_storage:
-  module: dagster_mysql.run_storage
-  class: MySQLRunStorage
-  config:
+storage:
+  mysql:
     mysql_db:
       username:
         env: DAGSTER_MYSQL_USERNAME
@@ -104,290 +88,17 @@ run_storage:
       port: 3306
 
 # and this config sets the credentials via DB connection string / url:
-run_storage:
-  module: dagster_mysql.run_storage
-  class: MySQLRunStorage
-  config:
+storage:
+  mysql:
     mysql_url: { MYSQL_DB_CONN_STRING }
 
 # this config grabs the MySQL connection string from environment variables
-run_storage:
-  module: dagster_mysql.run_storage
-  class: MySQLRunStorage
-  config:
+storage:
+  mysql:
     mysql_url:
       env: MYSQL_DB_CONN_STRING
 
-# end_marker_run_storage_mysql
-
-# start_marker_event_log_storage_sqlite
-
-# there are two ways to set `event_log_storage` to SqliteEventLogStorage
-
-# the first manually sets the directory (`base_dir`) to write event log data to:
-event_log_storage:
-  module: dagster.core.storage.event_log
-  class: SqliteEventLogStorage
-  config:
-    base_dir: /path/to/dir
-
-# and the second grabs the directory from an environment variable
-event_log_storage:
-  module: dagster.core.storage.event_log
-  class: SqliteEventLogStorage
-  config:
-    base_dir:
-      env: SQLITE_EVENT_LOG_STORAGE_BASE_DIR
-
-# end_marker_event_log_storage_sqlite
-
-# start_marker_event_log_storage_consolidated_sqlite
-
-# there are two ways to set `event_log_storage` to ConsolidatedSqliteEventLogStorage
-
-# the first manually sets the directory (`base_dir`) to write event log data to:
-event_log_storage:
-  module: dagster.core.storage.event_log
-  class: ConsolidatedSqliteEventLogStorage
-  config:
-    base_dir: /path/to/dir
-
-# and the second grabs the directory from an environment variable
-event_log_storage:
-  module: dagster.core.storage.event_log
-  class: ConsolidatedSqliteEventLogStorage
-  config:
-    base_dir:
-      env: CONSOLIDATED_SQLITE_EVENT_LOG_STORAGE_BASE_DIR
-
-# end_marker_event_log_storage_consolidated_sqlite
-
-# start_marker_event_log_storage_postgres
-
-# Postgres storage can be set using either credentials or a connection string
-
-# this config manually sets the Postgres credentials
-event_log_storage:
-  module: dagster_postgres.event_log
-  class: PostgresEventLogStorage
-  config:
-    postgres_db:
-      username: { DAGSTER_PG_USERNAME }
-      password: { DAGSTER_PG_PASSWORD }
-      hostname: { DAGSTER_PG_HOSTNAME }
-      db_name: { DAGSTER_PG_DB }
-      port: 5432
-
-# and this config grabs the database credentials from environment variables
-event_log_storage:
-  module: dagster_postgres.event_log
-  class: PostgresEventLogStorage
-  config:
-    postgres_db:
-      username:
-        env: DAGSTER_PG_USERNAME
-      password:
-        env: DAGSTER_PG_PASSWORD
-      hostname:
-        env: DAGSTER_PG_HOST
-      db_name:
-        env: DAGSTER_PG_DB
-      port: 5432
-
-# and this config sets the credentials via DB connection string / url:
-event_log_storage:
-  module: dagster_postgres.event_log
-  class: PostgresEventLogStorage
-  config:
-    postgres_url: { PG_DB_CONN_STRING }
-
-# This config gets the DB connection string / url via environment variables:
-event_log_storage:
-  module: dagster_postgres.event_log
-  class: PostgresEventLogStorage
-  config:
-    postgres_url:
-      env: PG_DB_CONN_STRING
-
-# end_marker_event_log_storage_postgres
-
-# start_marker_event_log_storage_mysql
-
-# MySQL storage can be set using either credentials or a connection string
-
-# this config manually sets the MySQL credentials
-event_log_storage:
-  module: dagster_mysql.event_log
-  class: MySQLEventLogStorage
-  config:
-  mysql_db:
-    username: { DAGSTER_MYSQL_USERNAME }
-    password: { DAGSTER_MYSQL_PASSWORD }
-    hostname: { DAGSTER_MYSQL_HOSTNAME }
-    db_name: { DAGSTER_MYSQL_DB }
-    port: 3306
-
-
-# and this config grabs the database credentials from environment variables
-event_log_storage:
-  module: dagster_mysql.event_log_storage
-  class: MySQLEventLogStorage
-  config:
-    mysql_db:
-      username:
-        env: DAGSTER_MYSQL_USERNAME
-      password:
-        env: DAGSTER_MYSQL_PASSWORD
-      hostname:
-        env: DAGSTER_MYSQL_HOSTNAME
-      db_name:
-        env: DAGSTER_MYSQL_DB
-      port: 3306
-
-# and this config sets the credentials via DB connection string / url:
-event_log_storage:
-  module: dagster_mysql.event_log_storage
-  class: MySQLEventLogStorage
-  config:
-    mysql_url: { MYSQL_DB_CONN_STRING }
-
-# this config grabs the MySQL connection string from environment variables
-event_log_storage:
-  module: dagster_mysql.event_log_storage
-  class: MySQLEventLogStorage
-  config:
-    mysql_url:
-      env: MYSQL_DB_CONN_STRING
-
-# end_marker_event_log_storage_mysql
-
-# start_marker_dagster_daemon
-
-scheduler:
-  module: dagster.core.scheduler
-  class: DagsterDaemonScheduler
-
-# end_marker_dagster_daemon
-
-# start_marker_schedule_storage_sqlite
-
-# there are two ways to set `schedule_storage` to SqliteScheduleStorage
-
-# the first manually sets the directory (`base_dir`) to write schedule-related data to:
-schedule_storage:
-  module: dagster.core.storage.schedules
-  class: SqliteScheduleStorage
-  config:
-    base_dir: /path/to/dir
-
-# the second grabs the directory from an environment variable
-schedule_storage:
-  module: dagster.core.storage.schedules
-  class: SqliteScheduleStorage
-  config:
-    base_dir:
-      env: SQLITE_SCHEDULE_STORAGE_DIRECTORY
-
-# end_marker_schedule_storage_sqlite
-
-# start_marker_schedule_storage_postgres
-
-# Postgres storage can be set using either credentials or a connection string
-
-# this config manually sets the Postgres credentials
-schedule_storage:
-  module: dagster_postgres.schedule_storage
-  class: PostgresScheduleStorage
-  config:
-    postgres_db:
-      username: { DAGSTER_PG_USERNAME }
-      password: { DAGSTER_PG_PASSWORD }
-      hostname: { DAGSTER_PG_HOSTNAME }
-      db_name: { DAGSTER_PG_DB }
-      port: 5432
-
-# and this config grabs the database credentials from environment variables
-schedule_storage:
-  module: dagster_postgres.schedule_storage
-  class: PostgresScheduleStorage
-  config:
-    postgres_db:
-      username:
-        env: DAGSTER_PG_USERNAME
-      password:
-        env: DAGSTER_PG_PASSWORD
-      hostname:
-        env: DAGSTER_PG_HOST
-      db_name:
-        env: DAGSTER_PG_DB
-      port: 5432
-
-# and this config sets the credentials via DB connection string / url:
-schedule_storage:
-  module: dagster_postgres.schedule_storage
-  class: PostgresScheduleStorage
-  config:
-    postgres_url: { PG_DB_CONN_STRING }
-
-# This config gets the DB connection string / url via environment variables:
-schedule_storage:
-  module: dagster_postgres.schedule_storage
-  class: PostgresScheduleStorage
-  config:
-    postgres_url:
-      env: PG_DB_CONN_STRING
-
-# end_marker_schedule_storage_postgres
-
-# start_marker_schedule_storage_mysql
-
-# MySQL storage can be set using either credentials or a connection string
-
-# this config manually sets the MySQL credentials
-schedule_storage:
-  module: dagster_mysql.schedule_storage
-  class: MySQLScheduleStorage
-  config:
-  mysql_db:
-    username: { DAGSTER_MYSQL_USERNAME }
-    password: { DAGSTER_MYSQL_PASSWORD }
-    hostname: { DAGSTER_MYSQL_HOSTNAME }
-    db_name: { DAGSTER_MYSQL_DB }
-    port: 3306
-
-
-# and this config grabs the database credentials from environment variables
-schedule_storage:
-  module: dagster_mysql.schedule_storage
-  class: MySQLScheduleStorage
-  config:
-    mysql_db:
-      username:
-        env: DAGSTER_MYSQL_USERNAME
-      password:
-        env: DAGSTER_MYSQL_PASSWORD
-      hostname:
-        env: DAGSTER_MYSQL_HOSTNAME
-      db_name:
-        env: DAGSTER_MYSQL_DB
-      port: 3306
-
-# and this config sets the credentials via DB connection string / url:
-schedule_storage:
-  module: dagster_mysql.schedule_storage
-  class: MySQLScheduleStorage
-  config:
-    mysql_url: { MYSQL_DB_CONN_STRING }
-
-# this config grabs the MySQL connection string from environment variables
-schedule_storage:
-  module: dagster_mysql.schedule_storage
-  class: MySQLScheduleStorage
-  config:
-    mysql_url:
-      env: MYSQL_DB_CONN_STRING
-
-# end_marker_schedule_storage_mysql
+# end_marker_storage_mysql
 
 # start_marker_run_launcher_default
 
@@ -584,6 +295,25 @@ local_artifact_storage:
 
 # end_marker_local_artifact_storage
 
+# start_run_monitoring
+
+# Opt in to the experimental Monitoring Daemon
+run_monitoring:
+  enabled: true
+  # values below are the defaults, and don't need to be specified execpt to override them
+  start_timeout_seconds: 180
+  max_resume_run_attempts: 3 # experimental if above 0
+  poll_interval_seconds: 120
+
+# end_run_monitoring
+
+# start_run_retries
+run_retries:
+  enabled: true
+  max_retries: 3 # Sets a default for all jobs. 0 if not set
+# end_run_retries
+
+
 # start_marker_telemetry
 
 # Allows opting out of Dagster collecting usage statistics.
@@ -591,3 +321,34 @@ telemetry:
   enabled: false
 
 # end_marker_telemetry
+
+# start_marker_code_servers
+
+# Configures how long Dagster waits for repositories
+# to load before timing out.
+code_servers:
+  local_startup_timeout: 120
+
+# end_marker_code_servers
+
+# start_marker_retention
+
+# Configures how long Dagster keeps sensor / schedule tick data
+retention:
+  schedule:
+    purge_after_days: 90 # sets retention policy for schedule ticks of all types
+  sensor:
+    purge_after_days:
+      skipped: 7
+      failure: 30
+      success: -1 # keep success ticks indefinitely
+
+# end_marker_retention
+
+# start_marker_sensors
+
+sensors:
+  use_threads: true
+  num_workers: 8
+
+# end_marker_sensors

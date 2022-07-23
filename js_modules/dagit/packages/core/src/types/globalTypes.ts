@@ -7,6 +7,21 @@
 // START Enums and Input Objects
 //==============================================================
 
+export enum AssetComputeStatus {
+  NONE = "NONE",
+  OUT_OF_DATE = "OUT_OF_DATE",
+  UP_TO_DATE = "UP_TO_DATE",
+}
+
+export enum BackfillStatus {
+  CANCELED = "CANCELED",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+  INCOMPLETE = "INCOMPLETE",
+  IN_PROGRESS = "IN_PROGRESS",
+  REQUESTED = "REQUESTED",
+}
+
 export enum BulkActionStatus {
   CANCELED = "CANCELED",
   COMPLETED = "COMPLETED",
@@ -20,9 +35,11 @@ export enum ComputeIOType {
 }
 
 export enum DagsterEventType {
+  ALERT_FAILURE = "ALERT_FAILURE",
   ALERT_START = "ALERT_START",
   ALERT_SUCCESS = "ALERT_SUCCESS",
   ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION",
+  ASSET_MATERIALIZATION_PLANNED = "ASSET_MATERIALIZATION_PLANNED",
   ASSET_OBSERVATION = "ASSET_OBSERVATION",
   ASSET_STORE_OPERATION = "ASSET_STORE_OPERATION",
   ENGINE_EVENT = "ENGINE_EVENT",
@@ -41,6 +58,9 @@ export enum DagsterEventType {
   PIPELINE_START = "PIPELINE_START",
   PIPELINE_STARTING = "PIPELINE_STARTING",
   PIPELINE_SUCCESS = "PIPELINE_SUCCESS",
+  RESOURCE_INIT_FAILURE = "RESOURCE_INIT_FAILURE",
+  RESOURCE_INIT_STARTED = "RESOURCE_INIT_STARTED",
+  RESOURCE_INIT_SUCCESS = "RESOURCE_INIT_SUCCESS",
   RUN_CANCELED = "RUN_CANCELED",
   RUN_CANCELING = "RUN_CANCELING",
   RUN_DEQUEUED = "RUN_DEQUEUED",
@@ -58,6 +78,8 @@ export enum DagsterEventType {
   STEP_START = "STEP_START",
   STEP_SUCCESS = "STEP_SUCCESS",
   STEP_UP_FOR_RETRY = "STEP_UP_FOR_RETRY",
+  STEP_WORKER_STARTED = "STEP_WORKER_STARTED",
+  STEP_WORKER_STARTING = "STEP_WORKER_STARTING",
 }
 
 export enum ErrorSource {
@@ -115,6 +137,11 @@ export enum ObjectStoreOperationType {
   SET_OBJECT = "SET_OBJECT",
 }
 
+export enum ReexecutionStrategy {
+  ALL_STEPS = "ALL_STEPS",
+  FROM_FAILURE = "FROM_FAILURE",
+}
+
 export enum RepositoryLocationLoadStatus {
   LOADED = "LOADED",
   LOADING = "LOADING",
@@ -148,6 +175,12 @@ export enum StepKind {
 export enum TerminateRunPolicy {
   MARK_AS_CANCELED_IMMEDIATELY = "MARK_AS_CANCELED_IMMEDIATELY",
   SAFE_TERMINATE = "SAFE_TERMINATE",
+}
+
+export interface AssetGroupSelector {
+  groupName: string;
+  repositoryName: string;
+  repositoryLocationName: string;
 }
 
 export interface AssetKeyInput {
@@ -193,13 +226,15 @@ export interface JobOrPipelineSelector {
   repositoryName: string;
   repositoryLocationName: string;
   solidSelection?: string[] | null;
+  assetSelection?: AssetKeyInput[] | null;
 }
 
 export interface LaunchBackfillParams {
   selector: PartitionSetSelector;
-  partitionNames: string[];
+  partitionNames?: string[] | null;
   reexecutionSteps?: string[] | null;
   fromFailure?: boolean | null;
+  allPartitions?: boolean | null;
   tags?: ExecutionTag[] | null;
   forceSynchronousSubmission?: boolean | null;
 }
@@ -214,6 +249,11 @@ export interface PipelineSelector {
   repositoryName: string;
   repositoryLocationName: string;
   solidSelection?: string[] | null;
+}
+
+export interface ReexecutionParams {
+  parentRunId: string;
+  strategy: ReexecutionStrategy;
 }
 
 export interface RepositorySelector {

@@ -2,7 +2,7 @@ import {gql} from '@apollo/client';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 
 import {StartSchedule, StartSchedule_startSchedule_PythonError} from './types/StartSchedule';
 import {StopSchedule, StopSchedule_stopRunningSchedule_PythonError} from './types/StopSchedule';
@@ -19,17 +19,19 @@ export const START_SCHEDULE_MUTATION = gql`
           runningCount
         }
       }
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export const STOP_SCHEDULE_MUTATION = gql`
-  mutation StopSchedule($scheduleOriginId: String!) {
-    stopRunningSchedule(scheduleOriginId: $scheduleOriginId) {
+  mutation StopSchedule($scheduleOriginId: String!, $scheduleSelectorId: String!) {
+    stopRunningSchedule(
+      scheduleOriginId: $scheduleOriginId
+      scheduleSelectorId: $scheduleSelectorId
+    ) {
       __typename
       ... on ScheduleStateResult {
         scheduleState {
@@ -39,12 +41,11 @@ export const STOP_SCHEDULE_MUTATION = gql`
           runningCount
         }
       }
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export const displayScheduleMutationErrors = (data: StartSchedule | StopSchedule) => {

@@ -1,4 +1,5 @@
 import time
+from typing import Any
 
 from dagster.core.host_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
@@ -8,12 +9,12 @@ from dagster.core.host_representation.grpc_server_state_subscriber import (
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
+BaseTestSuite: Any = make_graphql_context_test_suite(
+    context_variants=[GraphQLContextVariant.non_launchable_sqlite_instance_deployed_grpc_env()]
+)
 
-class TestSubscribeToGrpcServerEvents(
-    make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.non_launchable_sqlite_instance_deployed_grpc_env()]
-    )
-):
+
+class TestSubscribeToGrpcServerEvents(BaseTestSuite):
     def test_grpc_server_handle_message_subscription(self, graphql_context):
         events = []
         test_subscriber = LocationStateSubscriber(events.append)

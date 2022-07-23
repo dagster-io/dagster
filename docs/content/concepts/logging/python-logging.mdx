@@ -40,7 +40,7 @@ With the default behavior, because this code uses a custom python logger (instea
 
 This can be accomplished by setting the `managed_python_loggers` key in your dagster.yaml file to a list of python logger names that you would like to capture:
 
-```yaml file=/concepts/logging/python_logging_managed_loggers_config2.yaml
+```yaml file=/concepts/logging/python_logging_managed_loggers_config.yaml
 python_logs:
   managed_python_loggers:
     - my_logger
@@ -80,16 +80,6 @@ def ambitious_op():
 ```
 
 Note: The logging module retains global state, meaning the logger returned by this function will be identical if this function is called multiple times with the same arguments in the same process. This means that there may be unpredictable or unituitive results if you set the level of the returned python logger to different values in different parts of your code.
-
-### Example: Capturing logs from all python loggers
-
-If you would like to capture logs from ALL python loggers, you can simply include `root` in your list, as python loggers are arranged in a hierarchy, with `root` as the parent of all other loggers:
-
-```yaml file=/concepts/logging/python_logging_managed_loggers_config.yaml
-python_logs:
-  managed_python_loggers:
-    - root
-```
 
 ## Configuring A Python Log Level <Experimental />
 

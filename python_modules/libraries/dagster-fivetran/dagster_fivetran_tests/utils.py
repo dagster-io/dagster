@@ -1,4 +1,4 @@
-from dagster.utils.merger import deep_merge_dicts
+from dagster._utils.merger import deep_merge_dicts
 
 DEFAULT_CONNECTOR_ID = "some_connector"
 
@@ -178,3 +178,7 @@ def get_sample_sync_response():
         "code": "Success",
         "message": "Sync has been successfully triggered for connector with id 'some_connector'",
     }
+
+
+def get_sample_resync_response():
+    return {"code": "Success", "message": "Re-sync has been triggered successfully"}

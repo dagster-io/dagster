@@ -75,6 +75,13 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   intRepr: string;
 }
 
+export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
+}
+
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_PipelineRunMetadataEntry {
   __typename: "PipelineRunMetadataEntry";
   label: string;
@@ -166,7 +173,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   schema: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries = TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_PathMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_JsonMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_UrlMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_TextMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_MarkdownMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_PythonArtifactMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_FloatMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_IntMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_PipelineRunMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_AssetMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_TableMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_TableSchemaMetadataEntry;
+export type TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries = TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_PathMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_JsonMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_UrlMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_TextMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_MarkdownMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_PythonArtifactMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_FloatMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_IntMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_BoolMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_PipelineRunMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_AssetMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_TableMetadataEntry | TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_metadataEntries_TableSchemaMetadataEntry;
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
@@ -176,6 +183,12 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -183,6 +196,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -200,6 +214,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -241,12 +256,24 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   recursiveConfigTypes: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -256,6 +283,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -273,6 +301,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -312,6 +341,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_EnumConfigType_values[];
   recursiveConfigTypes: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -323,6 +353,12 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -330,6 +366,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -347,6 +384,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -395,6 +433,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -405,6 +444,12 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -412,6 +457,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -429,6 +475,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -479,6 +526,12 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -486,6 +539,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -503,6 +557,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -554,6 +609,12 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -561,6 +622,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
@@ -578,6 +640,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -630,6 +693,12 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -637,6 +706,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -654,6 +724,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -695,12 +766,24 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   recursiveConfigTypes: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -710,6 +793,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -727,6 +811,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -766,6 +851,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_EnumConfigType_values[];
   recursiveConfigTypes: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -777,6 +863,12 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -784,6 +876,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -801,6 +894,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -849,6 +943,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -859,6 +954,12 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -866,6 +967,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -883,6 +985,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -933,6 +1036,12 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -940,6 +1049,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -957,6 +1067,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1008,6 +1119,12 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   typeParamKeys: string[];
 }
 
+export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -1015,6 +1132,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
@@ -1032,6 +1150,7 @@ export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterType
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface TypeExplorerContainerQuery_pipelineOrError_Pipeline_dagsterTypeOrError_RegularDagsterType_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {

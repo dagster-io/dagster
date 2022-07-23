@@ -1,12 +1,12 @@
 from os import path
 
+from dagster._serdes import deserialize_json_to_dagster_namedtuple, deserialize_value
 from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.serdes import deserialize_json_to_dagster_namedtuple, deserialize_value
 
 
 def test_dead_events():
     snapshot = path.join(path.dirname(path.realpath(__file__)), "dead_events.txt")
-    with open(snapshot, "r") as fd:
+    with open(snapshot, "r", encoding="utf8") as fd:
         objs = []
         for line in fd.readlines():
             obj = deserialize_value(line)

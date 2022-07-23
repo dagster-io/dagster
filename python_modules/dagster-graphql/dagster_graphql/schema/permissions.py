@@ -1,11 +1,11 @@
 import graphene
 
-from dagster import check
+import dagster._check as check
 
 
 class GraphenePermission(graphene.ObjectType):
     class Meta:
-        "Permission"
+        name = "Permission"
 
     permission = graphene.NonNull(graphene.String)
     value = graphene.NonNull(graphene.Boolean)

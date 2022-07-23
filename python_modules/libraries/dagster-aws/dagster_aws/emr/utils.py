@@ -1,6 +1,6 @@
 import copy
 
-from dagster import check
+import dagster._check as check
 
 
 def subset_run_config(run_config, solid_name):

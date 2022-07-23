@@ -2,8 +2,8 @@ import * as React from 'react';
 
 import {BaseButton} from './BaseButton';
 import {Box} from './Box';
-import {ColorsWIP} from './Colors';
-import {IconName, IconWIP} from './Icon';
+import {Colors} from './Colors';
+import {IconName, Icon} from './Icon';
 import {Tooltip} from './Tooltip';
 
 export type ButtonGroupItem<T> = {
@@ -19,7 +19,7 @@ interface Props<T> {
   onClick: (id: T, e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
-export const ButtonGroup = <T extends string>(props: Props<T>) => {
+export const ButtonGroup = <T extends string | number>(props: Props<T>) => {
   const {activeItems, buttons, onClick} = props;
   return (
     <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
@@ -29,13 +29,11 @@ export const ButtonGroup = <T extends string>(props: Props<T>) => {
         const buttonElement = (
           <BaseButton
             key={id}
-            fillColor={isActive ? ColorsWIP.Gray200 : ColorsWIP.Gray50}
-            textColor={isActive ? ColorsWIP.Gray900 : ColorsWIP.Gray700}
+            fillColor={isActive ? Colors.Gray200 : Colors.Gray50}
+            textColor={isActive ? Colors.Gray900 : Colors.Gray700}
             strokeColor="transparent"
             icon={
-              icon ? (
-                <IconWIP name={icon} color={isActive ? ColorsWIP.Gray900 : ColorsWIP.Gray700} />
-              ) : null
+              icon ? <Icon name={icon} color={isActive ? Colors.Gray900 : Colors.Gray700} /> : null
             }
             label={label}
             onClick={(e) => onClick(id, e)}

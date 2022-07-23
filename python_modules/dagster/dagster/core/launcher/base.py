@@ -2,11 +2,11 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import NamedTuple, Optional
 
+from dagster._serdes import whitelist_for_serdes
 from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.workspace.workspace import IWorkspace
-from dagster.serdes import whitelist_for_serdes
 
 
 class LaunchRunContext(NamedTuple):
@@ -72,12 +72,6 @@ class RunLauncher(ABC, MayHaveInstanceWeakref):
             context (LaunchRunContext): information about the launch - every run launcher
             will need the PipelineRun, and some run launchers may need information from the
             IWorkspace from which the run was launched.
-        """
-
-    @abstractmethod
-    def can_terminate(self, run_id):
-        """
-        Can this run_id be terminated by this run launcher.
         """
 
     @abstractmethod

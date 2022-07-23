@@ -1,11 +1,11 @@
-import {ButtonWIP, IconWIP, MenuItemWIP, MenuWIP, Popover} from '@dagster-io/ui';
+import {Button, Icon, MenuItem, Menu, Popover} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results} from './types/PipelinePartitionsRootQuery';
 
 type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results;
 
-export const PartitionSetSelector: React.FunctionComponent<{
+export const PartitionSetSelector: React.FC<{
   selected: PartitionSet;
   partitionSets: PartitionSet[];
   onSelect: (partitionSet: PartitionSet) => void;
@@ -17,9 +17,9 @@ export const PartitionSetSelector: React.FunctionComponent<{
       onInteraction={setOpen}
       position="bottom-left"
       content={
-        <MenuWIP style={{minWidth: 280}}>
+        <Menu style={{minWidth: 280}}>
           {partitionSets.map((partitionSet, idx) => (
-            <MenuItemWIP
+            <MenuItem
               key={idx}
               onClick={() => onSelect(partitionSet)}
               active={selected.name === partitionSet.name}
@@ -27,12 +27,10 @@ export const PartitionSetSelector: React.FunctionComponent<{
               text={<div>{partitionSet.name}</div>}
             />
           ))}
-        </MenuWIP>
+        </Menu>
       }
     >
-      <ButtonWIP
-        rightIcon={<IconWIP name="expand_more" />}
-      >{`Partition Set: ${selected.name}`}</ButtonWIP>
+      <Button rightIcon={<Icon name="expand_more" />}>{`Partition Set: ${selected.name}`}</Button>
     </Popover>
   );
 };

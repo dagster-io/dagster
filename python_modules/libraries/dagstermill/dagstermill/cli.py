@@ -1,15 +1,15 @@
 import copy
 import os
 import subprocess
-from typing import Dict
+from typing import Dict, Optional
 
 import click
 import nbformat
 from papermill.iorw import load_notebook_node, write_ipynb
 
-from dagster import check
-from dagster.seven.json import loads
-from dagster.utils import mkdir_p, safe_isfile
+import dagster._check as check
+from dagster._seven.json import loads
+from dagster._utils import mkdir_p, safe_isfile
 
 
 def get_import_cell():
@@ -22,7 +22,7 @@ def get_parameters_cell():
     return parameters_cell
 
 
-def get_kernelspec(kernel: str = None):
+def get_kernelspec(kernel: Optional[str] = None):
     kernelspecs = loads(subprocess.check_output(["jupyter", "kernelspec", "list", "--json"]))
 
     check.invariant(len(kernelspecs["kernelspecs"]) > 0, "No available Jupyter kernelspecs!")
@@ -121,7 +121,7 @@ def execute_create_notebook(notebook: str, force_overwrite: bool, kernel: str):
             abort=True,
         )
 
-    with open(notebook_path, "w") as f:
+    with open(notebook_path, "w", encoding="utf8") as f:
         f.write(get_notebook_scaffolding(get_kernelspec(kernel)))
         click.echo("Created new dagstermill notebook at {path}".format(path=notebook_path))
 

@@ -9,23 +9,10 @@ import { InstigationType, InstigationStatus, RunStatus, InstigationTickStatus } 
 // GraphQL fragment: InstigationStateFragment
 // ====================================================
 
-export interface InstigationStateFragment_repositoryOrigin_repositoryLocationMetadata {
-  __typename: "RepositoryMetadata";
-  key: string;
-  value: string;
-}
-
-export interface InstigationStateFragment_repositoryOrigin {
-  __typename: "RepositoryOrigin";
-  id: string;
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: InstigationStateFragment_repositoryOrigin_repositoryLocationMetadata[];
-}
-
 export interface InstigationStateFragment_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface InstigationStateFragment_typeSpecificData_ScheduleData {
@@ -40,9 +27,12 @@ export interface InstigationStateFragment_runs {
   id: string;
   runId: string;
   status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
-export interface InstigationStateFragment_ticks_error_cause {
+export interface InstigationStateFragment_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -52,7 +42,7 @@ export interface InstigationStateFragment_ticks_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstigationStateFragment_ticks_error_cause | null;
+  causes: InstigationStateFragment_ticks_error_causes[];
 }
 
 export interface InstigationStateFragment_ticks {
@@ -63,16 +53,19 @@ export interface InstigationStateFragment_ticks {
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: InstigationStateFragment_ticks_error | null;
 }
 
 export interface InstigationStateFragment {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;
-  repositoryOrigin: InstigationStateFragment_repositoryOrigin;
+  repositoryName: string;
+  repositoryLocationName: string;
   typeSpecificData: InstigationStateFragment_typeSpecificData | null;
   runs: InstigationStateFragment_runs[];
   ticks: InstigationStateFragment_ticks[];

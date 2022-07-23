@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Extra  # pylint: disable=no-name-in-module
+from pydantic import BaseModel, Extra
 
 
 class Redis(BaseModel):

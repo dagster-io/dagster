@@ -107,7 +107,7 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", "intersphinx/python.inv"),
     "airflow": ("https://airflow.apache.org", "intersphinx/airflow.inv"),
     "dask": ("https://distributed.dask.org/en/latest/", "intersphinx/dask.inv"),
-    "celery": ("http://docs.celeryproject.org/en/latest/", "intersphinx/celery.inv"),
+    "celery": ("https://docs.celeryq.dev/en/stable/", "intersphinx/celery.inv"),
     "boto3": ("https://boto3.amazonaws.com/v1/documentation/api/latest/", "intersphinx/boto3.inv"),
     "psycopg2": ("https://www.psycopg.org/docs/", "intersphinx/psycopg2.inv"),
 }

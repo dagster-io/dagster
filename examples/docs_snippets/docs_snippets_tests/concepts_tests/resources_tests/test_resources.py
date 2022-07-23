@@ -1,5 +1,4 @@
 from dagster import build_init_resource_context, build_op_context
-
 from docs_snippets.concepts.resources.resources import (
     cereal_fetcher,
     connect,

@@ -1,16 +1,9 @@
-from dagster import (
-    Executor,
-    Field,
-    Noneable,
-    Permissive,
-    StringSource,
-    check,
-    executor,
-    multiple_process_executor_requirements,
-)
+from dagster import Executor, Field, Noneable, Permissive, StringSource
+from dagster import _check as check
+from dagster import executor, multiple_process_executor_requirements
+from dagster._grpc.types import ExecuteStepArgs
+from dagster._serdes import pack_value
 from dagster.core.execution.retries import RetryMode, get_retries_config
-from dagster.grpc.types import ExecuteStepArgs
-from dagster.serdes import pack_value
 
 from .config import DEFAULT_CONFIG, dict_wrapper
 from .defaults import broker_url, result_backend
@@ -55,7 +48,7 @@ def celery_executor(init_context):
     the ``config_source`` key. This config corresponds to the "new lowercase settings" introduced
     in Celery version 4.0 and the object constructed from config will be passed to the
     :py:class:`celery.Celery` constructor as its ``config_source`` argument.
-    (See https://docs.celeryproject.org/en/latest/userguide/configuration.html for details.)
+    (See https://docs.celeryq.dev/en/stable/userguide/configuration.html for details.)
 
     The executor also exposes the ``broker``, `backend`, and ``include`` arguments to the
     :py:class:`celery.Celery` constructor.

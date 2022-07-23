@@ -1,11 +1,15 @@
 import sys
-from collections import namedtuple
+from contextlib import contextmanager
+from contextvars import ContextVar
+from typing import Callable, Mapping, NamedTuple, Optional, Sequence, cast
 
 from graphql.execution.base import ResolveInfo
 
-from dagster import check
+import dagster._check as check
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster.core.definitions.events import AssetKey
 from dagster.core.host_representation import GraphSelector, PipelineSelector
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.core.workspace.context import BaseWorkspaceRequestContext
 
 
 def check_permission(permission):
@@ -23,8 +27,13 @@ def check_permission(permission):
 def assert_permission(graphene_info: ResolveInfo, permission: str) -> None:
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
 
-    if not graphene_info.context.has_permission(permission):
+    context = cast(BaseWorkspaceRequestContext, graphene_info.context)
+    if not context.has_permission(permission):
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
+
+
+def _noop(_):
+    pass
 
 
 class ErrorCapture:
@@ -35,17 +44,32 @@ class ErrorCapture:
         # Transform exception in to PythonError to present to user
         return GraphenePythonError(serializable_error_info_from_exc_info(exc_info))
 
+    # global behavior for how to handle unexpected exceptions
     on_exception = default_on_exception
+
+    # context var for observing unexpected exceptions
+    observer: ContextVar[Callable[[Exception], None]] = ContextVar(
+        "error_capture_observer", default=_noop
+    )
+
+    @staticmethod
+    @contextmanager
+    def watch(fn: Callable[[Exception], None]):
+        token = ErrorCapture.observer.set(fn)
+        try:
+            yield
+        finally:
+            ErrorCapture.observer.reset(token)
 
 
 def capture_error(fn):
     def _fn(*args, **kwargs):
-
         try:
             return fn(*args, **kwargs)
         except UserFacingGraphQLError as de_exception:
             return de_exception.error
-        except Exception:
+        except Exception as exc:
+            ErrorCapture.observer.get()(exc)
             return ErrorCapture.on_exception(sys.exc_info())
 
     return _fn
@@ -62,11 +86,15 @@ class UserFacingGraphQLError(Exception):
 
 
 def pipeline_selector_from_graphql(data):
+    asset_selection = data.get("assetSelection")
     return PipelineSelector(
         location_name=data["repositoryLocationName"],
         repository_name=data["repositoryName"],
         pipeline_name=data.get("pipelineName") or data.get("jobName"),
         solid_selection=data.get("solidSelection"),
+        asset_selection=[AssetKey.from_graphql_input(asset_key) for asset_key in asset_selection]
+        if asset_selection
+        else None,
     )
 
 
@@ -79,19 +107,31 @@ def graph_selector_from_graphql(data):
 
 
 class ExecutionParams(
-    namedtuple(
+    NamedTuple(
         "_ExecutionParams",
-        "selector run_config mode execution_metadata step_keys",
+        [
+            ("selector", PipelineSelector),
+            ("run_config", Mapping[str, object]),
+            ("mode", Optional[str]),
+            ("execution_metadata", "ExecutionMetadata"),
+            ("step_keys", Optional[Sequence[str]]),
+        ],
     )
 ):
-    def __new__(cls, selector, run_config, mode, execution_metadata, step_keys):
-        check.dict_param(run_config, "run_config", key_type=str)
+    def __new__(
+        cls,
+        selector: PipelineSelector,
+        run_config: Optional[Mapping[str, object]],
+        mode: Optional[str],
+        execution_metadata: "ExecutionMetadata",
+        step_keys: Optional[Sequence[str]],
+    ):
         check.opt_list_param(step_keys, "step_keys", of_type=str)
 
         return super(ExecutionParams, cls).__new__(
             cls,
             selector=check.inst_param(selector, "selector", PipelineSelector),
-            run_config=run_config,
+            run_config=check.opt_dict_param(run_config, "run_config", key_type=str),
             mode=check.opt_str_param(mode, "mode"),
             execution_metadata=check.inst_param(
                 execution_metadata, "execution_metadata", ExecutionMetadata
@@ -109,8 +149,24 @@ class ExecutionParams(
         }
 
 
-class ExecutionMetadata(namedtuple("_ExecutionMetadata", "run_id tags root_run_id parent_run_id")):
-    def __new__(cls, run_id, tags, root_run_id=None, parent_run_id=None):
+class ExecutionMetadata(
+    NamedTuple(
+        "_ExecutionMetadata",
+        [
+            ("run_id", Optional[str]),
+            ("tags", Mapping[str, str]),
+            ("root_run_id", Optional[str]),
+            ("parent_run_id", Optional[str]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        run_id: Optional[str],
+        tags: Mapping[str, str],
+        root_run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+    ):
         return super(ExecutionMetadata, cls).__new__(
             cls,
             check.opt_str_param(run_id, "run_id"),

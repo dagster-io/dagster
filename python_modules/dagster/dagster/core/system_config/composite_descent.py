@@ -1,8 +1,8 @@
 from typing import NamedTuple, Optional
 
-from dagster import check
-from dagster.config.evaluate_value_result import EvaluateValueResult
-from dagster.config.validate import process_config
+import dagster._check as check
+from dagster._config import EvaluateValueResult, process_config
+from dagster._utils.merger import merge_dicts
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.graph_definition import GraphDefinition
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
@@ -15,7 +15,6 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.system_config.objects import SolidConfig
-from dagster.utils.merger import merge_dicts
 
 
 class SolidConfigEntry(
@@ -97,11 +96,14 @@ def composite_descent(pipeline_def, solids_config, resource_defs):
             solids_config_dict=solids_config,
             resource_defs=resource_defs,
             is_using_graph_job_op_apis=pipeline_def.is_job,  # pylint: disable=protected-access
+            asset_layer=pipeline_def.asset_layer,
         )
     }
 
 
-def _composite_descent(parent_stack, solids_config_dict, resource_defs, is_using_graph_job_op_apis):
+def _composite_descent(
+    parent_stack, solids_config_dict, resource_defs, is_using_graph_job_op_apis, asset_layer
+):
     """
     The core implementation of composite_descent. This yields a stream of
     SolidConfigEntry. This is used by composite_descent to construct a
@@ -163,13 +165,14 @@ def _composite_descent(parent_stack, solids_config_dict, resource_defs, is_using
                 current_solid_config,
                 resource_defs,
                 is_using_graph_job_op_apis,
+                asset_layer,
             )
             if graph_def.has_config_mapping
             else current_solid_config.get(node_key, {})
         )
 
         yield from _composite_descent(
-            current_stack, solids_dict, resource_defs, is_using_graph_job_op_apis
+            current_stack, solids_dict, resource_defs, is_using_graph_job_op_apis, asset_layer
         )
 
 
@@ -209,6 +212,7 @@ def _apply_top_level_config_mapping(
             dependency_structure=graph_def.dependency_structure,
             resource_defs=resource_defs,
             is_using_graph_job_op_apis=is_using_graph_job_op_apis,
+            asset_layer=pipeline_def.asset_layer,
         )
 
         # process against that new type
@@ -228,6 +232,7 @@ def _get_mapped_solids_dict(
     current_solid_config,
     resource_defs,
     is_using_graph_job_op_apis,
+    asset_layer,
 ):
     # the spec of the config mapping function is that it takes the dictionary at:
     # solid_name:
@@ -271,6 +276,7 @@ def _get_mapped_solids_dict(
         parent_handle=current_stack.handle,
         resource_defs=resource_defs,
         is_using_graph_job_op_apis=is_using_graph_job_op_apis,
+        asset_layer=asset_layer,
     )
 
     # process against that new type

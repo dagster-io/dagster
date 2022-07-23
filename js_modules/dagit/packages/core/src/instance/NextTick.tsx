@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {ColorsWIP, CaptionMono} from '@dagster-io/ui';
+import {Colors, CaptionMono} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -44,7 +44,7 @@ export const NextTick = (props: Props) => {
 
   if (nextTick) {
     return (
-      <CaptionMono color={ColorsWIP.Gray500}>
+      <CaptionMono color={Colors.Gray500}>
         Next tick:{' '}
         <TimestampDisplay
           timestamp={nextTick.earliest}

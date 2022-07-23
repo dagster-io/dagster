@@ -25,7 +25,7 @@ In this configuration, Dagit will write execution logs to `$DAGSTER_HOME/logs` a
 
 ## Running dagster-daemon
 
-If you're using [schedules](/concepts/partitions-schedules-sensors/schedules) or sensors, or want to set limits on the number of runs that can be executed at once, you'll want to also run a [dagster-daemon service](/deployment/dagster-daemon) as part of your deployment. To run this service locally, run the following command:
+If you're using [schedules](/concepts/partitions-schedules-sensors/schedules), [sensors](/concepts/partitions-schedules-sensors/sensors), or [backfills](/concepts/partitions-schedules-sensors/backfills), or want to set limits on the number of runs that can be executed at once, you'll want to also run a [dagster-daemon service](/deployment/dagster-daemon) as part of your deployment. To run this service locally, run the following command:
 
 ```shell
 pip install dagster

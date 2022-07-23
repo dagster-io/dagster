@@ -1,128 +1,256 @@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ColorsWIP} from './Colors';
+import account_circle from '../icon-svgs/account_circle.svg';
+import account_tree from '../icon-svgs/account_tree.svg';
+import add_circle from '../icon-svgs/add_circle.svg';
+import alternate_email from '../icon-svgs/alternate_email.svg';
+import arrow_back from '../icon-svgs/arrow_back.svg';
+import arrow_downward from '../icon-svgs/arrow_downward.svg';
+import arrow_drop_down from '../icon-svgs/arrow_drop_down.svg';
+import arrow_forward from '../icon-svgs/arrow_forward.svg';
+import arrow_upward from '../icon-svgs/arrow_upward.svg';
+import asset from '../icon-svgs/asset.svg';
+import asset_group from '../icon-svgs/asset_group.svg';
+import asset_non_sda from '../icon-svgs/asset_non_sda.svg';
+import assignment from '../icon-svgs/assignment.svg';
+import assignment_turned_in from '../icon-svgs/assignment_turned_in.svg';
+import attach_file from '../icon-svgs/attach_file.svg';
+import bolt from '../icon-svgs/bolt.svg';
+import expectation from '../icon-svgs/bp-automatic-updates.svg';
+import op from '../icon-svgs/bp-git-commit.svg';
+import op_selector from '../icon-svgs/bp-send-to-graph.svg';
+import cached from '../icon-svgs/cached.svg';
+import cancel from '../icon-svgs/cancel.svg';
+import check_circle from '../icon-svgs/check_circle.svg';
+import checklist from '../icon-svgs/checklist.svg';
+import chevron_left from '../icon-svgs/chevron_left.svg';
+import chevron_right from '../icon-svgs/chevron_right.svg';
+import close from '../icon-svgs/close.svg';
+import content_copy from '../icon-svgs/content_copy.svg';
+import deleteSVG from '../icon-svgs/delete.svg';
+import done from '../icon-svgs/done.svg';
+import download_for_offline from '../icon-svgs/download_for_offline.svg';
+import drag_handle from '../icon-svgs/drag_handle.svg';
+import dynamic_feed from '../icon-svgs/dynamic_feed.svg';
+import edit from '../icon-svgs/edit.svg';
+import email from '../icon-svgs/email.svg';
+import error from '../icon-svgs/error.svg';
+import error_outline from '../icon-svgs/error_outline.svg';
+import expand_less from '../icon-svgs/expand_less.svg';
+import expand_more from '../icon-svgs/expand_more.svg';
+import filter_alt from '../icon-svgs/filter_alt.svg';
+import folder from '../icon-svgs/folder.svg';
+import folder_open from '../icon-svgs/folder_open.svg';
+import gantt_flat from '../icon-svgs/gantt_flat.svg';
+import gantt_waterfall from '../icon-svgs/gantt_waterfall.svg';
+import github from '../icon-svgs/github.svg';
+import github_pr_closed from '../icon-svgs/github_pr_closed.svg';
+import github_pr_merged from '../icon-svgs/github_pr_merged.svg';
+import github_pr_open from '../icon-svgs/github_pr_open.svg';
+import graph_downstream from '../icon-svgs/graph_downstream.svg';
+import graph_neighbors from '../icon-svgs/graph_neighbors.svg';
+import graph_upstream from '../icon-svgs/graph_upstream.svg';
+import history from '../icon-svgs/history.svg';
+import history_toggle_off from '../icon-svgs/history_toggle_off.svg';
+import hourglass_bottom from '../icon-svgs/hourglass_bottom.svg';
+import info from '../icon-svgs/info.svg';
+import job from '../icon-svgs/job.svg';
+import layers from '../icon-svgs/layers.svg';
+import line_style from '../icon-svgs/line_style.svg';
+import linear_scale from '../icon-svgs/linear_scale.svg';
+import link from '../icon-svgs/link.svg';
+import list from '../icon-svgs/list.svg';
+import location_on from '../icon-svgs/location_on.svg';
+import lock from '../icon-svgs/lock.svg';
+import logout from '../icon-svgs/logout.svg';
+import materialization from '../icon-svgs/materialization.svg';
+import menu from '../icon-svgs/menu.svg';
+import menu_book from '../icon-svgs/menu_book.svg';
+import more_horiz from '../icon-svgs/more_horiz.svg';
+import nightlight from '../icon-svgs/nightlight.svg';
+import observation from '../icon-svgs/observation.svg';
+import open_in_new from '../icon-svgs/open_in_new.svg';
+import panel_hide_right from '../icon-svgs/panel_hide_right.svg';
+import panel_show_both from '../icon-svgs/panel_show_both.svg';
+import panel_show_bottom from '../icon-svgs/panel_show_bottom.svg';
+import panel_show_left from '../icon-svgs/panel_show_left.svg';
+import panel_show_right from '../icon-svgs/panel_show_right.svg';
+import panel_show_top from '../icon-svgs/panel_show_top.svg';
+import people from '../icon-svgs/people.svg';
+import refresh from '../icon-svgs/refresh.svg';
+import replay from '../icon-svgs/replay.svg';
+import schedule from '../icon-svgs/schedule.svg';
+import schema from '../icon-svgs/schema.svg';
+import search from '../icon-svgs/search.svg';
+import sensors from '../icon-svgs/sensors.svg';
+import settings from '../icon-svgs/settings.svg';
+import settings_backup_restore from '../icon-svgs/settings_backup_restore.svg';
+import slack from '../icon-svgs/slack.svg';
+import sort_by_alpha from '../icon-svgs/sort_by_alpha.svg';
+import source from '../icon-svgs/source.svg';
+import speed from '../icon-svgs/speed.svg';
+import splitscreen from '../icon-svgs/splitscreen.svg';
+import star from '../icon-svgs/star.svg';
+import sync_problem from '../icon-svgs/sync_problem.svg';
+import table_view from '../icon-svgs/table_view.svg';
+import tag from '../icon-svgs/tag.svg';
+import timer from '../icon-svgs/timer.svg';
+import toggle_off from '../icon-svgs/toggle_off.svg';
+import toggle_on from '../icon-svgs/toggle_on.svg';
+import toggle_whitespace from '../icon-svgs/toggle_whitespace.svg';
+import tune from '../icon-svgs/tune.svg';
+import unfold_less from '../icon-svgs/unfold_less.svg';
+import unfold_more from '../icon-svgs/unfold_more.svg';
+import vertical_align_bottom from '../icon-svgs/vertical_align_bottom.svg';
+import vertical_align_center from '../icon-svgs/vertical_align_center.svg';
+import vertical_align_top from '../icon-svgs/vertical_align_top.svg';
+import view_list from '../icon-svgs/view_list.svg';
+import visibility from '../icon-svgs/visibility.svg';
+import visibility_off from '../icon-svgs/visibility_off.svg';
+import warning from '../icon-svgs/warning.svg';
+import waterfall_chart from '../icon-svgs/waterfall_chart.svg';
+import workspaces from '../icon-svgs/workspaces.svg';
+import wysiwyg from '../icon-svgs/wysiwyg.svg';
+import zoom_in from '../icon-svgs/zoom_in.svg';
+import zoom_out from '../icon-svgs/zoom_out.svg';
+
+import {Colors} from './Colors';
 
 // Mostly Material Design icons - need another one? Download the SVG:
 // https://github.com/marella/material-design-icons/tree/main/svg/outlined
 
 export const Icons = {
   // Core icons
-  asset: require('../icon-svgs/table_view.svg'),
-  expectation: require('../icon-svgs/bp-automatic-updates.svg'),
-  materialization: require('../icon-svgs/materialization.svg'),
-  observation: require('../icon-svgs/observation.svg'),
-  job: require('../icon-svgs/job.svg'),
-  op: require('../icon-svgs/bp-git-commit.svg'),
-  op_selector: require('../icon-svgs/bp-send-to-graph.svg'),
-  op_dynamic: require('../icon-svgs/bolt.svg'),
-  partition_set: require('../icon-svgs/schedule.svg'),
-  repo: require('../icon-svgs/source.svg'),
-  resource: require('../icon-svgs/layers.svg'),
-  run: require('../icon-svgs/history.svg'),
-  sensors: require('../icon-svgs/sensors.svg'),
-  schedule: require('../icon-svgs/schedule.svg'),
-  workspace: require('../icon-svgs/source.svg'),
-  gantt_flat: require('../icon-svgs/gantt_flat.svg'),
-  gantt_waterfall: require('../icon-svgs/gantt_waterfall.svg'),
+  asset,
+  asset_non_sda,
+  asset_group,
+  expectation,
+  materialization,
+  observation,
+  job,
+  op,
+  op_selector,
+  op_dynamic: bolt,
+  partition_set: schedule,
+  repo: source,
+  resource: layers,
+  run: history,
+  sensors,
+  schedule,
+  workspace: source,
+  gantt_flat,
+  gantt_waterfall,
 
   // Other custom icons
-  toggle_whitespace: require('../icon-svgs/toggle_whitespace.svg'),
-  panel_show_top: require('../icon-svgs/panel_show_top.svg'),
-  panel_show_left: require('../icon-svgs/panel_show_left.svg'),
-  panel_show_right: require('../icon-svgs/panel_show_right.svg'),
-  panel_hide_right: require('../icon-svgs/panel_hide_right.svg'),
-  panel_show_bottom: require('../icon-svgs/panel_show_bottom.svg'),
-  panel_show_both: require('../icon-svgs/panel_show_both.svg'),
-  copy_to_clipboard: require('../icon-svgs/assignment.svg'),
-  copy_to_clipboard_done: require('../icon-svgs/assignment_turned_in.svg'),
-  open_in_new: require('../icon-svgs/open_in_new.svg'),
-  folder: require('../icon-svgs/folder.svg'),
-  tag: require('../icon-svgs/tag.svg'),
+  toggle_whitespace,
+  panel_show_top,
+  panel_show_left,
+  panel_show_right,
+  panel_hide_right,
+  panel_show_bottom,
+  panel_show_both,
+  copy_to_clipboard: assignment,
+  copy_to_clipboard_done: assignment_turned_in,
+  open_in_new,
+  folder,
+  tag,
+  slack,
+  github,
+  github_pr_open,
+  github_pr_closed,
+  github_pr_merged,
+
+  graph_downstream,
+  graph_upstream,
+  graph_neighbors,
 
   // Material icons
-  add_circle: require('../icon-svgs/add_circle.svg'),
-  account_circle: require('../icon-svgs/account_circle.svg'),
-  account_tree: require('../icon-svgs/account_tree.svg'),
-  alternate_email: require('../icon-svgs/alternate_email.svg'),
-  arrow_back: require('../icon-svgs/arrow_back.svg'),
-  arrow_downward: require('../icon-svgs/arrow_downward.svg'),
-  arrow_drop_down: require('../icon-svgs/arrow_drop_down.svg'),
-  arrow_forward: require('../icon-svgs/arrow_forward.svg'),
-  arrow_upward: require('../icon-svgs/arrow_upward.svg'),
-  assignment: require('../icon-svgs/assignment.svg'),
-  assignment_turned_in: require('../icon-svgs/assignment_turned_in.svg'),
-  attach_file: require('../icon-svgs/attach_file.svg'),
-  bolt: require('../icon-svgs/bolt.svg'),
-  cached: require('../icon-svgs/cached.svg'),
-  cancel: require('../icon-svgs/cancel.svg'),
-  check_circle: require('../icon-svgs/check_circle.svg'),
-  checklist: require('../icon-svgs/checklist.svg'),
-  chevron_right: require('../icon-svgs/chevron_right.svg'),
-  chevron_left: require('../icon-svgs/chevron_left.svg'),
-  close: require('../icon-svgs/close.svg'),
-  content_copy: require('../icon-svgs/content_copy.svg'),
-  delete: require('../icon-svgs/delete.svg'),
-  done: require('../icon-svgs/done.svg'),
-  download_for_offline: require('../icon-svgs/download_for_offline.svg'),
-  dynamic_feed: require('../icon-svgs/dynamic_feed.svg'),
-  drag_handle: require('../icon-svgs/drag_handle.svg'),
-  edit: require('../icon-svgs/edit.svg'),
-  error: require('../icon-svgs/error.svg'),
-  error_outline: require('../icon-svgs/error_outline.svg'),
-  expand_less: require('../icon-svgs/expand_less.svg'),
-  expand_more: require('../icon-svgs/expand_more.svg'),
-  filter_alt: require('../icon-svgs/filter_alt.svg'),
-  folder_open: require('../icon-svgs/folder_open.svg'),
-  info: require('../icon-svgs/info.svg'),
-  history: require('../icon-svgs/history.svg'),
-  history_toggle_off: require('../icon-svgs/history_toggle_off.svg'),
-  hourglass_bottom: require('../icon-svgs/hourglass_bottom.svg'),
-  layers: require('../icon-svgs/layers.svg'),
-  line_style: require('../icon-svgs/line_style.svg'),
-  linear_scale: require('../icon-svgs/linear_scale.svg'),
-  link: require('../icon-svgs/link.svg'),
-  list: require('../icon-svgs/list.svg'),
-  location_on: require('../icon-svgs/location_on.svg'),
-  lock: require('../icon-svgs/lock.svg'),
-  logout: require('../icon-svgs/logout.svg'),
-  menu: require('../icon-svgs/menu.svg'),
-  menu_book: require('../icon-svgs/menu_book.svg'),
-  more_horiz: require('../icon-svgs/more_horiz.svg'),
-  nightlight: require('../icon-svgs/nightlight.svg'),
-  people: require('../icon-svgs/people.svg'),
-  refresh: require('../icon-svgs/refresh.svg'),
-  replay: require('../icon-svgs/replay.svg'),
-  schema: require('../icon-svgs/schema.svg'),
-  search: require('../icon-svgs/search.svg'),
-  settings: require('../icon-svgs/settings.svg'),
-  settings_backup_restore: require('../icon-svgs/settings_backup_restore.svg'),
-  sort_by_alpha: require('../icon-svgs/sort_by_alpha.svg'),
-  source: require('../icon-svgs/source.svg'),
-  speed: require('../icon-svgs/speed.svg'),
-  splitscreen: require('../icon-svgs/splitscreen.svg'),
-  star: require('../icon-svgs/star.svg'),
-  sync_problem: require('../icon-svgs/sync_problem.svg'),
-  table_view: require('../icon-svgs/table_view.svg'),
-  timer: require('../icon-svgs/timer.svg'),
-  toggle_off: require('../icon-svgs/toggle_off.svg'),
-  toggle_on: require('../icon-svgs/toggle_on.svg'),
-  tune: require('../icon-svgs/tune.svg'),
-  unfold_less: require('../icon-svgs/unfold_less.svg'),
-  unfold_more: require('../icon-svgs/unfold_more.svg'),
-  view_list: require('../icon-svgs/view_list.svg'),
-  visibility: require('../icon-svgs/visibility.svg'),
-  visibility_off: require('../icon-svgs/visibility_off.svg'),
-  warning: require('../icon-svgs/warning.svg'),
-  workspaces: require('../icon-svgs/workspaces.svg'),
-  waterfall_chart: require('../icon-svgs/waterfall_chart.svg'),
-  vertical_align_bottom: require('../icon-svgs/vertical_align_bottom.svg'),
-  vertical_align_center: require('../icon-svgs/vertical_align_center.svg'),
-  vertical_align_top: require('../icon-svgs/vertical_align_top.svg'),
-  wysiwyg: require('../icon-svgs/wysiwyg.svg'),
-  zoom_in: require('../icon-svgs/zoom_in.svg'),
-  zoom_out: require('../icon-svgs/zoom_out.svg'),
+  add_circle,
+  account_circle,
+  account_tree,
+  alternate_email,
+  arrow_back,
+  arrow_downward,
+  arrow_drop_down,
+  arrow_forward,
+  arrow_upward,
+  assignment,
+  assignment_turned_in,
+  attach_file,
+  bolt,
+  cached,
+  cancel,
+  check_circle,
+  checklist,
+  chevron_right,
+  chevron_left,
+  close,
+  content_copy,
+  delete: deleteSVG,
+  done,
+  download_for_offline,
+  dynamic_feed,
+  drag_handle,
+  edit,
+  email,
+  error,
+  error_outline,
+  expand_less,
+  expand_more,
+  filter_alt,
+  folder_open,
+  info,
+  history,
+  history_toggle_off,
+  hourglass_bottom,
+  layers,
+  line_style,
+  linear_scale,
+  link,
+  list,
+  location_on,
+  lock,
+  logout,
+  menu,
+  menu_book,
+  more_horiz,
+  nightlight,
+  people,
+  refresh,
+  replay,
+  schema,
+  search,
+  settings,
+  settings_backup_restore,
+  sort_by_alpha,
+  source,
+  speed,
+  splitscreen,
+  star,
+  sync_problem,
+  table_view,
+  timer,
+  toggle_off,
+  toggle_on,
+  tune,
+  unfold_less,
+  unfold_more,
+  view_list,
+  visibility,
+  visibility_off,
+  warning,
+  workspaces,
+  waterfall_chart,
+  vertical_align_bottom,
+  vertical_align_center,
+  vertical_align_top,
+  wysiwyg,
+  zoom_in,
+  zoom_out,
 } as const;
+
+const SVGS_WITH_COLORS = new Set([slack]);
 
 export type IconName = keyof typeof Icons;
 
@@ -139,12 +267,16 @@ interface Props {
   style?: React.CSSProperties;
 }
 
-export const IconWIP = React.memo((props: Props) => {
-  const {color = ColorsWIP.Dark, name, size = 16, style} = props;
+export const Icon = React.memo((props: Props) => {
+  const {name, size = 16, style} = props;
   let img = Icons[name] || '';
   if (typeof img === 'object' && 'default' in img) {
     // in Dagit but not in Storybook due to webpack config differences
-    img = img.default;
+    img = (img as {default: any}).default;
+  }
+  let color: string | null = props.color || Colors.Dark;
+  if (SVGS_WITH_COLORS.has(img)) {
+    color = null;
   }
   return (
     <IconWrapper
@@ -160,19 +292,31 @@ export const IconWIP = React.memo((props: Props) => {
 });
 
 interface WrapperProps {
-  $color: string;
+  $color: string | null;
   $size: number;
   $img: string;
   $rotation: string | null;
 }
 
 export const IconWrapper = styled.div<WrapperProps>`
-  background: ${(p) => p.$color};
   width: ${(p) => p.$size}px;
   height: ${(p) => p.$size}px;
   flex-shrink: 0;
   flex-grow: 0;
-  mask-image: url(${(p) => p.$img});
+  ${(p) =>
+    p.$color === null
+      ? // Increased specificity so that StyledButton background-color logic doesn't apply here.
+        // We could just use !important but specificity is a little more flexible
+        `
+        background: url(${p.$img});
+        &[role='img'][role='img'] {
+          background-color: transparent;
+        }
+      `
+      : `
+        background: ${p.$color};
+        mask-image: url(${p.$img});
+      `}
   mask-size: cover;
   object-fit: cover;
   transition: transform 150ms linear;

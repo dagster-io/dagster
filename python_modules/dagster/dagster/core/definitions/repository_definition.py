@@ -1,18 +1,41 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Dict, Generic, List, Optional, Type, TypeVar, Union, cast
+from inspect import isfunction
+from types import FunctionType
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
-from dagster import check
+import dagster._check as check
+from dagster._utils import merge_dicts
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.utils import merge_dicts
 
 from .events import AssetKey
+from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .job_definition import JobDefinition
+from .logger_definition import LoggerDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline_definition import PipelineDefinition
 from .schedule_definition import ScheduleDefinition
 from .sensor_definition import SensorDefinition
+from .source_asset import SourceAsset
+from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import check_valid_name
+
+if TYPE_CHECKING:
+    from dagster.core.definitions import AssetGroup
 
 VALID_REPOSITORY_DATA_DICT_KEYS = {
     "pipelines",
@@ -25,6 +48,7 @@ VALID_REPOSITORY_DATA_DICT_KEYS = {
 RepositoryLevelDefinition = TypeVar(
     "RepositoryLevelDefinition",
     PipelineDefinition,
+    JobDefinition,
     PartitionSetDefinition,
     ScheduleDefinition,
     SensorDefinition,
@@ -37,7 +61,7 @@ class _CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
         definition_class: Type[RepositoryLevelDefinition],
         definition_class_name: str,
         definition_kind: str,
-        definitions: Dict[
+        definitions: Mapping[
             str, Union[RepositoryLevelDefinition, Callable[[], RepositoryLevelDefinition]]
         ],
         validation_fn: Callable[[RepositoryLevelDefinition], RepositoryLevelDefinition],
@@ -71,20 +95,20 @@ class _CacheingDefinitionIndex(Generic[RepositoryLevelDefinition]):
             [RepositoryLevelDefinition], RepositoryLevelDefinition
         ] = validation_fn
 
-        self._definitions: Dict[
+        self._definitions: Mapping[
             str, Union[RepositoryLevelDefinition, Callable[[], RepositoryLevelDefinition]]
         ] = definitions
         self._definition_cache: Dict[str, RepositoryLevelDefinition] = {}
         self._definition_names: Optional[List[str]] = None
 
-        self._lazy_definitions_fn: Optional[
-            Callable[[], List[RepositoryLevelDefinition]]
+        self._lazy_definitions_fn: Callable[
+            [], List[RepositoryLevelDefinition]
         ] = lazy_definitions_fn or (lambda: [])
         self._lazy_definitions: Optional[List[RepositoryLevelDefinition]] = None
 
         self._all_definitions: Optional[List[RepositoryLevelDefinition]] = None
 
-    def _get_lazy_definitions(self):
+    def _get_lazy_definitions(self) -> List[RepositoryLevelDefinition]:
         if self._lazy_definitions is None:
             self._lazy_definitions = self._lazy_definitions_fn()
             for definition in self._lazy_definitions:
@@ -193,14 +217,14 @@ class RepositoryData(ABC):
     """
 
     @abstractmethod
-    def get_all_pipelines(self):
+    def get_all_pipelines(self) -> List[PipelineDefinition]:
         """Return all pipelines/jobs in the repository as a list.
 
         Returns:
             List[PipelineDefinition]: All pipelines/jobs in the repository.
         """
 
-    def get_all_jobs(self):
+    def get_all_jobs(self) -> List[JobDefinition]:
         """Return all jobs in the repository as a list.
 
         Returns:
@@ -208,7 +232,7 @@ class RepositoryData(ABC):
         """
         return [job for job in self.get_all_pipelines() if isinstance(job, JobDefinition)]
 
-    def get_pipeline_names(self):
+    def get_pipeline_names(self) -> List[str]:
         """Get the names of all pipelines/jobs in the repository.
 
         Returns:
@@ -216,7 +240,7 @@ class RepositoryData(ABC):
         """
         return [pipeline_def.name for pipeline_def in self.get_all_pipelines()]
 
-    def get_job_names(self):
+    def get_job_names(self) -> List[str]:
         """Get the names of all jobs in the repository.
 
         Returns:
@@ -224,7 +248,7 @@ class RepositoryData(ABC):
         """
         return [job_def.name for job_def in self.get_all_jobs()]
 
-    def has_pipeline(self, pipeline_name):
+    def has_pipeline(self, pipeline_name: str) -> bool:
         """Check if a pipeline/job with a given name is present in the repository.
 
         Args:
@@ -235,7 +259,7 @@ class RepositoryData(ABC):
         """
         return pipeline_name in self.get_pipeline_names()
 
-    def has_job(self, job_name):
+    def has_job(self, job_name: str) -> bool:
         """Check if a job with a given name is present in the repository.
 
         Args:
@@ -246,7 +270,7 @@ class RepositoryData(ABC):
         """
         return job_name in self.get_job_names()
 
-    def get_pipeline(self, pipeline_name):
+    def get_pipeline(self, pipeline_name) -> PipelineDefinition:
         """Get a pipeline/job by name.
 
         Args:
@@ -264,7 +288,7 @@ class RepositoryData(ABC):
             )
         return pipelines_with_name[0]
 
-    def get_job(self, job_name):
+    def get_job(self, job_name: str) -> JobDefinition:
         """Get a job by name.
 
         Args:
@@ -286,7 +310,7 @@ class RepositoryData(ABC):
         """
         return [partition_set.name for partition_set in self.get_all_partition_sets()]
 
-    def has_partition_set(self, partition_set_name):
+    def has_partition_set(self, partition_set_name: str) -> bool:
         """Check if a partition set with a given name is present in the repository.
 
         Args:
@@ -297,7 +321,7 @@ class RepositoryData(ABC):
         """
         return partition_set_name in self.get_partition_set_names()
 
-    def get_all_partition_sets(self):
+    def get_all_partition_sets(self) -> List[PartitionSetDefinition]:
         """Return all partition sets in the repository as a list.
 
         Returns:
@@ -305,7 +329,7 @@ class RepositoryData(ABC):
         """
         return []
 
-    def get_partition_set(self, partition_set_name):
+    def get_partition_set(self, partition_set_name: str) -> PartitionSetDefinition:
         """Get a partition set by name.
 
         Args:
@@ -325,7 +349,7 @@ class RepositoryData(ABC):
             )
         return partition_sets_with_name[0]
 
-    def get_schedule_names(self):
+    def get_schedule_names(self) -> List[str]:
         """Get the names of all schedules in the repository.
 
         Returns:
@@ -333,7 +357,7 @@ class RepositoryData(ABC):
         """
         return [schedule.name for schedule in self.get_all_schedules()]
 
-    def get_all_schedules(self):
+    def get_all_schedules(self) -> List[ScheduleDefinition]:
         """Return all schedules in the repository as a list.
 
         Returns:
@@ -341,7 +365,7 @@ class RepositoryData(ABC):
         """
         return []
 
-    def get_schedule(self, schedule_name):
+    def get_schedule(self, schedule_name: str) -> ScheduleDefinition:
         """Get a schedule by name.
 
         args:
@@ -359,16 +383,16 @@ class RepositoryData(ABC):
             )
         return schedules_with_name[0]
 
-    def has_schedule(self, schedule_name):
+    def has_schedule(self, schedule_name: str) -> bool:
         return schedule_name in self.get_schedule_names()
 
-    def get_all_sensors(self):
+    def get_all_sensors(self) -> List[SensorDefinition]:
         return []
 
-    def get_sensor_names(self):
+    def get_sensor_names(self) -> List[str]:
         return [sensor.name for sensor in self.get_all_sensors()]
 
-    def get_sensor(self, sensor_name):
+    def get_sensor(self, sensor_name: str) -> SensorDefinition:
         sensors_with_name = [
             sensor for sensor in self.get_all_sensors() if sensor.name == sensor_name
         ]
@@ -378,17 +402,43 @@ class RepositoryData(ABC):
             )
         return sensors_with_name[0]
 
-    def has_sensor(self, sensor_name):
+    def has_sensor(self, sensor_name: str) -> bool:
         return sensor_name in self.get_sensor_names()
 
-    def get_source_assets_by_key(self):
+    def get_source_assets_by_key(self) -> Mapping[AssetKey, SourceAsset]:
         return {}
+
+    def load_all_definitions(self):
+        # force load of all lazy constructed code artifacts
+        self.get_all_pipelines()
+        self.get_all_jobs()
+        self.get_all_partition_sets()
+        self.get_all_schedules()
+        self.get_all_sensors()
+        self.get_source_assets_by_key()
+
+
+T = TypeVar("T")
+Resolvable = Callable[[], T]
 
 
 class CachingRepositoryData(RepositoryData):
     """Default implementation of RepositoryData used by the :py:func:`@repository <repository>` decorator."""
 
-    def __init__(self, pipelines, jobs, partition_sets, schedules, sensors, source_assets):
+    _all_jobs: Optional[List[JobDefinition]]
+    _all_pipelines: Optional[List[PipelineDefinition]]
+
+    def __init__(
+        self,
+        pipelines: Mapping[str, Union[PipelineDefinition, Resolvable[PipelineDefinition]]],
+        jobs: Mapping[str, Union[JobDefinition, Resolvable[JobDefinition]]],
+        partition_sets: Mapping[
+            str, Union[PartitionSetDefinition, Resolvable[PartitionSetDefinition]]
+        ],
+        schedules: Mapping[str, Union[ScheduleDefinition, Resolvable[ScheduleDefinition]]],
+        sensors: Mapping[str, Union[SensorDefinition, Resolvable[SensorDefinition]]],
+        source_assets_by_key: Mapping[AssetKey, SourceAsset],
+    ):
         """Constructs a new CachingRepositoryData object.
 
         You may pass pipeline, job, partition_set, and schedule definitions directly, or you may pass
@@ -401,24 +451,37 @@ class CachingRepositoryData(RepositoryData):
         at retrieval time.
 
         Args:
-            pipelines (Dict[str, Union[PipelineDefinition, Callable[[], PipelineDefinition]]]):
+            pipelines (Mapping[str, Union[PipelineDefinition, Callable[[], PipelineDefinition]]]):
                 The pipeline definitions belonging to the repository.
-            jobs (Dict[str, Union[JobDefinition, Callable[[], JobDefinition]]]):
+            jobs (Mapping[str, Union[JobDefinition, Callable[[], JobDefinition]]]):
                 The job definitions belonging to the repository.
-            partition_sets (Dict[str, Union[PartitionSetDefinition, Callable[[], PartitionSetDefinition]]]):
+            partition_sets (Mapping[str, Union[PartitionSetDefinition, Callable[[], PartitionSetDefinition]]]):
                 The partition sets belonging to the repository.
-            schedules (Dict[str, Union[ScheduleDefinition, Callable[[], ScheduleDefinition]]]):
+            schedules (Mapping[str, Union[ScheduleDefinition, Callable[[], ScheduleDefinition]]]):
                 The schedules belonging to the repository.
-            sensors (Dict[str, Union[SensorDefinition, Callable[[], SensorDefinition]]]):
+            sensors (Mapping[str, Union[SensorDefinition, Callable[[], SensorDefinition]]]):
                 The sensors belonging to a repository.
-            source_assets (Dict[str, SourceAsset]): The source assets belonging to a repository.
+            source_assets_by_key (Mapping[AssetKey, SourceAsset]): The source assets belonging to a repository.
         """
-        check.dict_param(pipelines, "pipelines", key_type=str)
-        check.dict_param(jobs, "jobs", key_type=str)
-        check.dict_param(partition_sets, "partition_sets", key_type=str)
-        check.dict_param(schedules, "schedules", key_type=str)
-        check.dict_param(sensors, "sensors", key_type=str)
-        check.dict_param(source_assets, "source_assets", key_type=AssetKey)
+        check.mapping_param(
+            pipelines, "pipelines", key_type=str, value_type=(PipelineDefinition, FunctionType)
+        )
+        check.mapping_param(jobs, "jobs", key_type=str, value_type=(JobDefinition, FunctionType))
+        check.mapping_param(
+            partition_sets,
+            "partition_sets",
+            key_type=str,
+            value_type=(PartitionSetDefinition, FunctionType),
+        )
+        check.mapping_param(
+            schedules, "schedules", key_type=str, value_type=(ScheduleDefinition, FunctionType)
+        )
+        check.mapping_param(
+            sensors, "sensors", key_type=str, value_type=(SensorDefinition, FunctionType)
+        )
+        check.mapping_param(
+            source_assets_by_key, "source_assets_by_key", key_type=AssetKey, value_type=SourceAsset
+        )
 
         self._pipelines = _CacheingDefinitionIndex(
             PipelineDefinition,
@@ -443,14 +506,16 @@ class CachingRepositoryData(RepositoryData):
             schedules,
             self._validate_schedule,
         )
-        schedule_partition_sets = [
-            schedule.get_partition_set()
-            for schedule in self._schedules.get_all_definitions()
-            if isinstance(schedule, PartitionScheduleDefinition)
-        ]
-        self._source_assets = source_assets
+        schedule_partition_sets = filter(
+            None,
+            [
+                _get_partition_set_from_schedule(schedule)
+                for schedule in self._schedules.get_all_definitions()
+            ],
+        )
+        self._source_assets_by_key = source_assets_by_key
 
-        def load_partition_sets_from_pipelines():
+        def load_partition_sets_from_pipelines() -> List[PartitionSetDefinition]:
             job_partition_sets = []
             for pipeline in self.get_all_pipelines():
                 if isinstance(pipeline, JobDefinition):
@@ -488,7 +553,7 @@ class CachingRepositoryData(RepositoryData):
         self._all_jobs = None
 
     @staticmethod
-    def from_dict(repository_definitions):
+    def from_dict(repository_definitions: Dict[str, Dict[str, Any]]) -> "CachingRepositoryData":
         """Static constructor.
 
         Args:
@@ -531,7 +596,7 @@ class CachingRepositoryData(RepositoryData):
         )
         if duplicate_keys:
             raise DagsterInvalidDefinitionError(
-                f"Duplicate definitions between schedules and sensors found for keys: {duplicate_keys.join(', ')}"
+                f"Duplicate definitions between schedules and sensors found for keys: {', '.join(duplicate_keys)}"
             )
 
         # merge jobs in to pipelines while they are just implemented as pipelines
@@ -543,46 +608,75 @@ class CachingRepositoryData(RepositoryData):
 
             if isinstance(job, GraphDefinition):
                 repository_definitions["jobs"][key] = job.coerce_to_job()
-            elif not isinstance(job, JobDefinition):
+            elif isinstance(job, UnresolvedAssetJobDefinition):
+                repository_definitions["jobs"][key] = job.resolve(
+                    # TODO: https://github.com/dagster-io/dagster/issues/8263
+                    assets=[],
+                    source_assets=[],
+                    default_executor_def=None,
+                )
+            elif not isinstance(job, JobDefinition) and not isfunction(job):
                 raise DagsterInvalidDefinitionError(
                     f"Object mapped to {key} is not an instance of JobDefinition or GraphDefinition."
                 )
 
-        return CachingRepositoryData(**repository_definitions, source_assets={})
+        return CachingRepositoryData(**repository_definitions, source_assets_by_key={})
 
     @classmethod
-    def from_list(cls, repository_definitions):
+    def from_list(
+        cls,
+        repository_definitions: List[
+            Union[
+                PipelineDefinition,
+                PartitionSetDefinition,
+                ScheduleDefinition,
+                SensorDefinition,
+                "AssetGroup",
+                GraphDefinition,
+                UnresolvedAssetJobDefinition,
+            ]
+        ],
+        default_executor_def: Optional[ExecutorDefinition] = None,
+        default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
+    ) -> "CachingRepositoryData":
         """Static constructor.
 
         Args:
-            repository_definitions (List[Union[PipelineDefinition, PartitionSetDefinition, ScheduleDefinition, AssetGroup]]):
+            repository_definitions (List[Union[PipelineDefinition, PartitionSetDefinition, ScheduleDefinition, SensorDefinition, AssetGroup, GraphDefinition]]):
                 Use this constructor when you have no need to lazy load pipelines/jobs or other
                 definitions.
         """
-        from dagster.core.asset_defs import AssetGroup, build_assets_job
+        from dagster.core.definitions import AssetGroup, AssetsDefinition
 
-        pipelines_or_jobs = {}
-        partition_sets = {}
-        schedules = {}
-        sensors = {}
-        source_assets = {}
+        pipelines_or_jobs: Dict[str, Union[PipelineDefinition, JobDefinition]] = {}
+        coerced_graphs: Dict[str, JobDefinition] = {}
+        unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition] = {}
+        partition_sets: Dict[str, PartitionSetDefinition] = {}
+        schedules: Dict[str, ScheduleDefinition] = {}
+        sensors: Dict[str, SensorDefinition] = {}
+        assets_defs: List[AssetsDefinition] = []
+        asset_keys: Set[AssetKey] = set()
+        source_assets: List[SourceAsset] = []
+        combined_asset_group = None
         for definition in repository_definitions:
             if isinstance(definition, PipelineDefinition):
                 if (
                     definition.name in pipelines_or_jobs
                     and pipelines_or_jobs[definition.name] != definition
-                ):
+                ) or definition.name in unresolved_jobs:
                     raise DagsterInvalidDefinitionError(
-                        "Duplicate {target_type} definition found for {target}".format(
-                            target_type=definition.target_type, target=definition.describe_target()
-                        )
+                        f"Duplicate {definition.target_type} definition found for {definition.describe_target()}"
+                    )
+                if AssetGroup.is_base_job_name(definition.name):
+                    raise DagsterInvalidDefinitionError(
+                        f"Attempted to provide job called {definition.name} to repository, which "
+                        "is a reserved name. Please rename the job."
                     )
                 pipelines_or_jobs[definition.name] = definition
             elif isinstance(definition, PartitionSetDefinition):
                 if definition.name in partition_sets:
                     raise DagsterInvalidDefinitionError(
-                        "Duplicate partition set definition found for partition set "
-                        "{partition_set_name}".format(partition_set_name=definition.name)
+                        f"Duplicate partition set definition found for partition set {definition.name}"
                     )
                 partition_sets[definition.name] = definition
             elif isinstance(definition, SensorDefinition):
@@ -591,63 +685,123 @@ class CachingRepositoryData(RepositoryData):
                         f"Duplicate definition found for {definition.name}"
                     )
                 sensors[definition.name] = definition
-                if definition.has_loadable_targets():
-                    targets = definition.load_targets()
-                    for target in targets:
-                        pipelines_or_jobs[target.name] = target
             elif isinstance(definition, ScheduleDefinition):
                 if definition.name in sensors or definition.name in schedules:
                     raise DagsterInvalidDefinitionError(
                         f"Duplicate definition found for {definition.name}"
                     )
                 schedules[definition.name] = definition
-                if definition.has_loadable_target():
-                    target = definition.load_target()
-                    pipelines_or_jobs[target.name] = target
-                if isinstance(definition, PartitionScheduleDefinition):
-                    partition_set_def = definition.get_partition_set()
+                partition_set_def = _get_partition_set_from_schedule(definition)
+                if partition_set_def:
                     if (
                         partition_set_def.name in partition_sets
                         and partition_set_def != partition_sets[partition_set_def.name]
                     ):
                         raise DagsterInvalidDefinitionError(
                             "Duplicate partition set definition found for partition set "
-                            "{partition_set_name}".format(partition_set_name=partition_set_def.name)
+                            f"{partition_set_def.name}"
                         )
                     partition_sets[partition_set_def.name] = partition_set_def
             elif isinstance(definition, GraphDefinition):
                 coerced = definition.coerce_to_job()
                 if coerced.name in pipelines_or_jobs:
                     raise DagsterInvalidDefinitionError(
-                        "Duplicate {target_type} definition found for graph '{name}'".format(
-                            target_type=coerced.target_type, name=coerced.name
-                        )
+                        f"Duplicate {coerced.target_type} definition found for graph '{coerced.name}'"
                     )
                 pipelines_or_jobs[coerced.name] = coerced
-
+                coerced_graphs[coerced.name] = coerced
+            elif isinstance(definition, UnresolvedAssetJobDefinition):
+                if definition.name in pipelines_or_jobs or definition.name in unresolved_jobs:
+                    raise DagsterInvalidDefinitionError(
+                        f"Duplicate definition found for unresolved job '{definition.name}'"
+                    )
+                # we can only resolve these once we have all assets
+                unresolved_jobs[definition.name] = definition
             elif isinstance(definition, AssetGroup):
-                asset_group = definition
-                pipelines_or_jobs[asset_group.all_assets_job_name] = build_assets_job(
-                    asset_group.all_assets_job_name,
-                    assets=asset_group.assets,
-                    source_assets=asset_group.source_assets,
-                    resource_defs=asset_group.resource_defs,
-                    executor_def=asset_group.executor_def,
-                )
-                source_assets = {
-                    source_asset.key: source_asset for source_asset in asset_group.source_assets
-                }
+                if combined_asset_group:
+                    combined_asset_group += definition
+                else:
+                    combined_asset_group = definition
+            elif isinstance(definition, AssetsDefinition):
+                for key in definition.keys:
+                    if key in asset_keys:
+                        raise DagsterInvalidDefinitionError(f"Duplicate asset key: {key}")
 
+                asset_keys.update(definition.keys)
+                assets_defs.append(definition)
+            elif isinstance(definition, SourceAsset):
+                source_assets.append(definition)
             else:
                 check.failed(f"Unexpected repository entry {definition}")
 
-        pipelines = {}
-        jobs = {}
+        if assets_defs or source_assets:
+            if combined_asset_group is not None:
+                raise DagsterInvalidDefinitionError(
+                    "A repository can't have both an AssetGroup and direct asset defs"
+                )
+            combined_asset_group = AssetGroup(
+                assets=assets_defs,
+                source_assets=source_assets,
+                executor_def=default_executor_def,
+            )
+
+        if combined_asset_group:
+            for job_def in combined_asset_group.get_base_jobs():
+                pipelines_or_jobs[job_def.name] = job_def
+
+            source_assets_by_key = {
+                source_asset.key: source_asset
+                for source_asset in combined_asset_group.source_assets
+            }
+        else:
+            source_assets_by_key = {}
+
+        for name, sensor_def in sensors.items():
+            if sensor_def.has_loadable_targets():
+                targets = sensor_def.load_targets()
+                for target in targets:
+                    _process_and_validate_target(
+                        sensor_def, coerced_graphs, unresolved_jobs, pipelines_or_jobs, target
+                    )
+
+        for name, schedule_def in schedules.items():
+            if schedule_def.has_loadable_target():
+                target = schedule_def.load_target()
+                _process_and_validate_target(
+                    schedule_def, coerced_graphs, unresolved_jobs, pipelines_or_jobs, target
+                )
+
+        # resolve all the UnresolvedAssetJobDefinitions using the full set of assets
+        for name, unresolved_job_def in unresolved_jobs.items():
+            if not combined_asset_group:
+                raise DagsterInvalidDefinitionError(
+                    f"UnresolvedAssetJobDefinition {name} specified, but no AssetDefinitions exist "
+                    "on the repository."
+                )
+            resolved_job = unresolved_job_def.resolve(
+                assets=combined_asset_group.assets,
+                source_assets=combined_asset_group.source_assets,
+                default_executor_def=default_executor_def,
+            )
+            pipelines_or_jobs[name] = resolved_job
+
+        pipelines: Dict[str, PipelineDefinition] = {}
+        jobs: Dict[str, JobDefinition] = {}
         for name, pipeline_or_job in pipelines_or_jobs.items():
             if isinstance(pipeline_or_job, JobDefinition):
                 jobs[name] = pipeline_or_job
             else:
                 pipelines[name] = pipeline_or_job
+
+        if default_executor_def:
+            for name, job_def in jobs.items():
+                if not job_def._executor_def_specified:  # pylint: disable=protected-access
+                    jobs[name] = job_def.with_executor_def(default_executor_def)
+
+        if default_logger_defs:
+            for name, job_def in jobs.items():
+                if not job_def._logger_defs_specified:  # pylint: disable=protected-access
+                    jobs[name] = job_def.with_logger_defs(default_logger_defs)
 
         return CachingRepositoryData(
             pipelines=pipelines,
@@ -655,10 +809,10 @@ class CachingRepositoryData(RepositoryData):
             partition_sets=partition_sets,
             schedules=schedules,
             sensors=sensors,
-            source_assets=source_assets,
+            source_assets_by_key=source_assets_by_key,
         )
 
-    def get_pipeline_names(self):
+    def get_pipeline_names(self) -> List[str]:
         """Get the names of all pipelines/jobs in the repository.
 
         Returns:
@@ -666,7 +820,7 @@ class CachingRepositoryData(RepositoryData):
         """
         return self._pipelines.get_definition_names() + self.get_job_names()
 
-    def get_job_names(self):
+    def get_job_names(self) -> List[str]:
         """Get the names of all jobs in the repository.
 
         Returns:
@@ -674,7 +828,7 @@ class CachingRepositoryData(RepositoryData):
         """
         return self._jobs.get_definition_names()
 
-    def has_pipeline(self, pipeline_name):
+    def has_pipeline(self, pipeline_name: str) -> bool:
         """Check if a pipeline/job with a given name is present in the repository.
 
         Args:
@@ -689,7 +843,7 @@ class CachingRepositoryData(RepositoryData):
             pipeline_name
         )
 
-    def has_job(self, job_name):
+    def has_job(self, job_name: str) -> bool:
         """Check if a job with a given name is present in the repository.
 
         Args:
@@ -701,7 +855,7 @@ class CachingRepositoryData(RepositoryData):
         check.str_param(job_name, "job_name")
         return self._jobs.has_definition(job_name)
 
-    def get_all_pipelines(self):
+    def get_all_pipelines(self) -> List[PipelineDefinition]:
         """Return all pipelines/jobs in the repository as a list.
 
         Note that this will construct any pipeline/job that has not yet been constructed.
@@ -713,11 +867,15 @@ class CachingRepositoryData(RepositoryData):
             return self._all_pipelines
 
         self._all_jobs = self._jobs.get_all_definitions()
-        self._all_pipelines = self._pipelines.get_all_definitions() + self._all_jobs
-        self._check_solid_defs()
+        pipelines: List[PipelineDefinition] = [
+            *self._pipelines.get_all_definitions(),
+            *self._all_jobs,
+        ]
+        self._check_solid_defs(pipelines)
+        self._all_pipelines = pipelines
         return self._all_pipelines
 
-    def get_all_jobs(self):
+    def get_all_jobs(self) -> List[JobDefinition]:
         """Return all jobs in the repository as a list.
 
         Note that this will construct any job that has not yet been constructed.
@@ -733,9 +891,10 @@ class CachingRepositoryData(RepositoryData):
         # pipeline/job/graph uniqueness.
         self.get_all_pipelines()
 
-        return self._all_jobs
+        # The `get_all_pipelines` call ensures _all_jobs is set.
+        return cast(List[JobDefinition], self._all_jobs)
 
-    def get_pipeline(self, pipeline_name):
+    def get_pipeline(self, pipeline_name: str) -> PipelineDefinition:
         """Get a pipeline/job by name.
 
         If this pipeline/job has not yet been constructed, only this pipeline/job is constructed, and will
@@ -755,7 +914,7 @@ class CachingRepositoryData(RepositoryData):
         else:
             return self._pipelines.get_definition(pipeline_name)
 
-    def get_job(self, job_name):
+    def get_job(self, job_name: str) -> JobDefinition:
         """Get a job by name.
 
         If this job has not yet been constructed, only this job is constructed, and will
@@ -771,7 +930,7 @@ class CachingRepositoryData(RepositoryData):
         check.str_param(job_name, "job_name")
         return self._jobs.get_definition(job_name)
 
-    def get_partition_set_names(self):
+    def get_partition_set_names(self) -> List[str]:
         """Get the names of all partition sets in the repository.
 
         Returns:
@@ -779,7 +938,7 @@ class CachingRepositoryData(RepositoryData):
         """
         return self._partition_sets.get_definition_names()
 
-    def has_partition_set(self, partition_set_name):
+    def has_partition_set(self, partition_set_name: str) -> bool:
         """Check if a partition set with a given name is present in the repository.
 
         Args:
@@ -791,7 +950,7 @@ class CachingRepositoryData(RepositoryData):
         check.str_param(partition_set_name, "partition_set_name")
         return self._partition_sets.has_definition(partition_set_name)
 
-    def get_all_partition_sets(self):
+    def get_all_partition_sets(self) -> List[PartitionSetDefinition]:
         """Return all partition sets in the repository as a list.
 
         Note that this will construct any partition set that has not yet been constructed.
@@ -801,7 +960,7 @@ class CachingRepositoryData(RepositoryData):
         """
         return self._partition_sets.get_all_definitions()
 
-    def get_partition_set(self, partition_set_name):
+    def get_partition_set(self, partition_set_name: str) -> PartitionSetDefinition:
         """Get a partition set by name.
 
         If this partition set has not yet been constructed, only this partition set is constructed,
@@ -818,7 +977,7 @@ class CachingRepositoryData(RepositoryData):
 
         return self._partition_sets.get_definition(partition_set_name)
 
-    def get_schedule_names(self):
+    def get_schedule_names(self) -> List[str]:
         """Get the names of all schedules in the repository.
 
         Returns:
@@ -826,7 +985,7 @@ class CachingRepositoryData(RepositoryData):
         """
         return self._schedules.get_definition_names()
 
-    def get_all_schedules(self):
+    def get_all_schedules(self) -> List[ScheduleDefinition]:
         """Return all schedules in the repository as a list.
 
         Note that this will construct any schedule that has not yet been constructed.
@@ -836,7 +995,7 @@ class CachingRepositoryData(RepositoryData):
         """
         return self._schedules.get_all_definitions()
 
-    def get_schedule(self, schedule_name):
+    def get_schedule(self, schedule_name: str) -> ScheduleDefinition:
         """Get a schedule by name.
 
         if this schedule has not yet been constructed, only this schedule is constructed, and will
@@ -853,31 +1012,31 @@ class CachingRepositoryData(RepositoryData):
 
         return self._schedules.get_definition(schedule_name)
 
-    def has_schedule(self, schedule_name):
+    def has_schedule(self, schedule_name: str) -> bool:
         check.str_param(schedule_name, "schedule_name")
 
         return self._schedules.has_definition(schedule_name)
 
-    def get_all_sensors(self):
+    def get_all_sensors(self) -> List[SensorDefinition]:
         return self._sensors.get_all_definitions()
 
-    def get_sensor_names(self):
+    def get_sensor_names(self) -> List[str]:
         return self._sensors.get_definition_names()
 
-    def get_sensor(self, sensor_name):
+    def get_sensor(self, sensor_name: str) -> SensorDefinition:
         return self._sensors.get_definition(sensor_name)
 
-    def has_sensor(self, sensor_name):
+    def has_sensor(self, sensor_name: str) -> bool:
         return self._sensors.has_definition(sensor_name)
 
-    def get_source_assets_by_key(self):
-        return self._source_assets
+    def get_source_assets_by_key(self) -> Mapping[AssetKey, SourceAsset]:
+        return self._source_assets_by_key
 
-    def _check_solid_defs(self):
+    def _check_solid_defs(self, pipelines: List[PipelineDefinition]) -> None:
         solid_defs = {}
         solid_to_pipeline = {}
-        for pipeline in self._all_pipelines:
-            for solid_def in pipeline.all_node_defs + [pipeline.graph]:
+        for pipeline in pipelines:
+            for solid_def in [*pipeline.all_node_defs, pipeline.graph]:
                 # skip checks for subselected graphs because they don't have their own names
                 if isinstance(solid_def, SubselectedGraphDefinition):
                     break
@@ -899,13 +1058,13 @@ class CachingRepositoryData(RepositoryData):
                         )
                     )
 
-    def _validate_pipeline(self, pipeline):
+    def _validate_pipeline(self, pipeline: PipelineDefinition) -> PipelineDefinition:
         return pipeline
 
-    def _validate_job(self, job):
+    def _validate_job(self, job: JobDefinition) -> JobDefinition:
         return job
 
-    def _validate_schedule(self, schedule):
+    def _validate_schedule(self, schedule: ScheduleDefinition) -> ScheduleDefinition:
         pipelines = self.get_pipeline_names()
 
         if schedule.pipeline_name not in pipelines:
@@ -916,7 +1075,7 @@ class CachingRepositoryData(RepositoryData):
 
         return schedule
 
-    def _validate_sensor(self, sensor):
+    def _validate_sensor(self, sensor: SensorDefinition) -> SensorDefinition:
         pipelines = self.get_pipeline_names()
         if len(sensor.targets) == 0:
             # skip validation when the sensor does not target a pipeline
@@ -931,7 +1090,9 @@ class CachingRepositoryData(RepositoryData):
 
         return sensor
 
-    def _validate_partition_set(self, partition_set):
+    def _validate_partition_set(
+        self, partition_set: PartitionSetDefinition
+    ) -> PartitionSetDefinition:
         return partition_set
 
 
@@ -958,24 +1119,28 @@ class RepositoryDefinition:
         self._repository_data = check.inst_param(repository_data, "repository_data", RepositoryData)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         return self._description
 
+    def load_all_definitions(self):
+        # force load of all lazy constructed code artifacts
+        self._repository_data.load_all_definitions()
+
     @property
-    def pipeline_names(self):
+    def pipeline_names(self) -> List[str]:
         """List[str]: Names of all pipelines/jobs in the repository"""
         return self._repository_data.get_pipeline_names()
 
     @property
-    def job_names(self):
+    def job_names(self) -> List[str]:
         """List[str]: Names of all jobs in the repository"""
         return self._repository_data.get_job_names()
 
-    def has_pipeline(self, name):
+    def has_pipeline(self, name: str) -> bool:
         """Check if a pipeline/job with a given name is present in the repository.
 
         Args:
@@ -986,7 +1151,7 @@ class RepositoryDefinition:
         """
         return self._repository_data.has_pipeline(name)
 
-    def get_pipeline(self, name):
+    def get_pipeline(self, name: str) -> PipelineDefinition:
         """Get a pipeline/job by name.
 
         If this pipeline/job is present in the lazily evaluated dictionary passed to the
@@ -1001,7 +1166,7 @@ class RepositoryDefinition:
         """
         return self._repository_data.get_pipeline(name)
 
-    def get_all_pipelines(self):
+    def get_all_pipelines(self) -> List[PipelineDefinition]:
         """Return all pipelines/jobs in the repository as a list.
 
         Note that this will construct any pipeline/job in the lazily evaluated dictionary that
@@ -1012,7 +1177,7 @@ class RepositoryDefinition:
         """
         return self._repository_data.get_all_pipelines()
 
-    def has_job(self, name):
+    def has_job(self, name: str) -> bool:
         """Check if a job with a given name is present in the repository.
 
         Args:
@@ -1023,7 +1188,7 @@ class RepositoryDefinition:
         """
         return self._repository_data.has_job(name)
 
-    def get_job(self, name):
+    def get_job(self, name: str) -> JobDefinition:
         """Get a job by name.
 
         If this job is present in the lazily evaluated dictionary passed to the
@@ -1039,7 +1204,7 @@ class RepositoryDefinition:
         """
         return self._repository_data.get_job(name)
 
-    def get_all_jobs(self):
+    def get_all_jobs(self) -> List[JobDefinition]:
         """Return all jobs in the repository as a list.
 
         Note that this will construct any job in the lazily evaluated dictionary that has
@@ -1051,37 +1216,131 @@ class RepositoryDefinition:
         return self._repository_data.get_all_jobs()
 
     @property
-    def partition_set_defs(self):
+    def partition_set_defs(self) -> List[PartitionSetDefinition]:
         return self._repository_data.get_all_partition_sets()
 
-    def get_partition_set_def(self, name):
+    def get_partition_set_def(self, name: str) -> PartitionSetDefinition:
         return self._repository_data.get_partition_set(name)
 
     @property
-    def schedule_defs(self):
+    def schedule_defs(self) -> List[ScheduleDefinition]:
         return self._repository_data.get_all_schedules()
 
-    def get_schedule_def(self, name):
+    def get_schedule_def(self, name: str) -> ScheduleDefinition:
         return self._repository_data.get_schedule(name)
 
-    def has_schedule_def(self, name):
+    def has_schedule_def(self, name: str) -> bool:
         return self._repository_data.has_schedule(name)
 
     @property
-    def sensor_defs(self):
+    def sensor_defs(self) -> List[SensorDefinition]:
         return self._repository_data.get_all_sensors()
 
-    def get_sensor_def(self, name):
+    def get_sensor_def(self, name: str) -> SensorDefinition:
         return self._repository_data.get_sensor(name)
 
-    def has_sensor_def(self, name):
+    def has_sensor_def(self, name: str) -> bool:
         return self._repository_data.has_sensor(name)
 
     @property
-    def source_assets_by_key(self):
+    def source_assets_by_key(self) -> Dict[AssetKey, SourceAsset]:
         return self._repository_data.get_source_assets_by_key()
 
     # If definition comes from the @repository decorator, then the __call__ method will be
     # overwritten. Therefore, we want to maintain the call-ability of repository definitions.
     def __call__(self, *args, **kwargs):
         return self
+
+
+def _process_and_validate_target(
+    schedule_or_sensor_def: Union[SensorDefinition, ScheduleDefinition],
+    coerced_graphs: Dict[str, JobDefinition],
+    unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition],
+    pipelines_or_jobs: Dict[str, PipelineDefinition],
+    target: Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition],
+):
+    # This function modifies the state of coerced_graphs and unresolved_jobs
+    targeter = (
+        f"schedule '{schedule_or_sensor_def.name}'"
+        if isinstance(schedule_or_sensor_def, ScheduleDefinition)
+        else f"sensor '{schedule_or_sensor_def.name}'"
+    )
+    if isinstance(target, GraphDefinition):
+        if target.name not in coerced_graphs:
+            # Since this is a graph we have to coerce, it is not possible to be
+            # the same definition by reference equality
+            if target.name in pipelines_or_jobs:
+                dupe_target_type = pipelines_or_jobs[target.name].target_type
+                raise DagsterInvalidDefinitionError(
+                    _get_error_msg_for_target_conflict(
+                        targeter, "graph", target.name, dupe_target_type
+                    )
+                )
+        elif coerced_graphs[target.name].graph != target:
+            raise DagsterInvalidDefinitionError(
+                _get_error_msg_for_target_conflict(targeter, "graph", target.name, "graph")
+            )
+        coerced_job = target.coerce_to_job()
+        coerced_graphs[target.name] = coerced_job
+        pipelines_or_jobs[target.name] = coerced_job
+    elif isinstance(target, UnresolvedAssetJobDefinition):
+        if target.name not in unresolved_jobs:
+            # Since this is am unresolved job we have to resolve, it is not possible to
+            # be the same definition by reference equality
+            if target.name in pipelines_or_jobs:
+                dupe_target_type = pipelines_or_jobs[target.name].target_type
+                raise DagsterInvalidDefinitionError(
+                    _get_error_msg_for_target_conflict(
+                        targeter, "unresolved asset job", target.name, dupe_target_type
+                    )
+                )
+        elif unresolved_jobs[target.name].selection != target.selection:
+            raise DagsterInvalidDefinitionError(
+                _get_error_msg_for_target_conflict(
+                    targeter, "unresolved asset job", target.name, "unresolved asset job"
+                )
+            )
+        unresolved_jobs[target.name] = target
+    else:
+        if target.name in pipelines_or_jobs and pipelines_or_jobs[target.name] != target:
+            dupe_target_type = (
+                "graph"
+                if target.name in coerced_graphs
+                else "unresolved asset job"
+                if target.name in unresolved_jobs
+                else pipelines_or_jobs[target.name].target_type
+            )
+            raise DagsterInvalidDefinitionError(
+                _get_error_msg_for_target_conflict(
+                    targeter, target.target_type, target.name, dupe_target_type
+                )
+            )
+        pipelines_or_jobs[target.name] = target
+
+
+def _get_error_msg_for_target_conflict(targeter, target_type, target_name, dupe_target_type):
+    return f"{targeter} targets {target_type} '{target_name}', but a different {dupe_target_type} with the same name was provided. Disambiguate between these by providing a separate name to one of them."
+
+
+def _get_partition_set_from_schedule(
+    schedule: ScheduleDefinition,
+) -> Optional[PartitionSetDefinition]:
+    """With the legacy APIs, partition sets can live on schedules. With the non-legacy APIs,
+    they live on jobs. Pulling partition sets from schedules causes problems with unresolved asset
+    jobs, because two different instances of the same logical partition set end up getting created
+    - one on the schedule and one on the the resolved job.
+
+    To avoid this problem, we avoid pulling partition sets off of schedules that target unresolved
+    asset jobs. This works, because the partition set still gets pulled directly off the asset job
+    elsewhere.
+
+    When we remove the legacy APIs, we should be able to stop pulling partition sets off of
+    schedules entirely and remove this entire code path.
+    """
+    if (
+        isinstance(schedule, PartitionScheduleDefinition)
+        and not schedule.targets_unresolved_asset_job
+    ):
+        return schedule.get_partition_set()
+    else:
+        return None

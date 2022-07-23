@@ -3,21 +3,23 @@ import multiprocessing
 import pendulum
 import pytest
 
+from dagster._daemon import get_default_daemon_logger
+from dagster._daemon.sensor import execute_sensor_iteration
+from dagster._seven import IS_WINDOWS
+from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster.core.test_utils import (
+    SingleThreadPoolExecutor,
     cleanup_test_instance,
     create_test_daemon_workspace,
     get_crash_signals,
     get_logger_output_from_capfd,
+    wait_for_futures,
 )
-from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.sensor import execute_sensor_iteration
-from dagster.seven import IS_WINDOWS
-from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 from .test_sensor_run import (
     instance_with_sensors,
@@ -32,16 +34,22 @@ def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, deb
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
             with pendulum.test(execution_datetime), create_test_daemon_workspace(
-                workspace_load_target=workspace_load_target()
+                workspace_load_target=workspace_load_target(),
+                instance=instance,
             ) as workspace:
+                logger = get_default_daemon_logger("SensorDaemon")
+                futures = {}
                 list(
                     execute_sensor_iteration(
                         instance,
-                        get_default_daemon_logger("SensorDaemon"),
+                        logger,
                         workspace,
+                        threadpool_executor=SingleThreadPoolExecutor(),
                         debug_crash_flags=debug_crash_flags,
+                        debug_futures=futures,
                     )
                 )
+                wait_for_futures(futures)
         finally:
             cleanup_test_instance(instance)
 
@@ -79,7 +87,9 @@ def test_failure_before_run_created(crash_location, crash_signal, capfd):
             )
             launch_process.start()
             launch_process.join(timeout=60)
-            ticks = instance.get_ticks(external_sensor.get_external_origin_id())
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.SKIPPED
             capfd.readouterr()
@@ -97,7 +107,9 @@ def test_failure_before_run_created(crash_location, crash_signal, capfd):
 
             capfd.readouterr()
 
-            ticks = instance.get_ticks(external_sensor.get_external_origin_id())
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
             assert len(ticks) == 2
             assert ticks[0].status == TickStatus.STARTED
             assert not int(ticks[0].timestamp) % 2  # skip condition for simple_sensor
@@ -124,7 +136,9 @@ def test_failure_before_run_created(crash_location, crash_signal, capfd):
 2019-02-27 18:01:03 -0600 - dagster.daemon.SensorDaemon - INFO - Completed launch of run {run.run_id} for simple_sensor"""
             )
 
-            ticks = instance.get_ticks(external_sensor.get_external_origin_id())
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
             assert len(ticks) == 3
             assert ticks[0].status == TickStatus.SUCCESS
 
@@ -165,7 +179,9 @@ def test_failure_after_run_created_before_run_launched(crash_location, crash_sig
 
             assert launch_process.exitcode != 0
 
-            ticks = instance.get_ticks(external_sensor.get_external_origin_id())
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
 
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.STARTED
@@ -182,7 +198,7 @@ def test_failure_after_run_created_before_run_launched(crash_location, crash_sig
 
             launch_process = spawn_ctx.Process(
                 target=_test_launch_sensor_runs_in_subprocess,
-                args=[instance.get_ref(), frozen_datetime.add(seconds=1), None],
+                args=[instance.get_ref(), frozen_datetime.add(seconds=31), None],
             )
             launch_process.start()
             launch_process.join(timeout=60)
@@ -199,7 +215,9 @@ def test_failure_after_run_created_before_run_launched(crash_location, crash_sig
                 in captured.out
             )
 
-            ticks = instance.get_ticks(external_sensor.get_external_origin_id())
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
             assert len(ticks) == 2
             assert ticks[0].status == TickStatus.SUCCESS
 
@@ -248,7 +266,9 @@ def test_failure_after_run_launched(crash_location, crash_signal, capfd):
 
             assert launch_process.exitcode != 0
 
-            ticks = instance.get_ticks(external_sensor.get_external_origin_id())
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
 
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.STARTED
@@ -262,7 +282,7 @@ def test_failure_after_run_launched(crash_location, crash_signal, capfd):
 
             launch_process = spawn_ctx.Process(
                 target=_test_launch_sensor_runs_in_subprocess,
-                args=[instance.get_ref(), frozen_datetime.add(seconds=1), None],
+                args=[instance.get_ref(), frozen_datetime.add(seconds=31), None],
             )
             launch_process.start()
             launch_process.join(timeout=60)
@@ -279,6 +299,8 @@ def test_failure_after_run_launched(crash_location, crash_signal, capfd):
                 in captured.out
             )
 
-            ticks = instance.get_ticks(external_sensor.get_external_origin_id())
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
             assert len(ticks) == 2
             assert ticks[0].status == TickStatus.SKIPPED

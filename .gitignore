@@ -154,3 +154,6 @@ pythonenv*/
 
 # Vim project-local settings
 .vim
+
+# DuckDB
+*.duckdb

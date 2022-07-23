@@ -22,7 +22,7 @@ All content is in the `/content` folder.
 
 **_Try it out_**
 
-Open http://localhost:3001/concepts/solids-pipelines/solids in your browser, and the file `/content/concepts/solid-pipelines/solids.mdx` in your editor. Try editing the file and see your changes be reflected live in the browser.
+Open http://localhost:3001/concepts/ops-jobs-graphs/ops in your browser, and the file `/content/concepts/ops-jobs-graphs/ops.mdx` in your editor. Try editing the file and see your changes be reflected live in the browser.
 
 ---
 
@@ -132,18 +132,23 @@ If you are adding a new page or want to update the navigation in the sidebar, up
 Docs screenshots are generated manually. Previously, this meant that you would run Dagit and hit Shift-Command-4. Now, we are moving towards using the `docs/screenshot_capture/capture-screenshot.py` script, which adds some automation. To use it, you add a "screenshot spec" to `docs/screenshot_capture/screenshots.yaml` and then run the script to generate an image from that spec.
 
 A screenshot spec includes:
+
 - A `path` to an image file that the screenshot should be stored in.
 - A `defs_file` that the script will run `dagit -f` or `dagit -w` on to load a set of Dagster definitions.
 - A `url` for the page to take the screenshot from.
 - An optional set of manual `steps`, which the person generating the screenshot is expected to carry out before the screenshot is taken.
 - A `vetted` boolean, which indicates whether the current screenshot in the repo was generated using the spec.
+- An optional `width` in pixels for the window in which the screenshot will be taken.
+- An optional `height` in pixels for the window in which the screenshot will be taken.
 
 #### Setup
+
 ```
 pip install selenium
 ```
 
 Install Selenium's chrome driver:
+
 - `brew install chromedriver` OR download chromedriver from [here](https://chromedriver.chromium.org/downloads)) and manually add to /usr/local/bin
 - You may need to run `xattr -d com.apple.quarantine /usr/local/bin/chromedriver` (gross)
 

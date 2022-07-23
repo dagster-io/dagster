@@ -12,8 +12,12 @@ from dagster_k8s.client import DEFAULT_WAIT_TIMEOUT
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
 from dagster_test.test_project import get_test_project_workspace_and_external_pipeline
 
-from dagster import pipeline, reconstructable
-from dagster.check import CheckError
+from dagster import reconstructable
+from dagster._check import CheckError
+from dagster._grpc.types import ExecuteRunArgs
+from dagster._legacy import pipeline
+from dagster._utils import merge_dicts
+from dagster._utils.hosted_user_process import external_pipeline_from_recon_pipeline
 from dagster.core.host_representation import RepositoryHandle
 from dagster.core.launcher import LaunchRunContext
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
@@ -23,9 +27,7 @@ from dagster.core.test_utils import (
     in_process_test_workspace,
     instance_for_test,
 )
-from dagster.grpc.types import ExecuteRunArgs
-from dagster.utils import merge_dicts
-from dagster.utils.hosted_user_process import external_pipeline_from_recon_pipeline
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 
 def test_empty_celery_config():
@@ -334,8 +336,10 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     # Create fake external pipeline.
     recon_pipeline = reconstructable(fake_pipeline)
     recon_repo = recon_pipeline.repository
+    loadable_target_origin = LoadableTargetOrigin(python_file=__file__)
+
     with instance_for_test() as instance:
-        with in_process_test_workspace(instance, recon_repo) as workspace:
+        with in_process_test_workspace(instance, loadable_target_origin) as workspace:
             location = workspace.get_repository_location(workspace.repository_location_names[0])
 
             repo_def = recon_repo.get_definition()
@@ -374,7 +378,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             container = kwargs["body"].spec.template.spec.containers[0]
 
             job_resources = container.resources
-            assert job_resources == expected_resources
+            assert job_resources.to_dict() == expected_resources
 
             labels = kwargs["body"].spec.template.metadata.labels
             assert labels["foo_label_key"] == "bar_label_value"
@@ -405,8 +409,11 @@ def test_raise_on_error(kubeconfig_file):
     # Create fake external pipeline.
     recon_pipeline = reconstructable(fake_pipeline)
     recon_repo = recon_pipeline.repository
+    loadable_target_origin = LoadableTargetOrigin(
+        python_file=__file__,
+    )
     with instance_for_test() as instance:
-        with in_process_test_workspace(instance, recon_repo) as workspace:
+        with in_process_test_workspace(instance, loadable_target_origin) as workspace:
             location = workspace.get_repository_location(workspace.repository_location_names[0])
 
             repo_def = recon_repo.get_definition()

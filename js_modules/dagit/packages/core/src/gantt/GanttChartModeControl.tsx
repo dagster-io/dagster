@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {GanttChartMode} from './Constants';
 
-export const GanttChartModeControl: React.FunctionComponent<{
+export const GanttChartModeControl: React.FC<{
   value: GanttChartMode;
   hideTimedMode: boolean;
   onChange: (mode: GanttChartMode) => void;

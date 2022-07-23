@@ -2,16 +2,9 @@
 
 <div className="border px-4 py-4 space-y-8">
   <div className="border px-4 py-4 space-y-4">
-    <div>Storages</div>
-    <div className="grid grid-cols-3 gap-8 justify-between">
-      <InstanceDiagramBox href="#run-storage">Run Storage</InstanceDiagramBox>
-      <InstanceDiagramBox href="#event-log-storage">
-        Event Storage
-      </InstanceDiagramBox>
-      <InstanceDiagramBox href="#schedule-storage">
-        Schedule Storage
-      </InstanceDiagramBox>
-    </div>
+    <InstanceDiagramBox href="#dagster-storage">
+      Dagster Storage
+    </InstanceDiagramBox>
   </div>
   <div className="grid grid-cols-2 gap-8 justify-between">
     <InstanceDiagramBox href="#run-launcher">Run Launcher</InstanceDiagramBox>
@@ -81,49 +74,47 @@ To do this, provide a `$DAGSTER_HOME/dagster.yaml` file. Dagit and all Dagster t
 
 Note that Dagster supports retrieving instance YAML values from environment variables, using an `env:` key instead of a string literal value. Examples of using `env:` are included in the sample configurations below.
 
-### Run Storage
+### Dagster Storage
 
-Run storage configures how the history of runs is persisted - this includes metadata on a given run's status, relevant timestamps, and other useful data to inspect a run's history.
+Dagster storage configures how job and asset history is persisted - this includes metadata on runs, event logs, schedule/sensor ticks, and other useful data.
 
-To configure Run Storage, you should set the `run_storage` attribute in your `dagster.yaml`. There are _three_ available options:
+To configure storage, you should set the `storage` attribute in your `dagster.yaml`. There are _three_ available options:
 
-#### SqliteRunStorage (Default)
+#### Sqlite storage (Default)
 
-<PyObject module="dagster.core.storage.runs" object="SqliteRunStorage" /> uses a
-Sqlite DB as the backing run storage.
+<PyObject
+module="dagster.core.storage.sqlite_storage"
+object="DagsterSqliteStorage"
+/> uses a Sqlite DB for storage.
 
-```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_storage_sqlite endbefore=end_marker_run_storage_sqlite
-# there are two ways to set run_storage to SqliteRunStorage
+```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_storage_sqlite endbefore=end_marker_storage_sqlite
+# there are two ways to set storage to SqliteStorage
 
-# this config manually sets the directory (`base_dir`) for Sqlite to store run information in:
-run_storage:
-  module: dagster.core.storage.runs
-  class: SqliteRunStorage
-  config:
+# this config manually sets the directory (`base_dir`) for Sqlite to store data in:
+storage:
+  sqlite:
     base_dir: /path/to/dir
 
 # and this config grabs the directory from an environment variable
-run_storage:
-  module: dagster.core.storage.runs
-  class: SqliteRunStorage
-  config:
+storage:
+  sqlite:
     base_dir:
-      env: SQLITE_RUN_STORAGE_BASE_DIR
+      env: SQLITE_STORAGE_BASE_DIR
 ```
 
-#### PostgresRunStorage
+#### Postgres storage
 
-<PyObject module="dagster_postgres" object="PostgresRunStorage" /> uses a Postgres
-DB as the backing run storage solution.
+<PyObject module="dagster_postgres" object="DagsterPostgresStorage" /> uses a Postgres
+DB as the backing storage solution. This requires that the `dagster-postgres` library
+be installed.
 
-```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_storage_postgres endbefore=end_marker_run_storage_postgres
-# Postgres storage can be set using either credentials or a connection string
+```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_storage_postgres endbefore=end_marker_storage_postgres
+# Postgres storage can be set using either credentials or a connection string.  This requires that
+# the `dagster-postgres` library be installed.
 
 # this config manually sets the Postgres credentials
-run_storage:
-  module: dagster_postgres.run_storage
-  class: PostgresRunStorage
-  config:
+storage:
+  postgres:
     postgres_db:
       username: { DAGSTER_PG_USERNAME }
       password: { DAGSTER_PG_PASSWORD }
@@ -132,10 +123,8 @@ run_storage:
       port: 5432
 
 # and this config grabs the database credentials from environment variables
-run_storage:
-  module: dagster_postgres.run_storage
-  class: PostgresRunStorage
-  config:
+storage:
+  postgres:
     postgres_db:
       username:
         env: DAGSTER_PG_USERNAME
@@ -148,47 +137,41 @@ run_storage:
       port: 5432
 
 # and this config sets the credentials via DB connection string / url:
-run_storage:
-  module: dagster_postgres.run_storage
-  class: PostgresRunStorage
-  config:
+storage:
+  postgres:
     postgres_url: { PG_DB_CONN_STRING }
 
 # This config gets the DB connection string / url via environment variables:
-run_storage:
-  module: dagster_postgres.run_storage
-  class: PostgresRunStorage
-  config:
+storage:
+  postgres:
     postgres_url:
       env: PG_DB_CONN_STRING
 ```
 
-#### MySQLRunStorage
+### MySQL storage
 
-<PyObject module="dagster_mysql" object="MySQLRunStorage" /> uses a MySQL DB as the
-backing run storage solution.
+<PyObject module="dagster_mysql" object="DagsterMySQLStorage" /> uses a Postgres
+DB as the backing storage solution. This requires that the `dagster-mysql` library
+be installed.
 
-```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_storage_mysql endbefore=end_marker_run_storage_mysql
-# MySQL storage can be set using either credentials or a connection string
+```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_storage_mysql endbefore=end_marker_storage_mysql
+# MySQL storage can be set using either credentials or a connection string.  This requires that the
+# `dagster-mysql` library be installed.
 
 # this config manually sets the MySQL credentials
-run_storage:
-  module: dagster_mysql.run_storage
-  class: MySQLRunStorage
-  config:
-  mysql_db:
-    username: { DAGSTER_MYSQL_USERNAME }
-    password: { DAGSTER_MYSQL_PASSWORD }
-    hostname: { DAGSTER_MYSQL_HOSTNAME }
-    db_name: { DAGSTER_MYSQL_DB }
-    port: 3306
+storage:
+  mysql:
+    mysql_db:
+      username: { DAGSTER_MYSQL_USERNAME }
+      password: { DAGSTER_MYSQL_PASSWORD }
+      hostname: { DAGSTER_MYSQL_HOSTNAME }
+      db_name: { DAGSTER_MYSQL_DB }
+      port: 3306
 
 
 # and this config grabs the database credentials from environment variables
-run_storage:
-  module: dagster_mysql.run_storage
-  class: MySQLRunStorage
-  config:
+storage:
+  mysql:
     mysql_db:
       username:
         env: DAGSTER_MYSQL_USERNAME
@@ -201,325 +184,13 @@ run_storage:
       port: 3306
 
 # and this config sets the credentials via DB connection string / url:
-run_storage:
-  module: dagster_mysql.run_storage
-  class: MySQLRunStorage
-  config:
+storage:
+  mysql:
     mysql_url: { MYSQL_DB_CONN_STRING }
 
 # this config grabs the MySQL connection string from environment variables
-run_storage:
-  module: dagster_mysql.run_storage
-  class: MySQLRunStorage
-  config:
-    mysql_url:
-      env: MYSQL_DB_CONN_STRING
-```
-
-### Event Log Storage
-
-Event log storage controls how the structured event logs produced by each run are persisted - this includes events related to ops starting/running/completing, run events, and useful event-related data.
-
-To configure Event Log Storage, you should set the `event_log_storage` attribute in your `dagster.yaml`. There are _four_ available options:
-
-#### SqliteEventLogStorage (Default)
-
-<PyObject
-module="dagster.core.storage.event_log"
-object="SqliteEventLogStorage"
-/> uses a Sqlite database as the backing storage for event logs. However, it utilizes
-a seperate Sqlite database (i.e. directory) for each run. In other words, the storage
-is sharded by run. This means that certain useful features, like the Assets page,
-are not usable since Dagster can't perform cross-run queries.
-
-Note that by leaving your `event_log_storage` attribute blank, Run Storage will be set to Sqlite by default. If you would like to manually specify `event_log_storage`, add the following snippet to your `dagster.yaml`:
-
-```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_event_log_storage_sqlite endbefore=end_marker_event_log_storage_sqlite
-# there are two ways to set `event_log_storage` to SqliteEventLogStorage
-
-# the first manually sets the directory (`base_dir`) to write event log data to:
-event_log_storage:
-  module: dagster.core.storage.event_log
-  class: SqliteEventLogStorage
-  config:
-    base_dir: /path/to/dir
-
-# and the second grabs the directory from an environment variable
-event_log_storage:
-  module: dagster.core.storage.event_log
-  class: SqliteEventLogStorage
-  config:
-    base_dir:
-      env: SQLITE_EVENT_LOG_STORAGE_BASE_DIR
-```
-
-#### ConsolidatedSqliteEventLogStorage <Experimental/>
-
-<PyObject
-module="dagster.core.storage.event_log"
-object="ConsolidatedSqliteEventLogStorage"
-/> is meant to imitate the behavior of Postgres or MySQL-based event log storages,
-as it is not sharded by run. That is, all runs are persisted to the same Sqlite DB,
-which allows for cross-run queries (and thus use of certain Dagster features, like
-the Assets page).
-
-```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_event_log_storage_consolidated_sqlite endbefore=end_marker_event_log_storage_consolidated_sqlite
-# there are two ways to set `event_log_storage` to ConsolidatedSqliteEventLogStorage
-
-# the first manually sets the directory (`base_dir`) to write event log data to:
-event_log_storage:
-  module: dagster.core.storage.event_log
-  class: ConsolidatedSqliteEventLogStorage
-  config:
-    base_dir: /path/to/dir
-
-# and the second grabs the directory from an environment variable
-event_log_storage:
-  module: dagster.core.storage.event_log
-  class: ConsolidatedSqliteEventLogStorage
-  config:
-    base_dir:
-      env: CONSOLIDATED_SQLITE_EVENT_LOG_STORAGE_BASE_DIR
-```
-
-#### PostgresEventLogStorage
-
-<PyObject module="dagster_postgres" object="PostgresEventLogStorage" /> utilizes
-a Postgres Database as the backing Event Log Storage solution.
-
-```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_event_log_storage_postgres endbefore=end_marker_event_log_storage_postgres
-# Postgres storage can be set using either credentials or a connection string
-
-# this config manually sets the Postgres credentials
-event_log_storage:
-  module: dagster_postgres.event_log
-  class: PostgresEventLogStorage
-  config:
-    postgres_db:
-      username: { DAGSTER_PG_USERNAME }
-      password: { DAGSTER_PG_PASSWORD }
-      hostname: { DAGSTER_PG_HOSTNAME }
-      db_name: { DAGSTER_PG_DB }
-      port: 5432
-
-# and this config grabs the database credentials from environment variables
-event_log_storage:
-  module: dagster_postgres.event_log
-  class: PostgresEventLogStorage
-  config:
-    postgres_db:
-      username:
-        env: DAGSTER_PG_USERNAME
-      password:
-        env: DAGSTER_PG_PASSWORD
-      hostname:
-        env: DAGSTER_PG_HOST
-      db_name:
-        env: DAGSTER_PG_DB
-      port: 5432
-
-# and this config sets the credentials via DB connection string / url:
-event_log_storage:
-  module: dagster_postgres.event_log
-  class: PostgresEventLogStorage
-  config:
-    postgres_url: { PG_DB_CONN_STRING }
-
-# This config gets the DB connection string / url via environment variables:
-event_log_storage:
-  module: dagster_postgres.event_log
-  class: PostgresEventLogStorage
-  config:
-    postgres_url:
-      env: PG_DB_CONN_STRING
-```
-
-#### MySQLEventLogStorage
-
-<PyObject module="dagster_mysql" object="MySQLEventLogStorage" /> uses a MySQL DB
-as the backing event log storage solution.
-
-```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_event_log_storage_mysql endbefore=end_marker_event_log_storage_mysql
-# MySQL storage can be set using either credentials or a connection string
-
-# this config manually sets the MySQL credentials
-event_log_storage:
-  module: dagster_mysql.event_log
-  class: MySQLEventLogStorage
-  config:
-  mysql_db:
-    username: { DAGSTER_MYSQL_USERNAME }
-    password: { DAGSTER_MYSQL_PASSWORD }
-    hostname: { DAGSTER_MYSQL_HOSTNAME }
-    db_name: { DAGSTER_MYSQL_DB }
-    port: 3306
-
-
-# and this config grabs the database credentials from environment variables
-event_log_storage:
-  module: dagster_mysql.event_log_storage
-  class: MySQLEventLogStorage
-  config:
-    mysql_db:
-      username:
-        env: DAGSTER_MYSQL_USERNAME
-      password:
-        env: DAGSTER_MYSQL_PASSWORD
-      hostname:
-        env: DAGSTER_MYSQL_HOSTNAME
-      db_name:
-        env: DAGSTER_MYSQL_DB
-      port: 3306
-
-# and this config sets the credentials via DB connection string / url:
-event_log_storage:
-  module: dagster_mysql.event_log_storage
-  class: MySQLEventLogStorage
-  config:
-    mysql_url: { MYSQL_DB_CONN_STRING }
-
-# this config grabs the MySQL connection string from environment variables
-event_log_storage:
-  module: dagster_mysql.event_log_storage
-  class: MySQLEventLogStorage
-  config:
-    mysql_url:
-      env: MYSQL_DB_CONN_STRING
-```
-
-### Schedule Storage
-
-Schedule storage controls the backing storage used to manage the state of schedules and sensors.
-
-To configure Schedule Storage, you should set the `schedule_storage` key in your `dagster.yaml`. There are _three_ available options:
-
-#### SqliteScheduleStorage (Default)
-
-<PyObject
-module="dagster.core.storage.schedules"
-object="SqliteScheduleStorage"
-/> uses a Sqlite DB as the backing schedule storage solution.
-
-```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_schedule_storage_sqlite endbefore=end_marker_schedule_storage_sqlite
-# there are two ways to set `schedule_storage` to SqliteScheduleStorage
-
-# the first manually sets the directory (`base_dir`) to write schedule-related data to:
-schedule_storage:
-  module: dagster.core.storage.schedules
-  class: SqliteScheduleStorage
-  config:
-    base_dir: /path/to/dir
-
-# the second grabs the directory from an environment variable
-schedule_storage:
-  module: dagster.core.storage.schedules
-  class: SqliteScheduleStorage
-  config:
-    base_dir:
-      env: SQLITE_SCHEDULE_STORAGE_DIRECTORY
-```
-
-#### PostgresScheduleStorage
-
-<PyObject module="dagster_postgres" object="PostgresScheduleStorage" /> uses a Postgres
-DB as the backing schedule storage solution.
-
-```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_schedule_storage_postgres endbefore=end_marker_schedule_storage_postgres
-# Postgres storage can be set using either credentials or a connection string
-
-# this config manually sets the Postgres credentials
-schedule_storage:
-  module: dagster_postgres.schedule_storage
-  class: PostgresScheduleStorage
-  config:
-    postgres_db:
-      username: { DAGSTER_PG_USERNAME }
-      password: { DAGSTER_PG_PASSWORD }
-      hostname: { DAGSTER_PG_HOSTNAME }
-      db_name: { DAGSTER_PG_DB }
-      port: 5432
-
-# and this config grabs the database credentials from environment variables
-schedule_storage:
-  module: dagster_postgres.schedule_storage
-  class: PostgresScheduleStorage
-  config:
-    postgres_db:
-      username:
-        env: DAGSTER_PG_USERNAME
-      password:
-        env: DAGSTER_PG_PASSWORD
-      hostname:
-        env: DAGSTER_PG_HOST
-      db_name:
-        env: DAGSTER_PG_DB
-      port: 5432
-
-# and this config sets the credentials via DB connection string / url:
-schedule_storage:
-  module: dagster_postgres.schedule_storage
-  class: PostgresScheduleStorage
-  config:
-    postgres_url: { PG_DB_CONN_STRING }
-
-# This config gets the DB connection string / url via environment variables:
-schedule_storage:
-  module: dagster_postgres.schedule_storage
-  class: PostgresScheduleStorage
-  config:
-    postgres_url:
-      env: PG_DB_CONN_STRING
-```
-
-#### MySQLScheduleStorage
-
-<PyObject module="dagster_mysql" object="MySQLScheduleStorage" /> uses a MySQL DB
-as the backing schedule storage solution.
-
-```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_schedule_storage_mysql endbefore=end_marker_schedule_storage_mysql
-# MySQL storage can be set using either credentials or a connection string
-
-# this config manually sets the MySQL credentials
-schedule_storage:
-  module: dagster_mysql.schedule_storage
-  class: MySQLScheduleStorage
-  config:
-  mysql_db:
-    username: { DAGSTER_MYSQL_USERNAME }
-    password: { DAGSTER_MYSQL_PASSWORD }
-    hostname: { DAGSTER_MYSQL_HOSTNAME }
-    db_name: { DAGSTER_MYSQL_DB }
-    port: 3306
-
-
-# and this config grabs the database credentials from environment variables
-schedule_storage:
-  module: dagster_mysql.schedule_storage
-  class: MySQLScheduleStorage
-  config:
-    mysql_db:
-      username:
-        env: DAGSTER_MYSQL_USERNAME
-      password:
-        env: DAGSTER_MYSQL_PASSWORD
-      hostname:
-        env: DAGSTER_MYSQL_HOSTNAME
-      db_name:
-        env: DAGSTER_MYSQL_DB
-      port: 3306
-
-# and this config sets the credentials via DB connection string / url:
-schedule_storage:
-  module: dagster_mysql.schedule_storage
-  class: MySQLScheduleStorage
-  config:
-    mysql_url: { MYSQL_DB_CONN_STRING }
-
-# this config grabs the MySQL connection string from environment variables
-schedule_storage:
-  module: dagster_mysql.schedule_storage
-  class: MySQLScheduleStorage
-  config:
+storage:
+  mysql:
     mysql_url:
       env: MYSQL_DB_CONN_STRING
 ```
@@ -791,3 +462,48 @@ For more information on how and why we use telemetry, please visit the <Link hre
 telemetry:
   enabled: false
 ```
+
+### Code servers
+
+The `code_servers` key lets you configure how Dagster loads the code in your [workspace](/concepts/repositories-workspaces/workspaces).
+
+When you aren't [running your own gRPC server](/concepts/repositories-workspaces/workspaces#running-your-own-grpc-server), Dagit and the Dagster Daemon load your code from a gRPC server running in a subprocess. By default, if your code takes more than 60 seconds to load, Dagster will assume that it is hanging and stop waiting for it to load. If you expect that your repository code will take longer than 60 seconds to load, you can set the `local_startup_timeout` key:
+
+```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_code_servers endbefore=end_marker_code_servers
+# Configures how long Dagster waits for repositories
+# to load before timing out.
+code_servers:
+  local_startup_timeout: 120
+```
+
+### Data retention
+
+The `retention` key lets you configure how long Dagster retains certain types of data that have diminishing value over time, like schedule/sensor tick data. If you want to clean up old ticks to minimize storage concerns and improve query performance, you can set retention policy using the `retention` config key:
+
+For schedule and sensor ticks, you can specify the field `purge_after_days`, which takes either a mapping of tick types to integers, or an integer that applies to all tick types. This integer determines after how many days that ticks can be safely removed. A value of `-1` indicates that ticks should be retained indefinitely.
+
+```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_retention endbefore=end_marker_retention
+# Configures how long Dagster keeps sensor / schedule tick data
+retention:
+  schedule:
+    purge_after_days: 90 # sets retention policy for schedule ticks of all types
+  sensor:
+    purge_after_days:
+      skipped: 7
+      failure: 30
+      success: -1 # keep success ticks indefinitely
+```
+
+By default, Dagster retains skipped sensor ticks for 7 days and retains all other ticks indefinitely.
+
+### Sensor evaluation
+
+The `sensors` key lets you configure how your sensors get evaluated. If you want your sensors to be evaluated asynchronously, you can set the `use_threads` attribute as well as a `num_workers` config setting.
+
+```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_sensors endbefore=end_marker_sensors
+sensors:
+  use_threads: true
+  num_workers: 8
+```
+
+By default, Dagster evaluates sensors synchronously.

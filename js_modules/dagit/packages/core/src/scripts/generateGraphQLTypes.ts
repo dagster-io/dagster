@@ -8,19 +8,18 @@ console.log('Downloading schema...');
 const TARGET_FILE = './src/graphql/schema.graphql';
 
 // https://github.com/dagster-io/dagster/issues/2623
+// Initially, write schema.graphql in the SDL format, without descriptions
+// Otherwise, the generated types in Typescript would also have descriptions.
 const result = execSync(
   `dagster-graphql --ephemeral-instance --empty-workspace -t '${getIntrospectionQuery({
     descriptions: false,
   })}'`,
   {cwd: '../../../../examples/docs_snippets/'},
 ).toString();
-
 const schemaJson = JSON.parse(result).data;
-
-// Write schema.graphql in the SDL format
 const sdl = printSchema(buildClientSchema(schemaJson));
 
-console.log('Generating schema.graphql...');
+console.log('Generating schema.graphql without descriptions...');
 
 writeFileSync(TARGET_FILE, sdl);
 
@@ -44,6 +43,19 @@ execSync(
   `find src -type d -name types | xargs rm -r && yarn apollo codegen:generate --includes "./src/**/*.tsx" --target typescript types --localSchemaFile ${TARGET_FILE} --globalTypesFile ./src/types/globalTypes.ts`,
   {stdio: 'inherit'},
 );
+
+// https://github.com/dagster-io/dagster/issues/2623
+// Finally, write schema.graphql in the SDL format, with descriptions
+const resultWithDescriptions = execSync(
+  `dagster-graphql --ephemeral-instance --empty-workspace -t '${getIntrospectionQuery()}'`,
+  {cwd: '../../../../examples/docs_snippets/'},
+).toString();
+const schemaJsonWithDescriptions = JSON.parse(resultWithDescriptions).data;
+const sdlWithDescriptions = printSchema(buildClientSchema(schemaJsonWithDescriptions));
+
+console.log('Generating schema.graphql with descriptions...');
+
+writeFileSync(TARGET_FILE, sdlWithDescriptions);
 
 execSync(`yarn prettier --loglevel silent --write ${TARGET_FILE}`, {stdio: 'inherit'});
 

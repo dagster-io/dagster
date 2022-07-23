@@ -4,9 +4,11 @@ import faker from 'faker';
 import * as React from 'react';
 
 import {StorybookProvider} from '../testing/StorybookProvider';
+import {generateRunMocks} from '../testing/generateRunMocks';
 import {RunStatus} from '../types/globalTypes';
 
 import {RunStatusPez, RunStatusPezList} from './RunStatusPez';
+import {RunTimeFragment} from './types/RunTimeFragment';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -41,35 +43,57 @@ export const Colors = () => {
 };
 
 export const List = () => {
+  const tenDaysAgo = React.useMemo(() => Date.now() - 10 * 24 * 60 * 60 * 1000, []);
+  const now = React.useMemo(() => Date.now(), []);
+
+  const wrapToFragment = (
+    inp: {
+      id: string;
+      status: RunStatus;
+      startTime: number;
+      endTime: number;
+    }[],
+  ): RunTimeFragment[] =>
+    inp.map((r) => ({...r, runId: r.id, updateTime: null, __typename: 'Run'}));
+
+  const fakeRepo = 'a_repo.py';
   const fakeId = React.useCallback(() => faker.datatype.uuid(), []);
-  const randomList = React.useCallback(
-    (count) =>
-      [...new Array(count)].map(() => {
-        const rand = Math.random();
-        const runId = fakeId();
-        if (rand < 0.7) {
-          return {runId, status: RunStatus.SUCCESS};
-        }
-        return {runId, status: RunStatus.FAILURE};
-      }),
-    [fakeId],
-  );
 
   return (
     <StorybookProvider apolloProps={{mocks}}>
       <Box flex={{direction: 'column', gap: 8}}>
-        <RunStatusPezList fade runs={randomList(10)} />
         <RunStatusPezList
+          repoAddress={fakeRepo}
           fade
-          runs={[...randomList(9), {runId: fakeId(), status: RunStatus.STARTING}]}
+          runs={wrapToFragment(generateRunMocks(10, [tenDaysAgo, now]))}
         />
         <RunStatusPezList
+          repoAddress={fakeRepo}
+          fade
+          runs={wrapToFragment(generateRunMocks(9, [tenDaysAgo, now])).map((f) => ({
+            ...f,
+            status: RunStatus.STARTED,
+          }))}
+        />
+        <RunStatusPezList
+          repoAddress={fakeRepo}
           fade
           runs={[
-            ...randomList(7),
-            {runId: fakeId(), status: RunStatus.STARTING},
-            {runId: fakeId(), status: RunStatus.STARTING},
-            {runId: fakeId(), status: RunStatus.STARTING},
+            ...wrapToFragment(generateRunMocks(7, [tenDaysAgo, now])),
+            ...[...new Array(3)]
+              .map((_, idx) => {
+                const id = fakeId();
+                return {
+                  __typename: 'Run' as const,
+                  id,
+                  runId: id,
+                  status: RunStatus.STARTING,
+                  startTime: Date.now() - (idx + 1) * 60 * 60 * 1000,
+                  endTime: Date.now() - idx * 60 * 60 * 1000,
+                  updateTime: null,
+                };
+              })
+              .reverse(), //Latest first
           ]}
         />
       </Box>

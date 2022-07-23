@@ -2,8 +2,8 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {Box} from './Box';
-import {ColorsWIP} from './Colors';
-import {Table} from './Table';
+import {Colors} from './Colors';
+import {Table, TableProps} from './Table';
 
 type Row = {key: string; value: React.ReactNode};
 
@@ -57,11 +57,11 @@ export const StyledTable = styled.table`
 `;
 
 const MetadataKey = styled.div`
-  color: ${ColorsWIP.Gray600};
+  color: ${Colors.Gray600};
   font-weight: 400;
 `;
 
-export const MetadataTableWIP = styled(Table)`
+export const MetadataTableWIP = styled(Table)<TableProps>`
   td:first-child {
     white-space: nowrap;
     width: 1px;

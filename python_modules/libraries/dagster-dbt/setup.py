@@ -1,11 +1,11 @@
 from typing import Dict
 
-from setuptools import find_packages, setup  # type: ignore
+from setuptools import find_packages, setup
 
 
 def get_version() -> str:
     version: Dict[str, str] = {}
-    with open("dagster_dbt/version.py") as fp:
+    with open("dagster_dbt/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
     return version["__version__"]
@@ -14,7 +14,7 @@ def get_version() -> str:
 if __name__ == "__main__":
     ver = get_version()
     # dont pin dev installs to avoid pip dep resolver issues
-    pin = "" if ver == "dev" else f"=={ver}"
+    pin = "" if ver == "0+dev" else f"=={ver}"
     setup(
         name="dagster-dbt",
         version=ver,
@@ -31,20 +31,19 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=find_packages(exclude=["test"]),
+        packages=find_packages(exclude=["dagster_dbt_tests*"]),
         install_requires=[
             f"dagster{pin}",
             f"dagster-pandas{pin}",
+            "dbt-core",
             "pandas",
             "requests",
             "attrs",
-            "agate < 1.6.2",
+            "agate",
         ],
         extras_require={
             "test": [
-                # https://github.com/dagster-io/dagster/issues/4167
-                "Jinja2<3.0",
-                "dbt-core",
+                "Jinja2",
                 "dbt-rpc",
                 "dbt-postgres",
                 "matplotlib",

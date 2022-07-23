@@ -3,6 +3,7 @@ import pickle
 import sys
 from typing import List
 
+from dagster._serdes import serialize_value
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
@@ -10,7 +11,6 @@ from dagster.core.execution.plan.external_step import (
     run_step_from_ref,
 )
 from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
-from dagster.serdes import serialize_value
 
 
 def main(step_run_ref_path: str) -> None:

@@ -29,6 +29,7 @@ from schema.charts.dagster.subschema.daemon import (
 )
 from schema.charts.dagster.subschema.postgresql import PostgreSQL, Service
 from schema.charts.dagster.subschema.python_logs import PythonLogs
+from schema.charts.dagster.subschema.retention import Retention, TickRetention, TickRetentionByType
 from schema.charts.dagster.subschema.run_launcher import (
     CeleryK8sRunLauncherConfig,
     K8sRunLauncherConfig,
@@ -36,9 +37,11 @@ from schema.charts.dagster.subschema.run_launcher import (
     RunLauncherConfig,
     RunLauncherType,
 )
+from schema.charts.dagster.subschema.telemetry import Telemetry
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.utils.helm_template import HelmTemplate
 
+from dagster.core.instance.config import retention_config_schema
 from dagster.core.run_coordinator import QueuedRunCoordinator
 
 
@@ -57,8 +60,9 @@ def helm_template() -> HelmTemplate:
     )
 
 
+@pytest.mark.parametrize("postgresql_scheme", ["", "postgresql", "postgresql+psycopg2"])
 @pytest.mark.parametrize("storage", ["schedule_storage", "run_storage", "event_log_storage"])
-def test_storage_postgres_db_config(template: HelmTemplate, storage: str):
+def test_storage_postgres_db_config(template: HelmTemplate, postgresql_scheme: str, storage: str):
     postgresql_username = "username"
     postgresql_host = "1.1.1.1"
     postgresql_database = "database"
@@ -74,6 +78,7 @@ def test_storage_postgres_db_config(template: HelmTemplate, storage: str):
             postgresqlHost=postgresql_host,
             postgresqlDatabase=postgresql_database,
             postgresqlParams=postgresql_params,
+            postgresqlScheme=postgresql_scheme,
             service=Service(port=postgresql_port),
         )
     )
@@ -94,6 +99,10 @@ def test_storage_postgres_db_config(template: HelmTemplate, storage: str):
     assert postgres_db["db_name"] == postgresql_database
     assert postgres_db["port"] == postgresql_port
     assert postgres_db["params"] == postgresql_params
+    if not postgresql_scheme:
+        assert "scheme" not in postgres_db
+    else:
+        assert postgres_db["scheme"] == postgresql_scheme
 
 
 def test_k8s_run_launcher_config(template: HelmTemplate):
@@ -151,7 +160,7 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
     assert run_launcher_config["config"]["job_namespace"] == job_namespace
     assert run_launcher_config["config"]["load_incluster_config"] == load_incluster_config
     assert run_launcher_config["config"]["image_pull_policy"] == image_pull_policy
-    assert run_launcher_config["config"]["env_config_maps"][1:] == [
+    assert run_launcher_config["config"]["env_config_maps"] == [
         configmap["name"] for configmap in env_config_maps
     ]
     assert run_launcher_config["config"]["env_secrets"] == [
@@ -188,6 +197,36 @@ def test_k8s_run_launcher_fail_pod_on_run_failure(template: HelmTemplate):
     run_launcher_config = instance["run_launcher"]
 
     assert run_launcher_config["config"]["fail_pod_on_run_failure"]
+
+
+def test_k8s_run_launcher_resources(template: HelmTemplate):
+    resources = {
+        "requests": {"memory": "64Mi", "cpu": "250m"},
+        "limits": {"memory": "128Mi", "cpu": "500m"},
+    }
+
+    helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.K8S,
+            config=RunLauncherConfig.construct(
+                k8sRunLauncher=K8sRunLauncherConfig.construct(
+                    imagePullPolicy="Always",
+                    loadInclusterConfig=True,
+                    envConfigMaps=[],
+                    envSecrets=[],
+                    envVars=[],
+                    volumeMounts=[],
+                    volumes=[],
+                    resources=resources,
+                )
+            ),
+        )
+    )
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    run_launcher_config = instance["run_launcher"]
+
+    assert run_launcher_config["config"]["resources"] == resources
 
 
 def test_celery_k8s_run_launcher_config(template: HelmTemplate):
@@ -309,8 +348,10 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
 
 
 @pytest.mark.parametrize("enabled", [True, False])
-def test_queued_run_coordinator_config(template: HelmTemplate, enabled: bool):
-    max_concurrent_runs = 50
+@pytest.mark.parametrize("max_concurrent_runs", [0, 50])
+def test_queued_run_coordinator_config(
+    template: HelmTemplate, enabled: bool, max_concurrent_runs: int
+):
     tag_concurrency_limits = [TagConcurrencyLimit(key="key", value="value", limit=10)]
     dequeue_interval_seconds = 50
     helm_values = DagsterHelmValues.construct(
@@ -381,16 +422,9 @@ def test_custom_run_coordinator_config(template: HelmTemplate):
     assert instance["run_coordinator"]["config"] == config
 
 
-@pytest.mark.parametrize(
-    "compute_log_manager_type",
-    [ComputeLogManagerType.NOOP, ComputeLogManagerType.LOCAL],
-    ids=["noop", "local compute log manager becomes noop"],
-)
-def test_noop_compute_log_manager(
-    template: HelmTemplate, compute_log_manager_type: ComputeLogManagerType
-):
+def test_noop_compute_log_manager(template: HelmTemplate):
     helm_values = DagsterHelmValues.construct(
-        computeLogManager=ComputeLogManager.construct(type=compute_log_manager_type)
+        computeLogManager=ComputeLogManager.construct(type=ComputeLogManagerType.NOOP)
     )
 
     configmaps = template.render(helm_values)
@@ -592,6 +626,17 @@ def test_custom_python_logs_missing_config(template: HelmTemplate):
     assert "dagster_handler_config" not in python_logs_config
 
 
+@pytest.mark.parametrize("enabled", [True, False])
+def test_telemetry(template: HelmTemplate, enabled: bool):
+    helm_values = DagsterHelmValues.construct(telemetry=Telemetry.construct(enabled=enabled))
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    telemetry_config = instance.get("telemetry")
+
+    assert telemetry_config["enabled"] == enabled
+
+
 @pytest.mark.parametrize(
     argnames=["json_schema_model", "compute_log_manager_class"],
     argvalues=[
@@ -620,3 +665,39 @@ def test_run_coordinator_has_schema(json_schema_model, run_coordinator_class):
     run_coordinator_fields = set(map(to_camel_case, run_coordinator_class.config_type().keys()))
 
     assert json_schema_fields == run_coordinator_fields
+
+
+def test_retention(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        retention=Retention.construct(
+            enabled=True,
+            schedule=TickRetention.construct(
+                purgeAfterDays=30,
+            ),
+            sensor=TickRetention.construct(
+                purgeAfterDays=TickRetentionByType(
+                    skipped=7,
+                    success=30,
+                    failure=30,
+                    started=30,
+                ),
+            ),
+        )
+    )
+
+    configmaps = template.render(helm_values)
+    assert len(configmaps) == 1
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    retention_config = instance["retention"]
+    assert retention_config.keys() == retention_config_schema().config_type.fields.keys()
+    assert instance["retention"]["schedule"]["purge_after_days"] == 30
+    assert instance["retention"]["sensor"]["purge_after_days"]["skipped"] == 7
+    assert instance["retention"]["sensor"]["purge_after_days"]["success"] == 30
+    assert instance["retention"]["sensor"]["purge_after_days"]["failure"] == 30
+
+
+def test_retention_backcompat(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct()
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    assert not instance.get("retention")

@@ -11,12 +11,15 @@ from dagster import (
     PipelineDefinition,
     SolidDefinition,
     TypeCheck,
-    check,
 )
+from dagster import _check as check
+from dagster._loggers import colored_console_logger
+from dagster._serdes import unpack_value
+from dagster._utils import EventGenerationManager, ensure_gen
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.events import RetryRequested
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import scoped_pipeline_context
@@ -30,9 +33,6 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import DagsterRun, PipelineRunStatus
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
-from dagster.loggers import colored_console_logger
-from dagster.serdes import unpack_value
-from dagster.utils import EventGenerationManager, ensure_gen
 
 from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
 from .errors import DagstermillError
@@ -358,7 +358,10 @@ class Manager:
         # load input from source
         step_context = self.context._step_context  # pylint: disable=protected-access
         step_input = step_context.step.step_input_named(input_name)
-        for event_or_input_value in ensure_gen(step_input.source.load_input_object(step_context)):
+        input_def = step_context.solid_def.input_def_named(input_name)
+        for event_or_input_value in ensure_gen(
+            step_input.source.load_input_object(step_context, input_def)
+        ):
             if isinstance(event_or_input_value, DagsterEvent):
                 continue
             else:

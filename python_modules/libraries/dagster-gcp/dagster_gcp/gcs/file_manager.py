@@ -4,7 +4,7 @@ from contextlib import contextmanager
 
 from google.cloud import storage  # type: ignore
 
-from dagster import check, usable_as_dagster_type
+import dagster._check as check
 from dagster.core.storage.file_manager import (
     FileHandle,
     FileManager,
@@ -13,7 +13,6 @@ from dagster.core.storage.file_manager import (
 )
 
 
-@usable_as_dagster_type
 class GCSFileHandle(FileHandle):
     """A reference to a file on GCS."""
 
@@ -73,7 +72,8 @@ class GCSFileManager(FileManager):
 
         self._download_if_not_cached(file_handle)
 
-        with open(self._get_local_path(file_handle), mode) as file_obj:
+        encoding = None if mode == "rb" else "utf-8"
+        with open(self._get_local_path(file_handle), mode, encoding=encoding) as file_obj:
             yield file_obj
 
     def _file_handle_cached(self, file_handle):

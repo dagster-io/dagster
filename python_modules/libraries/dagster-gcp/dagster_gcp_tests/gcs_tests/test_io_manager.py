@@ -1,19 +1,29 @@
+from dagster_gcp.gcs import FakeGCSClient
 from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager, gcs_pickle_io_manager
 from dagster_gcp.gcs.resources import gcs_resource
 from google.cloud import storage  # type: ignore
 
 from dagster import (
+    AssetGroup,
+    AssetsDefinition,
     DagsterInstance,
     DynamicOut,
     DynamicOutput,
+    GraphIn,
+    GraphOut,
     In,
     Int,
     Out,
     PipelineRun,
+    ResourceDefinition,
+    StaticPartitionsDefinition,
+    asset,
     build_input_context,
     build_output_context,
+    graph,
     job,
     op,
+    resource,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import DagsterEventType
@@ -22,6 +32,11 @@ from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
+
+
+@resource
+def mock_gcs_resource(_):
+    return FakeGCSClient()
 
 
 def get_step_output(step_events, step_key, output_name="result"):
@@ -134,7 +149,7 @@ def test_dynamic(gcs_bucket):
     def echo(_, x):
         return x
 
-    @job(resource_defs={"io_manager": gcs_pickle_io_manager, "gcs": gcs_resource})
+    @job(resource_defs={"io_manager": gcs_pickle_io_manager, "gcs": mock_gcs_resource})
     def dynamic():
         numbers().map(echo)  # pylint: disable=no-member
 
@@ -142,3 +157,53 @@ def test_dynamic(gcs_bucket):
         run_config={"resources": {"io_manager": {"config": {"gcs_bucket": gcs_bucket}}}}
     )
     assert result.success
+
+
+def test_asset_io_manager(gcs_bucket):
+    @op
+    def first_op(first_input):
+        assert first_input == 3
+        return first_input * 2
+
+    @op
+    def second_op(second_input):
+        assert second_input == 6
+        return second_input + 3
+
+    @asset
+    def upstream():
+        return 2
+
+    @asset
+    def downstream(upstream):
+        return 1 + upstream
+
+    @graph(ins={"downstream": GraphIn()}, out={"asset3": GraphOut()})
+    def graph_asset(downstream):
+        return second_op(first_op(downstream))
+
+    @asset(partitions_def=StaticPartitionsDefinition(["apple", "orange"]))
+    def partitioned():
+        return 8
+
+    fake_gcs_client = FakeGCSClient()
+    asset_group = AssetGroup(
+        [upstream, downstream, AssetsDefinition.from_graph(graph_asset), partitioned],
+        resource_defs={
+            "io_manager": gcs_pickle_io_manager.configured(
+                {"gcs_bucket": gcs_bucket, "gcs_prefix": "assets"}
+            ),
+            "gcs": ResourceDefinition.hardcoded_resource(fake_gcs_client),
+        },
+    )
+    asset_job = asset_group.build_job(name="my_asset_job")
+
+    result = asset_job.execute_in_process(partition_key="apple")
+    assert result.success
+    assert fake_gcs_client.get_all_blob_paths() == {
+        f"{gcs_bucket}/assets/upstream",
+        f"{gcs_bucket}/assets/downstream",
+        f"{gcs_bucket}/assets/partitioned/apple",
+        f"{gcs_bucket}/assets/asset3",
+        f"{gcs_bucket}/assets/storage/{result.run_id}/files/graph_asset.first_op/result",
+    }

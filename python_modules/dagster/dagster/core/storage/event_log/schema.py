@@ -26,6 +26,15 @@ SecondaryIndexMigrationTable = db.Table(
     db.Column("migration_completed", db.DateTime),
 )
 
+# The AssetKeyTable contains a `last_materialization_timestamp` column that is exclusively
+# used to determine if an asset exists (last materialization timestamp > wipe timestamp).
+# This column is used nowhere else, and as of AssetObservation creation, we want to extend
+# this functionality to ensure that assets with observation OR materialization timestamp
+# > wipe timestamp display in Dagit.
+
+# As of the following PR, we update last_materialization_timestamp to store the timestamp
+# of the latest asset observation or materialization that has occurred.
+# https://github.com/dagster-io/dagster/pull/6885
 AssetKeyTable = db.Table(
     "asset_keys",
     SqlEventLogStorageMetadata,
@@ -35,6 +44,7 @@ AssetKeyTable = db.Table(
     db.Column("last_run_id", db.String(255)),
     db.Column("asset_details", db.Text),
     db.Column("wipe_timestamp", db.types.TIMESTAMP),  # guarded by secondary index check
+    # last_materialization_timestamp contains timestamp for latest materialization or observation
     db.Column(
         "last_materialization_timestamp", db.types.TIMESTAMP
     ),  # guarded by secondary index check

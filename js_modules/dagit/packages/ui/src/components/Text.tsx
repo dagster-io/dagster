@@ -1,6 +1,6 @@
 import styled from 'styled-components/macro';
 
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 import {FontFamily} from './styles';
 
 interface TextProps {
@@ -36,7 +36,7 @@ export const Caption = styled.span<TextProps>`
 `;
 
 export const Code = styled.span`
-  background-color: ${ColorsWIP.Blue50};
+  background-color: ${Colors.Blue50};
   border-radius: 2px;
   font-family: ${FontFamily.monospace};
   font-size: 14px;

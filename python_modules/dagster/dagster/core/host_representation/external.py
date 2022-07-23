@@ -2,7 +2,9 @@ import warnings
 from collections import OrderedDict
 from typing import TYPE_CHECKING, List, Optional, Sequence, Union
 
-from dagster import check
+import dagster._check as check
+from dagster._serdes import create_snapshot_id
+from dagster._utils.schedules import schedule_execution_time_iterator
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.schedule_definition import DefaultScheduleStatus
@@ -14,7 +16,6 @@ from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, St
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.snap import ExecutionPlanSnapshot
 from dagster.core.utils import toposort
-from dagster.utils.schedules import schedule_execution_time_iterator
 
 from .external_data import (
     ExternalAssetNode,
@@ -27,6 +28,7 @@ from .external_data import (
 from .handle import InstigatorHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
+from .selector import InstigatorSelector, RepositorySelector
 
 if TYPE_CHECKING:
     from dagster.core.scheduler.instigation import InstigatorState
@@ -142,7 +144,7 @@ class ExternalRepository:
             for external_partition_set_data in self.external_repository_data.external_partition_set_datas
         ]
 
-    def get_full_external_pipeline(self, pipeline_name):
+    def get_full_external_pipeline(self, pipeline_name: str) -> "ExternalPipeline":
         check.str_param(pipeline_name, "pipeline_name")
         return ExternalPipeline(
             self.external_repository_data.get_external_pipeline_data(pipeline_name),
@@ -156,7 +158,7 @@ class ExternalRepository:
     def has_external_job(self, job_name):
         return job_name in self._job_index_map
 
-    def get_external_job(self, job_name):
+    def get_external_job(self, job_name) -> "ExternalPipeline":
         check.str_param(job_name, "job_name")
 
         if not self.has_external_job(job_name):
@@ -168,12 +170,18 @@ class ExternalRepository:
             pipeline_index=self.get_pipeline_index(job_name),
         )
 
-    def get_external_jobs(self):
+    def get_external_jobs(self) -> List["ExternalPipeline"]:
         return [self.get_external_job(pn) for pn in self._job_index_map]
 
     @property
     def handle(self):
         return self._handle
+
+    @property
+    def selector_id(self):
+        return create_snapshot_id(
+            RepositorySelector(self._handle.location_name, self._handle.repository_name)
+        )
 
     def get_external_origin(self):
         return self.handle.get_external_origin()
@@ -268,6 +276,14 @@ class ExternalPipeline(RepresentedPipeline):
         )
 
     @property
+    def asset_selection(self):
+        return (
+            self._pipeline_index.pipeline_snapshot.lineage_snapshot.asset_selection
+            if self._pipeline_index.pipeline_snapshot.lineage_snapshot
+            else None
+        )
+
+    @property
     def active_presets(self):
         return list(self._active_preset_dict.values())
 
@@ -301,12 +317,16 @@ class ExternalPipeline(RepresentedPipeline):
             mode_name if mode_name else self.get_default_mode_name()
         ).root_config_key
 
-    def get_default_mode_name(self):
+    def get_default_mode_name(self) -> str:
         return self._pipeline_index.get_default_mode_name()
 
     @property
     def tags(self):
         return self._pipeline_index.pipeline_snapshot.tags
+
+    @property
+    def metadata(self):
+        return self._pipeline_index.pipeline_snapshot.metadata
 
     @property
     def computed_pipeline_snapshot_id(self):
@@ -491,6 +511,16 @@ class ExternalSchedule:
         return self.get_external_origin().get_id()
 
     @property
+    def selector_id(self):
+        return create_snapshot_id(
+            InstigatorSelector(
+                self.handle.location_name,
+                self.handle.repository_name,
+                self._external_schedule_data.name,
+            )
+        )
+
+    @property
     def default_status(self) -> DefaultScheduleStatus:
         return (
             self._external_schedule_data.default_status
@@ -602,6 +632,16 @@ class ExternalSensor:
     def get_external_origin_id(self):
         return self.get_external_origin().get_id()
 
+    @property
+    def selector_id(self):
+        return create_snapshot_id(
+            InstigatorSelector(
+                self.handle.location_name,
+                self.handle.repository_name,
+                self._external_sensor_data.name,
+            )
+        )
+
     def get_current_instigator_state(self, stored_state: Optional["InstigatorState"]):
         from dagster.core.scheduler.instigation import (
             InstigatorState,
@@ -671,6 +711,10 @@ class ExternalPartitionSet:
     @property
     def pipeline_name(self):
         return self._external_partition_set_data.pipeline_name
+
+    @property
+    def repository_handle(self):
+        return self._handle.repository_handle
 
     def get_external_origin(self):
         return self._handle.get_external_origin()

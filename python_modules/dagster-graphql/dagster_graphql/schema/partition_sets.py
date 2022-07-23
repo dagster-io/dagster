@@ -2,18 +2,20 @@ import graphene
 from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_by_name,
     get_partition_config,
+    get_partition_set_partition_runs,
     get_partition_set_partition_statuses,
     get_partition_tags,
     get_partitions,
 )
 from dagster_graphql.implementation.fetch_runs import get_runs
 
-from dagster import check
+import dagster._check as check
+from dagster._utils import merge_dicts
 from dagster.core.host_representation import ExternalPartitionSet, RepositoryHandle
 from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster.utils import merge_dicts
 
+from .backfill import GraphenePartitionBackfill
 from .errors import (
     GraphenePartitionSetNotFoundError,
     GraphenePipelineNotFoundError,
@@ -50,10 +52,21 @@ class GraphenePartitionRunConfigOrError(graphene.Union):
 class GraphenePartitionStatus(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     partitionName = graphene.NonNull(graphene.String)
+    runId = graphene.Field(graphene.String)
     runStatus = graphene.Field(GrapheneRunStatus)
+    runDuration = graphene.Field(graphene.Float)
 
     class Meta:
         name = "PartitionStatus"
+
+
+class GraphenePartitionRun(graphene.ObjectType):
+    id = graphene.NonNull(graphene.String)
+    partitionName = graphene.NonNull(graphene.String)
+    run = graphene.Field(GrapheneRun)
+
+    class Meta:
+        name = "PartitionRun"
 
 
 class GraphenePartitionStatuses(graphene.ObjectType):
@@ -174,7 +187,13 @@ class GraphenePartitionSet(graphene.ObjectType):
     )
     partition = graphene.Field(GraphenePartition, partition_name=graphene.NonNull(graphene.String))
     partitionStatusesOrError = graphene.NonNull(GraphenePartitionStatusesOrError)
+    partitionRuns = non_null_list(GraphenePartitionRun)
     repositoryOrigin = graphene.NonNull(GrapheneRepositoryOrigin)
+    backfills = graphene.Field(
+        non_null_list(GraphenePartitionBackfill),
+        cursor=graphene.String(),
+        limit=graphene.Int(),
+    )
 
     class Meta:
         name = "PartitionSet"
@@ -215,14 +234,32 @@ class GraphenePartitionSet(graphene.ObjectType):
             partition_name,
         )
 
+    def resolve_partitionRuns(self, graphene_info):
+        return get_partition_set_partition_runs(graphene_info, self._external_partition_set)
+
     def resolve_partitionStatusesOrError(self, graphene_info):
         return get_partition_set_partition_statuses(
-            graphene_info, self._external_repository_handle, self._external_partition_set.name
+            graphene_info,
+            self._external_repository_handle,
+            self._external_partition_set.name,
+            self._external_partition_set.pipeline_name,
         )
 
     def resolve_repositoryOrigin(self, _):
         origin = self._external_partition_set.get_external_origin().external_repository_origin
         return GrapheneRepositoryOrigin(origin)
+
+    def resolve_backfills(self, graphene_info, **kwargs):
+        matching = [
+            backfill
+            for backfill in graphene_info.context.instance.get_backfills(
+                cursor=kwargs.get("cursor"),
+            )
+            if backfill.partition_set_origin.partition_set_name == self._external_partition_set.name
+            and backfill.partition_set_origin.external_repository_origin.repository_name
+            == self._external_repository_handle.repository_name
+        ]
+        return [GraphenePartitionBackfill(backfill) for backfill in matching[: kwargs.get("limit")]]
 
 
 class GraphenePartitionSetOrError(graphene.Union):

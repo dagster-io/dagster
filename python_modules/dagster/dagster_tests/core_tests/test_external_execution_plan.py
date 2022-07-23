@@ -1,5 +1,6 @@
 import os
 import pickle
+import re
 
 import pytest
 
@@ -197,12 +198,9 @@ def test_execute_step_wrong_step_key():
             pipeline_run=pipeline_run,
         )
 
-    assert exc_info.value.step_keys == ["nope.compute", "nuh_uh.compute"]
+    assert set(exc_info.value.step_keys) == {"nope.compute", "nuh_uh.compute"}
 
-    assert (
-        str(exc_info.value)
-        == "Can not build subset plan from unknown steps: nope.compute, nuh_uh.compute"
-    )
+    assert re.match("Can not build subset plan from unknown steps", str(exc_info.value))
 
 
 def test_using_file_system_for_subplan_missing_input():

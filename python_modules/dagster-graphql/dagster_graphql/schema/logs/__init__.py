@@ -1,6 +1,7 @@
 def types():
     from .compute_logs import GrapheneComputeLogFile, GrapheneComputeLogs
     from .events import (
+        GrapheneAssetMaterializationPlannedEvent,
         GrapheneDisplayableEvent,
         GrapheneEngineEvent,
         GrapheneExecutionStepFailureEvent,
@@ -27,6 +28,9 @@ def types():
         GrapheneObjectStoreOperationType,
         GrapheneObservationEvent,
         GraphenePipelineRunStepStats,
+        GrapheneResourceInitFailureEvent,
+        GrapheneResourceInitStartedEvent,
+        GrapheneResourceInitSuccessEvent,
         GrapheneRunCanceledEvent,
         GrapheneRunCancelingEvent,
         GrapheneRunDequeuedEvent,
@@ -39,6 +43,8 @@ def types():
         GrapheneRunSuccessEvent,
         GrapheneStepEvent,
         GrapheneStepExpectationResultEvent,
+        GrapheneStepWorkerStartedEvent,
+        GrapheneStepWorkerStartingEvent,
         GrapheneTypeCheck,
     )
     from .log_level import GrapheneLogLevel
@@ -78,13 +84,19 @@ def types():
         GrapheneRunFailureEvent,
         GrapheneRunEvent,
         GraphenePipelineRunStepStats,
+        GrapheneResourceInitFailureEvent,
+        GrapheneResourceInitStartedEvent,
+        GrapheneResourceInitSuccessEvent,
         GrapheneRunStepStats,
         GrapheneRunStartEvent,
         GrapheneRunStartingEvent,
         GrapheneRunSuccessEvent,
         GrapheneStepEvent,
         GrapheneStepExpectationResultEvent,
+        GrapheneStepWorkerStartedEvent,
+        GrapheneStepWorkerStartingEvent,
         GrapheneMaterializationEvent,
         GrapheneObservationEvent,
         GrapheneTypeCheck,
+        GrapheneAssetMaterializationPlannedEvent,
     ]

@@ -10,10 +10,10 @@ from dagster import (
     Nothing,
     OutputDefinition,
     Permissive,
-    check,
-    op,
-    solid,
 )
+from dagster import _check as check
+from dagster import op
+from dagster._legacy import solid
 
 from .utils import execute, execute_script_file
 
@@ -64,8 +64,7 @@ def core_shell(dagster_decorator, decorator_name):
     )
     def shell_fn(context, shell_command):
         op_config = context.op_config.copy()
-        if not op_config.get("env"):
-            op_config["env"] = os.environ.copy()
+        op_config["env"] = {**os.environ, **op_config.get("env", {})}
         output, return_code = execute(shell_command=shell_command, log=context.log, **op_config)
 
         if return_code:
@@ -200,8 +199,7 @@ def core_create_shell_command(
     )
     def _shell_fn(context):
         op_config = context.op_config.copy()
-        if not op_config.get("env"):
-            op_config["env"] = os.environ.copy()
+        op_config["env"] = {**os.environ, **op_config.get("env", {})}
         output, return_code = execute(shell_command=shell_command, log=context.log, **op_config)
 
         if return_code:
@@ -328,8 +326,7 @@ def core_create_shell_script(
     )
     def _shell_script_fn(context):
         op_config = context.op_config.copy()
-        if not op_config.get("env"):
-            op_config["env"] = os.environ.copy()
+        op_config["env"] = {**os.environ, **op_config.get("env", {})}
         output, return_code = execute_script_file(
             shell_script_path=shell_script_path, log=context.log, **op_config
         )

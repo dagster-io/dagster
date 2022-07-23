@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="ge_example",
-    version="dev",
+    version="0+dev",
     author_email="hello@elementl.com",
     packages=["ge_example"],
     include_package_data=True,
@@ -10,7 +10,7 @@ setup(
         "dagster",
         "dagit",
         "dagster-ge",
-        "great_expectations",
+        "great_expectations>=0.14.12",  # pinned because pip is using the cached wheel for 0.13.14
     ],
     author="Elementl",
     license="Apache-2.0",

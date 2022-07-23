@@ -6,6 +6,7 @@ import {
   tokensAsStringArray,
   tokenizedValuesFromStringArray,
 } from '@dagster-io/ui';
+import qs from 'qs';
 import * as React from 'react';
 
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
@@ -20,6 +21,11 @@ import {
 type PipelineRunTags = RunsSearchSpaceQuery_pipelineRunTags[];
 
 export type RunFilterTokenType = 'id' | 'status' | 'pipeline' | 'job' | 'snapshotId' | 'tag';
+
+export type RunFilterToken = {
+  token?: RunFilterTokenType;
+  value: string;
+};
 
 const RUN_PROVIDERS_EMPTY = [
   {
@@ -57,7 +63,7 @@ const RUN_PROVIDERS_EMPTY = [
  * be provided (eg pipeline:, which is not relevant within pipeline scoped views.)
  */
 export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[]) {
-  return useQueryPersistedState<TokenizingFieldValue[]>(
+  return useQueryPersistedState<RunFilterToken[]>(
     React.useMemo(
       () => ({
         encode: (tokens) => ({q: tokensAsStringArray(tokens), cursor: undefined}),
@@ -65,11 +71,18 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
           tokenizedValuesFromStringArray(q, RUN_PROVIDERS_EMPTY).filter(
             (t) =>
               !t.token || !enabledFilters || enabledFilters.includes(t.token as RunFilterTokenType),
-          ),
+          ) as RunFilterToken[],
       }),
       [enabledFilters],
     ),
   );
+}
+
+export function runsPathWithFilters(filterTokens: RunFilterToken[]) {
+  return `/instance/runs?${qs.stringify(
+    {q: tokensAsStringArray(filterTokens)},
+    {arrayFormat: 'brackets'},
+  )}`;
 }
 
 export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
@@ -164,8 +177,8 @@ function searchSuggestionsForRuns(
 
 interface RunsFilterInputProps {
   loading?: boolean;
-  tokens: TokenizingFieldValue[];
-  onChange: (tokens: TokenizingFieldValue[]) => void;
+  tokens: RunFilterToken[];
+  onChange: (tokens: RunFilterToken[]) => void;
   enabledFilters?: RunFilterTokenType[];
 }
 
@@ -204,7 +217,9 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
     const limitedTokens = new Set<string>(['id', 'job', 'pipeline', 'snapshotId']);
     const presentLimitedTokens = tokens.filter((token) => limitedTokens.has(token));
 
-    return suggestionProviders.filter((provider) => !presentLimitedTokens.includes(provider.token));
+    return suggestionProviders.filter(
+      (provider) => !provider.token || !presentLimitedTokens.includes(provider.token),
+    );
   };
 
   const onFocus = React.useCallback(() => performQuery(), [performQuery]);
@@ -212,7 +227,7 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
   return (
     <TokenizingField
       values={search}
-      onChange={onChange}
+      onChange={(values) => onChange(values as RunFilterToken[])}
       onFocus={onFocus}
       suggestionProviders={suggestions}
       suggestionProvidersFilter={suggestionProvidersFilter}

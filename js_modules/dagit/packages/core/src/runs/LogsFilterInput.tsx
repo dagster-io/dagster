@@ -1,13 +1,16 @@
 import {
-  ColorsWIP,
+  Colors,
   Popover,
   TextInput,
   SuggestionProvider,
   useSuggestionsForString,
+  Icon,
 } from '@dagster-io/ui';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import styled from 'styled-components/macro';
+
+import {ClearButton} from '../ui/ClearButton';
 
 interface Props {
   value: string;
@@ -58,13 +61,18 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {shown, highlight} = state;
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   const {empty, perProvider} = React.useMemo(() => {
     const perProvider = suggestionProviders.reduce((accum, provider) => {
       const values = provider.values();
-      return {...accum, [provider.token]: {fuse: new Fuse(values, fuseOptions), all: values}};
+      return provider.token
+        ? {...accum, [provider.token]: {fuse: new Fuse(values, fuseOptions), all: values}}
+        : accum;
     }, {} as {[token: string]: {fuse: Fuse<string>; all: string[]}});
-    const providerKeys = suggestionProviders.map((provider) => provider.token);
+    const providerKeys = suggestionProviders
+      .map((provider) => provider.token)
+      .filter((token) => token) as string[];
     return {
       empty: new Fuse(providerKeys, fuseOptions),
       perProvider,
@@ -113,6 +121,12 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
     },
     [onChange, onSelectSuggestion],
   );
+
+  const onClear = React.useCallback(() => {
+    dispatch({type: 'change-query'});
+    onChange('');
+    inputRef.current?.focus();
+  }, [onChange]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     const {key} = e;
@@ -165,10 +179,16 @@ export const LogsFilterInput: React.FC<Props> = (props) => {
         spellCheck={false}
         autoCorrect="off"
         value={value}
+        ref={inputRef}
         onChange={onInputChange}
         onFocus={() => dispatch({type: 'show-popover'})}
         onBlur={() => dispatch({type: 'hide-popover'})}
         onKeyDown={onKeyDown}
+        rightElement={
+          <ClearButton onClick={onClear}>
+            <Icon name="cancel" />
+          </ClearButton>
+        }
       />
     </Popover>
   );
@@ -222,8 +242,8 @@ interface HighlightableTextProps {
 
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
-  background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Blue500 : ColorsWIP.White)};
-  color: ${({isHighlight}) => (isHighlight ? ColorsWIP.White : 'default')};
+  background-color: ${({isHighlight}) => (isHighlight ? Colors.Blue500 : Colors.White)};
+  color: ${({isHighlight}) => (isHighlight ? Colors.White : 'default')};
   cursor: pointer;
   display: flex;
   flex-direction: row;
@@ -235,6 +255,6 @@ const Item = styled.li<HighlightableTextProps>`
   text-overflow: ellipsis;
 
   &:hover {
-    background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Blue500 : ColorsWIP.Gray100)};
+    background-color: ${({isHighlight}) => (isHighlight ? Colors.Blue500 : Colors.Gray100)};
   }
 `;

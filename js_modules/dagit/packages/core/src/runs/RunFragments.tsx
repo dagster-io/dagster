@@ -24,7 +24,7 @@ export const RunFragments = {
   RunFragment: gql`
     fragment RunFragment on Run {
       id
-      runConfig
+      runConfigYaml
       runId
       canTerminate
       status
@@ -33,10 +33,21 @@ export const RunFragments = {
         key
         value
       }
+      assets {
+        id
+        key {
+          path
+        }
+      }
       rootRunId
       parentRunId
       pipelineName
       solidSelection
+      assetSelection {
+        ... on AssetKey {
+          path
+        }
+      }
       pipelineSnapshotId
       executionPlan {
         artifactsPersisted
@@ -45,6 +56,7 @@ export const RunFragments = {
       stepKeysToExecute
       ...RunFragmentForRepositoryMatch
       ...RunDetailsFragment
+      updateTime
       stepStats {
         stepKey
         status

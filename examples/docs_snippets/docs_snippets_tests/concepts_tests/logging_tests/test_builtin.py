@@ -1,7 +1,7 @@
 import pytest
 import yaml
-from dagster.utils import file_relative_path
 
+from dagster._utils import file_relative_path
 from docs_snippets.concepts.logging.builtin_logger import demo_job, demo_job_error
 from docs_snippets.concepts.logging.logging_jobs import local_logs, prod_logs
 
@@ -16,6 +16,7 @@ def test_demo_job_config():
             __file__, "../../../docs_snippets/concepts/logging/config.yaml"
         ),
         "r",
+        encoding="utf-8",
     ) as fd:
         run_config = yaml.safe_load(fd.read())
     assert demo_job.execute_in_process(run_config=run_config).success

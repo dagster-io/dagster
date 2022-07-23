@@ -3,10 +3,11 @@ import subprocess
 import sys
 from contextlib import contextmanager
 
-from dagster import check
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+import dagster._check as check
+from dagster._utils import file_relative_path, git_repository_root
+from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.host_representation import InProcessRepositoryLocationOrigin
-from dagster.utils import file_relative_path, git_repository_root
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -43,9 +44,10 @@ def build_and_tag_test_image(tag):
 @contextmanager
 def get_test_project_external_pipeline(pipeline_name):
     with InProcessRepositoryLocationOrigin(
-        ReconstructableRepository.for_file(
-            file_relative_path(__file__, "test_pipelines/repo.py"),
-            "define_demo_execution_repo",
+        LoadableTargetOrigin(
+            executable_path=sys.executable,
+            python_file=file_relative_path(__file__, "test_pipelines/repo.py"),
+            attribute="define_demo_execution_repo",
         )
     ).create_location() as location:
         yield location.get_repository("demo_execution_repo").get_full_external_pipeline(
@@ -62,7 +64,7 @@ def get_default_docker_image_tag():
 
 def get_test_project_docker_image():
     docker_repository = os.getenv("DAGSTER_DOCKER_REPOSITORY")
-    image_name = os.getenv("DAGSTER_DOCKER_IMAGE", "buildkite-test-image-core")
+    image_name = os.getenv("DAGSTER_DOCKER_IMAGE", "test-project-core")
     docker_image_tag = os.getenv("DAGSTER_DOCKER_IMAGE_TAG")
 
     if IS_BUILDKITE:

@@ -19,8 +19,8 @@ from dagster import (
     PipelineDefinition,
     execute_pipeline,
     lambda_solid,
-    solid,
 )
+from dagster._legacy import solid
 from dagster.core.execution.api import create_execution_plan
 
 
@@ -325,7 +325,7 @@ def test_nothing_infer():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="must be used via InputDefinition and no parameter should be included in the solid function",
+        match="must be used via InputDefinition and no parameter should be included in the @solid decorated function",
     ):
 
         @solid

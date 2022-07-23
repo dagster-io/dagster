@@ -3,7 +3,7 @@ import {Box, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {Loading} from '../ui/Loading';
@@ -44,9 +44,6 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
       fetchPolicy: 'network-only',
     },
   );
-  const [selected = undefined, setSelected] = useQueryPersistedState<string>({
-    queryKey: 'partitionSet',
-  });
 
   return (
     <Loading queryResult={queryResult}>
@@ -80,21 +77,8 @@ export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
           );
         }
 
-        const selectionHasMatch =
-          selected && !!partitionSetsOrError.results.filter((x) => x.name === selected).length;
-        const partitionSet =
-          selectionHasMatch && selected
-            ? partitionSetsOrError.results.filter((x) => x.name === selected)[0]
-            : partitionSetsOrError.results[0];
-
         return (
-          <PartitionView
-            partitionSet={partitionSet}
-            partitionSets={partitionSetsOrError.results}
-            onChangePartitionSet={(x) => setSelected(x.name)}
-            pipelineName={pipelineName}
-            repoAddress={repoAddress}
-          />
+          <PartitionView partitionSet={partitionSetsOrError.results[0]} repoAddress={repoAddress} />
         );
       }}
     </Loading>
@@ -110,9 +94,7 @@ const PIPELINE_PARTITIONS_ROOT_QUERY = gql`
       ... on PipelineNotFoundError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
       ... on PartitionSets {
         results {
           id
@@ -122,4 +104,6 @@ const PIPELINE_PARTITIONS_ROOT_QUERY = gql`
       }
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;

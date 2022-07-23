@@ -1,8 +1,12 @@
 import inspect
+import warnings
 from collections import defaultdict
-from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Union, cast
+from typing import AbstractSet, Any, Dict, Iterator, List, Optional, Set, Tuple, Union, cast
 
-from dagster import check
+import dagster._check as check
+from dagster._utils import ensure_gen, iterate_with_context
+from dagster._utils.backcompat import ExperimentalWarning, experimental_functionality_warning
+from dagster._utils.timing import time_execution_scope
 from dagster.core.definitions import (
     AssetKey,
     AssetMaterialization,
@@ -11,10 +15,9 @@ from dagster.core.definitions import (
     Materialization,
     Output,
     OutputDefinition,
-    SolidDefinition,
     TypeCheck,
 )
-from dagster.core.definitions.decorators.solid import DecoratedSolidFunction
+from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster.core.definitions.events import AssetLineageInfo, DynamicOutput
 from dagster.core.definitions.metadata import (
     MetadataEntry,
@@ -40,10 +43,7 @@ from dagster.core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster.core.execution.resolve_versions import resolve_step_output_versions
 from dagster.core.storage.io_manager import IOManager
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
-from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
-from dagster.utils import ensure_gen, iterate_with_context
-from dagster.utils.backcompat import experimental_functionality_warning
-from dagster.utils.timing import time_execution_scope
+from dagster.core.types.dagster_type import DagsterType
 
 from .compute import SolidOutputUnion
 from .compute_generator import create_solid_compute_wrapper
@@ -103,8 +103,10 @@ def _step_output_error_checked_user_event_sequence(
             output = Output(
                 value=output.value,
                 output_name=output.output_name,
-                metadata_entries=output.metadata_entries
-                + normalize_metadata(cast(Dict[str, Any], metadata), []),
+                metadata_entries=[
+                    *output.metadata_entries,
+                    *normalize_metadata(cast(Dict[str, Any], metadata), []),
+                ],
             )
         else:
             if not output_def.is_dynamic:
@@ -124,8 +126,10 @@ def _step_output_error_checked_user_event_sequence(
             output = DynamicOutput(
                 value=output.value,
                 output_name=output.output_name,
-                metadata_entries=output.metadata_entries
-                + normalize_metadata(cast(Dict[str, Any], metadata), []),
+                metadata_entries=[
+                    *output.metadata_entries,
+                    *normalize_metadata(cast(Dict[str, Any], metadata), []),
+                ],
                 mapping_key=output.mapping_key,
             )
 
@@ -134,7 +138,7 @@ def _step_output_error_checked_user_event_sequence(
     for step_output in step.step_outputs:
         step_output_def = step_context.solid_def.output_def_named(step_output.name)
         if not step_context.has_seen_output(step_output_def.name) and not step_output_def.optional:
-            if step_output_def.dagster_type.kind == DagsterTypeKind.NOTHING:
+            if step_output_def.dagster_type.is_nothing:
                 step_context.log.info(
                     f'Emitting implicit Nothing for output "{step_output_def.name}" on {op_label}'
                 )
@@ -185,13 +189,21 @@ def _create_step_input_event(
 
 
 def _type_checked_event_sequence_for_input(
-    step_context: StepExecutionContext, input_name: str, input_value: Any
+    step_context: StepExecutionContext,
+    input_name: str,
+    input_value: Any,
 ) -> Iterator[DagsterEvent]:
     check.inst_param(step_context, "step_context", StepExecutionContext)
     check.str_param(input_name, "input_name")
 
     step_input = step_context.step.step_input_named(input_name)
-    input_def = step_input.source.get_input_def(step_context.pipeline_def)
+    input_def = step_context.solid_def.input_def_named(step_input.name)
+
+    check.invariant(
+        input_def.name == input_name,
+        f"InputDefinition name does not match, expected {input_name} got {input_def.name}",
+    )
+
     dagster_type = input_def.dagster_type
     type_check_context = step_context.for_type(dagster_type)
     input_type = type(input_value)
@@ -298,12 +310,15 @@ def core_dagster_event_sequence_for_step(
     inputs = {}
 
     for step_input in step_context.step.step_inputs:
-        input_def = step_input.source.get_input_def(step_context.pipeline_def)
+        input_def = step_context.solid_def.input_def_named(step_input.name)
         dagster_type = input_def.dagster_type
 
-        if dagster_type.kind == DagsterTypeKind.NOTHING:
+        if dagster_type.is_nothing:
             continue
-        for event_or_input_value in ensure_gen(step_input.source.load_input_object(step_context)):
+
+        for event_or_input_value in ensure_gen(
+            step_input.source.load_input_object(step_context, input_def)
+        ):
             if isinstance(event_or_input_value, DagsterEvent):
                 yield event_or_input_value
             else:
@@ -413,24 +428,33 @@ def _asset_key_and_partitions_for_output(
     output_context: OutputContext,
     output_def: OutputDefinition,
     output_manager: IOManager,
-) -> Tuple[Optional[AssetKey], Set[str]]:
+) -> Tuple[Optional[AssetKey], AbstractSet[str]]:
 
     manager_asset_key = output_manager.get_output_asset_key(output_context)
 
-    if output_def.is_asset:
+    pipeline_def = output_context.step_context.pipeline_def
+    node_handle = output_context.step_context.solid_handle
+    output_asset_info = pipeline_def.asset_layer.asset_info_for_output(
+        node_handle=output_context.step_context.solid_handle, output_name=output_def.name
+    )
+    if output_asset_info:
         if manager_asset_key is not None:
-            solid_def = cast(SolidDefinition, output_context.solid_def)
             raise DagsterInvariantViolationError(
-                f'Both the OutputDefinition and the IOManager of output "{output_def.name}" on '
-                f'solid "{solid_def.name}" associate it with an asset. Either remove '
-                "the asset_key parameter on the OutputDefinition or use an IOManager that does not "
-                "specify an AssetKey in its get_output_asset_key() function."
+                f'The IOManager of output "{output_def.name}" on node "{node_handle}" associates it '
+                f'with asset key "{manager_asset_key}", but this output has already been defined to '
+                f'produce asset "{output_asset_info.key}", either via a Software Defined Asset, '
+                "or by setting the asset_key parameter on the OutputDefinition. In most cases, this "
+                "means that you should use an IOManager that does not specify an AssetKey in its "
+                "get_output_asset_key() function for this output."
             )
+        if not output_asset_info.is_required:
+            output_context.log.warn(f"Materializing unexpected asset key: {output_asset_info.key}.")
         return (
-            output_def.get_asset_key(output_context),
-            output_def.get_asset_partitions(output_context) or set(),
+            output_asset_info.key,
+            output_asset_info.partitions_fn(output_context) or set(),
         )
-    elif manager_asset_key:
+
+    if manager_asset_key:
         return manager_asset_key, output_manager.get_output_asset_partitions(output_context)
 
     return None, set()
@@ -457,13 +481,13 @@ def _dedup_asset_lineage(asset_lineage: List[AssetLineageInfo]) -> List[AssetLin
 
 def _get_output_asset_materializations(
     asset_key: AssetKey,
-    asset_partitions: Set[str],
+    asset_partitions: AbstractSet[str],
     output: Union[Output, DynamicOutput],
     output_def: OutputDefinition,
     io_manager_metadata_entries: List[Union[MetadataEntry, PartitionMetadataEntry]],
 ) -> Iterator[AssetMaterialization]:
 
-    all_metadata = output.metadata_entries + io_manager_metadata_entries
+    all_metadata = [*output.metadata_entries, *io_manager_metadata_entries]
 
     if asset_partitions:
         metadata_mapping: Dict[str, List[Union[MetadataEntry, PartitionMetadataEntry]]] = {
@@ -484,11 +508,14 @@ def _get_output_asset_materializations(
                     metadata_mapping[partition].append(entry)
 
         for partition in asset_partitions:
-            yield AssetMaterialization(
-                asset_key=asset_key,
-                partition=partition,
-                metadata_entries=metadata_mapping[partition],
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=DeprecationWarning)
+
+                yield AssetMaterialization(
+                    asset_key=asset_key,
+                    partition=partition,
+                    metadata_entries=metadata_mapping[partition],
+                )
     else:
         for entry in all_metadata:
             if isinstance(entry, PartitionMetadataEntry):
@@ -496,7 +523,10 @@ def _get_output_asset_materializations(
                     f"Output {output_def.name} got a PartitionMetadataEntry ({entry}), but "
                     "is not associated with any specific partitions."
                 )
-        yield AssetMaterialization(asset_key=asset_key, metadata_entries=all_metadata)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+
+            yield AssetMaterialization(asset_key=asset_key, metadata_entries=all_metadata)
 
 
 def _store_output(
@@ -574,15 +604,18 @@ def _store_output(
             raise DagsterInvariantViolationError(
                 f"When handling output '{output_context.name}' of {output_context.solid_def.node_type_str} '{output_context.solid_def.name}', received a materialization with metadata, while context.add_output_metadata was used within the same call to handle_output. Due to potential conflicts, this is not allowed. Please specify metadata in one place within the `handle_output` function."
             )
+
         if manager_metadata_entries:
-            materialization = AssetMaterialization(
-                asset_key=materialization.asset_key,
-                description=materialization.description,
-                metadata_entries=manager_metadata_entries,
-                partition=materialization.partition,
-                tags=materialization.tags,
-                metadata=None,
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=ExperimentalWarning)
+
+                materialization = AssetMaterialization(
+                    asset_key=materialization.asset_key,
+                    description=materialization.description,
+                    metadata_entries=manager_metadata_entries,
+                    partition=materialization.partition,
+                    metadata=None,
+                )
         yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)
 
     asset_key, partitions = _asset_key_and_partitions_for_output(
@@ -625,8 +658,8 @@ def _create_type_materializations(
             continue
 
         for output_spec in solid_config.outputs.type_materializer_specs:
-            check.invariant(len(output_spec) == 1)
-            config_output_name, output_spec = list(output_spec.items())[0]
+            check.invariant(len(output_spec) == 1)  # type: ignore
+            config_output_name, output_spec = list(output_spec.items())[0]  # type: ignore
             if config_output_name == output_name:
                 step_output = step.step_output_named(output_name)
                 with user_code_error_boundary(
@@ -641,7 +674,12 @@ def _create_type_materializations(
                 ):
                     output_def = step_context.solid_def.output_def_named(step_output.name)
                     dagster_type = output_def.dagster_type
-                    materializations = dagster_type.materializer.materialize_runtime_values(
+                    materializer = dagster_type.materializer
+                    if materializer is None:
+                        check.failed(
+                            "Unexpected attempt to materialize with no materializer available on dagster_type"
+                        )
+                    materializations = materializer.materialize_runtime_values(
                         step_context, output_spec, value
                     )
 

@@ -1,14 +1,11 @@
 import { Node } from "hast";
 import path from "path";
 import visit from "unist-util-visit";
+import { parse } from "node-html-parser";
 const sizeOf = require("image-size");
 
 const PUBLIC_DIR = path.join(__dirname, "../public/");
 
-interface ParentNode extends Node {
-  type: string;
-  children: Node[];
-}
 interface ImageNode extends Node {
   type: string;
   url: string;
@@ -25,37 +22,62 @@ interface ImageTransformerOptions {
   setImageStats?: (newStats: ImageStats) => void;
 }
 
-export default ({ setImageStats }: ImageTransformerOptions) => async (
-  tree: Node
-) => {
-  const stats: ImageStats = {
-    totalImages: 0,
-    updatedImages: [],
-  };
-  const images: ImageNode[] = [];
-
-  visit(tree, ["image"], (node: ImageNode) => {
-    images.push(node);
-  });
-
-  for (const node of images) {
-    // Skip external images
-    if (node.url.startsWith("/")) {
-      stats.totalImages++;
-      const fileAbsPath = path.join(PUBLIC_DIR, node.url);
-      const dimensions = sizeOf(fileAbsPath);
-      const imageValue = `<Image alt="${node.alt}" src="${node.url}" width={${dimensions.width}} height={${dimensions.height}} />`;
-
-      // Convert original node to Image
-      if (node.value !== imageValue) {
-        node.type = "html";
-        node.value = imageValue;
-        stats.updatedImages.push(node.value as string);
-      }
+const getHTMLImageElement = (node: ImageNode) => {
+  // handle <img>
+  if (node.type === "html") {
+    const root = parse(node.value);
+    const imgElements = root.querySelectorAll("img");
+    if (imgElements.length > 0) {
+      return imgElements[0];
     }
   }
-
-  if (setImageStats) {
-    setImageStats(stats);
-  }
+  return;
 };
+
+export default ({ setImageStats }: ImageTransformerOptions) =>
+  async (tree: Node) => {
+    const stats: ImageStats = {
+      totalImages: 0,
+      updatedImages: [],
+    };
+    const images: ImageNode[] = [];
+
+    visit(tree, ["image", "html"], (node: ImageNode) => {
+      if (node.type === "html") {
+        if (getHTMLImageElement(node)) {
+          images.push(node);
+        }
+      } else {
+        images.push(node);
+      }
+    });
+
+    for (const node of images) {
+      const imgElement = getHTMLImageElement(node);
+      const imageUrl = imgElement ? imgElement.attrs.src : node.url;
+      const imageAlt = imgElement ? imgElement.attrs.alt : node.alt;
+
+      // Skip external images
+      if (imageUrl.startsWith("/")) {
+        stats.totalImages++;
+        const fileAbsPath = path.join(PUBLIC_DIR, imageUrl);
+        const dimensions = sizeOf(fileAbsPath);
+        const imageValue = `<Image ${
+          imageAlt ? `alt="${imageAlt}" ` : ""
+        }src="${imageUrl}" width={${dimensions.width}} height={${
+          dimensions.height
+        }} />`;
+
+        // Convert original node to Image
+        if (node.value !== imageValue) {
+          node.type = "html";
+          node.value = imageValue;
+          stats.updatedImages.push(node.value as string);
+        }
+      }
+    }
+
+    if (setImageStats) {
+      setImageStats(stats);
+    }
+  };

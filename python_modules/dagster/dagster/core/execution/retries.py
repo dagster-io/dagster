@@ -1,16 +1,17 @@
 from collections import defaultdict
 from enum import Enum
-from typing import Dict
+from typing import Dict, Optional
 
-from dagster import Field, Selector, check
-from dagster.serdes.serdes import whitelist_for_serdes
+from dagster import Field, Selector
+from dagster import _check as check
+from dagster._serdes.serdes import whitelist_for_serdes
 
 
 def get_retries_config():
     return Field(
         Selector({"enabled": {}, "disabled": {}}),
-        is_required=False,
         default_value={"enabled": {}},
+        description="Whether retries are enabled or not. By default, retries are enabled.",
     )
 
 
@@ -23,9 +24,10 @@ class RetryMode(Enum):
     DEFERRED = "deferred"
 
     @staticmethod
-    def from_config(config_value: Dict[str, Dict]):
+    def from_config(config_value: Dict[str, Dict]) -> Optional["RetryMode"]:
         for selector, _ in config_value.items():
             return RetryMode(selector)
+        return None
 
     @property
     def enabled(self) -> bool:
@@ -49,7 +51,7 @@ class RetryMode(Enum):
 
 
 class RetryState:
-    def __init__(self, previous_attempts: Dict[str, int] = None):
+    def __init__(self, previous_attempts: Optional[Dict[str, int]] = None):
         self._attempts = defaultdict(int)
         for key, val in check.opt_dict_param(
             previous_attempts, "previous_attempts", key_type=str, value_type=int

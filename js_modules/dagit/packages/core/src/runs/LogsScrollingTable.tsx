@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {ColorsWIP, NonIdealState} from '@dagster-io/ui';
+import {Colors, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {CellMeasurer, CellMeasurerCache, List, ListRowProps, ScrollParams} from 'react-virtualized';
@@ -15,6 +15,7 @@ import {
 import {ColumnWidthsProvider, Headers} from './LogsScrollingTableHeader';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {eventTypeToDisplayType} from './getRunFilterProviders';
+import {logNodeLevel} from './logNodeLevel';
 import {RunDagsterRunEventFragment} from './types/RunDagsterRunEventFragment';
 
 const LOGS_PADDING_BOTTOM = 50;
@@ -47,7 +48,12 @@ interface ILogsScrollingTableSizedProps {
 
 function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: string[]) {
   const filteredNodes = logs.allNodes.filter((node) => {
-    const l = node.__typename === 'LogMessageEvent' ? node.level : 'EVENT';
+    // These events are used to determine which assets a run will materialize and are not intended
+    // to be displayed in Dagit. Pagination is offset based, so we remove these logs client-side.
+    if (node.__typename === 'AssetMaterializationPlannedEvent') {
+      return false;
+    }
+    const l = logNodeLevel(node);
     if (!filter.levels[l]) {
       return false;
     }
@@ -81,7 +87,7 @@ function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: s
 
   return {
     filteredNodes: hasTextFilter && filter.hideNonMatches ? textMatchNodes : filteredNodes,
-    textMatchNodes: textMatchNodes,
+    textMatchNodes,
   };
 }
 
@@ -278,7 +284,7 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
     const isLastRow = index === this.props.filteredNodes.length - 1;
     const lastRowStyles = isLastRow
       ? {
-          borderBottom: `1px solid ${ColorsWIP.Gray100}`,
+          borderBottom: `1px solid ${Colors.Gray100}`,
         }
       : {};
 

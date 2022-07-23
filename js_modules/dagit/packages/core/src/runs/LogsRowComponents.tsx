@@ -1,4 +1,4 @@
-import {ColorsWIP, FontFamily} from '@dagster-io/ui';
+import {Colors, FontFamily} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
@@ -12,12 +12,12 @@ import {ColumnWidthsContext} from './LogsScrollingTableHeader';
 
 const bgcolorForLevel = (level: LogLevel) =>
   ({
-    [LogLevel.DEBUG]: ColorsWIP.White,
-    [LogLevel.INFO]: ColorsWIP.White,
-    [LogLevel.EVENT]: ColorsWIP.White,
-    [LogLevel.WARNING]: ColorsWIP.Yellow50,
-    [LogLevel.ERROR]: ColorsWIP.Red50,
-    [LogLevel.CRITICAL]: ColorsWIP.Red50,
+    [LogLevel.DEBUG]: Colors.White,
+    [LogLevel.INFO]: Colors.White,
+    [LogLevel.EVENT]: Colors.White,
+    [LogLevel.WARNING]: Colors.Yellow50,
+    [LogLevel.ERROR]: Colors.Red50,
+    [LogLevel.CRITICAL]: Colors.Red50,
   }[level]);
 
 export const Row = styled.div<{level: LogLevel; highlighted: boolean}>`
@@ -32,27 +32,27 @@ export const Row = styled.div<{level: LogLevel; highlighted: boolean}>`
   flex-direction: row;
   align-items: baseline;
   overflow: hidden;
-  border-top: 1px solid ${ColorsWIP.KeylineGray};
+  border-top: 1px solid ${Colors.KeylineGray};
   background: ${({highlighted, level}) => (highlighted ? '#ffe39f' : bgcolorForLevel(level))};
   &:hover {
     background: ${({highlighted}) => (highlighted ? '#ffe39f' : 'white')};
   }
   color: ${(props) =>
     ({
-      [LogLevel.DEBUG]: ColorsWIP.Gray400,
-      [LogLevel.INFO]: ColorsWIP.Gray900,
-      [LogLevel.EVENT]: ColorsWIP.Gray900,
-      [LogLevel.WARNING]: ColorsWIP.Yellow700,
-      [LogLevel.ERROR]: ColorsWIP.Red500,
-      [LogLevel.CRITICAL]: ColorsWIP.Red500,
+      [LogLevel.DEBUG]: Colors.Gray400,
+      [LogLevel.INFO]: Colors.Gray900,
+      [LogLevel.EVENT]: Colors.Gray900,
+      [LogLevel.WARNING]: Colors.Yellow700,
+      [LogLevel.ERROR]: Colors.Red500,
+      [LogLevel.CRITICAL]: Colors.Red500,
     }[props.level])};
 `;
 
 export const StructuredContent = styled.div`
   background: rgba(255, 255, 255, 0.5);
-  color: ${ColorsWIP.Gray900};
+  color: ${Colors.Gray900};
   box-sizing: border-box;
-  border-left: 1px solid ${ColorsWIP.KeylineGray};
+  border-left: 1px solid ${Colors.KeylineGray};
   word-break: break-word;
   white-space: pre-wrap;
   font-family: ${FontFamily.monospace};
@@ -105,9 +105,9 @@ export const OpColumnContainer = styled.div`
 const OpColumnTooltipStyle = JSON.stringify({
   fontSize: '0.9em',
   fontFamily: FontFamily.monospace,
-  color: ColorsWIP.Dark,
-  background: ColorsWIP.White,
-  border: `1px solid ${ColorsWIP.Gray100}`,
+  color: Colors.Dark,
+  background: Colors.White,
+  border: `1px solid ${Colors.Gray100}`,
   top: -8,
   left: 1,
 });
@@ -158,7 +158,7 @@ const TimestampColumnContainer = styled.div`
   a:visited,
   a:hover,
   a:active {
-    color: ${ColorsWIP.Gray400};
+    color: ${Colors.Gray400};
   }
 
   a:hover,
@@ -178,6 +178,6 @@ export const EventTypeColumn: React.FC = (props) => {
 
 const EventTypeColumnContainer = styled.div`
   flex-shrink: 0;
-  color: ${ColorsWIP.Gray400};
+  color: ${Colors.Gray400};
   padding: 4px;
 `;

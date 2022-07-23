@@ -1,8 +1,8 @@
 import pytest
 
-from dagster.check import CheckError
+from dagster._check import CheckError
+from dagster._seven import json
 from dagster.core.definitions.dependency import NodeHandle
-from dagster.seven import json
 
 
 def test_handle_path():

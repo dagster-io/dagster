@@ -1,11 +1,15 @@
 import enum
 import json
+from datetime import datetime
+from typing import Optional
 
+import pendulum
 import pytest
 
 from dagster import (
     ConfigMapping,
     DagsterInstance,
+    DagsterTypeCheckDidNotPass,
     Enum,
     Field,
     In,
@@ -20,7 +24,8 @@ from dagster import (
     resource,
     success_hook,
 )
-from dagster.check import CheckError
+from dagster._check import CheckError
+from dagster._loggers import json_console_logger
 from dagster.core.definitions.graph_definition import GraphDefinition
 from dagster.core.definitions.partition import (
     Partition,
@@ -28,13 +33,13 @@ from dagster.core.definitions.partition import (
     StaticPartitionsDefinition,
 )
 from dagster.core.definitions.pipeline_definition import PipelineSubsetDefinition
-from dagster.core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster.core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
 )
-from dagster.loggers import json_console_logger
+from dagster.core.test_utils import instance_for_test
 
 
 def get_ops():
@@ -47,6 +52,26 @@ def get_ops():
         return x + y
 
     return emit_one, add
+
+
+def test_top_level_inputs_execution():
+    @op
+    def the_op(leaf_in: int):
+        return leaf_in + 1
+
+    @graph
+    def the_graph(the_in):
+        return the_op(the_in)
+
+    result = the_graph.execute_in_process(input_values={"the_in": 2})
+    assert result.success
+    assert result.output_value() == 3
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for step input "leaf_in" - expected type "Int". Description: Value "bad_value" of python type "str" must be a int.',
+    ):
+        the_graph.execute_in_process(input_values={"the_in": "bad_value"})
 
 
 def test_basic_graph():
@@ -963,6 +988,9 @@ def test_job_partitions_def():
     def my_op(context):
         assert context.has_partition_key
         assert context.partition_key == "2020-01-01"
+        assert context.partition_time_window == TimeWindow(
+            pendulum.parse("2020-01-01"), pendulum.parse("2020-01-02")
+        )
 
     @graph
     def my_graph():
@@ -1008,3 +1036,172 @@ def test_nothing_inputs_graph():
     the_job = my_pipeline.to_job()
     result = the_job.execute_in_process()
     assert result.success
+
+
+def test_run_id_execute_in_process():
+    @graph
+    def blank():
+        pass
+
+    with instance_for_test() as instance:
+        result = blank.execute_in_process(instance=instance, run_id="foo")
+        assert result.success
+        assert instance.get_run_by_id("foo")
+
+        result = blank.to_job().execute_in_process(instance=instance, run_id="bar")
+        assert result.success
+        assert instance.get_run_by_id("bar")
+
+        result = blank.alias("some_name").execute_in_process(instance=instance, run_id="baz")
+        assert result.success
+        assert instance.get_run_by_id("baz")
+
+
+def test_graphs_break_type_checks():
+    # Test to ensure we use grab the type from correct input def along mapping chains for type checks.
+
+    @op
+    def emit_str():
+        return "one"
+
+    @op
+    def echo_int(y: int):
+        assert isinstance(y, int), "type checks should fail before op invocation"
+        return y
+
+    @graph
+    def no_repro():
+        echo_int(emit_str())
+
+    with pytest.raises(DagsterTypeCheckDidNotPass):
+        no_repro.execute_in_process()
+
+    @graph
+    def map_any(x):
+        echo_int(x)
+
+    @graph
+    def repro():
+        map_any(emit_str())
+
+    with pytest.raises(DagsterTypeCheckDidNotPass):
+        repro.execute_in_process()
+
+    @graph
+    def map_str(x: str):
+
+        echo_int(x)
+
+    @graph
+    def repro_2():
+        map_str(emit_str())
+
+    with pytest.raises(DagsterTypeCheckDidNotPass):
+        repro_2.execute_in_process()
+
+
+def test_to_job_input_values():
+    @op
+    def my_op(x, y):
+        return x + y
+
+    @graph
+    def my_graph(x, y):
+        return my_op(x, y)
+
+    result = my_graph.to_job(input_values={"x": 5, "y": 6}).execute_in_process()
+    assert result.success
+    assert result.output_value() == 11
+
+    result = my_graph.alias("blah").to_job(input_values={"x": 5, "y": 6}).execute_in_process()
+    assert result.success
+    assert result.output_value() == 11
+
+    # Test partial input value specification
+    result = my_graph.to_job(input_values={"x": 5}).execute_in_process(input_values={"y": 6})
+    assert result.success
+    assert result.output_value() == 11
+
+    # Test input value specification override
+    result = my_graph.to_job(input_values={"x": 5, "y": 6}).execute_in_process(
+        input_values={"y": 7}
+    )
+    assert result.success
+    assert result.output_value() == 12
+
+
+def test_input_values_name_not_found():
+    @op
+    def my_op(x, y):
+        return x + y
+
+    @graph
+    def my_graph(x, y):
+        return my_op(x, y)
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Error when constructing JobDefinition 'my_graph': Input value provided for key 'z', but job has no top-level input with that name.",
+    ):
+        my_graph.to_job(input_values={"z": 4})
+
+
+def test_input_values_override_default():
+    @op(ins={"x": In(default_value=5)})
+    def op_with_default_input(x):
+        return x
+
+    @graph
+    def my_graph(x):
+        return op_with_default_input(x)
+
+    result = my_graph.execute_in_process(input_values={"x": 6})
+    assert result.success
+    assert result.output_value() == 6
+
+
+def test_unsatisfied_input_nested():
+    @op
+    def ingest(x: datetime) -> str:
+        return str(x)
+
+    @graph
+    def the_graph(x):
+        ingest(x)
+
+    @graph
+    def the_top_level_graph():
+        the_graph()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Input 'x' of graph 'the_graph' has no way of being resolved.",
+    ):
+        the_top_level_graph.to_job()
+
+
+def test_all_dagster_types():
+    class Foo:
+        pass
+
+    class Bar(Foo):
+        pass
+
+    @op
+    def my_op(x: Foo):
+        return x
+
+    @op
+    def my_op_2(x: Foo):
+        return x
+
+    @graph
+    def my_graph(x: Optional[Bar]):
+        y = x or Foo()
+        my_op_2(my_op(y))
+
+    names = [x.display_name for x in my_graph.all_dagster_types()]
+
+    assert "Foo" in names
+    assert "Bar" in names
+    assert "Bar?" in names

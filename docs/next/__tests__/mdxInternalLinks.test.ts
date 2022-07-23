@@ -8,6 +8,7 @@ import masterNavigation from "../../content/_navigation.json";
 import generateToc from "mdast-util-toc";
 import { getItems, getIds } from "../components/mdx/SidebarNavigation";
 import matter from "gray-matter";
+import parse from "html-react-parser";
 
 // remark
 import mdx from "remark-mdx";
@@ -16,7 +17,7 @@ import remark from "remark";
 const ROOT_DIR = path.resolve(__dirname, "../../");
 const DOCS_DIR = path.resolve(ROOT_DIR, "content");
 interface LinkElement extends Node {
-  type: "link" | "image";
+  type: "link" | "image" | "html";
   url: string;
 }
 
@@ -30,7 +31,12 @@ test("No dead navs", async () => {
       // TODO: Validate links to API Docs
       return;
     }
-    if (elem.path && !fileExists(path.join(DOCS_DIR, elem.path) + ".mdx")) {
+    if (
+      elem.path &&
+      !fileExists(path.join(DOCS_DIR, elem.path) + ".mdx") &&
+      !elem.isExternalLink &&
+      !elem.isUnversioned
+    ) {
       deadNavLinks.push({
         title: elem.title,
         deadLink: elem.path,
@@ -124,9 +130,22 @@ function isLinkLegit(
     const allAnchors = collectHeadingsAsAnchors(astStore[targetFilePath]);
     return allAnchors.includes(anchor);
   }
+  console.log("rawTarget", rawTarget, path);
 
   return false;
 }
+
+export const getNextImageElement = (node) => {
+  // handle <Image>
+  if (node.type === "html") {
+    const root = parse(node.value, { trim: true });
+
+    if ((root as any).type === "image") {
+      return { url: (root as any).props.src, type: "html" } as LinkElement;
+    }
+  }
+  return;
+};
 
 // traverse the mdx ast to find all internal links
 function collectInternalLinks(
@@ -136,8 +155,19 @@ function collectInternalLinks(
   const externalLinkRegex = /^(https?:\/\/|mailto:)/;
   const result: Array<string> = [];
 
-  visit(tree, ["link", "image"], (node: LinkElement, index) => {
-    const { url } = node;
+  visit(tree, ["link", "image", "html"], (node: LinkElement, index) => {
+    let linkNode = node;
+    if (node.type === "html") {
+      const nextImageElement = getNextImageElement(node);
+      if (nextImageElement) {
+        linkNode = nextImageElement;
+      } else {
+        return;
+      }
+    }
+
+    const { url } = linkNode;
+    // console.log(linkNode, url);
     if (url.match(externalLinkRegex)) {
       return;
     }

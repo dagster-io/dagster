@@ -2,19 +2,16 @@ from os import path
 
 import pytest
 
+from dagster import ExecutorRequirement, ModeDefinition, PipelineDefinition
+from dagster import _check as check
 from dagster import (
-    ExecutorRequirement,
-    ModeDefinition,
-    PipelineDefinition,
-    check,
     execute_pipeline,
     fs_io_manager,
     in_process_executor,
     multiprocess_executor,
-    pipeline,
     reconstructable,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.executor_definition import executor
 from dagster.core.errors import (
     DagsterInvalidConfigError,

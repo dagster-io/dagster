@@ -2,10 +2,11 @@ from gzip import GzipFile
 
 import click
 
-from dagster import DagsterInstance, check
-from dagster.cli.debug import DebugRunPayload
+from dagster import DagsterInstance
+from dagster import _check as check
+from dagster._cli.debug import DebugRunPayload
+from dagster._serdes import deserialize_json_to_dagster_namedtuple
 from dagster.core.workspace import WorkspaceProcessContext
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 from .cli import (
     DEFAULT_DAGIT_HOST,
@@ -50,6 +51,7 @@ def dagit_debug_command(input_files, port):
         port=port,
         host=DEFAULT_DAGIT_HOST,
         path_prefix="",
+        log_level="debug",
     )
 
 

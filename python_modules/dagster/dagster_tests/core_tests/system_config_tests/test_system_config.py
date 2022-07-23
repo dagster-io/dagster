@@ -16,18 +16,16 @@ from dagster import (
     String,
     execute_pipeline,
     lambda_solid,
-    pipeline,
-    solid,
 )
-from dagster.config.config_type import ConfigTypeKind
-from dagster.config.validate import process_config
+from dagster._config import ConfigTypeKind, process_config
+from dagster._legacy import pipeline, solid
+from dagster._loggers import default_loggers
 from dagster.core.definitions import create_run_config_schema
 from dagster.core.definitions.run_config import (
     RunConfigSchemaCreationData,
     define_solid_dictionary_cls,
 )
 from dagster.core.system_config.objects import ResolvedRunConfig, ResourceConfig, SolidConfig
-from dagster.loggers import default_loggers
 
 
 def create_creation_data(pipeline_def):
@@ -40,6 +38,10 @@ def create_creation_data(pipeline_def):
         ignored_solids=[],
         required_resources=set(),
         is_using_graph_job_op_apis=pipeline_def.is_job,
+        direct_inputs=pipeline_def._input_values  # pylint: disable = protected-access
+        if pipeline_def.is_job
+        else {},
+        asset_layer=pipeline_def.asset_layer,
     )
 
 
@@ -286,6 +288,7 @@ def test_solid_config_error():
         parent_handle=None,
         resource_defs={},
         is_using_graph_job_op_apis=False,
+        asset_layer=pipeline_def.asset_layer,
     )
 
     int_solid_config_type = solid_dict_type.fields["int_config_solid"].config_type

@@ -1,25 +1,41 @@
-from typing import NamedTuple, Optional, Union
+from typing import Any, Dict, NamedTuple, Optional, Union
 
-from dagster import check
-from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.events import DagsterEvent
-from dagster.core.utils import coerce_valid_log_level
-from dagster.serdes import (
+import dagster._check as check
+from dagster._serdes.serdes import (
+    DefaultNamedTupleSerializer,
+    WhitelistMap,
     deserialize_json_to_dagster_namedtuple,
     register_serdes_tuple_fallbacks,
     serialize_dagster_namedtuple,
     whitelist_for_serdes,
 )
-from dagster.utils.error import SerializableErrorInfo
-from dagster.utils.log import (
+from dagster._utils.error import SerializableErrorInfo
+from dagster._utils.log import (
     JsonEventLoggerHandler,
     StructuredLoggerHandler,
     StructuredLoggerMessage,
     construct_single_handler_logger,
 )
+from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.events import DagsterEvent
+from dagster.core.utils import coerce_valid_log_level
 
 
-@whitelist_for_serdes
+class EventLogEntrySerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def value_to_storage_dict(
+        cls,
+        value: NamedTuple,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> Dict[str, Any]:
+        storage_dict = super().value_to_storage_dict(value, whitelist_map, descent_path)
+        # include an empty string for the message field to allow older versions of dagster to load the events
+        storage_dict["message"] = ""
+        return storage_dict
+
+
+@whitelist_for_serdes(serializer=EventLogEntrySerializer)
 class EventLogEntry(
     NamedTuple(
         "_EventLogEntry",
@@ -132,7 +148,7 @@ class EventLogEntry(
         return self.user_message
 
 
-def construct_event_record(logger_message):
+def construct_event_record(logger_message: StructuredLoggerMessage) -> EventLogEntry:
     check.inst_param(logger_message, "logger_message", StructuredLoggerMessage)
 
     return EventLogEntry(

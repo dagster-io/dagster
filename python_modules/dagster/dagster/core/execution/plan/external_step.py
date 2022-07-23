@@ -1,25 +1,26 @@
 import os
 import pickle
+import shutil
 import subprocess
 import sys
 from typing import TYPE_CHECKING, Iterator, Optional, cast
 
-from dagster import Field, StringSource, check, resource
+import dagster._check as check
+from dagster._config import Field, StringSource
+from dagster._serdes import deserialize_value
 from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
-from dagster.core.definitions.reconstructable import (
-    ReconstructablePipeline,
-    ReconstructableRepository,
-)
+from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
+from dagster.core.definitions.resource_definition import resource
 from dagster.core.definitions.step_launcher import StepLauncher, StepRunRef
 from dagster.core.errors import raise_execution_interrupts
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.context.system import StepExecutionContext
 from dagster.core.execution.context_creation_pipeline import PlanExecutionContextManager
-from dagster.core.execution.plan.execute_step import core_dagster_event_sequence_for_step
+from dagster.core.execution.plan.execute_plan import dagster_event_sequence_for_step
+from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
-from dagster.serdes import deserialize_value
 
 PICKLED_EVENTS_FILE_NAME = "events.pkl"
 PICKLED_STEP_RUN_REF_FILE_NAME = "step_run_ref.pkl"
@@ -49,12 +50,13 @@ class LocalExternalStepLauncher(StepLauncher):
     def launch_step(
         self,
         step_context: StepExecutionContext,
-        prior_attempts_count: int,
     ) -> Iterator[DagsterEvent]:
-        step_run_ref = step_context_to_step_run_ref(step_context, prior_attempts_count)
+        step_run_ref = step_context_to_step_run_ref(step_context)
         run_id = step_context.pipeline_run.run_id
 
         step_run_dir = os.path.join(self.scratch_dir, run_id, step_run_ref.step_key)
+        if os.path.exists(step_run_dir):
+            shutil.rmtree(step_run_dir)
         os.makedirs(step_run_dir)
 
         step_run_ref_file_path = os.path.join(step_run_dir, PICKLED_STEP_RUN_REF_FILE_NAME)
@@ -104,14 +106,11 @@ def _module_in_package_dir(file_path: str, package_dir: str) -> str:
 
 def step_context_to_step_run_ref(
     step_context: StepExecutionContext,
-    prior_attempts_count: int,
     package_dir: Optional[str] = None,
 ) -> StepRunRef:
     """
     Args:
         step_context (StepExecutionContext): The step context.
-        prior_attempts_count (int): The number of times this time has been tried before in the same
-            pipeline run.
         package_dir (Optional[str]): If set, the reconstruction file code pointer will be converted
             to be relative a module pointer relative to the package root.  This enables executing
             steps in remote setups where the package containing the pipeline resides at a different
@@ -123,7 +122,6 @@ def step_context_to_step_run_ref(
     """
 
     check.inst_param(step_context, "step_context", StepExecutionContext)
-    check.int_param(prior_attempts_count, "prior_attempts_count")
 
     retry_mode = step_context.retry_mode
 
@@ -144,13 +142,12 @@ def step_context_to_step_run_ref(
                     container_image=recon_pipeline.repository.container_image,
                     executable_path=recon_pipeline.repository.executable_path,
                     entry_point=recon_pipeline.repository.entry_point,
+                    container_context=recon_pipeline.repository.container_context,
                 ),
                 pipeline_name=recon_pipeline.pipeline_name,
                 solids_to_execute=recon_pipeline.solids_to_execute,
             )
 
-    parent_run_id = step_context.pipeline_run.parent_run_id
-    parent_run = step_context.instance.get_run_by_id(parent_run_id) if parent_run_id else None
     return StepRunRef(
         run_config=step_context.run_config,
         pipeline_run=step_context.pipeline_run,
@@ -158,9 +155,7 @@ def step_context_to_step_run_ref(
         step_key=step_context.step.key,
         retry_mode=retry_mode,
         recon_pipeline=recon_pipeline,  # type: ignore
-        prior_attempts_count=prior_attempts_count,
-        known_state=step_context.execution_plan.known_state,
-        parent_run=parent_run,
+        known_state=step_context.get_known_state(),
     )
 
 
@@ -180,11 +175,6 @@ def external_instance_from_step_run_ref(
         DagsterInstance: A DagsterInstance that can be used to execute an external step.
     """
     instance = DagsterInstance.ephemeral()
-    # re-execution expects the parent run to be available on the instance, so add these
-    if step_run_ref.parent_run:
-        # remove the pipeline_snapshot_id, as this instance doesn't have any snapshots
-        instance.add_run(step_run_ref.pipeline_run._replace(pipeline_snapshot_id=None))
-        instance.add_run(step_run_ref.parent_run._replace(pipeline_snapshot_id=None))
     if event_listener_fn:
         instance.add_event_listener(step_run_ref.run_id, event_listener_fn)
     return instance
@@ -194,9 +184,15 @@ def step_run_ref_to_step_context(
     step_run_ref: StepRunRef, instance: DagsterInstance
 ) -> StepExecutionContext:
     check.inst_param(instance, "instance", DagsterInstance)
-    pipeline = step_run_ref.recon_pipeline.subset_for_execution_from_existing_pipeline(
-        step_run_ref.pipeline_run.solids_to_execute
-    )
+
+    pipeline = step_run_ref.recon_pipeline
+
+    solids_to_execute = step_run_ref.pipeline_run.solids_to_execute
+    if solids_to_execute or step_run_ref.pipeline_run.asset_selection:
+        pipeline = step_run_ref.recon_pipeline.subset_for_execution_from_existing_pipeline(
+            frozenset(solids_to_execute) if solids_to_execute else None,
+            asset_selection=step_run_ref.pipeline_run.asset_selection,
+        )
 
     execution_plan = create_execution_plan(
         pipeline,
@@ -221,12 +217,14 @@ def step_run_ref_to_step_context(
     execution_step = cast("ExecutionStep", execution_plan.get_step_by_key(step_run_ref.step_key))
 
     step_execution_context = execution_context.for_step(
-        execution_step, step_run_ref.prior_attempts_count
+        execution_step,
+        step_run_ref.known_state or KnownExecutionState(),
     )
     # Since for_step is abstract for IPlanContext, its return type is IStepContext.
     # Since we are launching from a PlanExecutionContext, the type will always be
     # StepExecutionContext.
     step_execution_context = cast(StepExecutionContext, step_execution_context)
+
     return step_execution_context
 
 
@@ -235,4 +233,7 @@ def run_step_from_ref(
 ) -> Iterator[DagsterEvent]:
     check.inst_param(instance, "instance", DagsterInstance)
     step_context = step_run_ref_to_step_context(step_run_ref, instance)
-    return core_dagster_event_sequence_for_step(step_context)
+
+    # The step should be forced to run locally with respect to the remote process that this step
+    # context is being deserialized in
+    return dagster_event_sequence_for_step(step_context, force_local_execution=True)

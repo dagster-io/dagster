@@ -1,6 +1,6 @@
 import graphene
 
-from dagster import check
+import dagster._check as check
 from dagster.core.host_representation import RepresentedPipeline
 
 from ..errors import (

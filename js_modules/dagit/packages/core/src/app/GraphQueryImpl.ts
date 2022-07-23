@@ -1,3 +1,5 @@
+import {isPlannedDynamicStep, dynamicKeyWithoutIndex} from '../gantt/DynamicStepSupport';
+
 const MAX_RENDERED_FOR_EMPTY_QUERY = 100;
 
 export interface GraphQueryItem {
@@ -100,14 +102,22 @@ export function filterByQuery<T extends GraphQueryItem>(items: T[], query: strin
   const focus = new Set<T>();
 
   for (const clause of clauses) {
-    const parts = /(\*?\+*)([.\w\d>\[\]\"_-]+)(\+*\*?)/.exec(clause.trim());
+    const parts = /(\*?\+*)([.\w\d>\[\?\]\"_\/-]+)(\+*\*?)/.exec(clause.trim());
     if (!parts) {
       continue;
     }
     const [, parentsClause, itemName, descendentsClause] = parts;
-    const itemsMatching = items.filter((s) =>
-      /\".*\"/.test(itemName) ? s.name === itemName.replace(/\"/g, '') : s.name.includes(itemName),
-    );
+
+    const itemsMatching = items.filter((s) => {
+      if (isPlannedDynamicStep(itemName.replace(/\"/g, ''))) {
+        // When unresolved dynamic step (i.e ends with `[?]`) is selected, match all dynamic steps
+        return s.name.startsWith(dynamicKeyWithoutIndex(itemName.replace(/\"/g, '')));
+      } else {
+        return /\".*\"/.test(itemName)
+          ? s.name === itemName.replace(/\"/g, '')
+          : s.name.includes(itemName);
+      }
+    });
 
     for (const item of itemsMatching) {
       const upDepth = expansionDepthForClause(parentsClause);

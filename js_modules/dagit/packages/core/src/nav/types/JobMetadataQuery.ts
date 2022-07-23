@@ -16,6 +16,7 @@ export interface JobMetadataQuery_pipelineOrError_PipelineNotFoundError {
 export interface JobMetadataQuery_pipelineOrError_Pipeline_schedules_scheduleState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   status: InstigationStatus;
 }
 
@@ -25,6 +26,7 @@ export interface JobMetadataQuery_pipelineOrError_Pipeline_schedules {
   mode: string;
   name: string;
   cronSchedule: string;
+  executionTimezone: string | null;
   scheduleState: JobMetadataQuery_pipelineOrError_Pipeline_schedules_scheduleState;
 }
 
@@ -37,6 +39,7 @@ export interface JobMetadataQuery_pipelineOrError_Pipeline_sensors_targets {
 export interface JobMetadataQuery_pipelineOrError_Pipeline_sensors_sensorState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   status: InstigationStatus;
 }
 
@@ -100,5 +103,5 @@ export interface JobMetadataQuery {
 
 export interface JobMetadataQueryVariables {
   params: PipelineSelector;
-  runsFilter?: RunsFilter | null;
+  runsFilter: RunsFilter;
 }

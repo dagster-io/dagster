@@ -1,6 +1,6 @@
 import re
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.version_strategy import OpVersionContext, ResourceVersionContext
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
@@ -21,7 +21,7 @@ def check_valid_version(version: str) -> None:
         )
 
 
-def resolve_config_version(config_value):
+def resolve_config_version(config_value: object):
     """Resolve a configuration value into a hashed version.
 
     If a None value is passed in, we return the result of an empty join_and_hash.

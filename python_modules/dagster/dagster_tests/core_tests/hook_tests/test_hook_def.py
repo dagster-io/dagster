@@ -1,27 +1,18 @@
 from collections import defaultdict
+from unittest import mock
 
 import pytest
 
-from dagster import (
-    DagsterEventType,
-    ModeDefinition,
-    NodeInvocation,
-    PipelineDefinition,
-    build_hook_context,
-    check,
-    execute_pipeline,
-    graph,
-    op,
-    pipeline,
-    reconstructable,
-    resource,
-    solid,
-)
+from dagster import DagsterEventType, ModeDefinition, NodeInvocation, PipelineDefinition
+from dagster import _check as check
+from dagster import build_hook_context, execute_pipeline, graph, job, op, reconstructable, resource
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions import NodeHandle, PresetDefinition, failure_hook, success_hook
-from dagster.core.definitions.decorators.hook import event_list_hook
+from dagster.core.definitions.decorators.hook_decorator import event_list_hook
 from dagster.core.definitions.events import HookExecutionResult
 from dagster.core.definitions.policy import RetryPolicy
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvalidDefinitionError
+from dagster.core.test_utils import instance_for_test
 
 
 class SomeUserException(Exception):
@@ -150,7 +141,7 @@ def test_hook_resource_error():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="resource key 'resource_b' is required by hook 'a_hook'",
+        match="resource with key 'resource_b' required by hook 'a_hook' attached to solid 'a_solid_with_hook' was not provided",
     ):
         PipelineDefinition(
             solid_defs=[a_solid],
@@ -267,6 +258,48 @@ def test_failure_hook():
     assert "failed_solid_with_hook" in called_hook_to_solids["failure_hook_resource"]
     assert "succeeded_solid_with_hook" not in called_hook_to_solids["a_failure_hook"]
     assert "succeeded_solid_with_hook" not in called_hook_to_solids["a_named_failure_hook"]
+
+
+def test_failure_hook_framework_exception():
+
+    called_hook_to_solids = defaultdict(list)
+
+    @failure_hook
+    def a_failure_hook(context):
+        called_hook_to_solids[context.hook_def.name].append(context.solid.name)
+
+    @op
+    def my_op(_):
+        # this solid shouldn't trigger failure hooks
+        pass
+
+    @job(hooks={a_failure_hook})
+    def my_job():
+        my_op()
+
+    with mock.patch(
+        "dagster.core.execution.plan.execute_plan.core_dagster_event_sequence_for_step"
+    ) as mocked_event_sequence:
+        mocked_event_sequence.side_effect = Exception("Framework exception during execution")
+
+        result = my_job.execute_in_process(raise_on_error=False)
+        assert not result.success
+
+        # Hook runs when a framework error
+        assert "my_op" in called_hook_to_solids["a_failure_hook"]
+
+        called_hook_to_solids = defaultdict(list)
+
+        # Does not run if the execution is interrupted
+        mocked_event_sequence.side_effect = DagsterExecutionInterruptedError(
+            "Execution interrupted during execution"
+        )
+
+        result = my_job.execute_in_process(raise_on_error=False)
+        assert not result.success
+
+        # test if hooks are run for the given solids
+        assert "my_op" not in called_hook_to_solids["a_failure_hook"]
 
 
 def test_success_hook_event():
@@ -467,6 +500,39 @@ def test_hook_graph_job_op():
 
     assert called.get("hook_one") == 2
     assert called.get("hook_two") == 1
+
+
+@success_hook(required_resource_keys={"resource_a"})
+def res_hook(context):
+    assert context.resources.resource_a == 1
+
+
+@op
+def emit():
+    return 1
+
+
+@graph
+def nested():
+    emit.with_hooks({res_hook})()
+
+
+@graph
+def nested_two():
+    nested()
+
+
+@job(resource_defs={"resource_a": resource_a})
+def res_hook_job():
+    nested_two()
+
+
+def test_multiproc_hook_resource_deps():
+    assert nested.execute_in_process(resources={"resource_a": resource_a}).success
+    assert res_hook_job.execute_in_process().success
+
+    with instance_for_test() as instance:
+        assert execute_pipeline(reconstructable(res_hook_job), instance=instance).success
 
 
 def test_hook_context_op_solid_provided():

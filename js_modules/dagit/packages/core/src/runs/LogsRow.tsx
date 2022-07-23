@@ -47,26 +47,24 @@ export class Structured extends React.Component<StructuredProps, StructuredState
           />
         ),
       });
-    } else if (node.__typename === 'HookErroredEvent') {
+    } else if (node.__typename === 'ExecutionStepUpForRetryEvent') {
+      showCustomAlert({
+        title: 'Step Retry',
+        body: <PythonErrorInfo error={node.error ? node.error : node} />,
+      });
+    } else if (
+      (node.__typename === 'EngineEvent' && node.error) ||
+      (node.__typename === 'RunFailureEvent' && node.error) ||
+      node.__typename === 'HookErroredEvent' ||
+      node.__typename === 'ResourceInitFailureEvent'
+    ) {
       showCustomAlert({
         title: 'Error',
         body: <PythonErrorInfo error={node.error ? node.error : node} />,
       });
-    } else if (node.__typename === 'EngineEvent' && node.engineError) {
-      showCustomAlert({
-        title: 'Error',
-        body: <PythonErrorInfo error={node.engineError} />,
-      });
-    } else if (node.__typename === 'RunFailureEvent' && node.pipelineFailureError) {
-      showCustomAlert({
-        title: 'Error',
-        body: (
-          <PythonErrorInfo error={node.pipelineFailureError ? node.pipelineFailureError : node} />
-        ),
-      });
     } else {
       showCustomAlert({
-        title: (node.stepKey && node.stepKey) || 'Info',
+        title: node.stepKey || 'Info',
         body: (
           <StructuredContent>
             <LogsRowStructuredContent node={node} metadata={metadata} />
@@ -99,35 +97,33 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
       level
       stepKey
     }
-    ... on MaterializationEvent {
-      assetKey {
-        path
-      }
+    ... on DisplayableEvent {
       label
       description
       metadataEntries {
         ...MetadataEntryFragment
+      }
+    }
+    ... on MarkerEvent {
+      markerStart
+      markerEnd
+    }
+    ... on ErrorEvent {
+      error {
+        ...PythonErrorFragment
+      }
+    }
+    ... on MaterializationEvent {
+      assetKey {
+        path
       }
     }
     ... on ObservationEvent {
       assetKey {
         path
       }
-      label
-      description
-      metadataEntries {
-        ...MetadataEntryFragment
-      }
-    }
-    ... on RunFailureEvent {
-      pipelineFailureError: error {
-        ...PythonErrorFragment
-      }
     }
     ... on ExecutionStepFailureEvent {
-      error {
-        ...PythonErrorFragment
-      }
       errorSource
       failureMetadata {
         metadataEntries {
@@ -156,9 +152,6 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
           ...MetadataEntryFragment
         }
       }
-      metadataEntries {
-        ...MetadataEntryFragment
-      }
     }
     ... on StepExpectationResultEvent {
       expectationResult {
@@ -181,28 +174,12 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
     ... on HandledOutputEvent {
       outputName
       managerKey
-      metadataEntries {
-        ...MetadataEntryFragment
-      }
     }
     ... on LoadedInputEvent {
       inputName
       managerKey
       upstreamOutputName
       upstreamStepKey
-    }
-    ... on EngineEvent {
-      metadataEntries {
-        ...MetadataEntryFragment
-      }
-      engineError: error {
-        ...PythonErrorFragment
-      }
-    }
-    ... on HookErroredEvent {
-      error {
-        ...PythonErrorFragment
-      }
     }
     ... on LogsCapturedEvent {
       logKey

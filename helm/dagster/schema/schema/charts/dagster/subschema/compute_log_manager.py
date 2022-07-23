@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, Dict, Optional, Type
 
-from pydantic import Extra  # pylint: disable=no-name-in-module
+from pydantic import Extra
 
 from ...utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
 from .config import StringSource
@@ -9,7 +9,6 @@ from .config import StringSource
 
 class ComputeLogManagerType(str, Enum):
     NOOP = "NoOpComputeLogManager"
-    LOCAL = "LocalComputeLogManager"  # deprecated in favor of noop
     AZURE = "AzureBlobComputeLogManager"
     GCS = "GCSComputeLogManager"
     S3 = "S3ComputeLogManager"

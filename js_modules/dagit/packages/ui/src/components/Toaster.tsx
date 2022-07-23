@@ -3,8 +3,8 @@ import {Toaster as BlueprintToaster, IToasterProps, IToaster, IToastProps} from 
 import React from 'react';
 import {createGlobalStyle} from 'styled-components/macro';
 
-import {ColorsWIP} from './Colors';
-import {IconName, IconWIP} from './Icon';
+import {Colors} from './Colors';
+import {IconName, Icon} from './Icon';
 
 export const GlobalToasterStyle = createGlobalStyle`
   .dagster-toaster {
@@ -13,8 +13,8 @@ export const GlobalToasterStyle = createGlobalStyle`
       border-radius: 8px;
       font-size: 14px;
       line-height: 22px;
-      color: ${ColorsWIP.White};
-      background-color: ${ColorsWIP.Gray900};
+      color: ${Colors.White};
+      background-color: ${Colors.Gray900};
     }
 
     .bp3-button-group {
@@ -29,12 +29,12 @@ export const GlobalToasterStyle = createGlobalStyle`
     }
 
     .bp3-toast.bp3-intent-success {
-      background-color: ${ColorsWIP.Blue500};
+      background-color: ${Colors.Blue500};
     }
 
     .bp3-toast.bp3-intent-warning,
     .bp3-toast.bp3-intent-danger {
-      background-color: ${ColorsWIP.Red500};
+      background-color: ${Colors.Red500};
     }
   }
 `;
@@ -56,7 +56,7 @@ export const Toaster: {
       if (icon && typeof icon === 'string') {
         rest.message = (
           <>
-            <IconWIP name={icon} color={ColorsWIP.White} />
+            <Icon name={icon} color={Colors.White} />
             {rest.message}
           </>
         );

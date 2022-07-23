@@ -1,7 +1,7 @@
 .. currentmodule:: dagster
 
-Partitions
-==========
+Partitioned Config
+==================
 
 .. autoclass:: PartitionedConfig
     :members:
@@ -18,8 +18,52 @@ Partitions
 
 .. autofunction:: monthly_partitioned_config
 
+
+Partitions Definitions
+======================
+
+.. autoclass:: PartitionsDefinition
+    :members:
+
+.. autoclass:: HourlyPartitionsDefinition
+    :members:
+
+.. autoclass:: DailyPartitionsDefinition
+    :members:
+
+.. autoclass:: WeeklyPartitionsDefinition
+    :members:
+
+.. autoclass:: MonthlyPartitionsDefinition
+    :members:
+
+.. autoclass:: TimeWindowPartitionsDefinition
+    :members:
+
+.. autoclass:: StaticPartitionsDefinition
+    :members:
+
+
+Partitioned Schedules
+=====================
+
 .. autofunction:: build_schedule_from_partitioned_job
     :noindex:
+
+Partition Mapping (Experimental)
+================================
+
+.. autoclass:: PartitionMapping
+    :members:
+
+.. autoclass:: TimeWindowPartitionMapping
+    :members:
+
+.. autoclass:: AllPartitionMapping
+    :members:
+
+.. autoclass:: LastPartitionMapping
+    :members:
 
 Legacy Functions
 ================

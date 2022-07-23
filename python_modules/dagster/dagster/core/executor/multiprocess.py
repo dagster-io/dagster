@@ -3,7 +3,11 @@ import os
 import sys
 from typing import List, Optional
 
-from dagster import MetadataEntry, check
+from dagster import MetadataEntry
+from dagster import _check as check
+from dagster._utils import start_termination_thread
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.timing import format_duration, time_execution_scope
 from dagster.core.errors import (
     DagsterExecutionInterruptedError,
     DagsterSubprocessError,
@@ -12,14 +16,12 @@ from dagster.core.errors import (
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.context.system import PlanOrchestrationContext
+from dagster.core.execution.context_creation_pipeline import create_context_free_log_manager
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.base import Executor
 from dagster.core.instance import DagsterInstance
-from dagster.utils import start_termination_thread
-from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.timing import format_duration, time_execution_scope
 
 from .child_process_executor import (
     ChildProcessCommand,
@@ -65,18 +67,16 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
                 known_state=self.known_state,
             )
 
-            yield instance.report_engine_event(
-                "Executing step {} in subprocess".format(self.step_key),
-                self.pipeline_run,
-                EngineEventData(
-                    [
-                        MetadataEntry.text(str(os.getpid()), "pid"),
-                        MetadataEntry.text(self.step_key, "step_key"),
-                    ],
-                    marker_end=DELEGATE_MARKER,
-                ),
-                MultiprocessExecutor,
-                self.step_key,
+            log_manager = create_context_free_log_manager(instance, self.pipeline_run)
+
+            yield DagsterEvent.step_worker_started(
+                log_manager,
+                self.pipeline_run.pipeline_name,
+                message='Executing step "{}" in subprocess.'.format(self.step_key),
+                metadata_entries=[
+                    MetadataEntry("pid", value=str(os.getpid())),
+                ],
+                step_key=self.step_key,
             )
 
             yield from execute_plan_iterator(
@@ -132,16 +132,16 @@ class MultiprocessExecutor(Executor):
 
             # or if the reconstructable pipeline has a module target, we will use that
             elif pipeline.get_module():
-                preload = [
-                    # we import this module first to avoid user code like
-                    #  pyspark.serializers._hijack_namedtuple from breaking us
-                    "dagster.core.executor.multiprocess",
-                    pipeline.get_module(),
-                ]
+                preload = [pipeline.get_module()]
 
             # base case is to preload the dagster library
             else:
                 preload = ["dagster"]
+
+            # we import this module first to avoid user code like
+            # pyspark.serializers._hijack_namedtuple from breaking us
+            if "dagster.core.executor.multiprocess" not in preload:
+                preload = ["dagster.core.executor.multiprocess"] + preload
 
             multiproc_ctx.set_forkserver_preload(preload)
 
@@ -218,14 +218,16 @@ class MultiprocessExecutor(Executor):
                             serializable_error = serializable_error_info_from_exc_info(
                                 sys.exc_info()
                             )
+                            step_context = plan_context.for_step(
+                                active_execution.get_step_by_key(key)
+                            )
                             yield DagsterEvent.engine_event(
-                                plan_context,
+                                step_context,
                                 (
                                     "Multiprocess executor: child process for step {step_key} "
                                     "unexpectedly exited with code {exit_code}"
                                 ).format(step_key=key, exit_code=crash.exit_code),
                                 EngineEventData.engine_error(serializable_error),
-                                step_handle=active_execution.get_step_by_key(key).handle,
                             )
                             step_failure_event = DagsterEvent.step_failure_event(
                                 step_context=plan_context.for_step(
@@ -313,11 +315,10 @@ def execute_step_out_of_process(
         known_state=known_state,
     )
 
-    yield DagsterEvent.engine_event(
+    yield DagsterEvent.step_worker_starting(
         step_context,
-        "Launching subprocess for {}".format(step.key),
-        EngineEventData(marker_start=DELEGATE_MARKER),
-        step_handle=step.handle,
+        'Launching subprocess for "{}".'.format(step.key),
+        metadata_entries=[],
     )
 
     for ret in execute_child_process_command(multiproc_ctx, command):

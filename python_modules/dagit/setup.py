@@ -5,13 +5,13 @@ from setuptools import find_packages, setup
 
 def long_description():
     here = os.path.abspath(os.path.dirname(__file__))
-    with open(os.path.join(here, "README.rst"), "r") as fh:
+    with open(os.path.join(here, "README.rst"), "r", encoding="utf8") as fh:
         return fh.read()
 
 
 def get_version():
     version = {}
-    with open("dagit/version.py") as fp:
+    with open("dagit/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
     return version["__version__"]
@@ -20,7 +20,7 @@ def get_version():
 if __name__ == "__main__":
     ver = get_version()
     # dont pin dev installs to avoid pip dep resolver issues
-    pin = "" if ver == "dev" else f"=={ver}"
+    pin = "" if ver == "0+dev" else f"=={ver}"
     setup(
         name="dagit",
         version=ver,
@@ -39,7 +39,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=find_packages(exclude=["dagit_tests"]),
+        packages=find_packages(exclude=["dagit_tests*"]),
         include_package_data=True,
         install_requires=[
             "PyYAML",
@@ -51,7 +51,7 @@ if __name__ == "__main__":
             # watchdog
             "watchdog>=0.8.3",
             # notebooks support
-            "nbconvert>=5.4.0,<6.0.0",
+            "nbconvert",
             "starlette",
             "uvicorn[standard]",
         ],

@@ -1,13 +1,13 @@
 import {gql} from '@apollo/client';
-import {ColorsWIP} from '@dagster-io/ui';
-import {isEqual} from 'lodash';
+import {Colors} from '@dagster-io/ui';
+import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {colorHash} from '../app/Util';
 
 import {PartitionGraphFragment} from './types/PartitionGraphFragment';
-
 export const PARTITION_GRAPH_FRAGMENT = gql`
   fragment PartitionGraphFragment on PipelineRun {
     id
@@ -19,9 +19,7 @@ export const PARTITION_GRAPH_FRAGMENT = gql`
         endTime
         materializations
       }
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
+      ...PythonErrorFragment
     }
     stepStats {
       __typename
@@ -37,6 +35,8 @@ export const PARTITION_GRAPH_FRAGMENT = gql`
       }
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export const getPipelineDurationForRun = (run: PartitionGraphFragment) => {
@@ -177,14 +177,14 @@ export const StepSelector: React.FC<{
             key={stepKey}
             shown={!hidden.includes(stepKey)}
             onClick={onStepClick(stepKey)}
-            color={stepKey === jobLabel ? ColorsWIP.Gray500 : colorHash(stepKey)}
+            color={stepKey === jobLabel ? Colors.Gray500 : colorHash(stepKey)}
           >
             <div
               className="color-dot"
               style={{
                 backgroundColor: !hidden.includes(stepKey)
                   ? stepKey === jobLabel
-                    ? ColorsWIP.Gray500
+                    ? Colors.Gray500
                     : colorHash(stepKey)
                   : '#aaaaaa',
               }}
@@ -208,7 +208,7 @@ const Item = styled.div`
   user-select: none;
   font-size: 12px;
   line-height: 32px;
-  color: ${(props) => (props.shown ? ColorsWIP.Gray900 : ColorsWIP.Gray400)};
+  color: ${(props) => (props.shown ? Colors.Gray900 : Colors.Gray400)};
   white-space: nowrap;
   align-items: center;
   display: flex;

@@ -1,5 +1,6 @@
+# type: ignore[return-value]
 import time
-from typing import Dict, Generator, Tuple
+from typing import Dict, Generator, List, Tuple
 
 import pytest
 
@@ -8,6 +9,7 @@ from dagster import (
     AssetMaterialization,
     AssetObservation,
     DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DagsterType,
     DagsterTypeCheckDidNotPass,
@@ -22,12 +24,21 @@ from dagster import (
     SolidDefinition,
     build_op_context,
     graph,
+    job,
+    mem_io_manager,
     op,
-    solid,
 )
+from dagster._legacy import solid
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.dagster_type import Int, String
+
+
+def some_fn(a):
+    return a
+
+
+the_lambda = lambda a: a
 
 
 def execute_op_in_graph(an_op, instance=None):
@@ -37,6 +48,22 @@ def execute_op_in_graph(an_op, instance=None):
 
     result = my_graph.execute_in_process(instance=instance)
     return result
+
+
+def test_no_outs():
+    @op(output_defs=[])
+    def the_op():
+        pass
+
+    assert len(the_op.output_defs) == 0
+    result = execute_op_in_graph(the_op)
+    assert result.success
+
+    @op(out={})
+    def the_out_op():
+        pass
+
+    assert len(the_op.outs) == 0
 
 
 def test_op():
@@ -88,6 +115,14 @@ def test_ins():
     assert my_op(1, "2") == 3
 
 
+def test_ins_dagster_types():
+    assert In(dagster_type=None)
+    assert In(dagster_type=int)
+    assert In(dagster_type=List)
+    assert In(dagster_type=List[int])  # typing type
+    assert In(dagster_type=Int)  # dagster type
+
+
 def test_out():
     @op(out=Out(metadata={"x": 1}))
     def my_op() -> int:
@@ -101,6 +136,14 @@ def test_out():
     assert my_op.output_defs[0].metadata == {"x": 1}
     assert my_op.output_defs[0].name == "result"
     assert my_op() == 1
+
+
+def test_out_dagster_types():
+    assert Out(dagster_type=None)
+    assert Out(dagster_type=int)
+    assert Out(dagster_type=List)
+    assert Out(dagster_type=List[int])  # typing type
+    assert Out(dagster_type=Int)  # dagster type
 
 
 def test_multi_out():
@@ -365,8 +408,10 @@ def test_type_annotations_with_output():
     def my_op_returns_output() -> Output:
         return Output(5)
 
-    with pytest.raises(DagsterTypeCheckDidNotPass):
-        my_op_returns_output()
+    output = my_op_returns_output()
+    assert output.value == 5
+    result = execute_op_in_graph(my_op_returns_output)
+    assert result.output_for_node("my_op_returns_output") == 5
 
 
 # Document what happens when someone tries to use type annotations with generator
@@ -748,3 +793,551 @@ def test_implicit_op_output_with_asset_key():
     result = execute_op_in_graph(my_constant_asset_op)
     assert result.success
     assert len(result.asset_materializations_for_node(my_constant_asset_op.name)) == 1
+
+
+def test_args_kwargs_op():
+    # pylint: disable=function-redefined
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r"@op 'the_op' decorated function has positional vararg parameter "
+        r"'\*_args'. @op decorated functions should only have keyword arguments "
+        r"that match input names and, if system information is required, a "
+        r"first positional parameter named 'context'.",
+    ):
+
+        @op(ins={"the_in": In()})
+        def the_op(*_args):
+            pass
+
+    @op(ins={"the_in": In()})
+    def the_op(**kwargs):
+        return kwargs["the_in"]
+
+    @op
+    def emit_op():
+        return 1
+
+    @graph
+    def the_graph_provides_inputs():
+        the_op(emit_op())
+
+    result = the_graph_provides_inputs.execute_in_process()
+    assert result.success
+
+
+def test_generic_output_op():
+    @op
+    def the_op() -> Output[str]:
+        return Output("foo")
+
+    assert the_op.output_def_named("result").dagster_type.key == "String"
+
+    result = execute_op_in_graph(the_op)
+    assert result.success
+    assert result.output_for_node("the_op") == "foo"
+
+    result = the_op()
+    assert isinstance(result, Output)
+    assert result.value == "foo"
+
+    @op
+    def the_op_bad_type_match() -> Output[int]:
+        return Output("foo")
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for step output "result" - expected type '
+        '"Int". Description: Value "foo" of python type "str" must be a int.',
+    ):
+        execute_op_in_graph(the_op_bad_type_match)
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for op "the_op_bad_type_match" output "result" - expected type '
+        '"Int". Description: Value "foo" of python type "str" must be a int.',
+    ):
+        the_op_bad_type_match()
+
+
+def test_output_generic_correct_inner_type():
+    @op
+    def the_op_not_using_output() -> Output[int]:
+        return 42
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match='Error with output for op "the_op_not_using_output": output '
+        "'result' has generic output annotation, but did not receive an Output "
+        "object for this output.",
+    ):
+        execute_op_in_graph(the_op_not_using_output)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="output 'result' has generic output annotation, but did not "
+        "receive an Output object for this output.",
+    ):
+        the_op_not_using_output()
+
+    @op
+    def the_op_annotation_not_using_output() -> int:
+        return Output(42)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="received Output object for output 'result' which does not have an Output annotation.",
+    ):
+        execute_op_in_graph(the_op_annotation_not_using_output)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="received Output object for output 'result' which does not have an Output annotation.",
+    ):
+        the_op_annotation_not_using_output()
+
+
+def test_generic_output_tuple_op():
+    @op(out={"out1": Out(), "out2": Out()})
+    def the_op() -> Tuple[Output[str], Output[int]]:
+        return (Output("foo"), Output(5))
+
+    result = execute_op_in_graph(the_op)
+    assert result.success
+
+    result1, result2 = the_op()
+    assert isinstance(result1, Output)
+    assert result1.value == "foo"
+    assert isinstance(result2, Output)
+    assert result2.value == 5
+
+    @op(out={"out1": Out(), "out2": Out()})
+    def the_op_bad_type_match() -> Tuple[Output[str], Output[int]]:
+        return (Output("foo"), Output("foo"))
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for step output "out2" - expected type "Int". '
+        'Description: Value "foo" of python type "str" must be a int.',
+    ):
+        execute_op_in_graph(the_op_bad_type_match)
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for op "the_op_bad_type_match" output "out2" - '
+        'expected type "Int". Description: Value "foo" of python type "str" '
+        "must be a int.",
+    ):
+        the_op_bad_type_match()
+
+
+def test_generic_output_tuple_complex_types():
+    @op(out={"out1": Out(), "out2": Out()})
+    def the_op() -> Tuple[Output[List[str]], Output[Dict[str, str]]]:
+        return (Output(["foo"]), Output({"foo": "bar"}))
+
+    result = execute_op_in_graph(the_op)
+    assert result.success
+
+    result1, result2 = the_op()
+    assert isinstance(result1, Output)
+    assert isinstance(result2, Output)
+
+    assert result1.value == ["foo"]
+    assert result2.value == {"foo": "bar"}
+
+
+def test_generic_output_name_mismatch():
+    @op(out={"out1": Out(), "out2": Out()})
+    def the_op() -> Tuple[Output[int], Output[str]]:
+        return (Output("foo", output_name="out2"), Output(42, output_name="out1"))
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Output was explicitly named 'out2', which does not match the "
+        "output definition specified for position 0: 'out1'.",
+    ):
+        execute_op_in_graph(the_op)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Output was explicitly named 'out2', which does not match the "
+        "output definition specified for position 0: 'out1'.",
+    ):
+        the_op()
+
+
+def test_generic_dynamic_output():
+    @op
+    def basic() -> List[DynamicOutput[int]]:
+        return [DynamicOutput(mapping_key="1", value=1), DynamicOutput(mapping_key="2", value=2)]
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+    assert result.output_for_node("basic") == {"1": 1, "2": 2}
+
+    result = basic()
+    assert len(result) == 2
+    out1, out2 = result
+    assert out1.value == 1
+    assert out2.value == 2
+
+
+def test_generic_dynamic_output_type_mismatch():
+    @op
+    def basic() -> List[DynamicOutput[int]]:
+        return [DynamicOutput(mapping_key="1", value=1), DynamicOutput(mapping_key="2", value="2")]
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for step output "result" - expected type '
+        '"Int". Description: Value "2" of python type "str" must be a int.',
+    ):
+        execute_op_in_graph(basic)
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for op "basic" output "result" - expected type '
+        '"Int". Description: Value "2" of python type "str" must be a int.',
+    ):
+        basic()
+
+
+def test_generic_dynamic_output_mix_with_regular():
+    @op(out={"regular": Out(), "dynamic": DynamicOut()})
+    def basic() -> Tuple[Output[int], List[DynamicOutput[str]]]:
+        return (
+            Output(5),
+            [
+                DynamicOutput(mapping_key="1", value="foo"),
+                DynamicOutput(mapping_key="2", value="bar"),
+            ],
+        )
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+
+    assert result.output_for_node("basic", "regular") == 5
+    assert result.output_for_node("basic", "dynamic") == {"1": "foo", "2": "bar"}
+
+    non_dynamic, dynamic = basic()
+    assert isinstance(non_dynamic, Output)
+    assert non_dynamic.value == 5
+    assert isinstance(dynamic, list)
+    d_out1, d_out2 = dynamic
+    assert d_out1.value == "foo"
+    assert d_out2.value == "bar"
+
+
+def test_generic_dynamic_output_mix_with_regular_type_mismatch():
+    @op(out={"regular": Out(), "dynamic": DynamicOut()})
+    def basic() -> Tuple[Output[int], List[DynamicOutput[str]]]:
+        return (
+            Output(5),
+            [
+                DynamicOutput(mapping_key="1", value="foo"),
+                DynamicOutput(mapping_key="2", value=5),
+            ],
+        )
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for step output "dynamic" - expected type '
+        '"String". Description: Value "5" of python type "int" must be a string.',
+    ):
+        execute_op_in_graph(basic)
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for op "basic" output "dynamic" - expected '
+        'type "String". Description: Value "5" of python type "int" must be a string.',
+    ):
+        basic()
+
+
+def test_generic_dynamic_output_name_not_provided():
+    @op
+    def basic() -> List[DynamicOutput[int]]:
+        return [DynamicOutput(value=5, mapping_key="blah", output_name="blah")]
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Output was explicitly named 'blah', which does not match the "
+        "output definition specified for position 0: 'result'.",
+    ):
+        execute_op_in_graph(basic)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Output was explicitly named 'blah', which does not match the "
+        "output definition specified for position 0: 'result'.",
+    ):
+        basic()
+
+
+def test_generic_dynamic_output_name_mismatch():
+    @op(out={"the_name": DynamicOut()})
+    def basic() -> List[DynamicOutput[int]]:
+        return [DynamicOutput(value=5, mapping_key="blah", output_name="bad_name")]
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Output was explicitly named 'bad_name', which does not match the "
+        "output definition specified for position 0: 'the_name'.",
+    ):
+        execute_op_in_graph(basic)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Output was explicitly named 'bad_name', which does not match the "
+        "output definition specified for position 0: 'the_name'.",
+    ):
+        basic()
+
+
+def test_generic_dynamic_output_bare_list():
+    @op
+    def basic() -> List[DynamicOutput]:
+        return [DynamicOutput(4, mapping_key="1")]
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+    assert result.output_for_node("basic") == {"1": 4}
+
+    result = basic()
+    assert isinstance(result, list)
+    assert result[0].value == 4
+
+
+def test_generic_dynamic_output_bare():
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Op annotated with return type DynamicOutput. DynamicOutputs can "
+        "only be returned in the context of a List. If only one output is "
+        "needed, use the Output API.",
+    ):
+
+        @op
+        def basic() -> DynamicOutput:
+            pass
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Op annotated with return type DynamicOutput. DynamicOutputs can "
+        "only be returned in the context of a List. If only one output is "
+        "needed, use the Output API.",
+    ):
+
+        @op
+        def another_basic() -> DynamicOutput[int]:
+            pass
+
+
+def test_generic_dynamic_output_empty():
+    @op
+    def basic() -> List[DynamicOutput]:
+        return []
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="No outputs found for output 'result' from node 'basic'.",
+    ):
+        result.output_for_node("basic")
+
+    result = basic()
+    assert isinstance(result, list)
+
+    @op(out=DynamicOut())
+    def dynamic_op_no_return_or_yield():
+        pass
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=r"dynamic output 'result' expected a list of DynamicOutput objects, but instead received instead an object of type \<class 'NoneType'\>\.",
+    ):
+        execute_op_in_graph(dynamic_op_no_return_or_yield)
+
+    # Ensure that invocation behavior matches
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=r"dynamic output 'result' expected a list of DynamicOutput objects, but instead received instead an object of type \<class 'NoneType'\>\.",
+    ):
+        dynamic_op_no_return_or_yield()
+
+
+def test_dynamic_output_yields_no_outputs():
+    @op(out=DynamicOut())
+    def the_op():
+        yield AssetMaterialization("third")
+
+    result = execute_op_in_graph(the_op)
+    assert result.success
+
+    assert len(list(the_op())) == 1
+
+
+def test_generic_dynamic_output_empty_with_type():
+    @op
+    def basic() -> List[DynamicOutput[str]]:
+        return []
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+
+    # Equivalent behavior in the dynamic yield case. is_required doesn't
+    # actually do anything on a DynamicOut right now:
+    # https://github.com/dagster-io/dagster/issues/5948#issuecomment-997037163
+    @op(out=DynamicOut(dagster_type=str, is_required=False))
+    def basic_yield():
+        pass
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="dynamic output 'result' expected a list of DynamicOutput "
+        "objects, but instead received instead an object of type "
+        "<class 'NoneType'>.",
+    ):
+        execute_op_in_graph(basic_yield)
+
+    # Ensure that invocation behavior matches
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="dynamic output 'result' expected a list of DynamicOutput "
+        "objects, but instead received instead an object of type "
+        "<class 'NoneType'>.",
+    ):
+        basic_yield()
+
+
+def test_generic_dynamic_multiple_outputs_empty():
+    @op(out={"out1": Out(), "out2": DynamicOut()})
+    def basic() -> Tuple[Output, List[DynamicOutput]]:
+        return (Output(5), [])
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="No outputs found for output 'out2' from node 'basic'.",
+    ):
+        result.output_for_node("basic", "out2")
+
+    out1, out2 = basic()
+    assert isinstance(out1, Output)
+    assert isinstance(out2, list)
+
+
+def test_non_dynamic_empty_list():
+    @op(
+        out={
+            "output_1": Out(List[Dict]),
+            "output_2": Out(List[Dict]),
+        }
+    )
+    def dummy_op():
+        output_1 = [{"dummy_key1": "dummy_value1"}, {"dummy_key2": "dummy_value2"}]
+        output_2 = []
+        return (output_1, output_2)
+
+    result = execute_op_in_graph(dummy_op)
+    assert result.success
+
+
+def test_required_io_manager_op_access():
+    # Show that required io manager keys can be accessed from within the body
+    # of an op.
+    @op(out=Out(io_manager_key="foo"))
+    def the_op(context):
+        assert hasattr(context.resources, "foo")
+
+    @job(resource_defs={"foo": mem_io_manager})
+    def the_job():
+        the_op()
+
+    result = the_job.execute_in_process()
+    assert result.success
+
+
+def test_dynamic_output_bad_list_entry():
+    @op
+    def basic() -> List[DynamicOutput[int]]:
+        return ["foo"]
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Error with output for op \"basic\": dynamic output 'result' at position 0 expected a list of DynamicOutput objects, but received an item with type <class 'str'>.",
+    ):
+        execute_op_in_graph(basic)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Error with output for op \"basic\": dynamic output 'result' at position 0 expected a list of DynamicOutput objects, but received an item with type <class 'str'>.",
+    ):
+        basic()
+
+    @op(out={"out1": Out(), "out2": DynamicOut()})
+    def basic_multi_output() -> Tuple[Output[int], List[DynamicOutput[str]]]:
+        return (5, ["foo"])
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Error with output for op \"basic_multi_output\": output 'out1' "
+        "has generic output annotation, but did not receive an Output object "
+        "for this output. Received instead an object of type <class 'int'>.",
+    ):
+        execute_op_in_graph(basic_multi_output)
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Error with output for op \"basic_multi_output\": output 'out1' "
+        "has generic output annotation, but did not receive an Output object "
+        "for this output. Received instead an object of type <class 'int'>.",
+    ):
+        basic_multi_output()
+
+
+def test_list_out_op():
+    @op(out={"list_out": Out(List[str]), "other_out": Out(int)})
+    def test_op() -> Tuple[List[str], int]:
+        return ([], 5)
+
+    result = execute_op_in_graph(test_op)
+    assert result.success
+
+    assert test_op() == ([], 5)
+
+
+def test_dynamic_list_out_no_annotation():
+    @op(out=DynamicOut())
+    def the_op():
+        return [DynamicOutput(5, mapping_key="foo")]
+
+    result = execute_op_in_graph(the_op)
+    assert result.success
+
+    assert len(the_op()) == 1
+
+
+def test_output_return_no_annotation():
+    @op
+    def the_op():
+        return Output(5)
+
+    assert execute_op_in_graph(the_op).success
+    assert the_op() == Output(5)
+
+
+def test_output_mismatch_tuple_lengths():
+    @op(out={"out1": Out(), "out2": Out()})
+    def the_op() -> Tuple[int, int]:
+        return (1, 2, 3)
+
+    with pytest.raises(DagsterInvariantViolationError, match="Length mismatch"):
+        execute_op_in_graph(the_op)
+
+    with pytest.raises(DagsterInvariantViolationError, match="Length mismatch"):
+        the_op()

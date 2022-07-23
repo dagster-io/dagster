@@ -3,11 +3,17 @@ import { useEffect, useState } from "react";
 import ALL_VERSIONS from "../.versioned_content/_versions.json";
 import { useRouter } from "next/router";
 
-const defaultVersion =
-  process.env.NODE_ENV === "production"
-    ? ALL_VERSIONS[ALL_VERSIONS.length - 1]
-    : "master";
 export const latestVersion = ALL_VERSIONS[ALL_VERSIONS.length - 1];
+
+let defaultVersion = latestVersion;
+if (process.env.NEXT_PUBLIC_VERCEL_ENV !== "production") {
+  // We use NEXT_PUBLIC_VERCEL_ENV to default Vercel previews to master because
+  // * NEXT_PUBLIC_VERCEL_ENV is exposed to the browser
+  // * Vercel previews have NODE_ENV === "production"
+  defaultVersion = "master";
+} else if (process.env.NODE_ENV !== "production") {
+  defaultVersion = "master";
+}
 
 export function normalizeVersionPath(
   asPath: string,
@@ -41,7 +47,9 @@ export function normalizeVersionPath(
 
   // sort release versions by latest - we assume `ALL_VERSIONS` starts with master, and then
   // the following versions are sorted from oldest to latest.
-  const sortedVersions = ALL_VERSIONS.slice(0, 1).concat(ALL_VERSIONS.slice(1).reverse())
+  const sortedVersions = ALL_VERSIONS.slice(0, 1).concat(
+    ALL_VERSIONS.slice(1).reverse()
+  );
 
   return {
     asPath,

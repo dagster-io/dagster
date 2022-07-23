@@ -2,11 +2,11 @@ import inspect
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Dict, Optional, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidInvocationError
 
-from ...config import Shape
-from ..decorator_utils import get_function_params
+from ..._config import Shape
+from .resource_requirement import ensure_requirements_satisfied
 
 if TYPE_CHECKING:
     from dagster.core.definitions.resource_definition import ResourceDefinition
@@ -14,18 +14,23 @@ if TYPE_CHECKING:
 
 
 def resource_invocation_result(
-    resource_def: "ResourceDefinition", init_context: Optional["InitResourceContext"]
+    resource_def: "ResourceDefinition", init_context: Optional["UnboundInitResourceContext"]
 ) -> Any:
-    from .resource_definition import is_context_provided
+    from ..execution.context.init import UnboundInitResourceContext
+    from .resource_definition import ResourceDefinition, is_context_provided
+
+    check.inst_param(resource_def, "resource_def", ResourceDefinition)
+    check.opt_inst_param(init_context, "init_context", UnboundInitResourceContext)
 
     if not resource_def.resource_fn:
         return None
-    init_context = _check_invocation_requirements(resource_def, init_context)
+    _init_context = _check_invocation_requirements(resource_def, init_context)
 
+    resource_fn = resource_def.resource_fn
     val_or_gen = (
-        resource_def.resource_fn(init_context)
-        if is_context_provided(get_function_params(resource_def.resource_fn))
-        else resource_def.resource_fn()
+        resource_fn(_init_context)
+        if is_context_provided(resource_fn)
+        else resource_fn()  # type: ignore
     )
     if inspect.isgenerator(val_or_gen):
 
@@ -43,29 +48,24 @@ def resource_invocation_result(
 
 
 def _check_invocation_requirements(
-    resource_def: "ResourceDefinition", init_context: Optional["InitResourceContext"]
+    resource_def: "ResourceDefinition", init_context: Optional["UnboundInitResourceContext"]
 ) -> "InitResourceContext":
+    from dagster.core.definitions.resource_definition import is_context_provided
     from dagster.core.execution.context.init import InitResourceContext, build_init_resource_context
 
-    if resource_def.required_resource_keys and init_context is None:
+    context_provided = is_context_provided(resource_def.resource_fn)
+    if context_provided and resource_def.required_resource_keys and init_context is None:
         raise DagsterInvalidInvocationError(
             "Resource has required resources, but no context was provided. Use the "
             "`build_init_resource_context` function to construct a context with the required "
             "resources."
         )
 
-    if init_context is not None and resource_def.required_resource_keys:
-        resources_dict = cast(
-            "InitResourceContext",
-            init_context,
-        ).resources._asdict()  # type: ignore[attr-defined]
-
-        for resource_key in resource_def.required_resource_keys:
-            if resource_key not in resources_dict:
-                raise DagsterInvalidInvocationError(
-                    f'Resource requires resource "{resource_key}", but no resource '
-                    "with that key was found on the context."
-                )
+    if context_provided and init_context is not None and resource_def.required_resource_keys:
+        ensure_requirements_satisfied(
+            init_context._resource_defs,  # pylint: disable=protected-access
+            list(resource_def.get_resource_requirements()),
+        )
 
     # Check config requirements
     if not init_context and resource_def.config_schema.as_field().is_required:
@@ -92,7 +92,7 @@ def _check_invocation_requirements(
 
 
 def _resolve_bound_config(resource_config: Any, resource_def: "ResourceDefinition") -> Any:
-    from dagster.config.validate import process_config
+    from dagster._config import process_config
 
     outer_config_shape = Shape({"config": resource_def.get_config_field()})
     config_evr = process_config(

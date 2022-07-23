@@ -1,8 +1,8 @@
+from dagster._grpc.server import ExecuteExternalPipelineArgs
+from dagster._serdes import deserialize_json_to_dagster_namedtuple
 from dagster.core.host_representation.handle import PipelineHandle
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test, poll_for_event, poll_for_finished_run
-from dagster.grpc.server import ExecuteExternalPipelineArgs
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 from .utils import get_bar_repo_repository_location
 
@@ -20,7 +20,7 @@ def _check_event_log_contains(event_log, expected_type_and_message):
 
 def test_launch_run_with_unloadable_pipeline_grpc():
     with instance_for_test() as instance:
-        with get_bar_repo_repository_location() as repository_location:
+        with get_bar_repo_repository_location(instance) as repository_location:
             pipeline_handle = PipelineHandle(
                 "foo", repository_location.get_repository("bar_repo").handle
             )
@@ -85,7 +85,7 @@ def test_launch_run_with_unloadable_pipeline_grpc():
 
 def test_launch_run_grpc():
     with instance_for_test() as instance:
-        with get_bar_repo_repository_location() as repository_location:
+        with get_bar_repo_repository_location(instance) as repository_location:
             pipeline_handle = PipelineHandle(
                 "foo", repository_location.get_repository("bar_repo").handle
             )
@@ -145,7 +145,7 @@ def test_launch_run_grpc():
 
 def test_launch_unloadable_run_grpc():
     with instance_for_test() as instance:
-        with get_bar_repo_repository_location() as repository_location:
+        with get_bar_repo_repository_location(instance) as repository_location:
             pipeline_handle = PipelineHandle(
                 "foo", repository_location.get_repository("bar_repo").handle
             )

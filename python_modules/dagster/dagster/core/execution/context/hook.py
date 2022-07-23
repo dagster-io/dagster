@@ -1,10 +1,10 @@
 import warnings
-from typing import AbstractSet, Any, Dict, Optional, Set, Union
+from typing import AbstractSet, Any, Dict, Mapping, Optional, Set, Union
 
-from dagster import check
+import dagster._check as check
 
 from ...definitions.composition import PendingNodeInvocation
-from ...definitions.decorators.graph import graph
+from ...definitions.decorators.graph_decorator import graph
 from ...definitions.dependency import Node
 from ...definitions.hook_definition import HookDefinition
 from ...definitions.mode import ModeDefinition
@@ -190,14 +190,14 @@ class HookContext:
 class UnboundHookContext(HookContext):
     def __init__(
         self,
-        resources: Dict[str, Any],
+        resources: Mapping[str, Any],
         mode_def: Optional[ModeDefinition],
         op: Optional[Union[SolidDefinition, PendingNodeInvocation]],
         run_id: Optional[str],
         job_name: Optional[str],
         op_exception: Optional[Exception],
     ):  # pylint: disable=super-init-not-called
-        from ..build_resources import build_resources
+        from ..build_resources import build_resources, wrap_resources_for_execution
         from ..context_creation_pipeline import initialize_console_manager
 
         self._mode_def = mode_def
@@ -212,7 +212,8 @@ class UnboundHookContext(HookContext):
             self._op = temp_graph.solids[0]
 
         # Open resource context manager
-        self._resources_cm = build_resources(resources)
+        self._resource_defs = wrap_resources_for_execution(resources)
+        self._resources_cm = build_resources(self._resource_defs)
         self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
         self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
 
@@ -391,7 +392,7 @@ class BoundHookContext(HookContext):
 
 
 def build_hook_context(
-    resources: Optional[Dict[str, Any]] = None,
+    resources: Optional[Mapping[str, Any]] = None,
     mode_def: Optional[ModeDefinition] = None,
     solid: Optional[Union[SolidDefinition, PendingNodeInvocation]] = None,
     op: Optional[Union[OpDefinition, PendingNodeInvocation]] = None,
@@ -431,12 +432,12 @@ def build_hook_context(
 
     op = check.opt_inst_param(op, "op", (OpDefinition, PendingNodeInvocation))
     solid = check.opt_inst_param(solid, "solid", (SolidDefinition, PendingNodeInvocation))
-    op = op or solid
+    op_or_solid = op or solid
 
     return UnboundHookContext(
         resources=check.opt_dict_param(resources, "resources", key_type=str),
         mode_def=check.opt_inst_param(mode_def, "mode_def", ModeDefinition),
-        op=op,
+        op=op_or_solid,  # type: ignore[arg-type] # (mypy bug)
         run_id=check.opt_str_param(run_id, "run_id"),
         job_name=check.opt_str_param(job_name, "job_name"),
         op_exception=check.opt_inst_param(op_exception, "op_exception", Exception),

@@ -1,9 +1,11 @@
 import sys
+from typing import Any
 from unittest import mock
 
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster import file_relative_path, repository
+from dagster._grpc.types import ListRepositoriesResponse
 from dagster.core.code_pointer import CodePointer
 from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
@@ -11,7 +13,6 @@ from dagster.core.host_representation import (
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace.load import location_origins_from_yaml_paths
-from dagster.grpc.types import ListRepositoriesResponse
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
@@ -76,11 +77,20 @@ mutation {
 """
 
 
-class TestReloadWorkspace(
-    make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.non_launchable_in_memory_instance_multi_location()]
-    )
-):
+MultiLocationTestSuite: Any = make_graphql_context_test_suite(
+    context_variants=[GraphQLContextVariant.non_launchable_in_memory_instance_multi_location()]
+)
+OutOfProcessTestSuite: Any = make_graphql_context_test_suite(
+    context_variants=[GraphQLContextVariant.non_launchable_in_memory_instance_managed_grpc_env()]
+)
+ManagedTestSuite: Any = make_graphql_context_test_suite(
+    context_variants=[
+        GraphQLContextVariant.non_launchable_in_memory_instance_managed_grpc_env(),
+    ]
+)
+
+
+class TestReloadWorkspace(MultiLocationTestSuite):
     def test_reload_workspace(self, graphql_context):
         result = execute_dagster_graphql(graphql_context, RELOAD_WORKSPACE_QUERY)
 
@@ -224,13 +234,7 @@ class TestReloadWorkspace(
             assert "new_location_name" in [node["name"] for node in nodes]
 
 
-class TestReloadRepositoriesOutOfProcess(
-    make_graphql_context_test_suite(
-        context_variants=[
-            GraphQLContextVariant.non_launchable_in_memory_instance_managed_grpc_env()
-        ]
-    )
-):
+class TestReloadRepositoriesOutOfProcess(OutOfProcessTestSuite):
     def test_out_of_process_reload_location(self, graphql_context):
         result = execute_dagster_graphql(
             graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {"repositoryLocationName": "test"}
@@ -394,13 +398,7 @@ class TestReloadRepositoriesOutOfProcess(
         )
 
 
-class TestReloadRepositoriesManagedGrpc(
-    make_graphql_context_test_suite(
-        context_variants=[
-            GraphQLContextVariant.non_launchable_in_memory_instance_managed_grpc_env(),
-        ]
-    )
-):
+class TestReloadRepositoriesManagedGrpc(ManagedTestSuite):
     def test_managed_grpc_reload_location(self, graphql_context):
         result = execute_dagster_graphql(
             graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {"repositoryLocationName": "test"}

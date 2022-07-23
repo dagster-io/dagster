@@ -5,14 +5,25 @@ import signal
 import sys
 import tempfile
 import time
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
 
 import pendulum
 import yaml
 
-from dagster import ModeDefinition, Shape, check, composite_solid, fs_io_manager, pipeline, solid
-from dagster.config import Field
-from dagster.config.config_type import Array
+from dagster import ModeDefinition, Shape
+from dagster import _check as check
+from dagster import composite_solid, fs_io_manager
+from dagster._config import Array, Field
+from dagster._daemon.controller import create_daemon_grpc_server_registry
+from dagster._daemon.workspace import DaemonWorkspace
+from dagster._legacy import pipeline, solid
+from dagster._serdes import ConfigurableClass
+from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
+from dagster._utils import Counter, merge_dicts, traced, traced_counter
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.log import configure_loggers
 from dagster.core.host_representation.origin import (
     ExternalPipelineOrigin,
     InProcessRepositoryLocationOrigin,
@@ -23,13 +34,6 @@ from dagster.core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import WorkspaceLoadTarget
-from dagster.daemon.controller import create_daemon_grpc_server_registry
-from dagster.daemon.workspace import DaemonWorkspace
-from dagster.serdes import ConfigurableClass
-from dagster.seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
-from dagster.utils import Counter, merge_dicts, traced, traced_counter
-from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.log import configure_loggers
 
 
 def step_output_event_filter(pipe_iterator):
@@ -120,7 +124,7 @@ def instance_for_test(overrides=None, set_dagster_home=True, temp_dir=None):
                 environ({"DAGSTER_HOME": temp_dir, "DAGSTER_DISABLE_TELEMETRY": "yes"})
             )
 
-        with open(os.path.join(temp_dir, "dagster.yaml"), "w") as fd:
+        with open(os.path.join(temp_dir, "dagster.yaml"), "w", encoding="utf8") as fd:
             yaml.dump(instance_overrides, fd, default_flow_style=False)
 
         with DagsterInstance.from_config(temp_dir) as instance:
@@ -145,9 +149,12 @@ def cleanup_test_instance(instance):
     instance.run_launcher.join()
 
 
+TEST_PIPELINE_NAME = "_test_pipeline_"
+
+
 def create_run_for_test(
     instance,
-    pipeline_name=None,
+    pipeline_name=TEST_PIPELINE_NAME,
     run_id=None,
     run_config=None,
     mode=None,
@@ -184,7 +191,7 @@ def create_run_for_test(
 
 def register_managed_run_for_test(
     instance,
-    pipeline_name=None,
+    pipeline_name=TEST_PIPELINE_NAME,
     run_id=None,
     run_config=None,
     mode=None,
@@ -211,6 +218,25 @@ def register_managed_run_for_test(
         execution_plan_snapshot,
         parent_pipeline_snapshot,
     )
+
+
+def wait_for_runs_to_finish(instance, timeout=20, run_tags=None):
+    total_time = 0
+    interval = 0.1
+
+    filters = RunsFilter(tags=run_tags) if run_tags else None
+
+    while True:
+        runs = instance.get_runs(filters)
+        if all([run.is_finished for run in runs]):
+            return
+
+        if total_time > timeout:
+            raise Exception("Timed out")
+
+        time.sleep(interval)
+        total_time += interval
+        interval = interval * 2
 
 
 def poll_for_finished_run(instance, run_id=None, timeout=20, run_tags=None):
@@ -304,9 +330,6 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
     def join(self, timeout=30):
         """Nothing to join on since all executions are synchronous."""
 
-    def can_terminate(self, run_id):
-        return False
-
     def terminate(self, run_id):
         check.not_implemented("Termination not supported")
 
@@ -350,9 +373,6 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def can_terminate(self, run_id):
-        return False
-
     def terminate(self, run_id):
         check.not_implemented("Termintation not supported")
 
@@ -387,9 +407,6 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def can_cancel_run(self, run_id):
-        check.not_implemented("Cancellation not supported")
-
     def cancel_run(self, run_id):
         check.not_implemented("Cancellation not supported")
 
@@ -401,12 +418,7 @@ def get_terminate_signal():
 
 
 def get_crash_signals():
-    if sys.platform == "win32":
-        return [
-            get_terminate_signal()
-        ]  # Windows keeps resources open after termination in a way that messes up tests
-    else:
-        return [get_terminate_signal(), signal.SIGINT]
+    return [get_terminate_signal()]
 
 
 _mocked_system_timezone = {"timezone": None}
@@ -436,18 +448,24 @@ class InProcessTestWorkspaceLoadTarget(WorkspaceLoadTarget):
 
 
 @contextmanager
-def in_process_test_workspace(instance, recon_repo):
+def in_process_test_workspace(instance, loadable_target_origin, container_image=None):
     with WorkspaceProcessContext(
-        instance, InProcessTestWorkspaceLoadTarget(InProcessRepositoryLocationOrigin(recon_repo))
+        instance,
+        InProcessTestWorkspaceLoadTarget(
+            InProcessRepositoryLocationOrigin(
+                loadable_target_origin,
+                container_image=container_image,
+            ),
+        ),
     ) as workspace_process_context:
         yield workspace_process_context.create_request_context()
 
 
 @contextmanager
-def create_test_daemon_workspace(workspace_load_target):
+def create_test_daemon_workspace(workspace_load_target, instance):
     """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests."""
     configure_loggers()
-    with create_daemon_grpc_server_registry() as grpc_server_registry:
+    with create_daemon_grpc_server_registry(instance) as grpc_server_registry:
         with DaemonWorkspace(grpc_server_registry, workspace_load_target) as workspace:
             yield workspace
 
@@ -487,6 +505,31 @@ def get_logger_output_from_capfd(capfd, logger_name):
     )
 
 
+def _step_events(instance, run):
+    events_by_step = defaultdict(set)
+    logs = instance.all_logs(run.run_id)
+    for record in logs:
+        if not record.is_dagster_event or not record.step_key:
+            continue
+        events_by_step[record.step_key] = record.dagster_event.event_type_value
+    return events_by_step
+
+
+def step_did_not_run(instance, run, step_name):
+    step_events = _step_events(instance, run)[step_name]
+    return len(step_events) == 0
+
+
+def step_succeeded(instance, run, step_name):
+    step_events = _step_events(instance, run)[step_name]
+    return "STEP_SUCCESS" in step_events
+
+
+def step_failed(instance, run, step_name):
+    step_events = _step_events(instance, run)[step_name]
+    return "STEP_FAILURE" in step_events
+
+
 def test_counter():
     @traced
     async def foo():
@@ -515,3 +558,26 @@ def test_counter():
     counts = counter.counts()
     assert counts["foo"] == 20
     assert counts["bar"] == 10
+
+
+def wait_for_futures(futures, timeout=None):
+    start_time = time.time()
+    for target_id, future in futures.copy().items():
+        if timeout is not None:
+            future_timeout = max(0, timeout - (time.time() - start_time))
+        else:
+            future_timeout = None
+
+        if not future.done():
+            future.result(timeout=future_timeout)
+            del futures[target_id]
+
+
+class SingleThreadPoolExecutor(ThreadPoolExecutor):
+    """
+    Utility class for testing threadpool executor logic which executes functions in a single
+    thread, for easier unit testing.
+    """
+
+    def __init__(self):
+        super().__init__(max_workers=1, thread_name_prefix="sensor_daemon_worker")

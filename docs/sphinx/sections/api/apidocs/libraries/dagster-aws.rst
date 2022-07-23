@@ -10,9 +10,6 @@ S3
 
 .. autoclass:: dagster_aws.s3.S3ComputeLogManager
 
-.. autoclass:: dagster_aws.s3.S3FileCache
-  :members:
-
 .. autoclass:: dagster_aws.s3.S3FileHandle
   :members:
 
@@ -39,9 +36,6 @@ S3
             key: my-key
 
 .. autoconfigurable:: dagster_aws.s3.s3_pickle_io_manager
-  :annotation: IOManagerDefinition
-
-.. autoconfigurable:: dagster_aws.s3.s3_pickle_asset_io_manager
   :annotation: IOManagerDefinition
 
 
@@ -88,7 +82,7 @@ CloudWatch
 SecretsManager
 --------------
 
-Resources which surface SecretsManager secrets for use in Dagster resources and jobs. 
+Resources which surface SecretsManager secrets for use in Dagster resources and jobs.
 
 .. autoconfigurable:: dagster_aws.secretsmanager.secretsmanager_resource
   :annotation: ResourceDefinition

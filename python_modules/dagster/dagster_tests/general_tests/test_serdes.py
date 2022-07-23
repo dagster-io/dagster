@@ -6,10 +6,10 @@ from typing import NamedTuple, Set
 
 import pytest
 
-from dagster import seven
-from dagster.check import ParameterCheckError, inst_param, set_param
-from dagster.serdes.errors import DeserializationError, SerdesUsageError, SerializationError
-from dagster.serdes.serdes import (
+from dagster import _seven
+from dagster._check import ParameterCheckError, inst_param, set_param
+from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
+from dagster._serdes.serdes import (
     DefaultEnumSerializer,
     DefaultNamedTupleSerializer,
     EnumSerializer,
@@ -25,7 +25,7 @@ from dagster.serdes.serdes import (
     serialize_value,
     unpack_inner_value,
 )
-from dagster.serdes.utils import create_snapshot_id, hash_str
+from dagster._serdes.utils import hash_str
 
 
 def test_deserialize_value_ok():
@@ -399,6 +399,7 @@ def test_persistent_tuple():
 
 
 def test_from_storage_dict():
+    # pylint: disable=function-redefined
     old_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=old_map)
@@ -417,9 +418,7 @@ def test_from_storage_dict():
 
     new_map = WhitelistMap.create()
 
-    @_whitelist_for_serdes(
-        whitelist_map=new_map, serializer=CompatSerializer
-    )  # pylint: disable=function-redefined
+    @_whitelist_for_serdes(whitelist_map=new_map, serializer=CompatSerializer)
     class MyThing(NamedTuple):
         new_name: str
 
@@ -462,6 +461,7 @@ def test_from_unpacked():
 
 
 def test_skip_when_empty():
+    # pylint: disable=function-redefined
     test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map)
@@ -475,7 +475,7 @@ def test_skip_when_empty():
 
     # Without setting skip_when_empty, the ID changes
 
-    @_whitelist_for_serdes(whitelist_map=test_map)  # pylint: disable=function-redefined
+    @_whitelist_for_serdes(whitelist_map=test_map)
     class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):
         def __new__(cls, foo, bar=None):
             return super(SameSnapshotTuple, cls).__new__(  # pylint: disable=bad-super-call
@@ -497,9 +497,7 @@ def test_skip_when_empty():
         def skip_when_empty(cls) -> Set[str]:
             return {"bar"}
 
-    @_whitelist_for_serdes(
-        whitelist_map=test_map, serializer=SkipWhenEmptySerializer
-    )  # pylint: disable=function-redefined
+    @_whitelist_for_serdes(whitelist_map=test_map, serializer=SkipWhenEmptySerializer)
     class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):
         def __new__(cls, foo, bar=None):
             return super(SameSnapshotTuple, cls).__new__(  # pylint: disable=bad-super-call
@@ -701,7 +699,7 @@ def test_namedtuple_name_map():
     thing = Thing("foo")
 
     thing_serialized = _serialize_dagster_namedtuple(thing, wmap)
-    assert seven.json.loads(thing_serialized)["__class__"] == "SerializedThing"
+    assert _seven.json.loads(thing_serialized)["__class__"] == "SerializedThing"
 
     with pytest.raises(DeserializationError):
         _deserialize_json(thing_serialized, wmap)
@@ -715,7 +713,7 @@ def test_whitelist_storage_name():
     wmap = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=wmap, storage_name="SerializedThing")
-    class Thing(NamedTuple):
+    class Thing(NamedTuple):  # pylint: disable=unused-variable
         name: str
 
     assert wmap.get_serialized_name("Thing") == "SerializedThing"

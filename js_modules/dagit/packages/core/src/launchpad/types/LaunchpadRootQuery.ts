@@ -16,9 +16,17 @@ export interface LaunchpadRootQuery_pipelineOrError_PipelineNotFoundError {
   message: string;
 }
 
+export interface LaunchpadRootQuery_pipelineOrError_PythonError_causes {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface LaunchpadRootQuery_pipelineOrError_PythonError {
   __typename: "PythonError";
   message: string;
+  stack: string[];
+  causes: LaunchpadRootQuery_pipelineOrError_PythonError_causes[];
 }
 
 export interface LaunchpadRootQuery_pipelineOrError_Pipeline_presets_tags {
@@ -79,9 +87,17 @@ export interface LaunchpadRootQuery_partitionSetsOrError_PipelineNotFoundError {
   message: string;
 }
 
+export interface LaunchpadRootQuery_partitionSetsOrError_PythonError_causes {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface LaunchpadRootQuery_partitionSetsOrError_PythonError {
   __typename: "PythonError";
   message: string;
+  stack: string[];
+  causes: LaunchpadRootQuery_partitionSetsOrError_PythonError_causes[];
 }
 
 export type LaunchpadRootQuery_partitionSetsOrError = LaunchpadRootQuery_partitionSetsOrError_PartitionSets | LaunchpadRootQuery_partitionSetsOrError_PipelineNotFoundError | LaunchpadRootQuery_partitionSetsOrError_PythonError;

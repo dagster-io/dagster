@@ -41,7 +41,7 @@ const LaunchpadSetupAllowedRoot: React.FC<Props> = (props) => {
 
   useJobTitle(explorerPath, isJob);
 
-  const [data, onSave] = useExecutionSessionStorage(repoAddress.name, pipelineName);
+  const [data, onSave] = useExecutionSessionStorage(repoAddress, pipelineName);
   const queryString = qs.parse(window.location.search, {ignoreQueryPrefix: true});
 
   React.useEffect(() => {

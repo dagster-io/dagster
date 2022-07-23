@@ -19,6 +19,22 @@ export interface RunRootQuery_pipelineRunOrError_Run_tags {
   value: string;
 }
 
+export interface RunRootQuery_pipelineRunOrError_Run_assets_key {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface RunRootQuery_pipelineRunOrError_Run_assets {
+  __typename: "Asset";
+  id: string;
+  key: RunRootQuery_pipelineRunOrError_Run_assets_key;
+}
+
+export interface RunRootQuery_pipelineRunOrError_Run_assetSelection {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface RunRootQuery_pipelineRunOrError_Run_executionPlan_steps_inputs_dependsOn {
   __typename: "ExecutionStep";
   key: string;
@@ -75,22 +91,25 @@ export interface RunRootQuery_pipelineRunOrError_Run_stepStats {
 export interface RunRootQuery_pipelineRunOrError_Run {
   __typename: "Run";
   id: string;
-  runConfig: any;
+  runConfigYaml: string;
   runId: string;
   canTerminate: boolean;
   status: RunStatus;
   mode: string;
   tags: RunRootQuery_pipelineRunOrError_Run_tags[];
+  assets: RunRootQuery_pipelineRunOrError_Run_assets[];
   rootRunId: string | null;
   parentRunId: string | null;
   pipelineName: string;
   solidSelection: string[] | null;
+  assetSelection: RunRootQuery_pipelineRunOrError_Run_assetSelection[] | null;
   pipelineSnapshotId: string | null;
   executionPlan: RunRootQuery_pipelineRunOrError_Run_executionPlan | null;
   stepKeysToExecute: string[] | null;
   repositoryOrigin: RunRootQuery_pipelineRunOrError_Run_repositoryOrigin | null;
   startTime: number | null;
   endTime: number | null;
+  updateTime: number | null;
   stepStats: RunRootQuery_pipelineRunOrError_Run_stepStats[];
 }
 

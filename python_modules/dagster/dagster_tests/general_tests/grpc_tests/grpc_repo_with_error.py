@@ -1,1 +1,4 @@
-from made_up_module import made_up_function  # pylint:disable=import-error,unused-import
+from dagster import ScheduleDefinition
+
+# Definition that will fire an error when it is imported
+ScheduleDefinition(cron_schedule="* * * * * * * * * *", pipeline_name="foo")

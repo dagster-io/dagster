@@ -13,6 +13,7 @@ from dagster_tests.core_tests.storage_tests.test_polling_event_watcher import (
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log import SqlEventLogStorage
+from dagster.core.storage.event_log.base import EventLogCursor
 from dagster.core.test_utils import instance_for_test
 
 
@@ -61,7 +62,7 @@ class EventStorer:
         )
 
 
-NumEventsAndCursor = namedtuple("NumEventsAndCursor", ["num_events_before_watch", "after_cursor"])
+NumEventsAndCursor = namedtuple("NumEventsAndCursor", ["num_events_before_watch", "cursor"])
 
 MAX_NUM_EVENTS_BEFORE_WATCH = 2
 MAX_NUM_EVENTS_AFTER_WATCH = 2
@@ -70,9 +71,15 @@ MAX_NUM_EVENTS_AFTER_WATCH = 2
 @pytest.mark.parametrize(
     "before_watch_config",
     [
-        NumEventsAndCursor(num_events_before_watch, after_cursor)
+        NumEventsAndCursor(num_events_before_watch, cursor)
         for num_events_before_watch in range(0, MAX_NUM_EVENTS_BEFORE_WATCH + 1)
-        for after_cursor in range(-1, num_events_before_watch + 1)
+        for cursor in [
+            None,
+            *map(
+                lambda storage_id: str(EventLogCursor.from_storage_id(storage_id)),
+                range(1, num_events_before_watch + 1),
+            ),
+        ]
     ],
 )
 @pytest.mark.parametrize("num_events_after_watch", list(range(1, MAX_NUM_EVENTS_AFTER_WATCH + 1)))
@@ -82,7 +89,7 @@ def test_using_instance(before_watch_config: NumEventsAndCursor, num_events_afte
         # set up instance & write `before_watch_config.num_events_before_watch` to event_log
         assert isinstance(storage, SqlitePollingEventLogStorage)
         observable_subscribe = PipelineRunObservableSubscribe(
-            instance, RUN_ID, after_cursor=before_watch_config.after_cursor
+            instance, RUN_ID, cursor=before_watch_config.cursor
         )
         event_storer = EventStorer(storage)
         event_storer.store_n_events(before_watch_config.num_events_before_watch)
@@ -93,7 +100,12 @@ def test_using_instance(before_watch_config: NumEventsAndCursor, num_events_afte
         call_args = observable_subscribe.observer.on_next.call_args_list
 
         # wait until all events have been captured
-        most_recent_event_processed = lambda: int(call_args[-1][0][0][0][-1].user_message)
+        def most_recent_event_processed():
+            events = call_args[-1][0][0][0]
+            if not events:
+                return 0
+            return int(events[-1].user_message)
+
         attempts = 10
         while (
             len(call_args) == 0 or most_recent_event_processed() < total_num_events
@@ -106,11 +118,9 @@ def test_using_instance(before_watch_config: NumEventsAndCursor, num_events_afte
             [event_record.user_message for event_record in call[0][0][0]] for call in call_args
         ]
         flattened_events_list = [int(message) for lst in events_list for message in lst]
-        # PipelineRunObservableSubscribe requests ids > after_cursor + 1
-        beginning_cursor = before_watch_config.after_cursor + 2
-        assert flattened_events_list == list(
-            range(
-                beginning_cursor,
-                total_num_events + 1,
-            )
+        beginning_id = (
+            EventLogCursor.parse(before_watch_config.cursor).storage_id() + 1
+            if before_watch_config.cursor
+            else 1
         )
+        assert flattened_events_list == list(range(beginning_id, total_num_events + 1))

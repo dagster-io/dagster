@@ -10,14 +10,15 @@ import pytest
 from dagstermill import DagstermillError
 from dagstermill.manager import Manager
 
-from dagster import AssetMaterialization, ModeDefinition, ResourceDefinition, check
+from dagster import AssetMaterialization, ModeDefinition, ResourceDefinition
+from dagster import _check as check
+from dagster._serdes import pack_value
+from dagster._utils import safe_tempfile_path
 from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
 from dagster.core.utils import make_new_run_id
-from dagster.serdes import pack_value
-from dagster.utils import safe_tempfile_path
 
 
 @contextlib.contextmanager
@@ -124,7 +125,7 @@ def test_yield_unserializable_result():
 def test_in_pipeline_manager_bad_solid():
     with pytest.raises(
         check.CheckError,
-        match=("hello_world_pipeline has no solid named foobar"),
+        match=("hello_world_pipeline has no op named foobar"),
     ):
         with in_pipeline_manager(solid_handle=NodeHandle("foobar", None)) as _manager:
             pass

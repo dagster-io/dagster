@@ -1,8 +1,10 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, NonIdealState, PageHeader, TagWIP, Heading} from '@dagster-io/ui';
+import {Box, Colors, NonIdealState, PageHeader, Tag, Heading} from '@dagster-io/ui';
 import React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
@@ -27,6 +29,8 @@ interface Props {
 }
 
 export const GraphRoot: React.FC<Props> = (props) => {
+  useTrackPageView();
+
   const {repoAddress} = props;
   const params = useParams();
 
@@ -35,19 +39,20 @@ export const GraphRoot: React.FC<Props> = (props) => {
   // Show the name of the composite solid we are within (-1 is the selection, -2 is current parent)
   // or the name of the pipeline tweaked to look a bit more like a graph name.
   const title = path.opNames.length > 1 ? path.opNames[path.opNames.length - 2] : path.pipelineName;
+  useDocumentTitle(`Graph: ${title}`);
 
   return (
     <div style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
       <PageHeader
         title={<Heading>{title}</Heading>}
         tags={
-          <TagWIP icon="schema">
+          <Tag icon="schema">
             Graph in <RepositoryLink repoAddress={repoAddress} />
-          </TagWIP>
+          </Tag>
         }
       />
       <Box
-        border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
         style={{minHeight: 0, flex: 1, display: 'flex'}}
       >
         <GraphExplorerRoot repoAddress={repoAddress} />
@@ -66,8 +71,6 @@ const GraphExplorerRoot: React.FC<Props> = (props) => {
     explodeComposites: false,
     preferAssetRendering: true,
   });
-
-  useDocumentTitle(`Graph: ${explorerPath.pipelineName}`);
 
   const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
   const graphResult = useQuery<GraphExplorerRootQuery, GraphExplorerRootQueryVariables>(
@@ -117,7 +120,7 @@ const GraphExplorerRoot: React.FC<Props> = (props) => {
                 history.replace(fullPath);
               }
             }}
-            pipelineOrGraph={result}
+            container={result}
             repoAddress={repoAddress}
             handles={displayedHandles}
             parentHandle={parentHandle ? parentHandle : undefined}
@@ -160,12 +163,10 @@ const GRAPH_EXPLORER_ROOT_QUERY = gql`
       ... on GraphNotFoundError {
         message
       }
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
     }
   }
   ${GRAPH_EXPLORER_FRAGMENT}
   ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

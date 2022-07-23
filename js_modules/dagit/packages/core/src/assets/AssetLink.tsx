@@ -1,20 +1,22 @@
-import {Box, ColorsWIP, IconWIP} from '@dagster-io/ui';
+import {Box, Colors, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+
 export const AssetLink: React.FC<{
   path: string[];
-  displayIcon?: boolean;
+  icon?: 'asset' | 'asset_non_sda' | 'folder';
   url?: string;
-  trailingSlash?: boolean;
-}> = ({path, displayIcon, url, trailingSlash}) => {
-  const linkUrl = url ? url : `/instance/assets/${path.map(encodeURIComponent).join('/')}`;
+  isGroup?: boolean;
+}> = ({path, icon, url, isGroup}) => {
+  const linkUrl = url ? url : assetDetailsPathForKey({path});
 
   return (
     <Box flex={{direction: 'row', alignItems: 'center', display: 'inline-flex'}}>
-      {displayIcon ? (
+      {icon ? (
         <Box margin={{right: 8}}>
-          <IconWIP name="asset" color={ColorsWIP.Gray400} />
+          <Icon name={icon} color={Colors.Gray400} />
         </Box>
       ) : null}
       <Link to={linkUrl}>
@@ -24,14 +26,12 @@ export const AssetLink: React.FC<{
             .reduce(
               (accum, curr, ii) => [
                 ...accum,
-                ii > 0 ? (
-                  <React.Fragment key={`${ii}-space`}>&nbsp;{`>`}&nbsp;</React.Fragment>
-                ) : null,
+                ii > 0 ? <React.Fragment key={`${ii}-space`}>&nbsp;/&nbsp;</React.Fragment> : null,
                 curr,
               ],
               [] as React.ReactNode[],
             )}
-          {trailingSlash ? '/' : null}
+          {isGroup ? '/' : null}
         </span>
       </Link>
     </Box>

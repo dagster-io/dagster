@@ -5,7 +5,7 @@ description: A Dagster schedule submits job runs at a fixed interval.
 
 # Schedules
 
-A Dagster schedule submits job runs at a fixed interval.
+A Dagster schedule submits [job](/concepts/ops-jobs-graphs/jobs) runs at a fixed interval.
 
 ## Relevant APIs
 
@@ -19,7 +19,7 @@ A Dagster schedule submits job runs at a fixed interval.
 
 ## Overview
 
-A _schedule_ is a definition in Dagster that is used to execute a job at a fixed interval. Each time at which a schedule is evaluated is called a _tick_. The schedule definition can generate run configuration for the job on each tick.
+A _schedule_ is a definition in Dagster that is used to execute a [job](/concepts/ops-jobs-graphs/jobs) at a fixed interval. Each time at which a schedule is evaluated is called a _tick_. The schedule definition can generate run configuration for the job on each tick.
 
 Each schedule:
 
@@ -38,7 +38,7 @@ You define a schedule by constructing a <PyObject object="ScheduleDefinition" />
 
 ### A basic schedule
 
-Here's a simple schedule that runs a job every day, at midnight. The `cron_schedule` accepts standard [cron expressions](https://en.wikipedia.org/wiki/Cron).
+Here's a simple schedule that runs a job every day, at midnight. The `cron_schedule` accepts standard [cron expressions](https://en.wikipedia.org/wiki/Cron). It also accepts `"@hourly"`, `"@daily"`, `"@weekly"`, and `"@monthly"` if your `croniter` dependency's version is >= 1.0.12.
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_schedule endbefore=end_basic_schedule
 @job
@@ -47,6 +47,16 @@ def my_job():
 
 
 basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
+```
+
+In order to run schedules for assets, you can [build a job that materializes assets](/concepts/assets/software-defined-assets#building-jobs-that-materialize-assets) and construct a <PyObject object="ScheduleDefinition" /> similarly:
+
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_asset_schedule endbefore=end_basic_asset_schedule
+from dagster import AssetSelection, define_asset_job
+
+asset_job = define_asset_job("asset_job", AssetSelection.groups("some_asset_group"))
+
+basic_schedule = ScheduleDefinition(job=asset_job, cron_schedule="0 0 * * *")
 ```
 
 ### A schedule that provides custom run config and tags
@@ -78,9 +88,9 @@ def configurable_job_schedule(context: ScheduleEvaluationContext):
 
 If you don't need access to the context parameter, you can omit it from the decorated function.
 
-### A schedule from a partitioned job
+### Schedules from partitioned assets and jobs
 
-#### Time partitioned job
+#### Time partitioned assets and jobs
 
 When you have a [partitioned job](/concepts/partitions-schedules-sensors/partitions) that's partitioned by time, you can use the <PyObject object="build_schedule_from_partitioned_job"/> function to construct a schedule for it whose interval matches the spacing of partitions in your job.
 
@@ -99,6 +109,23 @@ def do_stuff_partitioned():
 
 do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
     do_stuff_partitioned,
+)
+```
+
+The Partitioned Jobs concepts page also includes an [example of a date-partitioned asset](/concepts/partitions-schedules-sensors/partitions#partitioned-assets). You can define a schedule similarly using <PyObject object="build_schedule_from_partitioned_job"/>:
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_partitioned_asset_schedule endbefore=end_partitioned_asset_schedule
+from dagster import define_asset_job
+
+partitioned_asset_job = define_asset_job(
+    "partitioned_job",
+    selection="*",
+    partitions_def=HourlyPartitionsDefinition(start_date="2022-05-31", fmt="%Y-%m-%d"),
+)
+
+
+asset_partitioned_schedule = build_schedule_from_partitioned_job(
+    partitioned_asset_job,
 )
 ```
 
@@ -224,6 +251,12 @@ def test_configurable_job_schedule():
 ```
 
 If your `@schedule`-decorated function doesn't have a context parameter, you don't need to provide one when invoking it.
+
+## See it in action
+
+For more examples of schedules, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news_assets):
+
+- [Defining a partitioned asset job and a schedule based on it](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/core/\__init\_\_.py)
 
 ## Troubleshooting
 

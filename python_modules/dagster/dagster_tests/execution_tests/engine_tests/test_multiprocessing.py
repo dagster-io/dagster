@@ -16,15 +16,14 @@ from dagster import (
     String,
     execute_pipeline,
     lambda_solid,
-    pipeline,
     reconstructable,
-    solid,
 )
+from dagster._legacy import pipeline, solid
+from dagster._utils import safe_tempfile_path, segfault
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster.utils import safe_tempfile_path, segfault
 
 
 def test_diamond_simple_execution():
@@ -263,7 +262,7 @@ def define_subdag_pipeline():
         config_schema=Field(String),
     )
     def writer(context):
-        with open(context.solid_config, "w") as fd:
+        with open(context.solid_config, "w", encoding="utf8") as fd:
             fd.write("1")
         return
 
@@ -382,9 +381,7 @@ def test_optional_outputs():
 def throw():
     raise Failure(
         description="it Failure",
-        metadata_entries=[
-            MetadataEntry.text(label="label", text="text", description="description")
-        ],
+        metadata_entries=[MetadataEntry("label", value="text")],
     )
 
 
@@ -414,7 +411,6 @@ def test_failure_multiprocessing():
         assert failure_data.user_failure_data.description == "it Failure"
         assert failure_data.user_failure_data.metadata_entries[0].label == "label"
         assert failure_data.user_failure_data.metadata_entries[0].entry_data.text == "text"
-        assert failure_data.user_failure_data.metadata_entries[0].description == "description"
 
 
 @solid

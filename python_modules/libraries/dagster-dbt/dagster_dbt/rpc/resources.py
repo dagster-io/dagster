@@ -1,14 +1,18 @@
 import json
+import logging
 import platform
 import sys
 import time
 import uuid
 from base64 import standard_b64encode as b64
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 import requests
 
-from dagster import Failure, Field, IntSource, RetryRequested, StringSource, check, resource
+from dagster import Failure, Field, IntSource, RetryRequested, StringSource
+from dagster import _check as check
+from dagster import resource
+from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.utils import coerce_valid_log_level
 
 from ..dbt_resource import DbtResource
@@ -78,7 +82,7 @@ class DbtRpcResource(DbtResource):
         headers["Accept"] = "application/json"
         return headers
 
-    def _post(self, data: str = None) -> DbtRpcOutput:
+    def _post(self, data: Optional[str] = None) -> DbtRpcOutput:
         """Constructs and sends a POST request to the dbt RPC server.
 
         Returns:
@@ -95,7 +99,7 @@ class DbtRpcResource(DbtResource):
                 raise RetryRequested(max_retries=5, seconds_to_wait=30)
         return DbtRpcOutput(response)
 
-    def _get_result(self, data: str = None) -> DbtRpcOutput:
+    def _get_result(self, data: Optional[str] = None) -> DbtRpcOutput:
         """Constructs and sends a POST request to the dbt RPC server.
 
         Returns:
@@ -103,7 +107,9 @@ class DbtRpcResource(DbtResource):
         """
         return self._post(data)
 
-    def _default_request(self, method: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
+    def _default_request(
+        self, method: str, params: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """Constructs a standard HTTP request body, to be sent to a dbt RPC server.
 
         Args:
@@ -136,8 +142,8 @@ class DbtRpcResource(DbtResource):
         return self._jsonrpc_version
 
     @property
-    def logger(self) -> Optional[Any]:
-        """Optional[Any]: A property for injecting a logger dependency."""
+    def logger(self) -> logging.Logger:
+        """logging.Logger: A property for injecting a logger dependency."""
         return self._logger
 
     @property
@@ -158,9 +164,9 @@ class DbtRpcResource(DbtResource):
 
     def ls(
         self,
-        select: List[str] = None,
-        models: List[str] = None,
-        exclude: List[str] = None,
+        select: Optional[List[str]] = None,
+        models: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
         **kwargs,
     ) -> DbtRpcOutput:
         """Sends a request with the method ``list`` to the dbt RPC server, and returns the
@@ -246,7 +252,7 @@ class DbtRpcResource(DbtResource):
         return self._get_result(data=json.dumps(data))
 
     def compile(
-        self, models: List[str] = None, exclude: List[str] = None, **kwargs
+        self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
     ) -> DbtRpcOutput:
         """Sends a request with the method ``compile`` to the dbt RPC server, and returns the
         response. For more details, see the dbt docs for `compiling projects via RPC
@@ -266,7 +272,9 @@ class DbtRpcResource(DbtResource):
 
         return self._get_result(data=json.dumps(data))
 
-    def run(self, models: List[str] = None, exclude: List[str] = None, **kwargs) -> DbtRpcOutput:
+    def run(
+        self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
+    ) -> DbtRpcOutput:
         """Sends a request with the method ``run`` to the dbt RPC server, and returns the response.
         For more details, see the dbt docs for the RPC method `run
         <https://docs.getdbt.com/reference/commands/rpc/#run-models>`_.
@@ -285,7 +293,7 @@ class DbtRpcResource(DbtResource):
         return self._get_result(data=json.dumps(data))
 
     def snapshot(
-        self, select: List[str] = None, exclude: List[str] = None, **kwargs
+        self, select: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
     ) -> DbtRpcOutput:
         """Sends a request with the method ``snapshot`` to the dbt RPC server, and returns the
         response. For more details, see the dbt docs for the command `snapshot
@@ -306,8 +314,8 @@ class DbtRpcResource(DbtResource):
 
     def test(
         self,
-        models: List[str] = None,
-        exclude: List[str] = None,
+        models: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
         data: bool = True,
         schema: bool = True,
         **kwargs,
@@ -332,7 +340,11 @@ class DbtRpcResource(DbtResource):
         return self._get_result(data=json.dumps(data))
 
     def seed(
-        self, show: bool = False, select: List[str] = None, exclude: List[str] = None, **kwargs
+        self,
+        show: bool = False,
+        select: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+        **kwargs,
     ) -> DbtRpcOutput:
         """Sends a request with the method ``seed`` to the dbt RPC server, and returns the response.
         For more details, see the dbt docs for the RPC method `seed
@@ -447,6 +459,41 @@ class DbtRpcResource(DbtResource):
 
         return self._get_result(data=json.dumps(data))
 
+    def build(self, select: Optional[List[str]] = None, **kwargs) -> DbtRpcOutput:
+        """
+        Run the ``build`` command on a dbt project. kwargs are passed in as additional parameters.
+
+        Args:
+            select (List[str], optional): the models/resources to include in the run.
+
+        Returns:
+            DbtOutput: object containing parsed output from dbt
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError()
+
+    def get_run_results_json(self, **kwargs) -> Optional[Dict[str, Any]]:
+        """
+        Get a parsed version of the run_results.json file for the relevant dbt project.
+
+        Returns:
+            Dict[str, Any]: dictionary containing the parsed contents of the run_results json file
+                for this dbt project.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError()
+
+    def get_manifest_json(self, **kwargs) -> Optional[Dict[str, Any]]:
+        """
+        Get a parsed version of the manifest.json file for the relevant dbt project.
+
+        Returns:
+            Dict[str, Any]: dictionary containing the parsed contents of the manifest json file
+                for this dbt project.
+        """
+        ...  # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError()
+
 
 class DbtRpcSyncResource(DbtRpcResource):
     def __init__(
@@ -472,11 +519,12 @@ class DbtRpcSyncResource(DbtRpcResource):
         super().__init__(host, port, jsonrpc_version, logger)
         self.poll_interval = poll_interval
 
-    def _get_result(self, data: str = None) -> DbtRpcOutput:
-        """Sends a request to the dbt RPC server and continuously polls for the status of a request until the state is ``success``."""
+    def _get_result(self, data: Optional[str] = None) -> DbtRpcOutput:
+        """Sends a request to the dbt RPC server and continuously polls for the status of a request
+        until the state is ``success``."""
 
         out = super()._get_result(data)
-        request_token = out.result.get("request_token")
+        request_token: str = check.not_none(out.result.get("request_token"))
 
         logs_start = 0
 
@@ -529,7 +577,7 @@ def dbt_rpc_resource(context) -> DbtRpcResource:
     """This resource defines a dbt RPC client.
 
     To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/overview/configuration#configured>`_ method.
+    <https://docs.dagster.io/concepts/configuration/configured>`_ method.
 
     Examples:
 
@@ -566,7 +614,7 @@ def dbt_rpc_sync_resource(
     and waits for the request to complete before returning.
 
     To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/overview/configuration#configured>`_ method.
+    <https://docs.dagster.io/concepts/configuration/configured>`_ method.
 
     Examples:
 
@@ -588,6 +636,8 @@ def dbt_rpc_sync_resource(
     )
 
 
-local_dbt_rpc_resource = dbt_rpc_resource.configured({"host": "0.0.0.0", "port": 8580})
+local_dbt_rpc_resource = cast(
+    ResourceDefinition, dbt_rpc_resource.configured({"host": "0.0.0.0", "port": 8580})
+)
 local_dbt_rpc_resource.__doc__ = """This resource defines a dbt RPC client for an RPC server running
 on 0.0.0.0:8580."""

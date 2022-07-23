@@ -1,5 +1,5 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import {ButtonLink, ColorsWIP, Group, Caption} from '@dagster-io/ui';
+import {ButtonLink, Colors, Group, Caption} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -16,7 +16,10 @@ import {
   SchedulePartitionStatusFragment,
   SchedulePartitionStatusFragment_partitionSet_partitionStatusesOrError_PartitionStatuses_results as Partition,
 } from './types/SchedulePartitionStatusFragment';
-import {SchedulePartitionStatusQuery} from './types/SchedulePartitionStatusQuery';
+import {
+  SchedulePartitionStatusQuery,
+  SchedulePartitionStatusQueryVariables,
+} from './types/SchedulePartitionStatusQuery';
 
 const RUN_STATUSES = ['Succeeded', 'Failed', 'Missing', 'Pending'];
 
@@ -65,24 +68,24 @@ export const SchedulePartitionStatus: React.FC<{
 
   const partitionURL = workspacePathFromAddress(repoAddress, partitionPath);
 
-  const [retrievePartitionStatus, {data, loading}] = useLazyQuery<SchedulePartitionStatusQuery>(
-    SCHEDULE_PARTITION_STATUS_QUERY,
-    {
-      variables: {
-        scheduleSelector: {
-          scheduleName,
-          repositoryName: repoAddress.name,
-          repositoryLocationName: repoAddress.location,
-        },
+  const [retrievePartitionStatus, {data, loading}] = useLazyQuery<
+    SchedulePartitionStatusQuery,
+    SchedulePartitionStatusQueryVariables
+  >(SCHEDULE_PARTITION_STATUS_QUERY, {
+    variables: {
+      scheduleSelector: {
+        scheduleName,
+        repositoryName: repoAddress.name,
+        repositoryLocationName: repoAddress.location,
       },
     },
-  );
+  });
 
   const onClick = React.useCallback(() => retrievePartitionStatus(), [retrievePartitionStatus]);
 
   const loadable = () => {
     if (loading) {
-      return <Caption style={{color: ColorsWIP.Gray400}}>Loading…</Caption>;
+      return <Caption style={{color: Colors.Gray400}}>Loading…</Caption>;
     }
 
     if (!data) {
@@ -103,7 +106,7 @@ export const SchedulePartitionStatus: React.FC<{
       );
     }
 
-    return <Caption style={{color: ColorsWIP.Red700}}>Partition set not found!</Caption>;
+    return <Caption style={{color: Colors.Red700}}>Partition set not found!</Caption>;
   };
 
   return (
@@ -121,7 +124,7 @@ const RetrievedSchedulePartitionStatus: React.FC<{
   const {partitionSet} = schedule;
 
   if (!partitionSet || partitionSet.partitionStatusesOrError.__typename !== 'PartitionStatuses') {
-    return <span style={{color: ColorsWIP.Gray300}}>None</span>;
+    return <span style={{color: Colors.Gray300}}>None</span>;
   }
 
   const partitions = partitionSet.partitionStatusesOrError.results;
@@ -145,7 +148,7 @@ const RetrievedSchedulePartitionStatus: React.FC<{
                 {status === 'Failed' || status === 'Missing' ? (
                   <Link
                     to={`${partitionURL}?showFailuresAndGapsOnly=true`}
-                    style={{color: ColorsWIP.Gray900}}
+                    style={{color: Colors.Gray900}}
                   >
                     {partitionsByType[status].length}
                   </Link>

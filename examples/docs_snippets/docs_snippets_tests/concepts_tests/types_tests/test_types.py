@@ -1,6 +1,6 @@
 import pytest
-from dagster import DagsterTypeCheckDidNotPass
 
+from dagster import DagsterTypeCheckDidNotPass
 from docs_snippets.concepts.types.types import test_dagster_type
 
 
@@ -28,18 +28,6 @@ def test_python_object_dagster_type():
     double_even(even_num=EvenType(2))
     with pytest.raises(AssertionError):
         double_even(even_num=EvenType(3))
-
-
-def test_usable_as_dagster_type():
-    from docs_snippets.concepts.types.usable_as import EvenType, double_even
-
-    double_even(even_num=EvenType(2))
-
-
-def test_make_python_type_usable_as_dagster_type():
-    from docs_snippets.concepts.types.make_usable import EvenType, double_even
-
-    double_even(even_num=EvenType(2))
 
 
 def test_unit_test():

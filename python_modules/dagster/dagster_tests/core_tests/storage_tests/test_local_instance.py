@@ -12,11 +12,10 @@ from dagster import (
     Output,
     OutputDefinition,
     PipelineRun,
-    check,
-    execute_pipeline,
-    pipeline,
-    solid,
 )
+from dagster import _check as check
+from dagster import execute_pipeline
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.events import RetryRequested
 from dagster.core.execution.stats import StepEventStatus
 from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
@@ -73,7 +72,7 @@ def test_fs_stores():
 
 def test_init_compute_log_with_bad_config():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        with open(os.path.join(tmpdir_path, "dagster.yaml"), "w") as fd:
+        with open(os.path.join(tmpdir_path, "dagster.yaml"), "w", encoding="utf8") as fd:
             yaml.dump({"compute_logs": {"garbage": "flargh"}}, fd, default_flow_style=False)
         with pytest.raises(
             DagsterInvalidConfigError, match='Received unexpected config entry "garbage"'
@@ -93,7 +92,7 @@ def test_init_compute_log_with_bad_config_override():
 
 def test_init_compute_log_with_bad_config_module():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        with open(os.path.join(tmpdir_path, "dagster.yaml"), "w") as fd:
+        with open(os.path.join(tmpdir_path, "dagster.yaml"), "w", encoding="utf8") as fd:
             yaml.dump(
                 {"compute_logs": {"module": "flargh", "class": "Woble", "config": {}}},
                 fd,
@@ -127,7 +126,7 @@ def test_get_run_by_id():
 
         def _has_run(self, run_id):
             # This is uglier than we would like because there is no nonlocal keyword in py2
-            global MOCK_HAS_RUN_CALLED  # pylint: disable=global-statement
+            global MOCK_HAS_RUN_CALLED  # pylint: disable=global-variable-not-assigned
             # pylint: disable=protected-access
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
                 self._run_storage.add_run(PipelineRun(pipeline_name="foo_pipeline", run_id=run_id))

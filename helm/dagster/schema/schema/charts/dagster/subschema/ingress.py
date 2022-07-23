@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, Optional, Union
 
-from pydantic import BaseModel  # pylint: disable=no-name-in-module
+from pydantic import BaseModel
 
 from ...utils import kubernetes
 

@@ -29,6 +29,9 @@ fragment metadataEntryFragment on MetadataEntry {
   ... on IntMetadataEntry {
     intRepr
   }
+  ... on BoolMetadataEntry {
+    boolValue
+  }
   ... on JsonMetadataEntry {
     jsonString
   }
@@ -241,13 +244,14 @@ subscription subscribeTest($runId: ID!) {
 RUN_EVENTS_QUERY = (
     MESSAGE_EVENT_FRAGMENTS
     + """
-query pipelineRunEvents($runId: ID!, $after: Cursor) {
-  pipelineRunOrError(runId: $runId) {
+query pipelineRunEvents($runId: ID!, $cursor: String) {
+  logsForRun(runId: $runId, afterCursor: $cursor) {
     __typename
-    ... on PipelineRun {
-      events(after: $after) {
+    ... on EventConnection {
+      events {
         ...messageEventFragment
       }
+      cursor
     }
   }
 }
@@ -316,8 +320,8 @@ mutation($executionParams: ExecutionParams!) {
 LAUNCH_PIPELINE_REEXECUTION_MUTATION = (
     ERROR_FRAGMENT
     + """
-mutation($executionParams: ExecutionParams!) {
-  launchPipelineReexecution(executionParams: $executionParams) {
+mutation($executionParams: ExecutionParams, $reexecutionParams: ReexecutionParams) {
+  launchPipelineReexecution(executionParams: $executionParams, reexecutionParams: $reexecutionParams) {
     __typename
 
     ... on PythonError {

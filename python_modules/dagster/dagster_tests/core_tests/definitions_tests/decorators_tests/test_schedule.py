@@ -1,4 +1,5 @@
 import inspect
+import json
 import re
 from datetime import datetime, time
 
@@ -16,14 +17,14 @@ from dagster import (
     job,
     monthly_schedule,
     op,
-    pipeline,
     schedule,
-    solid,
     validate_run_config,
     weekly_schedule,
 )
-from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
-from dagster.utils.partitions import (
+from dagster._legacy import pipeline, solid
+from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._utils import merge_dicts
+from dagster._utils.partitions import (
     DEFAULT_DATE_FORMAT,
     DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
     DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE,
@@ -735,9 +736,25 @@ def test_schedule_decorators_bad():
 
     with pytest.raises(DagsterInvalidDefinitionError, match="invalid cron schedule"):
 
-        @schedule(cron_schedule="@daily", pipeline_name="foo_pipeline")
+        @schedule(cron_schedule="* * * * * *", pipeline_name="foo_pipeline")
         def bad_cron_string_three(context):
             return {}
+
+
+def test_schedule_with_nested_tags():
+
+    nested_tags = {"foo": {"bar": "baz"}}
+
+    @schedule(cron_schedule="* * * * *", pipeline_name="foo_pipeline", tags=nested_tags)
+    def my_tag_schedule():
+        return {}
+
+    assert my_tag_schedule.evaluate_tick(
+        build_schedule_context(scheduled_execution_time=pendulum.now())
+    )[0][0].tags == merge_dicts(
+        {key: json.dumps(val) for key, val in nested_tags.items()},
+        {"dagster/schedule_name": "my_tag_schedule"},
+    )
 
 
 def test_scheduled_jobs():
@@ -995,3 +1012,26 @@ def test_request_based_schedule_generator_no_context():
     assert len(requests) == 1
     assert requests[0].run_config == FOO_CONFIG
     assert requests[0].tags.get("foo") == "FOO"
+
+
+def test_vixie_cronstring_schedule():
+    context_without_time = build_schedule_context()
+    start_date = datetime(year=2019, month=1, day=1)
+
+    @op
+    def foo_op(context):
+        pass
+
+    @job
+    def foo_job():
+        foo_op()
+
+    @schedule(cron_schedule="@daily", job=foo_job)
+    def foo_schedule():
+        yield RunRequest(run_key=None, run_config={}, tags={"foo": "FOO"})
+
+    # evaluate tick
+    execution_data = foo_schedule.evaluate_tick(context_without_time)
+    assert execution_data.run_requests
+    assert len(execution_data.run_requests) == 1
+    assert execution_data.run_requests[0].tags.get("foo") == "FOO"

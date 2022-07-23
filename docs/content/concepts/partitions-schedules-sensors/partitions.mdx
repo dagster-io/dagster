@@ -1,11 +1,146 @@
 ---
-title: Partitioned Jobs | Dagster
-description: Dagster "Partitioned Jobs" enable launching backfills, where each partition processes a subset of data.
+title: Partitioned Assets and Jobs | Dagster
+description: Partitioned assets and jobs enable launching backfills, where each partition processes a subset of data.
 ---
 
-# Partitioned Jobs
+# Partitioned Assets and Jobs
 
-## Relevant APIs
+Partitioning allows a job or software-defined asset to correspond to a set of entities with identical structure but different parameters.
+
+A _partitioned job_ is a job where each run corresponds to a partition key. Most commonly, each partition key represents a time window, so, when a job executes, it processes data within one of the time windows.
+
+A _partitioned asset_ is an asset that's composed of a set of partitions, which can be materialized and tracked independently. Most commonly, each partition represents all the records in a data set that fall within a particular time window. Depending on where the asset is stored, each partition might correspond to a file or a slice of a table in a database.
+
+It's common to construct a partitioned job that materializes a particular set of partitioned assets every time it runs.
+
+Having defined a partitioned job or asset, you can:
+
+- View runs by partition in Dagit.
+- Define a [schedule](/concepts/partitions-schedules-sensors/schedules) that fills in a partition each time it runs. For example, a job might run each day and process the data that arrived during the previous day.
+- Launch [backfills](/concepts/partitions-schedules-sensors/backfills), which are sets of runs that each process a different partition. For example, after making a code change, you might want to run your job on all time windows instead of just one of them.
+
+---
+
+## Partitioned Assets
+
+### Relevant APIs
+
+| Name                                              | Description                                                                       |
+| ------------------------------------------------- | --------------------------------------------------------------------------------- |
+| <PyObject object="PartitionsDefinition" />        | Superclass - defines the set of partitions that can be materialized for an asset. |
+| <PyObject object="HourlyPartitionsDefinition" />  | A partitions definition with a partition for each hour.                           |
+| <PyObject object="DailyPartitionsDefinition" />   | A partitions definition with a partition for each day.                            |
+| <PyObject object="WeeklyPartitionsDefinition" />  | A partitions definition with a partition for each week.                           |
+| <PyObject object="MonthlyPartitionsDefinition" /> | A partitions definition with a partition for each month.                          |
+| <PyObject object="StaticPartitionsDefinition" />  | A partitions definition with a fixed set of partitions.                           |
+
+A software-defined asset can be assigned a <PyObject object="PartitionsDefinition" />, which determines the set of partitions that compose it. Once an asset has a set of partitions, you can launch materializations of individual partitions and view the materialization history by partition in Dagit.
+
+For example, below is an asset with a partition for each day since the first day of 2022:
+
+```python file=/concepts/partitions_schedules_sensors/partitioned_asset.py
+from dagster import DailyPartitionsDefinition, asset
+
+
+@asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
+def my_daily_partitioned_asset(context):
+    context.log.info(
+        f"Processing asset partition '{context.asset_partition_key_for_output()}'"
+    )
+```
+
+When an asset is unpartitioned, the default IO manager stores it in a file whose location is based on the asset's key. When an asset is partitioned, the default IO manager stores each partition in a separate file, all underneath a directory whose location is based on the asset's key.
+
+To view all partitions for an asset, open the **Definition** tab of the asset's details page. The bar in the **Partitions** section represents all of the partitions for the asset.
+
+In the following image, the partitions bar is entirely gray. This is because none of the partitions have been materialized:
+
+<Image
+src="/images/concepts/partitions-schedules-sensors/partitions/partitioned-asset.png"
+width={2662}
+height={1618}
+/>
+
+### Materializating partitioned assets
+
+When you materialize a partitioned asset, you choose which partitions to materialize, and Dagster will launch a run for each partition.
+
+**Note**: If you choose more than one partition, the [Dagster Daemon](/deployment/guides/service#running-dagster-daemon) needs to be running to queue the multiple runs.
+
+<Image
+src="/images/concepts/partitions-schedules-sensors/partitions/rematerialize-partition.png"
+width={2662}
+height={1618}
+/>
+
+After you've materialized a partition, it will show up as green in the partitions bar.
+
+<Image
+src="/images/concepts/partitions-schedules-sensors/partitions/materialized-partitioned-asset.png"
+width={2662}
+height={1618}
+/>
+
+To view materializations by partition, navigate to the **Activity** tab:
+
+<Image
+src="/images/concepts/partitions-schedules-sensors/partitions/materialized-partitioned-asset-activity.png"
+width={2662}
+height={1618}
+/>
+
+### Partition Dependencies
+
+When a partitioned asset depends on another partitioned asset, each partition in the downstream asset depends on a partition or multiple partitions in the upstream asset.
+
+A few rules govern partition-to-partition dependencies:
+
+- When the upstream asset and downstream asset have the same <PyObject object="PartitionsDefinition" />, each partition in the downstream asset depends on the same partition in the upstream asset.
+- When the upstream asset and downstream asset are both time window-partitioned, each partition in the downstream asset depends on all partitions in the upstream asset that intersect its time window.
+
+  For example, if an asset with a <PyObject object="DailyPartitionsDefinition" /> depends on an asset with an <PyObject object="HourlyPartitionsDefinition" />, then partition `2022-04-12` of the daily asset the would depend on 24 partitions of the hourly asset: `2022-04-12-00:00` through `2022-04-12-23:00`.
+
+## Partitioned Asset Jobs
+
+A partitioned asset job is a job that materializes a particular set of partitioned assets every time it runs.
+
+```python file=/concepts/partitions_schedules_sensors/partitioned_asset_job.py
+from dagster import (
+    AssetSelection,
+    HourlyPartitionsDefinition,
+    asset,
+    define_asset_job,
+    repository,
+)
+
+hourly_partitions_def = HourlyPartitionsDefinition(start_date="2022-05-31-00:00")
+
+
+@asset(partitions_def=hourly_partitions_def)
+def asset1():
+    ...
+
+
+@asset(partitions_def=hourly_partitions_def)
+def asset2():
+    ...
+
+
+partitioned_asset_job = define_asset_job(
+    name="asset_1_and_2_job",
+    selection=AssetSelection.assets(asset1, asset2),
+    partitions_def=hourly_partitions_def,
+)
+
+
+@repository
+def repo():
+    return [asset1, asset2, partitioned_asset_job]
+```
+
+## Partitioned Non-Asset Jobs
+
+### Relevant APIs
 
 | Name                                                       | Description                                                                                         |
 | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
@@ -18,21 +153,7 @@ description: Dagster "Partitioned Jobs" enable launching backfills, where each p
 | <PyObject object="dynamic_partitioned_config" decorator /> | Decorator for constructing partitioned config for a set of partition keys that can grow over time.  |
 | <PyObject object="build_schedule_from_partitioned_job" />  | A function that constructs a schedule whose interval matches the partitioning of a partitioned job. |
 
-## Overview
-
-A _partitioned job_ is a job where each run corresponds to a "partition". The choice of partition determines the run's config. Most commonly, each partition is a time window, so, when a job executes, it processes data within one of the time windows.
-
-Having defined a partitioned job, you can:
-
-- View runs by partition in Dagit.
-- Define a [schedule](/concepts/partitions-schedules-sensors/schedules) that fills in a partition each time it runs. For example, a job might run each day and process the data that arrived during the previous day.
-- Launch [backfills](/concepts/partitions-schedules-sensors/backfills), which are sets of runs that each process a different partition. For example, after making a code change, you might want to re-run your job on every date that it has run on in the past.
-
----
-
-## Defining Partitioned Jobs
-
-You define a partitioned job by constructing a <PyObject object="PartitionedConfig" /> object and supplying it when you construct your job.
+When defining a job that doesn't use software-defined assets, you can make it partitioned by supplying <PyObject object="PartitionedConfig" /> object as its config.
 
 ### Defining a Job with Time Partitions
 
@@ -94,7 +215,31 @@ def do_stuff_partitioned():
     process_data_for_date()
 ```
 
-In addition to the <PyObject object="daily_partitioned_config" decorator /> decorator, Dagster also provides <PyObject object="monthly_partitioned_config" decorator />, <PyObject object="weekly_partitioned_config" decorator />, <PyObject object="hourly_partitioned_config" decorator />.
+#### Dagit Partitions Tab
+
+In Dagit, you can view runs by partition in the Partitions tab of a Job page.
+
+<Image
+alt="Partitions Tab"
+src="/images/concepts/partitions-schedules-sensors/partitions/partitioned-job.png"
+width={2662}
+height={1618}
+/>
+
+In the "Run Matrix", each column corresponds to one of the partitions in the job. The time listed corresponds to the start time of the partition. Each row corresponds to one of the steps in the job. You can click on an individual box to navigate to logs and run information for the step.
+
+You can view and use partitions in the Dagit Launchpad tab for a job. In the top bar, you can select from the list of all available partitions. Within the config editor, the config for the selected partition will be populated.
+
+In the screenshot below, we select the `2020-01-02` partition, and we can see that the run config for the partition has been populated in the editor.
+
+<Image
+alt="Partitions in Dagit Launchpad"
+src="/images/concepts/partitions-schedules-sensors/partitions/launchpad.png"
+width={2662}
+height={1618}
+/>
+
+In addition to the <PyObject object="daily_partitioned_config" decorator /> decorator, Dagster also provides <PyObject object="monthly_partitioned_config" decorator />, <PyObject object="weekly_partitioned_config" decorator />, <PyObject object="hourly_partitioned_config" decorator />. See the API docs for each of these decorators for more information on how partitions are built based on different `start_date`, `minute_offset`, `hour_offset`, and `day_offset` inputs.
 
 ### Defining a Job with Static Partitions
 
@@ -129,7 +274,7 @@ def continent_job():
     continent_op()
 ```
 
-## Creating Schedules from Partitioned Jobs
+### Creating Schedules from Partitioned Jobs
 
 It's common that, when you have a partitioned job, you want to run it on a schedule. For example, if your job has a partition for each date, you likely want to run that job every day, on the partition for that day.
 
@@ -173,7 +318,7 @@ def antarctica_schedule():
     yield request
 ```
 
-The [Schedules concept page](/concepts/partitions-schedules-sensors/schedules#a-schedule-from-a-partitioned-job) describes how construct both kinds of schedules in more detail.
+Refer to the [Schedules documentation](/concepts/partitions-schedules-sensors/schedules#schedules-from-partitioned-assets-and-jobs) for more info about constructing both schedule types.
 
 ## Testing
 
@@ -183,12 +328,79 @@ Invoking a <PyObject object="PartitionedConfig" /> object will directly invoke t
 
 If you want to check whether the generated run config is valid for the config of job, you can use the <PyObject object="validate_run_config" /> function.
 
-```python file=/concepts/partitions_schedules_sensors/partitioned_config_test.py startafter=start endbefore=end
+```python file=/concepts/partitions_schedules_sensors/partitioned_config_test.py startafter=start_partition_config endbefore=end_partition_config
 from dagster import validate_run_config, daily_partitioned_config
 from datetime import datetime
 
 
 @daily_partitioned_config(start_date=datetime(2020, 1, 1))
+def my_partitioned_config(start: datetime, _end: datetime):
+    return {
+        "ops": {
+            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
+        }
+    }
+
+
+def test_my_partitioned_config():
+    # assert that the decorated function returns the expected output
+    run_config = my_partitioned_config(datetime(2020, 1, 3), datetime(2020, 1, 4))
+    assert run_config == {
+        "ops": {"process_data_for_date": {"config": {"date": "2020-01-03"}}}
+    }
+
+    # assert that the output of the decorated function is valid configuration for the
+    # do_stuff_partitioned job
+    assert validate_run_config(do_stuff_partitioned, run_config)
+```
+
+If you want to test that your <PyObject object="PartitionedConfig" /> creates the partitions you expect, you can use the `get_partition_keys` or `get_run_config_for_partition_key` functions.
+
+```python file=/concepts/partitions_schedules_sensors/partitioned_config_test.py startafter=start_partition_keys endbefore=end_partition_keys
+@daily_partitioned_config(start_date=datetime(2020, 1, 1), minute_offset=15)
+def my_offset_partitioned_config(start: datetime, _end: datetime):
+    return {
+        "ops": {
+            "process_data": {
+                "config": {
+                    "start": start.strftime("%Y-%m-%d-%H:%M"),
+                    "end": _end.strftime("%Y-%m-%d-%H:%M"),
+                }
+            }
+        }
+    }
+
+
+@op(config_schema={"start": str, "end": str})
+def process_data(context):
+    s = context.op_config["start"]
+    e = context.op_config["end"]
+    context.log.info(f"processing data for {s} - {e}")
+
+
+@job(config=my_offset_partitioned_config)
+def do_more_stuff_partitioned():
+    process_data()
+
+
+def test_my_offset_partitioned_config():
+    # test that the partition keys are what you expect
+    keys = my_offset_partitioned_config.get_partition_keys()
+    assert keys[0] == "2020-01-01"
+    assert keys[1] == "2020-01-02"
+
+    # test that the run_config for a partition is valid for do_stuff_partitioned
+    run_config = my_offset_partitioned_config.get_run_config_for_partition_key(keys[0])
+    assert validate_run_config(do_more_stuff_partitioned, run_config)
+
+    # test that the contents of run_config are what you expect
+    assert run_config == {
+        "ops": {
+            "process_data": {
+                "config": {"start": "2020-01-01-00:15", "end": "2020-01-02-00:15"}
+            }
+        }
+    }
 ```
 
 ### Testing Partitioned Jobs
@@ -200,34 +412,9 @@ def test_do_stuff_partitioned():
     assert do_stuff_partitioned.execute_in_process(partition_key="2020-01-01").success
 ```
 
-## Partitions in Dagit
+## See it in action
 
-### The Partitions Tab
+For more examples of partitions, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news_assets):
 
-In Dagit, you can view runs by partition in the Partitions tab of a Job page.
-
-In the "Run Matrix", each column corresponds to one of the partitions in the job. Each row corresponds to one of the steps in the job.
-
-<!-- This was generated from go/prod -->
-
-<Image
-alt="Partitions Tab"
-src="/images/concepts/partitions-schedules-sensors/partitions-page.png"
-width={3808}
-height={2414}
-/>
-
-You can click on an individual box to navigate to logs and run information for the step.
-
-### Launching Partitioned Runs from the Launchpad
-
-You can view and use partitions in the Dagit Launchpad tab for a job. In the top bar, you can select from the list of all available partitions. Within the config editor, the config for the selected partition will be populated.
-
-In the screenshot below, we select the `2020-05-01` partition, and we can see that the run config for the partition has been populated in the editor.
-
-<Image
-alt="Partitions in Dagit Launchpad"
-src="/images/concepts/partitions-schedules-sensors/partitions-playground.png"
-width={3808}
-height={2414}
-/>
+- [Defining partitioned assets](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/core/assets/items.py)
+- [Defining a partitioned asset job and a schedule based on it](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/core/\__init\_\_.py)

@@ -2,6 +2,7 @@ import atexit
 import json
 import subprocess
 import time
+from typing import Set
 from urllib import request
 from urllib.error import URLError
 
@@ -30,7 +31,7 @@ def get_rpc_server_status():
     return json.load(resp)
 
 
-all_subprocs = set()
+all_subprocs: Set[subprocess.Popen] = set()
 
 
 def kill_all_subprocs():

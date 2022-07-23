@@ -5,7 +5,7 @@ description: Dagster comes with a convenient CLI command for creating a new proj
 
 # Create a New Project
 
-This section will show you how to a create a new Dagster project and organize your files as you build larger and larger jobs. Dagster comes with a convenient CLI command for generating a project skeleton, but you can also choose to organize your files differently as your project evolves.
+This section will show you how to create a new Dagster project and organize your files as you build larger and larger jobs. Dagster comes with a convenient CLI command for generating a project skeleton, but you can also choose to organize your files differently as your project evolves.
 
 If you're completely new to Dagster, we recommend that you visit our [Tutorial](/tutorial) to learn all the basic concepts of Dagster.
 
@@ -38,7 +38,7 @@ Inside of the directory `PROJECT_NAME/`, the following files and directories are
 | `PROJECT_NAME/jobs/`         | A Python package that contains JobDefinitions, which are built up from ops                                                           |
 | `PROJECT_NAME/schedules/`    | A Python package that contains ScheduleDefinitions, to trigger recurring job runs based on time                                      |
 | `PROJECT_NAME/sensors/`      | A Python package that contains SensorDefinitions, to trigger job runs based on external state                                        |
-| `PROJECT_NAME/repository.py` | A Python module that contains a RepositoryDefinition, to specify which jbos, schedules, and sensors are available in your repository |
+| `PROJECT_NAME/repository.py` | A Python module that contains a RepositoryDefinition, to specify which jobs, schedules, and sensors are available in your repository |
 
 This file structure is a good starting point and suitable for most Dagster projects. As you build more and more jobs, you may eventually find your own way of structuring your code that works best for you.
 
@@ -76,7 +76,7 @@ pytest PROJECT_NAME_tests
 
 As you create Dagster ops and jobs, add tests in `PROJECT_NAME_tests/` to check that your code behaves as desired and does not break over time.
 
-For hints on how to write tests for ops and jobs in Dagster, [see our documentation tutorial on Testing](/tutorial/intro-tutorial/testable).
+For hints on how to write tests for ops and jobs in Dagster, [see our documentation tutorial on Testing](/tutorial/ops-jobs/testable).
 
 ## Deployment
 

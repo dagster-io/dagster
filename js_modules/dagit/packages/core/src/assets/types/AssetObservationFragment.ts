@@ -33,12 +33,6 @@ export interface AssetObservationFragment_runOrError_Run {
 
 export type AssetObservationFragment_runOrError = AssetObservationFragment_runOrError_RunNotFoundError | AssetObservationFragment_runOrError_Run;
 
-export interface AssetObservationFragment_stepStats {
-  __typename: "RunStepStats";
-  endTime: number | null;
-  startTime: number | null;
-}
-
 export interface AssetObservationFragment_metadataEntries_PathMetadataEntry {
   __typename: "PathMetadataEntry";
   label: string;
@@ -95,6 +89,13 @@ export interface AssetObservationFragment_metadataEntries_IntMetadataEntry {
   description: string | null;
   intValue: number | null;
   intRepr: string;
+}
+
+export interface AssetObservationFragment_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
 }
 
 export interface AssetObservationFragment_metadataEntries_PipelineRunMetadataEntry {
@@ -188,7 +189,7 @@ export interface AssetObservationFragment_metadataEntries_TableSchemaMetadataEnt
   schema: AssetObservationFragment_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type AssetObservationFragment_metadataEntries = AssetObservationFragment_metadataEntries_PathMetadataEntry | AssetObservationFragment_metadataEntries_JsonMetadataEntry | AssetObservationFragment_metadataEntries_UrlMetadataEntry | AssetObservationFragment_metadataEntries_TextMetadataEntry | AssetObservationFragment_metadataEntries_MarkdownMetadataEntry | AssetObservationFragment_metadataEntries_PythonArtifactMetadataEntry | AssetObservationFragment_metadataEntries_FloatMetadataEntry | AssetObservationFragment_metadataEntries_IntMetadataEntry | AssetObservationFragment_metadataEntries_PipelineRunMetadataEntry | AssetObservationFragment_metadataEntries_AssetMetadataEntry | AssetObservationFragment_metadataEntries_TableMetadataEntry | AssetObservationFragment_metadataEntries_TableSchemaMetadataEntry;
+export type AssetObservationFragment_metadataEntries = AssetObservationFragment_metadataEntries_PathMetadataEntry | AssetObservationFragment_metadataEntries_JsonMetadataEntry | AssetObservationFragment_metadataEntries_UrlMetadataEntry | AssetObservationFragment_metadataEntries_TextMetadataEntry | AssetObservationFragment_metadataEntries_MarkdownMetadataEntry | AssetObservationFragment_metadataEntries_PythonArtifactMetadataEntry | AssetObservationFragment_metadataEntries_FloatMetadataEntry | AssetObservationFragment_metadataEntries_IntMetadataEntry | AssetObservationFragment_metadataEntries_BoolMetadataEntry | AssetObservationFragment_metadataEntries_PipelineRunMetadataEntry | AssetObservationFragment_metadataEntries_AssetMetadataEntry | AssetObservationFragment_metadataEntries_TableMetadataEntry | AssetObservationFragment_metadataEntries_TableSchemaMetadataEntry;
 
 export interface AssetObservationFragment {
   __typename: "ObservationEvent";
@@ -197,8 +198,7 @@ export interface AssetObservationFragment {
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  stepStats: AssetObservationFragment_stepStats;
-  label: string;
+  label: string | null;
   description: string | null;
   metadataEntries: AssetObservationFragment_metadataEntries[];
 }

@@ -1,9 +1,11 @@
 from enum import Enum
 
-from dagster import check
+import dagster._check as check
 
 SYSTEM_TAG_PREFIX = "dagster/"
 HIDDEN_TAG_PREFIX = ".dagster/"
+
+REPOSITORY_LABEL_TAG = f"{HIDDEN_TAG_PREFIX}repository"
 
 SCHEDULE_NAME_TAG = "{prefix}schedule_name".format(prefix=SYSTEM_TAG_PREFIX)
 
@@ -39,7 +41,11 @@ PRIORITY_TAG = "{prefix}priority".format(prefix=SYSTEM_TAG_PREFIX)
 
 DOCKER_IMAGE_TAG = "{prefix}image".format(prefix=SYSTEM_TAG_PREFIX)
 
-USER_EDITABLE_SYSTEM_TAGS = [PRIORITY_TAG]
+MAX_RETRIES_TAG = "{prefix}max_retries".format(prefix=SYSTEM_TAG_PREFIX)
+RETRY_NUMBER_TAG = "{prefix}retry_number".format(prefix=SYSTEM_TAG_PREFIX)
+RETRY_STRATEGY_TAG = "{prefix}retry_strategy".format(prefix=SYSTEM_TAG_PREFIX)
+
+USER_EDITABLE_SYSTEM_TAGS = [PRIORITY_TAG, MAX_RETRIES_TAG, RETRY_STRATEGY_TAG]
 
 
 class TagType(Enum):
@@ -63,12 +69,12 @@ def get_tag_type(tag):
         return TagType.USER_PROVIDED
 
 
-def check_tags(obj, name):
-    check.opt_dict_param(obj, name, key_type=str, value_type=str)
+def check_reserved_tags(tags):
+    check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
 
-    for tag in obj.keys():
+    for tag in tags.keys():
         if not tag in USER_EDITABLE_SYSTEM_TAGS:
             check.invariant(
                 not tag.startswith(SYSTEM_TAG_PREFIX),
-                desc="User attempted to set tag with reserved system prefix: {tag}".format(tag=tag),
+                desc="Attempted to set tag with reserved system prefix: {tag}".format(tag=tag),
             )

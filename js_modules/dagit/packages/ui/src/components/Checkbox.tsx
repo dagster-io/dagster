@@ -1,11 +1,10 @@
-import {uniqueId} from 'lodash';
 import * as React from 'react';
 import {useRef} from 'react';
 import styled, {css} from 'styled-components/macro';
 
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 
-const DISABLED_COLOR = ColorsWIP.Gray300;
+const DISABLED_COLOR = Colors.Gray300;
 
 type Format = 'check' | 'star' | 'switch';
 type Size = 'small' | 'large';
@@ -30,23 +29,25 @@ interface IconProps {
   fillColor: string;
 }
 
-const StarIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor}) => (
+const StarIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor, disabled}) => (
   <svg width="24px" height="24px" viewBox="-3 -3 24 24">
     <path
       className="interaction-focus-outline"
       d="M8.99983 14.27L13.1498 16.78C13.9098 17.24 14.8398 16.56 14.6398 15.7L13.5398 10.98L17.2098 7.80001C17.8798 7.22001 17.5198 6.12001 16.6398 6.05001L11.8098 5.64001L9.91983 1.18001C9.57983 0.37001 8.41983 0.37001 8.07983 1.18001L6.18983 5.63001L1.35983 6.04001C0.479829 6.11001 0.119828 7.21001 0.789828 7.79001L4.45983 10.97L3.35983 15.69C3.15983 16.55 4.08983 17.23 4.84983 16.77L8.99983 14.27Z"
-      fill={ColorsWIP.White}
+      fill={Colors.White}
     />
     <path
       d="M16.65 6.04L11.81 5.62L9.92 1.17C9.58 0.36 8.42 0.36 8.08 1.17L6.19 5.63L1.36 6.04C0.48 6.11 0.12 7.21 0.79 7.79L4.46 10.97L3.36 15.69C3.16 16.55 4.09 17.23 4.85 16.77L9 14.27L13.15 16.78C13.91 17.24 14.84 16.56 14.64 15.7L13.54 10.97L17.21 7.79C17.88 7.21 17.53 6.11 16.65 6.04ZM9 12.4L5.24 14.67L6.24 10.39L2.92 7.51L7.3 7.13L9 3.1L10.71 7.14L15.09 7.52L11.77 10.4L12.77 14.68L9 12.4Z"
       className="interaction-darken"
-      fill={ColorsWIP.Gray300}
+      fill={Colors.Gray300}
+      style={{opacity: disabled ? 0.6 : 1}}
     />
     {indeterminate && (
       <path
         d="M11.6490126,5.26286597 L11.8098,5.64001 L16.6398,6.05001 C17.5198,6.12001 17.8798,7.22001 17.2098,7.80001 L17.2098,7.80001 L13.5398,10.98 L14.6398,15.7 C14.8398,16.56 13.9098,17.24 13.1498,16.78 L13.1498,16.78 L8.99983,14.27 L4.84983,16.77 C4.49121528,16.9870563 4.09474951,16.9502879 3.79701262,16.7605538 L11.6490126,5.26286597 Z"
         className="interaction-darken"
         fill={fillColor}
+        style={{opacity: disabled ? 0.6 : 1}}
       />
     )}
     <path
@@ -57,12 +58,13 @@ const StarIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor}) => (
         transformOrigin: '9px 9px',
         transform: !indeterminate && checked ? 'scale(1,1)' : 'scale(0,0)',
         transition: 'transform 80ms linear',
+        opacity: disabled ? 0.4 : 1,
       }}
     />
   </svg>
 );
 
-const SwitchIcon: React.FC<IconProps> = ({checked, indeterminate, disabled, fillColor}) => (
+const SwitchIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor, disabled}) => (
   <svg width="36px" height="24px" viewBox="-3 -3 42 28">
     <defs>
       <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="innerShadow">
@@ -79,8 +81,11 @@ const SwitchIcon: React.FC<IconProps> = ({checked, indeterminate, disabled, fill
       width="36"
       height="22"
       rx="11"
-      fill={disabled || (checked && !indeterminate) ? fillColor : ColorsWIP.Gray400}
-      style={{transition: 'fill 100ms linear'}}
+      fill={checked && !indeterminate ? fillColor : Colors.Gray400}
+      style={{
+        transition: 'fill 100ms linear',
+        opacity: disabled && checked && !indeterminate ? 0.6 : 1,
+      }}
       className="interaction-darken interaction-focus-outline"
     />
     {!disabled && <rect x="0" y="0" width="36" height="22" rx="11" fill="url(#innerShadow)" />}
@@ -92,37 +97,38 @@ const SwitchIcon: React.FC<IconProps> = ({checked, indeterminate, disabled, fill
       width="20"
       height="20"
       rx="10"
-      fill={ColorsWIP.White}
+      fill={disabled ? Colors.Gray200 : Colors.White}
     />
   </svg>
 );
 
-const CheckIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor}) => (
+const CheckIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor, disabled}) => (
   <svg width="24px" height="24px" viewBox="-3 -3 24 24">
     <path
       d="M16,0 C17.1,0 18,0.9 18,2 L18,2 L18,16 C18,17.1 17.1,18 16,18 L16,18 L2,18 C0.9,18 0,17.1 0,16 L0,16 L0,2 C0,0.9 0.9,0 2,0 L2,0 Z"
       id="Background"
       className=" interaction-focus-outline"
       style={{transition: 'fill 100ms linear'}}
-      fill={ColorsWIP.White}
+      fill={Colors.White}
     />
     <path
       id="Border"
       className="interaction-darken"
       d="M15 16H3C2.45 16 2 15.55 2 15V3C2 2.45 2.45 2 3 2H15C15.55 2 16 2.45 16 3V15C16 15.55 15.55 16 15 16ZM16 0H2C0.9 0 0 0.9 0 2V16C0 17.1 0.9 18 2 18H16C17.1 18 18 17.1 18 16V2C18 0.9 17.1 0 16 0Z"
-      fill={ColorsWIP.Gray300}
+      fill={Colors.Gray300}
+      style={{opacity: disabled ? (checked ? 0.4 : 0.6) : 1}}
     />
     <path
       d="M16,0 C17.1,0 18,0.9 18,2 L18,2 L18,16 C18,17.1 17.1,18 16,18 L16,18 L2,18 C0.9,18 0,17.1 0,16 L0,16 L0,2 C0,0.9 0.9,0 2,0 L2,0 Z"
       id="Fill"
       className="interaction-darken"
-      style={{transition: 'fill 100ms linear'}}
+      style={{transition: 'fill 100ms linear', opacity: disabled ? 0.6 : 1}}
       fill={checked || indeterminate ? fillColor : 'transparent'}
     />
     <polyline
       id="Check"
       fill="none"
-      stroke={ColorsWIP.White}
+      stroke={Colors.White}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -144,7 +150,7 @@ const CheckIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor}) => 
         transition: 'stroke-dashoffset 100ms linear',
         transitionDelay: !indeterminate ? '80ms' : '0',
       }}
-      stroke={ColorsWIP.White}
+      stroke={Colors.White}
       strokeWidth="2"
       strokeDasharray="8"
       strokeLinecap="round"
@@ -152,6 +158,9 @@ const CheckIcon: React.FC<IconProps> = ({checked, indeterminate, fillColor}) => 
     />
   </svg>
 );
+
+let counter = 0;
+const uniqueId = () => `checkbox-${counter++}`;
 
 const Base = ({
   id,
@@ -161,12 +170,12 @@ const Base = ({
   format = 'check',
   disabled = false,
   indeterminate = false,
-  fillColor = ColorsWIP.Blue500,
+  fillColor = Colors.Blue500,
   children, // not passed to input
   size,
   ...rest
 }: Props) => {
-  const uid = useRef(id || uniqueId('checkbox-'));
+  const uid = useRef(id || uniqueId());
   const Component: React.FC<IconProps> = {star: StarIcon, check: CheckIcon, switch: SwitchIcon}[
     format
   ];
@@ -185,7 +194,7 @@ const Base = ({
         disabled={disabled}
         checked={checked}
         indeterminate={indeterminate}
-        fillColor={disabled ? DISABLED_COLOR : fillColor}
+        fillColor={fillColor}
       />
       {label}
     </label>
@@ -219,7 +228,7 @@ export const Checkbox = styled(Base)`
   position: relative;
   user-select: none;
   align-items: flex-start;
-  color: ${({disabled}) => (disabled ? DISABLED_COLOR : ColorsWIP.Gray900)};
+  color: ${({disabled}) => (disabled ? DISABLED_COLOR : Colors.Gray900)};
   cursor: pointer;
   gap: 8px;
 

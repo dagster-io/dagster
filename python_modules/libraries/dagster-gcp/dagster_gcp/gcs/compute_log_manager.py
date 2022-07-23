@@ -4,7 +4,11 @@ from contextlib import contextmanager
 
 from google.cloud import storage  # type: ignore
 
-from dagster import Field, StringSource, check, seven
+import dagster._seven as seven
+from dagster import Field, StringSource
+from dagster import _check as check
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._utils import ensure_dir, ensure_file
 from dagster.core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
     ComputeIOType,
@@ -12,8 +16,6 @@ from dagster.core.storage.compute_log_manager import (
     ComputeLogManager,
 )
 from dagster.core.storage.local_compute_log_manager import IO_TYPE_EXTENSION, LocalComputeLogManager
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils import ensure_dir, ensure_file
 
 
 class GCSComputeLogManager(ComputeLogManager, ConfigurableClass):
@@ -35,7 +37,7 @@ class GCSComputeLogManager(ComputeLogManager, ConfigurableClass):
     Args:
         bucket (str): The name of the gcs bucket to which to log.
         local_dir (Optional[str]): Path to the local directory in which to stage logs. Default:
-            ``dagster.seven.get_system_temp_directory()``.
+            ``dagster._seven.get_system_temp_directory()``.
         prefix (Optional[str]): Prefix for the log file keys.
         json_credentials_envvar (Optional[str]): Env variable that contain the JSON with a private key
             and other credentials information. If this is set GOOGLE_APPLICATION_CREDENTIALS will be ignored.

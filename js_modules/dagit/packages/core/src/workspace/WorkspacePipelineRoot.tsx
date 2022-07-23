@@ -2,6 +2,7 @@ import {Alert, Box, NonIdealState, Page, PageHeader, Table, Heading} from '@dags
 import * as React from 'react';
 import {Link, Redirect, useLocation, useParams, useRouteMatch} from 'react-router-dom';
 
+import {useTrackPageView} from '../app/analytics';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {LoadingSpinner} from '../ui/Loading';
 
@@ -11,6 +12,8 @@ import {findRepoContainingPipeline} from './findRepoContainingPipeline';
 import {workspacePath, workspacePathFromAddress} from './workspacePath';
 
 export const WorkspacePipelineRoot = () => {
+  useTrackPageView();
+
   const params = useParams<{pipelinePath: string}>();
   const {pipelinePath} = params;
 

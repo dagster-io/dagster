@@ -1,3 +1,4 @@
+{{ config(tags=["foo", "bar"]) }}
 SELECT *
-from "test-schema".cereals
+from {{ ref("cereals") }}
 ORDER BY calories

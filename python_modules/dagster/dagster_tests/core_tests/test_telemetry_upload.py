@@ -6,11 +6,11 @@ import pytest
 import responses
 from click.testing import CliRunner
 
-from dagster.cli.pipeline import pipeline_execute_command
+from dagster._cli.pipeline import pipeline_execute_command
+from dagster._utils import pushd, script_relative_path
 from dagster.core.telemetry import cleanup_telemetry_logger
-from dagster.core.telemetry_upload import DAGSTER_TELEMETRY_URL, upload_logs
+from dagster.core.telemetry_upload import get_dagster_telemetry_url, upload_logs
 from dagster.core.test_utils import environ, instance_for_test
-from dagster.utils import pushd, script_relative_path
 
 
 def path_to_file(path):
@@ -29,7 +29,7 @@ def test_dagster_telemetry_upload(env):
     for handler in logger.handlers:
         logger.removeHandler(handler)
 
-    responses.add(responses.POST, DAGSTER_TELEMETRY_URL)
+    responses.add(responses.POST, get_dagster_telemetry_url())
 
     with instance_for_test(overrides={"telemetry": {"enabled": True}}):
         with environ(env):
@@ -53,7 +53,7 @@ def test_dagster_telemetry_upload(env):
             cleanup_telemetry_logger()
 
             upload_logs(mock_stop_event, raise_errors=True)
-            assert responses.assert_call_count(DAGSTER_TELEMETRY_URL, 1)
+            assert responses.assert_call_count(get_dagster_telemetry_url(), 1)
 
 
 @pytest.mark.parametrize(
@@ -77,4 +77,4 @@ def test_dagster_telemetry_no_test_env_upload(env):
                 )
 
             upload_logs(mock.MagicMock())
-            assert responses.assert_call_count(DAGSTER_TELEMETRY_URL, 0)
+            assert responses.assert_call_count(get_dagster_telemetry_url(), 0)

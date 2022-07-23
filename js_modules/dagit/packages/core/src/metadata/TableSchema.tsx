@@ -1,6 +1,6 @@
-import {Box, ColorsWIP, TagWIP, Tooltip} from '@dagster-io/ui';
+import {gql} from '@apollo/client';
+import {Box, Colors, Tag, Tooltip} from '@dagster-io/ui';
 import {Spacing} from '@dagster-io/ui/src/components/types';
-import {gql} from 'graphql.macro';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -84,7 +84,7 @@ const ColumnItem = styled(_ColumnItem)`
   flex-direction: column;
   gap: 4px;
   padding: 12px ${(props) => props.horizontalPadding}px;
-  border-top: 1px solid ${ColorsWIP.KeylineGray};
+  border-top: 1px solid ${Colors.KeylineGray};
   :first-child {
     border-top: none;
   }
@@ -96,22 +96,22 @@ const ColumnName = styled.div`
   padding-right: 4px;
 `;
 
-const TypeTag: React.FC<{type: string}> = ({type}) => <TagWIP intent="none">{type}</TagWIP>;
+const TypeTag: React.FC<{type: string}> = ({type}) => <Tag intent="none">{type}</Tag>;
 
-const NonNullableTag = <TagWIP intent="primary">non-nullable</TagWIP>;
+const NonNullableTag = <Tag intent="primary">non-nullable</Tag>;
 
-const UniqueTag = <TagWIP intent="primary">unique</TagWIP>;
+const UniqueTag = <Tag intent="primary">unique</Tag>;
 
 const ArbitraryConstraintTag: React.FC<{constraint: string}> = ({constraint}) => {
   if (constraint.length > MAX_CONSTRAINT_TAG_CHARS) {
     const content = constraint.substring(0, MAX_CONSTRAINT_TAG_CHARS - 3) + '...';
     return (
       <Tooltip content={<div>{constraint}</div>}>
-        <TagWIP intent="primary">{content}</TagWIP>
+        <Tag intent="primary">{content}</Tag>
       </Tooltip>
     );
   } else {
-    return <TagWIP intent="primary">{constraint}</TagWIP>;
+    return <Tag intent="primary">{constraint}</Tag>;
   }
 };
 

@@ -7,13 +7,14 @@ from airflow import DAG
 from airflow.models.baseoperator import BaseOperator
 from dagster_airflow.operators.util import check_storage_specified
 
-from dagster import check, seven
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+import dagster._check as check
+import dagster._seven as seven
+from dagster._utils.backcompat import canonicalize_backcompat_args
+from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance, is_dagster_home_set
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot, snapshot_from_execution_plan
-from dagster.utils.backcompat import canonicalize_backcompat_args
 
 from .compile import coalesce_execution_steps
 from .operators.docker_operator import DagsterDockerOperator

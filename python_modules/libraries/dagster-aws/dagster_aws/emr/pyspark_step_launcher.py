@@ -10,10 +10,12 @@ from dagster_aws.emr import EmrError, EmrJobRunner, emr_step_main
 from dagster_aws.emr.configs_spark import spark_config as get_spark_config
 from dagster_aws.utils.mrjob.log4j import parse_hadoop_log4j_records
 
-from dagster import Field, StringSource, check, resource
+from dagster import Field, StringSource
+from dagster import _check as check
+from dagster import resource
+from dagster._serdes import deserialize_value
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import DagsterInvariantViolationError, raise_execution_interrupts
-from dagster.core.events import log_step_event
 from dagster.core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
     PICKLED_STEP_RUN_REF_FILE_NAME,
@@ -187,7 +189,7 @@ def emr_pyspark_step_launcher(context):
 
 emr_pyspark_step_launcher.__doc__ = "\n".join(
     "- **" + option + "**: " + (field.description or "")
-    for option, field in emr_pyspark_step_launcher.config_schema.config_type.fields.items()
+    for option, field in emr_pyspark_step_launcher.config_schema.config_type.fields.items()  # type: ignore
 )
 
 
@@ -291,10 +293,8 @@ class EmrPySparkStepLauncher(StepLauncher):
 
             _upload_file_to_s3(step_run_ref_local_path, PICKLED_STEP_RUN_REF_FILE_NAME)
 
-    def launch_step(self, step_context, prior_attempts_count):
-        step_run_ref = step_context_to_step_run_ref(
-            step_context, prior_attempts_count, self.local_job_package_path
-        )
+    def launch_step(self, step_context):
+        step_run_ref = step_context_to_step_run_ref(step_context, self.local_job_package_path)
 
         run_id = step_context.pipeline_run.run_id
         log = step_context.log
@@ -307,25 +307,24 @@ class EmrPySparkStepLauncher(StepLauncher):
             0
         ]
 
-        yield from self.wait_for_completion_and_log(
-            log, run_id, step_key, emr_step_id, step_context
-        )
+        yield from self.wait_for_completion_and_log(run_id, step_key, emr_step_id, step_context)
 
-    def wait_for_completion_and_log(self, log, run_id, step_key, emr_step_id, step_context):
+    def wait_for_completion_and_log(self, run_id, step_key, emr_step_id, step_context):
         s3 = boto3.resource("s3", region_name=self.region_name)
         try:
-            for event in self.wait_for_completion(log, s3, run_id, step_key, emr_step_id):
-                log_step_event(step_context, event)
+            for event in self.wait_for_completion(step_context, s3, run_id, step_key, emr_step_id):
                 yield event
         except EmrError as emr_error:
             if self.wait_for_logs:
-                self._log_logs_from_s3(log, emr_step_id)
+                self._log_logs_from_s3(step_context.log, emr_step_id)
             raise emr_error
 
         if self.wait_for_logs:
-            self._log_logs_from_s3(log, emr_step_id)
+            self._log_logs_from_s3(step_context.log, emr_step_id)
 
-    def wait_for_completion(self, log, s3, run_id, step_key, emr_step_id, check_interval=15):
+    def wait_for_completion(
+        self, step_context, s3, run_id, step_key, emr_step_id, check_interval=15
+    ):
         """We want to wait for the EMR steps to complete, and while that's happening, we want to
         yield any events that have been written to S3 for us by the remote process.
         After the the EMR steps complete, we want a final chance to fetch events before finishing
@@ -339,13 +338,19 @@ class EmrPySparkStepLauncher(StepLauncher):
         while not done:
             with raise_execution_interrupts():
                 time.sleep(check_interval)  # AWS rate-limits us if we poll it too often
-                done = self.emr_job_runner.is_emr_step_complete(log, self.cluster_id, emr_step_id)
+                done = self.emr_job_runner.is_emr_step_complete(
+                    step_context.log, self.cluster_id, emr_step_id
+                )
 
                 all_events_new = self.read_events(s3, run_id, step_key)
 
             if len(all_events_new) > len(all_events):
                 for i in range(len(all_events), len(all_events_new)):
-                    yield all_events_new[i]
+                    event = all_events_new[i]
+                    # write each event from the EMR instance to the local instance
+                    step_context.instance.handle_new_event(event)
+                    if event.is_dagster_event:
+                        yield event.dagster_event
                 all_events = all_events_new
 
     def read_events(self, s3, run_id, step_key):
@@ -355,7 +360,7 @@ class EmrPySparkStepLauncher(StepLauncher):
 
         try:
             events_data = events_s3_obj.get()["Body"].read()
-            return pickle.loads(events_data)
+            return deserialize_value(pickle.loads(events_data))
         except ClientError as ex:
             # The file might not be there yet, which is fine
             if ex.response["Error"]["Code"] == "NoSuchKey":
@@ -434,9 +439,20 @@ class EmrPySparkStepLauncher(StepLauncher):
     def _main_file_local_path(self):
         return emr_step_main.__file__
 
+    def _sanitize_step_key(self, step_key: str) -> str:
+        # step_keys of dynamic steps contain brackets, which are invalid characters
+        return step_key.replace("[", "__").replace("]", "__")
+
     def _artifact_s3_uri(self, run_id, step_key, filename):
-        key = self._artifact_s3_key(run_id, step_key, filename)
+        key = self._artifact_s3_key(run_id, self._sanitize_step_key(step_key), filename)
         return "s3://{bucket}/{key}".format(bucket=self.staging_bucket, key=key)
 
     def _artifact_s3_key(self, run_id, step_key, filename):
-        return "/".join([self.staging_prefix, run_id, step_key, os.path.basename(filename)])
+        return "/".join(
+            [
+                self.staging_prefix,
+                run_id,
+                self._sanitize_step_key(step_key),
+                os.path.basename(filename),
+            ]
+        )

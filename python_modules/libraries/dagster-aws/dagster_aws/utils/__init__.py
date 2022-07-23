@@ -2,7 +2,7 @@ from botocore import __version__ as botocore_version
 from botocore.config import Config
 from packaging import version
 
-from dagster import check
+import dagster._check as check
 
 
 def construct_boto_client_retry_config(max_attempts):

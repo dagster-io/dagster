@@ -15,23 +15,10 @@ export interface ScheduleFragment_partitionSet {
   name: string;
 }
 
-export interface ScheduleFragment_scheduleState_repositoryOrigin_repositoryLocationMetadata {
-  __typename: "RepositoryMetadata";
-  key: string;
-  value: string;
-}
-
-export interface ScheduleFragment_scheduleState_repositoryOrigin {
-  __typename: "RepositoryOrigin";
-  id: string;
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: ScheduleFragment_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
-}
-
 export interface ScheduleFragment_scheduleState_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface ScheduleFragment_scheduleState_typeSpecificData_ScheduleData {
@@ -46,9 +33,12 @@ export interface ScheduleFragment_scheduleState_runs {
   id: string;
   runId: string;
   status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
-export interface ScheduleFragment_scheduleState_ticks_error_cause {
+export interface ScheduleFragment_scheduleState_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -58,7 +48,7 @@ export interface ScheduleFragment_scheduleState_ticks_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: ScheduleFragment_scheduleState_ticks_error_cause | null;
+  causes: ScheduleFragment_scheduleState_ticks_error_causes[];
 }
 
 export interface ScheduleFragment_scheduleState_ticks {
@@ -69,16 +59,19 @@ export interface ScheduleFragment_scheduleState_ticks {
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: ScheduleFragment_scheduleState_ticks_error | null;
 }
 
 export interface ScheduleFragment_scheduleState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;
-  repositoryOrigin: ScheduleFragment_scheduleState_repositoryOrigin;
+  repositoryName: string;
+  repositoryLocationName: string;
   typeSpecificData: ScheduleFragment_scheduleState_typeSpecificData | null;
   runs: ScheduleFragment_scheduleState_runs[];
   ticks: ScheduleFragment_scheduleState_ticks[];

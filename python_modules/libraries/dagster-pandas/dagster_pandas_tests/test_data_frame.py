@@ -1,3 +1,5 @@
+from typing import List
+
 import pytest
 from dagster_pandas.constraints import (
     ColumnDTypeInSetConstraint,
@@ -12,6 +14,7 @@ from dagster import (
     AssetMaterialization,
     DagsterInvariantViolationError,
     DagsterType,
+    DynamicOutput,
     Field,
     In,
     MetadataEntry,
@@ -22,9 +25,10 @@ from dagster import (
     dagster_type_loader,
     dagster_type_materializer,
     graph,
+    job,
     op,
 )
-from dagster.utils import safe_tempfile_path
+from dagster._utils import safe_tempfile_path
 
 
 def test_create_pandas_dataframe_dagster_type():
@@ -140,11 +144,10 @@ def test_execute_summary_stats_null_function():
     metadata_entries = _execute_summary_stats(
         "foo",
         DataFrame({"bar": [1, 2, 3]}),
-        lambda value: [MetadataEntry.text("baz", "qux", "quux")],
+        lambda value: [MetadataEntry("qux", value="baz")],
     )
     assert len(metadata_entries) == 1
     assert metadata_entries[0].label == "qux"
-    assert metadata_entries[0].description == "quux"
     assert metadata_entries[0].entry_data.text == "baz"
 
 
@@ -156,7 +159,7 @@ def test_execute_summary_stats_error():
         assert _execute_summary_stats(
             "foo",
             DataFrame({}),
-            lambda value: [MetadataEntry.text("baz", "qux", "quux"), "rofl"],
+            lambda value: [MetadataEntry("qux", value="baz"), "rofl"],
         )
 
 
@@ -277,7 +280,7 @@ def test_custom_dagster_dataframe_parametrizable_input():
 def test_basic_pipeline_with_pandas_dataframe_dagster_type_metadata_entries():
     def compute_event_metadata(dataframe):
         return [
-            MetadataEntry.text(str(max(dataframe["pid"])), "max_pid", "maximum pid"),
+            MetadataEntry("max_pid", value=str(max(dataframe["pid"]))),
         ]
 
     BasicDF = create_dagster_pandas_dataframe_type(
@@ -309,3 +312,31 @@ def test_basic_pipeline_with_pandas_dataframe_dagster_type_metadata_entries():
             )
             assert len(mock_df_output_event_metadata) == 1
             assert any([entry.label == "max_pid" for entry in mock_df_output_event_metadata])
+
+
+def execute_op_in_job(the_op):
+    @job
+    def the_job():
+        the_op()
+
+    return the_job.execute_in_process()
+
+
+def test_dataframe_annotations():
+    @op
+    def op_returns_dataframe() -> DataFrame:
+        return DataFrame()
+
+    assert execute_op_in_job(op_returns_dataframe).success
+
+    @op
+    def op_returns_output() -> Output[DataFrame]:
+        return Output(DataFrame())
+
+    assert execute_op_in_job(op_returns_output).success
+
+    @op
+    def op_returns_dynamic_output() -> List[DynamicOutput[DataFrame]]:
+        return [DynamicOutput(DataFrame(), "1")]
+
+    assert execute_op_in_job(op_returns_dynamic_output).success

@@ -1,26 +1,31 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterator, List, Mapping, Optional
+from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, cast
 
-from dagster import check
+import dagster._check as check
+from dagster._utils.backcompat import deprecation_warning
+from dagster._utils.forked_pdb import ForkedPdb
 from dagster.core.definitions.dependency import Node, NodeHandle
 from dagster.core.definitions.events import (
+    AssetKey,
     AssetMaterialization,
     AssetObservation,
     ExpectationResult,
     Materialization,
     UserEvent,
 )
+from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.mode import ModeDefinition
+from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.definitions.time_window_partitions import TimeWindow
-from dagster.core.errors import DagsterInvalidPropertyError
+from dagster.core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.utils.forked_pdb import ForkedPdb
+from dagster.core.storage.pipeline_run import DagsterRun, PipelineRun
 
 from .system import StepExecutionContext
 
@@ -115,9 +120,18 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.op_config
 
     @property
+    def op_config(self) -> Any:
+        return self.solid_config
+
+    @property
     def pipeline_run(self) -> PipelineRun:
         """PipelineRun: The current pipeline run"""
         return self._step_execution_context.pipeline_run
+
+    @property
+    def run(self) -> DagsterRun:
+        """DagsterRun: The current run"""
+        return cast(DagsterRun, self.pipeline_run)
 
     @property
     def instance(self) -> DagsterInstance:
@@ -169,7 +183,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.run_id
 
     @property
-    def run_config(self) -> dict:
+    def run_config(self) -> Mapping[str, object]:
         """dict: The run config for the current execution."""
         return self._step_execution_context.run_config
 
@@ -179,9 +193,26 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.pipeline_def
 
     @property
+    def job_def(self) -> JobDefinition:
+        """JobDefinition: The currently executing job."""
+        return cast(
+            JobDefinition,
+            check.inst(
+                self.pipeline_def,
+                JobDefinition,
+                "Accessing job_def inside a legacy pipeline. Use pipeline_def instead.",
+            ),
+        )
+
+    @property
     def pipeline_name(self) -> str:
         """str: The name of the currently executing pipeline."""
         return self._step_execution_context.pipeline_name
+
+    @property
+    def job_name(self) -> str:
+        """str: The name of the currently executing job."""
+        return self.pipeline_name
 
     @property
     def mode_def(self) -> ModeDefinition:
@@ -202,6 +233,14 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.solid_handle
 
     @property
+    def op_handle(self) -> NodeHandle:
+        """NodeHandle: The current op's handle.
+
+        :meta private:
+        """
+        return self.solid_handle
+
+    @property
     def solid(self) -> Node:
         """Solid: The current solid object.
 
@@ -211,9 +250,30 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.pipeline_def.get_solid(self.solid_handle)
 
     @property
+    def op(self) -> Node:
+        """Solid: The current op object.
+
+        :meta private:
+
+        """
+        return self.solid
+
+    @property
     def solid_def(self) -> SolidDefinition:
         """SolidDefinition: The current solid definition."""
         return self._step_execution_context.pipeline_def.get_solid(self.solid_handle).definition
+
+    @property
+    def op_def(self) -> OpDefinition:
+        """OpDefinition: The current op definition."""
+        return cast(
+            OpDefinition,
+            check.inst(
+                self.solid_def,
+                OpDefinition,
+                "Called op_def on a legacy solid. Use solid_def instead.",
+            ),
+        )
 
     @property
     def has_partition_key(self) -> bool:
@@ -228,13 +288,78 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.partition_key
 
+    @property
+    def partition_time_window(self) -> str:
+        """The partition time window for the current run.
+
+        Raises an error if the current run is not a partitioned run, or if the job's partition
+        definition is not a TimeWindowPartitionsDefinition.
+        """
+        return self._step_execution_context.partition_time_window
+
+    @property
+    def selected_asset_keys(self) -> AbstractSet[AssetKey]:
+        assets_def = self.job_def.asset_layer.assets_def_for_node(self.solid_handle)
+        if assets_def is None:
+            return set()
+        return assets_def.keys
+
+    @property
+    def selected_output_names(self) -> AbstractSet[str]:
+        # map selected asset keys to the output names they correspond to
+        selected_asset_keys = self.selected_asset_keys
+        selected_outputs = set()
+        for output_name in self.op.output_dict.keys():
+            asset_info = self.job_def.asset_layer.asset_info_for_output(
+                self.solid_handle, output_name
+            )
+            if asset_info and asset_info.key in selected_asset_keys:
+                selected_outputs.add(output_name)
+        return selected_outputs
+
+    def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
+        asset_output_info = self.pipeline_def.asset_layer.asset_info_for_output(
+            node_handle=self.op_handle, output_name=output_name
+        )
+        if asset_output_info is None:
+            check.failed(f"Output '{output_name}' has no asset")
+        else:
+            return asset_output_info.key
+
+    def asset_key_for_input(self, input_name: str) -> AssetKey:
+        key = self.pipeline_def.asset_layer.asset_key_for_input(
+            node_handle=self.op_handle, input_name=input_name
+        )
+        if key is None:
+            check.failed(f"Input '{input_name}' has no asset")
+        else:
+            return key
+
     def output_asset_partition_key(self, output_name: str = "result") -> str:
+        deprecation_warning(
+            "OpExecutionContext.output_asset_partition_key",
+            "1.0.0",
+            additional_warn_txt="Use OpExecutionContext.asset_partition_key_for_output instead.",
+        )
+
+        return self.asset_partition_key_for_output(output_name)
+
+    def asset_partition_key_for_output(self, output_name: str = "result") -> str:
         """Returns the asset partition key for the given output. Defaults to "result", which is the
         name of the default output.
         """
         return self._step_execution_context.asset_partition_key_for_output(output_name)
 
     def output_asset_partitions_time_window(self, output_name: str = "result") -> TimeWindow:
+        deprecation_warning(
+            "OpExecutionContext.output_asset_partitions_time_window",
+            "1.0.0",
+            additional_warn_txt="Use OpExecutionContext.asset_partitions_time_window_for_output instead.",
+        )
+
+        return self.asset_partitions_time_window_for_output(output_name)
+
+    def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
         """The time window for the partitions of the output asset.
 
         Raises an error if either of the following are true:
@@ -242,6 +367,38 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
         """
         return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
+
+    def asset_partition_key_for_input(self, input_name: str) -> str:
+        """Returns the asset partition key for the given output. Defaults to "result", which is the
+        name of the default output.
+        """
+        return self._step_execution_context.asset_partition_key_for_input(input_name)
+
+    def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
+        """The PartitionsDefinition on the upstream asset corresponding to this input."""
+        asset_key = self.asset_key_for_output(output_name)
+        result = self._step_execution_context.pipeline_def.asset_layer.partitions_def_for_asset(
+            asset_key
+        )
+        if result is None:
+            raise DagsterInvariantViolationError(
+                f"Attempting to access partitions def for asset {asset_key}, but it is not partitioned"
+            )
+
+        return result
+
+    def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
+        """The PartitionsDefinition on the upstream asset corresponding to this input."""
+        asset_key = self.asset_key_for_input(input_name)
+        result = self._step_execution_context.pipeline_def.asset_layer.partitions_def_for_asset(
+            asset_key
+        )
+        if result is None:
+            raise DagsterInvariantViolationError(
+                f"Attempting to access partitions def for asset {asset_key}, but it is not partitioned"
+            )
+
+        return result
 
     def has_tag(self, key: str) -> bool:
         """Check if a logging tag is set.

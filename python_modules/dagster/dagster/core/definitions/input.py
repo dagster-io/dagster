@@ -1,24 +1,47 @@
-from collections import namedtuple
-from typing import NamedTuple, Optional, Set, Union
+from types import FunctionType
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Type,
+    TypeVar,
+    Union,
+)
 
-from dagster import check
+import dagster._check as check
+from dagster._utils.backcompat import deprecation_warning, experimental_arg_warning
 from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.metadata import MetadataEntry, normalize_metadata
+from dagster.core.definitions.metadata import (
+    MetadataEntry,
+    PartitionMetadataEntry,
+    RawMetadataValue,
+    normalize_metadata,
+)
 from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
-from dagster.core.types.dagster_type import (
-    BuiltinScalarDagsterType,
+from dagster.core.types.dagster_type import (  # BuiltinScalarDagsterType,
     DagsterType,
     resolve_dagster_type,
 )
-from dagster.utils.backcompat import experimental_arg_warning
 
 from .inference import InferredInputProps
 from .utils import NoValueSentinel, check_valid_name
 
+if TYPE_CHECKING:
+    from dagster.core.execution.context.input import InputContext
+
+T = TypeVar("T")
+
 
 # unfortunately since type_check functions need TypeCheckContext which is only available
 # at runtime, we can only check basic types before runtime
-def _check_default_value(input_name, dagster_type, default_value):
+def _check_default_value(input_name: str, dagster_type: DagsterType, default_value: T) -> T:
+    from dagster.core.types.dagster_type import BuiltinScalarDagsterType
+
     if default_value is not NoValueSentinel:
         if dagster_type.is_nothing:
             raise DagsterInvalidDefinitionError(
@@ -65,24 +88,37 @@ class InputDefinition:
         asset_key (Optional[Union[AssetKey, InputContext -> AssetKey]]): (Experimental) An AssetKey
             (or function that produces an AssetKey from the InputContext) which should be associated
             with this InputDefinition. Used for tracking lineage information through Dagster.
-        asset_partitions (Optional[Union[Set[str], InputContext -> Set[str]]]): (Experimental) A
+        asset_partitions (Optional[Union[AbstractSet[str], InputContext -> AbstractSet[str]]]): (Experimental) A
             set of partitions of the given asset_key (or a function that produces this list of
             partitions from the InputContext) which should be associated with this InputDefinition.
     """
 
+    _name: str
+    _type_not_set: bool
+    _dagster_type: DagsterType
+    _description: Optional[str]
+    _default_value: Any
+    _input_manager_key: Optional[str]
+    _root_manager_key: Optional[str]
+    _metadata: Mapping[str, RawMetadataValue]
+    _metadata_entries: Sequence[Union[MetadataEntry, PartitionMetadataEntry]]
+    _asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]
+    _asset_partitions_fn: Optional[Callable[["InputContext"], Set[str]]]
+
     def __init__(
         self,
-        name=None,
-        dagster_type=None,
-        description=None,
-        default_value=NoValueSentinel,
-        root_manager_key=None,
-        metadata=None,
-        asset_key=None,
-        asset_partitions=None,
+        name: str,
+        dagster_type: object = None,
+        description: Optional[str] = None,
+        default_value: object = NoValueSentinel,
+        root_manager_key: Optional[str] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
+        asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
+        input_manager_key: Optional[str] = None
         # when adding new params, make sure to update combine_with_inferred below
     ):
-        self._name = check_valid_name(name) if name else None
+        self._name = check_valid_name(name)
 
         self._type_not_set = dagster_type is None
         self._dagster_type = check.inst(resolve_dagster_type(dagster_type), DagsterType)
@@ -92,14 +128,23 @@ class InputDefinition:
         self._default_value = _check_default_value(self._name, self._dagster_type, default_value)
 
         if root_manager_key:
-            experimental_arg_warning("root_manager_key", "InputDefinition.__init__")
+            deprecation_warning(
+                "root_manager_key",
+                "1.0.0",
+                additional_warn_txt="Use an InputManager with input_manager_key instead.",
+            )
+
+        if root_manager_key and input_manager_key:
+            raise DagsterInvalidDefinitionError(
+                f"Can't supply both root input manager key {root_manager_key} and input manager key {input_manager_key} on InputDefinition."
+            )
 
         self._root_manager_key = check.opt_str_param(root_manager_key, "root_manager_key")
 
+        self._input_manager_key = check.opt_str_param(input_manager_key, "input_manager_key")
+
         self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
-        self._metadata_entries = check.is_list(
-            normalize_metadata(self._metadata, [], allow_invalid=True), MetadataEntry
-        )
+        self._metadata_entries = normalize_metadata(self._metadata, [], allow_invalid=True)
 
         if asset_key:
             experimental_arg_warning("asset_key", "InputDefinition.__init__")
@@ -119,46 +164,50 @@ class InputDefinition:
         if callable(asset_partitions):
             self._asset_partitions_fn = asset_partitions
         elif asset_partitions is not None:
-            asset_partitions = check.opt_set_param(asset_partitions, "asset_partitions", str)
-            self._asset_partitions_fn = lambda _: asset_partitions
+            _asset_partitions = check.set_param(asset_partitions, "asset_partitions", of_type=str)
+            self._asset_partitions_fn = lambda _: _asset_partitions
         else:
             self._asset_partitions_fn = None
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def dagster_type(self):
+    def dagster_type(self) -> DagsterType:
         return self._dagster_type
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         return self._description
 
     @property
-    def has_default_value(self):
+    def has_default_value(self) -> bool:
         return self._default_value is not NoValueSentinel
 
     @property
-    def default_value(self):
+    def default_value(self) -> Any:
         check.invariant(self.has_default_value, "Can only fetch default_value if has_default_value")
         return self._default_value
 
     @property
-    def root_manager_key(self):
+    def root_manager_key(self) -> Optional[str]:
         return self._root_manager_key
 
     @property
-    def metadata(self):
+    def input_manager_key(self) -> Optional[str]:
+        return self._input_manager_key
+
+    @property
+    def metadata(self) -> Mapping[str, RawMetadataValue]:
         return self._metadata
 
     @property
-    def is_asset(self):
+    def is_asset(self) -> bool:
         return self._asset_key is not None
 
     @property
-    def metadata_entries(self):
+    def metadata_entries(self) -> Sequence[Union[MetadataEntry, PartitionMetadataEntry]]:
         return self._metadata_entries
 
     @property
@@ -168,7 +217,7 @@ class InputDefinition:
         else:
             return None
 
-    def get_asset_key(self, context) -> Optional[AssetKey]:
+    def get_asset_key(self, context: "InputContext") -> Optional[AssetKey]:
         """Get the AssetKey associated with this InputDefinition for the given
         :py:class:`InputContext` (if any).
 
@@ -181,7 +230,7 @@ class InputDefinition:
         else:
             return self.hardcoded_asset_key
 
-    def get_asset_partitions(self, context) -> Optional[Set[str]]:
+    def get_asset_partitions(self, context: "InputContext") -> Optional[Set[str]]:
         """Get the set of partitions that this solid will read from this InputDefinition for the given
         :py:class:`InputContext` (if any).
 
@@ -194,7 +243,9 @@ class InputDefinition:
 
         return self._asset_partitions_fn(context)
 
-    def mapping_to(self, solid_name, input_name, fan_in_index=None):
+    def mapping_to(
+        self, solid_name: str, input_name: str, fan_in_index: Optional[int] = None
+    ) -> "InputMapping":
         """Create an input mapping to an input of a child solid.
 
         In a CompositeSolidDefinition, you can use this helper function to construct
@@ -217,6 +268,7 @@ class InputDefinition:
         check.str_param(input_name, "input_name")
         check.opt_int_param(fan_in_index, "fan_in_index")
 
+        maps_to: Union[FanInInputPointer, InputPointer]
         if fan_in_index is not None:
             maps_to = FanInInputPointer(solid_name, input_name, fan_in_index)
         else:
@@ -224,15 +276,19 @@ class InputDefinition:
         return InputMapping(self, maps_to)
 
     @staticmethod
-    def create_from_inferred(inferred: InferredInputProps) -> "InputDefinition":
+    def create_from_inferred(
+        inferred: InferredInputProps, decorator_name: str
+    ) -> "InputDefinition":
         return InputDefinition(
             name=inferred.name,
-            dagster_type=_checked_inferred_type(inferred),
+            dagster_type=_checked_inferred_type(inferred, decorator_name),
             description=inferred.description,
             default_value=inferred.default_value,
         )
 
-    def combine_with_inferred(self, inferred: InferredInputProps) -> "InputDefinition":
+    def combine_with_inferred(
+        self, inferred: InferredInputProps, decorator_name: str
+    ) -> "InputDefinition":
         """
         Return a new InputDefinition that merges this ones properties with those inferred from type signature.
         This can update: dagster_type, description, and default_value if they are not set.
@@ -245,7 +301,7 @@ class InputDefinition:
 
         dagster_type = self._dagster_type
         if self._type_not_set:
-            dagster_type = _checked_inferred_type(inferred)
+            dagster_type = _checked_inferred_type(inferred, decorator_name=decorator_name)
 
         description = self._description
         if description is None and inferred.description is not None:
@@ -264,10 +320,11 @@ class InputDefinition:
             metadata=self._metadata,
             asset_key=self._asset_key,
             asset_partitions=self._asset_partitions_fn,
+            input_manager_key=self._input_manager_key,
         )
 
 
-def _checked_inferred_type(inferred: InferredInputProps) -> DagsterType:
+def _checked_inferred_type(inferred: InferredInputProps, decorator_name: str) -> DagsterType:
     try:
         resolved_type = resolve_dagster_type(inferred.annotation)
     except DagsterError as e:
@@ -281,7 +338,7 @@ def _checked_inferred_type(inferred: InferredInputProps) -> DagsterType:
         raise DagsterInvalidDefinitionError(
             f"Input parameter {inferred.name} is annotated with {resolved_type.display_name} "
             "which is a type that represents passing no data. This type must be used "
-            "via InputDefinition and no parameter should be included in the solid function."
+            f"via InputDefinition and no parameter should be included in the {decorator_name} decorated function."
         )
     return resolved_type
 
@@ -331,7 +388,7 @@ class InputMapping(
         )
 
     @property
-    def maps_to_fan_in(self):
+    def maps_to_fan_in(self) -> bool:
         return isinstance(self.maps_to, FanInInputPointer)
 
     def describe(self) -> str:
@@ -340,10 +397,18 @@ class InputMapping(
 
 
 class In(
-    namedtuple(
+    NamedTuple(
         "_In",
-        "dagster_type description default_value root_manager_key metadata "
-        "asset_key asset_partitions",
+        [
+            ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
+            ("description", Optional[str]),
+            ("default_value", Any),
+            ("root_manager_key", Optional[str]),
+            ("metadata", Optional[Mapping[str, Any]]),
+            ("asset_key", Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]),
+            ("asset_partitions", Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]]),
+            ("input_manager_key", Optional[str]),
+        ],
     )
 ):
     """
@@ -361,7 +426,7 @@ class In(
         root_manager_key (Optional[str]): (Experimental) The resource key for the
             :py:class:`RootInputManager` used for loading this input when it is not connected to an
             upstream output.
-        metadata (Optional[Dict[str, Any]]): A dict of metadata for the input.
+        metadata (Optional[Dict[str, RawMetadataValue]]): A dict of metadata for the input.
         asset_key (Optional[Union[AssetKey, InputContext -> AssetKey]]): (Experimental) An AssetKey
             (or function that produces an AssetKey from the InputContext) which should be associated
             with this In. Used for tracking lineage information through Dagster.
@@ -372,27 +437,43 @@ class In(
 
     def __new__(
         cls,
-        dagster_type=NoValueSentinel,
-        description=None,
-        default_value=NoValueSentinel,
-        root_manager_key=None,
-        metadata=None,
-        asset_key=None,
-        asset_partitions=None,
+        dagster_type: Union[Type, DagsterType] = NoValueSentinel,
+        description: Optional[str] = None,
+        default_value: Any = NoValueSentinel,
+        root_manager_key: Optional[str] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
+        asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
+        input_manager_key: Optional[str] = None,
     ):
+        if root_manager_key and input_manager_key:
+            raise DagsterInvalidDefinitionError(
+                f"Can't supply both root input manager key {root_manager_key} and input manager key {input_manager_key} on InputDefinition."
+            )
+
+        if root_manager_key:
+            deprecation_warning(
+                "root_manager_key",
+                "1.0.0",
+                additional_warn_txt="Use an InputManager with input_manager_key instead.",
+            )
+
         return super(In, cls).__new__(
             cls,
-            dagster_type=dagster_type,
-            description=description,
+            dagster_type=NoValueSentinel
+            if dagster_type is NoValueSentinel
+            else resolve_dagster_type(dagster_type),
+            description=check.opt_str_param(description, "description"),
             default_value=default_value,
-            root_manager_key=root_manager_key,
-            metadata=metadata,
-            asset_key=asset_key,
+            root_manager_key=check.opt_str_param(root_manager_key, "root_manager_key"),
+            metadata=check.opt_dict_param(metadata, "metadata", key_type=str),
+            asset_key=check.opt_inst_param(asset_key, "asset_key", (AssetKey, FunctionType)),  # type: ignore  # (mypy bug)
             asset_partitions=asset_partitions,
+            input_manager_key=check.opt_str_param(input_manager_key, "input_manager_key"),
         )
 
     @staticmethod
-    def from_definition(input_def: InputDefinition):
+    def from_definition(input_def: InputDefinition) -> "In":
         return In(
             dagster_type=input_def.dagster_type,
             description=input_def.description,
@@ -401,6 +482,7 @@ class In(
             metadata=input_def.metadata,
             asset_key=input_def._asset_key,  # pylint: disable=protected-access
             asset_partitions=input_def._asset_partitions_fn,  # pylint: disable=protected-access
+            input_manager_key=input_def.input_manager_key,
         )
 
     def to_definition(self, name: str) -> InputDefinition:
@@ -414,6 +496,7 @@ class In(
             metadata=self.metadata,
             asset_key=self.asset_key,
             asset_partitions=self.asset_partitions,
+            input_manager_key=self.input_manager_key,
         )
 
 
@@ -425,7 +508,7 @@ class GraphIn(NamedTuple("_GraphIn", [("description", Optional[str])])):
         description (Optional[str]): Human-readable description of the input.
     """
 
-    def __new__(cls, description=None):
+    def __new__(cls, description: Optional[str] = None):
         return super(GraphIn, cls).__new__(cls, description=description)
 
     def to_definition(self, name: str) -> InputDefinition:

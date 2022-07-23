@@ -1,12 +1,12 @@
 import {
-  ButtonWIP,
+  Button,
   ButtonLink,
-  ColorsWIP,
+  Colors,
   DialogBody,
   DialogFooter,
-  DialogWIP,
+  Dialog,
   Group,
-  TagWIP,
+  Tag,
   Trace,
 } from '@dagster-io/ui';
 import * as React from 'react';
@@ -21,14 +21,14 @@ const DaemonHealthTag = (props: Props) => {
   const {daemon} = props;
 
   if (daemon.healthy) {
-    return <TagWIP intent="success">Running</TagWIP>;
+    return <Tag intent="success">Running</Tag>;
   }
 
   if (daemon.required) {
-    return <TagWIP intent="danger">Not running</TagWIP>;
+    return <Tag intent="danger">Not running</Tag>;
   }
 
-  return <TagWIP intent="none">Not enabled</TagWIP>;
+  return <Tag intent="none">Not enabled</Tag>;
 };
 
 type State = {
@@ -70,10 +70,10 @@ export const DaemonHealth = (props: Props) => {
     if (errorCount > 0) {
       return (
         <>
-          <ButtonLink color={ColorsWIP.Link} underline="hover" onClick={show}>
+          <ButtonLink color={Colors.Link} underline="hover" onClick={show}>
             {errorCount > 1 ? `View errors (${errorCount})` : 'View error'}
           </ButtonLink>
-          <DialogWIP
+          <Dialog
             isOpen={shown}
             title="Daemon error"
             onClose={hide}
@@ -111,17 +111,17 @@ export const DaemonHealth = (props: Props) => {
                 )
               }
             >
-              <ButtonWIP intent="primary" onClick={hide}>
+              <Button intent="primary" onClick={hide}>
                 OK
-              </ButtonWIP>
+              </Button>
             </DialogFooter>
-          </DialogWIP>
+          </Dialog>
         </>
       );
     }
 
     if (!daemon.healthy) {
-      return <div style={{color: ColorsWIP.Gray500}}>No recent heartbeat</div>;
+      return <div style={{color: Colors.Gray500}}>No recent heartbeat</div>;
     }
 
     return null;

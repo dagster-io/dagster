@@ -1,0 +1,34 @@
+dagster-user-deployments:
+  enabled: true
+  deployments:
+    - name: "k8s-example-user-code-1"
+      image:
+        repository: "docker.io/dagster/user-code-example"
+        tag: latest
+        pullPolicy: Always
+      dagsterApiGrpcArgs:
+        - "--python-file"
+        - "/example_project/example_repo/repo.py"
+      port: 3030
+      envConfigMaps:
+        - my-config-map
+      envSecrets:
+        - my-secret
+      labels:
+        foo_label: bar_value
+      volumes:
+        - name: my-volume
+          configMap: my-config-map
+      volumeMounts:
+        - name: test-volume
+          mountPath: /opt/dagster/test_folder
+          subPath: test_file.yaml
+      resources:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+      includeConfigInLaunchedRuns:
+        enabled: true

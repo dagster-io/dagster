@@ -1,4 +1,4 @@
-import {ButtonWIP, DialogBody, DialogFooter, DialogWIP} from '@dagster-io/ui';
+import {Button, DialogBody, DialogFooter, Dialog} from '@dagster-io/ui';
 import * as React from 'react';
 
 interface ConfirmationOptions {
@@ -21,15 +21,15 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   onClose,
 }) => {
   return (
-    <DialogWIP icon={title ? 'info' : undefined} onClose={onClose} title={title} isOpen={open}>
+    <Dialog icon={title ? 'info' : undefined} onClose={onClose} title={title} isOpen={open}>
       <DialogBody>{description}</DialogBody>
       <DialogFooter>
-        <ButtonWIP onClick={onClose}>Cancel</ButtonWIP>
-        <ButtonWIP onClick={onSubmit} intent="danger">
+        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onSubmit} intent="danger">
           Confirm
-        </ButtonWIP>
+        </Button>
       </DialogFooter>
-    </DialogWIP>
+    </Dialog>
   );
 };
 
@@ -39,7 +39,10 @@ const CustomConfirmationContext = React.createContext<
 
 export const useConfirmation = () => React.useContext(CustomConfirmationContext);
 
-export const CustomConfirmationProvider: React.FunctionComponent = ({children}) => {
+const REMOVAL_DELAY = 500;
+
+export const CustomConfirmationProvider: React.FC = ({children}) => {
+  const [mounted, setMounted] = React.useState(false);
   const [confirmationState, setConfirmationState] = React.useState<ConfirmationOptions | null>(
     null,
   );
@@ -48,6 +51,19 @@ export const CustomConfirmationProvider: React.FunctionComponent = ({children}) 
     resolve: () => void;
     reject: () => void;
   }>();
+
+  // When a confirmation is set, allow the Dialog to be mounted. When it is cleared,
+  // remove the Dialog from the tree so that its root node doesn't linger in the DOM
+  // and cause subsequent z-index bugs.
+  React.useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    if (!!confirmationState) {
+      setMounted(true);
+    } else {
+      timer = setTimeout(() => setMounted(false), REMOVAL_DELAY);
+    }
+    return () => timer && clearTimeout(timer);
+  }, [confirmationState]);
 
   const openConfirmation = (options: ConfirmationOptions) => {
     setConfirmationState(options);
@@ -77,13 +93,14 @@ export const CustomConfirmationProvider: React.FunctionComponent = ({children}) 
       <CustomConfirmationContext.Provider value={openConfirmation}>
         {children}
       </CustomConfirmationContext.Provider>
-
-      <ConfirmationDialog
-        open={Boolean(confirmationState)}
-        onSubmit={handleSubmit}
-        onClose={handleClose}
-        {...confirmationState}
-      />
+      {mounted ? (
+        <ConfirmationDialog
+          open={!!confirmationState}
+          onSubmit={handleSubmit}
+          onClose={handleClose}
+          {...confirmationState}
+        />
+      ) : null}
     </>
   );
 };

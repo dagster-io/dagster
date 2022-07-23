@@ -2,13 +2,17 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {useTrackPageView} from '../app/analytics';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {PipelineTable, PIPELINE_TABLE_FRAGMENT} from '../pipelines/PipelineTable';
 
-import {__ASSET_GROUP} from './asset-graph/Utils';
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
-import {RepositoryPipelinesListQuery} from './types/RepositoryPipelinesListQuery';
+import {
+  RepositoryPipelinesListQuery,
+  RepositoryPipelinesListQueryVariables,
+} from './types/RepositoryPipelinesListQuery';
 
 const REPOSITORY_PIPELINES_LIST_QUERY = gql`
   query RepositoryPipelinesListQuery($repositorySelector: RepositorySelector!) {
@@ -35,16 +39,18 @@ interface Props {
 }
 
 export const RepositoryPipelinesList: React.FC<Props> = (props) => {
+  useTrackPageView();
+
   const {display, repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const {data, error, loading} = useQuery<RepositoryPipelinesListQuery>(
-    REPOSITORY_PIPELINES_LIST_QUERY,
-    {
-      fetchPolicy: 'cache-and-network',
-      variables: {repositorySelector},
-    },
-  );
+  const {data, error, loading} = useQuery<
+    RepositoryPipelinesListQuery,
+    RepositoryPipelinesListQueryVariables
+  >(REPOSITORY_PIPELINES_LIST_QUERY, {
+    fetchPolicy: 'cache-and-network',
+    variables: {repositorySelector},
+  });
 
   const repo = data?.repositoryOrError;
   const pipelinesForTable = React.useMemo(() => {
@@ -52,7 +58,7 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
       return null;
     }
     return repo.pipelines
-      .filter((pipelineOrJob) => pipelineOrJob.name !== __ASSET_GROUP)
+      .filter((pipelineOrJob) => !isHiddenAssetGroupJob(pipelineOrJob.name))
       .map((pipelineOrJob) => ({
         pipelineOrJob,
         repoAddress,

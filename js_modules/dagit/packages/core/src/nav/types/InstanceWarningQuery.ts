@@ -7,7 +7,7 @@
 // GraphQL query operation: InstanceWarningQuery
 // ====================================================
 
-export interface InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause {
+export interface InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -17,7 +17,7 @@ export interface InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses_la
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause | null;
+  causes: InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes[];
 }
 
 export interface InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses {
@@ -42,6 +42,23 @@ export interface InstanceWarningQuery_instance {
   hasInfo: boolean;
 }
 
+export interface InstanceWarningQuery_partitionBackfillsOrError_PythonError {
+  __typename: "PythonError";
+}
+
+export interface InstanceWarningQuery_partitionBackfillsOrError_PartitionBackfills_results {
+  __typename: "PartitionBackfill";
+  backfillId: string;
+}
+
+export interface InstanceWarningQuery_partitionBackfillsOrError_PartitionBackfills {
+  __typename: "PartitionBackfills";
+  results: InstanceWarningQuery_partitionBackfillsOrError_PartitionBackfills_results[];
+}
+
+export type InstanceWarningQuery_partitionBackfillsOrError = InstanceWarningQuery_partitionBackfillsOrError_PythonError | InstanceWarningQuery_partitionBackfillsOrError_PartitionBackfills;
+
 export interface InstanceWarningQuery {
   instance: InstanceWarningQuery_instance;
+  partitionBackfillsOrError: InstanceWarningQuery_partitionBackfillsOrError;
 }

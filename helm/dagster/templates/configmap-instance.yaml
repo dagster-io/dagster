@@ -22,14 +22,7 @@ data:
       module: dagster_postgres.schedule_storage
       class: PostgresScheduleStorage
       config:
-        postgres_db:
-          username: {{ .Values.postgresql.postgresqlUsername }}
-          password:
-            env: DAGSTER_PG_PASSWORD
-          hostname: {{ include "dagster.postgresql.host" . }}
-          db_name:  {{ .Values.postgresql.postgresqlDatabase	}}
-          port: {{ .Values.postgresql.service.port }}
-          params: {{ .Values.postgresql.postgresqlParams | toYaml | nindent 12 }}
+        {{- include "dagsterYaml.postgresql.config" . | indent 8 }}
 
     run_launcher:
       {{- $runLauncherType := .Values.runLauncher.type }}
@@ -46,27 +39,13 @@ data:
       module: dagster_postgres.run_storage
       class: PostgresRunStorage
       config:
-        postgres_db:
-          username: {{ .Values.postgresql.postgresqlUsername }}
-          password:
-            env: DAGSTER_PG_PASSWORD
-          hostname: {{ include "dagster.postgresql.host" . }}
-          db_name:  {{ .Values.postgresql.postgresqlDatabase	}}
-          port: {{ .Values.postgresql.service.port }}
-          params: {{ .Values.postgresql.postgresqlParams | toYaml | nindent 12 }}
+        {{- include "dagsterYaml.postgresql.config" . | indent 8 }}
 
     event_log_storage:
       module: dagster_postgres.event_log
       class: PostgresEventLogStorage
       config:
-        postgres_db:
-          username: {{ .Values.postgresql.postgresqlUsername }}
-          password:
-            env: DAGSTER_PG_PASSWORD
-          hostname: {{ include "dagster.postgresql.host" . }}
-          db_name:  {{ .Values.postgresql.postgresqlDatabase	}}
-          port: {{ .Values.postgresql.service.port }}
-          params: {{ .Values.postgresql.postgresqlParams | toYaml | nindent 12 }}
+        {{- include "dagsterYaml.postgresql.config" . | indent 8 }}
 
     {{- if and (.Values.dagsterDaemon.enabled) (.Values.dagsterDaemon.runCoordinator.enabled) }}
     {{- $runCoordinatorType := .Values.dagsterDaemon.runCoordinator.type }}
@@ -80,7 +59,7 @@ data:
 
     {{- $computeLogManagerType := .Values.computeLogManager.type }}
     compute_logs:
-      {{- if has $computeLogManagerType (list "NoOpComputeLogManager" "LocalComputeLogManager") -}}
+      {{- if eq $computeLogManagerType "NoOpComputeLogManager" -}}
         {{- include "dagsterYaml.computeLogManager.noop" . | indent 6 -}}
       {{- else if eq $computeLogManagerType "AzureBlobComputeLogManager" }}
         {{- include "dagsterYaml.computeLogManager.azure" . | indent 6 -}}
@@ -115,4 +94,37 @@ data:
       max_resume_run_attempts: {{ $runMonitoring.maxResumeRunAttempts }}
       {{- end }}
       poll_interval_seconds: {{ $runMonitoring.pollIntervalSeconds }}
+    {{- end }}
+
+    {{- if and (.Values.dagsterDaemon.enabled) (.Values.dagsterDaemon.runRetries.enabled) }}
+    {{- $runRetries := .Values.dagsterDaemon.runRetries }}
+    run_retries:
+      enabled: {{ $runRetries.enabled }}
+      {{- if $runRetries.maxRetries }}
+      max_retries: {{ $runRetries.maxRetries }}
+      {{- end }}
+    {{- end }}
+
+    {{- $sensors := .Values.dagsterDaemon.sensors }}
+    {{- if and (.Values.dagsterDaemon.enabled) ($sensors.useThreads) }}
+    sensors:
+      use_threads: {{ $sensors.useThreads }}
+      {{- if $sensors.numWorkers }}
+      num_workers: {{ $sensors.numWorkers }}
+      {{- end }}
+    {{- end }}
+
+    telemetry:
+      enabled: {{ .Values.telemetry.enabled }}
+
+    {{- if .Values.retention.enabled }}
+    retention:
+      {{- if .Values.retention.sensor }}
+      sensor:
+        purge_after_days: {{ .Values.retention.sensor.purgeAfterDays | toYaml | nindent 12 }}
+      {{- end }}
+      {{- if .Values.retention.schedule }}
+      schedule:
+        purge_after_days: {{ .Values.retention.schedule.purgeAfterDays | toYaml | nindent 12 }}
+      {{- end }}
     {{- end }}

@@ -202,6 +202,19 @@ def test_register_task_definition(ecs):
             family="dagster", containerDefinitions=[], memory="512", cpu="1"
         )
 
+    # With invalid names
+    with pytest.raises(ClientError):
+        # Special characters
+        ecs.register_task_definition(
+            family="boom!", containerDefinitions=[], memory="512", cpu="256"
+        )
+
+    with pytest.raises(ClientError):
+        # Too long
+        ecs.register_task_definition(
+            family=256 * "a", containerDefinitions=[], memory="512", cpu="256"
+        )
+
     response = ecs.register_task_definition(
         family="dagster", containerDefinitions=[], memory="512", cpu="256"
     )
@@ -235,6 +248,15 @@ def test_register_task_definition(ecs):
         family="dagster", containerDefinitions=[], networkMode="bridge", memory="512", cpu="256"
     )
     assert response["taskDefinition"]["networkMode"] == "bridge"
+
+    # Secrets default to an empty list
+    response = ecs.register_task_definition(
+        family="secrets",
+        containerDefinitions=[{"image": "hello_world:latest"}],
+        memory="512",
+        cpu="256",
+    )
+    assert response["taskDefinition"]["containerDefinitions"][0]["secrets"] == []
 
 
 def test_run_task(ecs, ec2, subnet):
@@ -348,6 +370,15 @@ def test_run_task(ecs, ec2, subnet):
     response = ecs.run_task(taskDefinition="container", overrides={"cpu": "512", "memory": "1024"})
     assert response["tasks"][0]["overrides"]["cpu"] == "512"
     assert response["tasks"][0]["overrides"]["memory"] == "1024"
+
+    # With very long overrides
+    with pytest.raises(Exception):
+        ecs.run_task(
+            taskDefinition="container",
+            # overrides is limited to 8192 characters including json formatting
+            # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html
+            overrides={"containerOverrides": ["boom" for i in range(10000)]},
+        )
 
 
 def test_stop_task(ecs):

@@ -1,8 +1,30 @@
-from typing import Dict
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
-from .input import In
-from .output import Out
+import dagster._check as check
+from dagster._config.config_schema import UserConfigSchema
+from dagster.core.definitions.policy import RetryPolicy
+from dagster.core.errors import DagsterInvariantViolationError
+
+from ..._seven.typing import get_origin
+from .definition_config_schema import IDefinitionConfigSchema
+from .inference import infer_output_props
+from .input import In, InputDefinition
+from .output import Out, OutputDefinition
 from .solid_definition import SolidDefinition
+
+if TYPE_CHECKING:
+    from .decorators.solid_decorator import DecoratedSolidFunction
 
 
 class OpDefinition(SolidDefinition):
@@ -52,11 +74,68 @@ class OpDefinition(SolidDefinition):
 
             OpDefinition(
                 name="add_one",
-                input_defs=[InputDefinition("num", Int)],
-                output_defs=[OutputDefinition(Int)], # default name ("result")
+                ins={"num": In(int)},
+                outs={"result": Out(int)},
                 compute_fn=_add_one,
             )
     """
+
+    def __init__(
+        self,
+        compute_fn: Union[Callable[..., Any], "DecoratedSolidFunction"],
+        name: str,
+        ins: Optional[Mapping[str, In]] = None,
+        outs: Optional[Mapping[str, Out]] = None,
+        description: Optional[str] = None,
+        config_schema: Optional[Union[UserConfigSchema, IDefinitionConfigSchema]] = None,
+        required_resource_keys: Optional[AbstractSet[str]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
+        version: Optional[str] = None,
+        retry_policy: Optional[RetryPolicy] = None,
+        input_defs: Optional[Sequence[InputDefinition]] = None,
+        output_defs: Optional[Sequence[OutputDefinition]] = None,
+    ):
+        from .decorators.solid_decorator import (
+            DecoratedSolidFunction,
+            resolve_checked_solid_fn_inputs,
+        )
+
+        if input_defs is None:
+            ins = check.opt_mapping_param(ins, "ins")
+            input_defs = [
+                inp.to_definition(name)
+                for name, inp in sorted(ins.items(), key=lambda input: input[0])
+            ]  # sort so that input definition order is deterministic
+
+            if isinstance(compute_fn, DecoratedSolidFunction):
+                resolved_input_defs: Sequence[InputDefinition] = resolve_checked_solid_fn_inputs(
+                    decorator_name="@op",
+                    fn_name=name,
+                    compute_fn=cast(DecoratedSolidFunction, compute_fn),
+                    explicit_input_defs=input_defs,
+                    exclude_nothing=True,
+                )
+            else:
+                resolved_input_defs = input_defs
+        else:
+            resolved_input_defs = input_defs
+
+        if output_defs is None:
+            check.opt_mapping_param(outs, "outs")
+            output_defs = _resolve_output_defs_from_outs(compute_fn=compute_fn, outs=outs)
+
+        super(OpDefinition, self).__init__(
+            compute_fn=compute_fn,
+            name=name,
+            description=description,
+            config_schema=config_schema,
+            required_resource_keys=required_resource_keys,
+            tags=tags,
+            version=version,
+            retry_policy=retry_policy,
+            input_defs=resolved_input_defs,
+            output_defs=output_defs,
+        )
 
     @property
     def node_type_str(self) -> str:
@@ -73,3 +152,49 @@ class OpDefinition(SolidDefinition):
     @property
     def outs(self) -> Dict[str, Out]:
         return {output_def.name: Out.from_definition(output_def) for output_def in self.output_defs}
+
+
+def _resolve_output_defs_from_outs(
+    compute_fn: Union[Callable[..., Any], "DecoratedSolidFunction"],
+    outs: Optional[Mapping[str, Out]],
+) -> Sequence[OutputDefinition]:
+    from .decorators.solid_decorator import DecoratedSolidFunction
+
+    if isinstance(compute_fn, DecoratedSolidFunction):
+        inferred_output_props = infer_output_props(
+            cast(DecoratedSolidFunction, compute_fn).decorated_fn
+        )
+        annotation = inferred_output_props.annotation
+    else:
+        inferred_output_props = None
+        annotation = None
+
+    if outs is None:
+        return [OutputDefinition.create_from_inferred(inferred_output_props)]
+
+    # If only a single entry has been provided to the out dict, then slurp the
+    # annotation into the entry.
+    if len(outs) == 1:
+        name = list(outs.keys())[0]
+        only_out = outs[name]
+        return [only_out.to_definition(annotation, name)]
+
+    output_defs = []
+
+    # Introspection on type annotations is experimental, so checking
+    # metaclass is the best we can do.
+    if annotation and not get_origin(annotation) == tuple:
+        raise DagsterInvariantViolationError(
+            "Expected Tuple annotation for multiple outputs, but received non-tuple annotation."
+        )
+    if annotation and not len(annotation.__args__) == len(outs):
+        raise DagsterInvariantViolationError(
+            "Expected Tuple annotation to have number of entries matching the "
+            f"number of outputs for more than one output. Expected {len(outs)} "
+            f"outputs but annotation has {len(annotation.__args__)}."
+        )
+    for idx, (name, cur_out) in enumerate(outs.items()):
+        annotation_type = annotation.__args__[idx] if annotation else None
+        output_defs.append(cur_out.to_definition(annotation_type, name=name))
+
+    return output_defs

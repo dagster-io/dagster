@@ -6,10 +6,10 @@ from gql import Client, gql
 from gql.transport import Transport
 from gql.transport.requests import RequestsHTTPTransport
 
-from dagster import check
+import dagster._check as check
+from dagster._utils.backcompat import experimental_class_warning
 from dagster.core.definitions.utils import validate_tags
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.utils.backcompat import experimental_class_warning
 
 from .client_queries import (
     CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY,
@@ -17,6 +17,7 @@ from .client_queries import (
     GET_PIPELINE_RUN_STATUS_QUERY,
     RELOAD_REPOSITORY_LOCATION_MUTATION,
     SHUTDOWN_REPOSITORY_LOCATION_MUTATION,
+    TERMINATE_RUN_JOB_MUTATION,
 )
 from .utils import (
     DagsterGraphQLClientError,
@@ -106,14 +107,9 @@ class DagsterGraphQLClient:
         repo_connection_status = query_res["__typename"]
         if repo_connection_status == "RepositoryConnection":
             valid_nodes: Iterable[PipelineInfo] = chain(
-                map(PipelineInfo.from_node, query_res["nodes"])
+                *map(PipelineInfo.from_node, query_res["nodes"])
             )
-            return [
-                repo_node_tuple
-                for repo_node_tuple_lst in valid_nodes
-                for repo_node_tuple in repo_node_tuple_lst
-                if repo_node_tuple.pipeline_name == pipeline_name
-            ]
+            return [info for info in valid_nodes if info.pipeline_name == pipeline_name]
         else:
             raise DagsterGraphQLClientError(repo_connection_status, query_res["message"])
 
@@ -427,3 +423,27 @@ class DagsterGraphQLClient:
             )
         else:
             raise Exception(f"Unexpected query result type {query_result_type}")
+
+    def terminate_run(self, run_id: str):
+        """
+        Terminates a pipeline run. This method it is useful when you would like to stop a pipeline run
+        based on a external event.
+
+        Args:
+            run_id (str): The run id of the pipeline run to terminate
+        """
+        check.str_param(run_id, "run_id")
+
+        res_data: Dict[str, Dict[str, Any]] = self._execute(
+            TERMINATE_RUN_JOB_MUTATION, {"runId": run_id}
+        )
+
+        query_result: Dict[str, Any] = res_data["terminateRun"]
+        query_result_type: str = query_result["__typename"]
+        if query_result_type == "TerminateRunSuccess":
+            return
+
+        elif query_result_type == "RunNotFoundError":
+            raise DagsterGraphQLClientError("RunNotFoundError", f"Run Id {run_id} not found")
+        else:
+            raise DagsterGraphQLClientError(query_result_type, query_result["message"])

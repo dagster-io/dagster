@@ -9,12 +9,176 @@ import { PipelineSelector } from "./../../types/globalTypes";
 // GraphQL query operation: PipelineExplorerRootQuery
 // ====================================================
 
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_BoolMetadataEntry {
+  __typename: "BoolMetadataEntry";
+  label: string;
+  description: string | null;
+  boolValue: boolean | null;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_AssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_AssetMetadataEntry_assetKey;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries = PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_PathMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_JsonMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_UrlMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TextMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_MarkdownMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_PythonArtifactMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_FloatMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_IntMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_BoolMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_PipelineRunMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_AssetMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableMetadataEntry | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries_TableSchemaMetadataEntry;
+
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
@@ -24,6 +188,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -41,6 +206,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -82,12 +248,24 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   recursiveConfigTypes: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -97,6 +275,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -114,6 +293,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -153,6 +333,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_EnumConfigType_values[];
   recursiveConfigTypes: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -164,6 +345,12 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   typeParamKeys: string[];
 }
 
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -171,6 +358,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -188,6 +376,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -236,6 +425,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -246,6 +436,12 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   typeParamKeys: string[];
 }
 
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -253,6 +449,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -270,6 +467,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -320,6 +518,12 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   typeParamKeys: string[];
 }
 
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -327,6 +531,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -344,6 +549,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -395,6 +601,12 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   typeParamKeys: string[];
 }
 
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -402,6 +614,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_MapConfigType_recursiveConfigTypes_RegularConfigType {
@@ -419,6 +632,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -483,6 +697,12 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   typeParamKeys: string[];
 }
 
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -490,6 +710,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
@@ -507,6 +728,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -548,12 +770,24 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   recursiveConfigTypes: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes[];
 }
 
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
@@ -563,6 +797,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
@@ -580,6 +815,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -619,6 +855,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_EnumConfigType_values[];
   recursiveConfigTypes: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes[];
 }
 
@@ -630,6 +867,12 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   typeParamKeys: string[];
 }
 
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -637,6 +880,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
@@ -654,6 +898,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -702,6 +947,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
@@ -712,6 +958,12 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   typeParamKeys: string[];
 }
 
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -719,6 +971,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
@@ -736,6 +989,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -786,6 +1040,12 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   typeParamKeys: string[];
 }
 
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -793,6 +1053,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
@@ -810,6 +1071,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -861,6 +1123,12 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   typeParamKeys: string[];
 }
 
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values {
+  __typename: "EnumConfigValue";
+  value: string;
+  description: string | null;
+}
+
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
@@ -868,6 +1136,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+  values: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_MapConfigType_recursiveConfigTypes_EnumConfigType_values[];
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_MapConfigType_recursiveConfigTypes_RegularConfigType {
@@ -885,6 +1154,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   description: string | null;
   isRequired: boolean;
   configTypeKey: string;
+  defaultValueAsJson: string | null;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
@@ -1211,7 +1481,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_assetNodes {
   __typename: "AssetNode";
   id: string;
-  opName: string | null;
+  opNames: string[];
   assetKey: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_assetNodes_assetKey;
 }
 
@@ -1274,7 +1544,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_assetNodes {
   __typename: "AssetNode";
   id: string;
-  opName: string | null;
+  opNames: string[];
   assetKey: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_assetNodes_assetKey;
 }
 
@@ -1462,8 +1732,11 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   __typename: "PipelineSnapshot";
   id: string;
   name: string;
+  metadataEntries: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries[];
   description: string | null;
   modes: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes[];
+  pipelineSnapshotId: string;
+  parentSnapshotId: string | null;
   solidHandle: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle | null;
   solidHandles: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles[];
 }
@@ -1478,9 +1751,17 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   message: string;
 }
 
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError_causes {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError {
   __typename: "PythonError";
   message: string;
+  stack: string[];
+  causes: PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError_causes[];
 }
 
 export type PipelineExplorerRootQuery_pipelineSnapshotOrError = PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineNotFoundError | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshotNotFoundError | PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError;

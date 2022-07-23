@@ -1,30 +1,44 @@
 import {gql, useQuery} from '@apollo/client';
-import {Alert, Box, ButtonLink, ColorsWIP, NonIdealState, Spinner, Tab, Tabs} from '@dagster-io/ui';
-import * as React from 'react';
-
-import {QueryCountdown} from '../app/QueryCountdown';
-import {displayNameForAssetKey} from '../app/Util';
-import {Timestamp} from '../app/time/Timestamp';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useDidLaunchEvent} from '../runs/RunUtils';
-import {LaunchAssetExecutionButton} from '../workspace/asset-graph/LaunchAssetExecutionButton';
 import {
-  buildGraphDataFromSingleNode,
-  buildLiveData,
-  IN_PROGRESS_RUNS_FRAGMENT,
-  LiveData,
-} from '../workspace/asset-graph/Utils';
+  Alert,
+  BaseTag,
+  Box,
+  ButtonLink,
+  Colors,
+  NonIdealState,
+  Spinner,
+  Tab,
+  Tabs,
+  Tag,
+} from '@dagster-io/ui';
+import * as React from 'react';
+import {Link} from 'react-router-dom';
+
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useMergedRefresh,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
+import {Timestamp} from '../app/time/Timestamp';
+import {GraphData, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
+import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
+import {useLiveDataForAssetKeys} from '../asset-graph/useLiveDataForAssetKeys';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {RepositoryLink} from '../nav/RepositoryLink';
+import {useDidLaunchEvent} from '../runs/RunUtils';
+import {AssetComputeStatus} from '../types/globalTypes';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetEvents} from './AssetEvents';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
+import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
+import {AssetNodeLineage} from './AssetNodeLineage';
+import {AssetLineageScope} from './AssetNodeLineageGraph';
 import {AssetPageHeader} from './AssetPageHeader';
+import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {AssetKey} from './types';
-import {
-  AssetNodeDefinitionRunsQuery,
-  AssetNodeDefinitionRunsQueryVariables,
-} from './types/AssetNodeDefinitionRunsQuery';
 import {AssetQuery, AssetQueryVariables} from './types/AssetQuery';
 
 interface Props {
@@ -32,79 +46,108 @@ interface Props {
 }
 
 export interface AssetViewParams {
-  view?: 'activity' | 'definition';
+  view?: 'activity' | 'definition' | 'lineage';
+  lineageScope?: AssetLineageScope;
+  lineageShowSecondaryEdges?: boolean;
+  lineageDepth?: number;
   partition?: string;
   time?: string;
   asOf?: string;
 }
 
 export const AssetView: React.FC<Props> = ({assetKey}) => {
-  useDocumentTitle(`Asset: ${displayNameForAssetKey(assetKey)}`);
-
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
 
   const queryResult = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
     notifyOnNetworkStatusChange: true,
-    pollInterval: 5 * 1000,
   });
-
-  // Refresh immediately when a run is launched from this page
-  useDidLaunchEvent(queryResult.refetch);
 
   const {assetOrError} = queryResult.data || queryResult.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
   const lastMaterializedAt = asset?.assetMaterializations[0]?.timestamp;
-  const definition = asset?.definition;
+  const viewingMostRecent = !params.asOf || Number(lastMaterializedAt) <= Number(params.asOf);
 
+  const definition = asset?.definition;
   const repoAddress = definition
     ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
     : null;
 
-  const inProgressRunsQuery = useQuery<
-    AssetNodeDefinitionRunsQuery,
-    AssetNodeDefinitionRunsQueryVariables
-  >(ASSET_NODE_DEFINITION_RUNS_QUERY, {
-    skip: !repoAddress,
-    variables: {
-      repositorySelector: {
-        repositoryLocationName: repoAddress ? repoAddress.location : '',
-        repositoryName: repoAddress ? repoAddress.name : '',
-      },
-    },
-    notifyOnNetworkStatusChange: true,
-    pollInterval: 15 * 1000,
-  });
+  const token = tokenForAssetKey(assetKey);
 
-  let liveDataByNode: LiveData = {};
+  const defaultDepth = params.lineageScope === 'neighbors' ? 2 : 5;
+  const requestedDepth = Number(params.lineageDepth) || defaultDepth;
+  const depthStr = '+'.repeat(requestedDepth);
 
-  if (definition) {
-    const inProgressRuns =
-      inProgressRunsQuery.data?.repositoryOrError.__typename === 'Repository'
-        ? inProgressRunsQuery.data.repositoryOrError.inProgressRunsByStep
-        : [];
+  const {assetGraphData, graphAssetKeys, graphQueryItems} = useAssetGraphData(
+    params.view === 'lineage' && params.lineageScope === 'upstream'
+      ? `${depthStr}"${token}"`
+      : params.view === 'lineage' && params.lineageScope === 'downstream'
+      ? `"${token}"${depthStr}`
+      : `${depthStr}"${token}"${depthStr}`,
+    {hideEdgesToNodesOutsideQuery: !params.lineageShowSecondaryEdges},
+  );
 
-    const nodesWithLatestMaterialization = [
-      definition,
-      ...definition.dependencies.map((d) => d.asset),
-      ...definition.dependedBy.map((d) => d.asset),
-    ];
-    liveDataByNode = buildLiveData(
-      buildGraphDataFromSingleNode(definition),
-      nodesWithLatestMaterialization,
-      inProgressRuns,
-    );
-  }
+  const {upstream, downstream} = useNeighborsFromGraph(assetGraphData, assetKey);
+  const {liveResult, liveDataByNode} = useLiveDataForAssetKeys(graphAssetKeys);
+
+  const refreshState = useMergedRefresh(
+    useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS),
+    useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS),
+  );
+
+  // Refresh immediately when a run is launched from this page
+  useDidLaunchEvent(queryResult.refetch);
+  useDidLaunchEvent(liveResult.refetch);
 
   // Avoid thrashing the materializations UI (which chooses a different default query based on whether
   // data is partitioned) by waiting for the definition to be loaded. (null OR a valid definition)
   const isDefinitionLoaded = definition !== undefined;
+  const isUpstreamChanged =
+    liveDataByNode[toGraphId(assetKey)]?.computeStatus === AssetComputeStatus.OUT_OF_DATE;
 
   return (
-    <div>
+    <Box flex={{direction: 'column'}} style={{height: '100%', width: '100%', overflowY: 'auto'}}>
       <AssetPageHeader
         assetKey={assetKey}
-        repoAddress={repoAddress}
+        tags={
+          <>
+            {repoAddress ? (
+              <Tag icon="asset">
+                Asset in <RepositoryLink repoAddress={repoAddress} />
+              </Tag>
+            ) : (
+              <Tag icon="asset_non_sda">Asset</Tag>
+            )}
+            {definition && repoAddress && (
+              <AssetNodeInstigatorTag assetNode={definition} repoAddress={repoAddress} />
+            )}
+            {definition && repoAddress && definition.groupName && (
+              <Tag icon="asset_group">
+                <Link
+                  to={workspacePathFromAddress(
+                    repoAddress,
+                    `/asset-groups/${definition.groupName}`,
+                  )}
+                >
+                  {definition.groupName}
+                </Link>
+              </Tag>
+            )}
+            {isUpstreamChanged ? (
+              <Box
+                onClick={() => setParams({...params, view: 'lineage', lineageScope: 'upstream'})}
+              >
+                <BaseTag
+                  fillColor={Colors.Yellow50}
+                  textColor={Colors.Yellow700}
+                  label="Upstream changed"
+                  interactive
+                />
+              </Box>
+            ) : undefined}
+          </>
+        }
         tabs={
           <Tabs size="large" selectedTabId={params.view || 'activity'}>
             <Tab
@@ -118,20 +161,21 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               onClick={() => setParams({...params, view: 'definition'})}
               disabled={!definition}
             />
+            <Tab
+              id="lineage"
+              title="Lineage"
+              onClick={() => setParams({...params, view: 'lineage'})}
+              disabled={!definition}
+            />
           </Tabs>
         }
         right={
-          <Box style={{margin: '-4px 0'}} flex={{gap: 8, alignItems: 'baseline'}}>
+          <Box style={{margin: '-4px 0'}} flex={{gap: 12, alignItems: 'baseline'}}>
             <Box margin={{top: 4}}>
-              <QueryCountdown pollInterval={5 * 1000} queryResult={queryResult} />
+              <QueryRefreshCountdown refreshState={refreshState} />
             </Box>
-            {definition && definition.jobNames.length > 0 && repoAddress && (
-              <LaunchAssetExecutionButton
-                assets={[definition]}
-                upstreamAssetKeys={definition.dependencies.map((d) => d.asset.assetKey)}
-                preferredJobName={definition.jobNames[0]}
-                title={lastMaterializedAt ? 'Rematerialize' : 'Materialize'}
-              />
+            {definition && definition.jobNames.length > 0 && repoAddress && upstream && (
+              <LaunchAssetExecutionButton assetKeys={[definition.assetKey]} />
             )}
           </Box>
         }
@@ -145,10 +189,10 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           >
             <Spinner purpose="page" />
           </Box>
-        ) : params.asOf ? (
+        ) : viewingMostRecent ? null : (
           <Box
             padding={{vertical: 16, horizontal: 24}}
-            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
           >
             <HistoricalViewAlert
               asOf={params.asOf}
@@ -156,20 +200,39 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               hasDefinition={!!definition}
             />
           </Box>
-        ) : undefined}
+        )}
       </div>
       {isDefinitionLoaded &&
         (params.view === 'definition' ? (
           definition ? (
-            <AssetNodeDefinition assetNode={definition} liveDataByNode={liveDataByNode} />
+            <AssetNodeDefinition
+              assetNode={definition}
+              upstream={upstream}
+              downstream={downstream}
+              liveDataByNode={liveDataByNode}
+            />
           ) : (
-            <Box padding={{vertical: 32}}>
-              <NonIdealState
-                title="No definition"
-                description="This asset doesn't have a software definition in any of your loaded repositories."
-                icon="materialization"
+            <AssetNoDefinitionState />
+          )
+        ) : params.view === 'lineage' ? (
+          definition ? (
+            assetGraphData ? (
+              <AssetNodeLineage
+                params={params}
+                setParams={setParams}
+                assetNode={definition}
+                liveDataByNode={liveDataByNode}
+                assetGraphData={assetGraphData}
+                requestedDepth={requestedDepth}
+                graphQueryItems={graphQueryItems}
               />
-            </Box>
+            ) : (
+              <Box style={{flex: 1}} flex={{alignItems: 'center', justifyContent: 'center'}}>
+                <Spinner purpose="page" />
+              </Box>
+            )
+          ) : (
+            <AssetNoDefinitionState />
           )
         ) : (
           <AssetEvents
@@ -179,21 +242,40 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             params={params}
             paramsTimeWindowOnly={!!params.asOf}
             setParams={setParams}
-            liveData={definition ? liveDataByNode[definition.id] : undefined}
-            repository={
-              definition?.repository
-                ? {
-                    repositoryLocationName: definition?.repository.location.name,
-                    repositoryName: definition.repository.name,
-                  }
-                : undefined
-            }
-            opName={definition?.opName}
+            liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
           />
         ))}
-    </div>
+    </Box>
   );
 };
+
+const AssetNoDefinitionState = () => (
+  <Box padding={{vertical: 32}}>
+    <NonIdealState
+      title="No definition"
+      description="This asset doesn't have a software definition in any of your loaded repositories."
+      icon="materialization"
+    />
+  </Box>
+);
+
+function useNeighborsFromGraph(graphData: GraphData | null, assetKey: AssetKey) {
+  const graphId = toGraphId(assetKey);
+
+  return React.useMemo(() => {
+    if (!graphData) {
+      return {upstream: null, downstream: null};
+    }
+    return {
+      upstream: Object.values(graphData.nodes)
+        .filter((n) => graphData.upstream[graphId]?.[toGraphId(n.assetKey)])
+        .map((n) => n.definition),
+      downstream: Object.values(graphData.nodes)
+        .filter((n) => graphData.downstream[graphId]?.[toGraphId(n.assetKey)])
+        .map((n) => n.definition),
+    };
+  }, [graphData, graphId]);
+}
 
 const ASSET_QUERY = gql`
   query AssetQuery($assetKey: AssetKeyInput!) {
@@ -210,6 +292,7 @@ const ASSET_QUERY = gql`
 
         definition {
           id
+          groupName
           partitionDefinition
           repository {
             id
@@ -219,28 +302,15 @@ const ASSET_QUERY = gql`
               name
             }
           }
+
+          ...AssetNodeInstigatorsFragment
           ...AssetNodeDefinitionFragment
         }
       }
     }
   }
+  ${ASSET_NODE_INSTIGATORS_FRAGMENT}
   ${ASSET_NODE_DEFINITION_FRAGMENT}
-`;
-
-const ASSET_NODE_DEFINITION_RUNS_QUERY = gql`
-  query AssetNodeDefinitionRunsQuery($repositorySelector: RepositorySelector!) {
-    repositoryOrError(repositorySelector: $repositorySelector) {
-      __typename
-      ... on Repository {
-        id
-        name
-        inProgressRunsByStep {
-          ...InProgressRunsFragment
-        }
-      }
-    }
-  }
-  ${IN_PROGRESS_RUNS_FRAGMENT}
 `;
 
 const HistoricalViewAlert: React.FC<{

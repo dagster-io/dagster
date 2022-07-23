@@ -63,3 +63,10 @@ def test_format_docstring_for_description():
         format_docstring_for_description(no_indentation_at_start)
         == no_indentation_at_start_expected
     )
+
+
+def test_empty():
+    def empty_docstring():
+        """"""
+
+    assert format_docstring_for_description(empty_docstring) == ""

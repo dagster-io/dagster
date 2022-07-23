@@ -13,8 +13,9 @@ from dagster import (
     composite_solid,
     lambda_solid,
     resource,
-    solid,
 )
+from dagster._legacy import solid
+from dagster._utils.test import execute_solid
 from dagster.core.test_utils import nesting_composite_pipeline
 from dagster.core.utility_solids import (
     create_root_solid,
@@ -22,7 +23,6 @@ from dagster.core.utility_solids import (
     define_stub_solid,
     input_set,
 )
-from dagster.utils.test import execute_solid
 
 
 def test_single_solid_in_isolation():

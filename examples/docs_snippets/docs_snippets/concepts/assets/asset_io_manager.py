@@ -1,7 +1,8 @@
 # pylint: disable=redefined-outer-name
 # start_marker
-from dagster import AssetGroup, asset
-from dagster_aws.s3 import s3_pickle_asset_io_manager, s3_resource
+from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+
+from dagster import asset, with_resources
 
 
 @asset
@@ -14,9 +15,9 @@ def downstream_asset(upstream_asset):
     return upstream_asset + [4]
 
 
-asset_group = AssetGroup(
+assets_with_io_manager = with_resources(
     [upstream_asset, downstream_asset],
-    resource_defs={"io_manager": s3_pickle_asset_io_manager, "s3": s3_resource},
+    resource_defs={"io_manager": s3_pickle_io_manager, "s3": s3_resource},
 )
 
 # end_marker

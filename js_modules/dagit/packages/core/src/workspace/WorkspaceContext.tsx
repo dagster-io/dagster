@@ -1,6 +1,8 @@
 import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
+import sortBy from 'lodash/sortBy';
 import * as React from 'react';
 
+import {AppContext} from '../app/AppContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {PipelineSelector} from '../types/globalTypes';
@@ -40,7 +42,7 @@ export type WorkspaceState = {
   visibleRepos: DagsterRepoOption[];
 
   refetch: () => Promise<ApolloQueryResult<RootWorkspaceQuery>>;
-  toggleVisible: (repoAddress: RepoAddress) => void;
+  toggleVisible: (repoAddresses: RepoAddress[]) => void;
 };
 
 export const WorkspaceContext = React.createContext<WorkspaceState>(
@@ -86,16 +88,20 @@ const ROOT_WORKSPACE_QUERY = gql`
                 }
                 schedules {
                   id
+                  cronSchedule
+                  executionTimezone
                   mode
                   name
                   pipelineName
                   scheduleState {
                     id
+                    selectorId
                     status
                   }
                 }
                 sensors {
                   id
+                  jobOriginId
                   name
                   targets {
                     mode
@@ -103,6 +109,7 @@ const ROOT_WORKSPACE_QUERY = gql`
                   }
                   sensorState {
                     id
+                    selectorId
                     status
                   }
                 }
@@ -111,12 +118,13 @@ const ROOT_WORKSPACE_QUERY = gql`
                   mode
                   pipelineName
                 }
+                assetGroups {
+                  groupName
+                }
                 ...RepositoryInfoFragment
               }
             }
-            ... on PythonError {
-              ...PythonErrorFragment
-            }
+            ...PythonErrorFragment
           }
         }
       }
@@ -154,16 +162,21 @@ const useWorkspaceState = (): WorkspaceState => {
       return {allRepos, error: workspaceOrError};
     }
 
-    allRepos = workspaceOrError.locationEntries.reduce((accum, locationEntry) => {
-      if (locationEntry.locationOrLoadError?.__typename !== 'RepositoryLocation') {
-        return accum;
-      }
-      const repositoryLocation = locationEntry.locationOrLoadError;
-      const reposForLocation = repositoryLocation.repositories.map((repository) => {
-        return {repository, repositoryLocation};
-      });
-      return [...accum, ...reposForLocation];
-    }, [] as DagsterRepoOption[]);
+    allRepos = sortBy(
+      workspaceOrError.locationEntries.reduce((accum, locationEntry) => {
+        if (locationEntry.locationOrLoadError?.__typename !== 'RepositoryLocation') {
+          return accum;
+        }
+        const repositoryLocation = locationEntry.locationOrLoadError;
+        const reposForLocation = repositoryLocation.repositories.map((repository) => {
+          return {repository, repositoryLocation};
+        });
+        return [...accum, ...reposForLocation];
+      }, [] as DagsterRepoOption[]),
+
+      // Sort by repo location, then by repo
+      (r) => `${r.repositoryLocation.name}:${r.repository.name}`,
+    );
 
     return {error: null, allRepos};
   }, [workspaceOrError]);
@@ -191,23 +204,39 @@ const validateHiddenKeys = (parsed: unknown) => (Array.isArray(parsed) ? parsed 
 const useVisibleRepos = (
   allRepos: DagsterRepoOption[],
 ): [DagsterRepoOption[], WorkspaceState['toggleVisible']] => {
-  const [hiddenKeys, setHiddenKeys] = useStateWithStorage<string[]>(
+  const {basePath} = React.useContext(AppContext);
+
+  const [oldHiddenKeys, setOldHiddenKeys] = useStateWithStorage<string[]>(
     HIDDEN_REPO_KEYS,
     validateHiddenKeys,
   );
+  const [hiddenKeys, setHiddenKeys] = useStateWithStorage<string[]>(
+    basePath + ':' + HIDDEN_REPO_KEYS,
+    validateHiddenKeys,
+  );
+
+  // TODO: Remove this logic eventually...
+  const migratedOldHiddenKeys = React.useRef(false);
+  if (oldHiddenKeys.length && !migratedOldHiddenKeys.current) {
+    setHiddenKeys(oldHiddenKeys);
+    setOldHiddenKeys(undefined);
+    migratedOldHiddenKeys.current = true;
+  }
 
   const toggleVisible = React.useCallback(
-    (repoAddress: RepoAddress) => {
-      const key = `${repoAddress.name}:${repoAddress.location}`;
+    (repoAddresses: RepoAddress[]) => {
+      repoAddresses.forEach((repoAddress) => {
+        const key = `${repoAddress.name}:${repoAddress.location}`;
 
-      setHiddenKeys((current) => {
-        let nextHiddenKeys = [...(current || [])];
-        if (nextHiddenKeys.includes(key)) {
-          nextHiddenKeys = nextHiddenKeys.filter((k) => k !== key);
-        } else {
-          nextHiddenKeys = [...nextHiddenKeys, key];
-        }
-        return nextHiddenKeys;
+        setHiddenKeys((current) => {
+          let nextHiddenKeys = [...(current || [])];
+          if (nextHiddenKeys.includes(key)) {
+            nextHiddenKeys = nextHiddenKeys.filter((k) => k !== key);
+          } else {
+            nextHiddenKeys = [...nextHiddenKeys, key];
+          }
+          return nextHiddenKeys;
+        });
       });
     },
     [setHiddenKeys],

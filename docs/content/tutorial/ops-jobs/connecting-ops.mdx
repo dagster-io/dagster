@@ -1,0 +1,147 @@
+---
+title: Connecting Ops in Jobs | Dagster
+description: A Dagster job is a set of ops which have data dependencies on each other to create a directed acyclic graph.
+---
+
+# Connecting Ops in Jobs
+
+<CodeReferenceLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/basics/connecting_solids/" />
+
+Our jobs wouldn't be very interesting if they were limited to single ops. Jobs connect ops into arbitrary [DAGs](https://en.wikipedia.org/wiki/Directed_acyclic_graph) of computation.
+
+Why split up code into ops instead of splitting it up into regular Python functions? There are a few reasons:
+
+- Dagster can execute sets of ops without executing the entire job. This means that, if we hit a failure in our job, we can re-run just the steps that didn't complete successfully, which often allows us to avoid re-executing expensive steps.
+- When two ops don't depend on each other, Dagster can execute them simultaneously.
+- Dagster can materialize the output of an op to persistent storage. [IO managers](/concepts/io-management/io-managers) let us separate business logic from IO, which lets us write code that's more testable and portable across environments.
+
+Dagster jobs model a _dataflow_ graph. In data pipelines, the reason that a later step comes after an earlier step is almost always that it uses data produced by the earlier step. Dagster models these dataflow dependencies with _inputs_ and _outputs_.
+
+---
+
+## Let's Get Serial
+
+We'll expand the job we worked with in the first section of the tutorial into two ops that:
+
+- Download the cereal data and return it as an output.
+- Consume the cereal data produced by the first op and find the cereal with the most sugar.
+
+This will allow us to re-run the code that finds the sugariest cereal without re-running the code that downloads the cereal data. If we spot a bug in our sugariness code, or if we decide we want to compute some other statistics about the cereal data, we won't need to re-download the data.
+
+```python file=/intro_tutorial/basics/connecting_solids/serial_pipeline.py
+import csv
+
+import requests
+
+from dagster import get_dagster_logger, job, op
+
+
+@op
+def download_cereals():
+    response = requests.get("https://docs.dagster.io/assets/cereal.csv")
+    lines = response.text.split("\n")
+    return [row for row in csv.DictReader(lines)]
+
+
+@op
+def find_sugariest(cereals):
+    sorted_by_sugar = sorted(cereals, key=lambda cereal: cereal["sugars"])
+    get_dagster_logger().info(f'{sorted_by_sugar[-1]["name"]} is the sugariest cereal')
+
+
+@job
+def serial():
+    find_sugariest(download_cereals())
+```
+
+You'll see that we've modified our existing `download_cereals` op to return an output, in this case the data frame representing the cereals dataset.
+
+We've defined our new op, `find_sugariest`, to take a user-defined input, `cereals`.
+
+We can use inputs and outputs to connect ops to each other. Here we tell Dagster that:
+
+- `download_cereals` doesn't depend on the output of any other op.
+- `find_sugariest` depends on the output of `download_cereals`.
+
+Let's visualize this job in Dagit:
+
+```bash
+dagit -f serial_job.py
+```
+
+Navigate to <http://127.0.0.1:3000>:
+
+<Image
+alt="serial_pipeline_figure_one.png"
+src="/images/tutorial/serial_pipeline_figure_one.png"
+width={1680}
+height={946}
+/>
+
+<br />
+
+---
+
+## A More Complex DAG
+
+Ops don't need to be wired together serially. The output of one op can be consumed by any number of other ops, and the outputs of several different ops can be consumed by a single op.
+
+```python file=/intro_tutorial/basics/connecting_solids/complex_pipeline.py
+import csv
+
+import requests
+
+from dagster import get_dagster_logger, job, op
+
+
+@op
+def download_cereals():
+    response = requests.get("https://docs.dagster.io/assets/cereal.csv")
+    lines = response.text.split("\n")
+    return [row for row in csv.DictReader(lines)]
+
+
+@op
+def find_highest_calorie_cereal(cereals):
+    sorted_cereals = list(sorted(cereals, key=lambda cereal: cereal["calories"]))
+    return sorted_cereals[-1]["name"]
+
+
+@op
+def find_highest_protein_cereal(cereals):
+    sorted_cereals = list(sorted(cereals, key=lambda cereal: cereal["protein"]))
+    return sorted_cereals[-1]["name"]
+
+
+@op
+def display_results(most_calories, most_protein):
+    logger = get_dagster_logger()
+    logger.info(f"Most caloric cereal: {most_calories}")
+    logger.info(f"Most protein-rich cereal: {most_protein}")
+
+
+@job
+def diamond():
+    cereals = download_cereals()
+    display_results(
+        most_calories=find_highest_calorie_cereal(cereals),
+        most_protein=find_highest_protein_cereal(cereals),
+    )
+```
+
+First, we introduce the intermediate variable `cereals` into our job definition to represent the output of the `download_cereals` op. Then we make both `find_highest_calorie_cereal` and `find_highest_protein_cereal` consume this output. Their outputs are in turn both consumed by `display_results`.
+
+Let's visualize this job in Dagit:
+
+```bash
+dagit -f complex_job.py
+```
+
+<Image
+alt="complex_pipeline_figure_one.png"
+src="/images/tutorial/complex_pipeline_figure_one.png"
+width={1331}
+height={874}
+/>
+
+When you execute this example from Dagit, you'll see that `download_cereals` executes first, followed by `find_highest_calorie_cereal` and `find_highest_protein_cereal` executing in parallel, since they don't depend on each other's outputs. Finally, `display_results` executes last, only after `find_highest_calorie_cereal` and `find_highest_protein_cereal` have both executed (because `display_results` depends on both of their outputs).

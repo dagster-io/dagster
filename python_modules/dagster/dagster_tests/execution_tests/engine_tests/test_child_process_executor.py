@@ -4,6 +4,7 @@ import time
 
 import pytest
 
+from dagster._utils import segfault
 from dagster.core.executor.child_process_executor import (
     ChildProcessCommand,
     ChildProcessCrashException,
@@ -13,7 +14,6 @@ from dagster.core.executor.child_process_executor import (
     ChildProcessSystemErrorEvent,
     execute_child_process_command,
 )
-from dagster.utils import segfault
 
 
 class DoubleAStringChildProcessCommand(ChildProcessCommand):

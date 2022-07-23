@@ -240,7 +240,9 @@ describe('useQueryPersistedState', () => {
     );
 
     screen.getByText(`Functions Same: true`).click();
+    expect(screen.getByText(`Functions Same: true`)).toBeVisible();
     screen.getByText(`Functions Same: true`).click();
+    expect(screen.getByText(`Functions Same: true`)).toBeVisible();
   });
 
   it('correctly encodes arrays, using bracket syntax', () => {

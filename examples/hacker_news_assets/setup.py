@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="hacker_news_assets",
-    version="dev",
+    version="0+dev",
     author="Elementl",
     author_email="hello@elementl.com",
     classifiers=[
@@ -24,7 +24,9 @@ setup(
         "dagster-slack",
         "dagster-postgres",
         "dbt-core",
+        "dbt-duckdb",
         "dbt-snowflake",
+        "duckdb!=0.3.3",  # missing wheels
         "mock",
         # DataFrames were not written to Snowflake, causing errors
         "pandas<1.4.0",

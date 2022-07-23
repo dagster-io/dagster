@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {ColorsWIP, CaptionMono} from '@dagster-io/ui';
+import {Colors, CaptionMono} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -7,7 +7,10 @@ import {Link} from 'react-router-dom';
 import {failedStatuses, inProgressStatuses} from '../runs/RunStatuses';
 import {StepEventStatus} from '../types/globalTypes';
 
-import {StepSummaryForRunQuery} from './types/StepSummaryForRunQuery';
+import {
+  StepSummaryForRunQuery,
+  StepSummaryForRunQueryVariables,
+} from './types/StepSummaryForRunQuery';
 
 interface Props {
   runId: string;
@@ -15,7 +18,10 @@ interface Props {
 
 export const StepSummaryForRun = (props: Props) => {
   const {runId} = props;
-  const {data} = useQuery<StepSummaryForRunQuery>(STEP_SUMMARY_FOR_RUN_QUERY, {variables: {runId}});
+  const {data} = useQuery<StepSummaryForRunQuery, StepSummaryForRunQueryVariables>(
+    STEP_SUMMARY_FOR_RUN_QUERY,
+    {variables: {runId}},
+  );
 
   const run = data?.pipelineRunOrError;
   const status = run?.__typename === 'Run' ? run.status : null;
@@ -50,13 +56,13 @@ export const StepSummaryForRun = (props: Props) => {
         ? qs.stringify({focusedTime: Math.floor(step.endTime * 1000)}, {addQueryPrefix: true})
         : '';
       return (
-        <CaptionMono color={ColorsWIP.Gray500}>
+        <CaptionMono color={Colors.Gray500}>
           Failed at <Link to={`/instance/runs/${runId}${query}`}>{step.stepKey}</Link>
         </CaptionMono>
       );
     }
     return (
-      <CaptionMono color={ColorsWIP.Gray500}>
+      <CaptionMono color={Colors.Gray500}>
         Failed at <Link to={`/instance/runs/${runId}`}>{stepCount} steps</Link>
       </CaptionMono>
     );
@@ -69,13 +75,13 @@ export const StepSummaryForRun = (props: Props) => {
         ? qs.stringify({focusedTime: Math.floor(step.endTime * 1000)}, {addQueryPrefix: true})
         : '';
       return (
-        <CaptionMono color={ColorsWIP.Gray500}>
+        <CaptionMono color={Colors.Gray500}>
           In progress at <Link to={`/instance/runs/${runId}${query}`}>{step.stepKey}</Link>
         </CaptionMono>
       );
     }
     return (
-      <CaptionMono color={ColorsWIP.Gray500}>
+      <CaptionMono color={Colors.Gray500}>
         In progress at <Link to={`/instance/runs/${runId}`}>{stepCount} steps</Link>
       </CaptionMono>
     );

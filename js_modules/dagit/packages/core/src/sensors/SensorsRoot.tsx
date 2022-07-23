@@ -3,6 +3,8 @@ import {Box, NonIdealState} from '@dagster-io/ui';
 import React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
@@ -15,26 +17,30 @@ import {RepoAddress} from '../workspace/types';
 import {SENSOR_FRAGMENT} from './SensorFragment';
 import {SensorInfo} from './SensorInfo';
 import {SensorsTable} from './SensorsTable';
-import {SensorsRootQuery} from './types/SensorsRootQuery';
+import {SensorsRootQuery, SensorsRootQueryVariables} from './types/SensorsRootQuery';
 
 interface Props {
   repoAddress: RepoAddress;
 }
 
 export const SensorsRoot = (props: Props) => {
-  const {repoAddress} = props;
+  useTrackPageView();
   useDocumentTitle('Sensors');
+
+  const {repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const queryResult = useQuery<SensorsRootQuery>(SENSORS_ROOT_QUERY, {
+  const queryResult = useQuery<SensorsRootQuery, SensorsRootQueryVariables>(SENSORS_ROOT_QUERY, {
     variables: {
-      repositorySelector: repositorySelector,
+      repositorySelector,
       instigationType: InstigationType.SENSOR,
     },
     fetchPolicy: 'cache-and-network',
-    pollInterval: 50 * 1000,
     partialRefetch: true,
+    notifyOnNetworkStatusChange: true,
   });
+
+  useQueryRefreshAtInterval(queryResult, 50 * 1000);
 
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>

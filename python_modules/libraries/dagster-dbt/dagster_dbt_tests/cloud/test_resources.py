@@ -3,7 +3,7 @@ import responses
 from dagster_dbt import dbt_cloud_resource
 
 from dagster import Failure, build_init_resource_context
-from dagster.check import CheckError
+from dagster._check import CheckError
 
 from .utils import (
     SAMPLE_ACCOUNT_ID,
@@ -14,6 +14,7 @@ from .utils import (
     sample_list_artifacts,
     sample_run_details,
     sample_run_results,
+    sample_runs_details,
 )
 
 
@@ -37,6 +38,37 @@ def test_get_job():
             json=sample_job_details(),
         )
         assert dc_resource.get_job(SAMPLE_JOB_ID) == sample_job_details()["data"]
+
+
+@pytest.mark.parametrize(
+    "job_id,include_related,query_string",
+    [
+        (
+            345,
+            ["environment"],
+            "?include_related=%5B%27environment%27%5D&order_by=-id&offset=0&limit=100&job_definition_id=345",
+        ),
+        (
+            None,
+            ["environment", "repository"],
+            "?include_related=%5B%27environment%27%2C+%27repository%27%5D&order_by=-id&offset=0&limit=100",
+        ),
+        (None, None, "?include_related=%5B%5D&order_by=-id&offset=0&limit=100"),
+    ],
+)
+def test_get_runs(job_id, include_related, query_string):
+    dc_resource = get_dbt_cloud_resource()
+
+    with responses.RequestsMock() as rsps:
+        rsps.add(
+            rsps.GET,
+            f"{SAMPLE_API_PREFIX}/runs/{query_string}",
+            json=sample_runs_details(),
+        )
+        assert (
+            dc_resource.get_runs(include_related=include_related, job_id=job_id)
+            == sample_runs_details()["data"]
+        )
 
 
 def test_get_run():

@@ -161,7 +161,7 @@ def test_deploy_docker():
         assert nodes
 
         names = {node["name"] for node in nodes[0]["pipelines"]}
-        assert names == {"my_job", "hanging_job"}
+        assert names == {"my_job", "hanging_job", "my_step_isolated_job"}
 
         variables = {
             "executionParams": {
@@ -169,6 +169,35 @@ def test_deploy_docker():
                     "repositoryLocationName": "example_user_code",
                     "repositoryName": "deploy_docker_repository",
                     "pipelineName": "my_job",
+                },
+                "mode": "default",
+            }
+        }
+
+        launch_res = requests.post(
+            "http://{dagit_host}:3000/graphql?query={query_string}&variables={variables}".format(
+                dagit_host=dagit_host,
+                query_string=LAUNCH_PIPELINE_MUTATION,
+                variables=json.dumps(variables),
+            )
+        ).json()
+
+        assert launch_res["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
+
+        run = launch_res["data"]["launchPipelineExecution"]["run"]
+        run_id = run["runId"]
+        assert run["status"] == "QUEUED"
+
+        _wait_for_run_status(run_id, dagit_host, PipelineRunStatus.SUCCESS)
+
+        # Launch a job that uses the docker executor
+
+        variables = {
+            "executionParams": {
+                "selector": {
+                    "repositoryLocationName": "example_user_code",
+                    "repositoryName": "deploy_docker_repository",
+                    "pipelineName": "my_step_isolated_job",
                 },
                 "mode": "default",
             }
@@ -228,7 +257,7 @@ def test_deploy_docker():
         assert (
             terminate_res["data"]["terminatePipelineExecution"]["__typename"]
             == "TerminateRunSuccess"
-        )
+        ), str(terminate_res)
 
         _wait_for_run_status(hanging_run_id, dagit_host, PipelineRunStatus.CANCELED)
 

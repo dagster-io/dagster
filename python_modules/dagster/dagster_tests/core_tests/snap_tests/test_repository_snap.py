@@ -1,4 +1,5 @@
-from dagster import pipeline, repository, solid
+from dagster import repository
+from dagster._legacy import pipeline, solid
 from dagster.core.host_representation import ExternalPipelineData, external_repository_data_from_def
 from dagster.core.snap import PipelineSnapshot
 

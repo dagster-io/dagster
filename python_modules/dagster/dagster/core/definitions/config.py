@@ -1,13 +1,16 @@
-from typing import TYPE_CHECKING, Any, Callable, Dict, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Mapping, NamedTuple, Optional, Union, cast
 
-from dagster import check
-from dagster.builtins import BuiltinEnum
-from dagster.config import ConfigType
-from dagster.config.post_process import resolve_defaults
-from dagster.config.validate import process_config, validate_config
+import dagster._check as check
+from dagster._builtins import BuiltinEnum
+from dagster._config import (
+    ConfigType,
+    is_supported_config_python_builtin,
+    process_config,
+    resolve_defaults,
+    validate_config,
+)
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster.core.errors import DagsterInvalidConfigError
-from dagster.primitive_mapping import is_supported_config_python_builtin
 
 from .definition_config_schema import convert_user_facing_definition_config_schema
 
@@ -15,7 +18,7 @@ if TYPE_CHECKING:
     from .pipeline_definition import PipelineDefinition
 
 
-def is_callable_valid_config_arg(config: Union[Callable[..., Any], Dict[str, Any]]) -> bool:
+def is_callable_valid_config_arg(config: Union[Callable[..., Any], Mapping[str, object]]) -> bool:
     return BuiltinEnum.contains(config) or is_supported_config_python_builtin(config)
 
 
@@ -52,7 +55,7 @@ class ConfigMapping(
     def __new__(
         cls,
         config_fn: Callable[[Any], Any],
-        config_schema: Any = None,
+        config_schema: Optional[Any] = None,
         receive_processed_config_values: Optional[bool] = None,
     ):
         return super(ConfigMapping, cls).__new__(

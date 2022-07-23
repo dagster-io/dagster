@@ -1,8 +1,11 @@
 import {gql, RefetchQueriesFunction, useMutation} from '@apollo/client';
-import {ButtonWIP, DialogBody, DialogFooter, DialogWIP, Group} from '@dagster-io/ui';
+import {Button, DialogBody, DialogFooter, Dialog, Group} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {displayNameForAssetKey} from '../app/Util';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
+
+import {AssetWipeMutation, AssetWipeMutationVariables} from './types/AssetWipeMutation';
 
 interface AssetKey {
   path: string[];
@@ -15,10 +18,13 @@ export const AssetWipeDialog: React.FC<{
   onComplete: (assetKeys: AssetKey[]) => void;
   requery?: RefetchQueriesFunction;
 }> = ({assetKeys, isOpen, onClose, onComplete, requery}) => {
-  const [requestWipe] = useMutation(ASSET_WIPE_MUTATION, {
-    variables: {assetKeys: assetKeys.map((key) => ({path: key.path || []}))},
-    refetchQueries: requery,
-  });
+  const [requestWipe] = useMutation<AssetWipeMutation, AssetWipeMutationVariables>(
+    ASSET_WIPE_MUTATION,
+    {
+      variables: {assetKeys: assetKeys.map((key) => ({path: key.path || []}))},
+      refetchQueries: requery,
+    },
+  );
 
   const wipe = async () => {
     if (!assetKeys.length) {
@@ -29,7 +35,7 @@ export const AssetWipeDialog: React.FC<{
   };
 
   return (
-    <DialogWIP
+    <Dialog
       isOpen={isOpen}
       title={`Wipe materializations of ${
         assetKeys.length === 1 ? displayNameForAssetKey(assetKeys[0]) : 'selected assets'
@@ -48,14 +54,14 @@ export const AssetWipeDialog: React.FC<{
         </Group>
       </DialogBody>
       <DialogFooter>
-        <ButtonWIP intent="none" onClick={onClose}>
+        <Button intent="none" onClick={onClose}>
           Cancel
-        </ButtonWIP>
-        <ButtonWIP intent="danger" onClick={wipe}>
+        </Button>
+        <Button intent="danger" onClick={wipe}>
           Wipe
-        </ButtonWIP>
+        </Button>
       </DialogFooter>
-    </DialogWIP>
+    </Dialog>
   );
 };
 
@@ -67,10 +73,9 @@ const ASSET_WIPE_MUTATION = gql`
           path
         }
       }
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;

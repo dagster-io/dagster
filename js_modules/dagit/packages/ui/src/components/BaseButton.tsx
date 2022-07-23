@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 import {StyledButton, StyledButtonText} from './StyledButton';
 
 interface CommonButtonProps {
@@ -18,14 +18,14 @@ interface BaseButtonProps extends CommonButtonProps, React.ComponentPropsWithRef
 export const BaseButton = React.forwardRef(
   (props: BaseButtonProps, ref: React.ForwardedRef<HTMLButtonElement>) => {
     const {
-      fillColor = ColorsWIP.White,
+      fillColor = Colors.White,
       disabled,
       icon,
       label,
       loading,
       rightIcon,
-      textColor = ColorsWIP.Dark,
-      strokeColor = ColorsWIP.Gray300,
+      textColor = Colors.Dark,
+      strokeColor = Colors.Gray300,
       ...rest
     } = props;
 

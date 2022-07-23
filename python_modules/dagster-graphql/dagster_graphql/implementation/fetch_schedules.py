@@ -1,9 +1,9 @@
 from graphql.execution.base import ResolveInfo
 
-from dagster import check
+import dagster._check as check
+from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, ScheduleSelector
-from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 
 from .utils import UserFacingGraphQLError, capture_error
 
@@ -25,7 +25,7 @@ def start_schedule(graphene_info, schedule_selector):
 
 
 @capture_error
-def stop_schedule(graphene_info, schedule_origin_id):
+def stop_schedule(graphene_info, schedule_origin_id, schedule_selector_id):
     from ..schema.instigation import GrapheneInstigationState
     from ..schema.schedules import GrapheneScheduleStateResult
 
@@ -40,7 +40,7 @@ def stop_schedule(graphene_info, schedule_origin_id):
     }
 
     schedule_state = instance.stop_schedule(
-        schedule_origin_id, external_schedules.get(schedule_origin_id)
+        schedule_origin_id, schedule_selector_id, external_schedules.get(schedule_origin_id)
     )
     return GrapheneScheduleStateResult(GrapheneInstigationState(schedule_state))
 
@@ -72,6 +72,7 @@ def get_schedules_or_error(graphene_info, repository_selector):
         state.name: state
         for state in graphene_info.context.instance.all_instigator_state(
             repository_origin_id=repository.get_external_origin_id(),
+            repository_selector_id=repository_selector.selector_id,
             instigator_type=InstigatorType.SCHEDULE,
         )
     }
@@ -103,7 +104,8 @@ def get_schedules_for_pipeline(graphene_info, pipeline_selector):
             continue
 
         schedule_state = graphene_info.context.instance.get_instigator_state(
-            external_schedule.get_external_origin_id()
+            external_schedule.get_external_origin_id(),
+            external_schedule.selector_id,
         )
         results.append(GrapheneSchedule(external_schedule, schedule_state))
 
@@ -127,7 +129,7 @@ def get_schedule_or_error(graphene_info, schedule_selector):
         )
 
     schedule_state = graphene_info.context.instance.get_instigator_state(
-        external_schedule.get_external_origin_id()
+        external_schedule.get_external_origin_id(), external_schedule.selector_id
     )
     return GrapheneSchedule(external_schedule, schedule_state)
 

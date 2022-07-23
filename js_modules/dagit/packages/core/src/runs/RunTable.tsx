@@ -1,43 +1,42 @@
 import {gql} from '@apollo/client';
-import {
-  Box,
-  Checkbox,
-  ColorsWIP,
-  IconWIP,
-  NonIdealState,
-  Table,
-  Mono,
-  TokenizingFieldValue,
-} from '@dagster-io/ui';
+import {Box, Checkbox, Colors, Icon, NonIdealState, Table, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
+import {RunsFilter} from '../types/globalTypes';
 import {
   findRepositoryAmongOptions,
   isThisThingAJob,
   useRepositoryOptions,
 } from '../workspace/WorkspaceContext';
-import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
+import {RunAssetKeyTags} from './RunAssetKeyTags';
 import {RunStatusTagWithStats} from './RunStatusTag';
-import {canceledStatuses, queuedStatuses} from './RunStatuses';
-import {RunStepKeysAssetList} from './RunStepKeysAssetList';
 import {RunTags} from './RunTags';
-import {RunElapsed, RunTime, RUN_TIME_FRAGMENT, titleForRun} from './RunUtils';
+import {
+  assetKeysForRun,
+  RunStateSummary,
+  RunTime,
+  RUN_TIME_FRAGMENT,
+  titleForRun,
+} from './RunUtils';
+import {RunFilterToken} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTableRunFragment';
 
 interface RunTableProps {
   runs: RunTableRunFragment[];
-  onSetFilter: (search: TokenizingFieldValue[]) => void;
+  filter?: RunsFilter;
+  onAddTag?: (token: RunFilterToken) => void;
   nonIdealState?: React.ReactNode;
   actionBarComponents?: React.ReactNode;
   highlightedIds?: string[];
@@ -46,7 +45,7 @@ interface RunTableProps {
 }
 
 export const RunTable = (props: RunTableProps) => {
-  const {runs, onSetFilter, nonIdealState, highlightedIds, actionBarComponents} = props;
+  const {runs, filter, onAddTag, nonIdealState, highlightedIds, actionBarComponents} = props;
   const allIds = runs.map((r) => r.runId);
 
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(allIds);
@@ -57,6 +56,7 @@ export const RunTable = (props: RunTableProps) => {
   const {options} = useRepositoryOptions();
 
   if (runs.length === 0) {
+    const anyFilter = Object.keys(filter || {}).length;
     return (
       <div>
         {actionBarComponents ? (
@@ -66,8 +66,12 @@ export const RunTable = (props: RunTableProps) => {
           {nonIdealState || (
             <NonIdealState
               icon="run"
-              title="No runs to display"
-              description="Use the Launchpad to launch a run."
+              title={anyFilter ? 'No matching runs' : 'No runs to display'}
+              description={
+                anyFilter
+                  ? 'No runs were found for this filter.'
+                  : 'Use the Launchpad to launch a run.'
+              }
             />
           )}
         </Box>
@@ -124,7 +128,7 @@ export const RunTable = (props: RunTableProps) => {
             <th style={{width: 90}}>Run ID</th>
             <th>{anyPipelines ? 'Job / Pipeline' : 'Job'}</th>
             <th style={{width: 90}}>Snapshot ID</th>
-            <th style={{width: 180}}>Timing</th>
+            <th style={{width: 190}}>Timing</th>
             {props.additionalColumnHeaders}
             <th style={{width: 52}} />
           </tr>
@@ -135,7 +139,7 @@ export const RunTable = (props: RunTableProps) => {
               canTerminateOrDelete={canTerminateOrDelete}
               run={run}
               key={run.runId}
-              onSetFilter={onSetFilter}
+              onAddTag={onAddTag}
               checked={checkedIds.has(run.runId)}
               additionalColumns={props.additionalColumnsForRow?.(run)}
               onToggleChecked={onToggleFactory(run.runId)}
@@ -166,6 +170,11 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
       repositoryLocationName
     }
     solidSelection
+    assetSelection {
+      ... on AssetKey {
+        path
+      }
+    }
     status
     tags {
       key
@@ -180,7 +189,7 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
 const RunRow: React.FC<{
   run: RunTableRunFragment;
   canTerminateOrDelete: boolean;
-  onSetFilter: (search: TokenizingFieldValue[]) => void;
+  onAddTag?: (token: RunFilterToken) => void;
   checked?: boolean;
   onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
   additionalColumns?: React.ReactNode[];
@@ -188,7 +197,7 @@ const RunRow: React.FC<{
 }> = ({
   run,
   canTerminateOrDelete,
-  onSetFilter,
+  onAddTag,
   checked,
   onToggleChecked,
   additionalColumns,
@@ -232,7 +241,9 @@ const RunRow: React.FC<{
       </td>
       <td>
         <Box flex={{direction: 'column', gap: 5}}>
-          {run.pipelineName !== __ASSET_GROUP ? (
+          {isHiddenAssetGroupJob(run.pipelineName) ? (
+            <RunAssetKeyTags assetKeys={assetKeysForRun(run)} />
+          ) : (
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <PipelineReference
                 isJob={isJob}
@@ -252,16 +263,14 @@ const RunRow: React.FC<{
                     : workspacePipelinePathGuessRepo(run.pipelineName)
                 }
               >
-                <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
+                <Icon name="open_in_new" color={Colors.Blue500} />
               </Link>
             </Box>
-          ) : (
-            <RunStepKeysAssetList stepKeys={run.stepKeysToExecute} />
           )}
           <RunTags
             tags={run.tags}
             mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}
-            onSetFilter={onSetFilter}
+            onAddTag={onAddTag}
           />
         </Box>
       </td>
@@ -274,9 +283,7 @@ const RunRow: React.FC<{
       </td>
       <td>
         <RunTime run={run} />
-        {queuedStatuses.has(run.status) || canceledStatuses.has(run.status) ? null : (
-          <RunElapsed run={run} />
-        )}
+        <RunStateSummary run={run} />
       </td>
       {additionalColumns}
       <td>

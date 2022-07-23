@@ -3,6 +3,7 @@ import {print} from 'graphql';
 import * as React from 'react';
 
 import {AppContext} from './AppContext';
+import {PYTHON_ERROR_FRAGMENT} from './PythonErrorInfo';
 
 export enum TelemetryAction {
   LAUNCH_RUN = 'LAUNCH_RUN',
@@ -15,12 +16,11 @@ const LOG_TELEMETRY_MUTATION = gql`
       ... on LogTelemetrySuccess {
         action
       }
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export async function logTelemetry(

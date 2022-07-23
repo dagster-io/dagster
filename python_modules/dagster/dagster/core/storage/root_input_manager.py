@@ -1,22 +1,15 @@
 from abc import abstractmethod
 from functools import update_wrapper
 
-from dagster import check
+import dagster._check as check
+from dagster._annotations import experimental
+from dagster._utils.backcompat import deprecation_warning
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
-from dagster.core.definitions.resource_definition import ResourceDefinition
-from dagster.core.storage.input_manager import InputManager
-from dagster.utils.backcompat import experimental
-
-
-class IInputManagerDefinition:
-    @property
-    @abstractmethod
-    def input_config_schema(self):
-        """The schema for per-input configuration for inputs that are managed by this
-        input manager"""
+from dagster.core.definitions.resource_definition import ResourceDefinition, is_context_provided
+from dagster.core.storage.input_manager import IInputManagerDefinition, InputManager
 
 
 class RootInputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
@@ -138,6 +131,11 @@ def root_input_manager(
         def csv_loader(context):
             return read_csv(context.config["path"])
     """
+    deprecation_warning(
+        "root_input_manager",
+        "1.0.0",
+        additional_warn_txt="Use an InputManager instead.",
+    )
 
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
         return _InputManagerDecoratorCallable()(config_schema)
@@ -159,7 +157,7 @@ class RootInputManagerWrapper(RootInputManager):
         self._load_fn = load_fn
 
     def load_input(self, context):
-        return self._load_fn(context)
+        return self._load_fn(context) if is_context_provided(self._load_fn) else self._load_fn()
 
 
 class _InputManagerDecoratorCallable:

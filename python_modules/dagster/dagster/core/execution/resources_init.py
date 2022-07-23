@@ -1,10 +1,24 @@
 import inspect
 from collections import deque
 from contextlib import ContextDecorator
-from typing import AbstractSet, Any, Callable, Deque, Dict, Optional, cast
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Deque,
+    Dict,
+    Generator,
+    Mapping,
+    Optional,
+    Set,
+    Union,
+    cast,
+)
 
-from dagster import check
-from dagster.core.decorator_utils import get_function_params
+import dagster._check as check
+from dagster._utils import EventGenerationManager, ensure_gen
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.timing import format_duration, time_execution_scope
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.resource_definition import (
     ResourceDefinition,
@@ -24,22 +38,19 @@ from dagster.core.execution.plan.inputs import (
     UnresolvedMappedStepInput,
 )
 from dagster.core.execution.plan.plan import ExecutionPlan, StepHandleUnion
-from dagster.core.execution.plan.step import ExecutionStep
+from dagster.core.execution.plan.step import ExecutionStep, IExecutionStep
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.system_config.objects import ResourceConfig
+from dagster.core.system_config.objects import ResolvedRunConfig, ResourceConfig
 from dagster.core.utils import toposort
-from dagster.utils import EventGenerationManager, ensure_gen
-from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.timing import format_duration, time_execution_scope
 
 from .context.init import InitResourceContext
 
 
 def resource_initialization_manager(
-    resource_defs: Dict[str, ResourceDefinition],
-    resource_configs: Dict[str, ResourceConfig],
+    resource_defs: Mapping[str, ResourceDefinition],
+    resource_configs: Mapping[str, ResourceConfig],
     log_manager: DagsterLogManager,
     execution_plan: Optional[ExecutionPlan],
     pipeline_run: Optional[PipelineRun],
@@ -62,7 +73,9 @@ def resource_initialization_manager(
     return EventGenerationManager(generator, ScopedResourcesBuilder)
 
 
-def resolve_resource_dependencies(resource_defs):
+def resolve_resource_dependencies(
+    resource_defs: Mapping[str, ResourceDefinition]
+) -> Dict[str, AbstractSet[str]]:
     """Generates a dictionary that maps resource key to resource keys it requires for initialization"""
     resource_dependencies = {
         key: resource_def.required_resource_keys for key, resource_def in resource_defs.items()
@@ -70,17 +83,10 @@ def resolve_resource_dependencies(resource_defs):
     return resource_dependencies
 
 
-def get_dependencies(resource_name, resource_deps):
-    """Get all resources that must be initialized before resource_name can be initialized.
-
-    Uses dfs to get all required dependencies from a particular resource. If dependencies are
-        cyclic, raise a DagsterInvariantViolationError.
-    """
+def ensure_resource_deps_satisfiable(resource_deps: Mapping[str, AbstractSet[str]]) -> None:
     path = set()  # resources we are currently checking the dependencies of
-    reqd_resources = set()
 
-    # adds dependencies for a given resource key to reqd_resources
-    def _get_deps_helper(resource_key):
+    def _helper(resource_key):
         path.add(resource_key)
         for reqd_resource_key in resource_deps[resource_key]:
             if reqd_resource_key in path:
@@ -89,17 +95,39 @@ def get_dependencies(resource_name, resource_deps):
                         key=reqd_resource_key
                     )
                 )
-            _get_deps_helper(reqd_resource_key)
+            if reqd_resource_key not in resource_deps:
+                raise DagsterInvariantViolationError(
+                    f"Resource with key '{reqd_resource_key}' required by resource with key '{resource_key}', but not provided."
+                )
+            _helper(reqd_resource_key)
         path.remove(resource_key)
+
+    for resource_key in sorted(list(resource_deps.keys())):
+        _helper(resource_key)
+
+
+def get_dependencies(
+    resource_name: str, resource_deps: Mapping[str, AbstractSet[str]]
+) -> AbstractSet[str]:
+    """Get all resources that must be initialized before resource_name can be initialized.
+
+    Uses dfs to get all required dependencies from a particular resource. Assumes that resource dependencies are not cyclic (check performed by a different function).
+    """
+    reqd_resources = set()
+
+    # adds dependencies for a given resource key to reqd_resources
+    def _get_deps_helper(resource_key):
+        for reqd_resource_key in resource_deps[resource_key]:
+            _get_deps_helper(reqd_resource_key)
         reqd_resources.add(resource_key)
 
     _get_deps_helper(resource_name)
-    return set(reqd_resources)
+    return reqd_resources
 
 
 def _core_resource_initialization_event_generator(
-    resource_defs: Dict[str, ResourceDefinition],
-    resource_configs: Dict[str, ResourceConfig],
+    resource_defs: Mapping[str, ResourceDefinition],
+    resource_configs: Mapping[str, ResourceConfig],
     resource_log_manager: DagsterLogManager,
     resource_managers: Deque[EventGenerationManager],
     execution_plan: Optional[ExecutionPlan],
@@ -110,7 +138,7 @@ def _core_resource_initialization_event_generator(
     pipeline_def_for_backwards_compat: Optional[PipelineDefinition],
 ):
 
-    pipeline_name = None
+    pipeline_name = ""  # Must be initialized to a string to satisfy typechecker
     contains_generator = False
     if emit_persistent_events:
         check.invariant(
@@ -124,7 +152,7 @@ def _core_resource_initialization_event_generator(
     try:
         if emit_persistent_events and resource_keys_to_init:
             yield DagsterEvent.resource_init_start(
-                cast(str, pipeline_name),
+                pipeline_name,
                 cast(ExecutionPlan, execution_plan),
                 resource_log_manager,
                 resource_keys_to_init,
@@ -169,19 +197,25 @@ def _core_resource_initialization_event_generator(
 
         if emit_persistent_events and resource_keys_to_init:
             yield DagsterEvent.resource_init_success(
-                cast(str, pipeline_name),
+                pipeline_name,
                 cast(ExecutionPlan, execution_plan),
                 resource_log_manager,
                 resource_instances,
                 resource_init_times,
             )
+
+        delta_res_keys = resource_keys_to_init - set(resource_instances.keys())
+        check.invariant(
+            not delta_res_keys,
+            f"resources instances do not align with resource to init, difference: {delta_res_keys}",
+        )
         yield ScopedResourcesBuilder(resource_instances, contains_generator)
     except DagsterUserCodeExecutionError as dagster_user_error:
         # Can only end up in this state if we attempt to initialize a resource, so
         # resource_keys_to_init cannot be empty
         if emit_persistent_events:
             yield DagsterEvent.resource_init_failure(
-                cast(str, pipeline_name),
+                pipeline_name,
                 cast(ExecutionPlan, execution_plan),
                 resource_log_manager,
                 resource_keys_to_init,
@@ -191,8 +225,8 @@ def _core_resource_initialization_event_generator(
 
 
 def resource_initialization_event_generator(
-    resource_defs: Dict[str, ResourceDefinition],
-    resource_configs: Dict[str, ResourceConfig],
+    resource_defs: Mapping[str, ResourceDefinition],
+    resource_configs: Mapping[str, ResourceConfig],
     log_manager: DagsterLogManager,
     execution_plan: Optional[ExecutionPlan],
     pipeline_run: Optional[PipelineRun],
@@ -267,18 +301,23 @@ class InitializedResource:
     `EventGenerationManager`-wrapped event stream.
     """
 
-    def __init__(self, obj, duration, is_generator):
+    def __init__(self, obj: Any, duration: str, is_generator: bool):
         self.resource = obj
         self.duration = duration
         self.is_generator = is_generator
 
 
-def single_resource_generation_manager(context, resource_name, resource_def):
+def single_resource_generation_manager(
+    context: InitResourceContext, resource_name: str, resource_def: ResourceDefinition
+) -> EventGenerationManager:
     generator = single_resource_event_generator(context, resource_name, resource_def)
-    return EventGenerationManager(generator, InitializedResource)
+    # EventGenerationManager needs to be renamed/generalized so that it doesn't only take event generators
+    return EventGenerationManager(generator, InitializedResource)  # type: ignore
 
 
-def single_resource_event_generator(context, resource_name, resource_def):
+def single_resource_event_generator(
+    context: InitResourceContext, resource_name: str, resource_def: ResourceDefinition
+) -> Generator[InitializedResource, None, None]:
     try:
         msg_fn = lambda: "Error executing resource_fn on ResourceDefinition {name}".format(
             name=resource_name
@@ -290,8 +329,8 @@ def single_resource_event_generator(context, resource_name, resource_def):
                 with time_execution_scope() as timer_result:
                     resource_or_gen = (
                         resource_def.resource_fn(context)
-                        if is_context_provided(get_function_params(resource_def.resource_fn))
-                        else resource_def.resource_fn()
+                        if is_context_provided(resource_def.resource_fn)
+                        else resource_def.resource_fn()  # type: ignore[call-arg]
                     )
 
                     # Flag for whether resource is generator. This is used to ensure that teardown
@@ -326,8 +365,12 @@ def single_resource_event_generator(context, resource_name, resource_def):
             )
 
 
-def get_required_resource_keys_to_init(execution_plan, pipeline_def, resolved_run_config):
-    resource_keys = set()
+def get_required_resource_keys_to_init(
+    execution_plan: ExecutionPlan,
+    pipeline_def: PipelineDefinition,
+    resolved_run_config: ResolvedRunConfig,
+) -> AbstractSet[str]:
+    resource_keys: Set[str] = set()
 
     for step_handle, step in execution_plan.step_dict.items():
         if step_handle not in execution_plan.step_handles_to_execute:
@@ -345,11 +388,14 @@ def get_required_resource_keys_to_init(execution_plan, pipeline_def, resolved_ru
     return frozenset(get_transitive_required_resource_keys(resource_keys, resource_defs))
 
 
-def get_transitive_required_resource_keys(required_resource_keys, resource_defs):
+def get_transitive_required_resource_keys(
+    required_resource_keys: AbstractSet[str], resource_defs: Mapping[str, ResourceDefinition]
+) -> AbstractSet[str]:
 
     resource_dependencies = resolve_resource_dependencies(resource_defs)
+    ensure_resource_deps_satisfiable(resource_dependencies)
 
-    transitive_required_resource_keys = set()
+    transitive_required_resource_keys: Set[str] = set()
 
     for resource_key in required_resource_keys:
         transitive_required_resource_keys = transitive_required_resource_keys.union(
@@ -359,8 +405,10 @@ def get_transitive_required_resource_keys(required_resource_keys, resource_defs)
     return transitive_required_resource_keys
 
 
-def get_required_resource_keys_for_step(pipeline_def, execution_step, execution_plan):
-    resource_keys = set()
+def get_required_resource_keys_for_step(
+    pipeline_def: PipelineDefinition, execution_step: IExecutionStep, execution_plan: ExecutionPlan
+) -> AbstractSet[str]:
+    resource_keys: Set[str] = set()
 
     # add all the solid compute resource keys
     solid_def = pipeline_def.get_solid(execution_step.solid_handle).definition
@@ -368,11 +416,14 @@ def get_required_resource_keys_for_step(pipeline_def, execution_step, execution_
 
     # add input type, input loader, and input io manager resource keys
     for step_input in execution_step.step_inputs:
-        input_def = step_input.source.get_input_def(pipeline_def)
+        input_def = solid_def.input_def_named(step_input.name)
 
         resource_keys = resource_keys.union(input_def.dagster_type.required_resource_keys)
 
         resource_keys = resource_keys.union(step_input.source.required_resource_keys(pipeline_def))
+
+        if input_def.input_manager_key:
+            resource_keys = resource_keys.union([input_def.input_manager_key])
 
         if isinstance(step_input, StepInput):
             source_handles = step_input.get_step_output_handle_dependencies()
@@ -405,7 +456,9 @@ def get_required_resource_keys_for_step(pipeline_def, execution_step, execution_
     return frozenset(resource_keys)
 
 
-def _wrapped_resource_iterator(resource_or_gen):
+def _wrapped_resource_iterator(
+    resource_or_gen: Union[Any, Generator[Any, None, None]]
+) -> Generator[Any, None, None]:
     """Returns an iterator which yields a single item, which is the resource.
 
     If the resource is not a context manager, then resource teardown happens following the first yield.

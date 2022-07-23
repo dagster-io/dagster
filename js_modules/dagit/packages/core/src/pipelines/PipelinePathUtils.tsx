@@ -2,7 +2,7 @@ import {Mono} from '@dagster-io/ui';
 import React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 
-import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
+import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 
 export interface ExplorerPath {
   pipelineName: string;
@@ -16,10 +16,12 @@ export function explorerPathToString(path: ExplorerPath) {
   const root = [
     path.pipelineName,
     path.snapshotId ? `@${path.snapshotId}` : ``,
-    path.opsQuery ? `~${path.explodeComposites ? '!' : ''}${path.opsQuery}` : ``,
+    path.opsQuery
+      ? `~${path.explodeComposites ? '!' : ''}${encodeURIComponent(path.opsQuery)}`
+      : ``,
   ].join('');
 
-  return `${root}/${path.opNames.join('/')}`;
+  return `${root}/${path.opNames.map(encodeURIComponent).join('/')}`;
 }
 
 export function explorerPathFromString(path: string): ExplorerPath {
@@ -39,23 +41,10 @@ export function explorerPathFromString(path: string): ExplorerPath {
   return {
     pipelineName,
     snapshotId,
-    opsQuery,
+    opsQuery: decodeURIComponent(opsQuery),
     explodeComposites: explodeComposites === '!',
-    opNames,
+    opNames: opNames.map(decodeURIComponent),
   };
-}
-
-export function instanceAssetsExplorerPathFromString(path: string): ExplorerPath {
-  // This is a bit of a hack, but our explorer path needs a job name and we'd like
-  // to continue sharing the parsing/stringifying logic from the job graph UI
-  return explorerPathFromString(__ASSET_GROUP + path || '/');
-}
-
-export function instanceAssetsExplorerPathToURL(path: Omit<ExplorerPath, 'pipelineName'>) {
-  return (
-    '/instance/asset-graph' +
-    explorerPathToString({...path, pipelineName: __ASSET_GROUP}).replace(__ASSET_GROUP, '')
-  );
 }
 
 export function useStripSnapshotFromPath(params: {pipelinePath: string}) {

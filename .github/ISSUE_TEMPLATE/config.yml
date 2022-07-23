@@ -1,12 +1,19 @@
 contact_links:
-  - name: Ask a question, get help, or share ideas 💭
-    url: https://github.com/dagster-io/dagster/discussions/category_choices
-    about: Discuss everything
-
-  - name: Add your company logo or write posts 📡
-    url: https://github.com/dagster-io/dagster-website
-    about: Visit dagster.io repo
-
-  - name: Join Dagster Slack Community 🔗
-    url: https://dagster-slackin.herokuapp.com/
-    about: Get help with issues, discuss Dagster and data engineering topics, and stay up to date with new releases and community events
+  - name: 🌟 Star us on Github
+    url: https://github.com/dagster-io/dagster
+    about: Show your support by starring the project!
+  - name: 🐦 Follow us on Twitter
+    url: https://twitter.com/dagsterio
+    about: Get notifications about Dagster content from our Twitter account.
+  - name: 📺 Subscribe to our YouTube channel
+    url: https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q
+    about: Watch videos about Dagster content from our YouTube account.
+  - name: 📚 Read our blog posts
+    url: https://dagster.io/blog
+    about: Read about the latest updates in Dagster.
+  - name: 👋 Join us on Slack
+    url: https://dagster.io/slack
+    about: Connect with thousands of other data practitioners building with Dagster. Share knowledge, get help, and contribute to the open-source project.
+  - name: ✏️ Start a Github Discussion
+    url: https://github.com/dagster-io/dagster/discussions
+    about: Interact with the community and Dagster core team over Github Discussions.

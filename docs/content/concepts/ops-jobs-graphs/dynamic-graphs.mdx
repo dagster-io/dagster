@@ -1,0 +1,155 @@
+---
+title: "Dynamic Graphs | Dagster"
+description: Dagster APIs for runtime determined graph structures.
+---
+
+# Dynamic Graphs
+
+The ability for portions of a [graph](/concepts/ops-jobs-graphs/graphs) to be duplicated at runtime.
+
+## Relevant APIs
+
+| Name                                                 | Description                                                                                   |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| <PyObject module="dagster" object="DynamicOut" />    | Declare that an op will return dynamic outputs                                                |
+| <PyObject module="dagster" object="DynamicOutput" /> | The object that an op will yield repeatedly, each containing a value and a unique mapping_key |
+
+## Overview
+
+The basic unit of computation in Dagster is the [op](/concepts/ops-jobs-graphs/ops). In certain cases it is desirable to run the same op multiple times on different pieces of similar data.
+
+Dynamic outputs are the tool Dagster provides to allow resolving the pieces of data at runtime and having downstream copies of the ops created for each piece.
+
+## Using Dynamic Outputs
+
+### A Static Job
+
+Here we start with a contrived example of a job containing a single expensive op:
+
+```python file=/concepts/ops_jobs_graphs/dynamic.py startafter=non_dyn_start endbefore=non_dyn_end
+@op
+def data_processing():
+    large_data = load_big_data()
+    interesting_result = expensive_processing(large_data)
+    return analyze(interesting_result)
+
+
+@job
+def naive():
+    data_processing()
+```
+
+While, the implementation of `expensive_computation` can internally do something to parallelize the compute, if anything goes wrong with any part we have to restart the whole computation.
+
+### A Dynamic Job
+
+With this motivation we will break up the computation using Dynamic Outputs. First we will define our new op that will use dynamic outputs. First we use <PyObject module="dagster" object="DynamicOut" /> to declare that this op will return dynamic outputs. Then in the function we `yield` a number of <PyObject module="dagster" object="DynamicOutput" /> objects that each contain a value and a unique `mapping_key`.
+
+```python file=/concepts/ops_jobs_graphs/dynamic.py startafter=dyn_out_start endbefore=dyn_out_end
+@op(out=DynamicOut())
+def load_pieces():
+    large_data = load_big_data()
+    for idx, piece in large_data.chunk():
+        yield DynamicOutput(piece, mapping_key=idx)
+```
+
+Then after creating ops for our downstream operations, we can put them all together in a job.
+
+```python file=/concepts/ops_jobs_graphs/dynamic.py startafter=dyn_job_start endbefore=dyn_job_end
+@job
+def dynamic_graph():
+    pieces = load_pieces()
+    results = pieces.map(compute_piece)
+    merge_and_analyze(results.collect())
+```
+
+Within our `@job` decorated composition function, the object representing the dynamic output can not be passed directly to another op. Either `map` or `collect` must be invoked on it.
+
+`map` takes a `Callable` which receives a single argument. This callable is evaluated once, and any invoked op that is passed the input argument will establish dependencies. The ops downstream of a dynamic output will be cloned for each dynamic output, and identified using the associated `mapping_key`. The return value from the callable is captured and wrapped in an object that allows for subsequent `map` or `collect` calls.
+
+`collect` creates a fan-in dependency over all the dynamic copies. The dependent op will receive a list containing all the values.
+
+## Advanced Mapping Examples
+
+### Returning Dynamic Outputs
+
+In addition to yielding, <PyObject object="DynamicOutput" /> objects can also be returned as part of a list.
+
+```python file=/concepts/ops_jobs_graphs/dynamic.py startafter=dyn_out_return_start endbefore=dyn_out_return_end
+from dagster import DynamicOut, DynamicOutput, op
+from typing import List
+
+
+@op(out=DynamicOut())
+def return_dynamic() -> List[DynamicOutput[str]]:
+    outputs = []
+    for idx, page_key in get_pages():
+        outputs.append(DynamicOutput(page_key, mapping_key=idx))
+    return outputs
+```
+
+<PyObject object="DynamicOutput" /> can be used as a generic type annotation describing
+the expected type of the output.
+
+### Chaining
+
+The following two examples are equivalent ways to establish a sequence of ops that occur for each dynamic output.
+
+```python file=/concepts/ops_jobs_graphs/dynamic.py startafter=dyn_chain_start endbefore=dyn_chain_end
+@job
+def chained():
+    results = dynamic_values().map(echo).map(echo).map(echo)
+    process(results.collect())
+
+
+@job
+def chained_alt():
+    def _for_each(val):
+        a = echo(val)
+        b = echo(a)
+        return echo(b)
+
+    results = dynamic_values().map(_for_each)
+    process(results.collect())
+```
+
+### Additional Arguments
+
+A lambda or scoped function can be used to pass non-dynamic outputs along side dynamic ones in `map` downstream.
+
+```python file=/concepts/ops_jobs_graphs/dynamic.py startafter=dyn_add_start endbefore=dyn_add_end
+@job
+def other_arg():
+    non_dynamic = one()
+    dynamic_values().map(lambda val: add(val, non_dynamic))
+```
+
+### Multiple Outputs
+
+Multiple outputs are returned via a `namedtuple`, where each entry can be used via `map` or `collect`.
+
+```python file=/concepts/ops_jobs_graphs/dynamic.py startafter=dyn_mult_start endbefore=dyn_mult_end
+@op(
+    out={
+        "values": DynamicOut(),
+        "negatives": DynamicOut(),
+    },
+)
+def multiple_dynamic_values():
+    for i in range(2):
+        yield DynamicOutput(i, output_name="values", mapping_key=f"num_{i}")
+        yield DynamicOutput(-i, output_name="negatives", mapping_key=f"neg_{i}")
+
+
+@job
+def multiple():
+    # can unpack on assignment (order based)
+    values, negatives = multiple_dynamic_values()
+    process(values.collect())
+    process(negatives.map(echo).collect())  # can use map or collect as usual
+
+    # or access by name
+    outs = multiple_dynamic_values()
+    process(outs.values.collect())
+    process(outs.negatives.map(echo).collect())
+```

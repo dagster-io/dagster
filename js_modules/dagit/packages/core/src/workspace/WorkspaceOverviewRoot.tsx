@@ -1,6 +1,6 @@
 import {
   Box,
-  ColorsWIP,
+  Colors,
   Group,
   NonIdealState,
   Page,
@@ -12,6 +12,7 @@ import {
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useTrackPageView} from '../app/analytics';
 import {LoadingSpinner} from '../ui/Loading';
 
 import {ReloadAllButton} from './ReloadAllButton';
@@ -21,6 +22,7 @@ import {buildRepoPath} from './buildRepoAddress';
 import {workspacePath} from './workspacePath';
 
 export const WorkspaceOverviewRoot = () => {
+  useTrackPageView();
   const {loading, error, options} = useRepositoryOptions();
 
   const content = () => {
@@ -61,11 +63,11 @@ export const WorkspaceOverviewRoot = () => {
         <thead>
           <tr>
             <th>Repository</th>
+            <th>Assets</th>
             <th>Jobs</th>
             {anyPipelinesInWorkspace ? <th>Pipelines</th> : null}
             <th>Graphs</th>
             <th>Ops</th>
-            <th>Assets</th>
             <th>Schedules</th>
             <th>Sensors</th>
           </tr>
@@ -82,6 +84,9 @@ export const WorkspaceOverviewRoot = () => {
               <tr key={repoString}>
                 <td style={{width: '40%'}}>{repoString}</td>
                 <td>
+                  <Link to={workspacePath(name, location, '/assets')}>Assets</Link>
+                </td>
+                <td>
                   <Link to={workspacePath(name, location, '/jobs')}>Jobs</Link>
                 </td>
                 {anyPipelinesInWorkspace ? (
@@ -89,7 +94,7 @@ export const WorkspaceOverviewRoot = () => {
                     {anyPipelines ? (
                       <Link to={workspacePath(name, location, '/pipelines')}>Pipelines</Link>
                     ) : (
-                      <span style={{color: ColorsWIP.Gray400}}>None</span>
+                      <span style={{color: Colors.Gray400}}>None</span>
                     )}
                   </td>
                 ) : null}
@@ -98,9 +103,6 @@ export const WorkspaceOverviewRoot = () => {
                 </td>
                 <td>
                   <Link to={workspacePath(name, location, '/ops')}>Ops</Link>
-                </td>
-                <td>
-                  <Link to={workspacePath(name, location, '/assets')}>Assets</Link>
                 </td>
                 <td>
                   <Link to={workspacePath(name, location, '/schedules')}>Schedules</Link>
@@ -130,7 +132,7 @@ export const WorkspaceOverviewRoot = () => {
       </Box>
       <Box
         padding={{vertical: 16, horizontal: 24}}
-        border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
       >
         <Subheading id="repository-locations">Repositories</Subheading>
       </Box>

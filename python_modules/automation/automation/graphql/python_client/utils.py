@@ -1,14 +1,16 @@
 import os
 import re
-from typing import Dict, NamedTuple, Set, Tuple
+from typing import AbstractSet, Dict, NamedTuple, Tuple, cast
 
 import dagster_graphql_tests
 from dagster_graphql.client import client_queries
 
+import dagster._check as check
+
 
 class LegacyQueryHistoryInfo(NamedTuple):
     directory: str
-    legacy_queries: Set[str]
+    legacy_queries: AbstractSet[str]
 
     @staticmethod
     def get() -> "LegacyQueryHistoryInfo":
@@ -42,4 +44,9 @@ def serialize_to_query_filename(dagster_version: str, date: str) -> str:
 
 
 def deserialize_from_query_filename(query_filename: str) -> Tuple[str, str]:
-    return query_filename.rstrip(".graphql").split("-")
+    parts = tuple(query_filename.rstrip(".graphql").split("-"))
+    check.invariant(
+        len(parts) == 2,
+        f"Invalid query filename {query_filename}; must have 2 '-' separated parts.",
+    )
+    return cast(Tuple[str, str], parts)

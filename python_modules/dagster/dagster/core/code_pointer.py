@@ -3,40 +3,47 @@ import inspect
 import os
 import sys
 from abc import ABC, abstractmethod
-from typing import List, NamedTuple, Optional
+from types import ModuleType
+from typing import Callable, List, NamedTuple, Optional, cast
 
-from dagster import check
+import dagster._check as check
+from dagster._serdes import whitelist_for_serdes
+from dagster._seven import get_import_error_message, import_module_from_path
+from dagster._utils import alter_sys_path, frozenlist
 from dagster.core.errors import DagsterImportError, DagsterInvariantViolationError
-from dagster.serdes import whitelist_for_serdes
-from dagster.seven import get_import_error_message, import_module_from_path
-from dagster.utils import alter_sys_path, frozenlist
 
 
 class CodePointer(ABC):
     @abstractmethod
-    def load_target(self):
+    def load_target(self) -> object:
         pass
 
     @abstractmethod
-    def describe(self):
+    def describe(self) -> str:
         pass
 
     @staticmethod
-    def from_module(module_name, definition, working_directory):
+    def from_module(
+        module_name: str, definition: str, working_directory: Optional[str]
+    ) -> "ModuleCodePointer":
         check.str_param(module_name, "module_name")
         check.str_param(definition, "definition")
         check.opt_str_param(working_directory, "working_directory")
         return ModuleCodePointer(module_name, definition, working_directory)
 
     @staticmethod
-    def from_python_package(module_name, attribute, working_directory):
+    def from_python_package(
+        module_name: str, attribute: str, working_directory: Optional[str]
+    ) -> "PackageCodePointer":
         check.str_param(module_name, "module_name")
         check.str_param(attribute, "attribute")
         check.opt_str_param(working_directory, "working_directory")
         return PackageCodePointer(module_name, attribute, working_directory)
 
     @staticmethod
-    def from_python_file(python_file, definition, working_directory):
+    def from_python_file(
+        python_file: str, definition: str, working_directory: Optional[str]
+    ) -> "FileCodePointer":
         check.str_param(python_file, "python_file")
         check.str_param(definition, "definition")
         check.opt_str_param(working_directory, "working_directory")
@@ -45,7 +52,7 @@ class CodePointer(ABC):
         )
 
 
-def rebase_file(relative_path_in_file, file_path_resides_in):
+def rebase_file(relative_path_in_file: str, file_path_resides_in: str) -> str:
     """
     In config files, you often put file paths that are meant to be relative
     to the location of that config file. This does that calculation.
@@ -57,7 +64,7 @@ def rebase_file(relative_path_in_file, file_path_resides_in):
     )
 
 
-def load_python_file(python_file, working_directory):
+def load_python_file(python_file: str, working_directory: Optional[str]) -> ModuleType:
     """
     Takes a path to a python file and returns a loaded module
     """
@@ -108,14 +115,18 @@ def load_python_file(python_file, working_directory):
             ) from ie
 
 
-def load_python_module(module_name, working_directory, remove_from_path_fn=None):
+def load_python_module(
+    module_name: str,
+    working_directory: Optional[str],
+    remove_from_path_fn: Callable[[], List[str]] = None,
+) -> ModuleType:
     check.str_param(module_name, "module_name")
     check.opt_str_param(working_directory, "working_directory")
     check.opt_callable_param(remove_from_path_fn, "remove_from_path_fn")
 
     # Use the passed in working directory for local imports (sys.path[0] isn't
     # consistently set in the different entry points that Dagster uses to import code)
-    remove_paths = remove_from_path_fn() if remove_from_path_fn else []  # hook for tests
+    remove_paths: List[str] = remove_from_path_fn() if remove_from_path_fn else []  # hook for tests
     remove_paths.insert(0, sys.path[0])  # remove the script path
 
     with alter_sys_path(
@@ -161,24 +172,34 @@ class FileCodePointer(
             check.opt_str_param(working_directory, "working_directory"),
         )
 
-    def load_target(self):
+    def load_target(self) -> object:
         module = load_python_file(self.python_file, self.working_directory)
-        if not hasattr(module, self.fn_name):
-            raise DagsterInvariantViolationError(
-                "{name} not found at module scope in file {file}.".format(
-                    name=self.fn_name, file=self.python_file
-                )
-            )
+        return _load_target_from_module(
+            module, self.fn_name, f"at module scope in file {self.python_file}."
+        )
 
-        return getattr(module, self.fn_name)
-
-    def describe(self):
+    def describe(self) -> str:
         if self.working_directory:
             return "{self.python_file}::{self.fn_name} -- [dir {self.working_directory}]".format(
                 self=self
             )
         else:
             return "{self.python_file}::{self.fn_name}".format(self=self)
+
+
+def _load_target_from_module(module: ModuleType, fn_name: str, error_suffix: str) -> object:
+    from dagster.core.definitions import AssetGroup
+    from dagster.core.workspace.autodiscovery import LOAD_ALL_ASSETS
+
+    if fn_name == LOAD_ALL_ASSETS:
+        # LOAD_ALL_ASSETS is a special symbol that's returned when, instead of loading a particular
+        # attribute, we should load all the assets in the module.
+        return AssetGroup.from_modules([module])
+    else:
+        if not hasattr(module, fn_name):
+            raise DagsterInvariantViolationError(f"{fn_name} not found {error_suffix}")
+
+        return getattr(module, fn_name)
 
 
 @whitelist_for_serdes
@@ -197,18 +218,13 @@ class ModuleCodePointer(
             check.opt_str_param(working_directory, "working_directory"),
         )
 
-    def load_target(self):
+    def load_target(self) -> object:
         module = load_python_module(self.module, self.working_directory)
+        return _load_target_from_module(
+            module, self.fn_name, f"in module {self.module}. dir: {dir(module)}"
+        )
 
-        if not hasattr(module, self.fn_name):
-            raise DagsterInvariantViolationError(
-                "{name} not found in module {module}. dir: {dir}".format(
-                    name=self.fn_name, module=self.module, dir=dir(module)
-                )
-            )
-        return getattr(module, self.fn_name)
-
-    def describe(self):
+    def describe(self) -> str:
         return "from {self.module} import {self.fn_name}".format(self=self)
 
 
@@ -228,22 +244,17 @@ class PackageCodePointer(
             check.opt_str_param(working_directory, "working_directory"),
         )
 
-    def load_target(self):
+    def load_target(self) -> object:
         module = load_python_module(self.module, self.working_directory)
+        return _load_target_from_module(
+            module, self.attribute, f"in module {self.module}. dir: {dir(module)}"
+        )
 
-        if not hasattr(module, self.attribute):
-            raise DagsterInvariantViolationError(
-                "{name} not found in module {module}. dir: {dir}".format(
-                    name=self.attribute, module=self.module, dir=dir(module)
-                )
-            )
-        return getattr(module, self.attribute)
-
-    def describe(self):
+    def describe(self) -> str:
         return "from {self.module} import {self.attribute}".format(self=self)
 
 
-def get_python_file_from_target(target):
+def get_python_file_from_target(target: object) -> Optional[str]:
     module = inspect.getmodule(target)
     python_file = getattr(module, "__file__", None)
 
@@ -300,14 +311,14 @@ class CustomPointer(
             reconstructable_kwargs,
         )
 
-    def load_target(self):
-        reconstructor = self.reconstructor_pointer.load_target()
+    def load_target(self) -> object:
+        reconstructor = cast(Callable, self.reconstructor_pointer.load_target())
 
         return reconstructor(
             *self.reconstructable_args, **{key: value for key, value in self.reconstructable_kwargs}
         )
 
-    def describe(self):
+    def describe(self) -> str:
         return "reconstructable using {module}.{fn_name}".format(
             module=self.reconstructor_pointer.module, fn_name=self.reconstructor_pointer.fn_name
         )

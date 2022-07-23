@@ -7,8 +7,12 @@ from collections import OrderedDict
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
 
-from dagster import check
-from dagster.core.errors import DagsterInvariantViolationError, DagsterRepositoryLocationLoadError
+import dagster._check as check
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster.core.errors import (
+    DagsterRepositoryLocationLoadError,
+    DagsterRepositoryLocationNotFoundError,
+)
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
@@ -30,8 +34,6 @@ from dagster.core.host_representation.grpc_server_state_subscriber import (
 )
 from dagster.core.host_representation.origin import GrpcServerRepositoryLocationOrigin
 from dagster.core.instance import DagsterInstance
-from dagster.grpc.server_watcher import create_grpc_watch_thread
-from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from .load_target import WorkspaceLoadTarget
 from .permissions import get_user_permissions
@@ -50,7 +52,6 @@ if TYPE_CHECKING:
 
 
 DAGIT_GRPC_SERVER_HEARTBEAT_TTL = 45
-DAGIT_GRPC_SERVER_STARTUP_TIMEOUT = 30
 
 
 class BaseWorkspaceRequestContext(IWorkspace):
@@ -101,10 +102,10 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def show_instance_config(self) -> bool:
         return True
 
-    def get_location(self, location_name: str):
+    def get_repository_location(self, location_name: str) -> RepositoryLocation:
         location_entry = self.get_location_entry(location_name)
         if not location_entry:
-            raise DagsterInvariantViolationError(
+            raise DagsterRepositoryLocationNotFoundError(
                 f"Location {location_name} does not exist in workspace"
             )
 
@@ -133,12 +134,6 @@ class BaseWorkspaceRequestContext(IWorkspace):
         return [
             entry.load_error for entry in self.get_workspace_snapshot().values() if entry.load_error
         ]
-
-    def get_repository_location(self, name: str) -> RepositoryLocation:
-        location_entry = self.get_location_entry(name)
-        if not location_entry or not location_entry.repository_location:
-            raise Exception(f"Location {name} not in workspace")
-        return cast(RepositoryLocation, location_entry.repository_location)
 
     def has_repository_location_error(self, name: str) -> bool:
         return self.get_repository_location_error(name) != None
@@ -432,7 +427,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 ProcessGrpcServerRegistry(
                     reload_interval=0,
                     heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
-                    startup_timeout=DAGIT_GRPC_SERVER_STARTUP_TIMEOUT,
+                    startup_timeout=instance.code_server_process_startup_timeout,
                 )
             )
 
@@ -519,6 +514,8 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             subscriber.handle_event(event)
 
     def _start_watch_thread(self, origin: GrpcServerRepositoryLocationOrigin) -> None:
+        from dagster._grpc.server_watcher import create_grpc_watch_thread
+
         location_name = origin.location_name
         check.invariant(location_name not in self._watch_thread_shutdown_events)
         client = origin.create_client()

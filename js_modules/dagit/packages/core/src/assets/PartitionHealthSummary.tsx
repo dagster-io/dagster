@@ -1,9 +1,9 @@
 import {gql, useApolloClient} from '@apollo/client';
-import {Tooltip, Spinner, Box, ColorsWIP} from '@dagster-io/ui';
-import {fromPairs} from 'lodash';
+import {Tooltip, Spinner, Box, Colors} from '@dagster-io/ui';
+import fromPairs from 'lodash/fromPairs';
 import React from 'react';
 
-import {displayNameForAssetKey} from '../app/Util';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assembleIntoSpans} from '../partitions/PartitionRangeInput';
 
 import {AssetKey} from './types';
@@ -34,6 +34,7 @@ export function usePartitionHealthData(assetKeys: AssetKey[]) {
     const load = async () => {
       const {data} = await client.query<PartitionHealthQuery, PartitionHealthQueryVariables>({
         query: PARTITION_HEALTH_QUERY,
+        fetchPolicy: 'network-only',
         variables: {
           assetKey: {path: loadKey.path},
         },
@@ -88,6 +89,8 @@ export const PartitionHealthSummary: React.FC<{
   }
 
   const {spans, keys, indexToPct} = assetData;
+  const highestIndex = spans.map((s) => s.endIdx).reduce((prev, cur) => Math.max(prev, cur), 0);
+
   const selectedSpans = selected
     ? assembleIntoSpans(keys, (key) => selected.includes(key)).filter((s) => s.status)
     : [];
@@ -102,7 +105,7 @@ export const PartitionHealthSummary: React.FC<{
       <Box
         flex={{justifyContent: 'space-between'}}
         margin={{bottom: 4}}
-        style={{fontSize: '0.8rem', color: ColorsWIP.Gray500}}
+        style={{fontSize: '0.8rem', color: Colors.Gray500}}
       >
         <span>
           {showAssetKey
@@ -117,12 +120,12 @@ export const PartitionHealthSummary: React.FC<{
             <div
               key={s.startIdx}
               style={{
-                left: indexToPct(s.startIdx),
+                left: `min(calc(100% - 2px), ${indexToPct(s.startIdx)})`,
                 width: indexToPct(s.endIdx - s.startIdx + 1),
                 position: 'absolute',
                 top: 0,
                 height: 8,
-                border: `2px solid ${ColorsWIP.Blue500}`,
+                border: `2px solid ${Colors.Blue500}`,
                 borderBottom: 0,
               }}
             />
@@ -142,11 +145,11 @@ export const PartitionHealthSummary: React.FC<{
           <div
             key={s.startIdx}
             style={{
-              left: indexToPct(s.startIdx),
+              left: `min(calc(100% - 2px), ${indexToPct(s.startIdx)})`,
               width: indexToPct(s.endIdx - s.startIdx + 1),
-              minWidth: 2,
+              minWidth: s.status ? 2 : undefined,
               position: 'absolute',
-              zIndex: s.status === false ? 2 : 1,
+              zIndex: s.startIdx === 0 || s.endIdx === highestIndex ? 3 : s.status ? 2 : 1, //End-caps, then statuses, then missing
               top: 0,
             }}
           >
@@ -165,7 +168,7 @@ export const PartitionHealthSummary: React.FC<{
                   width: '100%',
                   height: 14,
                   outline: 'none',
-                  background: s.status ? ColorsWIP.Green500 : ColorsWIP.Gray200,
+                  background: s.status ? Colors.Green500 : Colors.Gray200,
                 }}
               />
             </Tooltip>
@@ -175,7 +178,7 @@ export const PartitionHealthSummary: React.FC<{
       <Box
         flex={{justifyContent: 'space-between'}}
         margin={{top: 4}}
-        style={{fontSize: '0.8rem', color: ColorsWIP.Gray500}}
+        style={{fontSize: '0.8rem', color: Colors.Gray500}}
       >
         <span>{keys[0]}</span>
         <span>{keys[keys.length - 1]}</span>

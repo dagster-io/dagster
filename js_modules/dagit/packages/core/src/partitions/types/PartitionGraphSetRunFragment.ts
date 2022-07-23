@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RunStatus, StepEventStatus } from "./../../types/globalTypes";
+import { StepEventStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: PartitionGraphSetRunFragment
@@ -23,7 +23,7 @@ export interface PartitionGraphSetRunFragment_stats_RunStatsSnapshot {
   materializations: number;
 }
 
-export interface PartitionGraphSetRunFragment_stats_PythonError_cause {
+export interface PartitionGraphSetRunFragment_stats_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -33,7 +33,7 @@ export interface PartitionGraphSetRunFragment_stats_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: PartitionGraphSetRunFragment_stats_PythonError_cause | null;
+  causes: PartitionGraphSetRunFragment_stats_PythonError_causes[];
 }
 
 export type PartitionGraphSetRunFragment_stats = PartitionGraphSetRunFragment_stats_RunStatsSnapshot | PartitionGraphSetRunFragment_stats_PythonError;
@@ -60,7 +60,6 @@ export interface PartitionGraphSetRunFragment_stepStats {
 export interface PartitionGraphSetRunFragment {
   __typename: "Run";
   id: string;
-  status: RunStatus;
   tags: PartitionGraphSetRunFragment_tags[];
   runId: string;
   stats: PartitionGraphSetRunFragment_stats;

@@ -20,9 +20,10 @@ def test_fivetran_asset_keys():
     ft_assets = build_fivetran_assets(
         connector_id=DEFAULT_CONNECTOR_ID, destination_tables=["x.foo", "y.bar"]
     )
-    assert ft_assets[0].asset_keys == {AssetKey(["x", "foo"]), AssetKey(["y", "bar"])}
+    assert ft_assets[0].keys == {AssetKey(["x", "foo"]), AssetKey(["y", "bar"])}
 
 
+@pytest.mark.parametrize("schema_prefix", ["", "the_prefix"])
 @pytest.mark.parametrize(
     "tables,should_error",
     [
@@ -33,11 +34,14 @@ def test_fivetran_asset_keys():
         (["schema1.tracked", "does.not_exist"], True),
     ],
 )
-def test_fivetran_asset_run(tables, should_error):
+def test_fivetran_asset_run(tables, should_error, schema_prefix):
 
     ft_resource = fivetran_resource.configured({"api_key": "foo", "api_secret": "bar"})
     final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
     api_prefix = f"{FIVETRAN_API_BASE}/{FIVETRAN_CONNECTOR_PATH}{DEFAULT_CONNECTOR_ID}"
+
+    if schema_prefix:
+        tables = [f"{schema_prefix}_{t}" for t in tables]
 
     fivetran_assets = build_fivetran_assets(
         connector_id=DEFAULT_CONNECTOR_ID,
@@ -47,7 +51,7 @@ def test_fivetran_asset_run(tables, should_error):
     )
 
     # expect the multi asset to have one asset key and one output for each specified asset key
-    assert fivetran_assets[0].asset_keys == {AssetKey(table.split(".")) for table in tables}
+    assert fivetran_assets[0].keys == {AssetKey(table.split(".")) for table in tables}
     assert len(fivetran_assets[0].op.output_defs) == len(tables)
 
     fivetran_assets_job = build_assets_job(
@@ -72,9 +76,17 @@ def test_fivetran_asset_run(tables, should_error):
             ),
         )
         # initial state
-        rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
+        rsps.add(
+            rsps.GET,
+            api_prefix,
+            json=get_sample_connector_response(),
+        )
+
+        final_json = get_sample_connector_response(data=final_data)
+        if schema_prefix:
+            final_json["data"]["config"]["schema_prefix"] = schema_prefix
         # final state will be updated
-        rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response(data=final_data))
+        rsps.add(rsps.GET, api_prefix, json=final_json)
 
         if should_error:
             with pytest.raises(DagsterStepOutputNotFoundError):
@@ -100,8 +112,15 @@ def test_fivetran_asset_run(tables, should_error):
             found_asset_keys = set(
                 mat.event_specific_data.materialization.asset_key for mat in asset_materializations
             )
-            assert found_asset_keys == {
-                AssetKey(["schema1", "tracked"]),
-                AssetKey(["schema1", "untracked"]),
-                AssetKey(["schema2", "tracked"]),
-            }
+            if schema_prefix:
+                assert found_asset_keys == {
+                    AssetKey(["the_prefix_schema1", "tracked"]),
+                    AssetKey(["the_prefix_schema1", "untracked"]),
+                    AssetKey(["the_prefix_schema2", "tracked"]),
+                }
+            else:
+                assert found_asset_keys == {
+                    AssetKey(["schema1", "tracked"]),
+                    AssetKey(["schema1", "untracked"]),
+                    AssetKey(["schema2", "tracked"]),
+                }

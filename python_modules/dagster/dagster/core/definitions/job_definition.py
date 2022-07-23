@@ -4,16 +4,19 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
+    FrozenSet,
     List,
     Mapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
     cast,
 )
 
-from dagster import check
+import dagster._check as check
+from dagster._utils import merge_dicts
 from dagster.core.definitions.composition import MappedInputPlaceholder
 from dagster.core.definitions.dependency import (
     DependencyDefinition,
@@ -25,27 +28,36 @@ from dagster.core.definitions.dependency import (
     NodeInvocation,
     SolidOutputHandle,
 )
+from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.policy import RetryPolicy
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
+from dagster.core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    DagsterInvalidSubsetError,
+)
 from dagster.core.selector.subset_selector import (
+    AssetSelectionData,
     LeafNodeSelection,
     OpSelectionData,
     parse_op_selection,
 )
-from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
-from dagster.core.storage.tags import PARTITION_NAME_TAG
 from dagster.core.utils import str_format_set
 
+from .asset_layer import AssetLayer, build_asset_selection_job
+from .config import ConfigMapping
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
+from .logger_definition import LoggerDefinition
+from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue
 from .mode import ModeDefinition
-from .partition import PartitionSetDefinition
+from .partition import PartitionSetDefinition, PartitionedConfig, PartitionsDefinition
 from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
 from .resource_definition import ResourceDefinition
 from .run_request import RunRequest
+from .utils import DEFAULT_IO_MANAGER_KEY
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
@@ -55,24 +67,61 @@ if TYPE_CHECKING:
 
 
 class JobDefinition(PipelineDefinition):
+
+    _cached_partition_set: Optional["PartitionSetDefinition"]
+    _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]]
+    _input_values: Mapping[str, object]
+
     def __init__(
         self,
-        mode_def: ModeDefinition,
         graph_def: GraphDefinition,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        executor_def: Optional[ExecutorDefinition] = None,
+        logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
+        config_mapping: Optional[ConfigMapping] = None,
+        partitioned_config: Optional[PartitionedConfig] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        preset_defs: Optional[List[PresetDefinition]] = None,
-        tags: Dict[str, Any] = None,
+        preset_defs: Optional[Sequence[PresetDefinition]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
-        _op_selection_data: Optional[OpSelectionData] = None,
+        _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]] = None,
+        asset_layer: Optional[AssetLayer] = None,
+        _input_values: Optional[Mapping[str, object]] = None,
+        _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        _executor_def_specified: bool = False,
+        _logger_defs_specified: bool = False,
     ):
 
-        self._cached_partition_set: Optional["PartitionSetDefinition"] = None
-        self._op_selection_data = check.opt_inst_param(
-            _op_selection_data, "_op_selection_data", OpSelectionData
+        # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
+        mode_def = ModeDefinition(
+            resource_defs=resource_defs,
+            logger_defs=logger_defs,
+            executor_defs=[executor_def] if executor_def else None,
+            _config_mapping=config_mapping,
+            _partitioned_config=partitioned_config,
         )
+
+        self._executor_def_specified = _executor_def_specified
+        self._logger_defs_specified = _logger_defs_specified
+        self._cached_partition_set: Optional["PartitionSetDefinition"] = None
+        self._subset_selection_data = check.opt_inst_param(
+            _subset_selection_data,
+            "_subset_selection_data",
+            (OpSelectionData, AssetSelectionData),
+        )
+        self._input_values: Mapping[str, object] = check.opt_mapping_param(
+            _input_values, "_input_values"
+        )
+        for input_name in sorted(list(self._input_values.keys())):
+            if not graph_def.has_input(input_name):
+                job_name = name or graph_def.name
+                raise DagsterInvalidDefinitionError(
+                    f"Error when constructing JobDefinition '{job_name}': Input value provided for key '{input_name}', but job has no top-level input with that name."
+                )
 
         super(JobDefinition, self).__init__(
             name=name,
@@ -80,10 +129,13 @@ class JobDefinition(PipelineDefinition):
             mode_defs=[mode_def],
             preset_defs=preset_defs,
             tags=tags,
+            metadata=metadata,
+            metadata_entries=_metadata_entries,
             hook_defs=hook_defs,
             solid_retry_policy=op_retry_policy,
             graph_def=graph_def,
             version_strategy=version_strategy,
+            asset_layer=asset_layer,
         )
 
     @property
@@ -99,19 +151,34 @@ class JobDefinition(PipelineDefinition):
 
     @property
     def executor_def(self) -> ExecutorDefinition:
-        return self.mode_definitions[0].executor_defs[0]
+        return self.get_mode_definition().executor_defs[0]
 
     @property
     def resource_defs(self) -> Mapping[str, ResourceDefinition]:
-        return self.mode_definitions[0].resource_defs
+        return self.get_mode_definition().resource_defs
+
+    @property
+    def partitioned_config(self) -> Optional[PartitionedConfig]:
+        return self.get_mode_definition().partitioned_config
+
+    @property
+    def config_mapping(self) -> Optional[ConfigMapping]:
+        return self.get_mode_definition().config_mapping
+
+    @property
+    def loggers(self) -> Mapping[str, LoggerDefinition]:
+        return self.get_mode_definition().loggers
 
     def execute_in_process(
         self,
-        run_config: Optional[Dict[str, Any]] = None,
+        run_config: Optional[Mapping[str, Any]] = None,
         instance: Optional["DagsterInstance"] = None,
         partition_key: Optional[str] = None,
         raise_on_error: bool = True,
-        op_selection: Optional[List[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
+        asset_selection: Optional[Sequence[AssetKey]] = None,
+        run_id: Optional[str] = None,
+        input_values: Optional[Mapping[str, object]] = None,
     ) -> "ExecuteInProcessResult":
         """
         Execute the Job in-process, gathering results in-memory.
@@ -121,7 +188,7 @@ class JobDefinition(PipelineDefinition):
 
 
         Args:
-            run_config (Optional[Dict[str, Any]]:
+            run_config (Optional[Mapping[str, Any]]:
                 The configuration for the run
             instance (Optional[DagsterInstance]):
                 The instance to execute against, an ephemeral one will be used if none provided.
@@ -130,7 +197,7 @@ class JobDefinition(PipelineDefinition):
                 to select run config for jobs with partitioned config.
             raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
                 Defaults to ``True``.
-            op_selection (Optional[List[str]]): A list of op selection queries (including single op
+            op_selection (Optional[Sequence[str]]): A list of op selection queries (including single op
                 names) to execute. For example:
                 * ``['some_op']``: selects ``some_op`` itself.
                 * ``['*some_op']``: select ``some_op`` and all its ancestors (upstream dependencies).
@@ -138,6 +205,8 @@ class JobDefinition(PipelineDefinition):
                 (downstream dependencies) within 3 levels down.
                 * ``['*some_op', 'other_op_a', 'other_op_b+']``: select ``some_op`` and all its
                 ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
+            input_values (Optional[Mapping[str, Any]]):
+                A dictionary that maps python objects to the top-level inputs of the job. Input values provided here will override input values that have been provided to the job directly.
         Returns:
             :py:class:`~dagster.ExecuteInProcessResult`
 
@@ -145,39 +214,50 @@ class JobDefinition(PipelineDefinition):
         from dagster.core.definitions.executor_definition import execute_in_process_executor
         from dagster.core.execution.execute_in_process import core_execute_in_process
 
-        run_config = check.opt_dict_param(run_config, "run_config")
-        op_selection = check.opt_list_param(op_selection, "op_selection", str)
-        partition_key = check.opt_str_param(partition_key, "partition_key")
+        run_config = check.opt_mapping_param(run_config, "run_config")
+        op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
+        asset_selection = check.opt_sequence_param(asset_selection, "asset_selection", AssetKey)
 
         check.invariant(
-            len(self._mode_definitions) == 1,
-            "execute_in_process only supported on job / single mode pipeline",
+            not (op_selection and asset_selection),
+            "op_selection and asset_selection cannot both be provided as args to execute_in_process",
         )
 
-        base_mode = self.get_mode_definition()
-        # create an ephemeral in process mode by replacing the executor_def and
-        # switching the default fs io_manager to in mem, if another was not set
-        in_proc_mode = ModeDefinition(
-            name="in_process",
-            executor_defs=[execute_in_process_executor],
-            resource_defs=_swap_default_io_man(base_mode.resource_defs, self),
-            logger_defs=base_mode.loggers,
-            _config_mapping=base_mode.config_mapping,
-            _partitioned_config=base_mode.partitioned_config,
-        )
+        partition_key = check.opt_str_param(partition_key, "partition_key")
+        input_values = check.opt_mapping_param(input_values, "input_values")
 
+        # Combine provided input values at execute_in_process with input values
+        # provided to the definition. Input values provided at
+        # execute_in_process will override those provided on the definition.
+        input_values = merge_dicts(self._input_values, input_values)
+
+        resource_defs = dict(self.resource_defs)
+        logger_defs = dict(self.loggers)
         ephemeral_job = JobDefinition(
             name=self._name,
             graph_def=self._graph_def,
-            mode_def=in_proc_mode,
+            resource_defs=_swap_default_io_man(resource_defs, self),
+            executor_def=execute_in_process_executor,
+            logger_defs=logger_defs,
             hook_defs=self.hook_defs,
+            config_mapping=self.config_mapping,
+            partitioned_config=self.partitioned_config,
             tags=self.tags,
             op_retry_policy=self._solid_retry_policy,
             version_strategy=self.version_strategy,
-        ).get_job_def_for_op_selection(op_selection)
+            asset_layer=self.asset_layer,
+            _input_values=input_values,
+            _executor_def_specified=self._executor_def_specified,
+            _logger_defs_specified=self._logger_defs_specified,
+        )
 
+        ephemeral_job = ephemeral_job.get_job_def_for_subset_selection(
+            op_selection, frozenset(asset_selection) if asset_selection else None
+        )
+
+        tags = None
         if partition_key:
-            if not base_mode.partitioned_config:
+            if not self.partitioned_config:
                 check.failed(
                     f"Provided partition key `{partition_key}` for job `{self._name}` without a partitioned config"
                 )
@@ -185,7 +265,15 @@ class JobDefinition(PipelineDefinition):
                 not run_config,
                 "Cannot provide both run_config and partition_key arguments to `execute_in_process`",
             )
-            run_config = base_mode.partitioned_config.get_run_config(partition_key)
+            partition_set = self.get_partition_set_def()
+            if not partition_set:
+                check.failed(
+                    f"Provided partition key `{partition_key}` for job `{self._name}` without a partitioned config"
+                )
+
+            partition = partition_set.get_partition(partition_key)
+            run_config = partition_set.run_config_for_partition(partition)
+            tags = partition_set.tags_for_partition(partition)
 
         return core_execute_in_process(
             node=self._graph_def,
@@ -194,16 +282,96 @@ class JobDefinition(PipelineDefinition):
             instance=instance,
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
-            run_tags={PARTITION_NAME_TAG: partition_key} if partition_key else None,
+            run_tags=tags,
+            run_id=run_id,
+            asset_selection=frozenset(asset_selection),
         )
 
     @property
     def op_selection_data(self) -> Optional[OpSelectionData]:
-        return self._op_selection_data
+        return (
+            self._subset_selection_data
+            if isinstance(self._subset_selection_data, OpSelectionData)
+            else None
+        )
 
-    def get_job_def_for_op_selection(
+    @property
+    def asset_selection_data(self) -> Optional[AssetSelectionData]:
+        return (
+            self._subset_selection_data
+            if isinstance(self._subset_selection_data, AssetSelectionData)
+            else None
+        )
+
+    @property
+    def is_subset_pipeline(self) -> bool:
+        if self._subset_selection_data:
+            return True
+        return False
+
+    def get_job_def_for_subset_selection(
         self,
-        op_selection: Optional[List[str]] = None,
+        op_selection: Optional[Sequence[str]] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+    ):
+        check.invariant(
+            not (op_selection and asset_selection),
+            "op_selection and asset_selection cannot both be provided as args to execute_in_process",
+        )
+        if op_selection:
+            return self._get_job_def_for_op_selection(op_selection)
+        if asset_selection:  # asset_selection:
+            return self._get_job_def_for_asset_selection(asset_selection)
+        else:
+            return self
+
+    def _get_job_def_for_asset_selection(
+        self,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+    ) -> "JobDefinition":
+        asset_selection = check.opt_set_param(asset_selection, "asset_selection", AssetKey)
+
+        for asset in asset_selection:
+            nonexistent_assets = [
+                asset for asset in asset_selection if asset not in self.asset_layer.asset_keys
+            ]
+            nonexistent_asset_strings = [
+                asset_str
+                for asset_str in (asset.to_string() for asset in nonexistent_assets)
+                if asset_str
+            ]
+            if nonexistent_assets:
+                raise DagsterInvalidSubsetError(
+                    "Assets provided in asset_selection argument "
+                    f"{', '.join(nonexistent_asset_strings)} do not exist in parent asset group or job."
+                )
+        asset_selection_data = AssetSelectionData(
+            asset_selection=asset_selection,
+            parent_job_def=self,
+        )
+
+        check.invariant(
+            self.asset_layer.assets_defs_by_key is not None,
+            "Asset layer must have _asset_defs argument defined",
+        )
+
+        new_job = build_asset_selection_job(
+            name=self.name,
+            assets=set(self.asset_layer.assets_defs_by_key.values()),
+            source_assets=self.asset_layer.source_assets_by_key.values(),
+            executor_def=self.executor_def,
+            resource_defs=self.resource_defs,
+            description=self.description,
+            tags=self.tags,
+            asset_selection=asset_selection,
+            asset_selection_data=asset_selection_data,
+            config=self.config_mapping,
+        )
+        return new_job
+
+    def _get_job_def_for_op_selection(
+        self,
+        op_selection: Optional[Sequence[str]] = None,
     ) -> "JobDefinition":
         if not op_selection:
             return self
@@ -212,30 +380,46 @@ class JobDefinition(PipelineDefinition):
 
         resolved_op_selection_dict = parse_op_selection(self, op_selection)
 
-        sub_graph = get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
+        try:
+            sub_graph = get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
 
-        return JobDefinition(
-            name=self.name,
-            description=self.description,
-            mode_def=self.get_mode_definition(),
-            preset_defs=self.preset_defs,
-            tags=self.tags,
-            hook_defs=self.hook_defs,
-            op_retry_policy=self._solid_retry_policy,
-            graph_def=sub_graph,
-            version_strategy=self.version_strategy,
-            _op_selection_data=OpSelectionData(
-                op_selection=op_selection,
-                resolved_op_selection=set(
-                    resolved_op_selection_dict.keys()
-                ),  # equivalent to solids_to_execute. currently only gets top level nodes.
-                parent_job_def=self,  # used by pipeline snapshot lineage
-            ),
-        )
+            return JobDefinition(
+                name=self.name,
+                description=self.description,
+                resource_defs=dict(self.resource_defs),
+                logger_defs=dict(self.loggers),
+                executor_def=self.executor_def,
+                config_mapping=self.config_mapping,
+                partitioned_config=self.partitioned_config,
+                preset_defs=self.preset_defs,
+                tags=self.tags,
+                hook_defs=self.hook_defs,
+                op_retry_policy=self._solid_retry_policy,
+                graph_def=sub_graph,
+                version_strategy=self.version_strategy,
+                _executor_def_specified=self._executor_def_specified,
+                _logger_defs_specified=self._logger_defs_specified,
+                _subset_selection_data=OpSelectionData(
+                    op_selection=op_selection,
+                    resolved_op_selection=set(
+                        resolved_op_selection_dict.keys()
+                    ),  # equivalent to solids_to_execute. currently only gets top level nodes.
+                    parent_job_def=self,  # used by pipeline snapshot lineage
+                ),
+                # TODO: subset this structure.
+                # https://github.com/dagster-io/dagster/issues/7541
+                asset_layer=self.asset_layer,
+            )
+        except DagsterInvalidDefinitionError as exc:
+            # This handles the case when you construct a subset such that an unsatisfied
+            # input cannot be loaded from config. Instead of throwing a DagsterInvalidDefinitionError,
+            # we re-raise a DagsterInvalidSubsetError.
+            raise DagsterInvalidSubsetError(
+                f"The attempted subset {str_format_set(resolved_op_selection_dict)} for graph "
+                f"{self.graph.name} results in an invalid graph."
+            ) from exc
 
     def get_partition_set_def(self) -> Optional["PartitionSetDefinition"]:
-        if not self.is_single_mode:
-            return None
 
         mode = self.get_mode_definition()
         if not mode.partitioned_config:
@@ -243,25 +427,47 @@ class JobDefinition(PipelineDefinition):
 
         if not self._cached_partition_set:
 
+            tags_fn = mode.partitioned_config.tags_for_partition_fn
+            if not tags_fn:
+                tags_fn = lambda _: {}
             self._cached_partition_set = PartitionSetDefinition(
                 job_name=self.name,
                 name=f"{self.name}_partition_set",
                 partitions_def=mode.partitioned_config.partitions_def,
                 run_config_fn_for_partition=mode.partitioned_config.run_config_for_partition_fn,
+                tags_fn_for_partition=tags_fn,
                 mode=mode.name,
             )
 
         return self._cached_partition_set
 
-    def run_request_for_partition(self, partition_key: str, run_key: Optional[str]) -> RunRequest:
+    @property
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
+        mode = self.get_mode_definition()
+        if not mode.partitioned_config:
+            return None
+
+        return mode.partitioned_config.partitions_def
+
+    def run_request_for_partition(
+        self,
+        partition_key: str,
+        run_key: Optional[str],
+        tags: Optional[Mapping[str, str]] = None,
+    ) -> RunRequest:
         partition_set = self.get_partition_set_def()
         if not partition_set:
             check.failed("Called run_request_for_partition on a non-partitioned job")
 
         partition = partition_set.get_partition(partition_key)
         run_config = partition_set.run_config_for_partition(partition)
-        tags = partition_set.tags_for_partition(partition)
-        return RunRequest(run_key=run_key, run_config=run_config, tags=tags)
+        run_request_tags = (
+            {**tags, **partition_set.tags_for_partition(partition)}
+            if tags
+            else partition_set.tags_for_partition(partition)
+        )
+
+        return RunRequest(run_key=run_key, run_config=run_config, tags=run_request_tags)
 
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "JobDefinition":
         """Apply a set of hooks to all op instances within the job."""
@@ -271,13 +477,20 @@ class JobDefinition(PipelineDefinition):
         job_def = JobDefinition(
             name=self.name,
             graph_def=self._graph_def,
-            mode_def=self.mode_definitions[0],
+            resource_defs=dict(self.resource_defs),
+            logger_defs=dict(self.loggers),
+            executor_def=self.executor_def,
+            partitioned_config=self.partitioned_config,
+            config_mapping=self.config_mapping,
             preset_defs=self.preset_defs,
             tags=self.tags,
             hook_defs=hook_defs | self.hook_defs,
             description=self._description,
             op_retry_policy=self._solid_retry_policy,
-            _op_selection_data=self._op_selection_data,
+            asset_layer=self.asset_layer,
+            _subset_selection_data=self._subset_selection_data,
+            _executor_def_specified=self._executor_def_specified,
+            _logger_defs_specified=self._logger_defs_specified,
         )
 
         update_wrapper(job_def, self, updated=())
@@ -285,14 +498,71 @@ class JobDefinition(PipelineDefinition):
         return job_def
 
     def get_parent_pipeline_snapshot(self) -> Optional["PipelineSnapshot"]:
-        return (
-            self.op_selection_data.parent_job_def.get_pipeline_snapshot()
-            if self.op_selection_data
-            else None
+        if self.op_selection_data:
+            return self.op_selection_data.parent_job_def.get_pipeline_snapshot()
+        elif self.asset_selection_data:
+            return self.asset_selection_data.parent_job_def.get_pipeline_snapshot()
+        else:
+            return None
+
+    def has_direct_input_value(self, input_name: str) -> bool:
+        return input_name in self._input_values
+
+    def get_direct_input_value(self, input_name: str) -> object:
+        if input_name not in self._input_values:
+            raise DagsterInvalidInvocationError(
+                f"On job '{self.name}', attempted to retrieve input value for input named '{input_name}', but no value was provided. Provided input values: {sorted(list(self._input_values.keys()))}"
+            )
+        return self._input_values[input_name]
+
+    def with_executor_def(self, executor_def: ExecutorDefinition) -> "JobDefinition":
+        return JobDefinition(
+            graph_def=self.graph,
+            resource_defs=dict(self.resource_defs),
+            executor_def=executor_def,
+            logger_defs=dict(self.loggers),
+            config_mapping=self.config_mapping,
+            partitioned_config=self.partitioned_config,
+            name=self.name,
+            description=self.description,
+            preset_defs=self.preset_defs,
+            tags=self.tags,
+            _metadata_entries=self.metadata,
+            hook_defs=self.hook_defs,
+            op_retry_policy=self._solid_retry_policy,
+            version_strategy=self.version_strategy,
+            _subset_selection_data=self._subset_selection_data,
+            asset_layer=self.asset_layer,
+            _input_values=self._input_values,
+            _executor_def_specified=True,
+            _logger_defs_specified=self._logger_defs_specified,
+        )
+
+    def with_logger_defs(self, logger_defs: Mapping[str, LoggerDefinition]) -> "JobDefinition":
+        return JobDefinition(
+            graph_def=self.graph,
+            resource_defs=dict(self.resource_defs),
+            executor_def=self.executor_def,
+            logger_defs=logger_defs,
+            config_mapping=self.config_mapping,
+            partitioned_config=self.partitioned_config,
+            name=self.name,
+            description=self.description,
+            preset_defs=self.preset_defs,
+            tags=self.tags,
+            _metadata_entries=self.metadata,
+            hook_defs=self.hook_defs,
+            op_retry_policy=self._solid_retry_policy,
+            version_strategy=self.version_strategy,
+            _subset_selection_data=self._subset_selection_data,
+            asset_layer=self.asset_layer,
+            _input_values=self._input_values,
+            _executor_def_specified=self._executor_def_specified,
+            _logger_defs_specified=True,
         )
 
 
-def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: PipelineDefinition):
+def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: PipelineDefinition):
     """
     Used to create the user facing experience of the default io_manager
     switching to in-memory when using execute_in_process.
@@ -303,11 +573,11 @@ def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: Pipeline
 
     if (
         # pylint: disable=comparison-with-callable
-        resources.get("io_manager") in [default_job_io_manager, fs_asset_io_manager]
+        resources.get(DEFAULT_IO_MANAGER_KEY) in [default_job_io_manager]
         and job.version_strategy is None
     ):
         updated_resources = dict(resources)
-        updated_resources["io_manager"] = mem_io_manager
+        updated_resources[DEFAULT_IO_MANAGER_KEY] = mem_io_manager
         return updated_resources
 
     return resources
@@ -325,7 +595,7 @@ def _dep_key_of(node: Node) -> NodeInvocation:
 
 def get_subselected_graph_definition(
     graph: GraphDefinition,
-    resolved_op_selection_dict: Dict,
+    resolved_op_selection_dict: Mapping,
     parent_handle: Optional[NodeHandle] = None,
 ) -> SubselectedGraphDefinition:
     deps: Dict[
@@ -342,9 +612,10 @@ def get_subselected_graph_definition(
             continue
 
         # rebuild graph if any nodes inside the graph are selected
+        definition: Union[SubselectedGraphDefinition, NodeDefinition]
         if node.is_graph and resolved_op_selection_dict[node.name] is not LeafNodeSelection:
             definition = get_subselected_graph_definition(
-                node.definition,
+                cast(GraphDefinition, node.definition),  # guaranteed by node.is_graph
                 resolved_op_selection_dict[node.name],
                 parent_handle=node_handle,
             )
@@ -408,19 +679,17 @@ def get_subselected_graph_definition(
         )
     )
 
-    try:
-        return SubselectedGraphDefinition(
-            parent_graph_def=graph,
-            dependencies=deps,
-            node_defs=[definition for _, definition in selected_nodes],
-            input_mappings=new_input_mappings,
-            output_mappings=new_output_mappings,
-        )
-    except DagsterInvalidDefinitionError as exc:
-        # This handles the case when you construct a subset such that an unsatisfied
-        # input cannot be loaded from config. Instead of throwing a DagsterInvalidDefinitionError,
-        # we re-raise a DagsterInvalidSubsetError.
-        raise DagsterInvalidSubsetError(
-            f"The attempted subset {str_format_set(resolved_op_selection_dict)} for graph "
-            f"{graph.name} results in an invalid graph."
-        ) from exc
+    return SubselectedGraphDefinition(
+        parent_graph_def=graph,
+        dependencies=deps,
+        node_defs=[definition for _, definition in selected_nodes],
+        input_mappings=new_input_mappings,
+        output_mappings=new_output_mappings,
+    )
+
+
+def get_direct_input_values_from_job(target: PipelineDefinition) -> Mapping[str, Any]:
+    if target.is_job:
+        return cast(JobDefinition, target)._input_values  # pylint: disable=protected-access
+    else:
+        return {}

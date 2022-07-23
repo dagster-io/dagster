@@ -1,34 +1,35 @@
 import {gql, useLazyQuery} from '@apollo/client';
 import {
   Box,
-  ButtonWIP,
+  Button,
   ButtonLink,
-  ColorsWIP,
+  Colors,
   DialogBody,
   DialogFooter,
-  DialogWIP,
+  Dialog,
   Group,
-  HighlightedCodeBlock,
-  IconWIP,
-  MenuItemWIP,
-  MenuLink,
-  MenuWIP,
+  Icon,
+  MenuItem,
+  Menu,
   NonIdealState,
   Popover,
   Spinner,
   Table,
-  FontFamily,
+  Subheading,
+  StyledReadOnlyCodeMirror,
 } from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {copyValue} from '../app/DomUtils';
+import {SharedToaster} from '../app/DomUtils';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {useCopyToClipboard} from '../app/browser';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunTags} from '../runs/RunTags';
 import {InstigationStatus} from '../types/globalTypes';
+import {MenuLink} from '../ui/MenuLink';
 import {
   findRepositoryAmongOptions,
   isThisThingAJob,
@@ -44,6 +45,7 @@ import {RepositorySchedulesFragment} from './types/RepositorySchedulesFragment';
 import {ScheduleFragment} from './types/ScheduleFragment';
 import {
   ScheduleTickConfigQuery,
+  ScheduleTickConfigQueryVariables,
   ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult,
   ScheduleTickConfigQuery_scheduleOrError_Schedule_futureTick_evaluationResult_runRequests,
 } from './types/ScheduleTickConfigQuery';
@@ -168,15 +170,15 @@ const NextTickMenu: React.FC<{
     scheduleName: schedule.name,
   };
   const [isOpen, setOpen] = React.useState<boolean>(false);
-  const [loadTickConfig, {called, loading, data}] = useLazyQuery<ScheduleTickConfigQuery>(
-    SCHEDULE_TICK_CONFIG_QUERY,
-    {
-      variables: {
-        scheduleSelector,
-        tickTimestamp,
-      },
+  const [loadTickConfig, {called, loading, data}] = useLazyQuery<
+    ScheduleTickConfigQuery,
+    ScheduleTickConfigQueryVariables
+  >(SCHEDULE_TICK_CONFIG_QUERY, {
+    variables: {
+      scheduleSelector,
+      tickTimestamp,
     },
-  );
+  });
 
   const infoReady = called ? !loading : false;
   const evaluationResult =
@@ -198,7 +200,7 @@ const NextTickMenu: React.FC<{
   return (
     <>
       <Popover
-        content={<MenuWIP>{menuItems}</MenuWIP>}
+        content={<Menu>{menuItems}</Menu>}
         position="bottom-right"
         onOpening={() => {
           if (!called) {
@@ -206,7 +208,7 @@ const NextTickMenu: React.FC<{
           }
         }}
       >
-        <ButtonWIP icon={<IconWIP name="expand_more" />} />
+        <Button icon={<Icon name="expand_more" />} />
       </Popover>
       <NextTickDialog
         repoAddress={repoAddress}
@@ -228,19 +230,19 @@ const NextTickMenuItems: React.FC<{
   onItemOpen: (value: boolean) => void;
 }> = ({repoAddress, schedule, evaluationResult, loading, onItemOpen}) => {
   if (!evaluationResult) {
-    return <MenuItemWIP text="Could not preview tick for this schedule" />;
+    return <MenuItem text="Could not preview tick for this schedule" />;
   }
 
   if (evaluationResult.skipReason) {
-    return <MenuItemWIP text="View skip reason..." onClick={() => onItemOpen(true)} />;
+    return <MenuItem text="View skip reason..." onClick={() => onItemOpen(true)} />;
   }
 
   if (evaluationResult.error) {
-    return <MenuItemWIP text="View error..." onClick={() => onItemOpen(true)} />;
+    return <MenuItem text="View error..." onClick={() => onItemOpen(true)} />;
   }
 
   if (!evaluationResult.runRequests || !evaluationResult.runRequests.length) {
-    return <MenuItemWIP text="No runs requested for this projected schedule tick" />;
+    return <MenuItem text="No runs requested for this projected schedule tick" />;
   }
 
   if (evaluationResult.runRequests.length === 1) {
@@ -248,7 +250,7 @@ const NextTickMenuItems: React.FC<{
     const runConfigYaml = runRequest ? runRequest.runConfigYaml : '';
     return (
       <>
-        <MenuItemWIP
+        <MenuItem
           text={loading ? 'Loading Configuration...' : 'View Configuration...'}
           icon="open_in_new"
           onClick={() => onItemOpen(true)}
@@ -271,7 +273,7 @@ const NextTickMenuItems: React.FC<{
   }
 
   return (
-    <MenuItemWIP
+    <MenuItem
       text={`View ${evaluationResult.runRequests.length} run requests...`}
       icon="edit"
       target="_blank"
@@ -288,7 +290,6 @@ const NextTickDialog: React.FC<{
   schedule: ScheduleFragment;
   tickTimestamp: number;
 }> = ({repoAddress, evaluationResult, schedule, tickTimestamp, setOpen, isOpen}) => {
-  const configRef = React.useRef<HTMLDivElement>(null);
   const [
     selectedRunRequest,
     setSelectedRunRequest,
@@ -297,6 +298,8 @@ const NextTickDialog: React.FC<{
       ? evaluationResult.runRequests[0]
       : null,
   );
+
+  const copy = useCopyToClipboard();
 
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, schedule.pipelineName);
@@ -321,18 +324,26 @@ const NextTickDialog: React.FC<{
     body = null;
   } else if (selectedRunRequest) {
     body = (
-      <DialogBody>
-        <Group direction="column" spacing={12}>
+      <Box flex={{direction: 'column', gap: 20}}>
+        <Box flex={{direction: 'column', gap: 12}} padding={{top: 16, horizontal: 24}}>
+          <Subheading>Tags</Subheading>
           {selectedRunRequest.tags.length ? (
             <RunTags tags={selectedRunRequest.tags} mode={isJob ? null : schedule.mode} />
           ) : null}
-          <ConfigBody>
-            <div ref={configRef}>
-              <HighlightedCodeBlock value={selectedRunRequest.runConfigYaml} language="yaml" />
-            </div>
-          </ConfigBody>
-        </Group>
-      </DialogBody>
+        </Box>
+        <div>
+          <Box
+            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
+            padding={{left: 24, bottom: 16}}
+          >
+            <Subheading>Config</Subheading>
+          </Box>
+          <StyledReadOnlyCodeMirror
+            value={selectedRunRequest.runConfigYaml}
+            options={{lineNumbers: true, mode: 'yaml'}}
+          />
+        </div>
+      </Box>
     );
   } else if (evaluationResult.error) {
     body = (
@@ -372,7 +383,7 @@ const NextTickDialog: React.FC<{
                         underline={false}
                       >
                         <Group direction="row" spacing={8} alignItems="center">
-                          <IconWIP name="open_in_new" color={ColorsWIP.Gray400} />
+                          <Icon name="open_in_new" color={Colors.Gray400} />
                           <span>View config</span>
                         </Group>
                       </ButtonLink>
@@ -380,7 +391,7 @@ const NextTickDialog: React.FC<{
                     <td>
                       <Popover
                         content={
-                          <MenuWIP>
+                          <Menu>
                             <MenuLink
                               text="Open in Launchpad..."
                               icon="edit"
@@ -396,11 +407,11 @@ const NextTickDialog: React.FC<{
                                 })}`,
                               )}
                             />
-                          </MenuWIP>
+                          </Menu>
                         }
                         position="bottom"
                       >
-                        <ButtonWIP icon={<IconWIP name="expand_more" />} />
+                        <Button icon={<Icon name="expand_more" />} />
                       </Popover>
                     </td>
                   </tr>
@@ -414,7 +425,7 @@ const NextTickDialog: React.FC<{
   }
 
   return (
-    <DialogWIP
+    <Dialog
       onClose={() => close()}
       style={{width: '50vw'}}
       title={
@@ -426,22 +437,27 @@ const NextTickDialog: React.FC<{
       isOpen={isOpen}
     >
       {body}
-      <DialogFooter>
+      <DialogFooter topBorder>
         {selectedRunRequest ? (
-          <ButtonWIP
+          <Button
             autoFocus={false}
-            onClick={(e: React.MouseEvent<any, MouseEvent>) => {
-              copyValue(e, configRef && configRef.current ? configRef.current.innerText : '' || '');
+            onClick={() => {
+              copy(selectedRunRequest.runConfigYaml);
+              SharedToaster.show({
+                intent: 'success',
+                icon: 'copy_to_clipboard_done',
+                message: 'Copied!',
+              });
             }}
           >
-            Copy
-          </ButtonWIP>
+            Copy config
+          </Button>
         ) : null}
-        <ButtonWIP intent="primary" autoFocus={true} onClick={() => close()}>
+        <Button intent="primary" autoFocus={true} onClick={() => close()}>
           OK
-        </ButtonWIP>
+        </Button>
       </DialogFooter>
-    </DialogWIP>
+    </Dialog>
   );
 };
 
@@ -472,20 +488,12 @@ const SCHEDULE_TICK_CONFIG_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-const ConfigBody = styled.div`
-  white-space: pre-line;
-  font-family: ${FontFamily.monospace};
-  font-size: 14px;
-  overflow: scroll;
-  background: ${ColorsWIP.White};
-`;
-
 const RunRequestBody = styled.div`
   font-size: 13px;
 `;
 
 const SkipWrapper = styled.div`
   background-color: #fdfcf2;
-  border: 1px solid ${ColorsWIP.Yellow500};
+  border: 1px solid ${Colors.Yellow500};
   border-radius: 3px;
 `;

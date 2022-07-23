@@ -5,8 +5,8 @@ import time
 from click.testing import CliRunner
 from dagster_celery.cli import main
 
-from dagster import check
-from dagster.utils import file_relative_path
+import dagster._check as check
+from dagster._utils import file_relative_path
 
 
 def start_worker(name, config_yaml=None, args=None, exit_code=0, exception_str=""):

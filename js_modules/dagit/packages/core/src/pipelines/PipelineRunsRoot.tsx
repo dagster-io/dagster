@@ -4,13 +4,20 @@ import {
   CursorHistoryControls,
   NonIdealState,
   Page,
-  TagWIP,
+  Tag,
   TokenizingFieldValue,
+  tokenToString,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
-import {QueryCountdown} from '../app/QueryCountdown';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
 import {
@@ -18,9 +25,11 @@ import {
   RunsFilterInput,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
+  RunFilterToken,
 } from '../runs/RunsFilterInput';
-import {POLL_INTERVAL, useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
+import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {Loading} from '../ui/Loading';
+import {StickyTableContainer} from '../ui/StickyTableContainer';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
@@ -36,6 +45,8 @@ interface Props {
 }
 
 export const PipelineRunsRoot: React.FC<Props> = (props) => {
+  useTrackPageView();
+
   const {pipelinePath} = useParams<{pipelinePath: string}>();
   const {repoAddress = null} = props;
   const explorerPath = explorerPathFromString(pipelinePath);
@@ -79,6 +90,18 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
     },
   });
 
+  const onAddTag = React.useCallback(
+    (token: RunFilterToken) => {
+      const tokenAsString = tokenToString(token);
+      if (!filterTokens.some((token) => tokenToString(token) === tokenAsString)) {
+        setFilterTokens([...filterTokens, token]);
+      }
+    },
+    [filterTokens, setFilterTokens],
+  );
+
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+
   return (
     <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
       <Page>
@@ -106,23 +129,25 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
                 >
                   <Box flex={{direction: 'row', gap: 8}}>
                     {permanentTokens.map(({token, value}) => (
-                      <TagWIP key={token}>{`${token}:${value}`}</TagWIP>
+                      <Tag key={token}>{`${token}:${value}`}</Tag>
                     ))}
                   </Box>
-                  <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
+                  <QueryRefreshCountdown refreshState={refreshState} />
                 </Box>
-                <RunTable
-                  runs={displayed}
-                  onSetFilter={setFilterTokens}
-                  actionBarComponents={
-                    <RunsFilterInput
-                      enabledFilters={ENABLED_FILTERS}
-                      tokens={filterTokens}
-                      onChange={setFilterTokens}
-                      loading={queryResult.loading}
-                    />
-                  }
-                />
+                <StickyTableContainer $top={0}>
+                  <RunTable
+                    runs={displayed}
+                    onAddTag={onAddTag}
+                    actionBarComponents={
+                      <RunsFilterInput
+                        enabledFilters={ENABLED_FILTERS}
+                        tokens={filterTokens}
+                        onChange={setFilterTokens}
+                        loading={queryResult.loading}
+                      />
+                    }
+                  />
+                </StickyTableContainer>
                 {hasNextCursor || hasPrevCursor ? (
                   <div style={{marginTop: '20px'}}>
                     <CursorHistoryControls {...paginationProps} />
@@ -149,11 +174,10 @@ const PIPELINE_RUNS_ROOT_QUERY = gql`
       ... on InvalidPipelineRunsFilterError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
     }
   }
 
   ${RUN_TABLE_RUN_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

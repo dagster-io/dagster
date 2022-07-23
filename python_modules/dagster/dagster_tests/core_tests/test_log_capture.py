@@ -2,11 +2,11 @@ import sys
 
 import pytest
 
+from dagster._utils.test import get_temp_file_name
 from dagster.core.execution.compute_logs import (
     mirror_stream_to_file,
     should_disable_io_stream_redirect,
 )
-from dagster.utils.test import get_temp_file_name
 
 
 @pytest.mark.skipif(
@@ -15,7 +15,7 @@ from dagster.utils.test import get_temp_file_name
 def test_capture():
     with get_temp_file_name() as capture_filepath:
         with mirror_stream_to_file(sys.stdout, capture_filepath):
-            print("HELLO")
+            print("HELLO")  # pylint: disable=print-call
 
-        with open(capture_filepath, "r") as capture_stream:
+        with open(capture_filepath, "r", encoding="utf8") as capture_stream:
             assert "HELLO" in capture_stream.read()

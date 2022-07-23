@@ -5,7 +5,7 @@ from dagster_k8s.utils import (
     wait_for_job_success,
 )
 
-from dagster import check
+import dagster._check as check
 
 
 def wait_for_job_ready(job_name, namespace):

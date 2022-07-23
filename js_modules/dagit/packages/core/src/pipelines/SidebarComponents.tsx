@@ -1,5 +1,6 @@
+// eslint-disable-next-line no-restricted-imports
 import {Collapse} from '@blueprintjs/core';
-import {ColorsWIP, IconWIP, FontFamily} from '@dagster-io/ui';
+import {Colors, Icon, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -24,7 +25,7 @@ export const SidebarSection: React.FC<ISidebarSectionProps> = (props) => {
     <>
       <CollapsingHeaderBar onClick={onToggle}>
         {title}
-        <IconWIP
+        <Icon
           size={24}
           name="arrow_drop_down"
           style={{transform: open ? 'rotate(0)' : 'rotate(-90deg)'}}
@@ -63,12 +64,12 @@ export const SectionSmallHeader = styled.h4`
 `;
 
 export const SidebarSubhead = styled.div`
-  color: ${ColorsWIP.Gray400};
+  color: ${Colors.Gray400};
   font-size: 0.7rem;
 `;
 
 export const SectionItemContainer = styled.div`
-  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+  border-bottom: 1px solid ${Colors.KeylineGray};
   margin-bottom: 12px;
   padding-bottom: 12px;
   font-size: 0.8rem;
@@ -83,10 +84,10 @@ const CollapsingHeaderBar = styled.div`
   height: 32px;
   padding-left: 24px;
   padding-right: 8px;
-  background: ${ColorsWIP.White};
-  border-top: 1px solid ${ColorsWIP.KeylineGray};
-  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
-  color: ${ColorsWIP.Gray900};
+  background: ${Colors.White};
+  border-top: 1px solid ${Colors.KeylineGray};
+  border-bottom: 1px solid ${Colors.KeylineGray};
+  color: ${Colors.Gray900};
   cursor: pointer;
   display: flex;
   justify-content: space-between;

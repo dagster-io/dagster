@@ -1,13 +1,14 @@
 from typing import List, NamedTuple, Optional, Union
 
-from dagster import check
+import dagster._check as check
+from dagster._serdes import whitelist_for_serdes
 from dagster.core.definitions import (
     AssetMaterialization,
     Materialization,
     MetadataEntry,
     NodeHandle,
 )
-from dagster.serdes import whitelist_for_serdes
+from dagster.core.definitions.events import AssetKey
 
 from .handle import UnresolvedStepHandle
 from .objects import TypeCheckData
@@ -22,6 +23,7 @@ class StepOutputProperties(
             ("is_dynamic", bool),
             ("is_asset", bool),
             ("should_materialize", bool),
+            ("asset_key", Optional[AssetKey]),
         ],
     )
 ):
@@ -31,6 +33,7 @@ class StepOutputProperties(
         is_dynamic: bool,
         is_asset: bool,
         should_materialize: bool,
+        asset_key: Optional[AssetKey] = None,
     ):
         return super(StepOutputProperties, cls).__new__(
             cls,
@@ -38,6 +41,7 @@ class StepOutputProperties(
             check.bool_param(is_dynamic, "is_dynamic"),
             check.bool_param(is_asset, "is_asset"),
             check.bool_param(should_materialize, "should_materialize"),
+            check.opt_inst_param(asset_key, "asset_key", AssetKey),
         )
 
 
@@ -84,6 +88,12 @@ class StepOutput(
     @property
     def should_materialize(self) -> bool:
         return self.properties.should_materialize
+
+    @property
+    def asset_key(self) -> Optional[AssetKey]:
+        if not self.is_asset:
+            return None
+        return self.properties.asset_key
 
 
 @whitelist_for_serdes

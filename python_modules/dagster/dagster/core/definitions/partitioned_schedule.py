@@ -1,15 +1,15 @@
 from datetime import time
 from typing import Optional, Union, cast
 
-from dagster import check
+import dagster._check as check
 
 from .job_definition import JobDefinition
 from .partition import (
     Partition,
     PartitionSetDefinition,
     PartitionedConfig,
-    ScheduleTimeBasedPartitionsDefinition,
     ScheduleType,
+    get_cron_schedule,
 )
 from .run_request import SkipReason
 from .schedule_definition import (
@@ -18,10 +18,11 @@ from .schedule_definition import (
     ScheduleEvaluationContext,
 )
 from .time_window_partitions import TimeWindow, TimeWindowPartitionsDefinition
+from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 
 def build_schedule_from_partitioned_job(
-    job: JobDefinition,
+    job: Union[JobDefinition, UnresolvedAssetJobDefinition],
     description: Optional[str] = None,
     name: Optional[str] = None,
     minute_of_hour: Optional[int] = None,
@@ -35,27 +36,37 @@ def build_schedule_from_partitioned_job(
 
     The schedule executes at the cadence specified by the partitioning of the given job.
     """
-    check.invariant(len(job.mode_definitions) == 1, "job must only have one mode")
-    check.invariant(
-        job.mode_definitions[0].partitioned_config is not None, "job must be a partitioned job"
-    )
     check.invariant(
         not (day_of_week and day_of_month),
         "Cannot provide both day_of_month and day_of_week parameter to build_schedule_from_partitioned_job.",
     )
+    if isinstance(job, JobDefinition):
+        check.invariant(len(job.mode_definitions) == 1, "job must only have one mode")
+        check.invariant(
+            job.mode_definitions[0].partitioned_config is not None, "job must be a partitioned job"
+        )
 
-    partitioned_config = cast(PartitionedConfig, job.mode_definitions[0].partitioned_config)
-    partition_set = cast(PartitionSetDefinition, job.get_partition_set_def())
+        partitioned_config = cast(PartitionedConfig, job.mode_definitions[0].partitioned_config)
+        partition_set = cast(PartitionSetDefinition, job.get_partition_set_def())
+        partitions_def = cast(TimeWindowPartitionsDefinition, partitioned_config.partitions_def)
+    else:  # UnresolvedAssetJobDefinition
+        check.invariant(job.partitions_def is not None, "Job does not have a partitions_def.")
+        partition_set = cast(PartitionSetDefinition, job.get_partition_set_def())
+        partitions_def = cast(TimeWindowPartitionsDefinition, job.partitions_def)
 
-    check.inst(partitioned_config.partitions_def, TimeWindowPartitionsDefinition)
-    partitions_def = cast(TimeWindowPartitionsDefinition, partitioned_config.partitions_def)
+    check.inst(partitions_def, TimeWindowPartitionsDefinition)
 
-    minute_of_hour = cast(int, check.opt_int_param(minute_of_hour, "minute_of_hour", default=0))
+    minute_of_hour = cast(
+        int,
+        check.opt_int_param(minute_of_hour, "minute_of_hour", default=partitions_def.minute_offset),
+    )
 
     if partitions_def.schedule_type == ScheduleType.HOURLY:
         check.invariant(hour_of_day is None, "Cannot set hour parameter with hourly partitions.")
 
-    hour_of_day = cast(int, check.opt_int_param(hour_of_day, "hour_of_day", default=0))
+    hour_of_day = cast(
+        int, check.opt_int_param(hour_of_day, "hour_of_day", default=partitions_def.hour_offset)
+    )
     execution_time = time(minute=minute_of_hour, hour=hour_of_day)
 
     if partitions_def.schedule_type == ScheduleType.DAILY:
@@ -67,23 +78,19 @@ def build_schedule_from_partitioned_job(
         )
 
     if partitions_def.schedule_type == ScheduleType.MONTHLY:
-        execution_day = check.opt_int_param(day_of_month, "day_of_month", default=1)
+        default = partitions_def.day_offset or 1
+        execution_day = check.opt_int_param(day_of_month, "day_of_month", default=default)
     elif partitions_def.schedule_type == ScheduleType.WEEKLY:
-        execution_day = check.opt_int_param(day_of_week, "day_of_week", default=0)
+        default = partitions_def.day_offset or 0
+        execution_day = check.opt_int_param(day_of_week, "day_of_week", default=default)
     else:
         execution_day = 0
 
-    schedule_partitions = ScheduleTimeBasedPartitionsDefinition(
-        schedule_type=partitions_def.schedule_type,
-        start=partitions_def.start,
-        execution_time=execution_time,
-        execution_day=execution_day,
-        offset=1,
-    )
+    cron_schedule = get_cron_schedule(partitions_def.schedule_type, execution_time, execution_day)
 
     schedule_def = partition_set.create_schedule_definition(
         schedule_name=check.opt_str_param(name, "name", f"{job.name}_schedule"),
-        cron_schedule=schedule_partitions.get_cron_schedule(),
+        cron_schedule=cron_schedule,
         partition_selector=latest_window_partition_selector,
         execution_timezone=partitions_def.timezone,
         description=description,

@@ -1,4 +1,4 @@
-import {Box, ColorsWIP, IconWIP, IconWrapper, Tooltip} from '@dagster-io/ui';
+import {Box, Colors, Icon, IconWrapper, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -14,9 +14,16 @@ import {WebSocketStatus} from './WebSocketProvider';
 
 interface Props {
   searchPlaceholder: string;
+  rightOfSearchBar?: React.ReactNode;
+  showStatusWarningIcon?: boolean;
 }
 
-export const AppTopNav: React.FC<Props> = ({children, searchPlaceholder}) => {
+export const AppTopNav: React.FC<Props> = ({
+  children,
+  rightOfSearchBar,
+  searchPlaceholder,
+  showStatusWarningIcon = true,
+}) => {
   const history = useHistory();
 
   return (
@@ -24,6 +31,7 @@ export const AppTopNav: React.FC<Props> = ({children, searchPlaceholder}) => {
       <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
         <AppTopNavLogo />
         <SearchDialog searchPlaceholder={searchPlaceholder} />
+        {rightOfSearchBar}
       </Box>
       <Box flex={{direction: 'row', alignItems: 'center'}}>
         <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
@@ -32,24 +40,28 @@ export const AppTopNav: React.FC<Props> = ({children, searchPlaceholder}) => {
             shortcutLabel="⌥1"
             shortcutFilter={(e) => e.code === 'Digit1' && e.altKey}
           >
-            <TopNavLink to="/instance/runs">Runs</TopNavLink>
+            <TopNavLink to="/instance/runs" data-cy="AppTopNav_RunsLink">
+              Runs
+            </TopNavLink>
           </ShortcutHandler>
           <ShortcutHandler
             onShortcut={() => history.push('/instance/assets')}
             shortcutLabel="⌥2"
             shortcutFilter={(e) => e.code === 'Digit2' && e.altKey}
           >
-            <TopNavLink to="/instance/assets">Assets</TopNavLink>
+            <TopNavLink to="/instance/assets" data-cy="AppTopNav_AssetsLink">
+              Assets
+            </TopNavLink>
           </ShortcutHandler>
           <ShortcutHandler
             onShortcut={() => history.push('/instance')}
             shortcutLabel="⌥3"
             shortcutFilter={(e) => e.code === 'Digit3' && e.altKey}
           >
-            <TopNavLink to="/instance">
+            <TopNavLink to="/instance" data-cy="AppTopNav_StatusLink">
               <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
                 Status
-                <InstanceWarningIcon />
+                {showStatusWarningIcon ? <InstanceWarningIcon /> : null}
               </Box>
             </TopNavLink>
           </ShortcutHandler>
@@ -58,7 +70,7 @@ export const AppTopNav: React.FC<Props> = ({children, searchPlaceholder}) => {
             shortcutLabel="⌥4"
             shortcutFilter={(e) => e.code === 'Digit4' && e.altKey}
           >
-            <TopNavLink to="/workspace">
+            <TopNavLink to="/workspace" data-cy="AppTopNav_WorkspaceLink">
               <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
                 Workspace
                 <WorkspaceWarningIcon />
@@ -97,13 +109,8 @@ export const AppTopNavLogo: React.FC = () => {
         shortcutLabel="."
         shortcutFilter={(e) => e.key === '.'}
       >
-        <NavButton
-          onClick={onToggle}
-          onKeyDown={onKeyDown}
-          ref={navButton}
-          $visible={nav.isCollapsible}
-        >
-          <IconWIP name="menu" color={ColorsWIP.White} size={24} />
+        <NavButton onClick={onToggle} onKeyDown={onKeyDown} ref={navButton}>
+          <Icon name="menu" color={Colors.White} size={24} />
         </NavButton>
       </ShortcutHandler>
       <Box flex={{display: 'inline-flex'}} margin={{left: 8}}>
@@ -174,20 +181,25 @@ const DaggyTooltip = styled(Tooltip)`
 `;
 
 export const TopNavLink = styled(Link)`
-  color: ${ColorsWIP.Gray200};
+  color: ${Colors.Gray200};
   font-weight: 600;
   transition: color 50ms linear;
   padding: 24px 0;
 
   :hover,
   :active {
-    color: ${ColorsWIP.White};
+    color: ${Colors.White};
     text-decoration: none;
+  }
+
+  :focus {
+    outline: none !important;
+    color: ${Colors.White};
   }
 `;
 
 export const AppTopNavContainer = styled.div`
-  background: ${ColorsWIP.Gray900};
+  background: ${Colors.Gray900};
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -212,7 +224,7 @@ const LogoContainer = styled.div`
   }
 `;
 
-const NavButton = styled.button<{$visible: boolean}>`
+const NavButton = styled.button`
   border-radius: 20px;
   cursor: pointer;
   margin-left: 4px;
@@ -220,21 +232,21 @@ const NavButton = styled.button<{$visible: boolean}>`
   padding: 6px;
   border: none;
   background: transparent;
-  display: ${(p) => (p.$visible ? `block` : 'none')};
+  display: block;
 
   ${IconWrapper} {
     transition: background 100ms linear;
   }
 
   :hover ${IconWrapper} {
-    background: ${ColorsWIP.Gray500};
+    background: ${Colors.Gray500};
   }
 
   :active ${IconWrapper} {
-    background: ${ColorsWIP.Blue200};
+    background: ${Colors.Blue200};
   }
 
   :focus {
-    background: ${ColorsWIP.Gray700};
+    background: ${Colors.Gray700};
   }
 `;

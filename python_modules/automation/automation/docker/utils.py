@@ -2,13 +2,20 @@
 import subprocess
 import sys
 from datetime import datetime, timezone
+from typing import Dict, Optional
 
-from dagster import check
+import dagster._check as check
 
 
-def execute_docker_build(image, docker_args=None, cwd=None):
+def execute_docker_build(
+    image: str,
+    docker_args: Optional[Dict[str, str]] = None,
+    cwd: Optional[str] = None,
+    platform: Optional[str] = None,
+):
     check.str_param(image, "image")
     docker_args = check.opt_dict_param(docker_args, "docker_args", key_type=str, value_type=str)
+    cwd = check.opt_str_param(cwd, "cwd")
 
     print("Building image {}".format(image))
 
@@ -18,6 +25,10 @@ def execute_docker_build(image, docker_args=None, cwd=None):
         args += ["--build-arg", "{arg}={value}".format(arg=arg, value=value)]
 
     args += ["-t", image]
+    args += ["--progress", "plain"]
+
+    if platform:
+        args += ["--platform", platform]
 
     print(" ".join(args))
 
@@ -25,7 +36,7 @@ def execute_docker_build(image, docker_args=None, cwd=None):
     check.invariant(retval == 0, "Process must exit successfully")
 
 
-def execute_docker_push(image):
+def execute_docker_push(image: str) -> None:
     check.str_param(image, "image")
 
     print("Pushing image {}".format(image))
@@ -33,7 +44,7 @@ def execute_docker_push(image):
     check.invariant(retval == 0, "docker push must succeed")
 
 
-def execute_docker_tag(local_image, remote_image):
+def execute_docker_tag(local_image: str, remote_image: str) -> None:
     """Re-tag an existing image"""
     check.str_param(local_image, "local_image")
     check.str_param(remote_image, "remote_image")
@@ -45,13 +56,13 @@ def execute_docker_tag(local_image, remote_image):
     check.invariant(retval == 0, "docker tag must succeed")
 
 
-def python_version_image_tag(python_version, image_version):
+def python_version_image_tag(python_version: str, image_version: str) -> str:
     """Dagster images are typically tagged as py<PYTHON VERSION>-<IMAGE VERSION>"""
     check.str_param(python_version, "python_version")
     check.str_param(image_version, "image_version")
     return "py{}-{}".format(python_version, image_version)
 
 
-def current_time_str():
+def current_time_str() -> str:
     """Should be UTC date string like 2020-07-11T035005"""
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%S")

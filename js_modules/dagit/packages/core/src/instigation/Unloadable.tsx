@@ -1,34 +1,25 @@
 import {useMutation} from '@apollo/client';
-import {
-  Alert,
-  Box,
-  ButtonLink,
-  Checkbox,
-  ColorsWIP,
-  Group,
-  Table,
-  Subheading,
-  Tooltip,
-} from '@dagster-io/ui';
+import {Alert, Box, Checkbox, Colors, Group, Table, Subheading, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
+import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {
   displayScheduleMutationErrors,
   STOP_SCHEDULE_MUTATION,
 } from '../schedules/ScheduleMutations';
 import {humanCronString} from '../schedules/humanCronString';
-import {StopSchedule} from '../schedules/types/StopSchedule';
+import {StopSchedule, StopScheduleVariables} from '../schedules/types/StopSchedule';
 import {displaySensorMutationErrors, STOP_SENSOR_MUTATION} from '../sensors/SensorMutations';
-import {StopSensor} from '../sensors/types/StopSensor';
+import {StopSensor, StopSensorVariables} from '../sensors/types/StopSensor';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
-import {RepositoryOriginInformation} from '../workspace/RepositoryInformation';
+import {InstigatorSelectorInformation} from '../workspace/RepositoryInformation';
 
 import {TickTag} from './InstigationTick';
 import {InstigatedRunStatus} from './InstigationUtils';
 import {InstigationStateFragment} from './types/InstigationStateFragment';
 
-export const UnloadableSensors: React.FunctionComponent<{
+export const UnloadableSensors: React.FC<{
   sensorStates: InstigationStateFragment[];
 }> = ({sensorStates}) => {
   if (!sensorStates.length) {
@@ -59,7 +50,7 @@ export const UnloadableSensors: React.FunctionComponent<{
   );
 };
 
-export const UnloadableSchedules: React.FunctionComponent<{
+export const UnloadableSchedules: React.FC<{
   scheduleStates: InstigationStateFragment[];
 }> = ({scheduleStates}) => {
   if (!scheduleStates.length) {
@@ -133,12 +124,15 @@ const UnloadableScheduleInfo = () => (
 );
 
 const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) => {
-  const {id, name, status, repositoryOrigin, ticks} = sensorState;
+  const {id, selectorId, name, status, ticks} = sensorState;
+  const {canStopSensor} = usePermissions();
 
-  const [stopSensor, {loading: toggleOffInFlight}] = useMutation<StopSensor>(STOP_SENSOR_MUTATION, {
-    onCompleted: displaySensorMutationErrors,
-  });
-  const [showRepositoryOrigin, setShowRepositoryOrigin] = React.useState(false);
+  const [stopSensor, {loading: toggleOffInFlight}] = useMutation<StopSensor, StopSensorVariables>(
+    STOP_SENSOR_MUTATION,
+    {
+      onCompleted: displaySensorMutationErrors,
+    },
+  );
   const confirm = useConfirmation();
 
   const onChangeSwitch = async () => {
@@ -150,40 +144,39 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
           'If you turn it off, you will not be able to turn it back on from ' +
           'the currently loaded workspace.',
       });
-      stopSensor({variables: {jobOriginId: id}});
+      stopSensor({variables: {jobOriginId: id, jobSelectorId: selectorId}});
     }
   };
 
+  const lacksPermission = status === InstigationStatus.RUNNING && !canStopSensor;
   const latestTick = ticks.length ? ticks[0] : null;
+
+  const checkbox = () => {
+    const element = (
+      <Checkbox
+        format="switch"
+        disabled={toggleOffInFlight || status === InstigationStatus.STOPPED || lacksPermission}
+        checked={status === InstigationStatus.RUNNING}
+        onChange={onChangeSwitch}
+      />
+    );
+    return lacksPermission ? <Tooltip content={DISABLED_MESSAGE}>{element}</Tooltip> : element;
+  };
 
   return (
     <tr key={name}>
-      <td style={{width: 60}}>
-        <Checkbox
-          format="switch"
-          disabled={toggleOffInFlight || status === InstigationStatus.STOPPED}
-          checked={status === InstigationStatus.RUNNING}
-          onChange={onChangeSwitch}
-        />
-      </td>
+      <td style={{width: 60}}>{checkbox()}</td>
       <td>
         <Group direction="row" spacing={8} alignItems="center">
           {name}
-          <ButtonLink
-            onClick={() => {
-              setShowRepositoryOrigin(!showRepositoryOrigin);
-            }}
-          >
-            show info
-          </ButtonLink>
         </Group>
-        {showRepositoryOrigin && <RepositoryOriginInformation origin={repositoryOrigin} />}
+        <InstigatorSelectorInformation instigatorState={sensorState} />
       </td>
       <td>
         {latestTick ? (
           <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
         ) : (
-          <span style={{color: ColorsWIP.Gray300}}>None</span>
+          <span style={{color: Colors.Gray300}}>None</span>
         )}
       </td>
       <td>
@@ -195,18 +188,18 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
   );
 };
 
-const ScheduleStateRow: React.FunctionComponent<{
+const ScheduleStateRow: React.FC<{
   scheduleState: InstigationStateFragment;
 }> = ({scheduleState}) => {
-  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<StopSchedule>(
-    STOP_SCHEDULE_MUTATION,
-    {
-      onCompleted: displayScheduleMutationErrors,
-    },
-  );
-  const [showRepositoryOrigin, setShowRepositoryOrigin] = React.useState(false);
+  const {canStopRunningSchedule} = usePermissions();
+  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<
+    StopSchedule,
+    StopScheduleVariables
+  >(STOP_SCHEDULE_MUTATION, {
+    onCompleted: displayScheduleMutationErrors,
+  });
   const confirm = useConfirmation();
-  const {id, name, ticks, status, repositoryOrigin, typeSpecificData} = scheduleState;
+  const {id, selectorId, name, ticks, status, typeSpecificData} = scheduleState;
   const latestTick = ticks.length > 0 ? ticks[0] : null;
   const cronSchedule =
     typeSpecificData && typeSpecificData.__typename === 'ScheduleData'
@@ -221,32 +214,32 @@ const ScheduleStateRow: React.FunctionComponent<{
           'If you turn it off, you will not be able to turn it back on from ' +
           'the currently loaded workspace.',
       });
-      stopSchedule({variables: {scheduleOriginId: id}});
+      stopSchedule({variables: {scheduleOriginId: id, scheduleSelectorId: selectorId}});
     }
+  };
+
+  const lacksPermission = status === InstigationStatus.RUNNING && !canStopRunningSchedule;
+  const checkbox = () => {
+    const element = (
+      <Checkbox
+        format="switch"
+        checked={status === InstigationStatus.RUNNING}
+        disabled={status !== InstigationStatus.RUNNING || toggleOffInFlight || lacksPermission}
+        onChange={onChangeSwitch}
+      />
+    );
+
+    return lacksPermission ? <Tooltip content={DISABLED_MESSAGE}>{element}</Tooltip> : element;
   };
 
   return (
     <tr key={name}>
-      <td style={{width: 60}}>
-        <Checkbox
-          format="switch"
-          checked={status === InstigationStatus.RUNNING}
-          disabled={status !== InstigationStatus.RUNNING || toggleOffInFlight}
-          onChange={onChangeSwitch}
-        />
-      </td>
+      <td style={{width: 60}}>{checkbox()}</td>
       <td>
         <Group direction="row" spacing={8} alignItems="center">
           <div>{name}</div>
-          <ButtonLink
-            onClick={() => {
-              setShowRepositoryOrigin(!showRepositoryOrigin);
-            }}
-          >
-            show info
-          </ButtonLink>
         </Group>
-        {showRepositoryOrigin && <RepositoryOriginInformation origin={repositoryOrigin} />}
+        <InstigatorSelectorInformation instigatorState={scheduleState} />
       </td>
       <td style={{maxWidth: 150}}>
         <div

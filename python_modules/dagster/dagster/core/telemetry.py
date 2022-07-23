@@ -6,7 +6,7 @@ To see the logs we send, inspect $DAGSTER_HOME/logs/ if $DAGSTER_HOME is set or 
 See class TelemetryEntry for logged fields.
 
 For local development:
-  Spin up local telemetry server and set DAGSTER_TELEMETRY_URL = 'http://localhost:3000/actions'
+  Spin up local telemetry server and set the environment variable DAGSTER_TELEMETRY_URL = 'http://localhost:3000/actions'
   To test RotatingFileHandler, can set MAX_BYTES = 500
 """
 
@@ -25,16 +25,16 @@ from typing import Dict, NamedTuple, Optional
 import click
 import yaml
 
-from dagster import check
+import dagster._check as check
+from dagster._utils import merge_dicts
 from dagster.core.definitions.pipeline_base import IPipeline
-from dagster.core.definitions.reconstructable import (
+from dagster.core.definitions.reconstruct import (
     ReconstructablePipeline,
     ReconstructableRepository,
     get_ephemeral_repository_name,
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
-from dagster.utils import merge_dicts
 from dagster.version import __version__ as dagster_module_version
 
 TELEMETRY_STR = ".telemetry"
@@ -48,7 +48,6 @@ DAEMON_ALIVE = "daemon_alive"
 SCHEDULED_RUN_CREATED = "scheduled_run_created"
 SENSOR_RUN_CREATED = "sensor_run_created"
 BACKFILL_RUN_CREATED = "backfill_run_created"
-TELEMETRY_VERSION = "0.2"
 OS_DESC = platform.platform()
 OS_PLATFORM = platform.system()
 
@@ -92,11 +91,11 @@ def _telemetry_wrapper(f, metadata=None):
     var_names = f.__code__.co_varnames
     try:
         instance_index = var_names.index("instance")
-    except ValueError:
+    except ValueError as e:
         raise DagsterInvariantViolationError(
             "Attempted to log telemetry for function {name} that does not take a DagsterInstance "
             "in a parameter called 'instance'"
-        )
+        ) from e
 
     @wraps(f)
     def wrap(*args, **kwargs):
@@ -139,7 +138,6 @@ class TelemetryEntry(
             ("instance_id", str),
             ("metadata", Dict[str, str]),
             ("python_version", str),
-            ("version", str),
             ("dagster_version", str),
             ("os_desc", str),
             ("os_platform", str),
@@ -197,7 +195,6 @@ class TelemetryEntry(
             instance_id=instance_id,
             python_version=get_python_version(),
             metadata=metadata,
-            version=TELEMETRY_VERSION,
             dagster_version=dagster_module_version,
             os_desc=OS_DESC,
             os_platform=OS_PLATFORM,
@@ -214,7 +211,7 @@ def _dagster_home_if_set():
     return os.path.expanduser(dagster_home_path)
 
 
-def get_dir_from_dagster_home(target_dir):
+def get_or_create_dir_from_dagster_home(target_dir):
     """
     If $DAGSTER_HOME is set, return $DAGSTER_HOME/<target_dir>/
     Otherwise, return ~/.dagster/<target_dir>/
@@ -278,11 +275,24 @@ def _check_telemetry_instance_param(args, kwargs, instance_index):
 
 
 def _get_telemetry_logger():
+
+    # If a concurrently running process deleted the logging directory since the
+    # last action, we need to make sure to re-create the directory
+    # (the logger does not do this itself.)
+    dagster_home_path = get_or_create_dir_from_dagster_home("logs")
+
+    logging_file_path = os.path.join(dagster_home_path, "event.log")
     logger = logging.getLogger("dagster_telemetry_logger")
+
+    # If the file we were writing to has been overwritten, dump the existing logger and re-open the stream.
+    if not os.path.exists(logging_file_path) and len(logger.handlers) > 0:
+        handler = next(iter(logger.handlers))
+        handler.close()
+        logger.removeHandler(handler)
 
     if len(logger.handlers) == 0:
         handler = RotatingFileHandler(
-            os.path.join(get_dir_from_dagster_home("logs"), "event.log"),
+            logging_file_path,
             maxBytes=MAX_BYTES,
             backupCount=10,
         )
@@ -316,7 +326,7 @@ def _get_instance_telemetry_info(instance):
     dagster_telemetry_enabled = _get_instance_telemetry_enabled(instance)
     instance_id = None
     if dagster_telemetry_enabled:
-        instance_id = _get_or_set_instance_id()
+        instance_id = get_or_set_instance_id()
 
     run_storage_id = None
     if isinstance(instance.run_storage, SqlRunStorage):
@@ -328,7 +338,7 @@ def _get_instance_telemetry_enabled(instance):
     return instance.telemetry_enabled
 
 
-def _get_or_set_instance_id():
+def get_or_set_instance_id():
     instance_id = _get_telemetry_instance_id()
     if instance_id == None:
         instance_id = _set_telemetry_instance_id()
@@ -337,14 +347,16 @@ def _get_or_set_instance_id():
 
 # Gets the instance_id at $DAGSTER_HOME/.telemetry/id.yaml
 def _get_telemetry_instance_id():
-    telemetry_id_path = os.path.join(get_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")
+    telemetry_id_path = os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")
     if not os.path.exists(telemetry_id_path):
         return
 
-    with open(telemetry_id_path, "r") as telemetry_id_file:
+    with open(telemetry_id_path, "r", encoding="utf8") as telemetry_id_file:
         telemetry_id_yaml = yaml.safe_load(telemetry_id_file)
-        if INSTANCE_ID_STR in telemetry_id_yaml and isinstance(
-            telemetry_id_yaml[INSTANCE_ID_STR], str
+        if (
+            telemetry_id_yaml
+            and INSTANCE_ID_STR in telemetry_id_yaml
+            and isinstance(telemetry_id_yaml[INSTANCE_ID_STR], str)
         ):
             return telemetry_id_yaml[INSTANCE_ID_STR]
     return None
@@ -355,11 +367,11 @@ def _set_telemetry_instance_id():
     click.secho(TELEMETRY_TEXT)
     click.secho(SLACK_PROMPT)
 
-    telemetry_id_path = os.path.join(get_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")
+    telemetry_id_path = os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")
     instance_id = str(uuid.uuid4())
 
     try:  # In case we encounter an error while writing to user's file system
-        with open(telemetry_id_path, "w") as telemetry_id_file:
+        with open(telemetry_id_path, "w", encoding="utf8") as telemetry_id_file:
             yaml.dump({INSTANCE_ID_STR: instance_id}, telemetry_id_file, default_flow_style=False)
         return instance_id
     except Exception:
@@ -379,7 +391,7 @@ def log_external_repo_stats(instance, source, external_repo, external_pipeline=N
     check.opt_inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
 
     if _get_instance_telemetry_enabled(instance):
-        instance_id = _get_or_set_instance_id()
+        instance_id = get_or_set_instance_id()
 
         pipeline_name_hash = hash_name(external_pipeline.name) if external_pipeline else ""
         repo_hash = hash_name(external_repo.name)
@@ -412,7 +424,7 @@ def log_repo_stats(instance, source, pipeline=None, repo=None):
     check.opt_inst_param(repo, "repo", ReconstructableRepository)
 
     if _get_instance_telemetry_enabled(instance):
-        instance_id = _get_or_set_instance_id()
+        instance_id = get_or_set_instance_id()
 
         if isinstance(pipeline, ReconstructablePipeline):
             pipeline_name_hash = hash_name(pipeline.get_definition().name)

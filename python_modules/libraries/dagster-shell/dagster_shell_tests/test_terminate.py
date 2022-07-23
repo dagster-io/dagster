@@ -4,12 +4,13 @@ from contextlib import contextmanager
 import psutil
 from dagster_shell.utils import execute
 
-from dagster import pipeline, repository, solid
+from dagster import repository
+from dagster._legacy import pipeline, solid
+from dagster._utils import file_relative_path
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test, poll_for_finished_run, poll_for_step_start
 from dagster.core.workspace import WorkspaceProcessContext
 from dagster.core.workspace.load_target import PythonFileTarget
-from dagster.utils import file_relative_path
 
 
 @solid
@@ -91,7 +92,6 @@ def test_terminate_kills_subproc():
             time.sleep(0.5)
 
             launcher = instance.run_launcher
-            assert launcher.can_terminate(run_id)
             assert launcher.terminate(run_id)
 
             terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)

@@ -5,7 +5,7 @@ DEFAULT_DBT_TARGET_PATH = "target"
 
 # The set of dbt cli commands that result in the creation of a run_results.json output file
 # https://docs.getdbt.com/reference/artifacts/run-results-json
-DBT_RUN_RESULTS_COMMANDS = ["run", "test", "seed", "snapshot", "docs generate"]
+DBT_RUN_RESULTS_COMMANDS = ["run", "test", "seed", "snapshot", "docs generate", "build"]
 
 # The following config fields correspond to flags that apply to all dbt CLI commands. For details
 # on dbt CLI flags, see
@@ -91,5 +91,21 @@ CLI_COMMON_OPTIONS_CONFIG_SCHEMA = {
             "The directory path for target if different from the default `target-path` in "
             "your dbt project configuration file."
         ),
+    ),
+    "docs_url": Field(
+        config=StringSource,
+        is_required=False,
+        description="The url for where dbt docs are being served for this project.",
+    ),
+    "json_log_format": Field(
+        config=bool,
+        description="When True, dbt will invoked with the `--log-format json` flag, allowing "
+        "Dagster to parse the log messages and emit simpler log messages to the event log.",
+        default_value=True,
+    ),
+    "capture_logs": Field(
+        config=bool,
+        description="When True, logs emitted from dbt will be logged to the Dagster event log.",
+        default_value=True,
     ),
 }

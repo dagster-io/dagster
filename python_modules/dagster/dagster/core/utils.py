@@ -1,14 +1,15 @@
+import os
 import random
 import string
 import uuid
 import warnings
 from collections import OrderedDict
-from typing import Union
+from typing import Tuple, Union, cast
 
 import toposort as toposort_
 
-from dagster import check
-from dagster.utils import frozendict
+import dagster._check as check
+from dagster._utils import frozendict
 from dagster.version import __version__
 
 BACKFILL_TAG_LENGTH = 8
@@ -49,6 +50,8 @@ def coerce_valid_log_level(log_level: Union[str, int]) -> int:
 
 
 def toposort(data):
+    # Workaround a bug in older versions of toposort that choke on frozenset
+    data = {k: set(v) if isinstance(v, frozenset) else v for k, v in data.items()}
     return [sorted(list(level)) for level in toposort_.toposort(data)]
 
 
@@ -78,3 +81,14 @@ def check_dagster_package_version(library_name, library_version):
             __version__, library_name, library_version
         )
         warnings.warn(message)
+
+
+def parse_env_var(env_var_str: str) -> Tuple[str, str]:
+    if "=" in env_var_str:
+        split = env_var_str.split("=", maxsplit=1)
+        return (split[0], split[1])
+    else:
+        env_var_value = os.getenv(env_var_str)
+        if env_var_value == None:
+            raise Exception(f"Tried to load environment variable {env_var_str}, but it was not set")
+        return (env_var_str, cast(str, env_var_value))

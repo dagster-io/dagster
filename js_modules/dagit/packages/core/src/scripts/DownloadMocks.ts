@@ -5,19 +5,20 @@ import path from 'path';
 import {addTypenameToDocument} from '@apollo/client/utilities';
 import {print} from 'graphql/language/printer';
 
-/*
-Why is this script structured as a Jest test? Jest goes to great lengths to
-setup a NodeJS execution environment that also mimics a browser, so we can read/
-write to the filesystem but ALSO load all of the application code (and retrieve
-the query objects), etc. We could set all this up (new tsconfig, jsdom, etc.) but
-leveraging Jest is easiest.
-*/
+/**
+ * Why is this script structured as a Jest test? Jest goes to great lengths to
+ * setup a NodeJS execution environment that also mimics a browser, so we can read/
+ * write to the filesystem but ALSO load all of the application code (and retrieve
+ * the query objects), etc. We could set all this up (new tsconfig, jsdom, etc.) but
+ * leveraging Jest is easiest.
+ */
 
 // collect mocks from various tests in the codebase
 import {MOCKS as SVGMocks} from '../testing/SVGMocks';
 
 const dagsterRoot = path.resolve(path.join(__dirname, '..', '..', '..', '..'));
 
+// eslint-disable-next-line jest/expect-expect
 it(`builds mocks`, () => {
   for (const mock of SVGMocks) {
     const query = print(addTypenameToDocument(mock.query))

@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Extra  # pylint: disable=no-name-in-module
+from pydantic import BaseModel, Extra
 
 from ...utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
 

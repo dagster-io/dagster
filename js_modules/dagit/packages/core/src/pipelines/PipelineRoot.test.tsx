@@ -15,7 +15,7 @@ jest.mock('./GraphExplorer', () => ({
 }));
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
-jest.mock('../graph/getFullOpLayout', () => ({}));
+jest.mock('../graph/asyncGraphLayout', () => ({}));
 
 const REPO_NAME = 'foo';
 const REPO_LOCATION = 'bar';
@@ -27,6 +27,9 @@ describe('PipelineRoot', () => {
       id: () => PIPELINE_NAME,
       modes: () => [...new Array(1)],
       isAssetJob: () => false,
+    }),
+    SolidDefinition: () => ({
+      assetNodes: () => [],
     }),
     PipelineSnapshot: () => ({
       runs: () => [],
@@ -43,6 +46,7 @@ describe('PipelineRoot', () => {
       id: REPO_NAME,
       name: REPO_NAME,
       pipelines: () => [...new Array(1)],
+      assetGroups: () => [...new Array(0)],
     }),
   };
 

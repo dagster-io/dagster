@@ -25,23 +25,10 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_parti
   name: string;
 }
 
-export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata {
-  __typename: "RepositoryMetadata";
-  key: string;
-  value: string;
-}
-
-export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_repositoryOrigin {
-  __typename: "RepositoryOrigin";
-  id: string;
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
-}
-
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_typeSpecificData_ScheduleData {
@@ -56,9 +43,12 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_sched
   id: string;
   runId: string;
   status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
-export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_ticks_error_cause {
+export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -68,7 +58,7 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_sched
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_ticks_error_cause | null;
+  causes: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_ticks_error_causes[];
 }
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_ticks {
@@ -79,16 +69,19 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_sched
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_ticks_error | null;
 }
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;
-  repositoryOrigin: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_repositoryOrigin;
+  repositoryName: string;
+  repositoryLocationName: string;
   typeSpecificData: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_typeSpecificData | null;
   runs: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_runs[];
   ticks: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_ticks[];
@@ -135,7 +128,7 @@ export interface SchedulesRootQuery_repositoryOrError_Repository {
   displayMetadata: SchedulesRootQuery_repositoryOrError_Repository_displayMetadata[];
 }
 
-export interface SchedulesRootQuery_repositoryOrError_PythonError_cause {
+export interface SchedulesRootQuery_repositoryOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -145,28 +138,15 @@ export interface SchedulesRootQuery_repositoryOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: SchedulesRootQuery_repositoryOrError_PythonError_cause | null;
+  causes: SchedulesRootQuery_repositoryOrError_PythonError_causes[];
 }
 
 export type SchedulesRootQuery_repositoryOrError = SchedulesRootQuery_repositoryOrError_RepositoryNotFoundError | SchedulesRootQuery_repositoryOrError_Repository | SchedulesRootQuery_repositoryOrError_PythonError;
 
-export interface SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_repositoryOrigin_repositoryLocationMetadata {
-  __typename: "RepositoryMetadata";
-  key: string;
-  value: string;
-}
-
-export interface SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_repositoryOrigin {
-  __typename: "RepositoryOrigin";
-  id: string;
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_repositoryOrigin_repositoryLocationMetadata[];
-}
-
 export interface SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_ScheduleData {
@@ -181,9 +161,12 @@ export interface SchedulesRootQuery_unloadableInstigationStatesOrError_Instigati
   id: string;
   runId: string;
   status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
-export interface SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_cause {
+export interface SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -193,7 +176,7 @@ export interface SchedulesRootQuery_unloadableInstigationStatesOrError_Instigati
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_cause | null;
+  causes: SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_causes[];
 }
 
 export interface SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks {
@@ -204,16 +187,19 @@ export interface SchedulesRootQuery_unloadableInstigationStatesOrError_Instigati
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error | null;
 }
 
 export interface SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;
-  repositoryOrigin: SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_repositoryOrigin;
+  repositoryName: string;
+  repositoryLocationName: string;
   typeSpecificData: SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData | null;
   runs: SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_runs[];
   ticks: SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks[];
@@ -225,7 +211,7 @@ export interface SchedulesRootQuery_unloadableInstigationStatesOrError_Instigati
   results: SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results[];
 }
 
-export interface SchedulesRootQuery_unloadableInstigationStatesOrError_PythonError_cause {
+export interface SchedulesRootQuery_unloadableInstigationStatesOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -235,12 +221,12 @@ export interface SchedulesRootQuery_unloadableInstigationStatesOrError_PythonErr
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: SchedulesRootQuery_unloadableInstigationStatesOrError_PythonError_cause | null;
+  causes: SchedulesRootQuery_unloadableInstigationStatesOrError_PythonError_causes[];
 }
 
 export type SchedulesRootQuery_unloadableInstigationStatesOrError = SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates | SchedulesRootQuery_unloadableInstigationStatesOrError_PythonError;
 
-export interface SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause {
+export interface SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -250,7 +236,7 @@ export interface SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_last
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause | null;
+  causes: SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes[];
 }
 
 export interface SchedulesRootQuery_instance_daemonHealth_allDaemonStatuses {

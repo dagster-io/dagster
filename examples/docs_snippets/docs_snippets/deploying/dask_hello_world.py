@@ -1,7 +1,8 @@
 # start_local_job_marker
 
-from dagster import job, op
 from dagster_dask import dask_executor
+
+from dagster import job, op
 
 
 @op

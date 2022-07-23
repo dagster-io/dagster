@@ -2,14 +2,10 @@
   "compilerOptions": {
     "paths": {
       "@dagster-io/dagit-core/*": ["../core/src/*"],
-      "@dagster-io/ui": ["../ui"]
+      "@dagster-io/ui": ["../ui/src"]
     },
-    "target": "es5",
-    "lib": [
-      "es6",
-      "dom",
-      "esnext.asynciterable"
-    ],
+    "module": "es2022",
+    "target": "es2022",
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -22,7 +18,6 @@
     "noImplicitAny": true,
     "strictNullChecks": true,
     "suppressImplicitAnyIndexErrors": true,
-    "module": "esnext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,

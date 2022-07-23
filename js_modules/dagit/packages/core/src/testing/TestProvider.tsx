@@ -5,6 +5,7 @@ import {MemoryRouter, MemoryRouterProps} from 'react-router-dom';
 import {AppContext, AppContextValue} from '../app/AppContext';
 import {PermissionsContext, PermissionsFromJSON} from '../app/Permissions';
 import {WebSocketContext, WebSocketContextType} from '../app/WebSocketProvider';
+import {AnalyticsContext} from '../app/analytics';
 import {PermissionFragment} from '../app/types/PermissionFragment';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
@@ -17,8 +18,7 @@ export const PERMISSIONS_ALLOW_ALL: PermissionsFromJSON = {
   launch_pipeline_reexecution: true,
   start_schedule: true,
   stop_running_schedule: true,
-  start_sensor: true,
-  stop_sensor: true,
+  edit_sensor: true,
   terminate_pipeline_execution: true,
   delete_pipeline_run: true,
   reload_repository_location: true,
@@ -31,12 +31,14 @@ export const PERMISSIONS_ALLOW_ALL: PermissionsFromJSON = {
 const testValue: AppContextValue = {
   basePath: '',
   rootServerURI: '',
+  staticPathRoot: '/',
   telemetryEnabled: false,
 };
 
 const websocketValue: WebSocketContextType = {
   availability: 'available',
   status: WebSocket.OPEN,
+  disabled: false,
 };
 
 interface Props {
@@ -52,19 +54,29 @@ export const TestProvider: React.FC<Props> = (props) => {
     return Object.keys(PERMISSIONS_ALLOW_ALL).map((permission) => {
       const override = permissionOverrides ? permissionOverrides[permission] : null;
       const value = typeof override === 'boolean' ? override : true;
-      return {__typename: 'GraphenePermission', permission, value};
+      return {__typename: 'Permission', permission, value};
     });
   }, [permissionOverrides]);
+
+  const analytics = React.useMemo(
+    () => ({
+      page: () => {},
+      track: () => {},
+    }),
+    [],
+  );
 
   return (
     <AppContext.Provider value={{...testValue, ...appContextProps}}>
       <WebSocketContext.Provider value={websocketValue}>
         <PermissionsContext.Provider value={permissions}>
-          <MemoryRouter {...routerProps}>
-            <ApolloTestProvider {...apolloProps} typeDefs={typeDefs}>
-              <WorkspaceProvider>{props.children}</WorkspaceProvider>
-            </ApolloTestProvider>
-          </MemoryRouter>
+          <AnalyticsContext.Provider value={analytics}>
+            <MemoryRouter {...routerProps}>
+              <ApolloTestProvider {...apolloProps} typeDefs={typeDefs}>
+                <WorkspaceProvider>{props.children}</WorkspaceProvider>
+              </ApolloTestProvider>
+            </MemoryRouter>
+          </AnalyticsContext.Provider>
         </PermissionsContext.Provider>
       </WebSocketContext.Provider>
     </AppContext.Provider>

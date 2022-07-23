@@ -5,7 +5,9 @@ import deepmerge from 'deepmerge';
 import * as React from 'react';
 import {createGlobalStyle} from 'styled-components/macro';
 
-import {ColorsWIP} from './Colors';
+import searchSVG from '../icon-svgs/search.svg';
+
+import {Colors} from './Colors';
 import {FontFamily} from './styles';
 
 export const GlobalPopoverStyle = createGlobalStyle`
@@ -22,8 +24,8 @@ export const GlobalPopoverStyle = createGlobalStyle`
       .bp3-icon.bp3-icon-search {
         width: 16px;
         height: 16px;
-        background: ${ColorsWIP.Gray900};
-        mask-image: url(${require('../icon-svgs/search.svg').default});
+        background: ${Colors.Gray900};
+        mask-image: url(${searchSVG});
         mask-size: cover;
         &::before { 
           content: '';
@@ -36,12 +38,10 @@ export const GlobalPopoverStyle = createGlobalStyle`
       .bp3-input {
         border: none;
         border-radius: 8px;
-        box-shadow: ${ColorsWIP.Gray300} inset 0px 0px 0px 1px, ${
-  ColorsWIP.KeylineGray
-} inset 2px 2px 1.5px;
+        box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px;
         font-family: ${FontFamily.default};
         ::placeholder {
-          color: ${ColorsWIP.Gray500};
+          color: ${Colors.Gray500};
         }
       }
     }
@@ -59,7 +59,7 @@ export const GlobalPopoverStyle = createGlobalStyle`
 
   .dagit-popover .bp3-popover2.bp3-dark .bp3-popover2-content,
   .bp3-dark .dagit-popover .bp3-popover2 .bp3-popover2-content {
-    background-color: ${ColorsWIP.Gray900};
+    background-color: ${Colors.Gray900};
   }
 `;
 

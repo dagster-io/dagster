@@ -1,8 +1,8 @@
-from dagster import check
+import dagster._check as check
+from dagster._serdes import ConfigurableClass
+from dagster._utils.hosted_user_process import recon_pipeline_from_origin
 from dagster.core.execution.api import execute_run
 from dagster.core.launcher import LaunchRunContext, RunLauncher
-from dagster.serdes import ConfigurableClass
-from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 
 
 class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
@@ -31,11 +31,8 @@ class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
         return SyncInMemoryRunLauncher(inst_data=inst_data)
 
     def launch_run(self, context: LaunchRunContext) -> None:
-        recon_pipeline = recon_pipeline_from_origin(context.pipeline_code_origin)
+        recon_pipeline = recon_pipeline_from_origin(context.pipeline_code_origin)  # type: ignore
         execute_run(recon_pipeline, context.pipeline_run, self._instance)
-
-    def can_terminate(self, run_id):
-        return False
 
     def terminate(self, run_id):
         check.not_implemented("Termination not supported.")

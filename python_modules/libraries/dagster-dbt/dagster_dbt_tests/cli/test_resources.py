@@ -2,7 +2,8 @@ import json
 
 from dagster_dbt import dbt_cli_resource
 
-from dagster import build_solid_context, solid
+from dagster import build_solid_context
+from dagster._legacy import solid
 
 
 def get_dbt_resource(project_dir, profiles_dir, **kwargs):
@@ -52,7 +53,7 @@ def test_ls(conn_string, test_project_dir, dbt_config_dir):  # pylint: disable=u
 
     context = get_dbt_solid_context(test_project_dir, dbt_config_dir)
     dbt_result = my_dbt_solid(context)
-    assert len(dbt_result.raw_output.split("\n\n")) == 22
+    assert len(dbt_result.raw_output.split("\n\n")) == 25
 
 
 def test_ls_resource_type(
@@ -77,7 +78,7 @@ def test_test(
 
     context = get_dbt_solid_context(test_project_dir, dbt_config_dir)
     dbt_result = my_dbt_solid(context)
-    assert len(dbt_result.result["results"]) == 15
+    assert len(dbt_result.result["results"]) == 17
 
 
 def test_basic_run(
@@ -114,6 +115,19 @@ def test_models_default_run(
     context = get_dbt_solid_context(test_project_dir, dbt_config_dir, models=["least_caloric"])
     dbt_result = my_dbt_solid(context)
     assert len(dbt_result.result["results"]) == 1
+
+
+def test_docs_url_run(
+    dbt_seed, conn_string, test_project_dir, dbt_config_dir
+):  # pylint: disable=unused-argument
+    @solid(required_resource_keys={"dbt"})
+    def my_dbt_solid(context):
+        return context.resources.dbt.run()
+
+    context = get_dbt_solid_context(test_project_dir, dbt_config_dir, docs_url="foo.com")
+    dbt_result = my_dbt_solid(context)
+    assert len(dbt_result.result["results"]) == 4
+    assert dbt_result.docs_url == "foo.com"
 
 
 def test_models_override_run(

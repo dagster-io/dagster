@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# pylint: disable=print-call
 
 import os
 import sys

@@ -1,7 +1,8 @@
 import tempfile
 from contextlib import contextmanager
 
-from dagster import check, job, op
+import dagster._check as check
+from dagster import job, op
 from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster.core.launcher import DefaultRunLauncher
 from dagster.core.run_coordinator import DefaultRunCoordinator
@@ -72,6 +73,24 @@ def broken_compute_log_manager_instance(fail_on_setup=False, fail_on_teardown=Fa
             )
 
 
+def _has_setup_exception(execute_result):
+    return any(
+        [
+            "Exception while setting up compute log capture" in str(event)
+            for event in execute_result.all_events
+        ]
+    )
+
+
+def _has_teardown_exception(execute_result):
+    return any(
+        [
+            "Exception while cleaning up compute log capture" in str(event)
+            for event in execute_result.all_events
+        ]
+    )
+
+
 def test_broken_compute_log_manager():
     @op
     def yay(context):
@@ -94,13 +113,31 @@ def test_broken_compute_log_manager():
         boo()
 
     with broken_compute_log_manager_instance(fail_on_setup=True) as instance:
-        assert yay_job.execute_in_process(instance=instance).success
-        assert not boo_job.execute_in_process(instance=instance, raise_on_error=False).success
+        yay_result = yay_job.execute_in_process(instance=instance)
+        assert yay_result.success
+        assert _has_setup_exception(yay_result)
+
+        boo_result = boo_job.execute_in_process(instance=instance, raise_on_error=False)
+        assert not boo_result.success
+        assert _has_setup_exception(boo_result)
 
     with broken_compute_log_manager_instance(fail_on_teardown=True) as instance:
-        assert yay_job.execute_in_process(instance=instance).success
-        assert not boo_job.execute_in_process(instance=instance, raise_on_error=False).success
+        yay_result = yay_job.execute_in_process(instance=instance)
+        assert yay_result.success
+        assert _has_teardown_exception(yay_result)
+
+        boo_result = boo_job.execute_in_process(instance=instance, raise_on_error=False)
+
+        assert not boo_result.success
+        assert _has_teardown_exception(boo_result)
 
     with broken_compute_log_manager_instance() as instance:
-        assert yay_job.execute_in_process(instance=instance).success
-        assert not boo_job.execute_in_process(instance=instance, raise_on_error=False).success
+        yay_result = yay_job.execute_in_process(instance=instance)
+        assert yay_result.success
+        assert not _has_setup_exception(yay_result)
+        assert not _has_teardown_exception(yay_result)
+
+        boo_result = boo_job.execute_in_process(instance=instance, raise_on_error=False)
+        assert not boo_result.success
+        assert not _has_setup_exception(boo_result)
+        assert not _has_teardown_exception(boo_result)

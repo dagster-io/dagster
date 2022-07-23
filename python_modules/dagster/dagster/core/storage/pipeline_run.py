@@ -1,14 +1,22 @@
 import warnings
-from collections import namedtuple
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, NamedTuple, Optional, Type
+from inspect import Parameter
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    FrozenSet,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Type,
+    Union,
+)
 
-from dagster import check
-from dagster.core.origin import PipelinePythonOrigin
-from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
-from dagster.core.utils import make_new_run_id
-from dagster.serdes.serdes import (
+import dagster._check as check
+from dagster._serdes.serdes import (
     DefaultNamedTupleSerializer,
     EnumSerializer,
     WhitelistMap,
@@ -18,15 +26,23 @@ from dagster.serdes.serdes import (
     unpack_inner_value,
     whitelist_for_serdes,
 )
+from dagster.core.definitions.events import AssetKey
+from dagster.core.origin import PipelinePythonOrigin
+from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
+from dagster.core.utils import make_new_run_id
 
 from .tags import (
     BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
+    REPOSITORY_LABEL_TAG,
     RESUME_RETRY_TAG,
     SCHEDULE_NAME_TAG,
     SENSOR_NAME_TAG,
 )
+
+if TYPE_CHECKING:
+    from dagster.core.host_representation.origin import ExternalPipelineOrigin
 
 
 class DagsterRunStatusSerializer(EnumSerializer):
@@ -46,16 +62,33 @@ class DagsterRunStatusSerializer(EnumSerializer):
 
 @whitelist_for_serdes(serializer=DagsterRunStatusSerializer)
 class DagsterRunStatus(Enum):
-    """The status of pipeline execution."""
+    """The status of run execution."""
 
+    # Runs waiting to be launched by the Dagster Daemon.
     QUEUED = "QUEUED"
+
+    # Runs that have been launched, but execution has not yet started."""
     NOT_STARTED = "NOT_STARTED"
+
+    # Runs that are managed outside of the Dagster control plane.
     MANAGED = "MANAGED"
+
+    # Runs that have been launched, but execution has not yet started.
     STARTING = "STARTING"
+
+    # Runs that have been launched and execution has started.
     STARTED = "STARTED"
+
+    # Runs that have successfully completed.
     SUCCESS = "SUCCESS"
+
+    # Runs that have failed to complete.
     FAILURE = "FAILURE"
+
+    # Runs that are in-progress and pending to be canceled.
     CANCELING = "CANCELING"
+
+    # Runs that have been canceled before completion.
     CANCELED = "CANCELED"
 
 
@@ -80,28 +113,41 @@ NON_IN_PROGRESS_RUN_STATUSES = [
     PipelineRunStatus.CANCELED,
 ]
 
+FINISHED_STATUSES = [
+    PipelineRunStatus.SUCCESS,
+    PipelineRunStatus.FAILURE,
+    PipelineRunStatus.CANCELED,
+]
+
 
 @whitelist_for_serdes
 class PipelineRunStatsSnapshot(
-    namedtuple(
+    NamedTuple(
         "_PipelineRunStatsSnapshot",
-        (
-            "run_id steps_succeeded steps_failed materializations "
-            "expectations enqueued_time launch_time start_time end_time"
-        ),
+        [
+            ("run_id", str),
+            ("steps_succeeded", int),
+            ("steps_failed", int),
+            ("materializations", int),
+            ("expectations", int),
+            ("enqueued_time", Optional[float]),
+            ("launch_time", Optional[float]),
+            ("start_time", Optional[float]),
+            ("end_time", Optional[float]),
+        ],
     )
 ):
     def __new__(
         cls,
-        run_id,
-        steps_succeeded,
-        steps_failed,
-        materializations,
-        expectations,
-        enqueued_time,
-        launch_time,
-        start_time,
-        end_time,
+        run_id: str,
+        steps_succeeded: int,
+        steps_failed: int,
+        materializations: int,
+        expectations: int,
+        enqueued_time: Optional[float],
+        launch_time: Optional[float],
+        start_time: Optional[float],
+        end_time: Optional[float],
     ):
         return super(PipelineRunStatsSnapshot, cls).__new__(
             cls,
@@ -157,6 +203,7 @@ def pipeline_run_from_storage(
     run_id=None,
     run_config=None,
     mode=None,
+    asset_selection=None,
     solid_selection=None,
     solids_to_execute=None,
     step_keys_to_execute=None,
@@ -186,6 +233,7 @@ def pipeline_run_from_storage(
     # * added solid_subset
     # * renamed solid_subset -> solid_selection, added solids_to_execute
     # * renamed environment_dict -> run_config
+    # * added asset_selection
 
     # back compat for environment dict => run_config
     if environment_dict:
@@ -244,6 +292,7 @@ def pipeline_run_from_storage(
         run_id=run_id,
         run_config=run_config,
         mode=mode,
+        asset_selection=asset_selection,
         solid_selection=solid_selection,
         solids_to_execute=solids_to_execute,
         step_keys_to_execute=step_keys_to_execute,
@@ -259,14 +308,26 @@ def pipeline_run_from_storage(
 
 
 class PipelineRun(
-    namedtuple(
+    NamedTuple(
         "_PipelineRun",
-        (
-            "pipeline_name run_id run_config mode solid_selection solids_to_execute "
-            "step_keys_to_execute status tags root_run_id parent_run_id "
-            "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin "
-            "pipeline_code_origin"
-        ),
+        [
+            ("pipeline_name", str),
+            ("run_id", str),
+            ("run_config", Mapping[str, object]),
+            ("mode", Optional[str]),
+            ("asset_selection", Optional[FrozenSet[AssetKey]]),
+            ("solid_selection", Optional[List[str]]),
+            ("solids_to_execute", Optional[FrozenSet[str]]),
+            ("step_keys_to_execute", Optional[List[str]]),
+            ("status", PipelineRunStatus),
+            ("tags", Dict[str, str]),
+            ("root_run_id", Optional[str]),
+            ("parent_run_id", Optional[str]),
+            ("pipeline_snapshot_id", Optional[str]),
+            ("execution_plan_snapshot_id", Optional[str]),
+            ("external_pipeline_origin", Optional["ExternalPipelineOrigin"]),
+            ("pipeline_code_origin", Optional[PipelinePythonOrigin]),
+        ],
     )
 ):
     """Serializable internal representation of a pipeline run, as stored in a
@@ -275,25 +336,22 @@ class PipelineRun(
 
     def __new__(
         cls,
-        pipeline_name=None,
-        run_id=None,
-        run_config=None,
-        mode=None,
-        solid_selection=None,
-        solids_to_execute=None,
-        step_keys_to_execute=None,
-        status=None,
-        tags=None,
-        root_run_id=None,
-        parent_run_id=None,
-        pipeline_snapshot_id=None,
-        execution_plan_snapshot_id=None,
-        # An ExternalPipelineOrigin that can be used to recreate the RepositoryLocation and
-        # ExternalPipeline that was used to submit this run
-        external_pipeline_origin=None,
-        # A PipelinePythonOrigin with information about where to find the pipeline definition in
-        # code. Most run launchers will pass this origin as an argument to the run worker process.
-        pipeline_code_origin=None,
+        pipeline_name: str,
+        run_id: Optional[str] = None,
+        run_config: Optional[Mapping[str, object]] = None,
+        mode: Optional[str] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
+        solid_selection: Optional[List[str]] = None,
+        solids_to_execute: Optional[FrozenSet[str]] = None,
+        step_keys_to_execute: Optional[List[str]] = None,
+        status: Optional[PipelineRunStatus] = None,
+        tags: Optional[Dict[str, str]] = None,
+        root_run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        pipeline_snapshot_id: Optional[str] = None,
+        execution_plan_snapshot_id: Optional[str] = None,
+        external_pipeline_origin: Optional["ExternalPipelineOrigin"] = None,
+        pipeline_code_origin: Optional[PipelinePythonOrigin] = None,
     ):
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
@@ -304,11 +362,19 @@ class PipelineRun(
             ),
         )
         # a frozenset which contains the names of the solids to execute
-        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
+        solids_to_execute = check.opt_nullable_set_param(
+            solids_to_execute, "solids_to_execute", of_type=str
+        )
         # a list of solid queries provided by the user
         # possible to be None when only solids_to_execute is set by the user directly
-        check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+        solid_selection = check.opt_nullable_list_param(
+            solid_selection, "solid_selection", of_type=str
+        )
         check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+
+        asset_selection = check.opt_nullable_set_param(
+            asset_selection, "asset_selection", of_type=AssetKey
+        )
 
         # Placing this with the other imports causes a cyclic import
         # https://github.com/dagster-io/dagster/issues/3181
@@ -327,11 +393,12 @@ class PipelineRun(
 
         return super(PipelineRun, cls).__new__(
             cls,
-            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
+            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             run_id=check.str_param(run_id, "run_id"),
-            run_config=check.opt_dict_param(run_config, "run_config", key_type=str),
+            run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
             mode=check.opt_str_param(mode, "mode"),
             solid_selection=solid_selection,
+            asset_selection=asset_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=check.opt_inst_param(
@@ -378,13 +445,23 @@ class PipelineRun(
     def get_parent_run_id(self):
         return self.tags.get(PARENT_RUN_ID_TAG)
 
+    def tags_for_storage(self):
+        repository_tags = {}
+        if self.external_pipeline_origin:
+            # tag the run with a label containing the repository name / location name, to allow for
+            # per-repository filtering of runs from dagit.
+            repository_tags[
+                REPOSITORY_LABEL_TAG
+            ] = self.external_pipeline_origin.external_repository_origin.get_label()
+
+        if not self.tags:
+            return repository_tags
+
+        return {**repository_tags, **self.tags}
+
     @property
     def is_finished(self):
-        return (
-            self.status == PipelineRunStatus.SUCCESS
-            or self.status == PipelineRunStatus.FAILURE
-            or self.status == PipelineRunStatus.CANCELED
-        )
+        return self.status in FINISHED_STATUSES
 
     @property
     def is_success(self):
@@ -392,6 +469,10 @@ class PipelineRun(
 
     @property
     def is_failure(self):
+        return self.status == PipelineRunStatus.FAILURE
+
+    @property
+    def is_failure_or_canceled(self):
         return self.status == PipelineRunStatus.FAILURE or self.status == PipelineRunStatus.CANCELED
 
     @property
@@ -402,6 +483,10 @@ class PipelineRun(
     def previous_run_id(self):
         # Compat
         return self.parent_run_id
+
+    @property
+    def job_name(self) -> str:
+        return self.pipeline_name
 
     @staticmethod
     def tags_for_schedule(schedule):
@@ -451,6 +536,23 @@ class RunsFilterSerializer(DefaultNamedTupleSerializer):
         # job_name as pipeline_name
         return replace_storage_keys(storage, {"job_name": "pipeline_name"})
 
+    @classmethod
+    def value_from_storage_dict(
+        cls,
+        storage_dict: Dict[str, Any],
+        klass: Type,
+        args_for_class: Mapping[str, Parameter],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> NamedTuple:
+        # We store empty run ids as [] but only accept None
+        if "run_ids" in storage_dict and storage_dict["run_ids"] == []:
+            storage_dict["run_ids"] = None
+
+        return super().value_from_storage_dict(
+            storage_dict, klass, args_for_class, whitelist_map, descent_path
+        )
+
 
 @whitelist_for_serdes(serializer=RunsFilterSerializer)
 class RunsFilter(
@@ -460,7 +562,7 @@ class RunsFilter(
             ("run_ids", List[str]),
             ("job_name", Optional[str]),
             ("statuses", List[PipelineRunStatus]),
-            ("tags", Dict[str, str]),
+            ("tags", Dict[str, Union[str, List[str]]]),
             ("snapshot_id", Optional[str]),
             ("updated_after", Optional[datetime]),
             ("mode", Optional[str]),
@@ -470,10 +572,10 @@ class RunsFilter(
 ):
     def __new__(
         cls,
-        run_ids: List[str] = None,
+        run_ids: Optional[List[str]] = None,
         job_name: Optional[str] = None,
-        statuses: List[PipelineRunStatus] = None,
-        tags: Dict[str, str] = None,
+        statuses: Optional[List[PipelineRunStatus]] = None,
+        tags: Optional[Dict[str, Union[str, List[str]]]] = None,
         snapshot_id: Optional[str] = None,
         updated_after: Optional[datetime] = None,
         mode: Optional[str] = None,
@@ -481,12 +583,15 @@ class RunsFilter(
         pipeline_name: Optional[str] = None,  # for backcompat purposes
     ):
         job_name = job_name or pipeline_name
+
+        check.invariant(run_ids != [], "When filtering on run ids, a non-empty list must be used.")
+
         return super(RunsFilter, cls).__new__(
             cls,
             run_ids=check.opt_list_param(run_ids, "run_ids", of_type=str),
             job_name=check.opt_str_param(job_name, "job_name"),
             statuses=check.opt_list_param(statuses, "statuses", of_type=PipelineRunStatus),
-            tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
+            tags=check.opt_dict_param(tags, "tags", key_type=str),
             snapshot_id=check.opt_str_param(snapshot_id, "snapshot_id"),
             updated_after=check.opt_inst_param(updated_after, "updated_after", datetime),
             mode=check.opt_str_param(mode, "mode"),
@@ -565,6 +670,37 @@ class RunRecord(
             # start_time and end_time fields will be populated once the run has started and ended, respectively, but will be None beforehand.
             start_time=check.opt_float_param(start_time, "start_time"),
             end_time=check.opt_float_param(end_time, "end_time"),
+        )
+
+
+@whitelist_for_serdes
+class RunPartitionData(
+    NamedTuple(
+        "_RunPartitionData",
+        [
+            ("run_id", str),
+            ("partition", str),
+            ("status", DagsterRunStatus),
+            ("start_time", Optional[float]),
+            ("end_time", Optional[float]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        run_id: str,
+        partition: str,
+        status: DagsterRunStatus,
+        start_time: Optional[float],
+        end_time: Optional[float],
+    ):
+        return super(RunPartitionData, cls).__new__(
+            cls,
+            run_id=check.str_param(run_id, "run_id"),
+            partition=check.str_param(partition, "partition"),
+            status=check.inst_param(status, "status", DagsterRunStatus),
+            start_time=check.opt_inst(start_time, float),
+            end_time=check.opt_inst(end_time, float),
         )
 
 

@@ -10,7 +10,7 @@ from dagster_shell import (
     shell_solid,
 )
 
-from dagster import Failure, OutputDefinition, composite_solid, execute_solid
+from dagster import Failure, OutputDefinition, composite_solid, execute_solid, job, op
 
 
 @pytest.mark.parametrize("factory", [create_shell_command_solid, create_shell_command_op])
@@ -24,15 +24,50 @@ def test_shell_command(factory):
     assert result.output_values == {"result": "this is a test message: foobar\n"}
 
 
+@pytest.mark.parametrize("factory", [create_shell_command_solid, create_shell_command_op])
+def test_shell_command_inherits_environment(monkeypatch, factory):
+    # OUTSIDE_ENV_VAR represents an environment variable that should be available
+    # to jobs. eg. 12-factor app secrets, defined in your Docker container, etc.
+    monkeypatch.setenv("OUTSIDE_ENV_VAR", "foo")
+
+    solid = factory('echo "$OUTSIDE_ENV_VAR:$MY_ENV_VAR"', name="foobar")
+
+    # inherit outside environment variables if none specified for op
+    result = execute_solid(solid)
+    assert result.output_values == {"result": "foo:\n"}
+
+    # also inherit outside environment variables if env vars specified for op
+    result = execute_solid(
+        solid,
+        run_config={"solids": {"foobar": {"config": {"env": {"MY_ENV_VAR": "bar"}}}}},
+    )
+    assert result.output_values == {"result": "foo:bar\n"}
+
+
 @pytest.mark.parametrize("shell_defn,name", [(shell_op, "shell_op"), (shell_solid, "shell_solid")])
 def test_shell(shell_defn, name):
-
     result = execute_solid(
         shell_defn,
         input_values={"shell_command": 'echo "this is a test message: $MY_ENV_VAR"'},
         run_config={"solids": {name: {"config": {"env": {"MY_ENV_VAR": "foobar"}}}}},
     )
     assert result.output_values == {"result": "this is a test message: foobar\n"}
+
+
+def test_shell_op_inside_job():
+    # NOTE: this would be best as a docs example
+    @op
+    def get_shell_cmd_op():
+        return "echo $MY_ENV_VAR"
+
+    @job
+    def shell_job():
+        shell_op(get_shell_cmd_op())
+
+    result = shell_job.execute_in_process(
+        run_config={"ops": {"shell_op": {"config": {"env": {"MY_ENV_VAR": "hello world!"}}}}}
+    )
+    assert result.output_for_node("shell_op") == "hello world!\n"
 
 
 @pytest.mark.parametrize("factory", [create_shell_command_op, create_shell_command_solid])

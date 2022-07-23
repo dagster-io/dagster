@@ -1,7 +1,7 @@
 from graphql.execution.base import ResolveInfo
 
-from dagster import check
-from dagster.config.validate import validate_config_from_snap
+import dagster._check as check
+from dagster._config import validate_config_from_snap
 from dagster.core.host_representation import RepresentedPipeline
 
 from .external import get_external_pipeline_or_raise

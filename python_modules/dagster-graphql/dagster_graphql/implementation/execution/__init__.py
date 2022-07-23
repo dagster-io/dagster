@@ -1,11 +1,16 @@
+import sys
+
 from graphql.execution.base import ResolveInfo
 from rx import Observable
 
-from dagster import check
+import dagster._check as check
+from dagster._serdes import serialize_dagster_namedtuple
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster.core.events import DagsterEventType, EngineEventData
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
+from dagster.core.storage.event_log.base import EventLogCursor
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
-from dagster.serdes import serialize_dagster_namedtuple
-from dagster.utils.error import serializable_error_info_from_exc_info
 
 from ..external import ExternalPipeline, ensure_valid_config, get_external_pipeline_or_raise
 from ..fetch_runs import is_config_valid
@@ -16,14 +21,16 @@ from .backfill import (
     create_and_launch_partition_backfill,
     resume_partition_backfill,
 )
-from .launch_execution import launch_pipeline_execution, launch_pipeline_reexecution
+from .launch_execution import (
+    launch_pipeline_execution,
+    launch_pipeline_reexecution,
+    launch_reexecution_from_parent_run,
+)
 
 
-def _force_mark_as_canceled(graphene_info, run_id):
+def _force_mark_as_canceled(instance, run_id):
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.roots.mutation import GrapheneTerminateRunSuccess
-
-    instance = graphene_info.context.instance
 
     reloaded_record = instance.get_run_records(RunsFilter(run_ids=[run_id]))[0]
 
@@ -39,7 +46,7 @@ def _force_mark_as_canceled(graphene_info, run_id):
 
 
 @capture_error
-def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
+def terminate_pipeline_execution(instance, run_id, terminate_policy):
     from ...schema.errors import GrapheneRunNotFoundError
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.roots.mutation import (
@@ -48,10 +55,9 @@ def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
         GrapheneTerminateRunSuccess,
     )
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+    check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(run_id, "run_id")
 
-    instance = graphene_info.context.instance
     records = instance.get_run_records(RunsFilter(run_ids=[run_id]))
 
     force_mark_as_canceled = (
@@ -65,10 +71,11 @@ def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
     run = record.pipeline_run
     graphene_run = GrapheneRun(record)
 
-    valid_status = not run.is_finished and (
-        force_mark_as_canceled
-        or (run.status == PipelineRunStatus.STARTED or run.status == PipelineRunStatus.QUEUED)
+    can_cancel_run = (
+        run.status == PipelineRunStatus.STARTED or run.status == PipelineRunStatus.QUEUED
     )
+
+    valid_status = not run.is_finished and (force_mark_as_canceled or can_cancel_run)
 
     if not valid_status:
         return GrapheneTerminateRunFailure(
@@ -78,24 +85,26 @@ def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
             ),
         )
 
-    if (
-        graphene_info.context.instance.run_coordinator
-        and graphene_info.context.instance.run_coordinator.can_cancel_run(run_id)
-        and graphene_info.context.instance.run_coordinator.cancel_run(run_id)
-    ):
+    if force_mark_as_canceled:
+        try:
+            if instance.run_coordinator and can_cancel_run:
+                instance.run_coordinator.cancel_run(run_id)
+        except:
+            instance.report_engine_event(
+                "Exception while attempting to force-terminate run. Run will still be marked as canceled.",
+                pipeline_name=run.pipeline_name,
+                run_id=run.run_id,
+                engine_event_data=EngineEventData(
+                    error=serializable_error_info_from_exc_info(sys.exc_info()),
+                ),
+            )
+        return _force_mark_as_canceled(instance, run_id)
 
-        return (
-            _force_mark_as_canceled(graphene_info, run_id)
-            if force_mark_as_canceled
-            else GrapheneTerminateRunSuccess(graphene_run)
-        )
+    if instance.run_coordinator and can_cancel_run and instance.run_coordinator.cancel_run(run_id):
+        return GrapheneTerminateRunSuccess(graphene_run)
 
-    return (
-        _force_mark_as_canceled(graphene_info, run_id)
-        if force_mark_as_canceled
-        else GrapheneTerminateRunFailure(
-            run=graphene_run, message="Unable to terminate run {run_id}".format(run_id=run.run_id)
-        )
+    return GrapheneTerminateRunFailure(
+        run=graphene_run, message="Unable to terminate run {run_id}".format(run_id=run.run_id)
     )
 
 
@@ -114,7 +123,7 @@ def delete_pipeline_run(graphene_info, run_id):
     return GrapheneDeletePipelineRunSuccess(run_id)
 
 
-def get_pipeline_run_observable(graphene_info, run_id, after=None):
+def get_pipeline_run_observable(graphene_info, run_id, cursor=None):
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.pipelines.subscription import (
         GraphenePipelineRunLogsSubscriptionFailure,
@@ -124,7 +133,7 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.str_param(run_id, "run_id")
-    check.opt_int_param(after, "after")
+    check.opt_str_param(cursor, "cursor")
     instance = graphene_info.context.instance
     records = instance.get_run_records(RunsFilter(run_ids=[run_id]))
 
@@ -143,17 +152,18 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
     run = record.pipeline_run
 
     def _handle_events(payload):
-        events, loading_past = payload
+        events, loading_past, cursor = payload
         return GraphenePipelineRunLogsSubscriptionSuccess(
             run=GrapheneRun(record),
             messages=[from_event_record(event, run.pipeline_name) for event in events],
             hasMorePastEvents=loading_past,
+            cursor=cursor,
         )
 
     # pylint: disable=E1101
-    return Observable.create(
-        PipelineRunObservableSubscribe(instance, run_id, after_cursor=after)
-    ).map(_handle_events)
+    return Observable.create(PipelineRunObservableSubscribe(instance, run_id, cursor=cursor)).map(
+        _handle_events
+    )
 
 
 def get_compute_log_observable(graphene_info, run_id, step_key, io_type, cursor=None):

@@ -1,19 +1,24 @@
 import os
-from typing import Dict, cast
+from typing import Dict, Mapping, cast
 
-from dagster import check
-from dagster.config import Field, ScalarUnion, Selector
-from dagster.config.evaluate_value_result import EvaluateValueResult
-from dagster.config.source import IntSource, StringSource
-from dagster.config.validate import process_config
+import dagster._check as check
+from dagster._config import (
+    EvaluateValueResult,
+    Field,
+    IntSource,
+    ScalarUnion,
+    Selector,
+    StringSource,
+    process_config,
+)
+from dagster._utils import merge_dicts
 from dagster.core.errors import DagsterInvalidConfigError
-from dagster.utils import merge_dicts
 
 
 def process_workspace_config(
-    workspace_config: Dict[str, object]
-) -> EvaluateValueResult[Dict[str, object]]:
-    workspace_config = check.dict_param(workspace_config, "workspace_config")
+    workspace_config: Mapping[str, object]
+) -> EvaluateValueResult[Mapping[str, object]]:
+    workspace_config = check.mapping_param(workspace_config, "workspace_config")
 
     return process_config(WORKSPACE_CONFIG_SCHEMA, workspace_config)
 

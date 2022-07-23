@@ -3,10 +3,10 @@ import {ProgressBar as BlueprintProgressBar, ProgressBarProps} from '@blueprintj
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 
 export const ProgressBar: React.FC<ProgressBarProps & {fillColor?: string}> = ({
-  fillColor = ColorsWIP.Gray600,
+  fillColor = Colors.Gray600,
   ...rest
 }) => {
   return (

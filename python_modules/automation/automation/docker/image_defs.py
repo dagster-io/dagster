@@ -2,21 +2,23 @@
 import contextlib
 import os
 import shutil
-import subprocess
+from typing import Callable, Dict, Iterator, List, Optional
 
 from automation.git import git_repo_root
 
-from dagster import check
+import dagster._check as check
 
-from .dagster_docker import DagsterDockerImage
+from .dagster_docker import DagsterDockerImage, default_images_path
 
 
-def get_dagster_repo():
+def get_dagster_repo() -> str:
     return git_repo_root()
 
 
 @contextlib.contextmanager
-def copy_directories(paths, cwd, destination="build_cache"):
+def copy_directories(
+    paths: List[str], cwd: str, destination: str = "build_cache"
+) -> Iterator[None]:
     check.invariant(os.path.exists(cwd), "Image directory does not exist")
     build_cache_dir = os.path.join(cwd, destination)
 
@@ -48,32 +50,7 @@ def copy_directories(paths, cwd, destination="build_cache"):
 
 
 @contextlib.contextmanager
-def buildkite_integration_cm(cwd):
-    """For the buildkite integration base image, we first copy over scala_modules into the image
-    build directory.
-    """
-    scala_modules_dir = os.path.join(get_dagster_repo(), "scala_modules")
-    try:
-        cmd = [
-            "rsync",
-            "-av",
-            "--exclude='*target*'",
-            "--exclude='*.idea*'",
-            "--exclude='*.class'",
-            scala_modules_dir,
-            ".",
-        ]
-        print("Syncing scala_modules to build dir...")
-        print(cmd)
-        subprocess.call(cmd, cwd=cwd)
-        yield
-
-    finally:
-        shutil.rmtree(os.path.join(cwd, "scala_modules"))
-
-
-@contextlib.contextmanager
-def k8s_example_cm(cwd):
+def k8s_example_cm(cwd: str) -> Iterator[None]:
     with copy_directories(
         [
             "examples/deploy_k8s/example_project",
@@ -83,7 +60,7 @@ def k8s_example_cm(cwd):
         yield
 
 
-def get_core_celery_k8s_dirs():
+def get_core_celery_k8s_dirs() -> List[str]:
     return [
         "python_modules/dagster",
         "python_modules/libraries/dagster-postgres",
@@ -93,7 +70,7 @@ def get_core_celery_k8s_dirs():
     ]
 
 
-def get_core_k8s_dirs():
+def get_core_k8s_dirs() -> List[str]:
     return [
         "python_modules/dagster",
         "python_modules/libraries/dagster-postgres",
@@ -102,7 +79,7 @@ def get_core_k8s_dirs():
 
 
 @contextlib.contextmanager
-def k8s_example_editable_cm(cwd):
+def k8s_example_editable_cm(cwd: str) -> Iterator[None]:
     with copy_directories(
         get_core_celery_k8s_dirs()
         + [
@@ -117,7 +94,7 @@ def k8s_example_editable_cm(cwd):
 
 
 @contextlib.contextmanager
-def k8s_dagit_editable_cm(cwd):
+def k8s_dagit_editable_cm(cwd: str) -> Iterator[None]:
     print("!!!!! WARNING: You must call `make rebuild_dagit` after making changes to Dagit !!!!\n")
     with copy_directories(
         get_core_celery_k8s_dirs()
@@ -131,7 +108,7 @@ def k8s_dagit_editable_cm(cwd):
 
 
 @contextlib.contextmanager
-def k8s_dagit_example_cm(cwd):
+def k8s_dagit_example_cm(cwd: str) -> Iterator[None]:
     with copy_directories(
         get_core_celery_k8s_dirs()
         + [
@@ -148,7 +125,7 @@ def k8s_dagit_example_cm(cwd):
 
 
 @contextlib.contextmanager
-def k8s_celery_worker_editable_cm(cwd):
+def k8s_celery_worker_editable_cm(cwd: str) -> Iterator[None]:
     with copy_directories(
         get_core_celery_k8s_dirs(),
         cwd,
@@ -157,7 +134,7 @@ def k8s_celery_worker_editable_cm(cwd):
 
 
 @contextlib.contextmanager
-def user_code_example_cm(cwd):
+def user_code_example_cm(cwd: str) -> Iterator[None]:
     with copy_directories(
         [
             "examples/deploy_k8s/example_project",
@@ -168,7 +145,7 @@ def user_code_example_cm(cwd):
 
 
 @contextlib.contextmanager
-def user_code_example_editable_cm(cwd):
+def user_code_example_editable_cm(cwd: str) -> Iterator[None]:
     with copy_directories(
         get_core_celery_k8s_dirs() + ["python_modules/libraries/dagster-aws"],
         cwd,
@@ -180,7 +157,7 @@ def user_code_example_editable_cm(cwd):
 
 
 @contextlib.contextmanager
-def dagster_k8s_editable_cm(cwd):
+def dagster_k8s_editable_cm(cwd: str) -> Iterator[None]:
     print("!!!!! WARNING: You must call `make rebuild_dagit` after making changes to Dagit !!!!\n")
     with copy_directories(
         get_core_k8s_dirs()
@@ -195,7 +172,7 @@ def dagster_k8s_editable_cm(cwd):
 
 
 @contextlib.contextmanager
-def dagster_celery_k8s_editable_cm(cwd):
+def dagster_celery_k8s_editable_cm(cwd: str) -> Iterator[None]:
     print("!!!!! WARNING: You must call `make rebuild_dagit` after making changes to Dagit !!!!\n")
     with copy_directories(
         get_core_celery_k8s_dirs()
@@ -210,8 +187,7 @@ def dagster_celery_k8s_editable_cm(cwd):
 
 
 # Some images have custom build context manager functions, listed here
-CUSTOM_BUILD_CONTEXTMANAGERS = {
-    "buildkite-integration-base": buildkite_integration_cm,
+CUSTOM_BUILD_CONTEXTMANAGERS: Dict[str, Callable] = {
     "k8s-example": k8s_example_cm,
     "k8s-example-editable": k8s_example_editable_cm,
     "k8s-dagit-editable": k8s_dagit_editable_cm,
@@ -224,27 +200,26 @@ CUSTOM_BUILD_CONTEXTMANAGERS = {
 }
 
 
-def list_images(images_path=None):
+def list_images(images_path: Optional[str] = None) -> List[DagsterDockerImage]:
     """List all images that we manage.
 
     Returns:
         List[DagsterDockerImage]: A list of all images managed by this tool.
     """
 
-    images_path = images_path or os.path.join(os.path.dirname(__file__), "images")
+    images_path = images_path or default_images_path()
     image_folders = [f.name for f in os.scandir(images_path) if f.is_dir()]
 
     images = []
     for image in image_folders:
-        img = DagsterDockerImage(image, path=os.path.join(images_path, image))
+        img = DagsterDockerImage(image, images_path=images_path)
         if image in CUSTOM_BUILD_CONTEXTMANAGERS:
             img = img._replace(build_cm=CUSTOM_BUILD_CONTEXTMANAGERS[image])
         images.append(img)
     return images
 
 
-def get_image(name, images_path=None):
+def get_image(name: str, images_path: Optional[str] = None) -> DagsterDockerImage:
     """Retrieve the image information from the list defined above."""
     image = next((img for img in list_images(images_path=images_path) if img.image == name), None)
-    check.invariant(image is not None, "could not find image {}".format(name))
-    return image
+    return check.not_none(image, "could not find image {}".format(name))

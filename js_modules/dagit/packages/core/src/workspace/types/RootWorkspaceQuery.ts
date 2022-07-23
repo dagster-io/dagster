@@ -34,12 +34,15 @@ export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_l
 export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules_scheduleState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   status: InstigationStatus;
 }
 
 export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules {
   __typename: "Schedule";
   id: string;
+  cronSchedule: string;
+  executionTimezone: string | null;
   mode: string;
   name: string;
   pipelineName: string;
@@ -55,12 +58,14 @@ export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_l
 export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors_sensorState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   status: InstigationStatus;
 }
 
 export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors {
   __typename: "Sensor";
   id: string;
+  jobOriginId: string;
   name: string;
   targets: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors_targets[] | null;
   sensorState: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors_sensorState;
@@ -71,6 +76,11 @@ export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_l
   id: string;
   mode: string;
   pipelineName: string;
+}
+
+export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_assetGroups {
+  __typename: "AssetGroup";
+  groupName: string;
 }
 
 export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_location {
@@ -93,6 +103,7 @@ export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_l
   schedules: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules[];
   sensors: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_sensors[];
   partitionSets: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_partitionSets[];
+  assetGroups: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_assetGroups[];
   location: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_location;
   displayMetadata: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_displayMetadata[];
 }
@@ -106,7 +117,7 @@ export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_l
   repositories: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories[];
 }
 
-export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_cause {
+export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -116,7 +127,7 @@ export interface RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_l
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_cause | null;
+  causes: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError_causes[];
 }
 
 export type RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError = RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation | RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError;
@@ -136,7 +147,7 @@ export interface RootWorkspaceQuery_workspaceOrError_Workspace {
   locationEntries: RootWorkspaceQuery_workspaceOrError_Workspace_locationEntries[];
 }
 
-export interface RootWorkspaceQuery_workspaceOrError_PythonError_cause {
+export interface RootWorkspaceQuery_workspaceOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -146,7 +157,7 @@ export interface RootWorkspaceQuery_workspaceOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: RootWorkspaceQuery_workspaceOrError_PythonError_cause | null;
+  causes: RootWorkspaceQuery_workspaceOrError_PythonError_causes[];
 }
 
 export type RootWorkspaceQuery_workspaceOrError = RootWorkspaceQuery_workspaceOrError_Workspace | RootWorkspaceQuery_workspaceOrError_PythonError;

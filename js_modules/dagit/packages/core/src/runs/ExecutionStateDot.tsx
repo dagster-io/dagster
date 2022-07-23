@@ -1,4 +1,4 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import styled from 'styled-components/macro';
 
 import {IStepState} from './RunMetadataProvider';
@@ -11,24 +11,24 @@ export const ExecutionStateDot = styled.div<{state: IStepState}>`
   transition: background 200ms linear;
   background: ${({state}) =>
     ({
-      [IStepState.RUNNING]: ColorsWIP.Gray400,
-      [IStepState.SUCCEEDED]: ColorsWIP.Green700,
-      [IStepState.SKIPPED]: ColorsWIP.Yellow500,
-      [IStepState.FAILED]: ColorsWIP.Red500,
-      [IStepState.PREPARING]: ColorsWIP.Red500,
-      [IStepState.RETRY_REQUESTED]: ColorsWIP.Red500,
-      [IStepState.UNKNOWN]: ColorsWIP.Red500,
+      [IStepState.RUNNING]: Colors.Gray400,
+      [IStepState.SUCCEEDED]: Colors.Green700,
+      [IStepState.SKIPPED]: Colors.Yellow500,
+      [IStepState.FAILED]: Colors.Red500,
+      [IStepState.PREPARING]: Colors.Red500,
+      [IStepState.RETRY_REQUESTED]: Colors.Red500,
+      [IStepState.UNKNOWN]: Colors.Red500,
     }[state])};
   &:hover {
     background: ${({state}) =>
       ({
-        [IStepState.RUNNING]: ColorsWIP.Gray400,
-        [IStepState.SUCCEEDED]: ColorsWIP.Green700,
-        [IStepState.SKIPPED]: ColorsWIP.Yellow500,
-        [IStepState.FAILED]: ColorsWIP.Red200,
-        [IStepState.PREPARING]: ColorsWIP.Red500,
-        [IStepState.RETRY_REQUESTED]: ColorsWIP.Red500,
-        [IStepState.UNKNOWN]: ColorsWIP.Red500,
+        [IStepState.RUNNING]: Colors.Gray400,
+        [IStepState.SUCCEEDED]: Colors.Green700,
+        [IStepState.SKIPPED]: Colors.Yellow500,
+        [IStepState.FAILED]: Colors.Red200,
+        [IStepState.PREPARING]: Colors.Red500,
+        [IStepState.RETRY_REQUESTED]: Colors.Red500,
+        [IStepState.UNKNOWN]: Colors.Red500,
       }[state])};
   }
 `;

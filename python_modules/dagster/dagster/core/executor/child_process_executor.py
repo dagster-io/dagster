@@ -5,28 +5,33 @@ import os
 import queue
 import sys
 from abc import ABC, abstractmethod
-from collections import namedtuple
+from typing import NamedTuple
 
-from dagster import check
+import dagster._check as check
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.interrupts import capture_interrupts
 from dagster.core.errors import DagsterExecutionInterruptedError
-from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.interrupts import capture_interrupts
 
 
 class ChildProcessEvent:
     pass
 
 
-class ChildProcessStartEvent(namedtuple("ChildProcessStartEvent", "pid"), ChildProcessEvent):
+class ChildProcessStartEvent(
+    NamedTuple("ChildProcessStartEvent", [("pid", int)]), ChildProcessEvent
+):
     pass
 
 
-class ChildProcessDoneEvent(namedtuple("ChildProcessDoneEvent", "pid"), ChildProcessEvent):
+class ChildProcessDoneEvent(NamedTuple("ChildProcessDoneEvent", [("pid", int)]), ChildProcessEvent):
     pass
 
 
 class ChildProcessSystemErrorEvent(
-    namedtuple("ChildProcessSystemErrorEvent", "pid error_info"), ChildProcessEvent
+    NamedTuple(
+        "ChildProcessSystemErrorEvent", [("pid", int), ("error_info", SerializableErrorInfo)]
+    ),
+    ChildProcessEvent,
 ):
     pass
 

@@ -7,7 +7,7 @@
 // GraphQL query operation: SearchBootstrapQuery
 // ====================================================
 
-export interface SearchBootstrapQuery_workspaceOrError_PythonError_cause {
+export interface SearchBootstrapQuery_workspaceOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -17,7 +17,7 @@ export interface SearchBootstrapQuery_workspaceOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: SearchBootstrapQuery_workspaceOrError_PythonError_cause | null;
+  causes: SearchBootstrapQuery_workspaceOrError_PythonError_causes[];
 }
 
 export interface SearchBootstrapQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError {

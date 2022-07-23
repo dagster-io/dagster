@@ -1,4 +1,5 @@
-from dagster import Dict, InputDefinition, List, OutputDefinition, Set, Tuple, pipeline, solid
+from dagster import Dict, InputDefinition, List, OutputDefinition, Set, Tuple
+from dagster._legacy import pipeline, solid
 from dagster.core.snap import build_dagster_type_namespace_snapshot
 from dagster.core.types.dagster_type import ALL_RUNTIME_BUILTINS, create_string_type
 

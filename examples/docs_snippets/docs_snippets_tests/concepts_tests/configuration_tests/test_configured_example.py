@@ -1,7 +1,7 @@
 import yaml
-from dagster import graph, op
-from dagster.utils import file_relative_path
 
+from dagster import graph, op
+from dagster._utils import file_relative_path
 from docs_snippets.concepts.configuration.config_map_example import unsigned_s3_session
 from docs_snippets.concepts.configuration.configured_example import (
     east_unsigned_s3_session,
@@ -46,6 +46,7 @@ def test_configured_example_yaml():
             "../../../docs_snippets/concepts/configuration/configured_example.yaml",
         ),
         "r",
+        encoding="utf8",
     ) as fd:
         run_config = yaml.safe_load(fd.read())
     execute_job_with_resource_def(s3_session, run_config)

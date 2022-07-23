@@ -1,5 +1,4 @@
 from dagster import ScheduleDefinition
-
 from docs_snippets.concepts.partitions_schedules_sensors.schedules.schedule_examples import (  # pylint: disable=unused-import
     test_configurable_job_schedule,
 )

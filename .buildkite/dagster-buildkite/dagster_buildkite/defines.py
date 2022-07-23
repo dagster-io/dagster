@@ -1,26 +1,23 @@
-class SupportedPython:
-    V3_9 = "3.9.10"
-    V3_8 = "3.8.12"
-    V3_7 = "3.7.12"
-    V3_6 = "3.6.15"
+import os
+
+import packaging.version
+import requests
+
+GIT_REPO_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")
 
 
-SupportedPythons = [
-    SupportedPython.V3_6,
-    SupportedPython.V3_7,
-    SupportedPython.V3_8,
-    SupportedPython.V3_9,
-]
+def _get_latest_dagster_release() -> str:
+    res = requests.get("https://pypi.org/pypi/dagster/json")
+    module_json = res.json()
+    releases = module_json["releases"]
+    release_versions = [packaging.version.parse(release) for release in releases.keys()]
+    for release_version in reversed(sorted(release_versions)):
+        if not release_version.is_prerelease:
+            return str(release_version)
+    assert False, "No releases found"
 
-ExamplePythons = [SupportedPython.V3_8]
 
-TOX_MAP = {
-    SupportedPython.V3_9: "py39",
-    SupportedPython.V3_8: "py38",
-    SupportedPython.V3_7: "py37",
-    SupportedPython.V3_6: "py36",
-}
-
+LATEST_DAGSTER_RELEASE = _get_latest_dagster_release()
 
 # https://github.com/dagster-io/dagster/issues/1662
 DO_COVERAGE = True

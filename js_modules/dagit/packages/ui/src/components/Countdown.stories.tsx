@@ -1,7 +1,7 @@
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {ButtonWIP} from './Button';
+import {Button} from './Button';
 import {Countdown, useCountdown} from './Countdown';
 import {Group} from './Group';
 
@@ -33,8 +33,8 @@ export const FiveSeconds = () => {
   return (
     <Group direction="column" spacing={12}>
       <Group direction="row" spacing={8}>
-        <ButtonWIP onClick={() => setStatus('counting')}>Set counting</ButtonWIP>
-        <ButtonWIP onClick={() => setStatus('idle')}>Set idle</ButtonWIP>
+        <Button onClick={() => setStatus('counting')}>Set counting</Button>
+        <Button onClick={() => setStatus('idle')}>Set idle</Button>
       </Group>
       {message(timeRemaining)}
     </Group>

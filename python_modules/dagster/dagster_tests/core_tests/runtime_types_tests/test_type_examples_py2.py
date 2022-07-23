@@ -12,8 +12,8 @@ from dagster import (
     String,
     Tuple,
     execute_solid,
-    solid,
 )
+from dagster._legacy import solid
 
 
 @solid(

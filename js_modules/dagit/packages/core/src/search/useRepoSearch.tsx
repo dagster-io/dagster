@@ -1,10 +1,10 @@
-import {gql, useLazyQuery, useQuery} from '@apollo/client';
+import {gql, useLazyQuery} from '@apollo/client';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {displayNameForAssetKey} from '../app/Util';
-import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
+import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 
@@ -45,12 +45,12 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
         const repoPath = buildRepoPath(repoName, locationName);
 
         const allPipelinesAndJobs = pipelines
+          .filter((item) => !isHiddenAssetGroupJob(item.name))
           .reduce((flat, pipelineOrJob) => {
             const {name, isJob} = pipelineOrJob;
             return [
               ...flat,
               {
-                key: `${repoPath}-${name}`,
                 label: name,
                 description: manyRepos
                   ? `${isJob ? 'Job' : 'Pipeline'} in ${repoPath}`
@@ -65,11 +65,9 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
                 type: SearchResultType.Pipeline,
               },
             ];
-          }, [] as SearchResult[])
-          .filter((item) => item.label !== __ASSET_GROUP);
+          }, [] as SearchResult[]);
 
         const allSchedules: SearchResult[] = schedules.map((schedule) => ({
-          key: `${repoPath}-${schedule.name}`,
           label: schedule.name,
           description: manyRepos ? `Schedule in ${repoPath}` : 'Schedule',
           href: workspacePath(repoName, locationName, `/schedules/${schedule.name}`),
@@ -77,24 +75,24 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
         }));
 
         const allSensors: SearchResult[] = sensors.map((sensor) => ({
-          key: `${repoPath}-${sensor.name}`,
           label: sensor.name,
           description: manyRepos ? `Sensor in ${repoPath}` : 'Sensor',
           href: workspacePath(repoName, locationName, `/sensors/${sensor.name}`),
           type: SearchResultType.Sensor,
         }));
 
-        const allPartitionSets: SearchResult[] = partitionSets.map((partitionSet) => ({
-          key: `${repoPath}-${partitionSet.name}`,
-          label: partitionSet.name,
-          description: manyRepos ? `Partition set in ${repoPath}` : 'Partition set',
-          href: workspacePath(
-            repoName,
-            locationName,
-            `/pipeline_or_job/${partitionSet.pipelineName}/partitions?partitionSet=${partitionSet.name}`,
-          ),
-          type: SearchResultType.PartitionSet,
-        }));
+        const allPartitionSets: SearchResult[] = partitionSets
+          .filter((item) => !isHiddenAssetGroupJob(item.pipelineName))
+          .map((partitionSet) => ({
+            label: partitionSet.name,
+            description: manyRepos ? `Partition set in ${repoPath}` : 'Partition set',
+            href: workspacePath(
+              repoName,
+              locationName,
+              `/pipeline_or_job/${partitionSet.pipelineName}/partitions?partitionSet=${partitionSet.name}`,
+            ),
+            type: SearchResultType.PartitionSet,
+          }));
 
         return [
           ...inner,
@@ -118,11 +116,10 @@ const secondaryDataToSearchResults = (data?: SearchSecondaryQuery) => {
   const {nodes} = data.assetsOrError;
   const allEntries = nodes.map(({key}) => {
     return {
-      key: displayNameForAssetKey(key),
       label: displayNameForAssetKey(key),
+      href: assetDetailsPathForKey(key),
       segments: key.path,
       description: 'Asset',
-      href: `/instance/assets/${key.path.map(encodeURIComponent).join('/')}`,
       type: SearchResultType.Asset,
     };
   });
@@ -131,15 +128,15 @@ const secondaryDataToSearchResults = (data?: SearchSecondaryQuery) => {
 };
 
 export const useRepoSearch = () => {
-  const {data: bootstrapData, loading: bootstrapLoading} = useQuery<SearchBootstrapQuery>(
-    SEARCH_BOOTSTRAP_QUERY,
-    {
-      fetchPolicy: 'cache-and-network',
-    },
-  );
+  const [
+    performBootstrapQuery,
+    {data: bootstrapData, loading: bootstrapLoading},
+  ] = useLazyQuery<SearchBootstrapQuery>(SEARCH_BOOTSTRAP_QUERY, {
+    fetchPolicy: 'cache-and-network',
+  });
 
   const [
-    performQuery,
+    performSecondaryQuery,
     {data: secondaryData, loading: secondaryLoading, called: secondaryQueryCalled},
   ] = useLazyQuery<SearchSecondaryQuery>(SEARCH_SECONDARY_QUERY, {
     fetchPolicy: 'cache-and-network',
@@ -155,25 +152,23 @@ export const useRepoSearch = () => {
   const performSearch = React.useCallback(
     (queryString: string, buildSecondary?: boolean): Fuse.FuseResult<SearchResult>[] => {
       if ((queryString || buildSecondary) && !secondaryQueryCalled) {
-        performQuery();
+        performSecondaryQuery();
       }
       const bootstrapResults: Fuse.FuseResult<SearchResult>[] = bootstrapFuse.search(queryString);
       const secondaryResults: Fuse.FuseResult<SearchResult>[] = secondaryFuse.search(queryString);
       return [...bootstrapResults, ...secondaryResults];
     },
-    [bootstrapFuse, secondaryFuse, performQuery, secondaryQueryCalled],
+    [bootstrapFuse, secondaryFuse, performSecondaryQuery, secondaryQueryCalled],
   );
 
-  return {loading, performSearch};
+  return {performBootstrapQuery, loading, performSearch};
 };
 
 const SEARCH_BOOTSTRAP_QUERY = gql`
   query SearchBootstrapQuery {
     workspaceOrError {
       __typename
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
+      ...PythonErrorFragment
       ... on Workspace {
         locationEntries {
           __typename

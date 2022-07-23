@@ -1,11 +1,15 @@
-import json
+import sys
 
 import graphene
+import yaml
 from graphene.types.generic import GenericScalar
 
-from dagster import check
+import dagster._check as check
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.yaml_utils import load_run_config_yaml
 
 from ..implementation.fetch_runs import get_runs, get_runs_count
+from ..implementation.utils import UserFacingGraphQLError
 from .errors import (
     GrapheneInvalidPipelineRunsFilterError,
     GraphenePythonError,
@@ -137,14 +141,24 @@ class GrapheneRunConfigData(GenericScalar, graphene.Scalar):
     class Meta:
         description = """This type is used when passing in a configuration object
         for pipeline configuration. Can either be passed in as a string (the
-        JSON-serialized configuration object) or as the configuration object itself. In
+        YAML configuration object) or as the configuration object itself. In
         either case, the object must conform to the constraints of the dagster config type system.
         """
         name = "RunConfigData"
 
 
-def parse_run_config_input(run_config):
-    return json.loads(run_config) if isinstance(run_config, str) else run_config
+def parse_run_config_input(run_config, raise_on_error: bool):
+    if run_config and isinstance(run_config, str):
+        try:
+            return load_run_config_yaml(run_config)
+        except yaml.YAMLError:
+            if raise_on_error:
+                raise UserFacingGraphQLError(
+                    GraphenePythonError(serializable_error_info_from_exc_info(sys.exc_info()))
+                )
+            # Pass the config through as a string so that it will return a useful validation error
+            return run_config
+    return run_config
 
 
 types = [

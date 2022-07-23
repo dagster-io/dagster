@@ -2,9 +2,7 @@
 from time import sleep
 from typing import List
 
-from dagster import Field, Output, op
-from dagster.core.definitions.decorators.graph import graph
-from dagster.core.definitions.output import Out
+from dagster import Field, Out, Output, graph, op
 
 
 @op

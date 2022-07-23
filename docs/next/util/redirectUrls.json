@@ -5,8 +5,8 @@
     "permanent": true
   },
   {
-    "source": "/tutorial/setup",
-    "destination": "/tutorial/intro-tutorial/setup",
+    "source": "/tutorial/intro-tutorial/setup",
+    "destination": "/tutorial/setup",
     "permanent": true
   },
   {
@@ -54,13 +54,11 @@
     "destination": "/tutorial/advanced-tutorial/materializations",
     "permanent": true
   },
-
   {
     "source": "/tutorial/advanced_repositories",
     "destination": "/tutorial/advanced-tutorial/repositories",
     "permanent": true
   },
-
   {
     "source": "/tutorial/advanced_scheduling",
     "destination": "/tutorial/advanced-tutorial/scheduling",
@@ -213,7 +211,26 @@
     "destination": "/deployment/run-coordinator",
     "permanent": true
   },
-
+  {
+    "source": "/guides/dagster/asset-tutorial",
+    "destination": "/tutorial/assets/defining-an-asset",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/asset-tutorial/asset-graph",
+    "destination": "/tutorial/assets/asset-graph",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/asset-tutorial/defining-an-asset",
+    "destination": "/tutorial/assets/defining-an-asset",
+    "permanent": true
+  },
+  {
+    "source": "/guides/dagster/asset-tutorial/testing-assets",
+    "destination": "/tutorial/assets/testing-assets",
+    "permanent": true
+  },
   {
     "source": "/overview/dagit",
     "destination": "/concepts/dagit/dagit",
@@ -443,18 +460,33 @@
     "permanent": true
   },
   {
+    "source": "/tutorial/intro-tutorial/single-op-job",
+    "destination": "/tutorial/ops-jobs/single-op-job",
+    "permanent": true
+  },
+  {
     "source": "/tutorial/intro-tutorial/single-solid-pipeline",
-    "destination": "/tutorial/intro-tutorial/single-op-job",
+    "destination": "/tutorial/ops-jobs/single-op-job",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/intro-tutorial/connecting-ops",
+    "destination": "/tutorial/ops-jobs/connecting-ops",
     "permanent": true
   },
   {
     "source": "/tutorial/intro-tutorial/connecting-solids",
-    "destination": "/tutorial/intro-tutorial/connecting-ops",
+    "destination": "/tutorial/ops-jobs/connecting-ops",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/intro-tutorial/testable",
+    "destination": "/tutorial/ops-jobs/testable",
     "permanent": true
   },
   {
     "source": "/tutorial/intro-tutorial/configuring-solids",
-    "destination": "/tutorial/advanced-tutorial/configuring-ops",
+    "destination": "/concepts/configuration/config-schema",
     "permanent": true
   },
   {
@@ -463,8 +495,38 @@
     "permanent": true
   },
   {
+    "source": "/tutorial/advanced-tutorial/configuring-ops",
+    "destination": "/concepts/configuration/config-schema",
+    "permanent": true
+  },
+  {
     "source": "/tutorial/advanced-tutorial/pipelines",
     "destination": "/tutorial/advanced-tutorial/resources",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/advanced-tutorial/types",
+    "destination": "/concepts/types",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/advanced-tutorial/resources",
+    "destination": "/concepts/resources",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/advanced-tutorial/repositories",
+    "destination": "/concepts/repositories-workspaces/repositories",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/advanced-tutorial/scheduling",
+    "destination": "/concepts/partitions-schedules-sensors/schedules",
+    "permanent": true
+  },
+  {
+    "source": "/tutorial/advanced-tutorial/materializations",
+    "destination": "/concepts/assets/asset-materializations",
     "permanent": true
   },
   {
@@ -474,7 +536,12 @@
   },
   {
     "source": "/concepts/solids-pipelines/pipelines",
-    "destination": "/concepts/ops-jobs-graphs/jobs-graphs",
+    "destination": "/concepts/ops-jobs-graphs/jobs",
+    "permanent": true
+  },
+  {
+    "source": "/concepts/ops-jobs-graphs/jobs-graphs",
+    "destination": "/concepts/ops-jobs-graphs/jobs",
     "permanent": true
   },
   {

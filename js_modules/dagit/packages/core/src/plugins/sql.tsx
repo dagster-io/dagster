@@ -1,11 +1,4 @@
-import {
-  ButtonWIP,
-  DialogBody,
-  DialogFooter,
-  DialogWIP,
-  HighlightedCodeBlock,
-  IconWIP,
-} from '@dagster-io/ui';
+import {Button, DialogFooter, Dialog, Icon, StyledReadOnlyCodeMirror} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {IPluginSidebarProps} from '../plugins';
@@ -27,32 +20,23 @@ export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
 
   return (
     <div>
-      <ButtonWIP icon={<IconWIP name="content_copy" />} onClick={() => setOpen(true)}>
+      <Button icon={<Icon name="content_copy" />} onClick={() => setOpen(true)}>
         View SQL
-      </ButtonWIP>
-      <DialogWIP
+      </Button>
+      <Dialog
         icon="info"
         onClose={() => setOpen(false)}
-        style={{width: '80vw', maxWidth: 900, height: 615}}
+        style={{width: '80vw', maxWidth: 900}}
         title={`SQL: ${props.definition.name}`}
         isOpen={open}
       >
-        <DialogBody>
-          <HighlightedCodeBlock
-            language="sql"
-            value={sql.value}
-            style={{
-              height: 510,
-              padding: 10,
-              overflow: 'scroll',
-              fontSize: '0.9em',
-            }}
-          />
-        </DialogBody>
-        <DialogFooter>
-          <ButtonWIP onClick={() => setOpen(false)}>Close</ButtonWIP>
+        <StyledReadOnlyCodeMirror options={{lineNumbers: true, mode: 'sql'}} value={sql.value} />
+        <DialogFooter topBorder>
+          <Button intent="primary" onClick={() => setOpen(false)}>
+            Close
+          </Button>
         </DialogFooter>
-      </DialogWIP>
+      </Dialog>
     </div>
   );
 };

@@ -4,8 +4,10 @@ from typing import Union
 import pandas
 import pyspark
 
-from dagster import Field, IOManager, MetadataEntry, OutputContext, check, io_manager
-from dagster.seven.temp_dir import get_system_temp_directory
+from dagster import Field, IOManager, MetadataEntry, OutputContext
+from dagster import _check as check
+from dagster import io_manager
+from dagster._seven.temp_dir import get_system_temp_directory
 
 
 class PartitionedParquetIOManager(IOManager):
@@ -25,10 +27,13 @@ class PartitionedParquetIOManager(IOManager):
     def handle_output(
         self, context: OutputContext, obj: Union[pandas.DataFrame, pyspark.sql.DataFrame]
     ):
-
         path = self._get_path(context)
+        if "://" not in self._base_path:
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+
         if isinstance(obj, pandas.DataFrame):
             row_count = len(obj)
+            context.log.info(f"Row count: {row_count}")
             obj.to_parquet(path=path, index=False)
         elif isinstance(obj, pyspark.sql.DataFrame):
             row_count = obj.count()
@@ -39,7 +44,6 @@ class PartitionedParquetIOManager(IOManager):
         yield MetadataEntry.path(path=path, label="path")
 
     def load_input(self, context) -> Union[pyspark.sql.DataFrame, str]:
-        # In this load_input function, we vary the behavior based on the type of the downstream input
         path = self._get_path(context.upstream_output)
         if context.dagster_type.typing_type == pyspark.sql.DataFrame:
             # return pyspark dataframe
@@ -51,17 +55,15 @@ class PartitionedParquetIOManager(IOManager):
         )
 
     def _get_path(self, context: OutputContext):
-        # filesystem-friendly string that is scoped to the start/end times of the data slice
-        start, end = context.asset_partitions_time_window
-        dt_format = "%Y%m%d%H%M%S"
-        partition_str = start.strftime(dt_format) + "_" + end.strftime(dt_format)
+        key = context.asset_key.path[-1]  # type: ignore
 
-        key = context.asset_key.path[-1]
-        # if local fs path, store all outptus in same directory
-        if "://" not in self._base_path:
-            return os.path.join(self._base_path, f"{key}-{partition_str}.pq")
-        # otherwise seperate into different dirs
-        return os.path.join(self._base_path, key, f"{partition_str}.pq")
+        if context.has_asset_partitions:
+            start, end = context.asset_partitions_time_window
+            dt_format = "%Y%m%d%H%M%S"
+            partition_str = start.strftime(dt_format) + "_" + end.strftime(dt_format)
+            return os.path.join(self._base_path, key, f"{partition_str}.pq")
+        else:
+            return os.path.join(self._base_path, f"{key}.pq")
 
 
 @io_manager(

@@ -18,10 +18,9 @@ from dagster import (
     Shape,
     String,
     TypeCheck,
-    check,
-    dagster_type_loader,
-    dagster_type_materializer,
 )
+from dagster import _check as check
+from dagster import dagster_type_loader, dagster_type_materializer
 
 from .utils import DataFrameUtilities, apply_utilities_to_df
 
@@ -483,7 +482,7 @@ def df_type_check(_, value):
         success=True,
         metadata_entries=[
             # string cast columns since they may be things like datetime
-            MetadataEntry.json({"columns": list(map(str, value.columns))}, "metadata"),
+            MetadataEntry("metadata", value={"columns": list(map(str, value.columns))}),
         ],
     )
 

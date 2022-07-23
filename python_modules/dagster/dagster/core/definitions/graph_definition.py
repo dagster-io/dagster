@@ -7,33 +7,34 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    Mapping,
     Optional,
+    Sequence,
     Set,
     Tuple,
+    TypeVar,
     Union,
     cast,
 )
 
 from toposort import CircularDependencyError, toposort_flatten
 
-from dagster import check
-from dagster.config import Field, Shape
-from dagster.config.config_type import ConfigType
-from dagster.config.validate import validate_config
+import dagster._check as check
+from dagster._config import ConfigType, Field, Shape, validate_config
+from dagster._utils import merge_dicts
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
-from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.utils import check_valid_name
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
+from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.core.storage.io_manager import io_manager
 from dagster.core.types.dagster_type import (
     DagsterType,
     DagsterTypeKind,
     construct_dagster_type_dictionary,
 )
-from dagster.utils import merge_dicts
 
 from .dependency import (
     DependencyStructure,
@@ -46,32 +47,34 @@ from .dependency import (
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .logger_definition import LoggerDefinition
+from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .preset import PresetDefinition
+from .resource_requirement import ResourceRequirement
 from .solid_container import create_execution_structure, validate_dependency_dict
+from .utils import DEFAULT_IO_MANAGER_KEY
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
+    from dagster.core.execution.context.init import InitResourceContext
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster.core.instance import DagsterInstance
 
+    from .asset_layer import AssetLayer
     from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
     from .partition import PartitionedConfig, PartitionsDefinition
     from .solid_definition import SolidDefinition
 
 
-def _check_node_defs_arg(graph_name: str, node_defs: Optional[List[NodeDefinition]]):
+def _check_node_defs_arg(
+    graph_name: str, node_defs: Optional[Sequence[NodeDefinition]]
+) -> Sequence[NodeDefinition]:
     node_defs = node_defs or []
 
-    if not isinstance(node_defs, list):
-        raise DagsterInvalidDefinitionError(
-            '"nodes" arg to "{name}" is not a list. Got {val}.'.format(
-                name=graph_name, val=repr(node_defs)
-            )
-        )
-    for node_def in node_defs:
+    _node_defs = check.opt_sequence_param(node_defs, "node_defs")
+    for node_def in _node_defs:
         if isinstance(node_def, NodeDefinition):
             continue
         elif callable(node_def):
@@ -94,12 +97,12 @@ def _check_node_defs_arg(graph_name: str, node_defs: Optional[List[NodeDefinitio
 def _create_adjacency_lists(
     solids: List[Node],
     dep_structure: DependencyStructure,
-) -> Tuple[Dict[str, Set[Node]], Dict[str, Set[Node]]]:
+) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]]]:
     visit_dict = {s.name: False for s in solids}
-    forward_edges: Dict[str, Set[Node]] = {s.name: set() for s in solids}
-    backward_edges: Dict[str, Set[Node]] = {s.name: set() for s in solids}
+    forward_edges: Dict[str, Set[str]] = {s.name: set() for s in solids}
+    backward_edges: Dict[str, Set[str]] = {s.name: set() for s in solids}
 
-    def visit(solid_name):
+    def visit(solid_name: str) -> None:
         if visit_dict[solid_name]:
             return
 
@@ -136,16 +139,16 @@ class GraphDefinition(NodeDefinition):
         name (str): The name of the graph. Must be unique within any :py:class:`GraphDefinition`
             or :py:class:`JobDefinition` containing the graph.
         description (Optional[str]): A human-readable description of the pipeline.
-        node_defs (Optional[List[NodeDefinition]]): The set of ops / graphs used in this graph.
+        node_defs (Optional[Sequence[NodeDefinition]]): The set of ops / graphs used in this graph.
         dependencies (Optional[Dict[Union[str, NodeInvocation], Dict[str, DependencyDefinition]]]):
             A structure that declares the dependencies of each op's inputs on the outputs of other
             ops in the graph. Keys of the top level dict are either the string names of ops in the
             graph or, in the case of aliased ops, :py:class:`NodeInvocations <NodeInvocation>`.
             Values of the top level dict are themselves dicts, which map input names belonging to
             the op or aliased op to :py:class:`DependencyDefinitions <DependencyDefinition>`.
-        input_mappings (Optional[List[InputMapping]]): Defines the inputs to the nested graph, and
+        input_mappings (Optional[Sequence[InputMapping]]): Defines the inputs to the nested graph, and
             how they map to the inputs of its constituent ops.
-        output_mappings (Optional[List[OutputMapping]]): Defines the outputs of the nested graph,
+        output_mappings (Optional[Sequence[OutputMapping]]): Defines the outputs of the nested graph,
             and how they map from the outputs of its constituent ops.
         config (Optional[ConfigMapping]): Defines the config of the graph, and how its schema maps
             to the config of its constituent ops.
@@ -173,28 +176,37 @@ class GraphDefinition(NodeDefinition):
             )
     """
 
+    _node_defs: Sequence[NodeDefinition]
+    _dagster_type_dict: Mapping[str, DagsterType]
+    _dependencies: Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
+    _dependency_structure: DependencyStructure
+    _node_dict: Mapping[str, Node]
+    _input_mappings: Sequence[InputMapping]
+    _output_mappings: Sequence[OutputMapping]
+    _config_mapping: Optional[ConfigMapping]
+    _solids_in_topological_order: Sequence[Node]
+
     def __init__(
         self,
         name: str,
         description: Optional[str] = None,
-        node_defs: Optional[List[NodeDefinition]] = None,
+        node_defs: Optional[Sequence[NodeDefinition]] = None,
         dependencies: Optional[
-            Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]
+            Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
         ] = None,
-        input_mappings: Optional[List[InputMapping]] = None,
-        output_mappings: Optional[List[OutputMapping]] = None,
+        input_mappings: Optional[Sequence[InputMapping]] = None,
+        output_mappings: Optional[Sequence[OutputMapping]] = None,
         config: Optional[ConfigMapping] = None,
-        tags: Optional[Dict[str, Any]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
         **kwargs,
     ):
         self._node_defs = _check_node_defs_arg(name, node_defs)
-        self._dagster_type_dict = construct_dagster_type_dictionary(self._node_defs)
         self._dependencies = validate_dependency_dict(dependencies)
         self._dependency_structure, self._node_dict = create_execution_structure(
             self._node_defs, self._dependencies, graph_definition=self
         )
 
-        # List[InputMapping]
+        # Sequence[InputMapping]
         self._input_mappings, input_defs = _validate_in_mappings(
             check.opt_list_param(input_mappings, "input_mappings"),
             self._node_dict,
@@ -202,7 +214,7 @@ class GraphDefinition(NodeDefinition):
             name,
             class_name=type(self).__name__,
         )
-        # List[OutputMapping]
+        # Sequence[OutputMapping]
         self._output_mappings = _validate_out_mappings(
             check.opt_list_param(output_mappings, "output_mappings"),
             self._node_dict,
@@ -224,9 +236,10 @@ class GraphDefinition(NodeDefinition):
 
         # must happen after base class construction as properties are assumed to be there
         # eager computation to detect cycles
-        self.solids_in_topological_order = self._solids_in_topological_order()
+        self._solids_in_topological_order = self._get_solids_in_topological_order()
+        self._dagster_type_dict = construct_dagster_type_dictionary([self])
 
-    def _solids_in_topological_order(self):
+    def _get_solids_in_topological_order(self) -> List[Node]:
 
         _forward_edges, backward_edges = _create_adjacency_lists(
             self.solids, self.dependency_structure
@@ -238,6 +251,31 @@ class GraphDefinition(NodeDefinition):
             raise DagsterInvalidDefinitionError(str(err)) from err
 
         return [self.solid_named(solid_name) for solid_name in order]
+
+    def get_inputs_must_be_resolved_top_level(
+        self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
+    ) -> List[InputDefinition]:
+        unresolveable_input_defs = []
+        for node in self.node_dict.values():
+            cur_handle = NodeHandle(node.name, handle)
+            for input_def in node.definition.get_inputs_must_be_resolved_top_level(
+                asset_layer, cur_handle
+            ):
+                if self.dependency_structure.has_deps(SolidInputHandle(node, input_def)):
+                    continue
+                elif not node.container_maps_input(input_def.name):
+                    raise DagsterInvalidDefinitionError(
+                        f"Input '{input_def.name}' of {node.describe_node()} "
+                        "has no way of being resolved. Must provide a resolution to this "
+                        "input via another op/graph, or via a direct input value mapped from the "
+                        "top-level graph. To "
+                        "learn more, see the docs for unconnected inputs: "
+                        "https://docs.dagster.io/concepts/io-management/unconnected-inputs#unconnected-inputs."
+                    )
+                else:
+                    mapped_input = node.container_mapped_input(input_def.name)
+                    unresolveable_input_defs.append(mapped_input.definition)
+        return unresolveable_input_defs
 
     @property
     def node_type_str(self) -> str:
@@ -252,12 +290,16 @@ class GraphDefinition(NodeDefinition):
         return list(set(self._node_dict.values()))
 
     @property
-    def node_dict(self) -> Dict[str, Node]:
+    def node_dict(self) -> Mapping[str, Node]:
         return self._node_dict
 
     @property
-    def node_defs(self) -> List[NodeDefinition]:
+    def node_defs(self) -> Sequence[NodeDefinition]:
         return self._node_defs
+
+    @property
+    def solids_in_topological_order(self) -> Sequence[Node]:
+        return self._solids_in_topological_order
 
     def has_solid_named(self, name: str) -> bool:
         check.str_param(name, "name")
@@ -267,7 +309,7 @@ class GraphDefinition(NodeDefinition):
         check.str_param(name, "name")
         check.invariant(
             name in self._node_dict,
-            "{graph_name} has no solid named {name}.".format(graph_name=self._name, name=name),
+            "{graph_name} has no op named {name}.".format(graph_name=self._name, name=name),
         )
 
         return self._node_dict[name]
@@ -284,7 +326,9 @@ class GraphDefinition(NodeDefinition):
         solid = self.solid_named(name)
         while lineage:
             name = lineage.pop()
-            solid = solid.definition.solid_named(name)
+            # We know that this is a current solid is a graph while ascending lineage
+            definition = cast(GraphDefinition, solid.definition)
+            solid = definition.solid_named(name)
 
         return solid
 
@@ -297,12 +341,22 @@ class GraphDefinition(NodeDefinition):
         for outer_node_def in self._node_defs:
             yield from outer_node_def.iterate_solid_defs()
 
+    def iterate_node_handles(
+        self, parent_node_handle: Optional[NodeHandle] = None
+    ) -> Iterator[NodeHandle]:
+        for node in self.node_dict.values():
+            cur_node_handle = NodeHandle(node.name, parent_node_handle)
+            if node.is_graph:
+                graph_def = node.definition.ensure_graph_def()
+                yield from graph_def.iterate_node_handles(cur_node_handle)
+            yield cur_node_handle
+
     @property
-    def input_mappings(self) -> List[InputMapping]:
+    def input_mappings(self) -> Sequence[InputMapping]:
         return self._input_mappings
 
     @property
-    def output_mappings(self) -> List[OutputMapping]:
+    def output_mappings(self) -> Sequence[OutputMapping]:
         return self._output_mappings
 
     @property
@@ -316,11 +370,11 @@ class GraphDefinition(NodeDefinition):
     def all_dagster_types(self) -> Iterable[DagsterType]:
         return self._dagster_type_dict.values()
 
-    def has_dagster_type(self, name):
+    def has_dagster_type(self, name: str) -> bool:
         check.str_param(name, "name")
         return name in self._dagster_type_dict
 
-    def dagster_type_named(self, name):
+    def dagster_type_named(self, name: str) -> DagsterType:
         check.str_param(name, "name")
         return self._dagster_type_dict[name]
 
@@ -349,21 +403,25 @@ class GraphDefinition(NodeDefinition):
                 return mapping
         check.failed(f"Could not find output mapping {output_name}")
 
+    T_Handle = TypeVar("T_Handle", bound=Optional[NodeHandle])
+
     def resolve_output_to_origin(
-        self, output_name: str, handle: NodeHandle
-    ) -> Tuple[OutputDefinition, NodeHandle]:
+        self,
+        output_name: str,
+        handle: Optional[NodeHandle],
+    ) -> Tuple[OutputDefinition, Optional[NodeHandle]]:
         check.str_param(output_name, "output_name")
-        check.inst_param(handle, "handle", NodeHandle)
+        check.opt_inst_param(handle, "handle", NodeHandle)
 
         mapping = self.get_output_mapping(output_name)
         check.invariant(mapping, "Can only resolve outputs for valid output names")
         mapped_solid = self.solid_named(mapping.maps_from.solid_name)
         return mapped_solid.definition.resolve_output_to_origin(
             mapping.maps_from.output_name,
-            NodeHandle(mapped_solid.name, handle),
+            NodeHandle(mapped_solid.name, handle),  # type: ignore
         )
 
-    def default_value_for_input(self, input_name: str) -> Any:
+    def default_value_for_input(self, input_name: str) -> object:
         check.str_param(input_name, "input_name")
 
         # base case
@@ -390,7 +448,9 @@ class GraphDefinition(NodeDefinition):
         return mapped_solid.definition.input_has_default(mapping.maps_to.input_name)
 
     @property
-    def dependencies(self) -> Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]:
+    def dependencies(
+        self,
+    ) -> Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]:
         return self._dependencies
 
     @property
@@ -451,16 +511,21 @@ class GraphDefinition(NodeDefinition):
         self,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
-        config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = None,
-        tags: Optional[Dict[str, Any]] = None,
-        logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        config: Optional[Union[ConfigMapping, Mapping[str, object], "PartitionedConfig"]] = None,
+        tags: Optional[Mapping[str, object]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
         op_selection: Optional[List[str]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
+        asset_layer: Optional["AssetLayer"] = None,
+        input_values: Optional[Mapping[str, object]] = None,
+        _asset_selection_data: Optional[AssetSelectionData] = None,
+        _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
     ) -> "JobDefinition":
         """
         Make this graph in to an executable Job by providing remaining components required for execution.
@@ -468,7 +533,7 @@ class GraphDefinition(NodeDefinition):
         Args:
             name (Optional[str]):
                 The name for the Job. Defaults to the name of the this graph.
-            resource_defs (Optional[Dict[str, ResourceDefinition]]):
+            resource_defs (Optional[Mapping [str, ResourceDefinition]]):
                 Resources that are required by this graph for execution.
                 If not defined, `io_manager` will default to filesystem.
             config:
@@ -490,12 +555,16 @@ class GraphDefinition(NodeDefinition):
                 values that can parameterize the job, as well as a function for mapping those
                 values to the base config. The values provided will be viewable and editable in the
                 Dagit playground, so be careful with secrets.
-            tags (Optional[Dict[str, Any]]):
-                Arbitrary metadata for any execution of the Job.
+            tags (Optional[Mapping[str, Any]]):
+                Arbitrary information that will be attached to the execution of the Job.
                 Values that are not strings will be json encoded and must meet the criteria that
                 `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
                 values provided at invocation time.
-            logger_defs (Optional[Dict[str, LoggerDefinition]]):
+            metadata (Optional[Mapping[str, RawMetadataValue]]):
+                Arbitrary information that will be attached to the JobDefinition and be viewable in Dagit.
+                Keys must be strings, and values must be python primitive types or one of the provided
+                MetadataValue types
+            logger_defs (Optional[Mapping[str, LoggerDefinition]]):
                 A dictionary of string logger identifiers to their implementations.
             executor_def (Optional[ExecutorDefinition]):
                 How this Job will be executed. Defaults to :py:class:`multi_or_in_process_executor`,
@@ -509,6 +578,10 @@ class GraphDefinition(NodeDefinition):
             partitions_def (Optional[PartitionsDefinition]): Defines a discrete set of partition
                 keys that can parameterize the job. If this argument is supplied, the config
                 argument can't also be supplied.
+            asset_layer (Optional[AssetLayer]): Top level information about the assets this job
+                will produce. Generally should not be set manually.
+            input_values (Optional[Mapping[str, Any]]):
+                A dictionary that maps python objects to the top-level inputs of a job.
 
         Returns:
             JobDefinition
@@ -520,15 +593,20 @@ class GraphDefinition(NodeDefinition):
         job_name = check_valid_name(name or self.name)
 
         tags = check.opt_dict_param(tags, "tags", key_type=str)
+        executor_def_specified = executor_def is not None
+        logger_defs_specified = logger_defs is not None
+        metadata_entries = check.opt_sequence_param(_metadata_entries, "_metadata_entries")
+
         executor_def = check.opt_inst_param(
             executor_def, "executor_def", ExecutorDefinition, default=multi_or_in_process_executor
         )
+        input_values = check.opt_mapping_param(input_values, "input_values")
 
-        if resource_defs and "io_manager" in resource_defs:
+        if resource_defs and DEFAULT_IO_MANAGER_KEY in resource_defs:
             resource_defs_with_defaults = resource_defs
         else:
             resource_defs_with_defaults = merge_dicts(
-                {"io_manager": default_job_io_manager}, resource_defs or {}
+                {DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs or {}
             )
 
         hooks = check.opt_set_param(hooks, "hooks", of_type=HookDefinition)
@@ -540,10 +618,12 @@ class GraphDefinition(NodeDefinition):
 
         if partitions_def:
             check.inst_param(partitions_def, "partitions_def", PartitionsDefinition)
-            check.invariant(
-                config is None, "Can't supply both the 'config' and 'partitions_def' arguments"
-            )
-            partitioned_config = PartitionedConfig(partitions_def, lambda _: {})
+            if isinstance(config, (ConfigMapping, PartitionedConfig)):
+                check.failed(
+                    "Can't supply a ConfigMapping or PartitionedConfig for 'config' when 'partitions_def' is supplied."
+                )
+            hardcoded_config = config if config else {}
+            partitioned_config = PartitionedConfig(partitions_def, lambda _: hardcoded_config)
 
         if isinstance(config, ConfigMapping):
             config_mapping = config
@@ -569,19 +649,24 @@ class GraphDefinition(NodeDefinition):
             name=job_name,
             description=description or self.description,
             graph_def=self,
-            mode_def=ModeDefinition(
-                resource_defs=resource_defs_with_defaults,
-                logger_defs=logger_defs,
-                executor_defs=[executor_def],
-                _config_mapping=config_mapping,
-                _partitioned_config=partitioned_config,
-            ),
+            resource_defs=resource_defs_with_defaults,
+            logger_defs=logger_defs,
+            executor_def=executor_def,
+            config_mapping=config_mapping,
+            partitioned_config=partitioned_config,
             preset_defs=presets,
             tags=tags,
+            metadata=metadata,
             hook_defs=hooks,
             version_strategy=version_strategy,
             op_retry_policy=op_retry_policy,
-        ).get_job_def_for_op_selection(op_selection)
+            asset_layer=asset_layer,
+            _input_values=input_values,
+            _subset_selection_data=_asset_selection_data,
+            _executor_def_specified=executor_def_specified,
+            _logger_defs_specified=logger_defs_specified,
+            _metadata_entries=metadata_entries,
+        ).get_job_def_for_subset_selection(op_selection)
 
     def coerce_to_job(self):
         # attempt to coerce a Graph in to a Job, raising a useful error if it doesn't work
@@ -595,9 +680,9 @@ class GraphDefinition(NodeDefinition):
 
     def _get_config_schema(
         self,
-        resource_defs: Optional[Dict[str, ResourceDefinition]],
+        resource_defs: Optional[Mapping[str, ResourceDefinition]],
         executor_def: "ExecutorDefinition",
-        logger_defs: Optional[Dict[str, LoggerDefinition]],
+        logger_defs: Optional[Mapping[str, LoggerDefinition]],
     ) -> ConfigType:
         from .job_definition import JobDefinition
 
@@ -605,11 +690,9 @@ class GraphDefinition(NodeDefinition):
             JobDefinition(
                 name=self.name,
                 graph_def=self,
-                mode_def=ModeDefinition(
-                    resource_defs=resource_defs,
-                    executor_defs=[executor_def],
-                    logger_defs=logger_defs,
-                ),
+                resource_defs=resource_defs,
+                executor_def=executor_def,
+                logger_defs=logger_defs,
             )
             .get_run_config_schema("default")
             .run_config_schema_type
@@ -619,20 +702,22 @@ class GraphDefinition(NodeDefinition):
         self,
         run_config: Any = None,
         instance: Optional["DagsterInstance"] = None,
-        resources: Optional[Dict[str, Any]] = None,
+        resources: Optional[Mapping[str, object]] = None,
         raise_on_error: bool = True,
         op_selection: Optional[List[str]] = None,
+        run_id: Optional[str] = None,
+        input_values: Optional[Mapping[str, object]] = None,
     ) -> "ExecuteInProcessResult":
         """
         Execute this graph in-process, collecting results in-memory.
 
         Args:
-            run_config (Optional[Dict[str, Any]]):
+            run_config (Optional[Mapping[str, Any]]):
                 Run config to provide to execution. The configuration for the underlying graph
                 should exist under the "ops" key.
             instance (Optional[DagsterInstance]):
                 The instance to execute against, an ephemeral one will be used if none provided.
-            resources (Optional[Dict[str, Any]]):
+            resources (Optional[Mapping[str, Any]]):
                 The resources needed if any are required. Can provide resource instances directly,
                 or resource definitions.
             raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
@@ -645,6 +730,8 @@ class GraphDefinition(NodeDefinition):
                 (downstream dependencies) within 3 levels down.
                 * ``['*some_op', 'other_op_a', 'other_op_b+']``: select ``some_op`` and all its
                 ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
+            input_values (Optional[Mapping[str, Any]]):
+                A dictionary that maps python objects to the top-level inputs of the graph.
 
         Returns:
             :py:class:`~dagster.ExecuteInProcessResult`
@@ -658,14 +745,17 @@ class GraphDefinition(NodeDefinition):
 
         instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         resources = check.opt_dict_param(resources, "resources", key_type=str)
+        input_values = check.opt_mapping_param(input_values, "input_values")
 
         resource_defs = wrap_resources_for_execution(resources)
-        in_proc_mode = ModeDefinition(
-            executor_defs=[execute_in_process_executor], resource_defs=resource_defs
-        )
+
         ephemeral_job = JobDefinition(
-            name=self._name, graph_def=self, mode_def=in_proc_mode
-        ).get_job_def_for_op_selection(op_selection)
+            name=self._name,
+            graph_def=self,
+            executor_def=execute_in_process_executor,
+            resource_defs=resource_defs,
+            _input_values=input_values,
+        ).get_job_def_for_subset_selection(op_selection)
 
         run_config = run_config if run_config is not None else {}
         op_selection = check.opt_list_param(op_selection, "op_selection", str)
@@ -677,6 +767,7 @@ class GraphDefinition(NodeDefinition):
             instance=instance,
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
+            run_id=run_id,
         )
 
     @property
@@ -687,6 +778,15 @@ class GraphDefinition(NodeDefinition):
     def is_subselected(self) -> bool:
         return False
 
+    def get_resource_requirements(
+        self, asset_layer: Optional["AssetLayer"] = None
+    ) -> Iterator[ResourceRequirement]:
+        for node in self.node_dict.values():
+            yield from node.get_resource_requirements(outer_container=self, asset_layer=asset_layer)
+
+        for dagster_type in self.all_dagster_types():
+            yield from dagster_type.get_resource_requirements()
+
 
 class SubselectedGraphDefinition(GraphDefinition):
     """Defines a subselected graph.
@@ -696,27 +796,29 @@ class SubselectedGraphDefinition(GraphDefinition):
             from. This is used for tracking where the subselected graph originally comes from.
             Note that we allow subselecting a subselected graph, and this field refers to the direct
             parent graph of the current subselection, rather than the original root graph.
-        node_defs (Optional[List[NodeDefinition]]): A list of all top level nodes in the graph. A
+        node_defs (Optional[Sequence[NodeDefinition]]): A list of all top level nodes in the graph. A
             node can be an op or a graph that contains other nodes.
-        dependencies (Optional[Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]]):
+        dependencies (Optional[Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]]):
             A structure that declares the dependencies of each op's inputs on the outputs of other
             ops in the subselected graph. Keys of the top level dict are either the string names of
             ops in the graph or, in the case of aliased solids, :py:class:`NodeInvocations <NodeInvocation>`.
             Values of the top level dict are themselves dicts, which map input names belonging to
             the op or aliased op to :py:class:`DependencyDefinitions <DependencyDefinition>`.
-        input_mappings (Optional[List[InputMapping]]): Define the inputs to the nested graph, and
+        input_mappings (Optional[Sequence[InputMapping]]): Define the inputs to the nested graph, and
             how they map to the inputs of its constituent ops.
-        output_mappings (Optional[List[OutputMapping]]): Define the outputs of the nested graph, and
+        output_mappings (Optional[Sequence[OutputMapping]]): Define the outputs of the nested graph, and
             how they map from the outputs of its constituent ops.
     """
 
     def __init__(
         self,
         parent_graph_def: GraphDefinition,
-        node_defs: Optional[List[NodeDefinition]],
-        dependencies: Optional[Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]],
-        input_mappings: Optional[List[InputMapping]],
-        output_mappings: Optional[List[OutputMapping]],
+        node_defs: Optional[Sequence[NodeDefinition]],
+        dependencies: Optional[
+            Mapping[Union[str, NodeInvocation], Mapping[str, IDependencyDefinition]]
+        ],
+        input_mappings: Optional[Sequence[InputMapping]],
+        output_mappings: Optional[Sequence[OutputMapping]],
     ):
         self._parent_graph_def = check.inst_param(
             parent_graph_def, "parent_graph_def", GraphDefinition
@@ -746,12 +848,12 @@ class SubselectedGraphDefinition(GraphDefinition):
 
 
 def _validate_in_mappings(
-    input_mappings: List[InputMapping],
-    solid_dict: Dict[str, Node],
+    input_mappings: Sequence[InputMapping],
+    solid_dict: Mapping[str, Node],
     dependency_structure: DependencyStructure,
     name: str,
     class_name: str,
-) -> Tuple[List[InputMapping], Iterable[InputDefinition]]:
+) -> Tuple[Sequence[InputMapping], Sequence[InputDefinition]]:
     from .composition import MappedInputPlaceholder
 
     input_def_dict: Dict[str, InputDefinition] = OrderedDict()
@@ -878,16 +980,16 @@ def _validate_in_mappings(
                             )
                         )
 
-    return input_mappings, input_def_dict.values()
+    return input_mappings, list(input_def_dict.values())
 
 
 def _validate_out_mappings(
-    output_mappings: List[OutputMapping],
-    solid_dict: Dict[str, Node],
+    output_mappings: Sequence[OutputMapping],
+    solid_dict: Mapping[str, Node],
     dependency_structure: DependencyStructure,
     name: str,
     class_name: str,
-) -> List[OutputMapping]:
+) -> Sequence[OutputMapping]:
     for mapping in output_mappings:
         if isinstance(mapping, OutputMapping):
 
@@ -995,7 +1097,10 @@ def _config_mapping_with_default_value(
 
     config_schema = Shape(
         fields=updated_fields,
-        description="run config schema with default values from default_config",
+        description=(
+            "This run config schema was automatically populated with default values "
+            "from `default_config`."
+        ),
         field_aliases=inner_schema.field_aliases,
     )
 
@@ -1013,9 +1118,10 @@ def _config_mapping_with_default_value(
 
 
 @io_manager(
-    description="The default io manager for Jobs. Uses filesystem but switches to in-memory when invoked through execute_in_process."
+    description="Built-in filesystem IO manager that stores and retrieves values using pickling."
 )
-def default_job_io_manager(init_context):
+def default_job_io_manager(init_context: "InitResourceContext"):
     from dagster.core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 
-    return PickledObjectFilesystemIOManager(base_dir=init_context.instance.storage_directory())
+    instance = check.not_none(init_context.instance)
+    return PickledObjectFilesystemIOManager(base_dir=instance.storage_directory())

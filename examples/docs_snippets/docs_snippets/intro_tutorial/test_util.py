@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 
 def patch_cereal_requests(fn):
-    with open(Path(__file__).parent / "cereal.csv") as f:
+    with open(Path(__file__).parent / "cereal.csv", encoding="utf8") as f:
         cereal_text = f.read()
 
     @patch("requests.get")

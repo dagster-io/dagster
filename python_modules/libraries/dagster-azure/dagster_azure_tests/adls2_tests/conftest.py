@@ -5,7 +5,7 @@ import pytest
 
 @pytest.fixture(scope="session")
 def storage_account():
-    yield "elementldevstorage"
+    yield "dagsterdev"
 
 
 @pytest.fixture(scope="session")

@@ -38,7 +38,10 @@ You can set the following parameters on the QueuedRunCoordinator by modifying it
 
 You can place limits on the number of runs that can be in progress at a single time. Any runs beyond this limit will be queued, and won’t use any compute.
 
-- An overall limit on the number of runs can be placed using the `max_concurrent_runs` key.
+- An overall limit on the number of runs can be placed using the `max_concurrent_runs` key. Defaults to `10`.
+  - You can disable this limit by setting it to `-1`
+  - You can also prevent any runs from launching by setting to `0`
+  - Any negative numbers other than `-1` are disallowed
 - More specific limits can be configured based on run tags, with `tag_concurrency_limits`. Limits can be specified for all runs with a certain tag key or key-value pair.
 
 If any limit would be exceeded by launching a run, then the run will stay queued.

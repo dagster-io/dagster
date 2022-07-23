@@ -5,6 +5,7 @@ import textwrap
 import pytest
 
 from dagster import DagsterEvent
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.errors import DagsterUserCodeExecutionError, user_code_error_boundary
 from dagster.core.execution.plan.objects import ErrorSource, StepFailureData
@@ -16,7 +17,6 @@ from dagster.core.log_manager import (
     DagsterMessageProps,
     construct_log_string,
 )
-from dagster.utils.error import serializable_error_info_from_exc_info
 
 
 def test_construct_log_string_for_event():
@@ -83,6 +83,7 @@ def make_log_string(error, error_source=None):
 
 
 def test_construct_log_string_with_error():
+    error = None
     try:
         raise ValueError("some error")
     except ValueError:
@@ -103,6 +104,7 @@ def test_construct_log_string_with_error():
 
 
 def test_construct_log_string_with_user_code_error():
+    error = None
     try:
         with user_code_error_boundary(
             DagsterUserCodeExecutionError, lambda: "Error occurred while eating a banana"
@@ -129,6 +131,7 @@ def test_construct_log_string_with_user_code_error():
 
 
 def test_construct_log_string_with_error_raise_from():
+    error = None
     try:
         try:
             raise ValueError("inner error")

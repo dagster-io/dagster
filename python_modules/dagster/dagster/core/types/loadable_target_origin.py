@@ -1,7 +1,7 @@
 from typing import List, NamedTuple, Optional
 
-from dagster import check
-from dagster.serdes import whitelist_for_serdes
+import dagster._check as check
+from dagster._serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
@@ -9,7 +9,7 @@ class LoadableTargetOrigin(
     NamedTuple(
         "LoadableTargetOrigin",
         [
-            ("executable_path", str),
+            ("executable_path", Optional[str]),
             ("python_file", Optional[str]),
             ("module_name", Optional[str]),
             ("working_directory", Optional[str]),
@@ -20,7 +20,7 @@ class LoadableTargetOrigin(
 ):
     def __new__(
         cls,
-        executable_path,
+        executable_path=None,
         python_file=None,
         module_name=None,
         working_directory=None,
@@ -29,7 +29,7 @@ class LoadableTargetOrigin(
     ):
         return super(LoadableTargetOrigin, cls).__new__(
             cls,
-            executable_path=check.str_param(executable_path, "executable_path"),
+            executable_path=check.opt_str_param(executable_path, "executable_path"),
             python_file=check.opt_str_param(python_file, "python_file"),
             module_name=check.opt_str_param(module_name, "module_name"),
             working_directory=check.opt_str_param(working_directory, "working_directory"),

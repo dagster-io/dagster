@@ -1,48 +1,38 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import * as React from 'react';
-import {useLocation} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
+import {SectionedLeftNav} from '../ui/SectionedLeftNav';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
-import {FlatContentList} from './FlatContentList';
 import {RepoNavItem} from './RepoNavItem';
 import {RepositoryLocationStateObserver} from './RepositoryLocationStateObserver';
 
 const LoadedRepositorySection: React.FC<{
   allRepos: DagsterRepoOption[];
   visibleRepos: DagsterRepoOption[];
-  toggleVisible: (repoAddress: RepoAddress) => void;
+  toggleVisible: (repoAddresses: RepoAddress[]) => void;
 }> = ({allRepos, visibleRepos, toggleVisible}) => {
-  const location = useLocation();
-  const workspacePath = location.pathname.split('/workspace/').pop();
-  const [, repoPath, type, item, tab] =
-    workspacePath?.match(
-      /([^\/]+)\/(pipelines|jobs|solids|ops|sensors|schedules)\/([^\/]+)\/?([^\/]+)?/,
-    ) || [];
+  const listContent = () => {
+    if (visibleRepos.length) {
+      return <SectionedLeftNav />;
+    }
 
-  // Covert the "jobname~*opquery*" path component to "jobname"
-  // so we know to select it in the sidebar
-  const selector =
-    item && (type === 'pipelines' || type === 'jobs')
-      ? explorerPathFromString(item).pipelineName
-      : item;
+    if (allRepos.length > 0) {
+      return <EmptyState>Select a repository to see a list of jobs.</EmptyState>;
+    }
+
+    return (
+      <EmptyState>
+        There are no repositories in this workspace. Add a repository to see a list of jobs.
+      </EmptyState>
+    );
+  };
 
   return (
     <Container>
-      <ListContainer>
-        {visibleRepos.length ? (
-          <FlatContentList repoPath={repoPath} selector={selector} repos={visibleRepos} tab={tab} />
-        ) : allRepos.length > 0 ? (
-          <EmptyState>Select a repository to see a list of jobs.</EmptyState>
-        ) : (
-          <EmptyState>
-            There are no repositories in this workspace. Add a repository to see a list of jobs.
-          </EmptyState>
-        )}
-      </ListContainer>
+      <ListContainer>{listContent()}</ListContainer>
       <RepositoryLocationStateObserver />
       <RepoNavItem allRepos={allRepos} selected={visibleRepos} onToggle={toggleVisible} />
     </Container>
@@ -50,7 +40,7 @@ const LoadedRepositorySection: React.FC<{
 };
 
 const Container = styled.div`
-  background: ${ColorsWIP.Gray100};
+  background: ${Colors.Gray100};
   display: flex;
   flex: 1;
   overflow: none;
@@ -66,7 +56,7 @@ const ListContainer = styled.div`
 `;
 
 const EmptyState = styled.div`
-  color: ${ColorsWIP.Gray400};
+  color: ${Colors.Gray400};
   line-height: 20px;
   padding: 6px 24px 0;
 `;

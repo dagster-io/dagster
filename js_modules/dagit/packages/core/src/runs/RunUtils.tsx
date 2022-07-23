@@ -1,9 +1,14 @@
 import {gql} from '@apollo/client';
+import {History} from 'history';
+import qs from 'qs';
 import * as React from 'react';
 
+import {Mono} from '../../../ui/src';
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {SharedToaster} from '../app/DomUtils';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
+import {AssetKey} from '../assets/types';
 import {ExecutionParams, RunStatus} from '../types/globalTypes';
 
 import {DagsterTag} from './RunTag';
@@ -19,24 +24,50 @@ export function titleForRun(run: {runId: string}) {
   return run.runId.split('-').shift();
 }
 
+export function assetKeysForRun(run: {
+  assetSelection: {path: string[]}[] | null;
+  stepKeysToExecute: string[] | null;
+}): AssetKey[] {
+  // Note: The fallback logic here is only necessary for Dagit <0.15.0 and should be removed
+  // soon, because stepKeysToExecute and asset keys do not map 1:1 for multi-component asset
+  // paths.
+  return run.assetSelection || run.stepKeysToExecute?.map((s) => ({path: [s]})) || [];
+}
+
+export function linkToRunEvent(
+  run: {runId: string},
+  event: {timestamp?: string; stepKey: string | null},
+) {
+  return `/instance/runs/${run.runId}?${qs.stringify({
+    focusedTime: event.timestamp ? Number(event.timestamp) : undefined,
+    selection: event.stepKey,
+    logs: `step:${event.stepKey}`,
+  })}`;
+}
+
 export const RunsQueryRefetchContext = React.createContext<{
   refetch: () => void;
 }>({refetch: () => {}});
 
-export function useDidLaunchEvent(cb: () => void) {
+export function useDidLaunchEvent(cb: () => void, delay = 1500) {
   React.useEffect(() => {
-    document.addEventListener('run-launched', cb);
-    return () => {
-      document.removeEventListener('run-launched', cb);
+    const handler = () => {
+      setTimeout(cb, delay);
     };
-  }, [cb]);
+    document.addEventListener('run-launched', handler);
+    return () => {
+      document.removeEventListener('run-launched', handler);
+    };
+  }, [cb, delay]);
 }
 
+export type LaunchBehavior = 'open' | 'open-in-new-tab' | 'toast';
+
 export function handleLaunchResult(
-  basePath: string,
   pipelineName: string,
   result: void | {data?: LaunchPipelineExecution | LaunchPipelineReexecution | null},
-  options: {openInTab?: boolean; querystring?: string},
+  history: History<unknown>,
+  options: {behavior: LaunchBehavior; preserveQuerystring?: boolean},
 ) {
   const obj =
     result && result.data && 'launchPipelineExecution' in result.data
@@ -51,13 +82,30 @@ export function handleLaunchResult(
   }
 
   if (obj.__typename === 'LaunchRunSuccess') {
-    const url = `${basePath}/instance/runs/${obj.run.runId}${options.querystring || ''}`;
-    if (options.openInTab) {
-      window.open(url, '_blank');
+    const pathname = `/instance/runs/${obj.run.runId}`;
+    const search = options.preserveQuerystring ? history.location.search : '';
+
+    if (options.behavior === 'open-in-new-tab') {
+      window.open(history.createHref({pathname, search}), '_blank');
+    } else if (options.behavior === 'open') {
+      history.push({pathname, search});
     } else {
-      window.location.href = url;
+      SharedToaster.show({
+        intent: 'success',
+        message: (
+          <div>
+            Launched run <Mono>{obj.run.runId.slice(0, 8)}</Mono>
+          </div>
+        ),
+        action: {
+          text: 'View',
+          onClick: () => history.push({pathname, search}),
+        },
+      });
     }
     document.dispatchEvent(new CustomEvent('run-launched'));
+  } else if (obj.__typename === 'InvalidSubsetError') {
+    showCustomAlert({body: obj.message});
   } else if (obj.__typename === 'PythonError') {
     showCustomAlert({
       title: 'Error',
@@ -111,7 +159,7 @@ export type ReExecutionStyle =
   | {type: 'selection'; selection: StepSelection};
 
 export function getReexecutionVariables(input: {
-  run: (RunFragment | RunTableRunFragment) & {runConfig: any};
+  run: (RunFragment | RunTableRunFragment) & {runConfigYaml: string};
   style: ReExecutionStyle;
   repositoryLocationName: string;
   repositoryName: string;
@@ -124,13 +172,18 @@ export function getReexecutionVariables(input: {
 
   const executionParams: ExecutionParams = {
     mode: run.mode,
-    runConfigData: run.runConfig,
+    runConfigData: run.runConfigYaml,
     executionMetadata: getBaseExecutionMetadata(run),
     selector: {
       repositoryLocationName,
       repositoryName,
       pipelineName: run.pipelineName,
       solidSelection: run.solidSelection,
+      assetSelection: run.assetSelection
+        ? run.assetSelection.map((asset_key) => ({
+            path: asset_key.path,
+          }))
+        : null,
     },
   };
 
@@ -147,7 +200,6 @@ export function getReexecutionVariables(input: {
       value: style.selection.query,
     });
   }
-
   return {executionParams};
 }
 
@@ -165,26 +217,26 @@ export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
       ... on PipelineNotFoundError {
         message
       }
+      ... on InvalidSubsetError {
+        message
+      }
       ... on RunConfigValidationInvalid {
         errors {
           message
         }
       }
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export const DELETE_MUTATION = gql`
   mutation Delete($runId: String!) {
     deletePipelineRun(runId: $runId) {
       __typename
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
       ... on UnauthorizedError {
         message
       }
@@ -193,6 +245,8 @@ export const DELETE_MUTATION = gql`
       }
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export const TERMINATE_MUTATION = gql`
@@ -215,16 +269,22 @@ export const TERMINATE_MUTATION = gql`
       ... on UnauthorizedError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
-  mutation LaunchPipelineReexecution($executionParams: ExecutionParams!) {
-    launchPipelineReexecution(executionParams: $executionParams) {
+  mutation LaunchPipelineReexecution(
+    $executionParams: ExecutionParams
+    $reexecutionParams: ReexecutionParams
+  ) {
+    launchPipelineReexecution(
+      executionParams: $executionParams
+      reexecutionParams: $reexecutionParams
+    ) {
       __typename
       ... on LaunchRunSuccess {
         run {
@@ -238,17 +298,19 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
       ... on PipelineNotFoundError {
         message
       }
+      ... on InvalidSubsetError {
+        message
+      }
       ... on RunConfigValidationInvalid {
         errors {
           message
         }
       }
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 interface RunTimeProps {
@@ -258,34 +320,36 @@ interface RunTimeProps {
 export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
   const {startTime, updateTime} = run;
 
-  const content = () => {
-    if (startTime) {
-      return <Timestamp timestamp={{unix: startTime}} />;
-    }
-    if (run.status === RunStatus.STARTING && updateTime) {
-      return <Timestamp timestamp={{unix: updateTime}} />;
-    }
-    if (run.status === RunStatus.QUEUED && updateTime) {
-      return <Timestamp timestamp={{unix: updateTime}} />;
-    }
-
-    switch (run.status) {
-      case RunStatus.FAILURE:
-        return 'Failed to start';
-      case RunStatus.CANCELED:
-        return 'Canceled';
-      case RunStatus.CANCELING:
-        return 'Canceling…';
-      default:
-        return 'Starting…';
-    }
-  };
-
-  return <div>{content()}</div>;
+  return (
+    <div>
+      {startTime ? (
+        <Timestamp timestamp={{unix: startTime}} />
+      ) : updateTime ? (
+        <Timestamp timestamp={{unix: updateTime}} />
+      ) : null}
+    </div>
+  );
 });
 
-export const RunElapsed: React.FC<RunTimeProps> = React.memo(({run}) => {
-  return <TimeElapsed startUnix={run.startTime} endUnix={run.endTime} />;
+export const RunStateSummary: React.FC<RunTimeProps> = React.memo(({run}) => {
+  // kind of a hack, but we manually set the start time to the end time in the graphql resolver
+  // for this case, so check for start/end time equality for the failed to start condition
+  const failedToStart =
+    run.status === RunStatus.FAILURE && (!run.startTime || run.startTime === run.endTime);
+
+  return failedToStart ? (
+    <div>Failed to start</div>
+  ) : run.status === RunStatus.CANCELED ? (
+    <div>Canceled</div>
+  ) : run.status === RunStatus.CANCELING ? (
+    <div>Canceling…</div>
+  ) : run.status === RunStatus.QUEUED ? (
+    <div>Queued…</div>
+  ) : !run.startTime ? (
+    <div>Starting…</div>
+  ) : (
+    <TimeElapsed startUnix={run.startTime} endUnix={run.endTime} />
+  );
 });
 
 export const RUN_TIME_FRAGMENT = gql`

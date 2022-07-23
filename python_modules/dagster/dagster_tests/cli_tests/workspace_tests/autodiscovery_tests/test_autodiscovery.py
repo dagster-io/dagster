@@ -4,15 +4,16 @@ import sys
 import pytest
 
 from dagster import DagsterInvariantViolationError, RepositoryDefinition
+from dagster._utils import alter_sys_path, file_relative_path, restore_sys_modules
 from dagster.core.code_pointer import CodePointer
-from dagster.core.definitions.reconstructable import repository_def_from_pointer
+from dagster.core.definitions.reconstruct import repository_def_from_pointer
 from dagster.core.errors import DagsterImportError
 from dagster.core.workspace.autodiscovery import (
+    LOAD_ALL_ASSETS,
     loadable_targets_from_python_file,
     loadable_targets_from_python_module,
     loadable_targets_from_python_package,
 )
-from dagster.utils import alter_sys_path, file_relative_path, restore_sys_modules
 
 
 def test_single_repository():
@@ -87,10 +88,10 @@ def test_double_graph():
         loadable_targets_from_python_file(double_pipeline_path)
 
     assert str(exc_info.value) == (
-        'No repository, job, or pipeline, and more than one graph found in "double_graph". '
-        "If you load a file or module directly it must either have one repository, "
-        "one job, one pipeline, or one graph in scope. Found graphs defined in variables or decorated "
-        "functions: ['graph_one', 'graph_two']."
+        'More than one graph found in "double_graph". '
+        "If you load a file or module directly and it has no repositories, jobs, or "
+        "pipelines in scope, it must have no more than one graph in scope. "
+        "Found graphs defined in variables or decorated functions: ['graph_one', 'graph_two']."
     )
 
 
@@ -105,7 +106,7 @@ def test_single_asset_group():
     repo_def = repository_def_from_pointer(CodePointer.from_python_file(path, symbol, None))
 
     isinstance(repo_def, RepositoryDefinition)
-    the_job = repo_def.get_job("__ASSET_GROUP")
+    the_job = repo_def.get_job("__ASSET_JOB")
     assert len(the_job.graph.node_defs) == 2
 
 
@@ -115,11 +116,26 @@ def test_double_asset_group():
         loadable_targets_from_python_file(path)
 
     assert str(exc_info.value) == (
-        'More than one asset collection found in "double_asset_group". '
-        "If you load a file or module directly it must either have one repository, one "
-        "job, one pipeline, one graph, or one asset collection scope. Found asset "
-        "collections defined in variables: ['ac1', 'ac2']."
+        'More than one asset group found in "double_asset_group". '
+        "If you load a file or module directly and it has no repositories, jobs, "
+        "pipeline, or graphs in scope, it must have no more than one asset group in scope. "
+        "Found asset groups defined in variables: ['ac1', 'ac2']."
     )
+
+
+def test_multiple_assets():
+    path = file_relative_path(__file__, "multiple_assets.py")
+    loadable_targets = loadable_targets_from_python_file(path)
+
+    assert len(loadable_targets) == 1
+    symbol = loadable_targets[0].attribute
+    assert symbol == LOAD_ALL_ASSETS
+
+    repo_def = repository_def_from_pointer(CodePointer.from_python_file(path, symbol, None))
+
+    isinstance(repo_def, RepositoryDefinition)
+    the_job = repo_def.get_job("__ASSET_JOB")
+    assert len(the_job.graph.node_defs) == 2
 
 
 def test_no_loadable_targets():
@@ -128,7 +144,7 @@ def test_no_loadable_targets():
 
     assert (
         str(exc_info.value)
-        == 'No jobs, pipelines, graphs, asset collections, or repositories found in "nada".'
+        == 'No repositories, jobs, pipelines, graphs, asset groups, or asset definitions found in "nada".'
     )
 
 

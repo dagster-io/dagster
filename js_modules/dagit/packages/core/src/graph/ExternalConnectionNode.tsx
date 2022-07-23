@@ -1,12 +1,11 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import {LinkVertical as Link} from '@vx/shape';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {Edge} from './OpLinks';
+import {Edge} from './OpEdges';
 import {SVGMonospaceText} from './SVGComponents';
-import {IPoint} from './getFullOpLayout';
-import {isHighlighted} from './highlighting';
+import {IPoint, isHighlighted} from './common';
 
 interface ExternalConnectionNodeProps {
   layout: IPoint;
@@ -22,7 +21,7 @@ interface ExternalConnectionNodeProps {
   onDoubleClickLabel: () => void;
 }
 
-export const ExternalConnectionNode: React.FunctionComponent<ExternalConnectionNodeProps> = ({
+export const ExternalConnectionNode: React.FC<ExternalConnectionNodeProps> = ({
   layout,
   target,
   edges,
@@ -68,10 +67,10 @@ export const ExternalConnectionNode: React.FunctionComponent<ExternalConnectionN
 
 const BackingRect = styled('rect')`
   stroke-width: 10px;
-  fill: ${ColorsWIP.Gray100};
-  stroke: ${ColorsWIP.Gray100};
+  fill: ${Colors.Gray100};
+  stroke: ${Colors.Gray100};
   &:hover {
-    fill: ${ColorsWIP.Gray200};
-    stroke: ${ColorsWIP.Gray200};
+    fill: ${Colors.Gray200};
+    stroke: ${Colors.Gray200};
   }
 `;

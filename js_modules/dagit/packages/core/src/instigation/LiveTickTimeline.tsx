@@ -1,4 +1,4 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import {ActiveElement, TimeUnit, TooltipItem} from 'chart.js';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
@@ -14,10 +14,10 @@ type FutureTick = TickHistoryQuery_instigationStateOrError_InstigationState_next
 type InstigationTick = TickHistoryQuery_instigationStateOrError_InstigationState_ticks;
 
 const COLOR_MAP = {
-  [InstigationTickStatus.SUCCESS]: ColorsWIP.Blue500,
-  [InstigationTickStatus.FAILURE]: ColorsWIP.Red500,
-  [InstigationTickStatus.STARTED]: ColorsWIP.Gray400,
-  [InstigationTickStatus.SKIPPED]: ColorsWIP.Yellow500,
+  [InstigationTickStatus.SUCCESS]: Colors.Blue500,
+  [InstigationTickStatus.FAILURE]: Colors.Red500,
+  [InstigationTickStatus.STARTED]: Colors.Gray400,
+  [InstigationTickStatus.SKIPPED]: Colors.Yellow500,
 };
 
 const REFRESH_INTERVAL = 100;
@@ -56,7 +56,7 @@ export const LiveTickTimeline: React.FC<{
 
   if (nextTick) {
     tickData.push({x: 1000 * nextTick.timestamp, y: 0});
-    tickColors.push(ColorsWIP.Gray200);
+    tickColors.push(Colors.Gray200);
     tickRadii.push(nextTickRadius);
   }
 
@@ -69,17 +69,17 @@ export const LiveTickTimeline: React.FC<{
           {x: graphNow - 60000 * 10, y: 0},
           {x: graphNow, y: 0},
         ],
-        borderColor: ColorsWIP.Gray100,
+        borderColor: Colors.Gray100,
         borderWidth: 1,
         pointBorderWidth: 2,
-        pointBorderColor: ColorsWIP.Gray200,
+        pointBorderColor: Colors.Gray200,
         pointRadius: 1,
         pointHoverRadius: 1,
       },
       {
         label: 'ticks',
         data: tickData,
-        borderColor: ColorsWIP.Gray100,
+        borderColor: Colors.Gray100,
         borderWidth: 0,
         backgroundColor: 'rgba(0,0,0,0)',
         pointBackgroundColor: 'rgba(0,0,0,0)',
@@ -123,7 +123,7 @@ export const LiveTickTimeline: React.FC<{
       tooltip: {
         displayColors: false,
         callbacks: {
-          label: function (tooltipItem: TooltipItem<any>) {
+          label(tooltipItem: TooltipItem<any>) {
             if (!tooltipItem.datasetIndex) {
               // this is the current time
               return 'Current time';
@@ -190,7 +190,9 @@ export const LiveTickTimeline: React.FC<{
         onHoverTick(undefined);
       }
     },
+
+    maintainAspectRatio: false,
   };
 
-  return <Line type="line" data={graphData} height={30} options={options} key="100%" />;
+  return <Line type="line" data={graphData} height={150} options={options} key="100%" />;
 };

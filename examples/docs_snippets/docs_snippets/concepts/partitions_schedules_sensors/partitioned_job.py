@@ -1,7 +1,12 @@
 """isort:skip_file"""
-from dagster import job
+from dagster import job, op
 
-from .date_config_job import process_data_for_date
+
+@op(config_schema={"date": str})
+def process_data_for_date(context):
+    date = context.op_config["date"]
+    context.log.info(f"processing data for {date}")
+
 
 # start_partitioned_config
 from dagster import daily_partitioned_config

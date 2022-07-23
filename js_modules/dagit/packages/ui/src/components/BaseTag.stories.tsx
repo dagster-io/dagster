@@ -2,9 +2,9 @@ import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
 import {BaseTag} from './BaseTag';
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 import {Group} from './Group';
-import {IconWIP} from './Icon';
+import {Icon} from './Icon';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -13,12 +13,12 @@ export default {
 } as Meta;
 
 const COLORS = [
-  {fillColor: ColorsWIP.Gray10, textColor: ColorsWIP.Gray900, iconColor: ColorsWIP.Gray900},
-  {fillColor: ColorsWIP.Blue50, textColor: ColorsWIP.Blue700, iconColor: ColorsWIP.Blue500},
-  {fillColor: ColorsWIP.Green50, textColor: ColorsWIP.Green700, iconColor: ColorsWIP.Green500},
-  {fillColor: ColorsWIP.Yellow50, textColor: ColorsWIP.Yellow700, iconColor: ColorsWIP.Yellow500},
-  {fillColor: ColorsWIP.Red50, textColor: ColorsWIP.Red700, iconColor: ColorsWIP.Red500},
-  {fillColor: ColorsWIP.Olive50, textColor: ColorsWIP.Olive700, iconColor: ColorsWIP.Olive500},
+  {fillColor: Colors.Gray10, textColor: Colors.Gray900, iconColor: Colors.Gray900},
+  {fillColor: Colors.Blue50, textColor: Colors.Blue700, iconColor: Colors.Blue500},
+  {fillColor: Colors.Green50, textColor: Colors.Green700, iconColor: Colors.Green500},
+  {fillColor: Colors.Yellow50, textColor: Colors.Yellow700, iconColor: Colors.Yellow500},
+  {fillColor: Colors.Red50, textColor: Colors.Red700, iconColor: Colors.Red500},
+  {fillColor: Colors.Olive50, textColor: Colors.Olive700, iconColor: Colors.Olive500},
 ];
 
 export const Basic = () => {
@@ -29,18 +29,18 @@ export const Basic = () => {
           <BaseTag
             fillColor={fillColor}
             textColor={textColor}
-            icon={<IconWIP name="info" color={iconColor} />}
+            icon={<Icon name="info" color={iconColor} />}
           />
           <BaseTag
             fillColor={fillColor}
             textColor={textColor}
-            icon={<IconWIP name="alternate_email" color={iconColor} />}
+            icon={<Icon name="alternate_email" color={iconColor} />}
             label="Lorem"
           />
           <BaseTag
             fillColor={fillColor}
             textColor={textColor}
-            rightIcon={<IconWIP name="toggle_off" color={iconColor} />}
+            rightIcon={<Icon name="toggle_off" color={iconColor} />}
             label="Lorem"
           />
           <BaseTag fillColor={fillColor} textColor={textColor} label="Lorem" />

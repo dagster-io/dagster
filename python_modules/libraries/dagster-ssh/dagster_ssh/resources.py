@@ -6,8 +6,10 @@ import paramiko
 from paramiko.config import SSH_PORT
 from sshtunnel import SSHTunnelForwarder
 
-from dagster import Field, StringSource, check, resource
-from dagster.utils import merge_dicts, mkdir_p
+from dagster import Field, StringSource
+from dagster import _check as check
+from dagster import resource
+from dagster._utils import merge_dicts, mkdir_p
 
 
 def key_from_str(key_str):
@@ -72,7 +74,7 @@ class SSHResource:
         user_ssh_config_filename = os.path.expanduser("~/.ssh/config")
         if os.path.isfile(user_ssh_config_filename):
             ssh_conf = paramiko.SSHConfig()
-            ssh_conf.parse(open(user_ssh_config_filename))
+            ssh_conf.parse(open(user_ssh_config_filename, encoding="utf8"))
             host_info = ssh_conf.lookup(self.remote_host)
             if host_info and host_info.get("proxycommand"):
                 self.host_proxy = paramiko.ProxyCommand(host_info.get("proxycommand"))

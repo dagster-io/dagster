@@ -1,4 +1,4 @@
-import {ColorsWIP, FontFamily} from '@dagster-io/ui';
+import {Colors, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -61,7 +61,7 @@ const OpTagsContainer = styled.div<{$minified: boolean}>`
   & > div {
     padding: 0 ${(p) => (p.$minified ? 10 : 5)}px;
     line-height: ${(p) => (p.$minified ? 32 : 20)}px;
-    color: ${ColorsWIP.White};
+    color: ${Colors.White};
     font-family: ${FontFamily.monospace};
     font-size: ${(p) => (p.$minified ? 24 : 14)}px;
     font-weight: 700;

@@ -1,15 +1,13 @@
-import {gql, useLazyQuery, useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {
   Box,
-  AnchorButton,
-  ButtonWIP,
+  Button,
   ButtonGroup,
-  ColorsWIP,
-  IconWIP,
+  Colors,
+  Icon,
   PageHeader,
   Spinner,
   Table,
-  TagWIP,
   Body,
   Heading,
   TextInput,
@@ -18,11 +16,12 @@ import {
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {QueryCountdown} from '../app/QueryCountdown';
-import {ScheduleOrSensorTag} from '../nav/JobMetadata';
+import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {RunStatusPezList} from '../runs/RunStatusPez';
 import {
   failedStatuses,
@@ -31,11 +30,10 @@ import {
   successStatuses,
 } from '../runs/RunStatuses';
 import {RunTimelineContainer, TimelineJob, makeJobKey, HourWindow} from '../runs/RunTimeline';
-import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
+import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {RunTimeFragment} from '../runs/types/RunTimeFragment';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
-import {RunStatus} from '../types/globalTypes';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -45,9 +43,9 @@ import {workspacePipelinePath} from '../workspace/workspacePath';
 
 import {InstanceTabs} from './InstanceTabs';
 import {JobMenu} from './JobMenu';
+import {LastRunSummary} from './LastRunSummary';
 import {NextTick, SCHEDULE_FUTURE_TICKS_FRAGMENT} from './NextTick';
 import {RepoFilterButton} from './RepoFilterButton';
-import {StepSummaryForRun} from './StepSummaryForRun';
 import {
   InstanceOverviewInitialQuery,
   InstanceOverviewInitialQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules as Schedule,
@@ -55,19 +53,6 @@ import {
 } from './types/InstanceOverviewInitialQuery';
 import {LastTenRunsPerJobQuery} from './types/LastTenRunsPerJobQuery';
 import {OverviewJobFragment} from './types/OverviewJobFragment';
-
-const intent = (status: RunStatus) => {
-  switch (status) {
-    case RunStatus.SUCCESS:
-      return 'success';
-    case RunStatus.CANCELED:
-    case RunStatus.CANCELING:
-    case RunStatus.FAILURE:
-      return 'danger';
-    default:
-      return 'none';
-  }
-};
 
 type JobItem = {
   job: OverviewJobFragment;
@@ -100,29 +85,32 @@ const initialState: State = {
   searchValue: '',
 };
 
-const POLL_INTERVAL = 15 * 1000;
-
 export const InstanceOverviewPage = () => {
+  useTrackPageView();
+
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
-
-  const queryResult = useQuery<InstanceOverviewInitialQuery>(INSTANCE_OVERVIEW_INITIAL_QUERY, {
-    fetchPolicy: 'network-only',
-    pollInterval: POLL_INTERVAL,
-    notifyOnNetworkStatusChange: true,
-  });
-  const {data, loading} = queryResult;
-
-  const [retrieveLastTenRuns, {data: lastTenRunsData}] = useLazyQuery<LastTenRunsPerJobQuery>(
-    LAST_TEN_RUNS_PER_JOB_QUERY,
-    {fetchPolicy: 'network-only', pollInterval: POLL_INTERVAL},
-  );
-
   const {searchValue} = state;
 
-  React.useEffect(() => {
-    retrieveLastTenRuns();
-  }, [retrieveLastTenRuns]);
+  const queryResultOverview = useQuery<InstanceOverviewInitialQuery>(
+    INSTANCE_OVERVIEW_INITIAL_QUERY,
+    {
+      fetchPolicy: 'network-only',
+      notifyOnNetworkStatusChange: true,
+    },
+  );
+  const {data, loading} = queryResultOverview;
+
+  const queryResultLastRuns = useQuery<LastTenRunsPerJobQuery>(LAST_TEN_RUNS_PER_JOB_QUERY, {
+    fetchPolicy: 'network-only',
+    notifyOnNetworkStatusChange: true,
+  });
+  const {data: lastTenRunsData} = queryResultLastRuns;
+
+  const refreshState = useMergedRefresh(
+    useQueryRefreshAtInterval(queryResultLastRuns, FIFTEEN_SECONDS),
+    useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS),
+  );
 
   const bucketed = React.useMemo(() => {
     const failed = [];
@@ -144,7 +132,7 @@ export const InstanceOverviewPage = () => {
       return a.job.name.toLocaleLowerCase().localeCompare(b.job.name.toLocaleLowerCase());
     };
 
-    if (data && data?.workspaceOrError.__typename === 'Workspace') {
+    if (data && Object.keys(data).length && data?.workspaceOrError.__typename === 'Workspace') {
       for (const locationEntry of data.workspaceOrError.locationEntries) {
         if (
           locationEntry.__typename === 'WorkspaceLocationEntry' &&
@@ -206,7 +194,9 @@ export const InstanceOverviewPage = () => {
         (r) =>
           r.repository.name === repoAddress.name &&
           r.repositoryLocation.name === repoAddress.location,
-      ) && job.name.toLocaleLowerCase().includes(searchToLower);
+      ) &&
+      job.name.toLocaleLowerCase().includes(searchToLower) &&
+      !isHiddenAssetGroupJob(job.name);
 
     const {failed, inProgress, queued, succeeded, neverRan} = bucketed;
     return {
@@ -219,12 +209,12 @@ export const InstanceOverviewPage = () => {
   }, [bucketed, visibleRepos, searchValue]);
 
   const lastTenRunsFlattened = React.useMemo(() => {
-    if (!lastTenRunsData) {
+    if (!lastTenRunsData || Object.keys(lastTenRunsData).length === 0) {
       return null;
     }
 
     const flattened: {[key: string]: RunTimeFragment[]} = {};
-    if (lastTenRunsData && lastTenRunsData?.workspaceOrError.__typename === 'Workspace') {
+    if (lastTenRunsData.workspaceOrError.__typename === 'Workspace') {
       for (const locationEntry of lastTenRunsData.workspaceOrError.locationEntries) {
         if (
           locationEntry.__typename === 'WorkspaceLocationEntry' &&
@@ -256,7 +246,7 @@ export const InstanceOverviewPage = () => {
     const appendRuns = (jobItem: JobItem) => {
       const {job, repoAddress} = jobItem;
       const jobKey = makeJobKey(repoAddress, job.name);
-      const matchingRuns = lastTenRunsFlattened ? lastTenRunsFlattened[jobKey] : [];
+      const matchingRuns = lastTenRunsFlattened ? lastTenRunsFlattened[jobKey] || [] : [];
       return {...jobItem, runs: [...matchingRuns].reverse()};
     };
 
@@ -270,11 +260,17 @@ export const InstanceOverviewPage = () => {
     };
   }, [lastTenRunsFlattened, filteredJobs]);
 
-  if (!data && loading) {
+  if (!data || Object.keys(data).length === 0) {
     return (
-      <Box padding={64}>
-        <Spinner purpose="page" />
-      </Box>
+      <>
+        <PageHeader
+          title={<Heading>Instance status</Heading>}
+          tabs={<InstanceTabs tab="overview" refreshState={refreshState} />}
+        />
+        <Box padding={64}>
+          <Spinner purpose="section" />
+        </Box>
+      </>
     );
   }
 
@@ -284,8 +280,7 @@ export const InstanceOverviewPage = () => {
     <>
       <PageHeader
         title={<Heading>Instance status</Heading>}
-        tabs={<InstanceTabs tab="overview" />}
-        right={<QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />}
+        tabs={<InstanceTabs tab="overview" refreshState={refreshState} />}
       />
       <Box
         padding={{horizontal: 24, top: 16}}
@@ -303,7 +298,7 @@ export const InstanceOverviewPage = () => {
       <RunTimelineSection jobs={filteredJobsFlattened} loading={loading} />
       {inProgress.length ? (
         <JobSection
-          icon={<IconWIP name="hourglass_bottom" color={ColorsWIP.Blue500} size={24} />}
+          icon={<Icon name="hourglass_bottom" color={Colors.Blue500} size={24} />}
           heading={
             inProgress.length === 1 ? '1 job in progress' : `${inProgress.length} jobs in progress`
           }
@@ -312,21 +307,21 @@ export const InstanceOverviewPage = () => {
       ) : null}
       {failed.length ? (
         <JobSection
-          icon={<IconWIP name="error_outline" color={ColorsWIP.Red500} size={24} />}
+          icon={<Icon name="error_outline" color={Colors.Red500} size={24} />}
           heading={failed.length === 1 ? '1 job failed' : `${failed.length} jobs failed`}
           jobs={failed}
         />
       ) : null}
       {queued.length ? (
         <JobSection
-          icon={<IconWIP name="checklist" color={ColorsWIP.Gray500} size={24} />}
+          icon={<Icon name="checklist" color={Colors.Gray500} size={24} />}
           heading={queued.length === 1 ? '1 job queued' : `${queued.length} jobs queued`}
           jobs={queued}
         />
       ) : null}
       {succeeded.length ? (
         <JobSection
-          icon={<IconWIP name="check_circle" color={ColorsWIP.Green500} size={24} />}
+          icon={<Icon name="check_circle" color={Colors.Green500} size={24} />}
           heading={
             succeeded.length === 1 ? '1 job succeeded' : `${succeeded.length} jobs succeeded`
           }
@@ -335,7 +330,7 @@ export const InstanceOverviewPage = () => {
       ) : null}
       {neverRan.length ? (
         <JobSection
-          icon={<IconWIP name="history_toggle_off" color={ColorsWIP.Gray900} size={24} />}
+          icon={<Icon name="history_toggle_off" color={Colors.Gray900} size={24} />}
           heading={neverRan.length === 1 ? '1 job never ran' : `${neverRan.length} jobs never ran`}
           jobs={neverRan}
         />
@@ -358,10 +353,13 @@ const RunTimelineSection = ({jobs, loading}: {jobs: JobItem[]; loading: boolean}
     }
   }, [loading]);
 
-  const now = nowRef.current;
+  const nowSecs = Math.floor(nowRef.current / 1000);
   const range: [number, number] = React.useMemo(() => {
-    return [now - Number(hourWindow) * ONE_HOUR, now + LOOKAHEAD_HOURS * ONE_HOUR];
-  }, [hourWindow, now]);
+    return [
+      nowSecs * 1000 - Number(hourWindow) * ONE_HOUR,
+      nowSecs * 1000 + LOOKAHEAD_HOURS * ONE_HOUR,
+    ];
+  }, [hourWindow, nowSecs]);
 
   const [start, end] = React.useMemo(() => {
     const [unvalidatedStart, unvalidatedEnd] = range;
@@ -388,10 +386,10 @@ const RunTimelineSection = ({jobs, loading}: {jobs: JobItem[]; loading: boolean}
         flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
         margin={{top: 16}}
         padding={{bottom: 16, horizontal: 24}}
-        border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+        border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
       >
         <Box flex={{alignItems: 'center', gap: 8}}>
-          <IconWIP name="waterfall_chart" color={ColorsWIP.Gray900} size={20} />
+          <Icon name="waterfall_chart" color={Colors.Gray900} size={20} />
           <Heading>Timeline</Heading>
         </Box>
         <Box flex={{alignItems: 'center', gap: 8}}>
@@ -407,12 +405,12 @@ const RunTimelineSection = ({jobs, loading}: {jobs: JobItem[]; loading: boolean}
               onClick={(hrWindow: HourWindow) => setHourWindow(hrWindow)}
             />
           ) : null}
-          <ButtonWIP
-            icon={<IconWIP name={shown ? 'unfold_less' : 'unfold_more'} />}
+          <Button
+            icon={<Icon name={shown ? 'unfold_less' : 'unfold_more'} />}
             onClick={() => setShown((current) => !current)}
           >
             {shown ? 'Hide' : 'Show'}
-          </ButtonWIP>
+          </Button>
         </Box>
       </Box>
       {shown ? (
@@ -452,6 +450,7 @@ const JobSection = (props: JobSectionProps) => {
         <tbody>
           {jobs.map(({job, repoAddress, runs, schedules, sensors}) => {
             const jobKey = makeJobKey(repoAddress, job.name);
+            const repoAddressString = repoAddressAsString(repoAddress);
             return (
               <tr key={jobKey}>
                 <td>
@@ -471,13 +470,13 @@ const JobSection = (props: JobSectionProps) => {
                         />
                         {!job.isJob ? <LegacyPipelineTag /> : null}
                       </Box>
-                      <Body color={ColorsWIP.Gray400} style={{fontFamily: FontFamily.monospace}}>
-                        {repoAddressAsString(repoAddress)}
+                      <Body color={Colors.Gray400} style={{fontFamily: FontFamily.monospace}}>
+                        {repoAddressString}
                       </Body>
                     </Box>
                     {runs ? (
                       <Box margin={{top: 4}}>
-                        <RunStatusPezList fade runs={runs} />
+                        <RunStatusPezList fade runs={runs} repoAddress={repoAddressString} />
                       </Box>
                     ) : null}
                   </Box>
@@ -493,34 +492,11 @@ const JobSection = (props: JobSectionProps) => {
                       {schedules.length ? <NextTick schedules={schedules} /> : null}
                     </Box>
                   ) : (
-                    <div style={{color: ColorsWIP.Gray500}}>None</div>
+                    <div style={{color: Colors.Gray500}}>None</div>
                   )}
                 </td>
                 <td>
-                  <Box
-                    flex={{
-                      direction: 'row',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
-                    }}
-                  >
-                    <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 8}}>
-                      <TagWIP intent={intent(job.runs[0].status)}>
-                        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                          <RunStatusIndicator status={job.runs[0].status} size={10} />
-                          <RunTime run={job.runs[0]} />
-                        </Box>
-                      </TagWIP>
-                      {failedStatuses.has(job.runs[0].status) ||
-                      inProgressStatuses.has(job.runs[0].status) ? (
-                        <StepSummaryForRun runId={job.runs[0].id} />
-                      ) : null}
-                    </Box>
-                    <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                      <RunElapsed run={job.runs[0]} />
-                      <AnchorButton to={`/instance/runs/${job.runs[0].id}`}>View run</AnchorButton>
-                    </Box>
-                  </Box>
+                  <LastRunSummary run={job.runs[0]} />
                 </td>
                 <td>
                   <JobMenu job={job} repoAddress={repoAddress} />
@@ -604,9 +580,7 @@ const INSTANCE_OVERVIEW_INITIAL_QUERY = gql`
                 }
               }
             }
-            ... on PythonError {
-              ...PythonErrorFragment
-            }
+            ...PythonErrorFragment
           }
         }
       }
@@ -646,9 +620,7 @@ const LAST_TEN_RUNS_PER_JOB_QUERY = gql`
                 }
               }
             }
-            ... on PythonError {
-              ...PythonErrorFragment
-            }
+            ...PythonErrorFragment
           }
         }
       }

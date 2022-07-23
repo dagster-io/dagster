@@ -1,10 +1,10 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Extra  # pylint: disable=no-name-in-module
+from pydantic import BaseModel, Extra
 
 from .utils import BaseModel as BaseModelWithNullableRequiredFields
-from .utils import SupportedKubernetes, create_definition_ref
+from .utils import create_definition_ref
 
 
 class Annotations(BaseModel):
@@ -35,7 +35,7 @@ class PullPolicy(str, Enum):
 
 class Image(BaseModelWithNullableRequiredFields):
     repository: str
-    tag: Optional[str]
+    tag: Optional[Union[str, int]]
     pullPolicy: PullPolicy
 
     @property
@@ -149,3 +149,8 @@ class VolumeMount(BaseModel):
 class Volume(BaseModel):
     class Config:
         schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.Volume")}
+
+
+class ResourceRequirements(BaseModel):
+    class Config:
+        schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.ResourceRequirements")}

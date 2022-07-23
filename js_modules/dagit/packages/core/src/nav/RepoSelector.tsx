@@ -1,9 +1,9 @@
 import {
   Box,
   Checkbox,
-  ColorsWIP,
+  Colors,
   Group,
-  IconWIP,
+  Icon,
   IconWrapper,
   Spinner,
   Table,
@@ -16,6 +16,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -35,7 +36,7 @@ export interface RepoSelectorOption {
 
 interface Props {
   onBrowse: () => void;
-  onToggle: (repoAddress: RepoAddress) => void;
+  onToggle: (repoAddresses: RepoAddress[]) => void;
   options: RepoSelectorOption[];
   selected: RepoSelectorOption[];
 }
@@ -44,62 +45,83 @@ export const RepoSelector: React.FC<Props> = (props) => {
   const {onBrowse, onToggle, options, selected} = props;
   const {canReloadRepositoryLocation} = usePermissions();
 
+  const optionCount = options.length;
+  const selectedCount = selected.length;
+
+  const onToggleAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const {checked} = e.target;
+    const reposToToggle = options
+      .filter((option) => (checked ? !selected.includes(option) : selected.includes(option)))
+      .map((option) => buildRepoAddress(option.repository.name, option.repositoryLocation.name));
+    onToggle(reposToToggle);
+  };
+
   return (
-    <Table>
-      <tbody>
-        {options.map((option) => {
-          const checked = selected.includes(option);
-          const repoAddress = {
-            location: option.repositoryLocation.name,
-            name: option.repository.name,
-          };
-          const addressString = repoAddressAsString(repoAddress);
-          return (
-            <tr key={addressString}>
-              <td>
-                <Checkbox
-                  checked={checked}
-                  onChange={(e) => {
-                    if (e.target instanceof HTMLInputElement) {
-                      onToggle(repoAddress);
-                    }
-                  }}
-                  id={`switch-${addressString}`}
-                />
-              </td>
-              <td>
-                <RepoLabel htmlFor={`switch-${addressString}`}>
-                  <Group direction="column" spacing={4}>
-                    <Box flex={{direction: 'row'}} title={addressString}>
-                      <RepoName>{repoAddress.name}</RepoName>
-                      <RepoLocation>{`@${repoAddress.location}`}</RepoLocation>
-                    </Box>
-                    <Group direction="column" spacing={2}>
-                      {option.repository.displayMetadata.map(({key, value}) => (
-                        <Caption
-                          style={{color: ColorsWIP.Gray400, fontFamily: FontFamily.monospace}}
-                          key={key}
-                        >{`${key}: ${value}`}</Caption>
-                      ))}
-                    </Group>
-                  </Group>
-                </RepoLabel>
-              </td>
-              <td>
-                <Link to={workspacePathFromAddress(repoAddress)} onClick={() => onBrowse()}>
-                  Browse
-                </Link>
-              </td>
-              {canReloadRepositoryLocation ? (
+    <div>
+      <Box padding={{vertical: 8, horizontal: 24}} flex={{alignItems: 'center', gap: 12}}>
+        <Checkbox
+          checked={selectedCount > 0}
+          indeterminate={!!(selectedCount && optionCount !== selectedCount)}
+          onChange={onToggleAll}
+        />
+        {`${selected.length} of ${options.length} selected`}
+      </Box>
+      <Table>
+        <tbody>
+          {options.map((option) => {
+            const checked = selected.includes(option);
+            const repoAddress = {
+              location: option.repositoryLocation.name,
+              name: option.repository.name,
+            };
+            const addressString = repoAddressAsString(repoAddress);
+            return (
+              <tr key={addressString}>
                 <td>
-                  <ReloadButton repoAddress={repoAddress} />
+                  <Checkbox
+                    checked={checked}
+                    onChange={(e) => {
+                      if (e.target instanceof HTMLInputElement) {
+                        onToggle([repoAddress]);
+                      }
+                    }}
+                    id={`switch-${addressString}`}
+                  />
                 </td>
-              ) : null}
-            </tr>
-          );
-        })}
-      </tbody>
-    </Table>
+                <td>
+                  <RepoLabel htmlFor={`switch-${addressString}`}>
+                    <Group direction="column" spacing={4}>
+                      <Box flex={{direction: 'row'}} title={addressString}>
+                        <RepoName>{repoAddress.name}</RepoName>
+                        <RepoLocation>{`@${repoAddress.location}`}</RepoLocation>
+                      </Box>
+                      <Group direction="column" spacing={2}>
+                        {option.repository.displayMetadata.map(({key, value}) => (
+                          <Caption
+                            style={{color: Colors.Gray400, fontFamily: FontFamily.monospace}}
+                            key={key}
+                          >{`${key}: ${value}`}</Caption>
+                        ))}
+                      </Group>
+                    </Group>
+                  </RepoLabel>
+                </td>
+                <td>
+                  <Link to={workspacePathFromAddress(repoAddress)} onClick={() => onBrowse()}>
+                    Browse
+                  </Link>
+                </td>
+                {canReloadRepositoryLocation ? (
+                  <td>
+                    <ReloadButton repoAddress={repoAddress} />
+                  </td>
+                ) : null}
+              </tr>
+            );
+          })}
+        </tbody>
+      </Table>
+    </div>
   );
 };
 
@@ -126,11 +148,11 @@ const RepoLabel = styled.label`
 `;
 
 const RepoName = styled.div`
-  color: ${ColorsWIP.Gray800};
+  color: ${Colors.Gray800};
 `;
 
 const RepoLocation = styled.div`
-  color: ${ColorsWIP.Gray700};
+  color: ${Colors.Gray700};
   font-family: ${FontFamily.monospace};
 `;
 
@@ -154,7 +176,7 @@ const ReloadButton: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
             {reloading ? (
               <Spinner purpose="body-text" />
             ) : (
-              <IconWIP name="refresh" color={ColorsWIP.Gray200} />
+              <Icon name="refresh" color={Colors.Gray200} />
             )}
           </ReloadButtonInner>
         </Tooltip>
@@ -172,15 +194,15 @@ const ReloadButtonInner = styled.button`
   outline: none;
 
   ${IconWrapper} {
-    background-color: ${ColorsWIP.Gray600};
+    background-color: ${Colors.Gray600};
     transition: background-color 100ms;
   }
 
   :hover ${IconWrapper} {
-    background-color: ${ColorsWIP.Gray800};
+    background-color: ${Colors.Gray800};
   }
 
   :focus ${IconWrapper} {
-    background-color: ${ColorsWIP.Link};
+    background-color: ${Colors.Link};
   }
 `;

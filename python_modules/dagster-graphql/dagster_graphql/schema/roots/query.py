@@ -1,10 +1,13 @@
-import graphene
+from typing import Dict, List
 
-from dagster import check
+import graphene
+from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
+
+import dagster._check as check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.execution.backfill import BulkActionStatus
 from dagster.core.host_representation import (
-    InstigationSelector,
+    InstigatorSelector,
     RepositorySelector,
     ScheduleSelector,
     SensorSelector,
@@ -26,6 +29,7 @@ from ...implementation.fetch_pipelines import (
 )
 from ...implementation.fetch_runs import (
     get_execution_plan,
+    get_logs_for_run,
     get_run_by_id,
     get_run_group,
     get_run_groups,
@@ -39,10 +43,10 @@ from ...implementation.fetch_schedules import (
 )
 from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from ...implementation.fetch_solids import get_graph_or_error
-from ...implementation.loader import BatchMaterializationLoader
+from ...implementation.loader import BatchMaterializationLoader, CrossRepoAssetDependedByLoader
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
 from ...implementation.utils import graph_selector_from_graphql, pipeline_selector_from_graphql
-from ..asset_graph import GrapheneAssetNode, GrapheneAssetNodeOrError
+from ..asset_graph import GrapheneAssetLatestInfo, GrapheneAssetNode, GrapheneAssetNodeOrError
 from ..backfill import (
     GrapheneBulkActionStatus,
     GraphenePartitionBackfillOrError,
@@ -50,10 +54,12 @@ from ..backfill import (
 )
 from ..external import (
     GrapheneRepositoriesOrError,
+    GrapheneRepositoryConnection,
     GrapheneRepositoryOrError,
     GrapheneWorkspaceOrError,
 )
 from ..inputs import (
+    GrapheneAssetGroupSelector,
     GrapheneAssetKeyInput,
     GrapheneGraphSelector,
     GrapheneInstigationSelector,
@@ -72,7 +78,7 @@ from ..instigation import (
 from ..partition_sets import GraphenePartitionSetOrError, GraphenePartitionSetsOrError
 from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
-from ..pipelines.pipeline import GrapheneRunOrError
+from ..pipelines.pipeline import GrapheneEventConnectionOrError, GrapheneRunOrError
 from ..pipelines.snapshot import GraphenePipelineSnapshotOrError
 from ..run_config import GrapheneRunConfigSchemaOrError
 from ..runs import (
@@ -93,74 +99,103 @@ from .pipeline import GrapheneGraphOrError, GraphenePipelineOrError
 
 
 class GrapheneDagitQuery(graphene.ObjectType):
+    """The root for all queries to retrieve data from the Dagster instance."""
+
     class Meta:
         name = "DagitQuery"
 
-    version = graphene.NonNull(graphene.String)
+    version = graphene.Field(
+        graphene.NonNull(graphene.String),
+        description="Retrieve the version of Dagster running in the Dagster deployment.",
+    )
 
-    repositoriesOrError = graphene.NonNull(GrapheneRepositoriesOrError)
+    repositoriesOrError = graphene.Field(
+        graphene.NonNull(GrapheneRepositoriesOrError),
+        repositorySelector=graphene.Argument(GrapheneRepositorySelector),
+        description="Retrieve all the repositories.",
+    )
+
     repositoryOrError = graphene.Field(
         graphene.NonNull(GrapheneRepositoryOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
+        description="Retrieve a repository by its location name and repository name.",
     )
 
-    workspaceOrError = graphene.NonNull(GrapheneWorkspaceOrError)
+    workspaceOrError = graphene.Field(
+        graphene.NonNull(GrapheneWorkspaceOrError),
+        description="Retrieve the workspace and its locations.",
+    )
 
     pipelineOrError = graphene.Field(
-        graphene.NonNull(GraphenePipelineOrError), params=graphene.NonNull(GraphenePipelineSelector)
+        graphene.NonNull(GraphenePipelineOrError),
+        params=graphene.NonNull(GraphenePipelineSelector),
+        description="Retrieve a job by its location name, repository name, and job name.",
     )
 
     pipelineSnapshotOrError = graphene.Field(
         graphene.NonNull(GraphenePipelineSnapshotOrError),
         snapshotId=graphene.String(),
         activePipelineSelector=graphene.Argument(GraphenePipelineSelector),
+        description="Retrieve a job snapshot by its id or location name, repository name, and job name.",
     )
 
     graphOrError = graphene.Field(
         graphene.NonNull(GrapheneGraphOrError),
         selector=graphene.Argument(GrapheneGraphSelector),
+        description="Retrieve a graph by its location name, repository name, and graph name.",
     )
 
-    scheduler = graphene.Field(graphene.NonNull(GrapheneSchedulerOrError))
+    scheduler = graphene.Field(
+        graphene.NonNull(GrapheneSchedulerOrError),
+        description="Retrieve the name of the scheduler running in the Dagster deployment.",
+    )
 
     scheduleOrError = graphene.Field(
         graphene.NonNull(GrapheneScheduleOrError),
         schedule_selector=graphene.NonNull(GrapheneScheduleSelector),
+        description="Retrieve a schedule by its location name, repository name, and schedule name.",
     )
 
     schedulesOrError = graphene.Field(
         graphene.NonNull(GrapheneSchedulesOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
+        description="Retrieve all the schedules.",
     )
 
     sensorOrError = graphene.Field(
         graphene.NonNull(GrapheneSensorOrError),
         sensorSelector=graphene.NonNull(GrapheneSensorSelector),
+        description="Retrieve a sensor by its location name, repository name, and sensor name.",
     )
     sensorsOrError = graphene.Field(
         graphene.NonNull(GrapheneSensorsOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
+        description="Retrieve all the sensors.",
     )
 
     instigationStateOrError = graphene.Field(
         graphene.NonNull(GrapheneInstigationStateOrError),
         instigationSelector=graphene.NonNull(GrapheneInstigationSelector),
+        description="Retrieve the state for a schedule or sensor by its location name, repository name, and schedule/sensor name.",
     )
 
     unloadableInstigationStatesOrError = graphene.Field(
         graphene.NonNull(GrapheneInstigationStatesOrError),
         instigationType=graphene.Argument(GrapheneInstigationType),
+        description="Retrieve the running schedules and sensors that are missing from the workspace.",
     )
 
     partitionSetsOrError = graphene.Field(
         graphene.NonNull(GraphenePartitionSetsOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
         pipelineName=graphene.NonNull(graphene.String),
+        description="Retrieve the partition sets for a job by its location name, repository name, and job name.",
     )
     partitionSetOrError = graphene.Field(
         graphene.NonNull(GraphenePartitionSetOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
         partitionSetName=graphene.String(),
+        description="Retrieve a partition set by its location name, repository name, and partition set name.",
     )
 
     pipelineRunsOrError = graphene.Field(
@@ -168,23 +203,34 @@ class GrapheneDagitQuery(graphene.ObjectType):
         filter=graphene.Argument(GrapheneRunsFilter),
         cursor=graphene.String(),
         limit=graphene.Int(),
+        description="Retrieve runs after applying a filter, cursor, and limit.",
     )
     pipelineRunOrError = graphene.Field(
-        graphene.NonNull(GrapheneRunOrError), runId=graphene.NonNull(graphene.ID)
+        graphene.NonNull(GrapheneRunOrError),
+        runId=graphene.NonNull(graphene.ID),
+        description="Retrieve a run by its run id.",
     )
     runsOrError = graphene.Field(
         graphene.NonNull(GrapheneRunsOrError),
         filter=graphene.Argument(GrapheneRunsFilter),
         cursor=graphene.String(),
         limit=graphene.Int(),
+        description="Retrieve runs after applying a filter, cursor, and limit.",
     )
     runOrError = graphene.Field(
-        graphene.NonNull(GrapheneRunOrError), runId=graphene.NonNull(graphene.ID)
+        graphene.NonNull(GrapheneRunOrError),
+        runId=graphene.NonNull(graphene.ID),
+        description="Retrieve a run by its run id.",
     )
-    pipelineRunTags = non_null_list(GraphenePipelineTagAndValues)
+    pipelineRunTags = graphene.Field(
+        non_null_list(GraphenePipelineTagAndValues),
+        description="Retrieve all the distinct key-value tags from all runs.",
+    )
 
     runGroupOrError = graphene.Field(
-        graphene.NonNull(GrapheneRunGroupOrError), runId=graphene.NonNull(graphene.ID)
+        graphene.NonNull(GrapheneRunGroupOrError),
+        runId=graphene.NonNull(graphene.ID),
+        description="Retrieve a group of runs with the matching root run id.",
     )
 
     runGroupsOrError = graphene.Field(
@@ -192,6 +238,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         filter=graphene.Argument(GrapheneRunsFilter),
         cursor=graphene.String(),
         limit=graphene.Int(),
+        description="Retrieve groups of runs after applying a filter, cursor, and limit.",
     )
 
     isPipelineConfigValid = graphene.Field(
@@ -201,6 +248,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
             "runConfigData": graphene.Argument(GrapheneRunConfigData),
             "mode": graphene.Argument(graphene.NonNull(graphene.String)),
         },
+        description="Retrieve whether the run configuration is valid or invalid.",
     )
 
     executionPlanOrError = graphene.Field(
@@ -210,6 +258,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
             "runConfigData": graphene.Argument(GrapheneRunConfigData),
             "mode": graphene.Argument(graphene.NonNull(graphene.String)),
         },
+        description="Retrieve the execution plan for a job and its run configuration.",
     )
 
     runConfigSchemaOrError = graphene.Field(
@@ -218,39 +267,47 @@ class GrapheneDagitQuery(graphene.ObjectType):
             "selector": graphene.Argument(graphene.NonNull(GraphenePipelineSelector)),
             "mode": graphene.Argument(graphene.String),
         },
-        description="""Fetch an environment schema given an execution selection and a mode.
-        See the descripton on RunConfigSchema for more information.""",
+        description="Retrieve the run configuration schema for a job.",
     )
 
-    instance = graphene.NonNull(GrapheneInstance)
+    instance = graphene.Field(
+        graphene.NonNull(GrapheneInstance),
+        description="Retrieve the instance configuration for the Dagster deployment.",
+    )
 
     assetsOrError = graphene.Field(
         graphene.NonNull(GrapheneAssetsOrError),
         prefix=graphene.List(graphene.NonNull(graphene.String)),
         cursor=graphene.String(),
         limit=graphene.Int(),
+        description="Retrieve assets after applying a prefix filter, cursor, and limit.",
     )
 
     assetOrError = graphene.Field(
         graphene.NonNull(GrapheneAssetOrError),
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
+        description="Retrieve an asset by asset key.",
     )
 
     assetNodes = graphene.Field(
         non_null_list(GrapheneAssetNode),
+        group=graphene.Argument(GrapheneAssetGroupSelector),
         pipeline=graphene.Argument(GraphenePipelineSelector),
         assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
         loadMaterializations=graphene.Boolean(default_value=False),
+        description="Retrieve asset nodes after applying a filter on asset group, job, and asset keys.",
     )
 
     assetNodeOrError = graphene.Field(
         graphene.NonNull(GrapheneAssetNodeOrError),
         assetKey=graphene.Argument(graphene.NonNull(GrapheneAssetKeyInput)),
+        description="Retrieve an asset node by asset key.",
     )
 
     partitionBackfillOrError = graphene.Field(
         graphene.NonNull(GraphenePartitionBackfillOrError),
         backfillId=graphene.Argument(graphene.NonNull(graphene.String)),
+        description="Retrieve a backfill by backfill id.",
     )
 
     partitionBackfillsOrError = graphene.Field(
@@ -258,11 +315,38 @@ class GrapheneDagitQuery(graphene.ObjectType):
         status=graphene.Argument(GrapheneBulkActionStatus),
         cursor=graphene.String(),
         limit=graphene.Int(),
+        description="Retrieve backfills after applying a status filter, cursor, and limit.",
     )
 
-    permissions = graphene.Field(non_null_list(GraphenePermission))
+    permissions = graphene.Field(
+        non_null_list(GraphenePermission),
+        description="Retrieve the set of permissions for the Dagster deployment.",
+    )
 
-    def resolve_repositoriesOrError(self, graphene_info):
+    assetsLatestInfo = graphene.Field(
+        non_null_list(GrapheneAssetLatestInfo),
+        assetKeys=graphene.Argument(non_null_list(GrapheneAssetKeyInput)),
+        description="Retrieve the latest materializations for a set of assets by asset keys.",
+    )
+
+    logsForRun = graphene.Field(
+        graphene.NonNull(GrapheneEventConnectionOrError),
+        runId=graphene.NonNull(graphene.ID),
+        afterCursor=graphene.String(),
+        limit=graphene.Int(),
+        description="Retrieve event logs after applying a run id filter, cursor, and limit.",
+    )
+
+    def resolve_repositoriesOrError(self, graphene_info, **kwargs):
+        if kwargs.get("repositorySelector"):
+            return GrapheneRepositoryConnection(
+                nodes=[
+                    fetch_repository(
+                        graphene_info,
+                        RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
+                    )
+                ]
+            )
         return fetch_repositories(graphene_info)
 
     def resolve_repositoryOrError(self, graphene_info, **kwargs):
@@ -326,7 +410,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     def resolve_instigationStateOrError(self, graphene_info, instigationSelector):
         return get_instigator_state_or_error(
-            graphene_info, InstigationSelector.from_graphql_input(instigationSelector)
+            graphene_info, InstigatorSelector.from_graphql_input(instigationSelector)
         )
 
     def resolve_unloadableInstigationStatesOrError(self, graphene_info, **kwargs):
@@ -404,7 +488,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return validate_pipeline_config(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
-            parse_run_config_input(kwargs.get("runConfigData", {})),
+            parse_run_config_input(kwargs.get("runConfigData", {}), raise_on_error=False),
             kwargs.get("mode"),
         )
 
@@ -412,7 +496,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return get_execution_plan(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
-            parse_run_config_input(kwargs.get("runConfigData", {})),
+            parse_run_config_input(kwargs.get("runConfigData", {}), raise_on_error=True),
             kwargs.get("mode"),
         )
 
@@ -431,7 +515,22 @@ class GrapheneDagitQuery(graphene.ObjectType):
             AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
         )
 
-        if "pipeline" in kwargs:
+        if "group" in kwargs:
+            group_name = kwargs.get("group").get("groupName")
+            repo_sel = RepositorySelector.from_graphql_input(kwargs.get("group"))
+            repo_loc = graphene_info.context.get_repository_location(repo_sel.location_name)
+            repo = repo_loc.get_repository(repo_sel.repository_name)
+            external_asset_nodes = repo.get_external_asset_nodes()
+            results = (
+                [
+                    GrapheneAssetNode(repo_loc, repo, asset_node)
+                    for asset_node in external_asset_nodes
+                    if asset_node.group_name == group_name
+                ]
+                if external_asset_nodes
+                else []
+            )
+        elif "pipeline" in kwargs:
             pipeline_name = kwargs.get("pipeline").get("pipelineName")
             repo_sel = RepositorySelector.from_graphql_input(kwargs.get("pipeline"))
             repo_loc = graphene_info.context.get_repository_location(repo_sel.location_name)
@@ -457,12 +556,15 @@ class GrapheneDagitQuery(graphene.ObjectType):
         materialization_loader = BatchMaterializationLoader(
             instance=graphene_info.context.instance, asset_keys=[node.assetKey for node in results]
         )
+
+        depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
         return [
             GrapheneAssetNode(
                 node.repository_location,
                 node.external_repository,
-                node.get_external_asset_node(),
+                node.external_asset_node,
                 materialization_loader=materialization_loader,
+                depended_by_loader=depended_by_loader,
             )
             for node in results
         ]
@@ -496,3 +598,23 @@ class GrapheneDagitQuery(graphene.ObjectType):
     def resolve_permissions(self, graphene_info):
         permissions = graphene_info.context.permissions
         return [GraphenePermission(permission, value) for permission, value in permissions.items()]
+
+    def resolve_assetsLatestInfo(self, graphene_info, **kwargs):
+        asset_keys = set(
+            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys")
+        )
+
+        results = get_asset_nodes(graphene_info)
+
+        # Filter down to requested asset keys
+        # Build mapping of asset key to the step keys required to generate the asset
+        step_keys_by_asset: Dict[AssetKey, List[str]] = {
+            node.external_asset_node.asset_key: node.external_asset_node.op_names
+            for node in results
+            if node.assetKey in asset_keys
+        }
+
+        return get_assets_latest_info(graphene_info, step_keys_by_asset)
+
+    def resolve_logsForRun(self, graphene_info, runId, afterCursor=None, limit=None):
+        return get_logs_for_run(graphene_info, runId, afterCursor, limit)

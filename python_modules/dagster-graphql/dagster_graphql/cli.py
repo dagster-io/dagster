@@ -3,20 +3,19 @@ from urllib.parse import urljoin, urlparse
 import click
 import requests
 from graphql import graphql
-from graphql.execution.executors.gevent import GeventExecutor
-from graphql.execution.executors.sync import SyncExecutor
 
+import dagster._check as check
+import dagster._seven as seven
 from dagster import __version__ as dagster_version
-from dagster import check, seven
-from dagster.cli.workspace import workspace_target_argument
-from dagster.cli.workspace.cli_target import (
+from dagster._cli.workspace import workspace_target_argument
+from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
     get_workspace_process_context_from_kwargs,
 )
+from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
+from dagster._utils.log import get_stack_trace_array
 from dagster.core.instance import DagsterInstance
 from dagster.core.workspace.context import WorkspaceProcessContext
-from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
-from dagster.utils.log import get_stack_trace_array
 
 from .client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from .schema import create_schema
@@ -27,26 +26,22 @@ def create_dagster_graphql_cli():
     return ui
 
 
-def execute_query(workspace_process_context, query, variables=None, use_sync_executor=False):
+def execute_query(workspace_process_context, query, variables=None):
     check.inst_param(
         workspace_process_context, "workspace_process_context", WorkspaceProcessContext
     )
     check.str_param(query, "query")
     check.opt_dict_param(variables, "variables")
-    check.bool_param(use_sync_executor, "use_sync_executor")
 
     query = query.strip("'\" \n\t")
 
     context = workspace_process_context.create_request_context()
-
-    executor = SyncExecutor() if use_sync_executor else GeventExecutor()
 
     result = graphql(
         request_string=query,
         schema=create_schema(),
         context_value=context,
         variable_values=variables,
-        executor=executor,
     )
 
     result_dict = result.to_dict()
@@ -88,7 +83,7 @@ def execute_query_from_cli(workspace_process_context, query, variables=None, out
     # stdout
     if output:
         check.str_param(output, "output")
-        with open(output, "w") as f:
+        with open(output, "w", encoding="utf8") as f:
             f.write(str_res + "\n")
     else:
         print(str_res)  # pylint: disable=print-call
@@ -153,7 +148,7 @@ PREDEFINED_QUERIES = {
 @click.option(
     "--predefined",
     "-p",
-    type=click.Choice(PREDEFINED_QUERIES.keys()),
+    type=click.Choice(list(PREDEFINED_QUERIES.keys())),
     help="GraphQL document to execute, from a predefined set provided by dagster-graphql.",
 )
 @click.option(

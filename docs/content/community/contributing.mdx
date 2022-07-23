@@ -9,6 +9,55 @@ We love to see our community members get involved! If you are planning to contri
 
 ## Environment Setup
 
+### Apple M1-specific setup
+
+If you have a Mac with an M1 chip, you will need to set up a separate environment to emulate an x86 architecture before following the remaining setup instructions. To find out if your Mac has an M1 chip, follow the instructions [here](https://www.howtogeek.com/706226/how-to-check-if-your-mac-is-using-an-intel-or-apple-silicon-processor/).
+
+If you don't have a Mac with an M1 chip, skip ahead to the next section - [Dagster development setup](#dagster-development-setup).
+
+1. Install rosetta. [About rosetta](https://developer.apple.com/documentation/apple-silicon/about-the-rosetta-translation-environment).
+
+   ```bash
+   softwareupdate --install-rosetta --agree-to-license
+   ```
+
+2. Create a duplicate terminal that will default to running the rosetta x86 emulator. [Source stack overflow post](https://apple.stackexchange.com/questions/428768/on-apple-m1-with-rosetta-how-to-open-entire-terminal-iterm-in-x86-64-architec).
+
+   - Go to `Finder` > `Applications` and find your terminal app.
+   - Right click the app and duplicate it.
+   - Right click the new terminal > `Get Info` > `Enable Open using Rosetta`.
+   - Click to open the terminal, type `arch` to verify it says `i386` now.
+
+3. In your rosetta terminal, install `homebrew`.
+
+   ```bash
+   arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   ```
+
+4. To ensure that the correct installation of `homebrew` is automatically used in your rosetta terminal, add the following snippet to your `~/.bashrc`, `~/.zshrc` or profile manager of choice.
+
+   ```bash
+   arch_name="$(uname -m)"
+
+   if [ "${arch_name}" = "x86_64" ]; then
+      echo "Running in x86 mode"
+      eval $(/usr/local/bin/brew shellenv)
+   elif [ "${arch_name}" = "arm64" ]; then
+      echo "Running in Arm mode"
+      eval $(/opt/homebrew/bin/brew shellenv)
+   else
+      echo "Unexpected uname -m result ${arch_name}"
+   fi
+
+   # brew libraries
+   export LDFLAGS="-L $(brew --prefix openssl)/lib"
+   export CFLAGS="-I $(brew --prefix openssl)/include"
+   ```
+
+After sourcing this file, you can ensure that the correct version of `homebrew` is being used by confirming the output of `which brew` is `/usr/local/bin/brew`.
+
+### Dagster development setup
+
 1. Install Python. Python 3.6 or above recommended, but our CI/CD pipeline currently tests against up-to-date patch versions of Python 3.6, 3.7 and 3.8.
 
 2. Create and activate a virtualenv, using the tool of your choice. On macOS you can install `pyenv` with Homebrew:
@@ -32,7 +81,7 @@ We love to see our community members get involved! If you are planning to contri
    pyenv activate dagster37
    ```
 
-3. Ensure that you have node installed by running _node -v_, and that you have [yarn](https://yarnpkg.com/lang/en/) installed. If you are on macOS, you can install yarn with Homebrew:
+3. Ensure that you have node installed by running `node -v`, and that you have [yarn](https://yarnpkg.com/lang/en/) installed. If you are on macOS, you can install yarn with Homebrew:
 
    ```bash
    brew install yarn
@@ -105,7 +154,7 @@ The API documentation is generated from ReStructured Text files (`.rst`), which 
 If you change any `.rst` files, be sure to run the following command in the `docs` directory:
 
 ```bash
-make buildnext
+make build
 ```
 
 ## Picking a Github Issue

@@ -1,6 +1,6 @@
 from memoized_development.solids.solid_utils import get_hash_for_file
 
-from dagster import solid
+from dagster._legacy import solid
 
 
 @solid(version=get_hash_for_file(__file__), config_schema={"tree_species": str})

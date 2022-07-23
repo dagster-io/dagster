@@ -9,8 +9,12 @@ from threading import Thread
 import boto3
 from dagster_aws.s3.file_manager import S3FileHandle, S3FileManager
 
-from dagster.core.execution.plan.external_step import PICKLED_EVENTS_FILE_NAME, run_step_from_ref
-from dagster.core.instance import DagsterInstance
+from dagster._serdes import serialize_value
+from dagster.core.execution.plan.external_step import (
+    PICKLED_EVENTS_FILE_NAME,
+    external_instance_from_step_run_ref,
+    run_step_from_ref,
+)
 
 DONE = object()
 
@@ -27,7 +31,7 @@ def main(step_run_ref_bucket, s3_dir_key):
     events_s3_key = os.path.dirname(s3_dir_key) + "/" + PICKLED_EVENTS_FILE_NAME
 
     def put_events(events):
-        file_obj = io.BytesIO(pickle.dumps(events))
+        file_obj = io.BytesIO(pickle.dumps(serialize_value(events)))
         session.put_object(Body=file_obj, Bucket=events_bucket, Key=events_s3_key)
 
     # Set up a thread to handle writing events back to the plan process, so execution doesn't get
@@ -39,13 +43,15 @@ def main(step_run_ref_bucket, s3_dir_key):
     )
     event_writing_thread.start()
 
-    with DagsterInstance.ephemeral() as instance:
-        try:
-            for event in run_step_from_ref(step_run_ref, instance):
-                events_queue.put(event)
-        finally:
-            events_queue.put(DONE)
-            event_writing_thread.join()
+    try:
+        instance = external_instance_from_step_run_ref(
+            step_run_ref, event_listener_fn=events_queue.put
+        )
+        # consume iterator
+        list(run_step_from_ref(step_run_ref, instance))
+    finally:
+        events_queue.put(DONE)
+        event_writing_thread.join()
 
 
 def event_writing_loop(events_queue, put_events_fn):

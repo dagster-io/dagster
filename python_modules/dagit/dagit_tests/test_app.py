@@ -8,12 +8,12 @@ from dagit.app import create_app_from_workspace_process_context
 from dagit.cli import dagit, host_dagit_ui_with_workspace_process_context
 from starlette.testclient import TestClient
 
-from dagster import seven
+from dagster import _seven
+from dagster._utils import file_relative_path
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, UPDATE_REPO_STATS, hash_name
 from dagster.core.test_utils import instance_for_test
 from dagster.core.workspace.load import load_workspace_process_context_from_yaml_paths
-from dagster.utils import file_relative_path
 
 
 def test_create_app_with_workspace():
@@ -139,6 +139,7 @@ def test_successful_host_dagit_ui_from_workspace():
                 host=None,
                 port=2343,
                 path_prefix="",
+                log_level="warning",
             )
 
 
@@ -158,6 +159,7 @@ def test_successful_host_dagit_ui_from_multiple_workspace_files():
                 host=None,
                 port=2343,
                 path_prefix="",
+                log_level="warning",
             )
 
 
@@ -172,6 +174,7 @@ def test_successful_host_dagit_ui_from_legacy_repository():
                 host=None,
                 port=2343,
                 path_prefix="",
+                log_level="warning",
             )
 
 
@@ -188,6 +191,7 @@ def test_invalid_path_prefix():
                     host=None,
                     port=2343,
                     path_prefix="no-leading-slash",
+                    log_level="warning",
                 )
             assert "path prefix should begin with a leading" in str(exc_info.value)
 
@@ -197,6 +201,7 @@ def test_invalid_path_prefix():
                     host=None,
                     port=2343,
                     path_prefix="/extra-trailing-slash/",
+                    log_level="warning",
                 )
             assert "path prefix should not include a trailing" in str(exc_info.value)
 
@@ -213,6 +218,7 @@ def test_valid_path_prefix():
                 host=None,
                 port=2343,
                 path_prefix="/dagster-path",
+                log_level="warning",
             )
 
 
@@ -237,7 +243,7 @@ def test_dagit_logs(_, caplog):
             for record in caplog.records:
                 try:
                     message = json.loads(record.getMessage())
-                except seven.JSONDecodeError:
+                except _seven.JSONDecodeError:
                     continue
 
                 records.append(record)
@@ -264,7 +270,6 @@ def test_dagit_logs(_, caplog):
                         "python_version",
                         "run_storage_id",
                         "metadata",
-                        "version",
                         "dagster_version",
                         "os_desc",
                         "os_platform",

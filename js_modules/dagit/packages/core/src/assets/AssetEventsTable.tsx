@@ -1,29 +1,28 @@
 import {
   Box,
-  ButtonWIP,
+  Button,
   ButtonLink,
-  ColorsWIP,
+  Colors,
   DialogFooter,
-  DialogWIP,
+  Dialog,
   Group,
-  IconWIP,
+  Icon,
   IconWrapper,
   Table,
   Mono,
 } from '@dagster-io/ui';
 import moment from 'moment';
-import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Timestamp} from '../app/time/Timestamp';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
-import {titleForRun} from '../runs/RunUtils';
+import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
-import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';
@@ -79,7 +78,7 @@ export const AssetEventsTable: React.FC<{
   );
 };
 
-const NoneSpan = () => <span style={{color: ColorsWIP.Gray400}}>None</span>;
+const NoneSpan = () => <span style={{color: Colors.Gray400}}>None</span>;
 
 const MetadataEntriesRow: React.FC<{
   group: AssetEventGroup;
@@ -87,7 +86,7 @@ const MetadataEntriesRow: React.FC<{
 }> = React.memo(({group, hasLineage}) => {
   const {latest, timestamp} = group;
   if (!latest) {
-    return <span />;
+    return <tr></tr>;
   }
   const assetLineage = latest.__typename === 'MaterializationEvent' ? latest.assetLineage : [];
 
@@ -100,7 +99,7 @@ const MetadataEntriesRow: React.FC<{
       : [];
 
   return (
-    <tr style={{background: ColorsWIP.Gray50}}>
+    <tr style={{background: Colors.Gray50}}>
       <td colSpan={6} style={{fontSize: 14, padding: 0}}>
         {latest.description && (
           <Box padding={{horizontal: 24, vertical: 12}}>{latest.description}</Box>
@@ -127,7 +126,7 @@ const MetadataEntriesRow: React.FC<{
                       </td>
                       <td style={{opacity: 0.7}}>
                         <Box flex={{gap: 8, alignItems: 'center'}}>
-                          <IconWIP name="observation" size={16} />
+                          <Icon name="observation" size={16} />
                           <span>
                             {`${obs.stepKey} in `}
                             <Link to={`/instance/runs/${obs.runId}?timestamp=${obs.timestamp}`}>
@@ -173,7 +172,7 @@ const EventGroupRow: React.FC<{
   const {latest, partition, timestamp, all} = group;
 
   const focusCss = isFocused
-    ? {paddingLeft: 4, borderLeft: `4px solid ${ColorsWIP.HighlightGreen}`}
+    ? {paddingLeft: 4, borderLeft: `4px solid ${Colors.HighlightGreen}`}
     : {paddingLeft: 8};
 
   const run = latest?.runOrError.__typename === 'Run' ? latest.runOrError : undefined;
@@ -218,20 +217,20 @@ const EventGroupRow: React.FC<{
                 events={all}
               />
             ) : latest.__typename === 'MaterializationEvent' ? (
-              <Box flex={{gap: 8, alignItems: 'center'}} style={{color: ColorsWIP.Gray600}}>
-                <IconWIP name="materialization" size={16} color={ColorsWIP.Gray600} />
+              <Box flex={{gap: 8, alignItems: 'center'}} style={{color: Colors.Gray600}}>
+                <Icon name="materialization" size={16} color={Colors.Gray600} />
                 Materialization
               </Box>
             ) : (
-              <Box flex={{gap: 8, alignItems: 'center'}} style={{color: ColorsWIP.Gray600}}>
-                <IconWIP name="observation" size={16} color={ColorsWIP.Gray600} /> Observation
+              <Box flex={{gap: 8, alignItems: 'center'}} style={{color: Colors.Gray600}}>
+                <Icon name="observation" size={16} color={Colors.Gray600} /> Observation
               </Box>
             )}
           </Group>
         </Group>
       </td>
       <td>
-        {run.pipelineName !== __ASSET_GROUP && (
+        {!isHiddenAssetGroupJob(run.pipelineName) && (
           <Box margin={{bottom: 4}}>
             <Box padding={{left: 8}}>
               <PipelineReference
@@ -243,15 +242,8 @@ const EventGroupRow: React.FC<{
               />
             </Box>
             <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
-              <IconWIP name="linear_scale" color={ColorsWIP.Gray400} />
-              <Link
-                to={`/instance/runs/${run.runId}?${qs.stringify({
-                  selection: latest.stepKey,
-                  logs: `step:${latest.stepKey}`,
-                })}`}
-              >
-                {latest.stepKey}
-              </Link>
+              <Icon name="linear_scale" color={Colors.Gray400} />
+              <Link to={linkToRunEvent(run, latest)}>{latest.stepKey}</Link>
             </Group>
           </Box>
         )}
@@ -270,7 +262,7 @@ const EventGroupRow: React.FC<{
 
 const HoverableRow = styled.tr`
   &:hover {
-    background: ${ColorsWIP.Gray10};
+    background: ${Colors.Gray10};
   }
 `;
 
@@ -319,7 +311,7 @@ export const AllIndividualEventsLink: React.FC<PredecessorDialogProps> = ({
   return (
     <>
       <ButtonLink onClick={() => setOpen(true)}>{`View ${count} events`}</ButtonLink>
-      <DialogWIP
+      <Dialog
         isOpen={open}
         canEscapeKeyClose
         canOutsideClickClose
@@ -339,18 +331,18 @@ export const AllIndividualEventsLink: React.FC<PredecessorDialogProps> = ({
           </Box>
         )}
         <DialogFooter>
-          <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
+          <Button intent="primary" onClick={() => setOpen(false)}>
             OK
-          </ButtonWIP>
+          </Button>
         </DialogFooter>
-      </DialogWIP>
+      </Dialog>
     </>
   );
 };
 
 const DisclosureTriangle: React.FC<{open: boolean; onClick?: () => void}> = ({open, onClick}) => (
   <DisclosureTriangleButton onClick={onClick} $open={open}>
-    <IconWIP name="arrow_drop_down" size={24} />
+    <Icon name="arrow_drop_down" size={24} />
   </DisclosureTriangleButton>
 );
 
@@ -372,7 +364,7 @@ const DisclosureTriangleButton = styled.button<{$open: boolean}>`
     outline: none;
 
     ${IconWrapper} {
-      background: ${ColorsWIP.Dark};
+      background: ${Colors.Dark};
       opacity: 0.5;
     }
   }

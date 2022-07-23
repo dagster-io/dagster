@@ -1,21 +1,24 @@
 import os
 import pickle
+from typing import Union
 
-from dagster import check
-from dagster.config import Field
-from dagster.config.source import StringSource
+import dagster._check as check
+from dagster._annotations import experimental
+from dagster._config import Field, StringSource
+from dagster._utils import PICKLE_PROTOCOL, mkdir_p
 from dagster.core.definitions.events import AssetKey, AssetMaterialization
-from dagster.core.definitions.metadata import MetadataEntry
+from dagster.core.definitions.metadata import MetadataEntry, MetadataValue
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.input import InputContext
 from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.io_manager import IOManager, io_manager
 from dagster.core.storage.memoizable_io_manager import MemoizableIOManager
-from dagster.utils import PICKLE_PROTOCOL, mkdir_p
-from dagster.utils.backcompat import experimental
 
 
-@io_manager(config_schema={"base_dir": Field(StringSource, is_required=False)})
+@io_manager(
+    config_schema={"base_dir": Field(StringSource, is_required=False)},
+    description="Built-in filesystem IO manager that stores and retrieves values using pickling.",
+)
 def fs_io_manager(init_context):
     """Built-in filesystem IO manager that stores and retrieves values using pickling.
 
@@ -24,7 +27,17 @@ def fs_io_manager(init_context):
     your dagster.yaml file (which will be a temporary directory if not explicitly set).
 
     Serializes and deserializes output values using pickling and automatically constructs
-    the filepaths for the assets.
+    the filepaths for ops and assets.
+
+    Assigns each op output to a unique filepath containing run ID, step key, and output name.
+    Assigns each asset to a single filesystem path, at "<base_dir>/<asset_key>". If the asset key
+    has multiple components, the final component is used as the name of the file, and the preceding
+    components as parent directories under the base_dir.
+
+    Subsequent materializations of an asset will overwrite previous materializations of that asset.
+    So, with a base directory of "/my/base/path", an asset with key
+    `AssetKey(["one", "two", "three"])` would be stored in a file called "three" in a directory
+    with path "/my/base/path/one/two/".
 
     Example usage:
 
@@ -46,7 +59,7 @@ def fs_io_manager(init_context):
 
         @job(
             resource_defs={
-                "io_manager": fs_io_manager.configured({"base_path": "/my/base/path"})
+                "io_manager": fs_io_manager.configured({"base_dir": "/my/base/path"})
             }
         )
         def job():
@@ -94,11 +107,14 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         self.write_mode = "wb"
         self.read_mode = "rb"
 
-    def _get_path(self, context):
+    def _get_path(self, context: Union[InputContext, OutputContext]) -> str:
         """Automatically construct filepath."""
-        keys = context.get_output_identifier()
+        if context.has_asset_key:
+            path = context.get_asset_identifier()
+        else:
+            path = context.get_identifier()
 
-        return os.path.join(self.base_dir, *keys)
+        return os.path.join(self.base_dir, *path)
 
     def has_output(self, context):
         filepath = self._get_path(context)
@@ -114,7 +130,6 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         check.inst_param(context, "context", OutputContext)
 
         filepath = self._get_path(context)
-        context.log.debug(f"Writing file at: {filepath}")
 
         # Ensure path exists
         mkdir_p(os.path.dirname(filepath))
@@ -141,14 +156,16 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
                     "https://docs.dagster.io/concepts/io-management/io-managers \n"
                     "For more information on executors, vist "
                     "https://docs.dagster.io/deployment/executors#overview"
-                )
+                ) from e
+
+        context.add_output_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
 
     def load_input(self, context):
         """Unpickle the file and Load it to a data object."""
         check.inst_param(context, "context", InputContext)
 
-        filepath = self._get_path(context.upstream_output)
-        context.log.debug(f"Loading file from: {filepath}")
+        filepath = self._get_path(context)
+        context.add_input_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
 
         with open(filepath, self.read_mode) as read_obj:
             return pickle.load(read_obj)
@@ -192,7 +209,9 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
 
         return AssetMaterialization(
             asset_key=AssetKey([context.pipeline_name, context.step_key, context.name]),
-            metadata_entries=[MetadataEntry.fspath(os.path.abspath(filepath))],
+            metadata_entries=[
+                MetadataEntry("path", value=MetadataValue.path(os.path.abspath(filepath)))
+            ],
         )
 
     def load_input(self, context):

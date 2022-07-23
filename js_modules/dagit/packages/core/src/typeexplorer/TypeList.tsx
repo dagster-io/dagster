@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, ColorsWIP} from '@dagster-io/ui';
+import {Box, Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -52,7 +52,7 @@ export const TypeList: React.FC<ITypeListProps> = (props) => {
                   ))}
                 </StyledUL>
               ) : (
-                <div style={{color: ColorsWIP.Gray500, fontSize: '12px'}}>None</div>
+                <div style={{color: Colors.Gray500, fontSize: '12px'}}>None</div>
               )}
             </Box>
           </SidebarSection>

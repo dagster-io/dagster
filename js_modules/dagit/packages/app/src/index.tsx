@@ -8,7 +8,7 @@ import {AppProvider} from '@dagster-io/dagit-core/app/AppProvider';
 import {AppTopNav} from '@dagster-io/dagit-core/app/AppTopNav';
 import {ContentRoot} from '@dagster-io/dagit-core/app/ContentRoot';
 import {logLink, timeStartLink} from '@dagster-io/dagit-core/app/apolloLinks';
-import {ColorsWIP, IconWIP, IconWrapper} from '@dagster-io/ui';
+import {Colors, Icon, IconWrapper} from '@dagster-io/ui';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 import {Link} from 'react-router-dom';
@@ -29,6 +29,7 @@ const config = {
   apolloLinks,
   basePath: pathPrefix,
   origin: process.env.REACT_APP_BACKEND_ORIGIN || document.location.origin,
+  staticPathRoot: `${pathPrefix}/`,
   telemetryEnabled,
 };
 
@@ -42,11 +43,19 @@ const SettingsLink = styled(Link)`
   }
 
   &:hover ${IconWrapper} {
-    background: ${ColorsWIP.White};
+    background: ${Colors.White};
   }
 
   &:active ${IconWrapper} {
-    background: ${ColorsWIP.White};
+    background: ${Colors.White};
+  }
+
+  &:focus {
+    outline: none;
+
+    ${IconWrapper} {
+      background: ${Colors.White};
+    }
   }
 `;
 
@@ -54,7 +63,7 @@ ReactDOM.render(
   <AppProvider appCache={appCache} config={config}>
     <AppTopNav searchPlaceholder="Search…">
       <SettingsLink to="/settings" title="User settings">
-        <IconWIP name="settings" color={ColorsWIP.Gray200} />
+        <Icon name="settings" color={Colors.Gray200} />
       </SettingsLink>
     </AppTopNav>
     <App>

@@ -1,15 +1,30 @@
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Mapping, Sequence
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Dict,
+    Iterable,
+    Iterator,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+)
 
-from dagster import check
+import dagster._check as check
+from dagster._utils import frozendict, frozenlist
 from dagster.core.definitions.configurable import NamedConfigurableDefinition
 from dagster.core.definitions.policy import RetryPolicy
-from dagster.utils import frozendict, frozenlist
 
 from .hook_definition import HookDefinition
 from .utils import check_valid_name, validate_tags
 
 if TYPE_CHECKING:
+    from dagster.core.types.dagster_type import DagsterType
+
+    from .asset_layer import AssetLayer
+    from .composition import PendingNodeInvocation
+    from .dependency import NodeHandle
     from .graph_definition import GraphDefinition
     from .input import InputDefinition
     from .output import OutputDefinition
@@ -18,14 +33,24 @@ if TYPE_CHECKING:
 # base class for SolidDefinition and GraphDefinition
 # represents that this is embedable within a graph
 class NodeDefinition(NamedConfigurableDefinition):
+
+    _name: str
+    _description: Optional[str]
+    _tags: Mapping[str, str]
+    _input_defs: Sequence["InputDefinition"]
+    _input_dict: Mapping[str, "InputDefinition"]
+    _output_defs: Sequence["OutputDefinition"]
+    _output_dict: Mapping[str, "OutputDefinition"]
+    _positional_inputs: Sequence[str]
+
     def __init__(
         self,
-        name,
-        input_defs,
-        output_defs,
-        description=None,
-        tags=None,
-        positional_inputs=None,
+        name: str,
+        input_defs: Sequence["InputDefinition"],
+        output_defs: Sequence["OutputDefinition"],
+        description: Optional[str] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        positional_inputs: Optional[Sequence[str]] = None,
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
@@ -42,36 +67,40 @@ class NodeDefinition(NamedConfigurableDefinition):
         self._positional_inputs = (
             positional_inputs
             if positional_inputs is not None
-            else list(map(lambda inp: inp.name, input_defs))
+            else [inp.name for inp in self._input_defs]
         )
 
     @property
     @abstractmethod
-    def node_type_str(self):
-        raise NotImplementedError()
+    def node_type_str(self) -> str:
+        ...
 
     @property
     @abstractmethod
     def is_graph_job_op_node(self) -> bool:
-        raise NotImplementedError()
+        ...
+
+    @abstractmethod
+    def all_dagster_types(self) -> Iterable["DagsterType"]:
+        ...
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
-    def describe_node(self):
+    def describe_node(self) -> str:
         return f"{self.node_type_str} '{self.name}'"
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         return self._description
 
     @property
-    def tags(self):
+    def tags(self) -> Mapping[str, str]:
         return self._tags
 
     @property
-    def positional_inputs(self):
+    def positional_inputs(self) -> Sequence[str]:
         return self._positional_inputs
 
     @property
@@ -82,7 +111,7 @@ class NodeDefinition(NamedConfigurableDefinition):
     def input_dict(self) -> Mapping[str, "InputDefinition"]:
         return self._input_dict
 
-    def resolve_input_name_at_position(self, idx):
+    def resolve_input_name_at_position(self, idx: int) -> Optional[str]:
         if idx >= len(self._positional_inputs):
             if not (
                 len(self._input_defs) - len(self._positional_inputs) == 1
@@ -107,47 +136,51 @@ class NodeDefinition(NamedConfigurableDefinition):
     def output_dict(self) -> Mapping[str, "OutputDefinition"]:
         return self._output_dict
 
-    def has_input(self, name):
+    def has_input(self, name: str) -> bool:
         check.str_param(name, "name")
         return name in self._input_dict
 
-    def input_def_named(self, name):
+    def input_def_named(self, name: str) -> "InputDefinition":
         check.str_param(name, "name")
         return self._input_dict[name]
 
-    def has_output(self, name):
+    def has_output(self, name: str) -> bool:
         check.str_param(name, "name")
         return name in self._output_dict
 
-    def output_def_named(self, name):
+    def output_def_named(self, name: str) -> "OutputDefinition":
         check.str_param(name, "name")
         return self._output_dict[name]
 
     @abstractmethod
-    def iterate_node_defs(self):
-        raise NotImplementedError()
+    def iterate_node_defs(self) -> Iterable["NodeDefinition"]:
+        ...
 
     @abstractmethod
-    def iterate_solid_defs(self):
-        raise NotImplementedError()
+    def iterate_solid_defs(self) -> Iterable["SolidDefinition"]:
+        ...
 
     @abstractmethod
-    def resolve_output_to_origin(self, output_name, handle):
-        raise NotImplementedError()
+    def resolve_output_to_origin(
+        self,
+        output_name: str,
+        handle: Optional["NodeHandle"],
+    ) -> Tuple["OutputDefinition", Optional["NodeHandle"]]:
+        ...
 
     @abstractmethod
-    def input_has_default(self, input_name):
-        raise NotImplementedError()
+    def input_has_default(self, input_name: str) -> bool:
+        ...
 
     @abstractmethod
-    def default_value_for_input(self, input_name):
-        raise NotImplementedError()
+    def default_value_for_input(self, input_name: str) -> object:
+        ...
 
     @abstractmethod
-    def input_supports_dynamic_output_dep(self, input_name):
-        raise NotImplementedError()
+    def input_supports_dynamic_output_dep(self, input_name: str) -> bool:
+        ...
 
-    def all_input_output_types(self):
+    def all_input_output_types(self) -> Iterator["DagsterType"]:
         for input_def in self._input_defs:
             yield input_def.dagster_type
             yield from input_def.dagster_type.inner_types
@@ -156,7 +189,7 @@ class NodeDefinition(NamedConfigurableDefinition):
             yield output_def.dagster_type
             yield from output_def.dagster_type.inner_types
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: object, **kwargs: object) -> object:
         from .composition import PendingNodeInvocation
 
         return PendingNodeInvocation(
@@ -167,7 +200,7 @@ class NodeDefinition(NamedConfigurableDefinition):
             retry_policy=None,
         )(*args, **kwargs)
 
-    def alias(self, name):
+    def alias(self, name: str) -> "PendingNodeInvocation":
         from .composition import PendingNodeInvocation
 
         check.str_param(name, "name")
@@ -180,7 +213,7 @@ class NodeDefinition(NamedConfigurableDefinition):
             retry_policy=None,
         )
 
-    def tag(self, tags):
+    def tag(self, tags: Optional[Dict[str, str]]) -> "PendingNodeInvocation":
         from .composition import PendingNodeInvocation
 
         return PendingNodeInvocation(
@@ -191,7 +224,7 @@ class NodeDefinition(NamedConfigurableDefinition):
             retry_policy=None,
         )
 
-    def with_hooks(self, hook_defs):
+    def with_hooks(self, hook_defs: AbstractSet[HookDefinition]):
         from .composition import PendingNodeInvocation
 
         hook_defs = frozenset(check.set_param(hook_defs, "hook_defs", of_type=HookDefinition))
@@ -204,7 +237,7 @@ class NodeDefinition(NamedConfigurableDefinition):
             retry_policy=None,
         )
 
-    def with_retry_policy(self, retry_policy: RetryPolicy):
+    def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
         from .composition import PendingNodeInvocation
 
         return PendingNodeInvocation(
@@ -230,3 +263,9 @@ class NodeDefinition(NamedConfigurableDefinition):
             return self
 
         check.failed(f"{self.name} is not a SolidDefinition")
+
+    @abstractmethod
+    def get_inputs_must_be_resolved_top_level(
+        self, asset_layer: "AssetLayer", handle: Optional["NodeHandle"] = None
+    ) -> Sequence["InputDefinition"]:
+        ...

@@ -6,7 +6,8 @@ from dagster_k8s.job import (
     get_user_defined_k8s_config,
 )
 
-from dagster import DynamicOutput, DynamicOutputDefinition, pipeline, solid
+from dagster import DynamicOutput, DynamicOutputDefinition
+from dagster._legacy import pipeline, solid
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.state import KnownExecutionState
@@ -215,11 +216,11 @@ def test_user_defined_config_from_tags():
                 "limits": {"cpu": "1000m", "memory": "1Gi"},
             }
         },
-        "pod_template_spec_metadata": {"pod_template_spec_key": "pod_template_spec_value"},
-        "pod_spec_config": {"pod_spec_config_key": "pod_spec_config_value"},
-        "job_config": {"job_config_key": "job_config_value"},
-        "job_metadata": {"job_metadata_key": "job_metadata_value"},
-        "job_spec_config": {"job_spec_config_key": "job_spec_config_value"},
+        "pod_template_spec_metadata": {"namespace": "pod_template_spec_value"},
+        "pod_spec_config": {"dns_policy": "pod_spec_config_value"},
+        "job_config": {"status": {"completed_indexes": "job_config_value"}},
+        "job_metadata": {"namespace": "job_metadata_value"},
+        "job_spec_config": {"backoff_limit": 120},
     }
 
     @pipeline(tags={USER_DEFINED_K8S_CONFIG_KEY: config_args})

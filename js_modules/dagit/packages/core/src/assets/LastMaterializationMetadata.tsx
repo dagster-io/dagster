@@ -1,16 +1,15 @@
-import {Box, ColorsWIP, Group, IconWIP, Mono, NonIdealState, Table} from '@dagster-io/ui';
-import {gql} from 'graphql.macro';
-import qs from 'qs';
+import {gql} from '@apollo/client';
+import {Box, Colors, Group, Icon, Mono, NonIdealState, Table} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Timestamp} from '../app/time/Timestamp';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {titleForRun} from '../runs/RunUtils';
+import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
-import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';
@@ -30,7 +29,7 @@ export const LatestMaterializationMetadata: React.FC<{
     return (
       <Box padding={{top: 16, bottom: 32}}>
         <NonIdealState
-          icon="asset"
+          icon="materialization"
           title="No materializations"
           description="No materializations were found for this asset."
         />
@@ -57,7 +56,7 @@ export const LatestMaterializationMetadata: React.FC<{
                     <Mono>{titleForRun({runId: latestEvent.runId})}</Mono>
                   </Link>
                 </Box>
-                {latestRun.pipelineName !== __ASSET_GROUP && (
+                {!isHiddenAssetGroupJob(latestRun.pipelineName) && (
                   <>
                     <Box padding={{left: 8, top: 4}}>
                       <PipelineReference
@@ -69,15 +68,8 @@ export const LatestMaterializationMetadata: React.FC<{
                       />
                     </Box>
                     <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
-                      <IconWIP name="linear_scale" color={ColorsWIP.Gray400} />
-                      <Link
-                        to={`/instance/runs/${latestRun.runId}?${qs.stringify({
-                          selection: latestEvent.stepKey,
-                          logs: `step:${latestEvent.stepKey}`,
-                        })}`}
-                      >
-                        {latestEvent.stepKey}
-                      </Link>
+                      <Icon name="linear_scale" color={Colors.Gray400} />
+                      <Link to={linkToRunEvent(latestRun, latestEvent)}>{latestEvent.stepKey}</Link>
                     </Group>
                   </>
                 )}

@@ -83,10 +83,21 @@ def my_directory_sensor():
 
 This sensor iterates through all the files in `MY_DIRECTORY` and `yields` a <PyObject object="RunRequest"/> for each file. Note that despite the `yield` syntax, the function will run to completion before any runs are submitted.
 
-Once `my_directory_sensor` is added to a <PyObject object="repository"/> with `log_file_job`, it can be started and will start creating runs. You can start or stop sensors in Dagit, or by setting the default status to `DefaultSensorStatus.RUNNING` in code:
+To write a sensor that materializes assets, you can [build a job that materializes assets](/concepts/assets/software-defined-assets#building-jobs-that-materialize-assets):
+
+```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_job_sensor_marker endbefore=end_asset_job_sensor_marker
+asset_job = define_asset_job("asset_job", "*")
+
+
+@sensor(job=asset_job)
+def materializes_asset_sensor():
+    yield RunRequest(...)
+```
+
+Once a sensor is added to a <PyObject object="repository"/> with the job it yields a <PyObject object="RunRequest"/> for, it can be started and will start creating runs. You can start or stop sensors in Dagit, or by setting the default status to `DefaultSensorStatus.RUNNING` in code:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_running_in_code endbefore=end_running_in_code
-@sensor(job=log_file_job, default_status=DefaultSensorStatus.RUNNING)
+@sensor(job=asset_job, default_status=DefaultSensorStatus.RUNNING)
 def my_running_sensor():
     ...
 ```
@@ -94,6 +105,87 @@ def my_running_sensor():
 If you manually start or stop a sensor in Dagit, that will override any default status that is set in code.
 
 Once your sensor is started, if you're running the [dagster-daemon](/deployment/dagster-daemon) process as part of your deployment, the sensor will begin executing immediately, without needing to restart the dagster-daemon process.
+
+## Asset sensors
+
+A useful pattern is to create a sensor that checks for new <PyObject object="AssetMaterialization" /> events for a particular asset key. This can be used to kick off a job that computes downstream assets or notifies appropriate stakeholders.
+
+One benefit of this pattern is that it enables cross-job and even cross-repository dependencies. Each job run instigated by an asset sensor is agnostic to the job that caused it.
+
+Dagster provides a special asset sensor definition format for sensors that fire a single <PyObject object="RunRequest"/> based on a single asset materialization. Here is an example of a sensor that generates a <PyObject object="RunRequest"/> for every materialization for the asset key `my_table`:
+
+```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_sensor_marker endbefore=end_asset_sensor_marker
+from dagster import AssetKey, asset_sensor
+
+
+@asset_sensor(asset_key=AssetKey("my_table"), job=my_job)
+def my_asset_sensor(context, asset_event):
+    yield RunRequest(
+        run_key=context.cursor,
+        run_config={
+            "ops": {
+                "read_materialization": {
+                    "config": {
+                        "asset_key": asset_event.dagster_event.asset_key.path,
+                    }
+                }
+            }
+        },
+    )
+```
+
+### Multi-asset sensors
+
+Multi-asset sensors, which can trigger job executions based on some combination of states from multiple asset materialization event streams, can be handled using the base sensor definition and manual cursor management based on the asset event streams. These asset event streams can be queried using the `instance` attribute off of the <PyObject object="SensorEvaluationContext" /> object.
+
+```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_marker endbefore=end_multi_asset_sensor_marker
+import json
+from dagster import EventRecordsFilter, DagsterEventType
+
+
+@sensor(job=my_job)
+def multi_asset_sensor(context):
+    cursor_dict = json.loads(context.cursor) if context.cursor else {}
+    a_cursor = cursor_dict.get("a")
+    b_cursor = cursor_dict.get("b")
+
+    a_event_records = context.instance.get_event_records(
+        EventRecordsFilter(
+            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+            asset_key=AssetKey("table_a"),
+            after_cursor=a_cursor,
+        ),
+        ascending=False,
+        limit=1,
+    )
+    b_event_records = context.instance.get_event_records(
+        EventRecordsFilter(
+            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+            asset_key=AssetKey("table_b"),
+            after_cursor=b_cursor,
+        ),
+        ascending=False,
+        limit=1,
+    )
+
+    if not a_event_records or not b_event_records:
+        return
+
+    # make sure we only generate events if both table_a and table_b have been materialized since
+    # the last evaluation.
+    yield RunRequest(run_key=None)
+
+    # update the sensor cursor by combining the individual event cursors from the two separate
+    # asset event streams
+    context.update_cursor(
+        json.dumps(
+            {
+                "a": a_event_records[0].storage_id,
+                "b": b_event_records[0].storage_id,
+            }
+        )
+    )
+```
 
 ## Idempotence and Cursors
 
@@ -290,108 +382,53 @@ width={1982}
 height={1400}
 />
 
-## Asset sensors
-
-A useful pattern is to create a sensor that checks for new <PyObject object="AssetMaterialization" /> events for a particular asset key. This can be used to kick off a job that computes downstream assets or notifies appropriate stakeholders.
-
-One benefit of this pattern is that it enables cross-job and even cross-repository dependencies. Each job run instigated by an asset sensor is agnostic to the job that caused it.
-
-Dagster provides a special asset sensor definition format for sensors that fire a single RunRequest based on a single asset materialization. Here is an example of a sensor that generates a RunRequest for every materialization for the asset key `my_table`:
-
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_sensor_marker endbefore=end_asset_sensor_marker
-from dagster import AssetKey, asset_sensor
-
-
-@asset_sensor(asset_key=AssetKey("my_table"), job=my_job)
-def my_asset_sensor(context, asset_event):
-    yield RunRequest(
-        run_key=context.cursor,
-        run_config={
-            "ops": {
-                "read_materialization": {
-                    "config": {
-                        "asset_key": asset_event.dagster_event.asset_key.path,
-                    }
-                }
-            }
-        },
-    )
-```
-
-### Multi-asset sensors
-
-Multi-asset sensors, which can trigger job executions based on some combination of states from multiple asset materialization event streams, can be handled using the base sensor definition and manual cursor management based on the asset event streams. These asset event streams can be queried using the `instance` attribute off of the <PyObject object="SensorEvaluationContext" /> object.
-
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_multi_asset_sensor_marker endbefore=end_multi_asset_sensor_marker
-import json
-from dagster import EventRecordsFilter, DagsterEventType
-
-
-@sensor(job=my_job)
-def multi_asset_sensor(context):
-    cursor_dict = json.loads(context.cursor) if context.cursor else {}
-    a_cursor = cursor_dict.get("a")
-    b_cursor = cursor_dict.get("b")
-
-    a_event_records = context.instance.get_event_records(
-        EventRecordsFilter(
-            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-            asset_key=AssetKey("table_a"),
-            after_cursor=a_cursor,
-        ),
-        ascending=False,
-        limit=1,
-    )
-    b_event_records = context.instance.get_event_records(
-        EventRecordsFilter(
-            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-            asset_key=AssetKey("table_a"),
-            after_cursor=b_cursor,
-        ),
-        ascending=False,
-        limit=1,
-    )
-
-    if not a_event_records or not b_event_records:
-        return
-
-    # make sure we only generate events if both table_a and table_b have been materialized since
-    # the last evaluation.
-    yield RunRequest(run_key=None)
-
-    # update the sensor cursor by combining the individual event cursors from the two separate
-    # asset event streams
-    context.update_cursor(
-        json.dumps(
-            {
-                "a": a_event_records[0].storage_id,
-                "b": b_event_records[0].storage_id,
-            }
-        )
-    )
-```
-
 ## Run status sensors
 
-If you want to act on the status of a job run, Dagster provides a way to create a sensor that reacts to run statuses. You can use <PyObject object="run_status_sensor" /> with a specified <PyObject object="DagsterRunStatus" /> to decorate a function that will run when the given status occurs. This can be used to send alerts to a monitoring service on job failure or report a run success.
+If you want to act on the status of a job run, Dagster provides a way to create a sensor that reacts to run statuses. You can use <PyObject object="run_status_sensor" /> with a specified <PyObject object="DagsterRunStatus" /> to decorate a function that will run when the given status occurs. This can be used to launch runs of other jobs, send alerts to a monitoring service on job failure, or report a run success.
 
-Here is an example of a sensor that reports job success:
+Here is an example of a run status sensor that launches a run of `status_reporting_job` if a run is successful
+
+```python file=concepts/partitions_schedules_sensors/sensors/run_status_run_requests.py startafter=start endbefore=end
+@run_status_sensor(
+    run_status=DagsterRunStatus.SUCCESS,
+    request_job=status_reporting_job,
+)
+def report_status_sensor(context):
+    # this condition prevents the sensor from triggering status_reporting_job again after it succeeds
+    if context.dagster_run.job_name != status_reporting_job.name:
+        run_config = {
+            "ops": {
+                "status_report": {"config": {"job_name": context.dagster_run.job_name}}
+            }
+        }
+        return RunRequest(run_key=None, run_config=run_config)
+    else:
+        return SkipReason("Don't report status of status_reporting_job")
+```
+
+`request_job` is the job that will be run when the `RunRequest` is returned.
+
+Note that in `report_status_sensor` we conditionally return a RunRequest. This ensures that when `report_status_sensor` runs `status_reporting_job` it doesn't enter an infinite loop where the success of `status_reporting_job` triggers another run of `status_reporting_job`, which triggers another run, and so on.
+
+Here is an example of a sensor that reports job success in a Slack message:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_success_sensor_marker endbefore=end_success_sensor_marker
 from dagster import run_status_sensor, RunStatusSensorContext, DagsterRunStatus
 
 
-@run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS)
+@run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
 def my_slack_on_run_success(context: RunStatusSensorContext):
     slack_client = WebClient(token=os.environ["SLACK_DAGSTER_ETL_BOT_TOKEN"])
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=f'Job "{context.pipeline_run.pipeline_name}" succeeded.',
+        message=f'Job "{context.dagster_run.job_name}" succeeded.',
     )
 ```
 
-Then, you can add the sensor to a repository so it can be enabled and used the same as other sensors:
+When a run status sensor is triggered by a job run but doesn't return anything, Dagster will report an event back to the run to indicate that the sensor ran.
+
+Once you have written your sensor, you can add the sensor to a repository so it can be enabled and used the same as other sensors:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_repo_marker endbefore=end_repo_marker
 from dagster import repository
@@ -406,7 +443,16 @@ def my_repository():
 
 Dagster provides a set of special run status sensor decorators for defining sensors that monitor job failure events. You can use <PyObject object="run_failure_sensor" /> to decorate a function that will run when a run fails.
 
-For example, you can write a sensor that sends a slack message when it runs using this decorator:
+```python file=concepts/partitions_schedules_sensors/sensors/run_status_run_requests.py startafter=start_job_failure endbefore=end_job_failure
+@run_failure_sensor(request_job=status_reporting_job)
+def report_failure_sensor(context):
+    run_config = {
+        "ops": {"status_report": {"config": {"job_name": context.dagster_run.job_name}}}
+    }
+    return RunRequest(run_key=None, run_config=run_config)
+```
+
+This job failure sensor sends a slack message when it runs:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_alert_sensor_marker endbefore=end_alert_sensor_marker
 import os
@@ -420,7 +466,7 @@ def my_slack_on_run_failure(context: RunFailureSensorContext):
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=f'Job "{context.pipeline_run.pipeline_name}" failed. Error: {context.failure_event.message}',
+        message=f'Job "{context.dagster_run.job_name}" failed. Error: {context.failure_event.message}',
     )
 ```
 
@@ -437,8 +483,8 @@ slack_on_run_failure = make_slack_on_run_failure_sensor(
 )
 ```
 
-<PyObject module="dagster.utils" object="make_email_on_run_failure_sensor" /> helps
-you create a job failure sensor that will send emails via the SMTP protocol:
+<PyObject object="make_email_on_run_failure_sensor" /> helps you create a job failure
+sensor that will send emails via the SMTP protocol:
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_email_marker endbefore=end_email_marker
 from dagster import make_email_on_run_failure_sensor
@@ -460,9 +506,9 @@ As with other sensors, you can directly invoke run status sensors. However, the 
 If you had written a status sensor like this (assuming you implemented the function `email_alert` elsewhere)
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_simple_success_sensor endbefore=end_simple_success_sensor
-@run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS)
+@run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
 def my_email_sensor(context: RunStatusSensorContext):
-    message = f'Job "{context.pipeline_run.pipeline_name}" succeeded.'
+    message = f'Job "{context.dagster_run.job_name}" succeeded.'
     email_alert(message)
 ```
 
@@ -511,7 +557,7 @@ We can use the same pattern to build the context for <PyObject object="run_failu
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_simple_fail_sensor endbefore=end_simple_fail_sensor
 @run_failure_sensor
 def my_email_failure_sensor(context: RunFailureSensorContext):
-    message = f'Job "{context.pipeline_run.pipeline_name}" failed. Error: {context.failure_event.message}'
+    message = f'Job "{context.dagster_run.job_name}" failed. Error: {context.failure_event.message}'
     email_alert(message)
 ```
 
@@ -574,12 +620,14 @@ from dagster_aws.s3.sensor import get_s3_keys
 
 @sensor(job=my_job)
 def my_s3_sensor(context):
-    new_s3_keys = get_s3_keys("my_s3_bucket", since_key=context.last_run_key)
+    since_key = context.cursor or None
+    new_s3_keys = get_s3_keys("my_s3_bucket", since_key=since_key)
     if not new_s3_keys:
-        yield SkipReason("No new s3 files found for bucket my_s3_bucket.")
-        return
-    for s3_key in new_s3_keys:
-        yield RunRequest(run_key=s3_key, run_config={})
+        return SkipReason("No new s3 files found for bucket my_s3_bucket.")
+    last_key = new_s3_keys[-1]
+    run_requests = [RunRequest(run_key=s3_key, run_config={}) for s3_key in new_s3_keys]
+    context.update_cursor(last_key)
+    return run_requests
 ```
 
 ### Using resources in sensors
@@ -610,3 +658,9 @@ def uses_db_connection():
 ```
 
 If a resource you want to initialize has dependencies on other resources, those can be included in the dictionary passed to <PyObject object="build_resources"/>. For more in-depth usage, check out the [Initializing Resources Outside of Execution](/concepts/resources#initializing-resources-outside-of-execution) section.
+
+## See it in action
+
+For more examples of sensors, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news_assets):
+
+- [Sensor factory](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/sensors/hn_tables_updated_sensor.py)

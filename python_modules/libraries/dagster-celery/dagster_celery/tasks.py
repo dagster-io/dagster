@@ -1,9 +1,10 @@
-from dagster import DagsterInstance, MetadataEntry, check
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster import DagsterInstance, MetadataEntry
+from dagster import _check as check
+from dagster._grpc.types import ExecuteStepArgs
+from dagster._serdes import serialize_dagster_namedtuple, unpack_value
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
-from dagster.grpc.types import ExecuteStepArgs
-from dagster.serdes import serialize_dagster_namedtuple, unpack_value
 
 from .core_execution_loop import DELEGATE_MARKER
 from .executor import CeleryExecutor
@@ -47,8 +48,8 @@ def create_task(celery_app, **task_kwargs):
             pipeline_run,
             EngineEventData(
                 [
-                    MetadataEntry.text(step_keys_str, "step_keys"),
-                    MetadataEntry.text(self.request.hostname, "Celery worker"),
+                    MetadataEntry("step_keys", value=step_keys_str),
+                    MetadataEntry("Celery worker", value=self.request.hostname),
                 ],
                 marker_end=DELEGATE_MARKER,
             ),

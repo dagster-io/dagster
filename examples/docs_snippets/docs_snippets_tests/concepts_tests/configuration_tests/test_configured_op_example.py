@@ -1,5 +1,4 @@
 from dagster import build_op_context
-
 from docs_snippets.concepts.configuration.configured_op_example import (
     another_configured_example,
     configured_example,

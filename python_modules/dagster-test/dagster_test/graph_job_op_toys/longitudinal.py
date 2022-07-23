@@ -4,7 +4,7 @@ from datetime import datetime
 from random import random
 
 from dagster import AssetMaterialization, In, Nothing, Out, fs_io_manager, graph, op
-from dagster.utils.partitions import DEFAULT_DATE_FORMAT
+from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 
 TRAFFIC_CONSTANTS = {
     0: 1,
@@ -132,6 +132,7 @@ def longitudinal():
 
 
 longitudinal_job = longitudinal.to_job(
+    name="longitudinal_no_schedule",
     description=(
         "Demo job that simulates updating tables of users and video views and training a "
         "video recommendation model. The growth of execution-time and data-throughput follows"

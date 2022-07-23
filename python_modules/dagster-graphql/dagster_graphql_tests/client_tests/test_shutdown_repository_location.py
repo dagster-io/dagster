@@ -1,4 +1,5 @@
 import time
+from typing import Any
 
 from dagster_graphql import ShutdownRepositoryLocationStatus
 
@@ -9,12 +10,12 @@ from ..graphql.graphql_context_test_suite import (
     make_graphql_context_test_suite,
 )
 
+BaseTestSuite: Any = make_graphql_context_test_suite(
+    context_variants=[GraphQLContextVariant.non_launchable_sqlite_instance_deployed_grpc_env()]
+)
 
-class TestShutdownRepositoryLocation(
-    make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.non_launchable_sqlite_instance_deployed_grpc_env()]
-    )
-):
+
+class TestShutdownRepositoryLocation(BaseTestSuite):
     def test_shutdown_repository_location(self, graphql_client, graphql_context):
         origin = next(iter(graphql_context.get_workspace_snapshot().values())).origin
         origin.create_client().heartbeat()

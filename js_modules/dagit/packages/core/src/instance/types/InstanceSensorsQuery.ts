@@ -9,7 +9,7 @@ import { InstigationType, InstigationStatus, RunStatus, InstigationTickStatus } 
 // GraphQL query operation: InstanceSensorsQuery
 // ====================================================
 
-export interface InstanceSensorsQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause {
+export interface InstanceSensorsQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -19,7 +19,7 @@ export interface InstanceSensorsQuery_instance_daemonHealth_allDaemonStatuses_la
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceSensorsQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause | null;
+  causes: InstanceSensorsQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes[];
 }
 
 export interface InstanceSensorsQuery_instance_daemonHealth_allDaemonStatuses {
@@ -61,23 +61,10 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_n
   timestamp: number;
 }
 
-export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_repositoryOrigin_repositoryLocationMetadata {
-  __typename: "RepositoryMetadata";
-  key: string;
-  value: string;
-}
-
-export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_repositoryOrigin {
-  __typename: "RepositoryOrigin";
-  id: string;
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_repositoryOrigin_repositoryLocationMetadata[];
-}
-
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_typeSpecificData_ScheduleData {
@@ -92,9 +79,12 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_n
   id: string;
   runId: string;
   status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
-export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_error_cause {
+export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -104,7 +94,7 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_n
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_error_cause | null;
+  causes: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_error_causes[];
 }
 
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks {
@@ -115,16 +105,19 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_n
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_error | null;
 }
 
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;
-  repositoryOrigin: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_repositoryOrigin;
+  repositoryName: string;
+  repositoryLocationName: string;
   typeSpecificData: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_typeSpecificData | null;
   runs: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_runs[];
   ticks: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks[];
@@ -175,7 +168,7 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection {
   nodes: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes[];
 }
 
-export interface InstanceSensorsQuery_repositoriesOrError_PythonError_cause {
+export interface InstanceSensorsQuery_repositoriesOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -185,28 +178,15 @@ export interface InstanceSensorsQuery_repositoriesOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceSensorsQuery_repositoriesOrError_PythonError_cause | null;
+  causes: InstanceSensorsQuery_repositoriesOrError_PythonError_causes[];
 }
 
 export type InstanceSensorsQuery_repositoriesOrError = InstanceSensorsQuery_repositoriesOrError_RepositoryConnection | InstanceSensorsQuery_repositoriesOrError_PythonError;
 
-export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_repositoryOrigin_repositoryLocationMetadata {
-  __typename: "RepositoryMetadata";
-  key: string;
-  value: string;
-}
-
-export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_repositoryOrigin {
-  __typename: "RepositoryOrigin";
-  id: string;
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_repositoryOrigin_repositoryLocationMetadata[];
-}
-
 export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_ScheduleData {
@@ -221,9 +201,12 @@ export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_Instiga
   id: string;
   runId: string;
   status: RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
-export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_cause {
+export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -233,7 +216,7 @@ export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_Instiga
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_cause | null;
+  causes: InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_causes[];
 }
 
 export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks {
@@ -244,16 +227,19 @@ export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_Instiga
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error | null;
 }
 
 export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results {
   __typename: "InstigationState";
   id: string;
+  selectorId: string;
   name: string;
   instigationType: InstigationType;
   status: InstigationStatus;
-  repositoryOrigin: InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_repositoryOrigin;
+  repositoryName: string;
+  repositoryLocationName: string;
   typeSpecificData: InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData | null;
   runs: InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_runs[];
   ticks: InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks[];
@@ -265,7 +251,7 @@ export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_Instiga
   results: InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results[];
 }
 
-export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_PythonError_cause {
+export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -275,7 +261,7 @@ export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_PythonE
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceSensorsQuery_unloadableInstigationStatesOrError_PythonError_cause | null;
+  causes: InstanceSensorsQuery_unloadableInstigationStatesOrError_PythonError_causes[];
 }
 
 export type InstanceSensorsQuery_unloadableInstigationStatesOrError = InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates | InstanceSensorsQuery_unloadableInstigationStatesOrError_PythonError;

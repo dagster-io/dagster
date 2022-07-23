@@ -3,8 +3,9 @@ from contextlib import contextmanager
 from dagster_graphql.schema import create_schema
 from graphql import graphql
 
-from dagster import check
+import dagster._check as check
 from dagster.core.instance import DagsterInstance
+from dagster.core.test_utils import wait_for_runs_to_finish
 from dagster.core.workspace import WorkspaceProcessContext
 from dagster.core.workspace.load_target import PythonFileTarget
 
@@ -40,7 +41,7 @@ def execute_dagster_graphql(context, query, variables=None):
 
 def execute_dagster_graphql_and_finish_runs(context, query, variables=None):
     result = execute_dagster_graphql(context, query, variables)
-    context.instance.run_launcher.join()
+    wait_for_runs_to_finish(context.instance, timeout=30)
     return result
 
 
@@ -96,9 +97,35 @@ def infer_repository_selector(graphql_context):
     }
 
 
-def infer_pipeline_selector(graphql_context, pipeline_name, solid_selection=None):
+def infer_job_or_pipeline_selector(
+    graphql_context,
+    pipeline_name,
+    solid_selection=None,
+    asset_selection=None,
+):
     selector = infer_repository_selector(graphql_context)
-    selector.update({"pipelineName": pipeline_name, "solidSelection": solid_selection})
+    selector.update(
+        {
+            "pipelineName": pipeline_name,
+            "solidSelection": solid_selection,
+            "assetSelection": asset_selection,
+        }
+    )
+    return selector
+
+
+def infer_pipeline_selector(
+    graphql_context,
+    pipeline_name,
+    solid_selection=None,
+):
+    selector = infer_repository_selector(graphql_context)
+    selector.update(
+        {
+            "pipelineName": pipeline_name,
+            "solidSelection": solid_selection,
+        }
+    )
     return selector
 
 

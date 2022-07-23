@@ -1,19 +1,7 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
 
-import {RepositoryOriginFragment} from './types/RepositoryOriginFragment';
-
-export const REPOSITORY_ORIGIN_FRAGMENT = gql`
-  fragment RepositoryOriginFragment on RepositoryOrigin {
-    id
-    repositoryLocationName
-    repositoryName
-    repositoryLocationMetadata {
-      key
-      value
-    }
-  }
-`;
+import {InstigationStateFragment} from '../instigation/types/InstigationStateFragment';
 
 export const REPOSITORY_INFO_FRAGMENT = gql`
   fragment RepositoryInfoFragment on Repository {
@@ -30,17 +18,17 @@ export const REPOSITORY_INFO_FRAGMENT = gql`
   }
 `;
 
-export const RepositoryOriginInformation: React.FunctionComponent<{
-  origin: RepositoryOriginFragment;
-}> = ({origin}) => {
+export const InstigatorSelectorInformation: React.FC<{
+  instigatorState: InstigationStateFragment;
+}> = ({instigatorState}) => {
   return (
     <>
-      {origin.repositoryLocationMetadata.map((metadata, idx) => (
-        <div key={idx}>
-          <span style={{marginRight: 5}}>{metadata.key}:</span>
-          <span style={{opacity: 0.5}}>{metadata.value}</span>
-        </div>
-      ))}
+      <div>
+        <span style={{marginRight: 5}}>repository:</span>
+        <span style={{opacity: 0.5}}>
+          {instigatorState.repositoryName}@{instigatorState.repositoryLocationName}
+        </span>
+      </div>
     </>
   );
 };

@@ -10,10 +10,35 @@ import pytest
 from .utils import BUILDKITE
 
 
-@pytest.fixture(scope="module")
-def docker_compose_cm(test_directory):
+@contextmanager
+def docker_compose_cm(
+    docker_compose_yml,
+    network_name=None,
+    docker_context=None,
+    service=None,
+):
+    if not network_name:
+        network_name = network_name_from_yml(docker_compose_yml)
+    try:
+        docker_compose_up(docker_compose_yml, docker_context, service)
+        if BUILDKITE:
+            # When running in a container on Buildkite, we need to first connect our container
+            # and our network and then yield a dict of container name to the container's
+            # hostname.
+            with buildkite_hostnames_cm(network_name) as hostnames:
+                yield hostnames
+        else:
+            # When running locally, we don't need to jump through any special networking hoops;
+            # just yield a dict of container name to "localhost".
+            yield dict((container, "localhost") for container in list_containers())
+    finally:
+        docker_compose_down(docker_compose_yml, docker_context, service)
+
+
+@pytest.fixture(scope="module", name="docker_compose_cm")
+def docker_compose_cm_fixture(test_directory):
     @contextmanager
-    def docker_compose(
+    def _docker_compose(
         docker_compose_yml=None,
         network_name=None,
         docker_context=None,
@@ -21,24 +46,12 @@ def docker_compose_cm(test_directory):
     ):
         if not docker_compose_yml:
             docker_compose_yml = default_docker_compose_yml(test_directory)
-        if not network_name:
-            network_name = network_name_from_yml(docker_compose_yml)
-        try:
-            docker_compose_up(docker_compose_yml, docker_context, service)
-            if BUILDKITE:
-                # When running in a container on Buildkite, we need to first connect our container
-                # and our network and then yield a dict of container name to the container's
-                # hostname.
-                with buildkite_hostnames_cm(network_name) as hostnames:
-                    yield hostnames
-            else:
-                # When running locally, we don't need to jump through any special networking hoops;
-                # just yield a dict of container name to "localhost".
-                yield dict((container, "localhost") for container in list_containers())
-        finally:
-            docker_compose_down(docker_compose_yml, docker_context, service)
+        with docker_compose_cm(
+            docker_compose_yml, network_name, docker_context, service
+        ) as hostnames:
+            yield hostnames
 
-    return docker_compose
+    return _docker_compose
 
 
 @pytest.fixture

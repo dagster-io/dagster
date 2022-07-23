@@ -60,11 +60,17 @@
         "migrate": {
             "$ref": "#/definitions/Migrate"
         },
+        "telemetry": {
+            "$ref": "#/definitions/Telemetry"
+        },
         "serviceAccount": {
             "$ref": "#/definitions/ServiceAccount"
         },
         "global": {
             "$ref": "#/definitions/Global"
+        },
+        "retention": {
+            "$ref": "#/definitions/Retention"
         }
     },
     "required": [
@@ -85,8 +91,10 @@
         "dagsterDaemon",
         "busybox",
         "migrate",
+        "telemetry",
         "serviceAccount",
-        "global"
+        "global",
+        "retention"
     ],
     "definitions": {
         "PullPolicy": {
@@ -112,6 +120,9 @@
                     "anyOf": [
                         {
                             "type": "string"
+                        },
+                        {
+                            "type": "integer"
                         },
                         {
                             "type": "null"
@@ -200,6 +211,17 @@
                     "items": {
                         "$ref": "#/definitions/Server"
                     }
+                },
+                "externalConfigmap": {
+                    "title": "Externalconfigmap",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -290,6 +312,10 @@
                 "image": {
                     "$ref": "#/definitions/Image"
                 },
+                "nameOverride": {
+                    "title": "Nameoverride",
+                    "type": "string"
+                },
                 "service": {
                     "$ref": "#/definitions/schema__charts__utils__kubernetes__Service"
                 },
@@ -375,11 +401,23 @@
                             "type": "null"
                         }
                     ]
+                },
+                "logLevel": {
+                    "title": "Loglevel",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
                 "replicaCount",
                 "image",
+                "nameOverride",
                 "service",
                 "workspace",
                 "env",
@@ -400,6 +438,25 @@
                 "enableReadOnly"
             ],
             "additionalProperties": false
+        },
+        "SecretRef": {
+            "title": "SecretRef",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
+        },
+        "UserDeploymentIncludeConfigInLaunchedRuns": {
+            "title": "UserDeploymentIncludeConfigInLaunchedRuns",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "enabled"
+            ]
         },
         "VolumeMount": {
             "title": "VolumeMount",
@@ -430,6 +487,9 @@
                     "items": {
                         "type": "string"
                     }
+                },
+                "includeConfigInLaunchedRuns": {
+                    "$ref": "#/definitions/UserDeploymentIncludeConfigInLaunchedRuns"
                 },
                 "port": {
                     "title": "Port",
@@ -527,6 +587,13 @@
                     "title": "Enablesubchart",
                     "type": "boolean"
                 },
+                "imagePullSecrets": {
+                    "title": "Imagepullsecrets",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/SecretRef"
+                    }
+                },
                 "deployments": {
                     "title": "Deployments",
                     "type": "array",
@@ -538,6 +605,7 @@
             "required": [
                 "enabled",
                 "enableSubchart",
+                "imagePullSecrets",
                 "deployments"
             ]
         },
@@ -606,6 +674,10 @@
                 "postgresqlParams": {
                     "title": "Postgresqlparams",
                     "type": "object"
+                },
+                "postgresqlScheme": {
+                    "title": "Postgresqlscheme",
+                    "type": "string"
                 },
                 "service": {
                     "$ref": "#/definitions/schema__charts__dagster__subschema__postgresql__Service"
@@ -988,18 +1060,11 @@
                 "flower"
             ]
         },
-        "SecretRef": {
-            "title": "SecretRef",
-            "type": "object",
-            "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
-        },
         "ComputeLogManagerType": {
             "title": "ComputeLogManagerType",
             "description": "An enumeration.",
             "enum": [
                 "NoOpComputeLogManager",
-                "LocalComputeLogManager",
                 "AzureBlobComputeLogManager",
                 "GCSComputeLogManager",
                 "S3ComputeLogManager",
@@ -1716,6 +1781,12 @@
             ],
             "additionalProperties": false
         },
+        "ResourceRequirements": {
+            "title": "ResourceRequirements",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+        },
         "K8sRunLauncherConfig": {
             "title": "K8sRunLauncherConfig",
             "type": "object",
@@ -1814,6 +1885,17 @@
                     "anyOf": [
                         {
                             "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "resources": {
+                    "title": "ResourceRequirements",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/ResourceRequirements"
                         },
                         {
                             "type": "null"
@@ -2173,6 +2255,30 @@
                 }
             ]
         },
+        "Sensors": {
+            "title": "Sensors",
+            "type": "object",
+            "properties": {
+                "useThreads": {
+                    "title": "Usethreads",
+                    "type": "boolean"
+                },
+                "numWorkers": {
+                    "title": "Numworkers",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "useThreads"
+            ]
+        },
         "Daemon": {
             "title": "Daemon",
             "type": "object",
@@ -2259,6 +2365,13 @@
                 "runMonitoring": {
                     "title": "Runmonitoring",
                     "type": "object"
+                },
+                "runRetries": {
+                    "title": "Runretries",
+                    "type": "object"
+                },
+                "sensors": {
+                    "$ref": "#/definitions/Sensors"
                 }
             },
             "required": [
@@ -2281,7 +2394,9 @@
                 "readinessProbe",
                 "startupProbe",
                 "annotations",
-                "runMonitoring"
+                "runMonitoring",
+                "runRetries",
+                "sensors"
             ],
             "additionalProperties": false
         },
@@ -2309,6 +2424,20 @@
             "required": [
                 "enabled"
             ]
+        },
+        "Telemetry": {
+            "title": "Telemetry",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "enabled"
+            ],
+            "additionalProperties": false
         },
         "ServiceAccount": {
             "title": "ServiceAccount",
@@ -2359,6 +2488,77 @@
                 "serviceAccountName",
                 "celeryConfigSecretName"
             ]
+        },
+        "TickRetentionByType": {
+            "title": "TickRetentionByType",
+            "type": "object",
+            "properties": {
+                "skipped": {
+                    "title": "Skipped",
+                    "type": "integer"
+                },
+                "success": {
+                    "title": "Success",
+                    "type": "integer"
+                },
+                "failure": {
+                    "title": "Failure",
+                    "type": "integer"
+                },
+                "started": {
+                    "title": "Started",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "skipped",
+                "success",
+                "failure",
+                "started"
+            ],
+            "additionalProperties": false
+        },
+        "TickRetention": {
+            "title": "TickRetention",
+            "type": "object",
+            "properties": {
+                "purgeAfterDays": {
+                    "title": "Purgeafterdays",
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "$ref": "#/definitions/TickRetentionByType"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "purgeAfterDays"
+            ]
+        },
+        "Retention": {
+            "title": "Retention",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "sensor": {
+                    "$ref": "#/definitions/TickRetention"
+                },
+                "schedule": {
+                    "$ref": "#/definitions/TickRetention"
+                }
+            },
+            "required": [
+                "enabled",
+                "sensor",
+                "schedule"
+            ],
+            "additionalProperties": false
         }
     }
 }

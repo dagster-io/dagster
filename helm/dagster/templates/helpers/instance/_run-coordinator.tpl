@@ -4,7 +4,9 @@ module: dagster.core.run_coordinator
 class: QueuedRunCoordinator
 {{- if not (empty (compact (values $queuedRunCoordinatorConfig))) }}
 config:
-  {{- if $queuedRunCoordinatorConfig.maxConcurrentRuns }}
+  # Workaround to prevent 0 from being interpreted as falsey:
+  # https://github.com/helm/helm/issues/3164#issuecomment-709537506
+  {{- if not (kindIs "invalid" $queuedRunCoordinatorConfig.maxConcurrentRuns) }}
   max_concurrent_runs: {{ $queuedRunCoordinatorConfig.maxConcurrentRuns }}
   {{- end }}
 

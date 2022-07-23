@@ -4,66 +4,215 @@ schema {
   subscription: DagitSubscription
 }
 
+"""
+The root for all queries to retrieve data from the Dagster instance.
+"""
 type DagitQuery {
+  """
+  Retrieve the version of Dagster running in the Dagster deployment.
+  """
   version: String!
-  repositoriesOrError: RepositoriesOrError!
+
+  """
+  Retrieve all the repositories.
+  """
+  repositoriesOrError(repositorySelector: RepositorySelector): RepositoriesOrError!
+
+  """
+  Retrieve a repository by its location name and repository name.
+  """
   repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
+
+  """
+  Retrieve the workspace and its locations.
+  """
   workspaceOrError: WorkspaceOrError!
+
+  """
+  Retrieve a job by its location name, repository name, and job name.
+  """
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
+
+  """
+  Retrieve a job snapshot by its id or location name, repository name, and job name.
+  """
   pipelineSnapshotOrError(
     snapshotId: String
     activePipelineSelector: PipelineSelector
   ): PipelineSnapshotOrError!
+
+  """
+  Retrieve a graph by its location name, repository name, and graph name.
+  """
   graphOrError(selector: GraphSelector): GraphOrError!
+
+  """
+  Retrieve the name of the scheduler running in the Dagster deployment.
+  """
   scheduler: SchedulerOrError!
+
+  """
+  Retrieve a schedule by its location name, repository name, and schedule name.
+  """
   scheduleOrError(scheduleSelector: ScheduleSelector!): ScheduleOrError!
+
+  """
+  Retrieve all the schedules.
+  """
   schedulesOrError(repositorySelector: RepositorySelector!): SchedulesOrError!
+
+  """
+  Retrieve a sensor by its location name, repository name, and sensor name.
+  """
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
+
+  """
+  Retrieve all the sensors.
+  """
   sensorsOrError(repositorySelector: RepositorySelector!): SensorsOrError!
+
+  """
+  Retrieve the state for a schedule or sensor by its location name, repository name, and schedule/sensor name.
+  """
   instigationStateOrError(instigationSelector: InstigationSelector!): InstigationStateOrError!
+
+  """
+  Retrieve the running schedules and sensors that are missing from the workspace.
+  """
   unloadableInstigationStatesOrError(instigationType: InstigationType): InstigationStatesOrError!
+
+  """
+  Retrieve the partition sets for a job by its location name, repository name, and job name.
+  """
   partitionSetsOrError(
     repositorySelector: RepositorySelector!
     pipelineName: String!
   ): PartitionSetsOrError!
+
+  """
+  Retrieve a partition set by its location name, repository name, and partition set name.
+  """
   partitionSetOrError(
     repositorySelector: RepositorySelector!
     partitionSetName: String
   ): PartitionSetOrError!
+
+  """
+  Retrieve runs after applying a filter, cursor, and limit.
+  """
   pipelineRunsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
+
+  """
+  Retrieve a run by its run id.
+  """
   pipelineRunOrError(runId: ID!): RunOrError!
+
+  """
+  Retrieve runs after applying a filter, cursor, and limit.
+  """
   runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
+
+  """
+  Retrieve a run by its run id.
+  """
   runOrError(runId: ID!): RunOrError!
+
+  """
+  Retrieve all the distinct key-value tags from all runs.
+  """
   pipelineRunTags: [PipelineTagAndValues!]!
+
+  """
+  Retrieve a group of runs with the matching root run id.
+  """
   runGroupOrError(runId: ID!): RunGroupOrError!
+
+  """
+  Retrieve groups of runs after applying a filter, cursor, and limit.
+  """
   runGroupsOrError(filter: RunsFilter, cursor: String, limit: Int): RunGroupsOrError!
+
+  """
+  Retrieve whether the run configuration is valid or invalid.
+  """
   isPipelineConfigValid(
     pipeline: PipelineSelector!
     runConfigData: RunConfigData
     mode: String!
   ): PipelineConfigValidationResult!
+
+  """
+  Retrieve the execution plan for a job and its run configuration.
+  """
   executionPlanOrError(
     pipeline: PipelineSelector!
     runConfigData: RunConfigData
     mode: String!
   ): ExecutionPlanOrError!
+
+  """
+  Retrieve the run configuration schema for a job.
+  """
   runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
+
+  """
+  Retrieve the instance configuration for the Dagster deployment.
+  """
   instance: Instance!
+
+  """
+  Retrieve assets after applying a prefix filter, cursor, and limit.
+  """
   assetsOrError(prefix: [String!], cursor: String, limit: Int): AssetsOrError!
+
+  """
+  Retrieve an asset by asset key.
+  """
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
+
+  """
+  Retrieve asset nodes after applying a filter on asset group, job, and asset keys.
+  """
   assetNodes(
+    group: AssetGroupSelector
     pipeline: PipelineSelector
     assetKeys: [AssetKeyInput!]
     loadMaterializations: Boolean = false
   ): [AssetNode!]!
+
+  """
+  Retrieve an asset node by asset key.
+  """
   assetNodeOrError(assetKey: AssetKeyInput!): AssetNodeOrError!
+
+  """
+  Retrieve a backfill by backfill id.
+  """
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
+
+  """
+  Retrieve backfills after applying a status filter, cursor, and limit.
+  """
   partitionBackfillsOrError(
     status: BulkActionStatus
     cursor: String
     limit: Int
   ): PartitionBackfillsOrError!
-  permissions: [GraphenePermission!]!
+
+  """
+  Retrieve the set of permissions for the Dagster deployment.
+  """
+  permissions: [Permission!]!
+
+  """
+  Retrieve the latest materializations for a set of assets by asset keys.
+  """
+  assetsLatestInfo(assetKeys: [AssetKeyInput!]!): [AssetLatestInfo!]!
+
+  """
+  Retrieve event logs after applying a run id filter, cursor, and limit.
+  """
+  logsForRun(runId: ID!, afterCursor: String, limit: Int): EventConnectionOrError!
 }
 
 union RepositoriesOrError = RepositoryConnection | PythonError
@@ -86,8 +235,7 @@ type Repository {
   sensors: [Sensor!]!
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
-  inProgressRunsByStep: [InProgressRunsByStep!]!
-  latestRunByStep: [RunStatsByStep!]!
+  assetGroups: [AssetGroup!]!
 }
 
 type RepositoryLocation {
@@ -111,6 +259,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
   tags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
   runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
@@ -200,7 +349,30 @@ interface DagsterType {
 interface ConfigType {
   key: String!
   description: String
+
+  """
+  This is an odd and problematic field. It recursively goes down to
+  get all the types contained within a type. The case where it is horrible
+  are dictionaries and it recurses all the way down to the leaves. This means
+  that in a case where one is fetching all the types and then all the inner
+  types keys for those types, we are returning O(N^2) type keys, which
+  can cause awful performance for large schemas. When you have access
+  to *all* the types, you should instead only use the type_param_keys
+  field for closed generic types and manually navigate down the to
+  field types client-side.
+
+  Where it is useful is when you are fetching types independently and
+  want to be able to render them, but without fetching the entire schema.
+
+  We use this capability when rendering the sidebar.
+  """
   recursiveConfigTypes: [ConfigType!]!
+
+  """
+  This returns the keys for type parameters of any closed generic type,
+  (e.g. List, Optional). This should be used for reconstructing and
+  navigating the full schema client-side and not innerTypes.
+  """
   typeParamKeys: [String!]!
   isSelector: Boolean!
 }
@@ -211,36 +383,38 @@ interface MetadataEntry {
 }
 
 type AssetNode {
-  id: ID!
   assetKey: AssetKey!
-  description: String
-  opName: String
-  op: SolidDefinition
-  jobs: [Pipeline!]!
-  jobNames: [String!]!
-  repository: Repository!
-  dependencies: [AssetDependency!]!
-  dependedBy: [AssetDependency!]!
-  dependencyKeys: [AssetKey!]!
-  dependedByKeys: [AssetKey!]!
   assetMaterializations(
     partitions: [String]
     beforeTimestampMillis: String
     limit: Int
   ): [MaterializationEvent!]!
-  partitionKeys: [String!]!
-  partitionDefinition: String
+  computeKind: String
+  configField: ConfigTypeField
+  dependedBy: [AssetDependency!]!
+  dependedByKeys: [AssetKey!]!
+  dependencies: [AssetDependency!]!
+  dependencyKeys: [AssetKey!]!
+  description: String
+  graphName: String
+  groupName: String
+  id: ID!
+  jobNames: [String!]!
+  jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
   materializationCountByPartition: [MaterializationCountByPartition!]!
+  metadataEntries: [MetadataEntry!]!
+  op: SolidDefinition
+  opName: String
+  opNames: [String!]!
+  partitionKeys: [String!]!
+  partitionDefinition: String
+  repository: Repository!
+  requiredResources: [ResourceRequirement!]!
 }
 
 type AssetKey {
   path: [String!]!
-}
-
-type AssetDependency {
-  inputName: String!
-  asset: AssetNode!
 }
 
 type MaterializationEvent implements MessageEvent & StepEvent & DisplayableEvent {
@@ -251,7 +425,7 @@ type MaterializationEvent implements MessageEvent & StepEvent & DisplayableEvent
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
   assetKey: AssetKey
@@ -279,6 +453,9 @@ enum LogLevel {
   DEBUG
 }
 
+"""
+The types of events that may be yielded by solid and pipeline execution.
+"""
 enum DagsterEventType {
   STEP_OUTPUT
   STEP_INPUT
@@ -286,9 +463,15 @@ enum DagsterEventType {
   STEP_START
   STEP_SUCCESS
   STEP_SKIPPED
+  STEP_WORKER_STARTING
+  STEP_WORKER_STARTED
+  RESOURCE_INIT_STARTED
+  RESOURCE_INIT_SUCCESS
+  RESOURCE_INIT_FAILURE
   STEP_UP_FOR_RETRY
   STEP_RESTARTED
   ASSET_MATERIALIZATION
+  ASSET_MATERIALIZATION_PLANNED
   ASSET_OBSERVATION
   STEP_EXPECTATION_RESULT
   RUN_ENQUEUED
@@ -317,6 +500,7 @@ enum DagsterEventType {
   HOOK_SKIPPED
   ALERT_START
   ALERT_SUCCESS
+  ALERT_FAILURE
   LOGS_CAPTURED
 }
 
@@ -326,7 +510,7 @@ interface StepEvent {
 }
 
 interface DisplayableEvent {
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
 }
@@ -345,6 +529,10 @@ type Run implements PipelineRun {
   solidSelection: [String!]
   stats: RunStatsSnapshotOrError!
   stepStats: [RunStepStats!]!
+
+  """
+  Compute logs are the stdout/stderr logs for a given solid step computation
+  """
   computeLogs(stepKey: String!): ComputeLogs!
   executionPlan: ExecutionPlan
   stepKeysToExecute: [String!]
@@ -356,8 +544,10 @@ type Run implements PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
-  events(after: Cursor): [DagsterRunEvent!]!
+  eventConnection(afterCursor: String): EventConnection!
+  assetSelection: [AssetKey!]
   resolvedOpSelection: [String!]
+  assetMaterializations: [MaterializationEvent!]!
   startTime: Float
   endTime: Float
   updateTime: Float
@@ -375,6 +565,10 @@ interface PipelineRun {
   solidSelection: [String!]
   stats: RunStatsSnapshotOrError!
   stepStats: [RunStepStats!]!
+
+  """
+  Compute logs are the stdout/stderr logs for a given solid step computation
+  """
   computeLogs(stepKey: String!): ComputeLogs!
   executionPlan: ExecutionPlan
   stepKeysToExecute: [String!]
@@ -386,7 +580,7 @@ interface PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
-  events(after: Cursor): [DagsterRunEvent!]!
+  eventConnection(afterCursor: String): EventConnection!
 }
 
 type RepositoryOrigin {
@@ -401,18 +595,62 @@ type RepositoryMetadata {
   value: String!
 }
 
+"""
+The status of run execution.
+"""
 enum RunStatus {
+  """
+  Runs waiting to be launched by the Dagster Daemon.
+  """
   QUEUED
+
+  """
+  Runs that have been created, but not yet submitted for launch.
+  """
   NOT_STARTED
+
+  """
+  Runs that are managed outside of the Dagster control plane.
+  """
   MANAGED
+
+  """
+  Runs that have been launched, but execution has not yet started.
+  """
   STARTING
+
+  """
+  Runs that have been launched and execution has started.
+  """
   STARTED
+
+  """
+  Runs that have successfully completed.
+  """
   SUCCESS
+
+  """
+  Runs that have failed to complete.
+  """
   FAILURE
+
+  """
+  Runs that are in-progress and pending to be canceled.
+  """
   CANCELING
+
+  """
+  Runs that have been canceled before completion.
+  """
   CANCELED
 }
 
+"""
+This interface supports the case where we can look up a pipeline successfully in the
+repository available to the DagsterInstance/graphql context, as well as the case where we know
+that a pipeline exists/existed thanks to materialized data such as logs and run metadata, but
+where we can't look the concrete pipeline up.
+"""
 interface PipelineReference {
   name: String!
   solidSelection: [String!]
@@ -451,6 +689,7 @@ type PythonError implements Error {
   className: String
   stack: [String!]!
   cause: PythonError
+  causes: [PythonError!]!
 }
 
 interface Error {
@@ -487,7 +726,7 @@ enum StepEventStatus {
 }
 
 type ExpectationResult implements DisplayableEvent {
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
   success: Boolean!
@@ -507,6 +746,10 @@ type ComputeLogs {
 
 type ComputeLogFile {
   path: String!
+
+  """
+  The data output captured from step computation at query time
+  """
   data: String
   cursor: Int!
   size: Int!
@@ -537,11 +780,28 @@ type ExecutionStepOutput {
 }
 
 enum StepKind {
+  """
+  This is a user-defined computation step
+  """
   COMPUTE
+
+  """
+  This is a mapped step that has not yet been resolved
+  """
   UNRESOLVED_MAPPED
+
+  """
+  This is a collect step that is not yet resolved
+  """
   UNRESOLVED_COLLECT
 }
 
+"""
+This type is used when passing in a configuration object
+        for pipeline configuration. Can either be passed in as a string (the
+        YAML configuration object) or as the configuration object itself. In
+        either case, the object must conform to the constraints of the dagster config type system.
+"""
 scalar RunConfigData
 
 type PipelineTag {
@@ -577,13 +837,19 @@ type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
   assetKey: AssetKey
   runOrError: RunOrError!
   stepStats: RunStepStats!
   partition: String
+}
+
+type EventConnection {
+  events: [DagsterRunEvent!]!
+  cursor: String!
+  hasMore: Boolean!
 }
 
 union DagsterRunEvent =
@@ -596,6 +862,9 @@ union DagsterRunEvent =
   | ExecutionStepUpForRetryEvent
   | ExecutionStepRestartEvent
   | LogMessageEvent
+  | ResourceInitFailureEvent
+  | ResourceInitStartedEvent
+  | ResourceInitSuccessEvent
   | RunFailureEvent
   | RunStartEvent
   | RunEnqueuedEvent
@@ -604,6 +873,8 @@ union DagsterRunEvent =
   | RunCancelingEvent
   | RunCanceledEvent
   | RunSuccessEvent
+  | StepWorkerStartedEvent
+  | StepWorkerStartingEvent
   | HandledOutputEvent
   | LoadedInputEvent
   | LogsCapturedEvent
@@ -617,8 +888,10 @@ union DagsterRunEvent =
   | HookErroredEvent
   | AlertStartEvent
   | AlertSuccessEvent
+  | AlertFailureEvent
+  | AssetMaterializationPlannedEvent
 
-type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
+type ExecutionStepFailureEvent implements MessageEvent & StepEvent & ErrorEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -631,6 +904,13 @@ type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   failureMetadata: FailureMetadata
 }
 
+interface ErrorEvent {
+  error: PythonError
+}
+
+"""
+An enumeration.
+"""
 enum ErrorSource {
   FRAMEWORK_ERROR
   USER_CODE_ERROR
@@ -639,7 +919,7 @@ enum ErrorSource {
 }
 
 type FailureMetadata implements DisplayableEvent {
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
 }
@@ -657,7 +937,7 @@ type ExecutionStepInputEvent implements MessageEvent & StepEvent {
 }
 
 type TypeCheck implements DisplayableEvent {
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
   success: Boolean!
@@ -671,7 +951,7 @@ type ExecutionStepOutputEvent implements MessageEvent & StepEvent & DisplayableE
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
   outputName: String!
@@ -708,7 +988,7 @@ type ExecutionStepSuccessEvent implements MessageEvent & StepEvent {
   eventType: DagsterEventType
 }
 
-type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent {
+type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent & ErrorEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -740,7 +1020,58 @@ type LogMessageEvent implements MessageEvent {
   eventType: DagsterEventType
 }
 
-type RunFailureEvent implements MessageEvent & RunEvent {
+type ResourceInitFailureEvent implements MessageEvent & DisplayableEvent & StepEvent & MarkerEvent & ErrorEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  markerStart: String
+  markerEnd: String
+  error: PythonError
+}
+
+interface MarkerEvent {
+  markerStart: String
+  markerEnd: String
+}
+
+type ResourceInitStartedEvent implements MessageEvent & DisplayableEvent & StepEvent & MarkerEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  markerStart: String
+  markerEnd: String
+}
+
+type ResourceInitSuccessEvent implements MessageEvent & DisplayableEvent & StepEvent & MarkerEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  markerStart: String
+  markerEnd: String
+}
+
+type RunFailureEvent implements MessageEvent & RunEvent & ErrorEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -833,6 +1164,36 @@ type RunSuccessEvent implements MessageEvent & RunEvent {
   pipelineName: String!
 }
 
+type StepWorkerStartedEvent implements MessageEvent & DisplayableEvent & StepEvent & MarkerEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  markerStart: String
+  markerEnd: String
+}
+
+type StepWorkerStartingEvent implements MessageEvent & DisplayableEvent & StepEvent & MarkerEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  markerStart: String
+  markerEnd: String
+}
+
 type HandledOutputEvent implements MessageEvent & StepEvent & DisplayableEvent {
   runId: String!
   message: String!
@@ -841,14 +1202,14 @@ type HandledOutputEvent implements MessageEvent & StepEvent & DisplayableEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
   outputName: String!
   managerKey: String!
 }
 
-type LoadedInputEvent implements MessageEvent & StepEvent {
+type LoadedInputEvent implements MessageEvent & StepEvent & DisplayableEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -856,6 +1217,9 @@ type LoadedInputEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
   inputName: String!
   managerKey: String!
   upstreamOutputName: String
@@ -887,7 +1251,7 @@ type ObjectStoreOperationEvent implements MessageEvent & StepEvent {
 }
 
 type ObjectStoreOperationResult implements DisplayableEvent {
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
   op: ObjectStoreOperationType!
@@ -911,7 +1275,7 @@ type StepExpectationResultEvent implements MessageEvent & StepEvent {
   expectationResult: ExpectationResult!
 }
 
-type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent {
+type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent & MarkerEvent & ErrorEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -919,12 +1283,12 @@ type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  label: String!
+  label: String
   description: String
   metadataEntries: [MetadataEntry!]!
-  error: PythonError
   markerStart: String
   markerEnd: String
+  error: PythonError
 }
 
 type HookCompletedEvent implements MessageEvent & StepEvent {
@@ -947,7 +1311,7 @@ type HookSkippedEvent implements MessageEvent & StepEvent {
   eventType: DagsterEventType
 }
 
-type HookErroredEvent implements MessageEvent & StepEvent {
+type HookErroredEvent implements MessageEvent & StepEvent & ErrorEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -980,7 +1344,29 @@ type AlertSuccessEvent implements MessageEvent & RunEvent {
   pipelineName: String!
 }
 
-scalar Cursor
+type AlertFailureEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type AssetMaterializationPlannedEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+  assetKey: AssetKey
+  runOrError: RunOrError!
+}
 
 type RunNotFoundError implements PipelineRunNotFoundError & Error {
   runId: String!
@@ -997,17 +1383,23 @@ type AssetLineageInfo {
   partitions: [String!]!
 }
 
-type MaterializationCountByPartition {
-  partition: String!
-  materializationCount: Int!
-}
-
 type ConfigTypeField {
   name: String!
   description: String
   configType: ConfigType!
   configTypeKey: String!
   isRequired: Boolean!
+  defaultValueAsJson: String
+}
+
+type AssetDependency {
+  asset: AssetNode!
+  inputName: String!
+}
+
+type MaterializationCountByPartition {
+  partition: String!
+  materializationCount: Int!
 }
 
 type ResourceRequirement {
@@ -1075,6 +1467,7 @@ interface IPipelineSnapshot {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
   runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
@@ -1132,15 +1525,24 @@ type Schedule {
 
 type InstigationState {
   id: ID!
+  selectorId: String!
   name: String!
   instigationType: InstigationType!
   status: InstigationStatus!
+  repositoryName: String!
+  repositoryLocationName: String!
   repositoryOrigin: RepositoryOrigin!
   typeSpecificData: InstigationTypeSpecificData
   runs(limit: Int): [Run!]!
   runsCount: Int!
   tick(timestamp: Float): InstigationTick
-  ticks(dayRange: Int, dayOffset: Int, limit: Int): [InstigationTick!]!
+  ticks(
+    dayRange: Int
+    dayOffset: Int
+    limit: Int
+    cursor: String
+    statuses: [InstigationTickStatus!]
+  ): [InstigationTick!]!
   nextTick: FutureInstigationTick
   runningCount: Int!
 }
@@ -1160,6 +1562,7 @@ union InstigationTypeSpecificData = SensorData | ScheduleData
 type SensorData {
   lastTickTimestamp: Float
   lastRunKey: String
+  lastCursor: String
 }
 
 type ScheduleData {
@@ -1172,6 +1575,7 @@ type InstigationTick {
   status: InstigationTickStatus!
   timestamp: Float!
   runIds: [String!]!
+  runKeys: [String!]!
   error: PythonError
   skipReason: String
   cursor: String
@@ -1212,7 +1616,9 @@ type PartitionSet {
   partitionsOrError(cursor: String, limit: Int, reverse: Boolean): PartitionsOrError!
   partition(partitionName: String!): Partition
   partitionStatusesOrError: PartitionStatusesOrError!
+  partitionRuns: [PartitionRun!]!
   repositoryOrigin: RepositoryOrigin!
+  backfills(cursor: String, limit: Int): [PartitionBackfill!]!
 }
 
 union PartitionsOrError = Partitions | PythonError
@@ -1244,6 +1650,9 @@ type PartitionTags {
   results: [PipelineTag!]!
 }
 
+"""
+This type represents a filter on Dagster runs.
+"""
 input RunsFilter {
   runIds: [String]
   pipelineName: String
@@ -1269,7 +1678,49 @@ type PartitionStatuses {
 type PartitionStatus {
   id: String!
   partitionName: String!
+  runId: String
   runStatus: RunStatus
+  runDuration: Float
+}
+
+type PartitionRun {
+  id: String!
+  partitionName: String!
+  run: Run
+}
+
+type PartitionBackfill {
+  backfillId: String!
+  status: BulkActionStatus!
+  backfillStatus: BackfillStatus!
+  partitionNames: [String!]!
+  numPartitions: Int!
+  numRequested: Int!
+  fromFailure: Boolean!
+  reexecutionSteps: [String!]!
+  partitionSetName: String!
+  timestamp: Float!
+  partitionSet: PartitionSet
+  runs(limit: Int): [Run!]!
+  unfinishedRuns(limit: Int): [Run!]!
+  error: PythonError
+  partitionStatuses: PartitionStatuses!
+}
+
+enum BulkActionStatus {
+  REQUESTED
+  COMPLETED
+  FAILED
+  CANCELED
+}
+
+enum BackfillStatus {
+  REQUESTED
+  FAILED
+  CANCELED
+  IN_PROGRESS
+  COMPLETED
+  INCOMPLETE
 }
 
 type FutureInstigationTicks {
@@ -1319,6 +1770,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
   tags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
   runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
@@ -1330,45 +1782,39 @@ type Job implements SolidContainer & IPipelineSnapshot {
   repository: Repository!
 }
 
+"""
+A solid definition and its invocations within the repo.
+"""
 type UsedSolid {
   definition: ISolidDefinition!
   invocations: [NodeInvocationSite!]!
 }
 
+"""
+An invocation of a solid within a repo.
+"""
 type NodeInvocationSite {
   pipeline: Pipeline!
   solidHandle: SolidHandle!
 }
 
-type InProgressRunsByStep {
-  stepKey: String!
-  unstartedRuns: [Run!]!
-  inProgressRuns: [Run!]!
+type AssetGroup {
+  groupName: String!
+  assetKeys: [AssetKey!]!
 }
 
-union RunStatsByStep = LatestRun | JobRunsCount
-
-type LatestRun {
-  stepKey: String!
-  run: Run
-}
-
-type JobRunsCount {
-  stepKey: String!
-  jobNames: [String!]!
-  count: Int!
-  sinceLatestMaterialization: Boolean!
+"""
+This type represents the fields necessary to identify a repository.
+"""
+input RepositorySelector {
+  repositoryName: String!
+  repositoryLocationName: String!
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
 
 type RepositoryNotFoundError implements Error {
   message: String!
-  repositoryName: String!
-  repositoryLocationName: String!
-}
-
-input RepositorySelector {
   repositoryName: String!
   repositoryLocationName: String!
 }
@@ -1402,6 +1848,10 @@ type InvalidSubsetError implements Error {
   pipeline: Pipeline!
 }
 
+"""
+This type represents the fields necessary to identify a
+        pipeline or pipeline subset.
+"""
 input PipelineSelector {
   pipelineName: String!
   repositoryName: String!
@@ -1427,6 +1877,7 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
   tags: [PipelineTag!]!
+  metadataEntries: [MetadataEntry!]!
   runs(cursor: String, limit: Int): [Run!]!
   schedules: [Schedule!]!
   sensors: [Sensor!]!
@@ -1459,6 +1910,10 @@ type GraphNotFoundError implements Error {
   repositoryLocationName: String!
 }
 
+"""
+This type represents the fields necessary to identify a
+        graph
+"""
 input GraphSelector {
   graphName: String!
   repositoryName: String!
@@ -1482,6 +1937,9 @@ type ScheduleNotFoundError implements Error {
   scheduleName: String!
 }
 
+"""
+This type represents the fields necessary to identify a schedule.
+"""
 input ScheduleSelector {
   repositoryName: String!
   repositoryLocationName: String!
@@ -1505,6 +1963,9 @@ type UnauthorizedError implements Error {
   message: String!
 }
 
+"""
+This type represents the fields necessary to identify a sensor.
+"""
 input SensorSelector {
   repositoryName: String!
   repositoryLocationName: String!
@@ -1517,8 +1978,16 @@ type Sensors {
   results: [Sensor!]!
 }
 
-union InstigationStateOrError = InstigationState | PythonError
+union InstigationStateOrError = InstigationState | InstigationStateNotFoundError | PythonError
 
+type InstigationStateNotFoundError implements Error {
+  message: String!
+  name: String!
+}
+
+"""
+This type represents the fields necessary to identify a schedule or sensor.
+"""
 input InstigationSelector {
   repositoryName: String!
   repositoryLocationName: String!
@@ -1560,6 +2029,10 @@ type InvalidPipelineRunsFilterError implements Error {
   message: String!
 }
 
+"""
+A run tag and the free-form values that have been associated
+        with it so far.
+"""
 type PipelineTagAndValues {
   key: String!
   values: [String!]!
@@ -1631,6 +2104,11 @@ type EvaluationStackMapKeyEntry {
   mapKey: GenericScalar!
 }
 
+"""
+The `GenericScalar` scalar type represents a generic
+GraphQL scalar value that could be:
+String, Boolean, Int, Float, List or Object.
+"""
 scalar GenericScalar
 
 type EvaluationStackMapValueEntry {
@@ -1660,9 +2138,35 @@ union RunConfigSchemaOrError =
   | ModeNotFoundError
   | PythonError
 
+"""
+The run config schema represents the all the config type
+        information given a certain execution selection and mode of execution of that
+        selection. All config interactions (e.g. checking config validity, fetching
+        all config types, fetching in a particular config type) should be done
+        through this type
+"""
 type RunConfigSchema {
+  """
+  Fetch the root environment type. Concretely this is the type that
+          is in scope at the root of configuration document for a particular execution selection.
+          It is the type that is in scope initially with a blank config editor.
+  """
   rootConfigType: ConfigType!
+
+  """
+  Fetch all the named config types that are in the schema. Useful
+          for things like a type browser UI, or for fetching all the types are in the
+          scope of a document so that the index can be built for the autocompleting editor.
+  """
   allConfigTypes: [ConfigType!]!
+
+  """
+  Parse a particular run config result. The return value
+          either indicates that the validation succeeded by returning
+          `PipelineConfigValidationValid` or that there are configuration errors
+          by returning `RunConfigValidationInvalid' which containers a list errors
+          so that can be rendered for the user
+  """
   isRunConfigValid(runConfigData: RunConfigData): PipelineConfigValidationResult!
 }
 
@@ -1716,30 +2220,19 @@ input AssetKeyInput {
   path: [String!]!
 }
 
+"""
+This type represents the fields necessary to identify
+        an asset group.
+"""
+input AssetGroupSelector {
+  groupName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
+}
+
 union AssetNodeOrError = AssetNode | AssetNotFoundError
 
 union PartitionBackfillOrError = PartitionBackfill | PythonError
-
-type PartitionBackfill {
-  backfillId: String!
-  status: BulkActionStatus!
-  numRequested: Int!
-  numTotal: Int!
-  fromFailure: Boolean!
-  reexecutionSteps: [String!]!
-  partitionSetName: String!
-  timestamp: Float!
-  partitionSet: PartitionSet
-  runs(limit: Int): [Run!]!
-  error: PythonError
-}
-
-enum BulkActionStatus {
-  REQUESTED
-  COMPLETED
-  FAILED
-  CANCELED
-}
 
 union PartitionBackfillsOrError = PartitionBackfills | PythonError
 
@@ -1747,36 +2240,152 @@ type PartitionBackfills {
   results: [PartitionBackfill!]!
 }
 
-type GraphenePermission {
+type Permission {
   permission: String!
   value: Boolean!
 }
 
+type AssetLatestInfo {
+  assetKey: AssetKey!
+  latestMaterialization: MaterializationEvent
+  computeStatus: AssetComputeStatus!
+  unstartedRunIds: [String!]!
+  inProgressRunIds: [String!]!
+  latestRun: Run
+}
+
+"""
+An enumeration.
+"""
+enum AssetComputeStatus {
+  NONE
+  UP_TO_DATE
+  OUT_OF_DATE
+}
+
+union EventConnectionOrError = EventConnection | RunNotFoundError | PythonError
+
+"""
+The root for all mutations to modify data in your Dagster instance.
+"""
 type DagitMutation {
+  """
+  Launches a job run.
+  """
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchRunResult!
+
+  """
+  Launches a job run.
+  """
   launchRun(executionParams: ExecutionParams!): LaunchRunResult!
-  launchPipelineReexecution(executionParams: ExecutionParams!): LaunchRunReexecutionResult!
-  launchRunReexecution(executionParams: ExecutionParams!): LaunchRunReexecutionResult!
+
+  """
+  Re-executes a job run.
+  """
+  launchPipelineReexecution(
+    executionParams: ExecutionParams
+    reexecutionParams: ReexecutionParams
+  ): LaunchRunReexecutionResult!
+
+  """
+  Re-executes a job run.
+  """
+  launchRunReexecution(
+    executionParams: ExecutionParams
+    reexecutionParams: ReexecutionParams
+  ): LaunchRunReexecutionResult!
+
+  """
+  Enable a schedule to launch runs for a job at a fixed interval.
+  """
   startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
-  stopRunningSchedule(scheduleOriginId: String!): ScheduleMutationResult!
+
+  """
+  Disable a schedule from launching runs for a job.
+  """
+  stopRunningSchedule(
+    scheduleOriginId: String!
+    scheduleSelectorId: String!
+  ): ScheduleMutationResult!
+
+  """
+  Enable a sensor to launch runs for a job based on external state change.
+  """
   startSensor(sensorSelector: SensorSelector!): SensorOrError!
-  stopSensor(jobOriginId: String!): StopSensorMutationResultOrError!
+
+  """
+  Set a cursor for a sensor to track state across evaluations.
+  """
+  setSensorCursor(cursor: String, sensorSelector: SensorSelector!): SensorOrError!
+
+  """
+  Disable a sensor from launching runs for a job.
+  """
+  stopSensor(jobOriginId: String!, jobSelectorId: String!): StopSensorMutationResultOrError!
+
+  """
+  Terminates a run.
+  """
   terminatePipelineExecution(
     runId: String!
     terminatePolicy: TerminateRunPolicy
   ): TerminateRunResult!
+
+  """
+  Terminates a run.
+  """
   terminateRun(runId: String!, terminatePolicy: TerminateRunPolicy): TerminateRunResult!
+
+  """
+  Deletes a run from storage.
+  """
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
+
+  """
+  Deletes a run from storage.
+  """
   deleteRun(runId: String!): DeletePipelineRunResult!
+
+  """
+  Reloads a code location server.
+  """
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
+
+  """
+  Reloads the workspace and its code location servers.
+  """
   reloadWorkspace: ReloadWorkspaceMutationResult!
+
+  """
+  Shuts down a code location server.
+  """
   shutdownRepositoryLocation(
     repositoryLocationName: String!
   ): ShutdownRepositoryLocationMutationResult!
+
+  """
+  Deletes asset history from storage.
+  """
   wipeAssets(assetKeys: [AssetKeyInput!]!): AssetWipeMutationResult!
+
+  """
+  Launches a set of partition backfill runs.
+  """
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
+
+  """
+  Retries a set of partition backfill runs.
+  """
   resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
+
+  """
+  Cancels a set of partition backfill runs.
+  """
   cancelPartitionBackfill(backfillId: String!): CancelBackfillResult!
+
+  """
+  Log telemetry about the Dagster instance.
+  """
   logTelemetry(action: String!, clientTime: String!, metadata: String!): LogTelemetryMutationResult!
 }
 
@@ -1789,6 +2398,7 @@ union LaunchRunResult =
   | RunConflict
   | UnauthorizedError
   | PythonError
+  | InvalidSubsetError
   | PresetNotFoundError
   | ConflictingExecutionParamsError
   | NoModeProvidedError
@@ -1833,26 +2443,63 @@ type NoModeProvidedError implements Error {
 }
 
 input ExecutionParams {
+  """
+  Defines the job / pipeline and solid subset that should be executed.
+          All subsequent executions in the same run group (for example, a single-step
+          re-execution) are scoped to the original run's selector and solid
+          subset.
+  """
   selector: JobOrPipelineSelector!
   runConfigData: RunConfigData
   mode: String
+
+  """
+  Defines run tags and parent / root relationships.
+
+  Note: To
+          'restart from failure', provide a `parentRunId` and pass the
+          'dagster/is_resume_retry' tag. Dagster's automatic step key selection will
+          override any stepKeys provided.
+  """
   executionMetadata: ExecutionMetadata
+
+  """
+  Defines step keys to execute within the execution plan defined
+          by the pipeline `selector`. To execute the entire execution plan, you can omit
+          this parameter, provide an empty array, or provide every step name.
+  """
   stepKeys: [String!]
   preset: String
 }
 
+"""
+This type represents the fields necessary to identify a job or pipeline
+"""
 input JobOrPipelineSelector {
   pipelineName: String
   jobName: String
   repositoryName: String!
   repositoryLocationName: String!
   solidSelection: [String!]
+  assetSelection: [AssetKeyInput!]
 }
 
 input ExecutionMetadata {
   runId: String
   tags: [ExecutionTag!]
+
+  """
+  The ID of the run at the root of the run group. All partial /
+          full re-executions should use the first run as the rootRunID so they are
+          grouped together.
+  """
   rootRunId: String
+
+  """
+  The ID of the run serving as the parent within the run group.
+          For the first re-execution, this will be the same as the `rootRunId`. For
+          subsequent runs, the root or a previous re-execution could be the parent run.
+  """
   parentRunId: String
 }
 
@@ -1865,11 +2512,22 @@ union LaunchRunReexecutionResult =
   | RunConflict
   | UnauthorizedError
   | PythonError
+  | InvalidSubsetError
   | PresetNotFoundError
   | ConflictingExecutionParamsError
   | NoModeProvidedError
 
-union ScheduleMutationResult = PythonError | ScheduleStateResult
+input ReexecutionParams {
+  parentRunId: String!
+  strategy: ReexecutionStrategy!
+}
+
+enum ReexecutionStrategy {
+  FROM_FAILURE
+  ALL_STEPS
+}
+
+union ScheduleMutationResult = PythonError | UnauthorizedError | ScheduleStateResult
 
 type ScheduleStateResult {
   scheduleState: InstigationState!
@@ -1881,6 +2539,9 @@ type StopSensorMutationResult {
   instigationState: InstigationState
 }
 
+"""
+The output from a run termination.
+"""
 union TerminateRunResult =
     TerminateRunSuccess
   | TerminateRunFailure
@@ -1888,39 +2549,63 @@ union TerminateRunResult =
   | UnauthorizedError
   | PythonError
 
+"""
+Output indicating that a run was terminated.
+"""
 type TerminateRunSuccess implements TerminatePipelineExecutionSuccess {
   run: Run!
 }
 
+"""
+Interface indicating that a run was terminated.
+"""
 interface TerminatePipelineExecutionSuccess {
   run: Run!
 }
 
+"""
+Output indicating that a run failed to terminate.
+"""
 type TerminateRunFailure implements TerminatePipelineExecutionFailure {
   run: Run!
   message: String!
 }
 
+"""
+Interface indicating that a run failed to terminate.
+"""
 interface TerminatePipelineExecutionFailure {
   run: Run!
   message: String!
 }
 
+"""
+The type of termination policy to use for a run.
+"""
 enum TerminateRunPolicy {
   SAFE_TERMINATE
   MARK_AS_CANCELED_IMMEDIATELY
 }
 
+"""
+The output from deleting a run.
+"""
 union DeletePipelineRunResult =
     DeletePipelineRunSuccess
   | UnauthorizedError
   | PythonError
   | RunNotFoundError
 
+"""
+Output indicating that a run was deleted.
+"""
 type DeletePipelineRunSuccess {
   runId: String!
 }
 
+"""
+The output from reloading a code location server.
+"""
 union ReloadRepositoryLocationMutationResult =
     WorkspaceLocationEntry
   | ReloadNotSupported
@@ -1936,24 +2621,39 @@ type RepositoryLocationNotFound implements Error {
   message: String!
 }
 
+"""
+The output from reloading the workspace.
+"""
 union ReloadWorkspaceMutationResult = Workspace | UnauthorizedError | PythonError
 
+"""
+The output from shutting down a code location server.
+"""
 union ShutdownRepositoryLocationMutationResult =
     ShutdownRepositoryLocationSuccess
   | RepositoryLocationNotFound
   | UnauthorizedError
   | PythonError
 
+"""
+Output indicating that a code location server was shut down.
+"""
 type ShutdownRepositoryLocationSuccess {
   repositoryLocationName: String!
 }
 
+"""
+The output from deleting asset history.
+"""
 union AssetWipeMutationResult =
     AssetNotFoundError
   | UnauthorizedError
   | PythonError
   | AssetWipeSuccess
 
+"""
+Output indicating that asset history was deleted.
+"""
 type AssetWipeSuccess {
   assetKeys: [AssetKey!]!
 }
@@ -1968,6 +2668,7 @@ union LaunchBackfillResult =
   | RunConflict
   | UnauthorizedError
   | PythonError
+  | InvalidSubsetError
   | PresetNotFoundError
   | ConflictingExecutionParamsError
   | NoModeProvidedError
@@ -1979,13 +2680,18 @@ type LaunchBackfillSuccess {
 
 input LaunchBackfillParams {
   selector: PartitionSetSelector!
-  partitionNames: [String!]!
+  partitionNames: [String!]
   reexecutionSteps: [String!]
   fromFailure: Boolean
+  allPartitions: Boolean
   tags: [ExecutionTag!]
   forceSynchronousSubmission: Boolean
 }
 
+"""
+This type represents the fields necessary to identify a
+        pipeline or pipeline subset.
+"""
 input PartitionSetSelector {
   partitionSetName: String!
   repositorySelector: RepositorySelector!
@@ -2003,15 +2709,35 @@ type CancelBackfillSuccess {
   backfillId: String!
 }
 
+"""
+The output from logging telemetry.
+"""
 union LogTelemetryMutationResult = LogTelemetrySuccess | PythonError
 
+"""
+Output indicating that telemetry was logged.
+"""
 type LogTelemetrySuccess {
   action: String!
 }
 
+"""
+The root for all subscriptions to retrieve real-time data from the Dagster instance.
+"""
 type DagitSubscription {
-  pipelineRunLogs(runId: ID!, after: Cursor): PipelineRunLogsSubscriptionPayload!
+  """
+  Retrieve real-time event logs after applying a filter on run id and cursor.
+  """
+  pipelineRunLogs(runId: ID!, cursor: String): PipelineRunLogsSubscriptionPayload!
+
+  """
+  Retrieve real-time compute logs after applying a filter on run id, step name, log type, and cursor.
+  """
   computeLogs(runId: ID!, stepKey: String!, ioType: ComputeIOType!, cursor: String): ComputeLogFile!
+
+  """
+  Retrieve real-time events when a location in the workspace undergoes a state change.
+  """
   locationStateChangeEvents: LocationStateChangeSubscription!
 }
 
@@ -2023,6 +2749,7 @@ type PipelineRunLogsSubscriptionSuccess {
   run: Run!
   messages: [DagsterRunEvent!]!
   hasMorePastEvents: Boolean!
+  cursor: String!
 }
 
 type PipelineRunLogsSubscriptionFailure {
@@ -2055,12 +2782,6 @@ enum LocationStateChangeEventType {
 
 type MissingRunIdErrorEvent {
   invalidRunId: String!
-}
-
-type ConfigTypeNotFoundError implements Error {
-  message: String!
-  pipeline: Pipeline!
-  configTypeName: String!
 }
 
 type FieldNotDefinedConfigError implements PipelineConfigValidationError {
@@ -2116,34 +2837,58 @@ type UnknownPipeline implements PipelineReference {
   solidSelection: [String!]
 }
 
+"""
+Deletes a run from storage.
+"""
 type DeleteRunMutation {
   Output: DeletePipelineRunResult!
 }
 
+"""
+Launches a set of partition backfill runs.
+"""
 type LaunchBackfillMutation {
   Output: LaunchBackfillResult!
 }
 
+"""
+Launches a job run.
+"""
 type LaunchRunMutation {
   Output: LaunchRunResult!
 }
 
+"""
+Re-executes a job run.
+"""
 type LaunchRunReexecutionMutation {
   Output: LaunchRunReexecutionResult!
 }
 
+"""
+Reloads a code location server.
+"""
 type ReloadRepositoryLocationMutation {
   Output: ReloadRepositoryLocationMutationResult!
 }
 
+"""
+Reloads the workspace and its code location servers.
+"""
 type ReloadWorkspaceMutation {
   Output: ReloadWorkspaceMutationResult!
 }
 
+"""
+Shuts down a code location server.
+"""
 type ShutdownRepositoryLocationMutation {
   Output: ShutdownRepositoryLocationMutationResult!
 }
 
+"""
+Terminates a run.
+"""
 type TerminateRunMutation {
   Output: TerminateRunResult!
 }
@@ -2171,17 +2916,16 @@ type ScheduleTickFailureData {
   error: PythonError!
 }
 
-type ScheduleTickStatsSnapshot {
-  ticksStarted: Int!
-  ticksSucceeded: Int!
-  ticksSkipped: Int!
-  ticksFailed: Int!
-}
-
+"""
+Enable a schedule to launch runs for a job at a fixed interval.
+"""
 type StartScheduleMutation {
   Output: ScheduleMutationResult!
 }
 
+"""
+Disable a schedule from launching runs for a job.
+"""
 type StopRunningScheduleMutation {
   Output: ScheduleMutationResult!
 }
@@ -2197,7 +2941,30 @@ union ConfigTypeOrError =
 type EnumConfigType implements ConfigType {
   key: String!
   description: String
+
+  """
+  This is an odd and problematic field. It recursively goes down to
+  get all the types contained within a type. The case where it is horrible
+  are dictionaries and it recurses all the way down to the leaves. This means
+  that in a case where one is fetching all the types and then all the inner
+  types keys for those types, we are returning O(N^2) type keys, which
+  can cause awful performance for large schemas. When you have access
+  to *all* the types, you should instead only use the type_param_keys
+  field for closed generic types and manually navigate down the to
+  field types client-side.
+
+  Where it is useful is when you are fetching types independently and
+  want to be able to render them, but without fetching the entire schema.
+
+  We use this capability when rendering the sidebar.
+  """
   recursiveConfigTypes: [ConfigType!]!
+
+  """
+  This returns the keys for type parameters of any closed generic type,
+  (e.g. List, Optional). This should be used for reconstructing and
+  navigating the full schema client-side and not innerTypes.
+  """
   typeParamKeys: [String!]!
   isSelector: Boolean!
   values: [EnumConfigValue!]!
@@ -2212,25 +2979,103 @@ type EnumConfigValue {
 type CompositeConfigType implements ConfigType {
   key: String!
   description: String
+
+  """
+  This is an odd and problematic field. It recursively goes down to
+  get all the types contained within a type. The case where it is horrible
+  are dictionaries and it recurses all the way down to the leaves. This means
+  that in a case where one is fetching all the types and then all the inner
+  types keys for those types, we are returning O(N^2) type keys, which
+  can cause awful performance for large schemas. When you have access
+  to *all* the types, you should instead only use the type_param_keys
+  field for closed generic types and manually navigate down the to
+  field types client-side.
+
+  Where it is useful is when you are fetching types independently and
+  want to be able to render them, but without fetching the entire schema.
+
+  We use this capability when rendering the sidebar.
+  """
   recursiveConfigTypes: [ConfigType!]!
+
+  """
+  This returns the keys for type parameters of any closed generic type,
+  (e.g. List, Optional). This should be used for reconstructing and
+  navigating the full schema client-side and not innerTypes.
+  """
   typeParamKeys: [String!]!
   isSelector: Boolean!
   fields: [ConfigTypeField!]!
 }
 
+"""
+Regular is an odd name in this context. It really means Scalar or Any.
+"""
 type RegularConfigType implements ConfigType {
   key: String!
   description: String
+
+  """
+  This is an odd and problematic field. It recursively goes down to
+  get all the types contained within a type. The case where it is horrible
+  are dictionaries and it recurses all the way down to the leaves. This means
+  that in a case where one is fetching all the types and then all the inner
+  types keys for those types, we are returning O(N^2) type keys, which
+  can cause awful performance for large schemas. When you have access
+  to *all* the types, you should instead only use the type_param_keys
+  field for closed generic types and manually navigate down the to
+  field types client-side.
+
+  Where it is useful is when you are fetching types independently and
+  want to be able to render them, but without fetching the entire schema.
+
+  We use this capability when rendering the sidebar.
+  """
   recursiveConfigTypes: [ConfigType!]!
+
+  """
+  This returns the keys for type parameters of any closed generic type,
+  (e.g. List, Optional). This should be used for reconstructing and
+  navigating the full schema client-side and not innerTypes.
+  """
   typeParamKeys: [String!]!
   isSelector: Boolean!
   givenName: String!
 }
 
+type ConfigTypeNotFoundError implements Error {
+  message: String!
+  pipeline: Pipeline!
+  configTypeName: String!
+}
+
 type ArrayConfigType implements ConfigType & WrappingConfigType {
   key: String!
   description: String
+
+  """
+  This is an odd and problematic field. It recursively goes down to
+  get all the types contained within a type. The case where it is horrible
+  are dictionaries and it recurses all the way down to the leaves. This means
+  that in a case where one is fetching all the types and then all the inner
+  types keys for those types, we are returning O(N^2) type keys, which
+  can cause awful performance for large schemas. When you have access
+  to *all* the types, you should instead only use the type_param_keys
+  field for closed generic types and manually navigate down the to
+  field types client-side.
+
+  Where it is useful is when you are fetching types independently and
+  want to be able to render them, but without fetching the entire schema.
+
+  We use this capability when rendering the sidebar.
+  """
   recursiveConfigTypes: [ConfigType!]!
+
+  """
+  This returns the keys for type parameters of any closed generic type,
+  (e.g. List, Optional). This should be used for reconstructing and
+  navigating the full schema client-side and not innerTypes.
+  """
   typeParamKeys: [String!]!
   isSelector: Boolean!
   ofType: ConfigType!
@@ -2243,7 +3088,30 @@ interface WrappingConfigType {
 type NullableConfigType implements ConfigType & WrappingConfigType {
   key: String!
   description: String
+
+  """
+  This is an odd and problematic field. It recursively goes down to
+  get all the types contained within a type. The case where it is horrible
+  are dictionaries and it recurses all the way down to the leaves. This means
+  that in a case where one is fetching all the types and then all the inner
+  types keys for those types, we are returning O(N^2) type keys, which
+  can cause awful performance for large schemas. When you have access
+  to *all* the types, you should instead only use the type_param_keys
+  field for closed generic types and manually navigate down the to
+  field types client-side.
+
+  Where it is useful is when you are fetching types independently and
+  want to be able to render them, but without fetching the entire schema.
+
+  We use this capability when rendering the sidebar.
+  """
   recursiveConfigTypes: [ConfigType!]!
+
+  """
+  This returns the keys for type parameters of any closed generic type,
+  (e.g. List, Optional). This should be used for reconstructing and
+  navigating the full schema client-side and not innerTypes.
+  """
   typeParamKeys: [String!]!
   isSelector: Boolean!
   ofType: ConfigType!
@@ -2252,7 +3120,30 @@ type NullableConfigType implements ConfigType & WrappingConfigType {
 type ScalarUnionConfigType implements ConfigType {
   key: String!
   description: String
+
+  """
+  This is an odd and problematic field. It recursively goes down to
+  get all the types contained within a type. The case where it is horrible
+  are dictionaries and it recurses all the way down to the leaves. This means
+  that in a case where one is fetching all the types and then all the inner
+  types keys for those types, we are returning O(N^2) type keys, which
+  can cause awful performance for large schemas. When you have access
+  to *all* the types, you should instead only use the type_param_keys
+  field for closed generic types and manually navigate down the to
+  field types client-side.
+
+  Where it is useful is when you are fetching types independently and
+  want to be able to render them, but without fetching the entire schema.
+
+  We use this capability when rendering the sidebar.
+  """
   recursiveConfigTypes: [ConfigType!]!
+
+  """
+  This returns the keys for type parameters of any closed generic type,
+  (e.g. List, Optional). This should be used for reconstructing and
+  navigating the full schema client-side and not innerTypes.
+  """
   typeParamKeys: [String!]!
   isSelector: Boolean!
   scalarType: ConfigType!
@@ -2264,7 +3155,30 @@ type ScalarUnionConfigType implements ConfigType {
 type MapConfigType implements ConfigType {
   key: String!
   description: String
+
+  """
+  This is an odd and problematic field. It recursively goes down to
+  get all the types contained within a type. The case where it is horrible
+  are dictionaries and it recurses all the way down to the leaves. This means
+  that in a case where one is fetching all the types and then all the inner
+  types keys for those types, we are returning O(N^2) type keys, which
+  can cause awful performance for large schemas. When you have access
+  to *all* the types, you should instead only use the type_param_keys
+  field for closed generic types and manually navigate down the to
+  field types client-side.
+
+  Where it is useful is when you are fetching types independently and
+  want to be able to render them, but without fetching the entire schema.
+
+  We use this capability when rendering the sidebar.
+  """
   recursiveConfigTypes: [ConfigType!]!
+
+  """
+  This returns the keys for type parameters of any closed generic type,
+  (e.g. List, Optional). This should be used for reconstructing and
+  navigating the full schema client-side and not innerTypes.
+  """
   typeParamKeys: [String!]!
   isSelector: Boolean!
   keyType: ConfigType!
@@ -2377,7 +3291,15 @@ type FloatMetadataEntry implements MetadataEntry {
 type IntMetadataEntry implements MetadataEntry {
   label: String!
   description: String
+
+  """
+  Nullable to allow graceful degrade on > 32 bit numbers
+  """
   intValue: Int
+
+  """
+  String representation of the int to support greater than 32 bit
+  """
   intRepr: String!
 }
 
@@ -2385,6 +3307,12 @@ type JsonMetadataEntry implements MetadataEntry {
   label: String!
   description: String
   jsonString: String!
+}
+
+type BoolMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  boolValue: Boolean
 }
 
 type MarkdownMetadataEntry implements MetadataEntry {
@@ -2430,12 +3358,24 @@ type AssetMetadataEntry implements MetadataEntry {
   assetKey: AssetKey!
 }
 
+scalar Cursor
+
 type RunGroups {
   results: [RunGroup!]!
 }
 
+"""
+Disable a sensor from launching runs for a job.
+"""
 type StopSensorMutation {
   Output: StopSensorMutationResultOrError!
+}
+
+"""
+Set a cursor for a sensor to track state across evaluations.
+"""
+type SetSensorCursorMutation {
+  Output: SensorOrError!
 }
 
 type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {

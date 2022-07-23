@@ -1,4 +1,5 @@
 import os
+from typing import Dict
 from unittest import mock
 
 import pytest
@@ -20,20 +21,19 @@ from dagster import (
     OutputDefinition,
     execute_pipeline,
     fs_io_manager,
-    pipeline,
     reconstructable,
-    solid,
 )
+from dagster._legacy import pipeline, solid
+from dagster._utils.merger import deep_merge_dicts
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.test_utils import instance_for_test
-from dagster.utils.merger import deep_merge_dicts
 
 S3_BUCKET = "dagster-databricks-tests"
 ADLS2_STORAGE_ACCOUNT = "dagsterdatabrickstests"
 ADLS2_CONTAINER = "dagster-databricks-tests"
 
 
-BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG = {
+BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG: Dict[str, object] = {
     "databricks_host": os.environ.get("DATABRICKS_HOST"),
     "databricks_token": os.environ.get("DATABRICKS_TOKEN"),
     "local_pipeline_package_path": os.path.abspath(os.path.dirname(__file__)),
@@ -56,7 +56,12 @@ BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG = {
             {"pypi": {"package": "pytest"}},
         ],
     },
+    "permissions": {
+        "cluster_permissions": {"CAN_MANAGE": [{"group_name": "my_group"}]},
+        "job_permissions": {"CAN_MANAGE_RUN": [{"user_name": "my_user"}]},
+    },
     "secrets_to_env_variables": [],
+    "env_variables": {},
     "storage": {
         "s3": {
             "secret_scope": "dagster-databricks-tests",
@@ -161,9 +166,17 @@ def test_local():
 @mock.patch("dagster_databricks.databricks.DatabricksClient.read_file")
 @mock.patch("dagster_databricks.databricks.DatabricksClient.put_file")
 @mock.patch("dagster_databricks.DatabricksPySparkStepLauncher.get_step_events")
+@mock.patch("dagster_databricks.databricks.DatabricksClient.get_run")
 @mock.patch("dagster_databricks.databricks.DatabricksClient.get_run_state")
+@mock.patch("databricks_cli.sdk.api_client.ApiClient.perform_query")
 def test_pyspark_databricks(
-    mock_get_run_state, mock_get_step_events, mock_put_file, mock_read_file, mock_submit_run
+    mock_perform_query,
+    mock_get_run_state,
+    mock_get_run,
+    mock_get_step_events,
+    mock_put_file,
+    mock_read_file,
+    mock_submit_run,
 ):
     mock_submit_run.return_value = 12345
     mock_read_file.return_value = "somefilecontents".encode()
@@ -175,14 +188,17 @@ def test_pyspark_databricks(
     mock_get_run_state.side_effect = [running_state] * 5 + [final_state]
 
     with instance_for_test() as instance:
-        execute_pipeline(
+        result = execute_pipeline(
             pipeline=reconstructable(define_do_nothing_pipe), mode="local", instance=instance
         )
         mock_get_step_events.return_value = [
-            record.event_log_entry
-            for record in instance.get_event_records()
-            if record.event_log_entry.step_key == "do_nothing_solid"
+            event
+            for event in instance.all_logs(result.run_id)
+            if event.step_key == "do_nothing_solid"
         ]
+
+    # Test 1 - successful execution
+
     config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
     config.pop("local_pipeline_package_path")
     result = execute_pipeline(
@@ -207,11 +223,45 @@ def test_pyspark_databricks(
         },
     )
     assert result.success
+    assert mock_perform_query.call_count == 2
+    assert mock_get_run.call_count == 1
     assert mock_get_run_state.call_count == 6
     assert mock_get_step_events.call_count == 6
     assert mock_put_file.call_count == 4
     assert mock_read_file.call_count == 2
     assert mock_submit_run.call_count == 1
+
+    # Test 2 - attempting to update permissions for an existing cluster
+
+    config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
+    config.pop("local_pipeline_package_path")
+    config["run_config"]["cluster"] = {"existing": "cluster_id"}
+    with pytest.raises(ValueError) as excinfo:
+        execute_pipeline(
+            pipeline=reconstructable(define_do_nothing_pipe),
+            mode="test",
+            run_config={
+                "resources": {
+                    "pyspark_step_launcher": {
+                        "config": deep_merge_dicts(
+                            config,
+                            {
+                                "databricks_host": "",
+                                "databricks_token": "",
+                                "poll_interval_sec": 0.1,
+                                "local_dagster_job_package_path": os.path.abspath(
+                                    os.path.dirname(__file__)
+                                ),
+                            },
+                        ),
+                    },
+                },
+            },
+        )
+        assert (
+            str(excinfo.value)
+            == "Attempting to update permissions of an existing cluster. This is dangerous and thus unsupported."
+        )
 
 
 @pytest.mark.skipif(

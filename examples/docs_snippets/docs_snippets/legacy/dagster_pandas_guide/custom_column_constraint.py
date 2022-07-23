@@ -1,7 +1,5 @@
 from datetime import datetime
 
-from dagster import Out, job, op
-from dagster.utils import script_relative_path
 from dagster_pandas import PandasColumn, create_dagster_pandas_dataframe_type
 from dagster_pandas.constraints import (
     ColumnConstraint,
@@ -9,6 +7,9 @@ from dagster_pandas.constraints import (
     ColumnDTypeInSetConstraint,
 )
 from pandas import DataFrame, read_csv
+
+from dagster import Out, job, op
+from dagster._utils import script_relative_path
 
 
 # start_custom_col

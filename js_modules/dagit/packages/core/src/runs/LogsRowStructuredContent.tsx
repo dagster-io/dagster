@@ -1,11 +1,14 @@
+// eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
-import {Box, ColorsWIP, TagWIP} from '@dagster-io/ui';
+import {Box, Colors, Tag} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
-import {assertUnreachable, displayNameForAssetKey} from '../app/Util';
+import {assertUnreachable} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetKey} from '../assets/types';
 import {
   LogRowStructuredContentTable,
@@ -13,7 +16,7 @@ import {
   MetadataEntryLink,
 } from '../metadata/MetadataEntry';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
-import {ErrorSource} from '../types/globalTypes';
+import {DagsterEventType, ErrorSource} from '../types/globalTypes';
 
 import {EventTypeColumn} from './LogsRowComponents';
 import {IRunMetadataDict} from './RunMetadataProvider';
@@ -41,7 +44,7 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
       );
 
     case 'ExecutionStepUpForRetryEvent':
-      return <DefaultContent eventType={eventType} message={node.message} eventIntent="warning" />;
+      return <StepUpForRetryContent error={node.error} message={node.message} />;
 
     case 'ExecutionStepStartEvent':
       if (!node.stepKey || metadata.logCaptureSteps) {
@@ -143,6 +146,8 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
           timestamp={node.timestamp}
         />
       );
+    case 'AssetMaterializationPlannedEvent':
+      return <DefaultContent eventType={eventType} message={node.message} />;
     case 'ObjectStoreOperationEvent':
       return (
         <DefaultContent message={node.message} eventType={eventType}>
@@ -156,7 +161,11 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
         </DefaultContent>
       );
     case 'LoadedInputEvent':
-      return <DefaultContent message={node.message} eventType={eventType} />;
+      return (
+        <DefaultContent message={node.message} eventType={eventType}>
+          <MetadataEntries entries={node.metadataEntries} />
+        </DefaultContent>
+      );
     case 'HookCompletedEvent':
       return <DefaultContent eventType={eventType} message={node.message} />;
     case 'HookSkippedEvent':
@@ -167,38 +176,31 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
       return <DefaultContent eventType={eventType} message={node.message} />;
     case 'AlertSuccessEvent':
       return <DefaultContent eventType={eventType} message={node.message} />;
+    case 'AlertFailureEvent':
+      return <DefaultContent eventType={eventType} message={node.message} eventIntent="warning" />;
+    case 'ResourceInitFailureEvent':
     case 'RunFailureEvent':
-      if (node.pipelineFailureError) {
-        return (
-          <FailureContent
-            message={node.message}
-            error={node.pipelineFailureError}
-            eventType={eventType}
-          />
-        );
+      if (node.error) {
+        return <FailureContent message={node.message} error={node.error} eventType={eventType} />;
       }
-
       return <DefaultContent message={node.message} eventType={eventType} eventIntent="danger" />;
     case 'RunSuccessEvent':
       return <DefaultContent message={node.message} eventType={eventType} eventIntent="success" />;
-
     case 'RunStartEvent':
-      return <DefaultContent message={node.message} eventType={eventType} />;
     case 'RunEnqueuedEvent':
-      return <DefaultContent message={node.message} eventType={eventType} />;
     case 'RunDequeuedEvent':
-      return <DefaultContent message={node.message} eventType={eventType} />;
     case 'RunStartingEvent':
-      return <DefaultContent message={node.message} eventType={eventType} />;
     case 'RunCancelingEvent':
+    case 'ResourceInitStartedEvent':
+    case 'ResourceInitSuccessEvent':
+    case 'StepWorkerStartedEvent':
+    case 'StepWorkerStartingEvent':
       return <DefaultContent message={node.message} eventType={eventType} />;
     case 'RunCanceledEvent':
       return <FailureContent message={node.message} eventType={eventType} />;
     case 'EngineEvent':
-      if (node.engineError) {
-        return (
-          <FailureContent message={node.message} error={node.engineError} eventType={eventType} />
-        );
+      if (node.error) {
+        return <FailureContent message={node.message} error={node.error} eventType={eventType} />;
       }
       return (
         <DefaultContent
@@ -251,7 +253,7 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
 
 // Structured Content Renderers
 
-const DefaultContent: React.FunctionComponent<{
+const DefaultContent: React.FC<{
   message: string;
   eventType?: string;
   eventColor?: string;
@@ -263,7 +265,7 @@ const DefaultContent: React.FunctionComponent<{
     <>
       <EventTypeColumn>
         {eventType && (
-          <TagWIP
+          <Tag
             intent={eventIntent}
             style={
               eventColor
@@ -278,7 +280,7 @@ const DefaultContent: React.FunctionComponent<{
             }
           >
             {eventTypeToDisplayType(eventType)}
-          </TagWIP>
+          </Tag>
         )}
       </EventTypeColumn>
       <Box padding={{horizontal: 12}} style={{flex: 1}}>
@@ -289,7 +291,7 @@ const DefaultContent: React.FunctionComponent<{
   );
 };
 
-const FailureContent: React.FunctionComponent<{
+const FailureContent: React.FC<{
   message?: string;
   eventType: string;
   error?: PythonErrorFragment | null;
@@ -311,22 +313,84 @@ const FailureContent: React.FunctionComponent<{
   }
 
   if (error) {
-    errorMessage = <span style={{color: ColorsWIP.Red500}}>{`${error.message}`}</span>;
+    errorMessage = <span style={{color: Colors.Red500}}>{`${error.message}`}</span>;
 
     // omit the outer stack for user code errors with a cause
     // as the outer stack is just framework code
-    if (!(errorSource === ErrorSource.USER_CODE_ERROR && error.cause)) {
-      errorStack = (
-        <span style={{color: ColorsWIP.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>
-      );
+    if (
+      error.stack.length &&
+      !(errorSource === ErrorSource.USER_CODE_ERROR && error.causes.length)
+    ) {
+      errorStack = <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>;
     }
 
-    if (error.cause) {
-      errorCause = (
+    if (error.causes.length) {
+      errorCause = error.causes.map((cause) => (
         <>
           {`The above exception was caused by the following exception:\n`}
-          <span style={{color: ColorsWIP.Red500}}>{`${error.cause.message}`}</span>
-          <span style={{color: ColorsWIP.Red500}}>{`\nStack Trace:\n${error.cause.stack}`}</span>
+          <span style={{color: Colors.Red500}}>{`${cause.message}`}</span>
+          {cause?.stack.length ? (
+            <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${cause.stack}`}</span>
+          ) : null}
+        </>
+      ));
+    }
+  }
+
+  return (
+    <>
+      <EventTypeColumn>
+        <Tag minimal intent="danger">
+          {eventTypeToDisplayType(eventType)}
+        </Tag>
+      </EventTypeColumn>
+      <Box padding={{horizontal: 12}} style={{flex: 1}}>
+        {contextMessage}
+        {errorMessage}
+        <MetadataEntries entries={metadataEntries} />
+        {errorStack}
+        {errorCause}
+      </Box>
+    </>
+  );
+};
+
+const StepUpForRetryContent: React.FC<{
+  message?: string;
+  error?: PythonErrorFragment | null;
+}> = ({message, error}) => {
+  let contextMessage = null;
+  let errorCause = null;
+  let errorMessage = null;
+  let errorStack = null;
+
+  if (message) {
+    contextMessage = (
+      <>
+        <span>{message}</span>
+        <br />
+      </>
+    );
+  }
+
+  if (error) {
+    // If no cause, this was a `raise RetryRequest` inside the op. Show the trace for the main error.
+    if (!error.causes.length) {
+      errorMessage = <span style={{color: Colors.Red500}}>{`${error.message}`}</span>;
+      errorStack = <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>;
+    } else {
+      // If there is a cause, this was a different exception. Show that instead.
+      errorCause = (
+        <>
+          {error.causes.map((cause, index) => (
+            <>
+              {index === 0
+                ? `The retry request was caused by the following exception:\n`
+                : `The above exception was caused by the following exception:\n`}
+              <span style={{color: Colors.Red500}}>{`${cause.message}`}</span>
+              <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${cause.stack}`}</span>
+            </>
+          ))}
         </>
       );
     }
@@ -335,14 +399,13 @@ const FailureContent: React.FunctionComponent<{
   return (
     <>
       <EventTypeColumn>
-        <TagWIP minimal intent="danger">
-          {eventTypeToDisplayType(eventType)}
-        </TagWIP>
+        <Tag minimal intent="warning">
+          {eventTypeToDisplayType(DagsterEventType.STEP_UP_FOR_RETRY)}
+        </Tag>
       </EventTypeColumn>
       <Box padding={{horizontal: 12}} style={{flex: 1}}>
         {contextMessage}
         {errorMessage}
-        <MetadataEntries entries={metadataEntries} />
         {errorStack}
         {errorCause}
       </Box>
@@ -365,8 +428,7 @@ const AssetMetadataContent: React.FC<{
     );
   }
 
-  const asOf = qs.stringify({asOf: timestamp});
-  const to = `/instance/assets/${assetKey.path.map(encodeURIComponent).join('/')}?${asOf}`;
+  const to = assetDetailsPathForKey(assetKey, {asOf: timestamp});
 
   const assetDashboardLink = (
     <span style={{marginLeft: 10}}>

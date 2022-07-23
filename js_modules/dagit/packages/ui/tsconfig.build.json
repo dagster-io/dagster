@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig",
+  "compilerOptions": {
+    "outDir": "lib",
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true
+  },
+  "exclude": [
+    "node_modules",
+    "lib",
+    "**/*.stories.*",
+    "**/*.test.*"
+  ]
+}

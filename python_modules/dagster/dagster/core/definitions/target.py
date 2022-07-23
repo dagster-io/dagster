@@ -1,9 +1,17 @@
-from typing import List, NamedTuple, Optional, Union
+from typing import NamedTuple, Optional, Sequence, Union
 
-from dagster import check
+from typing_extensions import TypeAlias
+
+import dagster._check as check
 
 from .graph_definition import GraphDefinition
+from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
+from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+
+ExecutableDefinition: TypeAlias = Union[
+    PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition
+]
 
 
 class RepoRelativeTarget(NamedTuple):
@@ -13,47 +21,56 @@ class RepoRelativeTarget(NamedTuple):
 
     pipeline_name: str
     mode: str
-    solid_selection: Optional[List[str]]
+    solid_selection: Optional[Sequence[str]]
 
 
-class DirectTarget(NamedTuple("_DirectTarget", [("pipeline", PipelineDefinition)])):
+class DirectTarget(
+    NamedTuple(
+        "_DirectTarget",
+        [("target", ExecutableDefinition)],
+    )
+):
     """
     The thing to be executed by a schedule or sensor, referenced directly and loaded
     in to any repository the container is included in.
     """
 
-    def __new__(cls, graph: Union[GraphDefinition, PipelineDefinition]):
-        check.inst_param(graph, "graph", (GraphDefinition, PipelineDefinition))
-
-        # pipeline will become job / execution target
-        if isinstance(graph, PipelineDefinition):
-            pipeline = graph
-        else:
-            pipeline = graph.to_job(resource_defs={})
-
-        check.invariant(
-            len(pipeline.mode_definitions) == 1,
-            f"Pipeline {pipeline.name} has more than one mode which makes it an invalid "
-            "execution target.",
+    def __new__(
+        cls, target: Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition]
+    ):
+        check.inst_param(
+            target, "target", (GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition)
         )
+
+        if isinstance(target, PipelineDefinition) and not len(target.mode_definitions) == 1:
+            check.failed(
+                "Only graphs, jobs, and single-mode pipelines are valid "
+                "execution targets from a schedule or sensor. Please see the "
+                f"following guide to migrate your pipeline '{target.name}': "
+                "https://docs.dagster.io/guides/dagster/graph_job_op#migrating-to-ops-jobs-and-graphs"
+            )
 
         return super().__new__(
             cls,
-            pipeline,
+            target,
         )
 
     @property
     def pipeline_name(self) -> str:
-        return self.pipeline.name
+        return self.target.name
 
     @property
     def mode(self) -> str:
-        return self.pipeline.mode_definitions[0].name
+        return (
+            self.target.mode_definitions[0].name
+            if isinstance(self.target, PipelineDefinition)
+            else DEFAULT_MODE_NAME
+        )
 
     @property
     def solid_selection(self):
         # open question on how to direct target subset pipeline
         return None
 
-    def load(self):
-        return self.pipeline
+    def load(self) -> Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]:
+        return self.target

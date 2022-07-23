@@ -1,10 +1,19 @@
 {
   "name": "@dagster-io/ui",
-  "version": "1.0.1",
+  "version": "1.0.5",
   "description": "Dagster UI Component Library",
   "license": "Apache-2.0",
-  "types": "src/index.ts",
+  "main": "lib/index.js",
+  "module": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib/**/*"
+  ],
+  "sideEffects": false,
   "scripts": {
+    "prepack": "yarn build",
+    "prepublish": "yarn lint && yarn ts && yarn jest",
+    "build": "rm -rf lib && tsc -p ./tsconfig.build.json && yarn rollup -c rollup.config.js",
     "lint": "eslint src/ --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
     "jest": "jest",
     "ts": "tsc -p .",
@@ -13,20 +22,21 @@
   },
   "peerDependencies": {
     "@blueprintjs/core": "^3.45.0",
-    "@blueprintjs/icons": "^3.26.1",
     "@blueprintjs/popover2": "0.10.1",
     "@blueprintjs/select": "^3.16.4",
-    "@blueprintjs/table": "^3.8.33",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-is": "^17.0.2",
     "styled-components": "^5.3.3"
   },
   "dependencies": {
-    "react-markdown": "6.0.3",
-    "remark": "13.x",
+    "codemirror": "^5.65.2",
+    "deepmerge": "^4.2.2",
+    "react-codemirror2": "^7.2.1",
+    "react-markdown": "^6.0.3",
+    "react-virtualized": "^9.22.3",
     "remark-gfm": "1.0.0",
-    "remark-plain-text": "^0.2.0"
+    "yaml": "2.0.0-10"
   },
   "devDependencies": {
     "@babel/core": "^7.16.7",
@@ -35,7 +45,15 @@
     "@babel/preset-env": "^7.16.7",
     "@babel/preset-react": "^7.16.7",
     "@babel/preset-typescript": "^7.16.7",
+    "@dagster-io/eslint-config": "1.0.5",
     "@mdx-js/react": "^1.6.22",
+    "@rollup/plugin-babel": "^5.3.1",
+    "@rollup/plugin-commonjs": "^21.0.3",
+    "@rollup/plugin-image": "^2.1.1",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^13.1.3",
+    "@rollup/plugin-replace": "^4.0.0",
+    "@rollup/plugin-url": "^6.1.0",
     "@storybook/addon-actions": "^6.4.13",
     "@storybook/addon-docs": "^6.4.13",
     "@storybook/addon-essentials": "^6.4.13",
@@ -49,22 +67,41 @@
     "@testing-library/user-event": "^13.5.0",
     "@types/babel__core": "^7",
     "@types/babel__preset-env": "^7",
-    "@types/eslint": "^8",
+    "@types/codemirror": "^5.60.5",
     "@types/jest": "^27.4.0",
+    "@types/lru-cache": "^7",
     "@types/mdx-js__react": "^1",
-    "@types/prettier": "^2",
+    "@types/react-is": "^17",
+    "@types/rollup-plugin-node-globals": "^1",
     "@types/styled-components": "^5",
     "@types/testing-library__jest-dom": "^5.14.2",
     "babel-jest": "^27.4.6",
-    "babel-loader": "^8.2.3",
+    "babel-loader": "^8.2.4",
     "babel-plugin-macros": "^3.1.0",
+    "core-js": "^3.21.1",
     "eslint": "^8.6.0",
     "eslint-plugin-storybook": "^0.5.5",
     "jest": "^27.4.7",
     "nearest-color": "^0.4.4",
     "prettier": "2.2.1",
-    "react-router": "^5.2.1",
-    "react-router-dom": "^5.3.0",
-    "typescript": "^4.5.4"
+    "regenerator-runtime": "^0.13.9",
+    "rollup": "^2.70.1",
+    "rollup-plugin-node-globals": "^1.4.0",
+    "rollup-plugin-polyfill-node": "^0.8.0",
+    "rollup-plugin-styles": "^4.0.0",
+    "typescript": "4.7.3",
+    "webpack": "^5.0.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }

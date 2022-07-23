@@ -5,7 +5,8 @@ from enum import Enum
 
 import kubernetes
 
-from dagster import DagsterInstance, check
+from dagster import DagsterInstance
+from dagster import _check as check
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 
 DEFAULT_WAIT_TIMEOUT = 86400.0  # 1 day
@@ -159,7 +160,7 @@ class DagsterKubernetesClient:
             job_name (str): Name of the job to wait for.
             namespace (str): Namespace in which the job is located.
             wait_timeout (numeric, optional): Timeout after which to give up and raise exception.
-                Defaults to DEFAULT_WAIT_TIMEOUT.
+                Defaults to DEFAULT_WAIT_TIMEOUT. Set to 0 to disable.
             wait_time_between_attempts (numeric, optional): Wait time between polling attempts. Defaults
                 to DEFAULT_WAIT_BETWEEN_ATTEMPTS.
 
@@ -175,7 +176,7 @@ class DagsterKubernetesClient:
         start = start_time or self.timer()
 
         while not job:
-            if self.timer() - start > wait_timeout:
+            if wait_timeout and (self.timer() - start > wait_timeout):
                 raise DagsterK8sTimeoutError(
                     "Timed out while waiting for job {job_name}"
                     " to launch".format(job_name=job_name)
@@ -221,7 +222,7 @@ class DagsterKubernetesClient:
             job_name (str): Name of the job to wait for.
             namespace (str): Namespace in which the job is located.
             wait_timeout (numeric, optional): Timeout after which to give up and raise exception.
-                Defaults to DEFAULT_WAIT_TIMEOUT.
+                Defaults to DEFAULT_WAIT_TIMEOUT. Set to 0 to disable.
             wait_time_between_attempts (numeric, optional): Wait time between polling attempts. Defaults
                 to DEFAULT_WAIT_BETWEEN_ATTEMPTS.
 
@@ -247,10 +248,32 @@ class DagsterKubernetesClient:
             start_time=start,
         )
 
+        self.wait_for_running_job_to_succeed(
+            job_name,
+            namespace,
+            instance,
+            run_id,
+            wait_timeout,
+            wait_time_between_attempts,
+            num_pods_to_wait_for,
+            start=start,
+        )
+
+    def wait_for_running_job_to_succeed(
+        self,
+        job_name,
+        namespace,
+        instance=None,
+        run_id=None,
+        wait_timeout=DEFAULT_WAIT_TIMEOUT,
+        wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
+        num_pods_to_wait_for=DEFAULT_JOB_POD_COUNT,
+        start=None,
+    ):
         # Wait for the job status to be completed. We check the status every
         # wait_time_between_attempts seconds
         while True:
-            if self.timer() - start > wait_timeout:
+            if wait_timeout and (self.timer() - start > wait_timeout):
                 raise DagsterK8sTimeoutError(
                     "Timed out while waiting for job {job_name}"
                     " to complete".format(job_name=job_name)
@@ -392,7 +415,7 @@ class DagsterKubernetesClient:
             wait_for_state (WaitForPodState, optional): Whether to wait for pod readiness or
                 termination. Defaults to waiting for readiness.
             wait_timeout (numeric, optional): Timeout after which to give up and raise exception.
-                Defaults to DEFAULT_WAIT_TIMEOUT.
+                Defaults to DEFAULT_WAIT_TIMEOUT. Set to 0 to disable.
             wait_time_between_attempts (numeric, optional): Wait time between polling attempts. Defaults
                 to DEFAULT_WAIT_BETWEEN_ATTEMPTS.
 
@@ -416,7 +439,7 @@ class DagsterKubernetesClient:
             ).items
             pod = pods[0] if pods else None
 
-            if self.timer() - start > wait_timeout:
+            if wait_timeout and self.timer() - start > wait_timeout:
                 raise DagsterK8sError(
                     "Timed out while waiting for pod to become ready with pod info: %s" % str(pod)
                 )

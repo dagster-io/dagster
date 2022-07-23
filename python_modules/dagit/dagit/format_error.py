@@ -1,13 +1,13 @@
-from typing import Any, Dict
+from typing import Dict
 
 from graphql.error.base import GraphQLError
 
-from dagster.utils.log import get_stack_trace_array
+from dagster._utils.log import get_stack_trace_array
 
 
 # based on default_format_error copied and pasted from graphql_server 1.1.1
-def format_error_with_stack_trace(error: Exception) -> Dict[str, Any]:
-    formatted_error = {"message": str(error)}  # type: Dict[str, Any]
+def format_error_with_stack_trace(error: BaseException) -> Dict[str, object]:
+    formatted_error: Dict[str, object] = {"message": str(error)}
 
     if isinstance(error, GraphQLError):
         if error.locations is not None:
@@ -19,8 +19,8 @@ def format_error_with_stack_trace(error: Exception) -> Dict[str, Any]:
 
         # this is what is different about this implementation
         # we print out stack traces to ease debugging
-        if hasattr(error, "original_error") and error.original_error:
-            formatted_error["stack_trace"] = get_stack_trace_array(error.original_error)
+        if hasattr(error, "original_error") and error.original_error:  # type: ignore [attr-defined]
+            formatted_error["stack_trace"] = get_stack_trace_array(error.original_error)  # type: ignore [attr-defined]
     else:
         formatted_error["stack_trace"] = get_stack_trace_array(error)
 

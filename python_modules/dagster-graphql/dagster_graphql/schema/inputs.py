@@ -46,7 +46,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
 
         if self.statuses:
             statuses = [
-                PipelineRunStatus[status]
+                PipelineRunStatus[status]  # type: ignore
                 for status in self.statuses  # pylint: disable=not-an-iterable
             ]
         else:
@@ -56,7 +56,7 @@ class GrapheneRunsFilter(graphene.InputObjectType):
         created_before = pendulum.from_timestamp(self.createdBefore) if self.createdBefore else None
 
         return RunsFilter(
-            run_ids=self.runIds,
+            run_ids=self.runIds if self.runIds else None,
             pipeline_name=self.pipelineName,
             tags=tags,
             statuses=statuses,
@@ -87,6 +87,17 @@ class GraphenePipelineSelector(graphene.InputObjectType):
         name = "PipelineSelector"
 
 
+class GrapheneAssetGroupSelector(graphene.InputObjectType):
+    groupName = graphene.NonNull(graphene.String)
+    repositoryName = graphene.NonNull(graphene.String)
+    repositoryLocationName = graphene.NonNull(graphene.String)
+
+    class Meta:
+        description = """This type represents the fields necessary to identify
+        an asset group."""
+        name = "AssetGroupSelector"
+
+
 class GrapheneGraphSelector(graphene.InputObjectType):
     graphName = graphene.NonNull(graphene.String)
     repositoryName = graphene.NonNull(graphene.String)
@@ -104,6 +115,7 @@ class GrapheneJobOrPipelineSelector(graphene.InputObjectType):
     repositoryName = graphene.NonNull(graphene.String)
     repositoryLocationName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
+    assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKeyInput))
 
     class Meta:
         description = """This type represents the fields necessary to identify a job or pipeline"""
@@ -131,9 +143,10 @@ class GraphenePartitionSetSelector(graphene.InputObjectType):
 
 class GrapheneLaunchBackfillParams(graphene.InputObjectType):
     selector = graphene.NonNull(GraphenePartitionSetSelector)
-    partitionNames = non_null_list(graphene.String)
+    partitionNames = graphene.List(graphene.NonNull(graphene.String))
     reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))
     fromFailure = graphene.Boolean()
+    allPartitions = graphene.Boolean()
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
     forceSynchronousSubmission = graphene.Boolean()
 
@@ -206,6 +219,22 @@ class GrapheneExecutionParams(graphene.InputObjectType):
 
     class Meta:
         name = "ExecutionParams"
+
+
+class GrapheneReexecutionStrategy(graphene.Enum):
+    FROM_FAILURE = "FROM_FAILURE"
+    ALL_STEPS = "ALL_STEPS"
+
+    class Meta:
+        name = "ReexecutionStrategy"
+
+
+class GrapheneReexecutionParams(graphene.InputObjectType):
+    parentRunId = graphene.NonNull(graphene.String)
+    strategy = graphene.NonNull(GrapheneReexecutionStrategy)
+
+    class Meta:
+        name = "ReexecutionParams"
 
 
 class GrapheneMarshalledInput(graphene.InputObjectType):

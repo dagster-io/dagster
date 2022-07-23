@@ -16,11 +16,10 @@ Dagster runtime.
 """
 
 import sys
-import traceback
 from contextlib import contextmanager
 
-from dagster import check
-from dagster.utils.interrupts import raise_interrupts_as
+import dagster._check as check
+from dagster._utils.interrupts import raise_interrupts_as
 
 
 class DagsterExecutionInterruptedError(BaseException):
@@ -321,7 +320,7 @@ class DagsterInvalidConfigError(DagsterError):
     schema)."""
 
     def __init__(self, preamble, errors, config_value, *args, **kwargs):
-        from dagster.config.errors import EvaluationError
+        from dagster._config import EvaluationError
 
         check.str_param(preamble, "preamble")
         self.errors = check.list_param(errors, "errors", of_type=EvaluationError)
@@ -354,7 +353,7 @@ class DagsterSubprocessError(DagsterError):
     """
 
     def __init__(self, *args, **kwargs):
-        from dagster.utils.error import SerializableErrorInfo
+        from dagster._utils.error import SerializableErrorInfo
 
         self.subprocess_error_infos = check.list_param(
             kwargs.pop("subprocess_error_infos"), "subprocess_error_infos", SerializableErrorInfo
@@ -372,7 +371,7 @@ class DagsterUserCodeProcessError(DagsterError):
 
     @staticmethod
     def from_error_info(error_info):
-        from dagster.utils.error import SerializableErrorInfo
+        from dagster._utils.error import SerializableErrorInfo
 
         check.inst_param(error_info, "error_info", SerializableErrorInfo)
         return DagsterUserCodeProcessError(
@@ -380,7 +379,7 @@ class DagsterUserCodeProcessError(DagsterError):
         )
 
     def __init__(self, *args, **kwargs):
-        from dagster.utils.error import SerializableErrorInfo
+        from dagster._utils.error import SerializableErrorInfo
 
         self.user_code_process_error_infos = check.list_param(
             kwargs.pop("user_code_process_error_infos"),
@@ -390,9 +389,13 @@ class DagsterUserCodeProcessError(DagsterError):
         super(DagsterUserCodeProcessError, self).__init__(*args, **kwargs)
 
 
+class DagsterRepositoryLocationNotFoundError(DagsterError):
+    pass
+
+
 class DagsterRepositoryLocationLoadError(DagsterError):
     def __init__(self, *args, **kwargs):
-        from dagster.utils.error import SerializableErrorInfo
+        from dagster._utils.error import SerializableErrorInfo
 
         self.load_error_infos = check.list_param(
             kwargs.pop("load_error_infos"),
@@ -406,7 +409,7 @@ class DagsterLaunchFailedError(DagsterError):
     """Indicates an error while attempting to launch a pipeline run."""
 
     def __init__(self, *args, **kwargs):
-        from dagster.utils.error import SerializableErrorInfo
+        from dagster._utils.error import SerializableErrorInfo
 
         self.serializable_error_info = check.opt_inst_param(
             kwargs.pop("serializable_error_info", None),
@@ -420,7 +423,7 @@ class DagsterBackfillFailedError(DagsterError):
     """Indicates an error while attempting to launch a backfill."""
 
     def __init__(self, *args, **kwargs):
-        from dagster.utils.error import SerializableErrorInfo
+        from dagster._utils.error import SerializableErrorInfo
 
         self.serializable_error_info = check.opt_inst_param(
             kwargs.pop("serializable_error_info", None),
@@ -428,31 +431,6 @@ class DagsterBackfillFailedError(DagsterError):
             SerializableErrorInfo,
         )
         super(DagsterBackfillFailedError, self).__init__(*args, **kwargs)
-
-
-class DagsterInstanceMigrationRequired(DagsterError):
-    """Indicates that the dagster instance must be migrated."""
-
-    def __init__(self, msg=None, db_revision=None, head_revision=None, original_exc_info=None):
-        super(DagsterInstanceMigrationRequired, self).__init__(
-            "Instance is out of date and must be migrated{additional_msg}."
-            "{revision_clause} Please run `dagster instance migrate`.{original_exception_clause}".format(
-                additional_msg=" ({msg})".format(msg=msg) if msg else "",
-                revision_clause=(
-                    " Database is at revision {db_revision}, head is "
-                    "{head_revision}.".format(db_revision=db_revision, head_revision=head_revision)
-                    if db_revision or head_revision
-                    else ""
-                ),
-                original_exception_clause=(
-                    "\n\nOriginal exception:\n\n{original_exception}".format(
-                        original_exception="".join(traceback.format_exception(*original_exc_info))
-                    )
-                    if original_exc_info
-                    else ""
-                ),
-            )
-        )
 
 
 class DagsterRunAlreadyExists(DagsterError):

@@ -10,7 +10,7 @@ from dagster.core.definitions.events import Output
 from dagster.core.definitions.input import InputDefinition
 from dagster.core.definitions.metadata import (
     DagsterAssetMetadataValue,
-    DagsterPipelineRunMetadataValue,
+    DagsterRunMetadataValue,
     FloatMetadataValue,
     IntMetadataValue,
     JsonMetadataValue,
@@ -26,6 +26,16 @@ from dagster.core.definitions.metadata import (
 )
 from dagster.core.definitions.output import OutputDefinition
 from dagster.core.types.dagster_type import DagsterType
+
+# ########################
+# ##### ASSET GROUP
+# ########################
+
+
+def test_asset_group_import():
+    with pytest.warns(DeprecationWarning, match=re.escape("AssetGroup is deprecated")):
+        getattr(dagster, "AssetGroup")
+
 
 # ########################
 # ##### METADATA IMPORTS
@@ -44,8 +54,12 @@ METADATA_DEPRECATIONS = {
     "FloatMetadataEntryData": ("FloatMetadataValue", FloatMetadataValue),
     "IntMetadataEntryData": ("IntMetadataValue", IntMetadataValue),
     "DagsterPipelineRunMetadataEntryData": (
-        "DagsterPipelineRunMetadataValue",
-        DagsterPipelineRunMetadataValue,
+        "DagsterRunMetadataValue",
+        DagsterRunMetadataValue,
+    ),
+    "DagsterPipelineRunMetadataValue": (
+        "DagsterRunMetadataValue",
+        DagsterRunMetadataValue,
     ),
     "DagsterAssetMetadataEntryData": ("DagsterAssetMetadataValue", DagsterAssetMetadataValue),
     "TableMetadataEntryData": ("TableMetadataValue", TableMetadataValue),
@@ -89,7 +103,7 @@ def test_arbitrary_metadata():
         OutputDefinition(metadata={"foo": object()})
 
     with pytest.warns(DeprecationWarning, match=re.escape("arbitrary metadata values")):
-        InputDefinition(metadata={"foo": object()})
+        InputDefinition(name="foo", metadata={"foo": object()})
 
 
 def test_metadata_entry_description():

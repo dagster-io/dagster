@@ -9,8 +9,8 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     SolidDefinition,
-    check,
 )
+from dagster import _check as check
 
 
 def generate_solid(solid_id, num_inputs, num_outputs, num_cfg):

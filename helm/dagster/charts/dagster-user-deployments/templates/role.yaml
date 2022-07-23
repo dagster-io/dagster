@@ -1,0 +1,17 @@
+{{- if .Values.rbacEnabled }}
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "dagster.fullname" . }}-role
+  labels: {{ include "dagster.labels" . | nindent 4 }}
+
+# Allow the Dagster service account to read and write Kubernetes jobs and pods.
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs", "jobs/status"]
+    verbs: ["*"]
+  # The empty arg "" corresponds to the core API group
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "pods/status"]
+    verbs: ["*"]
+{{- end -}}

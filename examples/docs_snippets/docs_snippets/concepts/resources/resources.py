@@ -1,6 +1,5 @@
-"""isort:skip_file"""
-# pylint: disable=unused-argument
-# pylint: disable=reimported
+# isort: skip_file
+# pylint: disable=unused-argument,reimported,unnecessary-ellipsis
 from dagster import ResourceDefinition, graph, job
 
 
@@ -242,3 +241,41 @@ def uses_db_connection():
 
 
 # end_build_resources_example
+
+
+def do_something_with_resource(_):
+    pass
+
+
+# start_asset_use_resource
+from dagster import asset
+
+
+@asset(required_resource_keys={"foo"})
+def asset_requires_resource(context):
+    do_something_with_resource(context.resources.foo)
+
+
+# end_asset_use_resource
+
+
+@resource
+def foo_resource():
+    ...
+
+
+# start_asset_provide_resource
+from dagster import repository, with_resources
+
+
+@repository
+def repo():
+    return [
+        *with_resources(
+            definitions=[asset_requires_resource],
+            resource_defs={"foo": foo_resource},
+        )
+    ]
+
+
+# end_asset_provide_resource

@@ -1,13 +1,13 @@
 import {gql} from '@apollo/client';
 import {
   Box,
-  ButtonWIP,
-  ColorsWIP,
+  Button,
+  Colors,
   DialogBody,
   DialogFooter,
-  DialogWIP,
+  Dialog,
   Group,
-  IconWIP,
+  Icon,
   Markdown,
   Tooltip,
   FontFamily,
@@ -17,7 +17,9 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {copyValue} from '../app/DomUtils';
-import {assertUnreachable, displayNameForAssetKey} from '../app/Util';
+import {assertUnreachable} from '../app/Util';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 
 import {TableSchema, TABLE_SCHEMA_FRAGMENT} from './TableSchema';
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
@@ -79,7 +81,7 @@ export const MetadataEntry: React.FC<{
             {entry.path}
           </MetadataEntryAction>
           <IconButton onClick={(e) => copyValue(e, entry.path)}>
-            <IconWIP name="assignment" color={ColorsWIP.Gray500} />
+            <Icon name="assignment" color={Colors.Gray500} />
           </IconButton>
         </Group>
       );
@@ -95,10 +97,10 @@ export const MetadataEntry: React.FC<{
           copyContent={() => entry.jsonString}
           content={() => (
             <Box
-              background={ColorsWIP.Gray100}
+              background={Colors.Gray100}
               margin={{bottom: 12}}
               padding={24}
-              border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+              border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
               style={{whiteSpace: 'pre-wrap', fontFamily: FontFamily.monospace}}
             >
               {JSON.stringify(JSON.parse(entry.jsonString), null, 2)}
@@ -116,7 +118,7 @@ export const MetadataEntry: React.FC<{
             {entry.url}
           </MetadataEntryAction>
           <a href={entry.url} target="_blank" rel="noreferrer">
-            <IconWIP name="link" color={ColorsWIP.Gray500} />
+            <Icon name="link" color={Colors.Gray500} />
           </a>
         </Group>
       );
@@ -150,15 +152,15 @@ export const MetadataEntry: React.FC<{
       return <>{entry.floatValue}</>;
     case 'IntMetadataEntry':
       return <>{entry.intValue !== null ? entry.intValue : entry.intRepr}</>;
+    case 'BoolMetadataEntry':
+      return entry.boolValue !== null ? <>{entry.boolValue.toString()}</> : null;
     case 'PipelineRunMetadataEntry':
       return (
         <MetadataEntryLink to={`/instance/runs/${entry.runId}`}>{entry.runId}</MetadataEntryLink>
       );
     case 'AssetMetadataEntry':
       return (
-        <MetadataEntryLink
-          to={`/instance/assets/${entry.assetKey.path.map(encodeURIComponent).join('/')}`}
-        >
+        <MetadataEntryLink to={assetDetailsPathForKey(entry.assetKey)}>
           {displayNameForAssetKey(entry.assetKey)}
         </MetadataEntryLink>
       );
@@ -201,6 +203,9 @@ export const METADATA_ENTRY_FRAGMENT = gql`
     ... on IntMetadataEntry {
       intValue
       intRepr
+    }
+    ... on BoolMetadataEntry {
+      boolValue
     }
     ... on PipelineRunMetadataEntry {
       runId
@@ -261,7 +266,7 @@ const PythonArtifactLink = ({
   </>
 );
 
-const MetadataEntryModalAction: React.FunctionComponent<{
+const MetadataEntryModalAction: React.FC<{
   label: string;
   content: () => React.ReactNode;
   copyContent: () => string;
@@ -270,7 +275,7 @@ const MetadataEntryModalAction: React.FunctionComponent<{
   return (
     <>
       <MetadataEntryAction onClick={() => setOpen(true)}>{props.children}</MetadataEntryAction>
-      <DialogWIP
+      <Dialog
         icon="info"
         style={{width: 'auto', minWidth: 400, maxWidth: '80vw'}}
         title={props.label}
@@ -279,14 +284,12 @@ const MetadataEntryModalAction: React.FunctionComponent<{
       >
         {props.content()}
         <DialogFooter>
-          <ButtonWIP onClick={(e: React.MouseEvent) => copyValue(e, props.copyContent())}>
-            Copy
-          </ButtonWIP>
-          <ButtonWIP intent="primary" autoFocus={true} onClick={() => setOpen(false)}>
+          <Button onClick={(e: React.MouseEvent) => copyValue(e, props.copyContent())}>Copy</Button>
+          <Button intent="primary" autoFocus={true} onClick={() => setOpen(false)}>
             Close
-          </ButtonWIP>
+          </Button>
         </DialogFooter>
-      </DialogWIP>
+      </Dialog>
     </>
   );
 };
@@ -311,18 +314,18 @@ const StructuredContentTable = styled.table`
   width: 100%;
   padding: 0;
   margin-top: 4px;
-  border-top: 1px solid ${ColorsWIP.KeylineGray};
-  border-left: 1px solid ${ColorsWIP.KeylineGray};
-  background: ${ColorsWIP.Gray50};
+  border-top: 1px solid ${Colors.KeylineGray};
+  border-left: 1px solid ${Colors.KeylineGray};
+  background: ${Colors.Gray50};
 
   td:first-child {
-    color: ${ColorsWIP.Gray400};
+    color: ${Colors.Gray400};
   }
 
   &&& tbody > tr > td {
     padding: 4px 8px;
-    border-bottom: 1px solid ${ColorsWIP.KeylineGray};
-    border-right: 1px solid ${ColorsWIP.KeylineGray};
+    border-bottom: 1px solid ${Colors.KeylineGray};
+    border-right: 1px solid ${Colors.KeylineGray};
     vertical-align: top;
     box-shadow: none !important;
   }

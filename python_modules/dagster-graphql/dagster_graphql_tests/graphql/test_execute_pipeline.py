@@ -10,16 +10,52 @@ from dagster_graphql.client.query import (
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 from graphql import parse
 
+from dagster import PipelineRunStatus
+from dagster._utils import file_relative_path
+from dagster._utils.test import get_temp_file_name
 from dagster.core.storage.pipeline_run import RunsFilter
-from dagster.utils import file_relative_path
-from dagster.utils.test import get_temp_file_name
+from dagster.core.test_utils import wait_for_runs_to_finish
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
     ReadonlyGraphQLContextTestMatrix,
 )
 from .setup import csv_hello_world_solids_config
-from .utils import step_did_not_run, step_did_succeed, sync_execute_get_run_log_data
+from .utils import (
+    get_all_logs_for_finished_run_via_subscription,
+    step_did_not_run,
+    step_did_succeed,
+    sync_execute_get_run_log_data,
+)
+
+STEP_FAILURE_EVENTS_QUERY = """
+query pipelineRunEvents($runId: ID!) {
+  logsForRun(runId: $runId) {
+    __typename
+    ... on EventConnection {
+      events {
+        __typename
+        ... on ExecutionStepFailureEvent {
+          stepKey
+          message
+          level
+          error {
+            message
+            className
+            stack
+            causes {
+              message
+              className
+              stack
+            }
+          }
+        }
+      }
+      cursor
+    }
+  }
+}
+"""
 
 
 class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
@@ -89,7 +125,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert result.data
 
         assert result.data["launchPipelineExecution"]["__typename"] == "PythonError"
-        assert "JSONDecodeError" in result.data["launchPipelineExecution"]["message"]
+        assert "yaml.parser.ParserError" in result.data["launchPipelineExecution"]["message"]
 
     def test_basic_start_pipeline_execution_with_preset(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
@@ -128,9 +164,11 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         )
 
         assert not result.errors
-        assert result.data["launchPipelineExecution"]["run"]["tags"] == [
-            {"key": "tag_key", "value": "tag_value"}
-        ]
+        tags_by_key = {
+            tag["key"]: tag["value"]
+            for tag in result.data["launchPipelineExecution"]["run"]["tags"]
+        }
+        assert tags_by_key["tag_key"] == "tag_value"
 
         # just test existence
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
@@ -156,9 +194,12 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         )
 
         assert not result.errors
-        assert result.data["launchPipelineExecution"]["run"]["tags"] == [
-            {"key": "tag_key", "value": "new_tag_value"}
-        ]
+
+        tags_by_key = {
+            tag["key"]: tag["value"]
+            for tag in result.data["launchPipelineExecution"]["run"]["tags"]
+        }
+        assert tags_by_key["tag_key"] == "new_tag_value"
 
     def test_basic_start_pipeline_execution_with_non_existent_preset(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
@@ -300,23 +341,23 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
     def _csv_hello_world_event_sequence(self):
         # expected non engine event sequence from executing csv_hello_world pipeline
+
         return [
             "RunStartingEvent",
             "RunStartEvent",
+            "ResourceInitStartedEvent",
+            "ResourceInitSuccessEvent",
             "LogsCapturedEvent",
             "ExecutionStepStartEvent",
             "ExecutionStepInputEvent",
             "ExecutionStepOutputEvent",
-            "LogMessageEvent",
             "HandledOutputEvent",
             "ExecutionStepSuccessEvent",
             "LogsCapturedEvent",
             "ExecutionStepStartEvent",
-            "LogMessageEvent",
             "LoadedInputEvent",
             "ExecutionStepInputEvent",
             "ExecutionStepOutputEvent",
-            "LogMessageEvent",
             "HandledOutputEvent",
             "ExecutionStepSuccessEvent",
             "RunSuccessEvent",
@@ -345,7 +386,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         non_engine_event_types = [
             message["__typename"]
             for message in run_logs["messages"]
-            if message["__typename"] != "EngineEvent"
+            if message["__typename"] not in ("EngineEvent", "RunEnqueuedEvent", "RunDequeuedEvent")
         ]
 
         assert non_engine_event_types == self._csv_hello_world_event_sequence()
@@ -375,7 +416,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
         # block until run finishes
-        graphql_context.instance.run_launcher.join()
+        wait_for_runs_to_finish(graphql_context.instance)
 
         events_result = execute_dagster_graphql(
             graphql_context,
@@ -385,12 +426,12 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert not events_result.errors
         assert events_result.data
-        assert events_result.data["pipelineRunOrError"]["__typename"] == "Run"
+        assert events_result.data["logsForRun"]["__typename"] == "EventConnection"
 
         non_engine_event_types = [
             message["__typename"]
-            for message in events_result.data["pipelineRunOrError"]["events"]
-            if message["__typename"] != "EngineEvent"
+            for message in events_result.data["logsForRun"]["events"]
+            if message["__typename"] not in ("EngineEvent", "RunEnqueuedEvent", "RunDequeuedEvent")
         ]
         assert non_engine_event_types == self._csv_hello_world_event_sequence()
 
@@ -418,44 +459,53 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert exc_result.data
         assert exc_result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
 
-        def _fetch_events(after):
+        def _fetch_events(cursor):
             events_result = execute_dagster_graphql(
                 graphql_context,
                 RUN_EVENTS_QUERY,
                 variables={
                     "runId": exc_result.data["launchPipelineExecution"]["run"]["runId"],
-                    "after": after,
+                    "cursor": cursor,
                 },
             )
             assert not events_result.errors
             assert events_result.data
-            assert events_result.data["pipelineRunOrError"]["__typename"] == "Run"
-            return events_result.data["pipelineRunOrError"]["events"]
+            assert events_result.data["logsForRun"]["__typename"] == "EventConnection"
+            return (
+                events_result.data["logsForRun"]["events"],
+                events_result.data["logsForRun"]["cursor"],
+            )
 
         full_logs = []
-        cursor = -1
+        cursor = None
         iters = 0
 
         # do 3 polls, then fetch after waiting for execution to finish
         while iters < 3:
-            full_logs.extend(_fetch_events(cursor))
-            cursor = len(full_logs) - 1
+            _events, _cursor = _fetch_events(cursor)
+            full_logs.extend(_events)
+            cursor = _cursor
             iters += 1
             time.sleep(0.05)  # 50ms
 
         # block until run finishes
-        graphql_context.instance.run_launcher.join()
-        full_logs.extend(_fetch_events(cursor))
+        wait_for_runs_to_finish(graphql_context.instance)
+        _events, _cursor = _fetch_events(cursor)
+        full_logs.extend(_events)
 
         non_engine_event_types = [
-            message["__typename"] for message in full_logs if message["__typename"] != "EngineEvent"
+            message["__typename"]
+            for message in full_logs
+            if message["__typename"] not in ("EngineEvent", "RunEnqueuedEvent", "RunDequeuedEvent")
         ]
         assert non_engine_event_types == self._csv_hello_world_event_sequence()
 
-    def test_subscription_query_error(self, graphql_context):
+    def test_step_failure(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "naughty_programmer_pipeline")
-        run_logs = sync_execute_get_run_log_data(
-            context=graphql_context,
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
             variables={
                 "executionParams": {
                     "selector": selector,
@@ -464,21 +514,47 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        assert run_logs["__typename"] == "PipelineRunLogsSubscriptionSuccess"
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess", str(
+            result.data
+        )
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+
+        wait_for_runs_to_finish(graphql_context.instance)
+
+        logs_result = execute_dagster_graphql(
+            graphql_context,
+            STEP_FAILURE_EVENTS_QUERY,
+            variables={
+                "runId": run_id,
+            },
+        )
+
+        assert not logs_result.errors
+        assert logs_result.data
+        assert logs_result.data["logsForRun"]["__typename"] == "EventConnection"
+
+        run_logs = logs_result.data["logsForRun"]["events"]
 
         step_run_log_entry = _get_step_run_log_entry(
             run_logs, "throw_a_thing", "ExecutionStepFailureEvent"
         )
 
         assert step_run_log_entry
-        # Confirm that it is the user stack
 
         assert step_run_log_entry["message"] == 'Execution of step "throw_a_thing" failed.'
         assert step_run_log_entry["error"]
         assert step_run_log_entry["level"] == "ERROR"
-        assert isinstance(step_run_log_entry["error"]["cause"]["stack"], list)
 
-        assert "bad programmer" in step_run_log_entry["error"]["cause"]["stack"][-1]
+        causes = step_run_log_entry["error"]["causes"]
+
+        assert len(causes) == 3
+        assert [cause["message"] for cause in causes] == [
+            "Exception: Even more outer exception\n",
+            "Exception: Outer exception\n",
+            "Exception: bad programmer, bad\n",
+        ]
+
+        assert all([len(cause["stack"]) > 0 for cause in causes])
 
     def test_subscribe_bad_run_id(self, graphql_context):
         run_id = "nope"
@@ -697,9 +773,61 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert step_did_not_run(logs, "plus_one")
         assert step_did_not_run(logs, "subgraph.op_2")
 
+    def test_memoization_job(self, graphql_context):
+        selector = infer_pipeline_selector(graphql_context, "memoization_job")
+        run_config = {}
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "runConfigData": run_config,
+                    "mode": "default",
+                }
+            },
+        )
+        run = result.data["launchPipelineExecution"]["run"]
+        run_id = run["runId"]
+
+        wait_for_runs_to_finish(graphql_context.instance)
+
+        assert graphql_context.instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
+
+        logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
+            "pipelineRunLogs"
+        ]["messages"]
+        assert isinstance(logs, list)
+        assert step_did_succeed(logs, "my_op")
+
+        # run it again
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "runConfigData": run_config,
+                    "mode": "default",
+                }
+            },
+        )
+        run = result.data["launchPipelineExecution"]["run"]
+        run_id = run["runId"]
+
+        wait_for_runs_to_finish(graphql_context.instance)
+
+        assert graphql_context.instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
+
+        logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
+            "pipelineRunLogs"
+        ]["messages"]
+
+        assert step_did_not_run(logs, "my_op")
+
 
 def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):
-    for message_data in pipeline_run_logs["messages"]:
+    for message_data in pipeline_run_logs:
         if message_data["__typename"] == typename:
             if message_data["stepKey"] == step_key:
                 return message_data

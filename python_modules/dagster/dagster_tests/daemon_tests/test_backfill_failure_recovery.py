@@ -3,6 +3,10 @@ import multiprocessing
 import pendulum
 import pytest
 
+from dagster._daemon import get_default_daemon_logger
+from dagster._daemon.backfill import execute_backfill_iteration
+from dagster._seven import IS_WINDOWS
+from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import (
@@ -11,10 +15,6 @@ from dagster.core.test_utils import (
     get_crash_signals,
     get_logger_output_from_capfd,
 )
-from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.backfill import execute_backfill_iteration
-from dagster.seven import IS_WINDOWS
-from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 from .test_backfill import default_repo, instance_for_context, workspace_load_target
 
@@ -33,7 +33,7 @@ def _test_backfill_in_subprocess(instance_ref, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
             with pendulum.test(execution_datetime), create_test_daemon_workspace(
-                workspace_load_target=workspace_load_target()
+                workspace_load_target=workspace_load_target(), instance=instance
             ) as workspace:
                 list(
                     execute_backfill_iteration(

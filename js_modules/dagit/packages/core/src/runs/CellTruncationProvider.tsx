@@ -1,4 +1,4 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -35,7 +35,7 @@ const OverflowButton = styled.button`
   border-radius: 4px;
   line-height: 32px;
   padding: 0 12px;
-  color: ${ColorsWIP.White};
+  color: ${Colors.White};
   &:hover {
     background: rgba(100, 100, 100, 0.85);
   }

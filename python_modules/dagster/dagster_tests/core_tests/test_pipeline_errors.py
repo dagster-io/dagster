@@ -12,13 +12,10 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     SolidDefinition,
-    check,
-    execute_pipeline,
-    execute_solid,
-    lambda_solid,
-    pipeline,
-    solid,
 )
+from dagster import _check as check
+from dagster import execute_pipeline, execute_solid, lambda_solid
+from dagster._legacy import pipeline, solid
 
 
 def create_root_success_solid(name):
@@ -227,7 +224,7 @@ def test_explicit_failure():
     def throws_failure():
         raise DagsterTypeCheckDidNotPass(
             description="Always fails.",
-            metadata_entries=[MetadataEntry.text("why", label="always_fails")],
+            metadata_entries=[MetadataEntry("always_fails", value="why")],
         )
 
     @pipeline
@@ -238,4 +235,4 @@ def test_explicit_failure():
         execute_pipeline(pipe)
 
     assert exc_info.value.description == "Always fails."
-    assert exc_info.value.metadata_entries == [MetadataEntry.text("why", label="always_fails")]
+    assert exc_info.value.metadata_entries == [MetadataEntry("always_fails", value="why")]

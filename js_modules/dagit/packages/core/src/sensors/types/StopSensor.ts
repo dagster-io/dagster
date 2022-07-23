@@ -24,10 +24,17 @@ export interface StopSensor_stopSensor_StopSensorMutationResult {
   instigationState: StopSensor_stopSensor_StopSensorMutationResult_instigationState | null;
 }
 
+export interface StopSensor_stopSensor_PythonError_causes {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface StopSensor_stopSensor_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
+  causes: StopSensor_stopSensor_PythonError_causes[];
 }
 
 export type StopSensor_stopSensor = StopSensor_stopSensor_UnauthorizedError | StopSensor_stopSensor_StopSensorMutationResult | StopSensor_stopSensor_PythonError;
@@ -38,4 +45,5 @@ export interface StopSensor {
 
 export interface StopSensorVariables {
   jobOriginId: string;
+  jobSelectorId: string;
 }

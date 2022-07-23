@@ -9,13 +9,16 @@ import {
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
 import {
-  ColorsWIP,
+  Colors,
   GlobalDialogStyle,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
   GlobalToasterStyle,
   GlobalTooltipStyle,
   FontFamily,
+  CustomTooltipProvider,
+  GlobalInter,
+  GlobalInconsolata,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
@@ -27,12 +30,14 @@ import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 import {AppContext} from './AppContext';
 import {CustomAlertProvider} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
-import {CustomTooltipProvider} from './CustomTooltipProvider';
 import {LayoutProvider} from './LayoutProvider';
 import {PermissionsProvider} from './Permissions';
 import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
 import {WebSocketProvider} from './WebSocketProvider';
+import {AnalyticsContext, dummyAnalytics} from './analytics';
 import {TimezoneProvider} from './time/TimezoneContext';
+
+import './blueprint.css';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
 // break on underscores rather than arbitrary characters, but we need to remove these
@@ -45,7 +50,7 @@ const GlobalStyle = createGlobalStyle`
   }
 
   html, body, #root {
-    color: ${ColorsWIP.Gray800};
+    color: ${Colors.Gray800};
     width: 100vw;
     height: 100vh;
     overflow: hidden;
@@ -58,7 +63,7 @@ const GlobalStyle = createGlobalStyle`
   a,
   a:hover,
   a:active {
-    color: ${ColorsWIP.Link};
+    color: ${Colors.Link};
   }
 
   #root {
@@ -84,21 +89,6 @@ const GlobalStyle = createGlobalStyle`
     font-family: ${FontFamily.monospace};
     font-size: 16px;
   }
-
-  .material-icons {
-    display: block;
-  }
-
-  /* todo dish: Remove these when we have buttons updated. */
-
-  .bp3-button .material-icons {
-    position: relative;
-    top: 1px;
-  }
-
-  .bp3-button:disabled .material-icons {
-    color: ${ColorsWIP.Gray300}
-  }
 `;
 
 export interface AppProviderProps {
@@ -106,15 +96,23 @@ export interface AppProviderProps {
   config: {
     apolloLinks: ApolloLink[];
     basePath?: string;
-    telemetryEnabled?: boolean;
     headers?: {[key: string]: string};
     origin: string;
+    staticPathRoot?: string;
+    telemetryEnabled?: boolean;
   };
 }
 
 export const AppProvider: React.FC<AppProviderProps> = (props) => {
   const {appCache, config} = props;
-  const {apolloLinks, basePath = '', headers = {}, origin, telemetryEnabled = false} = config;
+  const {
+    apolloLinks,
+    basePath = '',
+    headers = {},
+    origin,
+    staticPathRoot = '/',
+    telemetryEnabled = false,
+  } = config;
 
   const graphqlPath = `${basePath}/graphql`;
   const rootServerURI = `${origin}${basePath}`;
@@ -154,14 +152,19 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
     () => ({
       basePath,
       rootServerURI,
+      staticPathRoot,
       telemetryEnabled,
     }),
-    [basePath, rootServerURI, telemetryEnabled],
+    [basePath, rootServerURI, staticPathRoot, telemetryEnabled],
   );
+
+  const analytics = React.useMemo(() => dummyAnalytics(), []);
 
   return (
     <AppContext.Provider value={appContextValue}>
       <WebSocketProvider websocketClient={websocketClient}>
+        <GlobalInter />
+        <GlobalInconsolata />
         <GlobalStyle />
         <GlobalToasterStyle />
         <GlobalTooltipStyle />
@@ -174,7 +177,9 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
               <TimezoneProvider>
                 <WorkspaceProvider>
                   <CustomConfirmationProvider>
-                    <LayoutProvider>{props.children}</LayoutProvider>
+                    <AnalyticsContext.Provider value={analytics}>
+                      <LayoutProvider>{props.children}</LayoutProvider>
+                    </AnalyticsContext.Provider>
                   </CustomConfirmationProvider>
                   <CustomTooltipProvider />
                   <CustomAlertProvider />

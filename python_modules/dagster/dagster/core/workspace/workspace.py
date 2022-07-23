@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Dict, NamedTuple, Optional
 
+from dagster._utils.error import SerializableErrorInfo
 from dagster.core.host_representation import RepositoryLocation, RepositoryLocationOrigin
-from dagster.utils.error import SerializableErrorInfo
 
 
 # For locations that are loaded asynchronously
@@ -27,7 +27,7 @@ class IWorkspace(ABC):
     """
 
     @abstractmethod
-    def get_location(self, location_name: str):
+    def get_repository_location(self, location_name: str) -> RepositoryLocation:
         """Return the RepositoryLocation for the given location name, or raise an error if there is an error loading it."""
 
     @abstractmethod

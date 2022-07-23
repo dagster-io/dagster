@@ -6,7 +6,6 @@ import {DAGSTER_TYPE_FRAGMENT} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterTypeFragment';
 import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
-import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 
 import {AssetNodeOpMetadataFragment} from './types/AssetNodeOpMetadataFragment';
 
@@ -14,7 +13,7 @@ export const metadataForAssetNode = (
   assetNode: AssetNodeOpMetadataFragment,
 ): {assetType?: DagsterTypeFragment; assetMetadata: MetadataEntryFragment[]} => {
   const assetType = assetNode.op?.outputDefinitions[0]?.type;
-  const assetMetadata = assetNode.op?.outputDefinitions[0]?.metadataEntries || [];
+  const assetMetadata = assetNode.metadataEntries || [];
   return {assetType, assetMetadata};
 };
 
@@ -37,11 +36,11 @@ export const AssetMetadataTable: React.FC<{
 export const ASSET_NODE_OP_METADATA_FRAGMENT = gql`
   fragment AssetNodeOpMetadataFragment on AssetNode {
     id
+    metadataEntries {
+      ...MetadataEntryFragment
+    }
     op {
       outputDefinitions {
-        metadataEntries {
-          ...MetadataEntryFragment
-        }
         type {
           ...DagsterTypeFragment
         }

@@ -2,7 +2,7 @@ from typing import Any, Dict, cast
 
 from dagster.core.errors import DagsterInvalidConfigError
 
-from ...config import Shape
+from ..._config import Shape
 from ..execution.context.logger import InitLoggerContext, UnboundInitLoggerContext
 from .logger_definition import LoggerDefinition
 
@@ -20,7 +20,7 @@ def logger_invocation_result(logger_def: LoggerDefinition, init_context: Unbound
 
 
 def _resolve_bound_config(logger_config: Any, logger_def: "LoggerDefinition") -> Any:
-    from dagster.config.validate import process_config
+    from dagster._config import process_config
 
     validated_config = None
     outer_config_shape = Shape({"config": logger_def.get_config_field()})

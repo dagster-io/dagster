@@ -1,14 +1,14 @@
-from dagster.api.snapshot_schedule import sync_get_external_schedule_execution_data_ephemeral_grpc
+from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_ephemeral_grpc
+from dagster._seven import get_current_datetime_in_utc
 from dagster.core.definitions.schedule_definition import ScheduleExecutionData
 from dagster.core.test_utils import instance_for_test
-from dagster.seven import get_current_datetime_in_utc
 
 from .utils import get_bar_repo_handle
 
 
 def test_external_schedule_execution_data_api_grpc():
     with instance_for_test() as instance:
-        with get_bar_repo_handle() as repository_handle:
+        with get_bar_repo_handle(instance) as repository_handle:
             execution_data = sync_get_external_schedule_execution_data_ephemeral_grpc(
                 instance,
                 repository_handle,
@@ -24,7 +24,7 @@ def test_external_schedule_execution_data_api_grpc():
 
 def test_external_schedule_execution_data_api_never_execute_grpc():
     with instance_for_test() as instance:
-        with get_bar_repo_handle() as repository_handle:
+        with get_bar_repo_handle(instance) as repository_handle:
             execution_data = sync_get_external_schedule_execution_data_ephemeral_grpc(
                 instance,
                 repository_handle,
@@ -37,7 +37,7 @@ def test_external_schedule_execution_data_api_never_execute_grpc():
 
 def test_include_execution_time_grpc():
     with instance_for_test() as instance:
-        with get_bar_repo_handle() as repository_handle:
+        with get_bar_repo_handle(instance) as repository_handle:
             execution_time = get_current_datetime_in_utc()
             execution_data = sync_get_external_schedule_execution_data_ephemeral_grpc(
                 instance,

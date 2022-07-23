@@ -1,12 +1,13 @@
+// eslint-disable-next-line no-restricted-imports
 import {Intent, PopoverPosition} from '@blueprintjs/core';
 import {
   Box,
-  ButtonWIP,
+  Button,
   Checkbox,
-  ColorsWIP,
-  IconWIP,
-  MenuItemWIP,
-  MenuWIP,
+  Colors,
+  Icon,
+  MenuItem,
+  Menu,
   Popover,
   TextInput,
   Tooltip,
@@ -48,6 +49,7 @@ interface GraphQueryInputProps {
   onKeyDown?: (e: React.KeyboardEvent<any>) => void;
   onFocus?: () => void;
   onBlur?: (value: string) => void;
+  autoApplyChanges?: boolean;
 }
 
 interface ActiveSuggestionInfo {
@@ -99,15 +101,15 @@ const placeholderTextForItems = (base: string, items: GraphQueryItem[]) => {
 const intentToStrokeColor = (intent: Intent | undefined) => {
   switch (intent) {
     case 'danger':
-      return ColorsWIP.Red500;
+      return Colors.Red500;
     case 'success':
-      return ColorsWIP.Green500;
+      return Colors.Green500;
     case 'warning':
-      return ColorsWIP.Yellow500;
+      return Colors.Yellow500;
     case 'none':
     case 'primary':
     default:
-      return ColorsWIP.Gray300;
+      return Colors.Gray300;
   }
 };
 
@@ -161,7 +163,7 @@ export const GraphQueryInput = React.memo(
       setPendingValue(props.value);
     }, [props.value]);
 
-    const lastClause = /(\*?\+*)([\w\d\[\]_-]+)(\+*\*?)$/.exec(pendingValue);
+    const lastClause = /(\*?\+*)([\w\d\[\]>_\/-]+)(\+*\*?)$/.exec(pendingValue);
 
     const [, prefix, lastElementName, suffix] = lastClause || [];
     const suggestions = React.useMemo(
@@ -185,6 +187,9 @@ export const GraphQueryInput = React.memo(
       // is now at it's location if it's gone, bounded to the array.
       let nextIdx = pos !== -1 ? pos : active.idx;
       nextIdx = Math.max(0, Math.min(suggestions.length - 1, nextIdx));
+      if (!suggestions[nextIdx]) {
+        return;
+      }
       const nextText = suggestions[nextIdx].name;
 
       if (nextIdx !== active.idx || nextText !== active.text) {
@@ -277,7 +282,7 @@ export const GraphQueryInput = React.memo(
             pipelineName: `${props.linkToPreview.pipelineName}~${flattenGraphsFlag}${pendingValue}`,
           })}
         >
-          Graph Preview <IconWIP color={ColorsWIP.Link} name="open_in_new" />
+          Graph Preview <Icon color={Colors.Link} name="open_in_new" />
         </Link>
       </OpCountWrap>
     );
@@ -290,9 +295,9 @@ export const GraphQueryInput = React.memo(
           position={props.popoverPosition || 'top-left'}
           content={
             suggestions.length ? (
-              <MenuWIP style={{width: props.width || '24vw'}}>
+              <Menu style={{width: props.width || '24vw'}}>
                 {suggestions.slice(0, 15).map((suggestion) => (
-                  <MenuItemWIP
+                  <MenuItem
                     icon={suggestion.isGraph ? 'job' : 'op'}
                     key={suggestion.name}
                     text={suggestion.name}
@@ -304,7 +309,7 @@ export const GraphQueryInput = React.memo(
                     }}
                   />
                 ))}
-              </MenuWIP>
+              </Menu>
             ) : (
               <div />
             )
@@ -318,7 +323,10 @@ export const GraphQueryInput = React.memo(
               strokeColor={intentToStrokeColor(props.intent)}
               autoFocus={props.autoFocus}
               placeholder={placeholderTextForItems(props.placeholder, props.items)}
-              onChange={(e: React.ChangeEvent<any>) => setPendingValue(e.target.value)}
+              onChange={(e: React.ChangeEvent<any>) => {
+                setPendingValue(e.target.value);
+                props.autoApplyChanges && props.onChange(e.target.value);
+              }}
               onFocus={() => {
                 if (!flattenGraphsEnabled) {
                   // Defer focus to be manually managed
@@ -335,7 +343,10 @@ export const GraphQueryInput = React.memo(
                 props.onBlur?.(pendingValue);
               }}
               onKeyDown={onKeyDown}
-              style={{width: props.width || '24vw'}}
+              style={{
+                width: props.width || '24vw',
+                paddingRight: focused && uncomitted ? 55 : '',
+              }}
               className={props.className}
               ref={inputRef}
             />
@@ -357,7 +368,7 @@ export const GraphQueryInput = React.memo(
                       content="Flatten subgraphs to select ops within nested graphs"
                       placement="right"
                     >
-                      <IconWIP name="info" color={ColorsWIP.Gray500} />
+                      <Icon name="info" color={Colors.Gray500} />
                     </Tooltip>
                   </Box>
                   {opCountInfo}
@@ -369,9 +380,9 @@ export const GraphQueryInput = React.memo(
         </Popover>
         {props.presets &&
           (props.presets.find((p) => p.value === pendingValue) ? (
-            <ButtonWIP
-              icon={<IconWIP name="layers" />}
-              rightIcon={<IconWIP name="cancel" />}
+            <Button
+              icon={<Icon name="layers" />}
+              rightIcon={<Icon name="cancel" />}
               onClick={() => props.onChange('*')}
               intent="none"
             />
@@ -379,9 +390,9 @@ export const GraphQueryInput = React.memo(
             <Popover
               position="top"
               content={
-                <MenuWIP>
+                <Menu>
                   {props.presets.map((preset) => (
-                    <MenuItemWIP
+                    <MenuItem
                       key={preset.name}
                       text={preset.name}
                       onMouseDown={(e: React.MouseEvent<any>) => {
@@ -391,12 +402,12 @@ export const GraphQueryInput = React.memo(
                       }}
                     />
                   ))}
-                </MenuWIP>
+                </Menu>
               }
             >
-              <ButtonWIP
-                icon={<IconWIP name="layers" />}
-                rightIcon={<IconWIP name="expand_less" />}
+              <Button
+                icon={<Icon name="layers" />}
+                rightIcon={<Icon name="expand_less" />}
                 intent="none"
               />
             </Popover>
@@ -422,8 +433,8 @@ const OpInfoWrap = styled.div`
   top: 100%;
   margin-top: 2px;
   font-size: 0.85rem;
-  background: ${ColorsWIP.White};
-  color: ${ColorsWIP.Gray600};
+  background: ${Colors.White};
+  color: ${Colors.Gray600};
   box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
   z-index: 2;
   left: 0;
@@ -438,9 +449,10 @@ const EnterHint = styled.div`
   right: 6px;
   top: 5px;
   border-radius: 5px;
-  border: 1px solid ${ColorsWIP.Gray500};
+  border: 1px solid ${Colors.Gray500};
+  background: ${Colors.White};
   font-weight: 500;
   font-size: 12px;
-  color: ${ColorsWIP.Gray500};
+  color: ${Colors.Gray500};
   padding: 2px 6px;
 `;

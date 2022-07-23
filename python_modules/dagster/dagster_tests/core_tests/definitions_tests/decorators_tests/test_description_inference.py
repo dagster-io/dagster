@@ -1,11 +1,12 @@
-from dagster import composite_solid, graph, job, op, solid
+from dagster import composite_solid, graph, job, op, resource
+from dagster._legacy import solid
 
 
 def test_description_inference():
-    decorators = [job, op, graph, solid, composite_solid]
+    decorators = [job, op, graph, solid, composite_solid, resource]
     for decorator in decorators:
 
-        @decorator
+        @decorator  # pylint: disable=cell-var-from-loop
         def my_thing():
             """
             Here is some

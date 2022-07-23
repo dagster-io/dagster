@@ -1,8 +1,8 @@
 import graphene
 
-from dagster import check
+import dagster._check as check
+from dagster._utils.error import SerializableErrorInfo
 from dagster.core.definitions.events import AssetKey
-from dagster.utils.error import SerializableErrorInfo
 
 from .util import non_null_list
 
@@ -23,6 +23,22 @@ class GraphenePythonError(graphene.ObjectType):
     stack = non_null_list(graphene.String)
     cause = graphene.Field(lambda: GraphenePythonError)
 
+    """
+    A list of all recursive errors deeper in the exception stack that caused this error to be
+    raised. For example, in a block of code like:
+    ```
+        try:
+            try:
+                raise Exception("Inner")
+            except Exception as e:
+                raise Exception("Middle") from e
+        except Exception as e:
+            raise Exception("Outer") from e
+    ```
+    The PythonError returned will correspond to Outer, with two causes - Middle and then Inner
+    """
+    causes = non_null_list("dagster_graphql.schema.errors.GraphenePythonError")
+
     def __init__(self, error_info):
         super().__init__()
         check.inst_param(error_info, "error_info", SerializableErrorInfo)
@@ -30,6 +46,14 @@ class GraphenePythonError(graphene.ObjectType):
         self.stack = error_info.stack
         self.cause = error_info.cause
         self.className = error_info.cls_name
+
+    def resolve_causes(self, _graphene_info):
+        causes = []
+        current_error = self.cause
+        while current_error and len(causes) < 10:  # Sanity check the depth of the causes
+            causes.append(GraphenePythonError(current_error))
+            current_error = current_error.cause
+        return causes
 
 
 class GrapheneSchedulerNotDefinedError(graphene.ObjectType):
@@ -248,6 +272,32 @@ class GrapheneRunConflict(graphene.ObjectType):
         name = "RunConflict"
 
 
+class GrapheneInvalidSubsetError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "InvalidSubsetError"
+
+    pipeline = graphene.Field(
+        graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GraphenePipeline")
+    )
+
+    def __init__(self, message, pipeline):
+        super().__init__()
+        self.message = check.str_param(message, "message")
+        self.pipeline = pipeline
+
+
+class GrapheneConfigTypeNotFoundError(graphene.ObjectType):
+    class Meta:
+        interfaces = (GrapheneError,)
+        name = "ConfigTypeNotFoundError"
+
+    pipeline = graphene.Field(
+        graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GraphenePipeline")
+    )
+    config_type_name = graphene.NonNull(graphene.String)
+
+
 create_execution_params_error_types = (
     GraphenePresetNotFoundError,
     GrapheneConflictingExecutionParamsError,
@@ -343,11 +393,13 @@ class GrapheneUnauthorizedError(graphene.ObjectType):
 types = [
     GrapheneAssetNotFoundError,
     GrapheneConflictingExecutionParamsError,
+    GrapheneConfigTypeNotFoundError,
     GrapheneDagsterTypeNotFoundError,
     GrapheneError,
     GrapheneInvalidOutputError,
     GrapheneInvalidPipelineRunsFilterError,
     GrapheneInvalidStepError,
+    GrapheneInvalidSubsetError,
     GrapheneModeNotFoundError,
     GrapheneNoModeProvidedError,
     GraphenePartitionSetNotFoundError,

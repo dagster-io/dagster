@@ -9,7 +9,7 @@ from starlette.testclient import TestClient
 
 from dagster import __version__ as dagster_version
 from dagster import job, op
-from dagster.seven import json
+from dagster._seven import json
 
 EVENT_LOG_SUBSCRIPTION = """
 subscription PipelineRunLogsSubscription($runId: ID!) {
@@ -74,7 +74,7 @@ def test_static_resources(test_client: TestClient):
 # https://graphql.org/learn/serving-over-http/
 
 
-def test_graphql_get(instance, test_client: TestClient):
+def test_graphql_get(instance, test_client: TestClient):  # pylint: disable=unused-argument
     # base case
     response = test_client.get(
         "/graphql",
@@ -105,6 +105,18 @@ def test_graphql_get(instance, test_client: TestClient):
         },
     )
     assert response.status_code == 400, response.text
+
+
+def test_graphql_invalid_json(instance, test_client: TestClient):  # pylint: disable=unused-argument
+    # base case
+    response = test_client.post(
+        "/graphql", data='{"query": "foo}', headers={"Content-Type": "application/json"}
+    )
+
+    print(str(response.text))
+
+    assert response.status_code == 400, response.text
+    assert 'GraphQL request is invalid JSON:\n{"query": "foo}' in response.text
 
 
 def test_graphql_post(test_client: TestClient):
@@ -155,6 +167,13 @@ def test_graphql_post(test_client: TestClient):
     )
     assert response.status_code == 200, response.text
     assert response.json() == {"data": {"__typename": "DagitQuery"}}
+
+    # non existent field
+    response = test_client.post(
+        "/graphql",
+        params={"query": "{__invalid}"},
+    )
+    assert response.status_code == 400, response.text
 
 
 def test_graphql_ws_error(test_client: TestClient):

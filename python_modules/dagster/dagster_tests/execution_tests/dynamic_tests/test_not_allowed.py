@@ -6,9 +6,8 @@ from dagster import (
     DynamicOutputDefinition,
     OutputDefinition,
     composite_solid,
-    pipeline,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 
 
 @solid(output_defs=[DynamicOutputDefinition()])
@@ -235,6 +234,6 @@ def test_collect_and_dep():
     ):
 
         @pipeline
-        def _bad():
+        def _bad_other():
             x = dynamic_solid()
             x.map(lambda y: add(x.collect(), y))

@@ -1,16 +1,16 @@
 import {
   Box,
-  CountdownStatus,
-  useCountdown,
+  Button,
   Group,
   MetadataTableWIP,
   PageHeader,
-  RefreshableCountdown,
-  TagWIP,
+  Tag,
   Heading,
+  FontFamily,
 } from '@dagster-io/ui';
 import * as React from 'react';
 
+import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {AssetLink} from '../assets/AssetLink';
 import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -20,6 +20,7 @@ import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
+import {EditCursorDialog} from './EditCursorDialog';
 import {SensorSwitch} from './SensorSwitch';
 import {SensorFragment} from './types/SensorFragment';
 
@@ -50,10 +51,8 @@ export const SensorDetails: React.FC<{
   sensor: SensorFragment;
   repoAddress: RepoAddress;
   daemonHealth: boolean | null;
-  countdownDuration: number;
-  countdownStatus: CountdownStatus;
-  onRefresh: () => void;
-}> = ({sensor, repoAddress, daemonHealth, countdownDuration, countdownStatus, onRefresh}) => {
+  refreshState: QueryRefreshState;
+}> = ({sensor, repoAddress, daemonHealth, refreshState}) => {
   const {
     name,
     sensorState: {status, ticks},
@@ -61,16 +60,14 @@ export const SensorDetails: React.FC<{
     metadata,
   } = sensor;
 
+  const [isCursorEditing, setCursorEditing] = React.useState(false);
+  const sensorSelector = {
+    sensorName: sensor.name,
+    repositoryName: repoAddress.name,
+    repositoryLocationName: repoAddress.location,
+  };
   const repo = useRepository(repoAddress);
   const pipelinesAndJobs = repo?.repository.pipelines;
-
-  const timeRemaining = useCountdown({
-    duration: countdownDuration,
-    status: countdownStatus,
-  });
-
-  const countdownRefreshing = countdownStatus === 'idle' || timeRemaining === 0;
-  const seconds = Math.floor(timeRemaining / 1000);
 
   const latestTick = ticks.length ? ticks[0] : null;
   const targetCount = targets?.length || 0;
@@ -93,6 +90,11 @@ export const SensorDetails: React.FC<{
     return targetCount > 1 ? 'Jobs' : 'Job';
   }, [anyPipelines, targetCount]);
 
+  const cursor =
+    sensor.sensorState.typeSpecificData &&
+    sensor.sensorState.typeSpecificData.__typename === 'SensorData' &&
+    sensor.sensorState.typeSpecificData.lastCursor;
+
   return (
     <>
       <PageHeader
@@ -105,23 +107,19 @@ export const SensorDetails: React.FC<{
         icon="sensors"
         tags={
           <>
-            <TagWIP icon="sensors">
+            <Tag icon="sensors">
               Sensor in <RepositoryLink repoAddress={repoAddress} />
-            </TagWIP>
+            </Tag>
             {sensor.nextTick && daemonHealth && status === InstigationStatus.RUNNING ? (
-              <TagWIP icon="timer">
+              <Tag icon="timer">
                 Next tick: <TimestampDisplay timestamp={sensor.nextTick.timestamp} />
-              </TagWIP>
+              </Tag>
             ) : null}
           </>
         }
         right={
           <Box margin={{top: 4}}>
-            <RefreshableCountdown
-              refreshing={countdownRefreshing}
-              seconds={seconds}
-              onRefresh={onRefresh}
-            />
+            <QueryRefreshCountdown refreshState={refreshState} />
           </Box>
         }
       />
@@ -145,7 +143,6 @@ export const SensorDetails: React.FC<{
                     <TimestampDisplay timestamp={latestTick.timestamp} />
                     <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
                   </Box>
-                  {latestTick.cursor ? <>Cursor: {latestTick.cursor}</> : null}
                 </>
               ) : (
                 'Sensor has never run'
@@ -172,6 +169,24 @@ export const SensorDetails: React.FC<{
             </tr>
           ) : null}
           <tr>
+            <td>Cursor</td>
+            <td>
+              {isCursorEditing ? (
+                <EditCursorDialog
+                  sensorSelector={sensorSelector}
+                  cursor={cursor ? cursor : ''}
+                  onClose={() => setCursorEditing(false)}
+                />
+              ) : null}
+              <Box flex={{direction: 'row', alignItems: 'center'}}>
+                <Box style={{fontFamily: FontFamily.monospace, marginRight: 10}}>
+                  {cursor ? cursor : 'None'}
+                </Box>
+                <Button onClick={() => setCursorEditing(true)}>Edit</Button>
+              </Box>
+            </td>
+          </tr>
+          <tr>
             <td>Frequency</td>
             <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>
           </tr>
@@ -181,7 +196,7 @@ export const SensorDetails: React.FC<{
               <td>
                 <Box flex={{direction: 'column', gap: 2}}>
                   {metadata.assetKeys.map((key) => (
-                    <AssetLink key={key.path.join('/')} path={key.path} displayIcon={true} />
+                    <AssetLink key={key.path.join('/')} path={key.path} icon="asset" />
                   ))}
                 </Box>
               </td>

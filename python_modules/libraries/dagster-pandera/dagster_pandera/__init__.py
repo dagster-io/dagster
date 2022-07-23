@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Callable, List, Type, Union
 import pandas as pd
 import pandera as pa
 
-import dagster.check as check
+import dagster._check as check
 from dagster import (
     DagsterType,
     MetadataEntry,
@@ -16,6 +16,7 @@ from dagster import (
     TypeCheck,
     TypeCheckContext,
 )
+from dagster.core.definitions.metadata import MetadataValue
 from dagster.core.utils import check_dagster_package_version
 
 from .version import __version__
@@ -108,7 +109,7 @@ def pandera_schema_to_dagster_type(
         name=name,
         description=norm_schema.description,
         metadata_entries=[
-            MetadataEntry.table_schema(tschema, label="schema"),
+            MetadataEntry("schema", value=MetadataValue.table_schema(tschema)),
         ],
     )
 
@@ -207,7 +208,7 @@ def _pandera_schema_wide_checks_to_table_constraints(
 
 
 def _pandera_check_to_table_constraint(pa_check: Union[pa.Check, pa.Hypothesis]) -> str:
-    return pa_check.description or pa_check.error
+    return _get_pandera_check_identifier(pa_check)
 
 
 def _pandera_column_to_table_column(pa_column: pa.Column) -> TableColumn:
@@ -216,7 +217,7 @@ def _pandera_column_to_table_column(pa_column: pa.Column) -> TableColumn:
         unique=pa_column.unique,
         other=[_pandera_check_to_column_constraint(pa_check) for pa_check in pa_column.checks],
     )
-    name = check.not_none(pa_column.name, "name")
+    name: str = check.not_none(pa_column.name, "name")
     return TableColumn(
         name=name,
         type=str(pa_column.dtype),
@@ -244,9 +245,16 @@ def _pandera_check_to_column_constraint(pa_check: pa.Check) -> str:
     if pa_check.description:
         return pa_check.description
     elif pa_check.name in CHECK_OPERATORS:
+        assert isinstance(
+            pa_check.error, str
+        ), "Expected pandera check to have string `error` attr."
         return f"{CHECK_OPERATORS[pa_check.name]} {_extract_operand(pa_check.error)}"
     else:
-        return pa_check.error
+        return _get_pandera_check_identifier(pa_check)
+
+
+def _get_pandera_check_identifier(pa_check: Union[pa.Check, pa.Hypothesis]) -> str:
+    return pa_check.description or pa_check.error or pa_check.name or str(pa_check)
 
 
 __all__ = [

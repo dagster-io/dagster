@@ -1,4 +1,6 @@
-from pydantic import BaseModel  # pylint: disable=no-name-in-module
+from typing import Optional
+
+from pydantic import BaseModel
 
 from ...utils.kubernetes import ExternalImage
 
@@ -15,4 +17,5 @@ class PostgreSQL(BaseModel):
     postgresqlPassword: str
     postgresqlDatabase: str
     postgresqlParams: dict
+    postgresqlScheme: Optional[str]
     service: Service

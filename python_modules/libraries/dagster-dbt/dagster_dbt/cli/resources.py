@@ -1,12 +1,13 @@
 from typing import Any, Dict, List, Optional, Set
 
-from dagster import Permissive, check, resource
-from dagster.utils.merger import merge_dicts
+import dagster._check as check
+from dagster import Permissive, resource
+from dagster._utils.merger import merge_dicts
 
 from ..dbt_resource import DbtResource
 from .constants import CLI_COMMON_FLAGS_CONFIG_SCHEMA, CLI_COMMON_OPTIONS_CONFIG_SCHEMA
 from .types import DbtCliOutput
-from .utils import execute_cli
+from .utils import execute_cli, parse_manifest, parse_run_results, remove_run_results
 
 
 class DbtCliResource(DbtResource):
@@ -28,12 +29,18 @@ class DbtCliResource(DbtResource):
         ignore_handled_error: bool,
         target_path: str,
         logger: Optional[Any] = None,
+        docs_url: Optional[str] = None,
+        json_log_format: bool = True,
+        capture_logs: bool = True,
     ):
         self._default_flags = default_flags
         self._executable = executable
         self._warn_error = warn_error
         self._ignore_handled_error = ignore_handled_error
         self._target_path = target_path
+        self._docs_url = docs_url
+        self._json_log_format = json_log_format
+        self._capture_logs = capture_logs
         super().__init__(logger)
 
     @property
@@ -86,10 +93,13 @@ class DbtCliResource(DbtResource):
             warn_error=self._warn_error,
             ignore_handled_error=self._ignore_handled_error,
             target_path=self._target_path,
+            docs_url=self._docs_url,
+            json_log_format=self._json_log_format,
+            capture_logs=self._capture_logs,
         )
 
     def compile(
-        self, models: List[str] = None, exclude: List[str] = None, **kwargs
+        self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
     ) -> DbtCliOutput:
         """
         Run the ``compile`` command on a dbt project. kwargs are passed in as additional parameters.
@@ -104,7 +114,9 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("compile", models=models, exclude=exclude, **kwargs)
 
-    def run(self, models: List[str] = None, exclude: List[str] = None, **kwargs) -> DbtCliOutput:
+    def run(
+        self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
+    ) -> DbtCliOutput:
         """
         Run the ``run`` command on a dbt project. kwargs are passed in as additional parameters.
 
@@ -119,7 +131,7 @@ class DbtCliResource(DbtResource):
         return self.cli("run", models=models, exclude=exclude, **kwargs)
 
     def snapshot(
-        self, select: List[str] = None, exclude: List[str] = None, **kwargs
+        self, select: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
     ) -> DbtCliOutput:
         """
         Run the ``snapshot`` command on a dbt project. kwargs are passed in as additional parameters.
@@ -136,8 +148,8 @@ class DbtCliResource(DbtResource):
 
     def test(
         self,
-        models: List[str] = None,
-        exclude: List[str] = None,
+        models: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
         data: bool = True,
         schema: bool = True,
         **kwargs,
@@ -163,7 +175,11 @@ class DbtCliResource(DbtResource):
         return self.cli("test", models=models, exclude=exclude, data=data, schema=schema, **kwargs)
 
     def seed(
-        self, show: bool = False, select: List[str] = None, exclude: List[str] = None, **kwargs
+        self,
+        show: bool = False,
+        select: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+        **kwargs,
     ) -> DbtCliOutput:
         """
         Run the ``seed`` command on a dbt project. kwargs are passed in as additional parameters.
@@ -182,9 +198,9 @@ class DbtCliResource(DbtResource):
 
     def ls(
         self,
-        select: List[str] = None,
-        models: List[str] = None,
-        exclude: List[str] = None,
+        select: Optional[List[str]] = None,
+        models: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
         **kwargs,
     ) -> DbtCliOutput:
         """
@@ -201,7 +217,20 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("ls", select=select, models=models, exclude=exclude, **kwargs)
 
-    def freshness(self, select: List[str] = None, **kwargs) -> DbtCliOutput:
+    def build(self, select: Optional[List[str]] = None, **kwargs) -> DbtCliOutput:
+        """
+        Run the ``build`` command on a dbt project. kwargs are passed in as additional parameters.
+
+        Args:
+            select (List[str], optional): the models/resources to include in the run.
+
+        Returns:
+            DbtCliOutput: An instance of :class:`DbtCliOutput<dagster_dbt.DbtCliOutput>` containing
+                parsed log output as well as the contents of run_results.json (if applicable).
+        """
+        return self.cli("build", select=select, **kwargs)
+
+    def freshness(self, select: Optional[List[str]] = None, **kwargs) -> DbtCliOutput:
         """
         Run the ``source snapshot-freshness`` command on a dbt project. kwargs are passed in as additional parameters.
 
@@ -244,6 +273,38 @@ class DbtCliResource(DbtResource):
 
         return self.cli(f"run-operation {macro}", args=args, **kwargs)
 
+    def get_run_results_json(self, **kwargs) -> Optional[Dict[str, Any]]:
+        """
+        Get a parsed version of the run_results.json file for the relevant dbt project.
+
+        Returns:
+            Dict[str, Any]: dictionary containing the parsed contents of the manifest json file
+                for this dbt project.
+        """
+        project_dir = kwargs.get("project_dir", self.default_flags["project-dir"])
+        target_path = kwargs.get("target_path", self._target_path)
+        return parse_run_results(project_dir, target_path)
+
+    def remove_run_results_json(self, **kwargs):
+        """
+        Remove the run_results.json file from previous runs (if it exists).
+        """
+        project_dir = kwargs.get("project_dir", self.default_flags["project-dir"])
+        target_path = kwargs.get("target_path", self._target_path)
+        remove_run_results(project_dir, target_path)
+
+    def get_manifest_json(self, **kwargs) -> Optional[Dict[str, Any]]:
+        """
+        Get a parsed version of the manifest.json file for the relevant dbt project.
+
+        Returns:
+            Dict[str, Any]: dictionary containing the parsed contents of the manifest json file
+                for this dbt project.
+        """
+        project_dir = kwargs.get("project_dir", self.default_flags["project-dir"])
+        target_path = kwargs.get("target_path", self._target_path)
+        return parse_manifest(project_dir, target_path)
+
 
 @resource(
     config_schema=Permissive(
@@ -253,50 +314,11 @@ class DbtCliResource(DbtResource):
                 **CLI_COMMON_FLAGS_CONFIG_SCHEMA, **CLI_COMMON_OPTIONS_CONFIG_SCHEMA
             ).items()
         }
-    ),
-    description="A resource that can run dbt CLI commands.",
+    )
 )
 def dbt_cli_resource(context) -> DbtCliResource:
-    """This resource defines a dbt CLI interface.
+    """This resource issues dbt CLI commands against a configured dbt project."""
 
-    To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/overview/configuration#configured>`_ method.
-
-    Examples:
-
-    .. code-block:: python
-
-        custom_dbt_cli_resource = dbt_cli_resource.configured({"project-dir": "path/to/my/dbt_project"})
-
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={"dbt": custom_dbt_cli_resource})])
-        def dbt_cli_pipeline():
-            # Run solids with `required_resource_keys={"dbt", ...}`.
-
-    You may configure this resource as follows:
-
-    .. code-block:: YAML
-
-        resources:
-          dbt_cli_resource:
-            config:
-              project_dir: "."
-              # Optional[str]: Which directory to look in for the dbt_project.yml file. Default is
-              # the current working directory and its parents.
-              profiles_dir: $DBT_PROFILES_DIR or $HOME/.dbt
-              # Optional[str]: Which directory to look in for the profiles.yml file.
-              profile: ""
-              # Optional[str]: Which profile to load. Overrides setting in dbt_project.yml.
-              target: ""
-              # Optional[str]: Which target to load for the given profile.
-              vars: {}
-              # Optional[Permissive]: Supply variables to the project. This argument overrides
-              # variables defined in your dbt_project.yml file. This argument should be a
-              # dictionary, eg. "{'my_variable': 'my_value'}"
-              bypass_cache: False
-              # Optional[bool]: If set, bypass the adapter-level cache of database state.
-
-
-    """
     # set of options in the config schema that are not flags
     non_flag_options = {k.replace("-", "_") for k in CLI_COMMON_OPTIONS_CONFIG_SCHEMA}
     # all config options that are intended to be used as flags for dbt commands
@@ -308,4 +330,7 @@ def dbt_cli_resource(context) -> DbtCliResource:
         ignore_handled_error=context.resource_config["ignore_handled_error"],
         target_path=context.resource_config["target_path"],
         logger=context.log,
+        docs_url=context.resource_config.get("docs_url"),
+        capture_logs=context.resource_config["capture_logs"],
+        json_log_format=context.resource_config["json_log_format"],
     )

@@ -9,15 +9,18 @@ from contextlib import contextmanager
 import pytest
 
 from dagster import (
+    DagsterEventType,
     DefaultRunLauncher,
     ModeDefinition,
+    _seven,
     file_relative_path,
     fs_io_manager,
-    pipeline,
     repository,
-    seven,
-    solid,
 )
+from dagster._grpc.client import DagsterGrpcClient
+from dagster._grpc.server import GrpcServerProcess
+from dagster._grpc.types import CancelExecutionRequest
+from dagster._legacy import pipeline, solid
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import GRPC_INFO_TAG
@@ -31,9 +34,6 @@ from dagster.core.test_utils import (
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace import WorkspaceProcessContext
 from dagster.core.workspace.load_target import GrpcServerTarget, PythonFileTarget
-from dagster.grpc.client import DagsterGrpcClient
-from dagster.grpc.server import GrpcServerProcess
-from dagster.grpc.types import CancelExecutionRequest
 
 default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 
@@ -295,7 +295,7 @@ def test_invalid_instance_run(get_workspace):
     run_configs(),
 )
 @pytest.mark.skipif(
-    seven.IS_WINDOWS,
+    _seven.IS_WINDOWS,
     reason="Crashy pipelines leave resources open on windows, causing filesystem contention",
 )
 def test_crashy_run(get_workspace, run_config):  # pylint: disable=redefined-outer-name
@@ -346,7 +346,7 @@ def test_crashy_run(get_workspace, run_config):  # pylint: disable=redefined-out
 
 @pytest.mark.parametrize("run_config", run_configs())
 @pytest.mark.skipif(
-    seven.IS_WINDOWS,
+    _seven.IS_WINDOWS,
     reason="Crashy pipelines leave resources open on windows, causing filesystem contention",
 )
 def test_exity_run(run_config):  # pylint: disable=redefined-outer-name
@@ -385,7 +385,7 @@ def test_exity_run(run_config):  # pylint: disable=redefined-outer-name
             assert _message_exists(event_records, 'Execution of step "exity_solid" failed.')
             assert _message_exists(
                 event_records,
-                'Execution of run for "exity_pipeline" failed. An exception was thrown during execution.',
+                "Execution of run for \"exity_pipeline\" failed. Steps failed: ['exity_solid']",
             )
 
 
@@ -424,7 +424,6 @@ def test_terminated_run(get_workspace, run_config):  # pylint: disable=redefined
             poll_for_step_start(instance, run_id)
 
             launcher = instance.run_launcher
-            assert launcher.can_terminate(run_id)
             assert launcher.terminate(run_id)
 
             terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
@@ -534,7 +533,20 @@ def test_cleanup_after_force_terminate(run_config):
 
 
 def _get_engine_events(event_records):
-    return [er for er in event_records if er.dagster_event and er.dagster_event.is_engine_event]
+    return [
+        er
+        for er in event_records
+        if er.dagster_event
+        and er.dagster_event.event_type
+        in {
+            DagsterEventType.ENGINE_EVENT,
+            DagsterEventType.STEP_WORKER_STARTING,
+            DagsterEventType.STEP_WORKER_STARTED,
+            DagsterEventType.RESOURCE_INIT_STARTED,
+            DagsterEventType.RESOURCE_INIT_SUCCESS,
+            DagsterEventType.RESOURCE_INIT_FAILURE,
+        }
+    ]
 
 
 def _get_successful_step_keys(event_records):
@@ -697,8 +709,8 @@ def test_engine_events(get_workspace, run_config):  # pylint: disable=redefined-
                 messages = [
                     "Started process for run",
                     "Executing steps using multiprocess executor",
-                    "Launching subprocess for return_one",
-                    "Executing step return_one in subprocess",
+                    'Launching subprocess for "return_one"',
+                    'Executing step "return_one" in subprocess.',
                     "Starting initialization of resources",
                     "Finished initialization of resources",
                     # multiply_by_2 and multiply_by_3 launch and execute in non-deterministic order
@@ -710,8 +722,8 @@ def test_engine_events(get_workspace, run_config):  # pylint: disable=redefined-
                     "",
                     "",
                     "",
-                    "Launching subprocess for add",
-                    "Executing step add in subprocess",
+                    'Launching subprocess for "add"',
+                    'Executing step "add" in subprocess',
                     "Starting initialization of resources",
                     "Finished initialization of resources",
                     "Multiprocess executor: parent process exiting",
@@ -740,5 +752,4 @@ def test_not_initialized():  # pylint: disable=redefined-outer-name
     run_id = "dummy"
 
     assert run_launcher.join() is None
-    assert run_launcher.can_terminate(run_id) is False
     assert run_launcher.terminate(run_id) is False

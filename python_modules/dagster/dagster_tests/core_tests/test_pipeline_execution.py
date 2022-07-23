@@ -1,4 +1,5 @@
 import uuid
+import warnings
 
 import pytest
 
@@ -17,14 +18,11 @@ from dagster import (
     PipelineDefinition,
     ResourceDefinition,
     String,
-    check,
-    execute_pipeline,
-    execute_pipeline_iterator,
-    pipeline,
-    reconstructable,
-    reexecute_pipeline,
-    solid,
 )
+from dagster import _check as check
+from dagster import execute_pipeline, execute_pipeline_iterator, reconstructable, reexecute_pipeline
+from dagster._legacy import pipeline, solid
+from dagster._utils.test import execute_solid_within_pipeline
 from dagster.core.definitions import Node
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.definitions.graph_definition import _create_adjacency_lists
@@ -43,7 +41,6 @@ from dagster.core.utility_solids import (
     input_set,
 )
 from dagster.core.workspace.load import location_origin_from_python_file
-from dagster.utils.test import execute_solid_within_pipeline
 
 # protected members
 # pylint: disable=W0212
@@ -171,20 +168,21 @@ def test_diamond_toposort():
 
 
 def test_external_diamond_toposort():
-    with location_origin_from_python_file(
-        python_file=__file__,
-        attribute="create_diamond_pipeline",
-        working_directory=None,
-    ).create_single_location() as repo_location:
-        external_repo = next(iter(repo_location.get_repositories().values()))
-        external_pipeline = next(iter(external_repo.get_all_external_pipelines()))
-        assert external_pipeline.solid_names_in_topological_order == [
-            "A_source",
-            "A",
-            "B",
-            "C",
-            "D",
-        ]
+    with instance_for_test() as instance:
+        with location_origin_from_python_file(
+            python_file=__file__,
+            attribute="create_diamond_pipeline",
+            working_directory=None,
+        ).create_single_location(instance) as repo_location:
+            external_repo = next(iter(repo_location.get_repositories().values()))
+            external_pipeline = next(iter(external_repo.get_all_external_pipelines()))
+            assert external_pipeline.solid_names_in_topological_order == [
+                "A_source",
+                "A",
+                "B",
+                "C",
+                "D",
+            ]
 
 
 def compute_called(name):
@@ -251,11 +249,15 @@ def test_create_pipeline_with_empty_solids_list():
 def test_singleton_pipeline():
     stub_solid = define_stub_solid("stub", [{"a key": "a value"}])
 
-    @pipeline
-    def single_solid_pipeline():
-        stub_solid()
+    # will fail if any warning is emitted
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
 
-    assert execute_pipeline(single_solid_pipeline).success
+        @pipeline
+        def single_solid_pipeline():
+            stub_solid()
+
+        assert execute_pipeline(single_solid_pipeline).success
 
 
 def test_two_root_solid_pipeline_with_empty_dependency_definition():
@@ -697,7 +699,7 @@ def test_pipeline_init_failure():
     event = result.event_list[-1]
     assert event.event_type_value == "PIPELINE_FAILURE"
     assert event.pipeline_failure_data
-    assert mem_instance.get_run_by_id(result.run_id).is_failure
+    assert mem_instance.get_run_by_id(result.run_id).is_failure_or_canceled
 
     with instance_for_test() as fs_instance:
         result = execute_pipeline(
@@ -710,7 +712,7 @@ def test_pipeline_init_failure():
         event = result.event_list[-1]
         assert event.event_type_value == "PIPELINE_FAILURE"
         assert event.pipeline_failure_data
-        assert fs_instance.get_run_by_id(result.run_id).is_failure
+        assert fs_instance.get_run_by_id(result.run_id).is_failure_or_canceled
 
 
 def test_reexecution_fs_storage():

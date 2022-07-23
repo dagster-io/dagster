@@ -1,7 +1,8 @@
 import time
 from typing import Callable, Dict, Iterator, List, Optional, Set, cast
 
-from dagster import check
+import dagster._check as check
+from dagster._utils.interrupts import pop_captured_interrupt
 from dagster.core.errors import (
     DagsterExecutionInterruptedError,
     DagsterInvariantViolationError,
@@ -9,10 +10,9 @@ from dagster.core.errors import (
 )
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import PlanOrchestrationContext
-from dagster.core.execution.plan.state import KnownExecutionState, StepOutputVersionData
-from dagster.core.execution.retries import RetryMode, RetryState
+from dagster.core.execution.plan.state import KnownExecutionState
+from dagster.core.execution.retries import RetryMode
 from dagster.core.storage.tags import PRIORITY_TAG
-from dagster.utils.interrupts import pop_captured_interrupt
 
 from .outputs import StepOutputData, StepOutputHandle
 from .plan import ExecutionPlan
@@ -30,15 +30,13 @@ class ActiveExecution:
         self,
         execution_plan: ExecutionPlan,
         retry_mode: RetryMode,
-        retry_state: RetryState,
         sort_key_fn: Optional[Callable[[ExecutionStep], float]] = None,
-        step_output_versions: Optional[List[StepOutputVersionData]] = None,
     ):
         self._plan: ExecutionPlan = check.inst_param(
             execution_plan, "execution_plan", ExecutionPlan
         )
         self._retry_mode = check.inst_param(retry_mode, "retry_mode", RetryMode)
-        self._retry_state = check.inst_param(retry_state, "retry_state", RetryState)
+        self._retry_state = self._plan.known_state.get_retry_state()
 
         self._sort_key_fn: Callable[[ExecutionStep], float] = (
             check.opt_callable_param(
@@ -48,14 +46,10 @@ class ActiveExecution:
             or _default_sort_key
         )
 
-        self._step_output_versions = check.opt_list_param(
-            step_output_versions, "step_output_versions", of_type=StepOutputVersionData
-        )
-
         self._context_guard: bool = False  # Prevent accidental direct use
 
         # We decide what steps to skip based on what outputs are yielded by upstream steps
-        self._step_outputs: Set[StepOutputHandle] = set()
+        self._step_outputs: Set[StepOutputHandle] = set(self._plan.known_state.ready_outputs)
 
         # All steps to be executed start out here in _pending
         self._pending: Dict[str, Set[str]] = self._plan.get_executable_step_deps()
@@ -245,7 +239,7 @@ class ActiveExecution:
         step = self._plan.get_step_by_key(step_key)
         return cast(ExecutionStep, check.inst(step, ExecutionStep))
 
-    def get_steps_to_execute(self, limit: int = None) -> List[ExecutionStep]:
+    def get_steps_to_execute(self, limit: Optional[int] = None) -> List[ExecutionStep]:
         check.invariant(
             self._context_guard,
             "ActiveExecution must be used as a context manager",
@@ -258,7 +252,7 @@ class ActiveExecution:
             key=self._sort_key_fn,
         )
 
-        if limit:
+        if limit is not None:
             steps = steps[:limit]
 
         for step in steps:
@@ -467,7 +461,9 @@ class ActiveExecution:
         return KnownExecutionState(
             previous_retry_attempts=self._retry_state.snapshot_attempts(),
             dynamic_mappings=dict(self._successful_dynamic_outputs),
-            step_output_versions=self._step_output_versions,
+            ready_outputs=self._step_outputs,
+            step_output_versions=self._plan.known_state.step_output_versions,
+            parent_state=self._plan.known_state.parent_state,
         )
 
     def _prep_for_dynamic_outputs(self, step: ExecutionStep):

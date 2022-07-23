@@ -35,7 +35,7 @@ from typing import Iterator, List, Optional
 
 from psycopg2.extensions import Notify
 
-from dagster import check
+import dagster._check as check
 
 from .utils import get_conn
 

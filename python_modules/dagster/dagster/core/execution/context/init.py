@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, Union
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.resource_definition import (
     IContainsGenerator,
@@ -129,7 +129,10 @@ class UnboundInitResourceContext(InitResourceContext):
         instance: Optional[DagsterInstance],
     ):
         from dagster.core.execution.api import ephemeral_instance_if_missing
-        from dagster.core.execution.build_resources import build_resources
+        from dagster.core.execution.build_resources import (
+            build_resources,
+            wrap_resources_for_execution,
+        )
         from dagster.core.execution.context_creation_pipeline import initialize_console_manager
 
         self._instance_provided = (
@@ -141,15 +144,15 @@ class UnboundInitResourceContext(InitResourceContext):
         # so ignore lint error
         instance = self._instance_cm.__enter__()  # pylint: disable=no-member
 
-        # If we are provided with a Resources instance, then we do not need to initialize
-        if isinstance(resources, Resources):
-            self._resources_cm = None
-        else:
-            self._resources_cm = build_resources(
-                check.opt_dict_param(resources, "resources", key_type=str), instance=instance
-            )
-            resources = self._resources_cm.__enter__()  # pylint: disable=no-member
-            self._resources_contain_cm = isinstance(resources, IContainsGenerator)
+        # Shouldn't actually ever have a resources object directly from this initialization
+
+        self._resource_defs = wrap_resources_for_execution(
+            check.opt_dict_param(resources, "resources")
+        )
+
+        self._resources_cm = build_resources(self._resource_defs, instance=instance)
+        resources = self._resources_cm.__enter__()  # pylint: disable=no-member
+        self._resources_contain_cm = isinstance(resources, IContainsGenerator)
 
         self._cm_scope_entered = False
         super(UnboundInitResourceContext, self).__init__(
@@ -167,8 +170,7 @@ class UnboundInitResourceContext(InitResourceContext):
         return self
 
     def __exit__(self, *exc):
-        if self._resources_cm:
-            self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
+        self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
         if self._instance_provided:
             self._instance_cm.__exit__(*exc)  # pylint: disable=no-member
 

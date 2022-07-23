@@ -1,8 +1,8 @@
 import os
 import random
 import string
+import sys
 import time
-from collections import defaultdict
 from contextlib import contextmanager
 
 import pendulum
@@ -15,12 +15,15 @@ from dagster import (
     daily_partitioned_config,
     fs_io_manager,
     graph,
-    pipeline,
     repository,
-    solid,
 )
+from dagster._daemon import get_default_daemon_logger
+from dagster._daemon.backfill import execute_backfill_iteration
+from dagster._legacy import pipeline, solid
+from dagster._seven import IS_WINDOWS, get_system_temp_directory
+from dagster._utils import touch_file
+from dagster._utils.error import SerializableErrorInfo
 from dagster.core.definitions import Partition, PartitionSetDefinition
-from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import execute_pipeline
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.host_representation import (
@@ -29,29 +32,21 @@ from dagster.core.host_representation import (
 )
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster.core.test_utils import create_test_daemon_workspace, instance_for_test
+from dagster.core.test_utils import (
+    create_test_daemon_workspace,
+    instance_for_test,
+    step_did_not_run,
+    step_failed,
+    step_succeeded,
+)
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace.load_target import PythonFileTarget
-from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.backfill import execute_backfill_iteration
-from dagster.seven import IS_WINDOWS, get_system_temp_directory
-from dagster.utils import touch_file
-from dagster.utils.error import SerializableErrorInfo
 
 default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 
 
 def _failure_flag_file():
     return os.path.join(get_system_temp_directory(), "conditionally_fail")
-
-
-def _step_events(instance, run):
-    events_by_step = defaultdict(set)
-    logs = instance.all_logs(run.run_id)
-    for record in logs:
-        if not record.is_dagster_event or not record.step_key:
-            continue
-        events_by_step[record.step_key] = record.dagster_event.event_type_value
-    return events_by_step
 
 
 @solid
@@ -125,28 +120,30 @@ def config_pipeline():
     config_solid()
 
 
-simple_partition_set = PartitionSetDefinition(
+# Type-ignores due to mypy bug with inference and lambdas
+
+simple_partition_set: PartitionSetDefinition = PartitionSetDefinition(
     name="simple_partition_set",
     pipeline_name="the_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
 )
 
-conditionally_fail_partition_set = PartitionSetDefinition(
+conditionally_fail_partition_set: PartitionSetDefinition = PartitionSetDefinition(
     name="conditionally_fail_partition_set",
     pipeline_name="conditional_failure_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
 )
 
-partial_partition_set = PartitionSetDefinition(
+partial_partition_set: PartitionSetDefinition = PartitionSetDefinition(
     name="partial_partition_set",
     pipeline_name="partial_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
 )
 
-parallel_failure_partition_set = PartitionSetDefinition(
+parallel_failure_partition_set: PartitionSetDefinition = PartitionSetDefinition(
     name="parallel_failure_partition_set",
     pipeline_name="parallel_failure_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
 )
 
 
@@ -172,16 +169,22 @@ def _large_partition_config(_):
 large_partition_set = PartitionSetDefinition(
     name="large_partition_set",
     pipeline_name="config_pipeline",
-    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],
+    partition_fn=lambda: [Partition("one"), Partition("two"), Partition("three")],  # type: ignore
     run_config_fn_for_partition=_large_partition_config,
 )
 
 
 def _unloadable_partition_set_origin():
     working_directory = os.path.dirname(__file__)
-    recon_repo = ReconstructableRepository.for_file(__file__, "doesnt_exist", working_directory)
     return ExternalRepositoryOrigin(
-        InProcessRepositoryLocationOrigin(recon_repo), "fake_repository"
+        InProcessRepositoryLocationOrigin(
+            LoadableTargetOrigin(
+                executable_path=sys.executable,
+                python_file=__file__,
+                working_directory=working_directory,
+            )
+        ),
+        "fake_repository",
     ).get_partition_set_origin("doesnt_exist")
 
 
@@ -203,10 +206,10 @@ def the_repo():
 
 
 @contextmanager
-def default_repo():
+def default_repo(instance):
     load_target = workspace_load_target()
     origin = load_target.create_origins()[0]
-    with origin.create_single_location() as location:
+    with origin.create_single_location(instance) as location:
         yield location.get_repository("the_repo")
 
 
@@ -223,25 +226,11 @@ def workspace_load_target():
 def instance_for_context(external_repo_context, overrides=None):
     with instance_for_test(overrides) as instance:
         with create_test_daemon_workspace(
-            workspace_load_target=workspace_load_target()
+            workspace_load_target=workspace_load_target(),
+            instance=instance,
         ) as workspace:
-            with external_repo_context() as external_repo:
+            with external_repo_context(instance) as external_repo:
                 yield (instance, workspace, external_repo)
-
-
-def step_did_not_run(instance, run, step_name):
-    step_events = _step_events(instance, run)[step_name]
-    return len(step_events) == 0
-
-
-def step_succeeded(instance, run, step_name):
-    step_events = _step_events(instance, run)[step_name]
-    return "STEP_SUCCESS" in step_events
-
-
-def step_failed(instance, run, step_name):
-    step_events = _step_events(instance, run)[step_name]
-    return "STEP_FAILURE" in step_events
 
 
 def wait_for_all_runs_to_start(instance, timeout=10):
@@ -318,6 +307,41 @@ def test_simple_backfill():
         assert two.tags[PARTITION_NAME_TAG] == "two"
         assert three.tags[BACKFILL_ID_TAG] == "simple"
         assert three.tags[PARTITION_NAME_TAG] == "three"
+
+
+def test_canceled_backfill():
+    with instance_for_context(default_repo) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
+        instance.add_backfill(
+            PartitionBackfill(
+                backfill_id="simple",
+                partition_set_origin=external_partition_set.get_external_origin(),
+                status=BulkActionStatus.REQUESTED,
+                partition_names=["one", "two", "three"],
+                from_failure=False,
+                reexecution_steps=None,
+                tags=None,
+                backfill_timestamp=pendulum.now().timestamp(),
+            )
+        )
+        assert instance.get_runs_count() == 0
+
+        iterator = execute_backfill_iteration(
+            instance, workspace, get_default_daemon_logger("BackfillDaemon")
+        )
+        next(iterator)
+        assert instance.get_runs_count() == 1
+        backfill = instance.get_backfills()[0]
+        assert backfill.status == BulkActionStatus.REQUESTED
+        instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELED))
+        list(iterator)
+        backfill = instance.get_backfill(backfill.backfill_id)
+        assert backfill.status == BulkActionStatus.CANCELED
+        assert instance.get_runs_count() == 1
 
 
 def test_failure_backfill():

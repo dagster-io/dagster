@@ -1,20 +1,25 @@
 import logging
 import time
 from collections import OrderedDict, defaultdict
-from typing import Dict, Iterable, Mapping, Optional, Sequence
+from typing import Dict, Iterable, Mapping, Optional, Sequence, Set, cast
 
-from dagster import check
+import dagster._check as check
+from dagster._serdes import ConfigurableClass
+from dagster._utils import utc_datetime_from_timestamp
+from dagster.core.assets import AssetDetails
 from dagster.core.definitions.events import AssetKey
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
-from dagster.serdes import ConfigurableClass
+from dagster.core.storage.event_log.base import AssetEntry, AssetRecord
 
 from .base import (
+    EventLogConnection,
+    EventLogCursor,
+    EventLogCursorType,
     EventLogRecord,
     EventLogStorage,
     EventRecordsFilter,
     RunShardedEventsCursor,
-    extract_asset_events_cursor,
 )
 
 
@@ -33,6 +38,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         if preload:
             for payload in preload:
                 self._logs[payload.pipeline_run.run_id] = payload.event_list
+        self._assets = defaultdict(dict)
 
         super().__init__()
 
@@ -48,20 +54,15 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
     def from_config_value(cls, inst_data, config_value):
         return cls(inst_data)
 
-    def get_logs_for_run(
+    def get_records_for_run(
         self,
         run_id,
-        cursor=-1,
+        cursor=None,
         of_type=None,
         limit=None,
-    ):
+    ) -> EventLogConnection:
         check.str_param(run_id, "run_id")
-        check.int_param(cursor, "cursor")
-        check.invariant(
-            cursor >= -1,
-            "Don't know what to do with negative cursor {cursor}".format(cursor=cursor),
-        )
-
+        check.opt_str_param(cursor, "cursor")
         of_types = (
             (
                 {of_type.value}
@@ -79,35 +80,80 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
             else None
         )
 
-        cursor = cursor + 1
+        if cursor is None:
+            offset = 0
+        else:
+            cursor = EventLogCursor.parse(cursor)
+            check.invariant(
+                cursor.cursor_type == EventLogCursorType.OFFSET,
+                "only offset cursors are supported with the in-memory event log",
+            )
+            offset = cursor.offset()
+
         if of_types:
             events = list(
                 filter(
-                    lambda r: r.is_dagster_event and r.dagster_event.event_type_value in of_types,
-                    self._logs[run_id][cursor:],
+                    lambda r: r.is_dagster_event
+                    and r.dagster_event.event_type_value in cast(Set[str], of_types),
+                    self._logs[run_id],
                 )
             )
+            events = events[offset:]
         else:
-            events = self._logs[run_id][cursor:]
+            events = self._logs[run_id][offset:]
 
         if limit:
             events = events[:limit]
 
-        return events
+        return EventLogConnection(
+            records=[
+                EventLogRecord(storage_id=event_id + offset, event_log_entry=event)
+                for event_id, event in enumerate(events)
+            ],
+            cursor=EventLogCursor.from_offset(offset + len(events)).to_string(),
+            has_more=bool(limit and len(events) == limit),
+        )
 
     def store_event(self, event):
         check.inst_param(event, "event", EventLogEntry)
         run_id = event.run_id
         self._logs[run_id].append(event)
+        offset = len(self._logs[run_id])
+
+        if (
+            event.is_dagster_event
+            and (
+                event.dagster_event.is_step_materialization
+                or event.dagster_event.is_asset_observation
+                or event.dagster_event.is_asset_materialization_planned
+            )
+            and event.dagster_event.asset_key
+        ):
+            self.store_asset_event(event)
 
         # snapshot handlers
         handlers = list(self._handlers[run_id])
 
         for handler in handlers:
             try:
-                handler(event)
+                handler(event, str(EventLogCursor.from_offset(offset)))
             except Exception:
                 logging.exception("Exception in callback for event watch on run %s.", run_id)
+
+    def store_asset_event(self, event):
+        asset_key = event.dagster_event.asset_key
+        asset = self._assets[asset_key] if asset_key in self._assets else {"id": len(self._assets)}
+
+        asset["last_materialization_timestamp"] = utc_datetime_from_timestamp(event.timestamp)
+        if event.dagster_event.is_step_materialization:
+            asset["last_materialization"] = event
+        if (
+            event.dagster_event.is_step_materialization
+            or event.dagster_event.is_asset_materialization_planned
+        ):
+            asset["last_run_id"] = event.run_id
+
+        self._assets[asset_key] = asset
 
     def delete_events(self, run_id):
         del self._logs[run_id]
@@ -137,35 +183,24 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def get_event_records(
         self,
-        event_records_filter: Optional[EventRecordsFilter] = None,
+        event_records_filter: EventRecordsFilter,
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Iterable[EventLogRecord]:
         after_id = (
-            (
-                event_records_filter.after_cursor.id
-                if isinstance(event_records_filter.after_cursor, RunShardedEventsCursor)
-                else event_records_filter.after_cursor
-            )
-            if event_records_filter
-            else None
+            event_records_filter.after_cursor.id
+            if isinstance(event_records_filter.after_cursor, RunShardedEventsCursor)
+            else event_records_filter.after_cursor
         )
         before_id = (
-            (
-                event_records_filter.before_cursor.id
-                if isinstance(event_records_filter.before_cursor, RunShardedEventsCursor)
-                else event_records_filter.before_cursor
-            )
-            if event_records_filter
-            else None
+            event_records_filter.before_cursor.id
+            if isinstance(event_records_filter.before_cursor, RunShardedEventsCursor)
+            else event_records_filter.before_cursor
         )
 
         filtered_events = []
 
         def _apply_filters(record):
-            if not event_records_filter:
-                return True
-
             if (
                 event_records_filter.event_type
                 and record.dagster_event.event_type_value != event_records_filter.event_type.value
@@ -219,6 +254,32 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
             event_records = event_records[:limit]
 
         return event_records
+
+    def get_asset_records(
+        self, asset_keys: Optional[Sequence[AssetKey]] = None
+    ) -> Iterable[AssetRecord]:
+        records = []
+        for asset_key, asset in self._assets.items():
+            if asset_keys is None or asset_key in asset_keys:
+                wipe_timestamp = self._wiped_asset_keys.get(asset_key)
+                if (
+                    not wipe_timestamp
+                    or wipe_timestamp < asset.get("last_materialization_timestamp").timestamp()
+                ):
+                    records.append(
+                        AssetRecord(
+                            storage_id=asset["id"],
+                            asset_entry=AssetEntry(
+                                asset_key=asset_key,
+                                last_materialization=asset.get("last_materialization"),
+                                last_run_id=asset.get("last_run_id"),
+                                asset_details=AssetDetails(last_wipe_timestamp=wipe_timestamp)
+                                if wipe_timestamp
+                                else None,
+                            ),
+                        )
+                    )
+        return records
 
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         for records in self._logs.values():
@@ -277,37 +338,6 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
 
         return materializations_by_key
 
-    def get_asset_events(
-        self,
-        asset_key,
-        partitions=None,
-        before_cursor=None,
-        after_cursor=None,
-        limit=None,
-        ascending=False,
-        include_cursor=False,
-        before_timestamp=None,
-        cursor=None,
-    ):
-        before_cursor, after_cursor = extract_asset_events_cursor(
-            cursor, before_cursor, after_cursor, ascending
-        )
-        event_records = self.get_event_records(
-            EventRecordsFilter(
-                asset_key=asset_key,
-                asset_partitions=partitions,
-                before_cursor=before_cursor,
-                after_cursor=after_cursor,
-                before_timestamp=before_timestamp,
-            ),
-            limit=limit,
-            ascending=ascending,
-        )
-        if include_cursor:
-            return [tuple([record.storage_id, record.event_log_entry]) for record in event_records]
-        else:
-            return [record.event_log_entry for record in event_records]
-
     def get_asset_run_ids(self, asset_key):
         asset_run_ids = set()
         for run_id, records in self._logs.items():
@@ -325,6 +355,8 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
     def wipe_asset(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
         self._wiped_asset_keys[asset_key] = time.time()
+        if asset_key in self._assets:
+            self._assets[asset_key]["last_run_id"] = None
 
     def get_materialization_count_by_partition(
         self, asset_keys: Sequence[AssetKey]

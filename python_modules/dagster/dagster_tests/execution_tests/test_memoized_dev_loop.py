@@ -134,6 +134,60 @@ def test_memoization_with_default_strategy():
             assert len(recorder) == 1
 
 
+def test_memoization_with_step_selection():
+    @op
+    def op1():
+        pass
+
+    @op
+    def op2(arg1):
+        del arg1
+
+    @graph
+    def my_graph():
+        op2(op1())
+
+    class MyVersionStrategy(VersionStrategy):
+        def get_op_version(self, context):
+            if context.op_def.name == op1.name:
+                return "foo"
+            else:
+                # op2 will not be memoized
+                import uuid
+
+                return str(uuid.uuid4()).replace("-", "_")
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test(temp_dir=temp_dir) as instance:
+            my_job = my_graph.to_job(
+                version_strategy=MyVersionStrategy(),
+                resource_defs={
+                    "io_manager": versioned_filesystem_io_manager.configured(
+                        {"base_dir": temp_dir}
+                    ),
+                },
+                tags={MEMOIZED_RUN_TAG: "True"},
+            )
+            single_op_selected_plan = create_execution_plan(
+                my_job, instance_ref=instance.get_ref(), step_keys_to_execute=["op1"]
+            )
+            assert len(single_op_selected_plan.step_keys_to_execute) == 1
+            assert single_op_selected_plan.step_keys_to_execute == ["op1"]
+
+            result = my_job.execute_in_process(instance=instance)
+            assert result.success
+
+            assert (
+                create_execution_plan(
+                    my_job, instance_ref=instance.get_ref(), step_keys_to_execute=["op1"]
+                ).step_keys_to_execute
+                == []
+            )
+            assert create_execution_plan(
+                my_job, instance_ref=instance.get_ref(), step_keys_to_execute=["op2"]
+            ).step_keys_to_execute == ["op2"]
+
+
 def test_memoization_with_default_strategy_overriden():
     version = ["foo"]
 

@@ -1,45 +1,53 @@
 import {gql, useMutation} from '@apollo/client';
-import {ButtonWIP, DialogBody, DialogFooter, DialogWIP} from '@dagster-io/ui';
+import {Button, DialogBody, DialogFooter, Dialog} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {doneStatuses} from '../runs/RunStatuses';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {cancelableStatuses} from '../runs/RunStatuses';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {BulkActionStatus} from '../types/globalTypes';
 
-import {InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results} from './types/InstanceBackfillsQuery';
-
-type Backfill = InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results;
+import {BackfillTableFragment} from './types/BackfillTableFragment';
+import {CancelBackfill, CancelBackfillVariables} from './types/CancelBackfill';
 
 interface Props {
-  backfill?: Backfill;
+  backfill?: BackfillTableFragment;
   onClose: () => void;
   onComplete: () => void;
 }
 export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props) => {
-  const [cancelBackfill] = useMutation(CANCEL_BACKFILL_MUTATION);
+  const [cancelBackfill] = useMutation<CancelBackfill, CancelBackfillVariables>(
+    CANCEL_BACKFILL_MUTATION,
+  );
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   if (!backfill) {
     return null;
   }
-  const numUnscheduled = (backfill.numTotal || 0) - (backfill.numRequested || 0);
-  const cancelableRuns = backfill.runs.filter(
-    (run) => !doneStatuses.has(run?.status) && run.canTerminate,
-  );
-  const unfinishedMap = backfill.runs
-    .filter((run) => !doneStatuses.has(run?.status))
-    .reduce((accum, run) => ({...accum, [run.id]: run.canTerminate}), {});
 
+  const numUnscheduled = (backfill.numPartitions || 0) - (backfill.numRequested || 0);
   const cancel = async () => {
     setIsSubmitting(true);
     await cancelBackfill({variables: {backfillId: backfill.backfillId}});
     onComplete();
     setIsSubmitting(false);
+    onClose();
   };
+
+  const unfinishedPartitions = backfill.partitionStatuses.results.filter(
+    (partition) =>
+      partition.runStatus && partition.runId && partition.runStatus in cancelableStatuses,
+  );
+  const unfinishedMap =
+    unfinishedPartitions?.reduce(
+      (accum, partition) =>
+        partition && partition.runId ? {...accum, [partition.runId]: true} : accum,
+      {},
+    ) || {};
 
   return (
     <>
-      <DialogWIP
+      <Dialog
         isOpen={!!backfill && backfill.status !== BulkActionStatus.CANCELED && !!numUnscheduled}
         title="Cancel backfill"
         onClose={onClose}
@@ -49,25 +57,25 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
           yet to be queued or launched.
         </DialogBody>
         <DialogFooter>
-          <ButtonWIP intent="none" onClick={onClose}>
+          <Button intent="none" onClick={onClose}>
             Close
-          </ButtonWIP>
+          </Button>
           {isSubmitting ? (
-            <ButtonWIP intent="danger" disabled>
+            <Button intent="danger" disabled>
               Canceling...
-            </ButtonWIP>
+            </Button>
           ) : (
-            <ButtonWIP intent="danger" onClick={cancel}>
+            <Button intent="danger" onClick={cancel}>
               Cancel backfill
-            </ButtonWIP>
+            </Button>
           )}
         </DialogFooter>
-      </DialogWIP>
+      </Dialog>
       <TerminationDialog
         isOpen={
           !!backfill &&
           (!numUnscheduled || backfill.status !== 'REQUESTED') &&
-          !!cancelableRuns.length
+          !!unfinishedPartitions.length
         }
         onClose={onClose}
         onComplete={onComplete}
@@ -84,9 +92,9 @@ const CANCEL_BACKFILL_MUTATION = gql`
       ... on CancelBackfillSuccess {
         backfillId
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;

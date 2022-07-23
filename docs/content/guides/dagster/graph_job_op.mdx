@@ -18,7 +18,7 @@ In Dagit, we display both jobs and pipelines, where pipelines are marked with th
 For simple pipelines, the new APIs just have different names. Here's a pipeline containing a single solid:
 
 ```python file=/guides/dagster/graph_job_op/simple_pipeline.py
-from dagster import pipeline, solid
+from dagster._legacy import pipeline, solid
 
 
 @solid
@@ -74,7 +74,8 @@ output = result.output_for_node("do_something")
 With pipelines, supplying resources involves defining a mode:
 
 ```python file=/guides/dagster/graph_job_op/pipeline_with_resources.py
-from dagster import ModeDefinition, pipeline, resource, solid
+from dagster import ModeDefinition, resource
+from dagster._legacy import pipeline, solid
 
 
 @resource
@@ -122,14 +123,8 @@ With pipelines, if you wanted to execute a pipeline with resources for a test, y
 ```python file=/guides/dagster/graph_job_op/pipeline_mode_test.py
 from unittest.mock import MagicMock
 
-from dagster import (
-    ModeDefinition,
-    ResourceDefinition,
-    execute_pipeline,
-    pipeline,
-    resource,
-    solid,
-)
+from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, resource
+from dagster._legacy import pipeline, solid
 
 
 @resource
@@ -279,7 +274,8 @@ workspace.yaml for the dev instance:
 With the pipeline APIs, if you want to specify config definition time (as opposed to at the time you're running the pipeline), you use a <PyObject module="dagster" object="PresetDefinition" />.
 
 ```python file=/guides/dagster/graph_job_op/pipeline_with_preset.py
-from dagster import PresetDefinition, pipeline, solid
+from dagster import PresetDefinition
+from dagster._legacy import pipeline, solid
 
 
 @solid(config_schema={"param": str})
@@ -355,7 +351,8 @@ With the pipeline APIs, a schedule targets a pipeline by referencing the pipelin
 Both the schedule and its targeted pipeline need to be provided to a repository in order to make use of the schedule.
 
 ```python file=/guides/dagster/graph_job_op/pipeline_with_schedule.py
-from dagster import ScheduleDefinition, pipeline, repository, solid
+from dagster import ScheduleDefinition, repository
+from dagster._legacy import pipeline, solid
 
 
 @solid
@@ -406,7 +403,8 @@ The same pattern works for sensors.
 With the pipeline APIs, if you want to schedule runs with config that depends on the scheduled execution time, you need to do something like this:
 
 ```python file=/guides/dagster/graph_job_op/pipeline_with_schedule_return_config.py
-from dagster import pipeline, schedule, solid
+from dagster import schedule
+from dagster._legacy import pipeline, solid
 
 
 @solid(config_schema={"date": str})
@@ -456,7 +454,8 @@ def do_it_all_schedule(context):
 With the pipeline APIs, if you want to have the same config available for manual runs of a pipeline and used in a schedule, you need to do something like this:
 
 ```python file=/guides/dagster/graph_job_op/pipeline_with_preset_and_schedule.py
-from dagster import PresetDefinition, pipeline, schedule, solid
+from dagster import PresetDefinition, schedule
+from dagster._legacy import pipeline, solid
 
 
 @solid(config_schema={"param": str})
@@ -509,7 +508,8 @@ In order to declare a partitioned schedule using the pipeline-centric APIs, you 
 ```python file=/guides/dagster/graph_job_op/pipeline_with_partition_schedule.py
 import datetime
 
-from dagster import daily_schedule, pipeline, repository, solid
+from dagster import daily_schedule, repository
+from dagster._legacy import pipeline, solid
 
 
 @solid(config_schema={"date": str})
@@ -578,7 +578,8 @@ def do_it_all_repo():
 With the solid API, you define inputs and outputs using the <PyObject object="InputDefinition" /> and <PyObject object="OutputDefinition" /> classes.
 
 ```python file=/guides/dagster/graph_job_op/solid_input_output_def.py
-from dagster import InputDefinition, OutputDefinition, solid
+from dagster import InputDefinition, OutputDefinition
+from dagster._legacy import solid
 
 
 @solid(
@@ -623,7 +624,8 @@ def do_something(arg1: str) -> Tuple[int, int]:
 With the pipeline APIs, if you want multiple layers of composition, you define a composite solid.
 
 ```python file=/guides/dagster/graph_job_op/composite_solid.py
-from dagster import composite_solid, pipeline, solid
+from dagster import composite_solid
+from dagster._legacy import pipeline, solid
 
 
 @solid
@@ -696,7 +698,8 @@ nested_output = result.output_for_node("do_two_things.do_something_else")
 With the pipeline APIs, if you want to pass inputs into and return outputs from a composite solid, you define the definitions of inputs and outputs it maps.
 
 ```python file=/guides/dagster/graph_job_op/composite_solid_ins_out.py
-from dagster import OutputDefinition, composite_solid, pipeline, solid
+from dagster import OutputDefinition, composite_solid
+from dagster._legacy import pipeline, solid
 from dagster.core.definitions.input import InputDefinition
 
 
@@ -782,7 +785,8 @@ Note that graphs no longer require information about the inputs they map to, but
 With the pipeline APIs, if you want to have multiple outputs from a composite solid, you define the output definitions it maps and return a dictionary, where the keys are the output names and the values are the output values.
 
 ```python file=/guides/dagster/graph_job_op/composite_solid_multi_out.py
-from dagster import Output, OutputDefinition, composite_solid, pipeline, solid
+from dagster import Output, OutputDefinition, composite_solid
+from dagster._legacy import pipeline, solid
 
 
 @solid

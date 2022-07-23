@@ -14,8 +14,9 @@ from dagster_k8s.utils import wait_for_pod
 from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage, PostgresScheduleStorage
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
-from dagster import check
-from dagster.cli.debug import export_run
+import dagster._check as check
+from dagster._cli.debug import export_run
+from dagster._utils import find_free_port
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.run_coordinator import DefaultRunCoordinator, QueuedRunCoordinator
@@ -23,7 +24,6 @@ from dagster.core.scheduler import DagsterDaemonScheduler
 from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.test_utils import ExplodingRunLauncher, environ
-from dagster.utils import find_free_port
 
 from .integration_utils import IS_BUILDKITE, check_output
 
@@ -118,6 +118,7 @@ def local_port_forward_postgres(namespace):
 
     wait_for_pod(postgres_pod_name, namespace=namespace)
 
+    p = None
     try:
         p = subprocess.Popen(
             [
@@ -161,14 +162,15 @@ def local_port_forward_postgres(namespace):
         yield forward_port
 
     finally:
-        print("Terminating port-forwarding")
-        p.terminate()
+        if p is not None:
+            print("Terminating port-forwarding")
+            p.terminate()
 
 
 @pytest.fixture(scope="session")
-def helm_postgres_url_for_k8s_run_launcher(helm_namespace_for_k8s_run_launcher):
+def helm_postgres_url_for_k8s_run_launcher(system_namespace_for_k8s_run_launcher):
     with local_port_forward_postgres(
-        namespace=helm_namespace_for_k8s_run_launcher
+        namespace=system_namespace_for_k8s_run_launcher
     ) as local_forward_port:
         postgres_url = "postgresql://test:test@localhost:{local_forward_port}/test".format(
             local_forward_port=local_forward_port

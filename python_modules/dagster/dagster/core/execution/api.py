@@ -1,11 +1,15 @@
 import sys
 from contextlib import contextmanager
-from typing import Any, Dict, FrozenSet, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, FrozenSet, Iterator, List, Mapping, Optional, Tuple, Union
 
-from dagster import check
+import dagster._check as check
+from dagster._utils import merge_dicts
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.interrupts import capture_interrupts
 from dagster.core.definitions import IPipeline, JobDefinition, PipelineDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.pipeline_definition import PipelineSubsetDefinition
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.context.system import PlanOrchestrationContext
@@ -16,13 +20,10 @@ from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.retries import RetryMode
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.selector import parse_step_selection
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import DagsterRun, PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.telemetry import log_repo_stats, telemetry_wrapper
 from dagster.core.utils import str_format_set
-from dagster.utils import merge_dicts
-from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.interrupts import capture_interrupts
 
 from .context_creation_pipeline import (
     ExecutionContextManager,
@@ -85,13 +86,29 @@ def execute_run_iterator(
                     )
 
                 return gen_ignore_duplicate_run_worker()
+            elif pipeline_run.is_finished:
+
+                def gen_ignore_duplicate_run_worker():
+                    yield instance.report_engine_event(
+                        "Ignoring a run worker that started after the run had already finished.",
+                        pipeline_run,
+                    )
+
+                return gen_ignore_duplicate_run_worker()
             else:
-                raise Exception(
-                    f"{pipeline_run.pipeline_name} ({pipeline_run.run_id}) started "
-                    f"a new run while the run was already in state {pipeline_run.status}. "
-                    "This most frequently happens when the run worker unexpectedly stops and is "
-                    "restarted by the cluster.",
-                )
+
+                def gen_fail_restarted_run_worker():
+                    yield instance.report_engine_event(
+                        f"{pipeline_run.pipeline_name} ({pipeline_run.run_id}) started "
+                        f"a new run worker while the run was already in state {pipeline_run.status}. "
+                        "This most frequently happens when the run worker unexpectedly stops and is "
+                        "restarted by the cluster. Marking the run as failed.",
+                        pipeline_run,
+                    )
+                    yield instance.report_run_failed(pipeline_run)
+
+                return gen_fail_restarted_run_worker()
+
     else:
         check.invariant(
             pipeline_run.status == PipelineRunStatus.STARTED
@@ -102,7 +119,7 @@ def execute_run_iterator(
             ),
         )
 
-    if pipeline_run.solids_to_execute:
+    if pipeline_run.solids_to_execute or pipeline_run.asset_selection:
         pipeline_def = pipeline.get_definition()
         if isinstance(pipeline_def, PipelineSubsetDefinition):
             check.invariant(
@@ -118,7 +135,10 @@ def execute_run_iterator(
             # note that when we receive the solids to execute via PipelineRun, it won't support
             # solid selection query syntax
             pipeline = pipeline.subset_for_execution_from_existing_pipeline(
-                pipeline_run.solids_to_execute
+                frozenset(pipeline_run.solids_to_execute)
+                if pipeline_run.solids_to_execute
+                else None,
+                asset_selection=pipeline_run.asset_selection,
             )
 
     execution_plan = _get_execution_plan_from_run(pipeline, pipeline_run, instance)
@@ -196,7 +216,7 @@ def execute_run(
         ),
     )
     pipeline_def = pipeline.get_definition()
-    if pipeline_run.solids_to_execute:
+    if pipeline_run.solids_to_execute or pipeline_run.asset_selection:
         if isinstance(pipeline_def, PipelineSubsetDefinition):
             check.invariant(
                 pipeline_run.solids_to_execute == pipeline.solids_to_execute,
@@ -211,11 +231,13 @@ def execute_run(
             # note that when we receive the solids to execute via PipelineRun, it won't support
             # solid selection query syntax
             pipeline = pipeline.subset_for_execution_from_existing_pipeline(
-                pipeline_run.solids_to_execute
+                frozenset(pipeline_run.solids_to_execute)
+                if pipeline_run.solids_to_execute
+                else None,
+                pipeline_run.asset_selection,
             )
 
     execution_plan = _get_execution_plan_from_run(pipeline, pipeline_run, instance)
-
     output_capture: Optional[Dict[StepOutputHandle, Any]] = {}
 
     _execute_run_iterable = ExecuteRunWithPlanIterable(
@@ -429,6 +451,9 @@ def _logged_execute_pipeline(
         solid_selection=solid_selection,
         solids_to_execute=solids_to_execute,
         tags=tags,
+        pipeline_code_origin=(
+            pipeline.get_python_origin() if isinstance(pipeline, ReconstructablePipeline) else None
+        ),
     )
 
     return execute_run(
@@ -447,7 +472,7 @@ def reexecute_pipeline(
     mode: Optional[str] = None,
     preset: Optional[str] = None,
     tags: Optional[Dict[str, Any]] = None,
-    instance: DagsterInstance = None,
+    instance: Optional[DagsterInstance] = None,
     raise_on_error: bool = True,
 ) -> PipelineExecutionResult:
     """Reexecute an existing pipeline run.
@@ -521,6 +546,11 @@ def reexecute_pipeline(
                 step_selection,
             )
 
+        if parent_pipeline_run.asset_selection:
+            pipeline = pipeline.subset_for_execution(
+                solid_selection=None, asset_selection=parent_pipeline_run.asset_selection
+            )
+
         pipeline_run = execute_instance.create_run_for_pipeline(
             pipeline_def=pipeline.get_definition(),
             execution_plan=execution_plan,
@@ -528,6 +558,7 @@ def reexecute_pipeline(
             mode=mode,
             tags=tags,
             solid_selection=parent_pipeline_run.solid_selection,
+            asset_selection=parent_pipeline_run.asset_selection,
             solids_to_execute=parent_pipeline_run.solids_to_execute,
             root_run_id=parent_pipeline_run.root_run_id or parent_pipeline_run.run_id,
             parent_run_id=parent_pipeline_run.run_id,
@@ -549,7 +580,7 @@ def reexecute_pipeline_iterator(
     mode: Optional[str] = None,
     preset: Optional[str] = None,
     tags: Optional[Dict[str, Any]] = None,
-    instance: DagsterInstance = None,
+    instance: Optional[DagsterInstance] = None,
 ) -> Iterator[DagsterEvent]:
     """Reexecute a pipeline iteratively.
 
@@ -643,14 +674,14 @@ def execute_plan_iterator(
     pipeline_run: PipelineRun,
     instance: DagsterInstance,
     retry_mode: Optional[RetryMode] = None,
-    run_config: Optional[dict] = None,
+    run_config: Optional[Mapping[str, object]] = None,
 ) -> Iterator[DagsterEvent]:
     check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
     retry_mode = check.opt_inst_param(retry_mode, "retry_mode", RetryMode, RetryMode.DISABLED)
-    run_config = check.opt_dict_param(run_config, "run_config")
+    run_config = check.opt_mapping_param(run_config, "run_config")
 
     return iter(
         ExecuteRunWithPlanIterable(
@@ -734,21 +765,27 @@ def _get_execution_plan_from_run(
 
 def create_execution_plan(
     pipeline: Union[IPipeline, PipelineDefinition],
-    run_config: Optional[dict] = None,
+    run_config: Optional[Mapping[str, object]] = None,
     mode: Optional[str] = None,
     step_keys_to_execute: Optional[List[str]] = None,
-    known_state: KnownExecutionState = None,
+    known_state: Optional[KnownExecutionState] = None,
     instance_ref: Optional[InstanceRef] = None,
     tags: Optional[Dict[str, str]] = None,
 ) -> ExecutionPlan:
     pipeline = _check_pipeline(pipeline)
     pipeline_def = pipeline.get_definition()
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
-    run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
+    run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)
     mode = check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name())
     check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
     check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
     tags = check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
+    known_state = check.opt_inst_param(
+        known_state,
+        "known_state",
+        KnownExecutionState,
+        default=KnownExecutionState(),
+    )
 
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=mode)
 
@@ -1002,18 +1039,19 @@ def _resolve_reexecute_step_selection(
     pipeline: IPipeline,
     mode: Optional[str],
     run_config: Optional[dict],
-    parent_pipeline_run: PipelineRun,
+    parent_pipeline_run: DagsterRun,
     step_selection: List[str],
 ) -> ExecutionPlan:
     if parent_pipeline_run.solid_selection:
-        pipeline = pipeline.subset_for_execution(parent_pipeline_run.solid_selection)
+        pipeline = pipeline.subset_for_execution(parent_pipeline_run.solid_selection, None)
 
-    parent_logs = instance.all_logs(parent_pipeline_run.run_id)
+    state = KnownExecutionState.build_for_reexecution(instance, parent_pipeline_run)
+
     parent_plan = create_execution_plan(
         pipeline,
         parent_pipeline_run.run_config,
         mode,
-        known_state=KnownExecutionState.derive_from_logs(parent_logs),
+        known_state=state,
     )
     step_keys_to_execute = parse_step_selection(parent_plan.get_all_step_deps(), step_selection)
     execution_plan = create_execution_plan(
@@ -1021,7 +1059,7 @@ def _resolve_reexecute_step_selection(
         run_config,
         mode,
         step_keys_to_execute=list(step_keys_to_execute),
-        known_state=KnownExecutionState.for_reexecution(parent_logs, step_keys_to_execute),
+        known_state=state.update_for_step_selection(step_keys_to_execute),
         tags=parent_pipeline_run.tags,
     )
     return execution_plan

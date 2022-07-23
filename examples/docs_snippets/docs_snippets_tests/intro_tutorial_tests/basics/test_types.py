@@ -2,8 +2,7 @@ import csv
 from collections import OrderedDict
 
 from dagster import execute_solid
-from dagster.utils import script_relative_path
-
+from dagster._utils import script_relative_path
 from docs_snippets.intro_tutorial.basics.e04_quality.custom_types_2 import (
     sort_by_calories,
 )
@@ -34,6 +33,7 @@ def test_sort():
     with open(
         script_relative_path("../../../docs_snippets/intro_tutorial/cereal.csv"),
         "r",
+        encoding="utf8",
     ) as fd:
         cereals = [row for row in csv.DictReader(fd)]
 

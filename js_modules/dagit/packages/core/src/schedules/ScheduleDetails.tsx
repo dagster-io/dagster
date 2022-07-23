@@ -1,14 +1,11 @@
 import {
   Box,
   ButtonLink,
-  ColorsWIP,
-  CountdownStatus,
-  useCountdown,
+  Colors,
   Group,
   MetadataTableWIP,
   PageHeader,
-  RefreshableCountdown,
-  TagWIP,
+  Tag,
   Code,
   Heading,
   Mono,
@@ -16,6 +13,7 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
+import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {useCopyToClipboard} from '../app/browser';
 import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -35,11 +33,9 @@ const TIME_FORMAT = {showSeconds: false, showTimezone: true};
 export const ScheduleDetails: React.FC<{
   schedule: ScheduleFragment;
   repoAddress: RepoAddress;
-  countdownDuration: number;
-  countdownStatus: CountdownStatus;
-  onRefresh: () => void;
+  refreshState: QueryRefreshState;
 }> = (props) => {
-  const {repoAddress, schedule, countdownDuration, countdownStatus, onRefresh} = props;
+  const {repoAddress, schedule, refreshState} = props;
   const {cronSchedule, executionTimezone, futureTicks, name, partitionSet, pipelineName} = schedule;
   const copyToClipboard = useCopyToClipboard();
 
@@ -47,11 +43,6 @@ export const ScheduleDetails: React.FC<{
   const isJob = isThisThingAJob(repo, pipelineName);
 
   const [copyText, setCopyText] = React.useState('Click to copy');
-
-  const timeRemaining = useCountdown({
-    duration: countdownDuration,
-    status: countdownStatus,
-  });
 
   // Restore the tooltip text after a delay.
   React.useEffect(() => {
@@ -76,8 +67,6 @@ export const ScheduleDetails: React.FC<{
   };
 
   const running = status === InstigationStatus.RUNNING;
-  const countdownRefreshing = countdownStatus === 'idle' || timeRemaining === 0;
-  const seconds = Math.floor(timeRemaining / 1000);
 
   return (
     <>
@@ -90,38 +79,29 @@ export const ScheduleDetails: React.FC<{
         }
         tags={
           <>
-            <TagWIP icon="schedule">
+            <Tag icon="schedule">
               Schedule in <RepositoryLink repoAddress={repoAddress} />
-            </TagWIP>
+            </Tag>
             {futureTicks.results.length && running ? (
-              <TagWIP icon="timer">
+              <Tag icon="timer">
                 Next tick:{' '}
                 <TimestampDisplay
                   timestamp={futureTicks.results[0].timestamp}
                   timezone={executionTimezone}
                   timeFormat={TIME_FORMAT}
                 />
-              </TagWIP>
+              </Tag>
             ) : null}
             <Box flex={{display: 'inline-flex'}} margin={{top: 2}}>
               <Tooltip content={copyText}>
-                <ButtonLink
-                  color={{link: ColorsWIP.Gray400, hover: ColorsWIP.Gray600}}
-                  onClick={copyId}
-                >
+                <ButtonLink color={{link: Colors.Gray400, hover: Colors.Gray600}} onClick={copyId}>
                   <Mono>{`id: ${id.slice(0, 8)}`}</Mono>
                 </ButtonLink>
               </Tooltip>
             </Box>
           </>
         }
-        right={
-          <RefreshableCountdown
-            refreshing={countdownRefreshing}
-            seconds={seconds}
-            onRefresh={onRefresh}
-          />
-        }
+        right={<QueryRefreshCountdown refreshState={refreshState} />}
       />
       <MetadataTableWIP>
         <tbody>
@@ -173,7 +153,7 @@ export const ScheduleDetails: React.FC<{
             <td>
               {cronSchedule ? (
                 <Group direction="row" spacing={8}>
-                  <span>{humanCronString(cronSchedule)}</span>
+                  <span>{humanCronString(cronSchedule, executionTimezone || 'UTC')}</span>
                   <Code>({cronSchedule})</Code>
                 </Group>
               ) : (

@@ -1,5 +1,5 @@
 import asyncio
-import re
+from functools import partial
 
 import pytest
 
@@ -13,6 +13,7 @@ from dagster import (
     ExpectationResult,
     Failure,
     Field,
+    In,
     InputDefinition,
     Materialization,
     Noneable,
@@ -27,10 +28,9 @@ from dagster import (
     composite_solid,
     execute_solid,
     op,
-    pipeline,
     resource,
-    solid,
 )
+from dagster._legacy import pipeline, solid
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -167,9 +167,8 @@ def test_solid_invocation_with_resources():
     # resource.
     context = build_solid_context()
     with pytest.raises(
-        DagsterInvalidInvocationError,
-        match='solid "solid_requires_resources" requires resource "foo", but no resource '
-        "with that key was found on the context.",
+        DagsterInvalidDefinitionError,
+        match="resource with key 'foo' required by solid 'solid_requires_resources' was not provided",
     ):
         solid_requires_resources(context)
 
@@ -468,19 +467,13 @@ def test_wrong_output():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape(
-            'Core compute for solid "solid_wrong_output" returned an output "wrong_name" that does '
-            "not exist. The available outputs are ['result']"
-        ),
+        match="explicitly named 'wrong_name'",
     ):
         execute_solid(solid_wrong_output)
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape(
-            'Invocation of solid "solid_wrong_output" returned an output "wrong_name" that does '
-            "not exist. The available outputs are ['result']"
-        ),
+        match="explicitly named 'wrong_name'",
     ):
         solid_wrong_output()
 
@@ -495,7 +488,17 @@ def test_optional_output_return():
     def solid_multiple_outputs_not_sent():
         return Output(2, output_name="2")
 
-    assert solid_multiple_outputs_not_sent().value == 2
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="has multiple outputs, but only one output was returned",
+    ):
+        solid_multiple_outputs_not_sent()
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="has multiple outputs, but only one output was returned",
+    ):
+        execute_solid(solid_multiple_outputs_not_sent)
 
 
 def test_optional_output_yielded():
@@ -587,16 +590,14 @@ def test_missing_required_output_return():
         return Output(2, output_name="2")
 
     with pytest.raises(
-        DagsterStepOutputNotFoundError,
-        match='Core compute for solid "solid_multiple_outputs_not_sent" did not return an output '
-        'for non-optional output "1"',
+        DagsterInvariantViolationError,
+        match="has multiple outputs, but only one output was returned",
     ):
         execute_solid(solid_multiple_outputs_not_sent)
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Invocation of solid 'solid_multiple_outputs_not_sent' did not return an output "
-        "for non-optional output '1'",
+        match="has multiple outputs, but only one output was returned",
     ):
         solid_multiple_outputs_not_sent()
 
@@ -865,10 +866,15 @@ def test_dynamic_output_non_gen():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Attempted to return a DynamicOutput from solid. DynamicOuts are only supported "
-        "using yield syntax.",
+        match="expected a list of DynamicOutput objects",
     ):
         should_not_work()
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="expected a list of DynamicOutput objects",
+    ):
+        execute_solid(should_not_work)
 
 
 def test_dynamic_output_async_non_gen():
@@ -880,10 +886,15 @@ def test_dynamic_output_async_non_gen():
     loop = asyncio.get_event_loop()
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Attempted to return a DynamicOutput from solid. DynamicOuts are only supported "
-        "using yield syntax.",
+        match="dynamic output 'a' expected a list of DynamicOutput objects",
     ):
         loop.run_until_complete(should_not_work())
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="dynamic output 'a' expected a list of DynamicOutput objects",
+    ):
+        execute_solid(should_not_work())
 
 
 def test_solid_invocation_with_bad_resources(capsys):
@@ -1019,3 +1030,74 @@ def test_log_metadata_after_dynamic_output():
         match="In op 'the_op', attempted to log output metadata for output 'result' with mapping_key 'one' which has already been yielded. Metadata must be logged before the output is yielded.",
     ):
         list(the_op(build_op_context()))
+
+
+def test_kwarg_inputs():
+    @op(ins={"the_in": In(str)})
+    def the_op(**kwargs) -> str:
+        return kwargs["the_in"] + "foo"
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="op 'the_op' has 0 positional inputs, but 1 positional inputs were provided.",
+    ):
+        the_op("bar")
+
+    assert the_op(the_in="bar") == "barfoo"
+
+    with pytest.raises(KeyError):
+        the_op(bad_val="bar")
+
+    @op(ins={"the_in": In(), "kwarg_in": In(), "kwarg_in_two": In()})
+    def the_op_2(the_in, **kwargs):
+        return the_in + kwargs["kwarg_in"] + kwargs["kwarg_in_two"]
+
+    assert the_op_2("foo", kwarg_in="bar", kwarg_in_two="baz") == "foobarbaz"
+
+
+def test_default_kwarg_inputs():
+    @op
+    def the_op(x=1, y=2):
+        return x + y
+
+    assert the_op() == 3
+
+
+def test_kwargs_via_partial_functools():
+    def fake_func(foo, bar):
+        return foo + bar
+
+    new_func = partial(fake_func, foo=1, bar=2)
+
+    new_op = op(name="new_func")(new_func)
+
+    assert new_op() == 3
+
+
+def test_get_mapping_key():
+    context = build_op_context(mapping_key="the_key")
+
+    assert context.get_mapping_key() == "the_key"  # Ensure unbound context has mapping key
+
+    @op
+    def basic_op(context):
+        assert context.get_mapping_key() == "the_key"  # Ensure bound context has mapping key
+
+    basic_op(context)
+
+
+def test_required_resource_keys_no_context_invocation():
+    @op(required_resource_keys={"foo"})
+    def uses_resource_no_context():
+        pass
+
+    uses_resource_no_context()
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Too many input arguments were provided for op "
+        "'uses_resource_no_context'. This may be because an argument was "
+        "provided for the context parameter, but no context parameter was "
+        "defined for the solid.",
+    ):
+        uses_resource_no_context(None)

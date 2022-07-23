@@ -1,1 +1,2 @@
 include LICENSE
+include dagster_dbt/py.typed

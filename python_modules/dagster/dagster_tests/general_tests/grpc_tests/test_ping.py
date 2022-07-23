@@ -4,12 +4,13 @@ import time
 
 import pytest
 
-from dagster import check, seven
+import dagster._check as check
+import dagster._seven as seven
+from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer, ephemeral_grpc_api_client
+from dagster._grpc.server import GrpcServerProcess, open_server_process
+from dagster._serdes.ipc import interrupt_ipc_subprocess_pid
+from dagster._utils import find_free_port, safe_tempfile_path
 from dagster.core.errors import DagsterUserCodeUnreachableError
-from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer, ephemeral_grpc_api_client
-from dagster.grpc.server import GrpcServerProcess, open_server_process
-from dagster.serdes.ipc import interrupt_ipc_subprocess_pid
-from dagster.utils import find_free_port, safe_tempfile_path
 
 
 def server_thread_runnable(**kwargs):
@@ -59,7 +60,7 @@ def test_process_killed_after_client_finished():
     while server_process.server_process.poll() is None:
         time.sleep(0.05)
         # Verify server process cleans up eventually
-        assert time.time() - start_time < 1.5
+        assert time.time() - start_time < 5
 
     # verify socket is cleaned up
     assert not os.path.exists(socket)

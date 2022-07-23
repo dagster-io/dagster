@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 
-from pydantic import Extra  # pylint: disable=no-name-in-module
+from pydantic import Extra
 
 from ...utils import kubernetes
 from ...utils.utils import BaseModel
@@ -15,11 +15,13 @@ class Server(BaseModel):
 class Workspace(BaseModel):
     enabled: bool
     servers: List[Server]
+    externalConfigmap: Optional[str]
 
 
 class Dagit(BaseModel):
     replicaCount: int
     image: kubernetes.Image
+    nameOverride: str
     service: kubernetes.Service
     workspace: Workspace
     env: Dict[str, str]
@@ -39,6 +41,7 @@ class Dagit(BaseModel):
     annotations: kubernetes.Annotations
     enableReadOnly: bool
     dbStatementTimeout: Optional[int]
+    logLevel: Optional[str]
 
     class Config:
         extra = Extra.forbid

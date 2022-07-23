@@ -1,4 +1,4 @@
-import {ColorsWIP, IconWIP} from '@dagster-io/ui';
+import {Colors, Icon} from '@dagster-io/ui';
 import React from 'react';
 
 export const formatRepositoryUrl = (url: string): string => {
@@ -26,8 +26,8 @@ export const RepositoryRemoteLocationLink: React.FC<{repositoryUrl: string}> = (
 
   return (
     <a href={repositoryUrl} target="_blank" rel="noopener noreferrer">
-      <IconWIP
-        color={ColorsWIP.Link}
+      <Icon
+        color={Colors.Link}
         name="link"
         style={{display: 'inline-block', verticalAlign: 'middle'}}
       />{' '}

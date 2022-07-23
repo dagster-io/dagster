@@ -6,7 +6,7 @@ import subprocess
 
 import requests
 
-from dagster.utils import merge_dicts
+from dagster._utils import merge_dicts
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -32,15 +32,15 @@ def check_output(*args, **kwargs):
 
 def which_(exe):
     """Uses distutils to look for an executable, mimicking unix which"""
-    from distutils import spawn  # pylint: disable=no-name-in-module
+    from distutils import spawn  # pylint: disable=deprecated-module
 
     # https://github.com/PyCQA/pylint/issues/73
     return spawn.find_executable(exe)
 
 
-def get_test_namespace():
+def get_test_namespace(prefix="dagster-test"):
     namespace_suffix = hex(random.randint(0, 16**6))[2:]
-    return "dagster-test-%s" % namespace_suffix
+    return f"{prefix}-{namespace_suffix}"
 
 
 def within_docker():
@@ -52,7 +52,7 @@ def within_docker():
     return (
         os.path.exists("/.dockerenv")
         or os.path.isfile(cgroup_path)
-        and any("docker" in line for line in open(cgroup_path))
+        and any("docker" in line for line in open(cgroup_path, encoding="utf8"))
     )
 
 

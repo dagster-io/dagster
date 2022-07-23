@@ -44,20 +44,11 @@ Reconstructable pipelines
 .. autoclass:: reconstructable
    :noindex:
 
-.. currentmodule:: dagster.core.definitions.reconstructable
+.. currentmodule:: dagster.core.definitions.reconstruct
 
 .. autoclass:: ReconstructablePipeline
    :members:
 
-Dependencies and aliases
-------------------------
-.. currentmodule:: dagster
-
-.. autoclass:: DependencyDefinition
-
-.. autoclass:: MultiDependencyDefinition
-
-.. autoclass:: SolidInvocation
 
 Pipeline configuration
 ----------------------
@@ -129,3 +120,10 @@ Run Config Schema
         },
 
       }
+
+Aliases
+-------
+
+.. currentmodule:: dagster
+
+.. autoclass:: SolidInvocation

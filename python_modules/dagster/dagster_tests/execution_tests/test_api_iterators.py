@@ -1,6 +1,9 @@
 import pytest
 
-from dagster import ModeDefinition, PipelineDefinition, check, resource, solid
+from dagster import ModeDefinition, PipelineDefinition
+from dagster import _check as check
+from dagster import resource
+from dagster._legacy import solid
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events.log import EventLogEntry, construct_event_logger
@@ -121,14 +124,16 @@ def test_execute_run_iterator():
             mode="default",
         ).with_status(PipelineRunStatus.SUCCESS)
 
-        with pytest.raises(
-            Exception,
-            match=r"basic_resource_pipeline \({}\) started a new "
-            r"run while the run was already in state DagsterRunStatus.SUCCESS.".format(
-                pipeline_run.run_id
-            ),
-        ):
+        events = list(
             execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+        )
+
+        assert any(
+            [
+                "Ignoring a run worker that started after the run had already finished." in event
+                for event in events
+            ]
+        )
 
         with instance_for_test(
             overrides={
@@ -175,6 +180,72 @@ def test_execute_run_iterator():
         assert (
             events[0].message
             == "Not starting execution since the run was canceled before execution could start"
+        )
+
+
+def test_restart_running_run_worker():
+    def event_callback(_record):
+        pass
+
+    with instance_for_test() as instance:
+        pipeline_def = PipelineDefinition(
+            name="basic_resource_pipeline",
+            solid_defs=[resource_solid],
+            mode_defs=[
+                ModeDefinition(
+                    resource_defs={"a": resource_a, "b": resource_b},
+                    logger_defs={"callback": construct_event_logger(event_callback)},
+                )
+            ],
+        )
+        pipeline_run = instance.create_run_for_pipeline(
+            pipeline_def=pipeline_def,
+            run_config={"loggers": {"callback": {}}},
+            mode="default",
+        ).with_status(PipelineRunStatus.STARTED)
+
+        events = list(
+            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+        )
+
+        assert any(
+            [
+                f"{pipeline_run.pipeline_name} ({pipeline_run.run_id}) started a new run worker while the run was already in state DagsterRunStatus.STARTED. "
+                in event.message
+                for event in events
+            ]
+        )
+
+        assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.FAILURE
+
+
+def test_start_run_worker_after_run_failure():
+    def event_callback(_record):
+        pass
+
+    with instance_for_test() as instance:
+        pipeline_def = PipelineDefinition(
+            name="basic_resource_pipeline",
+            solid_defs=[resource_solid],
+            mode_defs=[
+                ModeDefinition(
+                    resource_defs={"a": resource_a, "b": resource_b},
+                    logger_defs={"callback": construct_event_logger(event_callback)},
+                )
+            ],
+        )
+        pipeline_run = instance.create_run_for_pipeline(
+            pipeline_def=pipeline_def,
+            run_config={"loggers": {"callback": {}}},
+            mode="default",
+        ).with_status(PipelineRunStatus.FAILURE)
+
+        event = next(
+            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+        )
+        assert (
+            "Ignoring a run worker that started after the run had already finished."
+            in event.message
         )
 
 

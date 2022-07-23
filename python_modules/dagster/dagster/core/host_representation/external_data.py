@@ -5,34 +5,40 @@ business logic or clever indexing. Use the classes in external.py
 for that.
 """
 from abc import ABC, abstractmethod
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from datetime import datetime
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple
+from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union, cast
 
-from dagster import StaticPartitionsDefinition, check
-from dagster.core.asset_defs import SourceAsset
-from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
+from dagster import StaticPartitionsDefinition
+from dagster import _check as check
+from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
+from dagster._utils.error import SerializableErrorInfo
 from dagster.core.definitions import (
     JobDefinition,
-    OutputDefinition,
     PartitionSetDefinition,
     PartitionsDefinition,
     PipelineDefinition,
     PresetDefinition,
     RepositoryDefinition,
     ScheduleDefinition,
+    SourceAsset,
 )
+from dagster.core.definitions.asset_layer import AssetOutputInfo
+from dagster.core.definitions.dependency import NodeOutputHandle
 from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster.core.definitions.mode import DEFAULT_MODE_NAME
-from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.partition import PartitionScheduleDefinition, ScheduleType
 from dagster.core.definitions.schedule_definition import DefaultScheduleStatus
-from dagster.core.definitions.sensor_definition import AssetSensorDefinition, DefaultSensorStatus
+from dagster.core.definitions.sensor_definition import (
+    AssetSensorDefinition,
+    DefaultSensorStatus,
+    SensorDefinition,
+)
 from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.definitions.utils import DEFAULT_GROUP_NAME
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.snap import PipelineSnapshot
-from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
-from dagster.utils.error import SerializableErrorInfo
 
 
 @whitelist_for_serdes
@@ -55,29 +61,29 @@ class ExternalRepositoryData(
         external_pipeline_datas: Sequence["ExternalPipelineData"],
         external_schedule_datas: Sequence["ExternalScheduleData"],
         external_partition_set_datas: Sequence["ExternalPartitionSetData"],
-        external_sensor_datas: Sequence["ExternalSensorData"] = None,
-        external_asset_graph_data: Sequence["ExternalAssetNode"] = None,
+        external_sensor_datas: Optional[Sequence["ExternalSensorData"]] = None,
+        external_asset_graph_data: Optional[Sequence["ExternalAssetNode"]] = None,
     ):
         return super(ExternalRepositoryData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            external_pipeline_datas=check.list_param(
+            external_pipeline_datas=check.sequence_param(
                 external_pipeline_datas, "external_pipeline_datas", of_type=ExternalPipelineData
             ),
-            external_schedule_datas=check.list_param(
+            external_schedule_datas=check.sequence_param(
                 external_schedule_datas, "external_schedule_datas", of_type=ExternalScheduleData
             ),
-            external_partition_set_datas=check.list_param(
+            external_partition_set_datas=check.sequence_param(
                 external_partition_set_datas,
                 "external_partition_set_datas",
                 of_type=ExternalPartitionSetData,
             ),
-            external_sensor_datas=check.opt_list_param(
+            external_sensor_datas=check.opt_sequence_param(
                 external_sensor_datas,
                 "external_sensor_datas",
                 of_type=ExternalSensorData,
             ),
-            external_asset_graph_data=check.opt_list_param(
+            external_asset_graph_data=check.opt_sequence_param(
                 external_asset_graph_data,
                 "external_asset_graph_dats",
                 of_type=ExternalAssetNode,
@@ -200,26 +206,26 @@ class ExternalPresetData(
         "_ExternalPresetData",
         [
             ("name", str),
-            ("run_config", Dict[str, Any]),
-            ("solid_selection", Optional[List[str]]),
+            ("run_config", Mapping[str, object]),
+            ("solid_selection", Optional[Sequence[str]]),
             ("mode", str),
-            ("tags", Dict[str, str]),
+            ("tags", Mapping[str, str]),
         ],
     )
 ):
     def __new__(
         cls,
         name: str,
-        run_config: Dict[str, Any],
-        solid_selection: Optional[List[str]],
+        run_config: Optional[Mapping[str, object]],
+        solid_selection: Optional[Sequence[str]],
         mode: str,
-        tags: Dict[str, str],
+        tags: Mapping[str, str],
     ):
         return super(ExternalPresetData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            run_config=check.opt_dict_param(run_config, "run_config", key_type=str),
-            solid_selection=check.opt_nullable_list_param(
+            run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
+            solid_selection=check.opt_nullable_sequence_param(
                 solid_selection, "solid_selection", of_type=str
             ),
             mode=check.str_param(mode, "mode"),
@@ -241,9 +247,9 @@ class ExternalScheduleData(
             ("name", str),
             ("cron_schedule", str),
             ("pipeline_name", str),
-            ("solid_selection", Optional[List[str]]),
+            ("solid_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
-            ("environment_vars", Optional[Dict[str, str]]),
+            ("environment_vars", Optional[Mapping[str, str]]),
             ("partition_set_name", Optional[str]),
             ("execution_timezone", Optional[str]),
             ("description", Optional[str]),
@@ -297,28 +303,32 @@ class ExternalScheduleExecutionErrorData(
 class ExternalTargetData(
     NamedTuple(
         "_ExternalTargetData",
-        [("pipeline_name", str), ("mode", str), ("solid_selection", Optional[List[str]])],
+        [("pipeline_name", str), ("mode", str), ("solid_selection", Optional[Sequence[str]])],
     )
 ):
-    def __new__(cls, pipeline_name: str, mode: str, solid_selection: Optional[List[str]]):
+    def __new__(cls, pipeline_name: str, mode: str, solid_selection: Optional[Sequence[str]]):
         return super(ExternalTargetData, cls).__new__(
             cls,
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             mode=check.str_param(mode, "mode"),
-            solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
+            solid_selection=check.opt_nullable_sequence_param(
+                solid_selection, "solid_selection", str
+            ),
         )
 
 
 @whitelist_for_serdes
 class ExternalSensorMetadata(
-    NamedTuple("_ExternalSensorMetadata", [("asset_keys", Optional[List[AssetKey]])])
+    NamedTuple("_ExternalSensorMetadata", [("asset_keys", Optional[Sequence[AssetKey]])])
 ):
     """Stores additional sensor metadata which is available on the Dagit frontend."""
 
-    def __new__(cls, asset_keys: Optional[List[AssetKey]] = None):
+    def __new__(cls, asset_keys: Optional[Sequence[AssetKey]] = None):
         return super(ExternalSensorMetadata, cls).__new__(
             cls,
-            asset_keys=check.opt_nullable_list_param(asset_keys, "asset_keys", of_type=AssetKey),
+            asset_keys=check.opt_nullable_sequence_param(
+                asset_keys, "asset_keys", of_type=AssetKey
+            ),
         )
 
 
@@ -335,11 +345,11 @@ class ExternalSensorData(
         [
             ("name", str),
             ("pipeline_name", Optional[str]),
-            ("solid_selection", Optional[List[str]]),
+            ("solid_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
             ("min_interval", Optional[int]),
             ("description", Optional[str]),
-            ("target_dict", Dict[str, ExternalTargetData]),
+            ("target_dict", Mapping[str, ExternalTargetData]),
             ("metadata", Optional[ExternalSensorMetadata]),
             ("default_status", Optional[DefaultSensorStatus]),
         ],
@@ -349,11 +359,11 @@ class ExternalSensorData(
         cls,
         name: str,
         pipeline_name: Optional[str] = None,
-        solid_selection: Optional[List[str]] = None,
+        solid_selection: Optional[Sequence[str]] = None,
         mode: Optional[str] = None,
         min_interval: Optional[int] = None,
         description: Optional[str] = None,
-        target_dict: Dict[str, ExternalTargetData] = None,
+        target_dict: Optional[Mapping[str, ExternalTargetData]] = None,
         metadata: Optional[ExternalSensorMetadata] = None,
         default_status: Optional[DefaultSensorStatus] = None,
     ):
@@ -364,7 +374,7 @@ class ExternalSensorData(
                 pipeline_name: ExternalTargetData(
                     pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
                     mode=check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME),
-                    solid_selection=check.opt_nullable_list_param(
+                    solid_selection=check.opt_nullable_sequence_param(
                         solid_selection, "solid_selection", str
                     ),
                 )
@@ -376,7 +386,7 @@ class ExternalSensorData(
             pipeline_name=check.opt_str_param(
                 pipeline_name, "pipeline_name"
             ),  # keep legacy field populated
-            solid_selection=check.opt_nullable_list_param(
+            solid_selection=check.opt_nullable_sequence_param(
                 solid_selection, "solid_selection", str
             ),  # keep legacy field populated
             mode=check.opt_str_param(mode, "mode"),  # keep legacy field populated
@@ -391,8 +401,21 @@ class ExternalSensorData(
 
 
 @whitelist_for_serdes
-class ExternalSensorExecutionErrorData(namedtuple("_ExternalSensorExecutionErrorData", "error")):
-    def __new__(cls, error):
+class ExternalRepositoryErrorData(
+    NamedTuple("_ExternalRepositoryErrorData", [("error", Optional[SerializableErrorInfo])])
+):
+    def __new__(cls, error: Optional[SerializableErrorInfo]):
+        return super(ExternalRepositoryErrorData, cls).__new__(
+            cls,
+            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+        )
+
+
+@whitelist_for_serdes
+class ExternalSensorExecutionErrorData(
+    NamedTuple("_ExternalSensorExecutionErrorData", [("error", Optional[SerializableErrorInfo])])
+):
+    def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(ExternalSensorExecutionErrorData, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
@@ -400,18 +423,29 @@ class ExternalSensorExecutionErrorData(namedtuple("_ExternalSensorExecutionError
 
 
 @whitelist_for_serdes
-class ExternalExecutionParamsData(namedtuple("_ExternalExecutionParamsData", "run_config tags")):
-    def __new__(cls, run_config=None, tags=None):
+class ExternalExecutionParamsData(
+    NamedTuple(
+        "_ExternalExecutionParamsData",
+        [("run_config", Mapping[str, object]), ("tags", Mapping[str, str])],
+    )
+):
+    def __new__(
+        cls,
+        run_config: Optional[Mapping[str, object]] = None,
+        tags: Optional[Mapping[str, str]] = None,
+    ):
         return super(ExternalExecutionParamsData, cls).__new__(
             cls,
-            run_config=check.opt_dict_param(run_config, "run_config"),
-            tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
+            run_config=check.opt_mapping_param(run_config, "run_config"),
+            tags=check.opt_mapping_param(tags, "tags", key_type=str, value_type=str),
         )
 
 
 @whitelist_for_serdes
-class ExternalExecutionParamsErrorData(namedtuple("_ExternalExecutionParamsErrorData", "error")):
-    def __new__(cls, error):
+class ExternalExecutionParamsErrorData(
+    NamedTuple("_ExternalExecutionParamsErrorData", [("error", Optional[SerializableErrorInfo])])
+):
+    def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(ExternalExecutionParamsErrorData, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
@@ -427,11 +461,25 @@ class ExternalPartitionsDefinitionData(ABC):
 @whitelist_for_serdes
 class ExternalTimeWindowPartitionsDefinitionData(
     ExternalPartitionsDefinitionData,
-    namedtuple(
-        "_ExternalTimeWindowPartitionsDefinitionData", "schedule_type start timezone fmt end_offset"
+    NamedTuple(
+        "_ExternalTimeWindowPartitionsDefinitionData",
+        [
+            ("schedule_type", ScheduleType),
+            ("start", float),
+            ("timezone", Optional[str]),
+            ("fmt", str),
+            ("end_offset", int),
+        ],
     ),
 ):
-    def __new__(cls, schedule_type, start, timezone, fmt, end_offset):
+    def __new__(
+        cls,
+        schedule_type: ScheduleType,
+        start: float,
+        timezone: Optional[str],
+        fmt: str,
+        end_offset: int,
+    ):
         return super(ExternalTimeWindowPartitionsDefinitionData, cls).__new__(
             cls,
             schedule_type=check.inst_param(schedule_type, "schedule_type", ScheduleType),
@@ -454,9 +502,9 @@ class ExternalTimeWindowPartitionsDefinitionData(
 @whitelist_for_serdes
 class ExternalStaticPartitionsDefinitionData(
     ExternalPartitionsDefinitionData,
-    namedtuple("_ExternalStaticPartitionsDefinitionData", "partition_keys"),
+    NamedTuple("_ExternalStaticPartitionsDefinitionData", [("partition_keys", Sequence[str])]),
 ):
-    def __new__(cls, partition_keys):
+    def __new__(cls, partition_keys: Sequence[str]):
         return super(ExternalStaticPartitionsDefinitionData, cls).__new__(
             cls, partition_keys=check.list_param(partition_keys, "partition_keys", str)
         )
@@ -467,21 +515,39 @@ class ExternalStaticPartitionsDefinitionData(
 
 @whitelist_for_serdes
 class ExternalPartitionSetData(
-    namedtuple("_ExternalPartitionSetData", "name pipeline_name solid_selection mode")
+    NamedTuple(
+        "_ExternalPartitionSetData",
+        [
+            ("name", str),
+            ("pipeline_name", str),
+            ("solid_selection", Optional[Sequence[str]]),
+            ("mode", Optional[str]),
+        ],
+    )
 ):
-    def __new__(cls, name, pipeline_name, solid_selection, mode):
+    def __new__(
+        cls,
+        name: str,
+        pipeline_name: str,
+        solid_selection: Optional[Sequence[str]],
+        mode: Optional[str],
+    ):
         return super(ExternalPartitionSetData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
-            solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
+            solid_selection=check.opt_nullable_sequence_param(
+                solid_selection, "solid_selection", str
+            ),
             mode=check.opt_str_param(mode, "mode"),
         )
 
 
 @whitelist_for_serdes
-class ExternalPartitionNamesData(namedtuple("_ExternalPartitionNamesData", "partition_names")):
-    def __new__(cls, partition_names=None):
+class ExternalPartitionNamesData(
+    NamedTuple("_ExternalPartitionNamesData", [("partition_names", Sequence[str])])
+):
+    def __new__(cls, partition_names: Optional[Sequence[str]] = None):
         return super(ExternalPartitionNamesData, cls).__new__(
             cls,
             partition_names=check.opt_list_param(partition_names, "partition_names", str),
@@ -489,43 +555,55 @@ class ExternalPartitionNamesData(namedtuple("_ExternalPartitionNamesData", "part
 
 
 @whitelist_for_serdes
-class ExternalPartitionConfigData(namedtuple("_ExternalPartitionConfigData", "name run_config")):
-    def __new__(cls, name, run_config=None):
+class ExternalPartitionConfigData(
+    NamedTuple(
+        "_ExternalPartitionConfigData", [("name", str), ("run_config", Mapping[str, object])]
+    )
+):
+    def __new__(cls, name: str, run_config: Optional[Mapping[str, object]] = None):
         return super(ExternalPartitionConfigData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            run_config=check.opt_dict_param(run_config, "run_config"),
+            run_config=check.opt_mapping_param(run_config, "run_config"),
         )
 
 
 @whitelist_for_serdes
-class ExternalPartitionTagsData(namedtuple("_ExternalPartitionTagsData", "name tags")):
-    def __new__(cls, name, tags=None):
+class ExternalPartitionTagsData(
+    NamedTuple("_ExternalPartitionTagsData", [("name", str), ("tags", Mapping[str, object])])
+):
+    def __new__(cls, name: str, tags: Optional[Mapping[str, object]] = None):
         return super(ExternalPartitionTagsData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            tags=check.opt_dict_param(tags, "tags"),
+            tags=check.opt_mapping_param(tags, "tags"),
         )
 
 
 @whitelist_for_serdes
 class ExternalPartitionExecutionParamData(
-    namedtuple("_ExternalPartitionExecutionParamData", "name tags run_config")
+    NamedTuple(
+        "_ExternalPartitionExecutionParamData",
+        [("name", str), ("tags", Mapping[str, object]), ("run_config", Mapping[str, object])],
+    )
 ):
-    def __new__(cls, name, tags, run_config):
+    def __new__(cls, name: str, tags: Mapping[str, object], run_config: Mapping[str, object]):
         return super(ExternalPartitionExecutionParamData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            tags=check.dict_param(tags, "tags"),
-            run_config=check.opt_dict_param(run_config, "run_config"),
+            tags=check.mapping_param(tags, "tags"),
+            run_config=check.opt_mapping_param(run_config, "run_config"),
         )
 
 
 @whitelist_for_serdes
 class ExternalPartitionSetExecutionParamData(
-    namedtuple("_ExternalPartitionSetExecutionParamData", "partition_data")
+    NamedTuple(
+        "_ExternalPartitionSetExecutionParamData",
+        [("partition_data", Sequence[ExternalPartitionExecutionParamData])],
+    )
 ):
-    def __new__(cls, partition_data):
+    def __new__(cls, partition_data: Sequence[ExternalPartitionExecutionParamData]):
         return super(ExternalPartitionSetExecutionParamData, cls).__new__(
             cls,
             partition_data=check.list_param(
@@ -536,9 +614,9 @@ class ExternalPartitionSetExecutionParamData(
 
 @whitelist_for_serdes
 class ExternalPartitionExecutionErrorData(
-    namedtuple("_ExternalPartitionExecutionErrorData", "error")
+    NamedTuple("_ExternalPartitionExecutionErrorData", [("error", Optional[SerializableErrorInfo])])
 ):
-    def __new__(cls, error):
+    def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(ExternalPartitionExecutionErrorData, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
@@ -547,7 +625,14 @@ class ExternalPartitionExecutionErrorData(
 
 @whitelist_for_serdes
 class ExternalAssetDependency(
-    namedtuple("_ExternalAssetDependency", "upstream_asset_key input_name output_name")
+    NamedTuple(
+        "_ExternalAssetDependency",
+        [
+            ("upstream_asset_key", AssetKey),
+            ("input_name", Optional[str]),
+            ("output_name", Optional[str]),
+        ],
+    )
 ):
     """A definition of a directed edge in the logical asset graph.
 
@@ -555,13 +640,12 @@ class ExternalAssetDependency(
     that depends on it.
     """
 
-    def __new__(cls, upstream_asset_key: AssetKey, input_name: str = None, output_name: str = None):
-        check.invariant(
-            (input_name is None) ^ (output_name is None),
-            "When constructing ExternalAssetDependency, exactly one of `input_name` and "
-            f"`output_name` should be supplied. AssetKey `{upstream_asset_key}` is associated with "
-            f"input `{input_name}` and output `{output_name}`.",
-        )
+    def __new__(
+        cls,
+        upstream_asset_key: AssetKey,
+        input_name: Optional[str] = None,
+        output_name: Optional[str] = None,
+    ):
         return super(ExternalAssetDependency, cls).__new__(
             cls,
             upstream_asset_key=upstream_asset_key,
@@ -572,7 +656,14 @@ class ExternalAssetDependency(
 
 @whitelist_for_serdes
 class ExternalAssetDependedBy(
-    namedtuple("_ExternalAssetDependedBy", "downstream_asset_key input_name output_name")
+    NamedTuple(
+        "_ExternalAssetDependedBy",
+        [
+            ("downstream_asset_key", AssetKey),
+            ("input_name", Optional[str]),
+            ("output_name", Optional[str]),
+        ],
+    )
 ):
     """A definition of a directed edge in the logical asset graph.
 
@@ -581,14 +672,11 @@ class ExternalAssetDependedBy(
     """
 
     def __new__(
-        cls, downstream_asset_key: AssetKey, input_name: str = None, output_name: str = None
+        cls,
+        downstream_asset_key: AssetKey,
+        input_name: Optional[str] = None,
+        output_name: Optional[str] = None,
     ):
-        check.invariant(
-            (input_name is None) ^ (output_name is None),
-            "When constructing ExternalAssetDependedBy, exactly one of `input_name` and "
-            f"`output_name` should be supplied. AssetKey `{downstream_asset_key}` is associated with "
-            f"input `{input_name}` and output `{output_name}`.",
-        )
         return super(ExternalAssetDependedBy, cls).__new__(
             cls,
             downstream_asset_key=downstream_asset_key,
@@ -599,9 +687,25 @@ class ExternalAssetDependedBy(
 
 @whitelist_for_serdes
 class ExternalAssetNode(
-    namedtuple(
+    NamedTuple(
         "_ExternalAssetNode",
-        "asset_key dependencies depended_by op_name op_description job_names partitions_def_data output_name output_description",
+        [
+            ("asset_key", AssetKey),
+            ("dependencies", Sequence[ExternalAssetDependency]),
+            ("depended_by", Sequence[ExternalAssetDependedBy]),
+            ("compute_kind", Optional[str]),
+            ("op_name", Optional[str]),
+            ("op_names", Optional[Sequence[str]]),
+            ("node_definition_name", Optional[str]),
+            ("graph_name", Optional[str]),
+            ("op_description", Optional[str]),
+            ("job_names", Sequence[str]),
+            ("partitions_def_data", Optional[ExternalPartitionsDefinitionData]),
+            ("output_name", Optional[str]),
+            ("output_description", Optional[str]),
+            ("metadata_entries", Sequence[MetadataEntry]),
+            ("group_name", Optional[str]),
+        ],
     )
 ):
     """A definition of a node in the logical asset graph.
@@ -612,26 +716,51 @@ class ExternalAssetNode(
     def __new__(
         cls,
         asset_key: AssetKey,
-        dependencies: List[ExternalAssetDependency],
-        depended_by: List[ExternalAssetDependedBy],
+        dependencies: Sequence[ExternalAssetDependency],
+        depended_by: Sequence[ExternalAssetDependedBy],
+        compute_kind: Optional[str] = None,
         op_name: Optional[str] = None,
+        op_names: Optional[Sequence[str]] = None,
+        node_definition_name: Optional[str] = None,
+        graph_name: Optional[str] = None,
         op_description: Optional[str] = None,
-        job_names: Optional[List[str]] = None,
+        job_names: Optional[Sequence[str]] = None,
         partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None,
         output_name: Optional[str] = None,
         output_description: Optional[str] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
+        group_name: Optional[str] = None,
     ):
+        # backcompat logic to handle ExternalAssetNodes serialized without op_names/graph_name
+        if not op_names:
+            op_names = list(filter(None, [op_name]))
         return super(ExternalAssetNode, cls).__new__(
             cls,
-            asset_key=asset_key,
-            dependencies=dependencies,
-            depended_by=depended_by,
-            op_name=op_name,
-            op_description=op_description or output_description,
-            job_names=job_names,
-            partitions_def_data=partitions_def_data,
-            output_name=output_name,
-            output_description=output_description,
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
+            dependencies=check.opt_sequence_param(
+                dependencies, "dependencies", of_type=ExternalAssetDependency
+            ),
+            depended_by=check.opt_sequence_param(
+                depended_by, "depended_by", of_type=ExternalAssetDependedBy
+            ),
+            compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
+            op_name=check.opt_str_param(op_name, "op_name"),
+            op_names=check.opt_list_param(op_names, "op_names"),
+            node_definition_name=check.opt_str_param(node_definition_name, "node_definition_name"),
+            graph_name=check.opt_str_param(graph_name, "graph_name"),
+            op_description=check.opt_str_param(
+                op_description or output_description, "op_description"
+            ),
+            job_names=check.opt_sequence_param(job_names, "job_names", of_type=str),
+            partitions_def_data=check.opt_inst_param(
+                partitions_def_data, "partitions_def_data", ExternalPartitionsDefinitionData
+            ),
+            output_name=check.opt_str_param(output_name, "output_name"),
+            output_description=check.opt_str_param(output_description, "output_description"),
+            metadata_entries=check.opt_sequence_param(
+                metadata_entries, "metadata_entries", of_type=MetadataEntry
+            ),
+            group_name=check.opt_str_param(group_name, "group_name"),
         )
 
 
@@ -669,57 +798,48 @@ def external_asset_graph_from_defs(
     pipelines: Sequence[PipelineDefinition], source_assets_by_key: Mapping[AssetKey, SourceAsset]
 ) -> Sequence[ExternalAssetNode]:
     node_defs_by_asset_key: Dict[
-        AssetKey, List[Tuple[OutputDefinition, NodeDefinition, PipelineDefinition]]
+        AssetKey, List[Tuple[NodeOutputHandle, PipelineDefinition]]
     ] = defaultdict(list)
+    asset_info_by_asset_key: Dict[AssetKey, AssetOutputInfo] = dict()
+    metadata_by_asset_key: Dict[AssetKey, MetadataUserInput] = dict()
 
     deps: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependency]] = defaultdict(dict)
-    dep_by: Dict[AssetKey, List[ExternalAssetDependedBy]] = defaultdict(list)
+    dep_by: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependedBy]] = defaultdict(dict)
     all_upstream_asset_keys: Set[AssetKey] = set()
+    op_names_by_asset_key: Dict[AssetKey, Sequence[str]] = {}
+    group_names: Dict[AssetKey, str] = {}
 
-    for pipeline in pipelines:
-        for node_def in pipeline.all_node_defs:
-            input_name_by_asset_key = {
-                id.hardcoded_asset_key: id.name
-                for id in node_def.input_defs
-                if id.hardcoded_asset_key is not None
-            }
+    for pipeline_def in pipelines:
+        asset_info_by_node_output = pipeline_def.asset_layer.asset_info_by_node_output_handle
 
-            output_name_by_asset_key = {
-                od.hardcoded_asset_key: od.name
-                for od in node_def.output_defs
-                if od.hardcoded_asset_key is not None
-            }
-
-            node_upstream_asset_keys = set(
-                filter(None, (id.hardcoded_asset_key for id in node_def.input_defs))
-            )
-            all_upstream_asset_keys.update(node_upstream_asset_keys)
-
-            for output_def in node_def.output_defs:
-                output_asset_key = output_def.hardcoded_asset_key
-                if not output_asset_key:
-                    continue
-
-                node_defs_by_asset_key[output_asset_key].append((output_def, node_def, pipeline))
-
-                # if no deps specified, assume depends on all inputs and no outputs
-                asset_deps = (output_def.metadata or {}).get(ASSET_DEPENDENCY_METADATA_KEY)
-                if asset_deps is None:
-                    asset_deps = node_upstream_asset_keys
-
-                for upstream_asset_key in asset_deps:
-                    deps[output_asset_key][upstream_asset_key] = ExternalAssetDependency(
-                        upstream_asset_key=upstream_asset_key,
-                        input_name=input_name_by_asset_key.get(upstream_asset_key),
-                        output_name=output_name_by_asset_key.get(upstream_asset_key),
+        for node_output_handle, asset_info in asset_info_by_node_output.items():
+            if not asset_info.is_required:
+                continue
+            output_key = asset_info.key
+            if output_key not in op_names_by_asset_key:
+                op_names_by_asset_key[output_key] = [
+                    str(handle)
+                    for handle in pipeline_def.asset_layer.dependency_node_handles_by_asset_key.get(
+                        output_key, []
                     )
-                    dep_by[upstream_asset_key].append(
-                        ExternalAssetDependedBy(
-                            downstream_asset_key=output_asset_key,
-                            input_name=input_name_by_asset_key.get(upstream_asset_key),
-                            output_name=output_name_by_asset_key.get(upstream_asset_key),
-                        )
-                    )
+                ]
+            upstream_asset_keys = pipeline_def.asset_layer.upstream_assets_for_asset(output_key)
+            all_upstream_asset_keys.update(upstream_asset_keys)
+            node_defs_by_asset_key[output_key].append((node_output_handle, pipeline_def))
+            asset_info_by_asset_key[output_key] = asset_info
+
+            for upstream_key in upstream_asset_keys:
+                deps[output_key][upstream_key] = ExternalAssetDependency(
+                    upstream_asset_key=upstream_key
+                )
+                dep_by[upstream_key][output_key] = ExternalAssetDependedBy(
+                    downstream_asset_key=output_key
+                )
+
+        for assets_def in pipeline_def.asset_layer.assets_defs_by_key.values():
+            metadata_by_asset_key.update(assets_def.metadata_by_key)
+        group_names.update(pipeline_def.asset_layer.group_names_by_assets())
+
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
         node_defs_by_asset_key.keys()
     ).difference(source_assets_by_key.keys())
@@ -728,70 +848,112 @@ def external_asset_graph_from_defs(
         ExternalAssetNode(
             asset_key=asset_key,
             dependencies=list(deps[asset_key].values()),
-            depended_by=dep_by[asset_key],
+            depended_by=list(dep_by[asset_key].values()),
             job_names=[],
+            group_name=group_names.get(asset_key),
         )
         for asset_key in asset_keys_without_definitions
     ]
 
     for source_asset in source_assets_by_key.values():
-        if source_asset.key in node_defs_by_asset_key:
-            raise DagsterInvariantViolationError(
-                f"Asset with key {source_asset.key.to_string()} is defined both as a source asset"
-                " and as a non-source asset"
+        if source_asset.key not in node_defs_by_asset_key:
+            # TODO: For now we are dropping partition metadata entries
+            metadata_entries = [
+                entry for entry in source_asset.metadata_entries if isinstance(entry, MetadataEntry)
+            ]
+            asset_nodes.append(
+                ExternalAssetNode(
+                    asset_key=source_asset.key,
+                    dependencies=list(deps[source_asset.key].values()),
+                    depended_by=list(dep_by[source_asset.key].values()),
+                    job_names=[],
+                    op_description=source_asset.description,
+                    metadata_entries=metadata_entries,
+                    group_name=source_asset.group_name,
+                )
             )
-
-        asset_nodes.append(
-            ExternalAssetNode(
-                asset_key=source_asset.key,
-                dependencies=list(deps[source_asset.key].values()),
-                depended_by=dep_by[source_asset.key],
-                job_names=[],
-                op_description=source_asset.description,
-            )
-        )
 
     for asset_key, node_tuple_list in node_defs_by_asset_key.items():
-        output_def, node_def, _ = node_tuple_list[0]
-        job_names = [job_def.name for _, _, job_def in node_tuple_list]
+        node_output_handle, job_def = node_tuple_list[0]
+
+        node_def = job_def.graph.get_solid(node_output_handle.node_handle).definition
+        output_def = node_def.output_def_named(node_output_handle.output_name)
+
+        asset_info = asset_info_by_asset_key[asset_key]
+
+        asset_metadata_entries = (
+            cast(
+                Sequence,
+                normalize_metadata(
+                    metadata=metadata_by_asset_key[asset_key],
+                    metadata_entries=[],
+                    allow_invalid=True,
+                ),
+            )
+            if asset_key in metadata_by_asset_key
+            else cast(Sequence, output_def.metadata_entries)
+        )
+
+        job_names = [job_def.name for _, job_def in node_tuple_list]
 
         # temporary workaround to retrieve asset partition definition from job
-        partitions_def_data = None
+        partitions_def_data: Optional[
+            Union[
+                ExternalTimeWindowPartitionsDefinitionData,
+                ExternalStaticPartitionsDefinitionData,
+            ]
+        ] = None
 
-        if output_def and output_def._asset_partitions_def:  # pylint: disable=protected-access
-            partitions_def = output_def._asset_partitions_def  # pylint: disable=protected-access
-            if partitions_def:
-                if isinstance(partitions_def, TimeWindowPartitionsDefinition):
-                    partitions_def_data = external_time_window_partitions_definition_from_def(
-                        partitions_def
-                    )
-                elif isinstance(partitions_def, StaticPartitionsDefinition):
-                    partitions_def_data = external_static_partitions_definition_from_def(
-                        partitions_def
-                    )
-                else:
-                    raise DagsterInvalidDefinitionError(
-                        "Only static partition and time window partitions are currently supported."
-                    )
+        partitions_def = asset_info.partitions_def
+        if partitions_def:
+            if isinstance(partitions_def, TimeWindowPartitionsDefinition):
+                partitions_def_data = external_time_window_partitions_definition_from_def(
+                    partitions_def
+                )
+            elif isinstance(partitions_def, StaticPartitionsDefinition):
+                partitions_def_data = external_static_partitions_definition_from_def(partitions_def)
+            else:
+                raise DagsterInvalidDefinitionError(
+                    "Only static partition and time window partitions are currently supported."
+                )
+
+        # if the asset is produced by an op at the top level of the graph, graph_name should be None
+        graph_name = None
+        node_handle = node_output_handle.node_handle
+        while node_handle.parent:
+            node_handle = node_handle.parent
+            graph_name = node_handle.name
 
         asset_nodes.append(
             ExternalAssetNode(
                 asset_key=asset_key,
                 dependencies=list(deps[asset_key].values()),
-                depended_by=dep_by[asset_key],
-                op_name=node_def.name,
+                depended_by=list(dep_by[asset_key].values()),
+                compute_kind=node_def.tags.get("kind"),
+                # backcompat
+                op_name=graph_name
+                or next(iter(op_names_by_asset_key[asset_key]), None)
+                or node_def.name,
+                graph_name=graph_name,
+                op_names=op_names_by_asset_key[asset_key],
                 op_description=node_def.description,
+                node_definition_name=node_def.name,
                 job_names=job_names,
                 partitions_def_data=partitions_def_data,
                 output_name=output_def.name,
                 output_description=output_def.description,
+                metadata_entries=asset_metadata_entries,
+                # assets defined by Out(asset_key="k") do not have any group
+                # name specified we default to DEFAULT_GROUP_NAME here to ensure
+                # such assets are part of the default group
+                group_name=group_names.get(asset_key, DEFAULT_GROUP_NAME),
             )
         )
 
     return asset_nodes
 
 
-def external_pipeline_data_from_def(pipeline_def):
+def external_pipeline_data_from_def(pipeline_def: PipelineDefinition) -> ExternalPipelineData:
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     return ExternalPipelineData(
         name=pipeline_def.name,
@@ -805,7 +967,7 @@ def external_pipeline_data_from_def(pipeline_def):
     )
 
 
-def external_schedule_data_from_def(schedule_def):
+def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> ExternalScheduleData:
     check.inst_param(schedule_def, "schedule_def", ScheduleDefinition)
     return ExternalScheduleData(
         name=schedule_def.name,
@@ -823,7 +985,9 @@ def external_schedule_data_from_def(schedule_def):
     )
 
 
-def external_time_window_partitions_definition_from_def(partitions_def):
+def external_time_window_partitions_definition_from_def(
+    partitions_def: TimeWindowPartitionsDefinition,
+) -> ExternalTimeWindowPartitionsDefinitionData:
     check.inst_param(partitions_def, "partitions_def", TimeWindowPartitionsDefinition)
     return ExternalTimeWindowPartitionsDefinitionData(
         schedule_type=partitions_def.schedule_type,
@@ -834,24 +998,28 @@ def external_time_window_partitions_definition_from_def(partitions_def):
     )
 
 
-def external_static_partitions_definition_from_def(partitions_def):
+def external_static_partitions_definition_from_def(
+    partitions_def: StaticPartitionsDefinition,
+) -> ExternalStaticPartitionsDefinitionData:
     check.inst_param(partitions_def, "partitions_def", StaticPartitionsDefinition)
     return ExternalStaticPartitionsDefinitionData(
         partition_keys=partitions_def.get_partition_keys()
     )
 
 
-def external_partition_set_data_from_def(partition_set_def):
+def external_partition_set_data_from_def(
+    partition_set_def: PartitionSetDefinition,
+) -> ExternalPartitionSetData:
     check.inst_param(partition_set_def, "partition_set_def", PartitionSetDefinition)
     return ExternalPartitionSetData(
         name=partition_set_def.name,
-        pipeline_name=partition_set_def.pipeline_name or partition_set_def.job_name,
+        pipeline_name=partition_set_def.pipeline_or_job_name,
         solid_selection=partition_set_def.solid_selection,
         mode=partition_set_def.mode,
     )
 
 
-def external_sensor_data_from_def(sensor_def):
+def external_sensor_data_from_def(sensor_def: SensorDefinition) -> ExternalSensorData:
     first_target = sensor_def.targets[0] if sensor_def.targets else None
 
     asset_keys = None
@@ -878,7 +1046,7 @@ def external_sensor_data_from_def(sensor_def):
     )
 
 
-def external_preset_data_from_def(preset_def):
+def external_preset_data_from_def(preset_def: PresetDefinition) -> ExternalPresetData:
     check.inst_param(preset_def, "preset_def", PresetDefinition)
     return ExternalPresetData(
         name=preset_def.name,

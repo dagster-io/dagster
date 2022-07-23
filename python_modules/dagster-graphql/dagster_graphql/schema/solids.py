@@ -1,11 +1,12 @@
 from functools import lru_cache
+from typing import Union
 
 import graphene
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.logs.events import GrapheneRunStepStats
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions import NodeHandle
 from dagster.core.host_representation import RepresentedPipeline
 from dagster.core.host_representation.historical import HistoricalPipeline
@@ -407,7 +408,7 @@ class ISolidDefinitionMixin:
         else:
             repo_handle = self._represented_pipeline.repository_handle
             origin = repo_handle.repository_location_origin
-            location = graphene_info.context.get_location(origin.location_name)
+            location = graphene_info.context.get_repository_location(origin.location_name)
             ext_repo = location.get_repository(repo_handle.repository_name)
             nodes = [
                 node
@@ -425,10 +426,10 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
         interfaces = (GrapheneISolidDefinition,)
         name = "SolidDefinition"
 
-    def __init__(self, represented_pipeline, solid_def_name):
+    def __init__(self, represented_pipeline: RepresentedPipeline, solid_def_name: str):
         check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
         self._solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
-        super().__init__(name=solid_def_name, description=self._solid_def_snap.description)
+        super().__init__(name=solid_def_name, description=self._solid_def_snap.description)  # type: ignore
         ISolidDefinitionMixin.__init__(self, represented_pipeline, solid_def_name)
 
     def resolve_config_field(self, _graphene_info):
@@ -674,7 +675,9 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
         return []
 
 
-def build_solid_definition(represented_pipeline, solid_def_name):
+def build_solid_definition(
+    represented_pipeline: RepresentedPipeline, solid_def_name: str
+) -> Union[GrapheneSolidDefinition, GrapheneCompositeSolidDefinition]:
     check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
     check.str_param(solid_def_name, "solid_def_name")
 

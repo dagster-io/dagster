@@ -1,4 +1,4 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
@@ -11,31 +11,35 @@ export const Items = styled.div`
   }
 
   scrollbar-width: thin;
-  scrollbar-color: ${ColorsWIP.Gray200} ${ColorsWIP.Gray200};
+  scrollbar-color: ${Colors.Gray200} ${Colors.Gray200};
 
   &::-webkit-scrollbar-track {
-    background: ${ColorsWIP.Gray100};
+    background: ${Colors.Gray100};
   }
   &::-webkit-scrollbar-thumb {
-    background-color: ${ColorsWIP.Gray200};
+    background-color: ${Colors.Gray200};
     border-radius: 6px;
-    border: 3px solid ${ColorsWIP.Gray200};
+    border: 3px solid ${Colors.Gray200};
   }
 `;
 
-export const Item = styled(Link)`
+export const Item = styled(Link)<{$active: boolean}>`
+  background-color: ${({$active}) => ($active ? Colors.Blue50 : 'transparent')};
   border-radius: 8px;
   font-size: 14px;
   text-overflow: ellipsis;
   overflow: hidden;
   padding: 6px 12px;
-  display: block;
-  color: ${ColorsWIP.Gray900} !important;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: ${({$active}) => ($active ? Colors.Blue700 : Colors.Dark)} !important;
   user-select: none;
+  transition: background 50ms linear, color 50ms linear;
 
   &:hover {
     text-decoration: none;
-    background-color: ${ColorsWIP.Gray10};
+    background-color: ${({$active}) => ($active ? Colors.Blue50 : Colors.Gray10)};
   }
 
   &:focus {
@@ -43,10 +47,6 @@ export const Item = styled(Link)`
   }
 
   &.focused {
-    border-left: 4px solid ${ColorsWIP.Gray400};
-  }
-
-  &.selected {
-    background: ${ColorsWIP.Gray200};
+    border-left: 4px solid ${Colors.Gray400};
   }
 `;

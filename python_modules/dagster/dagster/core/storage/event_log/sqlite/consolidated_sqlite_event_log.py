@@ -7,20 +7,20 @@ from sqlalchemy.pool import NullPool
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
-from dagster import check
-from dagster.config.source import StringSource
+import dagster._check as check
+from dagster._config import StringSource
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._utils import mkdir_p
+from dagster.core.storage.event_log.base import EventLogCursor
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.sql import (
     check_alembic_revision,
     create_engine,
     get_alembic_config,
-    handle_schema_errors,
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
 from dagster.core.storage.sqlite import create_db_conn_string
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils import mkdir_p
 
 from ..schema import SqlEventLogStorageMetadata
 from ..sql_event_log import SqlEventLogStorage
@@ -98,12 +98,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         engine = create_engine(self._conn_string, poolclass=NullPool)
         conn = engine.connect()
         try:
-            with handle_schema_errors(
-                conn,
-                get_alembic_config(__file__),
-                msg="ConsolidatedSqliteEventLogStorage requires migration",
-            ):
-                yield conn
+            yield conn
         finally:
             conn.close()
 
@@ -133,7 +128,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if name in self._secondary_index_cache:
             del self._secondary_index_cache[name]
 
-    def watch(self, run_id, start_cursor, callback):
+    def watch(self, run_id, cursor, callback):
         if not self._obs:
             self._obs = Observer()
             self._obs.start()
@@ -141,7 +136,6 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 ConsolidatedSqliteEventLogStorageWatchdog(self), self._base_dir, True
             )
 
-        cursor = start_cursor if start_cursor is not None else -1
         self._watchers[run_id][callback] = cursor
 
     def on_modified(self):
@@ -154,15 +148,19 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             cursor = self._watchers[run_id][callback]
 
             # fetch events
-            events = self.get_logs_for_run(run_id, cursor)
+            connection = self.get_records_for_run(run_id, cursor)
 
             # update cursor
-            self._watchers[run_id][callback] = cursor + len(events)
+            if connection.cursor:
+                self._watchers[run_id][callback] = connection.cursor
 
-            for event in events:
+            for record in connection.records:
                 status = None
                 try:
-                    status = callback(event)
+                    status = callback(
+                        record.event_log_entry,
+                        str(EventLogCursor.from_storage_id(record.storage_id)),
+                    )
                 except Exception:
                     logging.exception("Exception in callback for event watch on run %s.", run_id)
 

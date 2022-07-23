@@ -7,12 +7,6 @@ import {TestProvider} from '../testing/TestProvider';
 import {InstanceWarningIcon} from './InstanceWarningIcon';
 
 describe('InstanceWarningIcon', () => {
-  const defaultMocks = {
-    DaemonHealth: () => ({
-      allDaemonStatuses: () => [...new Array(3)],
-    }),
-  };
-
   const Test: React.FC<{mocks: any}> = ({mocks}) => {
     return (
       <TestProvider apolloProps={{mocks}}>
@@ -21,7 +15,7 @@ describe('InstanceWarningIcon', () => {
     );
   };
 
-  it('displays if daemon errors', async () => {
+  it('displays if there are daemon errors', async () => {
     const mocks = {
       DaemonStatus: () => ({
         healthy: () => false,
@@ -29,7 +23,7 @@ describe('InstanceWarningIcon', () => {
       }),
     };
 
-    render(<Test mocks={[defaultMocks, mocks]} />);
+    render(<Test mocks={[mocks]} />);
     await waitFor(() => {
       expect(screen.queryByLabelText('warning')).toBeVisible();
     });
@@ -39,10 +33,11 @@ describe('InstanceWarningIcon', () => {
     const mocks = {
       DaemonStatus: () => ({
         healthy: () => true,
+        required: () => true,
       }),
     };
 
-    render(<Test mocks={[defaultMocks, mocks]} />);
+    render(<Test mocks={[mocks]} />);
     await waitFor(() => {
       expect(screen.queryByLabelText('warning')).toBeNull();
     });
@@ -50,7 +45,7 @@ describe('InstanceWarningIcon', () => {
 
   describe('Schedule/sensor errors', () => {
     describe('Schedule error', () => {
-      const scheduleErrorMocks = {
+      const daemonStoppedSchedulerMocks = {
         DaemonHealth: () => ({
           allDaemonStatuses: () => [
             {daemonType: 'SCHEDULER', healthy: false, required: true},
@@ -61,28 +56,42 @@ describe('InstanceWarningIcon', () => {
       };
 
       it('does not display if there are no schedules, and only a scheduler error', async () => {
-        const pipelineMocks = {
-          Pipeline: () => ({
+        const repoMocks = {
+          Repository: () => ({
             sensors: () => [],
             schedules: () => [],
           }),
         };
 
-        render(<Test mocks={[defaultMocks, scheduleErrorMocks, pipelineMocks]} />);
+        render(<Test mocks={[daemonStoppedSchedulerMocks, repoMocks]} />);
         await waitFor(() => {
           expect(screen.queryByLabelText('warning')).toBeNull();
         });
       });
 
-      it('displays if there are schedules, and only a scheduler error', async () => {
-        const pipelineMocks = {
-          Pipeline: () => ({
+      it('does not display if schedules are not enabled, and only a scheduler error', async () => {
+        const repoMocks = {
+          Repository: () => ({
             sensors: () => [],
-            schedules: () => [...new Array(1)],
+            schedules: () => [{scheduleState: {status: 'STOPPED'}}],
           }),
         };
 
-        render(<Test mocks={[defaultMocks, scheduleErrorMocks, pipelineMocks]} />);
+        render(<Test mocks={[daemonStoppedSchedulerMocks, repoMocks]} />);
+        await waitFor(() => {
+          expect(screen.queryByLabelText('warning')).toBeNull();
+        });
+      });
+
+      it('displays if there are running schedules, and only a scheduler error', async () => {
+        const repoMocks = {
+          Repository: () => ({
+            sensors: () => [],
+            schedules: () => [{scheduleState: {status: 'RUNNING'}}],
+          }),
+        };
+
+        render(<Test mocks={[daemonStoppedSchedulerMocks, repoMocks]} />);
         await waitFor(() => {
           expect(screen.queryByLabelText('warning')).toBeVisible();
         });
@@ -90,7 +99,7 @@ describe('InstanceWarningIcon', () => {
     });
 
     describe('Sensor error', () => {
-      const sensorErrorMocks = {
+      const daemonStoppedSensorMocks = {
         DaemonHealth: () => ({
           allDaemonStatuses: () => [
             {daemonType: 'SCHEDULER', healthy: true, required: true},
@@ -101,28 +110,28 @@ describe('InstanceWarningIcon', () => {
       };
 
       it('does not display if there are no sensors, and only a sensor error', async () => {
-        const pipelineMocks = {
-          Pipeline: () => ({
+        const repoMocks = {
+          Repository: () => ({
             sensors: () => [],
             schedules: () => [],
           }),
         };
 
-        render(<Test mocks={[defaultMocks, sensorErrorMocks, pipelineMocks]} />);
+        render(<Test mocks={[daemonStoppedSensorMocks, repoMocks]} />);
         await waitFor(() => {
           expect(screen.queryByLabelText('warning')).toBeNull();
         });
       });
 
       it('displays if there are sensors, and only a sensor error', async () => {
-        const pipelineMocks = {
-          Pipeline: () => ({
-            sensors: () => [...new Array(1)],
+        const repoMocks = {
+          Repository: () => ({
+            sensors: () => [{sensorState: {status: 'RUNNING'}}],
             schedules: () => [],
           }),
         };
 
-        render(<Test mocks={[defaultMocks, sensorErrorMocks, pipelineMocks]} />);
+        render(<Test mocks={[daemonStoppedSensorMocks, repoMocks]} />);
         await waitFor(() => {
           expect(screen.queryByLabelText('warning')).toBeVisible();
         });
@@ -130,7 +139,7 @@ describe('InstanceWarningIcon', () => {
     });
 
     describe('Schedule and Sensor error', () => {
-      const errorMocks = {
+      const daemonStoppedBothMocks = {
         DaemonHealth: () => ({
           allDaemonStatuses: () => [
             {daemonType: 'SCHEDULER', healthy: false, required: true},
@@ -141,56 +150,56 @@ describe('InstanceWarningIcon', () => {
       };
 
       it('does not display if there are no sensors/schedules, and only (both) sensor/schedule errors', async () => {
-        const pipelineMocks = {
-          Pipeline: () => ({
+        const repoMocks = {
+          Repository: () => ({
             sensors: () => [],
             schedules: () => [],
           }),
         };
 
-        render(<Test mocks={[defaultMocks, errorMocks, pipelineMocks]} />);
+        render(<Test mocks={[daemonStoppedBothMocks, repoMocks]} />);
         await waitFor(() => {
           expect(screen.queryByLabelText('warning')).toBeNull();
         });
       });
 
       it('displays if there are sensors, and only (both) sensor/schedule errors', async () => {
-        const pipelineMocks = {
-          Pipeline: () => ({
-            sensors: () => [...new Array(1)],
+        const repoMocks = {
+          Repository: () => ({
+            sensors: () => [{sensorState: {status: 'RUNNING'}}],
             schedules: () => [],
           }),
         };
 
-        render(<Test mocks={[defaultMocks, errorMocks, pipelineMocks]} />);
+        render(<Test mocks={[daemonStoppedBothMocks, repoMocks]} />);
         await waitFor(() => {
           expect(screen.queryByLabelText('warning')).toBeVisible();
         });
       });
 
       it('displays if there are schedules, and only (both) sensor/schedule errors', async () => {
-        const pipelineMocks = {
-          Pipeline: () => ({
+        const repoMocks = {
+          Repository: () => ({
             sensors: () => [],
-            schedules: () => [...new Array(1)],
+            schedules: () => [{scheduleState: {status: 'RUNNING'}}],
           }),
         };
 
-        render(<Test mocks={[defaultMocks, errorMocks, pipelineMocks]} />);
+        render(<Test mocks={[daemonStoppedBothMocks, repoMocks]} />);
         await waitFor(() => {
           expect(screen.queryByLabelText('warning')).toBeVisible();
         });
       });
 
       it('displays if there are schedules and sensors, and only (both) sensor/schedule errors', async () => {
-        const pipelineMocks = {
-          Pipeline: () => ({
-            sensors: () => [...new Array(1)],
-            schedules: () => [...new Array(1)],
+        const repoMocks = {
+          Repository: () => ({
+            sensors: () => [{sensorState: {status: 'RUNNING'}}],
+            schedules: () => [{scheduleState: {status: 'RUNNING'}}],
           }),
         };
 
-        render(<Test mocks={[defaultMocks, errorMocks, pipelineMocks]} />);
+        render(<Test mocks={[daemonStoppedBothMocks, repoMocks]} />);
         await waitFor(() => {
           expect(screen.queryByLabelText('warning')).toBeVisible();
         });
@@ -198,7 +207,7 @@ describe('InstanceWarningIcon', () => {
     });
 
     describe('Other error', () => {
-      const otherErrorMocks = {
+      const daemonStoppedOtherMocks = {
         DaemonHealth: () => ({
           allDaemonStatuses: () => [
             {daemonType: 'SCHEDULER', healthy: true, required: true},
@@ -209,14 +218,14 @@ describe('InstanceWarningIcon', () => {
       };
 
       it('displays even if there are no sensors or schedules', async () => {
-        const pipelineMocks = {
-          Pipeline: () => ({
+        const repoMocks = {
+          Repository: () => ({
             sensors: () => [],
             schedules: () => [],
           }),
         };
 
-        render(<Test mocks={[defaultMocks, otherErrorMocks, pipelineMocks]} />);
+        render(<Test mocks={[daemonStoppedOtherMocks, repoMocks]} />);
         await waitFor(() => {
           expect(screen.queryByLabelText('warning')).toBeNull();
         });

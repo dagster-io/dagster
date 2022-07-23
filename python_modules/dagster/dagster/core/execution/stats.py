@@ -1,14 +1,14 @@
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, Iterable, List, cast
+from typing import Any, Dict, Iterable, List, NamedTuple, Optional, cast
 
-from dagster import check
+import dagster._check as check
+from dagster._serdes import whitelist_for_serdes
+from dagster._utils import datetime_as_float
 from dagster.core.definitions import ExpectationResult
-from dagster.core.events import DagsterEventType, StepExpectationResultData
+from dagster.core.events import MARKER_EVENTS, DagsterEventType, StepExpectationResultData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot
-from dagster.serdes import whitelist_for_serdes
-from dagster.utils import datetime_as_float
 
 
 def build_run_stats_from_events(run_id, records):
@@ -130,7 +130,7 @@ def build_run_step_stats_from_events(
             DagsterEventType.STEP_RESTARTED,
         ):
             attempt_events[step_key].append(event)
-        if dagster_event.event_type == DagsterEventType.ENGINE_EVENT:
+        if dagster_event.event_type in MARKER_EVENTS:
             if dagster_event.engine_event_data.marker_start:
                 key = dagster_event.engine_event_data.marker_start
                 if key not in markers[step_key]:
@@ -184,15 +184,15 @@ def build_run_step_stats_from_events(
 
 @whitelist_for_serdes
 class RunStepMarker(
-    namedtuple(
+    NamedTuple(
         "_RunStepMarker",
-        ("start_time end_time"),
+        [("start_time", Optional[float]), ("end_time", Optional[float])],
     )
 ):
     def __new__(
         cls,
-        start_time=None,
-        end_time=None,
+        start_time: Optional[float] = None,
+        end_time: Optional[float] = None,
     ):
         return super(RunStepMarker, cls).__new__(
             cls,
@@ -203,26 +203,34 @@ class RunStepMarker(
 
 @whitelist_for_serdes
 class RunStepKeyStatsSnapshot(
-    namedtuple(
+    NamedTuple(
         "_RunStepKeyStatsSnapshot",
-        (
-            "run_id step_key status start_time end_time materialization_events expectation_results "
-            "attempts attempts_list markers"
-        ),
+        [
+            ("run_id", str),
+            ("step_key", str),
+            ("status", Optional[StepEventStatus]),
+            ("start_time", Optional[float]),
+            ("end_time", Optional[float]),
+            ("materialization_events", List[EventLogEntry]),
+            ("expectation_results", List[ExpectationResult]),
+            ("attempts", Optional[int]),
+            ("attempts_list", List[RunStepMarker]),
+            ("markers", List[RunStepMarker]),
+        ],
     )
 ):
     def __new__(
         cls,
-        run_id,
-        step_key,
-        status=None,
-        start_time=None,
-        end_time=None,
-        materialization_events=None,
-        expectation_results=None,
-        attempts=None,
-        attempts_list=None,
-        markers=None,
+        run_id: str,
+        step_key: str,
+        status: Optional[StepEventStatus] = None,
+        start_time: Optional[float] = None,
+        end_time: Optional[float] = None,
+        materialization_events: Optional[List[EventLogEntry]] = None,
+        expectation_results: Optional[List[ExpectationResult]] = None,
+        attempts: Optional[int] = None,
+        attempts_list: Optional[List[RunStepMarker]] = None,
+        markers: Optional[List[RunStepMarker]] = None,
     ):
         return super(RunStepKeyStatsSnapshot, cls).__new__(
             cls,

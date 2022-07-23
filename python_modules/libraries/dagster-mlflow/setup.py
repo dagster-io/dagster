@@ -1,11 +1,11 @@
 from typing import Dict
 
-from setuptools import find_packages, setup  # type: ignore
+from setuptools import find_packages, setup
 
 
 def get_version() -> str:
     version: Dict[str, str] = {}
-    with open("dagster_mlflow/version.py") as fp:
+    with open("dagster_mlflow/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
     return version["__version__"]
@@ -28,7 +28,11 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=find_packages(exclude=["test"]),
-        install_requires=["dagster", "mlflow", "pandas"],
+        packages=find_packages(exclude=["dagster_mlflow_tests*"]),
+        install_requires=[
+            "dagster",
+            "mlflow<=1.26.0",  # https://github.com/mlflow/mlflow/issues/5968
+            "pandas",
+        ],
         zip_safe=False,
     )

@@ -1,4 +1,4 @@
-import {Box, ButtonWIP, DialogBody, DialogFooter, DialogWIP} from '@dagster-io/ui';
+import {Box, Button, DialogBody, DialogFooter, Dialog} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
@@ -16,7 +16,7 @@ interface Props {
 export const RepositoryLocationErrorDialog: React.FC<Props> = (props) => {
   const {isOpen, error, location, reloading, onTryReload, onDismiss} = props;
   return (
-    <DialogWIP
+    <Dialog
       icon="error"
       title="Repository location error"
       isOpen={isOpen}
@@ -28,19 +28,19 @@ export const RepositoryLocationErrorDialog: React.FC<Props> = (props) => {
         <ErrorContents location={location} error={error} />
       </DialogBody>
       <DialogFooter>
-        <ButtonWIP onClick={onTryReload} loading={reloading} intent="primary">
+        <Button onClick={onTryReload} loading={reloading} intent="primary">
           Reload again
-        </ButtonWIP>
-        <ButtonWIP onClick={onDismiss}>Dismiss</ButtonWIP>
+        </Button>
+        <Button onClick={onDismiss}>Dismiss</Button>
       </DialogFooter>
-    </DialogWIP>
+    </Dialog>
   );
 };
 
 export const RepositoryLocationNonBlockingErrorDialog: React.FC<Props> = (props) => {
   const {isOpen, error, location, reloading, onTryReload, onDismiss} = props;
   return (
-    <DialogWIP
+    <Dialog
       icon="error"
       title="Repository location error"
       isOpen={isOpen}
@@ -51,12 +51,12 @@ export const RepositoryLocationNonBlockingErrorDialog: React.FC<Props> = (props)
         <ErrorContents location={location} error={error} />
       </DialogBody>
       <DialogFooter>
-        <ButtonWIP onClick={onTryReload} loading={reloading} intent="primary">
+        <Button onClick={onTryReload} loading={reloading} intent="primary">
           Reload
-        </ButtonWIP>
-        <ButtonWIP onClick={onDismiss}>Close</ButtonWIP>
+        </Button>
+        <Button onClick={onDismiss}>Close</Button>
       </DialogFooter>
-    </DialogWIP>
+    </Dialog>
   );
 };
 

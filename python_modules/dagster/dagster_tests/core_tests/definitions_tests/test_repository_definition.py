@@ -1,31 +1,52 @@
 import datetime
 from collections import defaultdict
+from typing import Sequence
 
 import pytest
 
 from dagster import (
     AssetGroup,
     AssetKey,
+    AssetsDefinition,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
+    DailyPartitionsDefinition,
+    IOManager,
+    JobDefinition,
     PipelineDefinition,
+    ResourceDefinition,
     SensorDefinition,
     SolidDefinition,
     SourceAsset,
+    asset,
     build_schedule_from_partitioned_job,
     daily_partitioned_config,
     daily_schedule,
+    define_asset_job,
+    executor,
     graph,
+    in_process_executor,
+    io_manager,
     job,
     lambda_solid,
+    logger,
     op,
-    pipeline,
     repository,
+    resource,
     schedule,
     sensor,
-    solid,
+)
+from dagster._check import CheckError
+from dagster._legacy import pipeline, solid
+from dagster._loggers import default_loggers
+from dagster.core.definitions.executor_definition import (
+    default_executors,
+    multi_or_in_process_executor,
 )
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
+from dagster.core.errors import DagsterInvalidSubsetError
+
+# pylint: disable=comparison-with-callable
 
 
 def create_single_node_pipeline(name, called):
@@ -229,6 +250,27 @@ def test_direct_schedule_target():
     assert test
 
 
+def test_direct_schedule_unresolved_target():
+
+    unresolved_job = define_asset_job("unresolved_job", selection="foo")
+
+    @asset
+    def foo():
+        return None
+
+    foo_group = AssetGroup([foo])
+
+    @schedule(cron_schedule="* * * * *", job=unresolved_job)
+    def direct_schedule():
+        return {}
+
+    @repository
+    def test():
+        return [direct_schedule, foo_group]
+
+    assert isinstance(test.get_job("unresolved_job"), JobDefinition)
+
+
 def test_direct_sensor_target():
     @solid
     def wow():
@@ -247,6 +289,27 @@ def test_direct_sensor_target():
         return [direct_sensor]
 
     assert test
+
+
+def test_direct_sensor_unresolved_target():
+
+    unresolved_job = define_asset_job("unresolved_job", selection="foo")
+
+    @asset
+    def foo():
+        return None
+
+    foo_group = AssetGroup([foo])
+
+    @sensor(job=unresolved_job)
+    def direct_sensor(_):
+        return {}
+
+    @repository
+    def test():
+        return [direct_sensor, foo_group]
+
+    assert isinstance(test.get_job("unresolved_job"), JobDefinition)
 
 
 def test_target_dupe_job():
@@ -271,6 +334,26 @@ def test_target_dupe_job():
     assert test
 
 
+def test_target_dupe_unresolved():
+    unresolved_job = define_asset_job("unresolved_job", selection="foo")
+
+    @asset
+    def foo():
+        return None
+
+    foo_group = AssetGroup([foo])
+
+    @sensor(job=unresolved_job)
+    def direct_sensor(_):
+        return {}
+
+    @repository
+    def test():
+        return [foo_group, direct_sensor, unresolved_job]
+
+    assert isinstance(test.get_job("unresolved_job"), JobDefinition)
+
+
 def test_bare_graph():
     @solid
     def ok():
@@ -287,6 +370,23 @@ def test_bare_graph():
     # should get updated once "executable" exists
     assert test.get_pipeline("bare")
     assert test.get_job("bare")
+
+
+def test_unresolved_job():
+    unresolved_job = define_asset_job("unresolved_job", selection="foo")
+
+    @asset
+    def foo():
+        return None
+
+    foo_group = AssetGroup([foo])
+
+    @repository
+    def test():
+        return [foo_group, unresolved_job]
+
+    assert isinstance(test.get_job("unresolved_job"), JobDefinition)
+    assert isinstance(test.get_pipeline("unresolved_job"), JobDefinition)
 
 
 def test_bare_graph_with_resources():
@@ -393,6 +493,60 @@ def test_dupe_graph_defs():
         get_collision_repo().get_all_jobs()
 
 
+def test_dupe_unresolved_job_defs():
+    unresolved_job = define_asset_job("bar", selection="foo")
+
+    @asset
+    def foo():
+        return None
+
+    foo_group = AssetGroup([foo])
+
+    @op
+    def the_op():
+        pass
+
+    @graph
+    def graph_bar():
+        the_op()
+
+    bar = graph_bar.to_job(name="bar")
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Duplicate job definition found for job 'bar'",
+    ):
+
+        @repository
+        def _pipe_collide():
+            return [foo_group, unresolved_job, bar]
+
+    def get_collision_repo():
+        @repository
+        def graph_collide():
+            return [
+                foo_group,
+                graph_bar.to_job(name="bar"),
+                unresolved_job,
+            ]
+
+        return graph_collide
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Duplicate definition found for unresolved job 'bar'",
+    ):
+
+        get_collision_repo().get_all_pipelines()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Duplicate definition found for unresolved job 'bar'",
+    ):
+
+        get_collision_repo().get_all_jobs()
+
+
 def test_job_pipeline_collision():
     @solid
     def noop():
@@ -455,6 +609,7 @@ def test_dict_jobs():
             "jobs": {
                 "my_graph": my_graph,
                 "other_graph": my_graph.to_job(name="other_graph"),
+                "tbd": define_asset_job("tbd", selection="*"),
             }
         }
 
@@ -463,6 +618,53 @@ def test_dict_jobs():
     assert jobs.has_job("my_graph")
     assert jobs.get_job("my_graph")
     assert jobs.get_job("other_graph")
+    assert jobs.has_job("tbd")
+    assert jobs.get_job("tbd")
+
+
+def test_lazy_jobs():
+    @graph
+    def my_graph():
+        pass
+
+    @repository
+    def jobs():
+        return {
+            "jobs": {
+                "my_graph": my_graph,
+                "my_job": lambda: my_graph.to_job(name="my_job"),
+                "other_job": lambda: my_graph.to_job(name="other_job"),
+            }
+        }
+
+    assert jobs.get_pipeline("my_graph")
+    assert jobs.get_pipeline("my_job")
+    assert jobs.get_pipeline("other_job")
+
+    assert jobs.has_job("my_graph")
+    assert jobs.get_job("my_job")
+    assert jobs.get_job("other_job")
+
+
+def test_lazy_graph():
+    @graph
+    def my_graph():
+        pass
+
+    @repository
+    def jobs():
+        return {
+            "jobs": {
+                "my_graph": lambda: my_graph,
+            }
+        }
+
+    # Repository with a lazy graph can be constructed, but fails when you try to fetch it
+    with pytest.raises(
+        CheckError,
+        match="Invariant failed. Description: Bad constructor for job my_graph: must return JobDefinition",
+    ):
+        assert jobs.get_pipeline("my_graph")
 
 
 def test_list_dupe_graph():
@@ -564,6 +766,15 @@ def test_bad_coerce():
             }
 
 
+def test_bad_resolve():
+
+    with pytest.raises(DagsterInvalidSubsetError, match=r"AssetKey\(s\) {'foo'} were selected"):
+
+        @repository
+        def _fails():
+            return {"jobs": {"tbd": define_asset_job(name="tbd", selection="foo")}}
+
+
 def test_source_assets():
     foo = SourceAsset(key=AssetKey("foo"))
     bar = SourceAsset(key=AssetKey("bar"))
@@ -572,4 +783,798 @@ def test_source_assets():
     def my_repo():
         return [AssetGroup(assets=[], source_assets=[foo, bar])]
 
-    assert my_repo.source_assets_by_key == {AssetKey("foo"): foo, AssetKey("bar"): bar}
+    assert my_repo.source_assets_by_key == {
+        AssetKey("foo"): SourceAsset(key=AssetKey("foo")),
+        AssetKey("bar"): SourceAsset(key=AssetKey("bar")),
+    }
+
+
+def test_multiple_asset_groups_one_repo():
+    @asset
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    group1 = AssetGroup(assets=[asset1], source_assets=[SourceAsset(key=AssetKey("foo"))])
+    group2 = AssetGroup(assets=[asset2], source_assets=[SourceAsset(key=AssetKey("bar"))])
+
+    @repository
+    def my_repo():
+        return [group1, group2]
+
+    assert my_repo.source_assets_by_key.keys() == {AssetKey("foo"), AssetKey("bar")}
+    assert len(my_repo.get_all_jobs()) == 1
+    assert set(my_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
+        AssetKey(["asset1"]),
+        AssetKey(["asset2"]),
+    }
+
+
+def test_direct_assets():
+    @io_manager(required_resource_keys={"foo"})
+    def the_manager():
+        pass
+
+    foo_resource = ResourceDefinition.hardcoded_resource("foo")
+    foo = SourceAsset("foo", io_manager_def=the_manager, resource_defs={"foo": foo_resource})
+
+    @asset(resource_defs={"foo": foo_resource})
+    def asset1():
+        pass
+
+    @asset
+    def asset2():
+        pass
+
+    @repository
+    def my_repo():
+        return [foo, asset1, asset2]
+
+    assert len(my_repo.get_all_jobs()) == 1
+    assert set(my_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
+        AssetKey(["asset1"]),
+        AssetKey(["asset2"]),
+    }
+    assert my_repo.get_all_jobs()[0].resource_defs["foo"] == foo_resource
+
+
+def test_direct_assets_duplicate_keys():
+    def make_asset():
+        @asset
+        def asset1():
+            pass
+
+        return asset1
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r"Duplicate asset key: AssetKey\(\['asset1'\]\)",
+    ):
+
+        @repository
+        def my_repo():
+            return [make_asset(), make_asset()]
+
+
+def test_direct_asset_unsatified_resource():
+    @asset(required_resource_keys={"a"})
+    def asset1():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'a' required by op 'asset1' was not provided.",
+    ):
+
+        @repository
+        def my_repo():
+            return [asset1]
+
+
+def test_direct_asset_unsatified_resource_transitive():
+    @resource(required_resource_keys={"b"})
+    def resource1():
+        pass
+
+    @asset(resource_defs={"a": resource1})
+    def asset1():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'b' required by resource with key 'a' was not provided.",
+    ):
+
+        @repository
+        def my_repo():
+            return [asset1]
+
+
+def test_source_asset_unsatisfied_resource():
+    @io_manager(required_resource_keys={"foo"})
+    def the_manager():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'foo' required by resource with key 'foo__io_manager' was not provided.",
+    ):
+
+        @repository
+        def the_repo():
+            return [SourceAsset("foo", io_manager_def=the_manager)]
+
+
+def test_source_asset_unsatisfied_resource_transitive():
+    @io_manager(required_resource_keys={"foo"})
+    def the_manager():
+        pass
+
+    @resource(required_resource_keys={"bar"})
+    def foo_resource():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'bar' required by resource with key 'foo' was not provided.",
+    ):
+
+        @repository
+        def the_repo():
+            return [
+                SourceAsset("foo", io_manager_def=the_manager, resource_defs={"foo": foo_resource})
+            ]
+
+
+def test_direct_asset_resource_conflicts():
+    @asset(resource_defs={"foo": ResourceDefinition.hardcoded_resource("1")})
+    def first():
+        pass
+
+    @asset(resource_defs={"foo": ResourceDefinition.hardcoded_resource("2")})
+    def second():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Conflicting versions of resource with key 'foo' were provided to different assets.",
+    ):
+
+        @repository
+        def the_repo():
+            return [first, second]
+
+
+def test_source_asset_resource_conflicts():
+    @asset(resource_defs={"foo": ResourceDefinition.hardcoded_resource("1")})
+    def the_asset():
+        pass
+
+    @io_manager(required_resource_keys={"foo"})
+    def the_manager():
+        pass
+
+    the_source = SourceAsset(
+        key=AssetKey("the_key"),
+        io_manager_def=the_manager,
+        resource_defs={"foo": ResourceDefinition.hardcoded_resource("2")},
+    )
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Conflicting versions of resource with key 'foo' were provided to different assets.",
+    ):
+
+        @repository
+        def the_repo():
+            return [the_asset, the_source]
+
+    other_source = SourceAsset(
+        key=AssetKey("other_key"),
+        io_manager_def=the_manager,
+        resource_defs={"foo": ResourceDefinition.hardcoded_resource("3")},
+    )
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Conflicting versions of resource with key 'foo' were provided to different assets.",
+    ):
+
+        @repository
+        def other_repo():
+            return [other_source, the_source]
+
+
+def test_assets_different_io_manager_defs():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            assert obj == 10
+
+        def load_input(self, context):
+            return 5
+
+    the_manager_used = []
+
+    @io_manager
+    def the_manager():
+        the_manager_used.append("yes")
+        return MyIOManager()
+
+    other_manager_used = []
+
+    @io_manager
+    def other_manager():
+        other_manager_used.append("yes")
+        return MyIOManager()
+
+    @asset(io_manager_def=the_manager)
+    def the_asset(the_source, other_source):
+        return the_source + other_source
+
+    @asset(io_manager_def=other_manager)
+    def other_asset(the_source, other_source):
+        return the_source + other_source
+
+    the_source = SourceAsset(key=AssetKey("the_source"), io_manager_def=the_manager)
+
+    other_source = SourceAsset(key=AssetKey("other_source"), io_manager_def=other_manager)
+
+    @repository
+    def the_repo():
+        return [the_asset, other_asset, the_source, other_source]
+
+    assert len(the_repo.get_all_jobs()) == 1
+    assert the_repo.get_all_jobs()[0].execute_in_process().success
+    assert len(the_manager_used) == 2
+    assert len(other_manager_used) == 2
+
+
+def _create_graph_with_name(name):
+    @graph(name=name)
+    def _the_graph():
+        pass
+
+    return _the_graph
+
+
+def _create_job_with_name(name):
+    @job(name=name)
+    def _the_job():
+        pass
+
+    return _the_job
+
+
+def _create_pipeline_with_name(name):
+    @pipeline(name=name)
+    def _the_pipeline():
+        pass
+
+    return _the_pipeline
+
+
+def _create_schedule_from_target(target):
+    @schedule(job=target, cron_schedule="* * * * *")
+    def _the_schedule():
+        pass
+
+    return _the_schedule
+
+
+def _create_sensor_from_target(target):
+    @sensor(job=target)
+    def _the_sensor():
+        pass
+
+    return _the_sensor
+
+
+def test_duplicate_graph_valid():
+    the_graph = _create_graph_with_name("foo")
+
+    # Providing the same graph to the repo and multiple schedules / sensors is valid
+    @repository
+    def the_repo_dupe_graph_valid():
+        return [the_graph, _create_sensor_from_target(the_graph)]
+
+    assert len(the_repo_dupe_graph_valid.get_all_jobs()) == 1
+
+
+def test_duplicate_graph_target_invalid():
+    the_graph = _create_graph_with_name("foo")
+    other_graph = _create_graph_with_name("foo")
+    # Different reference-equal graph provided to repo with same name, ensure error is thrown.
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="sensor '_the_sensor' targets graph 'foo', but a different graph with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_graph_invalid_sensor():
+            return [the_graph, _create_sensor_from_target(other_graph)]
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="schedule '_the_schedule' targets graph 'foo', but a different graph with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_graph_invalid_schedule():
+            return [the_graph, _create_schedule_from_target(other_graph)]
+
+
+def test_duplicate_unresolved_job_valid():
+    the_job = define_asset_job(name="foo")
+
+    @asset
+    def foo_asset():
+        return 1
+
+    # Providing the same graph to the repo and multiple schedules / sensors is valid
+    @repository
+    def the_repo_dupe_unresolved_job_valid():
+        return [the_job, _create_sensor_from_target(the_job), foo_asset]
+
+    # one job for the mega job
+    assert len(the_repo_dupe_unresolved_job_valid.get_all_jobs()) == 2
+
+
+def test_duplicate_unresolved_job_target_invalid():
+    the_job = define_asset_job(name="foo")
+    other_job = define_asset_job(name="foo", selection="foo")
+
+    @asset
+    def foo():
+        return None
+
+    foo_group = AssetGroup([foo])
+
+    # Different reference-equal jobs provided to repo with same name, ensure error is thrown.
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="sensor '_the_sensor' targets unresolved asset job 'foo', but a different unresolved asset job with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_graph_invalid_sensor():
+            return [foo_group, the_job, _create_sensor_from_target(other_job)]
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="schedule '_the_schedule' targets unresolved asset job 'foo', but a different unresolved asset job with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_graph_invalid_schedule():
+            return [foo_group, the_job, _create_schedule_from_target(other_job)]
+
+
+def test_duplicate_job_target_valid():
+    the_job = _create_job_with_name("foo")
+
+    @repository
+    def the_repo_dupe_job_valid():
+        return [the_job, _create_schedule_from_target(the_job), _create_sensor_from_target(the_job)]
+
+
+def test_duplicate_job_target_invalid():
+    the_job = _create_job_with_name("foo")
+    other_job = _create_job_with_name("foo")
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="sensor '_the_sensor' targets job 'foo', but a different job with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_job_invalid_sensor():
+            return [the_job, _create_sensor_from_target(other_job)]
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="schedule '_the_schedule' targets job 'foo', but a different job with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_job_invalid_schedule():
+            return [the_job, _create_schedule_from_target(other_job)]
+
+
+def test_dupe_pipelines_valid():
+    the_pipeline = _create_pipeline_with_name("foo")
+
+    @repository
+    def the_repo_dupe_pipelines_valid():
+        return [
+            the_pipeline,
+            _create_schedule_from_target(the_pipeline),
+            _create_sensor_from_target(the_pipeline),
+        ]
+
+
+def test_dupe_pipelines_invalid():
+    the_pipeline = _create_pipeline_with_name("foo")
+    other_pipeline = _create_pipeline_with_name("foo")
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="schedule '_the_schedule' targets pipeline 'foo', but a different pipeline with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_pipelines_invalid_schedule():
+            return [the_pipeline, _create_schedule_from_target(other_pipeline)]
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="sensor '_the_sensor' targets pipeline 'foo', but a different pipeline with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_pipelines_invalid_sensor():
+            return [the_pipeline, _create_sensor_from_target(other_pipeline)]
+
+
+def test_dupe_jobs_pipelines_invalid():
+    the_job = _create_job_with_name("foo")
+    the_pipeline = _create_pipeline_with_name("foo")
+
+    the_schedule = _create_schedule_from_target(the_pipeline)
+    the_sensor = _create_sensor_from_target(the_pipeline)
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="schedule '_the_schedule' targets pipeline 'foo', but a different job with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_job_pipeline_invalid_schedule_job():
+            return [the_job, the_schedule]
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="sensor '_the_sensor' targets pipeline 'foo', but a different job with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_job_pipeline_invalid_sensor_job():
+            return [the_job, the_sensor]
+
+    the_graph = _create_graph_with_name("foo")
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="sensor '_the_sensor' targets pipeline 'foo', but a different graph with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_graph_pipeline_invalid_sensor_graph():
+            return [the_graph, the_sensor]
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="schedule '_the_schedule' targets pipeline 'foo', but a different graph with the same name was provided.",
+    ):
+
+        @repository
+        def the_repo_dupe_graph_pipeline_invalid_schedule_graph():
+            return [the_graph, the_schedule]
+
+
+def test_default_executor_repo():
+    @repository(default_executor_def=in_process_executor)
+    def the_repo():
+        return []
+
+
+def test_default_executor_assets_repo():
+    @graph
+    def no_executor_provided():
+        pass
+
+    @asset
+    def the_asset():
+        pass
+
+    @repository(default_executor_def=in_process_executor)
+    def the_repo():
+        return [no_executor_provided, the_asset]
+
+    # pylint: disable=comparison-with-callable
+    assert the_repo.get_job("__ASSET_JOB").executor_def == in_process_executor
+
+    assert the_repo.get_job("no_executor_provided").executor_def == in_process_executor
+
+
+def test_default_executor_jobs_and_pipelines():
+    @asset
+    def the_asset():
+        pass
+
+    unresolved_job = define_asset_job("asset_job", selection="*")
+
+    @executor
+    def custom_executor(_):
+        pass
+
+    @executor
+    def other_custom_executor(_):
+        pass
+
+    @job(executor_def=custom_executor)
+    def op_job_with_executor():
+        pass
+
+    @job
+    def op_job_no_executor():
+        pass
+
+    @job(executor_def=multi_or_in_process_executor)
+    def job_explicitly_specifies_default_executor():
+        pass
+
+    @pipeline
+    def the_pipeline():
+        pass
+
+    @repository(default_executor_def=other_custom_executor)
+    def the_repo():
+        return [
+            the_asset,
+            op_job_with_executor,
+            op_job_no_executor,
+            unresolved_job,
+            the_pipeline,
+            job_explicitly_specifies_default_executor,
+        ]
+
+    assert (
+        the_repo.get_pipeline("the_pipeline").mode_definitions[0].executor_defs == default_executors
+    )
+
+    assert the_repo.get_job("asset_job").executor_def == other_custom_executor
+
+    assert the_repo.get_job("op_job_with_executor").executor_def == custom_executor
+
+    assert the_repo.get_job("op_job_no_executor").executor_def == other_custom_executor
+
+    assert (
+        the_repo.get_job("job_explicitly_specifies_default_executor").executor_def
+        == multi_or_in_process_executor
+    )
+
+
+def test_list_load():
+    @asset
+    def asset1():
+        return 1
+
+    @asset
+    def asset2():
+        return 2
+
+    source = SourceAsset(key=AssetKey("a_source_asset"))
+
+    all_assets: Sequence[AssetsDefinition, SourceAsset] = [asset1, asset2, source]
+
+    @repository
+    def assets_repo():
+        return [all_assets]
+
+    assert len(assets_repo.get_all_jobs()) == 1
+    assert set(assets_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
+        AssetKey(["asset1"]),
+        AssetKey(["asset2"]),
+    }
+
+    @op
+    def op1():
+        return 1
+
+    @op
+    def op2():
+        return 1
+
+    @job
+    def job1():
+        op1()
+
+    @job
+    def job2():
+        op2()
+
+    job_list = [job1, job2]
+
+    @repository
+    def job_repo():
+        return [job_list]
+
+    assert len(job_repo.get_all_jobs()) == len(job_list)
+
+    @asset
+    def asset3():
+        return 3
+
+    @op
+    def op3():
+        return 3
+
+    @job
+    def job3():
+        op3()
+
+    combo_list = [asset3, job3]
+
+    @repository
+    def combo_repo():
+        return [combo_list]
+
+    assert len(combo_repo.get_all_jobs()) == 2
+    assert set(combo_repo.get_all_jobs()[0].asset_layer.asset_keys) == {
+        AssetKey(["asset3"]),
+    }
+
+
+def test_multi_nested_list():
+    @asset
+    def asset1():
+        return 1
+
+    @asset
+    def asset2():
+        return 2
+
+    source = SourceAsset(key=AssetKey("a_source_asset"))
+
+    layer_1: Sequence[AssetsDefinition, SourceAsset] = [asset2, source]
+    layer_2 = [layer_1, asset1]
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Bad return value from repository"):
+
+        @repository
+        def assets_repo():
+            return [layer_2]
+
+
+def test_default_executor_config():
+    @asset
+    def some_asset():
+        pass
+
+    @repository(default_executor_def=in_process_executor)
+    def the_repo():
+        # The config provided to the_job matches in_process_executor, but not the default executor.
+        return [
+            define_asset_job(
+                "the_job", config={"execution": {"config": {"retries": {"enabled": {}}}}}
+            ),
+            some_asset,
+        ]
+
+    assert the_repo.get_job("the_job").executor_def == in_process_executor
+
+
+def test_scheduled_partitioned_asset_job():
+    partitions_def = DailyPartitionsDefinition(start_date="2022-06-06")
+
+    @asset(partitions_def=partitions_def)
+    def asset1():
+        ...
+
+    @repository
+    def repo():
+        return [
+            asset1,
+            build_schedule_from_partitioned_job(
+                define_asset_job("fdsjk", partitions_def=partitions_def)
+            ),
+        ]
+
+    repo.load_all_definitions()
+
+
+def test_default_loggers_repo():
+    @logger
+    def basic():
+        pass
+
+    @repository(default_logger_defs={"foo": basic})
+    def the_repo():
+        return []
+
+
+def test_default_loggers_assets_repo():
+    @graph
+    def no_logger_provided():
+        pass
+
+    @asset
+    def the_asset():
+        pass
+
+    @logger
+    def basic():
+        pass
+
+    @repository(default_logger_defs={"foo": basic})
+    def the_repo():
+        return [no_logger_provided, the_asset]
+
+    assert the_repo.get_job("__ASSET_JOB").loggers == {"foo": basic}
+
+    assert the_repo.get_job("no_logger_provided").loggers == {"foo": basic}
+
+
+def test_default_loggers_jobs_and_pipelines():
+    @asset
+    def the_asset():
+        pass
+
+    unresolved_job = define_asset_job("asset_job", selection="*")
+
+    @logger
+    def custom_logger(_):
+        pass
+
+    @logger
+    def other_custom_logger(_):
+        pass
+
+    @job(logger_defs={"bar": custom_logger})
+    def op_job_with_loggers():
+        pass
+
+    @job
+    def op_job_no_loggers():
+        pass
+
+    @job(logger_defs=default_loggers())
+    def job_explicitly_specifies_default_loggers():
+        pass
+
+    @pipeline
+    def the_pipeline():
+        pass
+
+    @repository(default_logger_defs={"foo": other_custom_logger})
+    def the_repo():
+        return [
+            the_asset,
+            op_job_with_loggers,
+            op_job_no_loggers,
+            unresolved_job,
+            the_pipeline,
+            job_explicitly_specifies_default_loggers,
+        ]
+
+    assert the_repo.get_pipeline("the_pipeline").mode_definitions[0].loggers == default_loggers()
+
+    assert the_repo.get_job("asset_job").loggers == {"foo": other_custom_logger}
+
+    assert the_repo.get_job("op_job_with_loggers").loggers == {"bar": custom_logger}
+
+    assert the_repo.get_job("op_job_no_loggers").loggers == {"foo": other_custom_logger}
+
+    assert the_repo.get_job("job_explicitly_specifies_default_loggers").loggers == default_loggers()
+
+
+def test_default_loggers_keys_conflict():
+    @logger
+    def some_logger():
+        pass
+
+    @logger
+    def other_logger():
+        pass
+
+    @job(logger_defs={"foo": some_logger})
+    def the_job():
+        pass
+
+    @repository(default_logger_defs={"foo": other_logger})
+    def the_repo():
+        return [the_job]
+
+    assert the_repo.get_job("the_job").loggers == {"foo": some_logger}

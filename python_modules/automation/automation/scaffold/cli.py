@@ -18,8 +18,8 @@ necessary files like tox.ini, etc.
 """
 
 
-def add_to_examples_json(name):
-    with open(EXAMPLES_JSON_PATH, "r") as examples_file:
+def add_to_examples_json(name: str) -> None:
+    with open(EXAMPLES_JSON_PATH, "r", encoding="utf8") as examples_file:
         examples = json.load(examples_file)
 
     if name in {example["name"] for example in examples}:
@@ -31,7 +31,7 @@ def add_to_examples_json(name):
 
     examples.append({"name": name, "title": "", "description": ""})
 
-    with open(EXAMPLES_JSON_PATH, "w") as examples_file:
+    with open(EXAMPLES_JSON_PATH, "w", encoding="utf8") as examples_file:
         json.dump(examples, examples_file, indent=4)
 
 
@@ -44,15 +44,13 @@ def cli():
 @click.option(
     "--name", prompt='Name of library (ex: "foo" will create dagster-foo)', help="Name of library"
 )
-def library(name):
+def library(name: str):
     """Scaffolds a Dagster library <NAME> in python_modules/libraries/dagster-<NAME>."""
     template_library_path = os.path.join(ASSETS_PATH, "dagster-library-tmpl")
-    new_template_library_path = os.path.abspath(
-        "python_modules/libraries/dagster-{name}".format(name=name)
-    )
+    new_template_library_path = os.path.abspath(f"python_modules/libraries/dagster-{name}")
 
     if os.path.exists(new_template_library_path):
-        raise click.UsageError("Library with name {name} already exists".format(name=name))
+        raise click.UsageError(f"Library with name {name} already exists")
 
     copy_directory(template_library_path, new_template_library_path)
 
@@ -63,11 +61,11 @@ def library(name):
 
         for fname in files:
             fpath = os.path.join(dname, fname)
-            with open(fpath) as f:
+            with open(fpath, encoding="utf8") as f:
                 s = f.read()
             s = s.replace("{{LIBRARY_NAME}}", name)
             s = s.replace("{{VERSION}}", version)
-            with open(fpath, "w") as f:
+            with open(fpath, "w", encoding="utf8") as f:
                 f.write(s)
 
             new_fname = fname.replace(".tmpl", "")
@@ -104,11 +102,11 @@ def example(name):
     for dname, _, files in os.walk(new_template_library_path):
         for fname in files:
             fpath = os.path.join(dname, fname)
-            with open(fpath) as f:
+            with open(fpath, encoding="utf8") as f:
                 s = f.read()
             s = s.replace("{{EXAMPLE_NAME}}", name)
             s = s.replace("{{VERSION}}", version)
-            with open(fpath, "w") as f:
+            with open(fpath, "w", encoding="utf8") as f:
                 f.write(s)
 
             new_fname = fname.replace(".tmpl", "").replace("{{EXAMPLE_NAME}}", name)
@@ -126,7 +124,7 @@ def example(name):
     print("Added metadata to {path}".format(path=EXAMPLES_JSON_PATH))
 
 
-def main():
+def main() -> None:
     click_cli = click.CommandCollection(sources=[cli], help=CLI_HELP)
     click_cli()
 

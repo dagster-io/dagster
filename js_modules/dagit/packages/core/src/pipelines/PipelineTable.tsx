@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {ColorsWIP, Group, Table, Caption} from '@dagster-io/ui';
+import {Colors, Group, Table, Caption} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -67,7 +67,7 @@ export const PipelineTable: React.FC<Props> = (props) => {
                   ))}
                 </Group>
               ) : (
-                <div style={{color: ColorsWIP.Gray200}}>None</div>
+                <div style={{color: Colors.Gray200}}>None</div>
               )}
             </td>
             <td>
@@ -83,7 +83,7 @@ export const PipelineTable: React.FC<Props> = (props) => {
                   ))}
                 </Group>
               ) : (
-                <div style={{color: ColorsWIP.Gray200}}>None</div>
+                <div style={{color: Colors.Gray200}}>None</div>
               )}
             </td>
             <td>
@@ -106,7 +106,7 @@ export const PipelineTable: React.FC<Props> = (props) => {
 };
 
 const Description = styled.div`
-  color: ${ColorsWIP.Gray400};
+  color: ${Colors.Gray400};
   font-size: 12px;
 `;
 

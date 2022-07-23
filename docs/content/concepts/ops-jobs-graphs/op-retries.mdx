@@ -1,0 +1,88 @@
+---
+title: Op Retries | Dagster
+description: Retry ops on exception using RetryPolicy and RetryRequested
+---
+
+# Op Retries
+
+When an exception occurs during op execution, Dagster provides tools to retry that op within the same job run.
+
+## Relevant APIs
+
+| Name                                                  | Description                                                                   |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------- |
+| <PyObject module="dagster" object="RetryRequested" /> | An exception that can be thrown from the body of an op to request a retry     |
+| <PyObject module="dagster" object="RetryPolicy"  />   | A declarative policy to attach which will have retries requested on exception |
+| <PyObject module="dagster" object="Backoff"  />       | Modification to delay between retries based on attempt number                 |
+| <PyObject module="dagster" object="Jitter"  />        | Random modification to delay beween retries                                   |
+
+## Overview
+
+In Dagster, code is executed within an [op](/concepts/ops-jobs-graphs/ops). Sometimes this code can fail for transient reasons, and the desired behavior is to retry and run the function again.
+
+Dagster provides both declarative <PyObject module="dagster" object="RetryPolicy"  />s as well as manual <PyObject module="dagster" object="RetryRequested" /> exceptions to enable this behavior.
+
+## Using Op Retries
+
+Here we start off with an op that is causing us to have to retry the whole job anytime it fails.
+
+```python file=/concepts/ops_jobs_graphs/retries.py startafter=problem_start endbefore=problem_end
+@op
+def problematic():
+    fails_sometimes()
+```
+
+### RetryPolicy
+
+To get this solid to retry when an exception occurs, we can attach a <PyObject module="dagster" object="RetryPolicy" />.
+
+```python file=/concepts/ops_jobs_graphs/retries.py startafter=policy_start endbefore=policy_end
+@op(retry_policy=RetryPolicy())
+def better():
+    fails_sometimes()
+```
+
+This improves the situation, but we may need additional configuration to control how many times to retry and/or how long to wait between each retry.
+
+```python file=/concepts/ops_jobs_graphs/retries.py startafter=policy2_start endbefore=policy2_end
+@op(
+    retry_policy=RetryPolicy(
+        max_retries=3,
+        delay=0.2,  # 200ms
+        backoff=Backoff.EXPONENTIAL,
+        jitter=Jitter.PLUS_MINUS,
+    )
+)
+def even_better():
+    fails_sometimes()
+```
+
+In addition to being able to set the policy directly on the op definition, it can also be set on specific invocations of an op, or a <PyObject module="dagster" object="job" decorator /> to apply to all ops contained within.
+
+```python file=/concepts/ops_jobs_graphs/retries.py startafter=policy3_start endbefore=policy3_end
+default_policy = RetryPolicy(max_retries=1)
+flakey_op_policy = RetryPolicy(max_retries=10)
+
+
+@job(op_retry_policy=default_policy)
+def default_and_override_job():
+    problematic.with_retry_policy(flakey_op_policy)()
+```
+
+### RetryRequested
+
+In certain more nuanced situations, we may need to evaluate code to determine if we want to retry or not. For this we can use a manual <PyObject module="dagster" object="RetryRequested" /> exception.
+
+```python file=/concepts/ops_jobs_graphs/retries.py startafter=manual_start endbefore=manual_end
+@op
+def manual():
+    try:
+        fails_sometimes()
+    except Exception as e:
+        if should_retry(e):
+            raise RetryRequested(max_retries=1, seconds_to_wait=1) from e
+        else:
+            raise
+```
+
+Using `raise from` will ensure the original exceptions information is captured by Dagster.

@@ -1,10 +1,12 @@
 import abc
 import os
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Optional
 
-from dagster import check
-from dagster.config import Field
-from dagster.config.source import IntSource
+import dagster._check as check
+from dagster._config import Field, IntSource
+from dagster._serdes import ConfigurableClass
+from dagster._seven import get_current_datetime_in_utc
+from dagster._utils import mkdir_p
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import ExternalSchedule
@@ -14,9 +16,6 @@ from dagster.core.scheduler.instigation import (
     InstigatorStatus,
     ScheduleInstigatorData,
 )
-from dagster.serdes import ConfigurableClass
-from dagster.seven import get_current_datetime_in_utc
-from dagster.utils import mkdir_p
 
 
 class DagsterSchedulerError(DagsterError):
@@ -59,7 +58,9 @@ class Scheduler(abc.ABC):
     an external system such as cron to ensure scheduled repeated execution according.
     """
 
-    def start_schedule(self, instance, external_schedule):
+    def start_schedule(
+        self, instance: DagsterInstance, external_schedule: ExternalSchedule
+    ) -> InstigatorState:
         """
         Updates the status of the given schedule to `InstigatorStatus.RUNNING` in schedule storage,
 
@@ -74,35 +75,40 @@ class Scheduler(abc.ABC):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
 
-        schedule_state = instance.get_instigator_state(external_schedule.get_external_origin_id())
-        if external_schedule.get_current_instigator_state(schedule_state).is_running:
-            raise DagsterSchedulerError(
-                "You have attempted to start schedule {name}, but it is already running".format(
-                    name=external_schedule.name
-                )
-            )
+        stored_state = instance.get_instigator_state(
+            external_schedule.get_external_origin_id(), external_schedule.selector_id
+        )
+        computed_state = external_schedule.get_current_instigator_state(stored_state)
+        if computed_state.is_running:
+            return computed_state
 
         new_instigator_data = ScheduleInstigatorData(
             external_schedule.cron_schedule,
             get_current_datetime_in_utc().timestamp(),
         )
 
-        if not schedule_state:
-            started_schedule = InstigatorState(
+        if not stored_state:
+            started_state = InstigatorState(
                 external_schedule.get_external_origin(),
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.RUNNING,
                 new_instigator_data,
             )
-            instance.add_instigator_state(started_schedule)
+            instance.add_instigator_state(started_state)
         else:
-            started_schedule = schedule_state.with_status(InstigatorStatus.RUNNING).with_data(
+            started_state = stored_state.with_status(InstigatorStatus.RUNNING).with_data(
                 new_instigator_data
             )
-            instance.update_instigator_state(started_schedule)
-        return started_schedule
+            instance.update_instigator_state(started_state)
+        return started_state
 
-    def stop_schedule(self, instance, schedule_origin_id, external_schedule):
+    def stop_schedule(
+        self,
+        instance: DagsterInstance,
+        schedule_origin_id: str,
+        schedule_selector_id: str,
+        external_schedule: Optional[ExternalSchedule],
+    ) -> InstigatorState:
         """
         Updates the status of the given schedule to `InstigatorStatus.STOPPED` in schedule storage,
 
@@ -115,19 +121,19 @@ class Scheduler(abc.ABC):
         check.str_param(schedule_origin_id, "schedule_origin_id")
         check.opt_inst_param(external_schedule, "external_schedule", ExternalSchedule)
 
-        schedule_state = instance.get_instigator_state(schedule_origin_id)
-        if (
-            external_schedule
-            and not external_schedule.get_current_instigator_state(schedule_state).is_running
-        ) or (schedule_state and not schedule_state.is_running):
-            raise DagsterSchedulerError(
-                "You have attempted to stop schedule {name}, but it is already stopped".format(
-                    name=external_schedule.name
-                )
-            )
+        stored_state = instance.get_instigator_state(schedule_origin_id, schedule_selector_id)
 
-        if not schedule_state:
-            stopped_schedule = InstigatorState(
+        if not external_schedule:
+            computed_state = stored_state
+        else:
+            computed_state = external_schedule.get_current_instigator_state(stored_state)
+
+        if computed_state and not computed_state.is_running:
+            return computed_state
+
+        if not stored_state:
+            assert external_schedule
+            stopped_state = InstigatorState(
                 external_schedule.get_external_origin(),
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.STOPPED,
@@ -135,16 +141,16 @@ class Scheduler(abc.ABC):
                     external_schedule.cron_schedule,
                 ),
             )
-            instance.add_instigator_state(stopped_schedule)
+            instance.add_instigator_state(stopped_state)
         else:
-            stopped_schedule = schedule_state.with_status(InstigatorStatus.STOPPED).with_data(
+            stopped_state = stored_state.with_status(InstigatorStatus.STOPPED).with_data(
                 ScheduleInstigatorData(
-                    cron_schedule=schedule_state.instigator_data.cron_schedule,
+                    cron_schedule=computed_state.instigator_data.cron_schedule,
                 )
             )
-            instance.update_instigator_state(stopped_schedule)
+            instance.update_instigator_state(stopped_state)
 
-        return stopped_schedule
+        return stopped_state
 
     @abc.abstractmethod
     def debug_info(self):

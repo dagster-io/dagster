@@ -16,6 +16,11 @@ export interface RunTableRunFragment_repositoryOrigin {
   repositoryLocationName: string;
 }
 
+export interface RunTableRunFragment_assetSelection {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface RunTableRunFragment_tags {
   __typename: "PipelineTag";
   key: string;
@@ -36,6 +41,7 @@ export interface RunTableRunFragment {
   pipelineName: string;
   repositoryOrigin: RunTableRunFragment_repositoryOrigin | null;
   solidSelection: string[] | null;
+  assetSelection: RunTableRunFragment_assetSelection[] | null;
   tags: RunTableRunFragment_tags[];
   startTime: number | null;
   endTime: number | null;

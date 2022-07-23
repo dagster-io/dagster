@@ -1,7 +1,7 @@
 # type: ignore[attr-defined]
-from solids import example_two_solid  # pylint: disable=import-error
+from solids import example_two_solid  # pylint: disable=no-name-in-module
 
-from dagster import pipeline
+from dagster._legacy import pipeline
 
 
 @pipeline

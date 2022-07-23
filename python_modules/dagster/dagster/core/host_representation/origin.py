@@ -1,5 +1,4 @@
 import os
-import sys
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from inspect import Parameter
@@ -7,6 +6,8 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    Generator,
+    List,
     Mapping,
     NamedTuple,
     NoReturn,
@@ -16,20 +17,28 @@ from typing import (
     cast,
 )
 
-from dagster import check
-from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.serdes import (
+import dagster._check as check
+from dagster._serdes import (
     DefaultNamedTupleSerializer,
     create_snapshot_id,
     register_serdes_tuple_fallbacks,
     whitelist_for_serdes,
 )
-from dagster.serdes.serdes import WhitelistMap, unpack_inner_value
+from dagster._serdes.serdes import WhitelistMap, unpack_inner_value
+from dagster.core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
+from dagster.core.origin import DEFAULT_DAGSTER_ENTRY_POINT
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+
+from .selector import PartitionSetSelector, RepositorySelector
 
 if TYPE_CHECKING:
-    from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
+    from dagster._grpc.client import DagsterGrpcClient
+    from dagster.core.host_representation.repository_location import (
+        GrpcServerRepositoryLocation,
+        InProcessRepositoryLocation,
+        RepositoryLocation,
+    )
+    from dagster.core.instance import DagsterInstance
 
 # This is a hard-coded name for the special "in-process" location.
 # This is typically only used for test, although we may allow
@@ -73,27 +82,27 @@ def _assign_loadable_target_origin_name(loadable_target_origin: LoadableTargetOr
     )
 
 
-class RepositoryLocationOrigin(ABC):
+class RepositoryLocationOrigin(ABC, tuple):
     """Serializable representation of a RepositoryLocation that can be used to
     uniquely identify the location or reload it in across process boundaries.
     """
 
     @property
-    def is_reload_supported(self):
+    def is_reload_supported(self) -> bool:
         return True
 
     @property
-    def is_shutdown_supported(self):
+    def is_shutdown_supported(self) -> bool:
         return False
 
-    def shutdown_server(self):
+    def shutdown_server(self) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def get_display_metadata(self):
+    def get_display_metadata(self) -> Dict[str, Any]:
         pass
 
-    def get_id(self):
+    def get_id(self) -> str:
         return create_snapshot_id(self)
 
     @property
@@ -102,7 +111,7 @@ class RepositoryLocationOrigin(ABC):
         pass
 
     @abstractmethod
-    def create_location(self):
+    def create_location(self) -> "RepositoryLocation":
         pass
 
     @property
@@ -120,13 +129,13 @@ class RegisteredRepositoryLocationOrigin(
     its own mapping from location name to repository location metadata.
     """
 
-    def __new__(cls, location_name):
+    def __new__(cls, location_name: str):
         return super(RegisteredRepositoryLocationOrigin, cls).__new__(cls, location_name)
 
-    def get_display_metadata(self):
+    def get_display_metadata(self) -> Dict[str, Any]:
         return {}
 
-    def create_location(self):
+    def create_location(self) -> NoReturn:
         raise DagsterInvariantViolationError(
             "A RegisteredRepositoryLocationOrigin does not have enough information to load its "
             "repository location on its own."
@@ -135,16 +144,41 @@ class RegisteredRepositoryLocationOrigin(
 
 @whitelist_for_serdes
 class InProcessRepositoryLocationOrigin(
-    NamedTuple("_InProcessRepositoryLocationOrigin", [("recon_repo", ReconstructableRepository)]),
+    NamedTuple(
+        "_InProcessRepositoryLocationOrigin",
+        [
+            ("loadable_target_origin", LoadableTargetOrigin),
+            ("container_image", Optional[str]),
+            ("entry_point", List[str]),
+            ("container_context", Optional[Dict[str, Any]]),
+        ],
+    ),
     RepositoryLocationOrigin,
 ):
-    """Identifies a repository location constructed in the host process. Should only be
-    used in tests.
+    """Identifies a repository location constructed in the same process. Primarily
+    used in tests, since Dagster system processes like Dagit and the daemon do not
+    load user code in the same process.
     """
 
-    def __new__(cls, recon_repo):
+    def __new__(
+        cls,
+        loadable_target_origin: LoadableTargetOrigin,
+        container_image: Optional[str] = None,
+        entry_point: Optional[List[str]] = None,
+        container_context=None,
+    ):
         return super(InProcessRepositoryLocationOrigin, cls).__new__(
-            cls, check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
+            cls,
+            check.inst_param(
+                loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
+            ),
+            container_image=check.opt_str_param(container_image, "container_image"),
+            entry_point=(
+                check.opt_list_param(entry_point, "entry_point")
+                if entry_point
+                else DEFAULT_DAGSTER_ENTRY_POINT
+            ),
+            container_context=check.opt_dict_param(container_context, "container_context"),
         )
 
     @property
@@ -152,15 +186,13 @@ class InProcessRepositoryLocationOrigin(
         return IN_PROCESS_NAME
 
     @property
-    def is_reload_supported(self):
+    def is_reload_supported(self) -> bool:
         return False
 
-    def get_display_metadata(self):
-        return {
-            "in_process_code_pointer": self.recon_repo.pointer.describe(),
-        }
+    def get_display_metadata(self) -> Dict[str, Any]:
+        return {}
 
-    def create_location(self):
+    def create_location(self) -> "InProcessRepositoryLocation":
         from dagster.core.host_representation.repository_location import InProcessRepositoryLocation
 
         return InProcessRepositoryLocation(self)
@@ -178,7 +210,9 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
     for these repository locations on startup.
     """
 
-    def __new__(cls, loadable_target_origin, location_name=None):
+    def __new__(
+        cls, loadable_target_origin: LoadableTargetOrigin, location_name: Optional[str] = None
+    ):
         return super(ManagedGrpcPythonEnvRepositoryLocationOrigin, cls).__new__(
             cls,
             check.inst_param(
@@ -196,11 +230,7 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
             "working_directory": self.loadable_target_origin.working_directory,
             "attribute": self.loadable_target_origin.attribute,
             "package_name": self.loadable_target_origin.package_name,
-            "executable_path": (
-                self.loadable_target_origin.executable_path
-                if self.loadable_target_origin.executable_path != sys.executable
-                else None
-            ),
+            "executable_path": self.loadable_target_origin.executable_path,
         }
         return {key: value for key, value in metadata.items() if value is not None}
 
@@ -211,11 +241,10 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
         )
 
     @contextmanager
-    def create_single_location(self):
-        from dagster.core.workspace.context import (
-            DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
-            DAGIT_GRPC_SERVER_STARTUP_TIMEOUT,
-        )
+    def create_single_location(
+        self, instance: "DagsterInstance"
+    ) -> Generator["RepositoryLocation", None, None]:
+        from dagster.core.workspace.context import DAGIT_GRPC_SERVER_HEARTBEAT_TTL
 
         from .grpc_server_registry import ProcessGrpcServerRegistry
         from .repository_location import GrpcServerRepositoryLocation
@@ -223,7 +252,7 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
         with ProcessGrpcServerRegistry(
             reload_interval=0,
             heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
-            startup_timeout=DAGIT_GRPC_SERVER_STARTUP_TIMEOUT,
+            startup_timeout=instance.code_server_process_startup_timeout,
         ) as grpc_server_registry:
             endpoint = grpc_server_registry.get_grpc_endpoint(self)
             with GrpcServerRepositoryLocation(
@@ -263,7 +292,14 @@ class GrpcServerRepositoryLocationOrigin(
     is not responsible for managing the lifecycle of the server.
     """
 
-    def __new__(cls, host, port=None, socket=None, location_name=None, use_ssl=None):
+    def __new__(
+        cls,
+        host: str,
+        port: Optional[int] = None,
+        socket: Optional[str] = None,
+        location_name: Optional[str] = None,
+        use_ssl: Optional[bool] = None,
+    ):
         return super(GrpcServerRepositoryLocationOrigin, cls).__new__(
             cls,
             check.str_param(host, "host"),
@@ -291,11 +327,11 @@ class GrpcServerRepositoryLocationOrigin(
         return GrpcServerRepositoryLocation(self)
 
     @property
-    def supports_server_watch(self):
+    def supports_server_watch(self) -> bool:
         return True
 
-    def create_client(self):
-        from dagster.grpc.client import DagsterGrpcClient
+    def create_client(self) -> "DagsterGrpcClient":
+        from dagster._grpc.client import DagsterGrpcClient
 
         return DagsterGrpcClient(
             port=self.port,
@@ -305,10 +341,10 @@ class GrpcServerRepositoryLocationOrigin(
         )
 
     @property
-    def is_shutdown_supported(self):
+    def is_shutdown_supported(self) -> bool:
         return True
 
-    def shutdown_server(self):
+    def shutdown_server(self) -> None:
         try:
             self.create_client().shutdown_server()
         except DagsterUserCodeUnreachableError:
@@ -336,16 +372,24 @@ class ExternalRepositoryOrigin(
             check.str_param(repository_name, "repository_name"),
         )
 
-    def get_id(self):
+    def get_id(self) -> str:
         return create_snapshot_id(self)
 
-    def get_pipeline_origin(self, pipeline_name):
+    def get_selector_id(self) -> str:
+        return create_snapshot_id(
+            RepositorySelector(self.repository_location_origin.location_name, self.repository_name)
+        )
+
+    def get_label(self) -> str:
+        return f"{self.repository_name}@{self.repository_location_origin.location_name}"
+
+    def get_pipeline_origin(self, pipeline_name: str) -> "ExternalPipelineOrigin":
         return ExternalPipelineOrigin(self, pipeline_name)
 
-    def get_instigator_origin(self, instigator_name):
+    def get_instigator_origin(self, instigator_name: str) -> "ExternalInstigatorOrigin":
         return ExternalInstigatorOrigin(self, instigator_name)
 
-    def get_partition_set_origin(self, partition_set_name):
+    def get_partition_set_origin(self, partition_set_name: str) -> "ExternalPartitionSetOrigin":
         return ExternalPartitionSetOrigin(self, partition_set_name)
 
 
@@ -371,7 +415,7 @@ class ExternalPipelineOrigin(
             check.str_param(pipeline_name, "pipeline_name"),
         )
 
-    def get_id(self):
+    def get_id(self) -> str:
         return create_snapshot_id(self)
 
 
@@ -444,7 +488,7 @@ class ExternalInstigatorOrigin(
             check.str_param(instigator_name, "instigator_name"),
         )
 
-    def get_id(self):
+    def get_id(self) -> str:
         return create_snapshot_id(self)
 
 
@@ -478,5 +522,14 @@ class ExternalPartitionSetOrigin(
             check.str_param(partition_set_name, "partition_set_name"),
         )
 
-    def get_id(self):
+    def get_id(self) -> str:
         return create_snapshot_id(self)
+
+    def get_selector_id(self) -> str:
+        return create_snapshot_id(
+            PartitionSetSelector(
+                self.external_repository_origin.repository_location_origin.location_name,
+                self.external_repository_origin.repository_name,
+                self.partition_set_name,
+            )
+        )

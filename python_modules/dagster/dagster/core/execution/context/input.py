@@ -1,10 +1,9 @@
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
-from dagster import check
-from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.op_definition import OpDefinition
+import dagster._check as check
+from dagster.core.definitions.events import AssetKey, AssetObservation
+from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
-from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
@@ -12,7 +11,10 @@ from dagster.core.definitions.time_window_partitions import (
 from dagster.core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
+    from dagster.core.definitions import PartitionsDefinition, SolidDefinition
+    from dagster.core.definitions.op_definition import OpDefinition
     from dagster.core.definitions.resource_definition import Resources
+    from dagster.core.events import DagsterEvent
     from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.log_manager import DagsterLogManager
     from dagster.core.types.dagster_type import DagsterType
@@ -86,6 +88,10 @@ class InputContext:
             self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
             self._cm_scope_entered = False
 
+        self._events: List["DagsterEvent"] = []
+        self._observations: List[AssetObservation] = []
+        self._metadata_entries: List[Union[MetadataEntry, PartitionMetadataEntry]] = []
+
     def __enter__(self):
         if self._resources_cm:
             self._cm_scope_entered = True
@@ -137,6 +143,8 @@ class InputContext:
 
     @property
     def op_def(self) -> "OpDefinition":
+        from dagster.core.definitions import OpDefinition
+
         if self._solid_def is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access op_def, "
@@ -198,14 +206,39 @@ class InputContext:
         return self._resources
 
     @property
-    def asset_key(self) -> Optional[AssetKey]:
-        matching_input_defs = [
-            input_def
-            for input_def in cast(SolidDefinition, self._solid_def).input_defs
-            if input_def.name == self.name
-        ]
-        check.invariant(len(matching_input_defs) == 1)
-        return matching_input_defs[0].get_asset_key(self)
+    def has_asset_key(self) -> bool:
+        return (
+            self._step_context is not None
+            and self._name is not None
+            and self._step_context.pipeline_def.asset_layer.asset_key_for_input(
+                node_handle=self.step_context.solid_handle, input_name=self._name
+            )
+            is not None
+        )
+
+    @property
+    def asset_key(self) -> AssetKey:
+        result = self.step_context.pipeline_def.asset_layer.asset_key_for_input(
+            node_handle=self.step_context.solid_handle, input_name=self.name
+        )
+        if result is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access asset_key, but no asset is associated with this input"
+            )
+
+        return result
+
+    @property
+    def asset_partitions_def(self) -> "PartitionsDefinition":
+        """The PartitionsDefinition on the upstream asset corresponding to this input."""
+        asset_key = self.asset_key
+        result = self.step_context.pipeline_def.asset_layer.partitions_def_for_asset(asset_key)
+        if result is None:
+            raise DagsterInvariantViolationError(
+                f"Attempting to access partitions def for asset {asset_key}, but it is not partitioned"
+            )
+
+        return result
 
     @property
     def step_context(self) -> "StepExecutionContext":
@@ -265,27 +298,132 @@ class InputContext:
         if self.upstream_output is None:
             check.failed("InputContext needs upstream_output to get asset_partitions_time_window")
 
-        partitions_def = self.upstream_output.solid_def.output_def_named(
-            self.upstream_output.name
-        ).asset_partitions_def
-
-        if not partitions_def:
+        if self.upstream_output.asset_info is None:
             raise ValueError(
                 "Tried to get asset partitions for an output that does not correspond to a "
                 "partitioned asset."
             )
 
-        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
+        asset_info = self.upstream_output.asset_info
+
+        if not isinstance(asset_info.partitions_def, TimeWindowPartitionsDefinition):
             raise ValueError(
                 "Tried to get asset partitions for an input that correponds to a partitioned "
                 "asset that is not partitioned with a TimeWindowPartitionsDefinition."
             )
+
+        partitions_def: TimeWindowPartitionsDefinition = asset_info.partitions_def
 
         partition_key_range = self.asset_partition_key_range
         return TimeWindow(
             partitions_def.time_window_for_partition_key(partition_key_range.start).start,
             partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
+
+    def get_identifier(self) -> Sequence[str]:
+        """Utility method to get a collection of identifiers that as a whole represent a unique
+        step input.
+
+        If not using memoization, the unique identifier collection consists of
+
+        - ``run_id``: the id of the run which generates the input.
+            Note: This method also handles the re-execution memoization logic. If the step that
+            generates the input is skipped in the re-execution, the ``run_id`` will be the id
+            of its parent run.
+        - ``step_key``: the key for a compute step.
+        - ``name``: the name of the output. (default: 'result').
+
+        If using memoization, the ``version`` corresponding to the step output is used in place of
+        the ``run_id``.
+
+        Returns:
+            List[str, ...]: A list of identifiers, i.e. (run_id or version), step_key, and output_name
+        """
+        if self.upstream_output is None:
+            raise DagsterInvariantViolationError(
+                "InputContext.upstream_output not defined. " "Cannot compute an identifier"
+            )
+
+        return self.upstream_output.get_identifier()
+
+    def get_asset_identifier(self) -> Sequence[str]:
+        if self.asset_key is not None:
+            if self.has_asset_partitions:
+                return self.asset_key.path + [self.asset_partition_key]
+            else:
+                return self.asset_key.path
+        else:
+            check.failed("Can't get asset identifier for an input with no asset key")
+
+    def consume_events(self) -> Iterator["DagsterEvent"]:
+        """Pops and yields all user-generated events that have been recorded from this context.
+
+        If consume_events has not yet been called, this will yield all logged events since the call to `handle_input`. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
+        """
+
+        events = self._events
+        self._events = []
+        yield from events
+
+    def add_input_metadata(
+        self,
+        metadata: Dict[str, Any],
+        description: Optional[str] = None,
+    ) -> None:
+        """Accepts a dictionary of metadata. Metadata entries will appear on the LOADED_INPUT event.
+        If the input is an asset, metadata will be attached to an asset observation.
+
+        The asset observation will be yielded from the run and appear in the event log.
+        Only valid if the context has an asset key.
+        """
+        from dagster.core.definitions.metadata import normalize_metadata
+        from dagster.core.events import DagsterEvent
+
+        metadata = check.dict_param(metadata, "metadata", key_type=str)
+        self._metadata_entries.extend(normalize_metadata(metadata, []))
+        if self.has_asset_key:
+            check.opt_str_param(description, "description")
+
+            observation = AssetObservation(
+                asset_key=self.asset_key,
+                description=description,
+                partition=self.asset_partition_key if self.has_asset_partitions else None,
+                metadata=metadata,
+            )
+            self._observations.append(observation)
+            if self._step_context:
+                self._events.append(DagsterEvent.asset_observation(self._step_context, observation))
+
+    def get_observations(
+        self,
+    ) -> List[AssetObservation]:
+        """Retrieve the list of user-generated asset observations that were observed via the context.
+
+        User-generated events that were yielded will not appear in this list.
+
+        **Examples:**
+
+        .. code-block:: python
+
+            from dagster import IOManager, build_input_context, AssetObservation
+
+            class MyIOManager(IOManager):
+                def load_input(self, context, obj):
+                    ...
+
+            def test_load_input():
+                mgr = MyIOManager()
+                context = build_input_context()
+                mgr.load_input(context)
+                observations = context.get_observations()
+                ...
+        """
+        return self._observations
+
+    def consume_metadata_entries(self) -> List[Union[MetadataEntry, PartitionMetadataEntry]]:
+        result = self._metadata_entries
+        self._metadata_entries = []
+        return result
 
 
 def build_input_context(
@@ -296,7 +434,8 @@ def build_input_context(
     dagster_type: Optional["DagsterType"] = None,
     resource_config: Optional[Dict[str, Any]] = None,
     resources: Optional[Dict[str, Any]] = None,
-    op_def: Optional[OpDefinition] = None,
+    op_def: Optional["OpDefinition"] = None,
+    step_context: Optional["StepExecutionContext"] = None,
 ) -> "InputContext":
     """Builds input context from provided parameters.
 
@@ -320,6 +459,7 @@ def build_input_context(
             definition.
         asset_key (Optional[AssetKey]): The asset key attached to the InputDefinition.
         op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
+        step_context (Optional[StepExecutionContext]): For internal use.
 
     Examples:
 
@@ -330,7 +470,9 @@ def build_input_context(
             with build_input_context(resources={"foo": context_manager_resource}) as context:
                 do_something
     """
+    from dagster.core.definitions import OpDefinition
     from dagster.core.execution.context.output import OutputContext
+    from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.execution.context_creation_pipeline import initialize_console_manager
     from dagster.core.types.dagster_type import DagsterType
 
@@ -341,6 +483,7 @@ def build_input_context(
     resource_config = check.opt_dict_param(resource_config, "resource_config", key_type=str)
     resources = check.opt_dict_param(resources, "resources", key_type=str)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
+    step_context = check.opt_inst_param(step_context, "step_context", StepExecutionContext)
 
     return InputContext(
         name=name,
@@ -352,6 +495,6 @@ def build_input_context(
         log_manager=initialize_console_manager(None),
         resource_config=resource_config,
         resources=resources,
-        step_context=None,
+        step_context=step_context,
         op_def=op_def,
     )

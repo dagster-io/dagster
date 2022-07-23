@@ -7,55 +7,40 @@
   "dependencies": {
     "@apollo/client": "3.3.16",
     "@blueprintjs/core": "^3.45.0",
-    "@blueprintjs/icons": "^3.26.1",
     "@blueprintjs/popover2": "0.10.1",
     "@blueprintjs/select": "^3.16.4",
-    "@blueprintjs/table": "^3.8.33",
     "@dagster-io/dagit-core": "workspace:*",
     "@dagster-io/ui": "workspace:*",
     "graphql": "^15.5.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-is": "^17.0.2",
     "react-router": "^5.2.1",
     "react-router-dom": "^5.3.0",
     "web-vitals": "^2.1.3"
   },
   "devDependencies": {
-    "@dagster-io/react-scripts": "5.0.1",
-    "@testing-library/jest-dom": "^5.16.1",
-    "@testing-library/react": "^12.1.2",
-    "@testing-library/user-event": "^13.5.0",
+    "@dagster-io/eslint-config": "workspace:*",
+    "@dagster-io/react-scripts": "5.0.4",
     "@types/jest": "^27.4.0",
     "@types/node": "^16.11.20",
     "@types/react": "17.0.4",
     "@types/react-dom": "^17.0.11",
-    "eslint": "8.7.0",
-    "eslint-config-prettier": "8.3.0",
-    "eslint-config-react-app": "^7.0.0",
-    "eslint-plugin-graphql": "^4.0.0",
-    "eslint-plugin-import": "2.25.3",
-    "eslint-plugin-jest": "25.3.0",
-    "eslint-plugin-jsx-a11y": "6.5.1",
-    "eslint-plugin-prettier": "^4.0.0",
-    "eslint-plugin-react": "7.27.1",
-    "eslint-plugin-react-hooks": "4.3.0",
-    "eslint-plugin-storybook": "^0.5.3",
-    "eslint-plugin-testing-library": "5.0.1",
+    "eslint": "8.6.0",
+    "eslint-plugin-jest": "^26.4.6",
     "eslint-webpack-plugin": "3.1.1",
-    "typescript": "^4.5.4"
+    "prettier": "2.2.1",
+    "source-map-explorer": "^2.5.0",
+    "typescript": "4.7.3",
+    "webpack": "^5.0.0"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "lint": "eslint src/ --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
     "test": "react-scripts test",
-    "ts": "tsc -p ."
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+    "ts": "tsc -p .",
+    "analyze": "source-map-explorer 'build/static/js/*.js'"
   },
   "browserslist": {
     "production": [

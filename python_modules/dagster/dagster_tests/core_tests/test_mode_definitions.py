@@ -17,13 +17,12 @@ from dagster import (
     String,
     execute_pipeline,
     logger,
-    pipeline,
     resource,
-    solid,
 )
-from dagster.check import CheckError
+from dagster._check import CheckError
+from dagster._legacy import pipeline, solid
+from dagster._utils.test import execute_solids_within_pipeline
 from dagster.core.utils import coerce_valid_log_level
-from dagster.utils.test import execute_solids_within_pipeline
 
 
 def test_default_mode_definition():
@@ -187,7 +186,8 @@ def test_mode_with_resource_deps():
     assert called["count"] == 1
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match=r"'a' is required by solid 'requires_a'"
+        DagsterInvalidDefinitionError,
+        match="resource with key 'a' required by solid 'requires_a' was not provided",
     ):
         PipelineDefinition(
             name="mode_with_bad_deps",

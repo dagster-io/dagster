@@ -2,10 +2,15 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {useTrackPageView} from '../app/analytics';
+import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
+import {AssetLocation} from '../asset-graph/useFindAssetLocation';
+import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {Loading} from '../ui/Loading';
 import {buildPipelineSelector} from '../workspace/WorkspaceContext';
-import {AssetGraphExplorer} from '../workspace/asset-graph/AssetGraphExplorer';
 import {RepoAddress} from '../workspace/types';
 
 import {explodeCompositesInHandleGraph} from './CompositeSupport';
@@ -24,6 +29,8 @@ import {
 } from './types/PipelineExplorerRootQuery';
 
 export const PipelineExplorerSnapshotRoot = () => {
+  useTrackPageView();
+
   const params = useParams();
   const explorerPath = explorerPathFromString(params['0']);
   const {pipelineName, snapshotId} = explorerPath;
@@ -37,6 +44,9 @@ export const PipelineExplorerSnapshotRoot = () => {
       onChangeExplorerPath={(path, mode) => {
         history[mode](`/instance/snapshots/${explorerPathToString(path)}`);
       }}
+      onNavigateToForeignNode={({assetKey}) => {
+        history.push(assetDetailsPathForKey(assetKey));
+      }}
     />
   );
 };
@@ -44,9 +54,16 @@ export const PipelineExplorerSnapshotRoot = () => {
 export const PipelineExplorerContainer: React.FC<{
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
+  onNavigateToForeignNode: (node: AssetLocation) => void;
   repoAddress?: RepoAddress;
   isGraph?: boolean;
-}> = ({explorerPath, repoAddress, onChangeExplorerPath, isGraph = false}) => {
+}> = ({
+  explorerPath,
+  repoAddress,
+  onChangeExplorerPath,
+  onNavigateToForeignNode,
+  isGraph = false,
+}) => {
   const [options, setOptions] = React.useState<GraphExplorerOptions>({
     explodeComposites: explorerPath.explodeComposites ?? false,
     preferAssetRendering: true,
@@ -81,16 +98,15 @@ export const PipelineExplorerContainer: React.FC<{
         const assetNodesPresent = result.solidHandles.some(
           (h) => h.solid.definition.assetNodes.length > 0,
         );
-
         if (options.preferAssetRendering && assetNodesPresent) {
           return (
             <AssetGraphExplorer
               options={options}
               setOptions={setOptions}
-              pipelineSelector={pipelineSelector}
-              handles={displayedHandles}
+              fetchOptions={{pipelineSelector}}
               explorerPath={explorerPath}
               onChangeExplorerPath={onChangeExplorerPath}
+              onNavigateToForeignNode={onNavigateToForeignNode}
             />
           );
         }
@@ -101,7 +117,7 @@ export const PipelineExplorerContainer: React.FC<{
             setOptions={setOptions}
             explorerPath={explorerPath}
             onChangeExplorerPath={onChangeExplorerPath}
-            pipelineOrGraph={result}
+            container={result}
             repoAddress={repoAddress}
             handles={displayedHandles}
             parentHandle={parentHandle ? parentHandle : undefined}
@@ -132,6 +148,9 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
       ... on PipelineSnapshot {
         id
         name
+        metadataEntries {
+          ...MetadataEntryFragment
+        }
         ...GraphExplorerFragment
 
         solidHandle(handleID: $rootHandleID) {
@@ -157,12 +176,12 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
       ... on PipelineSnapshotNotFoundError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
     }
   }
+  ${METADATA_ENTRY_FRAGMENT}
   ${GRAPH_EXPLORER_FRAGMENT}
   ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
   ${GRAPH_EXPLORER_ASSET_NODE_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

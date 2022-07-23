@@ -24,7 +24,7 @@ class HelmTemplate:
     subchart_paths: List[str]
     output: Optional[str] = None
     model: Optional[Any] = None
-    name: str = "release-name"
+    release_name: str = "release-name"
     api_client: ApiClient = ApiClient()
 
     def render(
@@ -44,21 +44,23 @@ class HelmTemplate:
             command = [
                 "helm",
                 "template",
-                self.name,
+                self.release_name,
                 helm_dir_path,
                 "--debug",
-                *["--values", tmp_file.name],
+                "--values",
+                tmp_file.name,
             ]
-
-            if self.output:
-                ## Uncomment to render all templates before filtering to surface Helm templating
-                ## errors with better error messages
-                # subprocess.check_output(command)
-
-                command += ["--show-only", self.output]
 
             with self._with_chart_yaml(helm_dir_path, chart_version):
                 templates = subprocess.check_output(command)
+
+                # HACK! Helm's --show-only option doesn't surface errors. For tests where we want to
+                # assert on things like {{ fail ... }}, we need to render the chart without --show-only.
+                # If that succeeds, we then carry on to calling with --show-only so that we can
+                # assert on specific objects in the chart.
+                if self.output:
+                    command += ["--show-only", self.output]
+                    templates = subprocess.check_output(command)
 
             print("\n--- Helm Templates ---")  # pylint: disable=print-call
             print(templates.decode())  # pylint: disable=print-call
@@ -92,10 +94,10 @@ class HelmTemplate:
                 shutil.copy2(chart_path, chart_copy_path)
                 chart_copy_paths.append(chart_copy_path)
 
-                with open(chart_path) as chart_file:
+                with open(chart_path, encoding="utf8") as chart_file:
                     old_chart_yaml = yaml.safe_load(chart_file)
 
-                with open(chart_path, "w") as chart_file:
+                with open(chart_path, "w", encoding="utf8") as chart_file:
                     new_chart_yaml = old_chart_yaml.copy()
                     new_chart_yaml["version"] = chart_version
                     yaml.dump(new_chart_yaml, chart_file)

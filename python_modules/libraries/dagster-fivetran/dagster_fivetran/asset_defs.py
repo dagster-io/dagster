@@ -3,8 +3,10 @@ from typing import List, Optional
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL
 from dagster_fivetran.utils import generate_materializations
 
-from dagster import AssetKey, AssetsDefinition, Out, Output, check, multi_asset
-from dagster.utils.backcompat import experimental
+from dagster import AssetKey, AssetsDefinition, Out, Output
+from dagster import _check as check
+from dagster import multi_asset
+from dagster._annotations import experimental
 
 
 @experimental
@@ -14,7 +16,7 @@ def build_fivetran_assets(
     poll_interval: float = DEFAULT_POLL_INTERVAL,
     poll_timeout: Optional[float] = None,
     io_manager_key: Optional[str] = None,
-    asset_key_prefix: List[str] = None,
+    asset_key_prefix: Optional[List[str]] = None,
 ) -> List[AssetsDefinition]:
 
     """
@@ -80,6 +82,7 @@ def build_fivetran_assets(
             for key in tracked_asset_keys
         },
         required_resource_keys={"fivetran"},
+        compute_kind="fivetran",
     )
     def _assets(context):
         fivetran_output = context.resources.fivetran.sync_and_poll(

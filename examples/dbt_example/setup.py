@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="dbt_example",
-    version="dev",
+    version="0+dev",
     author_email="hello@elementl.com",
     packages=["dbt_example"],
     include_package_data=True,

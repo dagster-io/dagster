@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 import {IconWrapper} from './Icon';
 
 interface Props {
@@ -19,7 +19,7 @@ const BaseTagTooltipStyle: React.CSSProperties = {
   alignItems: 'center',
   padding: '4px 8px',
   userSelect: 'text',
-  pointerEvents: 'all',
+  pointerEvents: 'none',
   borderRadius: 8,
   border: 'none',
   top: -10,
@@ -28,8 +28,8 @@ const BaseTagTooltipStyle: React.CSSProperties = {
 
 export const BaseTag = (props: Props) => {
   const {
-    fillColor = ColorsWIP.Gray10,
-    textColor = ColorsWIP.Gray900,
+    fillColor = Colors.Gray10,
+    textColor = Colors.Gray900,
     icon,
     interactive = false,
     rightIcon,
@@ -40,7 +40,7 @@ export const BaseTag = (props: Props) => {
       {icon || null}
       {label !== undefined && label !== null ? (
         <span
-          data-tooltip={label}
+          data-tooltip={typeof label === 'string' ? label : undefined}
           data-tooltip-style={JSON.stringify({
             ...BaseTagTooltipStyle,
             backgroundColor: fillColor,
@@ -65,7 +65,7 @@ export const StyledTag = styled.div<StyledTagProps>`
   background-color: ${({$fillColor}) => $fillColor};
   border-radius: 8px;
   color: ${({$textColor}) => $textColor};
-  cursor: ${({$interactive}) => ($interactive ? 'pointer' : 'default')};
+  cursor: ${({$interactive}) => ($interactive ? 'pointer' : 'inherit')};
   display: inline-flex;
   flex-direction: row;
   font-size: 12px;

@@ -1,8 +1,8 @@
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, Optional, cast
+from typing import Any, Dict, Generator, Mapping, Optional, cast
 
-from dagster import check
-from dagster.config.validate import process_config
+import dagster._check as check
+from dagster._config import process_config
 from dagster.core.definitions.resource_definition import (
     ResourceDefinition,
     Resources,
@@ -22,8 +22,8 @@ from .context_creation_pipeline import initialize_console_manager
 
 
 def _get_mapped_resource_config(
-    resource_defs: Dict[str, ResourceDefinition], resource_config: Dict[str, Any]
-) -> Dict[str, ResourceConfig]:
+    resource_defs: Mapping[str, ResourceDefinition], resource_config: Mapping[str, Any]
+) -> Mapping[str, ResourceConfig]:
     resource_config_schema = define_resource_dictionary_cls(
         resource_defs, set(resource_defs.keys())
     )
@@ -40,9 +40,9 @@ def _get_mapped_resource_config(
 
 @contextmanager
 def build_resources(
-    resources: Dict[str, Any],
+    resources: Mapping[str, Any],
     instance: Optional[DagsterInstance] = None,
-    resource_config: Optional[Dict[str, Any]] = None,
+    resource_config: Optional[Mapping[str, Any]] = None,
     pipeline_run: Optional[PipelineRun] = None,
     log_manager: Optional[DagsterLogManager] = None,
 ) -> Generator[Resources, None, None]:
@@ -54,12 +54,12 @@ def build_resources(
     context, resources will also be torn down safely.
 
     Args:
-        resources (Dict[str, Any]): Resource instances or definitions to build. All
+        resources (Mapping[str, Any]): Resource instances or definitions to build. All
             required resource dependencies to a given resource must be contained within this
             dictionary, or the resource build will fail.
         instance (Optional[DagsterInstance]): The dagster instance configured to instantiate
             resources on.
-        resource_config (Optional[Dict[str, Any]]): A dict representing the config to be
+        resource_config (Optional[Mapping[str, Any]]): A dict representing the config to be
             provided to each resource during initialization and teardown.
         pipeline_run (Optional[PipelineRun]): The pipeline run to provide during resource
             initialization and teardown. If the provided resources require either the `pipeline_run`
@@ -116,9 +116,9 @@ def build_resources(
 
 
 def wrap_resources_for_execution(
-    resources: Optional[Dict[str, Any]] = None
+    resources: Optional[Mapping[str, Any]] = None
 ) -> Dict[str, ResourceDefinition]:
-    resources = check.opt_dict_param(resources, "resources", key_type=str)
+    resources = check.opt_mapping_param(resources, "resources", key_type=str)
     resource_defs = {}
     # Wrap instantiated resource values in a resource definition.
     # If an instantiated IO manager is provided, wrap it in an IO manager definition.

@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, ButtonWIP, IconWIP} from '@dagster-io/ui';
+import {Box, Button, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {breakOnUnderscores} from '../app/Util';
@@ -63,12 +63,12 @@ export const SidebarOpInvocation: React.FC<ISidebarOpInvocationProps> = (props) 
           ) : null}
           {onEnterSubgraph && (
             <Box margin={{top: 12}}>
-              <ButtonWIP
-                icon={<IconWIP name="zoom_in" />}
+              <Button
+                icon={<Icon name="zoom_in" />}
                 onClick={() => onEnterSubgraph({name: solid.name})}
               >
                 Expand graph
-              </ButtonWIP>
+              </Button>
             </Box>
           )}
         </Box>
@@ -77,7 +77,7 @@ export const SidebarOpInvocation: React.FC<ISidebarOpInvocationProps> = (props) 
   );
 };
 
-export const SIDEBAR_SOLID_INVOCATION_FRAGMENT = gql`
+export const SIDEBAR_OP_INVOCATION_FRAGMENT = gql`
   fragment SidebarOpInvocationFragment on Solid {
     name
     inputs {

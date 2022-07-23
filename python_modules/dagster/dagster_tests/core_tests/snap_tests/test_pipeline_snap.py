@@ -11,10 +11,14 @@ from dagster import (
     Permissive,
     Selector,
     Shape,
-    pipeline,
-    solid,
 )
-from dagster.config.config_type import Array, Bool, Enum, EnumValue, Float, Int, Noneable, String
+from dagster._config import Array, Bool, Enum, EnumValue, Float, Int, Noneable, String
+from dagster._legacy import pipeline, solid
+from dagster._serdes import (
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+    serialize_pp,
+)
 from dagster.core.snap import (
     DependencyStructureIndex,
     PipelineSnapshot,
@@ -26,11 +30,6 @@ from dagster.core.snap.dep_snapshot import (
     InputHandle,
     OutputHandleSnap,
     build_dep_structure_snapshot_from_icontains_solids,
-)
-from dagster.serdes import (
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
-    serialize_pp,
 )
 
 

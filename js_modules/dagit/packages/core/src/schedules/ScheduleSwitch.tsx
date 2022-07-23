@@ -13,8 +13,8 @@ import {
   STOP_SCHEDULE_MUTATION,
 } from './ScheduleMutations';
 import {ScheduleSwitchFragment} from './types/ScheduleSwitchFragment';
-import {StartSchedule} from './types/StartSchedule';
-import {StopSchedule} from './types/StopSchedule';
+import {StartSchedule, StartScheduleVariables} from './types/StartSchedule';
+import {StopSchedule, StopScheduleVariables} from './types/StopSchedule';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -25,22 +25,22 @@ interface Props {
 export const ScheduleSwitch: React.FC<Props> = (props) => {
   const {repoAddress, schedule, size = 'large'} = props;
   const {name, scheduleState} = schedule;
-  const {status, id} = scheduleState;
+  const {status, id, selectorId} = scheduleState;
 
   const {canStartSchedule, canStopRunningSchedule} = usePermissions();
 
-  const [startSchedule, {loading: toggleOnInFlight}] = useMutation<StartSchedule>(
-    START_SCHEDULE_MUTATION,
-    {
-      onCompleted: displayScheduleMutationErrors,
-    },
-  );
-  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<StopSchedule>(
-    STOP_SCHEDULE_MUTATION,
-    {
-      onCompleted: displayScheduleMutationErrors,
-    },
-  );
+  const [startSchedule, {loading: toggleOnInFlight}] = useMutation<
+    StartSchedule,
+    StartScheduleVariables
+  >(START_SCHEDULE_MUTATION, {
+    onCompleted: displayScheduleMutationErrors,
+  });
+  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<
+    StopSchedule,
+    StopScheduleVariables
+  >(STOP_SCHEDULE_MUTATION, {
+    onCompleted: displayScheduleMutationErrors,
+  });
 
   const scheduleSelector = {
     ...repoAddressToSelector(repoAddress),
@@ -50,7 +50,7 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
   const onStatusChange = () => {
     if (status === InstigationStatus.RUNNING) {
       stopSchedule({
-        variables: {scheduleOriginId: id},
+        variables: {scheduleOriginId: id, scheduleSelectorId: selectorId},
       });
     } else {
       startSchedule({
@@ -87,7 +87,9 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
   );
 
   return lacksPermission ? (
-    <Tooltip content={DISABLED_MESSAGE}>{switchElement}</Tooltip>
+    <Tooltip content={DISABLED_MESSAGE} display="flex">
+      {switchElement}
+    </Tooltip>
   ) : (
     switchElement
   );
@@ -98,8 +100,10 @@ export const SCHEDULE_SWITCH_FRAGMENT = gql`
     id
     name
     cronSchedule
+    executionTimezone
     scheduleState {
       id
+      selectorId
       status
     }
   }

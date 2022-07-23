@@ -11,9 +11,9 @@ In addition to using the `k8s_job_executor` to run each op in its own Kubernetes
 
 In this section, we demonstrate how to extend the [previous Helm deployment guide](/deployment/guides/kubernetes/deploying-with-helm) to support that use case, by deploying a more complex configuration of Dagster, which utilizes the <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" /> and <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />.
 
-## Prerequsites
+## Prerequisites
 
-In addition to the [previous prerequisites](/deployment/guides/kubernetes/deploying-with-helm#prerequsites), we expect familiarity with [Celery, a distributed task queue system](https://docs.celeryproject.org/en/stable/).
+In addition to the [previous prerequisites](/deployment/guides/kubernetes/deploying-with-helm#prerequisites), we expect familiarity with \[Celery, a distributed task queue system]\(<https://docs.celeryq.dev/>).
 
 ## Deployment Architecture
 
@@ -161,7 +161,7 @@ The Helm chart can be configured to use this architecture by configuring the `ru
 
 Users can configure multiple Celery queues (for example, one celery queue for each resource the user would like to limit) and multiple Celery workers per queue via the `runLauncher.config.celeryK8sRunLauncher.workerQueues` section of `values.yaml`.
 
-The Celery workers poll for new Celery tasks and execute each task in order of receipt or priority. The Celery task largely consists of launching an ephemeral Kubernetes step job to execute that step.
+The Celery workers poll for new Celery tasks and execute each task in order of receipt or priority. The Celery task largely consists of launching an ephemeral Kubernetes step worker to execute that step.
 
 ### Daemon
 
@@ -173,9 +173,9 @@ The run worker is still responsible for traversing the execution plan, but now u
 
 All jobs being executed on an instance that uses the `CeleryK8sRunLauncher` must have the `celery_k8s_job_executor` set in the `executor_def` field.
 
-### Step Job
+### Step Worker
 
-The step job is responsible for executing a single step, writing the structured events to the database. The Celery worker polls for the step job completion.
+The step worker is responsible for executing a single step, writing the structured events to the database. The Celery worker polls for the step worker completion.
 
 ### Flower
 
@@ -225,11 +225,11 @@ You can introspect the jobs that were launched with `kubectl`:
 
     $ kubectl get jobs
     NAME                                               COMPLETIONS   DURATION   AGE
-    dagster-job-9f5c92d1216f636e0d33877560818840       1/1           5s         12s
-    dagster-job-a1063317b9aac91f42ca9eacec551b6f       1/1           12s        34s
+    dagster-step-9f5c92d1216f636e0d33877560818840       1/1           5s         12s
+    dagster-step-a1063317b9aac91f42ca9eacec551b6f       1/1           12s        34s
     dagster-run-fb6822e5-bf43-476f-9e6c-6f9896cf3fb8   1/1           37s        37s
 
-`dagster-job-` entries correspond to step jobs and `dagster-run-` entries correspond to run workers.
+`dagster-step-` entries correspond to step workers and `dagster-run-` entries correspond to run workers.
 
 Within Dagit, you can watch the job as it executes.
 

@@ -1,36 +1,48 @@
 from graphql.execution.base import ResolveInfo
 
-from dagster import check
+import dagster._check as check
+from dagster._utils import merge_dicts
+from dagster.core.errors import DagsterRunNotFoundError
 from dagster.core.execution.plan.resume_retry import get_retry_steps_from_parent_run
 from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.instance import DagsterInstance
+from dagster.core.storage.pipeline_run import DagsterRun, PipelineRunStatus
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.utils import make_new_run_id
-from dagster.utils import merge_dicts
 
 from ...schema.errors import GrapheneNoModeProvidedError
 from ..external import ensure_valid_config, get_external_execution_plan_or_raise
 from ..utils import ExecutionParams, UserFacingGraphQLError
 
 
+def _get_run(instance: DagsterInstance, run_id: str) -> DagsterRun:
+    run = instance.get_run_by_id(run_id)
+    if not run:
+        raise DagsterRunNotFoundError(invalid_run_id=run_id)
+    return run
+
+
 def compute_step_keys_to_execute(graphene_info, execution_params):
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(execution_params, "execution_params", ExecutionParams)
 
-    instance = graphene_info.context.instance
+    instance: DagsterInstance = graphene_info.context.instance
 
     if not execution_params.step_keys and is_resume_retry(execution_params):
         # Get step keys from parent_run_id if it's a resume/retry
+        parent_run = _get_run(instance, execution_params.execution_metadata.parent_run_id)
         return get_retry_steps_from_parent_run(
-            instance, execution_params.execution_metadata.parent_run_id
+            instance,
+            parent_run,
         )
     else:
         known_state = None
         if execution_params.execution_metadata.parent_run_id and execution_params.step_keys:
-            known_state = KnownExecutionState.for_reexecution(
-                instance.all_logs(execution_params.execution_metadata.parent_run_id),
-                execution_params.step_keys,
-            )
+            parent_run = _get_run(instance, execution_params.execution_metadata.parent_run_id)
+            known_state = KnownExecutionState.build_for_reexecution(
+                instance,
+                parent_run,
+            ).update_for_step_selection(execution_params.step_keys)
 
         return execution_params.step_keys, known_state
 
@@ -75,6 +87,9 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
         run_id=execution_params.execution_metadata.run_id
         if execution_params.execution_metadata.run_id
         else make_new_run_id(),
+        asset_selection=frozenset(execution_params.selector.asset_selection)
+        if execution_params.selector.asset_selection
+        else None,
         solid_selection=execution_params.selector.solid_selection,
         solids_to_execute=frozenset(execution_params.selector.solid_selection)
         if execution_params.selector.solid_selection

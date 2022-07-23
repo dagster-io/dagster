@@ -1,9 +1,9 @@
-from typing import List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional
 
-from dagster import check
+import dagster._check as check
+from dagster._serdes import create_snapshot_id, whitelist_for_serdes
+from dagster._utils import frozenlist
 from dagster.core.code_pointer import CodePointer
-from dagster.serdes import create_snapshot_id, whitelist_for_serdes
-from dagster.utils import frozenlist
 
 DEFAULT_DAGSTER_ENTRY_POINT = frozenlist(["dagster"])
 
@@ -21,13 +21,11 @@ class RepositoryPythonOrigin(
             ("code_pointer", CodePointer),
             ("container_image", Optional[str]),
             ("entry_point", Optional[List[str]]),
+            ("container_context", Optional[Dict[str, Any]]),
         ],
     ),
 ):
     """
-    Derived from the handle structure in the host process, this is the subset of information
-    necessary to load a target RepositoryDefinition in a "user process" locally.
-
     Args:
       executable_path (str): The Python executable of the user process.
       code_pointer (CodePoitner): Once the process has started, an object that can be used to
@@ -36,9 +34,19 @@ class RepositoryPythonOrigin(
           loads the repository. Only used in execution environments that start containers.
       entry_point (Optional[List[str]]): The entry point to use when starting a new process
           to load the repository. Defaults to ["dagster"] (and may differ from the executable_path).
+      container_context (Optional[Dict[str, Any]]): Additional context to use when creating a new
+          container that loads the repository. Keys can be specific to a given compute substrate
+          (for example, "docker", "k8s", etc.)
     """
 
-    def __new__(cls, executable_path, code_pointer, container_image=None, entry_point=None):
+    def __new__(
+        cls,
+        executable_path,
+        code_pointer,
+        container_image=None,
+        entry_point=None,
+        container_context=None,
+    ):
         return super(RepositoryPythonOrigin, cls).__new__(
             cls,
             check.str_param(executable_path, "executable_path"),
@@ -49,12 +57,17 @@ class RepositoryPythonOrigin(
                 if entry_point != None
                 else None
             ),
+            (
+                check.opt_dict_param(container_context, "container_context")
+                if container_context != None
+                else None
+            ),
         )
 
-    def get_id(self):
+    def get_id(self) -> str:
         return create_snapshot_id(self)
 
-    def get_pipeline_origin(self, pipeline_name):
+    def get_pipeline_origin(self, pipeline_name: str) -> "PipelinePythonOrigin":
         check.str_param(pipeline_name, "pipeline_name")
         return PipelinePythonOrigin(pipeline_name, self)
 
@@ -76,11 +89,11 @@ class PipelinePythonOrigin(
             check.inst_param(repository_origin, "repository_origin", RepositoryPythonOrigin),
         )
 
-    def get_id(self):
+    def get_id(self) -> str:
         return create_snapshot_id(self)
 
     @property
-    def executable_path(self):
+    def executable_path(self) -> str:
         return self.repository_origin.executable_path
 
     def get_repo_pointer(self) -> CodePointer:

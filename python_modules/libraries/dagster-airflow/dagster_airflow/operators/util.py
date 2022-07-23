@@ -3,7 +3,8 @@ import os
 import dateutil.parser
 from airflow.exceptions import AirflowException, AirflowSkipException
 
-from dagster import DagsterEventType, check
+from dagster import DagsterEventType
+from dagster import _check as check
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.plan.plan import can_isolate_steps, should_skip_step
@@ -83,6 +84,7 @@ def invoke_steps_within_python_operator(
     invocation_args, ts, dag_run, **kwargs
 ):  # pylint: disable=unused-argument
     mode = invocation_args.mode
+    recon_repo = invocation_args.recon_repo
     pipeline_name = invocation_args.pipeline_name
     step_keys = invocation_args.step_keys
     instance_ref = invocation_args.instance_ref
@@ -91,6 +93,8 @@ def invoke_steps_within_python_operator(
     pipeline_snapshot = invocation_args.pipeline_snapshot
     execution_plan_snapshot = invocation_args.execution_plan_snapshot
     parent_pipeline_snapshot = invocation_args.parent_pipeline_snapshot
+
+    recon_pipeline = recon_repo.get_reconstructable_pipeline(pipeline_name)
 
     run_id = dag_run.run_id
 
@@ -111,6 +115,7 @@ def invoke_steps_within_python_operator(
                 pipeline_snapshot=pipeline_snapshot,
                 execution_plan_snapshot=execution_plan_snapshot,
                 parent_pipeline_snapshot=parent_pipeline_snapshot,
+                pipeline_code_origin=recon_pipeline.get_python_origin(),
             )
 
             recon_pipeline = recon_repo.get_reconstructable_pipeline(

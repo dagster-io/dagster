@@ -1,6 +1,6 @@
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, List, Mapping, Optional, Sequence, Union, cast
 
-from dagster import check
+import dagster._check as check
 from dagster.core.definitions import NodeDefinition, NodeHandle
 from dagster.core.definitions.events import AssetMaterialization, AssetObservation, Materialization
 from dagster.core.definitions.utils import DEFAULT_OUTPUT
@@ -16,12 +16,19 @@ from dagster.core.storage.pipeline_run import DagsterRun
 
 
 class ExecuteInProcessResult:
+
+    _node_def: NodeDefinition
+    _handle: NodeHandle
+    _event_list: Sequence[DagsterEvent]
+    _dagster_run: DagsterRun
+    _output_capture: Mapping[StepOutputHandle, Any]
+
     def __init__(
         self,
         node_def: NodeDefinition,
-        all_events: List[DagsterEvent],
+        all_events: Sequence[DagsterEvent],
         dagster_run: DagsterRun,
-        output_capture: Optional[Dict[StepOutputHandle, Any]],
+        output_capture: Optional[Mapping[StepOutputHandle, Any]],
     ):
         self._node_def = node_def
 
@@ -30,7 +37,7 @@ class ExecuteInProcessResult:
         self._event_list = all_events
         self._dagster_run = dagster_run
 
-        self._output_capture = check.opt_dict_param(
+        self._output_capture = check.opt_mapping_param(
             output_capture, "output_capture", key_type=StepOutputHandle
         )
 
@@ -40,10 +47,10 @@ class ExecuteInProcessResult:
         return self._dagster_run.is_success
 
     @property
-    def all_node_events(self) -> List[DagsterEvent]:
+    def all_node_events(self) -> Sequence[DagsterEvent]:
         """List[DagsterEvent]: All dagster events from the in-process execution."""
 
-        step_events = []
+        step_events: List[DagsterEvent] = []
 
         for node_name in self._node_def.ensure_graph_def().node_dict.keys():
             handle = NodeHandle(node_name, None)
@@ -52,7 +59,7 @@ class ExecuteInProcessResult:
         return step_events
 
     @property
-    def all_events(self) -> List[DagsterEvent]:
+    def all_events(self) -> Sequence[DagsterEvent]:
         """List[DagsterEvent]: All dagster events emitted during in-process execution."""
 
         return self._event_list
@@ -67,7 +74,7 @@ class ExecuteInProcessResult:
         """DagsterRun: the DagsterRun object for the completed execution."""
         return self._dagster_run
 
-    def events_for_node(self, node_name: str) -> List[DagsterEvent]:
+    def events_for_node(self, node_name: str) -> Sequence[DagsterEvent]:
         """Retrieves all dagster events for a specific node.
 
         Args:
@@ -82,14 +89,14 @@ class ExecuteInProcessResult:
 
     def asset_materializations_for_node(
         self, node_name
-    ) -> List[Union[Materialization, AssetMaterialization]]:
+    ) -> Sequence[Union[Materialization, AssetMaterialization]]:
         return [
             cast(StepMaterializationData, event.event_specific_data).materialization
             for event in self.events_for_node(node_name)
             if event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION.value
         ]
 
-    def asset_observations_for_node(self, node_name) -> List[AssetObservation]:
+    def asset_observations_for_node(self, node_name) -> Sequence[AssetObservation]:
         return [
             cast(AssetObservationData, event.event_specific_data).asset_observation
             for event in self.events_for_node(node_name)
@@ -131,10 +138,10 @@ class ExecuteInProcessResult:
 
         # Get output from origin node
         return _filter_outputs_by_handle(
-            self._output_capture, origin_handle, origin_output_def.name
+            self._output_capture, check.not_none(origin_handle), origin_output_def.name
         )
 
-    def output_for_node(self, node_str: str, output_name: Optional[str] = DEFAULT_OUTPUT) -> Any:
+    def output_for_node(self, node_str: str, output_name: str = DEFAULT_OUTPUT) -> Any:
         """Retrieves output value with a particular name from the in-process run of the job.
 
         Args:
@@ -156,7 +163,7 @@ class ExecuteInProcessResult:
 
         # retrieve output value from resolved handle
         return _filter_outputs_by_handle(
-            self._output_capture, origin_handle, origin_output_def.name
+            self._output_capture, check.not_none(origin_handle), origin_output_def.name
         )
 
     def get_job_success_event(self):
@@ -191,8 +198,8 @@ class ExecuteInProcessResult:
 
 
 def _filter_events_by_handle(
-    event_list: List[DagsterEvent], handle: NodeHandle
-) -> List[DagsterEvent]:
+    event_list: Sequence[DagsterEvent], handle: NodeHandle
+) -> Sequence[DagsterEvent]:
     step_events = []
     for event in event_list:
         if event.is_step_event:
@@ -206,7 +213,7 @@ def _filter_events_by_handle(
 
 
 def _filter_outputs_by_handle(
-    output_dict: Dict[StepOutputHandle, Any],
+    output_dict: Mapping[StepOutputHandle, Any],
     node_handle: NodeHandle,
     output_name: str,
 ) -> Any:
@@ -217,7 +224,10 @@ def _filter_outputs_by_handle(
 
         # For the mapped output case, where step keys are in the format
         # "step_key[upstream_mapped_output_name]" within the step output handle.
-        if step_output_handle.step_key.startswith(f"{step_key}["):
+        if (
+            step_output_handle.step_key.startswith(f"{step_key}[")
+            and step_output_handle.output_name == output_name
+        ):
             output_found = True
             key_start = step_output_handle.step_key.find("[")
             key_end = step_output_handle.step_key.find("]")
@@ -235,5 +245,7 @@ def _filter_outputs_by_handle(
             mapped_outputs[step_output_handle.mapping_key] = value
 
     if not output_found:
-        raise DagsterInvariantViolationError(f"No outputs found for node '{node_handle}'.")
+        raise DagsterInvariantViolationError(
+            f"No outputs found for output '{output_name}' from node '{node_handle}'."
+        )
     return mapped_outputs

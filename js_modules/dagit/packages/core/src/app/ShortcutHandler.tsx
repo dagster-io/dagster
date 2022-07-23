@@ -1,9 +1,20 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components/macro';
 
-const MODIFIER_KEYCODES = [17, 18, 91, 224];
+import {getJSONForKey} from '../hooks/useStateWithStorage';
+
+export const SHORTCUTS_STORAGE_KEY = 'keyboard-shortcuts-enabled';
+
+const MODIFIER_KEYS = [
+  'ControlLeft',
+  'ControlRight',
+  'AltLeft',
+  'AltRight',
+  'MetaLeft',
+  'MetaRight',
+];
 const SHORTCUT_VISIBILITY_EVENT_TYPE = 'shortcut-visibility';
 const SHORTCUT_VISIBLITY_DELAY = 800;
 
@@ -41,13 +52,13 @@ const otherModifiersUsed = (event: KeyboardEvent) => {
   return (
     event.shiftKey ||
     (key !== 'Alt' && event.altKey) ||
-    (key !== 'Ctrl' && event.ctrlKey) ||
+    (key !== 'Control' && event.ctrlKey) ||
     (key !== 'Meta' && event.metaKey)
   );
 };
 
 window.addEventListener('keydown', (event) => {
-  const isModifier = MODIFIER_KEYCODES.includes(event.keyCode);
+  const isModifier = MODIFIER_KEYS.includes(event.code);
   if (!isModifier || otherModifiersUsed(event)) {
     // If any non-modifiers are pressed or if multiple modifiers are in use, kill the timeout
     // and hide the shortcuts.
@@ -57,7 +68,7 @@ window.addEventListener('keydown', (event) => {
   }
 });
 window.addEventListener('keyup', (event) => {
-  if (MODIFIER_KEYCODES.includes(event.keyCode)) {
+  if (MODIFIER_KEYS.includes(event.code)) {
     hideShortcuts();
   }
 });
@@ -89,9 +100,12 @@ export class ShortcutHandler extends React.Component<ShortcutHandlerProps, Short
   };
 
   componentDidMount() {
-    window.addEventListener('keydown', this.onGlobalKeydown);
-    window.addEventListener(SHORTCUT_VISIBILITY_EVENT_TYPE, this.onShortcutVisiblityChange);
-    this.onShortcutVisiblityChange();
+    const shortcutsEnabled = getJSONForKey(SHORTCUTS_STORAGE_KEY);
+    if (shortcutsEnabled || shortcutsEnabled === undefined) {
+      window.addEventListener('keydown', this.onGlobalKeydown);
+      window.addEventListener(SHORTCUT_VISIBILITY_EVENT_TYPE, this.onShortcutVisiblityChange);
+      this.onShortcutVisiblityChange();
+    }
   }
 
   componentWillUnmount() {
@@ -189,9 +203,9 @@ const ShortcutAnnotation = styled.div`
   padding: 2px;
   z-index: 20;
   transform: translate(-90%, -10px);
-  color: ${ColorsWIP.Gray100};
-  background: ${ColorsWIP.Gray800};
-  border: 1px solid ${ColorsWIP.Gray300};
+  color: ${Colors.Gray100};
+  background: ${Colors.Gray800};
+  border: 1px solid ${Colors.Gray300};
   border-radius: 3px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 `;

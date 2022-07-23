@@ -13,20 +13,19 @@ from dagster import (
     ModeDefinition,
     RetryPolicy,
     String,
+    _seven,
     execute_pipeline,
     execute_pipeline_iterator,
     job,
     op,
-    pipeline,
     reconstructable,
     resource,
-    seven,
-    solid,
 )
+from dagster._legacy import pipeline, solid
+from dagster._utils import safe_tempfile_path, send_interrupt
+from dagster._utils.interrupts import capture_interrupts, check_captured_interrupt
 from dagster.core.errors import DagsterExecutionInterruptedError, raise_execution_interrupts
 from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster.utils import safe_tempfile_path, send_interrupt
-from dagster.utils.interrupts import capture_interrupts, check_captured_interrupt
 
 
 def _send_kbd_int(temp_files):
@@ -37,7 +36,7 @@ def _send_kbd_int(temp_files):
 
 @solid(config_schema={"tempfile": Field(String)})
 def write_a_file(context):
-    with open(context.solid_config["tempfile"], "w") as ff:
+    with open(context.solid_config["tempfile"], "w", encoding="utf8") as ff:
         ff.write("yup")
 
     start_time = time.time()
@@ -97,7 +96,7 @@ def test_single_proc_interrupt():
         )
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_interrupt_multiproc():
     with tempfile.TemporaryDirectory() as tempdir:
         with instance_for_test(temp_dir=tempdir) as instance:
@@ -150,7 +149,7 @@ def test_interrupt_resource_teardown():
 
     @solid(config_schema={"tempfile": Field(String)}, required_resource_keys={"a"})
     def write_a_file_resource_solid(context):
-        with open(context.solid_config["tempfile"], "w") as ff:
+        with open(context.solid_config["tempfile"], "w", encoding="utf8") as ff:
             ff.write("yup")
 
         while True:
@@ -192,7 +191,7 @@ def _send_interrupt_to_self():
             raise Exception("Timed out waiting for interrupt to be received")
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_capture_interrupt():
     outer_interrupt = False
     inner_interrupt = False
@@ -231,8 +230,9 @@ def test_capture_interrupt():
     assert not inner_interrupt
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_raise_execution_interrupts():
+    standard_interrupt = False
     with raise_execution_interrupts():
         try:
             _send_interrupt_to_self()
@@ -242,7 +242,7 @@ def test_raise_execution_interrupts():
     assert standard_interrupt
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_interrupt_inside_nested_delay_and_raise():
     interrupt_inside_nested_raise = False
     interrupt_after_delay = False
@@ -262,7 +262,7 @@ def test_interrupt_inside_nested_delay_and_raise():
     assert not interrupt_after_delay
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_no_interrupt_after_nested_delay_and_raise():
     interrupt_inside_nested_raise = False
     interrupt_after_delay = False
@@ -283,7 +283,7 @@ def test_no_interrupt_after_nested_delay_and_raise():
     assert not interrupt_after_delay
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_calling_raise_execution_interrupts_also_raises_any_captured_interrupts():
     interrupt_from_raise_execution_interrupts = False
     interrupt_after_delay = False
@@ -308,7 +308,7 @@ def write_and_spin_if_missing(context):
     if os.path.exists(target):
         return
 
-    with open(target, "w") as ff:
+    with open(target, "w", encoding="utf8") as ff:
         ff.write(str(os.getpid()))
 
     start_time = time.time()
@@ -325,7 +325,7 @@ def policy_job():
     write_and_spin_if_missing()
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_retry_policy():
     """
     Start a thread which will interrupt the subprocess after it writes the file.
@@ -336,7 +336,7 @@ def test_retry_policy():
         pid = None
         while True:
             if os.path.exists(path):
-                with open(path) as f:
+                with open(path, encoding="utf8") as f:
                     pid_str = f.read()
                     if pid_str:
                         pid = int(pid_str)

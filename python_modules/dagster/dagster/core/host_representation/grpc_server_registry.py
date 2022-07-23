@@ -7,16 +7,16 @@ from typing import Generic, NamedTuple, Optional, TypeVar, Union, cast
 
 import pendulum
 
-from dagster import check
+import dagster._check as check
+from dagster._grpc.client import DagsterGrpcClient
+from dagster._grpc.server import GrpcServerProcess
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.origin import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocationOrigin,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.grpc.client import DagsterGrpcClient
-from dagster.grpc.server import GrpcServerProcess
-from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 
 class GrpcServerEndpoint(

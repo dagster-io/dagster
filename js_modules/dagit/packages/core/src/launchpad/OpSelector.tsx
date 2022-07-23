@@ -1,9 +1,10 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, Popover} from '@dagster-io/ui';
+import {Box, Colors, Popover} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../app/GraphQueryImpl';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
@@ -12,7 +13,7 @@ import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {OpSelectorQuery} from './types/OpSelectorQuery';
+import {OpSelectorQuery, OpSelectorQueryVariables} from './types/OpSelectorQuery';
 
 interface IOpSelectorProps {
   pipelineName: string;
@@ -46,12 +47,11 @@ const SOLID_SELECTOR_QUERY = gql`
       ... on InvalidSubsetError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
     }
   }
   ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export const OpSelector = (props: IOpSelectorProps) => {
@@ -69,10 +69,13 @@ export const OpSelector = (props: IOpSelectorProps) => {
   const selector = {...repoAddressToSelector(repoAddress), pipelineName};
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
-  const {data, loading} = useQuery<OpSelectorQuery>(SOLID_SELECTOR_QUERY, {
-    variables: {selector: selector, requestScopeHandleID: flattenGraphs ? undefined : ''},
-    fetchPolicy: 'cache-and-network',
-  });
+  const {data, loading} = useQuery<OpSelectorQuery, OpSelectorQueryVariables>(
+    SOLID_SELECTOR_QUERY,
+    {
+      variables: {selector, requestScopeHandleID: flattenGraphs ? undefined : ''},
+      fetchPolicy: 'cache-and-network',
+    },
+  );
 
   const query = props.query || '*';
 
@@ -147,7 +150,7 @@ export const OpSelector = (props: IOpSelectorProps) => {
             linkToPreview={{
               repoName: repoAddress.name,
               repoLocation: repoAddress.location,
-              pipelineName: pipelineName,
+              pipelineName,
               isJob,
             }}
             flattenGraphsEnabled={flattenGraphsEnabled}
@@ -165,7 +168,7 @@ export const OpSelector = (props: IOpSelectorProps) => {
 const PopoverErrorWrap = styled.div`
   padding: 4px 8px;
   border-radius: 2px;
-  border: 1px solid ${ColorsWIP.Red500};
-  background: ${ColorsWIP.Red200};
-  color: ${ColorsWIP.Red700};
+  border: 1px solid ${Colors.Red500};
+  background: ${Colors.Red200};
+  color: ${Colors.Red700};
 `;

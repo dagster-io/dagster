@@ -25,8 +25,8 @@ from dagster import (
     op,
     reconstructable,
     resource,
-    solid,
 )
+from dagster._legacy import solid
 from dagster.core.definitions import pipeline
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.resource_definition import make_values_resource
@@ -154,21 +154,19 @@ def test_resource_cyclic_dependencies():
         called["dep_solid"] = True
         assert context.resources.bar_resource == "foobar"
 
-    pipeline_def = PipelineDefinition(
-        name="with_dep_resource",
-        solid_defs=[dep_solid],
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"foo_resource": foo_resource, "bar_resource": bar_resource}
-            )
-        ],
-    )
-
     with pytest.raises(
         DagsterInvariantViolationError,
         match='Resource key "(foo_resource|bar_resource)" transitively depends on itself.',
     ):
-        execute_pipeline(pipeline_def)
+        PipelineDefinition(
+            name="with_dep_resource",
+            solid_defs=[dep_solid],
+            mode_defs=[
+                ModeDefinition(
+                    resource_defs={"foo_resource": foo_resource, "bar_resource": bar_resource}
+                )
+            ],
+        )
 
 
 def test_yield_resource():
@@ -905,7 +903,7 @@ def test_resource_teardown_failure():
     error_events = [
         event
         for event in result.event_list
-        if event.is_engine_event and event.event_specific_data.error
+        if event.event_type == DagsterEventType.ENGINE_EVENT and event.event_specific_data.error
     ]
     assert len(error_events) == 1
     assert called == ["A", "B"]
@@ -969,7 +967,7 @@ def test_multiprocessing_resource_teardown_failure():
         error_events = [
             event
             for event in result.event_list
-            if event.is_engine_event and event.event_specific_data.error
+            if event.event_type == DagsterEventType.ENGINE_EVENT and event.event_specific_data.error
         ]
         assert len(error_events) == 1
 
@@ -1142,13 +1140,20 @@ def test_resource_needs_resource():
     def foo_resource(init_context):
         return init_context.resources.bar_resource + "foo"
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="is required by resource"):
+    @op(required_resource_keys={"foo_resource"})
+    def op_requires_foo():
+        pass
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Resource with key 'bar_resource' required by resource with key 'foo_resource', but not provided.",
+    ):
 
         @pipeline(
             mode_defs=[ModeDefinition(resource_defs={"foo_resource": foo_resource})],
         )
         def _fail():
-            pass
+            op_requires_foo()
 
 
 def test_resource_op_subset():
@@ -1195,15 +1200,15 @@ def test_resource_op_subset():
         "io_manager",
     }
 
-    assert nested.get_job_def_for_op_selection(["foo_op"]).get_required_resource_defs_for_mode(
+    assert nested.get_job_def_for_subset_selection(["foo_op"]).get_required_resource_defs_for_mode(
         "default"
     ).keys() == {"foo", "bar", "io_manager"}
 
-    assert nested.get_job_def_for_op_selection(["bar_op"]).get_required_resource_defs_for_mode(
+    assert nested.get_job_def_for_subset_selection(["bar_op"]).get_required_resource_defs_for_mode(
         "default"
     ).keys() == {"bar", "io_manager"}
 
-    assert nested.get_job_def_for_op_selection(["baz_op"]).get_required_resource_defs_for_mode(
+    assert nested.get_job_def_for_subset_selection(["baz_op"]).get_required_resource_defs_for_mode(
         "default"
     ).keys() == {"baz", "io_manager"}
 

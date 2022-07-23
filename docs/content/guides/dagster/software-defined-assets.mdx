@@ -1,29 +1,31 @@
 ---
-title: Software-Defined Assets | Dagster
-description: The "software-defined asset" APIs sit atop of the graph/job/op APIs and enable a novel way of constructing Dagster jobs that puts assets at the forefront.
+title: Software-Defined Assets with Pandas and PySpark | Dagster
+description: The "software-defined asset" APIs sit atop of the graph/job/op APIs and enable a novel approach to orchestration that puts assets at the forefront.
 ---
 
-# Software-Defined Assets <Experimental />
+# Software-Defined Assets with Pandas and PySpark
 
 <CodeReferenceLink filePath="examples/software_defined_assets" />
 
-The "Software-defined asset" APIs sit atop of the graph/job/op APIs and enable a novel way of constructing Dagster jobs that puts assets at the forefront. As a reminder, to Dagster, an "asset" is a data product: an object produced by a data pipeline, e.g. a table, ML model, or report.
+The software-defined asset APIs sit atop of the graph/job/op APIs and enable a novel approach to orchestration that puts assets at the forefront.
 
-Conceptually, software-defined assets invert the typical relationship between assets and computation. Instead of defining a graph of ops and recording which assets those ops end up materializing, you define a set of assets, each of which knows how to compute its contents from upstream assets.
+In Dagster, an "asset" is a data product, an object produced by a data pipeline. Some examples are tables, machine learning models, or reports.
+
+Conceptually, software-defined assets invert the typical relationship between assets and computation. Instead of defining a graph of ops and recording which assets those ops end up materializing, you define a set of assets. Each asset knows how to compute its contents from upstream assets.
 
 Taking a software-defined asset approach has a few main benefits:
 
-- **Write less code** - because each asset knows about the assets it depends on, you don't need to use `@graph` / `@job` to wire up dependencies between your ops.
-- **Track cross-job dependencies via asset lineage** - Dagit allows you to find the parents and children of any asset, even if they live in different jobs. This is useful for finding the sources of problems and for understanding the consequences of changing or removing an asset.
+- **Write less code** - Each asset knows about the assets it depends on; you don't need to use `@graph` / `@job` to wire up dependencies.
+- **Track cross-job dependencies via asset lineage** - Dagster allows you to find the parents and children of any asset, even if they live in different jobs. This is useful for finding the sources of problems and for understanding the consequences of changing or removing an asset.
 - **Know when you need to take action on an asset** - In a unified view, Dagster compares the assets you've defined in code to the assets you've materialized in storage. You can catch that you've deployed code for generating a new table, but that you haven't yet materialized it. Or that you've deployed code that adds a column to a table, but that your stored table is still missing that column. Or that you've removed an asset definition, but the table still exists in storage.
 
-In this example, we'll define some tables and generate a Dagster job that updates them. We have a table of temperature samples collected in five-minute increments, and we want to compute a table of the highest temperatures for each day.
+In this example, we'll define some tables with dependencies on each other. We have a table of temperature samples collected in five-minute increments, and we want to compute a table of the highest temperatures for each day.
 
 ## Assets computed with Pandas and stored as CSVs
 
 ### Defining the assets
 
-Here are our asset (aka table) definitions.
+Here are our asset definitions that define tables we want to materialize.
 
 ```python file=../../software_defined_assets/software_defined_assets/assets.py startafter=start_marker endbefore=end_marker
 import pandas as pd
@@ -34,6 +36,7 @@ from dagster import AssetKey, SourceAsset, asset
 sfo_q2_weather_sample = SourceAsset(
     key=AssetKey("sfo_q2_weather_sample"),
     description="Weather samples, taken every five minutes at SFO",
+    metadata={"format": "csv"},
 )
 
 
@@ -52,32 +55,37 @@ def hottest_dates(daily_temperature_highs: DataFrame) -> DataFrame:
 
 `sfo_q2_weather_sample` represents our base temperature table. It's a <PyObject module="dagster" object="SourceAsset" />, meaning that we rely on it, but don't generate it.
 
-`daily_temperature_highs` represents a computed asset. It's derived by taking the `sfo_q2_weather_sample` table and applying the decorated function to it. Notice that it's defined using a pure function - i.e. a function with no side effects, just logical data transformation. The code for storing and retrieving the data in persistent storage will be supplied later on in an <PyObject object="IOManager" /> - that allows swapping in different implementations in different environments. E.g. we might want to store data in a local CSV file for easy testing, but store data a data warehouse in production.
+`daily_temperature_highs` represents a computed asset. It's derived by taking the `sfo_q2_weather_sample` table and applying the decorated function to it. Notice that it's defined using a pure function, a function with no side effects, just logical data transformation. The code for storing and retrieving the data in persistent storage will be supplied later on in an <PyObject object="IOManager" />. This allows us to swap in different implementations in different environments. For example, in local development, we might want to store data in a local CSV file for easy testing. However in production, we would want to store data in a data warehouse.
 
-`hottest_dates` is a computed asset that depends on another computed asset - the `daily_temperture_highs` asset.
+`hottest_dates` is a computed asset that depends on another computed asset, `daily_temperature_highs`.
 
-The framework infers asset dependencies by looking at the names of the arguments to the decorated functions. E.g. the function that defines the `daily_temperature_highs` asset has an argument named `sfo_q2_weather_sample` - corresponding to the asset of the same name.
+The framework infers asset dependencies by looking at the names of the arguments to the decorated functions. The function that defines the `daily_temperature_highs` asset has an argument named `sfo_q2_weather_sample`, which corresponds to the asset definition of the same name.
 
-### Building a job
+### Connecting assets to external services
 
-Having defined some assets, we can use <PyObject module="dagster.core.asset_defs" object="build_assets_job" /> to build a job that, when it runs, materializes them - i.e. it computes their contents and writes them to a location in persistent storage.
+Having defined some assets, we can combine them with resources and IO managers to determine how they're stored, and connect them to external services. We use <PyObject object="with_resources" /> to provide resources to assets and source assets.
 
-```python file=../../software_defined_assets/software_defined_assets/weather_job.py startafter=build_assets_job_start endbefore=build_assets_job_end
-weather_job = build_assets_job(
-    "weather",
-    assets=[daily_temperature_highs, hottest_dates],
-    source_assets=[sfo_q2_weather_sample],
+It's common to use a utility like <PyObject object="load_assets_from_modules" /> or <PyObject object="load_assets_from_package_name" /> to pick up all the assets within a module or package, so you don't need to list them individually.
+
+```python file=../../software_defined_assets/software_defined_assets/weather_assets.py startafter=gather_assets_start endbefore=gather_assets_end
+# imports the module called "assets" from the package containing the current module
+# the "assets" module contains the asset definitions
+from . import assets
+from dagster import load_assets_from_modules, with_resources
+
+weather_assets = with_resources(
+    load_assets_from_modules(modules=[assets]),
     resource_defs={
         "io_manager": IOManagerDefinition.hardcoded_io_manager(LocalFileSystemIOManager())
     },
 )
 ```
 
-The order that we supply the assets to <PyObject module="dagster.core.asset_defs" object="build_assets_job" /> doesn't matter. <PyObject module="dagster.core.asset_defs" object="build_assets_job" /> determines the execution dependencies based on the dependencies declared in the assets. `sfo_q2_weather_sample` is included in `source_assets` because it's not computed as part of the job - just consumed by other assets in the job.
+The order that we supply the assets doesn't matter, since the dependencies are determined by each asset definition.
 
 The functions we used to define our assets describe how to compute their contents, but not how to read and write them to persistent storage. For reading and writing, we define an <PyObject object="IOManager" />. In this case, our `LocalFileSystemIOManager` stores DataFrames as CSVs on the local filesystem:
 
-```python file=../../software_defined_assets/software_defined_assets/weather_job.py startafter=io_manager_start endbefore=io_manager_end
+```python file=../../software_defined_assets/software_defined_assets/weather_assets.py startafter=io_manager_start endbefore=io_manager_end
 class LocalFileSystemIOManager(IOManager):
     """Translates between Pandas DataFrames and CSVs on the local filesystem."""
 
@@ -98,7 +106,7 @@ class LocalFileSystemIOManager(IOManager):
 
 ## Adding in Spark assets
 
-Not all the assets in a job need to have the same Python type. Here's an asset whose computation is defined using Spark DataFrames, that depends on the `daily_temperature_highs` asset we defined above using Pandas.
+Not all the assets in the same dependency graph need to have the same Python type. Here's an asset whose computation is defined using Spark DataFrames, that depends on the `daily_temperature_highs` asset we defined above using Pandas.
 
 ```python file=../../software_defined_assets/software_defined_assets/spark_asset.py
 from pyspark.sql import DataFrame as SparkDF
@@ -121,24 +129,25 @@ def daily_temperature_high_diffs(daily_temperature_highs: SparkDF) -> SparkDF:
     )
 ```
 
-Here's an extended version of `weather_job` that contains the new asset:
+Here's an extended version of `weather_assets` that contains the new asset:
 
-```python file=../../software_defined_assets/software_defined_assets/spark_weather_job.py startafter=build_assets_job_start endbefore=build_assets_job_end
-spark_weather_job = build_assets_job(
-    "spark_weather",
-    assets=[daily_temperature_highs, hottest_dates, daily_temperature_high_diffs],
-    source_assets=[sfo_q2_weather_sample],
+```python file=../../software_defined_assets/software_defined_assets/spark_weather_assets.py startafter=gather_assets_start endbefore=gather_assets_end
+from . import assets, spark_asset
+from dagster import load_assets_from_modules, with_resources
+
+spark_weather_assets = with_resources(
+    load_assets_from_modules(modules=[assets, spark_asset]),
     resource_defs={
         "io_manager": IOManagerDefinition.hardcoded_io_manager(LocalFileSystemIOManager())
     },
 )
 ```
 
-### Defining a multi-type IOManager
+### Defining a multi-type IO Manager
 
 Because the same assets will be written and read into different Python types in different situations, we need to define an <PyObject object="IOManager" /> that can handle both of those types. Here's an extended version of the <PyObject object="IOManager" /> we defined before:
 
-```python file=../../software_defined_assets/software_defined_assets/spark_weather_job.py startafter=io_manager_start endbefore=io_manager_end
+```python file=../../software_defined_assets/software_defined_assets/spark_weather_assets.py startafter=io_manager_start endbefore=io_manager_end
 class LocalFileSystemIOManager(IOManager):
     def _get_fs_path(self, asset_key: AssetKey) -> str:
         return os.path.abspath(os.path.join(*asset_key.path))

@@ -17,14 +17,14 @@ def helm_template() -> HelmTemplate:
     )
 
 
-def test_job_instance_migrate_does_not_render(template: HelmTemplate, capsys):
+def test_job_instance_migrate_does_not_render(template: HelmTemplate, capfd):
     with pytest.raises(subprocess.CalledProcessError):
         helm_values_migrate_disabled = DagsterHelmValues.construct(migrate=Migrate(enabled=False))
 
         template.render(helm_values_migrate_disabled)
 
-        _, err = capsys.readouterr()
-        assert "Error: could not find template" in err
+    _, err = capfd.readouterr()
+    assert "Error: could not find template" in err
 
 
 def test_job_instance_migrate_renders(template: HelmTemplate):

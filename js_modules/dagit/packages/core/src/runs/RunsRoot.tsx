@@ -1,27 +1,35 @@
-import {gql, useQuery} from '@apollo/client';
+import {ApolloError, gql, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
-  ColorsWIP,
+  Colors,
   CursorHistoryControls,
   NonIdealState,
   Page,
   PageHeader,
   Tab,
   Tabs,
-  TagWIP,
+  Tag,
   Heading,
   TokenizingFieldValue,
+  tokenToString,
 } from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {QueryCountdown} from '../app/QueryCountdown';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 import {RunStatus} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
+import {StickyTableContainer} from '../ui/StickyTableContainer';
 
 import {AllScheduledTicks} from './AllScheduledTicks';
 import {doneStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
@@ -32,10 +40,11 @@ import {
   RunsFilterInput,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
+  RunFilterToken,
 } from './RunsFilterInput';
 import {QueueDaemonStatusQuery} from './types/QueueDaemonStatusQuery';
 import {RunsRootQuery, RunsRootQueryVariables} from './types/RunsRootQuery';
-import {POLL_INTERVAL, useCursorPaginatedQuery} from './useCursorPaginatedQuery';
+import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
 
 const PAGE_SIZE = 25;
 
@@ -56,7 +65,9 @@ const selectedTabId = (filterTokens: TokenizingFieldValue[]) => {
 };
 
 export const RunsRoot = () => {
+  useTrackPageView();
   useDocumentTitle('Runs');
+
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
   const [showScheduled, setShowScheduled] = React.useState(false);
@@ -86,13 +97,14 @@ export const RunsRoot = () => {
     query: RUNS_ROOT_QUERY,
     pageSize: PAGE_SIZE,
   });
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   const selectedTab = showScheduled ? 'scheduled' : selectedTabId(filterTokens);
   const staticStatusTags = selectedTab !== 'all';
 
   const setStatusFilter = (statuses: RunStatus[]) => {
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
-    const statusTokens = statuses.map((status) => ({token: 'status', value: status}));
+    const statusTokens = statuses.map((status) => ({token: 'status' as const, value: status}));
     setFilterTokens([...statusTokens, ...tokensMinusStatus]);
     setShowScheduled(false);
   };
@@ -107,6 +119,16 @@ export const RunsRoot = () => {
       }
     },
     [filterTokens, setFilterTokens, staticStatusTags],
+  );
+
+  const onAddTag = React.useCallback(
+    (token: RunFilterToken) => {
+      const tokenAsString = tokenToString(token);
+      if (!filterTokens.some((token) => tokenToString(token) === tokenAsString)) {
+        setFilterTokensWithStatus([...filterTokens, token]);
+      }
+    },
+    [filterTokens, setFilterTokensWithStatus],
   );
 
   const enabledFilters = React.useMemo(() => {
@@ -162,7 +184,7 @@ export const RunsRoot = () => {
               <Tab title="Scheduled" onClick={() => setShowScheduled(true)} id="scheduled" />
             </Tabs>
             <Box padding={{bottom: 8}}>
-              <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
+              <QueryRefreshCountdown refreshState={refreshState} />
             </Box>
           </Box>
         }
@@ -171,7 +193,7 @@ export const RunsRoot = () => {
         <Box
           flex={{direction: 'column', gap: 8}}
           padding={{horizontal: 24, vertical: 16}}
-          border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+          border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
         >
           <Alert
             intent="info"
@@ -181,7 +203,41 @@ export const RunsRoot = () => {
         </Box>
       ) : null}
       <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
-        <Loading queryResult={queryResult} allowStaleData={true}>
+        <Loading
+          queryResult={queryResult}
+          allowStaleData
+          renderError={(error: ApolloError) => {
+            // In this case, a 400 is most likely due to invalid run filters, which are a GraphQL
+            // validation error but surfaced as a 400.
+            const badRequest = !!(
+              error?.networkError &&
+              'statusCode' in error.networkError &&
+              error.networkError.statusCode === 400
+            );
+            return (
+              <Box
+                flex={{direction: 'column', gap: 32}}
+                padding={{vertical: 8, left: 24, right: 12}}
+              >
+                <RunsFilterInput
+                  tokens={mutableTokens}
+                  onChange={setFilterTokensWithStatus}
+                  loading={queryResult.loading}
+                  enabledFilters={enabledFilters}
+                />
+                <NonIdealState
+                  icon="warning"
+                  title={badRequest ? 'Invalid run filters' : 'Unexpected error'}
+                  description={
+                    badRequest
+                      ? 'The specified run filters are not valid. Please check the filters and try again.'
+                      : 'An unexpected error occurred. Check the console for details.'
+                  }
+                />
+              </Box>
+            );
+          }}
+        >
           {({pipelineRunsOrError}) => {
             if (pipelineRunsOrError.__typename !== 'Runs') {
               return (
@@ -201,31 +257,34 @@ export const RunsRoot = () => {
 
             return (
               <>
-                <RunTable
-                  runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
-                  onSetFilter={setFilterTokensWithStatus}
-                  actionBarComponents={
-                    showScheduled ? null : (
-                      <Box flex={{direction: 'column', gap: 8}}>
-                        {selectedTab !== 'all' ? (
-                          <Box flex={{direction: 'row', gap: 8}}>
-                            {filterTokens
-                              .filter((token) => token.token === 'status')
-                              .map(({token, value}) => (
-                                <TagWIP key={token}>{`${token}:${value}`}</TagWIP>
-                              ))}
-                          </Box>
-                        ) : null}
-                        <RunsFilterInput
-                          tokens={mutableTokens}
-                          onChange={setFilterTokensWithStatus}
-                          loading={queryResult.loading}
-                          enabledFilters={enabledFilters}
-                        />
-                      </Box>
-                    )
-                  }
-                />
+                <StickyTableContainer $top={0}>
+                  <RunTable
+                    runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
+                    onAddTag={onAddTag}
+                    filter={filter}
+                    actionBarComponents={
+                      showScheduled ? null : (
+                        <Box flex={{direction: 'column', gap: 8}}>
+                          {selectedTab !== 'all' ? (
+                            <Box flex={{direction: 'row', gap: 8}}>
+                              {filterTokens
+                                .filter((token) => token.token === 'status')
+                                .map(({token, value}) => (
+                                  <Tag key={token}>{`${token}:${value}`}</Tag>
+                                ))}
+                            </Box>
+                          ) : null}
+                          <RunsFilterInput
+                            tokens={mutableTokens}
+                            onChange={setFilterTokensWithStatus}
+                            loading={queryResult.loading}
+                            enabledFilters={enabledFilters}
+                          />
+                        </Box>
+                      )
+                    }
+                  />
+                </StickyTableContainer>
                 {pipelineRunsOrError.results.length > 0 ? (
                   <div style={{marginTop: '16px'}}>
                     <CursorHistoryControls {...paginationProps} />
@@ -264,9 +323,7 @@ const RUNS_ROOT_QUERY = gql`
       ... on InvalidPipelineRunsFilterError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
     }
     queuedCount: pipelineRunsOrError(filter: $queuedFilter) {
       ...CountFragment
@@ -278,6 +335,7 @@ const RUNS_ROOT_QUERY = gql`
 
   ${RUN_TABLE_RUN_FRAGMENT}
   ${COUNT_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 const QueueDaemonAlert = () => {

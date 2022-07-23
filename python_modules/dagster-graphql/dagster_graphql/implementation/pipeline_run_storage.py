@@ -3,9 +3,7 @@ from enum import Enum
 from threading import Event, Thread
 from time import sleep
 
-import gevent
-
-from dagster import check
+import dagster._check as check
 
 
 class State(Enum):
@@ -22,70 +20,63 @@ def get_chunk_size() -> int:
 
 
 class PipelineRunObservableSubscribe:
-    def __init__(self, instance, run_id, after_cursor=None):
+    def __init__(self, instance, run_id, cursor=None):
         self.instance = instance
         self.run_id = run_id
         self.observer = None
         self.state = State.NULL
         self.stopping = None
         self.stopped = None
-        self.after_cursor = after_cursor if after_cursor is not None else -1
+        self.cursor = cursor
 
     def __call__(self, observer):
         self.observer = observer
         check.invariant(self.state is State.NULL, f"unexpected state {self.state}")
         chunk_size = get_chunk_size()
-        events = self.instance.logs_after(self.run_id, self.after_cursor, limit=chunk_size)
-        done_loading = len(events) < chunk_size
+        connection = self.instance.get_records_for_run(self.run_id, self.cursor, limit=chunk_size)
+        events = [record.event_log_entry for record in connection.records]
+        self.observer.on_next((events, connection.has_more, connection.cursor))
+        self.cursor = connection.cursor
 
-        if events:
-            self.observer.on_next((events, not done_loading))
-            self.after_cursor = len(events) + int(self.after_cursor)
-
-        if done_loading:
-            self.watch_events()
-        else:
+        if connection.has_more:
             self.load_events()
+        else:
+            self.watch_events()
 
         return self
 
     def load_events(self):
         self.state = State.LOADING
 
-        # support for gevent based dagit server
-        if gevent.get_hub().gr_frame:
-            self.stopping = gevent.event.Event()
-            self.stopped = gevent.event.Event()
-            load_thread = gevent.Greenlet(self.background_event_loading, gevent.sleep)
-        else:
-            self.stopping = Event()
-            self.stopped = Event()
-            load_thread = Thread(
-                target=self.background_event_loading,
-                args=(sleep,),
-                name=f"load-events-{self.run_id}",
-            )
+        self.stopping = Event()
+        self.stopped = Event()
+        load_thread = Thread(
+            target=self.background_event_loading,
+            args=(sleep,),
+            name=f"load-events-{self.run_id}",
+        )
 
         load_thread.start()
 
     def watch_events(self):
         self.state = State.WATCHING
-        self.instance.watch_event_logs(self.run_id, self.after_cursor, self.handle_new_event)
+        self.instance.watch_event_logs(self.run_id, self.cursor, self.handle_new_event)
 
     def background_event_loading(self, sleep_fn):
         chunk_size = get_chunk_size()
 
         while not self.stopping.is_set():
-            events = self.instance.logs_after(self.run_id, self.after_cursor, limit=chunk_size)
+            connection = self.instance.get_records_for_run(
+                self.run_id, self.cursor, limit=chunk_size
+            )
             if self.observer is None:
                 break
 
-            done_loading = len(events) < chunk_size
+            events = [record.event_log_entry for record in connection.records]
+            self.observer.on_next((events, connection.has_more, connection.cursor))
+            self.cursor = connection.cursor
 
-            self.observer.on_next((events, not done_loading))
-            self.after_cursor = len(events) + int(self.after_cursor)
-
-            if done_loading:
+            if not connection.has_more:
                 break
 
             sleep_fn(0)
@@ -107,6 +98,6 @@ class PipelineRunObservableSubscribe:
         elif self.state is State.LOADING:
             self.stopping.set()
 
-    def handle_new_event(self, new_event):
+    def handle_new_event(self, new_event, cursor):
         if self.observer:
-            self.observer.on_next(([new_event], False))
+            self.observer.on_next(([new_event], False, cursor))

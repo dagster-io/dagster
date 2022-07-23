@@ -2,6 +2,7 @@ import typing
 
 import pytest
 import yaml
+
 from dagster import (
     AssetMaterialization,
     DagsterType,
@@ -15,11 +16,10 @@ from dagster import (
     execute_pipeline,
     execute_solid,
     make_python_type_usable_as_dagster_type,
-    pipeline,
-    solid,
     usable_as_dagster_type,
 )
-from dagster.utils import safe_tempfile_path
+from dagster._legacy import pipeline, solid
+from dagster._utils import safe_tempfile_path
 
 
 def test_basic_even_type():
@@ -147,7 +147,7 @@ def test_even_type_materialization_config():
 
     @dagster_type_materializer({"path": str})
     def save_to_file_materialization(_, cfg, value):
-        with open(cfg["path"], "w") as ff:
+        with open(cfg["path"], "w", encoding="utf8") as ff:
             ff.write(str(value))
             return AssetMaterialization(
                 "path",

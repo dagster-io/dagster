@@ -1,7 +1,7 @@
 from dagster import DagsterInstance
+from dagster._utils import file_relative_path
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load import load_workspace_process_context_from_yaml_paths
-from dagster.utils import file_relative_path
 
 
 def test_multi_location_error():

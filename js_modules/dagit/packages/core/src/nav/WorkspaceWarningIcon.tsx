@@ -1,4 +1,4 @@
-import {ColorsWIP, IconWIP} from '@dagster-io/ui';
+import {Colors, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
@@ -25,7 +25,7 @@ export const WorkspaceWarningIcon = React.memo(() => {
         position="bottom"
         modifiers={{offset: {enabled: true, options: {offset: [0, 28]}}}}
       >
-        <IconWIP name="warning" color={ColorsWIP.Yellow500} />
+        <Icon name="warning" color={Colors.Yellow500} />
       </WarningTooltip>
     );
   }

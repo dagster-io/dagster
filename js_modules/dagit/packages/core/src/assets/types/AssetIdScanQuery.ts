@@ -17,9 +17,16 @@ export interface AssetIdScanQuery_repositoriesOrError_RepositoryConnection_nodes
   name: string;
 }
 
+export interface AssetIdScanQuery_repositoriesOrError_RepositoryConnection_nodes_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface AssetIdScanQuery_repositoriesOrError_RepositoryConnection_nodes_assetNodes {
   __typename: "AssetNode";
   id: string;
+  opNames: string[];
+  assetKey: AssetIdScanQuery_repositoriesOrError_RepositoryConnection_nodes_assetNodes_assetKey;
 }
 
 export interface AssetIdScanQuery_repositoriesOrError_RepositoryConnection_nodes {

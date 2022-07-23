@@ -1,31 +1,31 @@
 import sqlalchemy as db
 
-from dagster import check, seven
-from dagster.core.events.log import EventLogEntry
+import dagster._check as check
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster.core.storage.config import mysql_config
 from dagster.core.storage.event_log import (
     AssetKeyTable,
     SqlEventLogStorage,
     SqlEventLogStorageMetadata,
     SqlPollingEventWatcher,
 )
+from dagster.core.storage.event_log.base import EventLogCursor
 from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
-from dagster.core.storage.sql import stamp_alembic_rev  # pylint: disable=unused-import
-from dagster.core.storage.sql import create_engine, run_alembic_upgrade
-from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
-from dagster.utils import utc_datetime_from_timestamp
-from dagster.utils.backcompat import experimental_class_warning
+from dagster.core.storage.sql import (
+    check_alembic_revision,
+    create_engine,
+    run_alembic_upgrade,
+    stamp_alembic_rev,
+)
 
 from ..utils import (
     MYSQL_POOL_RECYCLE,
     create_mysql_connection,
     mysql_alembic_config,
-    mysql_config,
     mysql_url_from_config,
     retry_mysql_connection_fn,
     retry_mysql_creation_fn,
 )
-
-CHANNEL_NAME = "run_events"
 
 
 class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
@@ -35,7 +35,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
     ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
 
-    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-mysql.yaml
+    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/dagster-mysql-legacy.yaml
        :caption: dagster.yaml
        :start-after: start_marker_event_log
        :end-before: end_marker_event_log
@@ -47,7 +47,6 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """
 
     def __init__(self, mysql_url, inst_data=None):
-        experimental_class_warning("MySQLEventLogStorage")
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.mysql_url = check.str_param(mysql_url, "mysql_url")
         self._disposed = False
@@ -122,49 +121,32 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         MySQLEventLogStorage.wipe_storage(conn_string)
         return MySQLEventLogStorage(conn_string)
 
-    def store_asset(self, event):
-        check.inst_param(event, "event", EventLogEntry)
-        if not event.is_dagster_event or not event.dagster_event.asset_key:
-            return
+    def store_asset_event(self, event):
+        # last_materialization_timestamp is updated upon observation, materialization, materialization_planned
+        # See SqlEventLogStorage.store_asset_event method for more details
 
-        materialization = event.dagster_event.step_materialization_data.materialization
-
-        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
-            with self.index_connection() as conn:
+        values = self._get_asset_entry_values(event, self.has_secondary_index(ASSET_KEY_INDEX_COLS))
+        with self.index_connection() as conn:
+            if values:
                 conn.execute(
                     db.dialects.mysql.insert(AssetKeyTable)
                     .values(
                         asset_key=event.dagster_event.asset_key.to_string(),
-                        last_materialization=serialize_dagster_namedtuple(materialization),
-                        last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-                        last_run_id=event.run_id,
-                        tags=seven.json.dumps(materialization.tags)
-                        if materialization.tags
-                        else None,
+                        **values,
                     )
                     .on_duplicate_key_update(
-                        last_materialization=serialize_dagster_namedtuple(materialization),
-                        last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
-                        last_run_id=event.run_id,
-                        tags=seven.json.dumps(materialization.tags)
-                        if materialization.tags
-                        else None,
+                        **values,
                     )
                 )
-        else:
-            with self.index_connection() as conn:
-                conn.execute(
-                    db.dialects.mysql.insert(AssetKeyTable)
-                    .values(
-                        asset_key=event.dagster_event.asset_key.to_string(),
-                        last_materialization=serialize_dagster_namedtuple(materialization),
-                        last_run_id=event.run_id,
+            else:
+                try:
+                    conn.execute(
+                        db.dialects.mysql.insert(AssetKeyTable).values(
+                            asset_key=event.dagster_event.asset_key.to_string(),
+                        )
                     )
-                    .on_duplicate_key_update(
-                        last_materialization=serialize_dagster_namedtuple(materialization),
-                        last_run_id=event.run_id,
-                    )
-                )
+                except db.exc.IntegrityError:
+                    pass
 
     def _connect(self):
         return create_mysql_connection(self._engine, __file__, "event log")
@@ -187,8 +169,10 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if name in self._secondary_index_cache:
             del self._secondary_index_cache[name]
 
-    def watch(self, run_id, start_cursor, callback):
-        self._event_watcher.watch_run(run_id, start_cursor, callback)
+    def watch(self, run_id, cursor, callback):
+        if cursor and EventLogCursor.parse(cursor).is_offset_cursor():
+            check.failed("Cannot call `watch` with an offset cursor")
+        self._event_watcher.watch_run(run_id, cursor, callback)
 
     def end_watch(self, run_id, handler):
         self._event_watcher.unwatch_run(run_id, handler)
@@ -204,3 +188,8 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if not self._disposed:
             self._disposed = True
             self._event_watcher.close()
+
+    def alembic_version(self):
+        alembic_config = mysql_alembic_config(__file__)
+        with self._connect() as conn:
+            return check_alembic_revision(alembic_config, conn)

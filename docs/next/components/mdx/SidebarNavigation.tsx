@@ -104,12 +104,15 @@ const useActiveId = (itemIds) => {
 
 const MARGINS = ["ml-0", "ml-2", "ml-4", "ml-8"];
 
-const renderItems = (items, activeId, depth) => {
+const renderItems = (items, activeId, depth, key) => {
   return (
-    <ol>
-      {items.map((item) => {
+    <ol key={key}>
+      {items.map((item, idx) => {
         return item.url ? (
-          <li key={item.url} className={cx(MARGINS[depth], "mt-3 list-inside")}>
+          <li
+            key={`${key}-${idx}`}
+            className={cx(MARGINS[depth], "mt-3 list-inside")}
+          >
             <a
               href={item.url}
               className={cx(
@@ -123,10 +126,11 @@ const renderItems = (items, activeId, depth) => {
             >
               {item.title}
             </a>
-            {item.items && renderItems(item.items, activeId, depth + 1)}
+            {item.items &&
+              renderItems(item.items, activeId, depth + 1, `${key}-${idx}`)}
           </li>
         ) : (
-          renderItems(item.items, activeId, depth)
+          renderItems(item.items, activeId, depth, `${key}-${idx}`)
         );
       })}
     </ol>
@@ -139,7 +143,7 @@ const SidebarNavigation = ({ items }) => {
   }
   const idList = getIds(items);
   const activeId = useActiveId(idList);
-  return renderItems(items, activeId, 0);
+  return renderItems(items, activeId, 0, 0);
 };
 
 export default SidebarNavigation;

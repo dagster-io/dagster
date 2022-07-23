@@ -69,18 +69,17 @@ def test_service_account_global_name(template: HelmTemplate):
     assert service_account_template.metadata.name == global_service_account_name
 
 
-def test_subchart_service_account_global_name(subchart_template: HelmTemplate, capsys):
-    with pytest.raises(subprocess.CalledProcessError):
-        global_service_account_name = "global-service-account-name"
-        service_account_values = DagsterHelmValues.construct(
-            global_=Global.construct(serviceAccountName=global_service_account_name),
-        )
+def test_subchart_service_account_global_name(subchart_template: HelmTemplate, capfd):
+    global_service_account_name = "global-service-account-name"
+    service_account_values = DagsterHelmValues.construct(
+        global_=Global.construct(serviceAccountName=global_service_account_name),
+    )
 
+    with pytest.raises(subprocess.CalledProcessError):
         subchart_template.render(service_account_values)
 
-        _, err = capsys.readouterr()
-
-        assert "Error: could not find template" in err
+    _, err = capfd.readouterr()
+    assert "Error: could not find template" in err
 
 
 def test_standalone_subchart_service_account_name(standalone_subchart_template: HelmTemplate):
@@ -98,17 +97,15 @@ def test_standalone_subchart_service_account_name(standalone_subchart_template: 
     assert service_account_template.metadata.name == service_account_name
 
 
-def test_service_account_does_not_render(template: HelmTemplate, capsys):
+def test_service_account_does_not_render(template: HelmTemplate, capfd):
+    service_account_values = DagsterHelmValues.construct(
+        serviceAccount=ServiceAccount.construct(name="service-account-name", create=False),
+    )
     with pytest.raises(subprocess.CalledProcessError):
-        service_account_values = DagsterHelmValues.construct(
-            serviceAccount=ServiceAccount.construct(name="service-account-name", create=False),
-        )
-
         template.render(service_account_values)
 
-        _, err = capsys.readouterr()
-
-        assert "Error: could not find template" in err
+    _, err = capfd.readouterr()
+    assert "Error: could not find template" in err
 
 
 def test_service_account_annotations(template: HelmTemplate):

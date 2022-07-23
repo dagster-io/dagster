@@ -1,14 +1,20 @@
 import hashlib
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Generator, Optional
+from typing import TYPE_CHECKING, AbstractSet, Callable, Iterator, Optional, Union, cast
 
-from dagster import check
-from dagster.config.config_type import ConfigType
+import dagster._check as check
+from dagster._config import ConfigType
+from dagster._utils import ensure_gen
+from dagster._utils.backcompat import experimental_arg_warning
 from dagster.core.decorator_utils import get_function_params, validate_expected_params
-from dagster.core.definitions.events import AssetMaterialization
+from dagster.core.definitions.events import AssetMaterialization, Materialization
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.utils import ensure_gen
-from dagster.utils.backcompat import experimental_arg_warning
+
+from ..definitions.resource_requirement import (
+    ResourceRequirement,
+    TypeLoaderResourceRequirement,
+    TypeMaterializerResourceRequirement,
+)
 
 if TYPE_CHECKING:
     from dagster.core.execution.context.system import StepExecutionContext
@@ -46,6 +52,15 @@ class DagsterTypeLoader(ABC):
     def required_resource_keys(self) -> AbstractSet[str]:
         return frozenset()
 
+    def get_resource_requirements(
+        self, outer_context: Optional[object] = None
+    ) -> Iterator[ResourceRequirement]:
+        type_display_name = cast(str, outer_context)
+        for resource_key in sorted(list(self.required_resource_keys())):
+            yield TypeLoaderResourceRequirement(
+                key=resource_key, type_display_name=type_display_name
+            )
+
 
 class DagsterTypeMaterializer(ABC):
     """
@@ -64,13 +79,22 @@ class DagsterTypeMaterializer(ABC):
     @abstractmethod
     def materialize_runtime_values(
         self, _context: "StepExecutionContext", _config_value: object, _runtime_value: object
-    ) -> object:
+    ) -> Iterator[Union[AssetMaterialization, Materialization]]:
         """
         How to materialize a runtime value given configuration.
         """
 
     def required_resource_keys(self) -> AbstractSet[str]:
         return frozenset()
+
+    def get_resource_requirements(
+        self, outer_context: Optional[object] = None
+    ) -> Iterator[ResourceRequirement]:
+        type_display_name = cast(str, outer_context)
+        for resource_key in sorted(list(self.required_resource_keys())):
+            yield TypeMaterializerResourceRequirement(
+                key=resource_key, type_display_name=type_display_name
+            )
 
 
 class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
@@ -177,7 +201,7 @@ def dagster_type_loader(
         def load_dict(_context, value):
             return value
     """
-    from dagster.config.field import resolve_to_config_type
+    from dagster._config import resolve_to_config_type
 
     config_type = resolve_to_config_type(config_schema)
     EXPECTED_POSITIONALS = ["context", "*"]
@@ -215,7 +239,7 @@ class DagsterTypeMaterializerForDecorator(DagsterTypeMaterializer):
 
     def materialize_runtime_values(
         self, context: "StepExecutionContext", config_value: object, runtime_value: object
-    ) -> Generator[AssetMaterialization, Any, Any]:
+    ) -> Iterator[Union[Materialization, AssetMaterialization]]:
         return ensure_gen(self._func(context, config_value, runtime_value))
 
     def required_resource_keys(self) -> AbstractSet[str]:
@@ -262,7 +286,7 @@ def dagster_type_materializer(
             return AssetMaterialization.file(path)
 
     """
-    from dagster.config.field import resolve_to_config_type
+    from dagster._config import resolve_to_config_type
 
     config_type = resolve_to_config_type(config_schema)
     return lambda func: _create_output_materializer_for_decorator(

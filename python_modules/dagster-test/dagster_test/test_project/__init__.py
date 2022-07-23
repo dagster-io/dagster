@@ -5,12 +5,11 @@ import sys
 from collections import namedtuple
 from contextlib import contextmanager
 
-from dagster import check
+import dagster._check as check
+from dagster._serdes import create_snapshot_id, whitelist_for_serdes
+from dagster._utils import file_relative_path, git_repository_root
 from dagster.core.code_pointer import FileCodePointer
-from dagster.core.definitions.reconstructable import (
-    ReconstructablePipeline,
-    ReconstructableRepository,
-)
+from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.build_resources import build_resources
 from dagster.core.execution.context.output import build_output_context
@@ -19,6 +18,7 @@ from dagster.core.host_representation import (
     ExternalSchedule,
     GrpcServerRepositoryLocationOrigin,
     InProcessRepositoryLocationOrigin,
+    InstigatorSelector,
     RepositoryLocation,
 )
 from dagster.core.host_representation.origin import (
@@ -32,8 +32,7 @@ from dagster.core.origin import (
     RepositoryPythonOrigin,
 )
 from dagster.core.test_utils import in_process_test_workspace
-from dagster.serdes import whitelist_for_serdes
-from dagster.utils import file_relative_path, git_repository_root
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -114,12 +113,13 @@ def build_and_tag_test_image(tag):
     return subprocess.check_output(["./build.sh", base_python, tag], cwd=get_test_repo_path())
 
 
-def get_test_project_recon_pipeline(pipeline_name, container_image=None):
+def get_test_project_recon_pipeline(pipeline_name, container_image=None, container_context=None):
     return ReOriginatedReconstructablePipelineForTest(
         ReconstructableRepository.for_file(
             file_relative_path(__file__, "test_pipelines/repo.py"),
             "define_demo_execution_repo",
             container_image=container_image,
+            container_context=container_context,
         ).get_reconstructable_pipeline(pipeline_name)
     )
 
@@ -155,17 +155,15 @@ class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
                 ),
                 container_image=self.repository.container_image,
                 entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
+                container_context=self.repository.container_context,
             ),
         )
 
 
 class ReOriginatedExternalPipelineForTest(ExternalPipeline):
-    def __init__(
-        self,
-        external_pipeline,
-        container_image=None,
-    ):
+    def __init__(self, external_pipeline, container_image=None, container_context=None):
         self._container_image = container_image
+        self._container_context = container_context
         super(ReOriginatedExternalPipelineForTest, self).__init__(
             external_pipeline.external_pipeline_data,
             external_pipeline.repository_handle,
@@ -189,6 +187,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
                 ),
                 container_image=self._container_image,
                 entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
+                container_context=self._container_context,
             ),
         )
 
@@ -203,15 +202,13 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
         return ExternalPipelineOrigin(
             external_repository_origin=ExternalRepositoryOrigin(
                 repository_location_origin=InProcessRepositoryLocationOrigin(
-                    recon_repo=ReconstructableRepository(
-                        pointer=FileCodePointer(
-                            python_file="/dagster_test/test_project/test_pipelines/repo.py",
-                            fn_name="define_demo_execution_repo",
-                        ),
-                        container_image=self._container_image,
+                    loadable_target_origin=LoadableTargetOrigin(
                         executable_path="python",
-                        entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
-                    )
+                        python_file="/dagster_test/test_project/test_pipelines/repo.py",
+                        attribute="define_demo_execution_repo",
+                    ),
+                    container_image=self._container_image,
+                    entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
                 ),
                 repository_name="demo_execution_repo",
             ),
@@ -250,16 +247,30 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
             instigator_name=self.name,
         )
 
+    @property
+    def selector_id(self):
+        """
+        Hack! Inject a selector that matches the one that the k8s helm chart will use.
+        """
+        return create_snapshot_id(
+            InstigatorSelector(
+                "user-code-deployment-1",
+                "demo_execution_repo",
+                self.name,
+            )
+        )
+
 
 @contextmanager
 def get_test_project_workspace(instance, container_image=None):
     with in_process_test_workspace(
         instance,
-        recon_repo=ReconstructableRepository.for_file(
-            file_relative_path(__file__, "test_pipelines/repo.py"),
-            "define_demo_execution_repo",
-            container_image=container_image,
+        loadable_target_origin=LoadableTargetOrigin(
+            executable_path=sys.executable,
+            python_file=file_relative_path(__file__, "test_pipelines/repo.py"),
+            attribute="define_demo_execution_repo",
         ),
+        container_image=container_image,
     ) as workspace:
         yield workspace
 
@@ -299,7 +310,7 @@ def get_test_project_external_schedule(instance, schedule_name, container_image=
 
 def get_test_project_docker_image():
     docker_repository = os.getenv("DAGSTER_DOCKER_REPOSITORY")
-    image_name = os.getenv("DAGSTER_DOCKER_IMAGE", "buildkite-test-image")
+    image_name = os.getenv("DAGSTER_DOCKER_IMAGE", "test-project")
     docker_image_tag = os.getenv("DAGSTER_DOCKER_IMAGE_TAG")
 
     if IS_BUILDKITE:

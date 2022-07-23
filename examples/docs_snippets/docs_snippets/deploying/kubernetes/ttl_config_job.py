@@ -1,9 +1,10 @@
+# pylint: disable=print-call
 from dagster import job, op
 
 
 @op
 def my_op():
-    print("foo")
+    print("foo")  # pylint: disable=print-call
 
 
 # fmt: off

@@ -11,7 +11,7 @@ description: We walk through a Kubernetes deployment of Dagster using Helm.
 
 Dagster publishes a [fully-featured Helm chart](https://github.com/dagster-io/dagster/tree/master/helm) to manage installing and running a production-grade Kubernetes deployment of Dagster. For each Dagster component in the chart, Dagster publishes a corresponding Docker image on [DockerHub](https://hub.docker.com/u/dagster).
 
-## Prerequsites
+## Prerequisites
 
 `kubectl` should be configured with your desired Kubernetes cluster. You should understand [the basics of Helm](https://helm.sh/docs/), and Helm 3 should be installed. If you are creating your own user code images, Docker should be installed as well.
 
@@ -263,6 +263,47 @@ dagster-user-deployments:
 ```
 
 `dagsterApiGrpcArgs` also supports loading repository definitions from a package name. To find the applicable arguments, [read here](/concepts/repositories-workspaces/workspaces#running-your-own-grpc-server).
+
+You can also specify configuration like configmaps, secrets, volumes, resource limits, and labels for individual user code deployments:
+
+```yaml file=/deploying/kubernetes/user_code_deployment_config.yaml
+dagster-user-deployments:
+  enabled: true
+  deployments:
+    - name: "k8s-example-user-code-1"
+      image:
+        repository: "docker.io/dagster/user-code-example"
+        tag: latest
+        pullPolicy: Always
+      dagsterApiGrpcArgs:
+        - "--python-file"
+        - "/example_project/example_repo/repo.py"
+      port: 3030
+      envConfigMaps:
+        - my-config-map
+      envSecrets:
+        - my-secret
+      labels:
+        foo_label: bar_value
+      volumes:
+        - name: my-volume
+          configMap: my-config-map
+      volumeMounts:
+        - name: test-volume
+          mountPath: /opt/dagster/test_folder
+          subPath: test_file.yaml
+      resources:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+      includeConfigInLaunchedRuns:
+        enabled: true
+```
+
+By default, this configuration will also be included in the pods for any runs that are launched for the user code deployment. You can disable this behavior for a user code deployment by setting `includeConfigInLaunchedRuns.enabled` to `false` for that deployment.
 
 #### Running `step_isolated_job` (Optional)
 

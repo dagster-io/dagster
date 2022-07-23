@@ -13,8 +13,8 @@ import {
   STOP_SENSOR_MUTATION,
 } from './SensorMutations';
 import {SensorSwitchFragment} from './types/SensorSwitchFragment';
-import {StartSensor} from './types/StartSensor';
-import {StopSensor} from './types/StopSensor';
+import {StartSensor, StartSensorVariables} from './types/StartSensor';
+import {StopSensor, StopSensorVariables} from './types/StopSensor';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -27,23 +27,26 @@ export const SensorSwitch: React.FC<Props> = (props) => {
   const {canStartSensor, canStopSensor} = usePermissions();
 
   const {jobOriginId, name, sensorState} = sensor;
-  const {status} = sensorState;
+  const {status, selectorId} = sensorState;
   const sensorSelector = {
     ...repoAddressToSelector(repoAddress),
     sensorName: name,
   };
 
-  const [startSensor, {loading: toggleOnInFlight}] = useMutation<StartSensor>(
+  const [startSensor, {loading: toggleOnInFlight}] = useMutation<StartSensor, StartSensorVariables>(
     START_SENSOR_MUTATION,
     {onCompleted: displaySensorMutationErrors},
   );
-  const [stopSensor, {loading: toggleOffInFlight}] = useMutation<StopSensor>(STOP_SENSOR_MUTATION, {
-    onCompleted: displaySensorMutationErrors,
-  });
+  const [stopSensor, {loading: toggleOffInFlight}] = useMutation<StopSensor, StopSensorVariables>(
+    STOP_SENSOR_MUTATION,
+    {
+      onCompleted: displaySensorMutationErrors,
+    },
+  );
 
   const onChangeSwitch = () => {
     if (status === InstigationStatus.RUNNING) {
-      stopSensor({variables: {jobOriginId}});
+      stopSensor({variables: {jobOriginId, jobSelectorId: selectorId}});
     } else {
       startSensor({variables: {sensorSelector}});
     }
@@ -77,7 +80,9 @@ export const SensorSwitch: React.FC<Props> = (props) => {
   );
 
   return lacksPermission ? (
-    <Tooltip content={DISABLED_MESSAGE}>{switchElement}</Tooltip>
+    <Tooltip content={DISABLED_MESSAGE} display="flex">
+      {switchElement}
+    </Tooltip>
   ) : (
     switchElement
   );
@@ -90,6 +95,7 @@ export const SENSOR_SWITCH_FRAGMENT = gql`
     name
     sensorState {
       id
+      selectorId
       status
     }
   }

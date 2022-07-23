@@ -1,24 +1,22 @@
 import time
+from typing import cast
 
-from dagster import Bool, Field, check, seven
-from dagster.core.errors import (
-    DagsterInvariantViolationError,
-    DagsterLaunchFailedError,
-    DagsterUserCodeUnreachableError,
+import dagster._seven as seven
+from dagster import Bool, Field
+from dagster import _check as check
+from dagster._grpc.client import DagsterGrpcClient
+from dagster._grpc.types import CancelExecutionRequest, ExecuteExternalPipelineArgs, StartRunResult
+from dagster._serdes import (
+    ConfigurableClass,
+    deserialize_as,
+    deserialize_json_to_dagster_namedtuple,
 )
+from dagster._utils import merge_dicts
+from dagster.core.errors import DagsterInvariantViolationError, DagsterLaunchFailedError
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import GRPC_INFO_TAG
-from dagster.grpc.client import DagsterGrpcClient
-from dagster.grpc.types import (
-    CanCancelExecutionRequest,
-    CancelExecutionRequest,
-    ExecuteExternalPipelineArgs,
-    StartRunResult,
-)
-from dagster.serdes import ConfigurableClass, deserialize_as, deserialize_json_to_dagster_namedtuple
-from dagster.utils import merge_dicts
 
 from .base import LaunchRunContext, RunLauncher
 
@@ -55,49 +53,31 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             inst_data=inst_data, wait_for_processes=config_value.get("wait_for_processes", False)
         )
 
-    def launch_run(self, context: LaunchRunContext) -> None:
-        run = context.pipeline_run
-
-        check.inst_param(run, "run", PipelineRun)
-
-        if not context.workspace:
-            raise DagsterInvariantViolationError(
-                "DefaultRunLauncher requires a workspace to be included in its LaunchRunContext"
-            )
-
-        repository_location = context.workspace.get_location(
-            run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name
-        )
-
-        check.inst(
-            repository_location,
-            GrpcServerRepositoryLocation,
-            "DefaultRunLauncher: Can't launch runs for pipeline not loaded from a GRPC server",
-        )
-
-        self._instance.add_run_tags(
+    @staticmethod
+    def launch_run_from_grpc_client(instance, run, grpc_client):
+        instance.add_run_tags(
             run.run_id,
             {
                 GRPC_INFO_TAG: seven.json.dumps(
                     merge_dicts(
-                        {"host": repository_location.host},
+                        {"host": grpc_client.host},
                         (
-                            {"port": repository_location.port}
-                            if repository_location.port
-                            else {"socket": repository_location.socket}
+                            {"port": grpc_client.port}
+                            if grpc_client.port
+                            else {"socket": grpc_client.socket}
                         ),
-                        ({"use_ssl": True} if repository_location.use_ssl else {}),
+                        ({"use_ssl": True} if grpc_client.use_ssl else {}),
                     )
                 )
             },
         )
 
         res = deserialize_as(
-            repository_location.client.start_run(
+            grpc_client.start_run(
                 ExecuteExternalPipelineArgs(
                     pipeline_origin=run.external_pipeline_origin,
                     pipeline_run_id=run.run_id,
-                    instance_ref=self._instance.get_ref(),
+                    instance_ref=instance.get_ref(),
                 )
             ),
             StartRunResult,
@@ -108,6 +88,31 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                     res.message, serializable_error_info=res.serializable_error_info
                 )
             )
+
+    def launch_run(self, context: LaunchRunContext) -> None:
+        run = context.pipeline_run
+
+        check.inst_param(run, "run", PipelineRun)
+
+        if not context.workspace:
+            raise DagsterInvariantViolationError(
+                "DefaultRunLauncher requires a workspace to be included in its LaunchRunContext"
+            )
+
+        external_pipeline_origin = check.not_none(run.external_pipeline_origin)
+        repository_location = context.workspace.get_repository_location(
+            external_pipeline_origin.external_repository_origin.repository_location_origin.location_name
+        )
+
+        check.inst(
+            repository_location,
+            GrpcServerRepositoryLocation,
+            "DefaultRunLauncher: Can't launch runs for pipeline not loaded from a GRPC server",
+        )
+
+        DefaultRunLauncher.launch_run_from_grpc_client(
+            self._instance, run, cast(GrpcServerRepositoryLocation, repository_location).client
+        )
 
         self._run_ids.add(run.run_id)
 
@@ -135,23 +140,6 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             host=grpc_info.get("host"),
             use_ssl=bool(grpc_info.get("use_ssl", False)),
         )
-
-    def can_terminate(self, run_id):
-        check.str_param(run_id, "run_id")
-
-        client = self._get_grpc_client_for_termination(run_id)
-        if not client:
-            return False
-
-        try:
-            res = deserialize_json_to_dagster_namedtuple(
-                client.can_cancel_execution(CanCancelExecutionRequest(run_id=run_id), timeout=5)
-            )
-        except DagsterUserCodeUnreachableError:
-            # Server that created the run may no longer exist
-            return False
-
-        return res.can_cancel
 
     def terminate(self, run_id):
         check.str_param(run_id, "run_id")

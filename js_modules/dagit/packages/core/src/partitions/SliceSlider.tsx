@@ -1,10 +1,11 @@
+// eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
 import {MultiSlider} from '@dagster-io/ui';
 import moment from 'moment-timezone';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-export const SliceSlider: React.FunctionComponent<{
+export const SliceSlider: React.FC<{
   maxUnix: number;
   minUnix: number;
   value: number;

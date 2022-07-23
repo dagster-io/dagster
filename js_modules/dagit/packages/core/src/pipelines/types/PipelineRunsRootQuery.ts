@@ -16,6 +16,11 @@ export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_reposito
   repositoryLocationName: string;
 }
 
+export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_assetSelection {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_tags {
   __typename: "PipelineTag";
   key: string;
@@ -36,6 +41,7 @@ export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results {
   pipelineName: string;
   repositoryOrigin: PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_repositoryOrigin | null;
   solidSelection: string[] | null;
+  assetSelection: PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_assetSelection[] | null;
   tags: PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_tags[];
   startTime: number | null;
   endTime: number | null;
@@ -52,9 +58,17 @@ export interface PipelineRunsRootQuery_pipelineRunsOrError_InvalidPipelineRunsFi
   message: string;
 }
 
+export interface PipelineRunsRootQuery_pipelineRunsOrError_PythonError_causes {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface PipelineRunsRootQuery_pipelineRunsOrError_PythonError {
   __typename: "PythonError";
   message: string;
+  stack: string[];
+  causes: PipelineRunsRootQuery_pipelineRunsOrError_PythonError_causes[];
 }
 
 export type PipelineRunsRootQuery_pipelineRunsOrError = PipelineRunsRootQuery_pipelineRunsOrError_Runs | PipelineRunsRootQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | PipelineRunsRootQuery_pipelineRunsOrError_PythonError;

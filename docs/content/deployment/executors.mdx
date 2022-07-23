@@ -14,16 +14,65 @@ description: Executors are responsible for executing steps within a job run.
 
 ## Overview
 
-Executors are responsible for executing steps within a job run. Once a run has launched and the process for the run, or run worker, has been allocated and started, the executor assumes responsibility for execution. Executors can range from single-process serial executors all the way to managing per-step computational resources with a sophisticated control plane.
+Executors are responsible for executing steps within a job run. Once a run has launched and the process for the run (the [run worker](/deployment/overview#job-execution-flow)) has been allocated and started, the executor assumes responsibility for execution. Executors can range from single-process serial executors all the way to managing per-step computational resources with a sophisticated control plane.
 
-Every job has an executor. The default executor is the <PyObject object="multiprocess_executor" />, which executes each step in its own process. You can choose the executor for a job by supplying an <PyObject object="ExecutorDefinition" /> to the `executor_def` parameter of <PyObject object="job" decorator /> or <PyObject object="GraphDefinition" method="to_job" />.
+## Specifying Executors
+
+Every job has an executor. The default executor is the <PyObject object="multi_or_in_process_executor" />, which by default executes each step in its own process, but can be configured to execute each step within the same process.
+
+An executor can be specified directly on the job by supplying an <PyObject object="ExecutorDefinition" /> to the `executor_def` parameter of <PyObject object="job" decorator /> or <PyObject object="GraphDefinition" method="to_job" />.
+
+```python file=/deploying/executors/executors.py startafter=start_executor_on_job endbefore=end_executor_on_job
+from dagster import multiprocess_executor, job, graph
+
+# Providing an executor using the job decorator
+@job(executor_def=multiprocess_executor)
+def the_job():
+    ...
+
+
+@graph
+def the_graph():
+    ...
+
+
+# Providing an executor using graph_def.to_job(...)
+other_job = the_graph.to_job(executor_def=multiprocess_executor)
+```
+
+A default executor can be specified for all jobs and assets provided to a repository using the `default_executor_def` argument of <PyObject object="repository" decorator />. All jobs that don't specify an executor will use this default executor, but if a job explicitly specifies an executor, then the default provided to the repository will not be used.
+
+```python file=/deploying/executors/executors.py startafter=start_executor_on_repo endbefore=end_executor_on_repo
+from dagster import multiprocess_executor, define_asset_job, asset, repository
+
+
+@asset
+def the_asset():
+    pass
+
+
+asset_job = define_asset_job("the_job", selection="*")
+
+
+@job
+def op_job():
+    ...
+
+
+# op_job and asset_job will both use the default_executor_def,
+# since neither define their own executor.
+@repository(default_executor_def=multiprocess_executor)
+def the_repo():
+    return [the_asset, asset_job, op_job]
+```
 
 Executing a job via <PyObject object="JobDefinition" method="execute_in_process" />, overrides the job's executor and uses <PyObject object="in_process_executor" /> instead.
 
 Example executors include:
 
 - <PyObject module="dagster" object="in_process_executor" />: Execution plan
-  executes serially within the run worker itself.
+  executes serially within the [run
+  worker](/deployment/overview#job-execution-flow) itself.
 - <PyObject module="dagster" object="multiprocess_executor" />: Each step
   executes within its own spawned process. Has configurable level of
   parallelism.

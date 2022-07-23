@@ -1,6 +1,8 @@
 import os
+import sys
 
 import pendulum
+import pytest
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_repository_selector,
@@ -9,7 +11,8 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._utils import Counter, traced_counter
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
@@ -20,8 +23,9 @@ from dagster.core.scheduler.instigation import (
     InstigatorType,
     ScheduleInstigatorData,
 )
-from dagster.seven.compat.pendulum import create_pendulum_time
-from dagster.utils import Counter, traced_counter
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+
+from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
 
 GET_SCHEDULES_QUERY = """
 query SchedulesQuery($repositorySelector: RepositorySelector!) {
@@ -83,6 +87,7 @@ query getSchedule($scheduleSelector: ScheduleSelector!, $ticksAfter: Float) {
       }
       scheduleState {
         id
+        selectorId
         ticks {
           id
           timestamp
@@ -100,6 +105,7 @@ query getScheduleState($scheduleSelector: ScheduleSelector!) {
     ... on Schedule {
       scheduleState {
         id
+        selectorId
         status
       }
     }
@@ -133,6 +139,7 @@ mutation(
   startSchedule(
     scheduleSelector: $scheduleSelector,
   ) {
+    __typename
     ... on PythonError {
       message
       className
@@ -141,6 +148,7 @@ mutation(
     ... on ScheduleStateResult {
       scheduleState {
         id
+        selectorId
         status
       }
     }
@@ -152,9 +160,11 @@ mutation(
 STOP_SCHEDULES_QUERY = """
 mutation(
   $scheduleOriginId: String!
+  $scheduleSelectorId: String!
 ) {
   stopRunningSchedule(
     scheduleOriginId: $scheduleOriginId,
+    scheduleSelectorId: $scheduleSelectorId
   ) {
     ... on PythonError {
       message
@@ -206,6 +216,10 @@ query RepositorySchedulesQuery($repositorySelector: RepositorySelector!) {
                       id
                       runId
                     }
+                    ticks(limit: 1) {
+                      id
+                      timestamp
+                    }
                 }
             }
         }
@@ -223,9 +237,13 @@ def default_execution_params():
 
 def _get_unloadable_schedule_origin(name):
     working_directory = os.path.dirname(__file__)
-    recon_repo = ReconstructableRepository.for_file(__file__, "doesnt_exist", working_directory)
+    loadable_target_origin = LoadableTargetOrigin(
+        executable_path=sys.executable,
+        python_file=__file__,
+        working_directory=working_directory,
+    )
     return ExternalRepositoryOrigin(
-        InProcessRepositoryLocationOrigin(recon_repo), "fake_repository"
+        InProcessRepositoryLocationOrigin(loadable_target_origin), "fake_repository"
     ).get_instigator_origin(name)
 
 
@@ -270,12 +288,16 @@ def test_start_and_stop_schedule(graphql_context):
     )
 
     schedule_origin_id = start_result.data["startSchedule"]["scheduleState"]["id"]
+    schedule_selector_id = start_result.data["startSchedule"]["scheduleState"]["selectorId"]
 
     # Stop a single schedule
     stop_result = execute_dagster_graphql(
         graphql_context,
         STOP_SCHEDULES_QUERY,
-        variables={"scheduleOriginId": schedule_origin_id},
+        variables={
+            "scheduleOriginId": schedule_origin_id,
+            "scheduleSelectorId": schedule_selector_id,
+        },
     )
     assert (
         stop_result.data["stopRunningSchedule"]["scheduleState"]["status"]
@@ -421,7 +443,7 @@ def test_next_tick_bad_schedule(graphql_context):
         assert tick["evaluationResult"]["error"]
 
 
-def test_get_unloadable_job(graphql_context):
+def test_unloadable_schedule(graphql_context):
     instance = graphql_context.instance
     initial_datetime = create_pendulum_time(
         year=2019,
@@ -431,22 +453,26 @@ def test_get_unloadable_job(graphql_context):
         minute=59,
         second=59,
     )
+
+    running_origin = _get_unloadable_schedule_origin("unloadable_running")
+    running_instigator_state = InstigatorState(
+        running_origin,
+        InstigatorType.SCHEDULE,
+        InstigatorStatus.RUNNING,
+        ScheduleInstigatorData(
+            "0 0 * * *",
+            pendulum.now("UTC").timestamp(),
+        ),
+    )
+
+    stopped_origin = _get_unloadable_schedule_origin("unloadable_stopped")
+
     with pendulum.test(initial_datetime):
-        instance.add_instigator_state(
-            InstigatorState(
-                _get_unloadable_schedule_origin("unloadable_running"),
-                InstigatorType.SCHEDULE,
-                InstigatorStatus.RUNNING,
-                ScheduleInstigatorData(
-                    "0 0 * * *",
-                    pendulum.now("UTC").timestamp(),
-                ),
-            )
-        )
+        instance.add_instigator_state(running_instigator_state)
 
         instance.add_instigator_state(
             InstigatorState(
-                _get_unloadable_schedule_origin("unloadable_stopped"),
+                stopped_origin,
                 InstigatorType.SCHEDULE,
                 InstigatorStatus.STOPPED,
                 ScheduleInstigatorData(
@@ -461,6 +487,20 @@ def test_get_unloadable_job(graphql_context):
     assert (
         result.data["unloadableInstigationStatesOrError"]["results"][0]["name"]
         == "unloadable_running"
+    )
+
+    # Verify that we can stop the unloadable schedule
+    stop_result = execute_dagster_graphql(
+        graphql_context,
+        STOP_SCHEDULES_QUERY,
+        variables={
+            "scheduleOriginId": running_instigator_state.instigator_origin_id,
+            "scheduleSelectorId": running_instigator_state.selector_id,
+        },
+    )
+    assert (
+        stop_result.data["stopRunningSchedule"]["scheduleState"]["status"]
+        == InstigatorStatus.STOPPED.value
     )
 
 
@@ -508,6 +548,10 @@ def test_future_ticks_until(graphql_context):
 
 
 def test_repository_batching(graphql_context):
+    instance = graphql_context.instance
+    if not instance.supports_batch_tick_queries or not instance.supports_bucket_queries:
+        pytest.skip("storage cannot batch fetch")
+
     traced_counter.set(Counter())
     selector = infer_repository_selector(graphql_context)
     result = execute_dagster_graphql(
@@ -521,7 +565,7 @@ def test_repository_batching(graphql_context):
     counter = traced_counter.get()
     counts = counter.counts()
     assert counts
-    assert len(counts) == 2
+    assert len(counts) == 3
 
     # We should have a single batch call to fetch run records (to fetch schedule runs) and a single
     # batch call to fetch instigator state, instead of separate calls for each schedule (~18
@@ -530,6 +574,7 @@ def test_repository_batching(graphql_context):
     # 2) `all_instigator_state` is fetched to instantiate GrapheneSchedule
     assert counts.get("DagsterInstance.get_run_records") == 1
     assert counts.get("DagsterInstance.all_instigator_state") == 1
+    assert counts.get("DagsterInstance.get_batch_ticks") == 1
 
 
 def test_start_schedule_with_default_status(graphql_context):
@@ -542,6 +587,8 @@ def test_start_schedule_with_default_status(graphql_context):
     )
 
     schedule_origin_id = result.data["scheduleOrError"]["scheduleState"]["id"]
+    schedule_selector_id = result.data["scheduleOrError"]["scheduleState"]["selectorId"]
+
     assert result.data["scheduleOrError"]["scheduleState"]["status"] == "RUNNING"
 
     # Start a single schedule
@@ -552,15 +599,18 @@ def test_start_schedule_with_default_status(graphql_context):
     )
 
     assert (
-        "You have attempted to start schedule running_in_code_schedule, but it is already running"
-        in start_result.data["startSchedule"]["message"]
+        start_result.data["startSchedule"]["scheduleState"]["status"]
+        == InstigatorStatus.RUNNING.value
     )
 
     # Stop a single schedule
     stop_result = execute_dagster_graphql(
         graphql_context,
         STOP_SCHEDULES_QUERY,
-        variables={"scheduleOriginId": schedule_origin_id},
+        variables={
+            "scheduleOriginId": schedule_origin_id,
+            "scheduleSelectorId": schedule_selector_id,
+        },
     )
     assert (
         stop_result.data["stopRunningSchedule"]["scheduleState"]["status"]
@@ -578,3 +628,24 @@ def test_start_schedule_with_default_status(graphql_context):
         start_result.data["startSchedule"]["scheduleState"]["status"]
         == InstigatorStatus.RUNNING.value
     )
+
+
+class TestSchedulePermissions(ReadonlyGraphQLContextTestMatrix):
+    def test_start_schedule_failure(self, graphql_context):
+        assert graphql_context.read_only == True
+
+        schedule_selector = infer_schedule_selector(
+            graphql_context, "no_config_pipeline_hourly_schedule"
+        )
+
+        # Start a single schedule
+        result = execute_dagster_graphql(
+            graphql_context,
+            START_SCHEDULES_QUERY,
+            variables={"scheduleSelector": schedule_selector},
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert result.data["startSchedule"]["__typename"] == "UnauthorizedError"

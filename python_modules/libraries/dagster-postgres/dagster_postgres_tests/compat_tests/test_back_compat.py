@@ -6,23 +6,37 @@ import subprocess
 import tempfile
 
 import pytest
-from sqlalchemy import create_engine
+import sqlalchemy as db
+from sqlalchemy import inspect
 
 from dagster import (
     AssetKey,
     AssetMaterialization,
+    AssetObservation,
     Output,
     execute_pipeline,
     job,
-    pipeline,
+    op,
     reconstructable,
-    solid,
 )
-from dagster.core.errors import DagsterInstanceMigrationRequired
+from dagster._legacy import pipeline, solid
+from dagster._utils import file_relative_path
 from dagster.core.instance import DagsterInstance
+from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster.utils import file_relative_path
+
+
+def get_columns(instance, table_name: str):
+    return set(c["name"] for c in inspect(instance.run_storage._engine).get_columns(table_name))
+
+
+def get_indexes(instance, table_name: str):
+    return set(c["name"] for c in inspect(instance.run_storage._engine).get_indexes(table_name))
+
+
+def get_tables(instance):
+    return instance.run_storage._engine.table_names()
 
 
 def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
@@ -37,8 +51,10 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
     run_id = "d5f89349-7477-4fab-913e-0925cef0a959"
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -53,7 +69,7 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
             noop_solid()
 
         with pytest.raises(
-            DagsterInstanceMigrationRequired, match=_migration_regex("run", current_revision=None)
+            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
             execute_pipeline(noop_pipeline, instance=instance)
 
@@ -92,8 +108,10 @@ def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -111,8 +129,7 @@ def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):
             asset_solid()
 
         with pytest.raises(
-            DagsterInstanceMigrationRequired,
-            match=_migration_regex("run", current_revision="c9159e740d7e"),
+            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
             execute_pipeline(asset_pipeline, instance=instance)
 
@@ -130,8 +147,10 @@ def test_0_9_22_postgres_pre_run_partition(hostname, conn_string):
         file_relative_path(__file__, "snapshot_0_9_22_pre_run_partition/postgres/pg_dump.txt"),
     )
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -148,8 +167,7 @@ def test_0_9_22_postgres_pre_run_partition(hostname, conn_string):
         tags = {PARTITION_NAME_TAG: "my_partition", PARTITION_SET_TAG: "my_partition_set"}
 
         with pytest.raises(
-            DagsterInstanceMigrationRequired,
-            match=_migration_regex("run", current_revision="3e0770016702"),
+            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
             execute_pipeline(simple_pipeline, tags=tags, instance=instance)
 
@@ -167,8 +185,10 @@ def test_0_10_0_schedule_wipe(hostname, conn_string):
         file_relative_path(__file__, "snapshot_0_10_0_wipe_schedules/postgres/pg_dump.txt"),
     )
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -186,12 +206,16 @@ def test_0_10_6_add_bulk_actions_table(hostname, conn_string):
         file_relative_path(__file__, "snapshot_0_10_6_add_bulk_actions_table/postgres/pg_dump.txt"),
     )
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
-        with pytest.raises(DagsterInstanceMigrationRequired):
+        with pytest.raises(
+            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
+        ):
             with DagsterInstance.from_config(tempdir) as instance:
                 instance.get_backfills()
 
@@ -210,16 +234,17 @@ def test_0_11_0_add_asset_details(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
         with DagsterInstance.from_config(tempdir) as instance:
             storage = instance._event_storage
             with pytest.raises(
-                DagsterInstanceMigrationRequired,
-                match=_migration_regex("event log", current_revision="3e71cf573ba6"),
+                (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
             ):
                 storage.all_asset_keys()
             instance.upgrade()
@@ -234,8 +259,10 @@ def test_0_12_0_add_mode_column(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -262,8 +289,7 @@ def test_0_12_0_add_mode_column(hostname, conn_string):
         # Ensure that migration required exception throws, since you are trying to use the
         # migration-required column.
         with pytest.raises(
-            DagsterInstanceMigrationRequired,
-            match=_migration_regex("run", current_revision="7cba9eeaaf1d"),
+            (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
             instance.get_runs(filters=RunsFilter(mode="the_mode"))
 
@@ -283,9 +309,7 @@ def test_0_12_0_extract_asset_index_cols(hostname, conn_string):
 
     @solid
     def asset_solid(_):
-        yield AssetMaterialization(
-            asset_key=AssetKey(["a"]), partition="partition_1", tags={"foo": "FOO"}
-        )
+        yield AssetMaterialization(asset_key=AssetKey(["a"]), partition="partition_1")
         yield Output(1)
 
     @pipeline
@@ -293,8 +317,10 @@ def test_0_12_0_extract_asset_index_cols(hostname, conn_string):
         asset_solid()
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -326,8 +352,42 @@ def test_0_12_0_extract_asset_index_cols(hostname, conn_string):
             assert not storage.has_asset_key(AssetKey(["a"]))
 
 
+def test_0_12_0_asset_observation_backcompat(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(__file__, "snapshot_0_12_0_pre_asset_index_cols/postgres/pg_dump.txt"),
+    )
+
+    @op
+    def asset_op(_):
+        yield AssetObservation(asset_key=AssetKey(["a"]))
+        yield Output(1)
+
+    @job
+    def asset_job():
+        asset_op()
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            storage = instance._event_storage
+
+            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)
+
+            # make sure that executing the pipeline works
+            asset_job.execute_in_process(instance=instance)
+            assert storage.has_asset_key(AssetKey(["a"]))
+
+
 def _reconstruct_from_file(hostname, conn_string, path, username="test", password="test"):
-    engine = create_engine(conn_string)
+    engine = db.create_engine(conn_string)
     engine.execute("drop schema public cascade;")
     engine.execute("create schema public;")
     env = os.environ.copy()
@@ -338,11 +398,9 @@ def _reconstruct_from_file(hostname, conn_string, path, username="test", passwor
     )
 
 
-def _migration_regex(storage_name, current_revision, expected_revision=None):
+def _migration_regex(current_revision, expected_revision=None):
     warning = re.escape(
-        "Instance is out of date and must be migrated (Postgres {} storage requires migration).".format(
-            storage_name
-        )
+        "Raised an exception that may indicate that the Dagster database needs to be be migrated."
     )
 
     if expected_revision:
@@ -351,7 +409,7 @@ def _migration_regex(storage_name, current_revision, expected_revision=None):
         )
     else:
         revision = "Database is at revision {}, head is [a-z0-9]+.".format(current_revision)
-    instruction = re.escape("Please run `dagster instance migrate`.")
+    instruction = re.escape("To migrate, run `dagster instance migrate`.")
 
     return "{} {} {}".format(warning, revision, instruction)
 
@@ -374,8 +432,10 @@ def test_0_13_12_add_start_time_end_time(hostname, conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -403,3 +463,181 @@ def test_0_13_12_add_start_time_end_time(hostname, conn_string):
         # Verify that historical records also get updated via data migration
         earliest_run_record = instance.get_run_records()[-1]
         assert earliest_run_record.end_time > earliest_run_record.start_time
+
+
+def test_schedule_secondary_index_table_backcompat(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            __file__, "snapshot_0_14_6_schedule_migration_table/postgres/pg_dump.txt"
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        instance = DagsterInstance.from_config(tempdir)
+
+        # secondary indexes should exist because it's colocated in this database from the run
+        # storage
+        assert instance.schedule_storage.has_secondary_index_table()
+
+        # this should succeed without raising any issues
+        instance.upgrade()
+
+        # no-op
+        assert instance.schedule_storage.has_secondary_index_table()
+
+
+def test_instigators_table_backcompat(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(__file__, "snapshot_0_14_6_instigators_table/postgres/pg_dump.txt"),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        instance = DagsterInstance.from_config(tempdir)
+
+        assert not instance.schedule_storage.has_instigators_table()
+
+        instance.upgrade()
+
+        assert instance.schedule_storage.has_instigators_table()
+
+
+def test_jobs_selector_id_migration(hostname, conn_string):
+    from dagster.core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
+    from dagster.core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
+
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            __file__, "snapshot_0_14_6_post_schema_pre_data_migration/postgres/pg_dump.txt"
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+
+            # runs the required data migrations
+            instance.upgrade()
+
+            assert instance.schedule_storage.has_built_index(SCHEDULE_JOBS_SELECTOR_ID)
+            legacy_count = len(instance.all_instigator_state())
+            migrated_instigator_count = instance.schedule_storage.execute(
+                db.select([db.func.count()]).select_from(InstigatorsTable)
+            )[0][0]
+            assert migrated_instigator_count == legacy_count
+
+            migrated_job_count = instance.schedule_storage.execute(
+                db.select([db.func.count()])
+                .select_from(JobTable)
+                .where(JobTable.c.selector_id.isnot(None))
+            )[0][0]
+            assert migrated_job_count == legacy_count
+
+            legacy_tick_count = instance.schedule_storage.execute(
+                db.select([db.func.count()]).select_from(JobTickTable)
+            )[0][0]
+            assert legacy_tick_count > 0
+
+            # tick migrations are optional
+            migrated_tick_count = instance.schedule_storage.execute(
+                db.select([db.func.count()])
+                .select_from(JobTickTable)
+                .where(JobTickTable.c.selector_id.isnot(None))
+            )[0][0]
+            assert migrated_tick_count == 0
+
+            # run the optional migrations
+            instance.reindex()
+
+            migrated_tick_count = instance.schedule_storage.execute(
+                db.select([db.func.count()])
+                .select_from(JobTickTable)
+                .where(JobTickTable.c.selector_id.isnot(None))
+            )[0][0]
+            assert migrated_tick_count == legacy_tick_count
+
+
+def test_add_bulk_actions_columns(hostname, conn_string):
+    new_columns = {"selector_id", "action_type"}
+    new_indexes = {"idx_bulk_actions_action_type", "idx_bulk_actions_selector_id"}
+
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            # use an old snapshot, it has the bulk actions table but not the new columns
+            __file__,
+            "snapshot_0_14_6_post_schema_pre_data_migration/postgres/pg_dump.txt",
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert get_columns(instance, "bulk_actions") & new_columns == set()
+            assert get_indexes(instance, "bulk_actions") & new_indexes == set()
+
+            instance.upgrade()
+            assert new_columns <= get_columns(instance, "bulk_actions")
+            assert new_indexes <= get_indexes(instance, "bulk_actions")
+
+
+def test_add_kvs_table(hostname, conn_string):
+
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            # use an old snapshot
+            __file__,
+            "snapshot_0_14_6_post_schema_pre_data_migration/postgres/pg_dump.txt",
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+
+        with open(
+            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
+        ) as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        with DagsterInstance.from_config(tempdir) as instance:
+            assert "kvs" not in get_tables(instance)
+
+            instance.upgrade()
+            assert "kvs" in get_tables(instance)
+            assert "idx_kvs_keys_unique" in get_indexes(instance, "kvs")

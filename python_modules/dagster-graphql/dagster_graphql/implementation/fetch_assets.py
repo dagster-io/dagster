@@ -1,7 +1,16 @@
-from dagster import AssetKey, DagsterEventType, EventRecordsFilter, check, seven
+from typing import TYPE_CHECKING, Dict, Mapping
+
+from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader
+
+import dagster._seven as seven
+from dagster import AssetKey, DagsterEventType, EventRecordsFilter
+from dagster import _check as check
 from dagster.core.events import ASSET_EVENTS
 
 from .utils import capture_error
+
+if TYPE_CHECKING:
+    from ..schema.asset_graph import GrapheneAssetNode
 
 
 def _normalize_asset_cursor_str(cursor_string):
@@ -51,26 +60,34 @@ def get_assets(graphene_info, prefix=None, cursor=None, limit=None):
     )
 
 
-def get_asset_nodes_by_asset_key(graphene_info):
+def get_asset_nodes_by_asset_key(graphene_info) -> Mapping[AssetKey, "GrapheneAssetNode"]:
+    """
+    If multiple repositories have asset nodes for the same asset key, chooses the asset node that
+    has an op.
+    """
+
     from ..schema.asset_graph import GrapheneAssetNode
 
-    return {
-        external_asset_node.asset_key: GrapheneAssetNode(location, repository, external_asset_node)
-        for location in graphene_info.context.repository_locations
-        for repository in location.get_repositories().values()
-        for external_asset_node in repository.get_external_asset_nodes()
-    }
+    depended_by_loader = CrossRepoAssetDependedByLoader(context=graphene_info.context)
+
+    asset_nodes_by_asset_key: Dict[AssetKey, GrapheneAssetNode] = {}
+    for location in graphene_info.context.repository_locations:
+        for repository in location.get_repositories().values():
+            for external_asset_node in repository.get_external_asset_nodes():
+                preexisting_node = asset_nodes_by_asset_key.get(external_asset_node.asset_key)
+                if preexisting_node is None or preexisting_node.external_asset_node.op_name is None:
+                    asset_nodes_by_asset_key[external_asset_node.asset_key] = GrapheneAssetNode(
+                        location,
+                        repository,
+                        external_asset_node,
+                        depended_by_loader=depended_by_loader,
+                    )
+
+    return asset_nodes_by_asset_key
 
 
 def get_asset_nodes(graphene_info):
-    from ..schema.asset_graph import GrapheneAssetNode
-
-    return [
-        GrapheneAssetNode(location, repository, external_asset_node)
-        for location in graphene_info.context.repository_locations
-        for repository in location.get_repositories().values()
-        for external_asset_node in repository.get_external_asset_nodes()
-    ]
+    return get_asset_nodes_by_asset_key(graphene_info).values()
 
 
 def get_asset_node(graphene_info, asset_key):
@@ -168,3 +185,18 @@ def get_assets_for_run_id(graphene_info, run_id):
         if record.is_dagster_event and record.dagster_event.asset_key
     ]
     return [GrapheneAsset(key=asset_key) for asset_key in asset_keys]
+
+
+def get_unique_asset_id(
+    asset_key: AssetKey, repository_location_name: str = None, repository_name: str = None
+) -> str:
+    repository_identifier = (
+        f"{repository_location_name}.{repository_name}"
+        if repository_location_name and repository_name
+        else ""
+    )
+    return (
+        f"{repository_identifier}.{asset_key.to_string()}"
+        if repository_identifier
+        else f"{asset_key.to_string()}"
+    )

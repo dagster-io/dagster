@@ -1,8 +1,10 @@
 import {useQuery} from '@apollo/client';
-import {Box, ColorsWIP, NonIdealState, Subheading} from '@dagster-io/ui';
+import {Box, Colors, NonIdealState, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {UnloadableSchedules} from '../instigation/Unloadable';
 import {InstigationType} from '../types/globalTypes';
@@ -14,21 +16,28 @@ import {SCHEDULES_ROOT_QUERY} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
 import {SchedulesNextTicks} from './SchedulesNextTicks';
 import {SchedulesTable} from './SchedulesTable';
-import {SchedulesRootQuery} from './types/SchedulesRootQuery';
+import {SchedulesRootQuery, SchedulesRootQueryVariables} from './types/SchedulesRootQuery';
 
 export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
+  useTrackPageView();
   useDocumentTitle('Schedules');
+
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const queryResult = useQuery<SchedulesRootQuery>(SCHEDULES_ROOT_QUERY, {
-    variables: {
-      repositorySelector: repositorySelector,
-      instigationType: InstigationType.SCHEDULE,
+  const queryResult = useQuery<SchedulesRootQuery, SchedulesRootQueryVariables>(
+    SCHEDULES_ROOT_QUERY,
+    {
+      variables: {
+        repositorySelector,
+        instigationType: InstigationType.SCHEDULE,
+      },
+      fetchPolicy: 'cache-and-network',
+      partialRefetch: true,
+      notifyOnNetworkStatusChange: true,
     },
-    fetchPolicy: 'cache-and-network',
-    pollInterval: 50 * 1000,
-    partialRefetch: true,
-  });
+  );
+
+  useQueryRefreshAtInterval(queryResult, 50 * 1000);
 
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
@@ -68,7 +77,7 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
               <SchedulesTable schedules={repositoryOrError.schedules} repoAddress={repoAddress} />
               <Box
                 padding={{vertical: 16, horizontal: 24}}
-                border={{side: 'bottom', width: 1, color: ColorsWIP.Gray100}}
+                border={{side: 'bottom', width: 1, color: Colors.Gray100}}
               >
                 <Subheading>Scheduled ticks</Subheading>
               </Box>

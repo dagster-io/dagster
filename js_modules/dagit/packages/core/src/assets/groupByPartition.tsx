@@ -1,4 +1,4 @@
-import {groupBy} from 'lodash';
+import groupBy from 'lodash/groupBy';
 
 import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
 import {AssetObservationFragment} from './types/AssetObservationFragment';
@@ -40,7 +40,7 @@ export const groupByPartition = (
 
       return {
         all: sorted,
-        latest: latest,
+        latest,
         timestamp: latest?.timestamp,
         partition: key,
       };

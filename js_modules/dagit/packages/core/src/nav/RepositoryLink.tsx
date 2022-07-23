@@ -1,9 +1,10 @@
-import {Box, ColorsWIP, IconWIP, IconWrapper, Spinner, Tooltip} from '@dagster-io/ui';
+import {Box, Colors, Icon, IconWrapper, Spinner, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
+import {withMiddleTruncation} from '../app/Util';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -18,14 +19,19 @@ export const RepositoryLink: React.FC<{
   const {location} = repoAddress;
   const {canReloadRepositoryLocation} = usePermissions();
 
+  const repoAddressTruncated = [
+    withMiddleTruncation(repoAddress.name, {maxLength: 19}),
+    withMiddleTruncation(repoAddress.location, {maxLength: 19}),
+  ].join('@');
+
   return (
-    <Box flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}}>
-      {showIcon && <IconWIP name="folder" style={{marginRight: 8}} color={ColorsWIP.Gray400} />}
-      <RepositoryName
-        to={workspacePathFromAddress(repoAddress)}
-        title={repoAddressAsString(repoAddress)}
-      >
-        {repoAddressAsString(repoAddress)}
+    <Box
+      flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}}
+      title={repoAddressAsString(repoAddress)}
+    >
+      {showIcon && <Icon name="folder" style={{marginRight: 8}} color={Colors.Gray400} />}
+      <RepositoryName to={workspacePathFromAddress(repoAddress)}>
+        {repoAddressTruncated}
       </RepositoryName>
       {canReloadRepositoryLocation && showRefresh ? (
         <ReloadRepositoryLocationButton location={location}>
@@ -45,7 +51,7 @@ export const RepositoryLink: React.FC<{
                 <Spinner purpose="body-text" />
               ) : (
                 <StyledButton onClick={tryReload}>
-                  <IconWIP name="refresh" color={ColorsWIP.Gray400} />
+                  <Icon name="refresh" color={Colors.Gray400} />
                 </StyledButton>
               )}
             </ReloadTooltip>
@@ -88,6 +94,6 @@ const StyledButton = styled.button`
   }
 
   :hover ${IconWrapper} {
-    color: ${ColorsWIP.Blue500};
+    color: ${Colors.Blue500};
   }
 `;

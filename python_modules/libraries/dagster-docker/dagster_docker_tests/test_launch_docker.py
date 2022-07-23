@@ -18,9 +18,9 @@ from dagster_test.test_project import (
     get_test_project_workspace_and_external_pipeline,
 )
 
+from dagster._utils.yaml_utils import merge_yamls
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.core.test_utils import environ, poll_for_finished_run, poll_for_step_start
-from dagster.utils.yaml_utils import merge_yamls
 
 from . import IS_BUILDKITE, docker_postgres_instance
 
@@ -236,7 +236,6 @@ def test_terminate_launched_docker_run():
 
             poll_for_step_start(instance, run_id)
 
-            assert instance.run_launcher.can_terminate(run_id)
             assert instance.run_launcher.terminate(run_id)
 
             terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
@@ -339,6 +338,28 @@ def test_launch_docker_image_multiple_networks():
     _test_launch(docker_image, launcher_config)
 
 
+def test_launch_docker_config_on_container_context():
+    docker_image = get_test_project_docker_image()
+    launcher_config = {}
+    _test_launch(
+        docker_image,
+        launcher_config,
+        container_image=docker_image,
+        container_context={
+            "docker": {
+                "env_vars": [
+                    "AWS_ACCESS_KEY_ID",
+                    "AWS_SECRET_ACCESS_KEY",
+                ],
+                "networks": [
+                    "container:test-postgres-db-docker",
+                    "postgres",
+                ],
+            }
+        },
+    )
+
+
 def test_cant_combine_network_and_networks():
     docker_image = get_test_project_docker_image()
     launcher_config = {
@@ -379,7 +400,9 @@ def test_terminate():
     _test_launch(docker_image, launcher_config, terminate=True)
 
 
-def _test_launch(docker_image, launcher_config, terminate=False):
+def _test_launch(
+    docker_image, launcher_config, terminate=False, container_image=None, container_context=None
+):
     if IS_BUILDKITE:
         launcher_config["registry"] = get_buildkite_registry_config()
     else:
@@ -401,8 +424,12 @@ def _test_launch(docker_image, launcher_config, terminate=False):
             }
         }
     ) as instance:
-        recon_pipeline = get_test_project_recon_pipeline("demo_pipeline_s3")
-        with get_test_project_workspace_and_external_pipeline(instance, "demo_pipeline_s3") as (
+        recon_pipeline = get_test_project_recon_pipeline(
+            "demo_pipeline_s3", container_image=container_image, container_context=container_context
+        )
+        with get_test_project_workspace_and_external_pipeline(
+            instance, "demo_pipeline_s3", container_image=container_image
+        ) as (
             workspace,
             orig_pipeline,
         ):
@@ -412,7 +439,7 @@ def _test_launch(docker_image, launcher_config, terminate=False):
                 pipeline_def=recon_pipeline.get_definition(),
                 run_config=run_config,
                 external_pipeline_origin=external_pipeline.get_external_origin(),
-                pipeline_code_origin=external_pipeline.get_python_origin(),
+                pipeline_code_origin=recon_pipeline.get_python_origin(),
             )
 
             instance.launch_run(run.run_id, workspace)
@@ -441,7 +468,6 @@ def _test_launch(docker_image, launcher_config, terminate=False):
                             raise Exception("Timed out waiting for run to start")
 
                 launcher = instance.run_launcher
-                assert launcher.can_terminate(run.run_id)
                 assert launcher.terminate(run.run_id)
 
                 poll_for_finished_run(instance, run.run_id, timeout=60)

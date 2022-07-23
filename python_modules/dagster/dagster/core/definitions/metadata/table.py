@@ -1,9 +1,8 @@
-import warnings
 from typing import Any, Dict, List, NamedTuple, Optional, Type, Union, cast
 
-import dagster.check as check
-from dagster.serdes.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
-from dagster.utils.backcompat import ExperimentalWarning, experimental
+import dagster._check as check
+from dagster._annotations import experimental
+from dagster._serdes.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
 # ########################
 # ##### TABLE RECORD
@@ -43,7 +42,6 @@ class TableRecord(NamedTuple("TableRecord", [("data", Dict[str, Union[str, int, 
 # ########################
 
 
-@experimental
 @whitelist_for_serdes
 class TableSchema(
     NamedTuple(
@@ -127,7 +125,6 @@ class TableSchema(
 # ########################
 
 
-@experimental
 @whitelist_for_serdes
 class TableConstraints(
     NamedTuple(
@@ -156,16 +153,13 @@ class TableConstraints(
         )
 
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore", category=ExperimentalWarning)
-    _DEFAULT_TABLE_CONSTRAINTS = TableConstraints(other=[])
+_DEFAULT_TABLE_CONSTRAINTS = TableConstraints(other=[])
 
 # ########################
 # ##### TABLE COLUMN
 # ########################
 
 
-@experimental
 @whitelist_for_serdes
 class TableColumn(
     NamedTuple(
@@ -221,7 +215,6 @@ class TableColumn(
 # ########################
 
 
-@experimental
 @whitelist_for_serdes
 class TableColumnConstraints(
     NamedTuple(
@@ -258,6 +251,4 @@ class TableColumnConstraints(
         )
 
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore", category=ExperimentalWarning)
-    _DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()
+_DEFAULT_TABLE_COLUMN_CONSTRAINTS = TableColumnConstraints()

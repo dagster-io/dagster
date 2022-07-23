@@ -1,14 +1,19 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, Group, NonIdealState, Table} from '@dagster-io/ui';
+import {Box, Colors, Group, NonIdealState, Table} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {__ASSET_GROUP} from './asset-graph/Utils';
+import {useTrackPageView} from '../app/analytics';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
-import {RepositoryGraphsListQuery} from './types/RepositoryGraphsListQuery';
+import {
+  RepositoryGraphsListQuery,
+  RepositoryGraphsListQueryVariables,
+} from './types/RepositoryGraphsListQuery';
 import {workspacePath} from './workspacePath';
 
 const REPOSITORY_GRAPHS_LIST_QUERY = gql`
@@ -61,11 +66,17 @@ interface Item {
   path: string;
   repoAddress: RepoAddress;
 }
+
 export const RepositoryGraphsList: React.FC<Props> = (props) => {
+  useTrackPageView();
+
   const {repoAddress} = props;
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const {data, error, loading} = useQuery<RepositoryGraphsListQuery>(REPOSITORY_GRAPHS_LIST_QUERY, {
+  const {data, error, loading} = useQuery<
+    RepositoryGraphsListQuery,
+    RepositoryGraphsListQueryVariables
+  >(REPOSITORY_GRAPHS_LIST_QUERY, {
     fetchPolicy: 'cache-and-network',
     variables: {repositorySelector},
   });
@@ -76,7 +87,9 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
       return null;
     }
     const jobGraphNames = new Set<string>(
-      repo.pipelines.filter((p) => p.isJob && p.name !== __ASSET_GROUP).map((p) => p.graphName),
+      repo.pipelines
+        .filter((p) => p.isJob && !isHiddenAssetGroupJob(p.name))
+        .map((p) => p.graphName),
     );
     const items: Item[] = Array.from(jobGraphNames).map((graphName) => ({
       name: graphName,
@@ -115,6 +128,18 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
     );
   }
 
+  if (!graphsForTable.length) {
+    return (
+      <Box padding={64}>
+        <NonIdealState
+          icon="schema"
+          title="No graphs found"
+          description={<div>This repository does not have any graphs defined.</div>}
+        />
+      </Box>
+    );
+  }
+
   return (
     <Table>
       <thead>
@@ -139,6 +164,6 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
 };
 
 const Description = styled.div`
-  color: ${ColorsWIP.Gray400};
+  color: ${Colors.Gray400};
   font-size: 12px;
 `;

@@ -1,16 +1,18 @@
 import {gql} from '@apollo/client';
+// eslint-disable-next-line no-restricted-imports
 import {Intent} from '@blueprintjs/core';
 import {
   Box,
-  ButtonWIP,
+  Button,
   ButtonLink,
   Checkbox,
-  ColorsWIP,
-  IconWIP,
+  Colors,
+  Icon,
   SplitPanelContainer,
-  TagWIP,
+  Tag,
   Code,
   Tooltip,
+  FontFamily,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -24,6 +26,7 @@ import {
   ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType,
 } from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
 
+import {LaunchpadType} from './LaunchpadRoot';
 import {
   RunPreviewValidationFragment,
   RunPreviewValidationFragment_RunConfigValidationInvalid_errors,
@@ -55,9 +58,11 @@ const stateToHint: {[key: string]: {title: string; intent: Intent}} = {
 const RemoveExtraConfigButton = ({
   onRemoveExtraPaths,
   extraNodes,
+  disabled,
 }: {
   extraNodes: string[];
   onRemoveExtraPaths: (paths: string[]) => void;
+  disabled: boolean;
 }) => {
   const confirm = useConfirmation();
 
@@ -125,15 +130,29 @@ const RemoveExtraConfigButton = ({
     onRemoveExtraPaths(extraNodes);
   };
 
-  return <ButtonWIP onClick={onClick}>Remove Extra Config</ButtonWIP>;
+  return (
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+      <Button disabled={disabled} onClick={onClick}>
+        Remove extra config
+      </Button>
+      {disabled ? (
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+          <Icon name="check_circle" color={Colors.Green500} />
+          No extra config to remove
+        </Box>
+      ) : null}
+    </Box>
+  );
 };
 
 const ScaffoldConfigButton = ({
   onScaffoldMissingConfig,
   missingNodes,
+  disabled,
 }: {
   missingNodes: string[];
   onScaffoldMissingConfig: () => void;
+  disabled: boolean;
 }) => {
   const confirm = useConfirmation();
 
@@ -166,12 +185,25 @@ const ScaffoldConfigButton = ({
     onScaffoldMissingConfig();
   };
 
-  return <ButtonWIP onClick={onClick}>Scaffold missing config</ButtonWIP>;
+  return (
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+      <Button disabled={disabled} onClick={onClick}>
+        Scaffold missing config
+      </Button>
+      {disabled ? (
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+          <Icon name="check_circle" color={Colors.Green500} />
+          No missing config
+        </Box>
+      ) : null}
+    </Box>
+  );
 };
 
 interface RunPreviewProps {
   validation: RunPreviewValidationFragment | null;
   document: any | null;
+  launchpadType: LaunchpadType;
 
   runConfigSchema?: ConfigEditorRunConfigSchemaFragment;
   onHighlightPath: (path: string[]) => void;
@@ -185,6 +217,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
     document,
     validation,
     onHighlightPath,
+    launchpadType,
     onRemoveExtraPaths,
     onScaffoldMissingConfig,
     solidSelection,
@@ -314,7 +347,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
             intent={stateToHint[state].intent}
             key={item.name}
           >
-            <TagWIP
+            <Tag
               key={item.name}
               intent={stateToHint[state].intent}
               onClick={() => {
@@ -323,7 +356,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
               }}
             >
               {item.name}
-            </TagWIP>
+            </Tag>
           </Tooltip>
         );
       })
@@ -343,30 +376,32 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
         <ErrorListContainer>
           <Section>
             <SectionTitle>Errors</SectionTitle>
-            {errorsAndPaths.map((item, idx) => (
-              <ErrorRow key={idx} error={item.error} onHighlight={onHighlightPath} />
-            ))}
-          </Section>
-
-          {(extraNodes.length > 0 || missingNodes.length > 0) && (
-            <Section>
-              <SectionTitle>Bulk Actions:</SectionTitle>
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 8}} padding={{top: 4}}>
-                {extraNodes.length ? (
-                  <RemoveExtraConfigButton
-                    onRemoveExtraPaths={onRemoveExtraPaths}
-                    extraNodes={extraNodes}
-                  />
-                ) : null}
-                {missingNodes.length ? (
-                  <ScaffoldConfigButton
-                    onScaffoldMissingConfig={onScaffoldMissingConfig}
-                    missingNodes={missingNodes}
-                  />
-                ) : null}
+            {errorsAndPaths.length ? (
+              errorsAndPaths.map((item, idx) => (
+                <ErrorRow key={idx} error={item.error} onHighlight={onHighlightPath} />
+              ))
+            ) : (
+              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                <Icon name="check_circle" color={Colors.Green500} />
+                No errors
               </Box>
-            </Section>
-          )}
+            )}
+          </Section>
+          <Section>
+            <SectionTitle>Config actions:</SectionTitle>
+            <Box flex={{direction: 'column', gap: 8}} padding={{top: 4, bottom: 20}}>
+              <ScaffoldConfigButton
+                onScaffoldMissingConfig={onScaffoldMissingConfig}
+                missingNodes={missingNodes}
+                disabled={!missingNodes.length}
+              />
+              <RemoveExtraConfigButton
+                onRemoveExtraPaths={onRemoveExtraPaths}
+                extraNodes={extraNodes}
+                disabled={!extraNodes.length}
+              />
+            </Box>
+          </Section>
         </ErrorListContainer>
       }
       firstInitialPercent={50}
@@ -392,7 +427,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
               )}
             </RuntimeAndResourcesSection>
             <Section>
-              <SectionTitle>Ops</SectionTitle>
+              <SectionTitle>{launchpadType === 'asset' ? 'Assets (Ops)' : 'Ops'}</SectionTitle>
               <ItemSet>
                 {itemsIn(
                   [hasOps ? 'ops' : 'solids'],
@@ -479,7 +514,7 @@ export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
 `;
 
 const SectionTitle = styled.div`
-  color: ${ColorsWIP.Gray400};
+  color: ${Colors.Gray400};
   text-transform: uppercase;
   font-size: 12px;
   margin-bottom: 8px;
@@ -514,13 +549,14 @@ const ErrorRowContainer = styled.div<{hoverable: boolean}>`
   font-size: 13px;
   white-space: pre-wrap;
   word-break: break-word;
+  font-family: ${FontFamily.monospace};
+  cursor: pointer;
   display: flex;
   flex-direction: row;
   align-items: flex-start;
   border-bottom: 1px solid #ccc;
-  padding: 7px 0;
-  padding-right: 7px;
-  margin-bottom: 8px;
+  padding: 8px;
+  margin: 8px 12px 0 -8px;
   &:last-child {
     border-bottom: 0;
     margin-bottom: 15px;
@@ -528,7 +564,7 @@ const ErrorRowContainer = styled.div<{hoverable: boolean}>`
   ${({hoverable}) =>
     hoverable &&
     `&:hover {
-      background: ${ColorsWIP.Gray50};
+      background: ${Colors.Gray50};
     }
   `}
 `;
@@ -541,7 +577,7 @@ const RuntimeAndResourcesSection = styled.div`
   }
 `;
 
-const ErrorRow: React.FunctionComponent<{
+const ErrorRow: React.FC<{
   error: ValidationError | React.ReactNode;
   onHighlight: (path: string[]) => void;
 }> = ({error, onHighlight}) => {
@@ -563,7 +599,7 @@ const ErrorRow: React.FunctionComponent<{
       onClick={() => target && onHighlight(errorStackToYamlPath(target.stack.entries))}
     >
       <div style={{paddingRight: 4}}>
-        <IconWIP name="error" color={ColorsWIP.Red500} />
+        <Icon name="error" color={Colors.Red500} />
       </div>
       <div>
         {displayed}

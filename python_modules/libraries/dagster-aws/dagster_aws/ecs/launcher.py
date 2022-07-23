@@ -1,19 +1,41 @@
+import warnings
 from collections import namedtuple
+from contextlib import suppress
+from typing import Any, Dict
 
 import boto3
 from botocore.exceptions import ClientError
 
-from dagster import Array, Field, Noneable, StringSource, check
+from dagster import Array, Field, Noneable, ScalarUnion, StringSource
+from dagster import _check as check
+from dagster._grpc.types import ExecuteRunArgs
+from dagster._serdes import ConfigurableClass
 from dagster.core.events import EngineEventData, MetadataEntry
-from dagster.core.launcher.base import LaunchRunContext, RunLauncher
-from dagster.grpc.types import ExecuteRunArgs
-from dagster.serdes import ConfigurableClass
-from dagster.utils import merge_dicts
+from dagster.core.launcher.base import (
+    CheckRunHealthResult,
+    LaunchRunContext,
+    RunLauncher,
+    WorkerStatus,
+)
+from dagster.core.storage.pipeline_run import PipelineRun
 
-from ..secretsmanager import get_secrets_from_arns, get_tagged_secrets
+from ..secretsmanager import get_secrets_from_arns
+from .container_context import SHARED_ECS_SCHEMA, EcsContainerContext
 from .tasks import default_ecs_task_definition, default_ecs_task_metadata
+from .utils import sanitize_family
 
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
+
+RUNNING_STATUSES = [
+    "PROVISIONING",
+    "PENDING",
+    "ACTIVATING",
+    "RUNNING",
+    "DEACTIVATING",
+    "STOPPING",
+    "DEPROVISIONING",
+]
+STOPPED_STATUSES = ["STOPPED"]
 
 
 class EcsRunLauncher(RunLauncher, ConfigurableClass):
@@ -26,16 +48,38 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         container_name="run",
         secrets=None,
         secrets_tag="dagster",
+        env_vars=None,
+        include_sidecars=False,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
         self.ec2 = boto3.resource("ec2")
         self.secrets_manager = boto3.client("secretsmanager")
+        self.logs = boto3.client("logs")
 
         self.task_definition = task_definition
         self.container_name = container_name
-        self.secrets = secrets or []
-        self.secrets_tag = secrets_tag
+
+        self.secrets = check.opt_list_param(secrets, "secrets")
+
+        self.env_vars = check.opt_list_param(env_vars, "env_vars")
+
+        if self.secrets and all(isinstance(secret, str) for secret in self.secrets):
+            warnings.warn(
+                "Setting secrets as a list of ARNs is deprecated. "
+                "Secrets should instead follow the same structure as the ECS API: "
+                "https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html",
+                DeprecationWarning,
+            )
+            self.secrets = [
+                {"name": name, "valueFrom": value_from}
+                for name, value_from in get_secrets_from_arns(
+                    self.secrets_manager, self.secrets
+                ).items()
+            ]
+
+        self.secrets_tags = [secrets_tag] if secrets_tag else []
+        self.include_sidecars = include_sidecars
 
         if self.task_definition:
             task_definition = self.ecs.describe_task_definition(taskDefinition=task_definition)
@@ -75,11 +119,17 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 ),
             ),
             "secrets": Field(
-                Array(StringSource),
+                Array(
+                    ScalarUnion(
+                        scalar_type=str,
+                        non_scalar_schema={"name": StringSource, "valueFrom": StringSource},
+                    )
+                ),
                 is_required=False,
                 description=(
-                    "An array of AWS Secrets Manager secrets arns. These secrets will "
-                    "be mounted as environment variabls in the container."
+                    "An array of AWS Secrets Manager secrets. These secrets will "
+                    "be mounted as environment variables in the container. See "
+                    "https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html."
                 ),
             ),
             "secrets_tag": Field(
@@ -91,6 +141,16 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     "environment variables in the container. Defaults to 'dagster'."
                 ),
             ),
+            "include_sidecars": Field(
+                bool,
+                is_required=False,
+                default_value=False,
+                description=(
+                    "Whether each run should use the same sidecars as the task that launches it. "
+                    "Defaults to False."
+                ),
+            ),
+            **SHARED_ECS_SCHEMA,
         }
 
     @staticmethod
@@ -129,13 +189,35 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         docker-compose when you use the Dagster ECS reference deployment.
         """
         run = context.pipeline_run
+        family = sanitize_family(
+            run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name  # type: ignore
+        )
+
+        container_context = EcsContainerContext.create_for_run(run, self)
+
         metadata = self._task_metadata()
-        pipeline_origin = context.pipeline_code_origin
+        pipeline_origin = check.not_none(context.pipeline_code_origin)
         image = pipeline_origin.repository_origin.container_image
-        task_definition = self._task_definition(metadata, image)["family"]
+        task_definition = self._task_definition(family, metadata, image, container_context)[
+            "family"
+        ]
+
+        # ECS limits overrides to 8192 characters including json formatting
+        # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html
+        # When container_context is serialized as part of the ExecuteRunArgs, we risk
+        # going over this limit (for example, if many secrets have been set). This strips
+        # the container context off of our pipeline origin because we don't actually need
+        # it to launch the run; we only needed it to create the task definition.
+        repository_origin = pipeline_origin.repository_origin
+        # pylint: disable=protected-access
+        stripped_repository_origin = repository_origin._replace(container_context={})
+        stripped_pipeline_origin = pipeline_origin._replace(
+            repository_origin=stripped_repository_origin
+        )
+        # pylint: enable=protected-access
 
         args = ExecuteRunArgs(
-            pipeline_origin=pipeline_origin,
+            pipeline_origin=stripped_pipeline_origin,
             pipeline_run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
         )
@@ -143,30 +225,29 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         # Set cpu or memory overrides
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
-        cpu_and_memory_overrides = {}
-        tags = self._get_run_tags(run.run_id)
-        if tags.cpu:
-            cpu_and_memory_overrides["cpu"] = tags.cpu
-        if tags.memory:
-            cpu_and_memory_overrides["memory"] = tags.memory
+        cpu_and_memory_overrides = self.get_cpu_and_memory_overrides(run)
+
+        container_overrides = [
+            {
+                "name": self.container_name,
+                "command": command,
+                # containerOverrides expects cpu/memory as integers
+                **{k: int(v) for k, v in cpu_and_memory_overrides.items()},
+            }
+        ]
+
+        overrides: Dict[str, Any] = {
+            "containerOverrides": container_overrides,
+            # taskOverrides expects cpu/memory as strings
+            **cpu_and_memory_overrides,
+        }
 
         # Run a task using the same network configuration as this processes's
         # task.
         response = self.ecs.run_task(
             taskDefinition=task_definition,
             cluster=metadata.cluster,
-            overrides={
-                "containerOverrides": [
-                    {
-                        "name": self.container_name,
-                        "command": command,
-                        # containerOverrides expects cpu/memory as integers
-                        **{k: int(v) for k, v in cpu_and_memory_overrides.items()},
-                    }
-                ],
-                # taskOverrides expects cpu/memory as strings
-                **cpu_and_memory_overrides,
-            },
+            overrides=overrides,
             networkConfiguration={
                 "awsvpcConfiguration": {
                     "subnets": metadata.subnets,
@@ -177,7 +258,19 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             launchType="FARGATE",
         )
 
-        arn = response["tasks"][0]["taskArn"]
+        tasks = response["tasks"]
+
+        if not tasks:
+            failures = response["failures"]
+            exceptions = []
+            for failure in failures:
+                arn = failure.get("arn")
+                reason = failure.get("reason")
+                detail = failure.get("detail")
+                exceptions.append(Exception(f"Task {arn} failed because {reason}: {detail}"))
+            raise Exception(exceptions)
+
+        arn = tasks[0]["taskArn"]
         self._set_run_tags(run.run_id, task_arn=arn)
         self._set_ecs_tags(run.run_id, task_arn=arn)
         self._instance.report_engine_event(
@@ -185,29 +278,25 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             pipeline_run=run,
             engine_event_data=EngineEventData(
                 [
-                    MetadataEntry.text(arn, "ECS Task ARN"),
-                    MetadataEntry.text(metadata.cluster, "ECS Cluster"),
-                    MetadataEntry.text(run.run_id, "Run ID"),
+                    MetadataEntry("ECS Task ARN", value=arn),
+                    MetadataEntry("ECS Cluster", value=metadata.cluster),
+                    MetadataEntry("Run ID", value=run.run_id),
                 ]
             ),
             cls=self.__class__,
         )
 
-    def can_terminate(self, run_id):
-        tags = self._get_run_tags(run_id)
+    def get_cpu_and_memory_overrides(self, run: PipelineRun) -> Dict[str, str]:
+        overrides = {}
 
-        if not (tags.arn and tags.cluster):
-            return False
+        cpu = run.tags.get("ecs/cpu")
+        memory = run.tags.get("ecs/memory")
 
-        tasks = self.ecs.describe_tasks(tasks=[tags.arn], cluster=tags.cluster).get("tasks")
-        if not tasks:
-            return False
-
-        status = tasks[0].get("lastStatus")
-        if status and status != "STOPPED":
-            return True
-
-        return False
+        if cpu:
+            overrides["cpu"] = cpu
+        if memory:
+            overrides["memory"] = memory
+        return overrides
 
     def terminate(self, run_id):
         tags = self._get_run_tags(run_id)
@@ -226,7 +315,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self.ecs.stop_task(task=tags.arn, cluster=tags.cluster)
         return True
 
-    def _task_definition(self, metadata, image):
+    def _task_definition(self, family, metadata, image, container_context):
         """
         Return the launcher's task definition if it's configured.
 
@@ -239,20 +328,100 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             task_definition = self.ecs.describe_task_definition(taskDefinition=self.task_definition)
             return task_definition["taskDefinition"]
 
+        environment = [
+            {"name": key, "value": value}
+            for key, value in container_context.get_environment_dict().items()
+        ]
+
+        secrets = container_context.get_secrets_dict(self.secrets_manager)
+        secrets_definition = (
+            {"secrets": [{"name": key, "valueFrom": value} for key, value in secrets.items()]}
+            if secrets
+            else {}
+        )
+
+        task_definition = {}
+        with suppress(ClientError):
+            task_definition = self.ecs.describe_task_definition(taskDefinition=family)[
+                "taskDefinition"
+            ]
+        secrets = secrets_definition.get("secrets", [])
+        if self._reuse_task_definition(task_definition, metadata, image, secrets, environment):
+            return task_definition
+
         return default_ecs_task_definition(
             self.ecs,
+            family,
             metadata,
             image,
             self.container_name,
-            secrets=merge_dicts(
-                (
-                    get_tagged_secrets(self.secrets_manager, self.secrets_tag)
-                    if self.secrets_tag
-                    else {}
-                ),
-                get_secrets_from_arns(self.secrets_manager, self.secrets),
-            ),
+            environment=environment,
+            secrets=secrets_definition,
+            include_sidecars=self.include_sidecars,
         )
+
+    def _reuse_task_definition(self, task_definition, metadata, image, secrets, environment):
+        container_definitions_match = False
+        task_definitions_match = False
+
+        container_definitions = task_definition.get("containerDefinitions", [{}])
+        # Only check for diffs to the primary container. This ignores changes to sidecars.
+        for container_definition in container_definitions:
+            if (
+                container_definition.get("image") == image
+                and container_definition.get("name") == self.container_name
+                and container_definition.get("secrets") == secrets
+                and ((not environment) or container_definition.get("environment") == environment)
+            ):
+                container_definitions_match = True
+
+        if task_definition.get("executionRoleArn") == metadata.task_definition.get(
+            "executionRoleArn"
+        ) and task_definition.get("taskRoleArn") == metadata.task_definition.get("taskRoleArn"):
+            task_definitions_match = True
+
+        return container_definitions_match & task_definitions_match
 
     def _task_metadata(self):
         return default_ecs_task_metadata(self.ec2, self.ecs)
+
+    @property
+    def supports_check_run_worker_health(self):
+        return True
+
+    def check_run_worker_health(self, run: PipelineRun):
+
+        tags = self._get_run_tags(run.run_id)
+
+        if not (tags.arn and tags.cluster):
+            return CheckRunHealthResult(WorkerStatus.UNKNOWN, "")
+
+        tasks = self.ecs.describe_tasks(tasks=[tags.arn], cluster=tags.cluster).get("tasks")
+        if not tasks:
+            return CheckRunHealthResult(WorkerStatus.UNKNOWN, "")
+
+        t = tasks[0]
+
+        if t.get("lastStatus") in RUNNING_STATUSES:
+            return CheckRunHealthResult(WorkerStatus.RUNNING)
+        elif t.get("lastStatus") in STOPPED_STATUSES:
+
+            failed_containers = []
+            for c in t.get("containers"):
+                if c.get("exitCode") != 0:
+                    failed_containers.append(c)
+            if len(failed_containers) > 0:
+                if len(failed_containers) > 1:
+                    container_str = "Containers"
+                else:
+                    container_str = "Container"
+                return CheckRunHealthResult(
+                    WorkerStatus.FAILED,
+                    f"ECS task failed. Stop code: {t.get('stopCode')}. Stop reason {t.get('stopReason')}. "
+                    f"{container_str} {c.get('name') for c in failed_containers} failed."
+                    f"Check the logs for task {t.get('taskArn')} for details.",
+                )
+
+            return CheckRunHealthResult(WorkerStatus.SUCCESS)
+
+        return CheckRunHealthResult(WorkerStatus.UNKNOWN, "ECS task health status is unknown.")

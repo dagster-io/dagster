@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import Extra  # pylint: disable=no-name-in-module
+from pydantic import Extra
 
 from ...utils import kubernetes
 from ...utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
@@ -60,6 +60,11 @@ class RunCoordinator(BaseModel):
         }
 
 
+class Sensors(BaseModel):
+    useThreads: bool
+    numWorkers: Optional[int]
+
+
 class Daemon(BaseModel):
     enabled: bool
     image: kubernetes.Image
@@ -81,6 +86,8 @@ class Daemon(BaseModel):
     startupProbe: kubernetes.StartupProbe
     annotations: kubernetes.Annotations
     runMonitoring: Dict[str, Any]
+    runRetries: Dict[str, Any]
+    sensors: Sensors
 
     class Config:
         extra = Extra.forbid
