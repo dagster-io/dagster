@@ -13,7 +13,12 @@ from papermill.iorw import load_notebook_node, write_ipynb
 
 from dagster import InputDefinition, OpDefinition, Output, OutputDefinition, SolidDefinition
 from dagster import _check as check
-from dagster import seven
+from dagster import _seven
+from dagster._serdes import pack_value
+from dagster._seven import get_system_temp_directory
+from dagster._utils import mkdir_p, safe_tempfile_path
+from dagster._utils.backcompat import rename_warning
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster.core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster.core.definitions.metadata import MetadataValue
 from dagster.core.definitions.reconstruct import ReconstructablePipeline
@@ -23,11 +28,6 @@ from dagster.core.execution.context.input import build_input_context
 from dagster.core.execution.context.system import StepExecutionContext
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.storage.file_manager import FileHandle
-from dagster.serdes import pack_value
-from dagster.seven import get_system_temp_directory
-from dagster.utils import mkdir_p, safe_tempfile_path
-from dagster.utils.backcompat import rename_warning
-from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .compat import ExecutionError
 from .engine import DagstermillEngine
@@ -92,7 +92,7 @@ def replace_parameters(context, nb, parameters):
         after = nb.cells
 
     nb.cells = before + [newcell] + after
-    nb.metadata.papermill["parameters"] = seven.json.dumps(parameters)
+    nb.metadata.papermill["parameters"] = _seven.json.dumps(parameters)
 
     return nb
 

@@ -11,14 +11,14 @@ from typing import Sequence, cast
 from typing_compat import get_args, get_origin
 
 import dagster._check as check
+from dagster._builtins import BuiltinEnum
 from dagster._config import Array, ConfigType
 from dagster._config import Noneable as ConfigNoneable
-from dagster.builtins import BuiltinEnum
+from dagster._serdes import whitelist_for_serdes
+from dagster._seven import is_subclass
 from dagster.core.definitions.events import DynamicOutput, Output, TypeCheck
 from dagster.core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.serdes import whitelist_for_serdes
-from dagster.seven import is_subclass
 
 from ..definitions.resource_requirement import (
     RequiresResources,
@@ -256,7 +256,7 @@ class DagsterType(RequiresResources):
 
 
 def _validate_type_check_fn(fn: t.Callable, name: t.Optional[str]) -> bool:
-    from dagster.seven import get_arg_names
+    from dagster._seven import get_arg_names
 
     args = get_arg_names(fn)
 
@@ -829,11 +829,11 @@ class TypeHintInferredDagsterType(DagsterType):
 
 def resolve_dagster_type(dagster_type: object) -> DagsterType:
     # circular dep
+    from dagster._utils.typing_api import is_typing_type
     from dagster.primitive_mapping import (
         is_supported_runtime_python_builtin,
         remap_python_builtin_for_runtime,
     )
-    from dagster.utils.typing_api import is_typing_type
 
     from .python_dict import Dict as DDict
     from .python_dict import PythonDict

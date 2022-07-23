@@ -24,9 +24,9 @@ from dagster import (
     reconstructable,
 )
 from dagster._legacy import pipeline, solid
+from dagster._utils.merger import deep_merge_dicts
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.test_utils import instance_for_test
-from dagster.utils.merger import deep_merge_dicts
 
 S3_BUCKET = "dagster-databricks-tests"
 ADLS2_STORAGE_ACCOUNT = "dagsterdatabrickstests"

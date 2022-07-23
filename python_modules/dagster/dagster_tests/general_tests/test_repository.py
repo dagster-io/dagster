@@ -15,7 +15,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._legacy import solid
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 def define_empty_pipeline():

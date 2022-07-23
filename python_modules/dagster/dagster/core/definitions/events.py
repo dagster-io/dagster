@@ -19,8 +19,8 @@ from typing import (
 )
 
 import dagster._check as check
-import dagster.seven as seven
-from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
+import dagster._seven as seven
+from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
 from .metadata import (
     MetadataEntry,

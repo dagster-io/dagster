@@ -8,7 +8,7 @@ from dagster_graphql.implementation.utils import ErrorCapture
 from dagster_graphql.schema.errors import GraphenePythonError
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 
 def test_python_error():

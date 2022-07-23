@@ -4,8 +4,8 @@ import pytest
 
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import GrpcServerProcess
+from dagster._utils import file_relative_path
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.utils import file_relative_path
 
 
 def test_health_check_success():

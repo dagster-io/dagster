@@ -16,7 +16,7 @@ from dagster._config.config_schema import UserConfigSchema
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvariantViolationError
 
-from ...seven.typing import get_origin
+from ..._seven.typing import get_origin
 from .definition_config_schema import IDefinitionConfigSchema
 from .inference import infer_output_props
 from .input import In, InputDefinition

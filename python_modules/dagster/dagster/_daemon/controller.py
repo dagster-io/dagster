@@ -19,12 +19,12 @@ from dagster._daemon.daemon import (
 )
 from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
+from dagster._utils.interrupts import raise_interrupts_as
+from dagster._utils.log import configure_loggers
 from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster.core.instance import DagsterInstance
 from dagster.core.workspace import IWorkspace
 from dagster.core.workspace.load_target import WorkspaceLoadTarget
-from dagster.utils.interrupts import raise_interrupts_as
-from dagster.utils.log import configure_loggers
 
 from .workspace import DaemonWorkspace
 

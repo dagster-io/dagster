@@ -4,7 +4,7 @@ order to do metaprogramming and reflection on the built-in typing module"""
 import typing
 
 import dagster._check as check
-from dagster.seven.typing import get_args, get_origin
+from dagster._seven.typing import get_args, get_origin
 
 
 def is_closed_python_optional_type(ttype):

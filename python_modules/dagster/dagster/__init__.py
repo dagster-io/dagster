@@ -12,17 +12,23 @@ sys.meta_path.insert(
     _module_alias_map.AliasedModuleFinder(
         {
             "dagster.api": "dagster._api",
+            "dagster.builtins": "dagster._builtins",
             "dagster.check": "dagster._check",
             "dagster.cli": "dagster._cli",
             "dagster.config": "dagster._config",
             "dagster.daemon": "dagster._daemon",
+            "dagster.experimental": "dagster._experimental",
             "dagster.generate": "dagster._generate",
             "dagster.grpc": "dagster._grpc",
             "dagster.loggers": "dagster._loggers",
+            "dagster.serdes": "dagster._serdes",
+            "dagster.seven": "dagster._seven",
+            "dagster.utils": "dagster._utils",
         }
     ),
 )
 
+from dagster._builtins import Any, Bool, Float, Int, Nothing, String
 from dagster._config import (
     Array,
     BoolSource,
@@ -39,7 +45,7 @@ from dagster._config import (
     Shape,
     StringSource,
 )
-from dagster.builtins import Any, Bool, Float, Int, Nothing, String
+from dagster._serdes import deserialize_value, serialize_value
 from dagster.core.definitions import (
     AllPartitionMapping,
     AssetIn,
@@ -301,22 +307,6 @@ from dagster.core.types.decorator import (
 from dagster.core.types.python_dict import Dict
 from dagster.core.types.python_set import Set
 from dagster.core.types.python_tuple import Tuple
-from dagster.serdes import deserialize_value, serialize_value
-from dagster.utils import file_relative_path
-from dagster.utils.alert import make_email_on_run_failure_sensor
-from dagster.utils.backcompat import ExperimentalWarning, deprecation_warning, rename_warning
-from dagster.utils.log import get_dagster_logger
-from dagster.utils.partitions import (
-    create_offset_partition_selector,
-    date_partition_range,
-    identity_partition_selector,
-)
-from dagster.utils.test import (
-    check_dagster_type,
-    execute_solid,
-    execute_solid_within_pipeline,
-    execute_solids_within_pipeline,
-)
 
 from .version import __version__
 
@@ -326,6 +316,21 @@ from dagster._loggers import (
     default_loggers,
     default_system_loggers,
     json_console_logger,
+)
+from dagster._utils import file_relative_path
+from dagster._utils.alert import make_email_on_run_failure_sensor
+from dagster._utils.backcompat import ExperimentalWarning, deprecation_warning, rename_warning
+from dagster._utils.log import get_dagster_logger
+from dagster._utils.partitions import (
+    create_offset_partition_selector,
+    date_partition_range,
+    identity_partition_selector,
+)
+from dagster._utils.test import (
+    check_dagster_type,
+    execute_solid,
+    execute_solid_within_pipeline,
+    execute_solids_within_pipeline,
 )
 
 # ########################

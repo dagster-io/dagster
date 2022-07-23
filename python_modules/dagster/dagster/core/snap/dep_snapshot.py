@@ -2,9 +2,9 @@ from collections import defaultdict
 from typing import Dict, List, NamedTuple
 
 import dagster._check as check
+from dagster._serdes import whitelist_for_serdes
 from dagster.core.definitions import GraphDefinition
 from dagster.core.definitions.dependency import DependencyType, Node, SolidInputHandle
-from dagster.serdes import whitelist_for_serdes
 
 
 def build_solid_invocation_snap(icontains_solids, solid):

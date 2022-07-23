@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._loggers import default_loggers
+from dagster._utils.merger import merge_dicts
 from dagster.core.definitions.executor_definition import ExecutorDefinition, default_executors
-from dagster.utils.merger import merge_dicts
 
 from .config import ConfigMapping
 from .logger_definition import LoggerDefinition

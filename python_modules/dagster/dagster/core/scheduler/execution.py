@@ -1,8 +1,8 @@
 from typing import List, NamedTuple, Optional
 
 import dagster._check as check
-from dagster.serdes import whitelist_for_serdes
-from dagster.utils.error import SerializableErrorInfo
+from dagster._serdes import whitelist_for_serdes
+from dagster._utils.error import SerializableErrorInfo
 
 
 class ScheduledExecutionResult:

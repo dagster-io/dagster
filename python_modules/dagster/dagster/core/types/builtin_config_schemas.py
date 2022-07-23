@@ -2,7 +2,7 @@ import pickle
 import warnings
 
 import dagster._check as check
-import dagster.seven as seven
+import dagster._seven as seven
 from dagster._config import (
     ConfigAnyInstance,
     ConfigBoolInstance,
@@ -15,7 +15,7 @@ from dagster._config import (
     ScalarUnion,
     Selector,
 )
-from dagster.utils.backcompat import ExperimentalWarning
+from dagster._utils.backcompat import ExperimentalWarning
 
 from .config_schema import dagster_type_loader, dagster_type_materializer
 

@@ -28,7 +28,7 @@ from dagster import (
     job,
     op,
 )
-from dagster.utils import safe_tempfile_path
+from dagster._utils import safe_tempfile_path
 
 
 def test_create_pandas_dataframe_dagster_type():

@@ -1,8 +1,8 @@
 import sys
 
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster.core.errors import DagsterUserCodeExecutionError, user_code_error_boundary
 from dagster.core.execution.plan.objects import ErrorSource, StepFailureData
-from dagster.utils.error import serializable_error_info_from_exc_info
 
 
 def test_failure_error_display_string():

@@ -3,10 +3,10 @@ import sys
 import pytest
 
 from dagster._api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.external_data import ExternalPipelineSubsetResult
 from dagster.core.host_representation.handle import PipelineHandle
-from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .utils import get_bar_repo_repository_location
 

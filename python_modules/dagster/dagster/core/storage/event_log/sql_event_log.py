@@ -8,20 +8,20 @@ import pendulum
 import sqlalchemy as db
 
 import dagster._check as check
-import dagster.seven as seven
+import dagster._seven as seven
+from dagster._serdes import (
+    deserialize_as,
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+)
+from dagster._serdes.errors import DeserializationError
+from dagster._utils import datetime_as_float, utc_datetime_from_naive, utc_datetime_from_timestamp
 from dagster.core.assets import AssetDetails
 from dagster.core.definitions.events import AssetKey, AssetMaterialization
 from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import MARKER_EVENTS, DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.stats import build_run_step_stats_from_events
-from dagster.serdes import (
-    deserialize_as,
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
-)
-from dagster.serdes.errors import DeserializationError
-from dagster.utils import datetime_as_float, utc_datetime_from_naive, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRunStatsSnapshot
 from .base import (

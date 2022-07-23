@@ -13,7 +13,7 @@ from typing import (
 )
 
 from dagster import _check as check
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from .base_storage import DagsterStorage
 from .event_log.base import AssetRecord, EventLogRecord, EventLogStorage, EventRecordsFilter

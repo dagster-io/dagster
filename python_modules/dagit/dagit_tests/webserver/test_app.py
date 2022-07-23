@@ -9,7 +9,7 @@ from starlette.testclient import TestClient
 
 from dagster import __version__ as dagster_version
 from dagster import job, op
-from dagster.seven import json
+from dagster._seven import json
 
 EVENT_LOG_SUBSCRIPTION = """
 subscription PipelineRunLogsSubscription($runId: ID!) {

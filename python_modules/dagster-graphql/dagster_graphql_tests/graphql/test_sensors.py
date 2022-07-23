@@ -13,6 +13,8 @@ from dagster_graphql.test.utils import (
 
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration
+from dagster._utils import Counter, traced_counter
+from dagster._utils.error import SerializableErrorInfo
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
@@ -31,8 +33,6 @@ from dagster.core.test_utils import (
     wait_for_futures,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.utils import Counter, traced_counter
-from dagster.utils.error import SerializableErrorInfo
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,

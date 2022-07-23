@@ -6,6 +6,7 @@ from difflib import SequenceMatcher
 from click.testing import CliRunner
 
 from dagster._cli.pipeline import pipeline_execute_command
+from dagster._utils import file_relative_path, pushd, script_relative_path
 from dagster.core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster.core.telemetry import (
     TELEMETRY_STR,
@@ -19,7 +20,6 @@ from dagster.core.telemetry import (
 )
 from dagster.core.test_utils import environ, instance_for_test
 from dagster.core.workspace.load import load_workspace_process_context_from_yaml_paths
-from dagster.utils import file_relative_path, pushd, script_relative_path
 
 EXPECTED_KEYS = set(
     [

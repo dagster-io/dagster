@@ -35,7 +35,7 @@ from typing import (
 )
 
 import dagster._check as check
-import dagster.seven as seven
+import dagster._seven as seven
 
 from .errors import DeserializationError, SerdesUsageError, SerializationError
 

@@ -11,10 +11,10 @@ from dagster_test.test_project import (
     get_test_project_recon_pipeline,
 )
 
+from dagster._utils.merger import merge_dicts
+from dagster._utils.yaml_utils import merge_yamls
 from dagster.core.execution.api import execute_pipeline
 from dagster.core.test_utils import environ
-from dagster.utils.merger import merge_dicts
-from dagster.utils.yaml_utils import merge_yamls
 
 from . import IS_BUILDKITE, docker_postgres_instance
 

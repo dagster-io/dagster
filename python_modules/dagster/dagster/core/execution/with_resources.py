@@ -1,7 +1,7 @@
 from typing import Any, Iterable, List, Mapping, Optional, Sequence, TypeVar, cast
 
 from dagster import _check as check
-from dagster.utils import merge_dicts
+from dagster._utils import merge_dicts
 
 from ..._config import Shape
 from ..definitions import ResourceDefinition

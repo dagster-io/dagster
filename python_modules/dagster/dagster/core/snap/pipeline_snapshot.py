@@ -34,6 +34,13 @@ from dagster._config import (
     Shape,
     get_builtin_scalar_by_name,
 )
+from dagster._serdes import (
+    DefaultNamedTupleSerializer,
+    create_snapshot_id,
+    deserialize_value,
+    unpack_inner_value,
+    whitelist_for_serdes,
+)
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
@@ -42,13 +49,6 @@ from dagster.core.definitions.pipeline_definition import (
     PipelineSubsetDefinition,
 )
 from dagster.core.utils import toposort_flatten
-from dagster.serdes import (
-    DefaultNamedTupleSerializer,
-    create_snapshot_id,
-    deserialize_value,
-    unpack_inner_value,
-    whitelist_for_serdes,
-)
 
 from .config_types import build_config_schema_snapshot
 from .dagster_types import DagsterTypeNamespaceSnapshot, build_dagster_type_namespace_snapshot

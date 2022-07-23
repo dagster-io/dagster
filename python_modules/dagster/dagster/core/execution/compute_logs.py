@@ -8,10 +8,10 @@ import uuid
 import warnings
 from contextlib import contextmanager
 
+from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
+from dagster._seven import IS_WINDOWS, wait_for_process
+from dagster._utils import ensure_file
 from dagster.core.execution import poll_compute_logs, watch_orphans
-from dagster.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
-from dagster.seven import IS_WINDOWS, wait_for_process
-from dagster.utils import ensure_file
 
 WIN_PY36_COMPUTE_LOG_DISABLED_MSG = """\u001b[33mWARNING: Compute log capture is disabled for the current environment. Set the environment variable `PYTHONLEGACYWINDOWSSTDIO` to enable.\n\u001b[0m"""
 

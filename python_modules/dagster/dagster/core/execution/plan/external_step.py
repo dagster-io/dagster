@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Iterator, Optional, cast
 
 import dagster._check as check
 from dagster._config import Field, StringSource
+from dagster._serdes import deserialize_value
 from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
 from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster.core.definitions.resource_definition import resource
@@ -20,7 +21,6 @@ from dagster.core.execution.plan.execute_plan import dagster_event_sequence_for_
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
-from dagster.serdes import deserialize_value
 
 PICKLED_EVENTS_FILE_NAME = "events.pkl"
 PICKLED_STEP_RUN_REF_FILE_NAME = "step_run_ref.pkl"

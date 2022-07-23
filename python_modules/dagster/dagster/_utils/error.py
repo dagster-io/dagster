@@ -2,7 +2,7 @@ import traceback
 from types import TracebackType
 from typing import Any, List, NamedTuple, Optional, Tuple, Type, Union
 
-from dagster.serdes import whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 
 
 # mypy does not support recursive types, so "cause" has to be typed `Any`

@@ -7,10 +7,10 @@ from contextlib import contextmanager
 from click.testing import CliRunner
 from dagster_graphql.cli import ui
 
-from dagster import seven
+from dagster import _seven
+from dagster._utils import file_relative_path
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
-from dagster.utils import file_relative_path
 
 
 @contextmanager
@@ -124,7 +124,7 @@ mutation ($executionParams: ExecutionParams!) {
 
 
 def test_start_execution_text():
-    variables = seven.json.dumps(
+    variables = _seven.json.dumps(
         {
             "executionParams": {
                 "selector": {
@@ -157,7 +157,7 @@ def test_start_execution_text():
 
 
 def test_start_execution_file():
-    variables = seven.json.dumps(
+    variables = _seven.json.dumps(
         {
             "executionParams": {
                 "selector": {
@@ -195,7 +195,7 @@ def test_start_execution_save_output():
     Test that the --output flag saves the GraphQL response to the specified file
     """
 
-    variables = seven.json.dumps(
+    variables = _seven.json.dumps(
         {
             "executionParams": {
                 "selector": {
@@ -242,7 +242,7 @@ def test_start_execution_save_output():
 
 
 def test_start_execution_predefined():
-    variables = seven.json.dumps(
+    variables = _seven.json.dumps(
         {
             "executionParams": {
                 "selector": {
@@ -270,7 +270,7 @@ def test_start_execution_predefined():
 
 
 def test_logs_in_start_execution_predefined():
-    variables = seven.json.dumps(
+    variables = _seven.json.dumps(
         {
             "executionParams": {
                 "selector": {

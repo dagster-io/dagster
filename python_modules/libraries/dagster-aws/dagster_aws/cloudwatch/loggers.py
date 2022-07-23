@@ -5,7 +5,7 @@ import boto3
 
 from dagster import Field, StringSource
 from dagster import _check as check
-from dagster import logger, seven
+from dagster import _seven, logger
 from dagster.core.utils import coerce_valid_log_level
 
 # The maximum batch size is 1,048,576 bytes, and this size is calculated as the sum of all event
@@ -108,7 +108,7 @@ class CloudwatchLogsHandler(logging.Handler):
         logging.critical("Error while logging!")
         try:
             logging.error(
-                "Attempted to log: {record}".format(record=seven.json.dumps(record.__dict__))
+                "Attempted to log: {record}".format(record=_seven.json.dumps(record.__dict__))
             )
         except Exception:
             pass
@@ -121,7 +121,7 @@ class CloudwatchLogsHandler(logging.Handler):
         self._emit(record, retry=True)
 
     def _emit(self, record, retry=False):
-        message = seven.json.dumps(record.__dict__)
+        message = _seven.json.dumps(record.__dict__)
         timestamp = millisecond_timestamp(
             datetime.datetime.strptime(record.dagster_meta["log_timestamp"], "%Y-%m-%dT%H:%M:%S.%f")
         )

@@ -19,12 +19,12 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._utils import frozentags
 from dagster.core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster.utils import frozentags
 
 from .config import ConfigMapping
 from .dependency import (

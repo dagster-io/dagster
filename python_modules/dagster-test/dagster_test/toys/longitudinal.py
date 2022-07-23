@@ -12,7 +12,7 @@ from dagster import (
     fs_io_manager,
 )
 from dagster._legacy import pipeline, solid
-from dagster.utils.partitions import DEFAULT_DATE_FORMAT
+from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 
 TRAFFIC_CONSTANTS = {
     0: 1,

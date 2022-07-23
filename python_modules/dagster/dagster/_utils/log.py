@@ -9,7 +9,7 @@ import coloredlogs
 import pendulum
 
 import dagster._check as check
-import dagster.seven as seven
+import dagster._seven as seven
 from dagster._config import Enum, EnumValue
 from dagster.core.definitions.logger_definition import logger
 from dagster.core.utils import PYTHON_LOGGING_LEVELS_MAPPING, coerce_valid_log_level

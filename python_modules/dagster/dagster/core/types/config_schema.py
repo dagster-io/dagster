@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING, AbstractSet, Callable, Iterator, Optional, Uni
 
 import dagster._check as check
 from dagster._config import ConfigType
+from dagster._utils import ensure_gen
+from dagster._utils.backcompat import experimental_arg_warning
 from dagster.core.decorator_utils import get_function_params, validate_expected_params
 from dagster.core.definitions.events import AssetMaterialization, Materialization
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.utils import ensure_gen
-from dagster.utils.backcompat import experimental_arg_warning
 
 from ..definitions.resource_requirement import (
     ResourceRequirement,

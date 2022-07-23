@@ -7,7 +7,7 @@ from dateutil.parser import parse
 from kubernetes.client import ApiClient
 
 import dagster._check as check
-from dagster.utils import frozendict
+from dagster._utils import frozendict
 
 
 def _get_k8s_class(classname):

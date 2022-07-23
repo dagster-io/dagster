@@ -1,7 +1,7 @@
 from dagster import ModeDefinition, logger, resource
 from dagster._legacy import pipeline
+from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.core.snap import PipelineSnapshot
-from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
 
 def test_mode_snap(snapshot):

@@ -18,6 +18,8 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._utils import merge_dicts
+from dagster._utils.backcompat import ExperimentalWarning
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster.core.definitions.executor_definition import in_process_executor
@@ -25,8 +27,6 @@ from dagster.core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterUnmetExecutorRequirementsError
 from dagster.core.selector.subset_selector import AssetSelectionData
 from dagster.core.storage.fs_io_manager import fs_io_manager
-from dagster.utils import merge_dicts
-from dagster.utils.backcompat import ExperimentalWarning
 
 from .asset_layer import build_asset_selection_job
 from .assets import AssetsDefinition

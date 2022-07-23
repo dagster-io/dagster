@@ -5,8 +5,8 @@ import pytest
 
 from dagster import DagsterInstance
 from dagster._check import CheckError
+from dagster._utils import touch_file
 from dagster.core.workspace.load import load_workspace_process_context_from_yaml_paths
-from dagster.utils import touch_file
 
 
 def test_bad_workspace_yaml_load():

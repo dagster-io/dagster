@@ -1,6 +1,7 @@
 from typing import List, NamedTuple, Optional, Union
 
 import dagster._check as check
+from dagster._serdes import whitelist_for_serdes
 from dagster.core.definitions import (
     AssetMaterialization,
     Materialization,
@@ -8,7 +9,6 @@ from dagster.core.definitions import (
     NodeHandle,
 )
 from dagster.core.definitions.events import AssetKey
-from dagster.serdes import whitelist_for_serdes
 
 from .handle import UnresolvedStepHandle
 from .objects import TypeCheckData

@@ -6,6 +6,8 @@ from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, v
 import dagster._check as check
 from dagster import executor
 from dagster._annotations import experimental
+from dagster._serdes.utils import hash_str
+from dagster._utils import merge_dicts
 from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster.core.events import DagsterEvent, EngineEventData, MetadataEntry
 from dagster.core.execution.retries import RetryMode, get_retries_config
@@ -19,8 +21,6 @@ from dagster.core.executor.step_delegating.step_handler.base import (
 )
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.utils import parse_env_var
-from dagster.serdes.utils import hash_str
-from dagster.utils import merge_dicts
 
 from .container_context import DockerContainerContext
 

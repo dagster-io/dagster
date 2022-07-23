@@ -11,10 +11,10 @@ from airflow.utils.dates import days_ago
 from dagster_airflow.dagster_pipeline_factory import make_dagster_pipeline_from_airflow_dag
 
 from dagster import DagsterEventType, execute_pipeline
+from dagster._seven import get_current_datetime_in_utc
 from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.test_utils import instance_for_test
-from dagster.seven import get_current_datetime_in_utc
 
 default_args = {
     "owner": "dagster",

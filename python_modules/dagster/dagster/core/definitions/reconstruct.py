@@ -5,8 +5,10 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, NamedTuple, Optional, Union, overload
 
 import dagster._check as check
-import dagster.seven as seven
+import dagster._seven as seven
 from dagster._annotations import experimental
+from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
+from dagster._utils import frozenlist, make_readonly_value
 from dagster.core.code_pointer import (
     CodePointer,
     CustomPointer,
@@ -21,8 +23,6 @@ from dagster.core.origin import (
     RepositoryPythonOrigin,
 )
 from dagster.core.selector import parse_solid_selection
-from dagster.serdes import pack_value, unpack_value, whitelist_for_serdes
-from dagster.utils import frozenlist, make_readonly_value
 
 from .events import AssetKey
 from .pipeline_base import IPipeline

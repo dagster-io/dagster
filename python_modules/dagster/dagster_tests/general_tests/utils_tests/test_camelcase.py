@@ -1,4 +1,4 @@
-from dagster.utils import camelcase
+from dagster._utils import camelcase
 
 
 def test_camelcase():

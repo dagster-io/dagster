@@ -8,9 +8,9 @@ from typing import BinaryIO, Optional, TextIO, Union
 
 import dagster._check as check
 from dagster._config import Field, StringSource
+from dagster._utils import mkdir_p
 from dagster.core.definitions.resource_definition import resource
 from dagster.core.instance import DagsterInstance
-from dagster.utils import mkdir_p
 
 from .temp_file_manager import TempfileManager
 

@@ -5,12 +5,12 @@ import time
 import pytest
 
 import dagster._check as check
-import dagster.seven as seven
+import dagster._seven as seven
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer, ephemeral_grpc_api_client
 from dagster._grpc.server import GrpcServerProcess, open_server_process
+from dagster._serdes.ipc import interrupt_ipc_subprocess_pid
+from dagster._utils import find_free_port, safe_tempfile_path
 from dagster.core.errors import DagsterUserCodeUnreachableError
-from dagster.serdes.ipc import interrupt_ipc_subprocess_pid
-from dagster.utils import find_free_port, safe_tempfile_path
 
 
 def server_thread_runnable(**kwargs):

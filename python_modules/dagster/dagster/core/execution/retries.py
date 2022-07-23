@@ -4,7 +4,7 @@ from typing import Dict, Optional
 
 from dagster import Field, Selector
 from dagster import _check as check
-from dagster.serdes.serdes import whitelist_for_serdes
+from dagster._serdes.serdes import whitelist_for_serdes
 
 
 def get_retries_config():

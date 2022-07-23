@@ -6,11 +6,11 @@ from typing import Union
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._config import Field, StringSource
+from dagster._utils import PICKLE_PROTOCOL, mkdir_p
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.input import InputContext
 from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.io_manager import IOManager, io_manager
-from dagster.utils import PICKLE_PROTOCOL, mkdir_p
 
 
 class MemoizableIOManager(IOManager):

@@ -5,17 +5,17 @@ import requests
 from graphql import graphql
 
 import dagster._check as check
-import dagster.seven as seven
+import dagster._seven as seven
 from dagster import __version__ as dagster_version
 from dagster._cli.workspace import workspace_target_argument
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
     get_workspace_process_context_from_kwargs,
 )
+from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
+from dagster._utils.log import get_stack_trace_array
 from dagster.core.instance import DagsterInstance
 from dagster.core.workspace.context import WorkspaceProcessContext
-from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
-from dagster.utils.log import get_stack_trace_array
 
 from .client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from .schema import create_schema

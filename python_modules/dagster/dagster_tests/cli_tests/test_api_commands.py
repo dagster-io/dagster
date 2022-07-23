@@ -5,13 +5,13 @@ from dagster_tests.api_tests.utils import get_bar_repo_handle, get_foo_pipeline_
 from dagster import DagsterEventType
 from dagster._cli import api
 from dagster._cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
+from dagster._serdes import serialize_dagster_namedtuple
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.retries import RetryState
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot
 from dagster.core.host_representation import PipelineHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import create_run_for_test, instance_for_test
-from dagster.serdes import serialize_dagster_namedtuple
 
 
 def runner_execute_run(runner, cli_args):

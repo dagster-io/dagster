@@ -2,9 +2,9 @@ import os
 
 from dagster import execute_pipeline
 from dagster._cli.pipeline import do_execute_command
+from dagster._utils import file_relative_path
 from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.test_utils import instance_for_test
-from dagster.utils import file_relative_path
 
 
 def test_execute_pipeline():

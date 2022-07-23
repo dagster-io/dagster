@@ -6,7 +6,7 @@ import pytz
 from croniter import croniter
 
 import dagster._check as check
-from dagster.seven.compat.pendulum import to_timezone
+from dagster._seven.compat.pendulum import to_timezone
 
 
 def is_valid_cron_string(cron_string: str) -> bool:

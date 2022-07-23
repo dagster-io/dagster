@@ -7,10 +7,10 @@ from dagster_mysql import MySQLEventLogStorage, MySQLRunStorage, MySQLScheduleSt
 from dagster_mysql.utils import get_conn
 from sqlalchemy.pool import NullPool
 
+from dagster._utils import file_relative_path
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.sql import create_engine, get_alembic_config, stamp_alembic_rev
 from dagster.core.test_utils import instance_for_test
-from dagster.utils import file_relative_path
 
 
 def full_mysql_config(hostname):

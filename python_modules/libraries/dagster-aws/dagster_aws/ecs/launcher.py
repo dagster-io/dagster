@@ -9,6 +9,7 @@ from botocore.exceptions import ClientError
 from dagster import Array, Field, Noneable, ScalarUnion, StringSource
 from dagster import _check as check
 from dagster._grpc.types import ExecuteRunArgs
+from dagster._serdes import ConfigurableClass
 from dagster.core.events import EngineEventData, MetadataEntry
 from dagster.core.launcher.base import (
     CheckRunHealthResult,
@@ -17,7 +18,6 @@ from dagster.core.launcher.base import (
     WorkerStatus,
 )
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.serdes import ConfigurableClass
 
 from ..secretsmanager import get_secrets_from_arns
 from .container_context import SHARED_ECS_SCHEMA, EcsContainerContext

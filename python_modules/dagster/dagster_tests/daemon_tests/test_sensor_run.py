@@ -24,6 +24,7 @@ from dagster import (
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
 from dagster._legacy import pipeline, solid
+from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster.core.definitions.decorators.sensor_decorator import asset_sensor, sensor
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.run_status_sensor_definition import run_status_sensor
@@ -44,7 +45,6 @@ from dagster.core.test_utils import (
     wait_for_futures,
 )
 from dagster.core.workspace.load_target import PythonFileTarget
-from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 
 @solid

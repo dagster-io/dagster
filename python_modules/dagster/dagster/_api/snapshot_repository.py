@@ -1,12 +1,12 @@
 from typing import TYPE_CHECKING, Mapping
 
 import dagster._check as check
+from dagster._serdes import deserialize_as
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.external_data import (
     ExternalRepositoryData,
     ExternalRepositoryErrorData,
 )
-from dagster.serdes import deserialize_as
 
 if TYPE_CHECKING:
     from dagster._grpc.client import DagsterGrpcClient

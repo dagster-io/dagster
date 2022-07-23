@@ -1,5 +1,5 @@
 import dagster._check as check
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from .compute_log_manager import MAX_BYTES_FILE_READ, ComputeLogFileData, ComputeLogManager
 

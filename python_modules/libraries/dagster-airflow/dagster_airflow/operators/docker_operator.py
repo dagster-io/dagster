@@ -7,12 +7,12 @@ from dagster_airflow.vendor.docker_operator import DockerOperator
 from docker import APIClient, from_env
 
 import dagster._check as check
-import dagster.seven as seven
+import dagster._seven as seven
 from dagster._grpc.types import ExecuteStepArgs
+from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.plan import should_skip_step
 from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR, DagsterInstance
-from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
 from .util import check_events_for_failures, check_events_for_skips, get_aws_environment
 

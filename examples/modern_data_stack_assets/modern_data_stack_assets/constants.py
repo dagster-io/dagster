@@ -1,7 +1,7 @@
 import numpy as np
 from dagster_postgres.utils import get_conn_string
 
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 # =========================================================================
 # To get this value, run `python -m modern_data_stack_assets.setup_airbyte`

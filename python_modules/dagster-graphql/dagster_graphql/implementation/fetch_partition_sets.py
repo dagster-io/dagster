@@ -1,6 +1,7 @@
 from graphql.execution.base import ResolveInfo
 
 import dagster._check as check
+from dagster._utils.yaml_utils import dump_run_config_yaml
 from dagster.core.host_representation import (
     ExternalPartitionSet,
     RepositoryHandle,
@@ -8,7 +9,6 @@ from dagster.core.host_representation import (
 )
 from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, TagType, get_tag_type
-from dagster.utils.yaml_utils import dump_run_config_yaml
 
 from .utils import capture_error
 

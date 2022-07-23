@@ -1,8 +1,8 @@
 import graphene
 
 import dagster._check as check
+from dagster._utils.error import SerializableErrorInfo
 from dagster.core.definitions.events import AssetKey
-from dagster.utils.error import SerializableErrorInfo
 
 from .util import non_null_list
 

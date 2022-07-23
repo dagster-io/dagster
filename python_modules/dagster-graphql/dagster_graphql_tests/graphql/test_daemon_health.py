@@ -8,8 +8,8 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
 
 from dagster._daemon.daemon import SensorDaemon
 from dagster._daemon.types import DaemonHeartbeat
+from dagster._utils.error import SerializableErrorInfo
 from dagster.core.scheduler import DagsterDaemonScheduler
-from dagster.utils.error import SerializableErrorInfo
 
 INDIVIDUAL_DAEMON_QUERY = """
 query InstanceDetailSummaryQuery {

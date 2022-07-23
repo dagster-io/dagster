@@ -1,4 +1,4 @@
-from dagster.utils.merger import deep_merge_dicts
+from dagster._utils.merger import deep_merge_dicts
 
 SAMPLE_ACCOUNT_ID = 30000
 SAMPLE_JOB_ID = 40000

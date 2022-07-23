@@ -1,5 +1,5 @@
 import dagster._check as check
-from dagster.builtins import Bool, Float, Int, String
+from dagster._builtins import Bool, Float, Int, String
 
 from .config_type import Array, ConfigAnyInstance
 from .field import resolve_to_config_type

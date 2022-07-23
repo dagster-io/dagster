@@ -1,6 +1,6 @@
 import dagster._check as check
 
-from .builtins import Bool, Float, Int, String
+from ._builtins import Bool, Float, Int, String
 from .core.types.dagster_type import Any as RuntimeAny
 from .core.types.dagster_type import List
 from .core.types.python_dict import PythonDict

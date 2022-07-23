@@ -13,8 +13,8 @@ from dagster_graphql.test.utils import (
 )
 
 from dagster import AssetKey, DagsterEventType, PipelineRunStatus
+from dagster._utils import safe_tempfile_path
 from dagster.core.test_utils import poll_for_finished_run
-from dagster.utils import safe_tempfile_path
 
 # from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 from .graphql_context_test_suite import (

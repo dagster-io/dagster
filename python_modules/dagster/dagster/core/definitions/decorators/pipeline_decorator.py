@@ -3,9 +3,9 @@ from typing import Any, Callable, Dict, List, Optional, Set, Union, overload
 
 import dagster._check as check
 from dagster._config import UserConfigSchema
+from dagster._utils.backcompat import experimental_arg_warning
 from dagster.core.decorator_utils import format_docstring_for_description
 from dagster.core.definitions.policy import RetryPolicy
-from dagster.utils.backcompat import experimental_arg_warning
 
 from ..graph_definition import GraphDefinition
 from ..hook_definition import HookDefinition

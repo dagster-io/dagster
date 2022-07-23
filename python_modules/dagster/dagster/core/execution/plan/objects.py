@@ -2,10 +2,10 @@ from enum import Enum
 from typing import TYPE_CHECKING, List, NamedTuple, Optional
 
 import dagster._check as check
+from dagster._serdes import whitelist_for_serdes
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.types import ExcInfo
 from dagster.core.definitions.metadata import MetadataEntry
-from dagster.serdes import whitelist_for_serdes
-from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from dagster.utils.types import ExcInfo
 
 if TYPE_CHECKING:
     from dagster.core.execution.context.system import StepExecutionContext

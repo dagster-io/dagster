@@ -5,6 +5,8 @@ import pytest
 
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
+from dagster._seven import IS_WINDOWS
+from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import (
@@ -13,8 +15,6 @@ from dagster.core.test_utils import (
     get_crash_signals,
     get_logger_output_from_capfd,
 )
-from dagster.seven import IS_WINDOWS
-from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 from .test_backfill import default_repo, instance_for_context, workspace_load_target
 

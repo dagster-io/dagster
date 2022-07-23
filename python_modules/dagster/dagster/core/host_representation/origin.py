@@ -18,16 +18,16 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster.core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
-from dagster.core.origin import DEFAULT_DAGSTER_ENTRY_POINT
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.serdes import (
+from dagster._serdes import (
     DefaultNamedTupleSerializer,
     create_snapshot_id,
     register_serdes_tuple_fallbacks,
     whitelist_for_serdes,
 )
-from dagster.serdes.serdes import WhitelistMap, unpack_inner_value
+from dagster._serdes.serdes import WhitelistMap, unpack_inner_value
+from dagster.core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
+from dagster.core.origin import DEFAULT_DAGSTER_ENTRY_POINT
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 from .selector import PartitionSetSelector, RepositorySelector
 

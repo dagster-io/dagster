@@ -21,12 +21,12 @@ from io import StringIO
 from queue import Empty, Queue
 from threading import Thread
 
+from dagster._serdes import serialize_value
 from dagster.core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
     external_instance_from_step_run_ref,
     run_step_from_ref,
 )
-from dagster.serdes import serialize_value
 
 # This won't be set in Databricks but is needed to be non-None for the
 # Dagster step to run.

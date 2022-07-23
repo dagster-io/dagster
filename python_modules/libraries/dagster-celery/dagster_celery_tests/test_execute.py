@@ -15,10 +15,10 @@ from dagster import (
     execute_pipeline,
     execute_pipeline_iterator,
 )
+from dagster._utils import send_interrupt
 from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import DagsterEventType
-from dagster.utils import send_interrupt
 
 from .utils import (  # isort:skip
     execute_eagerly_on_celery,

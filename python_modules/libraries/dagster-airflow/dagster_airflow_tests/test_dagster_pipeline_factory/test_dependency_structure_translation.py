@@ -7,8 +7,8 @@ from airflow.utils.helpers import chain
 from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
 from dagster_airflow.dagster_pipeline_factory import make_dagster_pipeline_from_airflow_dag
 
+from dagster._serdes import serialize_pp
 from dagster.core.snap import PipelineSnapshot
-from dagster.serdes import serialize_pp
 
 default_args = {
     "owner": "dagster",

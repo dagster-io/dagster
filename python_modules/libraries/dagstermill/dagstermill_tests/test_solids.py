@@ -14,10 +14,10 @@ from nbconvert.preprocessors import ExecutePreprocessor
 from dagster import execute_pipeline
 from dagster._check import CheckError
 from dagster._legacy import pipeline
+from dagster._utils import file_relative_path, safe_tempfile_path
 from dagster.core.definitions.metadata import PathMetadataValue
 from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.test_utils import instance_for_test
-from dagster.utils import file_relative_path, safe_tempfile_path
 
 DAGSTER_PANDAS_PRESENT = importlib.util.find_spec("dagster_pandas") is not None
 SKLEARN_PRESENT = importlib.util.find_spec("sklearn") is not None
