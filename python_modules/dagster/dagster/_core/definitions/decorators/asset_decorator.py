@@ -317,6 +317,8 @@ class _Asset:
                 for input_name, partition_mapping in (self.partition_mappings or {}).items()
             }
 
+        check.invalid_group_name(self.group_name)
+
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name={"result": out_asset_key},
@@ -324,7 +326,7 @@ class _Asset:
             partitions_def=self.partitions_def,
             partition_mappings=partition_mappings if partition_mappings else None,
             resource_defs=self.resource_defs,
-            group_names_by_key={out_asset_key: self.group_name} if self.group_name else None,
+            group_names_by_key={out_asset_key: self.group_name.strip()} if self.group_name else None,
         )
 
 
