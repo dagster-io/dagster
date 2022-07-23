@@ -30,18 +30,7 @@ class ExecutionResult(ABC):
 
     @property
     def run_id(self) -> str:
-        raise NotImplementedError()
-
-    @property
-    def successful_steps(self) -> Sequence[str]:
-        raise NotImplementedError()
-
-    @property
-    def skipped_steps(self) -> Sequence[str]:
-        raise NotImplementedError()
-
-    @property
-    def failed_steps(self) -> Sequence[str]:
+        """The unique identifier of the executed run."""
         raise NotImplementedError()
 
     @property
@@ -51,7 +40,7 @@ class ExecutionResult(ABC):
 
     @property
     def all_node_events(self) -> Sequence[DagsterEvent]:
-        """List[DagsterEvent]: All dagster events from the in-process execution."""
+        """List[DagsterEvent]: All dagster events from the execution."""
 
         step_events: List[DagsterEvent] = []
 
@@ -75,18 +64,6 @@ class ExecutionResult(ABC):
         return self.filter_events(_is_event_from_node)
 
     def output_value(self, output_name: str = DEFAULT_OUTPUT) -> Any:
-        """Retrieves output of top-level job, if an output is returned.
-
-        If the top-level job has no output, calling this method will result in a
-        DagsterInvariantViolationError.
-
-        Args:
-            output_name (Optional[str]): The name of the output to retrieve. Defaults to `result`,
-                the default output name in dagster.
-
-        Returns:
-            Any: The value of the retrieved output.
-        """
 
         check.str_param(output_name, "output_name")
 
@@ -111,17 +88,6 @@ class ExecutionResult(ABC):
         return self._get_output_for_handle(check.not_none(origin_handle), origin_output_def.name)
 
     def output_for_node(self, node_str: str, output_name: str = DEFAULT_OUTPUT) -> Any:
-        """Retrieves output value with a particular name from the in-process run of the job.
-
-        Args:
-            node_str (str): Name of the op/graph whose output should be retrieved. If the intended
-                graph/op is nested within another graph, the syntax is `outer_graph.inner_node`.
-            output_name (Optional[str]): Name of the output on the op/graph to retrieve. Defaults to
-                `result`, the default output name in dagster.
-
-        Returns:
-            Any: The value of the retrieved output.
-        """
 
         # resolve handle of node that node_str is referring to
         target_handle = NodeHandle.from_string(node_str)

@@ -2,6 +2,7 @@ from typing import Any, Mapping, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions import JobDefinition, NodeHandle
+from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.plan.outputs import StepOutputHandle
@@ -11,6 +12,16 @@ from .execution_result import ExecutionResult
 
 
 class ExecuteInProcessResult(ExecutionResult):
+    """Result object returned by in-process testing APIs.
+
+    Used for retrieving run success, events, and outputs from execution methods that return this object.
+
+    This object is returned by:
+    - :py:meth:`dagster.GraphDefinition.execute_in_process`
+    - :py:meth:`dagster.JobDefinition.execute_in_process`
+    - :py:meth:`dagster.materialize_to_memory`
+    - :py:meth:`dagster.materialize`
+    """
 
     _handle: NodeHandle
     _event_list: Sequence[DagsterEvent]
@@ -85,3 +96,31 @@ class ExecuteInProcessResult(ExecutionResult):
                 f"No outputs found for output '{output_name}' from node '{handle}'."
             )
         return mapped_outputs
+
+    def output_for_node(self, node_str: str, output_name: str = DEFAULT_OUTPUT) -> Any:
+        """Retrieves output value with a particular name from the in-process run of the job.
+
+        Args:
+            node_str (str): Name of the op/graph whose output should be retrieved. If the intended
+                graph/op is nested within another graph, the syntax is `outer_graph.inner_node`.
+            output_name (Optional[str]): Name of the output on the op/graph to retrieve. Defaults to
+                `result`, the default output name in dagster.
+
+        Returns:
+            Any: The value of the retrieved output.
+        """
+        return super(ExecuteInProcessResult, self).output_for_node(
+            node_str, output_name=output_name
+        )
+
+    def output_value(self, output_name: str = DEFAULT_OUTPUT) -> Any:
+        """Retrieves output of top-level job, if an output is returned.
+
+        Args:
+            output_name (Optional[str]): The name of the output to retrieve. Defaults to `result`,
+                the default output name in dagster.
+
+        Returns:
+            Any: The value of the retrieved output.
+        """
+        return super(ExecuteInProcessResult, self).output_value(output_name=output_name)

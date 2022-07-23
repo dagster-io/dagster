@@ -64,11 +64,7 @@ def test_basic_success(instance):
 
 
 def test_no_raise_on_error(instance):
-    result = execute_job(
-        reconstructable(emit_error_job),
-        instance,
-        raise_on_error=False,
-    )
+    result = execute_job(reconstructable(emit_error_job), instance)
     assert not result.success
 
 
@@ -93,6 +89,7 @@ def test_run_config(instance):
             reconstructable(emit_job),
             instance,
             run_config={"ops": {"conditional_return": "bad_config"}},
+            raise_on_error=True,
         )
 
 

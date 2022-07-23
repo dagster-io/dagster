@@ -2,6 +2,7 @@ from typing import Any, Sequence
 
 import dagster._check as check
 from dagster.core.definitions import JobDefinition, NodeHandle
+from dagster.core.definitions.utils import DEFAULT_OUTPUT
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.plan.step import StepKind
@@ -11,15 +12,14 @@ from dagster.core.storage.pipeline_run import DagsterRun
 from .execution_result import ExecutionResult
 
 
-class ExecuteJobResultContext:
-    def __init__(self, job_def, reconstruct_context, event_list, dagster_run):
-        self._job_def = job_def
-        self._reconstruct_context = reconstruct_context
-        self._event_list = event_list
-        self._dagster_run = dagster_run
-
-
 class ExecuteJobResult(ExecutionResult):
+    """Result object returned by :py:func:`dagster.execute_job`.
+
+    Used for retrieving run success, events, and outputs from `execute_job`. Users should not directly instantiate this class.
+
+    Events and run information can be retrieved off of the object directly. In order to access outputs, the `ExecuteJobResult` object needs to be opened as a context manager, which will re-initialize the resources from execution.
+    """
+
     def __init__(self, job_def, reconstruct_context, event_list, dagster_run):
         self._job_def = job_def
         self._reconstruct_context = reconstruct_context
@@ -52,6 +52,36 @@ class ExecuteJobResult(ExecutionResult):
     @property
     def run_id(self) -> str:
         return self.dagster_run.run_id
+
+    def output_value(self, output_name: str = DEFAULT_OUTPUT) -> Any:
+        """Retrieves output of top-level job, if an output is returned.
+
+        In order to use this method, the `ExecuteJobResult` object must be opened as a context manager. If this method is used without opening the context manager, it will result in a :py:class:`DagsterInvariantViolationError`. If the top-level job has no output, calling this method will also result in a :py:class:`DagsterInvariantViolationError`.
+
+        Args:
+            output_name (Optional[str]): The name of the output to retrieve. Defaults to `result`,
+                the default output name in dagster.
+
+        Returns:
+            Any: The value of the retrieved output.
+        """
+        return super(ExecuteJobResult, self).output_value(output_name=output_name)
+
+    def output_for_node(self, node_str: str, output_name: str = DEFAULT_OUTPUT) -> Any:
+        """Retrieves output value with a particular name from the run of the job.
+
+        In order to use this method, the `ExecuteJobResult` object must be opened as a context manager. If this method is used without opening the context manager, it will result in a :py:class:`DagsterInvariantViolationError`.
+
+        Args:
+            node_str (str): Name of the op/graph whose output should be retrieved. If the intended
+                graph/op is nested within another graph, the syntax is `outer_graph.inner_node`.
+            output_name (Optional[str]): Name of the output on the op/graph to retrieve. Defaults to
+                `result`, the default output name in dagster.
+
+        Returns:
+            Any: The value of the retrieved output.
+        """
+        return super(ExecuteJobResult, self).output_for_node(node_str, output_name=output_name)
 
     def compute_events_for_handle(self, handle: NodeHandle) -> Sequence[DagsterEvent]:
         return [

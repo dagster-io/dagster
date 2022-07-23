@@ -1,6 +1,6 @@
 import sys
 from contextlib import contextmanager
-from typing import Any, Dict, FrozenSet, Iterator, List, Mapping, Optional, Tuple, Union, cast
+from typing import Any, Dict, FrozenSet, Iterator, List, Mapping, Optional, Tuple, Union
 
 import dagster._check as check
 from dagster._core.definitions import IPipeline, JobDefinition, PipelineDefinition
@@ -364,21 +364,58 @@ def execute_job(
     instance: "DagsterInstance",
     run_config: Any = None,
     tags: Optional[Dict[str, Any]] = None,
-    raise_on_error: bool = True,
+    raise_on_error: bool = False,
     op_selection: Optional[List[str]] = None,
 ) -> ExecuteJobResult:
     """Execute a job synchronously.
 
-    Users will typically call this API when testing job execution, or running standalone
-    scripts.
+    This API represents dagster's python entrypoint for out-of-process execution. For most testing purposes, :py:meth:`~dagster.JobDefinition.execute_in_process` will be more suitable, but when wanting to run execution using an out-of-process executor (such as :py:class:`dagster.multiprocess_executor`), then `execute_job` is suitable.
+
+    `execute_job` expects a persistent :py:class:`DagsterInstance` for execution, meaning the `$DAGSTER_HOME` environment variable must be set. It als expects a reconstructable pointer to a :py:class:`JobDefinition` so that it can be reconstructed in separate processes. This can be done by wrapping the ``JobDefinition`` in a call to :py:func:`dagster.reconstructable`.
+
+    .. code-block:: python
+        from dagster import DagsterInstance, execute_job, job, reconstructable
+
+        @job
+        def the_job():
+            ...
+
+        instance = DagsterInstance.get()
+        result = execute_job(reconstructable(the_job), instance=instance)
+        assert result.success
+
+
+    If using the :py:meth:`~dagster.GraphDefinition.to_job` method to construct the ``JobDefinition``, then the invocation must be wrapped in a module-scope function, which can be passed to ``reconstructable``.
+
+    .. code-block:: python
+        from dagster import graph, reconstructable
+
+        @graph
+        def the_graph():
+            ...
+
+        def define_job():
+            return the_graph.to_job(...)
+
+        result = execute_job(reconstructable(define_job), ...)
+
+    Since `execute_job` is potentially executing outside of the current process, output objects need to be retrieved by use of the provided job's io managers. Output objects can be retrieved by opening the result of `execute_job` as a context manager.
+
+    .. code-block:: python
+        from dagster import execute_job
+
+        with execute_job(...) as result:
+            output_obj = result.output_for_node("some_op")
+
+
 
     Parameters:
-        job (ReconstructableJob): The job to execute.
+        job (ReconstructableJob): A reconstructable pointer to a :py:class:`JobDefinition`.
         instance (DagsterInstance): The instance to execute against.
         run_config (Optional[dict]): The configuration that parametrizes this run, as a dict.
         tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to run logs.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
-            Defaults to ``True``, since this is the most useful behavior in test.
+            Defaults to ``False``.
         op_selection (Optional[List[str]]): A list of op selection queries (including single
             op names) to execute. For example:
 
@@ -622,13 +659,12 @@ def reexecute_pipeline(
             parent_run_id=parent_pipeline_run.run_id,
         )
 
-        result = execute_run(
+        return execute_run(
             pipeline,
             pipeline_run,
             execute_instance,
             raise_on_error=raise_on_error,
         )
-        return cast(PipelineExecutionResult, result)
 
 
 def reexecute_pipeline_iterator(

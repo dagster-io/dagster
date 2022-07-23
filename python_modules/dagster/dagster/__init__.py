@@ -252,6 +252,7 @@ from dagster._core.execution.context.logger import InitLoggerContext
 from dagster._core.execution.context.output import OutputContext, build_output_context
 from dagster._core.execution.context.system import TypeCheckContext
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster._core.execution.execute_job_result import ExecuteJobResult
 from dagster._core.execution.plan.external_step import (
     external_instance_from_step_run_ref,
     run_step_from_ref,
@@ -545,6 +546,7 @@ __all__ = [
     "InitLoggerContext",
     "InitResourceContext",
     "ExecuteInProcessResult",
+    "ExecuteJobResult",
     "step_context_to_step_run_ref",
     "external_instance_from_step_run_ref",
     "step_run_ref_to_step_context",
