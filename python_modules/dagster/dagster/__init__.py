@@ -369,7 +369,7 @@ if typing.TYPE_CHECKING:
 
 _DEPRECATED = {
     "AssetGroup": (
-        "dagster.core.definitions",
+        "dagster._core.definitions",
         "1.0.0",
         "Instead, place a set of assets wrapped with `with_resources` directly on a repository.",
     ),

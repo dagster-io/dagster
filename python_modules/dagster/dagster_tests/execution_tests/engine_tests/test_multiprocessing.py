@@ -316,7 +316,7 @@ def test_ephemeral_event_log():
     with instance_for_test(
         overrides={
             "event_log_storage": {
-                "module": "dagster.core.storage.event_log",
+                "module": "dagster._core.storage.event_log",
                 "class": "InMemoryEventLogStorage",
             }
         }

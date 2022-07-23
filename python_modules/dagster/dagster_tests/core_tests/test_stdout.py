@@ -309,7 +309,7 @@ def test_compute_log_base_with_spaces():
             temp_dir=temp_dir,
             overrides={
                 "compute_logs": {
-                    "module": "dagster.core.storage.local_compute_log_manager",
+                    "module": "dagster._core.storage.local_compute_log_manager",
                     "class": "LocalComputeLogManager",
                     "config": {"base_dir": os.path.join(temp_dir, "base with spaces")},
                 }

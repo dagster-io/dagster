@@ -273,7 +273,7 @@ multiproc_job = multiproc.to_job()
 def _default_cli_test_instance_tempdir(temp_dir, overrides=None):
     default_overrides = {
         "run_launcher": {
-            "module": "dagster.core.test_utils",
+            "module": "dagster._core.test_utils",
             "class": "MockedRunLauncher",
         }
     }
@@ -281,7 +281,7 @@ def _default_cli_test_instance_tempdir(temp_dir, overrides=None):
         temp_dir=temp_dir,
         overrides=merge_dicts(default_overrides, (overrides if overrides else {})),
     ) as instance:
-        with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
+        with mock.patch("dagster._core.instance.DagsterInstance.get") as _instance:
             _instance.return_value = instance
             yield instance
 

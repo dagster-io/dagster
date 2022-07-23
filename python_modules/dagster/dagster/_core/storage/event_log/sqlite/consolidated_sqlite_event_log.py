@@ -41,7 +41,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     .. code-block:: YAML
 
         run_storage:
-          module: dagster.core.storage.event_log
+          module: dagster._core.storage.event_log
           class: ConsolidatedSqliteEventLogStorage
           config:
             base_dir: /path/to/dir

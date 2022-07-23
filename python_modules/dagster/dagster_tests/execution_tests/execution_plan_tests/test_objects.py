@@ -20,7 +20,7 @@ def test_failure_error_display_string():
 
         assert step_failure_data.error_display_string.startswith(
             """
-dagster.core.errors.DagsterUserCodeExecutionError: Error occurred while doing the thing:
+dagster._core.errors.DagsterUserCodeExecutionError: Error occurred while doing the thing:
 
 ValueError: some error
 

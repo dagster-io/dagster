@@ -118,7 +118,7 @@ def test_construct_log_string_with_user_code_error():
         """
         my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_FAILURE - Execution of step "solid2" failed.
 
-        dagster.core.errors.DagsterUserCodeExecutionError: Error occurred while eating a banana:
+        dagster._core.errors.DagsterUserCodeExecutionError: Error occurred while eating a banana:
 
         ValueError: some error
 

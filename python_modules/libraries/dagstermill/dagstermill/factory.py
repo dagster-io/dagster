@@ -327,7 +327,7 @@ def define_dagstermill_solid(
         output_notebook (Optional[str]): If set, will be used as the name of an injected output of
             type :py:class:`~dagster.FileHandle` that will point to the executed notebook (in
             addition to the :py:class:`~dagster.AssetMaterialization` that is always created). This
-            respects the :py:class:`~dagster.core.storage.file_manager.FileManager` configured on
+            respects the :py:class:`~dagster._core.storage.file_manager.FileManager` configured on
             the pipeline resources via the "file_manager" resource key, so, e.g.,
             if :py:class:`~dagster_aws.s3.s3_file_manager` is configured, the output will be a :
             py:class:`~dagster_aws.s3.S3FileHandle`.

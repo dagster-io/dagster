@@ -32,7 +32,7 @@ class RunShardedEventsCursor(NamedTuple):
 
 class EventLogRecord(NamedTuple):
     """Internal representation of an event record, as stored in a
-    :py:class:`~dagster.core.storage.event_log.EventLogStorage`.
+    :py:class:`~dagster._core.storage.event_log.EventLogStorage`.
     """
 
     storage_id: int
@@ -197,7 +197,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     """Abstract base class for storing structured event logs from pipeline runs.
 
     Note that event log storages using SQL databases as backing stores should implement
-    :py:class:`~dagster.core.storage.event_log.SqlEventLogStorage`.
+    :py:class:`~dagster._core.storage.event_log.SqlEventLogStorage`.
 
     Users should not directly instantiate concrete subclasses of this class; they are instantiated
     by internal machinery when ``dagit`` and ``dagster-graphql`` load, based on the values in the

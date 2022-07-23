@@ -5,7 +5,7 @@ Revises: 0da417ae1b81
 Create Date: 2021-02-10 14:58:02.954242
 
 """
-from dagster.core.storage.migration.utils import create_bulk_actions_table
+from dagster._core.storage.migration.utils import create_bulk_actions_table
 
 # revision identifiers, used by Alembic.
 revision = "a914fb6ccdf9"

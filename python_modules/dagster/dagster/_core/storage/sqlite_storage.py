@@ -90,7 +90,7 @@ class DagsterSqliteStorage(DagsterStorage, ConfigurableClass):
     @property
     def event_storage_data(self) -> Optional[ConfigurableClassData]:
         return ConfigurableClassData(
-            "dagster.core.storage.event_log",
+            "dagster._core.storage.event_log",
             "SqliteEventLogStorage",
             yaml.dump({"base_dir": _runs_directory(self.base_dir)}, default_flow_style=False),
         )
@@ -98,7 +98,7 @@ class DagsterSqliteStorage(DagsterStorage, ConfigurableClass):
     @property
     def run_storage_data(self) -> Optional[ConfigurableClassData]:
         return ConfigurableClassData(
-            "dagster.core.storage.runs",
+            "dagster._core.storage.runs",
             "SqliteRunStorage",
             yaml.dump({"base_dir": _event_logs_directory(self.base_dir)}, default_flow_style=False),
         )
@@ -106,7 +106,7 @@ class DagsterSqliteStorage(DagsterStorage, ConfigurableClass):
     @property
     def schedule_storage_data(self) -> Optional[ConfigurableClassData]:
         return ConfigurableClassData(
-            "dagster.core.storage.schedules",
+            "dagster._core.storage.schedules",
             "SqliteScheduleStorage",
             yaml.dump({"base_dir": _schedule_directory(self.base_dir)}, default_flow_style=False),
         )

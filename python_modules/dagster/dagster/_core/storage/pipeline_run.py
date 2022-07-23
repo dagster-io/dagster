@@ -331,7 +331,7 @@ class PipelineRun(
     )
 ):
     """Serializable internal representation of a pipeline run, as stored in a
-    :py:class:`~dagster.core.storage.runs.RunStorage`.
+    :py:class:`~dagster._core.storage.runs.RunStorage`.
     """
 
     def __new__(
@@ -508,7 +508,7 @@ class PipelineRun(
 @whitelist_for_serdes(serializer=DagsterRunSerializer)
 class DagsterRun(PipelineRun):
     """Serializable internal representation of a dagster run, as stored in a
-    :py:class:`~dagster.core.storage.runs.RunStorage`.
+    :py:class:`~dagster._core.storage.runs.RunStorage`.
 
     Subclasses PipelineRun for backcompat purposes. DagsterRun is the actual initialized class used throughout the system.
     """
@@ -649,7 +649,7 @@ class RunRecord(
     )
 ):
     """Internal representation of a run record, as stored in a
-    :py:class:`~dagster.core.storage.runs.RunStorage`.
+    :py:class:`~dagster._core.storage.runs.RunStorage`.
     """
 
     def __new__(

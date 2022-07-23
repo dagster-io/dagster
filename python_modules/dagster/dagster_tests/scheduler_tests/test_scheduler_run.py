@@ -1516,7 +1516,7 @@ def test_launch_failure(workspace, external_repo):
     with instance_for_test(
         overrides={
             "run_launcher": {
-                "module": "dagster.core.test_utils",
+                "module": "dagster._core.test_utils",
                 "class": "ExplodingRunLauncher",
             },
         },

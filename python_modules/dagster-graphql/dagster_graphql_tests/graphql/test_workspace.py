@@ -63,7 +63,7 @@ class TestLoadWorkspace(BaseTestSuite):
             [file_relative_path(__file__, "multi_location.yaml")]
         )
         with mock.patch(
-            "dagster.core.workspace.load_target.location_origins_from_yaml_paths",
+            "dagster._core.workspace.load_target.location_origins_from_yaml_paths",
         ) as origins_mock:
             original_origins.append(
                 ManagedGrpcPythonEnvRepositoryLocationOrigin(

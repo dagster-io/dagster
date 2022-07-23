@@ -13,7 +13,7 @@ def mock_asset_instance(mocker):
     # can use the ephemeral instance, since the default InMemoryEventLogStorage is asset aware
     instance = DagsterInstance.ephemeral()
     mocker.patch(
-        "dagster.core.instance.DagsterInstance.get",
+        "dagster._core.instance.DagsterInstance.get",
         return_value=instance,
     )
     yield instance

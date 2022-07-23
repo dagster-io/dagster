@@ -5,7 +5,7 @@ Revises: f4eed4c26e2c
 Create Date: 2022-01-20 11:45:26.092743
 
 """
-from dagster.core.storage.migration.utils import create_run_range_indices
+from dagster._core.storage.migration.utils import create_run_range_indices
 
 # revision identifiers, used by Alembic.
 revision = "17154c80d885"

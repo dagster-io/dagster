@@ -230,7 +230,7 @@ def test_do_it_live_emr():
 @mock.patch("boto3.resource")
 @mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher.wait_for_completion")
 @mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher._log_logs_from_s3")
-@mock.patch("dagster.core.events.log_step_event")
+@mock.patch("dagster._core.events.log_step_event")
 def test_fetch_logs_on_fail(
     _mock_log_step_event, mock_log_logs, mock_wait_for_completion, _mock_boto3_resource
 ):

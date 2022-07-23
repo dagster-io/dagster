@@ -4,7 +4,7 @@ All errors thrown by the Dagster framework inherit from :py:class:`~dagster.Dags
 should not subclass this base class for their own exceptions.
 
 There is another exception base class, :py:class:`~dagster.DagsterUserCodeExecutionError`, which is
-used by the framework in concert with the :py:func:`~dagster.core.errors.user_code_error_boundary`.
+used by the framework in concert with the :py:func:`~dagster._core.errors.user_code_error_boundary`.
 
 Dagster uses this construct to wrap user code into which it calls. User code can perform arbitrary
 computations and may itself throw exceptions. The error boundary catches these user code-generated
@@ -343,7 +343,7 @@ class DagsterInvalidConfigError(DagsterError):
 
 class DagsterUnmetExecutorRequirementsError(DagsterError):
     """Indicates the resolved executor is incompatible with the state of other systems
-    such as the :py:class:`~dagster.core.instance.DagsterInstance` or system storage configuration.
+    such as the :py:class:`~dagster._core.instance.DagsterInstance` or system storage configuration.
     """
 
 

@@ -27,12 +27,12 @@ def instance_for_queued_run_coordinator(max_concurrent_runs=None, tag_concurrenc
     )
     overrides = {
         "run_coordinator": {
-            "module": "dagster.core.run_coordinator",
+            "module": "dagster._core.run_coordinator",
             "class": "QueuedRunCoordinator",
             "config": {**max_concurrent_runs, **tag_concurrency_limits},
         },
         "run_launcher": {
-            "module": "dagster.core.test_utils",
+            "module": "dagster._core.test_utils",
             "class": "MockedRunLauncher",
             "config": {"bad_run_ids": ["bad-run"]},
         },

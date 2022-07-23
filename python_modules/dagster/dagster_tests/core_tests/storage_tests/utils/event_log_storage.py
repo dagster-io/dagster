@@ -934,21 +934,21 @@ class TestEventLogStorage:
             with ExitStack() as stack:
                 stack.enter_context(
                     mock.patch(
-                        "dagster.core.storage.event_log.sql_event_log.logging.warning",
+                        "dagster._core.storage.event_log.sql_event_log.logging.warning",
                         side_effect=mock_log,
                     )
                 )
                 # for generic sql-based event log storage
                 stack.enter_context(
                     mock.patch(
-                        "dagster.core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",
+                        "dagster._core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",
                         return_value="not_an_event_record",
                     )
                 )
                 # for sqlite event log storage, which overrides the record fetching implementation
                 stack.enter_context(
                     mock.patch(
-                        "dagster.core.storage.event_log.sqlite.sqlite_event_log.deserialize_json_to_dagster_namedtuple",
+                        "dagster._core.storage.event_log.sqlite.sqlite_event_log.deserialize_json_to_dagster_namedtuple",
                         return_value="not_an_event_record",
                     )
                 )
@@ -966,7 +966,7 @@ class TestEventLogStorage:
                 _logs = []  # reset logs
                 stack.enter_context(
                     mock.patch(
-                        "dagster.core.storage.event_log.sql_event_log.logging.warning",
+                        "dagster._core.storage.event_log.sql_event_log.logging.warning",
                         side_effect=mock_log,
                     )
                 )
@@ -974,14 +974,14 @@ class TestEventLogStorage:
                 # for generic sql-based event log storage
                 stack.enter_context(
                     mock.patch(
-                        "dagster.core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",
+                        "dagster._core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",
                         side_effect=seven.JSONDecodeError("error", "", 0),
                     )
                 )
                 # for sqlite event log storage, which overrides the record fetching implementation
                 stack.enter_context(
                     mock.patch(
-                        "dagster.core.storage.event_log.sqlite.sqlite_event_log.deserialize_json_to_dagster_namedtuple",
+                        "dagster._core.storage.event_log.sqlite.sqlite_event_log.deserialize_json_to_dagster_namedtuple",
                         side_effect=seven.JSONDecodeError("error", "", 0),
                     )
                 )

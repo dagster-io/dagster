@@ -20,7 +20,7 @@ def dagster_cli_runner():
             temp_dir=dagster_home_temp,
             overrides={
                 "run_launcher": {
-                    "module": "dagster.core.launcher.sync_in_memory_run_launcher",
+                    "module": "dagster._core.launcher.sync_in_memory_run_launcher",
                     "class": "SyncInMemoryRunLauncher",
                 }
             },
@@ -290,7 +290,7 @@ def test_logs_in_start_execution_predefined():
             temp_dir=temp_dir,
             overrides={
                 "run_launcher": {
-                    "module": "dagster.core.launcher.sync_in_memory_run_launcher",
+                    "module": "dagster._core.launcher.sync_in_memory_run_launcher",
                     "class": "SyncInMemoryRunLauncher",
                 }
             },

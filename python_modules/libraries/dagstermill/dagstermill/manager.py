@@ -80,7 +80,7 @@ class Manager:
     ):
         """
         Drop-in replacement for
-        `dagster.core.execution.resources_init.resource_initialization_manager`.  It uses a
+        `dagster._core.execution.resources_init.resource_initialization_manager`.  It uses a
         `DagstermillResourceEventGenerationManager` and explicitly calls `teardown` on it
         """
         generator = resource_initialization_event_generator(

@@ -156,7 +156,7 @@ class InstanceManagers:
                             "config": {"base_dir": temp_dir},
                         },
                         "run_launcher": {
-                            "module": "dagster.core.test_utils",
+                            "module": "dagster._core.test_utils",
                             "class": "ExplodingRunLauncher",
                         },
                     },
@@ -174,7 +174,7 @@ class InstanceManagers:
             with graphql_postgres_instance(
                 overrides={
                     "run_launcher": {
-                        "module": "dagster.core.test_utils",
+                        "module": "dagster._core.test_utils",
                         "class": "ExplodingRunLauncher",
                     }
                 }
@@ -200,7 +200,7 @@ class InstanceManagers:
                             "config": {"base_dir": temp_dir},
                         },
                         "run_launcher": {
-                            "module": "dagster.core.launcher.sync_in_memory_run_launcher",
+                            "module": "dagster._core.launcher.sync_in_memory_run_launcher",
                             "class": "SyncInMemoryRunLauncher",
                         },
                     },
@@ -225,7 +225,7 @@ class InstanceManagers:
                             "config": {"base_dir": temp_dir},
                         },
                         "run_coordinator": {
-                            "module": "dagster.core.run_coordinator.queued_run_coordinator",
+                            "module": "dagster._core.run_coordinator.queued_run_coordinator",
                             "class": "QueuedRunCoordinator",
                         },
                     },
@@ -272,7 +272,7 @@ class InstanceManagers:
             with graphql_postgres_instance(
                 overrides={
                     "run_launcher": {
-                        "module": "dagster.core.launcher.sync_in_memory_run_launcher",
+                        "module": "dagster._core.launcher.sync_in_memory_run_launcher",
                         "class": "SyncInMemoryRunLauncher",
                     }
                 }

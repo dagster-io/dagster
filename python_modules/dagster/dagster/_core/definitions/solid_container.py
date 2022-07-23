@@ -109,15 +109,15 @@ def create_execution_structure(
     This will create:
 
     pipeline_solid_dict = {
-        'giver': <dagster.core.definitions.dependency.Solid object>,
-        'sleeper_1': <dagster.core.definitions.dependency.Solid object>,
-        'sleeper_2': <dagster.core.definitions.dependency.Solid object>,
-        'sleeper_3': <dagster.core.definitions.dependency.Solid object>,
-        'sleeper_4': <dagster.core.definitions.dependency.Solid object>,
-        'total': <dagster.core.definitions.dependency.Solid object>
+        'giver': <dagster._core.definitions.dependency.Solid object>,
+        'sleeper_1': <dagster._core.definitions.dependency.Solid object>,
+        'sleeper_2': <dagster._core.definitions.dependency.Solid object>,
+        'sleeper_3': <dagster._core.definitions.dependency.Solid object>,
+        'sleeper_4': <dagster._core.definitions.dependency.Solid object>,
+        'total': <dagster._core.definitions.dependency.Solid object>
     }
 
-    as well as a dagster.core.definitions.dependency.DependencyStructure object.
+    as well as a dagster._core.definitions.dependency.DependencyStructure object.
     """
     from .graph_definition import GraphDefinition
     from .solid_definition import NodeDefinition

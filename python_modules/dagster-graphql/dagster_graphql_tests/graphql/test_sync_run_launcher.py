@@ -8,7 +8,7 @@ def test_sync_run_launcher_from_configurable_class():
     with instance_for_test(
         overrides={
             "run_launcher": {
-                "module": "dagster.core.launcher.sync_in_memory_run_launcher",
+                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
                 "class": "SyncInMemoryRunLauncher",
             }
         },
@@ -20,7 +20,7 @@ def test_sync_run_launcher_run():
     with instance_for_test(
         overrides={
             "run_launcher": {
-                "module": "dagster.core.launcher.sync_in_memory_run_launcher",
+                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
                 "class": "SyncInMemoryRunLauncher",
             }
         },

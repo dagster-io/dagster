@@ -225,7 +225,7 @@ def test_output_execute_log_stdout(capfd):
     with instance_for_test(
         overrides={
             "compute_logs": {
-                "module": "dagster.core.storage.noop_compute_log_manager",
+                "module": "dagster._core.storage.noop_compute_log_manager",
                 "class": "NoOpComputeLogManager",
             }
         },
@@ -258,7 +258,7 @@ def test_output_execute_log_stderr(capfd):
     with instance_for_test(
         overrides={
             "compute_logs": {
-                "module": "dagster.core.storage.noop_compute_log_manager",
+                "module": "dagster._core.storage.noop_compute_log_manager",
                 "class": "NoOpComputeLogManager",
             }
         },

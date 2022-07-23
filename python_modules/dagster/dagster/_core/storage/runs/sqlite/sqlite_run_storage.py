@@ -40,7 +40,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
     .. code-block:: YAML
 
         run_storage:
-          module: dagster.core.storage.runs
+          module: dagster._core.storage.runs
           class: SqliteRunStorage
           config:
             base_dir: /path/to/dir

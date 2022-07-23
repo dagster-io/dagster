@@ -12,7 +12,7 @@ from dagster._utils import merge_dicts
 @pytest.fixture()
 def instance():
     overrides = {
-        "run_launcher": {"module": "dagster.core.test_utils", "class": "MockedRunLauncher"}
+        "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"}
     }
     with instance_for_test(overrides=overrides) as inst:
         yield inst

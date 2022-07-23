@@ -114,7 +114,7 @@ def test_event_log_subscription_chunked():
 
 
 @mock.patch(
-    "dagster.core.storage.local_compute_log_manager.LocalComputeLogManager.is_watch_completed"
+    "dagster._core.storage.local_compute_log_manager.LocalComputeLogManager.is_watch_completed"
 )
 def test_compute_log_subscription(mock_watch_completed):
     mock_watch_completed.return_value = False

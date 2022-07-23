@@ -9,7 +9,7 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy import inspect
 
-from dagster.core.storage.migration.utils import has_column, has_table
+from dagster._core.storage.migration.utils import has_column, has_table
 
 # alembic magic breaks pylint
 # pylint: disable=no-member

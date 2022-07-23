@@ -98,16 +98,16 @@ def register_solid_transform():
         if not node.decorators:
             return False
         return (
-            "dagster.core.definitions.decorators.solid.solid" in node.decoratornames()
-            or "dagster.core.definitions.decorators.solid._Solid" in node.decoratornames()
-            or "dagster.core.definitions.decorators.composite_solid._CompositeSolid"
+            "dagster._core.definitions.decorators.solid.solid" in node.decoratornames()
+            or "dagster._core.definitions.decorators.solid._Solid" in node.decoratornames()
+            or "dagster._core.definitions.decorators.composite_solid._CompositeSolid"
             in node.decoratornames()
-            or "dagster.core.definitions.decorators.composite_solid.composite_solid"
+            or "dagster._core.definitions.decorators.composite_solid.composite_solid"
             in node.decoratornames()
-            or "dagster.core.definitions.decorators.op.op" in node.decoratornames()
-            or "dagster.core.definitions.decorators.op._Op" in node.decoratornames()
-            or "dagster.core.definitions.decorators.graph.graph" in node.decoratornames()
-            or "dagster.core.definitions.decorators.graph._Graph" in node.decoratornames()
+            or "dagster._core.definitions.decorators.op.op" in node.decoratornames()
+            or "dagster._core.definitions.decorators.op._Op" in node.decoratornames()
+            or "dagster._core.definitions.decorators.graph.graph" in node.decoratornames()
+            or "dagster._core.definitions.decorators.graph._Graph" in node.decoratornames()
         )
 
     @astroid.inference_tip

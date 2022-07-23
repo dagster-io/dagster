@@ -278,7 +278,7 @@ def test_failure_hook_framework_exception():
         my_op()
 
     with mock.patch(
-        "dagster.core.execution.plan.execute_plan.core_dagster_event_sequence_for_step"
+        "dagster._core.execution.plan.execute_plan.core_dagster_event_sequence_for_step"
     ) as mocked_event_sequence:
         mocked_event_sequence.side_effect = Exception("Framework exception during execution")
 

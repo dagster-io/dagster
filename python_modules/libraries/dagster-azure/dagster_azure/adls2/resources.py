@@ -81,7 +81,7 @@ def adls2_resource(context):
 def adls2_file_manager(context):
     """FileManager that provides abstract access to ADLS2.
 
-    Implements the :py:class:`~dagster.core.storage.file_manager.FileManager` API.
+    Implements the :py:class:`~dagster._core.storage.file_manager.FileManager` API.
     """
     adls2_client = _adls2_resource_from_config(context.resource_config).adls2_client
 

@@ -71,10 +71,10 @@ class FileManager(ABC):  # pylint: disable=no-init
 
         Temp files returned by this method are *not* guaranteed to be reusable across solid
         boundaries. For files that must be available across solid boundaries, use the
-        :py:meth:`~dagster.core.storage.file_manager.FileManager.read`,
-        :py:meth:`~dagster.core.storage.file_manager.FileManager.read_data`,
-        :py:meth:`~dagster.core.storage.file_manager.FileManager.write`, and
-        :py:meth:`~dagster.core.storage.file_manager.FileManager.write_data` methods.
+        :py:meth:`~dagster._core.storage.file_manager.FileManager.read`,
+        :py:meth:`~dagster._core.storage.file_manager.FileManager.read_data`,
+        :py:meth:`~dagster._core.storage.file_manager.FileManager.write`, and
+        :py:meth:`~dagster._core.storage.file_manager.FileManager.write_data` methods.
 
         Args:
             file_handle (FileHandle): The handle to the file to make available as a local temp file.
@@ -87,7 +87,7 @@ class FileManager(ABC):  # pylint: disable=no-init
     @abstractmethod
     def delete_local_temp(self):
         """Delete all local temporary files created by previous calls to
-        :py:meth:`~dagster.core.storage.file_manager.FileManager.copy_handle_to_local_temp`.
+        :py:meth:`~dagster._core.storage.file_manager.FileManager.copy_handle_to_local_temp`.
 
         Should typically only be called by framework implementors.
         """
@@ -162,7 +162,7 @@ def local_file_manager(init_context):
     By default, files will be stored in `<local_artifact_storage>/storage/file_manager` where
     `<local_artifact_storage>` can be configured the ``dagster.yaml`` file in ``$DAGSTER_HOME``.
 
-    Implements the :py:class:`~dagster.core.storage.file_manager.FileManager` API.
+    Implements the :py:class:`~dagster._core.storage.file_manager.FileManager` API.
 
     Examples:
 

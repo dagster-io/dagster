@@ -256,7 +256,7 @@ def test_launch_queued(gen_pipeline_args):
         overrides={
             "run_coordinator": {
                 "class": "QueuedRunCoordinator",
-                "module": "dagster.core.run_coordinator",
+                "module": "dagster._core.run_coordinator",
             }
         }
     ) as instance:
@@ -288,7 +288,7 @@ def test_job_launch_queued(gen_pipeline_args):
         overrides={
             "run_coordinator": {
                 "class": "QueuedRunCoordinator",
-                "module": "dagster.core.run_coordinator",
+                "module": "dagster._core.run_coordinator",
             }
         }
     ) as instance:

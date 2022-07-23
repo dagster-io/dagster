@@ -98,22 +98,22 @@ def configurable_storage_data(config_field, defaults) -> Sequence[ConfigurableCl
     elif "sqlite" in config_field:
         base_dir = check.str_elem(config_field["sqlite"], "base_dir")
         storage_data = ConfigurableClassData(
-            "dagster.core.storage.sqlite_storage",
+            "dagster._core.storage.sqlite_storage",
             "DagsterSqliteStorage",
             yaml.dump({"base_dir": base_dir}, default_flow_style=False),
         )
         run_storage_data = ConfigurableClassData(
-            "dagster.core.storage.runs",
+            "dagster._core.storage.runs",
             "SqliteRunStorage",
             yaml.dump({"base_dir": _runs_directory(base_dir)}, default_flow_style=False),
         )
         event_storage_data = ConfigurableClassData(
-            "dagster.core.storage.event_log",
+            "dagster._core.storage.event_log",
             "SqliteEventLogStorage",
             yaml.dump({"base_dir": _event_logs_directory(base_dir)}, default_flow_style=False),
         )
         schedule_storage_data = ConfigurableClassData(
-            "dagster.core.storage.schedules",
+            "dagster._core.storage.schedules",
             "SqliteScheduleStorage",
             yaml.dump({"base_dir": _schedule_directory(base_dir)}, default_flow_style=False),
         )
@@ -129,13 +129,13 @@ def configurable_storage_data(config_field, defaults) -> Sequence[ConfigurableCl
             default_flow_style=False,
         )
         run_storage_data = ConfigurableClassData(
-            "dagster.core.storage.legacy_storage", "LegacyRunStorage", storage_config_yaml
+            "dagster._core.storage.legacy_storage", "LegacyRunStorage", storage_config_yaml
         )
         event_storage_data = ConfigurableClassData(
-            "dagster.core.storage.legacy_storage", "LegacyEventLogStorage", storage_config_yaml
+            "dagster._core.storage.legacy_storage", "LegacyEventLogStorage", storage_config_yaml
         )
         schedule_storage_data = ConfigurableClassData(
-            "dagster.core.storage.legacy_storage", "LegacyScheduleStorage", storage_config_yaml
+            "dagster._core.storage.legacy_storage", "LegacyScheduleStorage", storage_config_yaml
         )
 
     return [storage_data, run_storage_data, event_storage_data, schedule_storage_data]
@@ -221,44 +221,44 @@ class InstanceRef(
     @staticmethod
     def config_defaults(base_dir):
         default_run_storage_data = ConfigurableClassData(
-            "dagster.core.storage.runs",
+            "dagster._core.storage.runs",
             "SqliteRunStorage",
             yaml.dump({"base_dir": _runs_directory(base_dir)}, default_flow_style=False),
         )
         default_event_log_storage_data = ConfigurableClassData(
-            "dagster.core.storage.event_log",
+            "dagster._core.storage.event_log",
             "SqliteEventLogStorage",
             yaml.dump({"base_dir": _event_logs_directory(base_dir)}, default_flow_style=False),
         )
         default_schedule_storage_data = ConfigurableClassData(
-            "dagster.core.storage.schedules",
+            "dagster._core.storage.schedules",
             "SqliteScheduleStorage",
             yaml.dump({"base_dir": _schedule_directory(base_dir)}, default_flow_style=False),
         )
 
         return {
             "local_artifact_storage": ConfigurableClassData(
-                "dagster.core.storage.root",
+                "dagster._core.storage.root",
                 "LocalArtifactStorage",
                 yaml.dump({"base_dir": base_dir}, default_flow_style=False),
             ),
             "storage": ConfigurableClassData(
-                "dagster.core.storage.sqlite_storage",
+                "dagster._core.storage.sqlite_storage",
                 "DagsterSqliteStorage",
                 yaml.dump({"base_dir": base_dir}, default_flow_style=False),
             ),
             "compute_logs": ConfigurableClassData(
-                "dagster.core.storage.local_compute_log_manager",
+                "dagster._core.storage.local_compute_log_manager",
                 "LocalComputeLogManager",
                 yaml.dump({"base_dir": compute_logs_directory(base_dir)}, default_flow_style=False),
             ),
             "scheduler": ConfigurableClassData(
-                "dagster.core.scheduler",
+                "dagster._core.scheduler",
                 "DagsterDaemonScheduler",
                 yaml.dump({}),
             ),
             "run_coordinator": ConfigurableClassData(
-                "dagster.core.run_coordinator", "DefaultRunCoordinator", yaml.dump({})
+                "dagster._core.run_coordinator", "DefaultRunCoordinator", yaml.dump({})
             ),
             "run_launcher": ConfigurableClassData(
                 "dagster",
@@ -320,7 +320,7 @@ class InstanceRef(
                 config_value, "schedule_storage", defaults["schedule_storage"]
             )
             storage_data = ConfigurableClassData(
-                module_name="dagster.core.storage.legacy_storage",
+                module_name="dagster._core.storage.legacy_storage",
                 class_name="CompositeStorage",
                 config_yaml=yaml.dump(
                     {

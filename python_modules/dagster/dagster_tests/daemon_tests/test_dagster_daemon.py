@@ -13,7 +13,7 @@ def test_scheduler_instance():
     with instance_for_test(
         overrides={
             "scheduler": {
-                "module": "dagster.core.scheduler",
+                "module": "dagster._core.scheduler",
                 "class": "DagsterDaemonScheduler",
             },
         }
@@ -33,7 +33,7 @@ def test_run_coordinator_instance():
     with instance_for_test(
         overrides={
             "run_coordinator": {
-                "module": "dagster.core.run_coordinator.queued_run_coordinator",
+                "module": "dagster._core.run_coordinator.queued_run_coordinator",
                 "class": "QueuedRunCoordinator",
             },
         }

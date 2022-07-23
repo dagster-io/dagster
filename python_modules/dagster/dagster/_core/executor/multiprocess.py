@@ -140,8 +140,8 @@ class MultiprocessExecutor(Executor):
 
             # we import this module first to avoid user code like
             # pyspark.serializers._hijack_namedtuple from breaking us
-            if "dagster.core.executor.multiprocess" not in preload:
-                preload = ["dagster.core.executor.multiprocess"] + preload
+            if "dagster._core.executor.multiprocess" not in preload:
+                preload = ["dagster._core.executor.multiprocess"] + preload
 
             multiproc_ctx.set_forkserver_preload(preload)
 

@@ -66,7 +66,7 @@ class LocalExternalStepLauncher(StepLauncher):
         command_tokens = [
             sys.executable,
             "-m",
-            "dagster.core.execution.plan.local_external_step_main",
+            "dagster._core.execution.plan.local_external_step_main",
             step_run_ref_file_path,
         ]
         # If this is being called within a `capture_interrupts` context, allow interrupts

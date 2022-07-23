@@ -12,7 +12,7 @@ from dagster._core.workspace.load_target import ModuleTarget
 def instance_session_scoped_fixture():
     with instance_for_test(
         overrides={
-            "run_launcher": {"module": "dagster.core.test_utils", "class": "MockedRunLauncher"}
+            "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"}
         }
     ) as instance:
         yield instance

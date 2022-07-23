@@ -3,10 +3,10 @@
 
 from alembic import context
 
-from dagster.core.storage.event_log import SqlEventLogStorageMetadata
-from dagster.core.storage.runs import SqlRunStorage
-from dagster.core.storage.schedules import SqlScheduleStorage
-from dagster.core.storage.sql import run_migrations_offline, run_migrations_online
+from dagster._core.storage.event_log import SqlEventLogStorageMetadata
+from dagster._core.storage.runs import SqlRunStorage
+from dagster._core.storage.schedules import SqlScheduleStorage
+from dagster._core.storage.sql import run_migrations_offline, run_migrations_online
 
 config = context.config
 

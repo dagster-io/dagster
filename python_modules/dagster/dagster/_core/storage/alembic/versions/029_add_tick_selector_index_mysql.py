@@ -5,7 +5,7 @@ Revises: c892b3fe0a9f
 Create Date: 2022-03-25 10:29:10.895341
 
 """
-from dagster.core.storage.migration.utils import create_tick_selector_index
+from dagster._core.storage.migration.utils import create_tick_selector_index
 
 # revision identifiers, used by Alembic.
 revision = "d32d1d6de793"

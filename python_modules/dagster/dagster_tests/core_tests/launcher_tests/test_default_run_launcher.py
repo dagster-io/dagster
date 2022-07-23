@@ -249,7 +249,7 @@ def test_invalid_instance_run(get_workspace):
                 temp_dir=temp_dir,
                 overrides={
                     "run_storage": {
-                        "module": "dagster.core.storage.runs",
+                        "module": "dagster._core.storage.runs",
                         "class": "SqliteRunStorage",
                         "config": {"base_dir": {"env": "RUN_STORAGE_ENV"}},
                     }

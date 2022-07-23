@@ -31,7 +31,7 @@ class TestQueuedRunCoordinator:
     @pytest.fixture
     def instance(self):
         overrides = {
-            "run_launcher": {"module": "dagster.core.test_utils", "class": "MockedRunLauncher"}
+            "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"}
         }
         with instance_for_test(overrides=overrides) as inst:
             yield inst
@@ -70,7 +70,7 @@ class TestQueuedRunCoordinator:
             with instance_for_test(
                 overrides={
                     "run_coordinator": {
-                        "module": "dagster.core.run_coordinator",
+                        "module": "dagster._core.run_coordinator",
                         "class": "QueuedRunCoordinator",
                         "config": {
                             "max_concurrent_runs": {
@@ -93,7 +93,7 @@ class TestQueuedRunCoordinator:
             with instance_for_test(
                 overrides={
                     "run_coordinator": {
-                        "module": "dagster.core.run_coordinator",
+                        "module": "dagster._core.run_coordinator",
                         "class": "QueuedRunCoordinator",
                         "config": {
                             "tag_concurrency_limits": [
@@ -110,7 +110,7 @@ class TestQueuedRunCoordinator:
             with instance_for_test(
                 overrides={
                     "run_coordinator": {
-                        "module": "dagster.core.run_coordinator",
+                        "module": "dagster._core.run_coordinator",
                         "class": "QueuedRunCoordinator",
                         "config": {
                             "max_concurrent_runs": {

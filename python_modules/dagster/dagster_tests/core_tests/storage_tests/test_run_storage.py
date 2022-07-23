@@ -45,19 +45,19 @@ class TestSqliteImplementation(TestRunStorage):
 
     def test_bucket_gating(self, storage):
         with mock.patch(
-            "dagster.core.storage.runs.sqlite.sqlite_run_storage.get_sqlite_version",
+            "dagster._core.storage.runs.sqlite.sqlite_run_storage.get_sqlite_version",
             return_value="3.7.17",
         ):
             assert not storage.supports_bucket_queries
 
         with mock.patch(
-            "dagster.core.storage.runs.sqlite.sqlite_run_storage.get_sqlite_version",
+            "dagster._core.storage.runs.sqlite.sqlite_run_storage.get_sqlite_version",
             return_value="3.25.1",
         ):
             assert storage.supports_bucket_queries
 
         with mock.patch(
-            "dagster.core.storage.runs.sqlite.sqlite_run_storage.get_sqlite_version",
+            "dagster._core.storage.runs.sqlite.sqlite_run_storage.get_sqlite_version",
             return_value="3.25.19",
         ):
             assert storage.supports_bucket_queries

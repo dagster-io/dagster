@@ -20,7 +20,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     """Abstract base class for storing pipeline run history.
 
     Note that run storages using SQL databases as backing stores should implement
-    :py:class:`~dagster.core.storage.runs.SqlRunStorage`.
+    :py:class:`~dagster._core.storage.runs.SqlRunStorage`.
 
     Users should not directly instantiate concrete subclasses of this class; they are instantiated
     by internal machinery when ``dagit`` and ``dagster-graphql`` load, based on the values in the
@@ -60,7 +60,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
         Args:
             filters (Optional[RunsFilter]) -- The
-                :py:class:`~dagster.core.storage.pipeline_run.RunsFilter` by which to filter
+                :py:class:`~dagster._core.storage.pipeline_run.RunsFilter` by which to filter
                 runs
             cursor (Optional[str]): Starting cursor (run_id) of range of runs
             limit (Optional[int]): Number of results to get. Defaults to infinite.
@@ -75,7 +75,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
         Args:
             filters (Optional[RunsFilter]) -- The
-                :py:class:`~dagster.core.storage.pipeline_run.PipelineRunFilter` by which to filter
+                :py:class:`~dagster._core.storage.pipeline_run.PipelineRunFilter` by which to filter
                 runs
 
         Returns:
@@ -110,7 +110,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
         Args:
             filter (Optional[RunsFilter]) -- The
-                :py:class:`~dagster.core.storage.pipeline_run.RunsFilter` by which to filter
+                :py:class:`~dagster._core.storage.pipeline_run.RunsFilter` by which to filter
                 runs
             cursor (Optional[str]): Starting cursor (run_id) of range of runs
             limit (Optional[int]): Number of results to get. Defaults to infinite.
@@ -118,7 +118,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         Returns:
             Dict[str, Dict[str, Union[List[PipelineRun], int]]]: Specifically, a dict of the form
                 ``{'pipeline_run_id': {'runs': [PipelineRun, ...], 'count': int}, ...}``. The
-                instances of :py:class:`~dagster.core.pipeline_run.PipelineRun` returned in this
+                instances of :py:class:`~dagster._core.pipeline_run.PipelineRun` returned in this
                 data structure correspond to all of the runs that would have been returned by
                 calling :py:meth:`get_run_groups` with the same arguments, plus their corresponding
                 root runs, if any. The keys of this structure are the run_ids of all of the root

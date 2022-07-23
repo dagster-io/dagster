@@ -8,7 +8,7 @@ Create Date: 2021-01-14 12:29:33.410870
 import sqlalchemy as sa
 from alembic import op
 
-from dagster.core.storage.migration.utils import has_table
+from dagster._core.storage.migration.utils import has_table
 
 # pylint: disable=no-member
 

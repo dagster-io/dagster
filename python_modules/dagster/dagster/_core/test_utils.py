@@ -109,7 +109,7 @@ def instance_for_test(overrides=None, set_dagster_home=True, temp_dir=None):
             {
                 "run_launcher": {
                     "class": "DefaultRunLauncher",
-                    "module": "dagster.core.launcher.default_run_launcher",
+                    "module": "dagster._core.launcher.default_run_launcher",
                     "config": {
                         "wait_for_processes": True,
                     },

@@ -8,7 +8,7 @@ Create Date: 2022-05-20 15:00:01.260860
 import sqlalchemy as db
 from alembic import op
 
-from dagster.core.storage.migration.utils import has_column, has_index, has_table
+from dagster._core.storage.migration.utils import has_column, has_index, has_table
 
 # revision identifiers, used by Alembic.
 revision = "6860f830e40c"

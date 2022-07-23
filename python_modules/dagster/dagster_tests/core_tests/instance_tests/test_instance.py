@@ -62,7 +62,7 @@ def test_partial_storage(tmpdir):
     with instance_for_test(
         overrides={
             "run_storage": {
-                "module": "dagster.core.storage.runs",
+                "module": "dagster._core.storage.runs",
                 "class": "SqliteRunStorage",
                 "config": {
                     "base_dir": str(tmpdir),
@@ -141,7 +141,7 @@ def test_submit_run():
     with instance_for_test(
         overrides={
             "run_coordinator": {
-                "module": "dagster.core.test_utils",
+                "module": "dagster._core.test_utils",
                 "class": "MockedRunCoordinator",
             }
         }
@@ -386,7 +386,7 @@ class TestInstanceSubclass(DagsterInstance):
     def config_defaults(base_dir):
         defaults = InstanceRef.config_defaults(base_dir)
         defaults["run_coordinator"] = ConfigurableClassData(
-            "dagster.core.run_coordinator.queued_run_coordinator",
+            "dagster._core.run_coordinator.queued_run_coordinator",
             "QueuedRunCoordinator",
             yaml.dump({}),
         )

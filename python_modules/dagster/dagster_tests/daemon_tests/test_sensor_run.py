@@ -847,7 +847,7 @@ def test_launch_failure(capfd, executor):
     with instance_with_sensors(
         overrides={
             "run_launcher": {
-                "module": "dagster.core.test_utils",
+                "module": "dagster._core.test_utils",
                 "class": "ExplodingRunLauncher",
             },
         },
@@ -1899,12 +1899,12 @@ def sqlite_storage_config_fn(temp_dir):
     # non-run sharded storage
     return {
         "run_storage": {
-            "module": "dagster.core.storage.runs",
+            "module": "dagster._core.storage.runs",
             "class": "SqliteRunStorage",
             "config": {"base_dir": temp_dir},
         },
         "event_log_storage": {
-            "module": "dagster.core.storage.event_log",
+            "module": "dagster._core.storage.event_log",
             "class": "SqliteEventLogStorage",
             "config": {"base_dir": temp_dir},
         },
@@ -1919,7 +1919,7 @@ def default_storage_config_fn(_):
 def sql_event_log_storage_config_fn(temp_dir):
     return {
         "event_log_storage": {
-            "module": "dagster.core.storage.event_log",
+            "module": "dagster._core.storage.event_log",
             "class": "ConsolidatedSqliteEventLogStorage",
             "config": {"base_dir": temp_dir},
         },
