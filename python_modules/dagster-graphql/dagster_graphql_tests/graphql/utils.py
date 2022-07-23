@@ -3,8 +3,8 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster import DagsterEventType
 from dagster import _check as check
-from dagster.core.test_utils import wait_for_runs_to_finish
-from dagster.core.workspace.context import BaseWorkspaceRequestContext
+from dagster._core.test_utils import wait_for_runs_to_finish
+from dagster._core.workspace.context import BaseWorkspaceRequestContext
 
 
 def get_all_logs_for_finished_run_via_subscription(context, run_id):

@@ -27,13 +27,13 @@ from dagster import (
     op,
     resource,
 )
-from dagster.core.definitions.assets import AssetsDefinition
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.events import DagsterEventType
-from dagster.core.execution.api import execute_plan
-from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster.core.utils import make_new_run_id
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.events import DagsterEventType
+from dagster._core.execution.api import execute_plan
+from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.utils import make_new_run_id
 
 
 def fake_io_manager_factory(io_manager):

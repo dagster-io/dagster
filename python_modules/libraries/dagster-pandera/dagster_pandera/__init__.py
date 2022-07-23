@@ -16,8 +16,8 @@ from dagster import (
     TypeCheck,
     TypeCheckContext,
 )
-from dagster.core.definitions.metadata import MetadataValue
-from dagster.core.utils import check_dagster_package_version
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.utils import check_dagster_package_version
 
 from .version import __version__
 

@@ -17,14 +17,14 @@ from dagster import (
     graph,
     op,
 )
+from dagster._core.definitions import AssetGroup, AssetIn, asset, build_assets_job, multi_asset
+from dagster._core.definitions.version_strategy import VersionStrategy
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.execution.api import create_execution_plan
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.fs_io_manager import fs_io_manager
+from dagster._core.test_utils import instance_for_test
 from dagster._legacy import pipeline, solid
-from dagster.core.definitions import AssetGroup, AssetIn, asset, build_assets_job, multi_asset
-from dagster.core.definitions.version_strategy import VersionStrategy
-from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.execution.api import create_execution_plan
-from dagster.core.instance import DagsterInstance
-from dagster.core.storage.fs_io_manager import fs_io_manager
-from dagster.core.test_utils import instance_for_test
 
 
 def define_pipeline(io_manager):

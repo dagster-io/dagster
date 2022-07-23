@@ -4,8 +4,8 @@ from contextlib import contextmanager
 import mock
 import pytest
 
+from dagster._core.storage.schedules import SqliteScheduleStorage
 from dagster._utils.test.schedule_storage import TestScheduleStorage
-from dagster.core.storage.schedules import SqliteScheduleStorage
 
 
 @contextmanager
@@ -24,19 +24,19 @@ class TestSqliteScheduleStorage(TestScheduleStorage):
 
     def test_bucket_gating(self, storage):
         with mock.patch(
-            "dagster.core.storage.schedules.sqlite.sqlite_schedule_storage.get_sqlite_version",
+            "dagster._core.storage.schedules.sqlite.sqlite_schedule_storage.get_sqlite_version",
             return_value="3.7.17",
         ):
             assert not storage.supports_batch_queries
 
         with mock.patch(
-            "dagster.core.storage.schedules.sqlite.sqlite_schedule_storage.get_sqlite_version",
+            "dagster._core.storage.schedules.sqlite.sqlite_schedule_storage.get_sqlite_version",
             return_value="3.25.1",
         ):
             assert storage.supports_batch_queries
 
         with mock.patch(
-            "dagster.core.storage.schedules.sqlite.sqlite_schedule_storage.get_sqlite_version",
+            "dagster._core.storage.schedules.sqlite.sqlite_schedule_storage.get_sqlite_version",
             return_value="3.25.19",
         ):
             assert storage.supports_batch_queries

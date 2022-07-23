@@ -15,10 +15,10 @@ from dagster import (
     execute_pipeline,
     execute_pipeline_iterator,
 )
+from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.errors import DagsterSubprocessError
+from dagster._core.events import DagsterEventType
 from dagster._utils import send_interrupt
-from dagster.core.definitions.reconstruct import ReconstructablePipeline
-from dagster.core.errors import DagsterSubprocessError
-from dagster.core.events import DagsterEventType
 
 from .utils import (  # isort:skip
     execute_eagerly_on_celery,
@@ -281,7 +281,7 @@ def test_execute_eagerly_retries_pipeline_on_celery():
 
 def test_engine_error(instance, tempdir):
     with mock.patch(
-        "dagster.core.execution.context.system.PlanData.raise_on_error",
+        "dagster._core.execution.context.system.PlanData.raise_on_error",
         return_value=True,
     ):
         with pytest.raises(DagsterSubprocessError):

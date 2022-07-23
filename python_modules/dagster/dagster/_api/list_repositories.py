@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
+from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ListRepositoriesResponse
 from dagster._serdes import deserialize_as
 from dagster._utils.error import SerializableErrorInfo
-from dagster.core.errors import DagsterUserCodeProcessError
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 if TYPE_CHECKING:
     from dagster._grpc.client import DagsterGrpcClient

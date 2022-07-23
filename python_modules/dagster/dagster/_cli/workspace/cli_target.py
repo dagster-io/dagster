@@ -7,21 +7,19 @@ import click
 from click import UsageError
 
 import dagster._check as check
-from dagster._grpc.utils import get_loadable_targets
-from dagster._utils.hosted_user_process import recon_repository_from_origin
-from dagster.core.code_pointer import CodePointer
-from dagster.core.definitions.reconstruct import repository_def_from_target_def
-from dagster.core.definitions.repository_definition import RepositoryDefinition
-from dagster.core.host_representation.external import ExternalRepository
-from dagster.core.host_representation.repository_location import RepositoryLocation
-from dagster.core.instance import DagsterInstance
-from dagster.core.origin import (
+from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.reconstruct import repository_def_from_target_def
+from dagster._core.definitions.repository_definition import RepositoryDefinition
+from dagster._core.host_representation.external import ExternalRepository
+from dagster._core.host_representation.repository_location import RepositoryLocation
+from dagster._core.instance import DagsterInstance
+from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     PipelinePythonOrigin,
     RepositoryPythonOrigin,
 )
-from dagster.core.workspace.context import WorkspaceRequestContext
-from dagster.core.workspace.load_target import (
+from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster._core.workspace.load_target import (
     EmptyWorkspaceTarget,
     GrpcServerTarget,
     ModuleTarget,
@@ -29,11 +27,13 @@ from dagster.core.workspace.load_target import (
     PythonFileTarget,
     WorkspaceFileTarget,
 )
+from dagster._grpc.utils import get_loadable_targets
+from dagster._utils.hosted_user_process import recon_repository_from_origin
 
 if TYPE_CHECKING:
-    from dagster.core.workspace.context import WorkspaceProcessContext
+    from dagster._core.workspace.context import WorkspaceProcessContext
 
-from dagster.core.host_representation.external import ExternalPipeline
+from dagster._core.host_representation.external import ExternalPipeline
 
 WORKSPACE_TARGET_WARNING = "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m, --grpc-port, --grpc-socket."
 
@@ -175,7 +175,7 @@ def get_workspace_load_target(kwargs: Dict[str, str]):
 def get_workspace_process_context_from_kwargs(
     instance: DagsterInstance, version: str, read_only: bool, kwargs: Dict[str, str]
 ) -> "WorkspaceProcessContext":
-    from dagster.core.workspace import WorkspaceProcessContext
+    from dagster._core.workspace import WorkspaceProcessContext
 
     return WorkspaceProcessContext(
         instance, get_workspace_load_target(kwargs), version=version, read_only=read_only

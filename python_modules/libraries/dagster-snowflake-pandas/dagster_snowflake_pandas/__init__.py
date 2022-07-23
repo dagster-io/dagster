@@ -1,4 +1,4 @@
-from dagster.core.utils import check_dagster_package_version
+from dagster._core.utils import check_dagster_package_version
 
 from .snowflake_pandas_type_handler import SnowflakePandasTypeHandler
 from .version import __version__

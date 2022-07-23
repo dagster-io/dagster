@@ -5,7 +5,7 @@ from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader
 import dagster._seven as seven
 from dagster import AssetKey, DagsterEventType, EventRecordsFilter
 from dagster import _check as check
-from dagster.core.events import ASSET_EVENTS
+from dagster._core.events import ASSET_EVENTS
 
 from .utils import capture_error
 

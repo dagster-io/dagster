@@ -14,20 +14,20 @@ from dagster_test.test_project import get_test_project_workspace_and_external_pi
 
 from dagster import reconstructable
 from dagster._check import CheckError
-from dagster._grpc.types import ExecuteRunArgs
-from dagster._legacy import pipeline
-from dagster._utils import merge_dicts
-from dagster._utils.hosted_user_process import external_pipeline_from_recon_pipeline
-from dagster.core.host_representation import RepositoryHandle
-from dagster.core.launcher import LaunchRunContext
-from dagster.core.storage.tags import DOCKER_IMAGE_TAG
-from dagster.core.test_utils import (
+from dagster._core.host_representation import RepositoryHandle
+from dagster._core.launcher import LaunchRunContext
+from dagster._core.storage.tags import DOCKER_IMAGE_TAG
+from dagster._core.test_utils import (
     create_run_for_test,
     environ,
     in_process_test_workspace,
     instance_for_test,
 )
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._grpc.types import ExecuteRunArgs
+from dagster._legacy import pipeline
+from dagster._utils import merge_dicts
+from dagster._utils.hosted_user_process import external_pipeline_from_recon_pipeline
 
 
 def test_empty_celery_config():

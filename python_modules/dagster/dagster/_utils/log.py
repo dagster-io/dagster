@@ -11,8 +11,8 @@ import pendulum
 import dagster._check as check
 import dagster._seven as seven
 from dagster._config import Enum, EnumValue
-from dagster.core.definitions.logger_definition import logger
-from dagster.core.utils import PYTHON_LOGGING_LEVELS_MAPPING, coerce_valid_log_level
+from dagster._core.definitions.logger_definition import logger
+from dagster._core.utils import PYTHON_LOGGING_LEVELS_MAPPING, coerce_valid_log_level
 
 LogLevelEnum = Enum("log_level", list(map(EnumValue, PYTHON_LOGGING_LEVELS_MAPPING.keys())))
 

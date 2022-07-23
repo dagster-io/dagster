@@ -4,10 +4,10 @@ import sys
 from contextlib import contextmanager
 
 import dagster._check as check
+from dagster._core.definitions.reconstruct import ReconstructableRepository
+from dagster._core.host_representation import InProcessRepositoryLocationOrigin
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._utils import file_relative_path, git_repository_root
-from dagster.core.definitions.reconstruct import ReconstructableRepository
-from dagster.core.host_representation import InProcessRepositoryLocationOrigin
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

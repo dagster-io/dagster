@@ -1,6 +1,6 @@
 import pytest
 
-from dagster.core.test_utils import environ, instance_for_test
+from dagster._core.test_utils import environ, instance_for_test
 
 MINIMAL_KUBECONFIG_CONTENT = """
 apiVersion: v1

@@ -11,13 +11,13 @@ from grpc_health.v1.health_pb2_grpc import HealthStub
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.events import EngineEventData
+from dagster._core.host_representation.origin import ExternalRepositoryOrigin
+from dagster._core.instance import DagsterInstance
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import serialize_dagster_namedtuple
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster.core.errors import DagsterUserCodeUnreachableError
-from dagster.core.events import EngineEventData
-from dagster.core.host_representation.origin import ExternalRepositoryOrigin
-from dagster.core.instance import DagsterInstance
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 from .__generated__ import DagsterApiStub, api_pb2
 from .server import GrpcServerProcess

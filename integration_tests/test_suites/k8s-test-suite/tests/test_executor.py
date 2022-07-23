@@ -30,11 +30,11 @@ from dagster_test.test_project import (
 from dagster_test.test_project.test_pipelines.repo import define_memoization_pipeline
 
 import dagster._check as check
+from dagster._core.events import DagsterEventType
+from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._utils import load_yaml_from_path, merge_dicts
 from dagster._utils.merger import deep_merge_dicts
-from dagster.core.events import DagsterEventType
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 
 
 @pytest.mark.integration

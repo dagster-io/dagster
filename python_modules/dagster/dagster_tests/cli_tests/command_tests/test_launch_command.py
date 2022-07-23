@@ -5,10 +5,10 @@ from click.testing import CliRunner
 from dagster import execute_pipeline
 from dagster._cli.job import job_launch_command
 from dagster._cli.pipeline import execute_launch_command, pipeline_launch_command
+from dagster._core.errors import DagsterRunAlreadyExists
+from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.test_utils import new_cwd
 from dagster._utils import file_relative_path
-from dagster.core.errors import DagsterRunAlreadyExists
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.test_utils import new_cwd
 
 from .test_cli_commands import (
     default_cli_test_instance,
@@ -256,7 +256,7 @@ def test_launch_queued(gen_pipeline_args):
         overrides={
             "run_coordinator": {
                 "class": "QueuedRunCoordinator",
-                "module": "dagster.core.run_coordinator",
+                "module": "dagster._core.run_coordinator",
             }
         }
     ) as instance:
@@ -288,7 +288,7 @@ def test_job_launch_queued(gen_pipeline_args):
         overrides={
             "run_coordinator": {
                 "class": "QueuedRunCoordinator",
-                "module": "dagster.core.run_coordinator",
+                "module": "dagster._core.run_coordinator",
             }
         }
     ) as instance:

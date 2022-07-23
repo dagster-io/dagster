@@ -11,10 +11,10 @@ from airflow.settings import LOG_FORMAT
 from airflow.utils import timezone
 
 from dagster import file_relative_path
+from dagster._core.test_utils import instance_for_test
+from dagster._core.utils import make_new_run_id
 from dagster._utils import load_yaml_from_glob_list, merge_dicts
 from dagster._utils.test.postgres_instance import TestPostgresInstance
-from dagster.core.test_utils import instance_for_test
-from dagster.core.utils import make_new_run_id
 
 
 @contextmanager

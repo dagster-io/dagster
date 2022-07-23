@@ -30,7 +30,7 @@ from dagster import (
     op,
 )
 from dagster._config import process_config, validate_config
-from dagster.core.definitions import create_run_config_schema
+from dagster._core.definitions import create_run_config_schema
 
 
 def dataset_exists(name):

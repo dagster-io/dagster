@@ -7,18 +7,11 @@ from typing import Generator, List, Optional
 import pendulum
 
 import dagster._check as check
-from dagster._grpc.types import ExecutionPlanSnapshotArgs
-from dagster._serdes import deserialize_as
-from dagster._serdes.ipc import IPCErrorMessage
-from dagster._seven import nullcontext
-from dagster._utils import start_termination_thread
-from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.interrupts import capture_interrupts
-from dagster.core.definitions import ScheduleEvaluationContext
-from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
-from dagster.core.definitions.sensor_definition import SensorEvaluationContext
-from dagster.core.errors import (
+from dagster._core.definitions import ScheduleEvaluationContext
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
+from dagster._core.definitions.sensor_definition import SensorEvaluationContext
+from dagster._core.errors import (
     DagsterExecutionInterruptedError,
     DagsterRunNotFoundError,
     PartitionExecutionError,
@@ -26,10 +19,10 @@ from dagster.core.errors import (
     SensorExecutionError,
     user_code_error_boundary,
 )
-from dagster.core.events import DagsterEvent, EngineEventData
-from dagster.core.execution.api import create_execution_plan, execute_run_iterator
-from dagster.core.host_representation import external_pipeline_data_from_def
-from dagster.core.host_representation.external_data import (
+from dagster._core.events import DagsterEvent, EngineEventData
+from dagster._core.execution.api import create_execution_plan, execute_run_iterator
+from dagster._core.host_representation import external_pipeline_data_from_def
+from dagster._core.host_representation.external_data import (
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
     ExternalPartitionExecutionParamData,
@@ -40,12 +33,19 @@ from dagster.core.host_representation.external_data import (
     ExternalScheduleExecutionErrorData,
     ExternalSensorExecutionErrorData,
 )
-from dagster.core.instance import DagsterInstance
-from dagster.core.snap.execution_plan_snapshot import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
     snapshot_from_execution_plan,
 )
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._grpc.types import ExecutionPlanSnapshotArgs
+from dagster._serdes import deserialize_as
+from dagster._serdes.ipc import IPCErrorMessage
+from dagster._seven import nullcontext
+from dagster._utils import start_termination_thread
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.interrupts import capture_interrupts
 
 from .types import ExecuteExternalPipelineArgs
 

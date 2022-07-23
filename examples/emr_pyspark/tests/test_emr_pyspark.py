@@ -1,7 +1,7 @@
 """Launching in EMR is prohibitively time consuming, so we just verify that the plan compiles"""
 import os
 
-from dagster.core.execution.api import create_execution_plan
+from dagster._core.execution.api import create_execution_plan
 
 from ..repo import make_and_filter_data_emr, make_and_filter_data_local
 

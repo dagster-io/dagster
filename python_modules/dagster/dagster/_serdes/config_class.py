@@ -1,14 +1,28 @@
 import importlib
 from abc import ABC, abstractmethod
-from typing import NamedTuple
+from typing import Any, Dict, NamedTuple
 
 import dagster._check as check
+from dagster._utils import convert_dagster_submodule_name
 from dagster._utils.yaml_utils import load_run_config_yaml
 
-from .serdes import whitelist_for_serdes
+from .serdes import DefaultNamedTupleSerializer, WhitelistMap, whitelist_for_serdes
 
 
-@whitelist_for_serdes
+class ConfigurableClassDataSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def value_to_storage_dict(
+        cls,
+        value: NamedTuple,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> Dict[str, Any]:
+        dct = super().value_to_storage_dict(value, whitelist_map, descent_path)
+        dct["module_name"] = convert_dagster_submodule_name(value.module_name, "public")  # type: ignore
+        return dct
+
+
+@whitelist_for_serdes(serializer=ConfigurableClassDataSerializer)
 class ConfigurableClassData(
     NamedTuple(
         "_ConfigurableClassData",
@@ -31,7 +45,7 @@ class ConfigurableClassData(
     def __new__(cls, module_name, class_name, config_yaml):
         return super(ConfigurableClassData, cls).__new__(
             cls,
-            check.str_param(module_name, "module_name"),
+            convert_dagster_submodule_name(check.str_param(module_name, "module_name"), "private"),
             check.str_param(class_name, "class_name"),
             check.str_param(config_yaml, "config_yaml"),
         )
@@ -49,7 +63,7 @@ class ConfigurableClassData(
 
     def rehydrate(self):
         from dagster._config import process_config, resolve_to_config_type
-        from dagster.core.errors import DagsterInvalidConfigError
+        from dagster._core.errors import DagsterInvalidConfigError
 
         try:
             module = importlib.import_module(self.module_name)
@@ -140,7 +154,7 @@ class ConfigurableClass(ABC):
         Args:
             config_value (dict): The validated config value to use. Typically this should be the
                 ``value`` attribute of a
-                :py:class:`~dagster.core.types.evaluator.evaluation.EvaluateValueResult`.
+                :py:class:`~dagster._core.types.evaluator.evaluation.EvaluateValueResult`.
 
 
         A common pattern is for the implementation to align the config_value with the signature

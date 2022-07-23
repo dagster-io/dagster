@@ -5,8 +5,8 @@ from graphql import graphql
 from graphql.execution.executors.sync import SyncExecutor
 
 from dagster._cli.workspace import get_workspace_process_context_from_kwargs
+from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
-from dagster.core.test_utils import instance_for_test
 
 
 def test_execute_hammer_through_dagit():

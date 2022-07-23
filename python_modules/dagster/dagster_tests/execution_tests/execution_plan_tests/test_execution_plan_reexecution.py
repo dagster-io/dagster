@@ -13,15 +13,15 @@ from dagster import (
     lambda_solid,
     reexecute_pipeline,
 )
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
-from dagster.core.events import get_step_output_event
-from dagster.core.execution.api import execute_plan
-from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.core.instance import DagsterInstance
-from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster.core.test_utils import default_mode_def_for_test
+from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
+from dagster._core.events import get_step_output_event
+from dagster._core.execution.api import execute_plan
+from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.instance import DagsterInstance
+from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.test_utils import default_mode_def_for_test
 
 
 def define_addy_pipeline(using_file_system=False):

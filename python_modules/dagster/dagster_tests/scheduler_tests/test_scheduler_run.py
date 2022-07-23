@@ -20,6 +20,29 @@ from dagster import (
     repository,
     schedule,
 )
+from dagster._core.definitions.run_request import RunRequest
+from dagster._core.host_representation import (
+    ExternalInstigatorOrigin,
+    ExternalRepositoryOrigin,
+    GrpcServerRepositoryLocation,
+    GrpcServerRepositoryLocationOrigin,
+)
+from dagster._core.scheduler.instigation import (
+    InstigatorState,
+    InstigatorStatus,
+    InstigatorType,
+    ScheduleInstigatorData,
+    TickData,
+    TickStatus,
+)
+from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
+from dagster._core.test_utils import (
+    create_test_daemon_workspace,
+    instance_for_test,
+    mock_system_timezone,
+)
+from dagster._core.workspace.load_target import EmptyWorkspaceTarget, GrpcServerTarget, ModuleTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._grpc.client import EphemeralDagsterGrpcClient
 from dagster._grpc.server import open_server_process
@@ -29,29 +52,6 @@ from dagster._seven import wait_for_process
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster._utils import find_free_port
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT
-from dagster.core.definitions.run_request import RunRequest
-from dagster.core.host_representation import (
-    ExternalInstigatorOrigin,
-    ExternalRepositoryOrigin,
-    GrpcServerRepositoryLocation,
-    GrpcServerRepositoryLocationOrigin,
-)
-from dagster.core.scheduler.instigation import (
-    InstigatorState,
-    InstigatorStatus,
-    InstigatorType,
-    ScheduleInstigatorData,
-    TickData,
-    TickStatus,
-)
-from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
-from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
-from dagster.core.test_utils import (
-    create_test_daemon_workspace,
-    instance_for_test,
-    mock_system_timezone,
-)
-from dagster.core.workspace.load_target import EmptyWorkspaceTarget, GrpcServerTarget, ModuleTarget
 
 from .conftest import loadable_target_origin, workspace_load_target
 
@@ -1516,7 +1516,7 @@ def test_launch_failure(workspace, external_repo):
     with instance_for_test(
         overrides={
             "run_launcher": {
-                "module": "dagster.core.test_utils",
+                "module": "dagster._core.test_utils",
                 "class": "ExplodingRunLauncher",
             },
         },

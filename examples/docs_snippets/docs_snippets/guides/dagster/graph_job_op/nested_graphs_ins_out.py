@@ -1,5 +1,5 @@
 from dagster import In, Out, graph, op
-from dagster.core.definitions.output import GraphOut
+from dagster._core.definitions.output import GraphOut
 
 
 @op

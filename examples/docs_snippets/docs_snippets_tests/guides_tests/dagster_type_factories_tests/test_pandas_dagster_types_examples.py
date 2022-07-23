@@ -5,7 +5,7 @@ import pytest
 
 import docs_snippets.guides.dagster.dagster_type_factories as example_root
 from dagster import check_dagster_type
-from dagster.core.errors import DagsterTypeCheckDidNotPass
+from dagster._core.errors import DagsterTypeCheckDidNotPass
 from docs_snippets.guides.dagster.dagster_type_factories.job_1 import (
     generate_trip_distribution_plot as job_1,
 )

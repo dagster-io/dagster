@@ -1,7 +1,7 @@
 import logging
 
 from dagster import ConfigMapping, DagsterInstance, Field, JobDefinition, job, logger, op, resource
-from dagster.core.utils import coerce_valid_log_level
+from dagster._core.utils import coerce_valid_log_level
 
 
 def test_basic_job():

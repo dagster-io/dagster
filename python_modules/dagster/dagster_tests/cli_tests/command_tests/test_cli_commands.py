@@ -29,16 +29,16 @@ from dagster._cli import ENV_PREFIX, cli
 from dagster._cli.job import job_execute_command
 from dagster._cli.pipeline import pipeline_execute_command
 from dagster._cli.run import run_delete_command, run_list_command, run_wipe_command
+from dagster._core.definitions.decorators.sensor_decorator import sensor
+from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
+from dagster._core.definitions.sensor_definition import RunRequest
+from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
+from dagster._core.storage.tags import MEMOIZED_RUN_TAG
+from dagster._core.test_utils import instance_for_test
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.server import GrpcServerProcess
 from dagster._legacy import pipeline, solid
 from dagster._utils import file_relative_path, merge_dicts
-from dagster.core.definitions.decorators.sensor_decorator import sensor
-from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
-from dagster.core.definitions.sensor_definition import RunRequest
-from dagster.core.storage.memoizable_io_manager import versioned_filesystem_io_manager
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG
-from dagster.core.test_utils import instance_for_test
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.version import __version__
 
 
@@ -273,7 +273,7 @@ multiproc_job = multiproc.to_job()
 def _default_cli_test_instance_tempdir(temp_dir, overrides=None):
     default_overrides = {
         "run_launcher": {
-            "module": "dagster.core.test_utils",
+            "module": "dagster._core.test_utils",
             "class": "MockedRunLauncher",
         }
     }
@@ -281,7 +281,7 @@ def _default_cli_test_instance_tempdir(temp_dir, overrides=None):
         temp_dir=temp_dir,
         overrides=merge_dicts(default_overrides, (overrides if overrides else {})),
     ) as instance:
-        with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
+        with mock.patch("dagster._core.instance.DagsterInstance.get") as _instance:
             _instance.return_value = instance
             yield instance
 

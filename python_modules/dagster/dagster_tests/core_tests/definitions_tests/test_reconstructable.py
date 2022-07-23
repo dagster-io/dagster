@@ -5,17 +5,17 @@ import types
 import pytest
 
 from dagster import DagsterInvariantViolationError, PipelineDefinition, lambda_solid
-from dagster._legacy import pipeline
-from dagster._utils import file_relative_path
-from dagster._utils.hosted_user_process import recon_pipeline_from_origin
-from dagster.core.code_pointer import FileCodePointer
-from dagster.core.definitions.reconstruct import reconstructable
-from dagster.core.origin import (
+from dagster._core.code_pointer import FileCodePointer
+from dagster._core.definitions.reconstruct import reconstructable
+from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     PipelinePythonOrigin,
     RepositoryPythonOrigin,
 )
-from dagster.core.snap import PipelineSnapshot, create_pipeline_snapshot_id
+from dagster._core.snap import PipelineSnapshot, create_pipeline_snapshot_id
+from dagster._legacy import pipeline
+from dagster._utils import file_relative_path
+from dagster._utils.hosted_user_process import recon_pipeline_from_origin
 
 
 @lambda_solid

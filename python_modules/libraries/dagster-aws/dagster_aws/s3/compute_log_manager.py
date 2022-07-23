@@ -7,15 +7,18 @@ from botocore.errorfactory import ClientError
 import dagster._seven as seven
 from dagster import Field, StringSource
 from dagster import _check as check
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import ensure_dir, ensure_file
-from dagster.core.storage.compute_log_manager import (
+from dagster._core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
     ComputeIOType,
     ComputeLogFileData,
     ComputeLogManager,
 )
-from dagster.core.storage.local_compute_log_manager import IO_TYPE_EXTENSION, LocalComputeLogManager
+from dagster._core.storage.local_compute_log_manager import (
+    IO_TYPE_EXTENSION,
+    LocalComputeLogManager,
+)
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._utils import ensure_dir, ensure_file
 
 
 class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):

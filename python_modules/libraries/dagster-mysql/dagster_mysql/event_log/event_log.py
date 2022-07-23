@@ -1,22 +1,22 @@
 import sqlalchemy as db
 
 import dagster._check as check
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster.core.storage.config import mysql_config
-from dagster.core.storage.event_log import (
+from dagster._core.storage.config import mysql_config
+from dagster._core.storage.event_log import (
     AssetKeyTable,
     SqlEventLogStorage,
     SqlEventLogStorageMetadata,
     SqlPollingEventWatcher,
 )
-from dagster.core.storage.event_log.base import EventLogCursor
-from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
-from dagster.core.storage.sql import (
+from dagster._core.storage.event_log.base import EventLogCursor
+from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._core.storage.sql import (
     check_alembic_revision,
     create_engine,
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from ..utils import (
     MYSQL_POOL_RECYCLE,

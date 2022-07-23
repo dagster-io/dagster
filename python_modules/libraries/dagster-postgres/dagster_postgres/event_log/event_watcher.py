@@ -4,9 +4,9 @@ from collections import defaultdict
 from typing import Callable, List, MutableMapping, Optional
 
 import dagster._check as check
-from dagster.core.events.log import EventLogEntry
-from dagster.core.storage.event_log.base import EventLogCursor
-from dagster.core.storage.event_log.polling_event_watcher import CallbackAfterCursor
+from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.event_log.base import EventLogCursor
+from dagster._core.storage.event_log.polling_event_watcher import CallbackAfterCursor
 
 from ..pynotify import await_pg_notifications
 

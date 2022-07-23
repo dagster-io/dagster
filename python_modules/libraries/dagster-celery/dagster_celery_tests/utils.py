@@ -5,9 +5,9 @@ import tempfile
 from contextlib import contextmanager
 
 from dagster import execute_pipeline
-from dagster.core.definitions.reconstruct import ReconstructablePipeline
-from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import instance_for_test
+from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import instance_for_test
 
 BUILDKITE = os.getenv("BUILDKITE")
 

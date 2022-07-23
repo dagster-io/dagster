@@ -6,19 +6,19 @@ from dagster_k8s.launcher import K8sRunLauncher
 from dagster import Field, IntSource, StringSource
 from dagster import _check as check
 from dagster import executor
-from dagster._utils import frozentags, merge_dicts
-from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
-from dagster.core.errors import DagsterUnmetExecutorRequirementsError
-from dagster.core.events import DagsterEvent, EngineEventData, MetadataEntry
-from dagster.core.execution.retries import RetryMode, get_retries_config
-from dagster.core.executor.base import Executor
-from dagster.core.executor.init import InitExecutorContext
-from dagster.core.executor.step_delegating import (
+from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
+from dagster._core.errors import DagsterUnmetExecutorRequirementsError
+from dagster._core.events import DagsterEvent, EngineEventData, MetadataEntry
+from dagster._core.execution.retries import RetryMode, get_retries_config
+from dagster._core.executor.base import Executor
+from dagster._core.executor.init import InitExecutorContext
+from dagster._core.executor.step_delegating import (
     CheckStepHealthResult,
     StepDelegatingExecutor,
     StepHandler,
     StepHandlerContext,
 )
+from dagster._utils import frozentags, merge_dicts
 
 from .container_context import K8sContainerContext
 from .job import (

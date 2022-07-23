@@ -1,7 +1,7 @@
 import graphene
 
-from dagster.core.scheduler.instigation import TickStatus
-from dagster.core.storage.pipeline_run import RunsFilter
+from dagster._core.scheduler.instigation import TickStatus
+from dagster._core.storage.pipeline_run import RunsFilter
 
 from ..errors import GraphenePythonError
 from ..instigation import GrapheneInstigationTickStatus

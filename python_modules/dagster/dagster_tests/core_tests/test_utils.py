@@ -1,7 +1,7 @@
 import pytest
 
-from dagster.core.test_utils import environ
-from dagster.core.utils import parse_env_var
+from dagster._core.test_utils import environ
+from dagster._core.utils import parse_env_var
 
 
 def test_parse_env_var_no_equals():

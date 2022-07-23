@@ -4,7 +4,7 @@ import dateutil
 
 from dagster import AssetKey, AssetMaterialization, AssetObservation, MetadataValue, Output
 from dagster import _check as check
-from dagster.core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.metadata import RawMetadataValue
 
 from .types import DbtOutput
 

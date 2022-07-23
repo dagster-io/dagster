@@ -16,6 +16,20 @@ from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.reconstruct import ReconstructableRepository
+from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.host_representation.external_data import (
+    ExternalRepositoryErrorData,
+    external_repository_data_from_def,
+)
+from dagster._core.host_representation.origin import (
+    ExternalPipelineOrigin,
+    ExternalRepositoryOrigin,
+)
+from dagster._core.instance import DagsterInstance
+from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
@@ -24,17 +38,6 @@ from dagster._serdes import (
 from dagster._serdes.ipc import IPCErrorMessage, ipc_write_stream, open_ipc_subprocess
 from dagster._utils import find_free_port, frozenlist, safe_tempfile_path_unmanaged
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from dagster.core.code_pointer import CodePointer
-from dagster.core.definitions.reconstruct import ReconstructableRepository
-from dagster.core.errors import DagsterUserCodeUnreachableError
-from dagster.core.host_representation.external_data import (
-    ExternalRepositoryErrorData,
-    external_repository_data_from_def,
-)
-from dagster.core.host_representation.origin import ExternalPipelineOrigin, ExternalRepositoryOrigin
-from dagster.core.instance import DagsterInstance
-from dagster.core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 from .__generated__ import api_pb2
 from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServicer_to_server
@@ -992,7 +995,7 @@ def open_server_process(
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
     check.opt_int_param(max_workers, "max_workers")
 
-    from dagster.core.test_utils import get_mocked_system_timezone
+    from dagster._core.test_utils import get_mocked_system_timezone
 
     mocked_system_timezone = get_mocked_system_timezone()
 

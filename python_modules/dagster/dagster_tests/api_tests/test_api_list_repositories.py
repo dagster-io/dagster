@@ -8,11 +8,11 @@ from dagster._api.list_repositories import (
     sync_list_repositories_ephemeral_grpc,
     sync_list_repositories_grpc,
 )
+from dagster._core.code_pointer import FileCodePointer, ModuleCodePointer, PackageCodePointer
+from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._grpc.types import LoadableRepositorySymbol
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
 from dagster._utils import file_relative_path
-from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer, PackageCodePointer
-from dagster.core.errors import DagsterUserCodeProcessError
 
 
 def test_sync_list_python_file_grpc():

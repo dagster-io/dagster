@@ -9,11 +9,11 @@ from dagit.cli import dagit, host_dagit_ui_with_workspace_process_context
 from starlette.testclient import TestClient
 
 from dagster import _seven
+from dagster._core.instance import DagsterInstance
+from dagster._core.telemetry import START_DAGIT_WEBSERVER, UPDATE_REPO_STATS, hash_name
+from dagster._core.test_utils import instance_for_test
+from dagster._core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster._utils import file_relative_path
-from dagster.core.instance import DagsterInstance
-from dagster.core.telemetry import START_DAGIT_WEBSERVER, UPDATE_REPO_STATS, hash_name
-from dagster.core.test_utils import instance_for_test
-from dagster.core.workspace.load import load_workspace_process_context_from_yaml_paths
 
 
 def test_create_app_with_workspace():

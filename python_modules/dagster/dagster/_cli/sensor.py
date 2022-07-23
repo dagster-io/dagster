@@ -12,16 +12,16 @@ from dagster._cli.workspace.cli_target import (
     get_repository_location_from_kwargs,
     repository_target_argument,
 )
-from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.yaml_utils import dump_run_config_yaml
-from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.host_representation import ExternalRepository
-from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.instigation import (
+from dagster._core.definitions.run_request import InstigatorType
+from dagster._core.host_representation import ExternalRepository
+from dagster._core.instance import DagsterInstance
+from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
     SensorInstigatorData,
 )
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.yaml_utils import dump_run_config_yaml
 
 
 @click.group(name="sensor")

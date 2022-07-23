@@ -2,18 +2,18 @@ import docker
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
 
 import dagster._check as check
-from dagster._grpc.types import ExecuteRunArgs, ResumeRunArgs
-from dagster._serdes import ConfigurableClass
-from dagster.core.launcher.base import (
+from dagster._core.launcher.base import (
     CheckRunHealthResult,
     LaunchRunContext,
     ResumeRunContext,
     RunLauncher,
     WorkerStatus,
 )
-from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.storage.tags import DOCKER_IMAGE_TAG
-from dagster.core.utils import parse_env_var
+from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.storage.tags import DOCKER_IMAGE_TAG
+from dagster._core.utils import parse_env_var
+from dagster._grpc.types import ExecuteRunArgs, ResumeRunArgs
+from dagster._serdes import ConfigurableClass
 
 from .container_context import DockerContainerContext
 

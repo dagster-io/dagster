@@ -1,7 +1,7 @@
 import dagster._check as check
-from dagster.core.events import DagsterEvent
-from dagster.core.events.utils import filter_dagster_events_from_cli_logs
-from dagster.core.execution.plan.objects import StepSuccessData
+from dagster._core.events import DagsterEvent
+from dagster._core.events.utils import filter_dagster_events_from_cli_logs
+from dagster._core.execution.plan.objects import StepSuccessData
 
 
 def test_filter_dagster_events_from_cli_logs():

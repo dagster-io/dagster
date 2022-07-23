@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING
 
 import dagster._check as check
+from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._utils.error import SerializableErrorInfo
-from dagster.core.errors import DagsterUserCodeProcessError
 
 if TYPE_CHECKING:
     from dagster._grpc.client import DagsterGrpcClient

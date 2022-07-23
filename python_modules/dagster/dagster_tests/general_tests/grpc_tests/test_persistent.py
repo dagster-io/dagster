@@ -9,6 +9,13 @@ import pytest
 
 from dagster import _seven
 from dagster._api.list_repositories import sync_list_repositories_grpc
+from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.host_representation.origin import (
+    ExternalRepositoryOrigin,
+    GrpcServerRepositoryLocationOrigin,
+)
+from dagster._core.test_utils import environ, instance_for_test, new_cwd
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import open_server_process, wait_for_grpc_server
 from dagster._grpc.types import SensorExecutionArgs
@@ -16,13 +23,6 @@ from dagster._serdes import deserialize_json_to_dagster_namedtuple
 from dagster._seven import get_system_temp_directory
 from dagster._utils import file_relative_path, find_free_port
 from dagster._utils.error import SerializableErrorInfo
-from dagster.core.errors import DagsterUserCodeUnreachableError
-from dagster.core.host_representation.origin import (
-    ExternalRepositoryOrigin,
-    GrpcServerRepositoryLocationOrigin,
-)
-from dagster.core.test_utils import environ, instance_for_test, new_cwd
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 
 def _get_ipc_output_file():
