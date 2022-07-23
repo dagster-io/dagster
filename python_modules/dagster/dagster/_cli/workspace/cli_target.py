@@ -7,6 +7,7 @@ import click
 from click import UsageError
 
 import dagster._check as check
+from dagster._grpc.utils import get_loadable_targets
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstruct import repository_def_from_target_def
 from dagster.core.definitions.repository_definition import RepositoryDefinition
@@ -27,7 +28,6 @@ from dagster.core.workspace.load_target import (
     PythonFileTarget,
     WorkspaceFileTarget,
 )
-from dagster.grpc.utils import get_loadable_targets
 from dagster.utils.hosted_user_process import recon_repository_from_origin
 
 if TYPE_CHECKING:

@@ -15,6 +15,10 @@ sys.meta_path.insert(
             "dagster.check": "dagster._check",
             "dagster.cli": "dagster._cli",
             "dagster.config": "dagster._config",
+            "dagster.daemon": "dagster._daemon",
+            "dagster.generate": "dagster._generate",
+            "dagster.grpc": "dagster._grpc",
+            "dagster.loggers": "dagster._loggers",
         }
     ),
 )
@@ -315,6 +319,14 @@ from dagster.utils.test import (
 )
 
 from .version import __version__
+
+# isort: split
+from dagster._loggers import (
+    colored_console_logger,
+    default_loggers,
+    default_system_loggers,
+    json_console_logger,
+)
 
 # ########################
 # ##### DEPRECATED ALIASES
@@ -724,4 +736,8 @@ __all__ = [
     "MEMOIZED_RUN_TAG",
     "MemoizableIOManager",
     "SourceHashVersionStrategy",
+    "colored_console_logger",
+    "default_loggers",
+    "default_system_loggers",
+    "json_console_logger",
 ]

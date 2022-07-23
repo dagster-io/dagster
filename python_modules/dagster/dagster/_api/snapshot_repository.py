@@ -9,8 +9,8 @@ from dagster.core.host_representation.external_data import (
 from dagster.serdes import deserialize_as
 
 if TYPE_CHECKING:
+    from dagster._grpc.client import DagsterGrpcClient
     from dagster.core.host_representation import RepositoryLocation
-    from dagster.grpc.client import DagsterGrpcClient
 
 
 def sync_get_streaming_external_repositories_data_grpc(

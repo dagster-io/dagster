@@ -13,9 +13,9 @@ from dagster_test.test_project import (
 )
 
 from dagster import seven
+from dagster._daemon.controller import all_daemons_healthy
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test, poll_for_finished_run
-from dagster.daemon.controller import all_daemons_healthy
 from dagster.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster.utils.merger import merge_dicts
 from dagster.utils.test.postgres_instance import postgres_instance_for_test

@@ -1,18 +1,18 @@
 from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
+from dagster._grpc.types import ListRepositoriesResponse
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.grpc.types import ListRepositoriesResponse
 from dagster.serdes import deserialize_as
 from dagster.utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
-    from dagster.grpc.client import DagsterGrpcClient
+    from dagster._grpc.client import DagsterGrpcClient
 
 
 def sync_list_repositories_grpc(api_client: "DagsterGrpcClient") -> ListRepositoriesResponse:
-    from dagster.grpc.client import DagsterGrpcClient
+    from dagster._grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
     result = deserialize_as(
@@ -35,7 +35,7 @@ def sync_list_repositories_ephemeral_grpc(
     attribute: Optional[str],
     package_name: Optional[str],
 ):
-    from dagster.grpc.client import ephemeral_grpc_api_client
+    from dagster._grpc.client import ephemeral_grpc_api_client
 
     check.str_param(executable_path, "executable_path")
     check.opt_str_param(python_file, "python_file")

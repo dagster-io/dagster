@@ -1019,7 +1019,7 @@ def open_server_process(
 
     server_process = open_ipc_subprocess(subprocess_args)
 
-    from dagster.grpc.client import DagsterGrpcClient
+    from dagster._grpc.client import DagsterGrpcClient
 
     client = DagsterGrpcClient(
         port=port,
@@ -1138,7 +1138,7 @@ class GrpcServerProcess:
             seven.wait_for_process(self.server_process, timeout=timeout)
 
     def create_ephemeral_client(self):
-        from dagster.grpc.client import EphemeralDagsterGrpcClient
+        from dagster._grpc.client import EphemeralDagsterGrpcClient
 
         return EphemeralDagsterGrpcClient(
             port=self.port, socket=self.socket, server_process=self.server_process

@@ -3,6 +3,8 @@ import multiprocessing
 import pendulum
 import pytest
 
+from dagster._daemon import get_default_daemon_logger
+from dagster._daemon.sensor import execute_sensor_iteration
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
@@ -16,8 +18,6 @@ from dagster.core.test_utils import (
     get_logger_output_from_capfd,
     wait_for_futures,
 )
-from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.sensor import execute_sensor_iteration
 from dagster.seven import IS_WINDOWS
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 

@@ -1,17 +1,17 @@
 from typing import TYPE_CHECKING, Any
 
 import dagster._check as check
+from dagster._grpc.types import ExternalScheduleExecutionArgs
 from dagster.core.definitions.schedule_definition import ScheduleExecutionData
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.external_data import ExternalScheduleExecutionErrorData
 from dagster.core.host_representation.handle import RepositoryHandle
 from dagster.core.instance import DagsterInstance
-from dagster.grpc.types import ExternalScheduleExecutionArgs
 from dagster.serdes import deserialize_as
 from dagster.seven.compat.pendulum import PendulumDateTime
 
 if TYPE_CHECKING:
-    from dagster.grpc.client import DagsterGrpcClient
+    from dagster._grpc.client import DagsterGrpcClient
 
 
 def sync_get_external_schedule_execution_data_ephemeral_grpc(
@@ -20,7 +20,7 @@ def sync_get_external_schedule_execution_data_ephemeral_grpc(
     schedule_name: str,
     scheduled_execution_time: Any,
 ):
-    from dagster.grpc.client import ephemeral_grpc_api_client
+    from dagster._grpc.client import ephemeral_grpc_api_client
 
     origin = repository_handle.get_external_origin()
     with ephemeral_grpc_api_client(

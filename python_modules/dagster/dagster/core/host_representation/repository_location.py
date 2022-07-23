@@ -20,6 +20,16 @@ from dagster._api.snapshot_pipeline import sync_get_external_pipeline_subset_grp
 from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
 from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
+from dagster._grpc.impl import (
+    get_external_schedule_execution,
+    get_external_sensor_execution,
+    get_notebook_data,
+    get_partition_config,
+    get_partition_names,
+    get_partition_set_execution_param_data,
+    get_partition_tags,
+)
+from dagster._grpc.types import GetCurrentImageResult
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.errors import DagsterInvariantViolationError
@@ -41,16 +51,6 @@ from dagster.core.host_representation.origin import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryPythonOrigin
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
-from dagster.grpc.impl import (
-    get_external_schedule_execution,
-    get_external_sensor_execution,
-    get_notebook_data,
-    get_partition_config,
-    get_partition_names,
-    get_partition_set_execution_param_data,
-    get_partition_tags,
-)
-from dagster.grpc.types import GetCurrentImageResult
 from dagster.serdes import deserialize_as
 from dagster.seven.compat.pendulum import PendulumDateTime
 from dagster.utils import merge_dicts
@@ -267,7 +267,7 @@ class RepositoryLocation(AbstractContextManager):
 
 class InProcessRepositoryLocation(RepositoryLocation):
     def __init__(self, origin: InProcessRepositoryLocationOrigin):
-        from dagster.grpc.server import LoadedRepositories
+        from dagster._grpc.server import LoadedRepositories
 
         self._origin = check.inst_param(origin, "origin", InProcessRepositoryLocationOrigin)
 
@@ -345,7 +345,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             ),
         )
 
-        from dagster.grpc.impl import get_external_pipeline_subset_result
+        from dagster._grpc.impl import get_external_pipeline_subset_result
 
         return get_external_pipeline_subset_result(
             self.get_reconstructable_pipeline(selector.pipeline_name),
@@ -500,7 +500,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         watch_server: Optional[bool] = True,
         grpc_server_registry: Optional[GrpcServerRegistry] = None,
     ):
-        from dagster.grpc.client import DagsterGrpcClient, client_heartbeat_thread
+        from dagster._grpc.client import DagsterGrpcClient, client_heartbeat_thread
 
         self._origin = check.inst_param(origin, "origin", RepositoryLocationOrigin)
 

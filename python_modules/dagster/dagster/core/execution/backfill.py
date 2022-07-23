@@ -189,7 +189,7 @@ def submit_backfill_runs(instance, workspace, repo_location, backfill_job, parti
 def create_backfill_run(
     instance, repo_location, external_pipeline, external_partition_set, backfill_job, partition_data
 ):
-    from dagster.daemon.daemon import get_telemetry_daemon_session_id
+    from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(repo_location, "repo_location", RepositoryLocation)

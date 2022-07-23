@@ -7,6 +7,7 @@ from typing import Generator, List, Optional
 import pendulum
 
 import dagster._check as check
+from dagster._grpc.types import ExecutionPlanSnapshotArgs
 from dagster.core.definitions import ScheduleEvaluationContext
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
@@ -39,7 +40,6 @@ from dagster.core.snap.execution_plan_snapshot import (
     snapshot_from_execution_plan,
 )
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.grpc.types import ExecutionPlanSnapshotArgs
 from dagster.serdes import deserialize_as
 from dagster.serdes.ipc import IPCErrorMessage
 from dagster.seven import nullcontext

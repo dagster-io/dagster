@@ -22,6 +22,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._loggers import default_loggers, default_system_loggers
 from dagster.core.definitions import ExecutorDefinition, ModeDefinition, PipelineDefinition
 from dagster.core.definitions.executor_definition import check_cross_process_constraints
 from dagster.core.definitions.pipeline_base import IPipeline
@@ -40,7 +41,6 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster.loggers import default_loggers, default_system_loggers
 from dagster.utils import EventGenerationManager
 from dagster.utils.error import serializable_error_info_from_exc_info
 

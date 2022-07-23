@@ -8,6 +8,7 @@ from dagster_k8s.executor import K8sStepHandler, k8s_job_executor
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
 
 from dagster import PipelineDefinition, execute_pipeline
+from dagster._grpc.types import ExecuteStepArgs
 from dagster._legacy import solid
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.reconstruct import reconstructable
@@ -20,7 +21,6 @@ from dagster.core.executor.init import InitExecutorContext
 from dagster.core.executor.step_delegating.step_handler.base import StepHandlerContext
 from dagster.core.storage.fs_io_manager import fs_io_manager
 from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
-from dagster.grpc.types import ExecuteStepArgs
 
 
 def _get_pipeline(name, solid_tags=None):

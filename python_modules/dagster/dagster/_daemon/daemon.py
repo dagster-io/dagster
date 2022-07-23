@@ -12,12 +12,12 @@ import pendulum
 
 from dagster import DagsterInstance
 from dagster import _check as check
+from dagster._daemon.backfill import execute_backfill_iteration
+from dagster._daemon.monitoring import execute_monitoring_iteration
+from dagster._daemon.sensor import execute_sensor_iteration_loop
+from dagster._daemon.types import DaemonHeartbeat
 from dagster.core.telemetry import DAEMON_ALIVE, log_action
 from dagster.core.workspace import IWorkspace
-from dagster.daemon.backfill import execute_backfill_iteration
-from dagster.daemon.monitoring import execute_monitoring_iteration
-from dagster.daemon.sensor import execute_sensor_iteration_loop
-from dagster.daemon.types import DaemonHeartbeat
 from dagster.scheduler.scheduler import execute_scheduler_iteration_loop
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 

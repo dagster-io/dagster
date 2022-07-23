@@ -4,15 +4,15 @@ import pendulum
 import pytest
 
 from dagster import DagsterInvariantViolationError
-from dagster.core.test_utils import instance_for_test
-from dagster.core.workspace.load_target import EmptyWorkspaceTarget
-from dagster.daemon.controller import (
+from dagster._daemon.controller import (
     DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
     all_daemons_healthy,
     all_daemons_live,
     daemon_controller_from_instance,
     get_daemon_statuses,
 )
+from dagster.core.test_utils import instance_for_test
+from dagster.core.workspace.load_target import EmptyWorkspaceTarget
 from dagster.utils.error import SerializableErrorInfo
 
 
@@ -108,7 +108,7 @@ def test_healthy_with_different_daemons():
 
 def test_thread_die_daemon(monkeypatch):
     with instance_for_test(overrides={}) as instance:
-        from dagster.daemon.daemon import SchedulerDaemon, SensorDaemon
+        from dagster._daemon.daemon import SchedulerDaemon, SensorDaemon
 
         iteration_ran = {"ran": False}
 
@@ -182,7 +182,7 @@ def test_transient_heartbeat_failure(mocker):
 
 def test_error_daemon(monkeypatch):
     with instance_for_test() as instance:
-        from dagster.daemon.daemon import SensorDaemon
+        from dagster._daemon.daemon import SensorDaemon
 
         should_raise_errors = True
 
@@ -316,7 +316,7 @@ def test_error_daemon(monkeypatch):
 
 def test_multiple_error_daemon(monkeypatch):
     with instance_for_test() as instance:
-        from dagster.daemon.daemon import SensorDaemon
+        from dagster._daemon.daemon import SensorDaemon
 
         def run_loop_error(_, _instance, _workspace):
             # ?message stack cls_name cause"
@@ -366,7 +366,7 @@ def test_multiple_error_daemon(monkeypatch):
 
 
 def test_warn_multiple_daemons(capsys):
-    from dagster.daemon.daemon import SensorDaemon
+    from dagster._daemon.daemon import SensorDaemon
 
     with instance_for_test() as instance:
         init_time = pendulum.now("UTC")

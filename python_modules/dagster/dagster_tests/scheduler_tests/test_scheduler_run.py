@@ -20,6 +20,9 @@ from dagster import (
     repository,
     schedule,
 )
+from dagster._daemon import get_default_daemon_logger
+from dagster._grpc.client import EphemeralDagsterGrpcClient
+from dagster._grpc.server import open_server_process
 from dagster._legacy import pipeline, solid
 from dagster.core.definitions.run_request import RunRequest
 from dagster.core.host_representation import (
@@ -44,9 +47,6 @@ from dagster.core.test_utils import (
     mock_system_timezone,
 )
 from dagster.core.workspace.load_target import EmptyWorkspaceTarget, GrpcServerTarget, ModuleTarget
-from dagster.daemon import get_default_daemon_logger
-from dagster.grpc.client import EphemeralDagsterGrpcClient
-from dagster.grpc.server import open_server_process
 from dagster.scheduler.scheduler import launch_scheduled_runs
 from dagster.seven import wait_for_process
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone

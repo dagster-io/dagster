@@ -12,6 +12,9 @@ from dagster._cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,
 )
+from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
+from dagster._grpc.impl import core_execute_run
+from dagster._grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
 from dagster.core.definitions.metadata import MetadataEntry
 from dagster.core.errors import DagsterExecutionInterruptedError
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
@@ -25,12 +28,8 @@ from dagster.core.origin import (
     get_python_environment_entry_point,
 )
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.test_utils import mock_system_timezone
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.utils import coerce_valid_log_level
-from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer
-from dagster.grpc.impl import core_execute_run
-from dagster.grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
 from dagster.serdes import deserialize_as, serialize_dagster_namedtuple
 from dagster.seven import nullcontext
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -568,6 +567,8 @@ def grpc_command(
     container_context=None,
     **kwargs,
 ):
+    from dagster.core.test_utils import mock_system_timezone
+
     if seven.IS_WINDOWS and port is None:
         raise click.UsageError(
             "You must pass a valid --port/-p on Windows: --socket/-s not supported."

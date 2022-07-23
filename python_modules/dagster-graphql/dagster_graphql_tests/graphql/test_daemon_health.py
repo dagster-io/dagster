@@ -6,9 +6,9 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
 )
 
+from dagster._daemon.daemon import SensorDaemon
+from dagster._daemon.types import DaemonHeartbeat
 from dagster.core.scheduler import DagsterDaemonScheduler
-from dagster.daemon.daemon import SensorDaemon
-from dagster.daemon.types import DaemonHeartbeat
 from dagster.utils.error import SerializableErrorInfo
 
 INDIVIDUAL_DAEMON_QUERY = """

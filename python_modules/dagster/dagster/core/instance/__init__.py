@@ -81,6 +81,7 @@ AIRFLOW_EXECUTION_DATE_STR = "airflow_execution_date"
 IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 
 if TYPE_CHECKING:
+    from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
     from dagster.core.debug import DebugRunPayload
     from dagster.core.definitions.run_request import InstigatorType
     from dagster.core.events import DagsterEvent, DagsterEventType
@@ -105,7 +106,6 @@ if TYPE_CHECKING:
     from dagster.core.storage.runs import RunStorage
     from dagster.core.storage.schedules import ScheduleStorage
     from dagster.core.workspace.workspace import IWorkspace
-    from dagster.daemon.types import DaemonHeartbeat, DaemonStatus
 
 
 def _check_run_equality(
@@ -1748,9 +1748,9 @@ class DagsterInstance:
         Args:
             run_id (str): The id of the run the launch.
         """
+        from dagster._daemon.monitoring import RESUME_RUN_LOG_MESSAGE
         from dagster.core.events import EngineEventData
         from dagster.core.launcher import ResumeRunContext
-        from dagster.daemon.monitoring import RESUME_RUN_LOG_MESSAGE
 
         run = self.get_run_by_id(run_id)
         if run is None:
@@ -1788,7 +1788,7 @@ class DagsterInstance:
         return run
 
     def count_resume_run_attempts(self, run_id: str):
-        from dagster.daemon.monitoring import count_resume_run_attempts
+        from dagster._daemon.monitoring import count_resume_run_attempts
 
         return count_resume_run_attempts(self, run_id)
 
@@ -1992,18 +1992,18 @@ class DagsterInstance:
         self._run_storage.wipe_daemon_heartbeats()
 
     def get_required_daemon_types(self):
-        from dagster.core.run_coordinator import QueuedRunCoordinator
-        from dagster.core.scheduler import DagsterDaemonScheduler
-        from dagster.daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
-        from dagster.daemon.daemon import (
+        from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
+        from dagster._daemon.daemon import (
             BackfillDaemon,
             MonitoringDaemon,
             SchedulerDaemon,
             SensorDaemon,
         )
-        from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import (
+        from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import (
             QueuedRunCoordinatorDaemon,
         )
+        from dagster.core.run_coordinator import QueuedRunCoordinator
+        from dagster.core.scheduler import DagsterDaemonScheduler
 
         if self.is_ephemeral:
             return []
@@ -2026,7 +2026,7 @@ class DagsterInstance:
         Get the current status of the daemons. If daemon_types aren't provided, defaults to all
         required types. Returns a dict of daemon type to status.
         """
-        from dagster.daemon.controller import get_daemon_statuses
+        from dagster._daemon.controller import get_daemon_statuses
 
         check.opt_list_param(daemon_types, "daemon_types", of_type=str)
         return get_daemon_statuses(

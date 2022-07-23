@@ -4,13 +4,13 @@ from dagster_graphql.test.utils import (
     infer_repository_selector,
 )
 
+from dagster._daemon import get_default_daemon_logger
+from dagster._daemon.sensor import execute_sensor_iteration
 from dagster.core.test_utils import (
     SingleThreadPoolExecutor,
     create_test_daemon_workspace,
     wait_for_futures,
 )
-from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.sensor import execute_sensor_iteration
 
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 
