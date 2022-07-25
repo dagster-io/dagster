@@ -3,26 +3,118 @@
     "title": "Getting Started",
     "icon": "Sparkles",
     "path": "/getting-started",
+    "isDefaultOpen": true,
     "children": [
       {
         "title": "What is Dagster?",
-        "path": "/getting-started/what-is-dagster"
+        "path": "/getting-started/what-is-dagster",
+        "children": [
+          {
+            "title": "Architecture",
+            "path": "/getting-started/architecture"
+          },
+          {
+            "title": "Telemetry",
+            "path": "/getting-started/telemetry"
+          },
+          {
+            "title": "Community",
+            "path": "/community"
+          }
+        ]
       },
       {
-        "title": "Architecture",
-        "path": "/getting-started/architecture"
+        "title": "Setup",
+        "path": "/getting-started/setup",
+        "children": [
+          {
+            "title": "Installation",
+            "path": "/getting-started/installation"
+          },
+          {
+            "title": "Project structure",
+            "path": "/getting-started/create-new-project"
+          }
+        ]
       },
       {
-        "title": "Telemetry",
-        "path": "/getting-started/telemetry"
-      },
-      {
-        "title": "Installation",
-        "path": "/getting-started/installation"
-      },
-      {
-        "title": "Creating a project",
-        "path": "/getting-started/create-new-project"
+        "title": "Learning Dagster",
+        "path": "/understanding-dagster/concepts",
+        "isDefaultOpen": true,
+        "children": [
+          {
+            "title": "Ops",
+            "path": "/understanding-dagster/concepts/ops"
+          },
+          {
+            "title": "Assets",
+            "path": "/understanding-dagster/concepts/software-defined-assets"
+          },
+          {
+            "title": "Graphs",
+            "path": "/understanding-dagster/concepts/graphs"
+          },
+          {
+            "title": "Jobs",
+            "path": "/understanding-dagster/concepts/jobs"
+          },
+          {
+            "title": "Schedules",
+            "path": "/understanding-dagster/concepts/schedules"
+          },
+          {
+            "title": "Sensors",
+            "path": "/understanding-dagster/concepts/sensors"
+          },
+          {
+            "title": "Partitions",
+            "path": "/understanding-dagster/concepts/partitions"
+          },
+          {
+            "title": "Backfills",
+            "path": "/understanding-dagster/concepts/backfills"
+          },
+          {
+            "title": "I/O managers",
+            "path": "/understanding-dagster/concepts/io-managers"
+          },
+          {
+            "title": "Configuration",
+            "path": "/understanding-dagster/concepts/configuration"
+          },
+          {
+            "title": "Repositories",
+            "path": "/understanding-dagster/concepts/repositories"
+          },
+          {
+            "title": "Workspaces",
+            "path": "/understanding-dagster/concepts/workspaces"
+          },
+          {
+            "title": "Resources",
+            "path": "/understanding-dagster/concepts/resources"
+          },
+          {
+            "title": "Dagit",
+            "path": "/understanding-dagster/concepts/dagit"
+          },
+          {
+            "title": "GraphQL API",
+            "path": "/understanding-dagster/concepts/graphql-api"
+          },
+          {
+            "title": "Dagster types",
+            "path": "/understanding-dagster/concepts/dagster-types"
+          },
+          {
+            "title": "Logging",
+            "path": "/understanding-dagster/concepts/logging"
+          },
+          {
+            "title": "Testing",
+            "path": "/understanding-dagster/concepts/testing"
+          }
+        ]
       }
     ]
   },
@@ -30,32 +122,32 @@
     "title": "Building with Dagster",
     "icon": "Menu",
     "path": "/building",
-    "isDefaultOpen": true,
     "children": [
       {
-        "title": "Understanding Dagster",
+        "title": "Designing DAGs",
+        "path": "/building#designing-dags",
         "children": [
           {
-            "title": "Designing DAGs",
-            "path": "/building#designing-dags"
+            "title": "Using assets",
+            "path": "/"
           },
           {
-            "title": "Running Dagster",
-            "path": "/building#running-dagster"
-          },
-          {
-            "title": "Organizing Dagster projects",
-            "path": "/building#organizing-dagster-projects"
-          },
-          {
-            "title": "Customizing Dagster",
-            "path": "/building#customizing-dagster"
-          },
-          {
-            "title": "Testing and logging",
-            "path": "/building#testing-and-logging"
+            "title": "Using ops and jobs",
+            "path": "/"
           }
         ]
+      },
+      {
+        "title": "Running jobs",
+        "path": "/building#running-dagster"
+      },
+      {
+        "title": "Organizing projects",
+        "path": "/building#organizing-projects"
+      },
+      {
+        "title": "Testing and logging",
+        "path": "/building#organizing-projects"
       },
       {
         "title": "Using Dagit",
@@ -179,21 +271,6 @@
             "path": "/deployment#managing-instances-and-users"
           }
         ]
-      }
-    ]
-  },
-  {
-    "title": "Monitoring & debugging",
-    "icon": "Document",
-    "path": "/monitoring",
-    "children": [
-      {
-        "title": "Logging",
-        "path": "todo"
-      },
-      {
-        "title": "Errors",
-        "path": "todo"
       }
     ]
   },
