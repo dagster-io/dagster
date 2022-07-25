@@ -634,7 +634,9 @@ class GraphDefinition(NodeDefinition):
             # Using config mapping here is a trick to make it so that the preset will be used even
             # when no config is supplied for the job.
             config_mapping = _config_mapping_with_default_value(
-                self._get_config_schema(resource_defs_with_defaults, executor_def, logger_defs),
+                self._get_config_schema(
+                    resource_defs_with_defaults, executor_def, logger_defs, asset_layer
+                ),
                 config,
                 job_name,
                 self.name,
@@ -683,6 +685,7 @@ class GraphDefinition(NodeDefinition):
         resource_defs: Optional[Mapping[str, ResourceDefinition]],
         executor_def: "ExecutorDefinition",
         logger_defs: Optional[Mapping[str, LoggerDefinition]],
+        asset_layer: Optional["AssetLayer"],
     ) -> ConfigType:
         from .job_definition import JobDefinition
 
@@ -693,6 +696,7 @@ class GraphDefinition(NodeDefinition):
                 resource_defs=resource_defs,
                 executor_def=executor_def,
                 logger_defs=logger_defs,
+                asset_layer=asset_layer,
             )
             .get_run_config_schema("default")
             .run_config_schema_type
