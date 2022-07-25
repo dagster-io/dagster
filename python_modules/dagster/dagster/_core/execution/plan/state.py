@@ -101,13 +101,8 @@ class KnownExecutionState(
             key_type=str,
             value_type=dict,
         )
-        for step_key, outputs in dynamic_mappings.items():
-            for outname, mapping_keys in outputs.items():
-                check.is_list(
-                    mapping_keys,
-                    of_type=str,
-                    additional_message=f"Bad mapping_keys at {step_key}.{outname}",
-                )
+        # some old payloads (0.15.0 -> 0.15.6) were persisted with [None] mapping_keys
+        # in dynamic_mappings, so can't assert [str] here in __new__.
 
         return super(KnownExecutionState, cls).__new__(
             cls,
