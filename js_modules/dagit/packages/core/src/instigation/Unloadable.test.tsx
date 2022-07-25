@@ -60,7 +60,7 @@ describe('Unloadables', () => {
         render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocks]}}
-            permissionOverrides={{edit_sensor: true}}
+            permissionOverrides={{edit_sensor: {enabled: true, disabledReason: null}}}
           >
             <Test />
           </TestProvider>,
@@ -83,7 +83,7 @@ describe('Unloadables', () => {
         render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocks]}}
-            permissionOverrides={{edit_sensor: true}}
+            permissionOverrides={{edit_sensor: {enabled: true, disabledReason: null}}}
           >
             <Test />
           </TestProvider>,
@@ -106,7 +106,7 @@ describe('Unloadables', () => {
         render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocks]}}
-            permissionOverrides={{edit_sensor: false}}
+            permissionOverrides={{edit_sensor: {enabled: false, disabledReason: 'Nope'}}}
           >
             <Test />
           </TestProvider>,
@@ -129,7 +129,7 @@ describe('Unloadables', () => {
         render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocks]}}
-            permissionOverrides={{edit_sensor: false}}
+            permissionOverrides={{edit_sensor: {enabled: false, disabledReason: 'Nope'}}}
           >
             <Test />
           </TestProvider>,
@@ -168,7 +168,7 @@ describe('Unloadables', () => {
         render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocks]}}
-            permissionOverrides={{stop_running_schedule: true}}
+            permissionOverrides={{stop_running_schedule: {enabled: true, disabledReason: null}}}
           >
             <Test />
           </TestProvider>,
@@ -191,7 +191,7 @@ describe('Unloadables', () => {
         render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocks]}}
-            permissionOverrides={{start_schedule: true}}
+            permissionOverrides={{start_schedule: {enabled: true, disabledReason: null}}}
           >
             <Test />
           </TestProvider>,
@@ -214,7 +214,7 @@ describe('Unloadables', () => {
         render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocks]}}
-            permissionOverrides={{stop_running_schedule: false}}
+            permissionOverrides={{stop_running_schedule: {enabled: false, disabledReason: 'nope'}}}
           >
             <Test />
           </TestProvider>,
@@ -237,7 +237,7 @@ describe('Unloadables', () => {
         render(
           <TestProvider
             apolloProps={{mocks: [defaultMocks, mocks]}}
-            permissionOverrides={{start_schedule: false}}
+            permissionOverrides={{start_schedule: {enabled: false, disabledReason: 'nope'}}}
           >
             <Test />
           </TestProvider>,

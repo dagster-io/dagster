@@ -21,47 +21,58 @@ export const EXPECTED_PERMISSIONS = {
   cancel_partition_backfill: true,
 };
 
+export type PermissionResult = {
+  enabled: boolean;
+  disabledReason: string;
+};
+
 export type PermissionsFromJSON = {
-  launch_pipeline_execution?: boolean;
-  launch_pipeline_reexecution?: boolean;
-  start_schedule?: boolean;
-  stop_running_schedule?: boolean;
-  edit_sensor?: boolean;
-  terminate_pipeline_execution?: boolean;
-  delete_pipeline_run?: boolean;
-  reload_repository_location?: boolean;
-  reload_workspace?: boolean;
-  wipe_assets?: boolean;
-  launch_partition_backfill?: boolean;
-  cancel_partition_backfill?: boolean;
+  launch_pipeline_execution?: PermissionResult;
+  launch_pipeline_reexecution?: PermissionResult;
+  start_schedule?: PermissionResult;
+  stop_running_schedule?: PermissionResult;
+  edit_sensor?: PermissionResult;
+  terminate_pipeline_execution?: PermissionResult;
+  delete_pipeline_run?: PermissionResult;
+  reload_repository_location?: PermissionResult;
+  reload_workspace?: PermissionResult;
+  wipe_assets?: PermissionResult;
+  launch_partition_backfill?: PermissionResult;
+  cancel_partition_backfill?: PermissionResult;
+};
+
+const DEFAULT_PERMISSIONS = {
+  enabled: false,
+  disabledReason: 'Disabled by your administrator',
 };
 
 const extractPermissions = (permissions: PermissionFragment[]) => {
   const permsMap: PermissionsFromJSON = {};
   for (const item of permissions) {
-    permsMap[item.permission] = item.value;
+    permsMap[item.permission] = {
+      enabled: item.value,
+      disabledReason: item.disabledReason || '',
+    };
   }
 
   return {
-    canLaunchPipelineExecution: !!permsMap.launch_pipeline_execution,
-    canLaunchPipelineReexecution: !!permsMap.launch_pipeline_reexecution,
-    canStartSchedule: !!permsMap.start_schedule,
-    canStopRunningSchedule: !!permsMap.stop_running_schedule,
-    canStartSensor: !!permsMap.edit_sensor,
-    canStopSensor: !!permsMap.edit_sensor,
-    canTerminatePipelineExecution: !!permsMap.terminate_pipeline_execution,
-    canDeletePipelineRun: !!permsMap.delete_pipeline_run,
-    canReloadRepositoryLocation: !!permsMap.reload_repository_location,
-    canReloadWorkspace: !!permsMap.reload_workspace,
-    canWipeAssets: !!permsMap.wipe_assets,
-    canLaunchPartitionBackfill: !!permsMap.launch_partition_backfill,
-    canCancelPartitionBackfill: !!permsMap.cancel_partition_backfill,
+    canLaunchPipelineExecution: permsMap.launch_pipeline_execution || DEFAULT_PERMISSIONS,
+    canLaunchPipelineReexecution: permsMap.launch_pipeline_reexecution || DEFAULT_PERMISSIONS,
+    canStartSchedule: permsMap.start_schedule || DEFAULT_PERMISSIONS,
+    canStopRunningSchedule: permsMap.stop_running_schedule || DEFAULT_PERMISSIONS,
+    canStartSensor: permsMap.edit_sensor || DEFAULT_PERMISSIONS,
+    canStopSensor: permsMap.edit_sensor || DEFAULT_PERMISSIONS,
+    canTerminatePipelineExecution: permsMap.terminate_pipeline_execution || DEFAULT_PERMISSIONS,
+    canDeletePipelineRun: permsMap.delete_pipeline_run || DEFAULT_PERMISSIONS,
+    canReloadRepositoryLocation: permsMap.reload_repository_location || DEFAULT_PERMISSIONS,
+    canReloadWorkspace: permsMap.reload_workspace || DEFAULT_PERMISSIONS,
+    canWipeAssets: permsMap.wipe_assets || DEFAULT_PERMISSIONS,
+    canLaunchPartitionBackfill: permsMap.launch_partition_backfill || DEFAULT_PERMISSIONS,
+    canCancelPartitionBackfill: permsMap.cancel_partition_backfill || DEFAULT_PERMISSIONS,
   };
 };
 
 export type PermissionsMap = ReturnType<typeof extractPermissions>;
-
-export const DISABLED_MESSAGE = 'Disabled by your administrator';
 
 export const PermissionsContext = React.createContext<PermissionFragment[]>([]);
 
@@ -86,5 +97,6 @@ const PERMISSIONS_QUERY = gql`
   fragment PermissionFragment on Permission {
     permission
     value
+    disabledReason
   }
 `;
