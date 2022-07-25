@@ -813,6 +813,7 @@ class DagsterInstance:
         external_pipeline_origin=None,
         pipeline_code_origin=None,
     ):
+        from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.execution.api import create_execution_plan
         from dagster._core.execution.plan.plan import ExecutionPlan
         from dagster._core.snap import snapshot_from_execution_plan
@@ -845,6 +846,11 @@ class DagsterInstance:
                 pipeline_def = pipeline_def.get_pipeline_subset_def(
                     solids_to_execute=solids_to_execute
                 )
+        if asset_selection and isinstance(pipeline_def, JobDefinition):
+            # for cases when `create_run_for_pipeline` is directly called
+            pipeline_def = pipeline_def.get_job_def_for_subset_selection(
+                asset_selection=asset_selection
+            )
 
         step_keys_to_execute = None
 

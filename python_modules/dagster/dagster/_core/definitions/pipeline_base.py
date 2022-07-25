@@ -35,6 +35,11 @@ class IPipeline(ABC):
     def solids_to_execute(self) -> Optional[FrozenSet[str]]:
         pass
 
+    @property
+    @abstractmethod
+    def asset_selection(self) -> Optional[FrozenSet[AssetKey]]:
+        pass
+
     @abstractmethod
     def subset_for_execution_from_existing_pipeline(
         self,
