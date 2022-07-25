@@ -156,3 +156,6 @@ class ExecutionResult(ABC):
             for event in self.events_for_node(node_name)
             if event.event_type_value == DagsterEventType.ASSET_OBSERVATION.value
         ]
+
+    def get_step_success_events(self) -> Sequence[DagsterEvent]:
+        return [event for event in self.all_events if event.is_step_success]

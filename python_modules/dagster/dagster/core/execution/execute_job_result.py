@@ -15,9 +15,13 @@ from .execution_result import ExecutionResult
 class ExecuteJobResult(ExecutionResult):
     """Result object returned by :py:func:`dagster.execute_job`.
 
-    Used for retrieving run success, events, and outputs from `execute_job`. Users should not directly instantiate this class.
+    Used for retrieving run success, events, and outputs from `execute_job`.
+    Users should not directly instantiate this class.
 
-    Events and run information can be retrieved off of the object directly. In order to access outputs, the `ExecuteJobResult` object needs to be opened as a context manager, which will re-initialize the resources from execution.
+    Events and run information can be retrieved off of the object directly. In
+    order to access outputs, the `ExecuteJobResult` object needs to be opened
+    as a context manager, which will re-initialize the resources from
+    execution.
     """
 
     def __init__(self, job_def, reconstruct_context, event_list, dagster_run):

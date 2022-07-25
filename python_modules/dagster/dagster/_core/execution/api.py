@@ -1,6 +1,18 @@
 import sys
 from contextlib import contextmanager
-from typing import Any, Dict, FrozenSet, Iterator, List, Mapping, Optional, Tuple, Union
+from typing import (
+    Any,
+    Dict,
+    FrozenSet,
+    Iterator,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import dagster._check as check
 from dagster._core.definitions import IPipeline, JobDefinition, PipelineDefinition
@@ -17,7 +29,12 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.selector import parse_step_selection
-from dagster._core.storage.pipeline_run import DagsterRun, PipelineRun, PipelineRunStatus
+from dagster._core.storage.pipeline_run import (
+    DagsterRun,
+    PipelineRun,
+    PipelineRunStatus,
+    DagsterRunStatus,
+)
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.telemetry import log_repo_stats, telemetry_wrapper
 from dagster._core.utils import str_format_set
@@ -359,6 +376,41 @@ def ephemeral_instance_if_missing(
             yield ephemeral_instance
 
 
+class ReexecutionOptions(NamedTuple):
+    """Reexecution configuration for python-based execution in Dagster.
+
+    Args:
+        parent_run_id (str): The run_id of the run to reexecute.
+        step_selection (Sequence[str]): The set of steps to reexecute. Must be a subset or match of the set of steps executed in the original run.
+    """
+
+    parent_run_id: str
+    step_selection: Sequence[str] = []
+
+    @staticmethod
+    def from_failure(run_id: str, instance: DagsterInstance) -> "ReexecutionOptions":
+        """Creates reexecution configuration from a failed run.
+
+        Args:
+            run_id (str): The run_id of the failed run. Run must fail in order to be reexecuted.
+            instance (DagsterInstance): The DagsterInstance that the original run occurred in.
+        Returns:
+            ReexecutionOptions: Reexecution configuration to pass to a python execution.
+        """
+        from dagster._core.execution.plan.resume_retry import get_retry_steps_from_parent_run
+
+        parent_run = instance.get_run_by_id(run_id)
+        check.invariant(
+            parent_run.status == DagsterRunStatus.FAILURE,
+            "Cannot reexecute from failure a run that is not failed",
+        )
+        # Tried to thread through KnownExecutionState to execution plan creation, but little benefit. It is recalculated later by the re-execution machinery.
+        step_keys_to_execute, _ = get_retry_steps_from_parent_run(
+            instance, parent_run=instance.get_run_by_id(run_id)
+        )
+        return ReexecutionOptions(parent_run_id=run_id, step_selection=step_keys_to_execute)
+
+
 def execute_job(
     job: ReconstructableJob,
     instance: "DagsterInstance",
@@ -366,12 +418,22 @@ def execute_job(
     tags: Optional[Dict[str, Any]] = None,
     raise_on_error: bool = False,
     op_selection: Optional[List[str]] = None,
+    reexecution_options: Optional[ReexecutionOptions] = None,
 ) -> ExecuteJobResult:
     """Execute a job synchronously.
 
-    This API represents dagster's python entrypoint for out-of-process execution. For most testing purposes, :py:meth:`~dagster.JobDefinition.execute_in_process` will be more suitable, but when wanting to run execution using an out-of-process executor (such as :py:class:`dagster.multiprocess_executor`), then `execute_job` is suitable.
+    This API represents dagster's python entrypoint for out-of-process
+    execution. For most testing purposes, :py:meth:`~dagster.JobDefinition.
+    execute_in_process` will be more suitable, but when wanting to run
+    execution using an out-of-process executor (such as :py:class:`dagster.
+    multiprocess_executor`), then `execute_job` is suitable.
 
-    `execute_job` expects a persistent :py:class:`DagsterInstance` for execution, meaning the `$DAGSTER_HOME` environment variable must be set. It als expects a reconstructable pointer to a :py:class:`JobDefinition` so that it can be reconstructed in separate processes. This can be done by wrapping the ``JobDefinition`` in a call to :py:func:`dagster.reconstructable`.
+    `execute_job` expects a persistent :py:class:`DagsterInstance` for
+    execution, meaning the `$DAGSTER_HOME` environment variable must be set.
+    It als expects a reconstructable pointer to a :py:class:`JobDefinition` so
+    that it can be reconstructed in separate processes. This can be done by
+    wrapping the ``JobDefinition`` in a call to :py:func:`dagster.
+    reconstructable`.
 
     .. code-block:: python
         from dagster import DagsterInstance, execute_job, job, reconstructable
@@ -385,7 +447,9 @@ def execute_job(
         assert result.success
 
 
-    If using the :py:meth:`~dagster.GraphDefinition.to_job` method to construct the ``JobDefinition``, then the invocation must be wrapped in a module-scope function, which can be passed to ``reconstructable``.
+    If using the :py:meth:`~dagster.GraphDefinition.to_job` method to
+    construct the ``JobDefinition``, then the invocation must be wrapped in a
+    module-scope function, which can be passed to ``reconstructable``.
 
     .. code-block:: python
         from dagster import graph, reconstructable
@@ -399,7 +463,10 @@ def execute_job(
 
         result = execute_job(reconstructable(define_job), ...)
 
-    Since `execute_job` is potentially executing outside of the current process, output objects need to be retrieved by use of the provided job's io managers. Output objects can be retrieved by opening the result of `execute_job` as a context manager.
+    Since `execute_job` is potentially executing outside of the current
+    process, output objects need to be retrieved by use of the provided job's
+    io managers. Output objects can be retrieved by opening the result of
+    `execute_job` as a context manager.
 
     .. code-block:: python
         from dagster import execute_job
@@ -425,6 +492,10 @@ def execute_job(
               (downstream dependencies) within 3 levels down.
             - ``['*some_op', 'other_op_a', 'other_op_b+']``: select ``some_op`` and all its
               ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
+        reexecution_options (Optional[ReexecutionOptions]):
+            Reexecution configuration to provide to the run, if this run is
+            intended to be a reexecution of a previous run. Cannot be used in
+            tandem with the ``op_selection`` argument.
 
     Returns:
       :py:class:`JobExecutionResult`: The result of job execution.
@@ -433,14 +504,36 @@ def execute_job(
     check.inst_param(job, "job", ReconstructablePipeline)
     check.inst_param(instance, "instance", DagsterInstance)
 
-    result = _logged_execute_pipeline(
-        job,
-        instance=instance,
-        run_config=run_config,
-        tags=tags,
-        solid_selection=op_selection,
-        raise_on_error=raise_on_error,
-    )
+    if reexecution_options is not None and op_selection is not None:
+        raise DagsterInvariantViolationError(
+            "re-execution and op selection cannot be used together at this time."
+        )
+
+    if reexecution_options:
+        if run_config is None:
+            run_config = instance.get_run_by_id(reexecution_options.parent_run_id).run_config
+        result = reexecute_pipeline(
+            pipeline=job,
+            parent_run_id=reexecution_options.parent_run_id,
+            run_config=run_config,
+            step_selection=list(reexecution_options.step_selection),
+            mode=None,
+            preset=None,
+            tags=tags,
+            instance=instance,
+            raise_on_error=raise_on_error,
+        )
+    else:
+        result = _logged_execute_pipeline(
+            pipeline=job,
+            instance=instance,
+            run_config=run_config,
+            mode=None,
+            preset=None,
+            tags=tags,
+            solid_selection=op_selection,
+            raise_on_error=raise_on_error,
+        )
 
     # We use PipelineExecutionResult to construct the JobExecutionResult.
     return ExecuteJobResult(
