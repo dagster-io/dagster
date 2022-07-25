@@ -195,9 +195,9 @@ const ExampleItem = ({
       </div>
       <p className="text-sm text-gray-500">{children}</p>
       <div className="inline-flex flex-row space-x-4">
-        <a href={hrefCloud}>
+        <a href={hrefCode}>
           <button className="py-1 px-4 rounded-lg bg-gable-green text-white hover:bg-transparent hover:text-gable-green hover: border hover:border-gable-green">
-            Clone
+            View the code
           </button>
         </a>
         {hrefDoc && (
@@ -207,11 +207,6 @@ const ExampleItem = ({
             </button>
           </Link>
         )}
-        <CodeReferenceLink filePath={hrefCode} isInline>
-          <button className="py-1 px-4 rounded-lg bg-transparent border text-gray-500 hover:text-gray-700 hover:bg-gray-100 hover:border-gray-300">
-            Code
-          </button>
-        </CodeReferenceLink>
       </div>
     </div>
   );
