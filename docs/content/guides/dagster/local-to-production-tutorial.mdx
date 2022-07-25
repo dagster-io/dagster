@@ -20,7 +20,7 @@ Using a few Dagster concepts, we can easily tackle this task! If you’re new to
 
 Using these Dagster concepts we will:
 
-- write three assets: all of the Hacker News, data about comments, and data about stories
+- write three assets: the entire Hacker News dataset, data about comments, and data about stories
 - write a resource to fetch data from Hacker News
 - use Dagster's Snowflake IO manager to store the datasets in [Snowflake](https://www.snowflake.com/)
   - for local development, we will use a Snowflake database called `SANDBOX` with a schema for each user
@@ -146,7 +146,7 @@ def hn_api_client():
 <Note>
   For the sake of brevity in this guide, we've omitted the implementation of
   <code>item_field_names</code>. You can find the full implementation of this resource
-  in the [full code example](https://github.com/dagster-io/dagster/tree/master/examples/local_to_production) on GitHub.
+  in the <a href="https://github.com/dagster-io/dagster/tree/master/examples/local_to_production">full code example</a> on GitHub.
 </Note>
 
 Now we can add these assets to our repository and materialize them via Dagit as part of our local development workflow
@@ -398,8 +398,7 @@ def stub_hn_client():
 <Note>
   Since the stub Hacker News resource and the real Hacker News resource need to
   implement the same methods, this would be a great time to write an interface.
-  We’ll skip the implementation in this guide, but you can find it in the [full
-  code](https://github.com/dagster-io/dagster/tree/master/examples/local_to_production)
+  We’ll skip the implementation in this guide, but you can find it in the <a href="https://github.com/dagster-io/dagster/tree/master/examples/local_to_production">full code example</a>.
 </Note>
 
 Now we can use the stub Hacker News resource to test that the items asset transforms the data in the way we expect:
