@@ -97,16 +97,14 @@ We'll illustrate this process by adding a non-notebook op to our job, which will
 ```python file=/legacy/data_science/iris_classify_2.py startafter=start
 import dagstermill as dm
 
-from dagster import InputDefinition, job
+from dagster import In, job
 from docs_snippets.legacy.data_science.download_file import download_file
 
 k_means_iris = dm.define_dagstermill_op(
     "k_means_iris",
     script_relative_path("iris-kmeans_2.ipynb"),
     output_notebook_name="iris_kmeans_output",
-    input_defs=[
-        InputDefinition("path", str, description="Local path to the Iris dataset")
-    ],
+    ins={"path": In(str, description="Local path to the Iris dataset")},
 )
 
 
@@ -222,16 +220,14 @@ For instance, suppose we want to make the number of clusters (the \_k\_ in k-mea
 ```python file=/legacy/data_science/iris_classify_3.py startafter=start
 import dagstermill as dm
 
-from dagster import Field, InputDefinition, Int, job
+from dagster import Field, In, Int, job
 from docs_snippets.legacy.data_science.download_file import download_file
 
 k_means_iris = dm.define_dagstermill_op(
     "k_means_iris",
     script_relative_path("iris-kmeans_2.ipynb"),
     output_notebook_name="iris_kmeans_output",
-    input_defs=[
-        InputDefinition("path", str, description="Local path to the Iris dataset")
-    ],
+    ins={"path": In(str, description="Local path to the Iris dataset")},
     config_schema=Field(
         Int,
         default_value=3,
