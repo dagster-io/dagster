@@ -21,6 +21,7 @@
 * [dagit] The live overlays on asset views, showing latest materialization and run info, now load faster
 * [dagit] Typing whitespace into the launchpad Yaml editor no longer causes execution to fail to start
 * [dagit] The explorer sidebar no longer displays “mode” label and description for jobs, since modes are deprecated.
+* Fixed a bug with dynamic orchestration that caused larger than necessary CLI input for steps, in some cases hitting limits with argument size.
 
 ### Community Contributions
 
