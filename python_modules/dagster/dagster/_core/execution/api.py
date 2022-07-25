@@ -381,7 +381,16 @@ class ReexecutionOptions(NamedTuple):
 
     Args:
         parent_run_id (str): The run_id of the run to reexecute.
-        step_selection (Sequence[str]): The set of steps to reexecute. Must be a subset or match of the set of steps executed in the original run.
+        step_selection (Sequence[str]):
+            The set of steps to reexecute. Must be a subset or match of the
+            set of steps executed in the original run. For example:
+
+            - ``['some_op']``: selects ``some_op`` itself.
+            - ``['*some_op']``: select ``some_op`` and all its ancestors (upstream dependencies).
+            - ``['*some_op+++']``: select ``some_op``, all its ancestors, and its descendants
+              (downstream dependencies) within 3 levels down.
+            - ``['*some_op', 'other_op_a', 'other_op_b+']``: select ``some_op`` and all its
+              ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
     """
 
     parent_run_id: str
@@ -477,7 +486,16 @@ def execute_job(
         with execute_job(...) as result:
             output_obj = result.output_for_node("some_op")
 
+    ``execute_job`` can also be used to reexecute a run, by providing a :py:class:`ReexecutionOptions`.
 
+    .. code-block:: python
+
+        from dagster import ReexecutionOptions, execute_job
+
+        instance = DagsterInstance.get()
+
+        options = ReexecutionOptions.from_failure(run_id=failed_run_id, instance)
+        execute_job(reconstructable(job), instance, reexecution_options=options)
 
     Parameters:
         job (ReconstructableJob): A reconstructable pointer to a :py:class:`JobDefinition`.
