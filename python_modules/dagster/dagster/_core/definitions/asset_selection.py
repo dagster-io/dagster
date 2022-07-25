@@ -156,7 +156,10 @@ class Resolver:
 
         self.assets_defs = assets_defs
         self.asset_dep_graph = generate_asset_dep_graph(assets_defs, source_assets)
-        self.all_assets_by_name = generate_asset_name_to_definition_map(assets_defs)
+        self.all_assets_by_key_str = generate_asset_name_to_definition_map(assets_defs)
+        self.source_asset_key_strs = {
+            source_asset.key.to_user_string() for source_asset in source_assets
+        }
 
     def resolve(self, root_node: AssetSelection) -> FrozenSet[AssetKey]:
         return frozenset(
@@ -165,7 +168,7 @@ class Resolver:
 
     def _resolve(self, node: AssetSelection) -> AbstractSet[str]:
         if isinstance(node, AllAssetSelection):
-            return set(self.all_assets_by_name.keys())
+            return set(self.all_assets_by_key_str.keys())
         elif isinstance(node, AndAssetSelection):
             child_1, child_2 = [self._resolve(child) for child in node.children]
             return child_1 & child_2
@@ -190,15 +193,23 @@ class Resolver:
                 [_match_groups(assets_def, set(node.children)) for assets_def in self.assets_defs],
             )
         elif isinstance(node, KeysAssetSelection):
-            specified_keys = set([child.to_user_string() for child in node.children])
-            invalid_keys = specified_keys - set(self.all_assets_by_name.keys())
-            if invalid_keys:
+            specified_key_strs = set([child.to_user_string() for child in node.children])
+            invalid_key_strs = specified_key_strs - set(self.all_assets_by_key_str.keys())
+            selected_source_asset_key_strs = specified_key_strs & self.source_asset_key_strs
+            if selected_source_asset_key_strs:
                 raise DagsterInvalidSubsetError(
-                    f"AssetKey(s) {invalid_keys} were selected, but no AssetDefinition objects supply "
+                    f"AssetKey(s) {selected_source_asset_key_strs} were selected, but these keys are "
+                    "supplied by SourceAsset objects, not AssetsDefinition objects. You don't need "
+                    "to include source assets in a selection for downstream assets to be able to "
+                    "read them."
+                )
+            if invalid_key_strs:
+                raise DagsterInvalidSubsetError(
+                    f"AssetKey(s) {invalid_key_strs} were selected, but no AssetsDefinition objects supply "
                     "these keys. Make sure all keys are spelled correctly, and all AssetsDefinitions "
                     "are correctly added to the repository."
                 )
-            return specified_keys
+            return specified_key_strs
         elif isinstance(node, OrAssetSelection):
             child_1, child_2 = [self._resolve(child) for child in node.children]
             return child_1 | child_2

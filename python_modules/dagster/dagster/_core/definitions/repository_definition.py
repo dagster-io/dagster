@@ -775,7 +775,7 @@ class CachingRepositoryData(RepositoryData):
         for name, unresolved_job_def in unresolved_jobs.items():
             if not combined_asset_group:
                 raise DagsterInvalidDefinitionError(
-                    f"UnresolvedAssetJobDefinition {name} specified, but no AssetDefinitions exist "
+                    f"UnresolvedAssetJobDefinition {name} specified, but no AssetsDefinitions exist "
                     "on the repository."
                 )
             resolved_job = unresolved_job_def.resolve(
