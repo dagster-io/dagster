@@ -5,7 +5,7 @@ It utilizes dagster's run configuration system and swappable resources to ensure
 is not overwritten by local developers. It also contains tests that provide mock data to assets to ensure
 correctness.
 
-To follow along with this example, you can read this [guide](link).
+To follow along with this example, you can read this [guide](https://docs.dagster.io/guides/dagster/local-to-production-tutorial).
 
 ## Setup
 To run this example locally

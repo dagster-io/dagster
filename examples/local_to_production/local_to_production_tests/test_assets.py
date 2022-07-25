@@ -1,16 +1,16 @@
 import pandas as pd
 from local_to_production.assets import comments, items, stories
-from local_to_production.resources import MockHNClient, mock_hn_client
+from local_to_production.resources import StubHNClient, stub_hn_client
 
 from dagster import build_op_context
 
 
 def test_items():
-    context = build_op_context(resources={"hn_client": mock_hn_client})
+    context = build_op_context(resources={"hn_client": stub_hn_client})
     hn_dataset = items(context)
     assert isinstance(hn_dataset, pd.DataFrame)
 
-    expected_data = pd.DataFrame(MockHNClient().data.values()).rename(columns={"by": "user_id"})
+    expected_data = pd.DataFrame(StubHNClient().data.values()).rename(columns={"by": "user_id"})
 
     assert (hn_dataset == expected_data).all().all()
 

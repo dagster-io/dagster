@@ -20,7 +20,7 @@ Using a few Dagster concepts, we can easily tackle this task! If you’re new to
 
 Using these Dagster concepts we will:
 
-- write three assets: one to represent the Hacker News data and two for the datasets containing data for comments and stories
+- write three assets: all of the Hacker News, data about comments, and data about stories
 - write a resource to fetch data from Hacker News
 - use Dagster's Snowflake IO manager to store the datasets in [Snowflake](https://www.snowflake.com/)
   - for local development, we will use a Snowflake database called `SANDBOX` with a schema for each user
@@ -146,7 +146,7 @@ def hn_api_client():
 <Note>
   For the sake of brevity in this guide, we've omitted the implementation of
   <code>item_field_names</code>. You can find the full implementation of this resource
-  in the [full code example](link to code example) on GitHub.
+  in the [full code example](https://github.com/dagster-io/dagster/tree/master/examples/local_to_production) on GitHub.
 </Note>
 
 Now we can add these assets to our repository and materialize them via Dagit as part of our local development workflow
@@ -241,7 +241,7 @@ def repo():
 
 Here we run into an issue. The next time a developer wants to work on the assets, they will have to remember to change the configuration for the `snowflake_io_manager`. This leaves room for a developer to accidentally overwrite the production asset during local development.
 
-Instead we can set up the repository to attach resources to assets based on the environment
+Instead we can set up the repository to attach resources to assets based on the environment:
 
 ```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v4.py startafter=start endbefore=end
 # repository.py
@@ -287,7 +287,7 @@ def repo():
 Now, we can set the environment variable `DAGSTER_DEPLOYMENT=production` in our deployment and the correct resources will be applied to the assets.
 
 <Note>
-If you're using [Dagster Cloud](link to dagster cloud page explaining this?), this environment variable will be set for you. Additionally, if you're using [Branch Deployments](link to branch deployments page explaining this?) <code>DAGSTER_DEPLOYMENT</code> will be automatically set to <code>VAR</code>.
+If you're using [Dagster Cloud](https://dagster.io/cloud), this environment variable will be set for you. Additionally, if you're using [Branch Deployments](https://docs.dagster.cloud/guides/branch-deployments) <code>DAGSTER_DEPLOYMENT</code> will be automatically set to <code>VAR</code>.
 
 </Note>
 
@@ -331,7 +331,7 @@ Since all of the Snowflake IO manager configuration is being set through environ
 
 Depending on your organization’s Dagster setup, there are a couple of options for a staging environment.
 
-If you are a Dagster Cloud user, we recommend using Branch Deployments as your staging step. Check out our \[comprehensive guide to Branch Deployments]\(link to claire’s doc) to learn how to set up Branch Deployments for your organization.
+If you are a Dagster Cloud user, we recommend using [Branch Deployments](https://docs.dagster.cloud/guides/branch-deployments) as your staging step. Check out our \[comprehensive guide to Branch Deployments]\(link to claire’s doc) to learn how to use Branch Deployments to verify your data pipelines before deploying them to production.
 
 If you host a staging deployment of Dagster, we’ve already done all of the necessary work to run our assets in staging! Since we get the configuration for our assets from environment variables, we can simply set the variables to new values in the staging environment, and we’re all set.
 
@@ -355,7 +355,7 @@ The general idea behind stubbing or mocking a Dagster resource is relatively sim
   For more information and recommendations on testing, refer to our [testing documentation](/concepts/testing).
 </Note>
 
-Since the Hacker News resource we wrote in our example fetches live data and we only use a few columns in our assets, it’s a great candidate for writing a stub. With a stubbed resource we can have full control over the data our assets see during unit tests, which in turn can allow us to make more specific assertions.
+Since the Hacker News resource we wrote in our example fetches live data and we only need the values from a few columns in our assets, it’s a great candidate for writing a stub. With a stubbed resource we can have full control over the data our assets see during unit tests, which in turn can allow us to make more specific assertions.
 
 We’ll start by writing the stubbed version of the Hacker News resource. We want to make sure the stub has implementations for each method the real `HackerNewsClient` implements:
 
@@ -399,7 +399,7 @@ def stub_hn_client():
   Since the stub Hacker News resource and the real Hacker News resource need to
   implement the same methods, this would be a great time to write an interface.
   We’ll skip the implementation in this guide, but you can find it in the [full
-  code](link to github)
+  code](https://github.com/dagster-io/dagster/tree/master/examples/local_to_production)
 </Note>
 
 Now we can use the stub Hacker News resource to test that the items asset transforms the data in the way we expect:
