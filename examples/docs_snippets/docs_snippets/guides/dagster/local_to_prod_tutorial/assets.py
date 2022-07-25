@@ -2,7 +2,7 @@ import pandas as pd
 
 from dagster import asset
 
-# start_assets
+# start_items
 # assets.py
 
 
@@ -11,7 +11,6 @@ from dagster import asset
 )
 def items(context) -> pd.DataFrame:
     """Items from the Hacker News API: each is a story or a comment on a story."""
-
     hn_client = context.resources.hn_client
 
     rows = []
@@ -22,8 +21,14 @@ def items(context) -> pd.DataFrame:
         subset=["id"]
     )
     result.rename(columns={"by": "user_id"}, inplace=True)
-
     return result
+
+
+# end_items
+
+
+# start_comments_stories
+# assets.py
 
 
 @asset
@@ -38,4 +43,4 @@ def stories(items: pd.DataFrame) -> pd.DataFrame:
     return items[items["type"] == "story"]
 
 
-# end_assets
+# end_comments_stories

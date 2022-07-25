@@ -24,7 +24,7 @@ def repo():
                 "user": "me@company.com",
                 "password": "my_super_secret_password",
                 "database": "SANDBOX",
-                "schema": "JAMIE",
+                "schema": "ALICE",
             }
         ),
     }

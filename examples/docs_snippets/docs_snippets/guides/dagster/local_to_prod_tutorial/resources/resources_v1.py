@@ -25,22 +25,6 @@ class HNAPIClient:
             "https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5
         ).json()
 
-    @property
-    def item_field_names(self):
-        return [
-            "id",
-            "parent",
-            "time",
-            "type",
-            "by",
-            "text",
-            "kids",
-            "score",
-            "title",
-            "descendants",
-            "url",
-        ]
-
 
 @resource
 def hn_api_client():

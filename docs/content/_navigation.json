@@ -412,8 +412,8 @@
         "path": "/guides/dagster/enriching-with-software-defined-assets"
       },
       {
-        "title": "Development to Production Workflow",
-        "path":"/guides/dagster/local_to_production_tutorial"
+        "title": "Transitioning Data Pipelines from Development to Production",
+        "path":"/guides/dagster/local-to-production-tutorial"
       },
       {
         "title": "Versioning and Memoization (Experimental)",

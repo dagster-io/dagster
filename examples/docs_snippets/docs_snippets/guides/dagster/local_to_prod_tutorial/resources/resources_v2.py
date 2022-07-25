@@ -6,9 +6,9 @@ from dagster import resource
 # resources.py
 
 
-class MockHNClient:
+class StubHNClient:
     """
-    Hacker News Client that returns mock data
+    Hacker News Client that returns fake data
     """
 
     def __init__(self):
@@ -19,12 +19,7 @@ class MockHNClient:
                 "title": "the first comment",
                 "by": "user1",
             },
-            2: {
-                "id": 2,
-                "type": "story",
-                "title": "an awesome story",
-                "by": "user2",
-            },
+            2: {"id": 2, "type": "story", "title": "an awesome story", "by": "user2"},
         }
 
     def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
@@ -39,8 +34,8 @@ class MockHNClient:
 
 
 @resource
-def mock_hn_client():
-    return MockHNClient()
+def stub_hn_client():
+    return StubHNClient()
 
 
 # end_mock
