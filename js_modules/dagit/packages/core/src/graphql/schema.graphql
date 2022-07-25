@@ -2243,6 +2243,7 @@ type PartitionBackfills {
 type Permission {
   permission: String!
   value: Boolean!
+  disabledReason: String
 }
 
 type AssetLatestInfo {
