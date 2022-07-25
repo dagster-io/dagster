@@ -4,8 +4,8 @@ from functools import reduce
 
 import pytest
 
-from dagster.core.definitions import AssetSelection, asset
-from dagster.core.definitions.events import AssetKey
+from dagster._core.definitions import AssetSelection, asset
+from dagster._core.definitions.events import AssetKey
 
 
 @asset(group_name="ladies")

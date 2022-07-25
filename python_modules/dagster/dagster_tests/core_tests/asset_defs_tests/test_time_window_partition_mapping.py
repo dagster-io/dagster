@@ -6,9 +6,9 @@ from dagster import (
     HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition,
 )
-from dagster.core.definitions.partition import ScheduleType
-from dagster.core.definitions.partition_key_range import PartitionKeyRange
-from dagster.core.definitions.time_window_partition_mapping import (
+from dagster._core.definitions.partition import ScheduleType
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.time_window_partition_mapping import (
     TimeWindowPartitionMapping,
     round_datetime_to_period,
 )

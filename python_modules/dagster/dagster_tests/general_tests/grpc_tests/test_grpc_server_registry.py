@@ -4,15 +4,16 @@ import time
 
 import pytest
 
-from dagster import file_relative_path, pipeline, repository
-from dagster.core.errors import DagsterUserCodeProcessError
-from dagster.core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
-from dagster.core.host_representation.origin import (
+from dagster import file_relative_path, repository
+from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster._core.host_representation.origin import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RegisteredRepositoryLocationOrigin,
 )
-from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.host_representation.repository_location import GrpcServerRepositoryLocation
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._legacy import pipeline
 
 
 @pipeline

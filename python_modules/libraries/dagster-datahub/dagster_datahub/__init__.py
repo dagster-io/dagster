@@ -1,4 +1,4 @@
-from dagster.core.utils import check_dagster_package_version
+from dagster._core.utils import check_dagster_package_version
 
 from .resources import datahub_kafka_emitter, datahub_rest_emitter
 from .version import __version__

@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Box, Colors, Tabs} from '@dagster-io/ui';
 import * as React from 'react';
 
@@ -9,10 +8,9 @@ import {TabLink} from '../ui/TabLink';
 import {RepoAddress} from '../workspace/types';
 
 import {RightInfoPanelContent} from './GraphExplorer';
-import {GraphExplorerJobContext} from './GraphExplorerJobContext';
 import {ExplorerPath} from './PipelinePathUtils';
-import {SidebarOpContainer} from './SidebarOpContainer';
-import {SidebarOpContainerInfo, SIDEBAR_OP_CONTAINER_INFO_FRAGMENT} from './SidebarPipelineInfo';
+import {SidebarContainerOverview} from './SidebarContainerOverview';
+import {SidebarOp} from './SidebarOp';
 import {SidebarRootContainerFragment} from './types/SidebarRootContainerFragment';
 
 type TabKey = 'types' | 'info';
@@ -34,7 +32,6 @@ interface SidebarRootProps {
   onEnterSubgraph: (arg: OpNameOrPath) => void;
   onClickOp: (arg: OpNameOrPath) => void;
   repoAddress?: RepoAddress;
-  isGraph: boolean;
 }
 
 export const SidebarRoot: React.FC<SidebarRootProps> = (props) => {
@@ -42,17 +39,14 @@ export const SidebarRoot: React.FC<SidebarRootProps> = (props) => {
     tab,
     typeName,
     container,
+    repoAddress,
     explorerPath,
     opHandleID,
     getInvocations,
     parentOpHandleID,
     onEnterSubgraph,
     onClickOp,
-    repoAddress,
-    isGraph,
   } = props;
-
-  const jobContext = React.useContext(GraphExplorerJobContext);
 
   const activeTab = tab || 'info';
 
@@ -62,7 +56,7 @@ export const SidebarRoot: React.FC<SidebarRootProps> = (props) => {
       key: 'info',
       content: () =>
         opHandleID ? (
-          <SidebarOpContainer
+          <SidebarOp
             key={opHandleID}
             explorerPath={explorerPath}
             handleID={opHandleID}
@@ -71,10 +65,10 @@ export const SidebarRoot: React.FC<SidebarRootProps> = (props) => {
             onEnterSubgraph={onEnterSubgraph}
             onClickOp={onClickOp}
             repoAddress={repoAddress}
-            isGraph={isGraph}
+            isGraph={container.__typename === 'Graph'}
           />
         ) : parentOpHandleID ? (
-          <SidebarOpContainer
+          <SidebarOp
             key={parentOpHandleID}
             explorerPath={explorerPath}
             handleID={parentOpHandleID}
@@ -82,12 +76,10 @@ export const SidebarRoot: React.FC<SidebarRootProps> = (props) => {
             getInvocations={getInvocations}
             onClickOp={onClickOp}
             repoAddress={repoAddress}
-            isGraph={isGraph}
+            isGraph={container.__typename === 'Graph'}
           />
-        ) : jobContext ? (
-          jobContext.sidebarTab
         ) : (
-          <SidebarOpContainerInfo isGraph={isGraph} container={container} key={container.name} />
+          <SidebarContainerOverview repoAddress={repoAddress} container={container} />
         ),
     },
     {
@@ -124,13 +116,3 @@ export const SidebarRoot: React.FC<SidebarRootProps> = (props) => {
     </>
   );
 };
-
-export const SIDEBAR_ROOT_CONTAINER_FRAGMENT = gql`
-  fragment SidebarRootContainerFragment on SolidContainer {
-    id
-    name
-    ...SidebarOpContainerInfoFragment
-  }
-
-  ${SIDEBAR_OP_CONTAINER_INFO_FRAGMENT}
-`;

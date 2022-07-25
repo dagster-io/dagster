@@ -12,7 +12,7 @@ from dagster import (
 )
 from dagster import _check as check
 from dagster import io_manager
-from dagster.utils import PICKLE_PROTOCOL
+from dagster._utils import PICKLE_PROTOCOL
 
 
 class PickledObjectS3IOManager(MemoizableIOManager):

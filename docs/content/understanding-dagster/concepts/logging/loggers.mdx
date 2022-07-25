@@ -134,7 +134,7 @@ For example, you may be operating in a containerized environment where container
 {"orig_message": "Hello, world!", "log_message_id": "49854579-e4d1-4289-8453-b3e177b20056", ...}
 ```
 
-In fact, a logger that prints JSON-formatted single-line messages like this to the console is already included as `dagster.loggers.json_console_logger`. But let's look at how we might implement a simplified version of this logger.
+In fact, a logger that prints JSON-formatted single-line messages like this to the console is already included in Dagster (<PyObject object="json_console_logger"/>). But let's look at how we might implement a simplified version of this logger.
 
 Loggers are defined internally using the <PyObject module="dagster" object="LoggerDefinition" displayText="LoggerDefinition" /> class, but, following a common pattern in the Dagster codebase, the <PyObject module="dagster" object="logger" displayText="@logger" /> decorator exposes a simpler API for the common use case and is typically what you'll use to define your own loggers. The decorated function should take a single argument, the `init_context` available during logger initialization, and return a `logging.Logger`.
 

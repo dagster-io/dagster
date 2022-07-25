@@ -1,10 +1,10 @@
 from graphql.execution.base import ResolveInfo
 
 import dagster._check as check
-from dagster.core.execution.plan.resume_retry import ReexecutionStrategy
-from dagster.core.host_representation.selector import PipelineSelector
-from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import RunsFilter
+from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
+from dagster._core.host_representation.selector import PipelineSelector
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.pipeline_run import RunsFilter
 
 from ..external import get_external_pipeline_or_raise
 from ..utils import ExecutionMetadata, ExecutionParams, capture_error

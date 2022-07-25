@@ -16,18 +16,16 @@ from dagster import (
     String,
     execute_pipeline,
     lambda_solid,
-    pipeline,
 )
-from dagster.config.config_type import ConfigTypeKind
-from dagster.config.validate import process_config
-from dagster.core.definitions import create_run_config_schema
-from dagster.core.definitions.run_config import (
+from dagster._config import ConfigTypeKind, process_config
+from dagster._core.definitions import create_run_config_schema
+from dagster._core.definitions.run_config import (
     RunConfigSchemaCreationData,
     define_solid_dictionary_cls,
 )
-from dagster.core.system_config.objects import ResolvedRunConfig, ResourceConfig, SolidConfig
-from dagster.legacy import solid
-from dagster.loggers import default_loggers
+from dagster._core.system_config.objects import ResolvedRunConfig, ResourceConfig, SolidConfig
+from dagster._legacy import pipeline, solid
+from dagster._loggers import default_loggers
 
 
 def create_creation_data(pipeline_def):

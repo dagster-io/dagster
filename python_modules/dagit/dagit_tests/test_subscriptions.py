@@ -7,12 +7,12 @@ from dagit.graphql import GraphQLWS
 from dagit.webserver import DagitWebserver
 from starlette.testclient import TestClient
 
-from dagster import execute_pipeline, pipeline
-from dagster.core.test_utils import environ, instance_for_test
-from dagster.core.workspace.context import WorkspaceProcessContext
-from dagster.core.workspace.load_target import WorkspaceFileTarget
-from dagster.legacy import solid
-from dagster.utils import file_relative_path
+from dagster import execute_pipeline
+from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.load_target import WorkspaceFileTarget
+from dagster._legacy import pipeline, solid
+from dagster._utils import file_relative_path
 
 EVENT_LOG_SUBSCRIPTION = """
     subscription PipelineRunLogsSubscription($runId: ID!) {
@@ -114,7 +114,7 @@ def test_event_log_subscription_chunked():
 
 
 @mock.patch(
-    "dagster.core.storage.local_compute_log_manager.LocalComputeLogManager.is_watch_completed"
+    "dagster._core.storage.local_compute_log_manager.LocalComputeLogManager.is_watch_completed"
 )
 def test_compute_log_subscription(mock_watch_completed):
     mock_watch_completed.return_value = False

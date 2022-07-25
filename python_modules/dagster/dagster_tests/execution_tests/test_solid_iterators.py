@@ -1,6 +1,6 @@
 from dagster import AssetMaterialization, Output, execute_solid
-from dagster.legacy import solid
-from dagster.utils.backcompat import experimental
+from dagster._annotations import experimental
+from dagster._legacy import solid
 
 
 def test_generator_return_solid():

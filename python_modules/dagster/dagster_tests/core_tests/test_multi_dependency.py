@@ -14,11 +14,10 @@ from dagster import (
     composite_solid,
     execute_pipeline,
     lambda_solid,
-    pipeline,
 )
-from dagster.core.definitions.composition import MappedInputPlaceholder
-from dagster.core.definitions.solid_definition import CompositeSolidDefinition
-from dagster.legacy import solid
+from dagster._core.definitions.composition import MappedInputPlaceholder
+from dagster._core.definitions.solid_definition import CompositeSolidDefinition
+from dagster._legacy import pipeline, solid
 
 
 def test_simple_values():

@@ -3,9 +3,8 @@ from typing import List, Optional, Union
 import graphene
 
 import dagster._check as check
-from dagster.config.config_type import ConfigTypeKind
-from dagster.config.snap import get_recursive_type_keys
-from dagster.core.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
+from dagster._config import ConfigTypeKind, get_recursive_type_keys
+from dagster._core.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
 
 from .util import non_null_list
 

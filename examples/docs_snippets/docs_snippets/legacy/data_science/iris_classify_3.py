@@ -1,7 +1,11 @@
+from dagster._utils import script_relative_path
+
+# isort: split
+# start
+
 import dagstermill as dm
 
 from dagster import Field, InputDefinition, Int, job
-from dagster.utils import script_relative_path
 from docs_snippets.legacy.data_science.download_file import download_file
 
 k_means_iris = dm.define_dagstermill_op(

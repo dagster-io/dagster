@@ -22,29 +22,28 @@ from dagster import (
     fs_io_manager,
     job,
     op,
-    pipeline,
     reconstructable,
     reexecute_pipeline,
     resource,
 )
-from dagster.core.definitions.no_step_launcher import no_step_launcher
-from dagster.core.events import DagsterEventType
-from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.context_creation_pipeline import PlanExecutionContextManager
-from dagster.core.execution.plan.external_step import (
+from dagster._core.definitions.no_step_launcher import no_step_launcher
+from dagster._core.events import DagsterEventType
+from dagster._core.execution.api import create_execution_plan
+from dagster._core.execution.context_creation_pipeline import PlanExecutionContextManager
+from dagster._core.execution.plan.external_step import (
     LocalExternalStepLauncher,
     local_external_step_launcher,
     step_context_to_step_run_ref,
     step_run_ref_to_step_context,
 )
-from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.core.execution.retries import RetryMode
-from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.test_utils import instance_for_test
-from dagster.legacy import solid
-from dagster.utils import safe_tempfile_path, send_interrupt
-from dagster.utils.merger import deep_merge_dicts, merge_dicts
+from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.execution.retries import RetryMode
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.test_utils import instance_for_test
+from dagster._legacy import pipeline, solid
+from dagster._utils import safe_tempfile_path, send_interrupt
+from dagster._utils.merger import deep_merge_dicts, merge_dicts
 
 RUN_CONFIG_BASE = {"solids": {"return_two": {"config": {"a": "b"}}}}
 

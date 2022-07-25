@@ -41,8 +41,8 @@ from schema.charts.dagster.subschema.telemetry import Telemetry
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.utils.helm_template import HelmTemplate
 
-from dagster.core.instance.config import retention_config_schema
-from dagster.core.run_coordinator import QueuedRunCoordinator
+from dagster._core.instance.config import retention_config_schema
+from dagster._core.run_coordinator import QueuedRunCoordinator
 
 
 def to_camel_case(s: str) -> str:

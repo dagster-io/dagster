@@ -18,9 +18,9 @@ from dagster_test.test_project import (
     get_test_project_workspace_and_external_pipeline,
 )
 
-from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
-from dagster.core.test_utils import environ, poll_for_finished_run, poll_for_step_start
-from dagster.utils.yaml_utils import merge_yamls
+from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.test_utils import environ, poll_for_finished_run, poll_for_step_start
+from dagster._utils.yaml_utils import merge_yamls
 
 from . import IS_BUILDKITE, docker_postgres_instance
 

@@ -3,15 +3,15 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 from slack_sdk.web.client import WebClient
 
 from dagster import DefaultSensorStatus
-from dagster.core.definitions import GraphDefinition, PipelineDefinition
-from dagster.core.definitions.run_status_sensor_definition import (
+from dagster._core.definitions import GraphDefinition, PipelineDefinition
+from dagster._core.definitions.run_status_sensor_definition import (
     PipelineFailureSensorContext,
     RunFailureSensorContext,
     RunStatusSensorContext,
     pipeline_failure_sensor,
     run_failure_sensor,
 )
-from dagster.core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 T = TypeVar("T", bound=RunStatusSensorContext)
 

@@ -14,12 +14,11 @@ from dagster import (
     lambda_solid,
     make_python_type_usable_as_dagster_type,
     op,
-    pipeline,
     usable_as_dagster_type,
 )
-from dagster.core.definitions.inference import infer_input_props, infer_output_props
-from dagster.core.types.dagster_type import DagsterTypeKind
-from dagster.legacy import solid
+from dagster._core.definitions.inference import infer_input_props, infer_output_props
+from dagster._core.types.dagster_type import DagsterTypeKind
+from dagster._legacy import pipeline, solid
 
 
 def test_infer_solid_description_from_docstring():

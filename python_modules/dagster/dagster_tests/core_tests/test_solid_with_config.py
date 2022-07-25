@@ -8,10 +8,9 @@ from dagster import (
     String,
     composite_solid,
     execute_pipeline,
-    pipeline,
     root_input_manager,
 )
-from dagster.legacy import solid
+from dagster._legacy import pipeline, solid
 
 
 def test_basic_solid_with_config():

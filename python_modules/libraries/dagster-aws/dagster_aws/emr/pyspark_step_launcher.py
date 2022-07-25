@@ -13,14 +13,14 @@ from dagster_aws.utils.mrjob.log4j import parse_hadoop_log4j_records
 from dagster import Field, StringSource
 from dagster import _check as check
 from dagster import resource
-from dagster.core.definitions.step_launcher import StepLauncher
-from dagster.core.errors import DagsterInvariantViolationError, raise_execution_interrupts
-from dagster.core.execution.plan.external_step import (
+from dagster._core.definitions.step_launcher import StepLauncher
+from dagster._core.errors import DagsterInvariantViolationError, raise_execution_interrupts
+from dagster._core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
     PICKLED_STEP_RUN_REF_FILE_NAME,
     step_context_to_step_run_ref,
 )
-from dagster.serdes import deserialize_value
+from dagster._serdes import deserialize_value
 
 # On EMR, Spark is installed here
 EMR_SPARK_HOME = "/usr/lib/spark/"

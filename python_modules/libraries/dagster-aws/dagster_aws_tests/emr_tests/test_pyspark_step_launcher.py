@@ -3,7 +3,7 @@ from unittest import mock
 from dagster_aws.emr.pyspark_step_launcher import EmrPySparkStepLauncher
 
 from dagster import DagsterEvent, EventLogEntry
-from dagster.core.execution.plan.objects import StepSuccessData
+from dagster._core.execution.plan.objects import StepSuccessData
 
 EVENTS = [
     EventLogEntry(

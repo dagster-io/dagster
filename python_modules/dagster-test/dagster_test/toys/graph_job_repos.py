@@ -10,7 +10,7 @@ from dagster import (
     schedule,
     sensor,
 )
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 def make_solid(

@@ -13,9 +13,9 @@ from dagster_test.test_project import (
 )
 
 from dagster import execute_pipeline
-from dagster.utils import merge_dicts
-from dagster.utils.test.postgres_instance import postgres_instance_for_test
-from dagster.utils.yaml_utils import merge_yamls
+from dagster._utils import merge_dicts
+from dagster._utils.test.postgres_instance import postgres_instance_for_test
+from dagster._utils.yaml_utils import merge_yamls
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

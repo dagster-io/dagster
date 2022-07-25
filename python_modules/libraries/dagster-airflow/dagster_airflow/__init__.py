@@ -1,4 +1,4 @@
-from dagster.core.utils import check_dagster_package_version
+from dagster._core.utils import check_dagster_package_version
 
 from .dagster_job_factory import make_dagster_job_from_airflow_dag
 from .dagster_pipeline_factory import (

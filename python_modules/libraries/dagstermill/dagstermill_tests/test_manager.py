@@ -12,13 +12,13 @@ from dagstermill.manager import Manager
 
 from dagster import AssetMaterialization, ModeDefinition, ResourceDefinition
 from dagster import _check as check
-from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.definitions.reconstruct import ReconstructablePipeline
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.core.test_utils import instance_for_test
-from dagster.core.utils import make_new_run_id
-from dagster.serdes import pack_value
-from dagster.utils import safe_tempfile_path
+from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._core.test_utils import instance_for_test
+from dagster._core.utils import make_new_run_id
+from dagster._serdes import pack_value
+from dagster._utils import safe_tempfile_path
 
 
 @contextlib.contextmanager

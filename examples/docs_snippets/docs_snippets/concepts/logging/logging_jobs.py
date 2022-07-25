@@ -1,7 +1,7 @@
 from dagster_aws.cloudwatch.loggers import cloudwatch_logger
 
 from dagster import graph, op, repository
-from dagster.loggers import colored_console_logger
+from dagster._loggers import colored_console_logger
 
 
 # start_logging_mode_marker_0

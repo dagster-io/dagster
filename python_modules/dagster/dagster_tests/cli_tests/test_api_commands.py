@@ -3,15 +3,15 @@ from click.testing import CliRunner
 from dagster_tests.api_tests.utils import get_bar_repo_handle, get_foo_pipeline_handle
 
 from dagster import DagsterEventType
-from dagster.cli import api
-from dagster.cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
-from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.core.execution.retries import RetryState
-from dagster.core.execution.stats import RunStepKeyStatsSnapshot
-from dagster.core.host_representation import PipelineHandle
-from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import create_run_for_test, instance_for_test
-from dagster.serdes import serialize_dagster_namedtuple
+from dagster._cli import api
+from dagster._cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
+from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.execution.retries import RetryState
+from dagster._core.execution.stats import RunStepKeyStatsSnapshot
+from dagster._core.host_representation import PipelineHandle
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import create_run_for_test, instance_for_test
+from dagster._serdes import serialize_dagster_namedtuple
 
 
 def runner_execute_run(runner, cli_args):
@@ -39,7 +39,7 @@ def test_execute_run():
     with instance_for_test(
         overrides={
             "compute_logs": {
-                "module": "dagster.core.storage.noop_compute_log_manager",
+                "module": "dagster._core.storage.noop_compute_log_manager",
                 "class": "NoOpComputeLogManager",
             }
         }
@@ -79,7 +79,7 @@ def test_execute_run_fail_pipeline():
     with instance_for_test(
         overrides={
             "compute_logs": {
-                "module": "dagster.core.storage.noop_compute_log_manager",
+                "module": "dagster._core.storage.noop_compute_log_manager",
                 "class": "NoOpComputeLogManager",
             }
         }
@@ -135,7 +135,7 @@ def test_execute_run_fail_pipeline():
             assert "RUN_FAILURE" in result.stdout, "no match, result: {}".format(result)
 
             with mock.patch(
-                "dagster.core.execution.api.pipeline_execution_iterator"
+                "dagster._core.execution.api.pipeline_execution_iterator"
             ) as _mock_pipeline_execution_iterator:
                 _mock_pipeline_execution_iterator.side_effect = Exception("Framework error")
 
@@ -161,7 +161,7 @@ def test_execute_run_cannot_load():
     with instance_for_test(
         overrides={
             "compute_logs": {
-                "module": "dagster.core.storage.noop_compute_log_manager",
+                "module": "dagster._core.storage.noop_compute_log_manager",
                 "class": "NoOpComputeLogManager",
             }
         }
@@ -214,7 +214,7 @@ def test_execute_step():
     with instance_for_test(
         overrides={
             "compute_logs": {
-                "module": "dagster.core.storage.noop_compute_log_manager",
+                "module": "dagster._core.storage.noop_compute_log_manager",
                 "class": "NoOpComputeLogManager",
             }
         }
@@ -251,7 +251,7 @@ def test_execute_step_1():
     with instance_for_test(
         overrides={
             "compute_logs": {
-                "module": "dagster.core.storage.noop_compute_log_manager",
+                "module": "dagster._core.storage.noop_compute_log_manager",
                 "class": "NoOpComputeLogManager",
             }
         }
@@ -287,7 +287,7 @@ def test_execute_step_verify_step():
     with instance_for_test(
         overrides={
             "compute_logs": {
-                "module": "dagster.core.storage.noop_compute_log_manager",
+                "module": "dagster._core.storage.noop_compute_log_manager",
                 "class": "NoOpComputeLogManager",
             }
         }
@@ -349,7 +349,7 @@ def test_execute_step_verify_step_framework_error(mock_verify_step):
     with instance_for_test(
         overrides={
             "compute_logs": {
-                "module": "dagster.core.storage.noop_compute_log_manager",
+                "module": "dagster._core.storage.noop_compute_log_manager",
                 "class": "NoOpComputeLogManager",
             }
         }

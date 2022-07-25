@@ -1,7 +1,7 @@
 import pytest
 
-from dagster.utils import file_relative_path
-from dagster.utils.test.postgres_instance import TestPostgresInstance
+from dagster._utils import file_relative_path
+from dagster._utils.test.postgres_instance import TestPostgresInstance
 
 
 @pytest.fixture(scope="session")

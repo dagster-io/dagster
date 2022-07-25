@@ -1,5 +1,5 @@
-from dagster import Float, InputDefinition, Int, List, OutputDefinition, composite_solid, pipeline
-from dagster.legacy import solid
+from dagster import Float, InputDefinition, Int, List, OutputDefinition, composite_solid
+from dagster._legacy import pipeline, solid
 
 
 @solid(output_defs=[OutputDefinition(Int)])

@@ -2,14 +2,14 @@ import string
 
 import pytest
 
-from dagster.api.snapshot_partition import (
+from dagster._api.snapshot_partition import (
     sync_get_external_partition_config_grpc,
     sync_get_external_partition_names_grpc,
     sync_get_external_partition_set_execution_param_data_grpc,
     sync_get_external_partition_tags_grpc,
 )
-from dagster.core.errors import DagsterUserCodeProcessError
-from dagster.core.host_representation import (
+from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.host_representation import (
     ExternalPartitionConfigData,
     ExternalPartitionNamesData,
     ExternalPartitionSetExecutionParamData,

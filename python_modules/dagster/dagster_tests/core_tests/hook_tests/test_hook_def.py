@@ -5,23 +5,14 @@ import pytest
 
 from dagster import DagsterEventType, ModeDefinition, NodeInvocation, PipelineDefinition
 from dagster import _check as check
-from dagster import (
-    build_hook_context,
-    execute_pipeline,
-    graph,
-    job,
-    op,
-    pipeline,
-    reconstructable,
-    resource,
-)
-from dagster.core.definitions import NodeHandle, PresetDefinition, failure_hook, success_hook
-from dagster.core.definitions.decorators.hook_decorator import event_list_hook
-from dagster.core.definitions.events import HookExecutionResult
-from dagster.core.definitions.policy import RetryPolicy
-from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvalidDefinitionError
-from dagster.core.test_utils import instance_for_test
-from dagster.legacy import solid
+from dagster import build_hook_context, execute_pipeline, graph, job, op, reconstructable, resource
+from dagster._core.definitions import NodeHandle, PresetDefinition, failure_hook, success_hook
+from dagster._core.definitions.decorators.hook_decorator import event_list_hook
+from dagster._core.definitions.events import HookExecutionResult
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidDefinitionError
+from dagster._core.test_utils import instance_for_test
+from dagster._legacy import pipeline, solid
 
 
 class SomeUserException(Exception):
@@ -287,7 +278,7 @@ def test_failure_hook_framework_exception():
         my_op()
 
     with mock.patch(
-        "dagster.core.execution.plan.execute_plan.core_dagster_event_sequence_for_step"
+        "dagster._core.execution.plan.execute_plan.core_dagster_event_sequence_for_step"
     ) as mocked_event_sequence:
         mocked_event_sequence.side_effect = Exception("Framework exception during execution")
 

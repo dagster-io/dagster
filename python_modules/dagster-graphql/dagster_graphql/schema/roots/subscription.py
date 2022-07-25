@@ -1,7 +1,7 @@
 import graphene
 
 import dagster._check as check
-from dagster.core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.compute_log_manager import ComputeIOType
 
 from ...implementation.execution import get_compute_log_observable, get_pipeline_run_observable
 from ..external import GrapheneLocationStateChangeSubscription, get_location_state_change_observable

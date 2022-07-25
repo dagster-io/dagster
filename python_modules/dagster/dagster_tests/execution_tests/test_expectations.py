@@ -7,7 +7,7 @@ from dagster import (
     PipelineDefinition,
     execute_pipeline,
 )
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 def expt_results_for_compute_step(result, solid_name):

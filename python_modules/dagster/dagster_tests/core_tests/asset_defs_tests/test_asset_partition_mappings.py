@@ -18,15 +18,15 @@ from dagster import (
     graph,
     op,
 )
-from dagster.core.definitions import asset, build_assets_job, multi_asset
-from dagster.core.definitions.asset_partitions import (
+from dagster._core.definitions import asset, build_assets_job, multi_asset
+from dagster._core.definitions.asset_partitions import (
     get_downstream_partitions_for_partition_range,
     get_upstream_partitions_for_partition_range,
 )
-from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.partition_key_range import PartitionKeyRange
-from dagster.core.definitions.partition_mapping import PartitionMapping
-from dagster.core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.partition_mapping import PartitionMapping
+from dagster._core.definitions.time_window_partitions import TimeWindow
 
 
 def test_filter_mapping_partitions_dep():
@@ -149,6 +149,7 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
     def downstream_asset(context, upstream_asset):
         assert context.asset_partition_key_for_output() == "2"
         assert upstream_asset is None
+        assert context.asset_partitions_def_for_input("upstream_asset") == upstream_partitions_def
 
     my_job = build_assets_job(
         "my_job",

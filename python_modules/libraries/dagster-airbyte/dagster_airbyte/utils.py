@@ -3,7 +3,7 @@ from typing import Any, Dict, Iterator, List
 from dagster_airbyte.types import AirbyteOutput
 
 from dagster import AssetMaterialization, MetadataValue
-from dagster.core.definitions.metadata.table import TableColumn, TableSchema
+from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 
 
 def _materialization_for_stream(

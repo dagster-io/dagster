@@ -4,9 +4,9 @@ import click
 
 from dagster import DagsterInstance
 from dagster import _check as check
-from dagster.cli.debug import DebugRunPayload
-from dagster.core.workspace import WorkspaceProcessContext
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster._cli.debug import DebugRunPayload
+from dagster._core.workspace import WorkspaceProcessContext
+from dagster._serdes import deserialize_json_to_dagster_namedtuple
 
 from .cli import (
     DEFAULT_DAGIT_HOST,

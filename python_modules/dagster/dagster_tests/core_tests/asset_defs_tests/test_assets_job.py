@@ -18,6 +18,7 @@ from dagster import (
     Output,
     ResourceDefinition,
     StaticPartitionsDefinition,
+    define_asset_job,
     graph,
     io_manager,
     materialize_to_memory,
@@ -25,20 +26,20 @@ from dagster import (
     op,
     resource,
 )
-from dagster.config.source import StringSource
-from dagster.core.definitions import AssetGroup, AssetIn, SourceAsset, asset, build_assets_job
-from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.definitions.executor_definition import in_process_executor
-from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
-from dagster.core.execution.api import execute_pipeline
-from dagster.core.snap import DependencyStructureIndex
-from dagster.core.snap.dep_snapshot import (
+from dagster._config import StringSource
+from dagster._core.definitions import AssetGroup, AssetIn, SourceAsset, asset, build_assets_job
+from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
+from dagster._core.execution.api import execute_pipeline
+from dagster._core.snap import DependencyStructureIndex
+from dagster._core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_icontains_solids,
 )
-from dagster.core.test_utils import instance_for_test
-from dagster.utils import safe_tempfile_path
-from dagster.utils.backcompat import ExperimentalWarning
+from dagster._core.test_utils import instance_for_test
+from dagster._utils import safe_tempfile_path
+from dagster._utils.backcompat import ExperimentalWarning
 
 
 @pytest.fixture(autouse=True)
@@ -1316,6 +1317,41 @@ def test_subset_of_build_assets_job():
                 instance=instance,
                 asset_selection=[AssetKey("unconnected")],
             )
+
+
+def test_job_preserved_with_asset_subset():
+    # Assert that default config is used for asset subset
+
+    @op(config_schema={"foo": int})
+    def one(context):
+        assert context.op_config["foo"] == 1
+
+    asset_one = AssetsDefinition.from_op(one)
+
+    @asset(config_schema={"bar": int})
+    def two(context, one):  # pylint: disable=unused-argument
+        assert context.op_config["bar"] == 2
+
+    @asset(config_schema={"baz": int})
+    def three(context, two):  # pylint: disable=unused-argument
+        assert context.op_config["baz"] == 3
+
+    foo_job = define_asset_job(
+        "foo_job",
+        config={
+            "ops": {
+                "one": {"config": {"foo": 1}},
+                "two": {"config": {"bar": 2}},
+                "three": {"config": {"baz": 3}},
+            }
+        },
+        description="my cool job",
+        tags={"yay": 1},
+    ).resolve([asset_one, two, three], [])
+
+    result = foo_job.execute_in_process(asset_selection=[AssetKey("one")])
+    assert result.success
+    assert result.dagster_run.tags == {"yay": "1"}
 
 
 def test_raise_error_on_incomplete_graph_asset_subset():

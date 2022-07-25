@@ -1,7 +1,7 @@
 import graphene
 
 import dagster._check as check
-from dagster.core.host_representation import RepresentedPipeline
+from dagster._core.host_representation import RepresentedPipeline
 
 from ..implementation.run_config_schema import resolve_is_run_config_valid
 from .config_types import GrapheneConfigType, to_config_type
