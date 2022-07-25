@@ -6,9 +6,9 @@ import re
 import pytest
 
 import dagster
-from dagster.core.definitions.events import Output
-from dagster.core.definitions.input import InputDefinition
-from dagster.core.definitions.metadata import (
+from dagster._core.definitions.events import Output
+from dagster._core.definitions.input import InputDefinition
+from dagster._core.definitions.metadata import (
     DagsterAssetMetadataValue,
     DagsterRunMetadataValue,
     FloatMetadataValue,
@@ -24,8 +24,8 @@ from dagster.core.definitions.metadata import (
     TextMetadataValue,
     UrlMetadataValue,
 )
-from dagster.core.definitions.output import OutputDefinition
-from dagster.core.types.dagster_type import DagsterType
+from dagster._core.definitions.output import OutputDefinition
+from dagster._core.types.dagster_type import DagsterType
 
 # ########################
 # ##### ASSET GROUP

@@ -3,7 +3,7 @@ import uuid
 from contextlib import contextmanager
 
 import dagster._check as check
-from dagster.core.storage.file_manager import (
+from dagster._core.storage.file_manager import (
     FileHandle,
     FileManager,
     TempfileManager,

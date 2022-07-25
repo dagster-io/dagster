@@ -16,9 +16,9 @@ from dagster import (
     repository,
     root_input_manager,
 )
-from dagster.core.errors import DagsterInvalidInvocationError, DagsterInvalidSubsetError
-from dagster.core.events import DagsterEventType
-from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvalidSubsetError
+from dagster._core.events import DagsterEventType
+from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 
 
 @op

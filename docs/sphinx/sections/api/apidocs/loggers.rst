@@ -3,7 +3,7 @@ Loggers
 
 Built-in loggers
 ----------------
-.. currentmodule:: dagster.loggers
+.. currentmodule:: dagster._loggers
 
 .. autofunction:: colored_console_logger
 

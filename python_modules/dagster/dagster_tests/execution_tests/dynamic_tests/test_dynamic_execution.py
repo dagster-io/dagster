@@ -14,12 +14,12 @@ from dagster import (
     op,
     reconstructable,
 )
+from dagster._core.errors import DagsterExecutionStepNotFoundError
+from dagster._core.execution.api import create_execution_plan, reexecute_pipeline
+from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import pipeline, solid
-from dagster.core.errors import DagsterExecutionStepNotFoundError
-from dagster.core.execution.api import create_execution_plan, reexecute_pipeline
-from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster.utils import merge_dicts
+from dagster._utils import merge_dicts
 
 
 @solid(tags={"third": "3"})

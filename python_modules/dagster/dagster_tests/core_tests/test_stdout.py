@@ -17,12 +17,12 @@ from dagster import (
     reconstructable,
     resource,
 )
+from dagster._core.execution.compute_logs import should_disable_io_stream_redirect
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._legacy import pipeline, solid
-from dagster.core.execution.compute_logs import should_disable_io_stream_redirect
-from dagster.core.instance import DagsterInstance
-from dagster.core.storage.compute_log_manager import ComputeIOType
-from dagster.core.test_utils import create_run_for_test, instance_for_test
-from dagster.utils import ensure_dir, touch_file
+from dagster._utils import ensure_dir, touch_file
 
 HELLO_SOLID = "HELLO SOLID"
 HELLO_RESOURCE = "HELLO RESOURCE"
@@ -173,7 +173,7 @@ def test_compute_log_manager_subscriptions():
     should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
 )
 def test_compute_log_manager_subscription_updates():
-    from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
+    from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 
     with tempfile.TemporaryDirectory() as temp_dir:
         compute_log_manager = LocalComputeLogManager(temp_dir, polling_timeout=0.5)
@@ -309,7 +309,7 @@ def test_compute_log_base_with_spaces():
             temp_dir=temp_dir,
             overrides={
                 "compute_logs": {
-                    "module": "dagster.core.storage.local_compute_log_manager",
+                    "module": "dagster._core.storage.local_compute_log_manager",
                     "class": "LocalComputeLogManager",
                     "config": {"base_dir": os.path.join(temp_dir, "base with spaces")},
                 }

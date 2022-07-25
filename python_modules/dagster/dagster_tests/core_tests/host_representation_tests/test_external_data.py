@@ -1,11 +1,11 @@
 import pytest
 
 from dagster import AssetKey, AssetsDefinition, GraphOut, In, Out, define_asset_job, graph, job, op
-from dagster.core.definitions import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
-from dagster.core.definitions.metadata import MetadataValue, normalize_metadata
-from dagster.core.definitions.utils import DEFAULT_GROUP_NAME
-from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.host_representation.external_data import (
+from dagster._core.definitions import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
+from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
+from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.host_representation.external_data import (
     ExternalAssetDependedBy,
     ExternalAssetDependency,
     ExternalAssetNode,
@@ -13,7 +13,7 @@ from dagster.core.host_representation.external_data import (
     ExternalTargetData,
     external_asset_graph_from_defs,
 )
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster._serdes import deserialize_json_to_dagster_namedtuple
 
 
 def test_single_asset_job():

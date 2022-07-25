@@ -699,8 +699,8 @@ With the pipeline APIs, if you want to pass inputs into and return outputs from 
 
 ```python file=/guides/dagster/graph_job_op/composite_solid_ins_out.py
 from dagster import OutputDefinition, composite_solid
+from dagster._core.definitions.input import InputDefinition
 from dagster._legacy import pipeline, solid
-from dagster.core.definitions.input import InputDefinition
 
 
 @solid
@@ -744,7 +744,7 @@ With the graph APIs, you can specify `ins` and `out` properties to do so:
 
 ```python file=/guides/dagster/graph_job_op/nested_graphs_ins_out.py
 from dagster import In, Out, graph, op
-from dagster.core.definitions.output import GraphOut
+from dagster._core.definitions.output import GraphOut
 
 
 @op
@@ -825,7 +825,7 @@ With the graph APIs, you can specify `out` property:
 
 ```python file=/guides/dagster/graph_job_op/nested_graphs_multi_out.py
 from dagster import Out, graph, op
-from dagster.core.definitions.output import GraphOut
+from dagster._core.definitions.output import GraphOut
 
 
 @op

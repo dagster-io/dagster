@@ -19,12 +19,12 @@ from dagster import (
     execute_pipeline,
     reconstructable,
 )
+from dagster._core.definitions.no_step_launcher import no_step_launcher
+from dagster._core.errors import DagsterSubprocessError
+from dagster._core.test_utils import instance_for_test
 from dagster._legacy import pipeline, solid
-from dagster.core.definitions.no_step_launcher import no_step_launcher
-from dagster.core.errors import DagsterSubprocessError
-from dagster.core.test_utils import instance_for_test
-from dagster.utils.merger import deep_merge_dicts
-from dagster.utils.test import create_test_pipeline_execution_context
+from dagster._utils.merger import deep_merge_dicts
+from dagster._utils.test import create_test_pipeline_execution_context
 
 S3_BUCKET = "dagster-scratch-80542c2"
 
@@ -230,7 +230,7 @@ def test_do_it_live_emr():
 @mock.patch("boto3.resource")
 @mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher.wait_for_completion")
 @mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher._log_logs_from_s3")
-@mock.patch("dagster.core.events.log_step_event")
+@mock.patch("dagster._core.events.log_step_event")
 def test_fetch_logs_on_fail(
     _mock_log_step_event, mock_log_logs, mock_wait_for_completion, _mock_boto3_resource
 ):

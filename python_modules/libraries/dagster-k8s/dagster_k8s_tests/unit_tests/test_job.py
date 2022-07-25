@@ -13,7 +13,7 @@ from dagster_k8s.utils import sanitize_k8s_label
 
 from dagster import __version__ as dagster_version
 from dagster import graph
-from dagster.core.test_utils import environ, remove_none_recursively
+from dagster._core.test_utils import environ, remove_none_recursively
 
 
 def test_job_serialization():

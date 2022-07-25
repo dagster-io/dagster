@@ -13,8 +13,8 @@ from dagster import (
     file_relative_path,
 )
 from dagster._legacy import solid
-from dagster.utils import dict_without_keys
-from dagster.utils.test import get_temp_dir
+from dagster._utils import dict_without_keys
+from dagster._utils.test import get_temp_dir
 
 spark = SparkSession.builder.getOrCreate()
 

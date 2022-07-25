@@ -17,30 +17,30 @@ from dagster import (
     graph,
     repository,
 )
-from dagster._legacy import pipeline, solid
-from dagster.core.definitions import Partition, PartitionSetDefinition
-from dagster.core.execution.api import execute_pipeline
-from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster.core.host_representation import (
+from dagster._core.definitions import Partition, PartitionSetDefinition
+from dagster._core.execution.api import execute_pipeline
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
 )
-from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
-from dagster.core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster.core.test_utils import (
+from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster._core.test_utils import (
     create_test_daemon_workspace,
     instance_for_test,
     step_did_not_run,
     step_failed,
     step_succeeded,
 )
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.core.workspace.load_target import PythonFileTarget
-from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.backfill import execute_backfill_iteration
-from dagster.seven import IS_WINDOWS, get_system_temp_directory
-from dagster.utils import touch_file
-from dagster.utils.error import SerializableErrorInfo
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.workspace.load_target import PythonFileTarget
+from dagster._daemon import get_default_daemon_logger
+from dagster._daemon.backfill import execute_backfill_iteration
+from dagster._legacy import pipeline, solid
+from dagster._seven import IS_WINDOWS, get_system_temp_directory
+from dagster._utils import touch_file
+from dagster._utils.error import SerializableErrorInfo
 
 default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 

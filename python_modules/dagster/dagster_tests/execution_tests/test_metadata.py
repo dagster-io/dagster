@@ -17,20 +17,20 @@ from dagster import (
     execute_pipeline,
 )
 from dagster._check import CheckError
-from dagster._legacy import pipeline, solid
-from dagster.core.definitions.metadata import (
+from dagster._core.definitions.metadata import (
     DagsterInvalidMetadata,
     MetadataEntry,
     normalize_metadata,
 )
-from dagster.core.definitions.metadata.table import (
+from dagster._core.definitions.metadata.table import (
     TableColumn,
     TableColumnConstraints,
     TableConstraints,
     TableRecord,
     TableSchema,
 )
-from dagster.utils import frozendict
+from dagster._legacy import pipeline, solid
+from dagster._utils import frozendict
 
 
 def solid_events_for_type(result, solid_name, event_type):
@@ -145,7 +145,7 @@ def test_unknown_metadata_value():
 
     assert str(exc_info.value) == (
         'Could not resolve the metadata value for "bad" to a known type. '
-        "Its type was <class 'dagster.core.instance.DagsterInstance'>. "
+        "Its type was <class 'dagster._core.instance.DagsterInstance'>. "
         "Consider wrapping the value with the appropriate MetadataValue type."
     )
 

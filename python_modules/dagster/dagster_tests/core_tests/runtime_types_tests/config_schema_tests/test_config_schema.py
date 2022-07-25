@@ -3,8 +3,8 @@ import hashlib
 import pytest
 
 from dagster import String
-from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types.config_schema import dagster_type_loader
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.types.config_schema import dagster_type_loader
 
 
 def test_dagster_type_loader_one():

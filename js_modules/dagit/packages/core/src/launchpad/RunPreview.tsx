@@ -26,6 +26,7 @@ import {
   ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType,
 } from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
 
+import {LaunchpadType} from './LaunchpadRoot';
 import {
   RunPreviewValidationFragment,
   RunPreviewValidationFragment_RunConfigValidationInvalid_errors,
@@ -202,6 +203,7 @@ const ScaffoldConfigButton = ({
 interface RunPreviewProps {
   validation: RunPreviewValidationFragment | null;
   document: any | null;
+  launchpadType: LaunchpadType;
 
   runConfigSchema?: ConfigEditorRunConfigSchemaFragment;
   onHighlightPath: (path: string[]) => void;
@@ -215,6 +217,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
     document,
     validation,
     onHighlightPath,
+    launchpadType,
     onRemoveExtraPaths,
     onScaffoldMissingConfig,
     solidSelection,
@@ -424,7 +427,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
               )}
             </RuntimeAndResourcesSection>
             <Section>
-              <SectionTitle>Ops</SectionTitle>
+              <SectionTitle>{launchpadType === 'asset' ? 'Assets (Ops)' : 'Ops'}</SectionTitle>
               <ItemSet>
                 {itemsIn(
                   [hasOps ? 'ops' : 'solids'],

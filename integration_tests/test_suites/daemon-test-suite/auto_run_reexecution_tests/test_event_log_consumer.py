@@ -2,11 +2,11 @@ import logging
 import time
 
 from dagster import DagsterEvent, DagsterEventType, EventLogEntry
-from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import create_run_for_test
-from dagster.daemon.auto_run_reexecution.event_log_consumer import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import create_run_for_test
+from dagster._daemon.auto_run_reexecution.event_log_consumer import (
     EventLogConsumerDaemon,
-    _get_new_cursor,
+    get_new_cursor,
 )
 
 TEST_EVENT_LOG_FETCH_LIMIT = 10
@@ -146,22 +146,22 @@ def test_cursors(instance: DagsterInstance, empty_workspace):
 
 def test_get_new_cursor():
     # hit fetch limit, uses max new_event_ids
-    assert _get_new_cursor(0, 20, 8, [3, 4, 5, 6, 7, 8, 9, 10]) == 10
+    assert get_new_cursor(0, 20, 8, [3, 4, 5, 6, 7, 8, 9, 10]) == 10
 
     # hit fetch limit, uses max new_event_ids with overall_max_event_id low
-    assert _get_new_cursor(0, 7, 8, [3, 4, 5, 6, 7, 8, 9, 10]) == 10
+    assert get_new_cursor(0, 7, 8, [3, 4, 5, 6, 7, 8, 9, 10]) == 10
 
     # didn't hit fetch limit, uses max new_event_ids with overall_max_event_id low
-    assert _get_new_cursor(0, 7, 8, [3, 4, 5, 6, 7, 8, 9]) == 9
+    assert get_new_cursor(0, 7, 8, [3, 4, 5, 6, 7, 8, 9]) == 9
 
     # didn't hit fetch limit, jumps to overall_max_event_id
-    assert _get_new_cursor(0, 20, 4, [1, 2, 3]) == 20
+    assert get_new_cursor(0, 20, 4, [1, 2, 3]) == 20
 
     # empty event log
-    assert _get_new_cursor(0, None, 4, []) is None
+    assert get_new_cursor(0, None, 4, []) is None
 
     # empty overall_max_event_id
-    assert _get_new_cursor(0, None, 5, [2, 3, 4]) == 4
+    assert get_new_cursor(0, None, 5, [2, 3, 4]) == 4
 
     # no new_event_ids
-    assert _get_new_cursor(0, 10, 4, []) == 10
+    assert get_new_cursor(0, 10, 4, []) == 10

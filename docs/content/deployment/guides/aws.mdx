@@ -42,7 +42,7 @@ The Deploying on ECS example on GitHub demonstrates how to configure the [Docker
 
 The <PyObject module="dagster_aws.ecs" object="EcsRunLauncher" /> launches an ECS task per run. It assumes that the rest of our Dagster deployment is also running in ECS on a Fargate compatible cluster.
 
-By default, each run's task registers its own task definition. To simplify configuration, these task definitions inherit most of their configuration (networking, cpu, memory, environment, etc.) from the process that launches the run but overrides its container definition with a new command to launch a Dagster run. When using the <PyObject module="dagster.core.run_coordinator" object="DefaultRunCoordinator" />, runs launched via Dagit or GraphQL inherit their task definitions from the Dagit task; runs launched from a sensor or schedule inherit their task definitions from the Daemon task.
+By default, each run's task registers its own task definition. To simplify configuration, these task definitions inherit most of their configuration (networking, cpu, memory, environment, etc.) from the process that launches the run but overrides its container definition with a new command to launch a Dagster run. When using the <PyObject module="dagster._core.run_coordinator" object="DefaultRunCoordinator" />, runs launched via Dagit or GraphQL inherit their task definitions from the Dagit task; runs launched from a sensor or schedule inherit their task definitions from the Daemon task.
 
 Alternatively, you can define your own task definition in your dagster.yaml:
 

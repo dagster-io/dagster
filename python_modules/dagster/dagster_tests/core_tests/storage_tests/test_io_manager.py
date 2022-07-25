@@ -32,17 +32,17 @@ from dagster import (
     resource,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.execution.api import create_execution_plan, execute_plan
+from dagster._core.execution.context.output import get_output_context
+from dagster._core.execution.plan.outputs import StepOutputHandle
+from dagster._core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
+from dagster._core.storage.io_manager import IOManager, io_manager
+from dagster._core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
+from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.test_utils import instance_for_test
 from dagster._legacy import pipeline, solid
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.definitions.time_window_partitions import DailyPartitionsDefinition
-from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.execution.context.output import get_output_context
-from dagster.core.execution.plan.outputs import StepOutputHandle
-from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
-from dagster.core.storage.io_manager import IOManager, io_manager
-from dagster.core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
-from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster.core.test_utils import instance_for_test
 
 
 def test_io_manager_with_config():

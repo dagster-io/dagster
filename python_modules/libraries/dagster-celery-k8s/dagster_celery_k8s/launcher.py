@@ -12,18 +12,17 @@ from dagster_k8s.utils import delete_job
 
 from dagster import DagsterInvariantViolationError, MetadataEntry
 from dagster import _check as check
-from dagster.config.field import resolve_to_config_type
-from dagster.config.validate import process_config
-from dagster.core.events import EngineEventData
-from dagster.core.execution.retries import RetryMode
-from dagster.core.launcher import LaunchRunContext, RunLauncher
-from dagster.core.launcher.base import CheckRunHealthResult, WorkerStatus
-from dagster.core.origin import PipelinePythonOrigin
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.core.storage.tags import DOCKER_IMAGE_TAG
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils import frozentags, merge_dicts
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster._config import process_config, resolve_to_config_type
+from dagster._core.events import EngineEventData
+from dagster._core.execution.retries import RetryMode
+from dagster._core.launcher import LaunchRunContext, RunLauncher
+from dagster._core.launcher.base import CheckRunHealthResult, WorkerStatus
+from dagster._core.origin import PipelinePythonOrigin
+from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._core.storage.tags import DOCKER_IMAGE_TAG
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._utils import frozentags, merge_dicts
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
 
@@ -199,7 +198,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         user_defined_k8s_config = get_user_defined_k8s_config(frozentags(run.tags))
 
-        from dagster.cli.api import ExecuteRunArgs
+        from dagster._cli.api import ExecuteRunArgs
 
         run_args = ExecuteRunArgs(
             pipeline_origin=pipeline_origin,

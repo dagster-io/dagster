@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from dagster.utils import list_pull
+from dagster._utils import list_pull
 
 
 def test_list_pull():

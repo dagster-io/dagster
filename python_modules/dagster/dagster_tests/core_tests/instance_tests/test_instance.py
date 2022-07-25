@@ -8,26 +8,26 @@ from dagster import PipelineDefinition
 from dagster import _check as check
 from dagster import execute_pipeline
 from dagster._check import CheckError
-from dagster._legacy import pipeline, solid
-from dagster.config import Field
-from dagster.core.errors import (
+from dagster._config import Field
+from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
 )
-from dagster.core.execution.api import create_execution_plan
-from dagster.core.instance import DagsterInstance, InstanceRef
-from dagster.core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
-from dagster.core.launcher import LaunchRunContext, RunLauncher
-from dagster.core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
-from dagster.core.snap import (
+from dagster._core.execution.api import create_execution_plan
+from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
+from dagster._core.launcher import LaunchRunContext, RunLauncher
+from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
+from dagster._core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
     snapshot_from_execution_plan,
 )
-from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
-from dagster.serdes import ConfigurableClass
-from dagster.serdes.config_class import ConfigurableClassData
+from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
+from dagster._legacy import pipeline, solid
+from dagster._serdes import ConfigurableClass
+from dagster._serdes.config_class import ConfigurableClassData
 
 
 def test_get_run_by_id():
@@ -62,7 +62,7 @@ def test_partial_storage(tmpdir):
     with instance_for_test(
         overrides={
             "run_storage": {
-                "module": "dagster.core.storage.runs",
+                "module": "dagster._core.storage.runs",
                 "class": "SqliteRunStorage",
                 "config": {
                     "base_dir": str(tmpdir),
@@ -141,7 +141,7 @@ def test_submit_run():
     with instance_for_test(
         overrides={
             "run_coordinator": {
-                "module": "dagster.core.test_utils",
+                "module": "dagster._core.test_utils",
                 "class": "MockedRunCoordinator",
             }
         }
@@ -168,7 +168,7 @@ def test_submit_run():
 
 
 def test_get_required_daemon_types():
-    from dagster.daemon.daemon import (
+    from dagster._daemon.daemon import (
         BackfillDaemon,
         MonitoringDaemon,
         SchedulerDaemon,
@@ -386,7 +386,7 @@ class TestInstanceSubclass(DagsterInstance):
     def config_defaults(base_dir):
         defaults = InstanceRef.config_defaults(base_dir)
         defaults["run_coordinator"] = ConfigurableClassData(
-            "dagster.core.run_coordinator.queued_run_coordinator",
+            "dagster._core.run_coordinator.queued_run_coordinator",
             "QueuedRunCoordinator",
             yaml.dump({}),
         )

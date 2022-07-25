@@ -4,7 +4,7 @@ import kubernetes
 
 from dagster import Field, In, Noneable, Nothing, Permissive, StringSource, op
 from dagster._annotations import experimental
-from dagster.utils import merge_dicts
+from dagster._utils import merge_dicts
 
 from ..container_context import K8sContainerContext
 from ..job import (

@@ -9,10 +9,10 @@ from dagster_graphql.test.utils import (
 )
 
 from dagster import PipelineRun, PipelineRunStatus
-from dagster.core.execution.backfill import BulkActionStatus
-from dagster.core.storage.tags import PARTITION_NAME_TAG
-from dagster.core.test_utils import create_run_for_test
-from dagster.seven import get_system_temp_directory
+from dagster._core.execution.backfill import BulkActionStatus
+from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._core.test_utils import create_run_for_test
+from dagster._seven import get_system_temp_directory
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 
