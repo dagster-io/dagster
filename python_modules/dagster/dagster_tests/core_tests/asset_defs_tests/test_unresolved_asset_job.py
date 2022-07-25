@@ -488,6 +488,48 @@ def test_config():
     assert result.output_for_node("other_config_asset") == 1 + 2 + 3
 
 
+@pytest.mark.parametrize(
+    "selection,config",
+    [
+        (AssetSelection.keys("other_config_asset"), {"other_config_asset": {"config": {"val": 3}}}),
+        (
+            AssetSelection.keys("other_config_asset").upstream(depth=1),
+            {
+                "config_asset": {"config": {"val": 2}},
+                "other_config_asset": {"config": {"val": 3}},
+            },
+        ),
+    ],
+)
+def test_subselect_config(selection, config):
+    @asset(io_manager_key="asset_io_manager")
+    def foo():
+        return 1
+
+    @asset(config_schema={"val": int}, io_manager_key="asset_io_manager")
+    def config_asset(context, foo):
+        return foo + context.op_config["val"]
+
+    @asset(config_schema={"val": int}, io_manager_key="asset_io_manager")
+    def other_config_asset(context, config_asset):
+        return config_asset + context.op_config["val"]
+
+    io_manager_obj, io_manager_def = asset_aware_io_manager()
+    io_manager_obj.db[AssetKey("foo")] = 1
+    io_manager_obj.db[AssetKey("config_asset")] = 1 + 2
+
+    all_assets = with_resources(
+        [foo, config_asset, other_config_asset], resource_defs={"asset_io_manager": io_manager_def}
+    )
+    job = define_asset_job("config_job", config={"ops": config}, selection=selection).resolve(
+        assets=all_assets, source_assets=[]
+    )
+
+    result = job.execute_in_process()
+
+    assert result.output_for_node("other_config_asset") == 1 + 2 + 3
+
+
 def test_simple_partitions():
     partitions_def = HourlyPartitionsDefinition(start_date="2020-01-01-00:00")
     job = define_asset_job("hourly", partitions_def=partitions_def).resolve(
