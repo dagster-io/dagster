@@ -2,7 +2,7 @@ import pandas as pd
 
 from dagster import build_op_context
 
-from .assets import comments, items, stories
+from .assets import items
 from .resources.resources_v2 import MockHNClient, mock_hn_client
 
 # start
@@ -19,28 +19,6 @@ def test_items():
     )
 
     assert (hn_dataset == expected_data).all().all()
-
-
-def test_comments():
-    mock_data = pd.DataFrame({"id": [1, 2, 3], "type": ["comment", "story", "comment"]})
-    out_data = comments(mock_data)
-
-    out_ids = out_data["id"].tolist()
-
-    assert 1 in out_ids
-    assert 2 not in out_ids
-    assert 3 in out_ids
-
-
-def test_stories():
-    mock_data = pd.DataFrame({"id": [1, 2, 3], "type": ["story", "story", "comment"]})
-    out_data = stories(mock_data)
-
-    out_ids = out_data["id"].tolist()
-
-    assert 1 in out_ids
-    assert 1 in out_ids
-    assert 3 not in out_ids
 
 
 # end

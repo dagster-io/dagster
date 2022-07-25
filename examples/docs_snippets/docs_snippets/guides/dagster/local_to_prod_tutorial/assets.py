@@ -15,7 +15,7 @@ def items(context) -> pd.DataFrame:
     hn_client = context.resources.hn_client
 
     rows = []
-    for item_id in range(1, 100 + 1):
+    for item_id in range(1, hn_client.fetch_max_item_id()):
         rows.append(hn_client.fetch_item_by_id(item_id))
 
     result = pd.DataFrame(rows, columns=hn_client.item_field_names).drop_duplicates(

@@ -1,35 +1,12 @@
-from abc import ABC
 from typing import Any, Dict, Optional
 
 from dagster import resource
-
-# start_abc
-# resources.py
-
-
-class HNClient(ABC):
-    """
-    Base class for a Hacker News Client
-    """
-
-    @property
-    def item_field_names(self):
-        pass
-
-    def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
-        pass
-
-    def fetch_max_item_id(self) -> int:
-        pass
-
-
-# end_abc
 
 # start_mock
 # resources.py
 
 
-class MockHNClient(HNClient):
+class MockHNClient:
     """
     Hacker News Client that returns mock data
     """
@@ -50,15 +27,15 @@ class MockHNClient(HNClient):
             },
         }
 
-    @property
-    def item_field_names(self):
-        return ["id", "type", "title", "by"]
-
     def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
         return self.data.get(item_id)
 
     def fetch_max_item_id(self) -> int:
         return len(self.data.items())
+
+    @property
+    def item_field_names(self):
+        return ["id", "type", "title", "by"]
 
 
 @resource
