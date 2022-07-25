@@ -3,6 +3,7 @@ import random
 import string
 import time
 from contextlib import contextmanager
+from unittest.mock import MagicMock
 
 import pendulum
 
@@ -10,11 +11,9 @@ from dagster import (
     Any,
     DefaultScheduleStatus,
     Field,
-    Partition,
-    PartitionSetDefinition,
     ScheduleDefinition,
-    daily_schedule,
-    hourly_schedule,
+    build_schedule_from_partitioned_job,
+    daily_partitioned_config,
     job,
     op,
     repository,
@@ -46,16 +45,12 @@ from dagster._core.workspace.load_target import EmptyWorkspaceTarget, GrpcServer
 from dagster._daemon import get_default_daemon_logger
 from dagster._grpc.client import EphemeralDagsterGrpcClient
 from dagster._grpc.server import open_server_process
-from dagster._legacy import pipeline, solid
 from dagster._scheduler.scheduler import launch_scheduled_runs
 from dagster._seven import wait_for_process
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster._utils import find_free_port
-from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 
 from .conftest import loadable_target_origin, workspace_load_target
-
-_COUPLE_DAYS_AGO = datetime.datetime(year=2019, month=2, day=25)
 
 
 def _throw(_context):
@@ -74,178 +69,149 @@ def _never(_context):
     return False
 
 
-@solid(config_schema={"partition_time": str})
+@op(config_schema={"execution_time": str})
 def the_solid(context):
-    return "Ran at this partition date: {}".format(context.solid_config["partition_time"])
+    return "Ran at this execution time: {}".format(context.op_config["execution_time"])
 
 
-@pipeline
+@job
 def the_pipeline():
     the_solid()
 
 
-def _solid_config(date):
+def _op_config(context):
     return {
-        "solids": {"the_solid": {"config": {"partition_time": date.isoformat()}}},
+        "ops": {
+            "the_solid": {
+                "config": {"execution_time": context.scheduled_execution_time.isoformat()}
+            }
+        },
     }
 
 
-@daily_schedule(pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="UTC")
-def simple_schedule(date):
-    return _solid_config(date)
+@schedule(job=the_pipeline, execution_timezone="UTC", cron_schedule="0 0 * * *")
+def simple_schedule(context):
+    return _op_config(context)
 
 
-@daily_schedule(pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO)
-def daily_schedule_without_timezone(date):
-    return _solid_config(date)
+@daily_partitioned_config(start_date=datetime.datetime(year=2019, month=2, day=25))
+def partitioned_job_config(_, date):
+    return _op_config(MagicMock(scheduled_execution_time=date))
 
 
-@daily_schedule(
-    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="US/Central"
+@job(config=partitioned_job_config)
+def partitioned_job():
+    the_solid()
+
+
+partitioned_schedule = build_schedule_from_partitioned_job(
+    partitioned_job, name="partitioned_schedule"
 )
-def daily_central_time_schedule(date):
-    return _solid_config(date)
 
 
-@schedule(
-    pipeline_name="the_pipeline", cron_schedule="*/5 * * * *", execution_timezone="US/Central"
-)
+@schedule(job=the_pipeline, cron_schedule="0 0 * * *")
+def daily_schedule_without_timezone(context):
+    return _op_config(context)
+
+
+@schedule(job=the_pipeline, execution_timezone="US/Central", cron_schedule="0 0 * * *")
+def daily_central_time_schedule(context):
+    return _op_config(context)
+
+
+@schedule(job=the_pipeline, cron_schedule="*/5 * * * *", execution_timezone="US/Central")
 def partitionless_schedule(context):
-    return _solid_config(context.scheduled_execution_time)
+    return _op_config(context)
 
 
 # Schedule that runs on a different day in Central Time vs UTC
-@daily_schedule(
-    pipeline_name="the_pipeline",
-    start_date=_COUPLE_DAYS_AGO,
-    execution_time=datetime.time(hour=23, minute=0),
-    execution_timezone="US/Central",
-)
-def daily_late_schedule(date):
-    return _solid_config(date)
+@schedule(job=the_pipeline, execution_timezone="US/Central", cron_schedule="0 23 * * *")
+def daily_late_schedule(context):
+    return _op_config(context)
 
 
-@daily_schedule(
-    pipeline_name="the_pipeline",
-    start_date=_COUPLE_DAYS_AGO,
-    execution_time=datetime.time(hour=2, minute=30),
-    execution_timezone="US/Central",
-)
-def daily_dst_transition_schedule_skipped_time(date):
-    return _solid_config(date)
+@schedule(job=the_pipeline, execution_timezone="US/Central", cron_schedule="30 2 * * *")
+def daily_dst_transition_schedule_skipped_time(context):
+    return _op_config(context)
 
 
-@daily_schedule(
-    pipeline_name="the_pipeline",
-    start_date=_COUPLE_DAYS_AGO,
-    execution_time=datetime.time(hour=1, minute=30),
-    execution_timezone="US/Central",
-)
-def daily_dst_transition_schedule_doubled_time(date):
-    return _solid_config(date)
+@schedule(job=the_pipeline, execution_timezone="US/Central", cron_schedule="30 1 * * *")
+def daily_dst_transition_schedule_doubled_time(context):
+    return _op_config(context)
 
 
-@daily_schedule(
-    pipeline_name="the_pipeline",
-    start_date=_COUPLE_DAYS_AGO,
-    execution_timezone="US/Eastern",
-)
-def daily_eastern_time_schedule(date):
-    return _solid_config(date)
+@schedule(job=the_pipeline, execution_timezone="US/Eastern", cron_schedule="0 0 * * *")
+def daily_eastern_time_schedule(context):
+    return _op_config(context)
 
 
-@daily_schedule(
-    pipeline_name="the_pipeline",
-    start_date=_COUPLE_DAYS_AGO,
-    end_date=datetime.datetime(year=2019, month=3, day=1),
-    execution_timezone="UTC",
-)
-def simple_temporary_schedule(date):
-    return _solid_config(date)
-
-
-# forgot date arg
-@daily_schedule(  # type: ignore
-    pipeline_name="the_pipeline",
-    start_date=_COUPLE_DAYS_AGO,
-    execution_timezone="UTC",
-)
+@schedule(job=the_pipeline, execution_timezone="UTC", cron_schedule="0 0 * * *")
 def bad_env_fn_schedule():
-    return {}
+    raise ValueError("fsdjk")
 
 
 NUM_CALLS = {"calls": 0}
 
 
-@daily_schedule(  # type: ignore
-    pipeline_name="the_pipeline",
-    start_date=_COUPLE_DAYS_AGO,
-    execution_timezone="UTC",
-)
-def passes_on_retry_schedule(date):
+@schedule(job=the_pipeline, execution_timezone="UTC", cron_schedule="0 0 * * *")
+def passes_on_retry_schedule(context):
     NUM_CALLS["calls"] = NUM_CALLS["calls"] + 1
     if NUM_CALLS["calls"] > 1:
-        return _solid_config(date)
+        return _op_config(context)
     raise Exception("better luck next time")
 
 
-@hourly_schedule(
-    pipeline_name="the_pipeline",
-    start_date=_COUPLE_DAYS_AGO,
-    execution_timezone="UTC",
-)
-def simple_hourly_schedule(date):
-    return _solid_config(date)
+@schedule(job=the_pipeline, execution_timezone="UTC", cron_schedule="0 * * * *")
+def simple_hourly_schedule(context):
+    return _op_config(context)
 
 
-@hourly_schedule(
-    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="US/Central"
-)
-def hourly_central_time_schedule(date):
-    return _solid_config(date)
+@schedule(job=the_pipeline, execution_timezone="US/Central", cron_schedule="0 * * * *")
+def hourly_central_time_schedule(context):
+    return _op_config(context)
 
 
-@daily_schedule(
-    pipeline_name="the_pipeline",
-    start_date=_COUPLE_DAYS_AGO,
+@schedule(
+    job=the_pipeline,
     should_execute=_throw,
     execution_timezone="UTC",
+    cron_schedule="0 0 * * *",
 )
-def bad_should_execute_schedule(date):
-    return _solid_config(date)
+def bad_should_execute_schedule(context):
+    return _op_config(context)
 
 
-@daily_schedule(
-    pipeline_name="the_pipeline",
-    start_date=_COUPLE_DAYS_AGO,
+@schedule(
+    job=the_pipeline,
     should_execute=_throw_on_odd_day,
     execution_timezone="UTC",
+    cron_schedule="0 0 * * *",
 )
-def bad_should_execute_schedule_on_odd_days(date):
-    return _solid_config(date)
+def bad_should_execute_schedule_on_odd_days(context):
+    return _op_config(context)
 
 
-@daily_schedule(
-    pipeline_name="the_pipeline",
-    start_date=_COUPLE_DAYS_AGO,
+@schedule(
+    job=the_pipeline,
     should_execute=_never,
     execution_timezone="UTC",
+    cron_schedule="0 0 * * *",
 )
-def skip_schedule(date):
-    return _solid_config(date)
+def skip_schedule(context):
+    return _op_config(context)
 
 
-@daily_schedule(
-    pipeline_name="the_pipeline",
-    start_date=_COUPLE_DAYS_AGO,
+@schedule(
+    job=the_pipeline,
     execution_timezone="UTC",
+    cron_schedule="0 0 * * *",
 )
 def wrong_config_schedule(_date):
     return {}
 
 
 @schedule(
-    pipeline_name="the_pipeline",
+    job=the_pipeline,
     cron_schedule="0 0 * * *",
     execution_timezone="UTC",
 )
@@ -260,55 +226,45 @@ def define_multi_run_schedule():
         else:
             date = pendulum.instance(context.scheduled_execution_time).subtract(days=1)
 
-        yield RunRequest(run_key="A", run_config=_solid_config(date), tags={"label": "A"})
-        yield RunRequest(run_key="B", run_config=_solid_config(date), tags={"label": "B"})
+        yield RunRequest(run_key="A", run_config=_op_config(context), tags={"label": "A"})
+        yield RunRequest(run_key="B", run_config=_op_config(context), tags={"label": "B"})
 
     return ScheduleDefinition(
         name="multi_run_schedule",
         cron_schedule="0 0 * * *",
-        pipeline_name="the_pipeline",
+        job=the_pipeline,
         execution_timezone="UTC",
         execution_fn=gen_runs,
     )
 
 
 @schedule(
-    pipeline_name="the_pipeline",
+    job=the_pipeline,
     cron_schedule="0 0 * * *",
     execution_timezone="UTC",
 )
 def multi_run_list_schedule(context):
-    if not context.scheduled_execution_time:
-        date = pendulum.now().subtract(days=1)
-    else:
-        date = pendulum.instance(context.scheduled_execution_time).subtract(days=1)
-
     return [
-        RunRequest(run_key="A", run_config=_solid_config(date), tags={"label": "A"}),
-        RunRequest(run_key="B", run_config=_solid_config(date), tags={"label": "B"}),
+        RunRequest(run_key="A", run_config=_op_config(context), tags={"label": "A"}),
+        RunRequest(run_key="B", run_config=_op_config(context), tags={"label": "B"}),
     ]
 
 
 def define_multi_run_schedule_with_missing_run_key():
     def gen_runs(context):
-        if not context.scheduled_execution_time:
-            date = pendulum.now().subtract(days=1)
-        else:
-            date = pendulum.instance(context.scheduled_execution_time).subtract(days=1)
-
-        yield RunRequest(run_key="A", run_config=_solid_config(date), tags={"label": "A"})
-        yield RunRequest(run_key=None, run_config=_solid_config(date), tags={"label": "B"})
+        yield RunRequest(run_key="A", run_config=_op_config(context), tags={"label": "A"})
+        yield RunRequest(run_key=None, run_config=_op_config(context), tags={"label": "B"})
 
     return ScheduleDefinition(
         name="multi_run_schedule_with_missing_run_key",
         cron_schedule="0 0 * * *",
-        pipeline_name="the_pipeline",
+        job=the_pipeline,
         execution_timezone="UTC",
         execution_fn=gen_runs,
     )
 
 
-@pipeline
+@job
 def the_other_pipeline():
     the_solid()
 
@@ -320,19 +276,17 @@ def the_other_repo():
     ]
 
 
-@solid(config_schema=Field(Any))
+@op(config_schema=Field(Any))
 def config_solid(_):
     return 1
 
 
-@pipeline
+@job
 def config_pipeline():
     config_solid()
 
 
-@daily_schedule(
-    pipeline_name="config_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="UTC"
-)
+@schedule(job=config_pipeline, execution_timezone="UTC", cron_schedule="0 0 * * *")
 def large_schedule(_):
     REQUEST_CONFIG_COUNT = 120000
 
@@ -340,7 +294,7 @@ def large_schedule(_):
         return "".join(random.choice(string.ascii_lowercase) for x in range(length))
 
     return {
-        "solids": {
+        "ops": {
             "config_solid": {
                 "config": {
                     "foo": {
@@ -352,34 +306,19 @@ def large_schedule(_):
     }
 
 
-@solid
+@op
 def start(_, x):
     return x
 
 
-@solid
+@op
 def end(_, x=1):
     return x
 
 
-@pipeline
+@job
 def two_step_pipeline():
     end(start())
-
-
-manual_partition = PartitionSetDefinition[str](
-    name="manual_partition",
-    pipeline_name="two_step_pipeline",
-    # selects only second step
-    solid_selection=["end"],
-    partition_fn=lambda: [Partition("one")],  # type: ignore
-    # includes config for first step - test that it is ignored
-    run_config_fn_for_partition=lambda _: {"solids": {"start": {"inputs": {"x": {"value": 4}}}}},
-)
-
-manual_partition_schedule = manual_partition.create_schedule_definition(
-    "manual_partition_schedule", "0 0 * * *", lambda _x, _y: Partition("one")
-)
 
 
 def define_default_config_job():
@@ -405,7 +344,7 @@ def the_repo():
         the_pipeline,
         config_pipeline,
         simple_schedule,
-        simple_temporary_schedule,
+        partitioned_schedule,
         simple_hourly_schedule,
         daily_schedule_without_timezone,
         daily_late_schedule,
@@ -426,30 +365,29 @@ def the_repo():
         partitionless_schedule,
         large_schedule,
         two_step_pipeline,
-        manual_partition_schedule,
         default_config_schedule,
         empty_schedule,
     ]
 
 
-@daily_schedule(
-    pipeline_name="the_pipeline",
-    start_date=_COUPLE_DAYS_AGO,
+@schedule(
+    job=the_pipeline,
     execution_timezone="UTC",
     default_status=DefaultScheduleStatus.RUNNING,
+    cron_schedule="0 0 * * *",
 )
-def always_running_schedule(date):
-    return _solid_config(date)
+def always_running_schedule(context):
+    return _op_config(context)
 
 
-@daily_schedule(
-    pipeline_name="the_pipeline",
-    start_date=_COUPLE_DAYS_AGO,
+@schedule(
+    job=the_pipeline,
     execution_timezone="UTC",
     default_status=DefaultScheduleStatus.STOPPED,
+    cron_schedule="0 0 * * *",
 )
-def never_running_schedule(date):
-    return _solid_config(date)
+def never_running_schedule(context):
+    return _op_config(context)
 
 
 @repository
@@ -489,33 +427,25 @@ def validate_tick(
     assert tick_data.skip_reason == expected_skip_reason
 
 
-def validate_run_exists(
-    run,
-    execution_time,
-    partition_time=None,
-    partition_fmt=DEFAULT_DATE_FORMAT,
-):
+def validate_run_exists(run, execution_time):
     assert run.tags[SCHEDULED_EXECUTION_TIME_TAG] == to_timezone(execution_time, "UTC").isoformat()
-
-    if partition_time:
-        assert run.tags[PARTITION_NAME_TAG] == partition_time.strftime(partition_fmt)
 
 
 def validate_run_started(
     instance,
     run,
     execution_time,
-    partition_time=None,
-    partition_fmt=DEFAULT_DATE_FORMAT,
     expected_success=True,
+    expected_config=None,
 ):
-    validate_run_exists(run, execution_time, partition_time, partition_fmt)
+    validate_run_exists(run, execution_time)
 
     if expected_success:
         assert instance.run_launcher.did_run_launch(run.run_id)
-
-        if partition_time:
-            assert run.run_config == _solid_config(partition_time)
+        if expected_config is not None:
+            assert run.run_config == expected_config
+        else:
+            assert run.run_config == _op_config(MagicMock(scheduled_execution_time=execution_time))
     else:
         assert run.status == PipelineRunStatus.FAILURE
 
@@ -594,7 +524,116 @@ def test_simple_schedule(instance, workspace, external_repo):
             instance,
             instance.get_runs()[0],
             execution_time=create_pendulum_time(2019, 2, 28),
-            partition_time=create_pendulum_time(2019, 2, 27),
+        )
+
+        # Verify idempotence
+        list(
+            launch_scheduled_runs(
+                instance,
+                workspace,
+                logger(),
+                pendulum.now("UTC"),
+            )
+        )
+        assert instance.get_runs_count() == 1
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 1
+        assert ticks[0].status == TickStatus.SUCCESS
+
+    # Verify advancing in time but not going past a tick doesn't add any new runs
+    freeze_datetime = freeze_datetime.add(seconds=2)
+    with pendulum.test(freeze_datetime):
+        list(
+            launch_scheduled_runs(
+                instance,
+                workspace,
+                logger(),
+                pendulum.now("UTC"),
+            )
+        )
+        assert instance.get_runs_count() == 1
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 1
+        assert ticks[0].status == TickStatus.SUCCESS
+
+    freeze_datetime = freeze_datetime.add(days=2)
+    with pendulum.test(freeze_datetime):
+
+        # Traveling two more days in the future before running results in one new tick for
+        # a non-partitioned schedule
+        list(
+            launch_scheduled_runs(
+                instance,
+                workspace,
+                logger(),
+                pendulum.now("UTC"),
+            )
+        )
+        assert instance.get_runs_count() == 2
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 2
+        assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 2
+
+
+def test_partitioned_schedule_catchup(instance, workspace, external_repo):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+    with pendulum.test(freeze_datetime):
+        external_schedule = external_repo.get_external_schedule("partitioned_schedule")
+
+        schedule_origin = external_schedule.get_external_origin()
+
+        instance.start_schedule(external_schedule)
+
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 0
+
+        # launch_scheduled_runs does nothing before the first tick
+        list(
+            launch_scheduled_runs(
+                instance,
+                workspace,
+                logger(),
+                pendulum.now("UTC"),
+            )
+        )
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 0
+
+    freeze_datetime = freeze_datetime.add(seconds=2)
+    with pendulum.test(freeze_datetime):
+        list(
+            launch_scheduled_runs(
+                instance,
+                workspace,
+                logger(),
+                pendulum.now("UTC"),
+            )
+        )
+
+        assert instance.get_runs_count() == 1
+        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+        assert len(ticks) == 1
+
+        expected_datetime = create_pendulum_time(year=2019, month=2, day=28)
+
+        validate_tick(
+            ticks[0],
+            external_schedule,
+            expected_datetime,
+            TickStatus.SUCCESS,
+            [run.run_id for run in instance.get_runs()],
+        )
+
+        wait_for_all_runs_to_start(instance)
+        validate_run_started(
+            instance,
+            instance.get_runs()[0],
+            execution_time=create_pendulum_time(2019, 2, 28),
         )
 
         # Verify idempotence
@@ -802,7 +841,6 @@ def test_schedule_without_timezone(instance):
                     instance,
                     instance.get_runs()[0],
                     execution_time=expected_datetime,
-                    partition_time=create_pendulum_time(2019, 2, 26, tz="UTC"),
                 )
 
                 # Verify idempotence
@@ -831,7 +869,7 @@ def test_bad_env_fn_no_retries(instance, workspace, external_repo):
             initial_datetime,
             TickStatus.FAILURE,
             [run.run_id for run in instance.get_runs()],
-            "Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule",
+            "Error occurred during the evaluation of schedule bad_env_fn_schedule",
             expected_failure_count=1,
         )
 
@@ -848,7 +886,7 @@ def test_bad_env_fn_no_retries(instance, workspace, external_repo):
             initial_datetime,
             TickStatus.FAILURE,
             [],
-            "Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule",
+            "Error occurred during the evaluation of schedule bad_env_fn_schedule",
             expected_failure_count=1,
         )
 
@@ -866,7 +904,7 @@ def test_bad_env_fn_no_retries(instance, workspace, external_repo):
             initial_datetime,
             TickStatus.FAILURE,
             [],
-            "Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule",
+            "Error occurred during the evaluation of schedule bad_env_fn_schedule",
             expected_failure_count=1,
         )
 
@@ -894,7 +932,7 @@ def test_bad_env_fn_with_retries(instance, workspace, external_repo):
             initial_datetime,
             TickStatus.FAILURE,
             [],
-            "Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule",
+            "Error occurred during the evaluation of schedule bad_env_fn_schedule",
             expected_failure_count=1,
         )
 
@@ -919,7 +957,7 @@ def test_bad_env_fn_with_retries(instance, workspace, external_repo):
             initial_datetime,
             TickStatus.FAILURE,
             [],
-            "Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule",
+            "Error occurred during the evaluation of schedule bad_env_fn_schedule",
             expected_failure_count=3,
         )
 
@@ -938,7 +976,7 @@ def test_bad_env_fn_with_retries(instance, workspace, external_repo):
             initial_datetime,
             TickStatus.FAILURE,
             [],
-            "Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule",
+            "Error occurred during the evaluation of schedule bad_env_fn_schedule",
             expected_failure_count=3,
         )
 
@@ -956,7 +994,7 @@ def test_bad_env_fn_with_retries(instance, workspace, external_repo):
             initial_datetime,
             TickStatus.FAILURE,
             [],
-            "Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule",
+            "Error occurred during the evaluation of schedule bad_env_fn_schedule",
             expected_failure_count=1,
         )
 
@@ -984,7 +1022,7 @@ def test_passes_on_retry(instance, workspace, external_repo):
             initial_datetime,
             TickStatus.FAILURE,
             [],
-            "Error occurred during the execution of run_config_fn for schedule passes_on_retry_schedule",
+            "Error occurred during the evaluation of schedule passes_on_retry_schedule",
             expected_failure_count=1,
         )
 
@@ -1129,6 +1167,7 @@ def test_schedule_run_default_config(instance, workspace, external_repo):
             run,
             execution_time=initial_datetime,
             expected_success=True,
+            expected_config={},
         )
 
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -1195,7 +1234,6 @@ def test_bad_schedules_mixed_with_good_schedule(instance, workspace, external_re
             instance,
             instance.get_runs()[0],
             execution_time=initial_datetime,
-            partition_time=create_pendulum_time(2019, 2, 26),
         )
 
         good_ticks = instance.get_ticks(good_origin.get_id(), good_schedule.selector_id)
@@ -1235,7 +1273,6 @@ def test_bad_schedules_mixed_with_good_schedule(instance, workspace, external_re
             instance,
             good_schedule_runs[0],
             execution_time=new_now,
-            partition_time=create_pendulum_time(2019, 2, 27),
         )
 
         good_ticks = instance.get_ticks(good_origin.get_id(), good_schedule.selector_id)
@@ -1254,7 +1291,6 @@ def test_bad_schedules_mixed_with_good_schedule(instance, workspace, external_re
             instance,
             bad_schedule_runs[0],
             execution_time=new_now,
-            partition_time=create_pendulum_time(2019, 2, 27),
         )
 
         bad_ticks = instance.get_ticks(bad_origin.get_id(), bad_schedule.selector_id)
@@ -1542,7 +1578,6 @@ def test_launch_failure(workspace, external_repo):
                 instance,
                 run,
                 execution_time=initial_datetime,
-                partition_time=create_pendulum_time(2019, 2, 26),
                 expected_success=False,
             )
 
@@ -1587,7 +1622,6 @@ def test_partitionless_schedule(instance, workspace, external_repo):
             instance,
             instance.get_runs()[0],
             execution_time=create_pendulum_time(year=2019, month=3, day=4, tz="US/Central"),
-            partition_time=None,
         )
 
 
@@ -1597,7 +1631,7 @@ def test_max_catchup_runs(instance, workspace, external_repo):
         "US/Central",
     )
     with pendulum.test(initial_datetime):
-        external_schedule = external_repo.get_external_schedule("simple_schedule")
+        external_schedule = external_repo.get_external_schedule("partitioned_schedule")
         schedule_origin = external_schedule.get_external_origin()
         instance.start_schedule(external_schedule)
 
@@ -1633,7 +1667,6 @@ def test_max_catchup_runs(instance, workspace, external_repo):
             instance,
             instance.get_runs()[0],
             execution_time=first_datetime,
-            partition_time=create_pendulum_time(2019, 3, 3),
         )
 
         second_datetime = create_pendulum_time(year=2019, month=3, day=3)
@@ -1650,7 +1683,6 @@ def test_max_catchup_runs(instance, workspace, external_repo):
             instance,
             instance.get_runs()[1],
             execution_time=second_datetime,
-            partition_time=create_pendulum_time(2019, 3, 2),
         )
 
 
@@ -1849,35 +1881,6 @@ def test_large_schedule(instance, workspace, external_repo):
         assert len(ticks) == 1
 
 
-def test_manual_partition_with_solid_selection(instance, workspace, external_repo):
-    freeze_datetime = to_timezone(
-        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
-        "US/Central",
-    )
-    with pendulum.test(freeze_datetime):
-        external_schedule = external_repo.get_external_schedule("manual_partition_schedule")
-        schedule_origin = external_schedule.get_external_origin()
-        instance.start_schedule(external_schedule)
-        freeze_datetime = freeze_datetime.add(seconds=2)
-
-    with pendulum.test(freeze_datetime):
-        list(
-            launch_scheduled_runs(
-                instance,
-                workspace,
-                logger(),
-                pendulum.now("UTC"),
-            )
-        )
-
-        assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-        run_id = ticks[0].run_ids[0]
-
-        assert instance.get_run_by_id(run_id).solid_selection == ["end"]  # matches solid_selection
-
-
 @contextmanager
 def _grpc_server_external_repo(port):
     server_process = open_server_process(
@@ -2029,7 +2032,7 @@ def test_status_in_code_schedule(instance):
 
             list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
-            # No runs, but the job state is updated to set a checkpoing
+            # No runs, but the job state is updated to set a checkpoint
             assert instance.get_runs_count() == 0
 
             assert len(instance.all_instigator_state()) == 1
@@ -2096,7 +2099,6 @@ def test_status_in_code_schedule(instance):
                 instance,
                 instance.get_runs()[0],
                 execution_time=create_pendulum_time(2019, 2, 28),
-                partition_time=create_pendulum_time(2019, 2, 27),
             )
 
             # Verify idempotence
@@ -2113,9 +2115,8 @@ def test_status_in_code_schedule(instance):
             assert len(ticks) == 1
             assert ticks[0].status == TickStatus.SUCCESS
 
-        freeze_datetime = freeze_datetime.add(days=2)
+        freeze_datetime = freeze_datetime.add(days=1)
         with pendulum.test(freeze_datetime):
-            # Traveling two more days in the future before running results in two new ticks
             list(
                 launch_scheduled_runs(
                     instance,
@@ -2124,15 +2125,10 @@ def test_status_in_code_schedule(instance):
                     pendulum.now("UTC"),
                 )
             )
-            assert instance.get_runs_count() == 3
+            assert instance.get_runs_count() == 2
             ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
-            assert len(ticks) == 3
-            assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 3
-
-            runs_by_partition = {run.tags[PARTITION_NAME_TAG]: run for run in instance.get_runs()}
-
-            assert "2019-02-28" in runs_by_partition
-            assert "2019-03-01" in runs_by_partition
+            assert len(ticks) == 2
+            assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 2
 
     # Now try with an empty workspace - ticks are still there, but the job state is deleted
     # once it's no longer present in the workspace
@@ -2147,7 +2143,7 @@ def test_status_in_code_schedule(instance):
                 )
             )
             ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
-            assert len(ticks) == 3
+            assert len(ticks) == 2
             assert len(instance.all_instigator_state()) == 0
 
 

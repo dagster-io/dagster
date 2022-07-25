@@ -17,6 +17,9 @@ from dagster import (
     Field,
     Output,
     graph,
+    job,
+    op,
+    reconstructable,
     repository,
     run_failure_sensor,
 )
@@ -42,16 +45,16 @@ from dagster._core.test_utils import (
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
-from dagster._legacy import pipeline, pipeline_failure_sensor, solid
+from dagster._legacy import pipeline_failure_sensor
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
 
-@solid
+@op
 def the_solid(_):
     return 1
 
 
-@pipeline
+@job
 def the_pipeline():
     the_solid()
 
@@ -64,12 +67,12 @@ def the_graph():
 the_job = the_graph.to_job()
 
 
-@solid(config_schema=Field(Any))
+@op(config_schema=Field(Any))
 def config_solid(_):
     return 1
 
 
-@pipeline
+@job
 def config_pipeline():
     config_solid()
 
@@ -79,29 +82,29 @@ def config_graph():
     config_solid()
 
 
-@solid
+@op
 def foo_solid():
     yield AssetMaterialization(asset_key=AssetKey("foo"))
     yield Output(1)
 
 
-@pipeline
+@job
 def foo_pipeline():
     foo_solid()
 
 
-@solid
+@op
 def foo_observation_solid():
     yield AssetObservation(asset_key=AssetKey("foo"), metadata={"text": "FOO"})
     yield Output(5)
 
 
-@pipeline
+@job
 def foo_observation_pipeline():
     foo_observation_solid()
 
 
-@solid
+@op
 def hanging_solid():
     start_time = time.time()
     while True:
@@ -110,17 +113,17 @@ def hanging_solid():
         time.sleep(0.5)
 
 
-@pipeline
+@job
 def hanging_pipeline():
     hanging_solid()
 
 
-@solid
+@op
 def failure_solid():
     raise Exception("womp womp")
 
 
-@pipeline
+@job
 def failure_pipeline():
     failure_solid()
 
@@ -133,7 +136,7 @@ def failure_graph():
 failure_job = failure_graph.to_job()
 
 
-@sensor(pipeline_name="the_pipeline")
+@sensor(job=the_pipeline)
 def simple_sensor(context):
     if not context.last_completion_time or not int(context.last_completion_time) % 2:
         return SkipReason()
@@ -141,33 +144,33 @@ def simple_sensor(context):
     return RunRequest(run_key=None, run_config={}, tags={})
 
 
-@sensor(pipeline_name="the_pipeline")
+@sensor(job=the_pipeline)
 def always_on_sensor(_context):
     return RunRequest(run_key=None, run_config={}, tags={})
 
 
-@sensor(pipeline_name="the_pipeline")
+@sensor(job=the_pipeline)
 def run_key_sensor(_context):
     return RunRequest(run_key="only_once", run_config={}, tags={})
 
 
-@sensor(pipeline_name="the_pipeline")
+@sensor(job=the_pipeline)
 def error_sensor(context):
     context.update_cursor("the exception below should keep this from being persisted")
     raise Exception("womp womp")
 
 
-@sensor(pipeline_name="the_pipeline")
+@sensor(job=the_pipeline)
 def wrong_config_sensor(_context):
     return RunRequest(run_key="bad_config_key", run_config={"bad_key": "bad_val"}, tags={})
 
 
-@sensor(pipeline_name="the_pipeline", minimum_interval_seconds=60)
+@sensor(job=the_pipeline, minimum_interval_seconds=60)
 def custom_interval_sensor(_context):
     return SkipReason()
 
 
-@sensor(pipeline_name="the_pipeline")
+@sensor(job=the_pipeline)
 def skip_cursor_sensor(context):
     if not context.cursor:
         cursor = 1
@@ -178,7 +181,7 @@ def skip_cursor_sensor(context):
     return SkipReason()
 
 
-@sensor(pipeline_name="the_pipeline")
+@sensor(job=the_pipeline)
 def run_cursor_sensor(context):
     if not context.cursor:
         cursor = 1
@@ -193,7 +196,7 @@ def _random_string(length):
     return "".join(random.choice(string.ascii_lowercase) for x in range(length))
 
 
-@sensor(pipeline_name="config_pipeline")
+@sensor(job=config_pipeline)
 def large_sensor(_context):
     # create a gRPC response payload larger than the limit (4194304)
     REQUEST_COUNT = 25
@@ -205,11 +208,11 @@ def large_sensor(_context):
         config_garbage = {
             _random_string(10): _random_string(20) for i in range(REQUEST_CONFIG_COUNT)
         }
-        config = {"solids": {"config_solid": {"config": {"foo": config_garbage}}}}
+        config = {"ops": {"config_solid": {"config": {"foo": config_garbage}}}}
         yield RunRequest(run_key=None, run_config=config, tags=tags_garbage)
 
 
-@asset_sensor(pipeline_name="the_pipeline", asset_key=AssetKey("foo"))
+@asset_sensor(job=the_pipeline, asset_key=AssetKey("foo"))
 def asset_foo_sensor(context, _event):
     return RunRequest(run_key=context.cursor, run_config={})
 
@@ -234,12 +237,12 @@ def my_run_failure_sensor_that_itself_fails(context):
     raise Exception("How meta")
 
 
-@run_status_sensor(pipeline_run_status=PipelineRunStatus.SUCCESS)
+@run_status_sensor(run_status=PipelineRunStatus.SUCCESS)
 def my_pipeline_success_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
 
 
-@run_status_sensor(pipeline_run_status=PipelineRunStatus.STARTED)
+@run_status_sensor(run_status=PipelineRunStatus.STARTED)
 def my_pipeline_started_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
 
@@ -256,7 +259,7 @@ def two_job_sensor(context):
         yield RunRequest(
             run_key=str(counter),
             job_name=config_job.name,
-            run_config={"solids": {"config_solid": {"config": {"foo": "blah"}}}},
+            run_config={"ops": {"config_solid": {"config": {"foo": "blah"}}}},
         )
     context.update_cursor(str(counter + 1))
 
@@ -316,7 +319,7 @@ def the_repo():
     ]
 
 
-@pipeline
+@job
 def the_other_pipeline():
     the_solid()
 
@@ -328,7 +331,7 @@ def the_other_repo():
     ]
 
 
-@sensor(pipeline_name="the_pipeline", default_status=DefaultSensorStatus.RUNNING)
+@sensor(job=the_pipeline, default_status=DefaultSensorStatus.RUNNING)
 def always_running_sensor(context):
     if not context.last_completion_time or not int(context.last_completion_time) % 2:
         return SkipReason()
@@ -336,7 +339,7 @@ def always_running_sensor(context):
     return RunRequest(run_key=None, run_config={}, tags={})
 
 
-@sensor(pipeline_name="the_pipeline", default_status=DefaultSensorStatus.STOPPED)
+@sensor(job=the_pipeline, default_status=DefaultSensorStatus.STOPPED)
 def never_running_sensor(context):
     if not context.last_completion_time or not int(context.last_completion_time) % 2:
         return SkipReason()
@@ -807,11 +810,11 @@ def test_wrong_config_sensor(capfd, executor):
                 freeze_datetime,
                 TickStatus.FAILURE,
                 [],
-                "Error in config for pipeline",
+                "Error in config for job",
             )
 
             captured = capfd.readouterr()
-            assert ("Error in config for pipeline") in captured.out
+            assert ("Error in config for job") in captured.out
 
         freeze_datetime = freeze_datetime.add(seconds=60)
         with pendulum.test(freeze_datetime):
@@ -830,11 +833,11 @@ def test_wrong_config_sensor(capfd, executor):
                 freeze_datetime,
                 TickStatus.FAILURE,
                 [],
-                "Error in config for pipeline",
+                "Error in config for job",
             )
 
             captured = capfd.readouterr()
-            assert ("Error in config for pipeline") in captured.out
+            assert ("Error in config for job") in captured.out
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
@@ -972,7 +975,7 @@ def test_launch_once(capfd, executor):
 
             # Manually create a new run with the same tags
             execute_pipeline(
-                the_pipeline,
+                reconstructable(the_pipeline),
                 run_config=launched_run.run_config,
                 tags=launched_run.tags,
                 instance=instance,
@@ -1091,7 +1094,7 @@ def test_launch_once_unbatched(capfd, executor):
 
             # Manually create a new run with the same tags
             execute_pipeline(
-                the_pipeline,
+                reconstructable(the_pipeline),
                 run_config=launched_run.run_config,
                 tags=launched_run.tags,
                 instance=instance,
@@ -1425,7 +1428,7 @@ def test_asset_sensor(executor):
         with pendulum.test(freeze_datetime):
 
             # should generate the foo asset
-            execute_pipeline(foo_pipeline, instance=instance)
+            execute_pipeline(reconstructable(foo_pipeline), instance=instance)
 
             # should fire the asset sensor
             evaluate_sensors(instance, workspace, executor)
@@ -1473,7 +1476,7 @@ def test_asset_job_sensor(executor):
         with pendulum.test(freeze_datetime):
 
             # should generate the foo asset
-            execute_pipeline(foo_pipeline, instance=instance)
+            execute_pipeline(reconstructable(foo_pipeline), instance=instance)
 
             # should fire the asset sensor
             evaluate_sensors(instance, workspace, executor)
@@ -1507,7 +1510,7 @@ def test_asset_sensor_not_triggered_on_observation(executor):
             instance.start_sensor(foo_sensor)
 
             # generates the foo asset observation
-            execute_pipeline(foo_observation_pipeline, instance=instance)
+            execute_pipeline(reconstructable(foo_observation_pipeline), instance=instance)
 
             # observation should not fire the asset sensor
             evaluate_sensors(instance, workspace, executor)
@@ -1525,7 +1528,7 @@ def test_asset_sensor_not_triggered_on_observation(executor):
         with pendulum.test(freeze_datetime):
 
             # should generate the foo asset
-            execute_pipeline(foo_pipeline, instance=instance)
+            execute_pipeline(reconstructable(foo_pipeline), instance=instance)
 
             # materialization should fire the asset sensor
             evaluate_sensors(instance, workspace, executor)
@@ -2131,7 +2134,7 @@ def test_multi_job_sensor(executor):
             run = instance.get_runs()[0]
             assert run.run_config == {}
             assert run.tags.get("dagster/sensor_name") == "two_job_sensor"
-            assert run.pipeline_name == "the_graph"
+            assert run.job_name == "the_graph"
 
             freeze_datetime = freeze_datetime.add(seconds=60)
         with pendulum.test(freeze_datetime):
@@ -2147,10 +2150,10 @@ def test_multi_job_sensor(executor):
                 TickStatus.SUCCESS,
             )
             run = instance.get_runs()[0]
-            assert run.run_config == {"solids": {"config_solid": {"config": {"foo": "blah"}}}}
+            assert run.run_config == {"ops": {"config_solid": {"config": {"foo": "blah"}}}}
             assert run.tags
             assert run.tags.get("dagster/sensor_name") == "two_job_sensor"
-            assert run.pipeline_name == "config_graph"
+            assert run.job_name == "config_graph"
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
