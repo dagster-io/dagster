@@ -9,7 +9,7 @@ In this guide, we'll walk through how to transition your data pipelines from loc
 
 Let's say we’ve been tasked with fetching data from Hacker News and splitting it into two datasets: one containing all of the data about stories and one containing all of the data about comments. We have two additional requirements:
 - we must be able to run our data pipeline in local, staging, and production environments
-- we need to be confident that data won't be accidentally overwritten because a user forgot to change a configuration value
+- we need to be confident that data won't be accidentally overwritten (for example because a user forgot to change a configuration value)
 
 Using a few Dagster concepts, we can easily tackle this task! If you’re new to Dagster, here’s an overview of the main concepts we’ll be using in this guide (if you’re already familiar with Dagster, feel free to skip to the next paragraph):
 
@@ -35,21 +35,26 @@ Using these Dagster concepts we will:
 
 ### Setup
 
-If you want to follow along with this guide:
+If you want to follow along with this guide you have two options:
+#### Clone the example code:
+This will give you the final version of the code we will write in this guide
 
-#### Clone the example code (this will give you the final version of the code):
+```bash
+pip install dagster, dagit
+dagster new-project --example local_to_prod
+cd local_to_prod
+pip install .
+```
 
-        pip install dagster, dagit
-        dagster new-project --example local_to_prod
-        cd local_to_prod
-        pip install .
+#### Start with a scaffolded project:
+This will create an empty project where you can copy the code as we write it in this guide
 
-#### Start with a scaffolded project and fill in the code as we go
-
-        pip install dagster, dagit
-        dagster new-project --quick-start local_to_prod
-        cd local_to_prod
-        pip install pandas pytest dagster-snowflake dagster-snowflake-pandas
+```bash
+pip install dagster, dagit
+dagster new-project --quick-start local_to_prod
+cd local_to_prod
+pip install pandas pytest dagster-snowflake dagster-snowflake-pandas
+```
 
 ### Part one: Local development
 
@@ -107,7 +112,7 @@ Now let's write the resource to fetch data from Hacker News.
 
 <Note>
 
-When you’re in the beginning development stages, you may find it easier to write the code to fetch data directly in your assets or ops. This is great for initial development, but eventually you may want to refactor your code to use resources to support things like testing. In this case we’re going to jump right into defining a resource because we're going to use it again in the optional section at the end of this guide.
+When you’re in the beginning development stages, you may find it easier to write the code to fetch data directly in your assets or ops. This is great for initial development, but eventually you may want to refactor your code to use resources. In this case we’re going to jump right into defining a resource because we're going to use it again in the optional section at the end of this guide.
 
 </Note>
 
@@ -163,7 +168,7 @@ def repo():
     ]
 ```
 
-When we materialize the assets in Dagit we can add configuration for the `snowflake_io_manager` in the launchpad or we can use the `configured` API and update our repository to look like this:
+When we materialize the assets in Dagit we can add configuration for the `snowflake_io_manager` in the launchpad, or we can use the `configured` API and update our repository to look like this:
 
 ```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v2.py startafter=start endbefore=end
 # repository.py
@@ -188,6 +193,8 @@ def repo():
 ```
 
 Now we can materialize the assets the Dagit and ensure that the data appears in Snowflake as we expect:
+
+[SCREENSHOT]
 
 <!-- \[Image: Screen Shot 2022-07-19 at 3.21.32 PM.png] -->
 
@@ -280,7 +287,7 @@ def repo():
 Now, we can set the environment variable `DAGSTER_DEPLOYMENT=production` in our deployment and the correct resources will be applied to the assets.
 
 <Note>
-If you are using [Dagster Cloud](link to dagster cloud page explaining this?), this environment variable will be set for you. Additionally, if you are using [Branch Deployments](link to branch deployments page explaining this?) <code>DAGSTER_DEPLOYMENT</code> will be automatically set to <code>VAR</code>.
+If you're using [Dagster Cloud](link to dagster cloud page explaining this?), this environment variable will be set for you. Additionally, if you're using [Branch Deployments](link to branch deployments page explaining this?) <code>DAGSTER_DEPLOYMENT</code> will be automatically set to <code>VAR</code>.
 
 </Note>
 
@@ -345,7 +352,7 @@ The general idea behind stubbing or mocking a Dagster resource is relatively sim
   relatively simple, writing a stub can be really helpful for unit testing the
   assets and ops that use the resource.
 
-  For more information and recommendations on testing, refer to the [testing documentation](/concepts/testing).
+  For more information and recommendations on testing, refer to our [testing documentation](/concepts/testing).
 </Note>
 
 Since the Hacker News resource we wrote in our example fetches live data and we only use a few columns in our assets, it’s a great candidate for writing a stub. With a stubbed resource we can have full control over the data our assets see during unit tests, which in turn can allow us to make more specific assertions.
