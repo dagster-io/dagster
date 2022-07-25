@@ -234,14 +234,9 @@ from dagster._core.errors import (
     DagsterUserCodeExecutionError,
     raise_execution_interrupts,
 )
-<<<<<<< HEAD
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.execution.api import (
-=======
-from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.execution.api import (
     ReexecutionOptions,
->>>>>>> add reexecution support
     execute_job,
     execute_pipeline,
     execute_pipeline_iterator,

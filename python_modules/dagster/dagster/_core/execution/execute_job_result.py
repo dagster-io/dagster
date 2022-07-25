@@ -1,13 +1,13 @@
 from typing import Any, Sequence
 
 import dagster._check as check
-from dagster.core.definitions import JobDefinition, NodeHandle
-from dagster.core.definitions.utils import DEFAULT_OUTPUT
-from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.events import DagsterEvent
-from dagster.core.execution.plan.step import StepKind
-from dagster.core.execution.plan.utils import build_resources_for_manager
-from dagster.core.storage.pipeline_run import DagsterRun
+from dagster._core.definitions import JobDefinition, NodeHandle
+from dagster._core.definitions.utils import DEFAULT_OUTPUT
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.events import DagsterEvent
+from dagster._core.execution.plan.step import StepKind
+from dagster._core.execution.plan.utils import build_resources_for_manager
+from dagster._core.storage.pipeline_run import DagsterRun
 
 from .execution_result import ExecutionResult
 

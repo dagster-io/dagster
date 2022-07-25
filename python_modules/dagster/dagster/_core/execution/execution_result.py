@@ -2,17 +2,17 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Sequence, Union, cast
 
 import dagster._check as check
-from dagster.core.definitions import JobDefinition, NodeHandle
-from dagster.core.definitions.events import AssetMaterialization, AssetObservation, Materialization
-from dagster.core.definitions.utils import DEFAULT_OUTPUT
-from dagster.core.errors import DagsterError, DagsterInvariantViolationError
-from dagster.core.events import (
+from dagster._core.definitions import JobDefinition, NodeHandle
+from dagster._core.definitions.events import AssetMaterialization, AssetObservation, Materialization
+from dagster._core.definitions.utils import DEFAULT_OUTPUT
+from dagster._core.errors import DagsterError, DagsterInvariantViolationError
+from dagster._core.events import (
     AssetObservationData,
     DagsterEvent,
     DagsterEventType,
     StepMaterializationData,
 )
-from dagster.core.storage.pipeline_run import DagsterRun
+from dagster._core.storage.pipeline_run import DagsterRun
 
 
 class ExecutionResult(ABC):
