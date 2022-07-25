@@ -197,13 +197,13 @@ const ExampleItem = ({
       <div className="inline-flex flex-row space-x-4">
         <a href={hrefCode}>
           <button className="py-1 px-4 rounded-lg bg-gable-green text-white hover:bg-transparent hover:text-gable-green hover: border hover:border-gable-green">
-            View the code
+            Code
           </button>
         </a>
         {hrefDoc && (
           <Link href={hrefDoc}>
             <button className="py-1 px-4 rounded-lg bg-transparent border text-gray-500 hover:text-gray-700 hover:bg-gray-100 hover:border-gray-300">
-              Doc
+              Guide
             </button>
           </Link>
         )}
