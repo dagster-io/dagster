@@ -743,8 +743,7 @@ def do_it_all():
 With the graph APIs, you can specify `ins` and `out` properties to do so:
 
 ```python file=/guides/dagster/graph_job_op/nested_graphs_ins_out.py
-from dagster import In, Out, graph, op
-from dagster._core.definitions.output import GraphOut
+from dagster import GraphOut, In, Out, graph, op
 
 
 @op

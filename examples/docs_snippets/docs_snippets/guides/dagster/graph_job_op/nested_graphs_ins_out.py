@@ -1,5 +1,4 @@
-from dagster import In, Out, graph, op
-from dagster._core.definitions.output import GraphOut
+from dagster import GraphOut, In, Out, graph, op
 
 
 @op
