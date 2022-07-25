@@ -1,5 +1,6 @@
 import pytest
 
+import dagster._check as check
 from dagster import (
     DagsterExecutionStepNotFoundError,
     DagsterInvalidConfigError,
@@ -12,7 +13,6 @@ from dagster import (
     op,
     reconstructable,
 )
-import dagster._check as check
 from dagster._core.test_utils import instance_for_test
 
 

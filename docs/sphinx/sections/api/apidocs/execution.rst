@@ -20,6 +20,9 @@ Executing Jobs
 
 .. autofunction:: execute_job
 
+.. autoclass:: ReexecutionOptions
+  :members: from_failure
+
 Executing Graphs
 ----------------
 

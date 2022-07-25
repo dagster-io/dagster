@@ -31,9 +31,9 @@ from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.selector import parse_step_selection
 from dagster._core.storage.pipeline_run import (
     DagsterRun,
+    DagsterRunStatus,
     PipelineRun,
     PipelineRunStatus,
-    DagsterRunStatus,
 )
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.telemetry import log_repo_stats, telemetry_wrapper
@@ -436,6 +436,7 @@ def execute_job(
     reconstructable`.
 
     .. code-block:: python
+
         from dagster import DagsterInstance, execute_job, job, reconstructable
 
         @job
@@ -452,6 +453,7 @@ def execute_job(
     module-scope function, which can be passed to ``reconstructable``.
 
     .. code-block:: python
+
         from dagster import graph, reconstructable
 
         @graph
@@ -469,6 +471,7 @@ def execute_job(
     `execute_job` as a context manager.
 
     .. code-block:: python
+
         from dagster import execute_job
 
         with execute_job(...) as result:
