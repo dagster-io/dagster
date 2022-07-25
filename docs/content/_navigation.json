@@ -7,15 +7,14 @@
     "children": [
       {
         "title": "What is Dagster?",
-        "path": "/getting-started/what-is-dagster",
         "children": [
           {
-            "title": "Architecture",
-            "path": "/getting-started/architecture"
+            "title": "Overview",
+            "path": "/getting-started/what-is-dagster"
           },
           {
-            "title": "Telemetry",
-            "path": "/getting-started/telemetry"
+            "title": "Open Source vs Cloud",
+            "path": "/getting-started/open-source-vs-cloud"
           },
           {
             "title": "Community",
@@ -33,7 +32,11 @@
           },
           {
             "title": "Project structure",
-            "path": "/getting-started/create-new-project"
+            "path": "/getting-started/project-structure"
+          },
+          {
+            "title": "Telemetry",
+            "path": "/getting-started/telemetry"
           }
         ]
       },
@@ -162,20 +165,20 @@
     "icon": "Grid",
     "children": [
       {
-        "title": "Azure",
-        "path": "/_apidocs/libraries/dagster-azure"
-      },
-      {
-        "title": "Amazon Web Services (AWS)",
-        "path": "/_apidocs/libraries/dagster-aws"
+        "title": "Airflow",
+        "path": "/integrations/airflow"
       },
       {
         "title": "dbt",
         "path": "/integrations/dbt"
       },
       {
-        "title": "Google Cloud Platform (GCP)",
-        "path": "/_apidocs/libraries/dagster-gcp"
+        "title": "Great Expectations",
+        "path": "/integrations/great-expectations"
+      },
+      {
+        "title": "Jupyter/Papermill",
+        "path": "/integrations/dagstermill"
       },
       {
         "title": "Pandas",
@@ -186,25 +189,8 @@
         "path": "/integrations/pandera"
       },
       {
-        "title": "Guides",
-        "children": [  
-          {
-            "title": "Airflow",
-            "path": "/integrations/airflow"
-          },
-          {
-            "title": "Great Expectations",
-            "path": "/integrations/great-expectations"
-          },
-          {
-            "title": "PySpark",
-            "path": "/integrations/spark"
-          },
-          {
-            "title": "Jupyter/Papermill",
-            "path": "/integrations/dagstermill"
-          }
-        ]
+        "title": "PySpark",
+        "path": "/integrations/spark"
       },
       {
       "title": "All integrations",
@@ -221,12 +207,12 @@
         "title": "Dagster open source",
         "children": [
           {
-            "title": "Understanding OS deployments",
-            "path": "/deployment/open-source/overview"
+            "title": "Overview",
+            "path": "/deployment/open-source/concepts"
           },
           {
-            "title": "TODO",
-            "path": "/deployment/open-source/todo"
+            "title": "Guides",
+            "path": "/deployment/open-source/guides"
           }
         ]
       },
