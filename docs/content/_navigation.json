@@ -124,6 +124,15 @@
     "path": "/building",
     "children": [
       {
+        "title": "Best practices",
+        "children": [
+          {
+            "title": "Organizing a project",
+            "path": "/guides/best-practices/organizing-a-project"
+          }
+        ]
+      },
+      {
         "title": "Designing DAGs",
         "path": "/building#designing-dags",
         "children": [
@@ -142,38 +151,8 @@
         "path": "/building#running-dagster"
       },
       {
-        "title": "Organizing projects",
-        "path": "/building#organizing-projects"
-      },
-      {
-        "title": "Testing and logging",
-        "path": "/building#organizing-projects"
-      },
-      {
-        "title": "Using Dagit",
-        "children": [
-          {
-            "title": "Dagit UI",
-            "path": "/building/understanding-dagster/dagit/dagit"
-          },
-          {
-            "title": "GraphQL API",
-            "path": "/building/understanding-dagster/dagit/graphql"
-          },
-          {
-            "title": "GraphQL Python Client",
-            "path": "/building/understanding-dagster/dagit/graphql-client"
-          }
-        ]
-      },
-      {
-        "title": "Best practices",
-        "children": [
-          {
-            "title": "Organizing a project",
-            "path": "/guides/best-practices/organizing-a-project"
-          }
-        ]
+        "title": "Customizing Dagster",
+        "path": "/building#customizing-dagster"
       }
     ]
   },
