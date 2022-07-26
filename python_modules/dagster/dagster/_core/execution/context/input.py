@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey, AssetObservation
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
@@ -120,12 +121,14 @@ class InputContext:
         if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
             self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
 
+    @public  # type: ignore
     @property
     def has_input_name(self) -> bool:
         """If we're the InputContext is being used to load the result of a run from outside the run,
         then it won't have an input name."""
         return self._name is not None
 
+    @public  # type: ignore
     @property
     def name(self) -> str:
         if self._name is None:
@@ -156,6 +159,7 @@ class InputContext:
 
         return self._solid_def
 
+    @public  # type: ignore
     @property
     def op_def(self) -> "OpDefinition":
         from dagster._core.definitions import OpDefinition
@@ -168,18 +172,22 @@ class InputContext:
 
         return cast(OpDefinition, self._solid_def)
 
+    @public  # type: ignore
     @property
     def config(self) -> Any:
         return self._config
 
+    @public  # type: ignore
     @property
     def metadata(self) -> Optional[Dict[str, Any]]:
         return self._metadata
 
+    @public  # type: ignore
     @property
     def upstream_output(self) -> Optional["OutputContext"]:
         return self._upstream_output
 
+    @public  # type: ignore
     @property
     def dagster_type(self) -> "DagsterType":
         if self._dagster_type is None:
@@ -190,6 +198,7 @@ class InputContext:
 
         return self._dagster_type
 
+    @public  # type: ignore
     @property
     def log(self) -> "DagsterLogManager":
         if self._log is None:
@@ -200,10 +209,12 @@ class InputContext:
 
         return self._log
 
+    @public  # type: ignore
     @property
     def resource_config(self) -> Optional[Dict[str, Any]]:
         return self._resource_config
 
+    @public  # type: ignore
     @property
     def resources(self) -> Any:
         if self._resources is None:
@@ -220,6 +231,7 @@ class InputContext:
             )
         return self._resources
 
+    @public  # type: ignore
     @property
     def has_asset_key(self) -> bool:
         return (
@@ -231,6 +243,7 @@ class InputContext:
             is not None
         )
 
+    @public  # type: ignore
     @property
     def asset_key(self) -> AssetKey:
         result = self.step_context.pipeline_def.asset_layer.asset_key_for_input(
@@ -243,6 +256,7 @@ class InputContext:
 
         return result
 
+    @public  # type: ignore
     @property
     def asset_partitions_def(self) -> "PartitionsDefinition":
         """The PartitionsDefinition on the upstream asset corresponding to this input."""
@@ -265,11 +279,13 @@ class InputContext:
 
         return self._step_context
 
+    @public  # type: ignore
     @property
     def has_partition_key(self) -> bool:
         """Whether the current run is a partitioned run"""
         return self.step_context.has_partition_key
 
+    @public  # type: ignore
     @property
     def partition_key(self) -> str:
         """The partition key for the current run.
@@ -278,6 +294,7 @@ class InputContext:
         """
         return self.step_context.partition_key
 
+    @public  # type: ignore
     @property
     def has_asset_partitions(self) -> bool:
         if self._step_context is not None:
@@ -285,6 +302,7 @@ class InputContext:
         else:
             return False
 
+    @public  # type: ignore
     @property
     def asset_partition_key(self) -> str:
         """The partition key for input asset.
@@ -294,6 +312,7 @@ class InputContext:
         """
         return self.step_context.asset_partition_key_for_input(self.name)
 
+    @public  # type: ignore
     @property
     def asset_partition_key_range(self) -> PartitionKeyRange:
         """The partition key range for input asset.
@@ -302,6 +321,7 @@ class InputContext:
         """
         return self.step_context.asset_partition_key_range_for_input(self.name)
 
+    @public  # type: ignore
     @property
     def asset_partitions_time_window(self) -> TimeWindow:
         """The time window for the partitions of the input asset.
@@ -335,6 +355,7 @@ class InputContext:
             partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
 
+    @public
     def get_identifier(self) -> Sequence[str]:
         """Utility method to get a collection of identifiers that as a whole represent a unique
         step input.
@@ -361,6 +382,7 @@ class InputContext:
 
         return self.upstream_output.get_identifier()
 
+    @public
     def get_asset_identifier(self) -> Sequence[str]:
         if self.asset_key is not None:
             if self.has_asset_partitions:
