@@ -26,8 +26,9 @@ Using these Dagster concepts we will:
 - Set up our repository so that the configuration for the Snowflake IO manager is automatically supplied based on the environment where the code is running.
 
 <Note>
-  At the end of this guide, you'll find an optional section that demonstrates writing a resource to fetch data from Hacker News and a
-  pattern for mocking resources that can be helpful when writing unit tests.
+  At the end of this guide, you'll find an optional section that demonstrates
+  writing a resource to fetch data from Hacker News and a pattern for mocking
+  resources that can be helpful when writing unit tests.
 </Note>
 
 ### Setup
@@ -77,16 +78,16 @@ Let’s start by writing our three assets. We'll use Pandas DataFrames to intera
 def items(context) -> pd.DataFrame:
     """Items from the Hacker News API: each is a story or a comment on a story."""
     rows = []
-    max_id = requests.get("https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5).json()
+    max_id = requests.get(
+        "https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5
+    ).json()
     # Hacker News API is 1-indexed, so adjust range by 1
     for item_id in range(context.op_config["N"] + 1, max_id + 1):
         item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
-        rows.append(item = requests.get(item_url, timeout=5).json())
+        rows.append(item=requests.get(item_url, timeout=5).json())
 
     # ITEM_FIELD_NAMES is a list of the column names in the Hacker News dataset
-    result = pd.DataFrame(rows, columns=ITEM_FIELD_NAMES).drop_duplicates(
-        subset=["id"]
-    )
+    result = pd.DataFrame(rows, columns=ITEM_FIELD_NAMES).drop_duplicates(subset=["id"])
     result.rename(columns={"by": "user_id"}, inplace=True)
     return result
 
@@ -121,7 +122,6 @@ Now we can add these assets to our repository and materialize them via Dagit as 
 @repository
 def repo():
     resource_defs = {
-        "hn_client": hn_api_client,
         "io_manager": snowflake_io_manager.configured(
             {
                 "account": "abc1234.us-east-1",
@@ -168,7 +168,6 @@ Instead, we can set up the repository to attach resources to assets based on the
 def repo():
     resource_defs = {
         "local": {
-            "hn_client": hn_api_client,
             "io_manager": snowflake_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
@@ -180,7 +179,6 @@ def repo():
             ),
         },
         "production": {
-            "hn_client": hn_api_client,
             "io_manager": snowflake_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
@@ -224,7 +222,6 @@ We can easily solve all of these problems because the Snowflake IO manager accep
 def repo():
     resource_defs = {
         "local": {
-            "hn_client": hn_api_client,
             "io_manager": snowflake_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
@@ -236,7 +233,6 @@ def repo():
             ),
         },
         "production": {
-            "hn_client": hn_api_client,
             "io_manager": snowflake_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
@@ -288,6 +284,7 @@ Let's start by writing the "real" Hacker News API Client:
 
 ```python file=/guides/dagster/local_to_prod_tutorial/resources/resources_v1.py startafter=start_resource endbefore=end_resource
 # resources.py
+
 
 class HNAPIClient:
     """
