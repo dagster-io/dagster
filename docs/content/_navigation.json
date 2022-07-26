@@ -23,22 +23,8 @@
         ]
       },
       {
-        "title": "Setup",
-        "path": "/getting-started/setup",
-        "children": [
-          {
-            "title": "Installation",
-            "path": "/getting-started/installation"
-          },
-          {
-            "title": "Project structure",
-            "path": "/getting-started/project-structure"
-          },
-          {
-            "title": "Telemetry",
-            "path": "/getting-started/telemetry"
-          }
-        ]
+        "title": "Installation",
+        "path": "/getting-started/installation"
       },
       {
         "title": "Learning Dagster",
