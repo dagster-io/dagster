@@ -22,12 +22,11 @@ Using a few Dagster concepts, we can easily tackle this task! If you’re new to
 Using these Dagster concepts we will:
 
 - Write three assets: the full Hacker News dataset, data about comments, and data about stories.
-- Write a resource to fetch data from Hacker News.
 - Use Dagster's Snowflake IO manager to store the datasets in [Snowflake](https://www.snowflake.com/).
 - Set up our repository so that the configuration for the Snowflake IO manager is automatically supplied based on the environment where the code is running.
 
 <Note>
-  At the end of this guide, you'll find an optional section that demonstrates a
+  At the end of this guide, you'll find an optional section that demonstrates writing a resource to fetch data from Hacker News and a
   pattern for mocking resources that can be helpful when writing unit tests.
 </Note>
 
@@ -62,7 +61,6 @@ pip install pandas pytest dagster-snowflake dagster-snowflake-pandas
 In this section we will:
 
 - Write our assets.
-- Write a resource to fetch data from Hacker News.
 - Add the assets to our [repository](/concepts/repositories-workspaces/repositories).
 - Add run configuration for the Snowflake IO manager.
 - Materialize assets in Dagit.
@@ -75,18 +73,18 @@ Let’s start by writing our three assets. We'll use Pandas DataFrames to intera
 
 @asset(
     config_schema={"N": int},
-    required_resource_keys={"hn_client"},
 )
 def items(context) -> pd.DataFrame:
     """Items from the Hacker News API: each is a story or a comment on a story."""
-    hn_client = context.resources.hn_client
-
     rows = []
+    max_id = requests.get("https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5).json()
     # Hacker News API is 1-indexed, so adjust range by 1
-    for item_id in range(context.op_config["N"] + 1, hn_client.fetch_max_item_id() + 1):
-        rows.append(hn_client.fetch_item_by_id(item_id))
+    for item_id in range(context.op_config["N"] + 1, max_id + 1):
+        item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
+        rows.append(item = requests.get(item_url, timeout=5).json())
 
-    result = pd.DataFrame(rows, columns=hn_client.item_field_names).drop_duplicates(
+    # ITEM_FIELD_NAMES is a list of the column names in the Hacker News dataset
+    result = pd.DataFrame(rows, columns=ITEM_FIELD_NAMES).drop_duplicates(
         subset=["id"]
     )
     result.rename(columns={"by": "user_id"}, inplace=True)
@@ -113,52 +111,6 @@ src="/images/guides/local_to_production/hacker_news_asset_graph.png"
 width={1538}
 height={730}
 />
-
-Now let's write the resource to fetch data from Hacker News.
-
-<Note>
-
-In many cases, it is often most convenient to interact with an external service directly in assets or ops, rather than write a resource. We recommend that you refactor your code to use resources in the following cases:
-
-- you need multiple assets or ops to interact with the service in a consistent way
-- you want to interact with a different service in certain scenarios (ie. a staging environment, or unit tests)
-
-</Note>
-
-```python file=/guides/dagster/local_to_prod_tutorial/resources/resources_v1.py startafter=start_resource endbefore=end_resource
-# resources.py
-
-
-class HNAPIClient:
-    """
-    Hacker News client that fetches live data
-    """
-
-    def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
-        """Fetches a single item from the Hacker News API by item id."""
-
-        item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
-        item = requests.get(item_url, timeout=5).json()
-        return item
-
-    def fetch_max_item_id(self) -> int:
-        return requests.get(
-            "https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5
-        ).json()
-
-
-@resource
-def hn_api_client():
-    return HNAPIClient()
-```
-
-<Note>
-  For the sake of brevity in this guide, we've omitted the implementation of
-  <code>item_field_names</code>. You can find the full implementation of this resource
-  in the <a href="https://github.com/dagster-io/dagster/tree/master/examples/local_to_production">
-    full code example
-  </a> on GitHub.
-</Note>
 
 Now we can add these assets to our repository and materialize them via Dagit as part of our local development workflow. We will use the [configured API](/concepts/configuration/configured) to add configuration for the `snowflake_io_manager`.
 
@@ -319,9 +271,83 @@ This guide demonstrates how we recommend that you write your assets and jobs so 
 
 ### Optional: Testing
 
-You may have noticed a missing step in the development workflow presented in this guide— unit tests! While the main purpose of the guide is to help you transition your code from local development to a production deployment, unit testing is still an important part of the development cycle, and we’d like to take this time to explore a pattern you may find useful when writing your own unit tests: stubbing resources.
+You may have noticed a missing step in the development workflow presented in this guide— unit tests! While the main purpose of the guide is to help you transition your code from local development to a production deployment, unit testing is still an important part of the development cycle, and we’d like to take this time to explore a pattern you may find useful when writing your own unit tests.
 
-The general idea behind stubbing or mocking a Dagster resource is relatively simple: since Dagster’s resource system allows you to supply different implementations of a resource to an asset or op, we can make a simplified version of a “real” resource and use it in unit tests!
+When we write unit tests for the `items` asset, we could make more precise assertions if we knew exactly what data we'd receive from Hacker News. If we refactor our interactions with the Hacker News API as a resource, we can leverage Dagster's resource system to provide a stub resource in our unit tests.
+
+<Note>
+
+In many cases, it is often most convenient to interact with an external service directly in assets or ops, rather than write a resource. We recommend that you refactor your code to use resources in the following cases:
+
+- you need multiple assets or ops to interact with the service in a consistent way
+- you want to interact with a different service in certain scenarios (ie. a staging environment, or unit tests)
+
+</Note>
+
+Let's start by writing the "real" Hacker News API Client:
+
+```python file=/guides/dagster/local_to_prod_tutorial/resources/resources_v1.py startafter=start_resource endbefore=end_resource
+# resources.py
+
+class HNAPIClient:
+    """
+    Hacker News client that fetches live data
+    """
+
+    def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
+        """Fetches a single item from the Hacker News API by item id."""
+
+        item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
+        item = requests.get(item_url, timeout=5).json()
+        return item
+
+    def fetch_max_item_id(self) -> int:
+        return requests.get(
+            "https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5
+        ).json()
+
+
+@resource
+def hn_api_client():
+    return HNAPIClient()
+```
+
+We'll also need to update the items asset to use this resource:
+
+```python file=/guides/dagster/local_to_prod_tutorial/assets_v2.py startafter=start_items endbefore=end_items
+# assets.py
+
+
+@asset(
+    config_schema={"N": int},
+    required_resource_keys={"hn_client"},
+)
+def items(context) -> pd.DataFrame:
+    """Items from the Hacker News API: each is a story or a comment on a story."""
+    hn_client = context.resources.hn_client
+
+    rows = []
+    # Hacker News API is 1-indexed, so adjust range by 1
+    for item_id in range(context.op_config["N"] + 1, hn_client.fetch_max_item_id() + 1):
+        rows.append(hn_client.fetch_item_by_id(item_id))
+
+    result = pd.DataFrame(rows, columns=hn_client.item_field_names).drop_duplicates(
+        subset=["id"]
+    )
+    result.rename(columns={"by": "user_id"}, inplace=True)
+    return result
+```
+
+<Note>
+  For the sake of brevity in this guide, we've omitted the implementation of the
+  property
+  <code>item_field_names</code> in <code>HNAPIClient</code>. You can find the full
+  implementation of this resource in the <a href="https://github.com/dagster-io/dagster/tree/master/examples/local_to_production">
+    full code example
+  </a> on GitHub.
+</Note>
+
+Now we can write stubbed version of the Hacker News resource. We want to make sure the stub has implementations for each method the real `HackerNewsClient` implements.
 
 <Note>
   Determining when it makes sense to stub a resource for a unit test can be a
@@ -332,10 +358,6 @@ The general idea behind stubbing or mocking a Dagster resource is relatively sim
   stub can be really helpful for unit testing the assets and ops that use the
   resource.
 </Note>
-
-Since the Hacker News resource we wrote in our example fetches live data and we only need the values from a few columns in our assets, it’s a great candidate for writing a stub. With a stubbed resource we can have full control over the data our assets see during unit tests, which in turn can allow us to make more specific assertions.
-
-We’ll start by writing the stubbed version of the Hacker News resource. We want to make sure the stub has implementations for each method the real `HackerNewsClient` implements:
 
 ```python file=/guides/dagster/local_to_prod_tutorial/resources/resources_v2.py startafter=start_mock endbefore=end_mock
 # resources.py
@@ -383,7 +405,7 @@ def stub_hn_client():
   .
 </Note>
 
-Now we can use the stub Hacker News resource to test that the items asset transforms the data in the way we expect:
+Now we can use the stub Hacker News resource to test that the `items` asset transforms the data in the way we expect:
 
 ```python file=/guides/dagster/local_to_prod_tutorial/test_assets.py startafter=start endbefore=end
 # test_assets.py

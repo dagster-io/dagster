@@ -1,6 +1,9 @@
 import pandas as pd
+import requests
 
 from dagster import asset
+
+ITEM_FIELD_NAMES = []
 
 # start_assets
 # assets.py
@@ -8,20 +11,20 @@ from dagster import asset
 
 @asset(
     config_schema={"N": int},
-    required_resource_keys={"hn_client"},
 )
 def items(context) -> pd.DataFrame:
     """Items from the Hacker News API: each is a story or a comment on a story."""
-    hn_client = context.resources.hn_client
-
     rows = []
+    max_id = requests.get(
+        "https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5
+    ).json()
     # Hacker News API is 1-indexed, so adjust range by 1
-    for item_id in range(context.op_config["N"] + 1, hn_client.fetch_max_item_id() + 1):
-        rows.append(hn_client.fetch_item_by_id(item_id))
+    for item_id in range(context.op_config["N"] + 1, max_id + 1):
+        item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
+        rows.append(item=requests.get(item_url, timeout=5).json())
 
-    result = pd.DataFrame(rows, columns=hn_client.item_field_names).drop_duplicates(
-        subset=["id"]
-    )
+    # ITEM_FIELD_NAMES is a list of the column names in the Hacker News dataset
+    result = pd.DataFrame(rows, columns=ITEM_FIELD_NAMES).drop_duplicates(subset=["id"])
     result.rename(columns={"by": "user_id"}, inplace=True)
     return result
 
