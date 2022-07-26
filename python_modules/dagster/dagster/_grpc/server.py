@@ -540,6 +540,7 @@ class DagsterApiServer(DagsterApiServicer):
                     container_image=self._container_image,
                     container_context=self._container_context,
                     dagster_library_versions=DagsterLibraryRegistry.get(),
+                    can_create_snapshots_in_run_worker=True,
                 )
             )
         except Exception:

@@ -845,37 +845,46 @@ def submit_asset_run(
             )
         )
 
-        job_selector = JobSubsetSelector(
-            location_name=location_name,
-            repository_name=repository_name,
-            job_name=job_name,
-            op_selection=None,
-            asset_selection=asset_keys,
-        )
-
-        selector_id = hash_collection(job_selector)
-
-        if selector_id not in pipeline_and_execution_plan_cache:
-            external_job = code_location.get_external_job(job_selector)
-
-            external_execution_plan = code_location.get_external_execution_plan(
-                external_job,
-                run_config={},
-                step_keys_to_execute=None,
-                known_state=None,
-                instance=instance,
+        if not code_location.can_create_snapshots_in_run_worker():
+            job_selector = JobSubsetSelector(
+                location_name=location_name,
+                repository_name=repository_name,
+                job_name=job_name,
+                op_selection=None,
+                asset_selection=asset_keys,
             )
-            pipeline_and_execution_plan_cache[selector_id] = (
-                external_job,
-                external_execution_plan,
+
+            selector_id = hash_collection(job_selector)
+
+            if selector_id not in pipeline_and_execution_plan_cache:
+                external_job = code_location.get_external_job(job_selector)
+
+                external_execution_plan = code_location.get_external_execution_plan(
+                    external_job,
+                    run_config={},
+                    step_keys_to_execute=None,
+                    known_state=None,
+                    instance=instance,
+                )
+                pipeline_and_execution_plan_cache[selector_id] = (
+                    external_job,
+                    external_execution_plan,
+                )
+
+            external_job, external_execution_plan = pipeline_and_execution_plan_cache[selector_id]
+            execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
+            job_snapshot = external_job.job_snapshot
+            parent_job_snapshot = external_job.parent_job_snapshot
+        else:
+            external_job = code_location.get_repository(repository_name).get_full_external_job(
+                job_name
             )
+            job_snapshot = None
+            execution_plan_snapshot = None
+            parent_job_snapshot = None
 
         check_for_debug_crash(debug_crash_flags, "EXECUTION_PLAN_CREATED")
         check_for_debug_crash(debug_crash_flags, f"EXECUTION_PLAN_CREATED_{run_request_index}")
-
-        external_job, external_execution_plan = pipeline_and_execution_plan_cache[selector_id]
-
-        execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
         run_to_submit = instance.create_run(
             job_name=external_job.name,
@@ -888,9 +897,9 @@ def submit_asset_run(
             root_run_id=None,
             parent_run_id=None,
             tags=run_request.tags,
-            job_snapshot=external_job.job_snapshot,
+            job_snapshot=job_snapshot,
             execution_plan_snapshot=execution_plan_snapshot,
-            parent_job_snapshot=external_job.parent_job_snapshot,
+            parent_job_snapshot=parent_job_snapshot,
             external_job_origin=external_job.get_external_origin(),
             job_code_origin=external_job.get_python_origin(),
             asset_selection=frozenset(asset_keys),

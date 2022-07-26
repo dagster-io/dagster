@@ -324,6 +324,7 @@ class ListRepositoriesResponse(
             ("container_image", Optional[str]),
             ("container_context", Optional[Mapping[str, Any]]),
             ("dagster_library_versions", Optional[Mapping[str, str]]),
+            ("can_create_snapshots_in_run_worker", bool),
         ],
     )
 ):
@@ -336,6 +337,7 @@ class ListRepositoriesResponse(
         container_image: Optional[str] = None,
         container_context: Optional[Mapping] = None,
         dagster_library_versions: Optional[Mapping[str, str]] = None,
+        can_create_snapshots_in_run_worker: Optional[bool] = None,
     ):
         return super(ListRepositoriesResponse, cls).__new__(
             cls,
@@ -363,6 +365,7 @@ class ListRepositoriesResponse(
             dagster_library_versions=check.opt_nullable_mapping_param(
                 dagster_library_versions, "dagster_library_versions"
             ),
+            can_create_snapshots_in_run_worker=can_create_snapshots_in_run_worker or False,
         )
 
 

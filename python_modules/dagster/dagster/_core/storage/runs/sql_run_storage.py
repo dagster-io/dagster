@@ -438,6 +438,24 @@ class SqlRunStorage(RunStorage):
         rows = self.fetchall(query)
         return sorted([r["key"] for r in rows])
 
+    def add_execution_plan_snapshot_to_run(self, run_id: str, execution_plan_snapshot_id: str):
+        run = self._get_run_by_id(run_id)
+        if not run:
+            raise DagsterRunNotFoundError(
+                f"Run {run_id} was not found in instance.", invalid_run_id=run_id
+            )
+        with self.connect() as conn:
+            run = run._replace(execution_plan_snapshot_id=execution_plan_snapshot_id)
+            conn.execute(
+                RunsTable.update()  # pylint: disable=no-value-for-parameter
+                .where(RunsTable.c.run_id == run_id)
+                .values(
+                    run_body=serialize_value(run),
+                    update_timestamp=pendulum.now("UTC"),
+                )
+            )
+        return run
+
     def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]) -> None:
         check.str_param(run_id, "run_id")
         check.mapping_param(new_tags, "new_tags", key_type=str, value_type=str)
