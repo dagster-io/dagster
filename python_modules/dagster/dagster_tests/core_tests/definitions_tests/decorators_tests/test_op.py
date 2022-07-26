@@ -780,7 +780,7 @@ def test_log_metadata_asset_materialization():
 
     result = execute_op_in_graph(the_op)
     materialization = result.asset_materializations_for_node("the_op")[0]
-    assert len(materialization.metadata_entries) == 1
+    assert len(materialization.metadata_entries) == 2
     assert materialization.metadata_entries[0].label == "bar"
     assert materialization.metadata_entries[0].entry_data.text == "baz"
 

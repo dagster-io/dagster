@@ -192,7 +192,7 @@ class JobDefinition(PipelineDefinition):
             # when no config is supplied for the job.
             config_mapping = _config_mapping_with_default_value(
                 get_run_config_schema_for_job(
-                    graph_def, resource_defs_with_defaults, executor_def, logger_defs
+                    graph_def, resource_defs_with_defaults, executor_def, logger_defs, asset_layer
                 ),
                 config,
                 name,
@@ -852,6 +852,7 @@ def get_run_config_schema_for_job(
     resource_defs: Mapping[str, ResourceDefinition],
     executor_def: "ExecutorDefinition",
     logger_defs: Mapping[str, LoggerDefinition],
+    asset_layer: Optional[AssetLayer],
 ) -> ConfigType:
     return (
         JobDefinition(
@@ -860,6 +861,7 @@ def get_run_config_schema_for_job(
             resource_defs=resource_defs,
             executor_def=executor_def,
             logger_defs=logger_defs,
+            asset_layer=asset_layer,
         )
         .get_run_config_schema("default")
         .run_config_schema_type
