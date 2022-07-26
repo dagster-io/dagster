@@ -19,7 +19,7 @@ def items(context) -> pd.DataFrame:
         "https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5
     ).json()
     # Hacker News API is 1-indexed, so adjust range by 1
-    for item_id in range(context.op_config["N"] + 1, max_id + 1):
+    for item_id in range(max_id - context.op_config["N"] + 1, max_id + 1):
         item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
         rows.append(item=requests.get(item_url, timeout=5).json())
 

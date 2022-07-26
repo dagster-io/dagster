@@ -80,15 +80,15 @@ class StubHNClient(HNClient):
             },
         }
 
-    @property
-    def item_field_names(self):
-        return ["id", "type", "title", "by"]
-
     def fetch_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:
         return self.data.get(item_id)
 
     def fetch_max_item_id(self) -> int:
-        return len(self.data.items())
+        return 2
+
+    @property
+    def item_field_names(self):
+        return ["id", "type", "title", "by"]
 
 
 @resource

@@ -24,8 +24,9 @@ def repo():
                 {
                     "account": "abc1234.us-east-1",
                     "user": "me@company.com",
-                    "password": "my_super_secret_password",  # password in config is bad practice
-                    "database": "SANDBOX",
+                    # password in config is bad practice
+                    "password": "my_super_secret_password",
+                    "database": "LOCAL",
                     "schema": "ALICE",
                 }
             ),
@@ -35,7 +36,8 @@ def repo():
                 {
                     "account": "abc1234.us-east-1",
                     "user": "dev@company.com",
-                    "password": "company_super_secret_password",  # password in config is bad practice
+                    # password in config is bad practice
+                    "password": "company_super_secret_password",
                     "database": "PRODUCTION",
                     "schema": "HACKER_NEWS",
                 }

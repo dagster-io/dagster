@@ -4,6 +4,7 @@ from dagster import asset
 
 
 @asset(
+    config_schema={"N": int},
     required_resource_keys={"hn_client"},
 )
 def items(context) -> pd.DataFrame:
@@ -11,9 +12,16 @@ def items(context) -> pd.DataFrame:
 
     hn_client = context.resources.hn_client
 
+    max_id = hn_client.fetch_max_item_id()
     rows = []
-    for item_id in range(1, 100):
+    log_count = 0
+    # Hacker News API is 1-indexed, so adjust range by 1
+    for item_id in range(max_id - context.op_config["N"] + 1, max_id + 1):
         rows.append(hn_client.fetch_item_by_id(item_id))
+        log_count += 1
+        if log_count >= 50:
+            context.log.info("Fetched 50 items.")
+            log_count = 0
 
     result = pd.DataFrame(rows, columns=hn_client.item_field_names).drop_duplicates(subset=["id"])
     result.rename(columns={"by": "user_id"}, inplace=True)

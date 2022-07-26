@@ -20,8 +20,10 @@ def repo():
             {
                 "account": "abc1234.us-east-1",
                 "user": "me@company.com",
+                # storing passwords in configuration is bad practice. We'll address this later
+                # in the guide
                 "password": "my_super_secret_password",
-                "database": "SANDBOX",
+                "database": "LOCAL",
                 "schema": "ALICE",
             }
         ),

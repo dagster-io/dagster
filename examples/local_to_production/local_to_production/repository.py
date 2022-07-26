@@ -22,8 +22,20 @@ def repo():
                     "account": "abc1234.us-east-1",
                     "user": {"env": "DEV_SNOWFLAKE_USER"},
                     "password": {"env": "DEV_SNOWFLAKE_PASSWORD"},
-                    "database": "SANDBOX",
+                    "database": "LOCAL",
                     "schema": {"env": "DEV_SNOWFLAKE_SCHEMA"},
+                }
+            ),
+        },
+        "staging": {
+            "hn_client": hn_api_client,
+            "io_manager": snowflake_io_manager.configured(
+                {
+                    "account": "abc1234.us-east-1",
+                    "user": "system@company.com",
+                    "password": {"env": "SYSTEM_SNOWFLAKE_PASSWORD"},
+                    "database": "STAGING",
+                    "schema": "HACKER_NEWS",
                 }
             ),
         },
