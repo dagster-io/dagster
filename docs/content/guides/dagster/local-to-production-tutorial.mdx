@@ -8,25 +8,23 @@ description: This guide walks through how to transition your data pipelines from
 In this guide, we'll walk through how to transition your data pipelines from local development to staging and production deployments.
 
 Let's say we’ve been tasked with fetching data from Hacker News and splitting it into two datasets: one containing all of the data about stories and one containing all of the data about comments. We have two additional requirements:
-- we must be able to run our data pipeline in local, staging, and production environments
-- we need to be confident that data won't be accidentally overwritten (for example because a user forgot to change a configuration value)
+
+- We must be able to run our data pipeline in local, staging, and production environments.
+- We need to be confident that data won't be accidentally overwritten (for example because a user forgot to change a configuration value).
 
 Using a few Dagster concepts, we can easily tackle this task! If you’re new to Dagster, here’s an overview of the main concepts we’ll be using in this guide (if you’re already familiar with Dagster, feel free to skip to the next paragraph):
 
-- [asset](/concepts/software-defined-assets) - an asset is a software object that models a data asset. The prototypical example is a table in a database or a file in cloud storage.
-- [resource](/concepts/resource) - a resource is an object that models a connection to a (typically) external service. Resources can be shared between assets and different implementations of resources can be swapped in depending on environment. For example, a resource may provide methods to send messages in Slack.
+- [Asset](/concepts/software-defined-assets) - an asset is a software object that models a data asset. The prototypical example is a table in a database or a file in cloud storage.
+- [Resource](/concepts/resource) - a resource is an object that models a connection to a (typically) external service. Resources can be shared between assets and different implementations of resources can be swapped in depending on environment. For example, a resource may provide methods to send messages in Slack.
 - [IO manager](/concepts/io-management/io-managers) - an IO manager is a special kind of resource that handles storing and loading assets. For example, if we wanted to store assets in S3, we would use Dagster’s built in S3 IO manager.
-- [run config](/concepts/configuration/config-schema) - assets and resources sometimes require configuration to set certain values (like the password to a database). Run config allows you to set these values at run time. In this guide, we will also use an API to set some default run configuration.
+- [Run config](/concepts/configuration/config-schema) - assets and resources sometimes require configuration to set certain values (like the password to a database). Run config allows you to set these values at run time. In this guide, we will also use an API to set some default run configuration.
 
 Using these Dagster concepts we will:
 
-- write three assets: the entire Hacker News dataset, data about comments, and data about stories
-- write a resource to fetch data from Hacker News
-- use Dagster's Snowflake IO manager to store the datasets in [Snowflake](https://www.snowflake.com/)
-  - for local development, we will use a Snowflake database called `SANDBOX` with a schema for each user
-  - for staging, we will use a Snowflake database called `STAGING` with a `HACKER_NEWS` schema
-  - for production, we will use a Snowflake database called `PRODUCTION` with a `HACKER_NEWS` schema
-- set up our repository so that the configuration for the Snowflake IO manager is automatically supplied based on the environment where the code is running
+- Write three assets: the entire Hacker News dataset, data about comments, and data about stories.
+- Write a resource to fetch data from Hacker News.
+- Use Dagster's Snowflake IO manager to store the datasets in [Snowflake](https://www.snowflake.com/).
+- Set up our repository so that the configuration for the Snowflake IO manager is automatically supplied based on the environment where the code is running.
 
 <Note>
   At the end of this guide, you'll find an optional section that demonstrates a
@@ -36,7 +34,9 @@ Using these Dagster concepts we will:
 ### Setup
 
 If you want to follow along with this guide you have two options:
+
 #### Clone the example code:
+
 This will give you the final version of the code we will write in this guide
 
 ```bash
@@ -47,6 +47,7 @@ pip install .
 ```
 
 #### Start with a scaffolded project:
+
 This will create an empty project where you can copy the code as we write it in this guide
 
 ```bash
@@ -62,13 +63,13 @@ In this section we will:
 
 - Write our assets
 - Write a resource to fetch data from Hacker News
-- Add the assets to our repository
+- Add the assets to our [repository](/concepts/repositories-workspaces/repositories)
 - Add run configuration for the Snowflake IO manager
 - Materialize assets in Dagit
 
-Let’s start by writing the asset that will contain all of the Hacker News data. We'll interact with the dataset as a Pandas DataFrame.
+Let’s start by writing our three assets. We'll use Pandas DataFrames to interact with the data.
 
-```python file=/guides/dagster/local_to_prod_tutorial/assets.py startafter=start_items endbefore=end_items
+```python file=/guides/dagster/local_to_prod_tutorial/assets.py startafter=start_assets endbefore=end_assets
 # assets.py
 
 
@@ -88,12 +89,6 @@ def items(context) -> pd.DataFrame:
     )
     result.rename(columns={"by": "user_id"}, inplace=True)
     return result
-```
-
-In this asset we use a resource (`hn_client`) that hasn't been written yet. We'll write it in a moment. First, let's write the assets to create the `comments` and `stories` datasets:
-
-```python file=/guides/dagster/local_to_prod_tutorial/assets.py startafter=start_comments_stories endbefore=end_comments_stories
-# assets.py
 
 
 @asset
@@ -108,11 +103,22 @@ def stories(items: pd.DataFrame) -> pd.DataFrame:
     return items[items["type"] == "story"]
 ```
 
+This results in an asset graph that looks like this:
+
+<Image
+alt="Hacker News asset graph"
+src="/images/guides/local_to_production/hacker_news_asset_graph.png"
+width={1331}
+height={874}
+/>
+
 Now let's write the resource to fetch data from Hacker News.
 
 <Note>
 
-When you’re in the beginning development stages, you may find it easier to write the code to fetch data directly in your assets or ops. This is great for initial development, but eventually you may want to refactor your code to use resources. In this case we’re going to jump right into defining a resource because we're going to use it again in the optional section at the end of this guide.
+In many cases, it is often most convenient to interact with an external service directly in assets or ops, rather than write a resource. We recommend that you refactor your code to use resources in the following cases:
+* you need multiple assets or ops to interact with the service in a consistent way
+* you want to interact with a different service in certain scenarios (ie. a staging environment, or unit tests)
 
 </Note>
 
@@ -146,29 +152,12 @@ def hn_api_client():
 <Note>
   For the sake of brevity in this guide, we've omitted the implementation of
   <code>item_field_names</code>. You can find the full implementation of this resource
-  in the <a href="https://github.com/dagster-io/dagster/tree/master/examples/local_to_production">full code example</a> on GitHub.
+  in the <a href="https://github.com/dagster-io/dagster/tree/master/examples/local_to_production">
+    full code example
+  </a> on GitHub.
 </Note>
 
-Now we can add these assets to our repository and materialize them via Dagit as part of our local development workflow
-
-```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v1.py startafter=start endbefore=end
-# repository.py
-
-
-@repository
-def repo():
-    return [
-        *with_resources(
-            [items, comments, stories],
-            resource_defs={
-                "hn_client": hn_api_client,
-                "io_manager": snowflake_io_manager,
-            },
-        )
-    ]
-```
-
-When we materialize the assets in Dagit we can add configuration for the `snowflake_io_manager` in the launchpad, or we can use the `configured` API and update our repository to look like this:
+Now we can add these assets to our repository and materialize them via Dagit as part of our local development workflow. We will use the `configured` API to add configuration for the `snowflake_io_manager`.
 
 ```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v2.py startafter=start endbefore=end
 # repository.py
@@ -194,15 +183,12 @@ def repo():
 
 Now we can materialize the assets the Dagit and ensure that the data appears in Snowflake as we expect:
 
-[SCREENSHOT]
+\[SCREENSHOT]
 
 <!-- \[Image: Screen Shot 2022-07-19 at 3.21.32 PM.png] -->
 
-<Note>
+While we define our assets as Pandas DataFrames, the Snowflake IO manager automatically translates the asset data to and from Snowflake tables. The Python asset name determines the Snowflake table name. In this case three tables will be created: `ITEMS`, `COMMENTS` and `STORIES`.
 
-While we define our assets as Pandas DataFrames, the Snowflake IO manager automatically translates the asset data to and from Snowflake tables. The Python asset name determines the Snowflake table name. In this case three tables will be created: <code>ITEMS</code>, <code>COMMENTS</code>, and <code>STORIES</code>.
-
-</Note>
 
 ### Part two: Deployment
 
@@ -215,33 +201,9 @@ Now that our assets work locally, we can start the deployment process! We’re g
 
 #### Production
 
-We want to store the assets in a production Snowflake database, so we need to update the configuration for the `snowflake_io_manager`
+We want to store the assets in a production Snowflake database, so we need to update the configuration for the `snowflake_io_manager`. But if we were to simply update out the values we set for local development, we run in an issue: the next time a developer wants to work on these assets, they will need to remember to change the configuration back to the local values. This leaves room for a developer to accidentally overwrite the production asset during local development.
 
-```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v3.py startafter=start endbefore=end
-# repository.py
-
-
-@repository
-def repo():
-    resource_defs = {
-        "hn_client": hn_api_client,
-        "io_manager": snowflake_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": "dev@company.com",
-                "password": "company_super_secret_password",
-                "database": "PRODUCTION",
-                "schema": "HACKER_NEWS",
-            }
-        ),
-    }
-
-    return [*with_resources([items, comments, stories], resource_defs=resource_defs)]
-```
-
-Here we run into an issue. The next time a developer wants to work on the assets, they will have to remember to change the configuration for the `snowflake_io_manager`. This leaves room for a developer to accidentally overwrite the production asset during local development.
-
-Instead we can set up the repository to attach resources to assets based on the environment:
+Instead, we can set up the repository to attach resources to assets based on the environment:
 
 ```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v4.py startafter=start endbefore=end
 # repository.py
@@ -275,7 +237,7 @@ def repo():
             ),
         },
     }
-    deployment_name = os.environ.get("DAGSTER_DEPLOYMENT", "local")
+    deployment_name = os.getenv("DAGSTER_DEPLOYMENT", "local")
 
     return [
         with_resources(
@@ -321,19 +283,13 @@ def repo():
     return [*with_resources([items, comments, stories], resource_defs=resource_defs)]
 ```
 
-<Note>
-
-Since all of the Snowflake IO manager configuration is being set through environment variables, we no longer need to select the resource configuration based on deployment! If we decide to add more configuration that varies between local and production, we can go back to the previous pattern of selecting config based on the deployment name.
-
-</Note>
-
 #### Staging
 
 Depending on your organization’s Dagster setup, there are a couple of options for a staging environment.
 
-If you are a Dagster Cloud user, we recommend using [Branch Deployments](https://docs.dagster.cloud/guides/branch-deployments) as your staging step. Check out our \[comprehensive guide to Branch Deployments]\(link to claire’s doc) to learn how to use Branch Deployments to verify your data pipelines before deploying them to production.
+For Dagster Cloud users, we recommend using [Branch Deployments](https://docs.dagster.cloud/guides/branch-deployments) as your staging step. A Branch Deployment is a new Dagster deployment that is automatically generated for each git branch. Check out our \[comprehensive guide to Branch Deployments]\(link to claire’s doc) to learn how to use Branch Deployments to verify data pipelines before deploying them to production.
 
-If you host a staging deployment of Dagster, we’ve already done all of the necessary work to run our assets in staging! Since we get the configuration for our assets from environment variables, we can simply set the variables to new values in the staging environment, and we’re all set.
+For a self hosted staging deployment of Dagster, we’ve already done all of the necessary work to run our assets in staging! Since we get the configuration for our assets from environment variables, we can simply set the variables to new values in the staging deployment, and we’re all set.
 
 ### Conclusion
 
@@ -351,8 +307,6 @@ The general idea behind stubbing or mocking a Dagster resource is relatively sim
   complicated to write and maintain a stub. In general, if a resource is
   relatively simple, writing a stub can be really helpful for unit testing the
   assets and ops that use the resource.
-
-  For more information and recommendations on testing, refer to our [testing documentation](/concepts/testing).
 </Note>
 
 Since the Hacker News resource we wrote in our example fetches live data and we only need the values from a few columns in our assets, it’s a great candidate for writing a stub. With a stubbed resource we can have full control over the data our assets see during unit tests, which in turn can allow us to make more specific assertions.
@@ -398,7 +352,11 @@ def stub_hn_client():
 <Note>
   Since the stub Hacker News resource and the real Hacker News resource need to
   implement the same methods, this would be a great time to write an interface.
-  We’ll skip the implementation in this guide, but you can find it in the <a href="https://github.com/dagster-io/dagster/tree/master/examples/local_to_production">full code example</a>.
+  We’ll skip the implementation in this guide, but you can find it in the{" "}
+  <a href="https://github.com/dagster-io/dagster/tree/master/examples/local_to_production">
+    full code example
+  </a>
+  .
 </Note>
 
 Now we can use the stub Hacker News resource to test that the items asset transforms the data in the way we expect:

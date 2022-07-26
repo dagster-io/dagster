@@ -15,7 +15,8 @@ snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()]
 # start
 # repository.py
 
-
+# Note: there are multiple issues with how this config is specified, mainly that
+# passwords are being stored in code. This will be addressed next.
 @repository
 def repo():
     resource_defs = {
@@ -25,7 +26,7 @@ def repo():
                 {
                     "account": "abc1234.us-east-1",
                     "user": "me@company.com",
-                    "password": "my_super_secret_password",
+                    "password": "my_super_secret_password",  # password in config is bad practice
                     "database": "SANDBOX",
                     "schema": "ALICE",
                 }
@@ -37,14 +38,14 @@ def repo():
                 {
                     "account": "abc1234.us-east-1",
                     "user": "dev@company.com",
-                    "password": "company_super_secret_password",
+                    "password": "company_super_secret_password",  # password in config is bad practice
                     "database": "PRODUCTION",
                     "schema": "HACKER_NEWS",
                 }
             ),
         },
     }
-    deployment_name = os.environ.get("DAGSTER_DEPLOYMENT", "local")
+    deployment_name = os.getenv("DAGSTER_DEPLOYMENT", "local")
 
     return [
         with_resources(

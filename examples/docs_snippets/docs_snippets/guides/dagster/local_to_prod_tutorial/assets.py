@@ -2,7 +2,7 @@ import pandas as pd
 
 from dagster import asset
 
-# start_items
+# start_assets
 # assets.py
 
 
@@ -24,13 +24,6 @@ def items(context) -> pd.DataFrame:
     return result
 
 
-# end_items
-
-
-# start_comments_stories
-# assets.py
-
-
 @asset
 def comments(items: pd.DataFrame) -> pd.DataFrame:
     """Comments from the Hacker News API."""
@@ -43,4 +36,4 @@ def stories(items: pd.DataFrame) -> pd.DataFrame:
     return items[items["type"] == "story"]
 
 
-# end_comments_stories
+# end_assets

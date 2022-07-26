@@ -1,3 +1,5 @@
+import os
+
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler
 
@@ -17,19 +19,38 @@ snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()]
 @repository
 def repo():
     resource_defs = {
-        "hn_client": hn_api_client,
-        "io_manager": snowflake_io_manager.configured(
-            {
-                "account": {"env": "SNOWFLAKE_ACCOUNT"},
-                "user": {"env": "SNOWFLAKE_USER"},
-                "password": {"env": "SNOWFLAKE_PASSWORD"},
-                "database": {"env": "SNOWFLAKE_DATABASE"},
-                "schema": {"env": "SNOWFLAKE_SCHEMA"},
-            }
-        ),
+        "local": {
+            "hn_client": hn_api_client,
+            "io_manager": snowflake_io_manager.configured(
+                {
+                    "account": "abc1234.us-east-1",
+                    "user": {"env": "DEV_SNOWFLAKE_USER"},
+                    "password": {"env": "DEV_SNOWFLAKE_PASSWORD"},
+                    "database": "SANDBOX",
+                    "schema": {"env": "DEV_SNOWFLAKE_SCHEMA"},
+                }
+            ),
+        },
+        "production": {
+            "hn_client": hn_api_client,
+            "io_manager": snowflake_io_manager.configured(
+                {
+                    "account": "abc1234.us-east-1",
+                    "user": "system@company.com",
+                    "password": {"env": "SYSTEM_SNOWFLAKE_PASSWORD"},
+                    "database": "PRODUCTION",
+                    "schema": "HACKER_NEWS",
+                }
+            ),
+        },
     }
+    deployment_name = os.getenv("DAGSTER_DEPLOYMENT", "local")
 
-    return [*with_resources([items, comments, stories], resource_defs=resource_defs)]
+    return [
+        with_resources(
+            [items, comments, stories], resource_defs=resource_defs[deployment_name]
+        )
+    ]
 
 
 # end
