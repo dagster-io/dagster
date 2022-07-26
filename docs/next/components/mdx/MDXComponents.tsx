@@ -395,19 +395,14 @@ const ArticleList = ({ children }) => {
   );
 };
 
-interface ArticleListItem {
-  title: string;
-  href: string;
-}
-
-const ArticleListItem = ({ title, href = [] }) => {
+const ArticleListItem = ({ title, href }) => {
   return (
       <li style={{
         marginTop: 0,
         }}>
-        <a href={href}>
+        <Link href={href}>
           {title}
-        </a>
+        </Link>
       </li>
     );
 };
