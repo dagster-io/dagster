@@ -765,7 +765,6 @@ class GraphDefinition(NodeDefinition):
         op_selection = check.opt_list_param(op_selection, "op_selection", str)
 
         return core_execute_in_process(
-            node=self,
             ephemeral_pipeline=ephemeral_job,
             run_config=run_config,
             instance=instance,
