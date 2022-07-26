@@ -377,7 +377,7 @@ def ephemeral_instance_if_missing(
 
 
 class ReexecutionOptions(NamedTuple):
-    """Reexecution configuration for python-based execution in Dagster.
+    """Reexecution options for python-based execution in Dagster.
 
     Args:
         parent_run_id (str): The run_id of the run to reexecute.
@@ -398,13 +398,13 @@ class ReexecutionOptions(NamedTuple):
 
     @staticmethod
     def from_failure(run_id: str, instance: DagsterInstance) -> "ReexecutionOptions":
-        """Creates reexecution configuration from a failed run.
+        """Creates reexecution options from a failed run.
 
         Args:
             run_id (str): The run_id of the failed run. Run must fail in order to be reexecuted.
             instance (DagsterInstance): The DagsterInstance that the original run occurred in.
         Returns:
-            ReexecutionOptions: Reexecution configuration to pass to a python execution.
+            ReexecutionOptions: Reexecution options to pass to a python execution.
         """
         from dagster._core.execution.plan.resume_retry import get_retry_steps_from_parent_run
 
@@ -486,7 +486,7 @@ def execute_job(
         with execute_job(...) as result:
             output_obj = result.output_for_node("some_op")
 
-    ``execute_job`` can also be used to reexecute a run, by providing a :py:class:`ReexecutionOptions`.
+    ``execute_job`` can also be used to reexecute a run, by providing a :py:class:`ReexecutionOptions` object.
 
     .. code-block:: python
 
@@ -514,7 +514,7 @@ def execute_job(
             - ``['*some_op', 'other_op_a', 'other_op_b+']``: select ``some_op`` and all its
               ancestors, ``other_op_a`` itself, and ``other_op_b`` and its direct child ops.
         reexecution_options (Optional[ReexecutionOptions]):
-            Reexecution configuration to provide to the run, if this run is
+            Reexecution options to provide to the run, if this run is
             intended to be a reexecution of a previous run. Cannot be used in
             tandem with the ``op_selection`` argument.
 
