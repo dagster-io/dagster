@@ -498,16 +498,11 @@
     ]
   },
   {
-    "title": "Support",
+    "title": "Community",
     "icon": "Users",
     "path": "/community",
     "isUnversioned": true,
     "children": [
-      {
-        "title": "Community",
-        "path": "/community",
-        "isUnversioned": true
-      },
       {
         "title": "Contributing",
         "path": "/community/contributing"
