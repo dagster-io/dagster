@@ -115,6 +115,9 @@ class CodeLocation(AbstractContextManager):
     def name(self) -> str:
         return self.origin.location_name
 
+    def can_create_snapshots_in_run_worker(self) -> bool:
+        return False
+
     @abstractmethod
     def get_external_execution_plan(
         self,
@@ -620,6 +623,7 @@ class GrpcServerCodeLocation(CodeLocation):
         self._container_context = None
         self._repository_code_pointer_dict = None
         self._entry_point = None
+        self._can_create_snapshots_in_run_worker = False
 
         try:
             self.client = DagsterGrpcClient(
@@ -630,6 +634,10 @@ class GrpcServerCodeLocation(CodeLocation):
                 metadata=grpc_metadata,
             )
             list_repositories_response = sync_list_repositories_grpc(self.client)
+
+            self._can_create_snapshots_in_run_worker = (
+                list_repositories_response.can_create_snapshots_in_run_worker
+            )
 
             self.server_id = server_id if server_id else sync_get_server_id(self.client)
             self.repository_names = set(
@@ -682,6 +690,9 @@ class GrpcServerCodeLocation(CodeLocation):
         except:
             self.cleanup()
             raise
+
+    def can_create_snapshots_in_run_worker(self) -> bool:
+        return self._can_create_snapshots_in_run_worker
 
     @property
     def origin(self) -> CodeLocationOrigin:

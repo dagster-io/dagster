@@ -485,7 +485,7 @@ class GrapheneRun(graphene.ObjectType):
         return from_captured_log_data(log_data)
 
     def resolve_executionPlan(self, graphene_info: ResolveInfo):
-        if not (self.dagster_run.execution_plan_snapshot_id and self.dagster_run.job_snapshot_id):
+        if not self.dagster_run.execution_plan_snapshot_id:
             return None
 
         instance = graphene_info.context.instance

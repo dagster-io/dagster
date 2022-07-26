@@ -1095,46 +1095,59 @@ def submit_run_request(
     if not run_request.asset_selection:
         check.failed("Expected RunRequest to have an asset selection")
 
-    pipeline_selector = JobSubsetSelector(
-        location_name=location_name,
-        repository_name=repo_handle.repository_name,
-        job_name=job_name,
-        asset_selection=run_request.asset_selection,
-        op_selection=None,
-    )
+    code_location = workspace.get_code_location(repo_handle.code_location_origin.location_name)
 
-    selector_id = hash_collection(pipeline_selector)
-
-    if selector_id not in pipeline_and_execution_plan_cache:
-        code_location = workspace.get_code_location(repo_handle.code_location_origin.location_name)
-        external_job = code_location.get_external_job(pipeline_selector)
-
-        external_execution_plan = code_location.get_external_execution_plan(
-            external_job,
-            {},
-            step_keys_to_execute=None,
-            known_state=None,
-            instance=instance,
+    if not code_location.can_create_snapshots_in_run_worker():
+        pipeline_selector = JobSubsetSelector(
+            location_name=location_name,
+            repository_name=repo_handle.repository_name,
+            job_name=job_name,
+            asset_selection=run_request.asset_selection,
+            op_selection=None,
         )
 
-        partitions_def = code_location.get_asset_job_partitions_def(external_job)
+        selector_id = hash_collection(pipeline_selector)
 
-        pipeline_and_execution_plan_cache[selector_id] = (
+        if selector_id not in pipeline_and_execution_plan_cache:
+            external_job = code_location.get_external_job(pipeline_selector)
+
+            external_execution_plan = code_location.get_external_execution_plan(
+                external_job,
+                {},
+                step_keys_to_execute=None,
+                known_state=None,
+                instance=instance,
+            )
+
+            partitions_def = code_location.get_asset_job_partitions_def(external_job)
+
+            pipeline_and_execution_plan_cache[selector_id] = (
+                external_job,
+                external_execution_plan,
+                partitions_def,
+            )
+
+        (
             external_job,
             external_execution_plan,
             partitions_def,
-        )
-
-    (
-        external_job,
-        external_execution_plan,
-        partitions_def,
-    ) = pipeline_and_execution_plan_cache[selector_id]
+        ) = pipeline_and_execution_plan_cache[selector_id]
+        execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
+        job_snapshot = external_job.job_snapshot
+        parent_job_snapshot = external_job.parent_job_snapshot
+    else:
+        external_job = code_location.get_repository(
+            repo_handle.repository_name
+        ).get_full_external_job(job_name)
+        job_snapshot = None
+        execution_plan_snapshot = None
+        parent_job_snapshot = None
+        partitions_def = code_location.get_asset_job_partitions_def(external_job)
 
     run = instance.create_run(
-        job_snapshot=external_job.job_snapshot,
-        execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-        parent_job_snapshot=external_job.parent_job_snapshot,
+        job_snapshot=job_snapshot,
+        execution_plan_snapshot=execution_plan_snapshot,
+        parent_job_snapshot=parent_job_snapshot,
         job_name=external_job.name,
         run_id=None,
         resolved_op_selection=None,
