@@ -4,7 +4,6 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
-    Dict,
     Mapping,
     Optional,
     Sequence,
@@ -144,12 +143,12 @@ class OpDefinition(SolidDefinition):
 
     @public  # type: ignore
     @property
-    def ins(self) -> Dict[str, In]:
+    def ins(self) -> Mapping[str, In]:
         return {input_def.name: In.from_definition(input_def) for input_def in self.input_defs}
 
     @public  # type: ignore
     @property
-    def outs(self) -> Dict[str, Out]:
+    def outs(self) -> Mapping[str, Out]:
         return {output_def.name: Out.from_definition(output_def) for output_def in self.output_defs}
 
     @public  # type: ignore

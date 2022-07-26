@@ -481,7 +481,7 @@ class JobDefinition(PipelineDefinition):
         if not op_selection:
             return self
 
-        op_selection = check.opt_list_param(op_selection, "op_selection", str)
+        op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
 
         resolved_op_selection_dict = parse_op_selection(self, op_selection)
 

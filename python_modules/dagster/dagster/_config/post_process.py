@@ -1,5 +1,5 @@
 import sys
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Mapping, Optional, cast
 
 import dagster._check as check
 from dagster._utils import ensure_single_item, frozendict, frozenlist
@@ -126,10 +126,10 @@ def _recurse_in_to_selector(context: TraversalContext, config_value: Any) -> Eva
 
 
 def _recurse_in_to_shape(
-    context: TraversalContext, config_value: Optional[Dict[str, object]]
+    context: TraversalContext, config_value: Optional[Mapping[str, object]]
 ) -> EvaluateValueResult:
     check.invariant(ConfigTypeKind.is_shape(context.config_type.kind), "Unexpected non shape type")
-    config_value = check.opt_dict_param(config_value, "config_value", key_type=str)
+    config_value = check.opt_mapping_param(config_value, "config_value", key_type=str)
 
     fields = context.config_type.fields  # type: ignore
 

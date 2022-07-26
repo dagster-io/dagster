@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Union, overload
+from typing import Any, Callable, Mapping, Optional, Sequence, Union, overload
 
 import dagster._check as check
 from dagster._core.decorator_utils import format_docstring_for_description
@@ -29,7 +29,7 @@ class _Graph:
         output_defs: Optional[Sequence[OutputDefinition]] = None,
         ins: Optional[Mapping[str, GraphIn]] = None,
         out: Optional[Union[GraphOut, Mapping[str, GraphOut]]] = None,
-        tags: Optional[Dict[str, Any]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
         config_mapping: Optional[ConfigMapping] = None,
     ):
         self.name = check.opt_str_param(name, "name")
@@ -111,12 +111,12 @@ def graph(
     *,
     name: Optional[str] = ...,
     description: Optional[str] = ...,
-    input_defs: Optional[List[InputDefinition]] = ...,
-    output_defs: Optional[List[OutputDefinition]] = ...,
-    ins: Optional[Dict[str, GraphIn]] = ...,
-    out: Optional[Union[GraphOut, Dict[str, GraphOut]]] = ...,
-    tags: Optional[Dict[str, Any]] = ...,
-    config: Optional[Union[ConfigMapping, Dict[str, Any]]] = ...,
+    input_defs: Optional[Sequence[InputDefinition]] = ...,
+    output_defs: Optional[Sequence[OutputDefinition]] = ...,
+    ins: Optional[Mapping[str, GraphIn]] = ...,
+    out: Optional[Union[GraphOut, Mapping[str, GraphOut]]] = ...,
+    tags: Optional[Mapping[str, Any]] = ...,
+    config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = ...,
 ) -> _Graph:
     ...
 
@@ -126,12 +126,12 @@ def graph(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    input_defs: Optional[List[InputDefinition]] = None,
-    output_defs: Optional[List[OutputDefinition]] = None,
-    ins: Optional[Dict[str, GraphIn]] = None,
-    out: Optional[Union[GraphOut, Dict[str, GraphOut]]] = None,
-    tags: Optional[Dict[str, Any]] = None,
-    config: Optional[Union[ConfigMapping, Dict[str, Any]]] = None,
+    input_defs: Optional[Sequence[InputDefinition]] = None,
+    output_defs: Optional[Sequence[OutputDefinition]] = None,
+    ins: Optional[Mapping[str, GraphIn]] = None,
+    out: Optional[Union[GraphOut, Mapping[str, GraphOut]]] = None,
+    tags: Optional[Mapping[str, Any]] = None,
+    config: Optional[Union[ConfigMapping, Mapping[str, Any]]] = None,
 ) -> Union[GraphDefinition, _Graph]:
     """Create a graph with the specified parameters from the decorated composition function.
 

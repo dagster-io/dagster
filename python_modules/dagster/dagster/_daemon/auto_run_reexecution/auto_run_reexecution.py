@@ -1,5 +1,5 @@
 import sys
-from typing import Iterator, List, Optional, Tuple, cast
+from typing import Iterator, Optional, Sequence, Tuple, cast
 
 from dagster import DagsterRun, MetadataEntry, MetadataValue
 from dagster._core.events import EngineEventData
@@ -14,7 +14,7 @@ DEFAULT_REEXECUTION_POLICY = ReexecutionStrategy.FROM_FAILURE
 
 
 def filter_runs_to_should_retry(
-    runs: List[DagsterRun], instance: DagsterInstance, default_max_retries: int
+    runs: Sequence[DagsterRun], instance: DagsterInstance, default_max_retries: int
 ) -> Iterator[Tuple[DagsterRun, int]]:
     """
     Return only runs that should retry along with their retry number (1st retry, 2nd, etc.)
@@ -150,7 +150,7 @@ def retry_run(
 
 def consume_new_runs_for_automatic_reexecution(
     workspace_process_context: IWorkspaceProcessContext,
-    run_records: List[RunRecord],
+    run_records: Sequence[RunRecord],
 ) -> Iterator[None]:
     """
     Check which runs should be retried, and retry them.

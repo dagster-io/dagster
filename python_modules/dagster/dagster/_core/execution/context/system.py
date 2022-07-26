@@ -16,6 +16,7 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
+    Sequence,
     Set,
     Union,
     cast,
@@ -128,7 +129,7 @@ class IPlanContext(ABC):
 
     @property
     @abstractmethod
-    def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
+    def output_capture(self) -> Optional[Mapping[StepOutputHandle, Any]]:
         raise NotImplementedError()
 
     @property
@@ -136,7 +137,7 @@ class IPlanContext(ABC):
         raise NotImplementedError()
 
     @property
-    def logging_tags(self) -> Dict[str, str]:
+    def logging_tags(self) -> Mapping[str, str]:
         return self.log.logging_metadata.to_tags()
 
     def has_tag(self, key: str) -> bool:
@@ -201,7 +202,7 @@ class PlanOrchestrationContext(IPlanContext):
         plan_data: PlanData,
         log_manager: DagsterLogManager,
         executor: Executor,
-        output_capture: Optional[Dict[StepOutputHandle, Any]],
+        output_capture: Optional[Mapping[StepOutputHandle, Any]],
         resume_from_failure: bool = False,
     ):
         self._plan_data = plan_data
@@ -231,7 +232,7 @@ class PlanOrchestrationContext(IPlanContext):
         return self._executor
 
     @property
-    def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
+    def output_capture(self) -> Optional[Mapping[StepOutputHandle, Any]]:
         return self._output_capture
 
     def for_step(self, step: ExecutionStep) -> "IStepContext":
@@ -864,7 +865,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             partitions_def.time_window_for_partition_key(partition_key_range.end).end,  # type: ignore
         )
 
-    def get_input_lineage(self) -> List[AssetLineageInfo]:
+    def get_input_lineage(self) -> Sequence[AssetLineageInfo]:
         if not self._input_lineage:
 
             for step_input in self.step.step_inputs:
@@ -901,7 +902,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         )
 
 
-def _dedup_asset_lineage(asset_lineage: List[AssetLineageInfo]) -> List[AssetLineageInfo]:
+def _dedup_asset_lineage(asset_lineage: Sequence[AssetLineageInfo]) -> List[AssetLineageInfo]:
     """Method to remove duplicate specifications of the same Asset/Partition pair from the lineage
     information. Duplicates can occur naturally when calculating transitive dependencies from solids
     with multiple Outputs, which in turn have multiple Inputs (because each Output of the solid will

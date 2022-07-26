@@ -7,7 +7,7 @@ import time
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
-from typing import Dict, Generator, List, NamedTuple, Optional, Sequence, Union
+from typing import Dict, Generator, List, Mapping, NamedTuple, Optional, Sequence, Union
 
 import pendulum
 
@@ -747,7 +747,7 @@ def _get_or_create_sensor_run(
     external_pipeline: ExternalPipeline,
     run_request: RunRequest,
     target_data: ExternalTargetData,
-    existing_runs_by_key: Dict[str, PipelineRun],
+    existing_runs_by_key: Mappping[str, PipelineRun],
 ):
 
     if not run_request.run_key:

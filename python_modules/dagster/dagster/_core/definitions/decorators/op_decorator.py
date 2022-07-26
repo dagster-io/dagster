@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Set, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Sequence, Set, Union, overload
 
 import dagster._check as check
 from dagster._config import UserConfigSchema
@@ -21,12 +21,12 @@ class _Op:
         name: Optional[str] = None,
         description: Optional[str] = None,
         required_resource_keys: Optional[Set[str]] = None,
-        config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
-        tags: Optional[Dict[str, Any]] = None,
+        config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
+        tags: Optional[Mapping[str, Any]] = None,
         version: Optional[str] = None,
         decorator_takes_context: Optional[bool] = True,
         retry_policy: Optional[RetryPolicy] = None,
-        ins: Optional[Dict[str, In]] = None,
+        ins: Optional[Mapping[str, In]] = None,
         out: Optional[Union[Out, Mapping[str, Out]]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
@@ -45,7 +45,7 @@ class _Op:
         # config will be checked within SolidDefinition
         self.config_schema = config_schema
 
-        self.ins = check.opt_nullable_dict_param(ins, "ins", key_type=str, value_type=In)
+        self.ins = check.opt_nullable_mapping_param(ins, "ins", key_type=str, value_type=In)
         self.out = out
 
     def __call__(self, fn: Callable[..., Any]) -> "OpDefinition":
@@ -92,11 +92,11 @@ def op(
     *,
     name: Optional[str] = ...,
     description: Optional[str] = ...,
-    ins: Optional[Dict[str, In]] = ...,
-    out: Optional[Union[Out, Dict[str, Out]]] = ...,
+    ins: Optional[Mapping[str, In]] = ...,
+    out: Optional[Union[Out, Mapping[str, Out]]] = ...,
     config_schema: Optional[UserConfigSchema] = ...,
     required_resource_keys: Optional[Set[str]] = ...,
-    tags: Optional[Dict[str, Any]] = ...,
+    tags: Optional[Mapping[str, Any]] = ...,
     version: Optional[str] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
 ) -> _Op:
@@ -108,11 +108,11 @@ def op(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    ins: Optional[Dict[str, In]] = None,
+    ins: Optional[Mapping[str, In]] = None,
     out: Optional[Union[Out, Mapping[str, Out]]] = None,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[Set[str]] = None,
-    tags: Optional[Dict[str, Any]] = None,
+    tags: Optional[Mapping[str, Any]] = None,
     version: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
 ) -> Union["OpDefinition", _Op]:

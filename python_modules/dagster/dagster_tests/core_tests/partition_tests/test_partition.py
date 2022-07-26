@@ -1,5 +1,5 @@
 from datetime import datetime, time
-from typing import Callable, List, Optional, Sequence
+from typing import Callable, Optional, Sequence
 
 import pendulum
 import pytest
@@ -40,7 +40,7 @@ def assert_expected_partitions(
     argnames=["partition_keys"],
     argvalues=[(["a_partition"],), ([str(x) for x in range(10)],)],
 )
-def test_static_partitions(partition_keys: List[str]):
+def test_static_partitions(partition_keys: Sequence[str]):
     static_partitions = StaticPartitionsDefinition(partition_keys)
 
     assert [(p.name, p.value) for p in static_partitions.get_partitions()] == [
@@ -300,7 +300,7 @@ def test_time_partitions_daily_partitions(
     end: Optional[datetime],
     partition_days_offset: Optional[int],
     current_time,
-    expected_partitions: List[str],
+    expected_partitions: Sequence[str],
     timezone: Optional[str],
 ):
     with pendulum.test(current_time):
@@ -406,7 +406,7 @@ def test_time_partitions_monthly_partitions(
     end: datetime,
     partition_months_offset: Optional[int],
     current_time,
-    expected_partitions: List[str],
+    expected_partitions: Sequence[str],
 ):
     with pendulum.test(current_time):
         partitions = ScheduleTimeBasedPartitionsDefinition(
@@ -511,7 +511,7 @@ def test_time_partitions_weekly_partitions(
     end: datetime,
     partition_weeks_offset: Optional[int],
     current_time,
-    expected_partitions: List[str],
+    expected_partitions: Sequence[str],
 ):
     with pendulum.test(current_time):
         partitions = ScheduleTimeBasedPartitionsDefinition(
@@ -716,7 +716,7 @@ def test_time_partitions_hourly_partitions(
     timezone: Optional[str],
     partition_hours_offset: int,
     current_time,
-    expected_partitions: List[str],
+    expected_partitions: Sequence[str],
 ):
     with pendulum.test(current_time):
         partitions = ScheduleTimeBasedPartitionsDefinition(
@@ -740,7 +740,7 @@ def test_time_partitions_hourly_partitions(
     ],
 )
 def test_dynamic_partitions_partitions(
-    partition_fn: Callable[[Optional[datetime]], List[Partition]]
+    partition_fn: Callable[[Optional[datetime]], Sequence[Partition]]
 ):
     partitions = DynamicPartitionsDefinition(partition_fn)
 
@@ -758,7 +758,7 @@ def test_dynamic_partitions_partitions(
         (lambda _current_time: [str(x) for x in range(10)],),
     ],
 )
-def test_dynamic_partitions_keys(partition_fn: Callable[[Optional[datetime]], List[str]]):
+def test_dynamic_partitions_keys(partition_fn: Callable[[Optional[datetime]], Sequence[str]]):
     partitions = DynamicPartitionsDefinition(partition_fn)
 
     assert [(p.name, p.value) for p in partitions.get_partitions()] == [

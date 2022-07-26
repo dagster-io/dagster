@@ -1,6 +1,6 @@
 import functools
 import glob
-from typing import Any, Dict
+from typing import Any, Mapping, Sequence
 
 import yaml
 
@@ -80,26 +80,26 @@ def merge_yamls(file_list, loader=DagsterRunConfigYamlLoader):
     Raises:
         yaml.YAMLError: When one of the YAML documents is invalid and has a parse error.
     """
-    check.list_param(file_list, "file_list", of_type=str)
+    check.sequence_param(file_list, "file_list", of_type=str)
 
     merged = {}
 
     for yaml_file in file_list:
         yaml_dict = load_yaml_from_path(yaml_file, loader=loader) or {}
 
-        check.invariant(
-            isinstance(yaml_dict, dict),
-            (
-                "Expected YAML from file {yaml_file} to parse to dictionary, "
-                'instead got: "{yaml_dict}"'
-            ).format(yaml_file=yaml_file, yaml_dict=yaml_dict),
-        )
-        merged = deep_merge_dicts(merged, yaml_dict)
+        if isinstance(yaml_dict, dict):
+            merged = deep_merge_dicts(merged, yaml_dict)
+            return merged
+        else:
+            check.failed(
+                (
+                    "Expected YAML from file {yaml_file} to parse to dictionary, "
+                    'instead got: "{yaml_dict}"'
+                ).format(yaml_file=yaml_file, yaml_dict=yaml_dict)
+            )
 
-    return merged
 
-
-def merge_yaml_strings(yaml_strs, loader=DagsterRunConfigYamlLoader):
+def merge_yaml_strings(yaml_strs: Sequence[str], loader=DagsterRunConfigYamlLoader) -> Mapping:
     """Combine a list of YAML strings into a dictionary.  Right-most overrides left-most.
 
     Args:
@@ -111,7 +111,7 @@ def merge_yaml_strings(yaml_strs, loader=DagsterRunConfigYamlLoader):
     Raises:
         yaml.YAMLError: When one of the YAML documents is invalid and has a parse error.
     """
-    check.list_param(yaml_strs, "yaml_strs", of_type=str)
+    check.sequence_param(yaml_strs, "yaml_strs", of_type=str)
 
     # Read YAML strings.
     yaml_dicts = list([yaml.load(y, Loader=loader) for y in yaml_strs])
@@ -135,7 +135,7 @@ def load_run_config_yaml(yaml_str: str):
     return yaml.load(yaml_str, Loader=DagsterRunConfigYamlLoader)
 
 
-def dump_run_config_yaml(run_config: Dict[str, Any]) -> str:
+def dump_run_config_yaml(run_config: Mapping[str, Any]) -> str:
     return yaml.dump(
         run_config, Dumper=DagsterRunConfigYamlDumper, default_flow_style=False, allow_unicode=True
     )

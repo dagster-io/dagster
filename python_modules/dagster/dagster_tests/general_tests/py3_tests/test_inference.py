@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import pytest
 
@@ -130,7 +130,7 @@ def test_single_typed_input_and_output_lambda():
 
 def test_wrapped_input_and_output_lambda():
     @lambda_solid
-    def add_one(nums: List[int]) -> Optional[List[int]]:
+    def add_one(nums: Sequence[int]) -> Optional[List[int]]:
         return [num + 1 for num in nums]
 
     assert add_one

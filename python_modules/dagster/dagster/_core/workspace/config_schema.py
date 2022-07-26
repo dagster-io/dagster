@@ -24,10 +24,10 @@ def process_workspace_config(
 
 
 def ensure_workspace_config(
-    workspace_config: Dict[str, object], yaml_path: str
-) -> Dict[str, object]:
+    workspace_config: Mapping[str, object], yaml_path: str
+) -> Mapping[str, object]:
     check.str_param(yaml_path, "yaml_path")
-    check.dict_param(workspace_config, "workspace_config", key_type=str)
+    check.mapping_param(workspace_config, "workspace_config", key_type=str)
 
     validation_result = process_workspace_config(workspace_config)
     if not validation_result.success:
@@ -41,7 +41,7 @@ def ensure_workspace_config(
     return cast(Dict[str, object], validation_result.value)
 
 
-def _get_target_config() -> Dict[str, ScalarUnion]:
+def _get_target_config() -> Mapping[str, ScalarUnion]:
     return {
         "python_file": ScalarUnion(
             scalar_type=str,

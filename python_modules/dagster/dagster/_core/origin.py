@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.code_pointer import CodePointer
@@ -8,7 +8,7 @@ from dagster._utils import frozenlist
 DEFAULT_DAGSTER_ENTRY_POINT = frozenlist(["dagster"])
 
 
-def get_python_environment_entry_point(executable_path: str) -> List[str]:
+def get_python_environment_entry_point(executable_path: str) -> Sequence[str]:
     return frozenlist([executable_path, "-m", "dagster"])
 
 
@@ -20,8 +20,8 @@ class RepositoryPythonOrigin(
             ("executable_path", str),
             ("code_pointer", CodePointer),
             ("container_image", Optional[str]),
-            ("entry_point", Optional[List[str]]),
-            ("container_context", Optional[Dict[str, Any]]),
+            ("entry_point", Optional[Sequence[str]]),
+            ("container_context", Optional[Mapping[str, Any]]),
         ],
     ),
 ):

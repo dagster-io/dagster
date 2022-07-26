@@ -1,4 +1,4 @@
-from typing import List
+from typing import Sequence
 
 import pytest
 
@@ -165,7 +165,7 @@ def echo(x):
 
 
 @op
-def adder(ls: List[int]) -> int:
+def adder(ls: Sequence[int]) -> int:
     return sum(ls)
 
 

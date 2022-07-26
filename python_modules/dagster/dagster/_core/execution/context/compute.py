@@ -545,7 +545,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
                 return ("dog", 5)
 
         """
-        metadata = check.dict_param(metadata, "metadata", key_type=str)
+        metadata = check.mapping_param(metadata, "metadata", key_type=str)
         output_name = check.opt_str_param(output_name, "output_name")
         mapping_key = check.opt_str_param(mapping_key, "mapping_key")
 

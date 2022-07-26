@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, cast
+from typing import Any, Mapping, Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions import JobDefinition, PipelineDefinition
@@ -7,10 +7,10 @@ from dagster._core.system_config.objects import ResolvedRunConfig
 
 def validate_run_config(
     job_def: Optional[JobDefinition] = None,
-    run_config: Optional[Dict[str, Any]] = None,
+    run_config: Optional[Mapping[str, Any]] = None,
     mode: Optional[str] = None,
     pipeline_def: Optional[PipelineDefinition] = None,
-) -> Dict[str, Any]:
+) -> Mapping[str, Any]:
     """Function to validate a provided run config blob against a given job. For legacy APIs, a
     pipeline/mode can also be passed in.
 
@@ -31,7 +31,7 @@ def validate_run_config(
 
     job_def = check.opt_inst_param(job_def, "job_def", (JobDefinition, PipelineDefinition))
     pipeline_def = check.opt_inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
-    run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
+    run_config = check.opt_mapping_param(run_config, "run_config", key_type=str)
 
     if job_def and pipeline_def:
         check.failed("Cannot specify both a job_def and a pipeline_def")

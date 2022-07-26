@@ -1,5 +1,17 @@
 # pylint: disable=super-init-not-called
-from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Set, Union, cast
+from typing import (
+    AbstractSet,
+    Any,
+    Dict,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+    cast,
+)
 
 import dagster._check as check
 from dagster._config import Shape
@@ -58,8 +70,8 @@ class UnboundSolidExecutionContext(OpExecutionContext):
     def __init__(
         self,
         solid_config: Any,
-        resources_dict: Dict[str, Any],
-        resources_config: Dict[str, Any],
+        resources_dict: Mapping[str, Any],
+        resources_config: Mapping[str, Any],
         instance: Optional[DagsterInstance],
         partition_key: Optional[str],
         mapping_key: Optional[str],
@@ -251,7 +263,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
             mapping_key=self._mapping_key,
         )
 
-    def get_events(self) -> List[UserEvent]:
+    def get_events(self) -> Sequence[UserEvent]:
         """Retrieve the list of user-generated events that were logged via the context.
 
         **Examples:**
@@ -555,7 +567,7 @@ class BoundSolidExecutionContext(OpExecutionContext):
                 return ("dog", 5)
 
         """
-        metadata = check.dict_param(metadata, "metadata", key_type=str)
+        metadata = check.mapping_param(metadata, "metadata", key_type=str)
         output_name = check.opt_str_param(output_name, "output_name")
         mapping_key = check.opt_str_param(mapping_key, "mapping_key")
 
@@ -599,9 +611,9 @@ class BoundSolidExecutionContext(OpExecutionContext):
 
 
 def build_op_context(
-    resources: Optional[Dict[str, Any]] = None,
+    resources: Optional[Mapping[str, Any]] = None,
     op_config: Any = None,
-    resources_config: Optional[Dict[str, Any]] = None,
+    resources_config: Optional[Mapping[str, Any]] = None,
     instance: Optional[DagsterInstance] = None,
     config: Any = None,
     partition_key: Optional[str] = None,
@@ -652,9 +664,9 @@ def build_op_context(
 
 
 def build_solid_context(
-    resources: Optional[Dict[str, Any]] = None,
+    resources: Optional[Mapping[str, Any]] = None,
     solid_config: Any = None,
-    resources_config: Optional[Dict[str, Any]] = None,
+    resources_config: Optional[Mapping[str, Any]] = None,
     instance: Optional[DagsterInstance] = None,
     config: Any = None,
     partition_key: Optional[str] = None,
@@ -697,8 +709,10 @@ def build_solid_context(
     solid_config = solid_config if solid_config else config
 
     return UnboundSolidExecutionContext(
-        resources_dict=check.opt_dict_param(resources, "resources", key_type=str),
-        resources_config=check.opt_dict_param(resources_config, "resources_config", key_type=str),
+        resources_dict=check.opt_mapping_param(resources, "resources", key_type=str),
+        resources_config=check.opt_mapping_param(
+            resources_config, "resources_config", key_type=str
+        ),
         solid_config=solid_config,
         instance=check.opt_inst_param(instance, "instance", DagsterInstance),
         partition_key=check.opt_str_param(partition_key, "partition_key"),

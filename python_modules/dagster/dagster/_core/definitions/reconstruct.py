@@ -9,8 +9,10 @@ from typing import (
     Dict,
     FrozenSet,
     List,
+    Mapping,
     NamedTuple,
     Optional,
+    Sequence,
     Union,
     overload,
 )
@@ -60,8 +62,7 @@ class ReconstructableRepository(
             ("pointer", CodePointer),
             ("container_image", Optional[str]),
             ("executable_path", Optional[str]),
-            ("entry_point", List[str]),
-            ("container_context", Optional[Dict[str, Any]]),
+            ("entry_point", Sequence[str            ("container_context", Optional[Mapping[str, Any]])   ("container_context", Optional[Dict[str, Any]]),
             ("repository_load_data", Optional["RepositoryLoadData"]),
         ],
     )
@@ -198,7 +199,7 @@ class ReconstructablePipeline(
         return self._replace(repository=self.repository.with_repository_load_data(metadata))
 
     @property
-    def solid_selection(self) -> Optional[List[str]]:
+    def solid_selection(self) -> Optional[Sequence[str]]:
         return seven.json.loads(self.solid_selection_str) if self.solid_selection_str else None
 
     # Keep the most recent 1 definition (globally since this is a NamedTuple method)
@@ -218,7 +219,7 @@ class ReconstructablePipeline(
     def _subset_for_execution(
         self,
         solids_to_execute: Optional[AbstractSet[str]],
-        solid_selection: Optional[List[str]],
+        solid_selection: Optional[Sequence[str]],nal[List[str]],
         asset_selection: Optional[AbstractSet[AssetKey]],
     ) -> "ReconstructablePipeline":
         # no selection
@@ -266,11 +267,11 @@ class ReconstructablePipeline(
 
     def subset_for_execution(
         self,
-        solid_selection: Optional[List[str]] = None,
+        solid_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ) -> "ReconstructablePipeline":
         # take a list of unresolved selection queries
-        check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+        check.opt_sequence_param(solid_selection, "solid_selection", of_type=str)
         check.opt_set_param(asset_selection, "asset_selection", of_type=AssetKey)
 
         check.invariant(

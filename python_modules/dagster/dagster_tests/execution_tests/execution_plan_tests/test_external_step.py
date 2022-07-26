@@ -3,6 +3,7 @@ import tempfile
 import time
 import uuid
 from threading import Thread
+from typing import Sequence
 
 import pytest
 
@@ -133,8 +134,6 @@ def _define_failure_job():
 
 
 def _define_dynamic_job(launch_initial, launch_final):
-    from typing import List
-
     initial_launcher = (
         local_external_step_launcher if launch_initial else ResourceDefinition.mock_resource()
     )
@@ -152,7 +151,7 @@ def _define_dynamic_job(launch_initial, launch_final):
         return i + 1
 
     @op(required_resource_keys={"final_launcher"})
-    def total(ins: List[int]):
+    def total(ins: Sequence[int]):
         return sum(ins)
 
     @job(

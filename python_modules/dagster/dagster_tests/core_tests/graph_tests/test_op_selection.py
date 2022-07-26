@@ -1,6 +1,6 @@
 # type: ignore[return-value]
 from datetime import datetime
-from typing import List
+from typing import Sequence
 
 import pytest
 
@@ -582,7 +582,7 @@ def test_sub_sub_graph_selection():
 
 def test_nested_op_selection_fan_in():
     @op
-    def sum_fan_in(nums: List[int]) -> int:
+    def sum_fan_in(nums: Sequence[int]) -> int:
         return sum(nums)
 
     @graph

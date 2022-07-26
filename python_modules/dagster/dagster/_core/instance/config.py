@@ -1,6 +1,6 @@
 import os
 import warnings
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Mapping, Optional
 
 from dagster import Array, Bool
 from dagster import _check as check
@@ -146,7 +146,7 @@ DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT = 180
 
 def get_default_tick_retention_settings(
     instigator_type: "InstigatorType",
-) -> Dict["TickStatus", int]:
+) -> Mapping["TickStatus", int]:
     from dagster._core.definitions.run_request import InstigatorType
     from dagster._core.scheduler.instigation import TickStatus
 
@@ -194,9 +194,9 @@ def retention_config_schema():
 
 
 def get_tick_retention_settings(
-    settings: Optional[Dict],
-    default_retention_settings: Dict["TickStatus", int],
-) -> Dict["TickStatus", int]:
+    settings: Optional[Mapping],
+    default_retention_settings: Mapping["TickStatus", int],
+) -> Mapping["TickStatus", int]:
     if not settings or not settings.get("purge_after_days"):
         return default_retention_settings
 

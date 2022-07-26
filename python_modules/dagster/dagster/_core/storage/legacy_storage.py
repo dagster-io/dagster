@@ -1,16 +1,4 @@
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from dagster import _check as check
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
@@ -182,7 +170,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         filters: Optional["RunsFilter"] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Dict[str, Dict[str, Union[Iterable["PipelineRun"], int]]]:
+    ) -> Mapping[str, Mapping[str, Union[Iterable["PipelineRun"], int]]]:
         return self._storage.run_storage.get_run_groups(filters, cursor, limit)
 
     def get_run_by_id(self, run_id: str) -> Optional["PipelineRun"]:
@@ -196,15 +184,15 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         ascending: bool = False,
         cursor: Optional[str] = None,
         bucket_by: Optional[Union["JobBucket", "TagBucket"]] = None,
-    ) -> List["RunRecord"]:
+    ) -> Sequence["RunRecord"]:
         return self._storage.run_storage.get_run_records(
             filters, limit, order_by, ascending, cursor, bucket_by
         )
 
-    def get_run_tags(self) -> List[Tuple[str, Set[str]]]:
+    def get_run_tags(self) -> Sequence[Tuple[str, Set[str]]]:
         return self._storage.run_storage.get_run_tags()
 
-    def add_run_tags(self, run_id: str, new_tags: Dict[str, str]):
+    def add_run_tags(self, run_id: str, new_tags: Mapping[str, str]):
         return self._storage.run_storage.add_run_tags(run_id, new_tags)
 
     def has_run(self, run_id: str) -> bool:
@@ -271,7 +259,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def add_daemon_heartbeat(self, daemon_heartbeat: "DaemonHeartbeat"):
         return self._storage.run_storage.add_daemon_heartbeat(daemon_heartbeat)
 
-    def get_daemon_heartbeats(self) -> Dict[str, "DaemonHeartbeat"]:
+    def get_daemon_heartbeats(self) -> Mapping[str, "DaemonHeartbeat"]:
         return self._storage.run_storage.get_daemon_heartbeats()
 
     def wipe_daemon_heartbeats(self):
@@ -282,7 +270,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         status: Optional["BulkActionStatus"] = None,
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> List["PartitionBackfill"]:
+    ) -> Sequence["PartitionBackfill"]:
         return self._storage.run_storage.get_backfills(status, cursor, limit)
 
     def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:
@@ -336,7 +324,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def get_step_stats_for_run(
         self, run_id: str, step_keys=None
-    ) -> List["RunStepKeyStatsSnapshot"]:
+    ) -> Sequence["RunStepKeyStatsSnapshot"]:
         return self._storage.event_storage.get_step_stats_for_run(run_id, step_keys)
 
     def store_event(self, event: "EventLogEntry"):
@@ -394,7 +382,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def get_asset_keys(
         self,
-        prefix: Optional[List[str]] = None,
+        prefix: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
     ) -> Iterable["AssetKey"]:
@@ -408,7 +396,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def get_asset_events(
         self,
         asset_key: "AssetKey",
-        partitions: Optional[List[str]] = None,
+        partitions: Optional[Sequence[str]] = None,
         before_cursor: Optional[int] = None,
         after_cursor: Optional[int] = None,
         limit: Optional[int] = None,
@@ -510,7 +498,7 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
         before: Optional[float] = None,
         after: Optional[float] = None,
         limit: Optional[int] = None,
-        statuses: Optional[List["TickStatus"]] = None,
+        statuses: Optional[Sequence["TickStatus"]] = None,
     ) -> Iterable["InstigatorTick"]:
         return self._storage.schedule_storage.get_ticks(
             origin_id, selector_id, before, after, limit, statuses
@@ -527,7 +515,7 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
         origin_id: str,
         selector_id: str,
         before: float,
-        tick_statuses: Optional[List["TickStatus"]] = None,
+        tick_statuses: Optional[Sequence["TickStatus"]] = None,
     ):
         return self._storage.schedule_storage.purge_ticks(
             origin_id, selector_id, before, tick_statuses

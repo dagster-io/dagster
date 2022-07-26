@@ -258,7 +258,7 @@ class NamedTupleSerializer(Serializer):
         value: NamedTuple,
         whitelist_map: WhitelistMap,
         descent_path: str,
-    ) -> Dict[str, Any]:
+    ) -> Mapping[str, Any]:
         """
         Transform the object in to a form that can be json serialized.
 
@@ -304,7 +304,7 @@ class DefaultNamedTupleSerializer(NamedTupleSerializer):
     @classmethod
     def value_from_unpacked(
         cls,
-        unpacked_dict: Dict[str, Any],
+        unpacked_dict: Mapping[str, Any],
         klass: Type[Any],
     ):
         return klass(**unpacked_dict)
@@ -552,7 +552,7 @@ def unpack_inner_value(val: Any, whitelist_map: WhitelistMap, descent_path: str)
 
 
 def register_serdes_tuple_fallbacks(
-    fallback_map: Dict[str, Optional[Type]],
+    fallback_map: Mapping[str, Optional[Type]],
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
 ) -> None:
     """
@@ -576,7 +576,7 @@ def register_serdes_tuple_fallbacks(
 
 
 def register_serdes_enum_fallbacks(
-    fallback_map: Dict[str, Optional[Type[Enum]]],
+    fallback_map: Mapping[str, Optional[Type[Enum]]],
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
 ) -> None:
     """
@@ -668,7 +668,7 @@ def _root(val: Any) -> str:
     return f"<root:{val.__class__.__name__}>"
 
 
-def replace_storage_keys(storage_dict: Dict[str, Any], key_mapping: Dict[str, str]):
+def replace_storage_keys(storage_dict: Dict[str, Any], key_mapping: Mapping[str, str]):
     """returns a version of the storage dict that replaces all the keys"""
     result = {}
     for key, value in storage_dict.items():

@@ -508,10 +508,12 @@ class SensorExecutionData(
         cursor: Optional[str] = None,
         pipeline_run_reactions: Optional[Sequence[PipelineRunReaction]] = None,
     ):
-        check.opt_list_param(run_requests, "run_requests", RunRequest)
+        check.opt_sequence_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
         check.opt_str_param(cursor, "cursor")
-        check.opt_list_param(pipeline_run_reactions, "pipeline_run_reactions", PipelineRunReaction)
+        check.opt_sequence_param(
+            pipeline_run_reactions, "pipeline_run_reactions", PipelineRunReaction
+        )
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
         )

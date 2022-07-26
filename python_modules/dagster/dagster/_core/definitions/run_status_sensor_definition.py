@@ -1,6 +1,6 @@
 import warnings
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Callable, List, NamedTuple, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Sequence, Union, cast
 
 import pendulum
 
@@ -194,7 +194,7 @@ def run_failure_sensor(
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     monitored_jobs: Optional[
-        List[
+        Sequence[
             Union[
                 PipelineDefinition,
                 GraphDefinition,
@@ -205,7 +205,7 @@ def run_failure_sensor(
         ]
     ] = None,
     job_selection: Optional[
-        List[
+        Sequence[
             Union[
                 PipelineDefinition,
                 GraphDefinition,
@@ -326,7 +326,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         monitored_jobs: Optional[
-            List[
+            Sequence[
                 Union[
                     PipelineDefinition,
                     GraphDefinition,
@@ -618,7 +618,7 @@ def run_status_sensor(
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     monitored_jobs: Optional[
-        List[
+        Sequence[
             Union[
                 PipelineDefinition,
                 GraphDefinition,
@@ -629,7 +629,7 @@ def run_status_sensor(
         ]
     ] = None,
     job_selection: Optional[
-        List[
+        Sequence[
             Union[
                 PipelineDefinition,
                 GraphDefinition,

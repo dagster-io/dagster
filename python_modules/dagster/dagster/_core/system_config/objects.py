@@ -44,8 +44,8 @@ class SolidConfig(
         )
 
     @staticmethod
-    def from_dict(config: Dict[str, Any]) -> "SolidConfig":
-        check.dict_param(config, "config", key_type=str)
+    def from_dict(config: Mapping[str, Any]) -> "SolidConfig":
+        check.mapping_param(config, "config", key_type=str)
 
         return SolidConfig(
             config=config.get("config"),
@@ -72,7 +72,7 @@ class OutputsConfig(NamedTuple):
             return set()
 
     @property
-    def type_materializer_specs(self) -> List[object]:
+    def type_materializer_specs(self) -> Sequence[object]:
         if isinstance(self.config, list):
             return self.config
         else:
@@ -120,20 +120,22 @@ class ResolvedRunConfig(
         inputs: Optional[Mapping[str, object]] = None,
     ):
         check.opt_inst_param(execution, "execution", ExecutionConfig)
-        check.opt_dict_param(original_config_dict, "original_config_dict")
-        resources = check.opt_dict_param(resources, "resources", key_type=str)
+        check.opt_mapping_param(original_config_dict, "original_config_dict")
+        resources = check.opt_mapping_param(resources, "resources", key_type=str)
         check.opt_str_param(mode, "mode")
-        inputs = check.opt_dict_param(inputs, "inputs", key_type=str)
+        inputs = check.opt_mapping_param(inputs, "inputs", key_type=str)
 
         if execution is None:
             execution = ExecutionConfig(None, None)
 
         return super(ResolvedRunConfig, cls).__new__(
             cls,
-            solids=check.opt_dict_param(solids, "solids", key_type=str, value_type=SolidConfig),
+            solids=check.opt_mapping_param(solids, "solids", key_type=str, value_type=SolidConfig),
             execution=execution,
             resources=resources,
-            loggers=check.opt_dict_param(loggers, "loggers", key_type=str, value_type=dict),
+            loggers=check.two_dim_mapping_param(
+                loggers, "loggers", key_type=str, value_type=Mapping
+            ),
             original_config_dict=original_config_dict,
             mode=mode,
             inputs=inputs,
@@ -225,7 +227,7 @@ class ResolvedRunConfig(
             inputs=input_configs,
         )
 
-    def to_dict(self) -> Dict[str, Mapping[str, object]]:
+    def to_dict(self) -> Mapping[str, Mapping[str, object]]:
 
         env_dict: Dict[str, Mapping[str, object]] = {}
 
@@ -300,7 +302,7 @@ def config_map_loggers(
     pipeline_def: PipelineDefinition,
     config_value: Mapping[str, Any],
     mode: str,
-) -> Dict[str, Any]:
+) -> Mapping[str, Any]:
     """This function executes the config mappings for loggers with respect to ConfigurableDefinition.
     It uses the `loggers` key on the run_config to determine which loggers will be initialized (and
     thus which ones need config mapping) and then iterates over each, looking up the corresponding
@@ -407,14 +409,14 @@ class ExecutionConfig(
                 execution_engine_name,
                 "execution_engine_name",  # "in_process"
             ),
-            execution_engine_config=check.opt_dict_param(
+            execution_engine_config=check.opt_mapping_param(
                 execution_engine_config, "execution_engine_config", key_type=str
             ),
         )
 
     @staticmethod
-    def from_dict(config: Optional[Mapping[str, object]] = None) -> "ExecutionConfig":
-        check.opt_mapping_param(config, "config", key_type=str)
+    def from_dict(config: Optional[Mapping[str, Mapping[str, Any]]] = None) -> "ExecutionConfig":
+        config = check.opt_mapping_param(config, "config", key_type=str)
         if config:
             execution_engine_name, execution_engine_config = ensure_single_item(config)
             return ExecutionConfig(execution_engine_name, execution_engine_config.get("config"))

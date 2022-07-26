@@ -1,5 +1,5 @@
 import os
-from typing import Dict, NamedTuple, Optional, Sequence
+from typing import Mapping, NamedTuple, Optional, Sequence
 
 import yaml
 
@@ -160,7 +160,7 @@ class InstanceRef(
             ("scheduler_data", Optional[ConfigurableClassData]),
             ("run_coordinator_data", Optional[ConfigurableClassData]),
             ("run_launcher_data", Optional[ConfigurableClassData]),
-            ("settings", Dict[str, object]),
+            ("settings", Mapping[str, object]),
             # Required for backwards compatibility, but going forward will be unused by new versions
             # of DagsterInstance, which instead will instead grab the constituent storages from the
             # unified `storage_data`, if it is populated.
@@ -186,7 +186,7 @@ class InstanceRef(
         scheduler_data: Optional[ConfigurableClassData],
         run_coordinator_data: Optional[ConfigurableClassData],
         run_launcher_data: Optional[ConfigurableClassData],
-        settings: Dict[str, object],
+        settings: Mapping[str, object],
         run_storage_data: ConfigurableClassData,
         event_storage_data: ConfigurableClassData,
         schedule_storage_data: ConfigurableClassData,
@@ -211,7 +211,7 @@ class InstanceRef(
             run_launcher_data=check.opt_inst_param(
                 run_launcher_data, "run_launcher_data", ConfigurableClassData
             ),
-            settings=check.opt_dict_param(settings, "settings", key_type=str),
+            settings=check.opt_mapping_param(settings, "settings", key_type=str),
             run_storage_data=check.inst_param(
                 run_storage_data, "run_storage_data", ConfigurableClassData
             ),

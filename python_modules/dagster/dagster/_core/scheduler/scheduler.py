@@ -1,6 +1,6 @@
 import abc
 import os
-from typing import List, NamedTuple, Optional
+from typing import NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._config import Field, IntSource
@@ -30,26 +30,28 @@ class SchedulerDebugInfo(
     NamedTuple(
         "SchedulerDebugInfo",
         [
-            ("errors", List[str]),
+            ("errors", Sequence[str]),
             ("scheduler_config_info", str),
             ("scheduler_info", str),
-            ("schedule_storage", List[str]),
+            ("schedule_storage", Sequence[str]),
         ],
     )
 ):
     def __new__(
         cls,
-        errors: List[str],
+        errors: Sequence[str],
         scheduler_config_info: str,
         scheduler_info: str,
-        schedule_storage: List[str],
+        schedule_storage: Sequence[str],
     ):
         return super(SchedulerDebugInfo, cls).__new__(
             cls,
-            errors=check.list_param(errors, "errors", of_type=str),
+            errors=check.sequence_param(errors, "errors", of_type=str),
             scheduler_config_info=check.str_param(scheduler_config_info, "scheduler_config_info"),
             scheduler_info=check.str_param(scheduler_info, "scheduler_info"),
-            schedule_storage=check.list_param(schedule_storage, "schedule_storage", of_type=str),
+            schedule_storage=check.sequence_param(
+                schedule_storage, "schedule_storage", of_type=str
+            ),
         )
 
 

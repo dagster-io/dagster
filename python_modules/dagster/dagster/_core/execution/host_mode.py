@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import List, Optional
+from typing import Optional, Sequence
 
 import dagster._check as check
 from dagster._config import Field, process_config
@@ -158,13 +158,13 @@ def execute_run_host_mode(
     pipeline: ReconstructablePipeline,
     pipeline_run: PipelineRun,
     instance: DagsterInstance,
-    executor_defs: Optional[List[ExecutorDefinition]] = None,
+    executor_defs: Optional[Sequence[ExecutorDefinition]] = None,
     raise_on_error: bool = False,
 ):
     check.inst_param(pipeline, "pipeline", ReconstructablePipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
-    check.opt_list_param(executor_defs, "executor_defs", of_type=ExecutorDefinition)
+    check.opt_sequence_param(executor_defs, "executor_defs", of_type=ExecutorDefinition)
     executor_defs = executor_defs if executor_defs != None else default_executors
 
     if pipeline_run.status == PipelineRunStatus.CANCELED:

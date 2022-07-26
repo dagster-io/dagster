@@ -242,7 +242,7 @@ def job_list_versions_command(**kwargs):
         execute_list_versions_command(instance, kwargs)
 
 
-def execute_list_versions_command(instance: DagsterInstance, kwargs: Dict[str, object]):
+def execute_list_versions_command(instance: DagsterInstance, kwargs: Mapping[str, object]):
     check.inst_param(instance, "instance", DagsterInstance)
 
     config = list(check.opt_tuple_param(kwargs.get("config"), "config", default=(), of_type=str))
