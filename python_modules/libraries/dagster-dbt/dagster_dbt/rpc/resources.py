@@ -80,7 +80,7 @@ class DbtRpcResource(DbtResource):
         headers["User-Agent"] = self._construct_user_agent()
         headers["Content-Type"] = "application/json"
         headers["Accept"] = "application/json"
-        return headers
+        return cast(Dict[str, str], headers)
 
     def _post(self, data: Optional[str] = None) -> DbtRpcOutput:
         """Constructs and sends a POST request to the dbt RPC server.
