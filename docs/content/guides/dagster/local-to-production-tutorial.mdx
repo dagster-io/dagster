@@ -61,11 +61,11 @@ pip install pandas pytest dagster-snowflake dagster-snowflake-pandas
 
 In this section we will:
 
-- Write our assets
-- Write a resource to fetch data from Hacker News
-- Add the assets to our [repository](/concepts/repositories-workspaces/repositories)
-- Add run configuration for the Snowflake IO manager
-- Materialize assets in Dagit
+- Write our assets.
+- Write a resource to fetch data from Hacker News.
+- Add the assets to our [repository](/concepts/repositories-workspaces/repositories).
+- Add run configuration for the Snowflake IO manager.
+- Materialize assets in Dagit.
 
 Let’s start by writing our three assets. We'll use Pandas DataFrames to interact with the data.
 
@@ -106,10 +106,10 @@ def stories(items: pd.DataFrame) -> pd.DataFrame:
 This results in an asset graph that looks like this:
 
 <Image
-alt="Hacker News asset graph"
+alt="alt"
 src="/images/guides/local_to_production/hacker_news_asset_graph.png"
-width={1331}
-height={874}
+width={1538}
+height={730}
 />
 
 Now let's write the resource to fetch data from Hacker News.
@@ -117,8 +117,9 @@ Now let's write the resource to fetch data from Hacker News.
 <Note>
 
 In many cases, it is often most convenient to interact with an external service directly in assets or ops, rather than write a resource. We recommend that you refactor your code to use resources in the following cases:
-* you need multiple assets or ops to interact with the service in a consistent way
-* you want to interact with a different service in certain scenarios (ie. a staging environment, or unit tests)
+
+- you need multiple assets or ops to interact with the service in a consistent way
+- you want to interact with a different service in certain scenarios (ie. a staging environment, or unit tests)
 
 </Note>
 
@@ -157,7 +158,7 @@ def hn_api_client():
   </a> on GitHub.
 </Note>
 
-Now we can add these assets to our repository and materialize them via Dagit as part of our local development workflow. We will use the `configured` API to add configuration for the `snowflake_io_manager`.
+Now we can add these assets to our repository and materialize them via Dagit as part of our local development workflow. We will use the [configured API](/concepts/configuration/configured) to add configuration for the `snowflake_io_manager`.
 
 ```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v2.py startafter=start endbefore=end
 # repository.py
@@ -189,13 +190,12 @@ Now we can materialize the assets the Dagit and ensure that the data appears in 
 
 While we define our assets as Pandas DataFrames, the Snowflake IO manager automatically translates the asset data to and from Snowflake tables. The Python asset name determines the Snowflake table name. In this case three tables will be created: `ITEMS`, `COMMENTS` and `STORIES`.
 
-
 ### Part two: Deployment
 
 In this section we will:
 
-- Modify the configuration for the Snowflake IO manager to handle staging and production environments
-- Discuss different options for managing a staging environment
+- Modify the configuration for the Snowflake IO manager to handle staging and production environments.
+- Discuss different options for managing a staging environment.
 
 Now that our assets work locally, we can start the deployment process! We’re going to get our assets set up for our production deployment first, and then circle back and discuss the options for our staging environment.
 
@@ -208,7 +208,8 @@ Instead, we can set up the repository to attach resources to assets based on the
 ```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v4.py startafter=start endbefore=end
 # repository.py
 
-
+# Note: there are multiple issues with how this config is specified, mainly that
+# passwords are being stored in code. This will be addressed next.
 @repository
 def repo():
     resource_defs = {
@@ -218,7 +219,7 @@ def repo():
                 {
                     "account": "abc1234.us-east-1",
                     "user": "me@company.com",
-                    "password": "my_super_secret_password",
+                    "password": "my_super_secret_password",  # password in config is bad practice
                     "database": "SANDBOX",
                     "schema": "ALICE",
                 }
@@ -230,7 +231,7 @@ def repo():
                 {
                     "account": "abc1234.us-east-1",
                     "user": "dev@company.com",
-                    "password": "company_super_secret_password",
+                    "password": "company_super_secret_password",  # password in config is bad practice
                     "database": "PRODUCTION",
                     "schema": "HACKER_NEWS",
                 }
@@ -268,19 +269,38 @@ We can easily solve all of these problems because the Snowflake IO manager accep
 @repository
 def repo():
     resource_defs = {
-        "hn_client": hn_api_client,
-        "io_manager": snowflake_io_manager.configured(
-            {
-                "account": {"env": "SNOWFLAKE_ACCOUNT"},
-                "user": {"env": "SNOWFLAKE_USER"},
-                "password": {"env": "SNOWFLAKE_PASSWORD"},
-                "database": {"env": "SNOWFLAKE_DATABASE"},
-                "schema": {"env": "SNOWFLAKE_SCHEMA"},
-            }
-        ),
+        "local": {
+            "hn_client": hn_api_client,
+            "io_manager": snowflake_io_manager.configured(
+                {
+                    "account": "abc1234.us-east-1",
+                    "user": {"env": "DEV_SNOWFLAKE_USER"},
+                    "password": {"env": "DEV_SNOWFLAKE_PASSWORD"},
+                    "database": "SANDBOX",
+                    "schema": {"env": "DEV_SNOWFLAKE_SCHEMA"},
+                }
+            ),
+        },
+        "production": {
+            "hn_client": hn_api_client,
+            "io_manager": snowflake_io_manager.configured(
+                {
+                    "account": "abc1234.us-east-1",
+                    "user": "system@company.com",
+                    "password": {"env": "SYSTEM_SNOWFLAKE_PASSWORD"},
+                    "database": "PRODUCTION",
+                    "schema": "HACKER_NEWS",
+                }
+            ),
+        },
     }
+    deployment_name = os.getenv("DAGSTER_DEPLOYMENT", "local")
 
-    return [*with_resources([items, comments, stories], resource_defs=resource_defs)]
+    return [
+        with_resources(
+            [items, comments, stories], resource_defs=resource_defs[deployment_name]
+        )
+    ]
 ```
 
 #### Staging
