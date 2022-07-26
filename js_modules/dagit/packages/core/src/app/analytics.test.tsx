@@ -55,7 +55,7 @@ describe('Analytics', () => {
     const Page = () => {
       const trackEvent = useTrackEvent();
       const onClick = () => {
-        trackEvent('userClick');
+        trackEvent('thingClick');
       };
       return <button onClick={onClick}>Hello</button>;
     };
@@ -87,7 +87,7 @@ describe('Analytics', () => {
       expect(track).toHaveBeenCalledTimes(1);
 
       // Track both the react-router Route path and the actual location pathname
-      expect(track.mock.calls[0][0]).toBe('userClick');
+      expect(track.mock.calls[0][0]).toBe('thingClick');
       expect(track.mock.calls[0][1]).toEqual({path: '/foo/:bar?', specificPath: '/foo/hello'});
     });
   });

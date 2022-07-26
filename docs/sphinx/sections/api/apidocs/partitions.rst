@@ -50,6 +50,20 @@ Partitioned Schedules
 .. autofunction:: build_schedule_from_partitioned_job
     :noindex:
 
+Partition Mapping (Experimental)
+================================
+
+.. autoclass:: PartitionMapping
+    :members:
+
+.. autoclass:: TimeWindowPartitionMapping
+    :members:
+
+.. autoclass:: AllPartitionMapping
+    :members:
+
+.. autoclass:: LastPartitionMapping
+    :members:
 
 Legacy Functions
 ================

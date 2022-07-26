@@ -31,21 +31,20 @@ from dagster import (
     lambda_solid,
     logger,
     op,
-    pipeline,
     repository,
     resource,
     schedule,
     sensor,
 )
 from dagster._check import CheckError
-from dagster.core.definitions.executor_definition import (
+from dagster._core.definitions.executor_definition import (
     default_executors,
     multi_or_in_process_executor,
 )
-from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
-from dagster.core.errors import DagsterInvalidSubsetError
-from dagster.legacy import solid
-from dagster.loggers import default_loggers
+from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
+from dagster._core.errors import DagsterInvalidSubsetError
+from dagster._legacy import pipeline, solid
+from dagster._loggers import default_loggers
 
 # pylint: disable=comparison-with-callable
 

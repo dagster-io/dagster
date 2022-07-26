@@ -109,7 +109,7 @@ const SingleRepoSummary: React.FC<{repo: RepoSelectorOption; onlyRepo: boolean}>
       >
         {repoAddress.name}
       </SingleRepoNameLink>
-      {canReloadRepositoryLocation ? (
+      {canReloadRepositoryLocation.enabled ? (
         <ReloadRepositoryLocationButton location={repoAddress.location}>
           {({tryReload, reloading}) => (
             <ShortcutHandler

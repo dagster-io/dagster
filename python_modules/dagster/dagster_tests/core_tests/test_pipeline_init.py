@@ -1,18 +1,18 @@
 import pytest
 
 from dagster import DagsterInstance, ModeDefinition, PipelineDefinition, resource
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.context_creation_pipeline import PlanExecutionContextManager
-from dagster.core.execution.resources_init import (
+from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.execution.api import create_execution_plan
+from dagster._core.execution.context_creation_pipeline import PlanExecutionContextManager
+from dagster._core.execution.resources_init import (
     resource_initialization_event_generator,
     resource_initialization_manager,
     single_resource_event_generator,
 )
-from dagster.core.execution.retries import RetryMode
-from dagster.core.log_manager import DagsterLogManager
-from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster.legacy import solid
+from dagster._core.execution.retries import RetryMode
+from dagster._core.log_manager import DagsterLogManager
+from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._legacy import solid
 
 
 def test_generator_exit():
@@ -66,8 +66,8 @@ def test_clean_event_generator_exit():
     """Testing for generator cleanup
     (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/)
     """
-    from dagster.core.definitions.resource_definition import ScopedResourcesBuilder
-    from dagster.core.execution.context.init import InitResourceContext
+    from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
+    from dagster._core.execution.context.init import InitResourceContext
 
     pipeline_def = gen_basic_resource_pipeline()
     instance = DagsterInstance.ephemeral()

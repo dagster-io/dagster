@@ -68,11 +68,11 @@ export const LaunchAssetExecutionButton: React.FC<{
     context === 'all' ? ` all${count}` : context === 'selected' ? ` selected${count}` : count
   }`;
 
-  if (!assetKeys.length || !canLaunchPipelineExecution) {
+  if (!assetKeys.length || !canLaunchPipelineExecution.enabled) {
     return (
       <Tooltip
         content={
-          !canLaunchPipelineExecution
+          !canLaunchPipelineExecution.enabled
             ? 'You do not have permission to materialize assets'
             : 'Select one or more assets to materialize.'
         }
@@ -263,8 +263,9 @@ async function stateForLaunchingAssets(
       jobName,
       repoAddress,
       sessionPresets: {
-        solidSelection: assetOpNames,
-        solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(' '),
+        flattenGraphs: true,
+        assetSelection: assets.map((a) => ({assetKey: a.assetKey, opNames: a.opNames})),
+        solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(', '),
       },
     };
   }
@@ -291,7 +292,7 @@ export function executionParamsForAssetJob(
         },
       ],
     },
-    runConfigData: {},
+    runConfigData: '{}',
     selector: {
       repositoryLocationName: repoAddress.location,
       repositoryName: repoAddress.name,

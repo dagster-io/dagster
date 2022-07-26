@@ -1,13 +1,15 @@
 import sys
-from typing import Mapping, NamedTuple, Optional, Sequence, cast
+from contextlib import contextmanager
+from contextvars import ContextVar
+from typing import Callable, Mapping, NamedTuple, Optional, Sequence, cast
 
 from graphql.execution.base import ResolveInfo
 
 import dagster._check as check
-from dagster.core.definitions.events import AssetKey
-from dagster.core.host_representation import GraphSelector, PipelineSelector
-from dagster.core.workspace.context import BaseWorkspaceRequestContext
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster._core.definitions.events import AssetKey
+from dagster._core.host_representation import GraphSelector, PipelineSelector
+from dagster._core.workspace.context import BaseWorkspaceRequestContext
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 
 def check_permission(permission):
@@ -30,6 +32,10 @@ def assert_permission(graphene_info: ResolveInfo, permission: str) -> None:
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
 
+def _noop(_):
+    pass
+
+
 class ErrorCapture:
     @staticmethod
     def default_on_exception(exc_info):
@@ -38,17 +44,32 @@ class ErrorCapture:
         # Transform exception in to PythonError to present to user
         return GraphenePythonError(serializable_error_info_from_exc_info(exc_info))
 
+    # global behavior for how to handle unexpected exceptions
     on_exception = default_on_exception
+
+    # context var for observing unexpected exceptions
+    observer: ContextVar[Callable[[Exception], None]] = ContextVar(
+        "error_capture_observer", default=_noop
+    )
+
+    @staticmethod
+    @contextmanager
+    def watch(fn: Callable[[Exception], None]):
+        token = ErrorCapture.observer.set(fn)
+        try:
+            yield
+        finally:
+            ErrorCapture.observer.reset(token)
 
 
 def capture_error(fn):
     def _fn(*args, **kwargs):
-
         try:
             return fn(*args, **kwargs)
         except UserFacingGraphQLError as de_exception:
             return de_exception.error
-        except Exception:
+        except Exception as exc:
+            ErrorCapture.observer.get()(exc)
             return ErrorCapture.on_exception(sys.exc_info())
 
     return _fn

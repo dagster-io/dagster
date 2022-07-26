@@ -9,12 +9,11 @@ from dagster import (
     ScheduleDefinition,
     SkipReason,
     lambda_solid,
-    pipeline,
     repository,
     sensor,
     usable_as_dagster_type,
 )
-from dagster.legacy import solid
+from dagster._legacy import pipeline, solid
 
 
 @lambda_solid

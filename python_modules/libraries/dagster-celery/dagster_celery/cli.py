@@ -6,11 +6,10 @@ import click
 from celery.utils.nodenames import default_nodename, host_format
 
 import dagster._check as check
-from dagster.config.post_process import post_process_config
-from dagster.config.validate import validate_config
-from dagster.core.errors import DagsterInvalidConfigError
-from dagster.core.instance import DagsterInstance
-from dagster.utils import load_yaml_from_path, mkdir_p
+from dagster._config import post_process_config, validate_config
+from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.instance import DagsterInstance
+from dagster._utils import load_yaml_from_path, mkdir_p
 
 from .executor import CeleryExecutor, celery_executor
 from .make_app import make_app

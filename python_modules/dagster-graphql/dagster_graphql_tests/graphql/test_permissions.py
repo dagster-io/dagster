@@ -9,7 +9,7 @@ from dagster_graphql.implementation.utils import (
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 import dagster._check as check
-from dagster.core.workspace.permissions import EDITOR_PERMISSIONS, VIEWER_PERMISSIONS, Permissions
+from dagster._core.workspace.permissions import EDITOR_PERMISSIONS, VIEWER_PERMISSIONS, Permissions
 
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 
@@ -18,6 +18,7 @@ PERMISSIONS_QUERY = """
       permissions {
         permission
         value
+        disabledReason
       }
     }
 """
@@ -139,3 +140,22 @@ class TestPermissionsQuery(NonLaunchableGraphQLContextTestMatrix):
             assert permissions_map == VIEWER_PERMISSIONS
         else:
             assert permissions_map == EDITOR_PERMISSIONS
+
+        for permission in result.data["permissions"]:
+            if not permission["value"]:
+                assert permission["disabledReason"] == "Disabled by your administrator"
+            else:
+                assert not permission.get("disabledReason")
+
+    def test_truthy_permission_result(self, graphql_context):
+        permissions = graphql_context.permissions
+        permission_result = next(iter(permissions.values()))
+
+        with pytest.raises(
+            Exception,
+            match="Don't check a PermissionResult for truthiness - check the `enabled` property instead",
+        ):
+            if permission_result:
+                pass
+
+        permission_result.enabled  # pylint: disable=pointless-statement

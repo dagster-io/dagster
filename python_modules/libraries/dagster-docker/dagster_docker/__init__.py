@@ -1,4 +1,4 @@
-from dagster.core.utils import check_dagster_package_version
+from dagster._core.utils import check_dagster_package_version
 
 from .docker_executor import docker_executor
 from .docker_run_launcher import DockerRunLauncher

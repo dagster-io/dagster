@@ -3,18 +3,18 @@ from contextlib import contextmanager
 
 import dagster._check as check
 from dagster import job, op
-from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
-from dagster.core.launcher import DefaultRunLauncher
-from dagster.core.run_coordinator import DefaultRunCoordinator
-from dagster.core.storage.compute_log_manager import (
+from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
+from dagster._core.launcher import DefaultRunLauncher
+from dagster._core.run_coordinator import DefaultRunCoordinator
+from dagster._core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
     ComputeLogFileData,
     ComputeLogManager,
 )
-from dagster.core.storage.event_log import SqliteEventLogStorage
-from dagster.core.storage.root import LocalArtifactStorage
-from dagster.core.storage.runs import SqliteRunStorage
-from dagster.core.test_utils import environ, instance_for_test
+from dagster._core.storage.event_log import SqliteEventLogStorage
+from dagster._core.storage.root import LocalArtifactStorage
+from dagster._core.storage.runs import SqliteRunStorage
+from dagster._core.test_utils import environ, instance_for_test
 
 
 def test_compute_log_manager_instance():

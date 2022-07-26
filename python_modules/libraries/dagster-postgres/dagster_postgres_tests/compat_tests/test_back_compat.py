@@ -17,15 +17,14 @@ from dagster import (
     execute_pipeline,
     job,
     op,
-    pipeline,
     reconstructable,
 )
-from dagster.core.instance import DagsterInstance
-from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
-from dagster.core.storage.pipeline_run import RunsFilter
-from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster.legacy import solid
-from dagster.utils import file_relative_path
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._core.storage.pipeline_run import RunsFilter
+from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster._legacy import pipeline, solid
+from dagster._utils import file_relative_path
 
 
 def get_columns(instance, table_name: str):
@@ -521,8 +520,8 @@ def test_instigators_table_backcompat(hostname, conn_string):
 
 
 def test_jobs_selector_id_migration(hostname, conn_string):
-    from dagster.core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
-    from dagster.core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
+    from dagster._core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
+    from dagster._core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
 
     _reconstruct_from_file(
         hostname,

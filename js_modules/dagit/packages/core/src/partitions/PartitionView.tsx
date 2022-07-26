@@ -12,7 +12,7 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
-import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
+import {usePermissions} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {OptionsContainer} from '../gantt/VizComponents';
 import {useViewport} from '../gantt/useViewport';
@@ -187,7 +187,7 @@ const PartitionViewContent: React.FC<{
           <Button onClick={() => setShowSteps(!showSteps)} active={showBackfillSetup}>
             {showSteps ? 'Hide per-step status' : 'Show per-step status'}
           </Button>
-          {canLaunchPartitionBackfill ? (
+          {canLaunchPartitionBackfill.enabled ? (
             <Button
               onClick={() => setShowBackfillSetup(!showBackfillSetup)}
               icon={<Icon name="add_circle" />}
@@ -196,7 +196,7 @@ const PartitionViewContent: React.FC<{
               Launch backfill...
             </Button>
           ) : (
-            <Tooltip content={DISABLED_MESSAGE}>
+            <Tooltip content={canLaunchPartitionBackfill.disabledReason}>
               <Button icon={<Icon name="add_circle" />} disabled>
                 Launch backfill...
               </Button>

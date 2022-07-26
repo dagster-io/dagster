@@ -1,11 +1,11 @@
 import time
 from collections import defaultdict
 
-from dagster.core.definitions.reconstruct import ReconstructablePipeline
-from dagster.core.events import DagsterEventType
-from dagster.core.events.log import EventLogEntry
-from dagster.core.execution.api import execute_run
-from dagster.core.test_utils import instance_for_test
+from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.events import DagsterEventType
+from dagster._core.events.log import EventLogEntry
+from dagster._core.execution.api import execute_run
+from dagster._core.test_utils import instance_for_test
 
 
 def test_event_callback_logging():

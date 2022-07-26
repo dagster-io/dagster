@@ -15,14 +15,13 @@ from dagster import (
     graph,
     job,
     op,
-    pipeline,
     reconstructable,
 )
-from dagster.core.definitions.events import Output
-from dagster.core.definitions.output import OutputDefinition
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.core.test_utils import instance_for_test
-from dagster.legacy import solid
+from dagster._core.definitions.events import Output
+from dagster._core.definitions.output import OutputDefinition
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.test_utils import instance_for_test
+from dagster._legacy import pipeline, solid
 
 
 def test_basic():

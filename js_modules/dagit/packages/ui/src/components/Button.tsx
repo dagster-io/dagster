@@ -136,7 +136,7 @@ export const JoinedButtons = styled.div`
   & > *:not(:first-child) ${StyledButton} {
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
-    margin-left: 1px;
+    margin-left: -1px;
   }
 `;
 

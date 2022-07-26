@@ -24,40 +24,41 @@ from dagster import (
     RetryRequested,
 )
 from dagster import _check as check
-from dagster import asset, build_assets_job, op, pipeline, resource, seven
-from dagster.core.assets import AssetDetails
-from dagster.core.definitions import ExpectationResult
-from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.events import (
+from dagster import _seven as seven
+from dagster import asset, build_assets_job, op, resource
+from dagster._core.assets import AssetDetails
+from dagster._core.definitions import ExpectationResult
+from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.events import (
     DagsterEvent,
     DagsterEventType,
     EngineEventData,
     StepExpectationResultData,
     StepMaterializationData,
 )
-from dagster.core.events.log import EventLogEntry, construct_event_logger
-from dagster.core.execution.api import execute_run
-from dagster.core.execution.plan.handle import StepHandle
-from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData
-from dagster.core.execution.stats import StepEventStatus
-from dagster.core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
-from dagster.core.storage.event_log.base import (
+from dagster._core.events.log import EventLogEntry, construct_event_logger
+from dagster._core.execution.api import execute_run
+from dagster._core.execution.plan.handle import StepHandle
+from dagster._core.execution.plan.objects import StepFailureData, StepSuccessData
+from dagster._core.execution.stats import StepEventStatus
+from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
+from dagster._core.storage.event_log.base import (
     EventLogRecord,
     EventRecordsFilter,
     RunShardedEventsCursor,
 )
-from dagster.core.storage.event_log.migration import (
+from dagster._core.storage.event_log.migration import (
     EVENT_LOG_DATA_MIGRATIONS,
     migrate_asset_key_data,
 )
-from dagster.core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
-from dagster.core.test_utils import create_run_for_test, instance_for_test
-from dagster.core.utils import make_new_run_id
-from dagster.legacy import solid
-from dagster.loggers import colored_console_logger
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
-from dagster.utils import datetime_as_float
+from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
+from dagster._core.test_utils import create_run_for_test, instance_for_test
+from dagster._core.utils import make_new_run_id
+from dagster._legacy import pipeline, solid
+from dagster._loggers import colored_console_logger
+from dagster._serdes import deserialize_json_to_dagster_namedtuple
+from dagster._utils import datetime_as_float
 
 TEST_TIMEOUT = 5
 
@@ -933,21 +934,21 @@ class TestEventLogStorage:
             with ExitStack() as stack:
                 stack.enter_context(
                     mock.patch(
-                        "dagster.core.storage.event_log.sql_event_log.logging.warning",
+                        "dagster._core.storage.event_log.sql_event_log.logging.warning",
                         side_effect=mock_log,
                     )
                 )
                 # for generic sql-based event log storage
                 stack.enter_context(
                     mock.patch(
-                        "dagster.core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",
+                        "dagster._core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",
                         return_value="not_an_event_record",
                     )
                 )
                 # for sqlite event log storage, which overrides the record fetching implementation
                 stack.enter_context(
                     mock.patch(
-                        "dagster.core.storage.event_log.sqlite.sqlite_event_log.deserialize_json_to_dagster_namedtuple",
+                        "dagster._core.storage.event_log.sqlite.sqlite_event_log.deserialize_json_to_dagster_namedtuple",
                         return_value="not_an_event_record",
                     )
                 )
@@ -965,7 +966,7 @@ class TestEventLogStorage:
                 _logs = []  # reset logs
                 stack.enter_context(
                     mock.patch(
-                        "dagster.core.storage.event_log.sql_event_log.logging.warning",
+                        "dagster._core.storage.event_log.sql_event_log.logging.warning",
                         side_effect=mock_log,
                     )
                 )
@@ -973,14 +974,14 @@ class TestEventLogStorage:
                 # for generic sql-based event log storage
                 stack.enter_context(
                     mock.patch(
-                        "dagster.core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",
+                        "dagster._core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",
                         side_effect=seven.JSONDecodeError("error", "", 0),
                     )
                 )
                 # for sqlite event log storage, which overrides the record fetching implementation
                 stack.enter_context(
                     mock.patch(
-                        "dagster.core.storage.event_log.sqlite.sqlite_event_log.deserialize_json_to_dagster_namedtuple",
+                        "dagster._core.storage.event_log.sqlite.sqlite_event_log.deserialize_json_to_dagster_namedtuple",
                         side_effect=seven.JSONDecodeError("error", "", 0),
                     )
                 )

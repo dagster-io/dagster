@@ -1,11 +1,11 @@
 import pytest
 from click.testing import CliRunner
 
-from dagster import AssetKey, AssetMaterialization, Output, execute_pipeline, pipeline
-from dagster.cli.asset import asset_wipe_command
-from dagster.core.instance import DagsterInstance
-from dagster.legacy import solid
-from dagster.seven import json
+from dagster import AssetKey, AssetMaterialization, Output, execute_pipeline
+from dagster._cli.asset import asset_wipe_command
+from dagster._core.instance import DagsterInstance
+from dagster._legacy import pipeline, solid
+from dagster._seven import json
 
 
 @pytest.fixture(name="asset_instance")
@@ -13,7 +13,7 @@ def mock_asset_instance(mocker):
     # can use the ephemeral instance, since the default InMemoryEventLogStorage is asset aware
     instance = DagsterInstance.ephemeral()
     mocker.patch(
-        "dagster.core.instance.DagsterInstance.get",
+        "dagster._core.instance.DagsterInstance.get",
         return_value=instance,
     )
     yield instance

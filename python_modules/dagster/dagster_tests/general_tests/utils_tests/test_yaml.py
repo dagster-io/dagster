@@ -5,8 +5,8 @@ import pytest
 import yaml
 
 import dagster._check as check
-from dagster.utils import file_relative_path
-from dagster.utils.yaml_utils import (
+from dagster._utils import file_relative_path
+from dagster._utils.yaml_utils import (
     dump_run_config_yaml,
     load_run_config_yaml,
     load_yaml_from_glob_list,

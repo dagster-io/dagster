@@ -7,11 +7,11 @@ from dagster_graphql.schema.logs.events import GrapheneRunStepStats
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 
 import dagster._check as check
-from dagster.core.definitions import NodeHandle
-from dagster.core.host_representation import RepresentedPipeline
-from dagster.core.host_representation.historical import HistoricalPipeline
-from dagster.core.snap import CompositeSolidDefSnap, DependencyStructureIndex, SolidDefSnap
-from dagster.core.storage.pipeline_run import RunsFilter
+from dagster._core.definitions import NodeHandle
+from dagster._core.host_representation import RepresentedPipeline
+from dagster._core.host_representation.historical import HistoricalPipeline
+from dagster._core.snap import CompositeSolidDefSnap, DependencyStructureIndex, SolidDefSnap
+from dagster._core.storage.pipeline_run import RunsFilter
 
 from .config_types import GrapheneConfigTypeField
 from .dagster_types import GrapheneDagsterType, to_dagster_type

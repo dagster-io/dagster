@@ -120,7 +120,7 @@ const GraphExplorerRoot: React.FC<Props> = (props) => {
                 history.replace(fullPath);
               }
             }}
-            pipelineOrGraph={result}
+            container={result}
             repoAddress={repoAddress}
             handles={displayedHandles}
             parentHandle={parentHandle ? parentHandle : undefined}

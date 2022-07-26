@@ -5,8 +5,8 @@ from distutils import spawn  # pylint: disable=deprecated-module
 import psycopg2
 import pytest
 
-from dagster.utils import file_relative_path, pushd
-from dagster.utils.test.postgres_instance import TestPostgresInstance
+from dagster._utils import file_relative_path, pushd
+from dagster._utils.test.postgres_instance import TestPostgresInstance
 
 # ======= CONFIG ========
 DBT_EXECUTABLE = "dbt"

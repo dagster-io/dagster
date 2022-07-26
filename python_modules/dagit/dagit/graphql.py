@@ -4,8 +4,9 @@ from enum import Enum
 from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, Union, cast
 
 from dagit.templates.playground import TEMPLATE
+from dagster_graphql.implementation.utils import ErrorCapture
 from graphene import Schema
-from graphql.error import GraphQLError
+from graphql.error import GraphQLError, GraphQLLocatedError
 from graphql.error import format_error as format_graphql_error
 from graphql.execution import ExecutionResult
 from rx import Observable
@@ -21,7 +22,7 @@ from starlette.routing import BaseRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
 import dagster._check as check
-from dagster.seven import json
+from dagster._seven import json
 
 
 class GraphQLWS(str, Enum):
@@ -49,23 +50,23 @@ class GraphQLServer(ABC):
 
     @abstractmethod
     def build_graphql_schema(self) -> Schema:
-        raise NotImplementedError()
+        ...
 
     @abstractmethod
     def build_graphql_middleware(self) -> list:
-        raise NotImplementedError()
+        ...
 
     @abstractmethod
     def build_middleware(self) -> List[Middleware]:
-        raise NotImplementedError()
+        ...
 
     @abstractmethod
     def build_routes(self) -> List[BaseRoute]:
-        raise NotImplementedError()
+        ...
 
     @abstractmethod
     def make_request_context(self, conn: HTTPConnection):
-        raise NotImplementedError()
+        ...
 
     def handle_graphql_errors(self, errors):
         return [format_graphql_error(err) for err in errors]
@@ -126,16 +127,22 @@ class GraphQLServer(ABC):
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
 
-        result = await self.execute_graphql_request(request, query, variables, operation_name)
+        captured_errors: List[Exception] = []
+        with ErrorCapture.watch(captured_errors.append):
+            result = await self.execute_graphql_request(request, query, variables, operation_name)
 
         response_data = {"data": result.data}
-        status_code = status.HTTP_200_OK
 
         if result.errors:
             response_data["errors"] = self.handle_graphql_errors(result.errors)
-            status_code = status.HTTP_400_BAD_REQUEST
 
-        return JSONResponse(response_data, status_code=status_code)
+        return JSONResponse(
+            response_data,
+            status_code=self._determine_status_code(
+                resolver_errors=result.errors,
+                captured_errors=captured_errors,
+            ),
+        )
 
     async def graphql_ws_endpoint(self, websocket: WebSocket):
         """
@@ -255,6 +262,33 @@ class GraphQLServer(ABC):
             middleware=self.build_middleware(),
             **kwargs,
         )
+
+    def _determine_status_code(
+        self,
+        resolver_errors: Optional[List[Exception]],
+        captured_errors: List[Exception],
+    ) -> int:
+        server_error = False
+        user_error = False
+
+        if resolver_errors:
+            for error in resolver_errors:
+                if isinstance(error, GraphQLLocatedError):
+                    server_error = True
+                else:
+                    # syntax error, invalid query, etc
+                    user_error = True
+
+        if captured_errors:
+            server_error = True
+
+        if server_error:
+            return status.HTTP_500_INTERNAL_SERVER_ERROR
+
+        if user_error:
+            return status.HTTP_400_BAD_REQUEST
+
+        return status.HTTP_200_OK
 
 
 async def _handle_async_results(results: AsyncGenerator, operation_id: str, websocket: WebSocket):

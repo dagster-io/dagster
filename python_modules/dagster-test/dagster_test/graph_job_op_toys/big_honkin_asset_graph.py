@@ -2,7 +2,7 @@ import random
 from typing import List
 
 from dagster import AssetGroup, AssetKey, asset
-from dagster.core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets import AssetsDefinition
 
 N_ASSETS = 1000
 

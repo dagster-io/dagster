@@ -19,9 +19,7 @@ With Dagster, the re-execution of parts of the job is grouped with the original 
 
 Consider the following job which has three ops, one of which fails half of the time.
 
-```python file=/guides/dagster/reexecution/unreliable_job.py
-from random import random
-
+```python file=/guides/dagster/reexecution/unreliable_job.py startafter=start_random_job endbefore=end_random_job
 from dagster import in_process_executor, job, op
 
 
@@ -33,7 +31,7 @@ def start():
 @op
 def unreliable(num: int) -> int:
     failure_rate = 0.5
-    if random() < failure_rate:
+    if some_random_result() < failure_rate:
         raise Exception("blah")
 
     return num
@@ -74,42 +72,42 @@ Within Dagit, a single or multiple ops may be selected simply by clicking them w
 
 Re-execution can be triggered via the API as well.
 
-| Name                                                                                       | Description                         |
-| ------------------------------------------------------------------------------------------ | ----------------------------------- |
-| <PyObject module="dagster" object="reexecute_pipeline" displayText="reexecute_pipeline" /> | Reexecute an existing pipeline run. |
+| Name                                                                                       | Description                                                                                     |
+| ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| <PyObject module="dagster" object="execute_job" displayText="execute_job" />               | Execute a dagster job synchronously from python.                                                |
+| <PyObject module="dagster" object="ReexecutionOptions" displayText="ReexecutionOptions" /> | Configuration to provide to `execute_job` allowing for reexecution from a previous dagster run. |
 
 Again, let's revist the job `unreliable_job`, which has a op named `unreliable`.
 
-```python file=/guides/dagster/reexecution/reexecution_api.py endbefore=end_initial_execution_marker
-from dagster import DagsterInstance, reexecute_pipeline
+```python file=/guides/dagster/reexecution/reexecution_api.py startafter=start_initial_execution_marker endbefore=end_initial_execution_marker
+from dagster import DagsterInstance, ReexecutionOptions, execute_job, reconstructable
 from docs_snippets.guides.dagster.reexecution.unreliable_job import unreliable_job
 
 instance = DagsterInstance.ephemeral()
 
 # Initial execution
-job_execution_result = unreliable_job.execute_in_process(
-    instance=instance, raise_on_error=False
-)
+initial_result = execute_job(reconstructable(unreliable_job), instance=instance)
 
-if not job_execution_result.success:
+if not initial_result.success:
+    options = ReexecutionOptions.from_failure(initial_result.run_id, instance)
     # re-execute the entire job
-    reexecute_pipeline(
-        unreliable_job,
-        parent_run_id=job_execution_result.run_id,
-        instance=instance,
+    from_failure_result = execute_job(
+        reconstructable(unreliable_job), instance=instance, reexecution_options=options
     )
 ```
 
-Using Dagster's API, you can programmatically trigger both an execution and a reexecution. Upon an initial pipeline run failing, you may want to trigger a full re-execution. Similarly, you can trigger a re-execution of selected ops or from a particular point.
+Using Dagster's API, you can programmatically trigger both an execution and a reexecution. Upon an initial run failing, you may want to re-trigger a run from the point of failure, as shown above. Similarly, you can trigger a re-execution of selected ops or from a particular point.
 
 ```python file=/guides/dagster/reexecution/reexecution_api.py startafter=start_partial_execution_marker endbefore=end_partial_execution_marker
 # re-execute the job, but only the "unreliable" op and all its descendents
-reexecute_pipeline(
-    unreliable_job,
-    parent_run_id=job_execution_result.run_id,
+options = ReexecutionOptions(
+    parent_run_id=initial_result.run_id, step_selection=["unreliable*"]
+)
+result = execute_job(
+    reconstructable(unreliable_job),
     instance=instance,
-    step_selection=["unreliable*"],
+    reexecution_options=options,
 )
 ```
 
-The `solid_selection` input is configurable, with syntax further documented in the <PyObject module="dagster" object="reexecute_pipeline" displayText="API docs" />.
+The `step_selection` input is configurable, with syntax further documented in the <PyObject module="dagster" object="ReexecutionOptions" displayText="API docs for ReexecutionOptions" />.

@@ -1,8 +1,8 @@
 from typing import Callable, Optional
 
-from dagster.core.definitions import OpDefinition, failure_hook
-from dagster.core.definitions.hook_definition import HookDefinition
-from dagster.core.execution.context.hook import HookContext
+from dagster._core.definitions import OpDefinition, failure_hook
+from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.execution.context.hook import HookContext
 
 
 def _default_summary_fn(context: HookContext) -> str:

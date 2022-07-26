@@ -4,7 +4,7 @@ import subprocess
 from typing import Any, Dict, Optional, Sequence
 
 import dagster._check as check
-from dagster.core.utils import coerce_valid_log_level
+from dagster._core.utils import coerce_valid_log_level
 
 from ..errors import (
     DagsterDbtCliFatalRuntimeError,

@@ -21,13 +21,16 @@ from dagster import (
     schedule_from_partitions,
 )
 from dagster._check import CheckError
-from dagster.core.definitions import asset, multi_asset
-from dagster.core.definitions.load_assets_from_modules import prefix_assets
-from dagster.core.definitions.partition import StaticPartitionsDefinition, static_partitioned_config
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
-from dagster.core.execution.with_resources import with_resources
-from dagster.core.storage.tags import PARTITION_NAME_TAG
-from dagster.core.test_utils import instance_for_test
+from dagster._core.definitions import asset, multi_asset
+from dagster._core.definitions.load_assets_from_modules import prefix_assets
+from dagster._core.definitions.partition import (
+    StaticPartitionsDefinition,
+    static_partitioned_config,
+)
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
+from dagster._core.execution.with_resources import with_resources
+from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._core.test_utils import instance_for_test
 
 
 def _all_asset_keys(result):
@@ -479,6 +482,48 @@ def test_config():
             }
         },
     ).resolve(assets=[foo, config_asset, other_config_asset], source_assets=[])
+
+    result = job.execute_in_process()
+
+    assert result.output_for_node("other_config_asset") == 1 + 2 + 3
+
+
+@pytest.mark.parametrize(
+    "selection,config",
+    [
+        (AssetSelection.keys("other_config_asset"), {"other_config_asset": {"config": {"val": 3}}}),
+        (
+            AssetSelection.keys("other_config_asset").upstream(depth=1),
+            {
+                "config_asset": {"config": {"val": 2}},
+                "other_config_asset": {"config": {"val": 3}},
+            },
+        ),
+    ],
+)
+def test_subselect_config(selection, config):
+    @asset(io_manager_key="asset_io_manager")
+    def foo():
+        return 1
+
+    @asset(config_schema={"val": int}, io_manager_key="asset_io_manager")
+    def config_asset(context, foo):
+        return foo + context.op_config["val"]
+
+    @asset(config_schema={"val": int}, io_manager_key="asset_io_manager")
+    def other_config_asset(context, config_asset):
+        return config_asset + context.op_config["val"]
+
+    io_manager_obj, io_manager_def = asset_aware_io_manager()
+    io_manager_obj.db[AssetKey("foo")] = 1
+    io_manager_obj.db[AssetKey("config_asset")] = 1 + 2
+
+    all_assets = with_resources(
+        [foo, config_asset, other_config_asset], resource_defs={"asset_io_manager": io_manager_def}
+    )
+    job = define_asset_job("config_job", config={"ops": config}, selection=selection).resolve(
+        assets=all_assets, source_assets=[]
+    )
 
     result = job.execute_in_process()
 

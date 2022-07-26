@@ -14,8 +14,8 @@ from dagster import (
     reconstructable,
     static_partitioned_config,
 )
-from dagster.core.storage.tags import PARTITION_NAME_TAG
-from dagster.core.test_utils import environ, instance_for_test
+from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._core.test_utils import environ, instance_for_test
 
 
 def define_the_job():

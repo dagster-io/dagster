@@ -429,7 +429,8 @@
       },
       {
         "title": "Migrating to Graphs, Jobs, and Ops",
-        "path": "/guides/dagster/graph_job_op"
+        "path": "https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op",
+        "isExternalLink": true
       },
       {
         "title": "Re-execution",
