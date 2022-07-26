@@ -395,6 +395,11 @@ const ArticleList = ({ children }) => {
   );
 };
 
+interface ArticleListItem {
+  title: string;
+  href: string;
+}
+
 const ArticleListItem = ({ title, href = [] }) => {
   return (
       <li style={{
