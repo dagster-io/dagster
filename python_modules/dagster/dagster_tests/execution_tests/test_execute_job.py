@@ -9,6 +9,7 @@ from dagster import (
     ReexecutionOptions,
     execute_job,
     graph,
+    in_process_executor,
     job,
     op,
     reconstructable,
@@ -255,3 +256,76 @@ def test_reexecute_from_failure_successful_run(instance):
 
     with pytest.raises(check.CheckError, match="run that is not failed"):
         ReexecutionOptions.from_failure(result.run_id, instance)
+
+
+def highly_nested_job():
+    @op
+    def emit_one():
+        return 1
+
+    @op
+    def add_one(x):
+        return x + 1
+
+    @job(executor_def=in_process_executor)
+    def the_job():
+        add_one.alias("add_one_outer")(
+            add_one.alias("add_one_middle")(add_one.alias("add_one_inner")(emit_one()))
+        )
+
+    return the_job
+
+
+def test_reexecution_selection_syntax(instance):
+    result = execute_job(reconstructable(highly_nested_job), instance)
+    assert result.success
+
+    # should execute every step, as ever step is upstream of add_one_outer
+    options_upstream = ReexecutionOptions(
+        parent_run_id=result.run_id, step_selection=["*add_one_middle"]
+    )
+    result = execute_job(
+        reconstructable(highly_nested_job), instance, reexecution_options=options_upstream
+    )
+    assert result.success
+    assert len(result.get_step_success_events()) == 3
+
+    # should execute every step, as ever step is upstream of add_one_outer
+    options_downstream = ReexecutionOptions(
+        parent_run_id=result.run_id, step_selection=["*add_one_middle"]
+    )
+    result = execute_job(
+        reconstructable(highly_nested_job), instance, reexecution_options=options_downstream
+    )
+    assert result.success
+    assert len(result.get_step_success_events()) == 3
+
+    # two levels up upstream
+    options_upstream = ReexecutionOptions(
+        parent_run_id=result.run_id, step_selection=["++add_one_outer"]
+    )
+    result = execute_job(
+        reconstructable(highly_nested_job), instance, reexecution_options=options_upstream
+    )
+    assert result.success
+    assert len(result.get_step_success_events()) == 3
+
+    # two levels up downstream
+    options_downstream = ReexecutionOptions(
+        parent_run_id=result.run_id, step_selection=["emit_one++"]
+    )
+    result = execute_job(
+        reconstructable(highly_nested_job), instance, reexecution_options=options_downstream
+    )
+    assert result.success
+    assert len(result.get_step_success_events()) == 3
+
+    # combine overlapping step selections
+    options_overlap = ReexecutionOptions(
+        parent_run_id=result.run_id, step_selection=["++add_one_outer", "emit_one++"]
+    )
+    result = execute_job(
+        reconstructable(highly_nested_job), instance, reexecution_options=options_overlap
+    )
+    assert result.success
+    assert len(result.get_step_success_events()) == 4

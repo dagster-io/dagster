@@ -382,7 +382,7 @@ class ReexecutionOptions(NamedTuple):
     Args:
         parent_run_id (str): The run_id of the run to reexecute.
         step_selection (Sequence[str]):
-            The set of steps to reexecute. Must be a subset or match of the
+            The list of step selections to reexecute. Must be a subset or match of the
             set of steps executed in the original run. For example:
 
             - ``['some_op']``: selects ``some_op`` itself.
