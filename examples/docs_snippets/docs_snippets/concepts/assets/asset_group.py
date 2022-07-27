@@ -1,6 +1,5 @@
 # pylint: disable=redefined-outer-name
-# start_marker
-from dagster import AssetGroup, asset
+from dagster import asset
 
 
 @asset
@@ -11,7 +10,3 @@ def upstream_asset():
 @asset
 def downstream_asset(upstream_asset):
     return upstream_asset + [4]
-
-
-asset_group = AssetGroup([upstream_asset, downstream_asset])
-# end_marker
