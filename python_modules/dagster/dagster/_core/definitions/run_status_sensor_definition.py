@@ -6,7 +6,6 @@ import pendulum
 
 import dagster._check as check
 from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     RunStatusSensorExecutionError,
     user_code_error_boundary,
@@ -23,7 +22,6 @@ from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import register_serdes_tuple_fallbacks
 from dagster._seven import JSONDecodeError
 from dagster._utils import utc_datetime_from_timestamp
-from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from ..decorator_utils import get_function_params
@@ -511,7 +509,7 @@ class RunStatusSensorDefinition(SensorDefinition):
 
 
 def run_status_sensor(
-    run_status: Optional[DagsterRunStatus] = None,
+    run_status: DagsterRunStatus,
     name: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
@@ -532,7 +530,7 @@ def run_status_sensor(
     Takes a :py:class:`~dagster.RunStatusSensorContext`.
 
     Args:
-        run_status (Optional[DagsterRunStatus]): The status of run execution which will be
+        run_status (DagsterRunStatus): The status of run execution which will be
             monitored by the sensor.
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated function.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse

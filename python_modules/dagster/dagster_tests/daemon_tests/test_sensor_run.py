@@ -17,7 +17,6 @@ from dagster import (
     Field,
     Output,
     graph,
-    pipeline,
     repository,
     run_failure_sensor,
 )
