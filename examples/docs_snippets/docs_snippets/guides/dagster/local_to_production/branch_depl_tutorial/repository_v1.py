@@ -1,5 +1,4 @@
 from dagster import repository, with_resources
-from ..resources.resources_v1 import hn_api_client
 from ..assets import comments, items, stories
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler
@@ -16,12 +15,11 @@ def repo():
         "account": {"env": "SNOWFLAKE_ACCOUNT"},
         "user": {"env": "SNOWFLAKE_USER"},
         "password": {"env": "SNOWFLAKE_PASSWORD"},
-        "schema": {"env": "SNOWFLAKE_SCHEMA"},
+        "schema": "HACKER_NEWS",
     }
     resource_defs = {
         "branch": {
-            "hn_client": hn_api_client,
-            "snowflake_io_mgr": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_io_manager.configured(
                 {
                     **snowflake_config,
                     "database": f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
@@ -29,8 +27,7 @@ def repo():
             ),
         },
         "production": {
-            "hn_client": hn_api_client,
-            "snowflake_io_mgr": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_io_manager.configured(
                 {
                     **snowflake_config,
                     "database": "PRODUCTION",

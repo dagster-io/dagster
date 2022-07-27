@@ -416,8 +416,8 @@
         "path":"/guides/dagster/local-to-production-tutorial"
       },
       {
-        "title": "Branch Deployments with Snowflake",
-        "path": "/guides/dagster/branch_depl_with_snowflake"
+        "title": "Dagster Cloud Branch Deployments with Snowflake",
+        "path": "/guides/dagster/branch-depl-with-snowflake"
       },
       {
         "title": "Versioning and Memoization (Experimental)",
