@@ -1,11 +1,7 @@
 from datetime import datetime
 
 from dagster_snowflake.db_io_manager import TablePartition, TableSlice
-from dagster_snowflake.snowflake_io_manager import (
-    SnowflakeDbClient,
-    _check_table_exists_statement,
-    _get_cleanup_statement,
-)
+from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, _get_cleanup_statement
 
 
 def test_get_select_statement():
@@ -72,20 +68,4 @@ def test_get_cleanup_statement_partitioned():
     ) == (
         "DELETE FROM database_abc.schema1.table1\n"
         "WHERE my_timestamp_col BETWEEN '2020-01-02 00:00:00' AND '2020-02-03 00:00:00'"
-    )
-
-
-def test_check_table_exists_statement():
-    assert _check_table_exists_statement(
-        TableSlice(
-            database="database_abc",
-            schema="schema1",
-            table="table1",
-            partition=TablePartition(
-                time_window=(datetime(2020, 1, 2), datetime(2020, 2, 3)),
-                partition_expr="my_timestamp_col",
-            ),
-        )
-    ) == (
-        "SELECT EXISTS (SELECT * FROM information_schema.tables WHERE table_schema = 'schema1' AND table_name = 'table1');"
     )
