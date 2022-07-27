@@ -26,12 +26,25 @@ Using these Dagster concepts we will:
 - Set up our Dagster [repository](/concepts/repositories-workspaces/repositories) so that the configuration for the Snowflake I/O manager is automatically supplied based on the environment where the code is running.
 
 ---
-## Setup
+## Setup v1
 
 <CodeReferenceLink filePath="examples/local_to_production/" />
 
 
 To run the code in the example, you will need to install a few additional pip libraries:
+
+```bash
+pip install dagster, dagit # skip if you've already installed dagster
+pip install pandas, pytest, requests, dagster-snowflake, dagster-snowflake-pandas
+```
+
+---
+## Setup v2
+
+If you'd like to follow along with this guide, you can find the full code example [here](https://github.com/dagster-io/dagster/tree/master/examples/local_to_production).
+
+
+You will also need to install a few additional pip libraries:
 
 ```bash
 pip install dagster, dagit # skip if you've already installed dagster
