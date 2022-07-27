@@ -1,5 +1,147 @@
 ---
 title: "Setting up OneLogin SSO for Dagster Cloud | Dagster Docs"
+
+platform_type: "cloud"
+display_name: "OneLogin"
+feature_name: "saml_sso_onelogin"
+pricing_plan: "enterprise"
 ---
 
 # Setting up OneLogin SSO for Dagster Cloud
+
+<Note>
+   This guide is applicable to Dagster Cloud.
+</Note>
+
+In this guide, you'll configure OneLogin to use single sign-on (SSO) with your Dagster Cloud organization.
+
+---
+
+## Prerequisites
+
+To complete the steps in this guide, you'll need:
+
+- The following in OneLogin:
+  - An existing OneLogin account
+  - Admin permissions
+- To have installed the [`dagster-cloud-cli`](https://pypi.org/project/dagster-cloud-cli/) Python package and have access to the `dagster-cloud` CLI
+- The following in Dagster Cloud:
+  - [Access to a user token](/auth#managing-user-and-agent-tokens)
+  - [Organization Admin permissions](/auth#role-based-access-controls) in your organization
+
+---
+
+## Step 1: Add the Dagster Cloud app in OneLogin
+
+1. Sign into your OneLogin portal.
+
+2. Navigate to **Administration > Applications**.
+
+3. On the **Applications** page, click **Add App**.
+
+4. On the **Find Applications** page, search for `Dagster Cloud`:
+
+   <Image
+   alt="Find Applications"
+   src="/images/dagster-cloud/sso/onelogin/find_applications.png"
+   width={1002}
+   height={242}
+   />
+
+5. Add and save the application.
+
+---
+
+## Step 2: Configure SSO in OneLogin
+
+1. In OneLogin, open the application and navigate to its **Configuration**.
+
+2. In the **Dagster Cloud organisation name** field, enter your Dagster Cloud organization name. This is used to route the SAML response to the correct Dagster Cloud subdomain.
+
+   In the following example, the organization name is `hooli` and our Dagster Cloud domain is `https://hooli.dagster.cloud`. To configure this correctly, we'd enter `hooli` into the **Subdomain** field:
+
+   <Image
+   alt="Okta Subdomain Configuration"
+   src="/images/dagster-cloud/sso/okta/subdomain_configuration.jpg"
+   width={2560}
+   height={1437}
+   />
+
+3. When finished, click **Done**.
+
+---
+
+## Step 3: Upload the SAML metadata to Dagster Cloud
+
+Next, you'll save and upload the application's SAML metadata to Dagster Cloud. This will enable single sign-on.
+
+1. In OneLogin, open the Dagster Cloud application.
+
+2. Navigate to **More Actions > SAML Metadata**.
+
+3. When prompted, save the file to your computer.
+
+4. After you've downloaded the SAML metadata file, upload it to Dagster Cloud using the `dagster-cloud` CLI:
+
+   ```shell
+   dagster-cloud organization settings saml upload-identity-provider-metadata <path/to/metadata> \
+     --api-token=<user_token> \
+     --url https://<organization_name>.dagster.cloud
+   ```
+
+---
+
+## Step 4: Grant access to users
+
+Next, you'll assign users to the Dagster Cloud application in OneLogin. This will allow them to log in using their OneLogin credentials with the sign in flow is initiated.
+
+1. In Okta, navigate to **Users**.
+
+2. Select a user.
+
+3. On the user's page, click **Applications**.
+
+4. Assign the user to Dagster Cloud. In the following image, we've assigned user `Test D'Test` to Dagster Cloud:
+
+   <Image
+   alt="Assign New Login"
+   src="/images/dagster-cloud/sso/onelogin/new_login.png"
+   width={1202}
+   height={436}
+   />
+
+5. Click **Continue**.
+
+6. Click **Save User.**
+
+7. Repeat steps 2-6 for every user you want to access Dagster Cloud.
+
+---
+
+## Step 5: Test your SSO configuration
+
+Lastly, you'll test your SSO configuration:
+
+- [Service provider (SP)-initiated login](#testing-a-service-provider-initiated-login)
+- [Identity provider (idP)-initiated login](#testing-an-identity-provider-initiated-login)
+
+### Testing a service provider-initiated login
+
+1. Navigate to your Dagster Cloud sign in page at `https://<organization_name>.dagster.cloud`
+
+2. Click the **Sign in with SSO** button.
+
+3. Initiate the login flow and address issues that arise, if any.
+
+### Testing an identity provider-initiated login
+
+In the OneLogin portal, click the Dagster Cloud icon:
+
+<Image
+alt="Assign New Login"
+src="/images/dagster-cloud/sso/onelogin/onelogin_login.png"
+width={2110}
+height={809}
+/>
+
+If successful, you'll be automatically signed into your Dagster Cloud organization.
