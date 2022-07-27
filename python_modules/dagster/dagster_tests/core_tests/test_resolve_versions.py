@@ -27,10 +27,7 @@ from dagster._core.definitions import InputDefinition
 from dagster._core.definitions.version_strategy import VersionStrategy
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.outputs import StepOutputHandle
-from dagster._core.execution.resolve_versions import (
-    join_and_hash,
-    resolve_config_version,
-)
+from dagster._core.execution.resolve_versions import join_and_hash, resolve_config_version
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.system_config.objects import ResolvedRunConfig

@@ -1,12 +1,6 @@
 import pytest
 
-from dagster import (
-    DagsterInvalidConfigError,
-    DependencyDefinition,
-    List,
-    NodeInvocation,
-    String,
-)
+from dagster import DagsterInvalidConfigError, DependencyDefinition, List, NodeInvocation, String
 from dagster._legacy import (
     InputDefinition,
     OutputDefinition,

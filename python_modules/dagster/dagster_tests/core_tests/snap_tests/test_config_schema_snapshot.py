@@ -1,14 +1,4 @@
-from dagster import (
-    Array,
-    Enum,
-    EnumValue,
-    Field,
-    Noneable,
-    ScalarUnion,
-    Selector,
-    Shape,
-    resource,
-)
+from dagster import Array, Enum, EnumValue, Field, Noneable, ScalarUnion, Selector, Shape, resource
 from dagster._config import ConfigTypeKind, Map, resolve_to_config_type
 from dagster._core.snap import (
     ConfigEnumValueSnap,

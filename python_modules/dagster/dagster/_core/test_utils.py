@@ -23,11 +23,7 @@ from dagster._core.host_representation.origin import (
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import RunLauncher
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
-from dagster._core.storage.pipeline_run import (
-    PipelineRun,
-    PipelineRunStatus,
-    RunsFilter,
-)
+from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._daemon.controller import create_daemon_grpc_server_registry

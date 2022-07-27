@@ -17,12 +17,7 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.instance import DagsterInstance
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    lambda_solid,
-)
+from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, lambda_solid
 
 
 def define_inty_pipeline(using_file_system=False):

@@ -827,11 +827,7 @@ def test_jobs_selector_id_migration():
     src_dir = file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration/sqlite")
 
     from dagster._core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
-    from dagster._core.storage.schedules.schema import (
-        InstigatorsTable,
-        JobTable,
-        JobTickTable,
-    )
+    from dagster._core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "schedules", "schedules.db")

@@ -18,10 +18,7 @@ from dagster import (
     reconstructable,
     resource,
 )
-from dagster._core.errors import (
-    DagsterExecutionInterruptedError,
-    raise_execution_interrupts,
-)
+from dagster._core.errors import DagsterExecutionInterruptedError, raise_execution_interrupts
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import (
     ModeDefinition,

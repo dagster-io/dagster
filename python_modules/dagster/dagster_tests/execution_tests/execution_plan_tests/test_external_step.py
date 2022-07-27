@@ -25,9 +25,7 @@ from dagster import (
 from dagster._core.definitions.no_step_launcher import no_step_launcher
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.context_creation_pipeline import (
-    PlanExecutionContextManager,
-)
+from dagster._core.execution.context_creation_pipeline import PlanExecutionContextManager
 from dagster._core.execution.plan.external_step import (
     LocalExternalStepLauncher,
     local_external_step_launcher,
@@ -43,8 +41,8 @@ from dagster._legacy import (
     ModeDefinition,
     execute_pipeline,
     execute_pipeline_iterator,
-    reexecute_pipeline,
     pipeline,
+    reexecute_pipeline,
     solid,
 )
 from dagster._utils import safe_tempfile_path, send_interrupt

@@ -3,13 +3,7 @@ import time
 
 from dagster import Field, Output, fs_io_manager
 from dagster._core.definitions.executor_definition import default_executors
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    pipeline,
-    solid,
-)
+from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, pipeline, solid
 
 
 def get_executor_defs():

@@ -1,9 +1,6 @@
 import time
 
-from dagster_graphql.test.utils import (
-    define_out_of_process_context,
-    execute_dagster_graphql,
-)
+from dagster_graphql.test.utils import define_out_of_process_context, execute_dagster_graphql
 
 from dagster import repository
 from dagster._core.storage.pipeline_run import PipelineRunStatus

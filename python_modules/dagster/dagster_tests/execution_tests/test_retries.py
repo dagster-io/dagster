@@ -33,8 +33,8 @@ from dagster._legacy import (
     execute_pipeline,
     execute_pipeline_iterator,
     lambda_solid,
-    reexecute_pipeline,
     pipeline,
+    reexecute_pipeline,
     solid,
 )
 

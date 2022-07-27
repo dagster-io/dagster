@@ -5,15 +5,10 @@ from dagster_test.toys.dynamic import dynamic_pipeline
 from dagster_test.toys.error_monster import error_monster
 from dagster_test.toys.hammer import hammer_pipeline
 from dagster_test.toys.log_spew import log_spew
-from dagster_test.toys.longitudinal import (
-    IntentionalRandomFailure,
-    longitudinal_pipeline,
-)
+from dagster_test.toys.longitudinal import IntentionalRandomFailure, longitudinal_pipeline
 from dagster_test.toys.many_events import many_events
 from dagster_test.toys.notebooks import hello_world_notebook_pipeline
-from dagster_test.toys.pyspark_assets.pyspark_assets_pipeline import (
-    pyspark_assets_pipeline,
-)
+from dagster_test.toys.pyspark_assets.pyspark_assets_pipeline import pyspark_assets_pipeline
 from dagster_test.toys.repo import toys_repository
 from dagster_test.toys.resources import resource_pipeline
 from dagster_test.toys.retries import retry_pipeline
@@ -27,9 +22,9 @@ from dagster import (
     reconstructable,
 )
 from dagster._core.test_utils import instance_for_test
+from dagster._legacy import execute_pipeline
 from dagster._utils import file_relative_path
 from dagster._utils.temp_file import get_temp_dir
-from dagster._legacy import execute_pipeline
 
 
 def test_repo():

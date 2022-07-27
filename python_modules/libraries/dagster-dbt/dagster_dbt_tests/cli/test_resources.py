@@ -1,6 +1,7 @@
 import json
 
 from dagster_dbt import dbt_cli_resource
+
 from dagster._legacy import build_solid_context, solid
 
 

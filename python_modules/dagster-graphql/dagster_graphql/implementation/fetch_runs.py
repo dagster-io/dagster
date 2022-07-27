@@ -1,15 +1,6 @@
 from collections import defaultdict
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Dict,
-    Iterable,
-    KeysView,
-    List,
-    Mapping,
-    Optional,
-    cast,
-)
+from typing import TYPE_CHECKING, Dict, Iterable, KeysView, List, Mapping, Optional, cast
 
 from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
 from graphql.execution.base import ResolveInfo
@@ -24,11 +15,11 @@ from dagster._core.host_representation import PipelineSelector
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.pipeline_run import RunRecord, RunsFilter
 from dagster._core.storage.tags import TagType, get_tag_type
+from dagster._legacy import PipelineDefinition, PipelineRunStatus
 
 from .events import from_event_record
 from .external import ensure_valid_config, get_external_pipeline_or_raise
 from .utils import UserFacingGraphQLError, capture_error
-from dagster._legacy import PipelineDefinition, PipelineRunStatus
 
 if TYPE_CHECKING:
     from ..schema.asset_graph import GrapheneAssetNode

@@ -42,8 +42,8 @@ from dagster._legacy import (
     OutputDefinition,
     composite_solid,
     execute_pipeline,
-    reexecute_pipeline,
     pipeline,
+    reexecute_pipeline,
     solid,
 )
 

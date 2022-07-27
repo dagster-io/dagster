@@ -14,11 +14,7 @@ from papermill.iorw import load_notebook_node, write_ipynb
 from dagster import In, OpDefinition, Out, Output
 from dagster import _check as check
 from dagster import _seven
-from dagster._core.definitions.events import (
-    AssetMaterialization,
-    Failure,
-    RetryRequested,
-)
+from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.utils import validate_tags
@@ -27,6 +23,7 @@ from dagster._core.execution.context.input import build_input_context
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.storage.file_manager import FileHandle
+from dagster._legacy import InputDefinition, OutputDefinition, SolidDefinition
 from dagster._serdes import pack_value
 from dagster._seven import get_system_temp_directory
 from dagster._utils import mkdir_p, safe_tempfile_path
@@ -37,7 +34,6 @@ from .compat import ExecutionError
 from .engine import DagstermillEngine
 from .errors import DagstermillError
 from .translator import DagsterTranslator
-from dagster._legacy import InputDefinition, OutputDefinition, SolidDefinition
 
 
 # https://github.com/nteract/papermill/blob/17d4bbb3960c30c263bca835e48baf34322a3530/papermill/parameterize.py

@@ -1,12 +1,7 @@
 # pylint: disable=redefined-outer-name
 from datetime import datetime
 
-from dagster import (
-    DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
-    MetadataValue,
-    asset,
-)
+from dagster import DailyPartitionsDefinition, HourlyPartitionsDefinition, MetadataValue, asset
 from dagster._legacy import AssetGroup
 
 daily_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")

@@ -1,6 +1,6 @@
 from dagster import Output
 from dagster import _check as check
-from dagster._legacy import (
+from dagster._core.definitions import (
     InputDefinition,
     OutputDefinition,
     SolidDefinition,

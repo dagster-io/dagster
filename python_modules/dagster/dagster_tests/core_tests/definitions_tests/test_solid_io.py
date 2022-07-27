@@ -5,12 +5,7 @@ import pytest
 
 from dagster import AssetKey, DynamicOutput, Output
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._legacy import (
-    DynamicOutputDefinition,
-    InputDefinition,
-    OutputDefinition,
-    solid,
-)
+from dagster._legacy import DynamicOutputDefinition, InputDefinition, OutputDefinition, solid
 
 
 def test_flex_inputs():

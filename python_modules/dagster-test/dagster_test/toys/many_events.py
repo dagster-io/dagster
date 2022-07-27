@@ -7,13 +7,7 @@ from dagster import (
     file_relative_path,
     fs_io_manager,
 )
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    pipeline,
-    solid,
-)
+from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, pipeline, solid
 
 MARKDOWN_EXAMPLE = "markdown_example.md"
 

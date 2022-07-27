@@ -1,11 +1,9 @@
 from typing import Any, Dict, Mapping, Optional, Set, cast
+
 from dagster import _check as check
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.execution.context.compute import AbstractComputeExecutionContext
-from dagster._core.execution.context.system import (
-    PlanExecutionContext,
-    StepExecutionContext,
-)
+from dagster._core.execution.context.system import PlanExecutionContext, StepExecutionContext
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._legacy import PipelineDefinition, PipelineRun, SolidDefinition

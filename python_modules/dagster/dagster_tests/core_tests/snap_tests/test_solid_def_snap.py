@@ -1,9 +1,6 @@
 from dagster._core.snap.solid import build_core_solid_def_snap
 from dagster._legacy import InputDefinition, OutputDefinition, solid
-from dagster._serdes import (
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
-)
+from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
 
 def test_basic_solid_definition():

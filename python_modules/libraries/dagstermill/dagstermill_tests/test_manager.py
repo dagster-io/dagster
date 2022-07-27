@@ -17,9 +17,9 @@ from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import make_new_run_id
+from dagster._legacy import ModeDefinition
 from dagster._serdes import pack_value
 from dagster._utils import safe_tempfile_path
-from dagster._legacy import ModeDefinition
 
 
 @contextlib.contextmanager

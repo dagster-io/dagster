@@ -25,10 +25,7 @@ from dagster._cli.workspace.cli_target import (
     repository_target_argument,
 )
 from dagster._core.definitions.pipeline_base import IPipeline
-from dagster._core.errors import (
-    DagsterBackfillFailedError,
-    DagsterInvariantViolationError,
-)
+from dagster._core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.backfill import (
     BulkActionStatus,
@@ -41,21 +38,16 @@ from dagster._core.host_representation import (
     RepositoryHandle,
     RepositoryLocation,
 )
-from dagster._core.host_representation.external_data import (
-    ExternalPartitionSetExecutionParamData,
-)
+from dagster._core.host_representation.external_data import ExternalPartitionSetExecutionParamData
 from dagster._core.host_representation.selector import PipelineSelector
 from dagster._core.instance import DagsterInstance
 from dagster._core.snap import PipelineSnapshot, SolidInvocationSnap
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
+from dagster._legacy import PipelineDefinition, execute_pipeline
 from dagster._seven import IS_WINDOWS, JSONDecodeError, json
-from dagster._utils import (
-    DEFAULT_WORKSPACE_YAML_FILENAME,
-    load_yaml_from_glob_list,
-    merge_dicts,
-)
+from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_pipeline_from_origin
 from dagster._utils.indenting_printer import IndentingPrinter
@@ -64,7 +56,6 @@ from dagster._utils.yaml_utils import dump_run_config_yaml
 
 from .config_scaffolder import scaffold_pipeline_config
 from .utils import get_instance_for_service
-from dagster._legacy import PipelineDefinition, execute_pipeline
 
 
 @click.group(name="pipeline")

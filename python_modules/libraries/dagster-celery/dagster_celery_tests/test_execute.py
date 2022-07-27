@@ -7,9 +7,17 @@ from unittest import mock
 
 import pytest
 from dagster_celery_tests.repo import COMPOSITE_DEPTH
+
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.errors import DagsterSubprocessError
 from dagster._core.events import DagsterEventType
+from dagster._legacy import (
+    CompositeSolidExecutionResult,
+    PipelineExecutionResult,
+    SolidExecutionResult,
+    execute_pipeline,
+    execute_pipeline_iterator,
+)
 from dagster._utils import send_interrupt
 
 from .utils import (  # isort:skip
@@ -17,13 +25,6 @@ from .utils import (  # isort:skip
     execute_pipeline_on_celery,
     events_of_type,
     REPO_FILE,
-)
-from dagster._legacy import (
-    CompositeSolidExecutionResult,
-    PipelineExecutionResult,
-    SolidExecutionResult,
-    execute_pipeline,
-    execute_pipeline_iterator,
 )
 
 

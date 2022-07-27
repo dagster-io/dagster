@@ -18,13 +18,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.utils import coerce_valid_log_level
-from dagster._legacy import (
-    ModeDefinition,
-    PipelineDefinition,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
+from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline, solid
 from dagster._utils.test import execute_solids_within_pipeline
 
 

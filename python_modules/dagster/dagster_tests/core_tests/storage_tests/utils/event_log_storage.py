@@ -48,9 +48,7 @@ from dagster._core.storage.event_log.migration import (
     EVENT_LOG_DATA_MIGRATIONS,
     migrate_asset_key_data,
 )
-from dagster._core.storage.event_log.sqlite.sqlite_event_log import (
-    SqliteEventLogStorage,
-)
+from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._core.utils import make_new_run_id
 from dagster._legacy import (

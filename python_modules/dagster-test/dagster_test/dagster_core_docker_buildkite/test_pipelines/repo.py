@@ -7,13 +7,7 @@ from dagster import (
     repository,
     usable_as_dagster_type,
 )
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    lambda_solid,
-    pipeline,
-    solid,
-)
+from dagster._legacy import InputDefinition, OutputDefinition, lambda_solid, pipeline, solid
 
 
 @lambda_solid

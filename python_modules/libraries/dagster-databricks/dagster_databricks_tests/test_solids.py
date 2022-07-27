@@ -8,10 +8,8 @@ from dagster_databricks import (
 )
 from dagster_databricks.databricks import DatabricksRunState
 from dagster_databricks.solids import create_ui_url
-from dagster_databricks.types import (
-    DatabricksRunLifeCycleState,
-    DatabricksRunResultState,
-)
+from dagster_databricks.types import DatabricksRunLifeCycleState, DatabricksRunResultState
+
 from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 

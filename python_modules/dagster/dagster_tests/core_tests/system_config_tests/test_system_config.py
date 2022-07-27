@@ -16,11 +16,7 @@ from dagster._core.definitions.run_config import (
     RunConfigSchemaCreationData,
     define_solid_dictionary_cls,
 )
-from dagster._core.system_config.objects import (
-    ResolvedRunConfig,
-    ResourceConfig,
-    SolidConfig,
-)
+from dagster._core.system_config.objects import ResolvedRunConfig, ResourceConfig, SolidConfig
 from dagster._legacy import (
     InputDefinition,
     ModeDefinition,

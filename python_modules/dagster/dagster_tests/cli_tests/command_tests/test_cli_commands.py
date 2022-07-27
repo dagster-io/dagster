@@ -26,10 +26,7 @@ from dagster._cli.job import job_execute_command
 from dagster._cli.pipeline import pipeline_execute_command
 from dagster._cli.run import run_delete_command, run_list_command, run_wipe_command
 from dagster._core.definitions.decorators.sensor_decorator import sensor
-from dagster._core.definitions.partition import (
-    PartitionedConfig,
-    StaticPartitionsDefinition,
-)
+from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG

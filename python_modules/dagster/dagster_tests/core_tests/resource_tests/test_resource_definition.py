@@ -25,10 +25,7 @@ from dagster import (
 from dagster._core.definitions import pipeline
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.resource_definition import make_values_resource
-from dagster._core.errors import (
-    DagsterConfigMappingFunctionError,
-    DagsterInvalidDefinitionError,
-)
+from dagster._core.errors import DagsterConfigMappingFunctionError, DagsterInvalidDefinitionError
 from dagster._core.events.log import EventLogEntry, construct_event_logger
 from dagster._core.execution.api import create_execution_plan, execute_plan, execute_run
 from dagster._core.instance import DagsterInstance

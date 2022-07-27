@@ -7,13 +7,14 @@ from dagster_graphql.test.utils import (
     execute_dagster_graphql_and_finish_runs,
     infer_repository_selector,
 )
+
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import create_run_for_test
+from dagster._legacy import PipelineRun, PipelineRunStatus
 from dagster._seven import get_system_temp_directory
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
-from dagster._legacy import PipelineRun, PipelineRunStatus
 
 PARTITION_PROGRESS_QUERY = """
   query PartitionProgressQuery($backfillId: String!) {

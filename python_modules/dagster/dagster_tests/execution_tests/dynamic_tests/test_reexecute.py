@@ -5,16 +5,13 @@ import pytest
 from dagster import DynamicOutput, fs_io_manager, job, op, reconstructable
 from dagster._core.definitions.events import Output
 from dagster._core.definitions.output import DynamicOut, Out
-from dagster._core.errors import (
-    DagsterExecutionStepNotFoundError,
-    DagsterInvariantViolationError,
-)
+from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import (
     DynamicOutputDefinition,
     execute_pipeline,
-    reexecute_pipeline,
     pipeline,
+    reexecute_pipeline,
     solid,
 )
 

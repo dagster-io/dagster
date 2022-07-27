@@ -6,14 +6,13 @@ import pytest
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.executor import K8sStepHandler, k8s_job_executor
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
+
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanData, PlanOrchestrationContext
-from dagster._core.execution.context_creation_pipeline import (
-    create_context_free_log_manager,
-)
+from dagster._core.execution.context_creation_pipeline import create_context_free_log_manager
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating.step_handler.base import StepHandlerContext

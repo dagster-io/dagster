@@ -4,13 +4,7 @@ from time import sleep
 
 from dagster import Field, Int, List, Output
 from dagster._core.test_utils import default_mode_def_for_test
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PresetDefinition,
-    pipeline,
-    solid,
-)
+from dagster._legacy import InputDefinition, OutputDefinition, PresetDefinition, pipeline, solid
 
 
 @solid(

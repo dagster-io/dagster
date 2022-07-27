@@ -14,6 +14,7 @@ from dagster_graphql.test.utils import (
 
 from dagster import AssetKey, DagsterEventType
 from dagster._core.test_utils import poll_for_finished_run
+from dagster._legacy import PipelineRunStatus
 from dagster._utils import safe_tempfile_path
 
 # from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
@@ -21,7 +22,6 @@ from .graphql_context_test_suite import (
     AllRepositoryGraphQLContextTestMatrix,
     ExecutingGraphQLContextTestMatrix,
 )
-from dagster._legacy import PipelineRunStatus
 
 GET_ASSET_KEY_QUERY = """
     query AssetKeyQuery {

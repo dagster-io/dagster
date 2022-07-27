@@ -9,8 +9,10 @@ from dagster_graphql.client.query import (
 )
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 from graphql import parse
+
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.test_utils import wait_for_runs_to_finish
+from dagster._legacy import PipelineRunStatus
 from dagster._utils import file_relative_path
 from dagster._utils.test import get_temp_file_name
 
@@ -25,7 +27,6 @@ from .utils import (
     step_did_succeed,
     sync_execute_get_run_log_data,
 )
-from dagster._legacy import PipelineRunStatus
 
 STEP_FAILURE_EVENTS_QUERY = """
 query pipelineRunEvents($runId: ID!) {

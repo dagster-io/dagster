@@ -10,17 +10,15 @@ from dagster._core.snap import snapshot_from_execution_plan
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_STRATEGY_TAG
 from dagster._core.test_utils import create_run_for_test, instance_for_test
+from dagster._legacy import PipelineRunStatus
 from dagster.daemon.auto_run_reexecution.auto_run_reexecution import (
     consume_new_runs_for_automatic_reexecution,
     filter_runs_to_should_retry,
     get_reexecution_strategy,
 )
-from dagster.daemon.auto_run_reexecution.event_log_consumer import (
-    EventLogConsumerDaemon,
-)
+from dagster.daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
 
 from .utils import foo, get_foo_pipeline_handle
-from dagster._legacy import PipelineRunStatus
 
 
 def create_run(instance, **kwargs):

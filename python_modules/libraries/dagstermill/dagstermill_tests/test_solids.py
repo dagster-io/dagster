@@ -10,6 +10,7 @@ from dagstermill import DagstermillError, define_dagstermill_solid
 from dagstermill.compat import ExecutionError
 from jupyter_client.kernelspec import NoSuchKernel
 from nbconvert.preprocessors import ExecutePreprocessor
+
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import PathMetadataValue
 from dagster._core.definitions.reconstruct import ReconstructablePipeline

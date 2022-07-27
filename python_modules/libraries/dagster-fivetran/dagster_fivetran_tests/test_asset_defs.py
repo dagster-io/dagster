@@ -5,6 +5,7 @@ from dagster_fivetran.asset_defs import build_fivetran_assets
 from dagster_fivetran.resources import FIVETRAN_API_BASE, FIVETRAN_CONNECTOR_PATH
 
 from dagster import AssetKey, DagsterStepOutputNotFoundError
+from dagster._legacy import build_assets_job
 
 from .utils import (
     DEFAULT_CONNECTOR_ID,
@@ -13,7 +14,6 @@ from .utils import (
     get_sample_sync_response,
     get_sample_update_response,
 )
-from dagster._legacy import build_assets_job
 
 
 def test_fivetran_asset_keys():

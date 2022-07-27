@@ -4,10 +4,7 @@ import pytest
 from azure.storage.filedatalake import DataLakeLeaseClient
 from dagster_azure.adls2 import create_adls2_client
 from dagster_azure.adls2.fake_adls2_resource import fake_adls2_resource
-from dagster_azure.adls2.io_manager import (
-    PickledObjectADLS2IOManager,
-    adls2_pickle_io_manager,
-)
+from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pickle_io_manager
 from dagster_azure.adls2.resources import adls2_resource
 from dagster_azure.blob import create_blob_client
 

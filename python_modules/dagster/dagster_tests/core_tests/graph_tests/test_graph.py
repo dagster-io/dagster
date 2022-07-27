@@ -31,18 +31,15 @@ from dagster._core.definitions.partition import (
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.pipeline_definition import PipelineSubsetDefinition
-from dagster._core.definitions.time_window_partitions import (
-    DailyPartitionsDefinition,
-    TimeWindow,
-)
+from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
 from dagster._core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
 )
 from dagster._core.test_utils import instance_for_test
-from dagster._loggers import json_console_logger
 from dagster._legacy import InputDefinition
+from dagster._loggers import json_console_logger
 
 
 def get_ops():

@@ -527,9 +527,7 @@ def test_same_name_different_modules():
     class MyClass:
         pass
 
-    from dagster_tests.general_tests.py3_tests.other_module import (
-        MyClass as OtherModuleMyClass,
-    )
+    from dagster_tests.general_tests.py3_tests.other_module import MyClass as OtherModuleMyClass
 
     @solid
     def my_solid(_) -> MyClass:

@@ -20,10 +20,7 @@ from dagster import reconstructable
 from dagster._core.definitions import Node
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.graph_definition import _create_adjacency_lists
-from dagster._core.errors import (
-    DagsterExecutionStepNotFoundError,
-    DagsterInvariantViolationError,
-)
+from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster._core.execution.results import SolidExecutionResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import (
@@ -45,8 +42,8 @@ from dagster._legacy import (
     PipelineDefinition,
     execute_pipeline,
     execute_pipeline_iterator,
-    reexecute_pipeline,
     pipeline,
+    reexecute_pipeline,
     solid,
 )
 from dagster._utils.test import execute_solid_within_pipeline

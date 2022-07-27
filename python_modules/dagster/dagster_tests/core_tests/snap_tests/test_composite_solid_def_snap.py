@@ -4,10 +4,7 @@ from dagster._core.snap import (
     build_composite_solid_def_snap,
 )
 from dagster._legacy import composite_solid, solid
-from dagster._serdes import (
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
-)
+from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
 
 def test_noop_comp_solid_definition():

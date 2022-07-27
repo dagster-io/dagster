@@ -2,13 +2,7 @@ import re
 
 import pytest
 
-from dagster import (
-    DagsterInvariantViolationError,
-    DagsterTypeCheckDidNotPass,
-    Field,
-    Int,
-    resource,
-)
+from dagster import DagsterInvariantViolationError, DagsterTypeCheckDidNotPass, Field, Int, resource
 from dagster._core.test_utils import nesting_composite_pipeline
 from dagster._core.utility_solids import (
     create_root_solid,

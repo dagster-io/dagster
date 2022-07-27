@@ -21,6 +21,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun, PipelineRunStatus
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.utils import make_new_run_id
+from dagster._legacy import Materialization, ModeDefinition, PipelineDefinition, SolidDefinition
 from dagster._loggers import colored_console_logger
 from dagster._serdes import unpack_value
 from dagster._utils import EventGenerationManager, ensure_gen
@@ -28,12 +29,6 @@ from dagster._utils import EventGenerationManager, ensure_gen
 from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
 from .errors import DagstermillError
 from .serialize import PICKLE_PROTOCOL
-from dagster._legacy import (
-    Materialization,
-    ModeDefinition,
-    PipelineDefinition,
-    SolidDefinition,
-)
 
 
 class DagstermillResourceEventGenerationManager(EventGenerationManager):

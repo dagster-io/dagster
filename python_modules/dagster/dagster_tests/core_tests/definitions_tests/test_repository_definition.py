@@ -37,10 +37,7 @@ from dagster._core.definitions.executor_definition import (
     default_executors,
     multi_or_in_process_executor,
 )
-from dagster._core.definitions.partition import (
-    PartitionedConfig,
-    StaticPartitionsDefinition,
-)
+from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._legacy import (
     AssetGroup,

@@ -8,14 +8,7 @@ from contextlib import contextmanager
 import pendulum
 import pytest
 
-from dagster import (
-    Any,
-    Field,
-    daily_partitioned_config,
-    fs_io_manager,
-    graph,
-    repository,
-)
+from dagster import Any, Field, daily_partitioned_config, fs_io_manager, graph, repository
 from dagster._core.definitions import Partition, PartitionSetDefinition
 from dagster._core.execution.api import execute_pipeline
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -24,11 +17,7 @@ from dagster._core.host_representation import (
     InProcessRepositoryLocationOrigin,
 )
 from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
-from dagster._core.storage.tags import (
-    BACKFILL_ID_TAG,
-    PARTITION_NAME_TAG,
-    PARTITION_SET_TAG,
-)
+from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._core.test_utils import (
     create_test_daemon_workspace,
     instance_for_test,

@@ -2,10 +2,7 @@ import pytest
 
 from dagster import asset
 from dagster._core.definitions.executor_definition import execute_in_process_executor
-from dagster._core.errors import (
-    DagsterExecutionStepNotFoundError,
-    DagsterInvalidSubsetError,
-)
+from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import (
     MAX_NUM,
     Traverser,

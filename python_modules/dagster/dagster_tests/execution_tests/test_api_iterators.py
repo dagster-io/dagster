@@ -1,4 +1,5 @@
 import pytest
+
 from dagster import _check as check
 from dagster import resource
 from dagster._core.definitions.pipeline_base import InMemoryPipeline

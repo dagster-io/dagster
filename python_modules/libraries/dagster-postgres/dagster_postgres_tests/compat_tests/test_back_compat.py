@@ -527,11 +527,7 @@ def test_instigators_table_backcompat(hostname, conn_string):
 
 def test_jobs_selector_id_migration(hostname, conn_string):
     from dagster._core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
-    from dagster._core.storage.schedules.schema import (
-        InstigatorsTable,
-        JobTable,
-        JobTickTable,
-    )
+    from dagster._core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
 
     _reconstruct_from_file(
         hostname,

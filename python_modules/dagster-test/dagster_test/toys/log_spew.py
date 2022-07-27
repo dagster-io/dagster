@@ -1,13 +1,7 @@
 import time
 
 from dagster import Output, fs_io_manager
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    pipeline,
-    solid,
-)
+from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, pipeline, solid
 
 
 def nonce_solid(name, n_inputs, n_outputs):

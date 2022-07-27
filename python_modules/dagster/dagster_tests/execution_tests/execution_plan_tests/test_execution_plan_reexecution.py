@@ -6,10 +6,7 @@ import pytest
 import dagster._check as check
 from dagster import DependencyDefinition, Int
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
-from dagster._core.errors import (
-    DagsterExecutionStepNotFoundError,
-    DagsterInvariantViolationError,
-)
+from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster._core.events import get_step_output_event
 from dagster._core.execution.api import execute_plan
 from dagster._core.execution.plan.plan import ExecutionPlan

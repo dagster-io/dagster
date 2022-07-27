@@ -5,9 +5,9 @@ import pytest
 from dagster import file_relative_path
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.test_utils import instance_for_test
+from dagster._legacy import execute_pipeline
 from dagster._utils import pushd
 from dagster._utils.yaml_utils import load_yaml_from_path
-from dagster._legacy import execute_pipeline
 
 
 @pytest.mark.parametrize(

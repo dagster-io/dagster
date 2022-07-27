@@ -4,15 +4,7 @@ import time
 
 import pytest
 
-from dagster import (
-    Failure,
-    Field,
-    MetadataEntry,
-    Nothing,
-    Output,
-    String,
-    reconstructable,
-)
+from dagster import Failure, Field, MetadataEntry, Nothing, Output, String, reconstructable
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.compute_log_manager import ComputeIOType

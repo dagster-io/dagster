@@ -5,8 +5,8 @@ import yaml
 from dagster_spark import create_spark_solid, spark_resource
 
 from dagster import execute_solid
-from dagster._utils import file_relative_path
 from dagster._legacy import ModeDefinition
+from dagster._utils import file_relative_path
 
 CONFIG_FILE = """
 solids:
