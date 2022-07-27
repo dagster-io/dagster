@@ -11,4 +11,5 @@ export interface PermissionFragment {
   __typename: "Permission";
   permission: string;
   value: boolean;
+  disabledReason: string | null;
 }

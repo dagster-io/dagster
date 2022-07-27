@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 import {BaseButton} from './BaseButton';
-import {Box} from './Box';
+import {JoinedButtons} from './Button';
 import {Colors} from './Colors';
 import {IconName, Icon} from './Icon';
 import {Tooltip} from './Tooltip';
@@ -22,16 +22,15 @@ interface Props<T> {
 export const ButtonGroup = <T extends string | number>(props: Props<T>) => {
   const {activeItems, buttons, onClick} = props;
   return (
-    <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+    <JoinedButtons>
       {buttons.map((button) => {
         const {id, icon, label, tooltip} = button;
         const isActive = activeItems?.has(id);
         const buttonElement = (
           <BaseButton
             key={id}
-            fillColor={isActive ? Colors.Gray200 : Colors.Gray50}
+            fillColor={isActive ? Colors.Gray200 : Colors.White}
             textColor={isActive ? Colors.Gray900 : Colors.Gray700}
-            strokeColor="transparent"
             icon={
               icon ? <Icon name={icon} color={isActive ? Colors.Gray900 : Colors.Gray700} /> : null
             }
@@ -50,6 +49,6 @@ export const ButtonGroup = <T extends string | number>(props: Props<T>) => {
 
         return buttonElement;
       })}
-    </Box>
+    </JoinedButtons>
   );
 };

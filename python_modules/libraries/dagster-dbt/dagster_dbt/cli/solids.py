@@ -9,9 +9,9 @@ from dagster import (
     Permissive,
     StringSource,
 )
-from dagster.config.field import Field
-from dagster.legacy import solid
-from dagster.utils.backcompat import experimental
+from dagster._annotations import experimental
+from dagster._config.field import Field
+from dagster._legacy import solid
 
 from ..utils import generate_materializations
 from .constants import (

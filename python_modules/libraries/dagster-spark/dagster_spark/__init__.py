@@ -1,4 +1,4 @@
-from dagster.core.utils import check_dagster_package_version
+from dagster._core.utils import check_dagster_package_version
 
 from .configs import define_spark_config
 from .ops import create_spark_op, create_spark_solid

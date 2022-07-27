@@ -29,8 +29,8 @@ from dagster import (
     job,
     op,
 )
-from dagster.config.validate import process_config, validate_config
-from dagster.core.definitions import create_run_config_schema
+from dagster._config import process_config, validate_config
+from dagster._core.definitions import create_run_config_schema
 
 
 def dataset_exists(name):

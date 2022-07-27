@@ -6,9 +6,9 @@ from unittest import mock
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster import file_relative_path
-from dagster.core.host_representation import ManagedGrpcPythonEnvRepositoryLocationOrigin
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.core.workspace.load import location_origins_from_yaml_paths
+from dagster._core.host_representation import ManagedGrpcPythonEnvRepositoryLocationOrigin
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.workspace.load import location_origins_from_yaml_paths
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
@@ -63,7 +63,7 @@ class TestLoadWorkspace(BaseTestSuite):
             [file_relative_path(__file__, "multi_location.yaml")]
         )
         with mock.patch(
-            "dagster.core.workspace.load_target.location_origins_from_yaml_paths",
+            "dagster._core.workspace.load_target.location_origins_from_yaml_paths",
         ) as origins_mock:
             original_origins.append(
                 ManagedGrpcPythonEnvRepositoryLocationOrigin(

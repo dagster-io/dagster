@@ -1,5 +1,5 @@
 from dagster import lambda_solid
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 def test_single_input():

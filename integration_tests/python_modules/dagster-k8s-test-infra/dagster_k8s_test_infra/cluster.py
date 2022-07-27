@@ -15,15 +15,15 @@ from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage, Postgr
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
 import dagster._check as check
-from dagster.cli.debug import export_run
-from dagster.core.instance import DagsterInstance, InstanceType
-from dagster.core.instance.ref import InstanceRef
-from dagster.core.run_coordinator import DefaultRunCoordinator, QueuedRunCoordinator
-from dagster.core.scheduler import DagsterDaemonScheduler
-from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
-from dagster.core.storage.root import LocalArtifactStorage
-from dagster.core.test_utils import ExplodingRunLauncher, environ
-from dagster.utils import find_free_port
+from dagster._cli.debug import export_run
+from dagster._core.instance import DagsterInstance, InstanceType
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.run_coordinator import DefaultRunCoordinator, QueuedRunCoordinator
+from dagster._core.scheduler import DagsterDaemonScheduler
+from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
+from dagster._core.storage.root import LocalArtifactStorage
+from dagster._core.test_utils import ExplodingRunLauncher, environ
+from dagster._utils import find_free_port
 
 from .integration_utils import IS_BUILDKITE, check_output
 

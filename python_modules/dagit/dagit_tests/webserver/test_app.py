@@ -9,7 +9,7 @@ from starlette.testclient import TestClient
 
 from dagster import __version__ as dagster_version
 from dagster import job, op
-from dagster.seven import json
+from dagster._seven import json
 
 EVENT_LOG_SUBSCRIPTION = """
 subscription PipelineRunLogsSubscription($runId: ID!) {
@@ -167,6 +167,13 @@ def test_graphql_post(test_client: TestClient):
     )
     assert response.status_code == 200, response.text
     assert response.json() == {"data": {"__typename": "DagitQuery"}}
+
+    # non existent field
+    response = test_client.post(
+        "/graphql",
+        params={"query": "{__invalid}"},
+    )
+    assert response.status_code == 400, response.text
 
 
 def test_graphql_ws_error(test_client: TestClient):

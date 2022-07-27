@@ -11,7 +11,7 @@ from hacker_news_assets.recommender import recommender_assets, recommender_asset
 from hacker_news_assets.resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
 
 from dagster import repository, with_resources
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 from .sensors.slack_on_failure_sensor import make_slack_on_failure_sensor
 

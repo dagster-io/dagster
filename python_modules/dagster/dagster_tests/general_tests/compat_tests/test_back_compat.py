@@ -14,22 +14,22 @@ import sqlalchemy as db
 
 from dagster import AssetKey, AssetMaterialization, Output
 from dagster import _check as check
-from dagster import execute_pipeline, file_relative_path, job, pipeline
-from dagster.cli.debug import DebugRunPayload
-from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.events import DagsterEvent
-from dagster.core.events.log import EventLogEntry
-from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster.core.instance import DagsterInstance, InstanceRef
-from dagster.core.scheduler.instigation import InstigatorState, InstigatorTick
-from dagster.core.storage.event_log.migration import migrate_event_log_data
-from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
-from dagster.core.storage.migration.utils import upgrading_instance
-from dagster.core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
-from dagster.core.storage.tags import REPOSITORY_LABEL_TAG
-from dagster.legacy import solid
-from dagster.serdes import DefaultNamedTupleSerializer, create_snapshot_id
-from dagster.serdes.serdes import (
+from dagster import execute_pipeline, file_relative_path, job
+from dagster._cli.debug import DebugRunPayload
+from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.events import DagsterEvent
+from dagster._core.events.log import EventLogEntry
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
+from dagster._core.storage.event_log.migration import migrate_event_log_data
+from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
+from dagster._core.storage.migration.utils import upgrading_instance
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
+from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
+from dagster._legacy import pipeline, solid
+from dagster._serdes import DefaultNamedTupleSerializer, create_snapshot_id
+from dagster._serdes.serdes import (
     WhitelistMap,
     _deserialize_json,
     _whitelist_for_serdes,
@@ -37,8 +37,8 @@ from dagster.serdes.serdes import (
     serialize_dagster_namedtuple,
     serialize_value,
 )
-from dagster.utils.error import SerializableErrorInfo
-from dagster.utils.test import copy_directory
+from dagster._utils.error import SerializableErrorInfo
+from dagster._utils.test import copy_directory
 
 
 def _migration_regex(warning, current_revision, expected_revision=None):
@@ -352,8 +352,8 @@ def test_run_partition_migration():
 def test_run_partition_data_migration():
     src_dir = file_relative_path(__file__, "snapshot_0_9_22_post_schema_pre_data_partition/sqlite")
     with copy_directory(src_dir) as test_dir:
-        from dagster.core.storage.runs.migration import RUN_PARTITIONS
-        from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
+        from dagster._core.storage.runs.migration import RUN_PARTITIONS
+        from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 
         # load db that has migrated schema, but not populated data for run partitions
         db_path = os.path.join(test_dir, "history", "runs.db")
@@ -659,7 +659,7 @@ def test_external_job_origin_instigator_origin():
 
     legacy_env, klass, repo_klass, location_klass = build_legacy_whitelist_map()
 
-    from dagster.core.host_representation.origin import (
+    from dagster._core.host_representation.origin import (
         ExternalInstigatorOrigin,
         ExternalRepositoryOrigin,
         GrpcServerRepositoryLocationOrigin,
@@ -692,7 +692,7 @@ def test_external_job_origin_instigator_origin():
         job_name="simple_schedule",
     )
     job_origin_str = serialize_value(job_origin, legacy_env)
-    from dagster.serdes.serdes import _WHITELIST_MAP
+    from dagster._serdes.serdes import _WHITELIST_MAP
 
     job_to_instigator = deserialize_json_to_dagster_namedtuple(job_origin_str)
     assert isinstance(job_to_instigator, ExternalInstigatorOrigin)
@@ -823,8 +823,8 @@ def test_instigators_table_backcompat():
 def test_jobs_selector_id_migration():
     src_dir = file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration/sqlite")
 
-    from dagster.core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
-    from dagster.core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
+    from dagster._core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
+    from dagster._core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "schedules", "schedules.db")
@@ -906,12 +906,12 @@ def test_repo_label_tag_migration():
 
 
 def test_add_bulk_actions_columns():
-    from dagster.core.host_representation.origin import (
+    from dagster._core.host_representation.origin import (
         ExternalPartitionSetOrigin,
         ExternalRepositoryOrigin,
         GrpcServerRepositoryLocationOrigin,
     )
-    from dagster.core.storage.runs.schema import BulkActionsTable
+    from dagster._core.storage.runs.schema import BulkActionsTable
 
     src_dir = file_relative_path(__file__, "snapshot_0_14_16_bulk_actions_columns/sqlite")
 

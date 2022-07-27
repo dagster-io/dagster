@@ -6,11 +6,11 @@ import pytest
 from click import UsageError
 from click.testing import CliRunner
 
-from dagster.cli.job import job_execute_command
-from dagster.cli.pipeline import execute_execute_command, pipeline_execute_command
-from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.test_utils import instance_for_test, new_cwd
-from dagster.utils import file_relative_path, merge_dicts
+from dagster._cli.job import job_execute_command
+from dagster._cli.pipeline import execute_execute_command, pipeline_execute_command
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.test_utils import instance_for_test, new_cwd
+from dagster._utils import file_relative_path, merge_dicts
 
 from .test_cli_commands import (
     non_existant_python_origin_target_args,
@@ -225,7 +225,7 @@ def test_output_execute_log_stdout(capfd):
     with instance_for_test(
         overrides={
             "compute_logs": {
-                "module": "dagster.core.storage.noop_compute_log_manager",
+                "module": "dagster._core.storage.noop_compute_log_manager",
                 "class": "NoOpComputeLogManager",
             }
         },
@@ -258,7 +258,7 @@ def test_output_execute_log_stderr(capfd):
     with instance_for_test(
         overrides={
             "compute_logs": {
-                "module": "dagster.core.storage.noop_compute_log_manager",
+                "module": "dagster._core.storage.noop_compute_log_manager",
                 "class": "NoOpComputeLogManager",
             }
         },

@@ -32,8 +32,8 @@ def msteams_resource(context):
 
         import os
 
-        from dagster import ModeDefinition, execute_pipeline, pipeline
-        from dagster.legacy import solid
+        from dagster import ModeDefinition, execute_pipeline
+        from dagster._legacy import pipeline, solid
         from dagster_msteams import Card, msteams_resource
 
 

@@ -1,9 +1,5 @@
 # isort: skip_file
-from dagster import (
-    pipeline,
-)
-
-from dagster.legacy import solid
+from dagster._legacy import pipeline, solid
 
 # start_custom_file_output_log
 

@@ -4,8 +4,8 @@ from typing import cast
 import pendulum
 
 from dagster import build_schedule_context, graph, op, repository
-from dagster.core.definitions.partitioned_schedule import build_schedule_from_partitioned_job
-from dagster.core.definitions.time_window_partitions import (
+from dagster._core.definitions.partitioned_schedule import build_schedule_from_partitioned_job
+from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     daily_partitioned_config,
     hourly_partitioned_config,

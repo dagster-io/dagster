@@ -7,7 +7,7 @@ from dagster import (
     Selector,
     execute_solid,
 )
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 def test_kitchen_sink():

@@ -1,9 +1,9 @@
 import graphene
 
 import dagster._check as check
-from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster.core.storage.pipeline_run import FINISHED_STATUSES, PipelineRunStatus, RunsFilter
-from dagster.core.storage.tags import BACKFILL_ID_TAG
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.storage.pipeline_run import FINISHED_STATUSES, PipelineRunStatus, RunsFilter
+from dagster._core.storage.tags import BACKFILL_ID_TAG
 
 from ..implementation.fetch_partition_sets import partition_statuses_from_run_partition_data
 from .errors import (
@@ -97,18 +97,6 @@ class GrapheneBackfillStatus(graphene.Enum):
         name = "BackfillStatus"
 
 
-class GrapheneBackfillRunStats(graphene.ObjectType):
-    class Meta:
-        name = "BackfillRunStats"
-
-    numQueued = graphene.NonNull(graphene.Int)
-    numInProgress = graphene.NonNull(graphene.Int)
-    numSucceeded = graphene.NonNull(graphene.Int)
-    numFailed = graphene.NonNull(graphene.Int)
-    numPartitionsWithRuns = graphene.NonNull(graphene.Int)
-    numTotalRuns = graphene.NonNull(graphene.Int)
-
-
 class GraphenePartitionBackfill(graphene.ObjectType):
     class Meta:
         name = "PartitionBackfill"
@@ -133,7 +121,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         limit=graphene.Int(),
     )
     error = graphene.Field(GraphenePythonError)
-    partitionRunStats = graphene.NonNull(GrapheneBackfillRunStats)
     partitionStatuses = graphene.NonNull(
         "dagster_graphql.schema.partition_sets.GraphenePartitionStatuses"
     )
@@ -227,36 +214,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
                     return GrapheneBackfillStatus.COMPLETED
                 else:
                     return GrapheneBackfillStatus.INCOMPLETE
-
-    def resolve_partitionRunStats(self, graphene_info):
-        partition_run_data = self._get_partition_run_data(graphene_info)
-
-        num_queued = 0
-        num_in_progress = 0
-        num_succeeded = 0
-        num_failed = 0
-
-        for partition in partition_run_data:
-            status = partition.status
-            if status == PipelineRunStatus.QUEUED:
-                num_queued = num_queued + 1
-            elif not status in FINISHED_STATUSES:
-                num_in_progress = num_in_progress + 1
-            elif status == PipelineRunStatus.SUCCESS:
-                num_succeeded = num_succeeded + 1
-            elif status in {PipelineRunStatus.FAILURE, PipelineRunStatus.CANCELED}:
-                num_failed = num_failed + 1
-            else:
-                check.invariant(False, f"Unexpected PipelineRunStatus {status}")
-
-        return GrapheneBackfillRunStats(
-            numQueued=num_queued,
-            numInProgress=num_in_progress,
-            numSucceeded=num_succeeded,
-            numFailed=num_failed,
-            numPartitionsWithRuns=len(partition_run_data),
-            numTotalRuns=len(partition_run_data),  # hack, but this is unused
-        )
 
     def resolve_runs(self, graphene_info):
         from .pipelines.pipeline import GrapheneRun

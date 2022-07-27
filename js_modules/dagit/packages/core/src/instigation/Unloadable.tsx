@@ -3,7 +3,7 @@ import {Alert, Box, Checkbox, Colors, Group, Table, Subheading, Tooltip} from '@
 import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
-import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
+import {usePermissions} from '../app/Permissions';
 import {
   displayScheduleMutationErrors,
   STOP_SCHEDULE_MUTATION,
@@ -148,7 +148,7 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
     }
   };
 
-  const lacksPermission = status === InstigationStatus.RUNNING && !canStopSensor;
+  const lacksPermission = status === InstigationStatus.RUNNING && !canStopSensor.enabled;
   const latestTick = ticks.length ? ticks[0] : null;
 
   const checkbox = () => {
@@ -160,7 +160,11 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
         onChange={onChangeSwitch}
       />
     );
-    return lacksPermission ? <Tooltip content={DISABLED_MESSAGE}>{element}</Tooltip> : element;
+    return lacksPermission ? (
+      <Tooltip content={canStopSensor.disabledReason}>{element}</Tooltip>
+    ) : (
+      element
+    );
   };
 
   return (
@@ -218,7 +222,7 @@ const ScheduleStateRow: React.FC<{
     }
   };
 
-  const lacksPermission = status === InstigationStatus.RUNNING && !canStopRunningSchedule;
+  const lacksPermission = status === InstigationStatus.RUNNING && !canStopRunningSchedule.enabled;
   const checkbox = () => {
     const element = (
       <Checkbox
@@ -229,7 +233,11 @@ const ScheduleStateRow: React.FC<{
       />
     );
 
-    return lacksPermission ? <Tooltip content={DISABLED_MESSAGE}>{element}</Tooltip> : element;
+    return lacksPermission ? (
+      <Tooltip content={canStopRunningSchedule.disabledReason}>{element}</Tooltip>
+    ) : (
+      element
+    );
   };
 
   return (

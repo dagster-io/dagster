@@ -41,7 +41,6 @@ import {
   LoadingNotice,
 } from '../pipelines/GraphNotices';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
-import {SidebarPipelineOrJobOverview} from '../pipelines/SidebarPipelineOrJobOverview';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {Loading} from '../ui/Loading';
@@ -49,6 +48,7 @@ import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 
 import {AssetConnectedEdges} from './AssetEdges';
+import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
 import {AssetNode, AssetNodeMinimal} from './AssetNode';
 import {ForeignNode} from './ForeignNode';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
@@ -192,15 +192,22 @@ export const AssetGraphExplorerWithData: React.FC<
       let nextOpsNameSelection = token;
 
       if (e.shiftKey || e.metaKey) {
-        const existing = explorerPath.opNames[0].split(',');
-        const added =
-          e.shiftKey && lastSelectedNode && node
-            ? opsInRange({graph: assetGraphData, from: lastSelectedNode, to: node})
-            : [token];
+        let tokensToAdd = [token];
+        if (e.shiftKey && lastSelectedNode && node) {
+          const tokensInRange = opsInRange({
+            graph: assetGraphData,
+            from: lastSelectedNode,
+            to: node,
+          });
+          if (tokensInRange.length) {
+            tokensToAdd = tokensInRange;
+          }
+        }
 
+        const existing = explorerPath.opNames[0].split(',');
         nextOpsNameSelection = (existing.includes(token)
           ? without(existing, token)
-          : uniq([...existing, ...added])
+          : uniq([...existing, ...tokensToAdd])
         ).join(',');
       }
 
@@ -480,7 +487,7 @@ export const AssetGraphExplorerWithData: React.FC<
         ) : fetchOptions.pipelineSelector ? (
           <RightInfoPanel>
             <RightInfoPanelContent>
-              <SidebarPipelineOrJobOverview pipelineSelector={fetchOptions.pipelineSelector} />
+              <AssetGraphJobSidebar pipelineSelector={fetchOptions.pipelineSelector} />
             </RightInfoPanelContent>
           </RightInfoPanel>
         ) : null

@@ -5,18 +5,18 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Set, Tuple
 
 from dagster import DagsterInstance
 from dagster import _check as check
-from dagster.core.definitions.events import AssetKey
-from dagster.core.events.log import EventLogEntry
-from dagster.core.host_representation import ExternalRepository
-from dagster.core.host_representation.external_data import (
+from dagster._core.definitions.events import AssetKey
+from dagster._core.events.log import EventLogEntry
+from dagster._core.host_representation import ExternalRepository
+from dagster._core.host_representation.external_data import (
     ExternalAssetDependedBy,
     ExternalAssetDependency,
     ExternalAssetNode,
 )
-from dagster.core.scheduler.instigation import InstigatorType
-from dagster.core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
-from dagster.core.storage.tags import SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
-from dagster.core.workspace.context import WorkspaceRequestContext
+from dagster._core.scheduler.instigation import InstigatorType
+from dagster._core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
+from dagster._core.storage.tags import SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
+from dagster._core.workspace.context import WorkspaceRequestContext
 
 
 class RepositoryDataType(Enum):

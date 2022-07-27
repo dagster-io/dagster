@@ -111,7 +111,7 @@ export const RepoSelector: React.FC<Props> = (props) => {
                     Browse
                   </Link>
                 </td>
-                {canReloadRepositoryLocation ? (
+                {canReloadRepositoryLocation.enabled ? (
                   <td>
                     <ReloadButton repoAddress={repoAddress} />
                   </td>

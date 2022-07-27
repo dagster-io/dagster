@@ -23,7 +23,8 @@ import {
   LoadingNotice,
 } from './GraphNotices';
 import {ExplorerPath} from './PipelinePathUtils';
-import {SidebarRoot, SIDEBAR_ROOT_CONTAINER_FRAGMENT} from './SidebarRoot';
+import {SIDEBAR_ROOT_CONTAINER_FRAGMENT} from './SidebarContainerOverview';
+import {SidebarRoot} from './SidebarRoot';
 import {GraphExplorerFragment} from './types/GraphExplorerFragment';
 import {GraphExplorerSolidHandleFragment} from './types/GraphExplorerSolidHandleFragment';
 
@@ -37,7 +38,7 @@ interface GraphExplorerProps {
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   options: GraphExplorerOptions;
   setOptions: (options: GraphExplorerOptions) => void;
-  pipelineOrGraph: GraphExplorerFragment;
+  container: GraphExplorerFragment;
   repoAddress?: RepoAddress;
   handles: GraphExplorerSolidHandleFragment[];
   parentHandle?: GraphExplorerSolidHandleFragment;
@@ -50,7 +51,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
     getInvocations,
     handles,
     options,
-    pipelineOrGraph,
+    container,
     explorerPath,
     onChangeExplorerPath,
     parentHandle,
@@ -266,7 +267,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
             <LoadingNotice async={async} nodeType="op" />
           ) : (
             <OpGraph
-              jobName={pipelineOrGraph.name}
+              jobName={container.name}
               ops={queryResultOps.all}
               focusOps={queryResultOps.focus}
               highlightedOps={highlightedOps}
@@ -289,7 +290,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
             // eslint-disable-next-line react/no-children-prop
             children={({location}: {location: any}) => (
               <SidebarRoot
-                container={pipelineOrGraph}
+                container={container}
                 explorerPath={explorerPath}
                 opHandleID={selectedHandle && selectedHandle.handleID}
                 parentOpHandleID={parentHandle && parentHandle.handleID}
@@ -297,7 +298,6 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
                 onEnterSubgraph={handleEnterCompositeSolid}
                 onClickOp={handleClickOp}
                 repoAddress={repoAddress}
-                isGraph={isGraph}
                 {...qs.parse(location.search || '', {ignoreQueryPrefix: true})}
               />
             )}

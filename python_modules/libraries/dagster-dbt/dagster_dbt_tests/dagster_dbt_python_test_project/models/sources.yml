@@ -4,6 +4,7 @@ sources:
   - name: raw_data
     tables:
       - name: events
+        tags: ["events"]
       - name: users
 
   - name: dagster

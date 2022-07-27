@@ -1,6 +1,6 @@
 import yaml
 
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 from docs_snippets.concepts.logging.custom_logger import (
     demo_job,
     json_console_logger,

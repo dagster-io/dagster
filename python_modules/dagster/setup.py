@@ -95,7 +95,6 @@ if __name__ == "__main__":
             "test": [
                 "coverage==5.3",
                 "docker",
-                "freezegun>=0.3.15",
                 "grpcio-tools",
                 "mock==3.0.5",
                 "objgraph",
@@ -110,9 +109,7 @@ if __name__ == "__main__":
                 "responses==0.10.*",
                 "snapshottest==0.6.0",
                 "tox==3.25.0",
-                "tqdm==4.48.0",  # pylint crash 48.1+
                 "yamllint",
-                "flake8>=3.7.8",
                 "astroid",  # let pylint determine the version
                 "pylint==2.13.7",
             ],

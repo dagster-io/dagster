@@ -1,8 +1,8 @@
 import graphene
 
 import dagster._check as check
-from dagster.core.definitions.events import AssetKey
-from dagster.core.workspace.permissions import Permissions
+from dagster._core.definitions.events import AssetKey
+from dagster._core.workspace.permissions import Permissions
 
 from ...implementation.execution import (
     cancel_partition_backfill,

@@ -1,4 +1,4 @@
-from dagster.core.utils import check_dagster_package_version
+from dagster._core.utils import check_dagster_package_version
 
 from .resources import SnowflakeConnection, snowflake_resource
 from .snowflake_io_manager import DbTypeHandler, build_snowflake_io_manager

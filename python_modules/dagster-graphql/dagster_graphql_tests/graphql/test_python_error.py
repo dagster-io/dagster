@@ -8,7 +8,7 @@ from dagster_graphql.implementation.utils import ErrorCapture
 from dagster_graphql.schema.errors import GraphenePythonError
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 
 def test_python_error():
@@ -38,7 +38,7 @@ def test_error_capture(graphql_context):
     ErrorCapture.on_exception = _new_on_exc
 
     with mock.patch(
-        "dagster.core.workspace.context.BaseWorkspaceRequestContext.repository_locations",
+        "dagster._core.workspace.context.BaseWorkspaceRequestContext.repository_locations",
         new_callable=mock.PropertyMock,
     ) as repo_locs_mock:
         repo_locs_mock.side_effect = Exception("oops all berries")

@@ -1,6 +1,6 @@
-from dagster.core.definitions import SourceAsset
-from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.metadata import MetadataEntry, MetadataValue
+from dagster._core.definitions import SourceAsset
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.metadata import MetadataEntry, MetadataValue
 
 
 def test_source_asset_metadata():

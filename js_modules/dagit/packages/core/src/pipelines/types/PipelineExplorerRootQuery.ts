@@ -1735,6 +1735,8 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   metadataEntries: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries[];
   description: string | null;
   modes: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes[];
+  pipelineSnapshotId: string;
+  parentSnapshotId: string | null;
   solidHandle: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle | null;
   solidHandles: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles[];
 }

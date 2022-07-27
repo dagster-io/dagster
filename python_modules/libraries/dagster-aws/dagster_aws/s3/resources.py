@@ -1,5 +1,5 @@
 from dagster import Field, StringSource, resource
-from dagster.utils.merger import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from .file_manager import S3FileManager
 from .utils import construct_s3_client
@@ -116,7 +116,7 @@ def s3_resource(context):
 def s3_file_manager(context):
     """FileManager that provides abstract access to S3.
 
-    Implements the :py:class:`~dagster.core.storage.file_manager.FileManager` API.
+    Implements the :py:class:`~dagster._core.storage.file_manager.FileManager` API.
     """
     return S3FileManager(
         s3_session=construct_s3_client(

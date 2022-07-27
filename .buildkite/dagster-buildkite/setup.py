@@ -21,7 +21,6 @@ setup(
     entry_points={
         "console_scripts": [
             "dagster-buildkite = dagster_buildkite.cli:dagster",
-            "dagster-buildkite-integration = dagster_buildkite.cli:integration",
         ]
     },
 )

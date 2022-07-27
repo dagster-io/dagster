@@ -171,7 +171,7 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
   );
 };
 
-export const SIDEBAR_SOLID_DEFINITION_FRAGMENT = gql`
+export const SIDEBAR_OP_DEFINITION_FRAGMENT = gql`
   fragment SidebarOpDefinitionFragment on ISolidDefinition {
     ...OpTypeSignatureFragment
     __typename

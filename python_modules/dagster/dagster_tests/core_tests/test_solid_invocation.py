@@ -28,10 +28,9 @@ from dagster import (
     composite_solid,
     execute_solid,
     op,
-    pipeline,
     resource,
 )
-from dagster.core.errors import (
+from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -41,7 +40,7 @@ from dagster.core.errors import (
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckDidNotPass,
 )
-from dagster.legacy import solid
+from dagster._legacy import pipeline, solid
 
 
 def test_solid_invocation_no_arg():

@@ -4,15 +4,15 @@ import graphene
 from dagster_graphql.implementation.fetch_runs import get_assets_latest_info
 
 import dagster._check as check
-from dagster.core.definitions.events import AssetKey
-from dagster.core.execution.backfill import BulkActionStatus
-from dagster.core.host_representation import (
+from dagster._core.definitions.events import AssetKey
+from dagster._core.execution.backfill import BulkActionStatus
+from dagster._core.host_representation import (
     InstigatorSelector,
     RepositorySelector,
     ScheduleSelector,
     SensorSelector,
 )
-from dagster.core.scheduler.instigation import InstigatorType
+from dagster._core.scheduler.instigation import InstigatorType
 
 from ...implementation.external import fetch_repositories, fetch_repository, fetch_workspace
 from ...implementation.fetch_assets import get_asset, get_asset_node, get_asset_nodes, get_assets

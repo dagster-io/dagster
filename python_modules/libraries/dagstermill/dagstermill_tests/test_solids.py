@@ -11,12 +11,13 @@ from dagstermill.compat import ExecutionError
 from jupyter_client.kernelspec import NoSuchKernel
 from nbconvert.preprocessors import ExecutePreprocessor
 
-from dagster import execute_pipeline, pipeline
+from dagster import execute_pipeline
 from dagster._check import CheckError
-from dagster.core.definitions.metadata import PathMetadataValue
-from dagster.core.definitions.reconstruct import ReconstructablePipeline
-from dagster.core.test_utils import instance_for_test
-from dagster.utils import file_relative_path, safe_tempfile_path
+from dagster._core.definitions.metadata import PathMetadataValue
+from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.test_utils import instance_for_test
+from dagster._legacy import pipeline
+from dagster._utils import file_relative_path, safe_tempfile_path
 
 DAGSTER_PANDAS_PRESENT = importlib.util.find_spec("dagster_pandas") is not None
 SKLEARN_PRESENT = importlib.util.find_spec("sklearn") is not None
@@ -293,7 +294,7 @@ def test_hello_world_reexecution():
         with tempfile.NamedTemporaryFile("w+", suffix=".py") as reexecution_notebook_file:
             reexecution_notebook_file.write(
                 (
-                    "from dagster import pipeline\n"
+                    "from dagster._legacy import pipeline\n"
                     "from dagstermill import define_dagstermill_solid\n\n\n"
                     "reexecution_solid = define_dagstermill_solid(\n"
                     "    'hello_world_reexecution', '{output_notebook_path}'\n"

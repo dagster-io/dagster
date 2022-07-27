@@ -1,5 +1,5 @@
 from dagster import composite_solid, graph, job, op, resource
-from dagster.legacy import solid
+from dagster._legacy import solid
 
 
 def test_description_inference():

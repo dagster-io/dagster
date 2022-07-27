@@ -1,7 +1,7 @@
 import yaml
 
 from dagster import graph, op
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 from docs_snippets.concepts.configuration.config_map_example import unsigned_s3_session
 from docs_snippets.concepts.configuration.configured_example import (
     east_unsigned_s3_session,

@@ -7,7 +7,7 @@ from requests import Response
 from requests.exceptions import RequestException
 
 from dagster import Failure, RetryRequested
-from dagster.core.execution.context.compute import SolidExecutionContext
+from dagster._core.execution.context.compute import SolidExecutionContext
 
 
 def fmt_rpc_logs(logs: List[Dict[str, str]]) -> Dict[int, str]:

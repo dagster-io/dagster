@@ -12,11 +12,11 @@ from dagster_test.dagster_core_docker_buildkite import (
 )
 
 import dagster._check as check
-import dagster.seven as seven
-from dagster.core.errors import DagsterUserCodeUnreachableError
-from dagster.grpc.client import DagsterGrpcClient
-from dagster.seven import nullcontext
-from dagster.utils import file_relative_path
+import dagster._seven as seven
+from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._grpc.client import DagsterGrpcClient
+from dagster._seven import nullcontext
+from dagster._utils import file_relative_path
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 HARDCODED_PORT = 8090

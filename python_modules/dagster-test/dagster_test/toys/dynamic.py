@@ -1,7 +1,7 @@
-from dagster import Field, pipeline
-from dagster.core.definitions.events import DynamicOutput
-from dagster.core.definitions.output import DynamicOutputDefinition
-from dagster.legacy import solid
+from dagster import Field
+from dagster._core.definitions.events import DynamicOutput
+from dagster._core.definitions.output import DynamicOutputDefinition
+from dagster._legacy import pipeline, solid
 
 
 @solid

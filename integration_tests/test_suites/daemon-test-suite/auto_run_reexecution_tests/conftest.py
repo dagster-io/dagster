@@ -1,8 +1,8 @@
 import pytest
 
-from dagster.core.test_utils import create_test_daemon_workspace
-from dagster.core.workspace.load_target import EmptyWorkspaceTarget
-from dagster.utils.test.postgres_instance import postgres_instance_for_test
+from dagster._core.test_utils import create_test_daemon_workspace
+from dagster._core.workspace.load_target import EmptyWorkspaceTarget
+from dagster._utils.test.postgres_instance import postgres_instance_for_test
 
 from .utils import workspace_load_target
 

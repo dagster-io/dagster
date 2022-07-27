@@ -1,14 +1,14 @@
 import pytest
 
-from dagster import seven
+from dagster import _seven
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="docker doesn't work on windows tests")
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="docker doesn't work on windows tests")
 def test_ping(docker_grpc_client):
     assert docker_grpc_client.ping("foobar") == "foobar"
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="docker doesn't work on windows tests")
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="docker doesn't work on windows tests")
 def test_streaming(docker_grpc_client):
     results = [
         result for result in docker_grpc_client.streaming_ping(sequence_length=10, echo="foo")

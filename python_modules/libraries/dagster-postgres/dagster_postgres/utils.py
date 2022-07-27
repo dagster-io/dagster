@@ -8,9 +8,9 @@ import psycopg2.errorcodes
 import sqlalchemy
 
 from dagster import _check as check
-from dagster.core.definitions.policy import Backoff, Jitter, calculate_delay
-from dagster.core.storage.config import pg_config  # pylint: disable=unused-import
-from dagster.core.storage.sql import get_alembic_config
+from dagster._core.definitions.policy import Backoff, Jitter, calculate_delay
+from dagster._core.storage.config import pg_config  # pylint: disable=unused-import
+from dagster._core.storage.sql import get_alembic_config
 
 
 class DagsterPostgresException(Exception):

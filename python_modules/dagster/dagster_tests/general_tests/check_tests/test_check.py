@@ -14,7 +14,7 @@ from dagster._check import (
     NotImplementedCheckError,
     ParameterCheckError,
 )
-from dagster.utils import frozendict, frozenlist
+from dagster._utils import frozendict, frozenlist
 
 
 @contextmanager
