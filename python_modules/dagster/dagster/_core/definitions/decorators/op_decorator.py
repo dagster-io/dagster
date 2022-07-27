@@ -222,17 +222,20 @@ def op(
                 return 'cool', 4
     """
 
-    # This case is for when decorator is used bare, without arguments. e.g. @op versus @op()
     if callable(name):
-        check.invariant(input_defs is None)
-        check.invariant(output_defs is None)
-        check.invariant(description is None)
-        check.invariant(config_schema is None)
-        check.invariant(required_resource_keys is None)
-        check.invariant(tags is None)
-        check.invariant(version is None)
-
-        return _Op()(name)
+        return _Op(
+            name=None,
+            description=description,
+            input_defs=input_defs,
+            output_defs=output_defs,
+            config_schema=config_schema,
+            required_resource_keys=required_resource_keys,
+            tags=tags,
+            version=version,
+            retry_policy=retry_policy,
+            ins=ins,
+            out=out,
+        )(name)
 
     return _Op(
         name=name,

@@ -1341,3 +1341,29 @@ def test_output_mismatch_tuple_lengths():
 
     with pytest.raises(DagsterInvariantViolationError, match="Length mismatch"):
         the_op()
+
+
+def test_use_decorator_as_function():
+    def my_fun() -> Tuple[int, str]:
+        return 1, "q"
+
+    my_op = op(
+        my_fun, description="my_op", out={"a": Out(metadata={"x": 1}), "b": Out(metadata={"y": 2})}
+    )
+    assert len(my_op.output_defs) == 2
+
+    assert my_op.outs == {
+        "a": Out(
+            metadata={"x": 1}, dagster_type=Int, is_required=True, io_manager_key="io_manager"
+        ),
+        "b": Out(
+            metadata={"y": 2}, dagster_type=String, is_required=True, io_manager_key="io_manager"
+        ),
+    }
+    assert my_op.output_defs[0].metadata == {"x": 1}
+    assert my_op.output_defs[0].name == "a"
+    assert my_op.output_defs[1].metadata == {"y": 2}
+    assert my_op.output_defs[1].name == "b"
+
+    assert my_op.description == "my_op"
+    assert my_op() == (1, "q")
