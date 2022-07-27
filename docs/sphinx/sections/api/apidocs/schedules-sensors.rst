@@ -72,9 +72,3 @@ Sensors
 
 .. autodecorator:: run_failure_sensor
 
-Legacy APIs
------------
-
-.. autodecorator:: pipeline_failure_sensor
-
-.. autoclass:: PipelineFailureSensorContext

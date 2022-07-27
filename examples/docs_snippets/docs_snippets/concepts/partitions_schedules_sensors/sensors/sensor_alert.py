@@ -107,7 +107,7 @@ email_on_run_failure = make_email_on_run_failure_sensor(
 from dagster import run_status_sensor, RunStatusSensorContext, DagsterRunStatus
 
 
-@run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS)
+@run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
 def my_slack_on_run_success(context: RunStatusSensorContext):
     slack_client = WebClient(token=os.environ["SLACK_DAGSTER_ETL_BOT_TOKEN"])
 
@@ -122,7 +122,7 @@ def my_slack_on_run_success(context: RunStatusSensorContext):
 # start_simple_success_sensor
 
 
-@run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS)
+@run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
 def my_email_sensor(context: RunStatusSensorContext):
     message = f'Job "{context.pipeline_run.pipeline_name}" succeeded.'
     email_alert(message)

@@ -123,7 +123,7 @@ def test_sensor_w_no_job():
 
 
 def test_run_status_sensor():
-    @run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS)
+    @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
     def status_sensor(context):
         assert context.dagster_event.event_type_value == "PIPELINE_SUCCESS"
 
@@ -202,14 +202,14 @@ def test_run_status_sensor_run_request():
         dagster_event=dagster_event,
     )
 
-    @run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS)
+    @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
     def basic_sensor(_):
         return RunRequest(run_key=None, run_config={}, tags={})
 
     assert basic_sensor(context).run_config == {}
 
     # test with context
-    @run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS)
+    @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
     def basic_sensor_w_arg(context):
         assert context.dagster_event.event_type_value == "PIPELINE_SUCCESS"
         return RunRequest(run_key=None, run_config={}, tags={})

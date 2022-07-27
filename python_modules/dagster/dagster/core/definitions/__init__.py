@@ -132,11 +132,9 @@ from .resource_definition import ResourceDefinition, make_values_resource, resou
 from .run_config_schema import RunConfigSchema, create_run_config_schema
 from .run_request import InstigatorType, RunRequest, SkipReason
 from .run_status_sensor_definition import (
-    PipelineFailureSensorContext,
     RunFailureSensorContext,
     RunStatusSensorContext,
     RunStatusSensorDefinition,
-    pipeline_failure_sensor,
     run_failure_sensor,
     run_status_sensor,
 )

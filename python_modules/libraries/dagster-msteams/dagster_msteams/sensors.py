@@ -5,8 +5,8 @@ from dagster_msteams.client import TeamsClient
 
 from dagster import DefaultSensorStatus
 from dagster.core.definitions.run_status_sensor_definition import (
-    PipelineFailureSensorContext,
-    pipeline_failure_sensor,
+    RunFailureSensorContext,
+    run_failure_sensor,
 )
 
 
@@ -21,7 +21,7 @@ def _default_failure_message(context: PipelineFailureSensorContext) -> str:
     )
 
 
-def make_teams_on_pipeline_failure_sensor(
+def make_teams_on_run_failure_sensor(
     hook_url: str,
     message_fn: Callable[[PipelineFailureSensorContext], str] = _default_failure_message,
     http_proxy: Optional[str] = None,
@@ -32,7 +32,7 @@ def make_teams_on_pipeline_failure_sensor(
     dagit_base_url: Optional[str] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
-    """Create a sensor on pipeline failures that will message the given MS Teams webhook URL.
+    """Create a sensor on run failures that will message the given MS Teams webhook URL.
 
     Args:
         hook_url (str): MS Teams incoming webhook URL.
@@ -53,23 +53,23 @@ def make_teams_on_pipeline_failure_sensor(
 
         .. code-block:: python
 
-            teams_on_pipeline_failure = make_teams_on_pipeline_failure_sensor(
+            teams_on_run_failure = make_teams_on_run_failure_sensor(
                 hook_url=os.getenv("TEAMS_WEBHOOK_URL")
             )
 
             @repository
             def my_repo():
-                return [my_pipeline + teams_on_pipeline_failure]
+                return [my_job + teams_on_run_failure]
 
         .. code-block:: python
 
-            def my_message_fn(context: PipelineFailureSensorContext) -> str:
-                return "Pipeline {pipeline_name} failed! Error: {error}".format(
-                    pipeline_name=context.pipeline_run.pipeline_name,
+            def my_message_fn(context: RunFailureSensorContext) -> str:
+                return "Job {job_name} failed! Error: {error}".format(
+                    job_name=context.dagster_run.pipeline_name,
                     error=context.failure_event.message,
                 )
 
-            teams_on_pipeline_failure = make_teams_on_pipeline_failure_sensor(
+            teams_on_run_failure = make_teams_on_run_run_sensor(
                 hook_url=os.getenv("TEAMS_WEBHOOK_URL"),
                 message_fn=my_message_fn,
                 dagit_base_url="http://localhost:3000",
@@ -86,8 +86,8 @@ def make_teams_on_pipeline_failure_sensor(
         verify=verify,
     )
 
-    @pipeline_failure_sensor(name=name, default_status=default_status)
-    def teams_on_pipeline_failure(context: PipelineFailureSensorContext):
+    @run_failure_sensor(name=name, default_status=default_status)
+    def teams_on_run_failure(context: RunFailureSensorContext):
 
         text = message_fn(context)
         if dagit_base_url:
@@ -99,4 +99,4 @@ def make_teams_on_pipeline_failure_sensor(
         card.add_attachment(text_message=text)
         teams_client.post_message(payload=card.payload)
 
-    return teams_on_pipeline_failure
+    return teams_on_run_failure

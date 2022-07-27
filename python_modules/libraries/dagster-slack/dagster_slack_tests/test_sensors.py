@@ -1,17 +1,17 @@
 import os
 
-from dagster_slack.sensors import make_slack_on_pipeline_failure_sensor
+from dagster_slack.sensors import make_slack_on_run_failure_sensor
 
 from dagster import repository
 from dagster.core.test_utils import environ
 
 
-def test_slack_pipeline_failure_sensor_def():
+def test_slack_run_failure_sensor_def():
     with environ({"SLACK_TOKEN": "blah"}):
 
         sensor_name = "my_failure_sensor"
 
-        my_sensor = make_slack_on_pipeline_failure_sensor(
+        my_sensor = make_slack_on_run_failure_sensor(
             channel="#foo", slack_token=os.getenv("SLACK_TOKEN"), name=sensor_name
         )
         assert my_sensor.name == sensor_name

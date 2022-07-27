@@ -51,14 +51,6 @@ PICKLE_PROTOCOL = 4
 DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
 
 
-# Back-compat after make_email_on_pipeline_failure_sensor and make_email_on_run_failure_sensor
-# were moved to avoid circular-dependency issues
-def make_email_on_pipeline_failure_sensor(*args, **kwargs):
-    from .alert import make_email_on_pipeline_failure_sensor  # pylint: disable=redefined-outer-name
-
-    return make_email_on_pipeline_failure_sensor(*args, **kwargs)
-
-
 def make_email_on_run_failure_sensor(*args, **kwargs):
     from .alert import make_email_on_run_failure_sensor  # pylint: disable=redefined-outer-name
 

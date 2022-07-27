@@ -149,7 +149,6 @@ from dagster.core.definitions import (
     multiprocess_executor,
     op,
     pipeline,
-    pipeline_failure_sensor,
     reconstructable,
     repository,
     resource,
@@ -488,7 +487,6 @@ __all__ = [
     "success_hook",
     "failure_hook",
     "run_failure_sensor",
-    "pipeline_failure_sensor",
     "run_status_sensor",
     # Execution
     "CompositeSolidExecutionResult",

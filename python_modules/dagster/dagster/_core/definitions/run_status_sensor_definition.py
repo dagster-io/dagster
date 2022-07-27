@@ -5,25 +5,26 @@ from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Union, c
 import pendulum
 
 import dagster._check as check
-from dagster.core.errors import (
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     RunStatusSensorExecutionError,
     user_code_error_boundary,
 )
-from dagster.core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent
-from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import DagsterRun, PipelineRun, PipelineRunStatus, RunsFilter
-from dagster.serdes import (
+from dagster._core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, PipelineRun, RunsFilter
+from dagster._serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
     whitelist_for_serdes,
 )
-from dagster.serdes.errors import DeserializationError
-from dagster.serdes.serdes import register_serdes_tuple_fallbacks
-from dagster.seven import JSONDecodeError
-from dagster.utils import utc_datetime_from_timestamp
-from dagster.utils.backcompat import deprecation_warning
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster._serdes.errors import DeserializationError
+from dagster._serdes.serdes import register_serdes_tuple_fallbacks
+from dagster._seven import JSONDecodeError
+from dagster._utils import utc_datetime_from_timestamp
+from dagster._utils.backcompat import deprecation_warning
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 from ..decorator_utils import get_function_params
 from .graph_definition import GraphDefinition
@@ -32,6 +33,8 @@ from .pipeline_definition import PipelineDefinition
 from .sensor_definition import (
     DefaultSensorStatus,
     PipelineRunReaction,
+    RawSensorEvaluationFunctionReturn,
+    RunRequest,
     SensorDefinition,
     SensorEvaluationContext,
     SkipReason,
@@ -103,14 +106,6 @@ class RunStatusSensorContext(
             dagster_run=check.inst_param(dagster_run, "dagster_run", DagsterRun),
             dagster_event=check.inst_param(dagster_event, "dagster_event", DagsterEvent),
             instance=check.inst_param(instance, "instance", DagsterInstance),
-        )
-
-    def for_pipeline_failure(self):
-        return PipelineFailureSensorContext(
-            sensor_name=self.sensor_name,
-            dagster_run=self.dagster_run,
-            dagster_event=self.dagster_event,
-            instance=self.instance,
         )
 
     def for_run_failure(self):
@@ -237,7 +232,7 @@ def run_failure_sensor(
             sensor_name = name
 
         @run_status_sensor(
-            run_status=PipelineRunStatus.FAILURE,
+            run_status=DagsterRunStatus.FAILURE,
             name=sensor_name,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
@@ -251,7 +246,7 @@ def run_failure_sensor(
 
         return _run_failure_sensor
 
-    # This case is for when decorator is used bare, without arguments
+    # This case is for when decorator is used bare, without arguments, i.e. @run_failure_sensor
     if callable(name):
         return inner(name)
 
@@ -265,7 +260,7 @@ class RunStatusSensorDefinition(SensorDefinition):
 
     Args:
         name (str): The name of the sensor. Defaults to the name of the decorated function.
-        run_status (PipelineRunStatus): The status of a run which will be
+        run_status (DagsterRunStatus): The status of a run which will be
             monitored by the sensor.
         run_status_sensor_fn (Callable[[RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]]): The core
             evaluation function for the sensor. Takes a :py:class:`~dagster.RunStatusSensorContext`.
@@ -286,10 +281,8 @@ class RunStatusSensorDefinition(SensorDefinition):
     def __init__(
         self,
         name: str,
-        run_status: PipelineRunStatus,
-        run_status_sensor_fn: Callable[
-            [RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]
-        ],
+        run_status: DagsterRunStatus,
+        run_status_sensor_fn: Callable[[RunStatusSensorContext], RawSensorEvaluationFunctionReturn],
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         monitored_jobs: Optional[
@@ -300,10 +293,10 @@ class RunStatusSensorDefinition(SensorDefinition):
         request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
     ):
 
-        from dagster.core.storage.event_log.base import EventRecordsFilter, RunShardedEventsCursor
+        from dagster._core.storage.event_log.base import EventRecordsFilter, RunShardedEventsCursor
 
         check.str_param(name, "name")
-        check.inst_param(run_status, "run_status", PipelineRunStatus)
+        check.inst_param(run_status, "run_status", DagsterRunStatus)
         check.callable_param(run_status_sensor_fn, "run_status_sensor_fn")
         check.opt_int_param(minimum_interval_seconds, "minimum_interval_seconds")
         check.opt_str_param(description, "description")
@@ -434,7 +427,13 @@ class RunStatusSensorDefinition(SensorDefinition):
                                     update_timestamp=update_timestamp.isoformat(),
                                 ).to_json()
                             )
-                            yield from sensor_return
+
+                            if isinstance(
+                                sensor_return, (RunRequest, SkipReason, PipelineRunReaction)
+                            ):
+                                yield sensor_return
+                            else:
+                                yield from sensor_return
                             return
                 except RunStatusSensorExecutionError as run_status_sensor_execution_error:
                     # When the user code errors, we report error to the sensor tick not the original run.
@@ -512,7 +511,7 @@ class RunStatusSensorDefinition(SensorDefinition):
 
 
 def run_status_sensor(
-    run_status: PipelineRunStatus,
+    run_status: Optional[DagsterRunStatus] = None,
     name: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
@@ -523,7 +522,7 @@ def run_status_sensor(
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
 ) -> Callable[
-    [Callable[[RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]]],
+    [Callable[[RunStatusSensorContext], RawSensorEvaluationFunctionReturn]],
     RunStatusSensorDefinition,
 ]:
     """
@@ -533,7 +532,7 @@ def run_status_sensor(
     Takes a :py:class:`~dagster.RunStatusSensorContext`.
 
     Args:
-        run_status (Optional[PipelineRunStatus]): The status of run execution which will be
+        run_status (Optional[DagsterRunStatus]): The status of run execution which will be
             monitored by the sensor.
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated function.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
@@ -551,7 +550,7 @@ def run_status_sensor(
     """
 
     def inner(
-        fn: Callable[["RunStatusSensorContext"], Union[SkipReason, PipelineRunReaction]]
+        fn: Callable[["RunStatusSensorContext"], RawSensorEvaluationFunctionReturn]
     ) -> RunStatusSensorDefinition:
 
         check.callable_param(fn, "fn")
