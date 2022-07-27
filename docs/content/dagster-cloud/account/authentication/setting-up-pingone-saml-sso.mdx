@@ -1,5 +1,194 @@
 ---
 title: "Setting up PingOne SSO for Dagster Cloud | Dagster Docs"
+
+display_name: "PingOne"
+feature_name: "saml_sso_pingone"
+pricing_plan: "enterprise"
 ---
 
 # Setting up PingOne SSO for Dagster Cloud
+
+<Note>
+   This guide is applicable to Dagster Cloud.
+</Note>
+
+In this guide, you'll configure PingOne to use single sign-on (SSO) with your Dagster Cloud organization.
+
+---
+
+## Prerequisites
+
+To complete the steps in this guide, you'll need:
+
+- The following in PingOne:
+  - An existing PingOne account
+  - Organization admin permissions
+- To have installed the [`dagster-cloud-cli`](https://pypi.org/project/dagster-cloud-cli/) Python package and have access to the `dagster-cloud` CLI
+- The following in Dagster Cloud:
+  - [Access to a user token](/auth#managing-user-and-agent-tokens)
+  - [Organization Admin permissions](/auth#role-based-access-controls) in your organization
+
+---
+
+## Step 1: Add the Dagster Cloud app in PingOne
+
+1. Sign into your PingOne Console.
+
+2. Using the sidebar, click **Connections > Applications**.
+
+   <Image
+   alt="PineOne Sidebar"
+   src="/images/dagster-cloud/sso/pingone/sidebar.png"
+   width={1742}
+   height={1046}
+   />
+
+3. On the **Applications** page, add an application.
+
+4. In **Select an application type**, click **Web app**.
+
+5. Click **SAML > Configure**:
+
+   <Image
+   alt="Add App"
+   src="/images/dagster-cloud/sso/pingone/add_app.png"
+   width={2562}
+   height={1878}
+   />
+
+---
+
+## Step 2: Configure SSO in PingOne
+
+1. In the **Create App Profile** page:
+
+   1. Add an application name, description, and icon:
+
+      <Image
+      alt="Application Details"
+      src="/images/dagster-cloud/sso/pingone/application_details.png"
+      width={2560}
+      height={1080}
+      />
+
+   2. When finished, click **Save and Continue.**
+
+2. In the **Configure SAML** page:
+
+   1. Fill in the following:
+
+      - **ACS URLS** and **Entity ID**: Copy and paste the following URL, replacing `<organization_name>` with your Dagster Cloud organization name:
+
+            https://<organization_name>.dagster.cloud/auth/saml/consume
+
+      - **Assertion Validity Duration**: Type `60`.
+
+      In the following example, the organization’s name is `hooli` and the Dagster Cloud domain is `https://hooli.dagster.cloud`:
+
+      <Image
+      alt="Service Provider Details"
+      src="/images/dagster-cloud/sso/pingone/service_provider_details.png"
+      width={2554}
+      height={2282}
+      />
+
+   2. When finished, click **Save and Continue.**
+
+3. In the **Map Attributes** page:
+
+   1. Configure the following attributes:
+
+      | Application attribute | Outgoing value |
+      | --------------------- | -------------- |
+      | Email                 | Email Address  |
+      | FirstName             | Given Name     |
+      | LastName              | Family Name    |
+
+      The page should look similar to the following:
+
+      <Image
+      alt="Attribute Mapping"
+      src="/images/dagster-cloud/sso/pingone/attribute_mapping.png"
+      width={2554}
+      height={1471}
+      />
+
+   2. When finished, click **Save and Continue.**
+
+---
+
+## Step 3: Upload the SAML metadata to Dagster Cloud
+
+Next, you'll save and upload the application's SAML metadata to Dagster Cloud. This will enable single sign-on.
+
+1. In PingOne, open the Dagster Cloud application.
+
+2. Click the **Configuration** tab.
+
+3. In the **Connection Details** section, click **Download Metadata**:
+
+   <Image
+   alt="SAML Metadata"
+   src="/images/dagster-cloud/sso/pingone/saml_metadata.png"
+   width={1549}
+   height={538}
+   />
+
+4. When prompted, save the file to your computer.
+
+5. After you've downloaded the SAML metadata file, upload it to Dagster Cloud using the `dagster-cloud` CLI:
+
+   ```shell
+   dagster-cloud organization settings saml upload-identity-provider-metadata <path/to/metadata> \
+     --api-token=<user_token> \
+     --url https://<organization_name>.dagster.cloud
+   ```
+
+---
+
+## Step 4: Grant access to users
+
+Next, you'll assign users to the Dagster Cloud application in PingOne. This will allow them to log in using their PingOne credentials with the sign in flow is initiated.
+
+1. In the Dagster Cloud application, click the **Access** tab.
+
+2. Click the **pencil icon** to edit the **Group membership policy**:
+
+   <Image
+   alt="Assign New Login"
+   src="/images/dagster-cloud/sso/pingone/new_login.png"
+   width={1564}
+   height={412}
+   />
+
+3. Edit the policy as needed to grant users access to the application.
+
+---
+
+## Step 5: Test your SSO configuration
+
+Lastly, you'll test your SSO configuration:
+
+- [Service provider (SP)-initiated login](#testing-a-service-provider-initiated-login)
+- [Identity provider (idP)-initiated login](#testing-an-identity-provider-initiated-login)
+
+### Testing a service provider-initiated login
+
+1. Navigate to your Dagster Cloud sign in page at `https://<organization_name>.dagster.cloud`
+
+2. Click the **Sign in with SSO** button.
+
+3. Initiate the login flow and address issues that arise, if any.
+
+### Testing an identity provider-initiated login
+
+In the PingOne application portal, click the **Dagster Cloud** icon:
+
+<Image
+alt="Identity Provider Login"
+src="/images/dagster-cloud/sso/pingone/identity_provider_login.png"
+width={2147}
+height={710}
+/>
+
+If successful, you'll be automatically signed in to your Dagster Cloud organization.
