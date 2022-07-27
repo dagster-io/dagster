@@ -31,10 +31,11 @@ Using these Dagster concepts we will:
 
 <CodeReferenceLink filePath="examples/local_to_production/" />
 
-You will also need to install a few additional pip libraries:
+To follow along with this guide, you can clone the full code example and install a few additional pip libraries:
 
 ```bash
-cd examples/local_to_production
+git clone git@github.com:dagster-io/dagster.git
+cd dagster/examples/local_to_production
 pip install -e .
 ```
 
@@ -119,6 +120,7 @@ from local_to_production.assets import comments, items, stories
 snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
 
 
+# Note that storing passwords in configuration is bad practice. It will be resolved later in the guide.
 @repository
 def repo():
     resource_defs = {
@@ -126,8 +128,7 @@ def repo():
             {
                 "account": "abc1234.us-east-1",
                 "user": "me@company.com",
-                # storing passwords in configuration is bad practice. We'll address this later
-                # in the guide
+                # password in config is bad practice
                 "password": "my_super_secret_password",
                 "database": "LOCAL",
                 "schema": "ALICE",
@@ -171,8 +172,7 @@ Instead, we can set up the repository to determine the configuration for resourc
 ```python file=/guides/dagster/local_to_production/repository/repository_v2.py startafter=start endbefore=end
 # repository.py
 
-# Note: there are multiple issues with how this config is specified, mainly that
-# passwords are being stored in code. This will be addressed next.
+# Note that storing passwords in configuration is bad practice. It will be resolved soon.
 @repository
 def repo():
     resource_defs = {
@@ -278,7 +278,7 @@ resource_defs = {
     "local": {...},
     "production": {...},
     "staging": {
-        "io_manager": snowflake_io_manager.configured(
+        "snowflake_io_manager": snowflake_io_manager.configured(
             {
                 "account": "abc1234.us-east-1",
                 "user": "system@company.com",

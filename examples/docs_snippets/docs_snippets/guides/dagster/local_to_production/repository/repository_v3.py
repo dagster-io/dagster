@@ -2,10 +2,9 @@ import os
 
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+from local_to_production.assets import comments, items, stories
 
 from dagster import repository, with_resources
-
-from local_to_production.assets import comments, items, stories
 
 # the snowflake io manager can be initialized to handle different data types
 # here we use the pandas type handler so we can store pandas DataFrames
@@ -59,7 +58,7 @@ resource_defs = {
     "local": {...},
     "production": {...},
     "staging": {
-        "io_manager": snowflake_io_manager.configured(
+        "snowflake_io_manager": snowflake_io_manager.configured(
             {
                 "account": "abc1234.us-east-1",
                 "user": "system@company.com",
