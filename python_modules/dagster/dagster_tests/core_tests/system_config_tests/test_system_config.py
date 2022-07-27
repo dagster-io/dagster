@@ -4,18 +4,11 @@ from dagster import (
     Any,
     DependencyDefinition,
     Field,
-    InputDefinition,
     Int,
-    ModeDefinition,
     NodeInvocation,
-    OutputDefinition,
-    PipelineDefinition,
     ResourceDefinition,
     Shape,
-    SolidDefinition,
     String,
-    execute_pipeline,
-    lambda_solid,
 )
 from dagster._config import ConfigTypeKind, process_config
 from dagster._core.definitions import create_run_config_schema
@@ -23,8 +16,22 @@ from dagster._core.definitions.run_config import (
     RunConfigSchemaCreationData,
     define_solid_dictionary_cls,
 )
-from dagster._core.system_config.objects import ResolvedRunConfig, ResourceConfig, SolidConfig
-from dagster._legacy import pipeline, solid
+from dagster._core.system_config.objects import (
+    ResolvedRunConfig,
+    ResourceConfig,
+    SolidConfig,
+)
+from dagster._legacy import (
+    InputDefinition,
+    ModeDefinition,
+    OutputDefinition,
+    PipelineDefinition,
+    SolidDefinition,
+    execute_pipeline,
+    lambda_solid,
+    pipeline,
+    solid,
+)
 from dagster._loggers import default_loggers
 
 
@@ -83,7 +90,10 @@ def test_all_types_provided():
 
 def test_provided_default_on_resources_config():
     @solid(
-        name="some_solid", input_defs=[], output_defs=[], required_resource_keys={"some_resource"}
+        name="some_solid",
+        input_defs=[],
+        output_defs=[],
+        required_resource_keys={"some_resource"},
     )
     def some_solid(_):
         return None
@@ -146,7 +156,10 @@ def test_solid_dictionary_type():
     env_obj = ResolvedRunConfig.build(
         pipeline_def,
         {
-            "solids": {"int_config_solid": {"config": 1}, "string_config_solid": {"config": "bar"}},
+            "solids": {
+                "int_config_solid": {"config": 1},
+                "string_config_solid": {"config": "bar"},
+            },
         },
     )
 
@@ -258,7 +271,10 @@ def test_whole_environment():
                 compute_fn=lambda *args: None,
             ),
             SolidDefinition(
-                name="no_config_solid", input_defs=[], output_defs=[], compute_fn=lambda *args: None
+                name="no_config_solid",
+                input_defs=[],
+                output_defs=[],
+                compute_fn=lambda *args: None,
             ),
         ],
     )
@@ -276,7 +292,10 @@ def test_whole_environment():
         "int_config_solid": SolidConfig.from_dict({"config": 123}),
         "no_config_solid": SolidConfig.from_dict({}),
     }
-    assert env.resources == {"test_resource": ResourceConfig(1), "io_manager": ResourceConfig(None)}
+    assert env.resources == {
+        "test_resource": ResourceConfig(1),
+        "io_manager": ResourceConfig(None),
+    }
 
 
 def test_solid_config_error():
@@ -440,7 +459,8 @@ def test_optional_solid_with_optional_subfield():
             SolidDefinition(
                 name="int_config_solid",
                 config_schema=Field(
-                    {"optional_field": Field(String, is_required=False)}, is_required=False
+                    {"optional_field": Field(String, is_required=False)},
+                    is_required=False,
                 ),
                 input_defs=[],
                 output_defs=[],

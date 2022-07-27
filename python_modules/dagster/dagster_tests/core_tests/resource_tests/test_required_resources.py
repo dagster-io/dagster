@@ -2,28 +2,34 @@ import pytest
 
 from dagster import (
     AssetMaterialization,
-    CompositeSolidDefinition,
     DagsterInstance,
     DagsterType,
     DagsterUnknownResourceError,
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
     ResourceDefinition,
     String,
-    composite_solid,
     dagster_type_loader,
     dagster_type_materializer,
-    execute_pipeline,
     resource,
     usable_as_dagster_type,
 )
 from dagster._core.definitions.configurable import configured
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidSubsetError,
+)
 from dagster._core.execution.api import create_execution_plan, execute_run
 from dagster._core.types.dagster_type import create_any_type
-from dagster._legacy import pipeline, solid
+from dagster._legacy import (
+    CompositeSolidDefinition,
+    InputDefinition,
+    ModeDefinition,
+    OutputDefinition,
+    composite_solid,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
 
 
 def get_resource_init_pipeline(resources_initted):
@@ -353,7 +359,9 @@ def test_execution_plan_subset_with_aliases():
     )
 
     result = execute_run(
-        InMemoryPipeline(selective_init_test_pipeline_with_alias), pipeline_run, instance
+        InMemoryPipeline(selective_init_test_pipeline_with_alias),
+        pipeline_run,
+        instance,
     )
 
     assert result.success
@@ -661,7 +669,8 @@ def test_loader_missing_resource_fails():
         return "A"
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="required by the loader on type 'CustomType'"
+        DagsterInvalidDefinitionError,
+        match="required by the loader on type 'CustomType'",
     ):
 
         @pipeline
@@ -682,7 +691,8 @@ def test_materialize_missing_resource_fails():
         return "A"
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="required by the materializer on type 'CustomType'"
+        DagsterInvalidDefinitionError,
+        match="required by the materializer on type 'CustomType'",
     ):
 
         @pipeline

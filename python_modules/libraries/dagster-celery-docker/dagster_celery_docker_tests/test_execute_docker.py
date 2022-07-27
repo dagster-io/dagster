@@ -11,11 +11,10 @@ from dagster_test.test_project import (
     get_test_project_environments_path,
     get_test_project_recon_pipeline,
 )
-
-from dagster import execute_pipeline
 from dagster._utils import merge_dicts
 from dagster._utils.test.postgres_instance import postgres_instance_for_test
 from dagster._utils.yaml_utils import merge_yamls
+from dagster._legacy import execute_pipeline
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

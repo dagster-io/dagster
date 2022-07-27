@@ -1,6 +1,4 @@
 import pytest
-
-from dagster import ModeDefinition, PipelineDefinition
 from dagster import _check as check
 from dagster import resource
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
@@ -15,7 +13,7 @@ from dagster._core.execution.api import (
 )
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import solid
+from dagster._legacy import ModeDefinition, PipelineDefinition, solid
 
 
 @resource
@@ -146,7 +144,9 @@ def test_execute_run_iterator():
         ) as run_monitoring_instance:
             event = next(
                 execute_run_iterator(
-                    InMemoryPipeline(pipeline_def), pipeline_run, instance=run_monitoring_instance
+                    InMemoryPipeline(pipeline_def),
+                    pipeline_run,
+                    instance=run_monitoring_instance,
                 )
             )
             assert (

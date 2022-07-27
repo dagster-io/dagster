@@ -6,17 +6,13 @@ from dagster import (
     DagsterInvalidDefinitionError,
     Dict,
     Float,
-    InputDefinition,
     Int,
     List,
     Nothing,
     Optional,
-    OutputDefinition,
-    PipelineDefinition,
     Set,
     String,
     Tuple,
-    lambda_solid,
 )
 from dagster._core.types.dagster_type import (
     ALL_RUNTIME_BUILTINS,
@@ -24,7 +20,13 @@ from dagster._core.types.dagster_type import (
     DagsterTypeKind,
     resolve_dagster_type,
 )
-from dagster._legacy import pipeline
+from dagster._legacy import (
+    InputDefinition,
+    OutputDefinition,
+    PipelineDefinition,
+    lambda_solid,
+    pipeline,
+)
 
 
 def inner_type_key_set(dagster_type):

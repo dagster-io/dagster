@@ -9,12 +9,10 @@ from dagster import (
     EnumValue,
     Field,
     Int,
-    PipelineDefinition,
-    execute_pipeline,
 )
 from dagster._config import Enum as ConfigEnum
 from dagster._config.validate import validate_config
-from dagster._legacy import pipeline, solid
+from dagster._legacy import PipelineDefinition, execute_pipeline, pipeline, solid
 
 
 def define_test_enum_type():

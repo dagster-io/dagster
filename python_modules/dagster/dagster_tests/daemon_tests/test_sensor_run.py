@@ -17,20 +17,30 @@ from dagster import (
     Field,
     Output,
     graph,
-    pipeline_failure_sensor,
     repository,
     run_failure_sensor,
 )
 from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.run_status_sensor_definition import run_status_sensor
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus, RunRequest, SkipReason
+from dagster._core.definitions.sensor_definition import (
+    DefaultSensorStatus,
+    RunRequest,
+    SkipReason,
+)
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.api import execute_pipeline
-from dagster._core.host_representation import ExternalInstigatorOrigin, ExternalRepositoryOrigin
+from dagster._core.host_representation import (
+    ExternalInstigatorOrigin,
+    ExternalRepositoryOrigin,
+)
 from dagster._core.instance import DagsterInstance
-from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
+from dagster._core.scheduler.instigation import (
+    InstigatorState,
+    InstigatorStatus,
+    TickStatus,
+)
 from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.test_utils import (
@@ -42,8 +52,11 @@ from dagster._core.test_utils import (
 )
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._daemon import get_default_daemon_logger
-from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
-from dagster._legacy import pipeline, solid
+from dagster._daemon.sensor import (
+    execute_sensor_iteration,
+    execute_sensor_iteration_loop,
+)
+from dagster._legacy import pipeline_failure_sensor, pipeline, solid
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
 
@@ -2287,7 +2300,8 @@ def test_status_in_code_sensor(executor):
                 assert (
                     len(
                         instance.get_ticks(
-                            never_running_origin.get_id(), not_running_sensor.selector_id
+                            never_running_origin.get_id(),
+                            not_running_sensor.selector_id,
                         )
                     )
                     == 0
@@ -2319,7 +2333,8 @@ def test_status_in_code_sensor(executor):
                 assert (
                     len(
                         instance.get_ticks(
-                            never_running_origin.get_id(), not_running_sensor.selector_id
+                            never_running_origin.get_id(),
+                            not_running_sensor.selector_id,
                         )
                     )
                     == 0
@@ -2351,7 +2366,8 @@ def test_status_in_code_sensor(executor):
                 assert (
                     len(
                         instance.get_ticks(
-                            never_running_origin.get_id(), not_running_sensor.selector_id
+                            never_running_origin.get_id(),
+                            not_running_sensor.selector_id,
                         )
                     )
                     == 0

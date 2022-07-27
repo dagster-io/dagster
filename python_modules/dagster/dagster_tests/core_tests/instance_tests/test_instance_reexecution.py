@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from dagster import DagsterInstance, execute_pipeline, job, op, reconstructable, repository
+from dagster import DagsterInstance, job, op, reconstructable, repository
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
@@ -15,6 +15,7 @@ from dagster._core.test_utils import (
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import PythonFileTarget
+from dagster._legacy import execute_pipeline
 
 CONDITIONAL_FAIL_ENV = "DAGSTER_CONDIIONAL_FAIL"
 

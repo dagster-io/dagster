@@ -1,4 +1,5 @@
-from dagster import graph, op, pipeline, repository, solid
+from dagster import graph, op, repository
+from dagster._legacy import pipeline, solid
 
 
 @solid

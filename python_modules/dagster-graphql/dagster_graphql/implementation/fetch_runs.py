@@ -1,11 +1,20 @@
 from collections import defaultdict
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, Iterable, KeysView, List, Mapping, Optional, cast
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Iterable,
+    KeysView,
+    List,
+    Mapping,
+    Optional,
+    cast,
+)
 
 from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
 from graphql.execution.base import ResolveInfo
 
-from dagster import AssetKey, PipelineDefinition, PipelineRunStatus
+from dagster import AssetKey
 from dagster import _check as check
 from dagster._config import validate_config
 from dagster._core.definitions import create_run_config_schema
@@ -19,6 +28,7 @@ from dagster._core.storage.tags import TagType, get_tag_type
 from .events import from_event_record
 from .external import ensure_valid_config, get_external_pipeline_or_raise
 from .utils import UserFacingGraphQLError, capture_error
+from dagster._legacy import PipelineDefinition, PipelineRunStatus
 
 if TYPE_CHECKING:
     from ..schema.asset_graph import GrapheneAssetNode
@@ -261,9 +271,10 @@ def get_assets_latest_info(graphene_info, step_keys_by_asset: Mapping[AssetKey, 
                 in_progress_records.append(run_record)
             run_records_by_run_id[run_record.pipeline_run.run_id] = run_record
 
-    in_progress_run_ids_by_asset, unstarted_run_ids_by_asset = _get_in_progress_runs_for_assets(
-        graphene_info, in_progress_records, step_keys_by_asset
-    )
+    (
+        in_progress_run_ids_by_asset,
+        unstarted_run_ids_by_asset,
+    ) = _get_in_progress_runs_for_assets(graphene_info, in_progress_records, step_keys_by_asset)
 
     return [
         GrapheneAssetLatestInfo(

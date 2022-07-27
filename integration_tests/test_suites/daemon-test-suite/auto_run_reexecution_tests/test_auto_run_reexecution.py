@@ -2,7 +2,7 @@
 import logging
 import time
 
-from dagster import DagsterEvent, DagsterEventType, EventLogEntry, PipelineRunStatus
+from dagster import DagsterEvent, DagsterEventType, EventLogEntry
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.instance import DagsterInstance
@@ -15,9 +15,12 @@ from dagster.daemon.auto_run_reexecution.auto_run_reexecution import (
     filter_runs_to_should_retry,
     get_reexecution_strategy,
 )
-from dagster.daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
+from dagster.daemon.auto_run_reexecution.event_log_consumer import (
+    EventLogConsumerDaemon,
+)
 
 from .utils import foo, get_foo_pipeline_handle
+from dagster._legacy import PipelineRunStatus
 
 
 def create_run(instance, **kwargs):

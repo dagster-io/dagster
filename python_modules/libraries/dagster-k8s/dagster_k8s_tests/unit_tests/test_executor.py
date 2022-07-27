@@ -6,21 +6,21 @@ import pytest
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.executor import K8sStepHandler, k8s_job_executor
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
-
-from dagster import PipelineDefinition, execute_pipeline
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanData, PlanOrchestrationContext
-from dagster._core.execution.context_creation_pipeline import create_context_free_log_manager
+from dagster._core.execution.context_creation_pipeline import (
+    create_context_free_log_manager,
+)
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating.step_handler.base import StepHandlerContext
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
 from dagster._grpc.types import ExecuteStepArgs
-from dagster._legacy import solid
+from dagster._legacy import PipelineDefinition, execute_pipeline, solid
 
 
 def _get_pipeline(name, solid_tags=None):
@@ -33,7 +33,8 @@ def _get_pipeline(name, solid_tags=None):
         solid_defs=[foo],
         mode_defs=[
             ModeDefinition(
-                executor_defs=[k8s_job_executor], resource_defs={"io_manager": fs_io_manager}
+                executor_defs=[k8s_job_executor],
+                resource_defs={"io_manager": fs_io_manager},
             )
         ],
     )

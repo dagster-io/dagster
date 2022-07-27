@@ -1,8 +1,6 @@
 import click
 import pytest
 from click.testing import CliRunner
-
-from dagster import execute_pipeline
 from dagster._cli.job import job_launch_command
 from dagster._cli.pipeline import execute_launch_command, pipeline_launch_command
 from dagster._core.errors import DagsterRunAlreadyExists
@@ -20,6 +18,7 @@ from .test_cli_commands import (
     valid_external_job_target_cli_args,
     valid_external_pipeline_target_cli_args_with_preset,
 )
+from dagster._legacy import execute_pipeline
 
 
 def run_launch(kwargs, instance, expected_count=None):

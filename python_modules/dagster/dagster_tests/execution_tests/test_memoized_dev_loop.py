@@ -7,10 +7,8 @@ from dagster import (
     DynamicOut,
     DynamicOutput,
     In,
-    execute_pipeline,
     graph,
     op,
-    reexecute_pipeline,
     resource,
     root_input_manager,
 )
@@ -21,11 +19,16 @@ from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.test_utils import instance_for_test
 
 from .memoized_dev_loop_pipeline import asset_pipeline
+from dagster._legacy import execute_pipeline, reexecute_pipeline
 
 
 def get_step_keys_to_execute(pipeline, run_config, mode, instance):
     return create_execution_plan(
-        pipeline, run_config, mode, instance_ref=instance.get_ref(), tags={MEMOIZED_RUN_TAG: "true"}
+        pipeline,
+        run_config,
+        mode,
+        instance_ref=instance.get_ref(),
+        tags={MEMOIZED_RUN_TAG: "true"},
     ).step_keys_to_execute
 
 
@@ -179,7 +182,9 @@ def test_memoization_with_step_selection():
 
             assert (
                 create_execution_plan(
-                    my_job, instance_ref=instance.get_ref(), step_keys_to_execute=["op1"]
+                    my_job,
+                    instance_ref=instance.get_ref(),
+                    step_keys_to_execute=["op1"],
                 ).step_keys_to_execute
                 == []
             )
@@ -238,7 +243,9 @@ def test_memoization_with_default_strategy_overriden():
             # Ensure that after switching memoization tag off, that the plan recognizes every step
             # should be run.
             unmemoized_plan = create_execution_plan(
-                my_job, instance_ref=instance.get_ref(), tags={MEMOIZED_RUN_TAG: "false"}
+                my_job,
+                instance_ref=instance.get_ref(),
+                tags={MEMOIZED_RUN_TAG: "false"},
             )
             assert len(unmemoized_plan.step_keys_to_execute) == 1
 
@@ -311,7 +318,9 @@ def test_version_strategy_depends_from_context():
             # Ensure that after switching memoization tag off, that the plan recognizes every step
             # should be run.
             unmemoized_plan = create_execution_plan(
-                my_job, instance_ref=instance.get_ref(), tags={MEMOIZED_RUN_TAG: "false"}
+                my_job,
+                instance_ref=instance.get_ref(),
+                tags={MEMOIZED_RUN_TAG: "false"},
             )
             assert len(unmemoized_plan.step_keys_to_execute) == 1
 

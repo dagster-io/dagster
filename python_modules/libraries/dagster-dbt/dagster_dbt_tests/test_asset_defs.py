@@ -5,12 +5,17 @@ from unittest.mock import MagicMock
 import psycopg2
 import pytest
 from dagster_dbt import dbt_cli_resource
-from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
-from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliHandledRuntimeError
+from dagster_dbt.asset_defs import (
+    load_assets_from_dbt_manifest,
+    load_assets_from_dbt_project,
+)
+from dagster_dbt.errors import (
+    DagsterDbtCliFatalRuntimeError,
+    DagsterDbtCliHandledRuntimeError,
+)
 from dagster_dbt.types import DbtOutput
 
 from dagster import (
-    AssetGroup,
     AssetIn,
     AssetKey,
     IOManager,
@@ -22,6 +27,7 @@ from dagster import (
 )
 from dagster._core.definitions import build_assets_job
 from dagster._utils import file_relative_path
+from dagster._legacy import AssetGroup
 
 
 @pytest.mark.parametrize(
@@ -485,7 +491,10 @@ def test_node_info_to_asset_key(
         ),
         ("*hanger2", "hanger2,subdir_schema/least_caloric,sort_by_calories"),
         (
-            ["cold_schema/sort_cold_cereals_by_calories", "subdir_schema/least_caloric"],
+            [
+                "cold_schema/sort_cold_cereals_by_calories",
+                "subdir_schema/least_caloric",
+            ],
             "cold_schema/sort_cold_cereals_by_calories,subdir_schema/least_caloric",
         ),
     ],
@@ -619,7 +628,10 @@ def test_dbt_selects(
 
 @pytest.mark.parametrize(
     "select,error_match",
-    [("tag:nonexist", "No dbt models match"), ("asjdlhalskujh:z", "not a valid method name")],
+    [
+        ("tag:nonexist", "No dbt models match"),
+        ("asjdlhalskujh:z", "not a valid method name"),
+    ],
 )
 def test_static_select_invalid_selection(select, error_match):
     manifest_path = file_relative_path(__file__, "sample_manifest.json")
@@ -634,7 +646,10 @@ def test_source_key_prefix(
     conn_string, test_python_project_dir, dbt_python_config_dir
 ):  # pylint: disable=unused-argument
     dbt_assets = load_assets_from_dbt_project(
-        test_python_project_dir, dbt_python_config_dir, key_prefix="dbt", source_key_prefix="source"
+        test_python_project_dir,
+        dbt_python_config_dir,
+        key_prefix="dbt",
+        source_key_prefix="source",
     )
     assert dbt_assets[0].keys_by_input_name == {
         "source_dagster_dbt_python_test_project_dagster_bot_labeled_users": AssetKey(
@@ -691,7 +706,8 @@ def test_python_interleaving(
                         f'CREATE TABLE IF NOT EXISTS "test-python-schema"."{table}" (user_id integer, is_bot bool)'
                     )
                     cur.executemany(
-                        f'INSERT INTO "test-python-schema"."{table}"' + " VALUES(%s,%s)", obj
+                        f'INSERT INTO "test-python-schema"."{table}"' + " VALUES(%s,%s)",
+                        obj,
                     )
                     conn.commit()
                     cur.close()
@@ -729,7 +745,10 @@ def test_python_interleaving(
         resource_defs={
             "io_manager": test_io_manager,
             "dbt": dbt_cli_resource.configured(
-                {"project_dir": test_python_project_dir, "profiles_dir": dbt_python_config_dir}
+                {
+                    "project_dir": test_python_project_dir,
+                    "profiles_dir": dbt_python_config_dir,
+                }
             ),
         },
     ).build_job("interleave_job")

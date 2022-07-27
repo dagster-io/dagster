@@ -18,7 +18,8 @@ from dagster_dbt import (
     dbt_rpc_test_and_wait,
 )
 
-from dagster import ModeDefinition, execute_solid
+from dagster import execute_solid
+from dagster._legacy import ModeDefinition
 
 
 def test_dbt_rpc_snapshot(rsps):

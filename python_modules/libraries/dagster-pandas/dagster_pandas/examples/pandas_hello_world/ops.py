@@ -1,9 +1,10 @@
 import dagster_pandas as dagster_pd
 import dagstermill
 
-from dagster import In, InputDefinition, Out, OutputDefinition, file_relative_path, op
+from dagster import In, Out, file_relative_path, op
 
 from ...data_frame import DataFrame
+from dagster._legacy import InputDefinition, OutputDefinition
 
 
 @op(

@@ -13,7 +13,6 @@ from dagster import (
     Enum,
     Field,
     In,
-    InputDefinition,
     Nothing,
     Out,
     Permissive,
@@ -32,7 +31,10 @@ from dagster._core.definitions.partition import (
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.pipeline_definition import PipelineSubsetDefinition
-from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
+from dagster._core.definitions.time_window_partitions import (
+    DailyPartitionsDefinition,
+    TimeWindow,
+)
 from dagster._core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
@@ -40,6 +42,7 @@ from dagster._core.errors import (
 )
 from dagster._core.test_utils import instance_for_test
 from dagster._loggers import json_console_logger
+from dagster._legacy import InputDefinition
 
 
 def get_ops():
@@ -569,7 +572,9 @@ def test_enum_config_mapping():
         config_schema=Shape(
             {
                 "my_field": Field(
-                    Enum.from_python_enum(TestEnum), is_required=False, default_value="TWO"
+                    Enum.from_python_enum(TestEnum),
+                    is_required=False,
+                    default_value="TWO",
                 )
             }
         ),
@@ -972,7 +977,8 @@ def test_job_non_default_logger_config():
         pass
 
     your_job = your_graph.to_job(
-        logger_defs={"json": json_console_logger}, config={"loggers": {"json": {"config": {}}}}
+        logger_defs={"json": json_console_logger},
+        config={"loggers": {"json": {"config": {}}}},
     )
 
     result = your_job.execute_in_process()

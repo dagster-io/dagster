@@ -7,12 +7,11 @@ from collections import OrderedDict
 
 from dagster_celery import celery_executor
 from dagster_celery.tags import DAGSTER_CELERY_RUN_PRIORITY_TAG
-
-from dagster import ModeDefinition, default_executors
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.test_utils import instance_for_test
 
 from .utils import execute_eagerly_on_celery, execute_on_thread, start_celery_worker
+from dagster._legacy import ModeDefinition, default_executors
 
 celery_mode_defs = [ModeDefinition(executor_defs=default_executors + [celery_executor])]
 
@@ -45,7 +44,10 @@ def test_run_priority_pipeline(rabbitmq):
             low_thread = threading.Thread(
                 target=execute_on_thread,
                 args=("low_pipeline", low_done, instance.get_ref()),
-                kwargs={"tempdir": tempdir, "tags": {DAGSTER_CELERY_RUN_PRIORITY_TAG: "-3"}},
+                kwargs={
+                    "tempdir": tempdir,
+                    "tags": {DAGSTER_CELERY_RUN_PRIORITY_TAG: "-3"},
+                },
             )
             low_thread.daemon = True
             low_thread.start()
@@ -56,7 +58,10 @@ def test_run_priority_pipeline(rabbitmq):
             hi_thread = threading.Thread(
                 target=execute_on_thread,
                 args=("hi_pipeline", hi_done, instance.get_ref()),
-                kwargs={"tempdir": tempdir, "tags": {DAGSTER_CELERY_RUN_PRIORITY_TAG: "3"}},
+                kwargs={
+                    "tempdir": tempdir,
+                    "tags": {DAGSTER_CELERY_RUN_PRIORITY_TAG: "3"},
+                },
             )
             hi_thread.daemon = True
             hi_thread.start()

@@ -9,22 +9,26 @@ from dagster import (
     AssetsDefinition,
     DailyPartitionsDefinition,
     MetadataValue,
-    ModeDefinition,
     Out,
     Output,
     StaticPartitionsDefinition,
-    execute_pipeline,
     graph,
     op,
 )
-from dagster._core.definitions import AssetGroup, AssetIn, asset, build_assets_job, multi_asset
+from dagster._core.definitions import (
+    AssetGroup,
+    AssetIn,
+    asset,
+    build_assets_job,
+    multi_asset,
+)
 from dagster._core.definitions.version_strategy import VersionStrategy
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import pipeline, solid
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
 
 
 def define_pipeline(io_manager):
@@ -246,7 +250,8 @@ def test_fs_io_manager_partitioned():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
         job_def = get_assets_job(
-            io_manager_def, partitions_def=DailyPartitionsDefinition(start_date="2020-02-01")
+            io_manager_def,
+            partitions_def=DailyPartitionsDefinition(start_date="2020-02-01"),
         )
 
         result = job_def.execute_in_process(partition_key="2020-05-03")
@@ -296,7 +301,8 @@ def test_fs_io_manager_partitioned_multi_asset():
             return 2
 
         group = AssetGroup(
-            [upstream_asset, downstream_asset], resource_defs={"io_manager": io_manager_def}
+            [upstream_asset, downstream_asset],
+            resource_defs={"io_manager": io_manager_def},
         )
 
         job = group.build_job(name="TheJob")
@@ -334,7 +340,9 @@ def test_fs_io_manager_partitioned_graph_backed_asset():
         )
 
         job_def = build_assets_job(
-            name="a", assets=[one, four_asset], resource_defs={"io_manager": io_manager_def}
+            name="a",
+            assets=[one, four_asset],
+            resource_defs={"io_manager": io_manager_def},
         )
 
         result = job_def.execute_in_process(partition_key="A")

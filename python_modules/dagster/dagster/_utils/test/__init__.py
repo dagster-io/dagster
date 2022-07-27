@@ -4,21 +4,27 @@ import tempfile
 import uuid
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, Generator, Optional, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    Generator,
+    Optional,
+    Union,
+    overload,
+)
 
 # top-level include is dangerous in terms of incurring circular deps
 from dagster import (
     DagsterInvariantViolationError,
     DependencyDefinition,
     Failure,
-    ModeDefinition,
     NodeInvocation,
-    PipelineDefinition,
     RepositoryDefinition,
     TypeCheck,
 )
 from dagster import _check as check
-from dagster import execute_pipeline, lambda_solid
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
@@ -38,7 +44,10 @@ from dagster._core.execution.context_creation_pipeline import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler import Scheduler
-from dagster._core.scheduler.scheduler import DagsterScheduleDoesNotExist, DagsterSchedulerError
+from dagster._core.scheduler.scheduler import (
+    DagsterScheduleDoesNotExist,
+    DagsterSchedulerError,
+)
 from dagster._core.snap import snapshot_from_execution_plan
 from dagster._core.storage.file_manager import LocalFileManager
 from dagster._core.storage.pipeline_run import PipelineRun
@@ -57,9 +66,18 @@ from ..temp_file import (
     get_temp_file_names,
 )
 from ..typing_api import is_typing_type
+from dagster._legacy import (
+    ModeDefinition,
+    PipelineDefinition,
+    execute_pipeline,
+    lambda_solid,
+)
 
 if TYPE_CHECKING:
-    from dagster._core.execution.results import CompositeSolidExecutionResult, SolidExecutionResult
+    from dagster._core.execution.results import (
+        CompositeSolidExecutionResult,
+        SolidExecutionResult,
+    )
 
 
 def create_test_pipeline_execution_context(
@@ -77,7 +95,11 @@ def create_test_pipeline_execution_context(
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline=pipeline_def, run_config=run_config)
     creation_data = create_context_creation_data(
-        InMemoryPipeline(pipeline_def), execution_plan, run_config, pipeline_run, instance
+        InMemoryPipeline(pipeline_def),
+        execution_plan,
+        run_config,
+        pipeline_run,
+        instance,
     )
     log_manager = create_log_manager(creation_data)
     scoped_resources_builder = ScopedResourcesBuilder()

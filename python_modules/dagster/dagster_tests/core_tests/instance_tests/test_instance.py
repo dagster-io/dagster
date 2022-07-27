@@ -3,10 +3,7 @@ import re
 import pytest
 import yaml
 from dagster_tests.api_tests.utils import get_bar_workspace
-
-from dagster import PipelineDefinition
 from dagster import _check as check
-from dagster import execute_pipeline
 from dagster._check import CheckError
 from dagster._config import Field
 from dagster._core.errors import (
@@ -25,7 +22,7 @@ from dagster._core.snap import (
     snapshot_from_execution_plan,
 )
 from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
-from dagster._legacy import pipeline, solid
+from dagster._legacy import PipelineDefinition, execute_pipeline, pipeline, solid
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 
@@ -337,7 +334,12 @@ def test_invalid_configurable_module():
         ),
     ):
         with instance_for_test(
-            overrides={"run_launcher": {"module": "made_up_module", "class": "MadeUpRunLauncher"}}
+            overrides={
+                "run_launcher": {
+                    "module": "made_up_module",
+                    "class": "MadeUpRunLauncher",
+                }
+            }
         ):
             pass
 
@@ -380,7 +382,10 @@ class TestInstanceSubclass(DagsterInstance):
 
     @classmethod
     def config_schema(cls):
-        return {"foo": Field(str, is_required=True), "baz": Field(str, is_required=False)}
+        return {
+            "foo": Field(str, is_required=True),
+            "baz": Field(str, is_required=False),
+        }
 
     @staticmethod
     def config_defaults(base_dir):

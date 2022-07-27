@@ -3,15 +3,17 @@ import pytest
 from dagster import (
     DagsterInvalidConfigError,
     DependencyDefinition,
-    InputDefinition,
     List,
     NodeInvocation,
+    String,
+)
+from dagster._legacy import (
+    InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    String,
     execute_pipeline,
+    solid,
 )
-from dagster._legacy import solid
 
 
 def test_string_from_inputs():
@@ -27,7 +29,8 @@ def test_string_from_inputs():
     )
 
     result = execute_pipeline(
-        pipeline, {"solids": {"str_as_input": {"inputs": {"string_input": {"value": "foo"}}}}}
+        pipeline,
+        {"solids": {"str_as_input": {"inputs": {"string_input": {"value": "foo"}}}}},
     )
 
     assert result.success
@@ -49,7 +52,8 @@ def test_string_from_aliased_inputs():
     )
 
     result = execute_pipeline(
-        pipeline, {"solids": {"aliased": {"inputs": {"string_input": {"value": "foo"}}}}}
+        pipeline,
+        {"solids": {"aliased": {"inputs": {"string_input": {"value": "foo"}}}}},
     )
 
     assert result.success

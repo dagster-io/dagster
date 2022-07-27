@@ -1,7 +1,8 @@
-from dagster_tests.general_tests.test_repository import define_multi_mode_with_resources_pipeline
-
-from dagster import PresetDefinition
+from dagster_tests.general_tests.test_repository import (
+    define_multi_mode_with_resources_pipeline,
+)
 from dagster._utils import file_relative_path
+from dagster._legacy import PresetDefinition
 
 
 def test_preset_yaml_roundtrip():

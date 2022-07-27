@@ -1,15 +1,13 @@
 from time import sleep
 
-from dagster import (
-    Field,
-    Int,
+from dagster import Field, Int, Output, fs_io_manager
+from dagster._legacy import (
     ModeDefinition,
-    Output,
     OutputDefinition,
     PresetDefinition,
-    fs_io_manager,
+    pipeline,
+    solid,
 )
-from dagster._legacy import pipeline, solid
 
 
 @solid(

@@ -6,25 +6,24 @@ import pytest
 from dagster import (
     DependencyDefinition,
     Field,
-    InputDefinition,
     Int,
     List,
-    ModeDefinition,
     MultiDependencyDefinition,
     Nothing,
     Optional,
     Output,
-    OutputDefinition,
-    PipelineDefinition,
     ResourceDefinition,
     String,
 )
 from dagster import _check as check
-from dagster import execute_pipeline, execute_pipeline_iterator, reconstructable, reexecute_pipeline
+from dagster import reconstructable
 from dagster._core.definitions import Node
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.graph_definition import _create_adjacency_lists
-from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
+from dagster._core.errors import (
+    DagsterExecutionStepNotFoundError,
+    DagsterInvariantViolationError,
+)
 from dagster._core.execution.results import SolidExecutionResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import (
@@ -39,7 +38,17 @@ from dagster._core.utility_solids import (
     input_set,
 )
 from dagster._core.workspace.load import location_origin_from_python_file
-from dagster._legacy import pipeline, solid
+from dagster._legacy import (
+    InputDefinition,
+    ModeDefinition,
+    OutputDefinition,
+    PipelineDefinition,
+    execute_pipeline,
+    execute_pipeline_iterator,
+    reexecute_pipeline,
+    pipeline,
+    solid,
+)
 from dagster._utils.test import execute_solid_within_pipeline
 
 # protected members
@@ -106,7 +115,13 @@ def test_single_dep_adjacency_lists():
 def test_diamond_deps_adjaceny_lists():
     forward_edges, backwards_edges = _do_construct(create_diamond_solids(), diamond_deps())
 
-    assert forward_edges == {"A_source": {"A"}, "A": {"B", "C"}, "B": {"D"}, "C": {"D"}, "D": set()}
+    assert forward_edges == {
+        "A_source": {"A"},
+        "A": {"B", "C"},
+        "B": {"D"},
+        "C": {"D"},
+        "D": set(),
+    }
     assert backwards_edges == {
         "D": {"B", "C"},
         "B": {"A"},
@@ -153,7 +168,9 @@ def create_diamond_solids():
 
 def create_diamond_pipeline():
     return PipelineDefinition(
-        name="diamond_pipeline", solid_defs=create_diamond_solids(), dependencies=diamond_deps()
+        name="diamond_pipeline",
+        solid_defs=create_diamond_solids(),
+        dependencies=diamond_deps(),
     )
 
 
@@ -220,7 +237,10 @@ def test_execute_solid_in_diamond():
     )
 
     assert solid_result.success
-    assert solid_result.output_value() == [{"a key": "a value"}, {"A": "compute_called"}]
+    assert solid_result.output_value() == [
+        {"a key": "a value"},
+        {"A": "compute_called"},
+    ]
 
 
 def test_execute_aliased_solid_in_diamond():
@@ -235,7 +255,10 @@ def test_execute_aliased_solid_in_diamond():
     )
 
     assert solid_result.success
-    assert solid_result.output_value() == [{"a key": "a value"}, {"aliased": "compute_called"}]
+    assert solid_result.output_value() == [
+        {"a key": "a value"},
+        {"aliased": "compute_called"},
+    ]
 
 
 def test_create_pipeline_with_empty_solids_list():
@@ -277,7 +300,9 @@ def test_two_root_solid_pipeline_with_partial_dependency_definition():
     stub_solid_b = define_stub_solid("stub_b", [{"a key": "a value"}])
 
     single_dep_pipe = PipelineDefinition(
-        solid_defs=[stub_solid_a, stub_solid_b], name="test", dependencies={"stub_a": {}}
+        solid_defs=[stub_solid_a, stub_solid_b],
+        name="test",
+        dependencies={"stub_a": {}},
     )
 
     assert execute_pipeline(single_dep_pipe).success
@@ -422,12 +447,14 @@ def test_pipeline_subset_of_subset():
     assert subset_result.result_for_solid("add_one_a").output_value() == 2
 
     with pytest.raises(
-        DagsterInvariantViolationError, match="Pipeline subsets may not be subset again."
+        DagsterInvariantViolationError,
+        match="Pipeline subsets may not be subset again.",
     ):
         subset_pipeline.get_pipeline_subset_def({"add_one_a"})
 
     with pytest.raises(
-        DagsterInvariantViolationError, match="Pipeline subsets may not be subset again."
+        DagsterInvariantViolationError,
+        match="Pipeline subsets may not be subset again.",
     ):
         subset_pipeline.get_pipeline_subset_def({"add_one_a", "return_one_a"})
 
@@ -451,7 +478,10 @@ def test_pipeline_subset_with_multi_dependency():
         dependencies={
             "noop": {
                 "dep": MultiDependencyDefinition(
-                    [DependencyDefinition("return_one"), DependencyDefinition("return_two")]
+                    [
+                        DependencyDefinition("return_one"),
+                        DependencyDefinition("return_two"),
+                    ]
                 )
             }
         },
@@ -495,7 +525,10 @@ def test_pipeline_explicit_subset_with_multi_dependency():
         dependencies={
             "noop": {
                 "dep": MultiDependencyDefinition(
-                    [DependencyDefinition("return_one"), DependencyDefinition("return_two")]
+                    [
+                        DependencyDefinition("return_one"),
+                        DependencyDefinition("return_two"),
+                    ]
                 )
             }
         },
@@ -980,7 +1013,12 @@ def test_two_step_reexecution():
 
 
 def test_optional():
-    @solid(output_defs=[OutputDefinition(Int, "x"), OutputDefinition(Int, "y", is_required=False)])
+    @solid(
+        output_defs=[
+            OutputDefinition(Int, "x"),
+            OutputDefinition(Int, "y", is_required=False),
+        ]
+    )
     def return_optional(_context):
         yield Output(1, "x")
 

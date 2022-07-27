@@ -4,8 +4,14 @@ from pyspark.sql import SparkSession, Window
 from pyspark.sql.functions import col, concat, lit
 from pyspark.sql.functions import max as pyspark_max
 
-from dagster import Field, InputDefinition, ModeDefinition, String, execute_pipeline, resource
-from dagster._legacy import pipeline, solid
+from dagster import Field, String, resource
+from dagster._legacy import (
+    InputDefinition,
+    ModeDefinition,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
 
 
 def create_spark_session():

@@ -1,18 +1,19 @@
 from unittest import mock
 
 import pytest
-from dagster_graphql.implementation.fetch_pipelines import _get_pipeline_snapshot_from_instance
+from dagster_graphql.implementation.fetch_pipelines import (
+    _get_pipeline_snapshot_from_instance,
+)
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     main_repo_location_name,
     main_repo_name,
 )
-
-from dagster import execute_pipeline
 from dagster._seven import json
 
 from .setup import noop_pipeline
+from dagster._legacy import execute_pipeline
 
 SNAPSHOT_OR_ERROR_QUERY_BY_SNAPSHOT_ID = """
 query PipelineSnapshotQueryBySnapshotID($snapshotId: String!) {

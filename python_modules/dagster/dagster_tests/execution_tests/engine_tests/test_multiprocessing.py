@@ -7,22 +7,25 @@ import pytest
 from dagster import (
     Failure,
     Field,
-    InputDefinition,
     MetadataEntry,
     Nothing,
     Output,
-    OutputDefinition,
-    PresetDefinition,
     String,
-    execute_pipeline,
-    lambda_solid,
     reconstructable,
 )
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import pipeline, solid
+from dagster._legacy import (
+    InputDefinition,
+    OutputDefinition,
+    PresetDefinition,
+    execute_pipeline,
+    lambda_solid,
+    pipeline,
+    solid,
+)
 from dagster._utils import safe_tempfile_path, segfault
 
 

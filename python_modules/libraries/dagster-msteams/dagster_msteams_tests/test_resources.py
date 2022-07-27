@@ -3,8 +3,8 @@ import json
 from dagster_msteams import msteams_resource
 from mock import patch
 
-from dagster import ModeDefinition, execute_solid
-from dagster._legacy import solid
+from dagster import execute_solid
+from dagster._legacy import ModeDefinition, solid
 
 
 @patch("dagster_msteams.client.TeamsClient.post_message")
@@ -26,7 +26,10 @@ def test_msteams_resource(mock_teams_post_message, json_message, teams_client):
         run_config={
             "resources": {
                 "msteams": {
-                    "config": {"hook_url": "https://some_url_here/", "https_proxy": "some_proxy"}
+                    "config": {
+                        "hook_url": "https://some_url_here/",
+                        "https_proxy": "some_proxy",
+                    }
                 }
             }
         },

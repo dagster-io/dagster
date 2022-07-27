@@ -1,12 +1,11 @@
 import yaml
-
-from dagster import execute_pipeline
 from docs_snippets.concepts.ops_jobs_graphs.job_execution import (
     execute_subset,
     forkserver_job,
     ip_yaml,
     my_job,
 )
+from dagster._legacy import execute_pipeline
 
 
 def test_execute_my_job():

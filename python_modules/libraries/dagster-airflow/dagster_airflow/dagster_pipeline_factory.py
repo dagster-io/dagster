@@ -16,18 +16,23 @@ from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
 from dagster import (
     DagsterInvariantViolationError,
     DependencyDefinition,
-    InputDefinition,
     MultiDependencyDefinition,
     Nothing,
-    OutputDefinition,
-    PipelineDefinition,
-    SolidDefinition,
 )
 from dagster import _check as check
 from dagster import repository
 from dagster._core.definitions.utils import VALID_NAME_REGEX, validate_tags
-from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
-from dagster._legacy import solid
+from dagster._core.instance import (
+    AIRFLOW_EXECUTION_DATE_STR,
+    IS_AIRFLOW_INGEST_PIPELINE_STR,
+)
+from dagster._legacy import (
+    InputDefinition,
+    OutputDefinition,
+    PipelineDefinition,
+    SolidDefinition,
+    solid,
+)
 
 
 class DagsterAirflowError(Exception):
@@ -52,7 +57,10 @@ def contains_duplicate_task_names(dag_bag, refresh_from_airflow_db):
 
 
 def make_dagster_repo_from_airflow_dag_bag(
-    dag_bag, repo_name, refresh_from_airflow_db=False, use_airflow_template_context=False
+    dag_bag,
+    repo_name,
+    refresh_from_airflow_db=False,
+    use_airflow_template_context=False,
 ):
     """Construct a Dagster repository corresponding to Airflow DAGs in DagBag.
 
@@ -97,7 +105,9 @@ def make_dagster_repo_from_airflow_dag_bag(
         if not use_unique_id:
             pipeline_defs.append(
                 make_dagster_pipeline_from_airflow_dag(
-                    dag=dag, tags=None, use_airflow_template_context=use_airflow_template_context
+                    dag=dag,
+                    tags=None,
+                    use_airflow_template_context=use_airflow_template_context,
                 )
             )
         else:
@@ -333,7 +343,12 @@ def _get_pipeline_definition_args(dag, use_airflow_template_context, unique_id=N
 
 
 def _traverse_airflow_dag(
-    task, seen_tasks, pipeline_dependencies, solid_defs, use_airflow_template_context, unique_id
+    task,
+    seen_tasks,
+    pipeline_dependencies,
+    solid_defs,
+    use_airflow_template_context,
+    unique_id,
 ):
     check.inst_param(task, "task", BaseOperator)
     check.list_param(seen_tasks, "seen_tasks", BaseOperator)

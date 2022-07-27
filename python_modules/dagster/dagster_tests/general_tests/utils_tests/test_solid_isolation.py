@@ -6,12 +6,7 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
     Field,
-    InputDefinition,
     Int,
-    ModeDefinition,
-    OutputDefinition,
-    composite_solid,
-    lambda_solid,
     resource,
 )
 from dagster._core.test_utils import nesting_composite_pipeline
@@ -21,7 +16,14 @@ from dagster._core.utility_solids import (
     define_stub_solid,
     input_set,
 )
-from dagster._legacy import solid
+from dagster._legacy import (
+    InputDefinition,
+    ModeDefinition,
+    OutputDefinition,
+    composite_solid,
+    lambda_solid,
+    solid,
+)
 from dagster._utils.test import execute_solid
 
 
@@ -70,7 +72,8 @@ def test_single_solid_with_config():
         ran["check_config_for_two"] = True
 
     result = execute_solid(
-        check_config_for_two, run_config={"solids": {"check_config_for_two": {"config": 2}}}
+        check_config_for_two,
+        run_config={"solids": {"check_config_for_two": {"config": 2}}},
     )
 
     assert result.success
@@ -99,7 +102,8 @@ def test_single_solid_with_context_config():
     assert ran["count"] == 1
 
     result = execute_solid(
-        check_context_config_for_two, mode_def=ModeDefinition(resource_defs={"num": num_resource})
+        check_context_config_for_two,
+        mode_def=ModeDefinition(resource_defs={"num": num_resource}),
     )
 
     assert result.success

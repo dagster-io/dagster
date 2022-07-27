@@ -7,10 +7,7 @@ import pytest
 from dagster import (
     DynamicOut,
     DynamicOutput,
-    DynamicOutputDefinition,
     Out,
-    build_solid_context,
-    execute_pipeline,
     execute_solid,
     graph,
     job,
@@ -19,9 +16,18 @@ from dagster import (
 )
 from dagster._core.definitions.events import Output
 from dagster._core.definitions.output import OutputDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
+)
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import pipeline, solid
+from dagster._legacy import (
+    DynamicOutputDefinition,
+    build_solid_context,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
 
 
 def test_basic():

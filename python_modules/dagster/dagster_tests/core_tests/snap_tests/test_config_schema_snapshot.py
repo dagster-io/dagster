@@ -3,7 +3,6 @@ from dagster import (
     Enum,
     EnumValue,
     Field,
-    ModeDefinition,
     Noneable,
     ScalarUnion,
     Selector,
@@ -16,7 +15,7 @@ from dagster._core.snap import (
     build_config_schema_snapshot,
     snap_from_config_type,
 )
-from dagster._legacy import pipeline, solid
+from dagster._legacy import ModeDefinition, pipeline, solid
 from dagster._serdes import (
     deserialize_json_to_dagster_namedtuple,
     deserialize_value,

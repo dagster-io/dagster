@@ -1,5 +1,11 @@
-from dagster import Float, InputDefinition, Int, List, OutputDefinition, composite_solid
-from dagster._legacy import pipeline, solid
+from dagster import Float, Int, List
+from dagster._legacy import (
+    InputDefinition,
+    OutputDefinition,
+    composite_solid,
+    pipeline,
+    solid,
+)
 
 
 @solid(output_defs=[OutputDefinition(Int)])
@@ -7,7 +13,10 @@ def emit_one(_):
     return 1
 
 
-@solid(input_defs=[InputDefinition("numbers", List[Int])], output_defs=[OutputDefinition(Int)])
+@solid(
+    input_defs=[InputDefinition("numbers", List[Int])],
+    output_defs=[OutputDefinition(Int)],
+)
 def add(_, numbers):
     return sum(numbers)
 

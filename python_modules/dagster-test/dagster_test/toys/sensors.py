@@ -4,7 +4,8 @@ from slack_sdk.web.client import WebClient
 
 from dagster import AssetKey, PipelineFailureSensorContext, RunRequest, SkipReason
 from dagster import _check as check
-from dagster import asset_sensor, pipeline_failure_sensor, sensor
+from dagster import asset_sensor, sensor
+from dagster._legacy import pipeline_failure_sensor
 
 
 def get_directory_files(directory_name, since=None):
@@ -55,7 +56,12 @@ def get_toys_sensors():
                 run_key="{}:{}".format(filename, str(mtime)),
                 run_config={
                     "solids": {
-                        "read_file": {"config": {"directory": directory_name, "filename": filename}}
+                        "read_file": {
+                            "config": {
+                                "directory": directory_name,
+                                "filename": filename,
+                            }
+                        }
                     }
                 },
             )
@@ -114,7 +120,10 @@ def get_toys_sensors():
             run_config={
                 "solids": {
                     "read_materialization": {
-                        "config": {"asset_key": ["model"], "pipeline": asset_event.pipeline_name}
+                        "config": {
+                            "asset_key": ["model"],
+                            "pipeline": asset_event.pipeline_name,
+                        }
                     }
                 }
             },

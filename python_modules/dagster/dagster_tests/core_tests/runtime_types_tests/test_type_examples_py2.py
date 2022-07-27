@@ -3,17 +3,15 @@ from dagster import (
     Bool,
     Dict,
     Float,
-    InputDefinition,
     Int,
     List,
     Optional,
-    OutputDefinition,
     Set,
     String,
     Tuple,
     execute_solid,
 )
-from dagster._legacy import solid
+from dagster._legacy import InputDefinition, OutputDefinition, solid
 
 
 @solid(
@@ -57,7 +55,10 @@ def div_2_py_2(_, x):
 
 
 @solid(
-    input_defs=[InputDefinition("x", dagster_type=String), InputDefinition("y", dagster_type=str)],
+    input_defs=[
+        InputDefinition("x", dagster_type=String),
+        InputDefinition("y", dagster_type=str),
+    ],
     output_defs=[OutputDefinition(dagster_type=str)],
 )
 def concat_py_2(_, x, y):
@@ -84,7 +85,8 @@ def concat_list_py2(_, xs):
 
 
 @solid(
-    input_defs=[InputDefinition("spec", dagster_type=Dict)], output_defs=[OutputDefinition(String)]
+    input_defs=[InputDefinition("spec", dagster_type=Dict)],
+    output_defs=[OutputDefinition(String)],
 )
 def repeat_py2(_, spec):
     return spec["word"] * spec["times"]

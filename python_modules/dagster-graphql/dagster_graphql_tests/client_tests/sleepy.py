@@ -2,13 +2,20 @@
 
 from time import sleep
 
-from dagster import Field, InputDefinition, Int, List, Output, OutputDefinition, PresetDefinition
+from dagster import Field, Int, List, Output
 from dagster._core.test_utils import default_mode_def_for_test
-from dagster._legacy import pipeline, solid
+from dagster._legacy import (
+    InputDefinition,
+    OutputDefinition,
+    PresetDefinition,
+    pipeline,
+    solid,
+)
 
 
 @solid(
-    input_defs=[InputDefinition("units", List[Int])], output_defs=[OutputDefinition(Int, "total")]
+    input_defs=[InputDefinition("units", List[Int])],
+    output_defs=[OutputDefinition(Int, "total")],
 )
 def sleeper(context, units):
     tot = 0

@@ -2,23 +2,22 @@ import json
 
 import pytest
 
-from dagster import (
-    Any,
-    AssetKey,
-    CompositeSolidDefinition,
-    DependencyDefinition,
-    InputDefinition,
-    Int,
-    NodeInvocation,
-    OutputDefinition,
-    PipelineDefinition,
-    String,
-    lambda_solid,
+from dagster import Any, AssetKey, DependencyDefinition, Int, NodeInvocation, String
+from dagster._core.definitions import (
+    AssetMaterialization,
+    Node,
+    create_run_config_schema,
 )
-from dagster._core.definitions import AssetMaterialization, Node, create_run_config_schema
 from dagster._core.definitions.dependency import NodeHandle, SolidOutputHandle
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._legacy import solid
+from dagster._legacy import (
+    CompositeSolidDefinition,
+    InputDefinition,
+    OutputDefinition,
+    PipelineDefinition,
+    lambda_solid,
+    solid,
+)
 
 
 def test_deps_equal():

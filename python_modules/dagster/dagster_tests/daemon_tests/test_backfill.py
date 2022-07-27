@@ -11,7 +11,6 @@ import pytest
 from dagster import (
     Any,
     Field,
-    ModeDefinition,
     daily_partitioned_config,
     fs_io_manager,
     graph,
@@ -25,7 +24,11 @@ from dagster._core.host_representation import (
     InProcessRepositoryLocationOrigin,
 )
 from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
-from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster._core.storage.tags import (
+    BACKFILL_ID_TAG,
+    PARTITION_NAME_TAG,
+    PARTITION_SET_TAG,
+)
 from dagster._core.test_utils import (
     create_test_daemon_workspace,
     instance_for_test,
@@ -37,7 +40,7 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
-from dagster._legacy import pipeline, solid
+from dagster._legacy import ModeDefinition, pipeline, solid
 from dagster._seven import IS_WINDOWS, get_system_temp_directory
 from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo

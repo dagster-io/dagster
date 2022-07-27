@@ -2,11 +2,10 @@ import threading
 import time
 
 from dagster_celery import celery_executor
-
-from dagster import ModeDefinition, default_executors
 from dagster._core.test_utils import instance_for_test
 
 from .utils import execute_on_thread, start_celery_worker
+from dagster._legacy import ModeDefinition, default_executors
 
 celery_mode_defs = [ModeDefinition(executor_defs=default_executors + [celery_executor])]
 
@@ -17,7 +16,8 @@ def test_multiqueue(rabbitmq):  # pylint: disable=unused-argument
         done = threading.Event()
         with start_celery_worker():
             execute_thread = threading.Thread(
-                target=execute_on_thread, args=("multiqueue_pipeline", done, instance.get_ref())
+                target=execute_on_thread,
+                args=("multiqueue_pipeline", done, instance.get_ref()),
             )
             execute_thread.daemon = True
             execute_thread.start()

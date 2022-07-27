@@ -7,11 +7,11 @@ from dagster import (
     MetadataEntry,
     TableColumn,
     TableSchema,
-    build_assets_job,
     build_init_resource_context,
 )
 
 from .utils import get_sample_connection_json, get_sample_job_json
+from dagster._legacy import build_assets_job
 
 
 @responses.activate

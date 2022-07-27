@@ -3,15 +3,14 @@ import time
 from datetime import datetime
 from random import random
 
-from dagster import (
-    AssetMaterialization,
+from dagster import AssetMaterialization, Nothing, fs_io_manager
+from dagster._legacy import (
     InputDefinition,
     ModeDefinition,
-    Nothing,
     OutputDefinition,
-    fs_io_manager,
+    pipeline,
+    solid,
 )
-from dagster._legacy import pipeline, solid
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 
 TRAFFIC_CONSTANTS = {

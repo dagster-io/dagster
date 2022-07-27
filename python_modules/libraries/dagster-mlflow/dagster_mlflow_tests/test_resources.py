@@ -14,9 +14,7 @@ import mlflow
 import pandas as pd
 import pytest
 from dagster_mlflow.resources import MlFlow, mlflow_tracking
-
-from dagster import ModeDefinition, execute_pipeline
-from dagster._legacy import pipeline, solid
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
 
 
 @pytest.fixture
@@ -191,7 +189,10 @@ def test_start_run(mock_start_run, context):
 @patch("mlflow.end_run")
 @pytest.mark.parametrize("any_error", [KeyboardInterrupt(), OSError(), RuntimeError(), None])
 def test_cleanup_on_error(
-    mock_mlflow_end_run, any_error, context, cleanup_mlflow_runs  # pylint: disable=unused-argument
+    mock_mlflow_end_run,
+    any_error,
+    context,
+    cleanup_mlflow_runs,  # pylint: disable=unused-argument
 ):
     with patch.object(MlFlow, "_setup"):
         # Given: a context  passed into the __init__ for MlFlow

@@ -5,9 +5,10 @@ from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union
 import dagster._check as check
 from dagster._core.utils import coerce_valid_log_level, make_new_run_id
 from dagster._utils.log import get_dagster_logger
+from dagster._legacy import PipelineRun
 
 if TYPE_CHECKING:
-    from dagster import DagsterInstance, PipelineRun
+    from dagster import DagsterInstance
     from dagster._core.events import DagsterEvent
 
 DAGSTER_META_KEY = "dagster_meta"
@@ -40,7 +41,9 @@ class DagsterMessageProps(
                 log_message_id, "log_message_id", default=make_new_run_id()
             ),
             log_timestamp=check.opt_str_param(
-                log_timestamp, "log_timestamp", default=datetime.datetime.utcnow().isoformat()
+                log_timestamp,
+                "log_timestamp",
+                default=datetime.datetime.utcnow().isoformat(),
             ),
             dagster_event=dagster_event,
         )
@@ -209,7 +212,10 @@ class DagsterLogHandler(logging.Handler):
         This function figures out what the original `extra` values of the log call were by
         comparing the set of attributes in the received record to those of a default record.
         """
-        ref_attrs = list(logging.makeLogRecord({}).__dict__.keys()) + ["message", "asctime"]
+        ref_attrs = list(logging.makeLogRecord({}).__dict__.keys()) + [
+            "message",
+            "asctime",
+        ]
         return {k: v for k, v in record.__dict__.items() if k not in ref_attrs}
 
     def _convert_record(self, record: logging.LogRecord) -> logging.LogRecord:

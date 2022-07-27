@@ -1,7 +1,9 @@
-from dagster import InputDefinition, OutputDefinition
 from dagster._core.snap.solid import build_core_solid_def_snap
-from dagster._legacy import solid
-from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster._legacy import InputDefinition, OutputDefinition, solid
+from dagster._serdes import (
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+)
 
 
 def test_basic_solid_definition():
@@ -27,7 +29,10 @@ def test_solid_definition_kitchen_sink():
         output_defs=[
             OutputDefinition(name="output_one", dagster_type=str),
             OutputDefinition(
-                name="output_two", dagster_type=int, description="desc2", is_required=False
+                name="output_two",
+                dagster_type=int,
+                description="desc2",
+                is_required=False,
             ),
         ],
         config_schema={"foo": int},
@@ -45,7 +50,10 @@ def test_solid_definition_kitchen_sink():
     assert kitchen_sink_solid_snap
     assert kitchen_sink_solid_snap.name == "kitchen_sink_solid"
     assert len(kitchen_sink_solid_snap.input_def_snaps) == 2
-    assert [inp.name for inp in kitchen_sink_solid_snap.input_def_snaps] == ["arg_one", "arg_two"]
+    assert [inp.name for inp in kitchen_sink_solid_snap.input_def_snaps] == [
+        "arg_one",
+        "arg_two",
+    ]
     assert [inp.dagster_type_key for inp in kitchen_sink_solid_snap.input_def_snaps] == [
         "String",
         "Int",
@@ -66,7 +74,10 @@ def test_solid_definition_kitchen_sink():
     assert kitchen_sink_solid_snap.get_output_snap("output_two").description == "desc2"
     assert kitchen_sink_solid_snap.get_output_snap("output_two").is_required is False
 
-    assert kitchen_sink_solid_snap.required_resource_keys == ["a_resource", "b_resource"]
+    assert kitchen_sink_solid_snap.required_resource_keys == [
+        "a_resource",
+        "b_resource",
+    ]
     assert kitchen_sink_solid_snap.tags == {"a_tag": "yup"}
     assert kitchen_sink_solid.positional_inputs == ["arg_two", "arg_one"]
 

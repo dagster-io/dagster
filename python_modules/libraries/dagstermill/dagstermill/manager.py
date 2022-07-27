@@ -2,16 +2,7 @@ import os
 import pickle
 import uuid
 
-from dagster import (
-    AssetMaterialization,
-    ExpectationResult,
-    Failure,
-    Materialization,
-    ModeDefinition,
-    PipelineDefinition,
-    SolidDefinition,
-    TypeCheck,
-)
+from dagster import AssetMaterialization, ExpectationResult, Failure, TypeCheck
 from dagster import _check as check
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import RetryRequested
@@ -37,6 +28,12 @@ from dagster._utils import EventGenerationManager, ensure_gen
 from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
 from .errors import DagstermillError
 from .serialize import PICKLE_PROTOCOL
+from dagster._legacy import (
+    Materialization,
+    ModeDefinition,
+    PipelineDefinition,
+    SolidDefinition,
+)
 
 
 class DagstermillResourceEventGenerationManager(EventGenerationManager):
