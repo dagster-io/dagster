@@ -1,5 +1,57 @@
 ---
 title: "Hybrid deployment in Dagster Cloud | Dagster Docs"
+description: ""
 ---
 
 # Dagster Cloud agents
+
+Dagster Cloud uses an agent that is responsible for executing your code. The agent streams metadata about code execution over HTTPS to Dagster Cloud’s Agent API.
+
+In this guide, we'll cover:
+
+- [The agents Dagster Cloud supports](#supported-agents)
+- [Resources for customizing your agent](#customizing-agents)
+
+---
+
+## Supported agents
+
+Dagster Cloud currently supports agents running on the following backends:
+
+- [Local](#local-agent)
+- [Kubernetes](#kubernetes-agent)
+- [Amazon Elastic Container Service (ECS)](#amazon-ecs-agent)
+- [Docker](#docker-agent)
+
+### Local agent
+
+The local agent executes Dagster jobs as processes on your computer. Refer to the [setup guide](/dagster-cloud/deployment/agents/local) for more info.
+
+### Kubernetes agent
+
+The Kubernetes agent executes Dagster jobs on a Kubernetes cluster. This agent is appropriate for scaled production deployments and is a good choice for teams who have already standardized on Kubernetes. Refer to the [setup guide](/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent) for more info.
+
+**Already set up a Kubernetes agent?** Refer to the [Kubernetes agent configuration reference](/dagster-cloud/deployment/agents/kubernetes/configuration-reference) for info about configuration options.
+
+### Amazon ECS agent
+
+The Amazon Elastic Container Service (ECS) agent executes Dagster jobs as Amazon Web Services (AWS) Fargate ECS tasks. This agent is appropriate for scaled production deployments; ECS is a good choice for teams who have already standardized on ECS or who don't plan to run their own container orchestration infrastructure.
+
+There are three ways you can create an Amazon ECS agent:
+
+- [**In a new VPC, using our CloudFormation template**](/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc) - **Recommended**. This option spins up the ECS agent from scratch, creating a new VPC and ECS cluster for the agent to run in.
+- [**In an existing VPC, using our CloudFormation template**](/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-existing-vpc) - This option spins up the ECS agent stack in an existing VPC, using a new or existing ECS cluster.
+- [**Manually provisioning the agent**](/dagster-cloud/deployment/agents/ecs/manually-provisioning-ecs-agent) - Manual provision is the most customizable option, but also the most advanced.
+
+**Already used our CloudFormation template?** Refer to the [Upgrading CloudFormation for Amazon ECS guide](/dagster-cloud/deployment/agents/amazon-ecs/upgrading-cloudformation) for info about upgrading your ECS agent's template.
+
+### Docker agent
+
+The Docker agent executes Dagster jobs in Docker containers on your computer. Refer to the [setup guide](/dagster-cloud/deployment/agents/docker) for more info.
+
+---
+
+## Customizing agents
+
+- [Customizing agent settings](/dagster-cloud/deployment/agents/customizing-configuration) - Customize your agent's configuration settings
+- [Running multiple agents](/dagster-cloud/deployment/agents/running-multiple-agents) - Set up multiple agents for use with Dagster Cloud
