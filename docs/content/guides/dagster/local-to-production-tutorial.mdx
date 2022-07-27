@@ -16,41 +16,26 @@ Using a few Dagster concepts, we can easily tackle this task! Here’s an overvi
 
 - [Assets](/concepts/software-defined-assets) - An asset is a software object that models a data asset. The prototypical example is a table in a database or a file in cloud storage.
 - [Resources](/concepts/resource) - A resource is an object that models a connection to a (typically) external service. Resources can be shared between assets, and different implementations of resources can be used depending on the environment. For example, a resource may provide methods to send messages in Slack.
-- [IO managers](/concepts/io-management/io-managers) - An IO manager is a special kind of resource that handles storing and loading assets. For example, if we wanted to store assets in S3, we could use Dagster’s built-in S3 IO manager.
+- [I/O managers](/concepts/io-management/io-managers) - An I/O manager is a special kind of resource that handles storing and loading assets. For example, if we wanted to store assets in S3, we could use Dagster’s built-in S3 I/O manager.
 - [Run config](/concepts/configuration/config-schema) - Assets and resources sometimes require configuration to set certain values, like the password to a database. Run config allows you to set these values at run time. In this guide, we will also use an API to set some default run configuration.
 
 Using these Dagster concepts we will:
 
 - Write three assets: the full Hacker News dataset, data about comments, and data about stories.
-- Use Dagster's Snowflake IO manager to store the datasets in [Snowflake](https://www.snowflake.com/).
-- Set up our Dagster [repository](/concepts/repositories-workspaces/repositories) so that the configuration for the Snowflake IO manager is automatically supplied based on the environment where the code is running.
+- Use Dagster's Snowflake I/O manager to store the datasets in [Snowflake](https://www.snowflake.com/).
+- Set up our Dagster [repository](/concepts/repositories-workspaces/repositories) so that the configuration for the Snowflake I/O manager is automatically supplied based on the environment where the code is running.
 
 ---
 ## Setup
 
+<CodeReferenceLink filePath="examples/local_to_production/" />
 
-If you want to follow along with this guide you have two options:
 
-### Option 1: Clone the example code:
-
-This will give you the final version of the code we will write in this guide
+To run the code in the example, you will need to install a few additional pip libraries:
 
 ```bash
-pip install dagster, dagit
-dagster new-project --example local_to_prod
-cd local_to_prod
-pip install .
-```
-
-### Option 2: Start with a scaffolded project:
-
-This will create an empty project where you can copy the code as we write it in this guide
-
-```bash
-pip install dagster, dagit
-dagster new-project --quick-start local_to_prod
-cd local_to_prod
-pip install pandas pytest dagster-snowflake dagster-snowflake-pandas
+pip install dagster, dagit # skip if you've already installed dagster
+pip install pandas, pytest, requests, dagster-snowflake, dagster-snowflake-pandas
 ```
 
 ---
@@ -60,7 +45,7 @@ In this section we will:
 
 - Write our assets
 - Add the assets to our repository
-- Add run configuration for the Snowflake IO manager
+- Add run configuration for the Snowflake I/O manager
 - Materialize assets in Dagit
 
 Let’s start by writing our three assets. We'll use Pandas DataFrames to interact with the data.
@@ -134,6 +119,7 @@ def repo():
 
     return [*with_resources([items, comments, stories], resource_defs=resource_defs)]
 ```
+Note that we have passwords in our configuration in this code snippet. This is bad practice, and we will resolve it shortly.
 
 Now we can materialize the assets the Dagit and ensure that the data appears in Snowflake as we expect:
 
@@ -144,16 +130,15 @@ width={2304}
 height={1064}
 />
 
-<!-- \[Image: Screen Shot 2022-07-19 at 3.21.32 PM.png] -->
 
-While we define our assets as Pandas DataFrames, the Snowflake IO manager automatically translates the data to and from Snowflake tables. The Python asset name determines the Snowflake table name. In this case three tables will be created: `ITEMS`, `COMMENTS` and `STORIES`.
+While we define our assets as Pandas DataFrames, the Snowflake I/O manager automatically translates the data to and from Snowflake tables. The Python asset name determines the Snowflake table name. In this case three tables will be created: `ITEMS`, `COMMENTS` and `STORIES`.
 
 ---
 ## Part two: Deployment
 
 In this section we will:
 
-- Modify the configuration for the Snowflake IO manager to handle staging and production environments
+- Modify the configuration for the Snowflake I/O manager to handle staging and production environments
 - Discuss different options for managing a staging environment
 
 Now that our assets work locally, we can start the deployment process! We'll first set up our assets for production , and then discuss the options for our staging deployment.
@@ -205,6 +190,7 @@ def repo():
         )
     ]
 ```
+Note that we still have passwords in our configuration in this code snippet. This is bad practice, and we will resolve it next.
 
 Now, we can set the environment variable `DAGSTER_DEPLOYMENT=production` in our deployment and the correct resources will be applied to the assets.
 
@@ -218,7 +204,7 @@ We still have some problems with this setup:
 1. Developers need to remember to change `user` and `password` to their credentials and `schema` to their name when developing locally.
 2. Passwords are being stored in code.
 
-We can easily solve these problems because the Snowflake IO manager accepts configuration from environment variables using the <PyObject object="StringSource" /> configuration type. This allows us to store configuration values as environment variables and point Dagster to those environment variables in the run configuration:
+We can easily solve these problems because the Snowflake I/O manager accepts configuration from environment variables using the <PyObject object="StringSource" /> configuration type. This allows us to store configuration values as environment variables and point Dagster to those environment variables in the run configuration:
 
 ```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v5.py startafter=start endbefore=end
 # repository.py
