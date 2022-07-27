@@ -5,6 +5,7 @@ from typing_extensions import Annotated
 
 from dagster._annotations import (
     PUBLIC,
+    PublicAttr,
     deprecated,
     experimental,
     is_deprecated,
@@ -23,8 +24,8 @@ def test_public_annotation():
     assert is_public(Foo.bar)
 
 
-def test_public_constant_for_namedtuple():
-    class Foo(NamedTuple("_Foo", [("bar", Annotated[int, PUBLIC])])):
+def test_public_attr():
+    class Foo(NamedTuple("_Foo", [("bar", PublicAttr[int])])):
         ...
 
     hints = (
