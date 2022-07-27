@@ -1,0 +1,165 @@
+---
+title: Getting started with Dagster Cloud | Dagster Cloud
+
+platform_type: "cloud"
+---
+
+# Getting Started with Dagster Cloud
+
+<Note>
+   This guide is applicable to Dagster Cloud.
+</Note>
+
+Welcome to Dagster Cloud!
+
+In this guide, we'll give you everything you need to get up and running with Dagster Cloud. We'll walk you through setting up your Dagster Cloud account, configuring deployment, loading your code, and launching your first run.
+
+This tutorial will walk you through running your first job on Dagster Cloud using [an example Dagster repository](https://github.com/dagster-io/dagster-cloud/tree/main/dagster-cloud-examples).
+
+---
+
+## Prerequisites
+
+To complete the steps in this guide, you'll need:
+
+- **Dagster code.** You can either use your own code or our [sample code (`dagster-cloud-examples`)](https://github.com/dagster-io/dagster-cloud/tree/main/dagster-cloud-examples). This guide will use the `dagster-cloud-examples` Python package.
+
+---
+
+## Step 1: Sign up for a Dagster Cloud account
+
+If you don't already have a Dagster Cloud account, [sign up for one](https://dagster.cloud/) before continuing.
+
+---
+
+## Step 2: Create your Dagster Cloud organization
+
+When you create an account, you'll also be asked to create a **Dagster Cloud organization.**
+
+<!-- TODO: Could use some more info in here about how orgs work beyond users/permissions/etc
+
+Dagster Cloud _deployments_ allow your organization to operate multiple independent instances of Dagster, with separately managed permissions. When your Dagster Cloud organization is first created, it starts with a single deployment called `prod`. -->
+
+---
+
+## Step 3: Invite your team
+
+**This step is optional.** 
+
+
+---
+
+## Step 4: Deploy the Dagster Cloud agent
+
+<!-- NOTE: Not required if using Serverless -->
+
+Dagster Cloud uses an agent that runs in your infrastructure to ensure that your code, data, and secrets remain private. The agent is responsible for executing your code in your infrastructure and streams metadata about code execution over HTTPS back to Dagster Cloud.
+
+Dagster Cloud currently supports the following agents:
+
+- [Amazon Elastic Container Service (ECS)](/agents#amazon-ecs-agent)
+- [Local](/agents#local-agent)
+- [Docker](/agents#docker-agent)
+- [Kubernetes](/agent#kubernetes-agent)
+
+Follow the steps for setting up and deploying your agent of choice, continuing to the next step when finished.
+
+---
+
+## Step 5: Add your code
+
+Once your agent is running, you'll need to tell it the location of your Dagster code. Each Dagster Cloud deployment can include code from one or more code locations. Refer to the [Adding a code location guide](/guides/adding-code) for more info.
+
+<!-- A code location specifies a single Python package or file that defines your Dagster code. Many agents also require specifying a Docker image, which the agent uses to create containers for executing your code. When you add a code location, your agent sends the location's Dagster repository metadata to Dagster Cloud.  -->
+
+To complete this step, you can use your own Dagster code or our [sample code](https://github.com/dagster-io/dagster-cloud/tree/main/dagster-cloud-examples). This tutorial will use the `dagster-cloud-examples` Python package.
+
+The steps to add a location depend on the type of agent you're using:
+
+- [Local agent](#local-agent)
+- [Container-based agent](#ecs-kubernetes-or-docker-agent), like Kubernetes, Docker, or Amazon ECS
+
+### Local agent
+
+1. Install the `dagster-cloud-examples` package in your Python environment:
+
+	```shell
+	pip install dagster-cloud-examples
+	```
+
+2. In Dagster Cloud, click **Workspace**.
+3. Click the **Add sample code location** button:
+
+	<Image
+	alt="Dagit Workspace Screen"
+	src="/images/adding_code_location.png"
+	width={1118}
+	height={451}
+	/>
+
+4. A pre-filled YAML editor with the following config will display:
+
+	```yaml
+	location_name: cloud-examples
+	code_source:
+	  package_name: dagster_cloud_examples
+	```
+
+	This config tells the agent to load jobs from the `dagster_cloud_examples` Python package.
+
+5. Click **Add code location** to save the config. 
+
+The agent will attempt to load the sample code. After the code is loaded, the new code location will show a **Loaded** status and a sample Dagster job will display in Dagster Cloud.
+
+### ECS, Kubernetes, or Docker agent
+
+1. In Dagster Cloud, click **Workspace**.
+2. Click the **Add sample code location** button:
+
+	<Image
+	alt="Dagit Workspace Screen"
+	src="/images/adding_code_location.png"
+	width={1118}
+	height={451}
+	/>
+
+3. A pre-filled YAML editor with the following config will display:
+
+	```yaml
+	location_name: cloud-examples
+	image: dagster/dagster-cloud-examples
+	code_source:
+	  package_name: dagster_cloud_examples
+	```
+
+	This config tells the agent to pull the `dagster/dagster-cloud-examples` Docker image and load jobs from the `dagster_cloud_examples` Python package in that image.
+
+4. Click **Add code location** to save the config. 
+
+The agent will attempt to pull the image and load the sample code. After the code is loaded, the new code location will show a **Loaded** status and a sample Dagster job will display in Dagster Cloud.
+
+---
+
+## Step 6: Launch a run
+
+In this step, you'll run your first job in Dagster Cloud. The [`dagster-cloud-examples` package](https://github.com/dagster-io/dagster-cloud/tree/main/dagster-cloud-examples) that you added to Dagster Cloud contains a job called `compute_cereal_properties`.
+
+1. Click the icon in the top-left corner of the page to expand the navigation.
+2. In the nav, open the `cereal_repository` repository and click the `compute_cereal_properties` job.
+3. On the job's page, click the **Launchpad** tab.
+4. Click **Launch Run** in the bottom right corner to launch the run.
+
+<Image
+alt="Dagit Launchpad for compute_cereal_properties Job"
+src="/images/run_cereal_job.png"
+width={1451}
+height={702}
+/>
+
+Launch this run in Dagit and watch it run to completion.
+
+Congratulations! You've run your first job on Dagster Cloud!
+
+---
+
+## Next steps
