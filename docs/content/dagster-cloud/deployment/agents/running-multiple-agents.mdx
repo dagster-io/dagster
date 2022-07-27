@@ -6,13 +6,11 @@ platform_type: "cloud"
 
 # Running multiple agents <Experimental />
 
-<Note>
-	This guide is applicable to Dagster Cloud.
-</Note>
+<Note>This guide is applicable to Dagster Cloud.</Note>
 
 Each Dagster Cloud instance deployment needs to have at least one agent running. Since the agent is lightweight and can tolerate short downtimes (e.g. during an upgrade), a single agent is adequate for most use cases.
 
-If you want to distribute runs across multiple Kubernetes clusters, ECS clusters, EC2 instances, or other environments, you can run multiple agents. For example, one in each cluster, instance, etc. 
+If you want to distribute runs across multiple Kubernetes clusters, ECS clusters, EC2 instances, or other environments, you can run multiple agents. For example, one in each cluster, instance, etc.
 
 It's recommended to only use multiple agents of the same type (e.g. multiple Kubernetes agents). Submitting runs to a specific agent isn't currently supported.
 
@@ -59,12 +57,7 @@ Follow the instructions for your agent:
 Add the following to the `dagster.yaml` file:
 
 ```yaml file=/concepts/agent/dagster.yaml
-agent_replicas:
-  enabled: true
-
-dagster_cloud_api:
-  # <your other config>
-  agent_label: "My agent" # optional
+ENOENT: no such file or directory, open '/Users/erincochran/Desktop/dagster-repo/examples/docs_snippets/docs_snippets/concepts/agent/dagster.yaml'
 ```
 
 ### Local
@@ -72,12 +65,7 @@ dagster_cloud_api:
 Add the following to the `dagster.yaml` file:
 
 ```yaml file=/concepts/agent/dagster.yaml
-agent_replicas:
-  enabled: true
-
-dagster_cloud_api:
-  # <your other config>
-  agent_label: "My agent" # optional
+ENOENT: no such file or directory, open '/Users/erincochran/Desktop/dagster-repo/examples/docs_snippets/docs_snippets/concepts/agent/dagster.yaml'
 ```
 
 ### Kubernetes
