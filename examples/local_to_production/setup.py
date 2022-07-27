@@ -11,6 +11,7 @@ setup(
         "dagster-snowflake-pandas",
         "dagit",
         "pandas",
+        "requests",
     ],  # external packages as dependencies
     author="Elementl",
     license="Apache-2.0",

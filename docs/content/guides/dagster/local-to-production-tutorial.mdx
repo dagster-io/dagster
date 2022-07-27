@@ -26,32 +26,20 @@ Using these Dagster concepts we will:
 - Set up our Dagster [repository](/concepts/repositories-workspaces/repositories) so that the configuration for the Snowflake I/O manager is automatically supplied based on the environment where the code is running.
 
 ---
-## Setup v1
+
+## Setup
 
 <CodeReferenceLink filePath="examples/local_to_production/" />
-
-
-To run the code in the example, you will need to install a few additional pip libraries:
-
-```bash
-pip install dagster, dagit # skip if you've already installed dagster
-pip install pandas, pytest, requests, dagster-snowflake, dagster-snowflake-pandas
-```
-
----
-## Setup v2
-
-If you'd like to follow along with this guide, you can find the full code example [here](https://github.com/dagster-io/dagster/tree/master/examples/local_to_production).
-
 
 You will also need to install a few additional pip libraries:
 
 ```bash
-pip install dagster, dagit # skip if you've already installed dagster
-pip install pandas, pytest, requests, dagster-snowflake, dagster-snowflake-pandas
+cd examples/local_to_production
+pip install -e .
 ```
 
 ---
+
 ## Part one: Local development
 
 In this section we will:
@@ -63,12 +51,17 @@ In this section we will:
 
 Let’s start by writing our three assets. We'll use Pandas DataFrames to interact with the data.
 
-```python file=/guides/dagster/local_to_prod_tutorial/assets.py startafter=start_assets endbefore=end_assets
+```python file=/guides/dagster/local_to_prod_tutorial/assets_v1.py startafter=start_assets endbefore=end_assets
 # assets.py
+import pandas as pd
+import requests
+
+from dagster import asset
 
 
 @asset(
     config_schema={"N": int},
+    io_manager_key="snowflake_io_manager",
 )
 def items(context) -> pd.DataFrame:
     """Items from the Hacker News API: each is a story or a comment on a story."""
@@ -79,7 +72,7 @@ def items(context) -> pd.DataFrame:
     # Hacker News API is 1-indexed, so adjust range by 1
     for item_id in range(max_id - context.op_config["N"] + 1, max_id + 1):
         item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
-        rows.append(item=requests.get(item_url, timeout=5).json())
+        rows.append(requests.get(item_url, timeout=5).json())
 
     # ITEM_FIELD_NAMES is a list of the column names in the Hacker News dataset
     result = pd.DataFrame(rows, columns=ITEM_FIELD_NAMES).drop_duplicates(subset=["id"])
@@ -87,13 +80,17 @@ def items(context) -> pd.DataFrame:
     return result
 
 
-@asset
+@asset(
+    io_manager_key="snowflake_io_manager",
+)
 def comments(items: pd.DataFrame) -> pd.DataFrame:
     """Comments from the Hacker News API."""
     return items[items["type"] == "comment"]
 
 
-@asset
+@asset(
+    io_manager_key="snowflake_io_manager",
+)
 def stories(items: pd.DataFrame) -> pd.DataFrame:
     """Stories from the Hacker News API."""
     return items[items["type"] == "story"]
@@ -110,14 +107,14 @@ height={730}
 
 Now we can add these assets to our repository and materialize them via Dagit as part of our local development workflow. We will use the [configured API](/concepts/configuration/configured) to add configuration for the `snowflake_io_manager`.
 
-```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v2.py startafter=start endbefore=end
+```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v1.py startafter=start endbefore=end
 # repository.py
 
 
 @repository
 def repo():
     resource_defs = {
-        "io_manager": snowflake_io_manager.configured(
+        "snowflake_io_manager": snowflake_io_manager.configured(
             {
                 "account": "abc1234.us-east-1",
                 "user": "me@company.com",
@@ -132,6 +129,7 @@ def repo():
 
     return [*with_resources([items, comments, stories], resource_defs=resource_defs)]
 ```
+
 Note that we have passwords in our configuration in this code snippet. This is bad practice, and we will resolve it shortly.
 
 Now we can materialize the assets the Dagit and ensure that the data appears in Snowflake as we expect:
@@ -143,10 +141,10 @@ width={2304}
 height={1064}
 />
 
-
 While we define our assets as Pandas DataFrames, the Snowflake I/O manager automatically translates the data to and from Snowflake tables. The Python asset name determines the Snowflake table name. In this case three tables will be created: `ITEMS`, `COMMENTS` and `STORIES`.
 
 ---
+
 ## Part two: Deployment
 
 In this section we will:
@@ -162,7 +160,7 @@ We want to store the assets in a production Snowflake database, so we need to up
 
 Instead, we can set up the repository to determine the configuration for resources based on the environment:
 
-```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v4.py startafter=start endbefore=end
+```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v2.py startafter=start endbefore=end
 # repository.py
 
 # Note: there are multiple issues with how this config is specified, mainly that
@@ -171,7 +169,7 @@ Instead, we can set up the repository to determine the configuration for resourc
 def repo():
     resource_defs = {
         "local": {
-            "io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
                     "user": "me@company.com",
@@ -183,7 +181,7 @@ def repo():
             ),
         },
         "production": {
-            "io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
                     "user": "dev@company.com",
@@ -198,19 +196,20 @@ def repo():
     deployment_name = os.getenv("DAGSTER_DEPLOYMENT", "local")
 
     return [
-        with_resources(
+        *with_resources(
             [items, comments, stories], resource_defs=resource_defs[deployment_name]
         )
     ]
 ```
+
 Note that we still have passwords in our configuration in this code snippet. This is bad practice, and we will resolve it next.
 
 Now, we can set the environment variable `DAGSTER_DEPLOYMENT=production` in our deployment and the correct resources will be applied to the assets.
 
-<Note>
+<!-- <Note>
 If you're using <a href="https://dagster.io/cloud">Dagster Cloud</a>, this environment variable will be set for you. Additionally, if you're using <a href="https://docs.dagster.cloud/guides/branch-deployments">Branch Deployments</a> <code>DAGSTER_DEPLOYMENT</code> will be automatically set to <code>VAR</code>.
 
-</Note>
+</Note> -->
 
 We still have some problems with this setup:
 
@@ -219,7 +218,7 @@ We still have some problems with this setup:
 
 We can easily solve these problems because the Snowflake I/O manager accepts configuration from environment variables using the <PyObject object="StringSource" /> configuration type. This allows us to store configuration values as environment variables and point Dagster to those environment variables in the run configuration:
 
-```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v5.py startafter=start endbefore=end
+```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v3.py startafter=start endbefore=end
 # repository.py
 
 
@@ -227,7 +226,7 @@ We can easily solve these problems because the Snowflake I/O manager accepts con
 def repo():
     resource_defs = {
         "local": {
-            "io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
                     "user": {"env": "DEV_SNOWFLAKE_USER"},
@@ -238,7 +237,7 @@ def repo():
             ),
         },
         "production": {
-            "io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
                     "user": "system@company.com",
@@ -252,7 +251,7 @@ def repo():
     deployment_name = os.getenv("DAGSTER_DEPLOYMENT", "local")
 
     return [
-        with_resources(
+        *with_resources(
             [items, comments, stories], resource_defs=resource_defs[deployment_name]
         )
     ]
@@ -266,7 +265,7 @@ Depending on your organization’s Dagster setup, there are a couple of options 
 
 - **For a self-hosted staging deployment**, we’ve already done most of the necessary work to run our assets in staging! All we need to do is add another entry to the `resource_defs` dictionary in our repository.
 
-```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v5.py startafter=start_staging endbefore=end_staging
+```python file=/guides/dagster/local_to_prod_tutorial/repository/repository_v3.py startafter=start_staging endbefore=end_staging
 resource_defs = {
     "local": {...},
     "production": {...},
@@ -284,8 +283,8 @@ resource_defs = {
 }
 ```
 
-
 ---
+
 ## Optional: Testing
 
 You may have noticed a missing step in the development workflow presented in this guide — unit tests! While the main purpose of the guide is to help you transition your code from local development to a production deployment, unit testing is still an important part of the development cycle. In this section, we'll explore a pattern you may find useful when writing your own unit tests.
@@ -295,20 +294,15 @@ When we write unit tests for the `items` asset, we could make more precise asser
 Before we get into implementation, let's go over some best practices:
 
 ### When to use resources
+
 In many cases, it is often most convenient to interact with an external service directly in assets or ops, rather than write a resource. We recommend refactoring code to use resources in the following cases:
 
 - Multiple assets or ops need to interact with the service in a consistent way
 - Different implementations of a service need to be used in certain scenarios (ie. a staging environment, or unit tests)
 
 ### When to use stub resources
-  Determining when it makes sense to stub a resource for a unit test can be a
-  topic of much debate. There are certainly some resources where it would be too
-  complicated to write and maintain a stub. For example, it would be difficult
-  to mock a database like Snowflake with a lightweight database since the SQL
-  syntax may vary. In general, if a resource is relatively simple, writing a
-  stub can be really helpful for unit testing the assets and ops that use the
-  resource.
 
+Determining when it makes sense to stub a resource for a unit test can be a topic of much debate. There are certainly some resources where it would be too complicated to write and maintain a stub. For example, it would be difficult to mock a database like Snowflake with a lightweight database since the SQL syntax may vary. In general, if a resource is relatively simple, writing a stub can be really helpful for unit testing the assets and ops that use the resource.
 
 We'll start by writing the "real" Hacker News API Client:
 
@@ -348,6 +342,7 @@ We'll also need to update the `items` asset to use this resource:
 @asset(
     config_schema={"N": int},
     required_resource_keys={"hn_client"},
+    io_manager_key="snowflake_io_manager",
 )
 def items(context) -> pd.DataFrame:
     """Items from the Hacker News API: each is a story or a comment on a story."""
@@ -442,6 +437,7 @@ def test_items():
 ```
 
 ---
+
 ## Conclusion
 
 This guide demonstrates how we recommend writing your assets and jobs so that they transition from local development to staging and production environments without requiring code changes at each step. While we focused on assets in this guide, the same concepts and APIs can be used to swap out run configuration for jobs.

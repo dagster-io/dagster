@@ -14,8 +14,7 @@ snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()]
 # start
 # repository.py
 
-# Note: there are multiple issues with how this config is specified, mainly that
-# passwords are being stored in code. This will be addressed next.
+
 @repository
 def repo():
     resource_defs = {
@@ -23,11 +22,10 @@ def repo():
             "snowflake_io_manager": snowflake_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
-                    "user": "me@company.com",
-                    # password in config is bad practice
-                    "password": "my_super_secret_password",
+                    "user": {"env": "DEV_SNOWFLAKE_USER"},
+                    "password": {"env": "DEV_SNOWFLAKE_PASSWORD"},
                     "database": "LOCAL",
-                    "schema": "ALICE",
+                    "schema": {"env": "DEV_SNOWFLAKE_SCHEMA"},
                 }
             ),
         },
@@ -35,9 +33,8 @@ def repo():
             "snowflake_io_manager": snowflake_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
-                    "user": "dev@company.com",
-                    # password in config is bad practice
-                    "password": "company_super_secret_password",
+                    "user": "system@company.com",
+                    "password": {"env": "SYSTEM_SNOWFLAKE_PASSWORD"},
                     "database": "PRODUCTION",
                     "schema": "HACKER_NEWS",
                 }
@@ -54,3 +51,24 @@ def repo():
 
 
 # end
+
+
+# start_staging
+
+resource_defs = {
+    "local": {...},
+    "production": {...},
+    "staging": {
+        "io_manager": snowflake_io_manager.configured(
+            {
+                "account": "abc1234.us-east-1",
+                "user": "system@company.com",
+                "password": {"env": "SYSTEM_SNOWFLAKE_PASSWORD"},
+                "database": "STAGING",
+                "schema": "HACKER_NEWS",
+            }
+        ),
+    },
+}
+
+# end_staging

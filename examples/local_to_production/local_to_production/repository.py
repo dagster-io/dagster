@@ -17,7 +17,7 @@ def repo():
     resource_defs = {
         "local": {
             "hn_client": hn_api_client,
-            "io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
                     "user": {"env": "DEV_SNOWFLAKE_USER"},
@@ -29,7 +29,7 @@ def repo():
         },
         "staging": {
             "hn_client": hn_api_client,
-            "io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
                     "user": "system@company.com",
@@ -41,7 +41,7 @@ def repo():
         },
         "production": {
             "hn_client": hn_api_client,
-            "io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
                     "user": "system@company.com",

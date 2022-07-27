@@ -6,6 +6,7 @@ from dagster import asset
 @asset(
     config_schema={"N": int},
     required_resource_keys={"hn_client"},
+    io_manager_key="snowflake_io_manager",
 )
 def items(context) -> pd.DataFrame:
     """Items from the Hacker News API: each is a story or a comment on a story."""
@@ -29,13 +30,17 @@ def items(context) -> pd.DataFrame:
     return result
 
 
-@asset
+@asset(
+    io_manager_key="snowflake_io_manager",
+)
 def comments(items: pd.DataFrame) -> pd.DataFrame:
     """Comments from the Hacker News API."""
     return items[items["type"] == "comment"]
 
 
-@asset
+@asset(
+    io_manager_key="snowflake_io_manager",
+)
 def stories(items: pd.DataFrame) -> pd.DataFrame:
     """Stories from the Hacker News API."""
     return items[items["type"] == "story"]
