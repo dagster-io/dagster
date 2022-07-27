@@ -19,10 +19,12 @@ def repo():
         "snowflake_io_manager": snowflake_io_manager.configured(
             {
                 "account": "abc1234.us-east-1",
-                "user": "dev@company.com",
-                "password": "company_super_secret_password",
-                "database": "PRODUCTION",
-                "schema": "HACKER_NEWS",
+                "user": "me@company.com",
+                # storing passwords in configuration is bad practice. We'll address this later
+                # in the guide
+                "password": "my_super_secret_password",
+                "database": "LOCAL",
+                "schema": "ALICE",
             }
         ),
     }

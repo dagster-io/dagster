@@ -5,7 +5,7 @@ from dagster_snowflake_pandas import SnowflakePandasTypeHandler
 
 from dagster import repository, with_resources
 
-from ..assets import comments, items, stories
+from ..assets_v1 import comments, items, stories
 
 # the snowflake io manager can be initialized to handle different data types
 # here we use the pandas type handler so we can store pandas DataFrames
@@ -14,30 +14,27 @@ snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()]
 # start
 # repository.py
 
-# Note: there are multiple issues with how this config is specified, mainly that
-# passwords are being stored in code. This will be addressed next.
+
 @repository
 def repo():
     resource_defs = {
         "local": {
-            "io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
-                    "user": "me@company.com",
-                    # password in config is bad practice
-                    "password": "my_super_secret_password",
+                    "user": {"env": "DEV_SNOWFLAKE_USER"},
+                    "password": {"env": "DEV_SNOWFLAKE_PASSWORD"},
                     "database": "LOCAL",
-                    "schema": "ALICE",
+                    "schema": {"env": "DEV_SNOWFLAKE_SCHEMA"},
                 }
             ),
         },
         "production": {
-            "io_manager": snowflake_io_manager.configured(
+            "snowflake_io_manager": snowflake_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
-                    "user": "dev@company.com",
-                    # password in config is bad practice
-                    "password": "company_super_secret_password",
+                    "user": "system@company.com",
+                    "password": {"env": "SYSTEM_SNOWFLAKE_PASSWORD"},
                     "database": "PRODUCTION",
                     "schema": "HACKER_NEWS",
                 }
@@ -47,10 +44,31 @@ def repo():
     deployment_name = os.getenv("DAGSTER_DEPLOYMENT", "local")
 
     return [
-        with_resources(
+        *with_resources(
             [items, comments, stories], resource_defs=resource_defs[deployment_name]
         )
     ]
 
 
 # end
+
+
+# start_staging
+
+resource_defs = {
+    "local": {...},
+    "production": {...},
+    "staging": {
+        "io_manager": snowflake_io_manager.configured(
+            {
+                "account": "abc1234.us-east-1",
+                "user": "system@company.com",
+                "password": {"env": "SYSTEM_SNOWFLAKE_PASSWORD"},
+                "database": "STAGING",
+                "schema": "HACKER_NEWS",
+            }
+        ),
+    },
+}
+
+# end_staging

@@ -9,6 +9,7 @@ from dagster import asset
 @asset(
     config_schema={"N": int},
     required_resource_keys={"hn_client"},
+    io_manager_key="snowflake_io_manager",
 )
 def items(context) -> pd.DataFrame:
     """Items from the Hacker News API: each is a story or a comment on a story."""

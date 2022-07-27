@@ -55,5 +55,5 @@ def repo():
     deployment_name = os.getenv("DAGSTER_DEPLOYMENT", "local")
 
     return [
-        with_resources([items, comments, stories], resource_defs=resource_defs[deployment_name])
+        *with_resources([items, comments, stories], resource_defs=resource_defs[deployment_name])
     ]

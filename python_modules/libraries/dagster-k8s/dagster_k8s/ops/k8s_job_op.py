@@ -125,8 +125,11 @@ def k8s_job_op(context):
 
     namespace = container_context.namespace
 
+    command = config.get("command")
+
     user_defined_k8s_config = UserDefinedDagsterK8sConfig(
         job_config=config.get("job_config"),
+        container_config=({"command": command} if command else {}),
     )
 
     k8s_job_config = DagsterK8sJobConfig(
@@ -150,7 +153,6 @@ def k8s_job_op(context):
 
     job = construct_dagster_k8s_job(
         job_config=k8s_job_config,
-        command=config.get("command"),
         args=config.get("args"),
         job_name=job_name,
         pod_name=job_name,

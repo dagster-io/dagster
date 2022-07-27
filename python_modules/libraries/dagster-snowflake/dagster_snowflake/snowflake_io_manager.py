@@ -1,5 +1,7 @@
 from typing import Sequence
 
+from snowflake.connector import ProgrammingError
+
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
 
 from .db_io_manager import DbClient, DbIOManager, DbTypeHandler, TablePartition, TableSlice
@@ -60,8 +62,11 @@ class SnowflakeDbClient(DbClient):
         with SnowflakeConnection(
             dict(schema=table_slice.schema, **no_schema_config), context.log  # type: ignore
         ).get_connection() as con:
-            if con.cursor().execute(_check_table_exists_statement(table_slice)).fetchone()[0]:
+            try:
                 con.execute_string(_get_cleanup_statement(table_slice))
+            except ProgrammingError:
+                # table doesn't exist yet, so ignore the error
+                pass
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:

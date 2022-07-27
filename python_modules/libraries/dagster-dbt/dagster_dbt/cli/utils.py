@@ -119,8 +119,10 @@ def execute_cli(
             except json.JSONDecodeError:
                 pass
             else:
-                message = json_line.get("message", json_line.get("msg", message))
-                log_level = json_line.get("levelname", json_line.get("level", "debug"))
+                # in rare cases, the loaded json line may be a string rather than a dictionary
+                if isinstance(message, dict):
+                    message = json_line.get("message", json_line.get("msg", message))
+                    log_level = json_line.get("levelname", json_line.get("level", "debug"))
 
         messages.append(message)
         if capture_logs:

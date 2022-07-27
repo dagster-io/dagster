@@ -60,11 +60,11 @@ except DagsterGraphQLClientError as exc:
 
 # start_run_status_marker
 from dagster_graphql import DagsterGraphQLClientError
-from dagster import PipelineRunStatus
+from dagster import DagsterRunStatus
 
 try:
-    status: PipelineRunStatus = client.get_run_status(RUN_ID)
-    if status == PipelineRunStatus.SUCCESS:
+    status: DagsterRunStatus = client.get_run_status(RUN_ID)
+    if status == DagsterRunStatus.SUCCESS:
         do_something_on_success()
     else:
         do_something_else()
