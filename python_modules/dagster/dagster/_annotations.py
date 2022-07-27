@@ -1,6 +1,6 @@
 import inspect
 from functools import wraps
-from typing import Callable, Type, TypeVar, cast
+from typing import Callable, Final, Type, TypeVar, cast
 
 import dagster._check as check
 from dagster._utils.backcompat import (
@@ -28,6 +28,17 @@ def public(obj: T_Callable) -> T_Callable:
 def is_public(fn: Callable) -> bool:
     check.callable_param(fn, "fn")
     return hasattr(fn, "_is_public") and getattr(fn, "_is_public")
+
+
+# Use `PUBLIC` with `typing_extensions.Annotated` to annotate public attributes on `NamedTuple`:
+#
+# from typing_extensions import Annotated
+# from dagster._annotations import PUBLIC
+#
+# class Foo(NamedTuple("_Foo", [("bar", Annotated[int, PUBLIC])])):
+#     ...
+
+PUBLIC: Final[str] = "public"
 
 
 ##### DEPRECATED

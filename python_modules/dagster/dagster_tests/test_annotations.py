@@ -1,4 +1,10 @@
+import sys
+from typing import NamedTuple, get_type_hints
+
+from typing_extensions import Annotated
+
 from dagster._annotations import (
+    PUBLIC,
     deprecated,
     experimental,
     is_deprecated,
@@ -15,6 +21,18 @@ def test_public_annotation():
             pass
 
     assert is_public(Foo.bar)
+
+
+def test_public_constant_for_namedtuple():
+    class Foo(NamedTuple("_Foo", [("bar", Annotated[int, PUBLIC])])):
+        ...
+
+    hints = (
+        get_type_hints(Foo, include_extras=True)
+        if sys.version_info >= (3, 9)
+        else get_type_hints(Foo)
+    )
+    assert hints["bar"] == Annotated[int, PUBLIC]
 
 
 def test_deprecated():
