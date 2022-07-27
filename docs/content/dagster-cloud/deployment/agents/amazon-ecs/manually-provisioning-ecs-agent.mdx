@@ -1,8 +1,12 @@
 ---
 title: Creating a manually-provisioned Amazon Elastic Container Services agent | Dagster Docs
+
+platform_type: "cloud"
 ---
 
 # Creating a manually-provisioned Amazon Elastic Container Services agent
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
 
 In this guide, you'll manually set up and deploy an Amazon Elastic Container Service (ECS) agent. Amazon ECS agents are used to launch user code in ECS tasks.
 
@@ -128,7 +132,7 @@ To successfully run your ECS agent, you'll need to have the following IAM roles 
 
 ## Amazon ECS configuration reference
 
-This section describes the properties of the `dagster`.yaml` configuration file used by Amazon ECS agents.
+This section describes the properties of the `dagster.yaml` configuration file used by Amazon ECS agents.
 
 ```yaml
 instance_class:
@@ -157,24 +161,22 @@ user_code_launcher:
 ### dagster_cloud_api properties
 
 <ReferenceTable>
-	<ReferenceTableItem
-	propertyName="deployment"
-	propertyDescription="The name of the Dagster Cloud deployment associated with the agent."
-	>
-	</ReferenceTableItem>
+  <ReferenceTableItem propertyName="deployment">
+    The name of the Dagster Cloud deployment associated with the agent.
+  </ReferenceTableItem>
 </ReferenceTable>
 
 ### user_code_launcher properties
 
 <ReferenceTable>
-	<ReferenceTableItem
-	propertyName="config.cluster"
-	propertyDescription='The name of an <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/create_cluster.html" target="_blank">ECS cluster</a> with a <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/cluster-capacity-providers.html" target="_blank">Fargate capacity provider</a>.'
-	>
-	</ReferenceTableItem>
-	<ReferenceTableItem
-	propertyName="config.subnets"
-	propertyDescription='<strong>At least one subnet is required</strong>. <a href="https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-networking.html" target="_blank">Fargate tasks</a> require a route to the internet so they can pull images. How this requirement is satisfied depends on the type of subnet provided:
+  <ReferenceTableItem
+  propertyName="config.cluster"
+  >
+  The name of an <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/create_cluster.html" target="_blank">ECS cluster</a> with a <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/cluster-capacity-providers.html" target="_blank">Fargate capacity provider</a>.
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.subnets">
+  <strong>At least one subnet is required</strong>. <a href="https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-networking.html" target="_blank">Fargate tasks</a> require a route to the internet so they can pull images. How this requirement is satisfied depends on the type of subnet provided:
 
    <ul>
     <li>
@@ -183,50 +185,36 @@ user_code_launcher:
     <li>
      <strong>Private subnets</strong> - The ECS agent assumes you've configured a NAT gateway with an attached NAT gateway. Tasks will <strong>not</strong> be assigned a public IP address.
     </li>
-    </ul>'
-	>
-	</ReferenceTableItem>
-	<ReferenceTableItem
-	propertyName="config.service_discovery_namespace_id"
-	propertyDescription="The name of a <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-servicediscovery-privatednsnamespace.html" target="_blank">private DNS namespace</a>.
+    </ul>
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.service_discovery_namespace_id">
+  The name of a <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-servicediscovery-privatednsnamespace.html" target="_blank">private DNS namespace</a>.
 
    <p>
     The ECS agent launches each user code repository location as its own ECS service. The agent communicates with these services via <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-discovery.html" target="_blank">AWS CloudMap service discovery</a>.
-   </p>"
-	>
-	</ReferenceTableItem>
-	<ReferenceTableItem
-	propertyName="config.service_discovery_namespace_id"
-	propertyDescription="The name of a <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-servicediscovery-privatednsnamespace.html" target="_blank">private DNS namespace</a>.
-
-   <p>
-    The ECS agent launches each user code repository location as its own ECS service. The agent communicates with these services via <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-discovery.html" target="_blank">AWS CloudMap service discovery</a>.
-   </p>"
-	>
-	</ReferenceTableItem>
-	<ReferenceTableItem
-	propertyName="config.execution_role_arn"
-	propertyDescription="The ARN of the <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html" target="_blank">Amazon ECS task execution IAM role</a>. This role allows ECS to interact with AWS resources on your behalf, such as getting an image from ECR or pushing logs to CloudWatch. Refer to <a href="#step-2-create-required-ecs-iam-roles">Step 2 of this guide</a> for more info.
+   </p>
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.execution_role_arn">
+  The ARN of the <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html" target="_blank">Amazon ECS task execution IAM role</a>. This role allows ECS to interact with AWS resources on your behalf, such as getting an image from ECR or pushing logs to CloudWatch. Refer to <a href="#step-2-create-required-ecs-iam-roles">Step 2 of this guide</a> for more info.
 
    <p>
     <strong>Note:</strong> This role must include a trust relationship that allows ECS to use it.
-   </p>"
-	>
-	</ReferenceTableItem>
-	<ReferenceTableItem
-	propertyName="config.task_role_arn"
-	propertyDescription="The ARN of the <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html" target="_blank">Amazon ECS task IAM role</a>. This role allows the containers running in the ECS task to interact with AWS. Refer to <a href="#step-2-create-required-ecs-iam-roles">Step 2 of this guide</a> for more info.
+   </p>
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.task_role_arn">
+  The ARN of the <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html" target="_blank">Amazon ECS task IAM role</a>. This role allows the containers running in the ECS task to interact with AWS. Refer to <a href="#step-2-create-required-ecs-iam-roles">Step 2 of this guide</a> for more info.
 
    <p>
     <strong>Note:</strong> This role must include a trust relationship that allows ECS to use it.
-   </p>"
-	>
-	</ReferenceTableItem>
-	<ReferenceTableItem
-	propertyName="config.log_group"
-	propertyDescription="The name of a CloudWatch <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Working-with-log-groups-and-streams.html#Create-Log-Group" target="_blank">log group</a>."
-	>
-	</ReferenceTableItem>
+   </p>
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.log_group">
+  The name of a CloudWatch <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Working-with-log-groups-and-streams.html#Create-Log-Group" target="_blank">log group</a>.
+  </ReferenceTableItem>
 </ReferenceTable>
 
 ---
