@@ -1,5 +1,111 @@
 ---
 title: Configuring and running a Kubernetes agent | Dagster Docs
+
+platform_type: "cloud"
 ---
 
 # Configuring and running a Kubernetes agent
+
+<Note>
+	This guide is applicable to Dagster Cloud.
+</Note>
+
+In this guide, you'll configure and run a Kubernetes agent. Kubernetes agents are used to launch your code in Kubernetes Jobs and Services.
+
+---
+
+## Prerequisites
+
+To complete the steps in this guide, you'll need:
+
+- **Permissions in Dagster Cloud that allow you to manage agent tokens**. Refer to the [User permissions documentation](/auth#role-based-access-controls) for more info.
+
+- **A Kubernetes cluster into which you can deploy the agent.** This can be a self-hosted Kubernetes cluster or a managed offering like [Amazon EKS](https://aws.amazon.com/eks/), [Azure AKS](https://azure.microsoft.com/en-us/services/kubernetes-service/#overview), or [Google GKE](https://cloud.google.com/kubernetes-engine).
+
+- **Access to a container registry to which you can push images and from which pods in the Kubernetes cluster can pull images.** This can be:
+
+  - A self-hosted registry,
+  - A public registry such as [DockerHub](https://hub.docker.com/), or
+  - A managed offering such as [Amazon ECR](https://aws.amazon.com/ecr/), [Azure ACR](https://azure.microsoft.com/en-us/services/container-registry/#overview), or [Google GCR](https://cloud.google.com/container-registry)
+
+- **To have Helm installed.** Refer to the [Helm installation documentation](https://helm.sh/docs/intro/install/) for more info.
+
+---
+
+## Step 1: Generate a Dagster Cloud agent token
+
+<!-- <GenerateAgentToken /> -->
+
+---
+
+## Step 2: Configure the agent
+
+In this step, you'll create a Kubernetes namespace for your Dagster Cloud resources. You'll also add the agent token to the Kubernetes cluster.
+
+1. Create a Kubernetes namespace for your Dagster Cloud resources:
+
+   ```shell
+   kubectl create namespace <namespace>
+   ```
+
+   For example, if the namespace is `dagster-cloud`:
+
+   ```shell
+   kubectl create namespace dagster-cloud
+   ```
+
+2. Add the agent token you created in [Step 1](#step-1-generate-a-dagster-cloud-agent-token) as a secret in the Kubernetes cluster:
+
+   ```shell
+   kubectl create secret generic dagster-cloud-agent-token \
+       --from-literal=DAGSTER_CLOUD_AGENT_TOKEN=<your_agent_token> \
+       --namespace dagster-cloud
+   ```
+
+---
+
+## Step 3: Start the agent
+
+In this step, you'll spin up the agent with Helm.
+
+1. Add the [agent chart repository](https://dagster-io.github.io/helm-user-cloud):
+
+   ```shell
+   helm repo add dagster-cloud https://dagster-io.github.io/helm-user-cloud
+   helm repo update
+   ```
+
+2. Install the agent chart, specifying:
+
+   - The namespace into which to install the chart
+   - The Dagster Cloud deployment the agent will be responsible for. **Note**: When your Dagster Cloud organization is first created, the default deployment is `prod`:
+
+   ```shell
+   helm upgrade \
+      --install user-cloud dagster-cloud/dagster-cloud-agent \
+      --namespace dagster-cloud \
+      --set dagsterCloud.deployment=prod
+   ```
+
+After the Helm chart is installed into the Kubernetes cluster, you can view the agent in Dagster Cloud.
+
+In Dagster Cloud, navigate to the **Status** page and click the **Agents** tab. You should see the agent running in the **Agent statuses** section:
+
+<Image
+alt="Instance Status"
+src="/images/dagster-cloud/agents/dagster-cloud-instance-status.png"
+width={1152}
+height={320}
+/>
+
+---
+
+## Next steps
+
+Now that you've got your agent running, what's next?
+
+- **If you're getting Dagster Cloud set up**, the next step is to [add a code location](/tutorial/adding-code-locations) using the agent.
+
+- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster Cloud](/guides/adding-code) guide for more info.
+
+You can also further [configure the jobs the agent runs](/dagster-cloud/deployment/agents/kubernetes/configuration-reference), including adding secrets, mounting volumes, and setting resource limits.
