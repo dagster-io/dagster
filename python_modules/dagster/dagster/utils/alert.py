@@ -9,9 +9,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 if TYPE_CHECKING:
     from dagster.core.definitions.graph_definition import GraphDefinition
     from dagster.core.definitions.pipeline_definition import PipelineDefinition
-    from dagster.core.definitions.run_status_sensor_definition import (
-        RunFailureSensorContext,
-    )
+    from dagster.core.definitions.run_status_sensor_definition import RunFailureSensorContext
     from dagster.core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,
     )
