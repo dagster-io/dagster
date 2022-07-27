@@ -5,7 +5,7 @@ from dagster_snowflake_pandas import SnowflakePandasTypeHandler
 
 from dagster import repository, with_resources
 
-from ..assets_v1 import comments, items, stories
+from local_to_production.assets import comments, items, stories
 
 # the snowflake io manager can be initialized to handle different data types
 # here we use the pandas type handler so we can store pandas DataFrames
@@ -14,8 +14,7 @@ snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()]
 # start
 # repository.py
 
-# Note: there are multiple issues with how this config is specified, mainly that
-# passwords are being stored in code. This will be addressed next.
+# Note that storing passwords in configuration is bad practice. It will be resolved soon.
 @repository
 def repo():
     resource_defs = {

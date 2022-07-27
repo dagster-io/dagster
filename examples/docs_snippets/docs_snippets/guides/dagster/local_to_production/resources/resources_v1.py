@@ -1,11 +1,10 @@
+# start_resource
+# resources.py
 from typing import Any, Dict, Optional
 
 import requests
 
 from dagster import resource
-
-# start_resource
-# resources.py
 
 
 class HNAPIClient:
