@@ -52,6 +52,7 @@ def main(quiet: bool, extra_packages: List[str]) -> None:
         '-e "python_modules/libraries/dagster-dask[yarn,pbs,kube]"',
         "-e python_modules/libraries/dagster-databricks",
         "-e python_modules/libraries/dagster-datadog",
+        "-e python_modules/libraries/dagster-datahub",
         "-e python_modules/libraries/dagster-docker",
         "-e python_modules/libraries/dagster-gcp",
         "-e python_modules/libraries/dagster-fivetran",

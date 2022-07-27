@@ -20,33 +20,27 @@ from dagster import (
     String,
 )
 from dagster import _check as check
-from dagster import (
-    execute_pipeline,
-    execute_pipeline_iterator,
-    pipeline,
-    reconstructable,
-    reexecute_pipeline,
-    solid,
-)
-from dagster.core.definitions import Node
-from dagster.core.definitions.dependency import DependencyStructure
-from dagster.core.definitions.graph_definition import _create_adjacency_lists
-from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
-from dagster.core.execution.results import SolidExecutionResult
-from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import (
+from dagster import execute_pipeline, execute_pipeline_iterator, reconstructable, reexecute_pipeline
+from dagster._core.definitions import Node
+from dagster._core.definitions.dependency import DependencyStructure
+from dagster._core.definitions.graph_definition import _create_adjacency_lists
+from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
+from dagster._core.execution.results import SolidExecutionResult
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import (
     default_mode_def_for_test,
     instance_for_test,
     step_output_event_filter,
 )
-from dagster.core.utility_solids import (
+from dagster._core.utility_solids import (
     create_root_solid,
     create_solid_with_deps,
     define_stub_solid,
     input_set,
 )
-from dagster.core.workspace.load import location_origin_from_python_file
-from dagster.utils.test import execute_solid_within_pipeline
+from dagster._core.workspace.load import location_origin_from_python_file
+from dagster._legacy import pipeline, solid
+from dagster._utils.test import execute_solid_within_pipeline
 
 # protected members
 # pylint: disable=W0212

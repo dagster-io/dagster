@@ -106,10 +106,7 @@ export const AssetTable = ({
               </Button>
             </Tooltip>
           ) : (
-            <LaunchAssetExecutionButton
-              assetKeys={checkedAssets.map((c) => c.key)}
-              liveDataByNode={liveDataByNode}
-            />
+            <LaunchAssetExecutionButton assetKeys={checkedAssets.map((c) => c.key)} />
           )}
           <MoreActionsDropdown selected={checkedAssets} clearSelection={() => onToggleAll(false)} />
         </Box>
@@ -151,7 +148,7 @@ export const AssetTable = ({
                   isSelected={checkedPaths.has(pathStr)}
                   onToggleChecked={onToggleFactory(pathStr)}
                   onWipe={(assets: Asset[]) => setToWipe(assets.map((asset) => asset.key))}
-                  canWipe={canWipeAssets}
+                  canWipe={canWipeAssets.enabled}
                 />
               );
             })
@@ -364,7 +361,7 @@ const MoreActionsDropdown: React.FC<{
   const [showBulkWipeDialog, setShowBulkWipeDialog] = React.useState<boolean>(false);
   const {canWipeAssets} = usePermissions();
 
-  if (!canWipeAssets) {
+  if (!canWipeAssets.enabled) {
     return null;
   }
 

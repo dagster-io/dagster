@@ -22,22 +22,21 @@ from dagster import (
     io_manager,
     job,
     op,
-    pipeline,
     reconstructable,
     resource,
     root_input_manager,
-    solid,
     usable_as_dagster_type,
 )
-from dagster.core.definitions import InputDefinition
-from dagster.core.definitions.version_strategy import VersionStrategy
-from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.plan.outputs import StepOutputHandle
-from dagster.core.execution.resolve_versions import join_and_hash, resolve_config_version
-from dagster.core.storage.memoizable_io_manager import MemoizableIOManager
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG
-from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster.core.test_utils import instance_for_test
+from dagster._core.definitions import InputDefinition
+from dagster._core.definitions.version_strategy import VersionStrategy
+from dagster._core.execution.api import create_execution_plan
+from dagster._core.execution.plan.outputs import StepOutputHandle
+from dagster._core.execution.resolve_versions import join_and_hash, resolve_config_version
+from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
+from dagster._core.storage.tags import MEMOIZED_RUN_TAG
+from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.test_utils import instance_for_test
+from dagster._legacy import pipeline, solid
 
 
 class VersionedInMemoryIOManager(MemoizableIOManager):

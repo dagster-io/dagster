@@ -7,22 +7,22 @@ import uuid
 
 import pytest
 
-from dagster import seven
-from dagster.api.list_repositories import sync_list_repositories_grpc
-from dagster.core.errors import DagsterUserCodeUnreachableError
-from dagster.core.host_representation.origin import (
+from dagster import _seven
+from dagster._api.list_repositories import sync_list_repositories_grpc
+from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.host_representation.origin import (
     ExternalRepositoryOrigin,
     GrpcServerRepositoryLocationOrigin,
 )
-from dagster.core.test_utils import environ, instance_for_test, new_cwd
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.grpc.client import DagsterGrpcClient
-from dagster.grpc.server import open_server_process, wait_for_grpc_server
-from dagster.grpc.types import SensorExecutionArgs
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
-from dagster.seven import get_system_temp_directory
-from dagster.utils import file_relative_path, find_free_port
-from dagster.utils.error import SerializableErrorInfo
+from dagster._core.test_utils import environ, instance_for_test, new_cwd
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._grpc.client import DagsterGrpcClient
+from dagster._grpc.server import open_server_process, wait_for_grpc_server
+from dagster._grpc.types import SensorExecutionArgs
+from dagster._serdes import deserialize_json_to_dagster_namedtuple
+from dagster._seven import get_system_temp_directory
+from dagster._utils import file_relative_path, find_free_port
+from dagster._utils.error import SerializableErrorInfo
 
 
 def _get_ipc_output_file():
@@ -101,7 +101,12 @@ def test_empty_executable_args():
         process = open_server_process(
             port, socket=None, loadable_target_origin=loadable_target_origin
         )
-        assert process.args[:3] == ["dagster", "api", "grpc"]
+        assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]
+
+        client = DagsterGrpcClient(port=port, host="localhost")
+        list_repositories_response = sync_list_repositories_grpc(client)
+        assert list_repositories_response.entry_point == ["dagster"]
+        assert list_repositories_response.executable_path == sys.executable
     finally:
         if process:
             process.terminate()
@@ -302,7 +307,7 @@ def test_load_with_non_existant_file(capfd):
 
     _, err = capfd.readouterr()
 
-    if seven.IS_WINDOWS:
+    if _seven.IS_WINDOWS:
         assert "The system cannot find the file specified" in err
     else:
         assert "No such file or directory" in err
@@ -370,7 +375,7 @@ def test_load_with_empty_working_directory(capfd):
                 process.terminate()
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="Crashes in subprocesses crash test runs on Windows")
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Crashes in subprocesses crash test runs on Windows")
 def test_crash_during_load():
     port = find_free_port()
     python_file = file_relative_path(__file__, "crashy_grpc_repo.py")

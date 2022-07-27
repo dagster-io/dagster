@@ -11,7 +11,7 @@ import kubernetes
 from kubernetes.client import Configuration
 
 import dagster._check as check
-from dagster.utils import safe_tempfile_path
+from dagster._utils import safe_tempfile_path
 
 from .cluster import ClusterConfig
 from .integration_utils import check_output, which_, within_docker

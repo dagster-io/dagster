@@ -1,6 +1,7 @@
 from dagster import Field, InputDefinition, Nothing, OutputDefinition, Permissive
 from dagster import _check as check
-from dagster import op, solid
+from dagster import op
+from dagster._legacy import solid
 
 from .databricks import wait_for_run_to_complete
 
@@ -88,7 +89,8 @@ def create_databricks_job_solid(
 
         .. code-block:: python
 
-            from dagster import ModeDefinition, pipeline
+            from dagster import ModeDefinition
+            from dagster._legacy import pipeline
             from dagster_databricks import create_databricks_job_solid, databricks_client
 
             sparkpi = create_databricks_job_solid().configured(

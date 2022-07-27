@@ -1,10 +1,10 @@
 from dagster import AssetKey, AssetMaterialization, Output, job, op
-from dagster.core.definitions.events import parse_asset_key_string
-from dagster.core.events.log import EventLogEntry
-from dagster.core.instance import DagsterInstance, InstanceRef
-from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
-from dagster.utils import file_relative_path
-from dagster.utils.test import copy_directory
+from dagster._core.definitions.events import parse_asset_key_string
+from dagster._core.events.log import EventLogEntry
+from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._utils import file_relative_path
+from dagster._utils.test import copy_directory
 
 
 def test_structured_asset_key():
@@ -129,6 +129,9 @@ def test_backcompat_asset_materializations():
 
             c_mat = storage.get_latest_materialization_events([c]).get(c)
             _validate_materialization(c, c_mat)
+
+            mat_by_key = storage.get_latest_materialization_events([])
+            assert len(mat_by_key) == 0
 
             mat_by_key = storage.get_latest_materialization_events([a, b, c])
             assert mat_by_key.get(a) is None

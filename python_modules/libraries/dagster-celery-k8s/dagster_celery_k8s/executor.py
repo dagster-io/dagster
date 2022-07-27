@@ -30,16 +30,16 @@ from dagster_k8s.utils import (
 from dagster import DagsterEvent, DagsterEventType, DagsterInstance, Executor, MetadataEntry
 from dagster import _check as check
 from dagster import executor, multiple_process_executor_requirements
-from dagster.cli.api import ExecuteStepArgs
-from dagster.core.errors import DagsterUnmetExecutorRequirementsError
-from dagster.core.events import EngineEventData
-from dagster.core.events.log import EventLogEntry
-from dagster.core.events.utils import filter_dagster_events_from_cli_logs
-from dagster.core.execution.plan.objects import StepFailureData, UserFailureData
-from dagster.core.execution.retries import RetryMode
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.serdes import pack_value, serialize_dagster_namedtuple, unpack_value
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster._cli.api import ExecuteStepArgs
+from dagster._core.errors import DagsterUnmetExecutorRequirementsError
+from dagster._core.events import EngineEventData
+from dagster._core.events.log import EventLogEntry
+from dagster._core.events.utils import filter_dagster_events_from_cli_logs
+from dagster._core.execution.plan.objects import StepFailureData, UserFailureData
+from dagster._core.execution.retries import RetryMode
+from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._serdes import pack_value, serialize_dagster_namedtuple, unpack_value
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
 from .launcher import CeleryK8sRunLauncher

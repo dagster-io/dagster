@@ -3,14 +3,13 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 from slack_sdk.web.client import WebClient
 
 from dagster import DefaultSensorStatus
-from dagster.core.definitions import GraphDefinition, PipelineDefinition
-from dagster.core.definitions.run_status_sensor_definition import (
-    PipelineFailureSensorContext,
+from dagster._core.definitions import GraphDefinition, PipelineDefinition
+from dagster._core.definitions.run_status_sensor_definition import (
     RunFailureSensorContext,
     RunStatusSensorContext,
     run_failure_sensor,
 )
-from dagster.core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 T = TypeVar("T", bound=RunStatusSensorContext)
 
@@ -58,9 +57,7 @@ def _build_slack_blocks_and_text(
     return blocks, main_body_text
 
 
-def _default_failure_message_text_fn(
-    context: Union[PipelineFailureSensorContext, RunFailureSensorContext]
-) -> str:
+def _default_failure_message_text_fn(context: RunFailureSensorContext) -> str:
     return f"Error: ```{context.failure_event.message}```"
 
 

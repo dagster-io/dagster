@@ -3,8 +3,8 @@ import time
 import kubernetes
 
 from dagster import Field, In, Noneable, Nothing, Permissive, StringSource, op
-from dagster.utils import merge_dicts
-from dagster.utils.backcompat import experimental
+from dagster._annotations import experimental
+from dagster._utils import merge_dicts
 
 from ..container_context import K8sContainerContext
 from ..job import (
@@ -88,11 +88,14 @@ def k8s_job_op(context):
     For example:
 
     .. literalinclude:: ../../../../../../python_modules/libraries/dagster-k8s/dagster_k8s_tests/unit_tests/test_example_k8s_job_op.py
-       :start-after: start_marker
-       :end-before: end_marker
-       :language: python
+      :start-after: start_marker
+      :end-before: end_marker
+      :language: python
 
+    The service account that is used to run this job should have the following RBAC permissions:
 
+    .. literalinclude:: ../../../../../../examples/docs_snippets/docs_snippets/deploying/kubernetes/k8s_job_op_rbac.yaml
+       :language: YAML
     """
 
     config = context.op_config

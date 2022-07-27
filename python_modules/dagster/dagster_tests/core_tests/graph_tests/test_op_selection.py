@@ -5,6 +5,7 @@ from typing import List
 import pytest
 
 from dagster import (
+    AssetKey,
     ConfigMapping,
     DynamicOut,
     DynamicOutput,
@@ -15,9 +16,9 @@ from dagster import (
     repository,
     root_input_manager,
 )
-from dagster.core.errors import DagsterInvalidInvocationError, DagsterInvalidSubsetError
-from dagster.core.events import DagsterEventType
-from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvalidSubsetError
+from dagster._core.events import DagsterEventType
+from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 
 
 @op
@@ -207,6 +208,39 @@ def test_unsatisfied_input_use_root_input_manager():
     assert result.output_for_node("end") == 4
 
     # test to ensure that if start is not being executed its input config is still allowed (and ignored)
+    subset_result = full_job.execute_in_process(
+        run_config={
+            "ops": {"end": {"inputs": {"x": 1}}},
+        },
+        op_selection=["end"],
+    )
+    assert subset_result.success
+    assert subset_result.output_for_node("end") == 1
+
+
+def test_unsatisfied_input_with_asset_key_use_config():
+    @op(ins={"x": In(asset_key=AssetKey("foo"))})
+    def start(_, x: int):
+        return x
+
+    @op(ins={"x": In(asset_key=AssetKey("bar"))})
+    def end(_, x: int):
+        return x
+
+    @graph
+    def testing_io():
+        end(start())
+
+    full_job = testing_io.to_job()
+    result = full_job.execute_in_process(
+        run_config={
+            "ops": {"start": {"inputs": {"x": 4}}},
+        },
+    )
+    assert result.success
+    assert result.output_for_node("end") == 4
+
+    # test to ensure that if start is not being executed its input config is used
     subset_result = full_job.execute_in_process(
         run_config={
             "ops": {"end": {"inputs": {"x": 1}}},

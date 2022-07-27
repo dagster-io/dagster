@@ -159,7 +159,7 @@ const SCHEDULE_ROOT_QUERY = gql`
       ...InstanceHealthFragment
       daemonHealth {
         id
-        daemonStatus(daemonType: "SCHEDULE") {
+        daemonStatus(daemonType: "SCHEDULER") {
           id
           healthy
         }

@@ -27,7 +27,7 @@ export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_Repos
   message: string;
 }
 
-export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_PythonError_cause {
+export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -37,7 +37,7 @@ export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_Pytho
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: ReloadRepositoryLocationMutation_reloadRepositoryLocation_PythonError_cause | null;
+  causes: ReloadRepositoryLocationMutation_reloadRepositoryLocation_PythonError_causes[];
 }
 
 export type ReloadRepositoryLocationMutation_reloadRepositoryLocation = ReloadRepositoryLocationMutation_reloadRepositoryLocation_WorkspaceLocationEntry | ReloadRepositoryLocationMutation_reloadRepositoryLocation_UnauthorizedError | ReloadRepositoryLocationMutation_reloadRepositoryLocation_ReloadNotSupported | ReloadRepositoryLocationMutation_reloadRepositoryLocation_RepositoryLocationNotFound | ReloadRepositoryLocationMutation_reloadRepositoryLocation_PythonError;

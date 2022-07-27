@@ -23,7 +23,7 @@ export interface ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitio
   results: ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results[];
 }
 
-export interface ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError_cause {
+export interface ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -33,7 +33,7 @@ export interface ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitio
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError_cause | null;
+  causes: ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError_causes[];
 }
 
 export type ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions | ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_PythonError;

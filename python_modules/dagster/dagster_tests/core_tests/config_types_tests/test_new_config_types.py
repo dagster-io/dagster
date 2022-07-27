@@ -1,7 +1,5 @@
 from dagster import Array, Int, Noneable
-from dagster.config.config_type import ConfigTypeKind
-from dagster.config.field import resolve_to_config_type
-from dagster.config.validate import validate_config
+from dagster._config import ConfigTypeKind, resolve_to_config_type, validate_config
 
 
 def test_config_any():

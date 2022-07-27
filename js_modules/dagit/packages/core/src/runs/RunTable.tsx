@@ -51,7 +51,8 @@ export const RunTable = (props: RunTableProps) => {
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(allIds);
 
   const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
-  const canTerminateOrDelete = canTerminatePipelineExecution || canDeletePipelineRun;
+  const canTerminateOrDelete =
+    canTerminatePipelineExecution.enabled || canDeletePipelineRun.enabled;
 
   const {options} = useRepositoryOptions();
 

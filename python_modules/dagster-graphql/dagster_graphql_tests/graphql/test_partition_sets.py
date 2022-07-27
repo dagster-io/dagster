@@ -91,25 +91,6 @@ GET_PARTITION_SET_TAGS_QUERY = """
     }
 """
 
-GET_PARTITION_SET_RUNS_QUERY = """
-    query PartitionSetQuery($repositorySelector: RepositorySelector!, $partitionSetName: String!) {
-        partitionSetOrError(repositorySelector: $repositorySelector, partitionSetName: $partitionSetName) {
-            ...on PartitionSet {
-                partitionsOrError {
-                    ... on Partitions {
-                        results {
-                            name
-                            runs {
-                                runId
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-"""
-
 GET_PARTITION_SET_STATUS_QUERY = """
     query PartitionSetQuery($repositorySelector: RepositorySelector!, $partitionSetName: String!) {
         partitionSetOrError(repositorySelector: $repositorySelector, partitionSetName: $partitionSetName) {
@@ -199,46 +180,6 @@ class TestPartitionSets(NonLaunchableGraphQLContextTestMatrix):
 
 
 class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
-    def test_get_partition_runs(self, graphql_context):
-        repository_selector = infer_repository_selector(graphql_context)
-        result = execute_dagster_graphql_and_finish_runs(
-            graphql_context,
-            LAUNCH_PARTITION_BACKFILL_MUTATION,
-            variables={
-                "backfillParams": {
-                    "selector": {
-                        "repositorySelector": repository_selector,
-                        "partitionSetName": "integer_partition",
-                    },
-                    "partitionNames": ["2", "3"],
-                    "forceSynchronousSubmission": True,
-                }
-            },
-        )
-        assert not result.errors
-        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
-        assert len(result.data["launchPartitionBackfill"]["launchedRunIds"]) == 2
-        run_ids = result.data["launchPartitionBackfill"]["launchedRunIds"]
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            query=GET_PARTITION_SET_RUNS_QUERY,
-            variables={
-                "partitionSetName": "integer_partition",
-                "repositorySelector": repository_selector,
-            },
-        )
-        assert not result.errors
-        assert result.data
-        partitions = result.data["partitionSetOrError"]["partitionsOrError"]["results"]
-        assert len(partitions) == 10
-        for partition in partitions:
-            if partition["name"] not in ("2", "3"):
-                assert len(partition["runs"]) == 0
-            else:
-                assert len(partition["runs"]) == 1
-                assert partition["runs"][0]["runId"] in run_ids
-
     def test_get_partition_status(self, graphql_context):
         repository_selector = infer_repository_selector(graphql_context)
         result = execute_dagster_graphql_and_finish_runs(

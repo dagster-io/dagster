@@ -7,7 +7,7 @@
 // GraphQL fragment: DaemonHealthFragment
 // ====================================================
 
-export interface DaemonHealthFragment_allDaemonStatuses_lastHeartbeatErrors_cause {
+export interface DaemonHealthFragment_allDaemonStatuses_lastHeartbeatErrors_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -17,7 +17,7 @@ export interface DaemonHealthFragment_allDaemonStatuses_lastHeartbeatErrors {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: DaemonHealthFragment_allDaemonStatuses_lastHeartbeatErrors_cause | null;
+  causes: DaemonHealthFragment_allDaemonStatuses_lastHeartbeatErrors_causes[];
 }
 
 export interface DaemonHealthFragment_allDaemonStatuses {

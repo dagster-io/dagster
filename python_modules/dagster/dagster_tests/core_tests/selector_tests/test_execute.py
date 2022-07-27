@@ -8,12 +8,12 @@ from dagster import (
     reexecute_pipeline,
     reexecute_pipeline_iterator,
 )
-from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
-from dagster.core.execution.api import create_execution_plan, execute_run
-from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import instance_for_test, step_output_event_filter
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
+from dagster._core.execution.api import create_execution_plan, execute_run
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import instance_for_test, step_output_event_filter
 
 from .test_subset_selector import asset_selection_job, foo_pipeline
 

@@ -13,11 +13,11 @@ from dagster import (
     job,
     op,
     resource,
-    solid,
 )
 from dagster._check import CheckError
-from dagster.core.definitions.decorators.graph_decorator import graph
-from dagster.core.definitions.output import GraphOut
+from dagster._core.definitions.decorators.graph_decorator import graph
+from dagster._core.definitions.output import GraphOut
+from dagster._legacy import solid
 
 
 def get_solids():

@@ -4,7 +4,7 @@ from threading import Thread
 from dagster_aws.emr.emr_step_main import DONE, event_writing_loop
 
 from dagster import DagsterEvent
-from dagster.core.events import EngineEventData
+from dagster._core.events import EngineEventData
 
 
 def make_event(event_id):

@@ -37,7 +37,7 @@ if __name__ == "__main__":
             "graphene>=2.1.3,<3",  # compatability with graphql-ws in dagit
             "graphql-core>=2.1,<3",  # compatability with graphql-ws in dagit
             "requests",
-            "gql<3",
+            "gql<3",  # compatibility with graphql-core pin above
         ],
         entry_points={"console_scripts": ["dagster-graphql = dagster_graphql.cli:main"]},
     )

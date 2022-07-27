@@ -9,7 +9,7 @@ from sshtunnel import SSHTunnelForwarder
 from dagster import Field, StringSource
 from dagster import _check as check
 from dagster import resource
-from dagster.utils import merge_dicts, mkdir_p
+from dagster._utils import merge_dicts, mkdir_p
 
 
 def key_from_str(key_str):

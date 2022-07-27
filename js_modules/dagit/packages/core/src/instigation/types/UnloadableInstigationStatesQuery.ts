@@ -32,7 +32,7 @@ export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrE
   updateTime: number | null;
 }
 
-export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_cause {
+export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -42,7 +42,7 @@ export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrE
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_cause | null;
+  causes: UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error_causes[];
 }
 
 export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks {
@@ -77,7 +77,7 @@ export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrE
   results: UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_InstigationStates_results[];
 }
 
-export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_PythonError_cause {
+export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -87,7 +87,7 @@ export interface UnloadableInstigationStatesQuery_unloadableInstigationStatesOrE
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_PythonError_cause | null;
+  causes: UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_PythonError_causes[];
 }
 
 export type UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError = UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_InstigationStates | UnloadableInstigationStatesQuery_unloadableInstigationStatesOrError_PythonError;

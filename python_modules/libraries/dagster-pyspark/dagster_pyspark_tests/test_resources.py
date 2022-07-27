@@ -1,7 +1,7 @@
 from dagster_pyspark.resources import pyspark_resource
 
 from dagster import execute_pipeline, job, multiprocess_executor, op, reconstructable
-from dagster.core.test_utils import instance_for_test
+from dagster._core.test_utils import instance_for_test
 
 
 def assert_pipeline_runs_with_resource(resource_def):

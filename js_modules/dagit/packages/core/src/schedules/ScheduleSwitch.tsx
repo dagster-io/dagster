@@ -2,7 +2,7 @@ import {gql, useMutation} from '@apollo/client';
 import {Checkbox, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
+import {usePermissions} from '../app/Permissions';
 import {InstigationStatus} from '../types/globalTypes';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -61,7 +61,7 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
 
   const running = status === InstigationStatus.RUNNING;
 
-  if (canStartSchedule && canStopRunningSchedule) {
+  if (canStartSchedule.enabled && canStopRunningSchedule.enabled) {
     return (
       <Checkbox
         format="switch"
@@ -73,7 +73,8 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
     );
   }
 
-  const lacksPermission = (running && !canStopRunningSchedule) || (!running && !canStartSchedule);
+  const lacksPermission =
+    (running && !canStopRunningSchedule.enabled) || (!running && !canStartSchedule.enabled);
   const disabled = toggleOffInFlight || toggleOnInFlight || lacksPermission;
 
   const switchElement = (
@@ -86,12 +87,18 @@ export const ScheduleSwitch: React.FC<Props> = (props) => {
     />
   );
 
-  return lacksPermission ? (
-    <Tooltip content={DISABLED_MESSAGE} display="flex">
+  if (!lacksPermission) {
+    return switchElement;
+  }
+
+  const disabledReason = running
+    ? canStopRunningSchedule.disabledReason
+    : canStartSchedule.disabledReason;
+
+  return (
+    <Tooltip content={disabledReason} display="flex">
       {switchElement}
     </Tooltip>
-  ) : (
-    switchElement
   );
 };
 

@@ -1,8 +1,8 @@
 import threading
 import time
 
-from dagster.core.errors import DagsterUserCodeUnreachableError
-from dagster.grpc.client import ephemeral_grpc_api_client
+from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._grpc.client import ephemeral_grpc_api_client
 
 
 def _stream_events_target(results, api_client):

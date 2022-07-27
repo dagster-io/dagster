@@ -3,7 +3,7 @@ import * as React from 'react';
 import {useHistory} from 'react-router';
 
 import {IconName} from '../../../ui/src';
-import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
+import {usePermissions} from '../app/Permissions';
 import {TelemetryAction, useTelemetryAction} from '../app/Telemetry';
 import {
   LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -42,7 +42,7 @@ export function useLaunchWithTelemetry() {
         variables.executionParams.selector.jobName ||
         variables.executionParams.selector.pipelineName;
 
-      if (!canLaunchPipelineExecution || !jobName) {
+      if (!canLaunchPipelineExecution.enabled || !jobName) {
         return;
       }
       const metadata: {[key: string]: string | null | undefined} = {
@@ -83,8 +83,10 @@ export const LaunchRootExecutionButton: React.FC<LaunchRootExecutionButtonProps>
         onClick: onLaunch,
         icon: props.icon || 'open_in_new',
         title: props.title || 'Launch Run',
-        disabled: props.disabled || !canLaunchPipelineExecution,
-        tooltip: !canLaunchPipelineExecution ? DISABLED_MESSAGE : undefined,
+        disabled: props.disabled || !canLaunchPipelineExecution.enabled,
+        tooltip: !canLaunchPipelineExecution.enabled
+          ? canLaunchPipelineExecution.disabledReason
+          : undefined,
       }}
     />
   );

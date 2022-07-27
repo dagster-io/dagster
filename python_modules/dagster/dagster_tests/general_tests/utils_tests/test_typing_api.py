@@ -1,6 +1,6 @@
 import typing
 
-from dagster.utils.typing_api import (
+from dagster._utils.typing_api import (
     get_optional_inner_type,
     is_closed_python_dict_type,
     is_closed_python_list_type,

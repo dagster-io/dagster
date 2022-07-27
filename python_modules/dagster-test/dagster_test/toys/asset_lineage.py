@@ -16,11 +16,10 @@ from dagster import (
     OutputDefinition,
     Partition,
     PartitionSetDefinition,
-    pipeline,
-    solid,
 )
-from dagster.core.storage.fs_io_manager import PickledObjectFilesystemIOManager
-from dagster.core.storage.io_manager import io_manager
+from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
+from dagster._core.storage.io_manager import io_manager
+from dagster._legacy import pipeline, solid
 
 
 def get_date_partitions():

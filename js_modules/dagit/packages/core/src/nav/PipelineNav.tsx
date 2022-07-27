@@ -2,7 +2,7 @@ import {Box, PageHeader, Tabs, Tag, Heading, Tooltip} from '@dagster-io/ui';
 import React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
-import {DISABLED_MESSAGE, PermissionsMap, usePermissions} from '../app/Permissions';
+import {PermissionsMap, PermissionResult, usePermissions} from '../app/Permissions';
 import {
   explorerPathFromString,
   explorerPathToString,
@@ -19,7 +19,7 @@ import {RepositoryLink} from './RepositoryLink';
 interface TabConfig {
   title: string;
   pathComponent: string;
-  isAvailable?: (permissions: PermissionsMap) => boolean;
+  getPermissionsResult?: (permissions: PermissionsMap) => PermissionResult;
 }
 
 const pipelineTabs: {[key: string]: TabConfig} = {
@@ -27,7 +27,7 @@ const pipelineTabs: {[key: string]: TabConfig} = {
   playground: {
     title: 'Launchpad',
     pathComponent: 'playground',
-    isAvailable: (permissions: PermissionsMap) => permissions.canLaunchPipelineExecution,
+    getPermissionsResult: (permissions: PermissionsMap) => permissions.canLaunchPipelineExecution,
   },
   runs: {
     title: 'Runs',
@@ -65,7 +65,7 @@ const tabForKey = (repoAddress: RepoAddress, isJob: boolean, explorerPath: Explo
         repoAddress,
         `/${isJob ? 'jobs' : 'pipelines'}/${explorerPathForTab}${tab.pathComponent}`,
       ),
-      isAvailable: tab.isAvailable,
+      getPermissionsResult: tab.getPermissionsResult,
     };
   };
 };
@@ -118,15 +118,20 @@ export const PipelineNav: React.FC<Props> = (props) => {
         tabs={
           <Tabs size="large" selectedTabId={active.title}>
             {tabs.map((tab) => {
-              const {href, text, isAvailable} = tab;
-              const disabled = isAvailable && !isAvailable(permissions);
-              const title = disabled ? (
-                <Tooltip content={DISABLED_MESSAGE} placement="top">
-                  {text}
-                </Tooltip>
-              ) : (
-                text
-              );
+              const {href, text, getPermissionsResult} = tab;
+              let permissionsResult = null;
+              if (getPermissionsResult) {
+                permissionsResult = getPermissionsResult(permissions);
+              }
+              const disabled = !!(permissionsResult && !permissionsResult.enabled);
+              const title =
+                permissionsResult && disabled ? (
+                  <Tooltip content={permissionsResult.disabledReason} placement="top">
+                    {text}
+                  </Tooltip>
+                ) : (
+                  text
+                );
               return <TabLink key={text} id={text} title={title} disabled={disabled} to={href} />;
             })}
           </Tabs>

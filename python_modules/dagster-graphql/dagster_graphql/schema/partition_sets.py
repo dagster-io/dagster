@@ -10,10 +10,10 @@ from dagster_graphql.implementation.fetch_partition_sets import (
 from dagster_graphql.implementation.fetch_runs import get_runs
 
 import dagster._check as check
-from dagster.core.host_representation import ExternalPartitionSet, RepositoryHandle
-from dagster.core.storage.pipeline_run import RunsFilter
-from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster.utils import merge_dicts
+from dagster._core.host_representation import ExternalPartitionSet, RepositoryHandle
+from dagster._core.storage.pipeline_run import RunsFilter
+from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster._utils import merge_dicts
 
 from .backfill import GraphenePartitionBackfill
 from .errors import (
@@ -52,6 +52,7 @@ class GraphenePartitionRunConfigOrError(graphene.Union):
 class GraphenePartitionStatus(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     partitionName = graphene.NonNull(graphene.String)
+    runId = graphene.Field(graphene.String)
     runStatus = graphene.Field(GrapheneRunStatus)
     runDuration = graphene.Field(graphene.Float)
 

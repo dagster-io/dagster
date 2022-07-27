@@ -44,7 +44,7 @@ export interface PartitionStepLoaderQuery_pipelineRunsOrError_InvalidPipelineRun
   message: string;
 }
 
-export interface PartitionStepLoaderQuery_pipelineRunsOrError_PythonError_cause {
+export interface PartitionStepLoaderQuery_pipelineRunsOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -54,7 +54,7 @@ export interface PartitionStepLoaderQuery_pipelineRunsOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: PartitionStepLoaderQuery_pipelineRunsOrError_PythonError_cause | null;
+  causes: PartitionStepLoaderQuery_pipelineRunsOrError_PythonError_causes[];
 }
 
 export type PartitionStepLoaderQuery_pipelineRunsOrError = PartitionStepLoaderQuery_pipelineRunsOrError_Runs | PartitionStepLoaderQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | PartitionStepLoaderQuery_pipelineRunsOrError_PythonError;

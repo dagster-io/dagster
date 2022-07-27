@@ -1,4 +1,4 @@
-from dagster.core.utils import check_dagster_package_version
+from dagster._core.utils import check_dagster_package_version
 
 from .hooks import pagerduty_on_failure
 from .resources import pagerduty_resource

@@ -15,13 +15,13 @@ from dagster import (
     dagster_type_materializer,
     execute_pipeline,
     lambda_solid,
-    solid,
 )
-from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.execution.plan.step import StepKind
-from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster.core.types.dagster_type import create_any_type
-from dagster.utils.test import get_temp_file_name, get_temp_file_names
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.execution.plan.step import StepKind
+from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.types.dagster_type import create_any_type
+from dagster._legacy import solid
+from dagster._utils.test import get_temp_file_name, get_temp_file_names
 
 
 def single_int_output_pipeline():
@@ -50,9 +50,9 @@ def multiple_output_pipeline():
 
 
 def single_int_named_output_pipeline():
-    @lambda_solid(output_def=OutputDefinition(Int, name="named"))
+    @solid(output_defs=[OutputDefinition(Int, name="named")])
     def return_named_one():
-        return Output(1, "named")
+        return 1
 
     return PipelineDefinition(
         name="single_int_named_output_pipeline", solid_defs=[return_named_one]

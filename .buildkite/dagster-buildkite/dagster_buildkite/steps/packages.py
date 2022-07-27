@@ -370,14 +370,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
-        "examples/hacker_news",
-        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
-        unsupported_python_versions=[
-            # dependency on dagster-dbt
-            AvailablePythonVersion.V3_6,
-        ],
-    ),
-    PackageSpec(
         "examples/hacker_news_assets",
         env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
         unsupported_python_versions=[

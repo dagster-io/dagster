@@ -1,4 +1,5 @@
-from dagster import lambda_solid, solid
+from dagster import lambda_solid
+from dagster._legacy import solid
 
 
 def test_single_input():

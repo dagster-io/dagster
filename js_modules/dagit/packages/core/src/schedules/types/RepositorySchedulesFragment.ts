@@ -44,7 +44,7 @@ export interface RepositorySchedulesFragment_schedules_scheduleState_runs {
   updateTime: number | null;
 }
 
-export interface RepositorySchedulesFragment_schedules_scheduleState_ticks_error_cause {
+export interface RepositorySchedulesFragment_schedules_scheduleState_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -54,7 +54,7 @@ export interface RepositorySchedulesFragment_schedules_scheduleState_ticks_error
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: RepositorySchedulesFragment_schedules_scheduleState_ticks_error_cause | null;
+  causes: RepositorySchedulesFragment_schedules_scheduleState_ticks_error_causes[];
 }
 
 export interface RepositorySchedulesFragment_schedules_scheduleState_ticks {

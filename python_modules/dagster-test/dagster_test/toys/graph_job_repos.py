@@ -9,8 +9,8 @@ from dagster import (
     repository,
     schedule,
     sensor,
-    solid,
 )
+from dagster._legacy import solid
 
 
 def make_solid(

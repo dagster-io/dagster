@@ -12,14 +12,14 @@ from dagster_graphql.schema.solids import (
 
 from dagster import AssetKey
 from dagster import _check as check
-from dagster.core.host_representation import ExternalRepository, RepositoryLocation
-from dagster.core.host_representation.external import ExternalPipeline
-from dagster.core.host_representation.external_data import (
+from dagster._core.host_representation import ExternalRepository, RepositoryLocation
+from dagster._core.host_representation.external import ExternalPipeline
+from dagster._core.host_representation.external_data import (
     ExternalAssetNode,
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
 )
-from dagster.core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
+from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
 
 from ..implementation.fetch_runs import AssetComputeStatus
 from ..implementation.loader import BatchMaterializationLoader, CrossRepoAssetDependedByLoader
@@ -145,6 +145,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         materialization_loader: Optional[BatchMaterializationLoader] = None,
         depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
     ):
+        from ..implementation.fetch_assets import get_unique_asset_id
+
         self._repository_location = check.inst_param(
             repository_location,
             "repository_location",
@@ -166,7 +168,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._node_definition_snap = None  # lazily loaded
 
         super().__init__(
-            id=external_asset_node.asset_key.to_string(),
+            id=get_unique_asset_id(
+                external_asset_node.asset_key, repository_location.name, external_repository.name
+            ),
             assetKey=external_asset_node.asset_key,
             description=external_asset_node.op_description,
             opName=external_asset_node.op_name,
@@ -238,7 +242,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             ]
             external_pipeline = self.get_external_pipeline()
             constituent_resource_key_sets = [
-                self.get_required_resources(external_pipeline.get_node_def_snap(name))
+                self.get_required_resource_keys_rec(external_pipeline.get_node_def_snap(name))
                 for name in constituent_node_names
             ]
             return [key for res_key_set in constituent_resource_key_sets for key in res_key_set]

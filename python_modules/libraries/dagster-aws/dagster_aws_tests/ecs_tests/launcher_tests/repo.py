@@ -1,12 +1,13 @@
 import dagster
+import dagster._legacy as legacy  # pylint: disable=protected-access
 
 
-@dagster.solid
+@legacy.solid
 def solid(_):
     pass
 
 
-@dagster.pipeline
+@legacy.pipeline
 def pipeline():
     solid()
 

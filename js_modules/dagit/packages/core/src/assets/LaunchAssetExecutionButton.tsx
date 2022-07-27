@@ -1,4 +1,4 @@
-import {gql, useApolloClient} from '@apollo/client';
+import {ApolloClient, gql, useApolloClient} from '@apollo/client';
 import {Button, Icon, Spinner, Tooltip} from '@dagster-io/ui';
 import pick from 'lodash/pick';
 import uniq from 'lodash/uniq';
@@ -7,11 +7,12 @@ import React from 'react';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {usePermissions} from '../app/Permissions';
-import {isSourceAsset, LiveData, toGraphId} from '../asset-graph/Utils';
+import {isSourceAsset} from '../asset-graph/Utils';
 import {useLaunchWithTelemetry} from '../launchpad/LaunchRootExecutionButton';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {DagsterTag} from '../runs/RunTag';
 import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
+import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
@@ -23,6 +24,10 @@ import {
   LaunchAssetLoaderQuery,
   LaunchAssetLoaderQueryVariables,
 } from './types/LaunchAssetLoaderQuery';
+import {
+  LaunchAssetLoaderResourceQuery,
+  LaunchAssetLoaderResourceQueryVariables,
+} from './types/LaunchAssetLoaderResourceQuery';
 
 type LaunchAssetsState =
   | {type: 'none'}
@@ -48,11 +53,10 @@ type LaunchAssetsState =
 
 export const LaunchAssetExecutionButton: React.FC<{
   assetKeys: AssetKey[]; // Memoization not required
-  liveDataByNode: LiveData;
   context?: 'all' | 'selected';
   intent?: 'primary' | 'none';
   preferredJobName?: string;
-}> = ({assetKeys, liveDataByNode, preferredJobName, context, intent = 'primary'}) => {
+}> = ({assetKeys, preferredJobName, context, intent = 'primary'}) => {
   const {canLaunchPipelineExecution} = usePermissions();
   const launchWithTelemetry = useLaunchWithTelemetry();
 
@@ -60,20 +64,15 @@ export const LaunchAssetExecutionButton: React.FC<{
   const client = useApolloClient();
 
   const count = assetKeys.length > 1 ? ` (${assetKeys.length})` : '';
-  const isRematerializeForAll = (assetKeys.length
-    ? assetKeys.map((n) => liveDataByNode[toGraphId(n)])
-    : Object.values(liveDataByNode)
-  ).every((e) => !!e?.lastMaterialization);
-
-  const label = `${isRematerializeForAll ? 'Rematerialize' : 'Materialize'}${
+  const label = `Materialize${
     context === 'all' ? ` all${count}` : context === 'selected' ? ` selected${count}` : count
   }`;
 
-  if (!assetKeys.length || !canLaunchPipelineExecution) {
+  if (!assetKeys.length || !canLaunchPipelineExecution.enabled) {
     return (
       <Tooltip
         content={
-          !canLaunchPipelineExecution
+          !canLaunchPipelineExecution.enabled
             ? 'You do not have permission to materialize assets'
             : 'Select one or more assets to materialize.'
         }
@@ -97,7 +96,8 @@ export const LaunchAssetExecutionButton: React.FC<{
     });
     const assets = result.data.assetNodes;
     const forceLaunchpad = e.shiftKey;
-    const next = stateForLaunchingAssets(assets, forceLaunchpad, preferredJobName);
+
+    const next = await stateForLaunchingAssets(client, assets, forceLaunchpad, preferredJobName);
 
     if (next.type === 'error') {
       showCustomAlert({
@@ -153,11 +153,12 @@ export const LaunchAssetExecutionButton: React.FC<{
   );
 };
 
-function stateForLaunchingAssets(
+async function stateForLaunchingAssets(
+  client: ApolloClient<any>,
   assets: LaunchAssetExecutionAssetNodeFragment[],
   forceLaunchpad: boolean,
   preferredJobName?: string,
-): LaunchAssetsState {
+): Promise<LaunchAssetsState> {
   if (assets.some(isSourceAsset)) {
     return {
       type: 'error',
@@ -169,6 +170,7 @@ function stateForLaunchingAssets(
     assets[0]?.repository.name || '',
     assets[0]?.repository.location.name || '',
   );
+
   if (
     !assets.every(
       (a) =>
@@ -200,32 +202,44 @@ function stateForLaunchingAssets(
     };
   }
 
-  const anyAssetsHaveConfig = assets.some((a) => configSchemaForAssetNode(a));
-  if (anyAssetsHaveConfig && partitionDefinition) {
+  const resourceResult = await client.query<
+    LaunchAssetLoaderResourceQuery,
+    LaunchAssetLoaderResourceQueryVariables
+  >({
+    query: LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
+    variables: {
+      pipelineSelector: {
+        pipelineName: jobName,
+        repositoryName: assets[0].repository.name,
+        repositoryLocationName: assets[0].repository.location.name,
+      },
+    },
+  });
+  const pipeline = resourceResult.data.pipelineOrError;
+  if (pipeline.__typename !== 'Pipeline') {
     return {
       type: 'error',
-      error: 'Cannot materialize assets using both asset config and partitions.',
+      error: `Pipeline ${jobName} does not exist.`,
     };
   }
+  const requiredResourceKeys = assets.flatMap((a) => a.requiredResources.map((r) => r.resourceKey));
+  const resources = pipeline.modes[0].resources.filter((r) =>
+    requiredResourceKeys.includes(r.name),
+  );
+  const anyResourcesHaveConfig = resources.some((r) => r.configField);
+  const anyResourcesHaveRequiredConfig = resources.some((r) => r.configField?.isRequired);
 
-  const requiredResources = assets.flatMap((a) => a.requiredResources.map((r) => r.resourceKey));
-  // temporary until a cleaner way to query the config requirements of resources is available
-  const anyResourcesHaveConfig = requiredResources.length >= 1;
+  const anyAssetsHaveConfig = assets.some((a) => configSchemaForAssetNode(a));
+  if ((anyAssetsHaveConfig || anyResourcesHaveRequiredConfig) && partitionDefinition) {
+    return {
+      type: 'error',
+      error:
+        'Cannot materialize assets using both partitions and asset or required resource config.',
+    };
+  }
 
   // Ok! Assertions met, how do we launch this run
 
-  if (anyAssetsHaveConfig || anyResourcesHaveConfig || forceLaunchpad) {
-    const assetOpNames = assets.flatMap((a) => a.opNames || []);
-    return {
-      type: 'launchpad',
-      jobName,
-      repoAddress,
-      sessionPresets: {
-        solidSelection: assetOpNames,
-        solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(' '),
-      },
-    };
-  }
   if (partitionDefinition) {
     const assetKeys = new Set(assets.map((a) => JSON.stringify(a.assetKey)));
     const upstreamAssetKeys = uniq(
@@ -240,6 +254,19 @@ function stateForLaunchingAssets(
       jobName,
       repoAddress,
       upstreamAssetKeys,
+    };
+  }
+  if (anyAssetsHaveConfig || anyResourcesHaveConfig || forceLaunchpad) {
+    const assetOpNames = assets.flatMap((a) => a.opNames || []);
+    return {
+      type: 'launchpad',
+      jobName,
+      repoAddress,
+      sessionPresets: {
+        flattenGraphs: true,
+        assetSelection: assets.map((a) => ({assetKey: a.assetKey, opNames: a.opNames})),
+        solidSelectionQuery: assetOpNames.map((name) => `"${name}"`).join(', '),
+      },
     };
   }
   return {
@@ -265,7 +292,7 @@ export function executionParamsForAssetJob(
         },
       ],
     },
-    runConfigData: {},
+    runConfigData: '{}',
     selector: {
       repositoryLocationName: repoAddress.location,
       repositoryName: repoAddress.name,
@@ -314,4 +341,32 @@ const LAUNCH_ASSET_LOADER_QUERY = gql`
     }
   }
   ${LAUNCH_ASSET_EXECUTION_ASSET_NODE_FRAGMENT}
+`;
+
+const LAUNCH_ASSET_LOADER_RESOURCE_QUERY = gql`
+  query LaunchAssetLoaderResourceQuery($pipelineSelector: PipelineSelector!) {
+    pipelineOrError(params: $pipelineSelector) {
+      ... on Pipeline {
+        id
+        modes {
+          id
+          resources {
+            name
+            description
+            configField {
+              name
+              isRequired
+              configType {
+                ...ConfigTypeSchemaFragment
+                recursiveConfigTypes {
+                  ...ConfigTypeSchemaFragment
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  ${CONFIG_TYPE_SCHEMA_FRAGMENT}
 `;

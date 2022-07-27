@@ -14,14 +14,13 @@ from dagster import (
     graph,
     job,
     op,
-    pipeline,
     resource,
-    solid,
 )
-from dagster.core.definitions import failure_hook, success_hook
-from dagster.core.definitions.decorators.hook_decorator import event_list_hook
-from dagster.core.definitions.events import Failure, HookExecutionResult
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster._core.definitions import failure_hook, success_hook
+from dagster._core.definitions.decorators.hook_decorator import event_list_hook
+from dagster._core.definitions.events import Failure, HookExecutionResult
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._legacy import pipeline, solid
 
 
 class SomeUserException(Exception):

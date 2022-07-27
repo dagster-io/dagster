@@ -9,6 +9,10 @@ import { InstigationSelector, InstigationTickStatus, InstigationType, RunStatus 
 // GraphQL query operation: TickHistoryQuery
 // ====================================================
 
+export interface TickHistoryQuery_instigationStateOrError_InstigationStateNotFoundError {
+  __typename: "InstigationStateNotFoundError";
+}
+
 export interface TickHistoryQuery_instigationStateOrError_InstigationState_nextTick {
   __typename: "FutureInstigationTick";
   timestamp: number;
@@ -21,7 +25,7 @@ export interface TickHistoryQuery_instigationStateOrError_InstigationState_ticks
   runId: string;
 }
 
-export interface TickHistoryQuery_instigationStateOrError_InstigationState_ticks_error_cause {
+export interface TickHistoryQuery_instigationStateOrError_InstigationState_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -31,7 +35,7 @@ export interface TickHistoryQuery_instigationStateOrError_InstigationState_ticks
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: TickHistoryQuery_instigationStateOrError_InstigationState_ticks_error_cause | null;
+  causes: TickHistoryQuery_instigationStateOrError_InstigationState_ticks_error_causes[];
 }
 
 export interface TickHistoryQuery_instigationStateOrError_InstigationState_ticks {
@@ -56,7 +60,7 @@ export interface TickHistoryQuery_instigationStateOrError_InstigationState {
   ticks: TickHistoryQuery_instigationStateOrError_InstigationState_ticks[];
 }
 
-export interface TickHistoryQuery_instigationStateOrError_PythonError_cause {
+export interface TickHistoryQuery_instigationStateOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -66,10 +70,10 @@ export interface TickHistoryQuery_instigationStateOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: TickHistoryQuery_instigationStateOrError_PythonError_cause | null;
+  causes: TickHistoryQuery_instigationStateOrError_PythonError_causes[];
 }
 
-export type TickHistoryQuery_instigationStateOrError = TickHistoryQuery_instigationStateOrError_InstigationState | TickHistoryQuery_instigationStateOrError_PythonError;
+export type TickHistoryQuery_instigationStateOrError = TickHistoryQuery_instigationStateOrError_InstigationStateNotFoundError | TickHistoryQuery_instigationStateOrError_InstigationState | TickHistoryQuery_instigationStateOrError_PythonError;
 
 export interface TickHistoryQuery {
   instigationStateOrError: TickHistoryQuery_instigationStateOrError;

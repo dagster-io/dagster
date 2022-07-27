@@ -7,7 +7,7 @@
 // GraphQL query operation: InstanceWarningQuery
 // ====================================================
 
-export interface InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause {
+export interface InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -17,7 +17,7 @@ export interface InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses_la
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_cause | null;
+  causes: InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses_lastHeartbeatErrors_causes[];
 }
 
 export interface InstanceWarningQuery_instance_daemonHealth_allDaemonStatuses {

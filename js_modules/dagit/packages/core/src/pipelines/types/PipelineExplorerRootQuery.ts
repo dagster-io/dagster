@@ -1735,6 +1735,8 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   metadataEntries: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_metadataEntries[];
   description: string | null;
   modes: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes[];
+  pipelineSnapshotId: string;
+  parentSnapshotId: string | null;
   solidHandle: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle | null;
   solidHandles: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles[];
 }
@@ -1749,7 +1751,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   message: string;
 }
 
-export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError_cause {
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -1759,7 +1761,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError_cause | null;
+  causes: PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError_causes[];
 }
 
 export type PipelineExplorerRootQuery_pipelineSnapshotOrError = PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineNotFoundError | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshotNotFoundError | PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError;

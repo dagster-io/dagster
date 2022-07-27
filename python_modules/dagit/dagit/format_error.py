@@ -2,7 +2,7 @@ from typing import Dict
 
 from graphql.error.base import GraphQLError
 
-from dagster.utils.log import get_stack_trace_array
+from dagster._utils.log import get_stack_trace_array
 
 
 # based on default_format_error copied and pasted from graphql_server 1.1.1

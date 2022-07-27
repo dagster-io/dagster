@@ -1,4 +1,4 @@
-from dagster.utils.merger import deep_merge_dicts
+from dagster._utils.merger import deep_merge_dicts
 
 DEFAULT_CONNECTOR_ID = "some_connector"
 

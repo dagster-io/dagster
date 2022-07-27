@@ -13,7 +13,7 @@ def my_slack_on_run_failure(context: RunFailureSensorContext):
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=f'Job "{context.pipeline_run.pipeline_name}" failed. Error: {context.failure_event.message}',
+        message=f'Job "{context.dagster_run.job_name}" failed. Error: {context.failure_event.message}',
     )
 
 
@@ -29,7 +29,7 @@ def email_alert(_):
 
 @run_failure_sensor
 def my_email_failure_sensor(context: RunFailureSensorContext):
-    message = f'Job "{context.pipeline_run.pipeline_name}" failed. Error: {context.failure_event.message}'
+    message = f'Job "{context.dagster_run.job_name}" failed. Error: {context.failure_event.message}'
     email_alert(message)
 
 
@@ -113,7 +113,7 @@ def my_slack_on_run_success(context: RunStatusSensorContext):
 
     slack_client.chat_postMessage(
         channel="#alert-channel",
-        message=f'Job "{context.pipeline_run.pipeline_name}" succeeded.',
+        message=f'Job "{context.dagster_run.job_name}" succeeded.',
     )
 
 
@@ -124,7 +124,7 @@ def my_slack_on_run_success(context: RunStatusSensorContext):
 
 @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
 def my_email_sensor(context: RunStatusSensorContext):
-    message = f'Job "{context.pipeline_run.pipeline_name}" succeeded.'
+    message = f'Job "{context.dagster_run.job_name}" succeeded.'
     email_alert(message)
 
 

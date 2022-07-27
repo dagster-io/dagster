@@ -25,17 +25,17 @@ from dagster import (
     op,
     reconstructable,
     resource,
-    solid,
 )
-from dagster.core.definitions import pipeline
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.definitions.resource_definition import make_values_resource
-from dagster.core.errors import DagsterConfigMappingFunctionError, DagsterInvalidDefinitionError
-from dagster.core.events.log import EventLogEntry, construct_event_logger
-from dagster.core.execution.api import create_execution_plan, execute_plan, execute_run
-from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import instance_for_test
-from dagster.core.utils import coerce_valid_log_level
+from dagster._core.definitions import pipeline
+from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.resource_definition import make_values_resource
+from dagster._core.errors import DagsterConfigMappingFunctionError, DagsterInvalidDefinitionError
+from dagster._core.events.log import EventLogEntry, construct_event_logger
+from dagster._core.execution.api import create_execution_plan, execute_plan, execute_run
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import instance_for_test
+from dagster._core.utils import coerce_valid_log_level
+from dagster._legacy import solid
 
 
 def define_string_resource():

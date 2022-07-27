@@ -37,6 +37,7 @@
    sections/api/apidocs/libraries/dagster-dask
    sections/api/apidocs/libraries/dagster-databricks
    sections/api/apidocs/libraries/dagster-datadog
+   sections/api/apidocs/libraries/dagster-datahub
    sections/api/apidocs/libraries/dagster-dbt
    sections/api/apidocs/libraries/dagster-fivetran
    sections/api/apidocs/libraries/dagster-docker

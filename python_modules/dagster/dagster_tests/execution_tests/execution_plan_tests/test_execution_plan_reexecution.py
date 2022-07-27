@@ -3,6 +3,7 @@ import pickle
 
 import pytest
 
+import dagster._check as check
 from dagster import (
     DependencyDefinition,
     InputDefinition,
@@ -13,15 +14,15 @@ from dagster import (
     lambda_solid,
     reexecute_pipeline,
 )
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
-from dagster.core.events import get_step_output_event
-from dagster.core.execution.api import execute_plan
-from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.core.instance import DagsterInstance
-from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster.core.test_utils import default_mode_def_for_test
+from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
+from dagster._core.events import get_step_output_event
+from dagster._core.execution.api import execute_plan
+from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.instance import DagsterInstance
+from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.test_utils import default_mode_def_for_test
 
 
 def define_addy_pipeline(using_file_system=False):
@@ -79,13 +80,15 @@ def test_execution_plan_reexecution():
         pipeline_def,
         run_config=run_config,
     )
+    known_state = KnownExecutionState.build_for_reexecution(
+        instance,
+        instance.get_run_by_id(result.run_id),
+    )
+    _check_known_state(known_state)
     execution_plan = ExecutionPlan.build(
         InMemoryPipeline(pipeline_def),
         resolved_run_config,
-        known_state=KnownExecutionState.build_for_reexecution(
-            instance,
-            instance.get_run_by_id(result.run_id),
-        ),
+        known_state=known_state,
     )
 
     subset_plan = execution_plan.build_subset_plan(["add_two"], pipeline_def, resolved_run_config)
@@ -117,6 +120,16 @@ def test_execution_plan_reexecution():
     assert get_step_output_event(step_events, "add_two")
 
 
+def _check_known_state(known_state: KnownExecutionState):
+    for step_key, outputs in known_state.dynamic_mappings.items():
+        for outname, mapping_keys in outputs.items():
+            check.is_list(
+                mapping_keys,
+                of_type=str,
+                additional_message=f"Bad mapping_keys at {step_key}.{outname}",
+            )
+
+
 def test_execution_plan_reexecution_with_in_memory():
     pipeline_def = define_addy_pipeline()
     instance = DagsterInstance.ephemeral()
@@ -128,13 +141,16 @@ def test_execution_plan_reexecution_with_in_memory():
     ## re-execute add_two
 
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config=run_config)
+    known_state = KnownExecutionState.build_for_reexecution(
+        instance,
+        instance.get_run_by_id(result.run_id),
+    )
+    _check_known_state(known_state)
+
     execution_plan = ExecutionPlan.build(
         InMemoryPipeline(pipeline_def),
         resolved_run_config,
-        known_state=KnownExecutionState.build_for_reexecution(
-            instance,
-            instance.get_run_by_id(result.run_id),
-        ),
+        known_state=known_state,
     )
 
     pipeline_run = instance.create_run_for_pipeline(

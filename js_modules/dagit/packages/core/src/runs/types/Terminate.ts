@@ -36,7 +36,7 @@ export interface Terminate_terminatePipelineExecution_UnauthorizedError {
   message: string;
 }
 
-export interface Terminate_terminatePipelineExecution_PythonError_cause {
+export interface Terminate_terminatePipelineExecution_PythonError_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -46,7 +46,7 @@ export interface Terminate_terminatePipelineExecution_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: Terminate_terminatePipelineExecution_PythonError_cause | null;
+  causes: Terminate_terminatePipelineExecution_PythonError_causes[];
 }
 
 export type Terminate_terminatePipelineExecution = Terminate_terminatePipelineExecution_TerminateRunFailure | Terminate_terminatePipelineExecution_RunNotFoundError | Terminate_terminatePipelineExecution_TerminateRunSuccess | Terminate_terminatePipelineExecution_UnauthorizedError | Terminate_terminatePipelineExecution_PythonError;

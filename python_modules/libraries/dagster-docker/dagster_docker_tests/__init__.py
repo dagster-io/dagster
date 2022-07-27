@@ -1,7 +1,7 @@
 import os
 from contextlib import contextmanager
 
-from dagster.utils.test.postgres_instance import postgres_instance_for_test
+from dagster._utils.test.postgres_instance import postgres_instance_for_test
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

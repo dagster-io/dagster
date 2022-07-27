@@ -21,14 +21,13 @@ from dagster import (
     io_manager,
     job,
     op,
-    pipeline,
     resource,
     root_input_manager,
-    solid,
 )
-from dagster.core.definitions.events import Failure, RetryRequested
-from dagster.core.errors import DagsterInvalidConfigError
-from dagster.core.instance import InstanceRef
+from dagster._core.definitions.events import Failure, RetryRequested
+from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.instance import InstanceRef
+from dagster._legacy import pipeline, solid
 
 ### input manager tests
 
@@ -349,7 +348,7 @@ def test_input_manager_class():
 
 
 ##################################################
-# root input manager tests (deprecate in 0.16.0) #
+# root input manager tests (deprecate in 1.0.0) #
 ##################################################
 
 
@@ -652,7 +651,7 @@ def test_resource_not_input_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="input manager with key 'not_manager' required by input '_input' of solid 'solid_requires_manager', but received <class 'dagster.core.definitions.resource_definition.ResourceDefinition'>",
+        match="input manager with key 'not_manager' required by input '_input' of solid 'solid_requires_manager', but received <class 'dagster._core.definitions.resource_definition.ResourceDefinition'>",
     ):
 
         @pipeline(mode_defs=[ModeDefinition(resource_defs={"not_manager": resource_not_manager})])

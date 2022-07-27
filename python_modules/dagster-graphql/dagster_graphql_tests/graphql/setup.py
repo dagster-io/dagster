@@ -79,27 +79,26 @@ from dagster import (
     logger,
     monthly_schedule,
     op,
-    pipeline,
     repository,
     resource,
-    solid,
     usable_as_dagster_type,
     weekly_schedule,
 )
-from dagster.core.definitions.decorators.sensor_decorator import sensor
-from dagster.core.definitions.executor_definition import in_process_executor
-from dagster.core.definitions.metadata import MetadataValue
-from dagster.core.definitions.reconstruct import ReconstructableRepository
-from dagster.core.definitions.sensor_definition import RunRequest, SkipReason
-from dagster.core.log_manager import coerce_valid_log_level
-from dagster.core.storage.fs_io_manager import fs_io_manager
-from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
-from dagster.core.storage.tags import RESUME_RETRY_TAG
-from dagster.core.test_utils import default_mode_def_for_test, today_at_midnight
-from dagster.core.workspace.context import WorkspaceProcessContext
-from dagster.core.workspace.load_target import PythonFileTarget
-from dagster.seven import get_system_temp_directory
-from dagster.utils import file_relative_path, segfault
+from dagster._core.definitions.decorators.sensor_decorator import sensor
+from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.reconstruct import ReconstructableRepository
+from dagster._core.definitions.sensor_definition import RunRequest, SkipReason
+from dagster._core.log_manager import coerce_valid_log_level
+from dagster._core.storage.fs_io_manager import fs_io_manager
+from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.storage.tags import RESUME_RETRY_TAG
+from dagster._core.test_utils import default_mode_def_for_test, today_at_midnight
+from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.load_target import PythonFileTarget
+from dagster._legacy import pipeline, solid
+from dagster._seven import get_system_temp_directory
+from dagster._utils import file_relative_path, segfault
 
 LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 
@@ -530,7 +529,13 @@ def pipeline_with_enum_config():
 def naughty_programmer_pipeline():
     @lambda_solid
     def throw_a_thing():
-        raise Exception("bad programmer, bad")
+        try:
+            try:
+                raise Exception("bad programmer, bad")
+            except Exception as e:
+                raise Exception("Outer exception") from e
+        except Exception as e:
+            raise Exception("Even more outer exception") from e
 
     throw_a_thing()
 

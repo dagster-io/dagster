@@ -1,7 +1,7 @@
 import dagster._check as check
-from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.host_representation import InstigatorSelector
-from dagster.core.scheduler.instigation import InstigatorStatus
+from dagster._core.definitions.run_request import InstigatorType
+from dagster._core.host_representation import InstigatorSelector
+from dagster._core.scheduler.instigation import InstigatorStatus
 
 from .utils import capture_error
 
@@ -39,7 +39,7 @@ def get_unloadable_instigator_states_or_error(graphene_info, instigator_type=Non
 
 @capture_error
 def get_instigator_state_or_error(graphene_info, selector):
-    from ..schema.instigation import GrapheneInstigationState
+    from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStateNotFoundError
 
     check.inst_param(selector, "selector", InstigatorSelector)
     location = graphene_info.context.get_repository_location(selector.location_name)
@@ -60,6 +60,6 @@ def get_instigator_state_or_error(graphene_info, selector):
         )
         current_state = external_schedule.get_current_instigator_state(stored_state)
     else:
-        check.failed(f"Could not find a definition for {selector.name}")
+        return GrapheneInstigationStateNotFoundError(selector.name)
 
     return GrapheneInstigationState(current_state)

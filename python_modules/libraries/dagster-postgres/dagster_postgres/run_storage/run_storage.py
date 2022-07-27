@@ -3,22 +3,22 @@ from typing import Dict
 import sqlalchemy as db
 
 import dagster._check as check
-from dagster.core.storage.config import pg_config
-from dagster.core.storage.runs import (
+from dagster._core.storage.config import pg_config
+from dagster._core.storage.runs import (
     DaemonHeartbeatsTable,
     InstanceInfo,
     RunStorageSqlMetadata,
     SqlRunStorage,
 )
-from dagster.core.storage.runs.schema import KeyValueStoreTable
-from dagster.core.storage.sql import (
+from dagster._core.storage.runs.schema import KeyValueStoreTable
+from dagster._core.storage.sql import (
     check_alembic_revision,
     create_engine,
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
-from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
-from dagster.utils import utc_datetime_from_timestamp
+from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
+from dagster._utils import utc_datetime_from_timestamp
 
 from ..utils import (
     create_pg_connection,

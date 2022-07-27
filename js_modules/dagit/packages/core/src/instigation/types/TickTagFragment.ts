@@ -9,7 +9,7 @@ import { InstigationTickStatus } from "./../../types/globalTypes";
 // GraphQL fragment: TickTagFragment
 // ====================================================
 
-export interface TickTagFragment_error_cause {
+export interface TickTagFragment_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -19,7 +19,7 @@ export interface TickTagFragment_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: TickTagFragment_error_cause | null;
+  causes: TickTagFragment_error_causes[];
 }
 
 export interface TickTagFragment {

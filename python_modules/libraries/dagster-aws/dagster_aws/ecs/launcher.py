@@ -1,22 +1,23 @@
 import warnings
 from collections import namedtuple
 from contextlib import suppress
+from typing import Any, Dict
 
 import boto3
 from botocore.exceptions import ClientError
 
 from dagster import Array, Field, Noneable, ScalarUnion, StringSource
 from dagster import _check as check
-from dagster.core.events import EngineEventData, MetadataEntry
-from dagster.core.launcher.base import (
+from dagster._core.events import EngineEventData, MetadataEntry
+from dagster._core.launcher.base import (
     CheckRunHealthResult,
     LaunchRunContext,
     RunLauncher,
     WorkerStatus,
 )
-from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.grpc.types import ExecuteRunArgs
-from dagster.serdes import ConfigurableClass
+from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._grpc.types import ExecuteRunArgs
+from dagster._serdes import ConfigurableClass
 
 from ..secretsmanager import get_secrets_from_arns
 from .container_context import SHARED_ECS_SCHEMA, EcsContainerContext
@@ -224,30 +225,29 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         # Set cpu or memory overrides
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
-        cpu_and_memory_overrides = {}
-        tags = self._get_run_tags(run.run_id)
-        if tags.cpu:
-            cpu_and_memory_overrides["cpu"] = tags.cpu
-        if tags.memory:
-            cpu_and_memory_overrides["memory"] = tags.memory
+        cpu_and_memory_overrides = self.get_cpu_and_memory_overrides(run)
+
+        container_overrides = [
+            {
+                "name": self.container_name,
+                "command": command,
+                # containerOverrides expects cpu/memory as integers
+                **{k: int(v) for k, v in cpu_and_memory_overrides.items()},
+            }
+        ]
+
+        overrides: Dict[str, Any] = {
+            "containerOverrides": container_overrides,
+            # taskOverrides expects cpu/memory as strings
+            **cpu_and_memory_overrides,
+        }
 
         # Run a task using the same network configuration as this processes's
         # task.
         response = self.ecs.run_task(
             taskDefinition=task_definition,
             cluster=metadata.cluster,
-            overrides={
-                "containerOverrides": [
-                    {
-                        "name": self.container_name,
-                        "command": command,
-                        # containerOverrides expects cpu/memory as integers
-                        **{k: int(v) for k, v in cpu_and_memory_overrides.items()},
-                    }
-                ],
-                # taskOverrides expects cpu/memory as strings
-                **cpu_and_memory_overrides,
-            },
+            overrides=overrides,
             networkConfiguration={
                 "awsvpcConfiguration": {
                     "subnets": metadata.subnets,
@@ -285,6 +285,18 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             ),
             cls=self.__class__,
         )
+
+    def get_cpu_and_memory_overrides(self, run: PipelineRun) -> Dict[str, str]:
+        overrides = {}
+
+        cpu = run.tags.get("ecs/cpu")
+        memory = run.tags.get("ecs/memory")
+
+        if cpu:
+            overrides["cpu"] = cpu
+        if memory:
+            overrides["memory"] = memory
+        return overrides
 
     def terminate(self, run_id):
         tags = self._get_run_tags(run_id)

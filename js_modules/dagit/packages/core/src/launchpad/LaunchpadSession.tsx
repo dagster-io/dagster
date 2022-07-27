@@ -11,6 +11,7 @@ import {
   SplitPanelContainer,
   isHelpContextEqual,
   ConfigEditorHelp,
+  TextInput,
 } from '@dagster-io/ui';
 import merge from 'deepmerge';
 import uniqBy from 'lodash/uniqBy';
@@ -27,13 +28,14 @@ import {
 } from '../app/ExecutionSessionStorage';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
+import {tokenForAssetKey} from '../asset-graph/Utils';
 import {
   CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT,
   CONFIG_EDITOR_VALIDATION_FRAGMENT,
   responseToYamlValidationResult,
 } from '../configeditor/ConfigEditorUtils';
 import {DagsterTag} from '../runs/RunTag';
-import {RepositorySelector} from '../types/globalTypes';
+import {PipelineSelector, RepositorySelector} from '../types/globalTypes';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -178,7 +180,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
   const {isJob} = pipeline;
   const tagsFromSession = React.useMemo(() => currentSession.tags || [], [currentSession]);
 
-  const pipelineSelector = {
+  const pipelineSelector: PipelineSelector = {
     ...repoAddressToSelector(repoAddress),
     pipelineName: pipeline.name,
     solidSelection: currentSession?.solidSelection || undefined,
@@ -231,12 +233,8 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
   };
 
   const onRemoveExtraPaths = (paths: string[]) => {
-    let runConfigData = '';
     try {
-      // Note: parsing `` returns null rather than an empty object,
-      // which is preferable for representing empty config.
-      runConfigData = yaml.parse(currentSession.runConfigYaml || '') || {};
-
+      const runConfigData = yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml));
       for (const path of paths) {
         deletePropertyPath(runConfigData, path);
       }
@@ -255,10 +253,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
   const onScaffoldMissingConfig = () => {
     const config = runConfigSchema ? scaffoldPipelineConfig(runConfigSchema) : {};
     try {
-      // Note: parsing `` returns null rather than an empty object,
-      // which is preferable for representing empty config.
-      const runConfigData = yaml.parse(currentSession.runConfigYaml || '') || {};
-
+      const runConfigData = yaml.parse(sanitizeConfigYamlString(currentSession.runConfigYaml));
       const updatedRunConfigData = merge(config, runConfigData);
       const runConfigYaml = yaml.stringify(updatedRunConfigData);
       onSaveSession({runConfigYaml});
@@ -272,10 +267,10 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
       return;
     }
 
+    const configYamlOrEmpty = sanitizeConfigYamlString(currentSession.runConfigYaml);
+
     try {
-      // Note: parsing `` returns null rather than an empty object,
-      // which is preferable for representing empty config.
-      yaml.parse(currentSession.runConfigYaml || '') || {};
+      yaml.parse(configYamlOrEmpty);
     } catch (err) {
       showCustomAlert({title: 'Invalid YAML', body: YAML_SYNTAX_INVALID});
       return;
@@ -283,8 +278,13 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
 
     return {
       executionParams: {
-        runConfigData: currentSession.runConfigYaml || {},
-        selector: pipelineSelector,
+        runConfigData: configYamlOrEmpty,
+        selector: {
+          ...pipelineSelector,
+          assetSelection: currentSession.assetSelection
+            ? currentSession.assetSelection.map((a) => ({path: a.assetKey.path}))
+            : undefined,
+        },
         mode: currentSession.mode || 'default',
         executionMetadata: {
           tags: uniqBy(
@@ -304,6 +304,15 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
                     {
                       key: DagsterTag.PresetName,
                       value: currentSession?.base?.['presetName'],
+                    },
+                  ]
+                : []),
+
+              ...(currentSession.assetSelection
+                ? [
+                    {
+                      key: DagsterTag.StepSelection,
+                      value: currentSession.assetSelection.flatMap((o) => o.opNames).join(','),
                     },
                   ]
                 : []),
@@ -338,7 +347,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
     // is in flight, in which case completion of this async method should not set loading=false.
     previewCounter.current += 1;
     const currentPreviewCount = previewCounter.current;
-    const configYamlOrEmpty = configYaml.trim() || '{}';
+    const configYamlOrEmpty = sanitizeConfigYamlString(configYaml);
 
     dispatch({type: 'preview-loading', payload: true});
 
@@ -552,20 +561,34 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
                 repoAddress={repoAddress}
               />
               <SessionSettingsSpacer />
-              <OpSelector
-                serverProvidedSubsetError={
-                  preview?.isPipelineConfigValid.__typename === 'InvalidSubsetError'
-                    ? preview.isPipelineConfigValid
-                    : undefined
-                }
-                pipelineName={pipeline.name}
-                value={currentSession.solidSelection || null}
-                query={currentSession.solidSelectionQuery || null}
-                onChange={onOpSelectionChange}
-                flattenGraphs={currentSession.flattenGraphs}
-                onFlattenGraphsChange={onFlattenGraphsChange}
-                repoAddress={repoAddress}
-              />
+              {launchpadType === 'asset' ? (
+                <TextInput
+                  readOnly
+                  value={
+                    currentSession.assetSelection
+                      ? currentSession.assetSelection
+                          .map((a) => tokenForAssetKey(a.assetKey))
+                          .join(', ')
+                      : '*'
+                  }
+                />
+              ) : (
+                <OpSelector
+                  serverProvidedSubsetError={
+                    preview?.isPipelineConfigValid.__typename === 'InvalidSubsetError'
+                      ? preview.isPipelineConfigValid
+                      : undefined
+                  }
+                  pipelineName={pipeline.name}
+                  value={currentSession.solidSelection || null}
+                  query={currentSession.solidSelectionQuery || null}
+                  onChange={onOpSelectionChange}
+                  flattenGraphs={currentSession.flattenGraphs}
+                  onFlattenGraphsChange={onFlattenGraphsChange}
+                  repoAddress={repoAddress}
+                />
+              )}
+
               {isJob ? (
                 <span />
               ) : (
@@ -670,6 +693,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
               message={!runConfigSchema ? LOADING_CONFIG_SCHEMA : LOADING_RUN_PREVIEW}
             />
             <RunPreview
+              launchpadType={launchpadType}
               document={previewedDocument}
               validation={preview ? preview.isPipelineConfigValid : null}
               solidSelection={currentSession.solidSelection}
@@ -720,6 +744,8 @@ const deletePropertyPath = (obj: any, path: string) => {
     delete obj[lastKey];
   }
 };
+
+const sanitizeConfigYamlString = (yamlString: string) => (yamlString || '').trim() || '{}';
 
 const PREVIEW_CONFIG_QUERY = gql`
   query PreviewConfigQuery(

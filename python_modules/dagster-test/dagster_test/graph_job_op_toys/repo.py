@@ -23,6 +23,7 @@ from dagster_test.graph_job_op_toys.error_monster import (
     error_monster_failing_job,
     error_monster_passing_job,
 )
+from dagster_test.graph_job_op_toys.graph_backed_assets import graph_backed_group
 from dagster_test.graph_job_op_toys.hammer import hammer_default_executor_job
 from dagster_test.graph_job_op_toys.input_managers import df_stats_job
 from dagster_test.graph_job_op_toys.log_asset import log_asset_job
@@ -40,9 +41,13 @@ from dagster_test.graph_job_op_toys.retries import retry_job
 from dagster_test.graph_job_op_toys.run_status_sensors import (
     fails_job,
     fails_sensor,
+    return_multi_run_request_success_sensor,
+    return_run_request_succeeds_sensor,
     status_job,
     succeeds_job,
-    succeeds_sensor,
+    success_sensor_with_pipeline_run_reaction,
+    yield_multi_run_request_success_sensor,
+    yield_run_request_succeeds_sensor,
 )
 from dagster_test.graph_job_op_toys.sleepy import sleepy_job
 from dagster_test.graph_job_op_toys.software_defined_assets import software_defined_assets
@@ -98,11 +103,15 @@ def toys_repository():
             software_defined_assets,
             with_metadata,
             succeeds_job,
-            succeeds_sensor,
+            return_run_request_succeeds_sensor,
+            yield_run_request_succeeds_sensor,
             fails_job,
             fails_sensor,
             status_job,
             df_stats_job,
+            yield_multi_run_request_success_sensor,
+            return_multi_run_request_success_sensor,
+            success_sensor_with_pipeline_run_reaction,
         ]
         + get_toys_schedules()
         + get_toys_sensors()
@@ -144,3 +153,8 @@ def downstream_assets_repository1():
 @repository
 def downstream_assets_repository2():
     return [downstream_asset_group2]
+
+
+@repository
+def graph_backed_asset_repository():
+    return [graph_backed_group]

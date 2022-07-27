@@ -4,18 +4,18 @@ from dagster_msteams.card import Card
 from dagster_msteams.client import TeamsClient
 
 from dagster import DefaultSensorStatus
-from dagster.core.definitions.run_status_sensor_definition import (
+from dagster._core.definitions.run_status_sensor_definition import (
     RunFailureSensorContext,
     run_failure_sensor,
 )
 
 
-def _default_failure_message(context: PipelineFailureSensorContext) -> str:
+def _default_failure_message(context: RunFailureSensorContext) -> str:
     return "\n".join(
         [
-            f"Pipeline {context.pipeline_run.pipeline_name} failed!",
-            f"Run ID: {context.pipeline_run.run_id}",
-            f"Mode: {context.pipeline_run.mode}",
+            f"Job {context.dagster_run.pipeline_name} failed!",
+            f"Run ID: {context.dagster_run.run_id}",
+            f"Mode: {context.dagster_run.mode}",
             f"Error: {context.failure_event.message}",
         ]
     )
@@ -23,7 +23,7 @@ def _default_failure_message(context: PipelineFailureSensorContext) -> str:
 
 def make_teams_on_run_failure_sensor(
     hook_url: str,
-    message_fn: Callable[[PipelineFailureSensorContext], str] = _default_failure_message,
+    message_fn: Callable[[RunFailureSensorContext], str] = _default_failure_message,
     http_proxy: Optional[str] = None,
     https_proxy: Optional[str] = None,
     timeout: Optional[float] = 60,
@@ -36,8 +36,8 @@ def make_teams_on_run_failure_sensor(
 
     Args:
         hook_url (str): MS Teams incoming webhook URL.
-        message_fn (Optional(Callable[[PipelineFailureSensorContext], str])): Function which
-            takes in the ``PipelineFailureSensorContext`` and outputs the message you want to send.
+        message_fn (Optional(Callable[[RunFailureSensorContext], str])): Function which
+            takes in the ``RunFailureSensorContext`` and outputs the message you want to send.
             Defaults to a text message that contains error message, pipeline name, and run ID.
         http_proxy : (Optional[str]): Proxy for requests using http protocol.
         https_proxy : (Optional[str]): Proxy for requests using https protocol.

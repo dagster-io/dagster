@@ -5,7 +5,7 @@ import mock
 import pytest
 from click.testing import CliRunner
 
-from dagster.cli.schedule import (
+from dagster._cli.schedule import (
     check_repo_and_scheduler,
     schedule_list_command,
     schedule_logs_command,
@@ -14,9 +14,9 @@ from dagster.cli.schedule import (
     schedule_stop_command,
     schedule_wipe_command,
 )
-from dagster.core.host_representation import ExternalRepository
-from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import environ
+from dagster._core.host_representation import ExternalRepository
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import environ
 
 from .test_cli_commands import schedule_command_contexts
 
@@ -25,7 +25,7 @@ from .test_cli_commands import schedule_command_contexts
 def test_schedules_list(gen_schedule_args):
     with gen_schedule_args as (cli_args, instance):
         runner = CliRunner()
-        with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
+        with mock.patch("dagster._core.instance.DagsterInstance.get") as _instance:
             _instance.return_value = instance
             result = runner.invoke(schedule_list_command, cli_args)
 
@@ -47,7 +47,7 @@ def test_schedules_list(gen_schedule_args):
 @pytest.mark.parametrize("gen_schedule_args", schedule_command_contexts())
 def test_schedules_start_and_stop(gen_schedule_args):
     with gen_schedule_args as (cli_args, instance):
-        with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
+        with mock.patch("dagster._core.instance.DagsterInstance.get") as _instance:
             _instance.return_value = instance
             runner = CliRunner()
 
@@ -72,7 +72,7 @@ def test_schedules_start_and_stop(gen_schedule_args):
 def test_schedules_start_empty(gen_schedule_args):
     with gen_schedule_args as (cli_args, instance):
         runner = CliRunner()
-        with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
+        with mock.patch("dagster._core.instance.DagsterInstance.get") as _instance:
             _instance.return_value = instance
             result = runner.invoke(
                 schedule_start_command,
@@ -87,7 +87,7 @@ def test_schedules_start_empty(gen_schedule_args):
 def test_schedules_start_all(gen_schedule_args):
     with gen_schedule_args as (cli_args, instance):
         runner = CliRunner()
-        with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
+        with mock.patch("dagster._core.instance.DagsterInstance.get") as _instance:
             _instance.return_value = instance
 
             result = runner.invoke(
@@ -103,7 +103,7 @@ def test_schedules_start_all(gen_schedule_args):
 def test_schedules_wipe_correct_delete_message(gen_schedule_args):
     with gen_schedule_args as (cli_args, instance):
         runner = CliRunner()
-        with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
+        with mock.patch("dagster._core.instance.DagsterInstance.get") as _instance:
             _instance.return_value = instance
 
             result = runner.invoke(
@@ -123,7 +123,7 @@ def test_schedules_wipe_correct_delete_message(gen_schedule_args):
 def test_schedules_wipe_incorrect_delete_message(gen_schedule_args):
     with gen_schedule_args as (cli_args, instance):
         runner = CliRunner()
-        with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
+        with mock.patch("dagster._core.instance.DagsterInstance.get") as _instance:
             _instance.return_value = instance
             result = runner.invoke(
                 schedule_wipe_command,
@@ -142,7 +142,7 @@ def test_schedules_wipe_incorrect_delete_message(gen_schedule_args):
 def test_schedules_restart(gen_schedule_args):
     with gen_schedule_args as (cli_args, instance):
         runner = CliRunner()
-        with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
+        with mock.patch("dagster._core.instance.DagsterInstance.get") as _instance:
             _instance.return_value = instance
 
             result = runner.invoke(
@@ -163,7 +163,7 @@ def test_schedules_restart(gen_schedule_args):
 def test_schedules_restart_all(gen_schedule_args):
     with gen_schedule_args as (cli_args, instance):
         runner = CliRunner()
-        with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
+        with mock.patch("dagster._core.instance.DagsterInstance.get") as _instance:
             _instance.return_value = instance
 
             result = runner.invoke(
@@ -182,7 +182,7 @@ def test_schedules_restart_all(gen_schedule_args):
 @pytest.mark.parametrize("gen_schedule_args", schedule_command_contexts())
 def test_schedules_logs(gen_schedule_args):
     with gen_schedule_args as (cli_args, instance):
-        with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
+        with mock.patch("dagster._core.instance.DagsterInstance.get") as _instance:
             _instance.return_value = instance
             runner = CliRunner()
 

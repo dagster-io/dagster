@@ -25,21 +25,21 @@ from dagster import (
     success_hook,
 )
 from dagster._check import CheckError
-from dagster.core.definitions.graph_definition import GraphDefinition
-from dagster.core.definitions.partition import (
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.partition import (
     Partition,
     PartitionedConfig,
     StaticPartitionsDefinition,
 )
-from dagster.core.definitions.pipeline_definition import PipelineSubsetDefinition
-from dagster.core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
-from dagster.core.errors import (
+from dagster._core.definitions.pipeline_definition import PipelineSubsetDefinition
+from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
+from dagster._core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
 )
-from dagster.core.test_utils import instance_for_test
-from dagster.loggers import json_console_logger
+from dagster._core.test_utils import instance_for_test
+from dagster._loggers import json_console_logger
 
 
 def get_ops():
@@ -492,7 +492,7 @@ def test_to_job_incomplete_default_config():
     def my_graph():
         my_op()
 
-    default_config_error = "Error in config when building job 'my_job' from graph 'my_graph' "
+    default_config_error = "Error in config when building job 'my_job' "
     invalid_default_error = "Invalid default_value for Field."
     invalid_configs = [
         (

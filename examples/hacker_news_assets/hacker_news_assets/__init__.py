@@ -11,7 +11,7 @@ from hacker_news_assets.recommender import recommender_assets, recommender_asset
 from hacker_news_assets.resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
 
 from dagster import repository, with_resources
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 from .sensors.slack_on_failure_sensor import make_slack_on_failure_sensor
 
@@ -24,6 +24,7 @@ dbt_assets = load_assets_from_dbt_manifest(
     # the schemas are already specified in dbt, so we don't need to also specify them in the key
     # prefix here
     key_prefix=["snowflake"],
+    source_key_prefix=["snowflake"],
 )
 
 all_assets = [*core_assets, *recommender_assets, *dbt_assets, *activity_analytics_assets]

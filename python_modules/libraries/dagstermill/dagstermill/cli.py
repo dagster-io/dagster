@@ -8,8 +8,8 @@ import nbformat
 from papermill.iorw import load_notebook_node, write_ipynb
 
 import dagster._check as check
-from dagster.seven.json import loads
-from dagster.utils import mkdir_p, safe_isfile
+from dagster._seven.json import loads
+from dagster._utils import mkdir_p, safe_isfile
 
 
 def get_import_cell():

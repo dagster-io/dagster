@@ -14,8 +14,14 @@ from dagster import (
 )
 from dagster import _check as check
 from dagster import build_op_context, io_manager, resource
-from dagster.core.definitions import AssetIn, AssetsDefinition, asset, build_assets_job, multi_asset
-from dagster.core.definitions.resource_requirement import ensure_requirements_satisfied
+from dagster._core.definitions import (
+    AssetIn,
+    AssetsDefinition,
+    asset,
+    build_assets_job,
+    multi_asset,
+)
+from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 
 
 @pytest.fixture(autouse=True)
@@ -133,6 +139,68 @@ def test_multi_asset_infer_from_empty_asset_key():
         yield Output(2, "my_other_out_name")
 
     assert my_asset.keys == {AssetKey("my_out_name"), AssetKey("my_other_out_name")}
+
+
+def test_multi_asset_group_names():
+    @multi_asset(
+        outs={
+            "out1": AssetOut(group_name="foo", key=AssetKey(["cool", "key1"])),
+            "out2": Out(),
+            "out3": AssetOut(),
+            "out4": AssetOut(group_name="bar", key_prefix="prefix4"),
+            "out5": AssetOut(group_name="bar"),
+        }
+    )
+    def my_asset():
+        pass
+
+    assert my_asset.group_names_by_key == {
+        AssetKey(["cool", "key1"]): "foo",
+        AssetKey("out2"): "default",
+        AssetKey("out3"): "default",
+        AssetKey(["prefix4", "out4"]): "bar",
+        AssetKey("out5"): "bar",
+    }
+
+
+def test_multi_asset_group_name():
+    @multi_asset(
+        outs={
+            "out1": AssetOut(key=AssetKey(["cool", "key1"])),
+            "out2": Out(),
+            "out3": AssetOut(),
+            "out4": AssetOut(key_prefix="prefix4"),
+            "out5": AssetOut(),
+        },
+        group_name="bar",
+    )
+    def my_asset():
+        pass
+
+    assert my_asset.group_names_by_key == {
+        AssetKey(["cool", "key1"]): "bar",
+        AssetKey("out2"): "bar",
+        AssetKey("out3"): "bar",
+        AssetKey(["prefix4", "out4"]): "bar",
+        AssetKey("out5"): "bar",
+    }
+
+
+def test_multi_asset_group_names_and_group_name():
+    with pytest.raises(check.CheckError):
+
+        @multi_asset(
+            outs={
+                "out1": AssetOut(group_name="foo", key=AssetKey(["cool", "key1"])),
+                "out2": Out(),
+                "out3": AssetOut(),
+                "out4": AssetOut(group_name="bar", key_prefix="prefix4"),
+                "out5": AssetOut(group_name="bar"),
+            },
+            group_name="something",
+        )
+        def my_asset():
+            pass
 
 
 def test_multi_asset_internal_asset_deps_metadata():

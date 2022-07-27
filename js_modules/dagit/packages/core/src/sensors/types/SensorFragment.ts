@@ -37,7 +37,7 @@ export interface SensorFragment_sensorState_runs {
   updateTime: number | null;
 }
 
-export interface SensorFragment_sensorState_ticks_error_cause {
+export interface SensorFragment_sensorState_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -47,7 +47,7 @@ export interface SensorFragment_sensorState_ticks_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: SensorFragment_sensorState_ticks_error_cause | null;
+  causes: SensorFragment_sensorState_ticks_error_causes[];
 }
 
 export interface SensorFragment_sensorState_ticks {

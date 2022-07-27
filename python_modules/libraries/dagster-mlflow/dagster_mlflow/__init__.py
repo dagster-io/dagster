@@ -1,4 +1,4 @@
-from dagster.core.utils import check_dagster_package_version
+from dagster._core.utils import check_dagster_package_version
 
 from .hooks import end_mlflow_on_run_finished, end_mlflow_run_on_pipeline_finished
 from .resources import mlflow_tracking

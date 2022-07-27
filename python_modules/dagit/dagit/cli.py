@@ -6,17 +6,17 @@ import click
 import uvicorn
 
 import dagster._check as check
-from dagster.cli.utils import get_instance_for_service
-from dagster.cli.workspace import (
+from dagster._cli.utils import get_instance_for_service
+from dagster._cli.workspace import (
     get_workspace_process_context_from_kwargs,
     workspace_target_argument,
 )
-from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
-from dagster.core.telemetry import START_DAGIT_WEBSERVER, log_action
-from dagster.core.telemetry_upload import uploading_logging_thread
-from dagster.core.workspace import WorkspaceProcessContext
-from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
-from dagster.utils.log import configure_loggers
+from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
+from dagster._core.telemetry import START_DAGIT_WEBSERVER, log_action
+from dagster._core.telemetry_upload import uploading_logging_thread
+from dagster._core.workspace import WorkspaceProcessContext
+from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
+from dagster._utils.log import configure_loggers
 
 from .app import create_app_from_workspace_process_context
 from .version import __version__

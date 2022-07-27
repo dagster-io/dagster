@@ -1,5 +1,6 @@
-from dagster import Bool, Field, Int, op, solid
-from dagster.seven import json
+from dagster import Bool, Field, Int, op
+from dagster._legacy import solid
+from dagster._seven import json
 
 from .configs import define_dataproc_submit_job_config
 from .resources import TWENTY_MINUTES

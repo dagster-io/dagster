@@ -82,7 +82,6 @@ export const AssetNodeLineage: React.FC<{
         {Object.values(assetGraphData.nodes).length > 1 ? (
           <LaunchAssetExecutionButton
             assetKeys={Object.values(assetGraphData.nodes).map((n) => n.assetKey)}
-            liveDataByNode={liveDataByNode}
             intent="none"
             context="all"
           />
@@ -135,7 +134,7 @@ const LineageDepthControl: React.FC<{
           inputMode="numeric"
           style={{
             width: 40,
-            marginLeft: 2,
+            marginLeft: -1,
             textAlign: 'center',
             height: 32,
             padding: 6,

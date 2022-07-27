@@ -2,20 +2,31 @@ from typing import Any, Callable, Dict, Iterator, List, Mapping, Optional, Union
 
 import dateutil
 
-from dagster import AssetKey, AssetMaterialization, AssetObservation, MetadataValue
+from dagster import AssetKey, AssetMaterialization, AssetObservation, MetadataValue, Output
 from dagster import _check as check
-from dagster.core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.metadata import RawMetadataValue
 
 from .types import DbtOutput
+
+# dbt resource types that may be considered assets
+ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
 
 
 def default_node_info_to_asset_key(node_info: Dict[str, Any]) -> AssetKey:
     return AssetKey(node_info["unique_id"].split("."))
 
 
-def _node_type(unique_id: str) -> str:
+def _resource_type(unique_id: str) -> str:
     # returns the type of the node (e.g. model, test, snapshot)
     return unique_id.split(".")[0]
+
+
+def _get_input_name(node_info: Mapping[str, Any]) -> str:
+    return node_info["unique_id"].replace(".", "_")
+
+
+def _get_output_name(node_info: Mapping[str, Any]) -> str:
+    return node_info["unique_id"].split(".")[-1]
 
 
 def _node_result_to_metadata(node_result: Dict[str, Any]) -> Mapping[str, RawMetadataValue]:
@@ -57,7 +68,9 @@ def result_to_events(
     docs_url: Optional[str] = None,
     node_info_to_asset_key: Optional[Callable[[Dict[str, Any]], AssetKey]] = None,
     manifest_json: Optional[Dict[str, Any]] = None,
-) -> Optional[Iterator[Union[AssetMaterialization, AssetObservation]]]:
+    extra_metadata: Optional[Dict[str, RawMetadataValue]] = None,
+    generate_asset_outputs: bool = False,
+) -> Iterator[Union[AssetMaterialization, AssetObservation, Output]]:
     """
     This is a hacky solution that attempts to consolidate parsing many of the potential formats
     that dbt can provide its results in. This is known to work for CLI Outputs for dbt versions 0.18+,
@@ -88,7 +101,6 @@ def result_to_events(
 
     # working with a response that contains the node block (RPC and CLI 0.18.x)
     if "node" in result:
-
         unique_id = result["node"]["unique_id"]
         metadata.update(_node_result_to_metadata(result["node"]))
     else:
@@ -97,19 +109,30 @@ def result_to_events(
     if docs_url:
         metadata["docs_url"] = MetadataValue.url(f"{docs_url}#!/model/{unique_id}")
 
-    node_type = _node_type(unique_id)
+    if extra_metadata:
+        metadata.update(extra_metadata)
 
     # if you have a manifest available, get the full node info, otherwise just populate unique_id
     node_info = manifest_json["nodes"][unique_id] if manifest_json else {"unique_id": unique_id}
 
-    if node_type == "model" and status == "success":
-        yield AssetMaterialization(
-            asset_key=node_info_to_asset_key(node_info),
-            description=f"dbt node: {unique_id}",
-            metadata=metadata,
-        )
+    node_resource_type = _resource_type(unique_id)
+
+    if node_resource_type in ASSET_RESOURCE_TYPES and status == "success":
+
+        if generate_asset_outputs:
+            yield Output(
+                value=None,
+                output_name=_get_output_name(node_info),
+                metadata=metadata,
+            )
+        else:
+            yield AssetMaterialization(
+                asset_key=node_info_to_asset_key(node_info),
+                description=f"dbt node: {unique_id}",
+                metadata=metadata,
+            )
     # can only associate tests with assets if we have manifest_json available
-    elif node_type == "test" and manifest_json:
+    elif node_resource_type == "test" and manifest_json:
         upstream_unique_ids = manifest_json["nodes"][unique_id]["depends_on"]["nodes"]
         # tests can apply to multiple asset keys
         for upstream_id in upstream_unique_ids:
@@ -137,14 +160,16 @@ def generate_events(
     """
 
     for result in dbt_output.result["results"]:
-        yield from check.not_none(
-            result_to_events(
-                result,
-                docs_url=dbt_output.docs_url,
-                node_info_to_asset_key=node_info_to_asset_key,
-                manifest_json=manifest_json,
+        for event in result_to_events(
+            result,
+            docs_url=dbt_output.docs_url,
+            node_info_to_asset_key=node_info_to_asset_key,
+            manifest_json=manifest_json,
+        ):
+            yield check.inst(
+                cast(Union[AssetMaterialization, AssetObservation], event),
+                (AssetMaterialization, AssetObservation),
             )
-        )
 
 
 def generate_materializations(

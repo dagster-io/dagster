@@ -246,7 +246,7 @@ def run_failure_sensor(
 
         return _run_failure_sensor
 
-    # This case is for when decorator is used bare, without arguments, i.e. @run_failure_sensor
+    # This case is for when decorator is used bare, without arguments
     if callable(name):
         return inner(name)
 

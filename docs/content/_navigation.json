@@ -112,10 +112,6 @@
           {
             "title": "Op Retries",
             "path": "/concepts/ops-jobs-graphs/op-retries"
-          },
-          {
-            "title": "Metadata & Tags",
-            "path": "/concepts/ops-jobs-graphs/metadata-tags"
           }
         ]
       },
@@ -146,6 +142,10 @@
           {
             "title": "Job Execution",
             "path": "/concepts/ops-jobs-graphs/job-execution"
+          },
+          {
+            "title": "Metadata & Tags",
+            "path": "/concepts/ops-jobs-graphs/metadata-tags"
           }
         ]
       },
@@ -425,7 +425,8 @@
       },
       {
         "title": "Migrating to Graphs, Jobs, and Ops",
-        "path": "/guides/dagster/graph_job_op"
+        "path": "https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op",
+        "isExternalLink": true
       },
       {
         "title": "Re-execution",
@@ -598,6 +599,10 @@
           {
             "title": "Datadog (dagster-datadog)",
             "path": "/_apidocs/libraries/dagster-datadog"
+          },
+          {
+            "title": "Datahub (dagster-datahub)",
+            "path": "/_apidocs/libraries/dagster-datahub"
           },
           {
             "title": "dbt (dagster-dbt)",

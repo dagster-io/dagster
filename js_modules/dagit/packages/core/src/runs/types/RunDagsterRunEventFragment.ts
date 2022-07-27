@@ -514,7 +514,7 @@ export interface RunDagsterRunEventFragment_ResourceInitFailureEvent_metadataEnt
 
 export type RunDagsterRunEventFragment_ResourceInitFailureEvent_metadataEntries = RunDagsterRunEventFragment_ResourceInitFailureEvent_metadataEntries_PathMetadataEntry | RunDagsterRunEventFragment_ResourceInitFailureEvent_metadataEntries_JsonMetadataEntry | RunDagsterRunEventFragment_ResourceInitFailureEvent_metadataEntries_UrlMetadataEntry | RunDagsterRunEventFragment_ResourceInitFailureEvent_metadataEntries_TextMetadataEntry | RunDagsterRunEventFragment_ResourceInitFailureEvent_metadataEntries_MarkdownMetadataEntry | RunDagsterRunEventFragment_ResourceInitFailureEvent_metadataEntries_PythonArtifactMetadataEntry | RunDagsterRunEventFragment_ResourceInitFailureEvent_metadataEntries_FloatMetadataEntry | RunDagsterRunEventFragment_ResourceInitFailureEvent_metadataEntries_IntMetadataEntry | RunDagsterRunEventFragment_ResourceInitFailureEvent_metadataEntries_BoolMetadataEntry | RunDagsterRunEventFragment_ResourceInitFailureEvent_metadataEntries_PipelineRunMetadataEntry | RunDagsterRunEventFragment_ResourceInitFailureEvent_metadataEntries_AssetMetadataEntry | RunDagsterRunEventFragment_ResourceInitFailureEvent_metadataEntries_TableMetadataEntry | RunDagsterRunEventFragment_ResourceInitFailureEvent_metadataEntries_TableSchemaMetadataEntry;
 
-export interface RunDagsterRunEventFragment_ResourceInitFailureEvent_error_cause {
+export interface RunDagsterRunEventFragment_ResourceInitFailureEvent_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -524,7 +524,7 @@ export interface RunDagsterRunEventFragment_ResourceInitFailureEvent_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: RunDagsterRunEventFragment_ResourceInitFailureEvent_error_cause | null;
+  causes: RunDagsterRunEventFragment_ResourceInitFailureEvent_error_causes[];
 }
 
 export interface RunDagsterRunEventFragment_ResourceInitFailureEvent {
@@ -1412,7 +1412,7 @@ export interface RunDagsterRunEventFragment_ObservationEvent {
   assetKey: RunDagsterRunEventFragment_ObservationEvent_assetKey | null;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_error_cause {
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -1422,7 +1422,7 @@ export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: RunDagsterRunEventFragment_ExecutionStepFailureEvent_error_cause | null;
+  causes: RunDagsterRunEventFragment_ExecutionStepFailureEvent_error_causes[];
 }
 
 export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_PathMetadataEntry {
@@ -1600,7 +1600,7 @@ export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent {
   failureMetadata: RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata | null;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepUpForRetryEvent_error_cause {
+export interface RunDagsterRunEventFragment_ExecutionStepUpForRetryEvent_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -1610,7 +1610,7 @@ export interface RunDagsterRunEventFragment_ExecutionStepUpForRetryEvent_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: RunDagsterRunEventFragment_ExecutionStepUpForRetryEvent_error_cause | null;
+  causes: RunDagsterRunEventFragment_ExecutionStepUpForRetryEvent_error_causes[];
 }
 
 export interface RunDagsterRunEventFragment_ExecutionStepUpForRetryEvent {

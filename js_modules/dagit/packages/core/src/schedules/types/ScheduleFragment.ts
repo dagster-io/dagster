@@ -38,7 +38,7 @@ export interface ScheduleFragment_scheduleState_runs {
   updateTime: number | null;
 }
 
-export interface ScheduleFragment_scheduleState_ticks_error_cause {
+export interface ScheduleFragment_scheduleState_ticks_error_causes {
   __typename: "PythonError";
   message: string;
   stack: string[];
@@ -48,7 +48,7 @@ export interface ScheduleFragment_scheduleState_ticks_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: ScheduleFragment_scheduleState_ticks_error_cause | null;
+  causes: ScheduleFragment_scheduleState_ticks_error_causes[];
 }
 
 export interface ScheduleFragment_scheduleState_ticks {

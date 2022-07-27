@@ -5,50 +5,50 @@ from datetime import datetime
 import pendulum
 import pytest
 
-from dagster import job, op, seven
-from dagster.core.definitions import PipelineDefinition
-from dagster.core.errors import (
+from dagster import _seven, job, op
+from dagster._core.definitions import PipelineDefinition
+from dagster._core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunNotFoundError,
     DagsterSnapshotDoesNotExist,
 )
-from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster.core.host_representation import (
+from dagster._core.events import DagsterEvent, DagsterEventType
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
-from dagster.core.instance import DagsterInstance, InstanceType
-from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-from dagster.core.run_coordinator import DefaultRunCoordinator
-from dagster.core.snap import create_pipeline_snapshot_id
-from dagster.core.storage.event_log import InMemoryEventLogStorage
-from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
-from dagster.core.storage.pipeline_run import (
+from dagster._core.instance import DagsterInstance, InstanceType
+from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
+from dagster._core.run_coordinator import DefaultRunCoordinator
+from dagster._core.snap import create_pipeline_snapshot_id
+from dagster._core.storage.event_log import InMemoryEventLogStorage
+from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
+from dagster._core.storage.pipeline_run import (
     DagsterRun,
     JobBucket,
     PipelineRunStatus,
     RunsFilter,
     TagBucket,
 )
-from dagster.core.storage.root import LocalArtifactStorage
-from dagster.core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
-from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
-from dagster.core.storage.tags import (
+from dagster._core.storage.root import LocalArtifactStorage
+from dagster._core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
+from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
+from dagster._core.storage.tags import (
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
     ROOT_RUN_ID_TAG,
 )
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.core.utils import make_new_run_id
-from dagster.daemon.daemon import SensorDaemon
-from dagster.daemon.types import DaemonHeartbeat
-from dagster.serdes import serialize_pp
-from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.utils import make_new_run_id
+from dagster._daemon.daemon import SensorDaemon
+from dagster._daemon.types import DaemonHeartbeat
+from dagster._serdes import serialize_pp
+from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
-win_py36 = seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
+win_py36 = _seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
 
 
 class TestRunStorage:
@@ -861,8 +861,8 @@ class TestRunStorage:
             storage.add_run(run_with_missing_snapshot)
 
     def test_add_get_execution_snapshot(self, storage):
-        from dagster.core.execution.api import create_execution_plan
-        from dagster.core.snap import snapshot_from_execution_plan
+        from dagster._core.execution.api import create_execution_plan
+        from dagster._core.snap import snapshot_from_execution_plan
 
         pipeline_def = PipelineDefinition(name="some_pipeline", solid_defs=[])
         execution_plan = create_execution_plan(pipeline_def)
@@ -1126,13 +1126,18 @@ class TestRunStorage:
             },
         )
         storage.add_run(three)
-        partition_data = storage.get_run_partition_data("foo_set", "foo_pipeline", "fake@fake")
+        partition_data = storage.get_run_partition_data(
+            runs_filter=RunsFilter(
+                pipeline_name="foo_pipeline",
+                tags={PARTITION_SET_TAG: "foo_set"},
+            )
+        )
         assert len(partition_data) == 3
         assert {_.partition for _ in partition_data} == {"one", "two", "three"}
         assert {_.run_id for _ in partition_data} == {one.run_id, two_retried.run_id, three.run_id}
 
     def _skip_in_memory(self, storage):
-        from dagster.core.storage.runs import InMemoryRunStorage
+        from dagster._core.storage.runs import InMemoryRunStorage
 
         if isinstance(storage, InMemoryRunStorage):
             pytest.skip()
@@ -1266,8 +1271,8 @@ class TestRunStorage:
         assert storage.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS
 
     def test_debug_snapshot_import(self, storage):
-        from dagster.core.execution.api import create_execution_plan
-        from dagster.core.snap import (
+        from dagster._core.execution.api import create_execution_plan
+        from dagster._core.snap import (
             create_execution_plan_snapshot_id,
             snapshot_from_execution_plan,
         )

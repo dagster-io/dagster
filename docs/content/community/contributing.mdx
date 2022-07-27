@@ -110,7 +110,10 @@ After sourcing this file, you can ensure that the correct version of `homebrew` 
 Some notes on developing in Dagster:
 
 - **Black/Pylint**: We use [black](https://github.com/python/black) to enforce a consistent code style, along with [pylint](https://www.pylint.org/). We test these in our CI/CD pipeline.
+  - You can run `make black` from the repo root to automatically format your files.
 - **Line Width**: We use a line width of 100.
+- **Import ordering**: We use [isort](https://github.com/PyCQA/isort) to standardize the order of imports.
+  - You can run "make isort" from the repo root to automatically isort your files.
 - **IDE**: We recommend setting up your IDE to format with black on save and check pylint, but you can always run `make black` and `make pylint` in the root Dagster directory before submitting a pull request. If you're also using VS Code, you can see what we're using for our `settings.json` [here](https://gist.github.com/natekupp/7a17a9df8d2064e5389cc84aa118a896).
 - **Docker**: Some tests require [Docker Desktop](https://www.docker.com/products/docker-desktop) to be able to run them locally.
 
@@ -154,7 +157,7 @@ The API documentation is generated from ReStructured Text files (`.rst`), which 
 If you change any `.rst` files, be sure to run the following command in the `docs` directory:
 
 ```bash
-make buildnext
+make build
 ```
 
 ## Picking a Github Issue

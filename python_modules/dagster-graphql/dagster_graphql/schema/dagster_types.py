@@ -5,9 +5,9 @@ from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 
 import dagster._check as check
-from dagster.core.snap import PipelineSnapshot
-from dagster.core.snap.dagster_types import DagsterTypeSnap
-from dagster.core.types.dagster_type import DagsterTypeKind
+from dagster._core.snap import PipelineSnapshot
+from dagster._core.snap.dagster_types import DagsterTypeSnap
+from dagster._core.types.dagster_type import DagsterTypeKind
 
 from .config_types import GrapheneConfigType, GrapheneConfigTypeUnion, to_config_type
 from .errors import (

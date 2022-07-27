@@ -3,13 +3,16 @@
 import pytest
 from dagster_k8s.container_context import K8sContainerContext
 
-from dagster.core.errors import DagsterInvalidConfigError
-from dagster.utils import make_readonly_value
+from dagster._core.errors import DagsterInvalidConfigError
+from dagster._utils import make_readonly_value
 
 
 @pytest.fixture
 def container_context_config():
     return {
+        "env_vars": [
+            "SHARED_KEY=SHARED_VAL",
+        ],
         "k8s": {
             "image_pull_policy": "Always",
             "image_pull_secrets": [{"name": "my_secret"}],
@@ -33,13 +36,16 @@ def container_context_config():
                 "requests": {"memory": "64Mi", "cpu": "250m"},
                 "limits": {"memory": "128Mi", "cpu": "500m"},
             },
-        }
+        },
     }
 
 
 @pytest.fixture
 def other_container_context_config():
     return {
+        "env_vars": [
+            "SHARED_OTHER_KEY=SHARED_OTHER_VAL",
+        ],
         "k8s": {
             "image_pull_policy": "Never",
             "image_pull_secrets": [{"name": "your_secret"}],
@@ -62,7 +68,7 @@ def other_container_context_config():
             "resources": {
                 "limits": {"memory": "64Mi", "cpu": "250m"},
             },
-        }
+        },
     }
 
 
@@ -156,7 +162,13 @@ def test_merge(empty_container_context, container_context, other_container_conte
     assert container_context.service_account_name == "my_service_account"
     assert container_context.env_config_maps == ["my_config_map"]
     assert container_context.env_secrets == ["my_secret"]
-    assert container_context.env_vars == ["MY_ENV_VAR"]
+    _check_same_sorted(
+        container_context.env_vars,
+        [
+            "MY_ENV_VAR",
+            "SHARED_KEY=SHARED_VAL",
+        ],
+    )
     assert container_context.volume_mounts == [
         {
             "mount_path": "my_mount_path",
@@ -204,6 +216,8 @@ def test_merge(empty_container_context, container_context, other_container_conte
         [
             "YOUR_ENV_VAR",
             "MY_ENV_VAR",
+            "SHARED_OTHER_KEY=SHARED_OTHER_VAL",
+            "SHARED_KEY=SHARED_VAL",
         ],
     )
     _check_same_sorted(

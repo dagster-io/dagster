@@ -5,7 +5,7 @@ description: This guide describes our example Dagster project
 
 # Hacker News Example Project
 
-The [Hacker News example project](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news) takes advantage of a wide range of Dagster features and can be useful as a point of reference for how we imagine structuring Dagster projects and using different APIs. At a high level, it consists of three jobs, all centered around a (contrived) use case of downloading Hacker News user activity data, loading it into a database, and doing analysis / training an ML model on the aggregated data.
+The [Hacker News example project](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news_assets) takes advantage of a wide range of Dagster features and can be useful as a point of reference for how we imagine structuring Dagster projects and using different APIs. At a high level, it consists of three asset groups, all centered around a (contrived) use case of downloading Hacker News user activity data, loading it into a database, and doing analysis / training an ML model on the aggregated data.
 
 Beyond the dagster libraries that it demonstrates the use of (listed below), this example shows useful patterns for many Dagster concepts: schedules, sensors, IO managers, resources, and unit tests (to name a few).
 
@@ -18,6 +18,4 @@ This project uses several dagster integration libraries:
 - [dagster_dbt](/\_apidocs/libraries/dagster-dbt)
 - [dagster_aws](/\_apidocs/libraries/dagster-aws)
 - [dagster_slack](/\_apidocs/libraries/dagster-slack)
-- [dagster_pandas](/\_apidocs/libraries/dagster-pandas)
 - [dagster_pyspark](/\_apidocs/libraries/dagster-pyspark)
-- [dagstermill](/\_apidocs/libraries/dagstermill)

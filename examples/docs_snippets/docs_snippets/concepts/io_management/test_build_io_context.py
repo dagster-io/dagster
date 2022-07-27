@@ -10,7 +10,7 @@ from dagster import (
     build_output_context,
     resource,
 )
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvariantViolationError
 
 
 def test_basic_build_input_context():
@@ -113,3 +113,9 @@ def test_context_logging_metadata():
     context.add_output_metadata({"foo": "bar"})
 
     assert [entry.label for entry in context.get_logged_metadata_entries()] == ["foo"]
+
+
+def test_context_partition_key():
+    context = build_output_context(partition_key="foo")
+    assert context.partition_key == "foo"
+    assert context.has_partition_key

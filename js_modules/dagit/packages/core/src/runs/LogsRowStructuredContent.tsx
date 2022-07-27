@@ -175,7 +175,7 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
     case 'AlertStartEvent':
       return <DefaultContent eventType={eventType} message={node.message} />;
     case 'AlertSuccessEvent':
-      return <DefaultContent eventType={eventType} message={node.message} eventIntent="success" />;
+      return <DefaultContent eventType={eventType} message={node.message} />;
     case 'AlertFailureEvent':
       return <DefaultContent eventType={eventType} message={node.message} eventIntent="warning" />;
     case 'ResourceInitFailureEvent':
@@ -317,25 +317,23 @@ const FailureContent: React.FC<{
 
     // omit the outer stack for user code errors with a cause
     // as the outer stack is just framework code
-    if (error.stack.length && !(errorSource === ErrorSource.USER_CODE_ERROR && error.cause)) {
+    if (
+      error.stack.length &&
+      !(errorSource === ErrorSource.USER_CODE_ERROR && error.causes.length)
+    ) {
       errorStack = <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>;
     }
 
-    if (error.cause) {
-      let errorCauseStack = null;
-      if (error.cause.stack.length) {
-        errorCauseStack = (
-          <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.cause.stack}`}</span>
-        );
-      }
-
-      errorCause = (
+    if (error.causes.length) {
+      errorCause = error.causes.map((cause) => (
         <>
           {`The above exception was caused by the following exception:\n`}
-          <span style={{color: Colors.Red500}}>{`${error.cause.message}`}</span>
-          {errorCauseStack}
+          <span style={{color: Colors.Red500}}>{`${cause.message}`}</span>
+          {cause?.stack.length ? (
+            <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${cause.stack}`}</span>
+          ) : null}
         </>
-      );
+      ));
     }
   }
 
@@ -377,16 +375,22 @@ const StepUpForRetryContent: React.FC<{
 
   if (error) {
     // If no cause, this was a `raise RetryRequest` inside the op. Show the trace for the main error.
-    if (!error.cause) {
+    if (!error.causes.length) {
       errorMessage = <span style={{color: Colors.Red500}}>{`${error.message}`}</span>;
       errorStack = <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.stack}`}</span>;
     } else {
       // If there is a cause, this was a different exception. Show that instead.
       errorCause = (
         <>
-          {`The retry request was caused by the following exception:\n`}
-          <span style={{color: Colors.Red500}}>{`${error.cause.message}`}</span>
-          <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${error.cause.stack}`}</span>
+          {error.causes.map((cause, index) => (
+            <>
+              {index === 0
+                ? `The retry request was caused by the following exception:\n`
+                : `The above exception was caused by the following exception:\n`}
+              <span style={{color: Colors.Red500}}>{`${cause.message}`}</span>
+              <span style={{color: Colors.Red500}}>{`\nStack Trace:\n${cause.stack}`}</span>
+            </>
+          ))}
         </>
       );
     }
