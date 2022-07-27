@@ -15,11 +15,11 @@ class AssetIn(
     NamedTuple(
         "_AssetIn",
         [
-            ("key", Optional[AssetKey]),
-            ("metadata", Optional[Mapping[str, Any]]),
-            ("key_prefix", Optional[Sequence[str]]),
-            ("input_manager_key", Optional[str]),
-            ("partition_mapping", Optional[PartitionMapping]),
+            ("key", PublicAttr[Optional[AssetKey]]),
+            ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
+            ("key_prefix", PublicAttr[Optional[Sequence[str]]]),
+            ("input_manager_key", PublicAttr[Optional[str]]),
+            ("partition_mapping", PublicAttr[Optional[PartitionMapping]]),
         ],
     )
 ):
