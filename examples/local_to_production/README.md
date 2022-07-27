@@ -11,7 +11,8 @@ To follow along with this example, you can read this [guide](https://docs.dagste
 To run this example locally
 
 ```
-# Install the example so that it will be on your Python path
+git clone git@github.com:dagster-io/dagster.git
+cd dagster/examples/local_to_production
 pip install -e .
 
 # Load it in the web UI
