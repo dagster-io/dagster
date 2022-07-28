@@ -482,9 +482,9 @@ class ExternalTimeWindowPartitionsDefinitionData(
         timezone: Optional[str],
         fmt: str,
         end_offset: int,
-        minute_offset: int,
-        hour_offset: int,
-        day_offset: Optional[int],
+        minute_offset: int = 0,
+        hour_offset: int = 0,
+        day_offset: Optional[int] = None,
     ):
         return super(ExternalTimeWindowPartitionsDefinitionData, cls).__new__(
             cls,
