@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import numpy as np
+from hacker_news_assets.store import s3_object_store
 from pandas import DataFrame, Series
 from scipy.sparse import coo_matrix
 
@@ -22,7 +23,7 @@ class IndexedCooMatrix:
     matrix and whose values are the corresponding values in this index."""
 
 
-@asset(key_prefix=["s3", "recommender"])
+@asset(store=s3_object_store)
 def user_story_matrix(comment_stories: DataFrame) -> Output[IndexedCooMatrix]:
     """
     A sparse matrix where the rows are users, the columns are stories, and the values
