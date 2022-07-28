@@ -332,6 +332,9 @@ class ReconstructablePipeline(
         return None
 
 
+ReconstructableJob = ReconstructablePipeline
+
+
 def reconstructable(target):
     """
     Create a :py:class:`~dagster._core.definitions.reconstructable.ReconstructablePipeline` from a

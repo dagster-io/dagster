@@ -1,15 +1,9 @@
-from dagster import (
-    Int,
-    ModeDefinition,
-    PipelineDefinition,
-    ResourceDefinition,
-    SolidDefinition,
-    String,
-)
+from dagster import Int, ResourceDefinition, String
 from dagster import _check as check
 from dagster._cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
 from dagster._config import config_type
 from dagster._core.definitions import create_run_config_schema
+from dagster._legacy import ModeDefinition, PipelineDefinition, SolidDefinition
 
 
 def fail_me():

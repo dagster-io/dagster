@@ -8,19 +8,22 @@ from dagster import (
     DagsterInvariantViolationError,
     DependencyDefinition,
     Field,
-    InputDefinition,
     Output,
+    execute_solid,
+    graph,
+    op,
+)
+from dagster._core.utility_solids import define_stub_solid
+from dagster._legacy import (
+    InputDefinition,
     OutputDefinition,
     PipelineDefinition,
     composite_solid,
     execute_pipeline,
-    execute_solid,
-    graph,
     lambda_solid,
-    op,
+    pipeline,
+    solid,
 )
-from dagster._core.utility_solids import define_stub_solid
-from dagster._legacy import pipeline, solid
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
 # pylint: disable=unused-variable, unused-argument, redefined-outer-name
@@ -192,7 +195,8 @@ def test_lambda_solid_with_underscore_input():
 
 def test_lambda_solid_definition_errors():
     with pytest.raises(
-        DagsterInvalidDefinitionError, match=re.escape("positional vararg parameter '*args'")
+        DagsterInvalidDefinitionError,
+        match=re.escape("positional vararg parameter '*args'"),
     ):
 
         @lambda_solid(input_defs=[InputDefinition(name="foo")])
@@ -202,7 +206,8 @@ def test_lambda_solid_definition_errors():
 
 def test_solid_definition_errors():
     with pytest.raises(
-        DagsterInvalidDefinitionError, match=re.escape("positional vararg parameter '*args'")
+        DagsterInvalidDefinitionError,
+        match=re.escape("positional vararg parameter '*args'"),
     ):
 
         @solid(input_defs=[InputDefinition(name="foo")], output_defs=[OutputDefinition()])
@@ -248,12 +253,14 @@ def test_wrong_argument_to_pipeline():
         pass
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="You have passed a lambda or function non_solid_func"
+        DagsterInvalidDefinitionError,
+        match="You have passed a lambda or function non_solid_func",
     ):
         PipelineDefinition(solid_defs=[non_solid_func], name="test")
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="You have passed a lambda or function <lambda>"
+        DagsterInvalidDefinitionError,
+        match="You have passed a lambda or function <lambda>",
     ):
         PipelineDefinition(solid_defs=[lambda x: x], name="test")
 

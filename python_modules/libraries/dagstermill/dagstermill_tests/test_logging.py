@@ -5,11 +5,11 @@ import os
 from dagstermill.examples.repository import hello_logging
 from dagstermill.io_managers import local_output_notebook_io_manager
 
-from dagster import ModeDefinition, String
+from dagster import String
 from dagster import _seven as seven
-from dagster import execute_pipeline, logger, reconstructable
+from dagster import logger, reconstructable
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import pipeline
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 from dagster._utils import safe_tempfile_path
 
 
@@ -30,7 +30,8 @@ class LogTestFileHandler(logging.Handler):
 def test_file_logger(init_context):
     klass = logging.getLoggerClass()
     logger_ = klass(
-        init_context.logger_config["name"], level=init_context.logger_config["log_level"]
+        init_context.logger_config["name"],
+        level=init_context.logger_config["log_level"],
     )
     handler = LogTestFileHandler(init_context.logger_config["file_path"])
     logger_.addHandler(handler)

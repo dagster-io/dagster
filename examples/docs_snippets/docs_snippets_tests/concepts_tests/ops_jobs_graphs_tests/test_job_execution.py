@@ -1,6 +1,6 @@
 import yaml
 
-from dagster import execute_pipeline
+from dagster._legacy import execute_pipeline
 from docs_snippets.concepts.ops_jobs_graphs.job_execution import (
     execute_subset,
     forkserver_job,

@@ -97,16 +97,14 @@ We'll illustrate this process by adding a non-notebook op to our job, which will
 ```python file=/legacy/data_science/iris_classify_2.py startafter=start
 import dagstermill as dm
 
-from dagster import InputDefinition, job
+from dagster import In, job
 from docs_snippets.legacy.data_science.download_file import download_file
 
 k_means_iris = dm.define_dagstermill_op(
     "k_means_iris",
     script_relative_path("iris-kmeans_2.ipynb"),
     output_notebook_name="iris_kmeans_output",
-    input_defs=[
-        InputDefinition("path", str, description="Local path to the Iris dataset")
-    ],
+    ins={"path": In(str, description="Local path to the Iris dataset")},
 )
 
 
@@ -124,7 +122,7 @@ We'll configure the `download_file` op with the URL to download the file from, a
 ```python file=/legacy/data_science/download_file.py startafter=start
 from urllib.request import urlretrieve
 
-from dagster import Field, OutputDefinition, String, op
+from dagster import Field, Out, String, op
 
 
 @op(
@@ -133,11 +131,7 @@ from dagster import Field, OutputDefinition, String, op
         "url": Field(String, description="The URL from which to download the file"),
         "path": Field(String, description="The path to which to download the file"),
     },
-    output_defs=[
-        OutputDefinition(
-            String, name="path", description="The path to which the file was downloaded"
-        )
-    ],
+    out={"path": Out(String, description="The path to which the file was downloaded")},
     description=(
         "A simple utility op that downloads a file from a URL to a path using urllib.urlretrieve"
     ),
@@ -222,16 +216,14 @@ For instance, suppose we want to make the number of clusters (the \_k\_ in k-mea
 ```python file=/legacy/data_science/iris_classify_3.py startafter=start
 import dagstermill as dm
 
-from dagster import Field, InputDefinition, Int, job
+from dagster import Field, In, Int, job
 from docs_snippets.legacy.data_science.download_file import download_file
 
 k_means_iris = dm.define_dagstermill_op(
     "k_means_iris",
     script_relative_path("iris-kmeans_2.ipynb"),
     output_notebook_name="iris_kmeans_output",
-    input_defs=[
-        InputDefinition("path", str, description="Local path to the Iris dataset")
-    ],
+    ins={"path": In(str, description="Local path to the Iris dataset")},
     config_schema=Field(
         Int,
         default_value=3,

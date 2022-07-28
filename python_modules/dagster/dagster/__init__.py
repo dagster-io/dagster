@@ -221,6 +221,7 @@ from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
+    DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
     DagsterResourceFunctionError,
     DagsterRunNotFoundError,
@@ -236,6 +237,8 @@ from dagster._core.errors import (
 )
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.execution.api import (
+    ReexecutionOptions,
+    execute_job,
     execute_pipeline,
     execute_pipeline_iterator,
     reexecute_pipeline,
@@ -251,6 +254,7 @@ from dagster._core.execution.context.logger import InitLoggerContext
 from dagster._core.execution.context.output import OutputContext, build_output_context
 from dagster._core.execution.context.system import TypeCheckContext
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster._core.execution.execute_job_result import ExecuteJobResult
 from dagster._core.execution.plan.external_step import (
     external_instance_from_step_run_ref,
     run_step_from_ref,
@@ -544,6 +548,7 @@ __all__ = [
     "InitLoggerContext",
     "InitResourceContext",
     "ExecuteInProcessResult",
+    "ExecuteJobResult",
     "step_context_to_step_run_ref",
     "external_instance_from_step_run_ref",
     "step_run_ref_to_step_context",
@@ -572,6 +577,8 @@ __all__ = [
     "default_executors",
     "execute_pipeline_iterator",
     "execute_pipeline",
+    "execute_job",
+    "ReexecutionOptions",
     "validate_run_config",
     "execute_solid_within_pipeline",
     "in_process_executor",
@@ -592,6 +599,7 @@ __all__ = [
     "DagsterInvalidInvocationError",
     "DagsterInvalidConfigError",
     "DagsterInvalidDefinitionError",
+    "DagsterInvalidSubsetError",
     "DagsterInvariantViolationError",
     "DagsterResourceFunctionError",
     "DagsterRunNotFoundError",

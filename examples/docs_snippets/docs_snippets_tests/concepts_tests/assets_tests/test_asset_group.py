@@ -1,5 +1,7 @@
-from docs_snippets.concepts.assets.asset_group import asset_group
+from dagster import load_assets_from_modules
 
 
 def test_asset_group():
-    assert len(asset_group.assets) == 2
+    from docs_snippets.concepts.assets import asset_group
+
+    assert len(load_assets_from_modules([asset_group])) == 2

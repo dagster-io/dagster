@@ -11,14 +11,10 @@ from dagster import (
     EnumValue,
     Field,
     Int,
-    ModeDefinition,
-    PipelineDefinition,
     ResourceDefinition,
     String,
     build_op_context,
     configured,
-    execute_pipeline,
-    execute_pipeline_iterator,
     fs_io_manager,
     graph,
     job,
@@ -35,12 +31,19 @@ from dagster._core.execution.api import create_execution_plan, execute_plan, exe
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import coerce_valid_log_level
-from dagster._legacy import solid
+from dagster._legacy import (
+    ModeDefinition,
+    PipelineDefinition,
+    execute_pipeline,
+    execute_pipeline_iterator,
+    solid,
+)
 
 
 def define_string_resource():
     return ResourceDefinition(
-        config_schema=String, resource_fn=lambda init_context: init_context.resource_config
+        config_schema=String,
+        resource_fn=lambda init_context: init_context.resource_config,
     )
 
 
@@ -123,7 +126,10 @@ def test_resource_with_dependencies():
         solid_defs=[dep_solid],
         mode_defs=[
             ModeDefinition(
-                resource_defs={"foo_resource": foo_resource, "bar_resource": bar_resource}
+                resource_defs={
+                    "foo_resource": foo_resource,
+                    "bar_resource": bar_resource,
+                }
             )
         ],
     )
@@ -163,7 +169,10 @@ def test_resource_cyclic_dependencies():
             solid_defs=[dep_solid],
             mode_defs=[
                 ModeDefinition(
-                    resource_defs={"foo_resource": foo_resource, "bar_resource": bar_resource}
+                    resource_defs={
+                        "foo_resource": foo_resource,
+                        "bar_resource": bar_resource,
+                    }
                 )
             ],
         )
@@ -227,7 +236,12 @@ def test_yield_multiple_resources():
 
     result = execute_pipeline(
         pipeline_def,
-        {"resources": {"string_one": {"config": "foo"}, "string_two": {"config": "bar"}}},
+        {
+            "resources": {
+                "string_one": {"config": "foo"},
+                "string_two": {"config": "bar"},
+            }
+        },
     )
 
     assert result.success
@@ -273,7 +287,12 @@ def test_resource_decorator():
 
     result = execute_pipeline(
         pipeline_def,
-        {"resources": {"string_one": {"config": "foo"}, "string_two": {"config": "bar"}}},
+        {
+            "resources": {
+                "string_one": {"config": "foo"},
+                "string_two": {"config": "bar"},
+            }
+        },
     )
 
     assert result.success
@@ -327,7 +346,12 @@ def test_mixed_multiple_resources():
 
     result = execute_pipeline(
         pipeline_def,
-        {"resources": {"returned_string": {"config": "foo"}, "yielded_string": {"config": "bar"}}},
+        {
+            "resources": {
+                "returned_string": {"config": "foo"},
+                "yielded_string": {"config": "bar"},
+            }
+        },
     )
 
     assert result.success
@@ -946,7 +970,11 @@ def define_resource_teardown_failure_pipeline():
         solid_defs=[resource_solid],
         mode_defs=[
             ModeDefinition(
-                resource_defs={"a": resource_a, "b": resource_b, "io_manager": fs_io_manager}
+                resource_defs={
+                    "a": resource_a,
+                    "b": resource_b,
+                    "io_manager": fs_io_manager,
+                }
             )
         ],
     )
@@ -1202,7 +1230,11 @@ def test_resource_op_subset():
 
     assert nested.get_job_def_for_subset_selection(["foo_op"]).get_required_resource_defs_for_mode(
         "default"
-    ).keys() == {"foo", "bar", "io_manager"}
+    ).keys() == {
+        "foo",
+        "bar",
+        "io_manager",
+    }
 
     assert nested.get_job_def_for_subset_selection(["bar_op"]).get_required_resource_defs_for_mode(
         "default"
@@ -1279,7 +1311,11 @@ def test_context_manager_resource():
     with build_op_context(resources={"cm": cm_resource}) as context:
         basic(context)
 
-    assert event_list == ["foo", "compute", "finally"]  # Ensures that we teardown after compute
+    assert event_list == [
+        "foo",
+        "compute",
+        "finally",
+    ]  # Ensures that we teardown after compute
 
     with pytest.raises(
         DagsterInvariantViolationError,

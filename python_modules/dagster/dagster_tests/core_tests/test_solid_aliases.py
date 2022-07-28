@@ -1,15 +1,13 @@
 from collections import defaultdict
 
-from dagster import (
-    DependencyDefinition,
+from dagster import DependencyDefinition, Int, NodeInvocation
+from dagster._legacy import (
     InputDefinition,
-    Int,
-    NodeInvocation,
     PipelineDefinition,
     execute_pipeline,
     lambda_solid,
+    solid,
 )
-from dagster._legacy import solid
 
 
 def test_aliased_solids():
@@ -36,7 +34,12 @@ def test_aliased_solids():
     result = execute_pipeline(pipeline)
     assert result.success
     solid_result = result.result_for_solid("third")
-    assert solid_result.output_value() == ["first", "not_first", "not_first", "not_first"]
+    assert solid_result.output_value() == [
+        "first",
+        "not_first",
+        "not_first",
+        "not_first",
+    ]
 
 
 def test_only_aliased_solids():

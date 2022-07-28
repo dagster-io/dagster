@@ -6,11 +6,11 @@ from dagster import (
     DagsterInvariantViolationError,
     GraphDefinition,
     JobDefinition,
-    PipelineDefinition,
     RepositoryDefinition,
 )
 from dagster._core.code_pointer import load_python_file, load_python_module
 from dagster._core.definitions import AssetGroup
+from dagster._legacy import PipelineDefinition
 
 LOAD_ALL_ASSETS = "<<LOAD_ALL_ASSETS>>"
 

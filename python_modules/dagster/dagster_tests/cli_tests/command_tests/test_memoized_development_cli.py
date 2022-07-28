@@ -5,9 +5,9 @@ from io import BytesIO
 
 import yaml
 
-from dagster import execute_pipeline
 from dagster._cli.pipeline import execute_list_versions_command
 from dagster._core.test_utils import instance_for_test
+from dagster._legacy import execute_pipeline
 from dagster._utils import file_relative_path
 
 from ...execution_tests.memoized_dev_loop_pipeline import asset_pipeline

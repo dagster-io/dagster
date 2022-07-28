@@ -20,17 +20,10 @@ from dagster_pandas import DataFrame
 from google.cloud import bigquery  # type: ignore
 from google.cloud.exceptions import NotFound
 
-from dagster import (
-    DagsterExecutionStepExecutionError,
-    InputDefinition,
-    List,
-    Nothing,
-    OutputDefinition,
-    job,
-    op,
-)
+from dagster import DagsterExecutionStepExecutionError, List, Nothing, job, op
 from dagster._config import process_config, validate_config
 from dagster._core.definitions import create_run_config_schema
+from dagster._legacy import InputDefinition, OutputDefinition
 
 
 def dataset_exists(name):
@@ -209,7 +202,10 @@ def test_pd_df_load():
     query_op = bq_op_for_queries(["SELECT num1, num2 FROM %s" % table]).alias("query_op")
     delete_op = bq_delete_dataset.alias("delete_op")
 
-    @op(input_defs=[InputDefinition("success", Nothing)], output_defs=[OutputDefinition(DataFrame)])
+    @op(
+        input_defs=[InputDefinition("success", Nothing)],
+        output_defs=[OutputDefinition(DataFrame)],
+    )
     def return_df(_context):  # pylint: disable=unused-argument
         return test_df
 
@@ -277,7 +273,10 @@ def test_gcs_load():
     ).alias("query_op")
     delete_op = bq_delete_dataset.alias("delete_op")
 
-    @op(input_defs=[InputDefinition("success", Nothing)], output_defs=[OutputDefinition(List[str])])
+    @op(
+        input_defs=[InputDefinition("success", Nothing)],
+        output_defs=[OutputDefinition(List[str])],
+    )
     def return_gcs_uri(_context):  # pylint: disable=unused-argument
         return ["gs://cloud-samples-data/bigquery/us-states/us-states.csv"]
 
@@ -307,6 +306,9 @@ def test_gcs_load():
     assert result.success
 
     values = result.output_for_node("query_op")
-    assert values[0].to_dict() == {"string_field_0": {0: "Alabama"}, "string_field_1": {0: "AL"}}
+    assert values[0].to_dict() == {
+        "string_field_0": {0: "Alabama"},
+        "string_field_1": {0: "AL"},
+    }
 
     assert not dataset_exists(dataset)
