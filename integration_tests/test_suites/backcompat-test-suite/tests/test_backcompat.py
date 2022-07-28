@@ -225,5 +225,5 @@ def is_0_release(release):
 def extract_major_version(release):
     """Returns major version if 0.x.x release, returns 'current_branch' if master."""
     if release == "current_branch":
-        return False
+        return release
     return release.split(".")[0]

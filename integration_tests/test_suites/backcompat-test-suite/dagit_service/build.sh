@@ -10,15 +10,10 @@ else
 fi
 
 if [ "$USER_CODE_BACKCOMPAT_VERSION" = "current_branch" ]; then
-    echo "asdfCURRENT_BRANCH REPO"
     export USER_CODE_DOCKERFILE="./Dockerfile_user_code_source"
 elif [ "$USER_CODE_MAJOR_VERSION" = "0" ]; then # If the dagster version is 0.x.x, then use the legacy dockerfile, which will test pipeline code.
-    echo "$USER_CODE_MAJOR_VERSION"
-    echo "asdfLEGACY REPO"
     export USER_CODE_DOCKERFILE="./Dockerfile_user_code_legacy_release"
 else
-    echo "$USER_CODE_MAJOR_VERSION"
-    echo "asdfMODERN REPO"
     export USER_CODE_DOCKERFILE="./Dockerfile_user_code_release"
 fi
 
