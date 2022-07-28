@@ -6,9 +6,9 @@ from contextlib import contextmanager
 
 import pytest
 
-from dagster import DagsterInvalidConfigError, ModeDefinition, PipelineRun
+from dagster import DagsterInvalidConfigError
 from dagster import _check as check
-from dagster import execute_pipeline, execute_solid, resource
+from dagster import execute_solid, resource
 from dagster._core.definitions import NodeHandle
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.logger import InitLoggerContext
@@ -16,7 +16,7 @@ from dagster._core.execution.plan.objects import StepFailureData
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import pipeline, solid
+from dagster._legacy import ModeDefinition, PipelineRun, execute_pipeline, pipeline, solid
 from dagster._loggers import colored_console_logger, json_console_logger
 from dagster._utils.error import SerializableErrorInfo
 
@@ -72,7 +72,8 @@ def test_logging_basic():
     with _setup_logger("test") as (captured_results, logger):
 
         dl = DagsterLogManager.create(
-            loggers=[logger], pipeline_run=PipelineRun(pipeline_name="system", run_id="123")
+            loggers=[logger],
+            pipeline_run=PipelineRun(pipeline_name="system", run_id="123"),
         )
         dl.debug("test")
         dl.info("test")
@@ -87,7 +88,8 @@ def test_logging_custom_log_levels():
     with _setup_logger("test", {"FOO": 3}) as (_captured_results, logger):
 
         dl = DagsterLogManager.create(
-            loggers=[logger], pipeline_run=PipelineRun(pipeline_name="system", run_id="123")
+            loggers=[logger],
+            pipeline_run=PipelineRun(pipeline_name="system", run_id="123"),
         )
         with pytest.raises(AttributeError):
             dl.foo("test")  # pylint: disable=no-member
@@ -97,7 +99,8 @@ def test_logging_integer_log_levels():
     with _setup_logger("test", {"FOO": 3}) as (_captured_results, logger):
 
         dl = DagsterLogManager.create(
-            loggers=[logger], pipeline_run=PipelineRun(pipeline_name="system", run_id="123")
+            loggers=[logger],
+            pipeline_run=PipelineRun(pipeline_name="system", run_id="123"),
         )
         dl.log(3, "test")  # pylint: disable=no-member
 
@@ -106,7 +109,8 @@ def test_logging_bad_custom_log_levels():
     with _setup_logger("test") as (_, logger):
 
         dl = DagsterLogManager.create(
-            loggers=[logger], pipeline_run=PipelineRun(pipeline_name="system", run_id="123")
+            loggers=[logger],
+            pipeline_run=PipelineRun(pipeline_name="system", run_id="123"),
         )
         with pytest.raises(check.CheckError):
             dl.log(level="test", msg="foobar")
@@ -139,7 +143,8 @@ def test_multiline_logging_complex():
     with _setup_logger(DAGSTER_DEFAULT_LOGGER) as (captured_results, logger):
 
         dl = DagsterLogManager.create(
-            loggers=[logger], pipeline_run=PipelineRun(run_id="123", pipeline_name="error_monster")
+            loggers=[logger],
+            pipeline_run=PipelineRun(run_id="123", pipeline_name="error_monster"),
         )
         dl.log_dagster_event(logging.INFO, msg, dagster_event)
 

@@ -1,4 +1,13 @@
+import sys
+from abc import abstractmethod
+from typing import NamedTuple, get_type_hints
+
+import pytest
+from typing_extensions import Annotated
+
 from dagster._annotations import (
+    PUBLIC,
+    PublicAttr,
     deprecated,
     experimental,
     is_deprecated,
@@ -8,28 +17,63 @@ from dagster._annotations import (
 )
 
 
-def test_public_annotation():
-    class Foo:
-        @public
-        def bar(self):
-            pass
+@pytest.mark.parametrize(
+    "decorator,predicate",
+    [(public, is_public), (experimental, is_experimental), (deprecated, is_deprecated)],
+)
+class TestAnnotations:
+    def test_annotated_method(self, decorator, predicate):
+        class Foo:
+            @decorator
+            def bar(self):
+                pass
 
-    assert is_public(Foo.bar)
+        assert predicate(Foo, "bar")
+
+    def test_annotated_property(self, decorator, predicate):
+        class Foo:
+            @decorator
+            @property
+            def bar(self):
+                pass
+
+        assert predicate(Foo, "bar")
+
+    def test_annotated_staticmethod(self, decorator, predicate):
+        class Foo:
+            @decorator
+            @staticmethod
+            def bar():
+                pass
+
+        assert predicate(Foo, "bar")
+
+    def test_annotated_classmethod(self, decorator, predicate):
+        class Foo:
+            @decorator
+            @classmethod
+            def bar(cls):
+                pass
+
+        assert predicate(Foo, "bar")
+
+    def test_annotated_abstractmethod(self, decorator, predicate):
+        class Foo:
+            @decorator
+            @abstractmethod
+            def bar(self):
+                pass
+
+        assert predicate(Foo, "bar")
 
 
-def test_deprecated():
-    class Foo:
-        @deprecated
-        def bar(self):
-            pass
+def test_public_attr():
+    class Foo(NamedTuple("_Foo", [("bar", PublicAttr[int])])):
+        ...
 
-    assert is_deprecated(Foo.bar)
-
-
-def test_experimental():
-    class Foo:
-        @experimental
-        def bar(self):
-            pass
-
-    assert is_experimental(Foo.bar)
+    hints = (
+        get_type_hints(Foo, include_extras=True)
+        if sys.version_info >= (3, 9)
+        else get_type_hints(Foo)
+    )
+    assert hints["bar"] == Annotated[int, PUBLIC]

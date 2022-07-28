@@ -1,4 +1,4 @@
-from dagster import OutputDefinition
+from dagster._legacy import OutputDefinition
 
 
 def test_output_definition():

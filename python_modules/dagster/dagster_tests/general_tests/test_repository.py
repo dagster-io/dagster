@@ -4,17 +4,9 @@ Repository of test pipelines
 
 import pytest
 
-from dagster import (
-    Int,
-    ModeDefinition,
-    PipelineDefinition,
-    PresetDefinition,
-    fs_io_manager,
-    repository,
-    resource,
-)
+from dagster import Int, fs_io_manager, repository, resource
 from dagster._check import CheckError
-from dagster._legacy import solid
+from dagster._legacy import ModeDefinition, PipelineDefinition, PresetDefinition, solid
 from dagster._utils import file_relative_path
 
 
@@ -28,7 +20,9 @@ def define_single_mode_pipeline():
         return 2
 
     return PipelineDefinition(
-        name="single_mode", solid_defs=[return_two], mode_defs=[ModeDefinition(name="the_mode")]
+        name="single_mode",
+        solid_defs=[return_two],
+        mode_defs=[ModeDefinition(name="the_mode")],
     )
 
 
@@ -71,7 +65,8 @@ def define_multi_mode_with_resources_pipeline():
         solid_defs=[apply_to_three],
         mode_defs=[
             ModeDefinition(
-                name="add_mode", resource_defs={"op": adder_resource, "io_manager": fs_io_manager}
+                name="add_mode",
+                resource_defs={"op": adder_resource, "io_manager": fs_io_manager},
             ),
             ModeDefinition(name="mult_mode", resource_defs={"op": multer_resource}),
             ModeDefinition(
@@ -86,7 +81,8 @@ def define_multi_mode_with_resources_pipeline():
                 mode="add_mode",
                 config_files=[
                     file_relative_path(
-                        __file__, "../environments/multi_mode_with_resources/add_mode.yaml"
+                        __file__,
+                        "../environments/multi_mode_with_resources/add_mode.yaml",
                     )
                 ],
             ),

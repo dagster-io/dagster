@@ -646,11 +646,10 @@ class PendingNodeInvocation:
             tags=self.tags,
             hook_defs=self.hook_defs,
             op_retry_policy=self.retry_policy,
-            _input_values=input_values,
+            input_values=input_values,
         )
 
         return core_execute_in_process(
-            node=self.node_def,
             ephemeral_pipeline=ephemeral_job,
             run_config=run_config if run_config is not None else {},
             instance=instance,

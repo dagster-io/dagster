@@ -2,18 +2,14 @@ from typing import Optional
 
 import pytest
 
-from dagster import (
-    DagsterInvalidDefinitionError,
+from dagster import DagsterInvalidDefinitionError, Nothing, execute_solid, job, op
+from dagster._legacy import (
     InputDefinition,
-    Nothing,
     composite_solid,
     execute_pipeline,
-    execute_solid,
-    job,
     lambda_solid,
-    op,
+    pipeline,
 )
-from dagster._legacy import pipeline
 
 
 def test_none():

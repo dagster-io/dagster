@@ -1,16 +1,13 @@
 from dagster import (
     AssetMaterialization,
     ExpectationResult,
-    InputDefinition,
     MetadataValue,
-    ModeDefinition,
     Nothing,
     Output,
-    OutputDefinition,
     file_relative_path,
     fs_io_manager,
 )
-from dagster._legacy import pipeline, solid
+from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, pipeline, solid
 
 MARKDOWN_EXAMPLE = "markdown_example.md"
 
@@ -140,8 +137,18 @@ def check_users_and_groups_one_fails_one_succeeds(_context):
         metadata={
             "table_summary": {
                 "columns": {
-                    "name": {"nulls": 0, "empty": 0, "values": 123, "average_length": 3.394893},
-                    "time_created": {"nulls": 1, "empty": 2, "values": 120, "average": 1231283},
+                    "name": {
+                        "nulls": 0,
+                        "empty": 0,
+                        "values": 123,
+                        "average_length": 3.394893,
+                    },
+                    "time_created": {
+                        "nulls": 1,
+                        "empty": 2,
+                        "values": 120,
+                        "average": 1231283,
+                    },
                 }
             },
         },
@@ -154,8 +161,18 @@ def check_users_and_groups_one_fails_one_succeeds(_context):
         metadata={
             "table_summary": {
                 "columns": {
-                    "name": {"nulls": 1, "empty": 0, "values": 122, "average_length": 3.394893},
-                    "time_created": {"nulls": 1, "empty": 2, "values": 120, "average": 1231283},
+                    "name": {
+                        "nulls": 1,
+                        "empty": 0,
+                        "values": 122,
+                        "average_length": 3.394893,
+                    },
+                    "time_created": {
+                        "nulls": 1,
+                        "empty": 2,
+                        "values": 120,
+                        "average": 1231283,
+                    },
                 }
             }
         },

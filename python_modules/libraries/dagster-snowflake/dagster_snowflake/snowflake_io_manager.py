@@ -1,5 +1,7 @@
 from typing import Sequence
 
+from snowflake.connector import ProgrammingError
+
 from dagster import Field, IOManagerDefinition, OutputContext, StringSource, io_manager
 
 from .db_io_manager import DbClient, DbIOManager, DbTypeHandler, TablePartition, TableSlice
@@ -52,10 +54,19 @@ def build_snowflake_io_manager(type_handlers: Sequence[DbTypeHandler]) -> IOMana
 class SnowflakeDbClient(DbClient):
     @staticmethod
     def delete_table_slice(context: OutputContext, table_slice: TableSlice) -> None:
+        no_schema_config = (
+            {k: v for k, v in context.resource_config.items() if k != "schema"}
+            if context.resource_config
+            else {}
+        )
         with SnowflakeConnection(
-            dict(schema=table_slice.schema, **(context.resource_config or {})), context.log  # type: ignore
+            dict(schema=table_slice.schema, **no_schema_config), context.log  # type: ignore
         ).get_connection() as con:
-            con.execute_string(_get_cleanup_statement(table_slice))
+            try:
+                con.execute_string(_get_cleanup_statement(table_slice))
+            except ProgrammingError:
+                # table doesn't exist yet, so ignore the error
+                pass
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:

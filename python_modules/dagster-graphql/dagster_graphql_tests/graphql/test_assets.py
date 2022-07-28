@@ -12,8 +12,9 @@ from dagster_graphql.test.utils import (
     infer_repository_selector,
 )
 
-from dagster import AssetKey, DagsterEventType, PipelineRunStatus
+from dagster import AssetKey, DagsterEventType
 from dagster._core.test_utils import poll_for_finished_run
+from dagster._legacy import PipelineRunStatus
 from dagster._utils import safe_tempfile_path
 
 # from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
@@ -317,7 +318,13 @@ def _create_run(
     result = execute_dagster_graphql(
         graphql_context,
         LAUNCH_PIPELINE_EXECUTION_MUTATION,
-        variables={"executionParams": {"selector": selector, "mode": mode, "stepKeys": step_keys}},
+        variables={
+            "executionParams": {
+                "selector": selector,
+                "mode": mode,
+                "stepKeys": step_keys,
+            }
+        },
     )
     assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
     run_id = result.data["launchPipelineExecution"]["run"]["runId"]
@@ -352,7 +359,9 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
     def test_get_asset_key_materialization(self, graphql_context, snapshot):
         _create_run(graphql_context, "single_asset_pipeline")
         result = execute_dagster_graphql(
-            graphql_context, GET_ASSET_MATERIALIZATION, variables={"assetKey": {"path": ["a"]}}
+            graphql_context,
+            GET_ASSET_MATERIALIZATION,
+            variables={"assetKey": {"path": ["a"]}},
         )
         assert result.data
         snapshot.assert_match(result.data)
@@ -509,7 +518,10 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_NODES_FROM_KEYS,
-            variables={"pipelineSelector": selector, "assetKeys": [{"path": ["asset_one"]}]},
+            variables={
+                "pipelineSelector": selector,
+                "assetKeys": [{"path": ["asset_one"]}],
+            },
         )
 
         assert result.data
@@ -814,7 +826,9 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         # Confirm that asset selection is respected
         run_id = _create_run(
-            graphql_context, "failure_assets_job", asset_selection=[{"path": ["asset_3"]}]
+            graphql_context,
+            "failure_assets_job",
+            asset_selection=[{"path": ["asset_3"]}],
         )
 
         result = execute_dagster_graphql(
@@ -870,7 +884,9 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         # Execute subselection with assets foo and foo_bar
         run_id = _create_run(
-            graphql_context, "foo_job", asset_selection=[{"path": ["foo"]}, {"path": ["foo_bar"]}]
+            graphql_context,
+            "foo_job",
+            asset_selection=[{"path": ["foo"]}, {"path": ["foo_bar"]}],
         )
         run = graphql_context.instance.get_run_by_id(run_id)
         assert run.is_finished
@@ -886,14 +902,20 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         run_id = _create_run(
             graphql_context,
             "foo_job",
-            asset_selection=[{"path": ["foo"]}, {"path": ["bar"]}, {"path": ["foo_bar"]}],
+            asset_selection=[
+                {"path": ["foo"]},
+                {"path": ["bar"]},
+                {"path": ["foo_bar"]},
+            ],
         )
         run = graphql_context.instance.get_run_by_id(run_id)
         assert run.is_finished
 
         # Generate materializations with subselection of foo and baz
         run_id = _create_run(
-            graphql_context, "foo_job", asset_selection=[{"path": ["foo"]}, {"path": ["baz"]}]
+            graphql_context,
+            "foo_job",
+            asset_selection=[{"path": ["foo"]}, {"path": ["baz"]}],
         )
         run = graphql_context.instance.get_run_by_id(run_id)
         assert run.is_finished
@@ -1118,7 +1140,9 @@ class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
             "repositoryName": repository.name,
         }
         result = execute_dagster_graphql(
-            graphql_context, CROSS_REPO_ASSET_GRAPH, variables={"repositorySelector": selector}
+            graphql_context,
+            CROSS_REPO_ASSET_GRAPH,
+            variables={"repositorySelector": selector},
         )
         asset_nodes = result.data["assetNodes"]
         upstream_asset = [
@@ -1126,7 +1150,10 @@ class TestCrossRepoAssetDependedBy(AllRepositoryGraphQLContextTestMatrix):
             for node in asset_nodes
             if node["id"] == 'cross_asset_repos.upstream_assets_repository.["upstream_asset"]'
         ][0]
-        dependent_asset_keys = [{"path": ["downstream_asset1"]}, {"path": ["downstream_asset2"]}]
+        dependent_asset_keys = [
+            {"path": ["downstream_asset1"]},
+            {"path": ["downstream_asset2"]},
+        ]
 
         result_dependent_keys = sorted(
             upstream_asset["dependedByKeys"], key=lambda node: node.get("path")[0]

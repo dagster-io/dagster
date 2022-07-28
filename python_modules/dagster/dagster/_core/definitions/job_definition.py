@@ -16,6 +16,9 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._config import Field, Shape
+from dagster._config.config_type import ConfigType
+from dagster._config.validate import validate_config
 from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.dependency import (
     DependencyDefinition,
@@ -30,7 +33,9 @@ from dagster._core.definitions.dependency import (
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import (
+    DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvalidSubsetError,
@@ -41,12 +46,14 @@ from dagster._core.selector.subset_selector import (
     OpSelectionData,
     parse_op_selection,
 )
+from dagster._core.storage.io_manager import io_manager
 from dagster._core.utils import str_format_set
 from dagster._utils import merge_dicts
 
 from .asset_layer import AssetLayer, build_asset_selection_job
 from .config import ConfigMapping
-from .executor_definition import ExecutorDefinition
+from .dependency import DependencyDefinition
+from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
 from .logger_definition import LoggerDefinition
@@ -62,6 +69,7 @@ from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
+    from dagster._core.execution.resources_init import InitResourceContext
     from dagster._core.instance import DagsterInstance
     from dagster._core.snap import PipelineSnapshot
 
@@ -70,7 +78,7 @@ class JobDefinition(PipelineDefinition):
 
     _cached_partition_set: Optional["PartitionSetDefinition"]
     _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]]
-    _input_values: Mapping[str, object]
+    input_values: Mapping[str, object]
 
     def __init__(
         self,
@@ -78,11 +86,10 @@ class JobDefinition(PipelineDefinition):
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
-        config_mapping: Optional[ConfigMapping] = None,
-        partitioned_config: Optional[PartitionedConfig] = None,
         name: Optional[str] = None,
+        config: Optional[Union[ConfigMapping, Mapping[str, object], PartitionedConfig]] = None,
         description: Optional[str] = None,
-        preset_defs: Optional[Sequence[PresetDefinition]] = None,
+        partitions_def: Optional[PartitionsDefinition] = None,
         tags: Optional[Mapping[str, Any]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
@@ -90,44 +97,135 @@ class JobDefinition(PipelineDefinition):
         version_strategy: Optional[VersionStrategy] = None,
         _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]] = None,
         asset_layer: Optional[AssetLayer] = None,
-        _input_values: Optional[Mapping[str, object]] = None,
+        input_values: Optional[Mapping[str, object]] = None,
         _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
-        _executor_def_specified: bool = False,
-        _logger_defs_specified: bool = False,
+        _executor_def_specified: Optional[bool] = None,
+        _logger_defs_specified: Optional[bool] = None,
+        _preset_defs: Optional[Sequence[PresetDefinition]] = None,
     ):
+        from dagster._loggers import default_loggers
+
+        check.inst_param(graph_def, "graph_def", GraphDefinition)
+        resource_defs = check.opt_mapping_param(
+            resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
+        )
+        # We need to check whether an actual executor/logger def was passed in
+        # before we set a default executor/logger defs. This is so we can
+        # determine if someone passed in the default executor vs the system set
+        # it directly. Once JobDefinition no longer subclasses
+        # PipelineDefinition, we can change the default executor to be set
+        # elsewhere to avoid the need for this check.
+        self._executor_def_specified = (
+            _executor_def_specified
+            if _executor_def_specified is not None
+            else executor_def is not None
+        )
+        self._logger_defs_specified = (
+            _logger_defs_specified
+            if _logger_defs_specified is not None
+            else logger_defs is not None
+        )
+        executor_def = check.opt_inst_param(
+            executor_def, "executor_def", ExecutorDefinition, default=multi_or_in_process_executor
+        )
+        check.opt_mapping_param(
+            logger_defs,
+            "logger_defs",
+            key_type=str,
+            value_type=LoggerDefinition,
+        )
+        logger_defs = logger_defs or default_loggers()
+        name = check_valid_name(check.opt_str_param(name, "name", default=graph_def.name))
+
+        config = check.opt_inst_param(config, "config", (Mapping, ConfigMapping, PartitionedConfig))
+        description = check.opt_str_param(description, "description")
+        partitions_def = check.opt_inst_param(
+            partitions_def, "partitions_def", PartitionsDefinition
+        )
+        tags = check.opt_mapping_param(tags, "tags", key_type=str)
+        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+        hook_defs = check.opt_set_param(hook_defs, "hook_defs")
+        op_retry_policy = check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy)
+        version_strategy = check.opt_inst_param(
+            version_strategy, "version_strategy", VersionStrategy
+        )
+        _subset_selection_data = check.opt_inst_param(
+            _subset_selection_data, "_subset_selection_data", (OpSelectionData, AssetSelectionData)
+        )
+        asset_layer = check.opt_inst_param(asset_layer, "asset_layer", AssetLayer)
+        input_values = check.opt_mapping_param(input_values, "input_values", key_type=str)
+        _metadata_entries = check.opt_sequence_param(_metadata_entries, "_metadata_entries")
+        _preset_defs = check.opt_sequence_param(
+            _preset_defs, "preset_defs", of_type=PresetDefinition
+        )
+
+        if resource_defs and DEFAULT_IO_MANAGER_KEY in resource_defs:
+            resource_defs_with_defaults = resource_defs
+        else:
+            resource_defs_with_defaults = merge_dicts(
+                {DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs or {}
+            )
+
+        presets = []
+        config_mapping = None
+        partitioned_config = None
+
+        if partitions_def:
+            if isinstance(config, (ConfigMapping, PartitionedConfig)):
+                check.failed(
+                    "Can't supply a ConfigMapping or PartitionedConfig for 'config' when 'partitions_def' is supplied."
+                )
+            hardcoded_config = config if config else {}
+            partitioned_config = PartitionedConfig(partitions_def, lambda _: hardcoded_config)
+
+        if isinstance(config, ConfigMapping):
+            config_mapping = config
+        elif isinstance(config, PartitionedConfig):
+            partitioned_config = config
+        elif isinstance(config, dict):
+            check.invariant(
+                len(_preset_defs) == 0,
+                "Bad state: attempted to pass preset definitions to job alongside config dictionary.",
+            )
+            presets = [PresetDefinition(name="default", run_config=config)]
+            # Using config mapping here is a trick to make it so that the preset will be used even
+            # when no config is supplied for the job.
+            config_mapping = _config_mapping_with_default_value(
+                get_run_config_schema_for_job(
+                    graph_def, resource_defs_with_defaults, executor_def, logger_defs, asset_layer
+                ),
+                config,
+                name,
+            )
+        elif config is not None:
+            check.failed(
+                f"config param must be a ConfigMapping, a PartitionedConfig, or a dictionary, but "
+                f"is an object of type {type(config)}"
+            )
 
         # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
         mode_def = ModeDefinition(
-            resource_defs=resource_defs,
+            resource_defs=resource_defs_with_defaults,
             logger_defs=logger_defs,
             executor_defs=[executor_def] if executor_def else None,
             _config_mapping=config_mapping,
             _partitioned_config=partitioned_config,
         )
 
-        self._executor_def_specified = _executor_def_specified
-        self._logger_defs_specified = _logger_defs_specified
         self._cached_partition_set: Optional["PartitionSetDefinition"] = None
-        self._subset_selection_data = check.opt_inst_param(
-            _subset_selection_data,
-            "_subset_selection_data",
-            (OpSelectionData, AssetSelectionData),
-        )
-        self._input_values: Mapping[str, object] = check.opt_mapping_param(
-            _input_values, "_input_values"
-        )
-        for input_name in sorted(list(self._input_values.keys())):
+        self._subset_selection_data = _subset_selection_data
+        self.input_values = input_values
+        for input_name in sorted(list(self.input_values.keys())):
             if not graph_def.has_input(input_name):
-                job_name = name or graph_def.name
                 raise DagsterInvalidDefinitionError(
-                    f"Error when constructing JobDefinition '{job_name}': Input value provided for key '{input_name}', but job has no top-level input with that name."
+                    f"Error when constructing JobDefinition '{name}': Input value provided for key '{input_name}', but job has no top-level input with that name."
                 )
 
         super(JobDefinition, self).__init__(
             name=name,
             description=description,
             mode_defs=[mode_def],
-            preset_defs=preset_defs,
+            preset_defs=presets or _preset_defs,
             tags=tags,
             metadata=metadata,
             metadata_entries=_metadata_entries,
@@ -229,7 +327,7 @@ class JobDefinition(PipelineDefinition):
         # Combine provided input values at execute_in_process with input values
         # provided to the definition. Input values provided at
         # execute_in_process will override those provided on the definition.
-        input_values = merge_dicts(self._input_values, input_values)
+        input_values = merge_dicts(self.input_values, input_values)
 
         resource_defs = dict(self.resource_defs)
         logger_defs = dict(self.loggers)
@@ -240,15 +338,15 @@ class JobDefinition(PipelineDefinition):
             executor_def=execute_in_process_executor,
             logger_defs=logger_defs,
             hook_defs=self.hook_defs,
-            config_mapping=self.config_mapping,
-            partitioned_config=self.partitioned_config,
+            config=self.config_mapping or self.partitioned_config,
             tags=self.tags,
             op_retry_policy=self._solid_retry_policy,
             version_strategy=self.version_strategy,
             asset_layer=self.asset_layer,
-            _input_values=input_values,
+            input_values=input_values,
             _executor_def_specified=self._executor_def_specified,
             _logger_defs_specified=self._logger_defs_specified,
+            _preset_defs=self._preset_defs,
         )
 
         ephemeral_job = ephemeral_job.get_job_def_for_subset_selection(
@@ -276,7 +374,6 @@ class JobDefinition(PipelineDefinition):
             tags = partition_set.tags_for_partition(partition)
 
         return core_execute_in_process(
-            node=self._graph_def,
             ephemeral_pipeline=ephemeral_job,
             run_config=run_config,
             instance=instance,
@@ -389,9 +486,7 @@ class JobDefinition(PipelineDefinition):
                 resource_defs=dict(self.resource_defs),
                 logger_defs=dict(self.loggers),
                 executor_def=self.executor_def,
-                config_mapping=self.config_mapping,
-                partitioned_config=self.partitioned_config,
-                preset_defs=self.preset_defs,
+                config=self.config_mapping or self.partitioned_config,
                 tags=self.tags,
                 hook_defs=self.hook_defs,
                 op_retry_policy=self._solid_retry_policy,
@@ -409,6 +504,7 @@ class JobDefinition(PipelineDefinition):
                 # TODO: subset this structure.
                 # https://github.com/dagster-io/dagster/issues/7541
                 asset_layer=self.asset_layer,
+                _preset_defs=self._preset_defs,
             )
         except DagsterInvalidDefinitionError as exc:
             # This handles the case when you construct a subset such that an unsatisfied
@@ -480,9 +576,7 @@ class JobDefinition(PipelineDefinition):
             resource_defs=dict(self.resource_defs),
             logger_defs=dict(self.loggers),
             executor_def=self.executor_def,
-            partitioned_config=self.partitioned_config,
-            config_mapping=self.config_mapping,
-            preset_defs=self.preset_defs,
+            config=self.partitioned_config or self.config_mapping,
             tags=self.tags,
             hook_defs=hook_defs | self.hook_defs,
             description=self._description,
@@ -491,6 +585,7 @@ class JobDefinition(PipelineDefinition):
             _subset_selection_data=self._subset_selection_data,
             _executor_def_specified=self._executor_def_specified,
             _logger_defs_specified=self._logger_defs_specified,
+            _preset_defs=self._preset_defs,
         )
 
         update_wrapper(job_def, self, updated=())
@@ -506,14 +601,14 @@ class JobDefinition(PipelineDefinition):
             return None
 
     def has_direct_input_value(self, input_name: str) -> bool:
-        return input_name in self._input_values
+        return input_name in self.input_values
 
     def get_direct_input_value(self, input_name: str) -> object:
-        if input_name not in self._input_values:
+        if input_name not in self.input_values:
             raise DagsterInvalidInvocationError(
-                f"On job '{self.name}', attempted to retrieve input value for input named '{input_name}', but no value was provided. Provided input values: {sorted(list(self._input_values.keys()))}"
+                f"On job '{self.name}', attempted to retrieve input value for input named '{input_name}', but no value was provided. Provided input values: {sorted(list(self.input_values.keys()))}"
             )
-        return self._input_values[input_name]
+        return self.input_values[input_name]
 
     def with_executor_def(self, executor_def: ExecutorDefinition) -> "JobDefinition":
         return JobDefinition(
@@ -521,11 +616,9 @@ class JobDefinition(PipelineDefinition):
             resource_defs=dict(self.resource_defs),
             executor_def=executor_def,
             logger_defs=dict(self.loggers),
-            config_mapping=self.config_mapping,
-            partitioned_config=self.partitioned_config,
+            config=self.config_mapping or self.partitioned_config,
             name=self.name,
             description=self.description,
-            preset_defs=self.preset_defs,
             tags=self.tags,
             _metadata_entries=self.metadata,
             hook_defs=self.hook_defs,
@@ -533,9 +626,10 @@ class JobDefinition(PipelineDefinition):
             version_strategy=self.version_strategy,
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self.asset_layer,
-            _input_values=self._input_values,
-            _executor_def_specified=True,
+            input_values=self.input_values,
+            _executor_def_specified=False,
             _logger_defs_specified=self._logger_defs_specified,
+            _preset_defs=self._preset_defs,
         )
 
     def with_logger_defs(self, logger_defs: Mapping[str, LoggerDefinition]) -> "JobDefinition":
@@ -544,11 +638,9 @@ class JobDefinition(PipelineDefinition):
             resource_defs=dict(self.resource_defs),
             executor_def=self.executor_def,
             logger_defs=logger_defs,
-            config_mapping=self.config_mapping,
-            partitioned_config=self.partitioned_config,
+            config=self.config_mapping or self.partitioned_config,
             name=self.name,
             description=self.description,
-            preset_defs=self.preset_defs,
             tags=self.tags,
             _metadata_entries=self.metadata,
             hook_defs=self.hook_defs,
@@ -556,9 +648,10 @@ class JobDefinition(PipelineDefinition):
             version_strategy=self.version_strategy,
             _subset_selection_data=self._subset_selection_data,
             asset_layer=self.asset_layer,
-            _input_values=self._input_values,
+            input_values=self.input_values,
             _executor_def_specified=self._executor_def_specified,
-            _logger_defs_specified=True,
+            _logger_defs_specified=False,
+            _preset_defs=self._preset_defs,
         )
 
 
@@ -568,8 +661,6 @@ def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: Pipel
     switching to in-memory when using execute_in_process.
     """
     from dagster._core.storage.mem_io_manager import mem_io_manager
-
-    from .graph_definition import default_job_io_manager
 
     if (
         # pylint: disable=comparison-with-callable
@@ -690,6 +781,88 @@ def get_subselected_graph_definition(
 
 def get_direct_input_values_from_job(target: PipelineDefinition) -> Mapping[str, Any]:
     if target.is_job:
-        return cast(JobDefinition, target)._input_values  # pylint: disable=protected-access
+        return cast(JobDefinition, target).input_values  # pylint: disable=protected-access
     else:
         return {}
+
+
+@io_manager(
+    description="Built-in filesystem IO manager that stores and retrieves values using pickling."
+)
+def default_job_io_manager(init_context: "InitResourceContext"):
+    from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
+
+    instance = check.not_none(init_context.instance)
+    return PickledObjectFilesystemIOManager(base_dir=instance.storage_directory())
+
+
+def _config_mapping_with_default_value(
+    inner_schema: ConfigType,
+    default_config: Dict[str, Any],
+    job_name: str,
+) -> ConfigMapping:
+    if not isinstance(inner_schema, Shape):
+        check.failed("Only Shape (dictionary) config_schema allowed on Job ConfigMapping")
+
+    def config_fn(x):
+        return x
+
+    updated_fields = {}
+    field_aliases = inner_schema.field_aliases
+    for name, field in inner_schema.fields.items():
+        if name in default_config:
+            updated_fields[name] = Field(
+                config=field.config_type,
+                default_value=default_config[name],
+                description=field.description,
+            )
+        elif name in field_aliases and field_aliases[name] in default_config:
+            updated_fields[name] = Field(
+                config=field.config_type,
+                default_value=default_config[field_aliases[name]],
+                description=field.description,
+            )
+        else:
+            updated_fields[name] = field
+
+    config_schema = Shape(
+        fields=updated_fields,
+        description=(
+            "This run config schema was automatically populated with default values "
+            "from `default_config`."
+        ),
+        field_aliases=inner_schema.field_aliases,
+    )
+
+    config_evr = validate_config(config_schema, default_config)
+    if not config_evr.success:
+        raise DagsterInvalidConfigError(
+            f"Error in config when building job '{job_name}' ",
+            config_evr.errors,
+            default_config,
+        )
+
+    return ConfigMapping(
+        config_fn=config_fn, config_schema=config_schema, receive_processed_config_values=False
+    )
+
+
+def get_run_config_schema_for_job(
+    graph_def: GraphDefinition,
+    resource_defs: Mapping[str, ResourceDefinition],
+    executor_def: "ExecutorDefinition",
+    logger_defs: Mapping[str, LoggerDefinition],
+    asset_layer: Optional[AssetLayer],
+) -> ConfigType:
+    return (
+        JobDefinition(
+            name=graph_def.name,
+            graph_def=graph_def,
+            resource_defs=resource_defs,
+            executor_def=executor_def,
+            logger_defs=logger_defs,
+            asset_layer=asset_layer,
+        )
+        .get_run_config_schema("default")
+        .run_config_schema_type
+    )

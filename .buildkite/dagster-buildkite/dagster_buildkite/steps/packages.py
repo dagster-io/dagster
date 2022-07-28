@@ -133,24 +133,6 @@ def dagster_graphql_extra_cmds(_, tox_factor: Optional[str]) -> List[str]:
         return []
 
 
-dbt_example_extra_cmds = [
-    "pushd examples/dbt_example",
-    # Run the postgres db. We are in docker running docker
-    # so this will be a sibling container.
-    "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
-    # Can't use host networking on buildkite and communicate via localhost
-    # between these sibling containers, so pass along the ip.
-    *network_buildkite_container("postgres"),
-    *connect_sibling_docker_container(
-        "postgres", "dbt_example_postgresql", "DAGSTER_DBT_EXAMPLE_PGHOST"
-    ),
-    "mkdir -p ~/.dbt/",
-    "touch ~/.dbt/profiles.yml",
-    "cat dbt_example_project/profiles.yml >> ~/.dbt/profiles.yml",
-    "popd",
-]
-
-
 docs_snippets_extra_cmds = [
     "pushd examples/docs_snippets",
     # Run the postgres db. We are in docker running docker
@@ -327,15 +309,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[
             # dependency on dagster-pandera
             AvailablePythonVersion.V3_6,
-        ],
-    ),
-    PackageSpec(
-        "examples/dbt_example",
-        pytest_extra_cmds=dbt_example_extra_cmds,
-        unsupported_python_versions=[
-            # dependency on dagster-dbt
-            AvailablePythonVersion.V3_6,
-            AvailablePythonVersion.V3_10,
         ],
     ),
     PackageSpec(

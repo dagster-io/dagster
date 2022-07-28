@@ -6,10 +6,11 @@ from airflow.operators.bash_operator import BashOperator
 from airflow.utils.dates import days_ago
 from dagster_airflow.dagster_pipeline_factory import make_dagster_pipeline_from_airflow_dag
 
-from dagster import DagsterEventType, execute_pipeline
+from dagster import DagsterEventType
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.test_utils import instance_for_test
+from dagster._legacy import execute_pipeline
 from dagster._seven import get_current_datetime_in_utc
 
 default_args = {
@@ -96,7 +97,8 @@ def test_pipeline_tags():
         # When mode is default and tags are set, run with tags
         result = execute_pipeline(
             pipeline=make_dagster_pipeline_from_airflow_dag(
-                dag=dag, tags={AIRFLOW_EXECUTION_DATE_STR: EXECUTION_DATE_MINUS_WEEK_FMT}
+                dag=dag,
+                tags={AIRFLOW_EXECUTION_DATE_STR: EXECUTION_DATE_MINUS_WEEK_FMT},
             ),
             instance=instance,
         )

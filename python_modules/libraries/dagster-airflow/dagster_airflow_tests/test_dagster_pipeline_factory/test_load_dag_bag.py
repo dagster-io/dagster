@@ -8,7 +8,7 @@ from dagster_airflow.dagster_pipeline_factory import (
 )
 from dagster_airflow_tests.marks import requires_airflow_db
 
-from dagster import execute_pipeline
+from dagster._legacy import execute_pipeline
 
 COMPLEX_DAG_FILE_CONTENTS = '''#
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -336,7 +336,10 @@ test_make_repo_inputs = [
     ([("complex.py", COMPLEX_DAG_FILE_CONTENTS)], None, ["airflow_example_complex"]),
     ([("bash.py", BASH_DAG_FILE_CONTENTS)], None, ["airflow_example_bash_operator"]),
     (
-        [("complex.py", COMPLEX_DAG_FILE_CONTENTS), ("bash.py", BASH_DAG_FILE_CONTENTS)],
+        [
+            ("complex.py", COMPLEX_DAG_FILE_CONTENTS),
+            ("bash.py", BASH_DAG_FILE_CONTENTS),
+        ],
         None,
         ["airflow_example_complex", "airflow_example_bash_operator"],
     ),

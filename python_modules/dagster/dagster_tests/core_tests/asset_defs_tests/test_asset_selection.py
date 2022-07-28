@@ -4,6 +4,7 @@ from functools import reduce
 
 import pytest
 
+from dagster import DagsterInvalidSubsetError, SourceAsset
 from dagster._core.definitions import AssetSelection, asset
 from dagster._core.definitions.events import AssetKey
 
@@ -111,3 +112,13 @@ def test_asset_selection_upstream(all_assets):
 
     sel_depth_1 = AssetSelection.keys("george").upstream(depth=1)
     assert sel_depth_1.resolve(all_assets) == _asset_keys_of({bob, fiona, george})
+
+
+def test_select_source_asset_keys():
+    a = SourceAsset("a")
+    selection = AssetSelection.keys(a.key)
+    with pytest.raises(
+        DagsterInvalidSubsetError,
+        match="these keys are supplied by SourceAsset objects, not AssetsDefinition objects",
+    ):
+        selection.resolve([a])

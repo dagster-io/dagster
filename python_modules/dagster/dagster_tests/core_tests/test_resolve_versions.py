@@ -9,14 +9,10 @@ from dagster import (
     IOManagerDefinition,
     In,
     Int,
-    ModeDefinition,
     Output,
-    OutputDefinition,
     SourceHashVersionStrategy,
     String,
-    composite_solid,
     dagster_type_loader,
-    execute_pipeline,
     fs_io_manager,
     graph,
     io_manager,
@@ -36,7 +32,14 @@ from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import pipeline, solid
+from dagster._legacy import (
+    ModeDefinition,
+    OutputDefinition,
+    composite_solid,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
 
 
 class VersionedInMemoryIOManager(MemoizableIOManager):
@@ -172,11 +175,18 @@ def test_memoized_plan_memoized_results():
         step_output_handle = StepOutputHandle("versioned_solid_no_input", "result")
         step_output_version = plan.get_version_for_step_output_handle(step_output_handle)
         manager.values[
-            (step_output_handle.step_key, step_output_handle.output_name, step_output_version)
+            (
+                step_output_handle.step_key,
+                step_output_handle.output_name,
+                step_output_version,
+            )
         ] = 4
 
         memoized_plan = plan.build_memoized_plan(
-            versioned_pipeline, resolved_run_config, instance=None, selected_step_keys=None
+            versioned_pipeline,
+            resolved_run_config,
+            instance=None,
+            selected_step_keys=None,
         )
 
         assert memoized_plan.step_keys_to_execute == ["versioned_solid_takes_input"]
@@ -466,7 +476,11 @@ def test_memoized_inner_solid():
         # Affix value to expected version for step output.
         step_output_version = unmemoized_plan.get_version_for_step_output_handle(step_output_handle)
         mgr.values[
-            (step_output_handle.step_key, step_output_handle.output_name, step_output_version)
+            (
+                step_output_handle.step_key,
+                step_output_handle.output_name,
+                step_output_version,
+            )
         ] = 4
         memoized_plan = unmemoized_plan.build_memoized_plan(
             wrap_pipeline,
@@ -584,7 +598,9 @@ def test_memoized_plan_disable_memoization():
         assert len(memoized_plan.step_keys_to_execute) == 0
 
         unmemoized_again = create_execution_plan(
-            my_pipeline, instance_ref=instance.get_ref(), tags={MEMOIZED_RUN_TAG: "false"}
+            my_pipeline,
+            instance_ref=instance.get_ref(),
+            tags={MEMOIZED_RUN_TAG: "false"},
         )
         assert len(unmemoized_again.step_keys_to_execute) == 1
 
@@ -594,7 +610,10 @@ def test_memoized_plan_root_input_manager():
     def my_input_manager():
         return 5
 
-    @solid(input_defs=[InputDefinition("x", root_manager_key="my_input_manager")], version="foo")
+    @solid(
+        input_defs=[InputDefinition("x", root_manager_key="my_input_manager")],
+        version="foo",
+    )
     def my_solid_takes_input(x):
         return x
 
@@ -629,7 +648,10 @@ def test_memoized_plan_root_input_manager_input_config():
     def my_input_manager():
         return 5
 
-    @solid(input_defs=[InputDefinition("x", root_manager_key="my_input_manager")], version="foo")
+    @solid(
+        input_defs=[InputDefinition("x", root_manager_key="my_input_manager")],
+        version="foo",
+    )
     def my_solid_takes_input(x):
         return x
 
@@ -684,7 +706,10 @@ def test_memoized_plan_root_input_manager_resource_config():
     def my_input_manager():
         return 5
 
-    @solid(input_defs=[InputDefinition("x", root_manager_key="my_input_manager")], version="foo")
+    @solid(
+        input_defs=[InputDefinition("x", root_manager_key="my_input_manager")],
+        version="foo",
+    )
     def my_solid_takes_input(x):
         return x
 
@@ -819,7 +844,8 @@ def test_bad_version_str(graph_for_test, strategy):
         )
 
         with pytest.raises(
-            DagsterInvariantViolationError, match=f"'{bad_str}' is not a valid version string."
+            DagsterInvariantViolationError,
+            match=f"'{bad_str}' is not a valid version string.",
         ):
             create_execution_plan(my_job, instance_ref=instance.get_ref())
 
@@ -933,7 +959,10 @@ def test_source_hash_with_root_input_manager():
     def the_op(x):
         return x + 1
 
-    @job(version_strategy=SourceHashVersionStrategy(), resource_defs={"manager": my_input_manager})
+    @job(
+        version_strategy=SourceHashVersionStrategy(),
+        resource_defs={"manager": my_input_manager},
+    )
     def call_the_op():
         the_op()
 

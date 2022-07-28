@@ -4,20 +4,23 @@ from dagster import (
     Any,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
-    InputDefinition,
     Int,
     List,
     MultiDependencyDefinition,
     Nothing,
+)
+from dagster._core.definitions.composition import MappedInputPlaceholder
+from dagster._core.definitions.solid_definition import CompositeSolidDefinition
+from dagster._legacy import (
+    InputDefinition,
     OutputDefinition,
     PipelineDefinition,
     composite_solid,
     execute_pipeline,
     lambda_solid,
+    pipeline,
+    solid,
 )
-from dagster._core.definitions.composition import MappedInputPlaceholder
-from dagster._core.definitions.solid_definition import CompositeSolidDefinition
-from dagster._legacy import pipeline, solid
 
 
 def test_simple_values():

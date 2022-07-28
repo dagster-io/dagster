@@ -6,19 +6,22 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DagsterType,
     In,
-    InputDefinition,
     Int,
-    composite_solid,
-    execute_pipeline,
     execute_solid,
-    lambda_solid,
     make_python_type_usable_as_dagster_type,
     op,
     usable_as_dagster_type,
 )
 from dagster._core.definitions.inference import infer_input_props, infer_output_props
 from dagster._core.types.dagster_type import DagsterTypeKind
-from dagster._legacy import pipeline, solid
+from dagster._legacy import (
+    InputDefinition,
+    composite_solid,
+    execute_pipeline,
+    lambda_solid,
+    pipeline,
+    solid,
+)
 
 
 def test_infer_solid_description_from_docstring():
@@ -148,7 +151,14 @@ def test_kitchen_sink():
 
     @lambda_solid
     def sink(
-        n: int, f: float, b: bool, s: str, x: Any, o: Optional[str], l: List[str], c: Custom
+        n: int,
+        f: float,
+        b: bool,
+        s: str,
+        x: Any,
+        o: Optional[str],
+        l: List[str],
+        c: Custom,
     ):  # pylint: disable=unused-argument
         pass
 

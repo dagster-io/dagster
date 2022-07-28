@@ -5,12 +5,12 @@ from dagster import (
     Out,
     Output,
     asset,
-    build_assets_job,
     job,
     multi_asset,
     op,
 )
 from dagster._core.test_utils import instance_for_test
+from dagster._legacy import build_assets_job
 
 
 def test_asset_materialization_planned_event_yielded():
@@ -78,7 +78,8 @@ def test_multi_asset_asset_materialization_planned_events():
         result = assets_job.execute_in_process(instance=instance)
         records = instance.get_event_records(
             EventRecordsFilter(
-                DagsterEventType.ASSET_MATERIALIZATION_PLANNED, AssetKey("my_asset_name")
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                AssetKey("my_asset_name"),
             )
         )
         assert result.run_id == records[0].event_log_entry.run_id

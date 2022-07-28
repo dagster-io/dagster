@@ -21,6 +21,8 @@ Errors
 
 .. autoexception:: DagsterInvalidDefinitionError
 
+.. autoexception:: DagsterInvalidSubsetError
+
 .. autoexception:: DagsterInvariantViolationError
 
 .. autoexception:: DagsterResourceFunctionError

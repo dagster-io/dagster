@@ -20,21 +20,17 @@ from typing import (
 from toposort import CircularDependencyError, toposort_flatten
 
 import dagster._check as check
-from dagster._config import ConfigType, Field, Shape, validate_config
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.utils import check_valid_name
-from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.selector.subset_selector import AssetSelectionData
-from dagster._core.storage.io_manager import io_manager
 from dagster._core.types.dagster_type import (
     DagsterType,
     DagsterTypeKind,
     construct_dagster_type_dictionary,
 )
-from dagster._utils import merge_dicts
 
 from .dependency import (
     DependencyStructure,
@@ -50,10 +46,8 @@ from .logger_definition import LoggerDefinition
 from .metadata import MetadataEntry, PartitionMetadataEntry, RawMetadataValue
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
-from .preset import PresetDefinition
 from .resource_requirement import ResourceRequirement
 from .solid_container import create_execution_structure, validate_dependency_dict
-from .utils import DEFAULT_IO_MANAGER_KEY
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
@@ -586,88 +580,26 @@ class GraphDefinition(NodeDefinition):
         Returns:
             JobDefinition
         """
-        from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
         from .job_definition import JobDefinition
-        from .partition import PartitionedConfig, PartitionsDefinition
-
-        job_name = check_valid_name(name or self.name)
-
-        tags = check.opt_dict_param(tags, "tags", key_type=str)
-        executor_def_specified = executor_def is not None
-        logger_defs_specified = logger_defs is not None
-        metadata_entries = check.opt_sequence_param(_metadata_entries, "_metadata_entries")
-
-        executor_def = check.opt_inst_param(
-            executor_def, "executor_def", ExecutorDefinition, default=multi_or_in_process_executor
-        )
-        input_values = check.opt_mapping_param(input_values, "input_values")
-
-        if resource_defs and DEFAULT_IO_MANAGER_KEY in resource_defs:
-            resource_defs_with_defaults = resource_defs
-        else:
-            resource_defs_with_defaults = merge_dicts(
-                {DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs or {}
-            )
-
-        hooks = check.opt_set_param(hooks, "hooks", of_type=HookDefinition)
-        op_retry_policy = check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy)
-        op_selection = check.opt_list_param(op_selection, "op_selection", of_type=str)
-        presets = []
-        config_mapping = None
-        partitioned_config = None
-
-        if partitions_def:
-            check.inst_param(partitions_def, "partitions_def", PartitionsDefinition)
-            if isinstance(config, (ConfigMapping, PartitionedConfig)):
-                check.failed(
-                    "Can't supply a ConfigMapping or PartitionedConfig for 'config' when 'partitions_def' is supplied."
-                )
-            hardcoded_config = config if config else {}
-            partitioned_config = PartitionedConfig(partitions_def, lambda _: hardcoded_config)
-
-        if isinstance(config, ConfigMapping):
-            config_mapping = config
-        elif isinstance(config, PartitionedConfig):
-            partitioned_config = config
-        elif isinstance(config, dict):
-            presets = [PresetDefinition(name="default", run_config=config)]
-            # Using config mapping here is a trick to make it so that the preset will be used even
-            # when no config is supplied for the job.
-            config_mapping = _config_mapping_with_default_value(
-                self._get_config_schema(
-                    resource_defs_with_defaults, executor_def, logger_defs, asset_layer
-                ),
-                config,
-                job_name,
-                self.name,
-            )
-        elif config is not None:
-            check.failed(
-                f"config param must be a ConfigMapping, a PartitionedConfig, or a dictionary, but "
-                f"is an object of type {type(config)}"
-            )
 
         return JobDefinition(
-            name=job_name,
+            name=name,
             description=description or self.description,
             graph_def=self,
-            resource_defs=resource_defs_with_defaults,
+            resource_defs=resource_defs,
             logger_defs=logger_defs,
             executor_def=executor_def,
-            config_mapping=config_mapping,
-            partitioned_config=partitioned_config,
-            preset_defs=presets,
+            config=config,
+            partitions_def=partitions_def,
             tags=tags,
             metadata=metadata,
             hook_defs=hooks,
             version_strategy=version_strategy,
             op_retry_policy=op_retry_policy,
             asset_layer=asset_layer,
-            _input_values=input_values,
+            input_values=input_values,
             _subset_selection_data=_asset_selection_data,
-            _executor_def_specified=executor_def_specified,
-            _logger_defs_specified=logger_defs_specified,
-            _metadata_entries=metadata_entries,
+            _metadata_entries=_metadata_entries,
         ).get_job_def_for_subset_selection(op_selection)
 
     def coerce_to_job(self):
@@ -679,28 +611,6 @@ class GraphDefinition(NodeDefinition):
                 f"Failed attempting to coerce Graph {self.name} in to a Job. "
                 "Use to_job instead, passing the required information."
             ) from err
-
-    def _get_config_schema(
-        self,
-        resource_defs: Optional[Mapping[str, ResourceDefinition]],
-        executor_def: "ExecutorDefinition",
-        logger_defs: Optional[Mapping[str, LoggerDefinition]],
-        asset_layer: Optional["AssetLayer"],
-    ) -> ConfigType:
-        from .job_definition import JobDefinition
-
-        return (
-            JobDefinition(
-                name=self.name,
-                graph_def=self,
-                resource_defs=resource_defs,
-                executor_def=executor_def,
-                logger_defs=logger_defs,
-                asset_layer=asset_layer,
-            )
-            .get_run_config_schema("default")
-            .run_config_schema_type
-        )
 
     def execute_in_process(
         self,
@@ -758,14 +668,13 @@ class GraphDefinition(NodeDefinition):
             graph_def=self,
             executor_def=execute_in_process_executor,
             resource_defs=resource_defs,
-            _input_values=input_values,
+            input_values=input_values,
         ).get_job_def_for_subset_selection(op_selection)
 
         run_config = run_config if run_config is not None else {}
         op_selection = check.opt_list_param(op_selection, "op_selection", str)
 
         return core_execute_in_process(
-            node=self,
             ephemeral_pipeline=ephemeral_job,
             run_config=run_config,
             instance=instance,
@@ -1067,65 +976,3 @@ def _validate_out_mappings(
                 )
             )
     return output_mappings
-
-
-def _config_mapping_with_default_value(
-    inner_schema: ConfigType,
-    default_config: Dict[str, Any],
-    job_name: str,
-    graph_name: str,
-) -> ConfigMapping:
-    if not isinstance(inner_schema, Shape):
-        check.failed("Only Shape (dictionary) config_schema allowed on Job ConfigMapping")
-
-    def config_fn(x):
-        return x
-
-    updated_fields = {}
-    field_aliases = inner_schema.field_aliases
-    for name, field in inner_schema.fields.items():
-        if name in default_config:
-            updated_fields[name] = Field(
-                config=field.config_type,
-                default_value=default_config[name],
-                description=field.description,
-            )
-        elif name in field_aliases and field_aliases[name] in default_config:
-            updated_fields[name] = Field(
-                config=field.config_type,
-                default_value=default_config[field_aliases[name]],
-                description=field.description,
-            )
-        else:
-            updated_fields[name] = field
-
-    config_schema = Shape(
-        fields=updated_fields,
-        description=(
-            "This run config schema was automatically populated with default values "
-            "from `default_config`."
-        ),
-        field_aliases=inner_schema.field_aliases,
-    )
-
-    config_evr = validate_config(config_schema, default_config)
-    if not config_evr.success:
-        raise DagsterInvalidConfigError(
-            f"Error in config when building job '{job_name}' from graph '{graph_name}' ",
-            config_evr.errors,
-            default_config,
-        )
-
-    return ConfigMapping(
-        config_fn=config_fn, config_schema=config_schema, receive_processed_config_values=False
-    )
-
-
-@io_manager(
-    description="Built-in filesystem IO manager that stores and retrieves values using pickling."
-)
-def default_job_io_manager(init_context: "InitResourceContext"):
-    from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
-
-    instance = check.not_none(init_context.instance)
-    return PickledObjectFilesystemIOManager(base_dir=instance.storage_directory())
