@@ -1,6 +1,7 @@
 from typing import Any, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import (
     AssetKey,
     CoercibleToAssetKey,
