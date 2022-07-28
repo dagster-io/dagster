@@ -14,7 +14,7 @@ This guide details a workflow to test Dagster code in your cloud environment wit
 
 With these tools, we can merge changes with confidence in the impact on our data platform and with assurance that our code will execute as intended.
 
-If you’re new to Dagster, here’s an overview of the main concepts we’ll be using:
+Here’s an overview of the main concepts we’ll be using:
 
 - [Assets](/concepts/assets/software-defined-assets) - We'll define three assets that each persist a table to Snowflake.
 - [Ops](/concepts/ops-jobs-graphs/ops) - We'll define two ops that query Snowflake: the first will clone a database, and the second will drop database clones.
@@ -61,8 +61,8 @@ To set up a branch deployment workflow to construct and test these tables, we wi
 
 1. Define these tables as [assets](/concepts/assets/software-defined-assets).
 2. Configure our assets to write to Snowflake using a different connection (credentials and database name) for two environments: production and branch deployment.
-3. Clone our production database upon each branch deployment launch, naming each clone `PRODUCTION_CLONE_<ID>`, where `<ID>` is the pull request ID of the branch. Then we'll create a branch deployment and test our Hacker News assets against our newly cloned database.
-4. Delete the corresponding database clone upon closing the feature branch.
+3. Write a job that will clone the production database upon each branch deployment launch. Each clone will be named `PRODUCTION_CLONE_<ID>`, where `<ID>` is the pull request ID of the branch. Then we'll create a branch deployment and test our Hacker News assets against our newly cloned database.
+4. Write a job that will delete the corresponding database clone upon closing the feature branch.
 
 ---
 
@@ -115,7 +115,7 @@ def stories(items: pd.DataFrame) -> pd.DataFrame:
     return items[items["type"] == "story"]
 ```
 
-As you can see, our assets use a [I/O manager](/concepts/io-management/io-managers) named `snowflake_io_manager` (source code available in the [Transitioning Data Pipelines from Development to Production](/guides/dagster/local-to-production-tutorial#part-one-local-development) guide). Using I/O managers and other resources allow us to swap out implementations per environment without modifying our business logic.
+As you can see, our assets use an [I/O manager](/concepts/io-management/io-managers) named `snowflake_io_manager`. Using I/O managers and other resources allow us to swap out implementations per environment without modifying our business logic.
 
 ---
 
@@ -270,7 +270,7 @@ name: Dagster Branch Deployments
             DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
 ```
 
-Opening a pull request for our current branch will automatically kick off a branch deployment. After the deployment launches, we can confirm that the `clone_prod` job is run:
+Opening a pull request for our current branch will automatically kick off a branch deployment. After the deployment launches, we can confirm that the `clone_prod` job has run:
 
 <Image
 alt="instance-overview"
