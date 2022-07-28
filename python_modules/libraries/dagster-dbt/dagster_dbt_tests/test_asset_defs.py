@@ -183,12 +183,14 @@ def test_fail_immediately(
 
 @pytest.mark.parametrize("use_build, fail_test", [(True, False), (True, True), (False, False)])
 def test_basic(
-    dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build, fail_test
+    capsys, dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build, fail_test
 ):  # pylint: disable=unused-argument
 
-    dbt_assets = load_assets_from_dbt_project(
-        test_project_dir, dbt_config_dir, use_build_command=use_build
-    )
+    # expected to emit json-formatted messages
+    with capsys.disabled():
+        dbt_assets = load_assets_from_dbt_project(
+            test_project_dir, dbt_config_dir, use_build_command=use_build
+        )
 
     assert dbt_assets[0].op.name == "run_dbt_dagster_dbt_test_project"
 
@@ -232,6 +234,16 @@ def test_basic(
         assert len(observations) == 17
     else:
         assert len(observations) == 0
+
+    captured = capsys.readouterr()
+
+    # make sure we're not logging the raw json to the console
+    for output in [captured.out, captured.err]:
+        for line in output.split("\n"):
+            # we expect a line like --vars {"fail_test": True}
+            if "vars" in line:
+                continue
+            assert "{" not in line
 
 
 def test_custom_groups(
@@ -377,7 +389,7 @@ def test_multiple_select_from_project(
 
 
 def test_dbt_ls_fail_fast():
-    with pytest.raises(DagsterDbtCliFatalRuntimeError):
+    with pytest.raises(DagsterDbtCliFatalRuntimeError, match="Invalid --project-dir flag."):
         load_assets_from_dbt_project("bad_project_dir", "bad_config_dir")
 
 

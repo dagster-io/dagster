@@ -120,7 +120,7 @@ def execute_cli(
                 pass
             else:
                 # in rare cases, the loaded json line may be a string rather than a dictionary
-                if isinstance(message, dict):
+                if isinstance(json_line, dict):
                     message = json_line.get("message", json_line.get("msg", message))
                     log_level = json_line.get("levelname", json_line.get("level", "debug"))
 
