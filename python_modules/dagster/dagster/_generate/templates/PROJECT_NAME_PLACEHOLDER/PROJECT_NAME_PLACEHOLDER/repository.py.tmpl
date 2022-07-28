@@ -1,0 +1,12 @@
+from dagster import ScheduleDefinition, define_asset_job, repository
+
+from {{ repo_name }}.assets import cereals, nabisco_cereals
+
+asset_job = define_asset_job("asset_job")
+
+daily_cereals_schedule = ScheduleDefinition(job=asset_job, cron_schedule="0 0 * * *")
+
+
+@repository
+def {{ repo_name }}():
+    return [cereals, nabisco_cereals, daily_cereals_schedule]
