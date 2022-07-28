@@ -6,10 +6,14 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DagsterTypeCheckDidNotPass,
     Dict,
-    execute_solid,
     usable_as_dagster_type,
 )
-from dagster._legacy import InputDefinition, OutputDefinition, lambda_solid
+from dagster._legacy import (
+    execute_solid,
+    InputDefinition,
+    OutputDefinition,
+    lambda_solid,
+)
 
 
 def test_basic_python_dictionary_output():
@@ -21,12 +25,17 @@ def test_basic_python_dictionary_output():
 
 
 def test_basic_python_dictionary_input():
-    @lambda_solid(input_defs=[InputDefinition("data", dict)], output_def=OutputDefinition(str))
+    @lambda_solid(
+        input_defs=[InputDefinition("data", dict)], output_def=OutputDefinition(str)
+    )
     def input_dict(data):
         return data["key"]
 
     assert (
-        execute_solid(input_dict, input_values={"data": {"key": "value"}}).output_value() == "value"
+        execute_solid(
+            input_dict, input_values={"data": {"key": "value"}}
+        ).output_value()
+        == "value"
     )
 
 
@@ -40,7 +49,9 @@ def test_basic_python_dictionary_wrong():
 
 
 def test_basic_python_dictionary_input_wrong():
-    @lambda_solid(input_defs=[InputDefinition("data", dict)], output_def=OutputDefinition(str))
+    @lambda_solid(
+        input_defs=[InputDefinition("data", dict)], output_def=OutputDefinition(str)
+    )
     def input_dict(data):
         return data["key"]
 
@@ -49,14 +60,18 @@ def test_basic_python_dictionary_input_wrong():
 
 
 def test_execute_dict_from_config():
-    @lambda_solid(input_defs=[InputDefinition("data", dict)], output_def=OutputDefinition(str))
+    @lambda_solid(
+        input_defs=[InputDefinition("data", dict)], output_def=OutputDefinition(str)
+    )
     def input_dict(data):
         return data["key"]
 
     assert (
         execute_solid(
             input_dict,
-            run_config={"solids": {"input_dict": {"inputs": {"data": {"key": "in_config"}}}}},
+            run_config={
+                "solids": {"input_dict": {"inputs": {"data": {"key": "in_config"}}}}
+            },
         ).output_value()
         == "in_config"
     )
@@ -71,12 +86,17 @@ def test_dagster_dictionary_output():
 
 
 def test_basic_dagster_dictionary_input():
-    @lambda_solid(input_defs=[InputDefinition("data", Dict)], output_def=OutputDefinition(str))
+    @lambda_solid(
+        input_defs=[InputDefinition("data", Dict)], output_def=OutputDefinition(str)
+    )
     def input_dict(data):
         return data["key"]
 
     assert (
-        execute_solid(input_dict, input_values={"data": {"key": "value"}}).output_value() == "value"
+        execute_solid(
+            input_dict, input_values={"data": {"key": "value"}}
+        ).output_value()
+        == "value"
     )
 
 
@@ -97,7 +117,10 @@ def test_basic_typing_dictionary_input():
         return data["key"]
 
     assert (
-        execute_solid(input_dict, input_values={"data": {"key": "value"}}).output_value() == "value"
+        execute_solid(
+            input_dict, input_values={"data": {"key": "value"}}
+        ).output_value()
+        == "value"
     )
 
 
@@ -130,7 +153,10 @@ def test_basic_closed_typing_dictionary_input():
         return data["key"]
 
     assert (
-        execute_solid(input_dict, input_values={"data": {"key": "value"}}).output_value() == "value"
+        execute_solid(
+            input_dict, input_values={"data": {"key": "value"}}
+        ).output_value()
+        == "value"
     )
 
 
@@ -153,7 +179,11 @@ def test_basic_closed_typing_dictionary_value_wrong():
 
 
 def test_complicated_dictionary_typing_pass():
-    @lambda_solid(output_def=OutputDefinition(typing.Dict[str, typing.List[typing.Dict[int, int]]]))
+    @lambda_solid(
+        output_def=OutputDefinition(
+            typing.Dict[str, typing.List[typing.Dict[int, int]]]
+        )
+    )
     def emit_dict():
         return {"foo": [{1: 1, 2: 2}]}
 
@@ -161,7 +191,11 @@ def test_complicated_dictionary_typing_pass():
 
 
 def test_complicated_dictionary_typing_fail():
-    @lambda_solid(output_def=OutputDefinition(typing.Dict[str, typing.List[typing.Dict[int, int]]]))
+    @lambda_solid(
+        output_def=OutputDefinition(
+            typing.Dict[str, typing.List[typing.Dict[int, int]]]
+        )
+    )
     def emit_dict():
         return {"foo": [{1: 1, "2": 2}]}
 
@@ -172,7 +206,9 @@ def test_complicated_dictionary_typing_fail():
 def test_dict_type_loader():
     test_input = {"hello": 5, "goodbye": 42}
 
-    @lambda_solid(input_defs=[InputDefinition("dict_input", dagster_type=typing.Dict[str, int])])
+    @lambda_solid(
+        input_defs=[InputDefinition("dict_input", dagster_type=typing.Dict[str, int])]
+    )
     def emit_dict(dict_input):
         return dict_input
 
@@ -192,7 +228,9 @@ def test_dict_type_loader_typing_fail():
     test_input = {"hello": "foo", "goodbye": "bar"}
 
     @lambda_solid(
-        input_defs=[InputDefinition("dict_input", dagster_type=typing.Dict[str, CustomType])]
+        input_defs=[
+            InputDefinition("dict_input", dagster_type=typing.Dict[str, CustomType])
+        ]
     )
     def emit_dict(dict_input):
         return dict_input
@@ -203,7 +241,9 @@ def test_dict_type_loader_typing_fail():
     ):
         execute_solid(
             emit_dict,
-            run_config={"solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
+            run_config={
+                "solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}
+            },
         )
 
 
@@ -211,7 +251,9 @@ def test_dict_type_loader_inner_type_mismatch():
 
     test_input = {"hello": "foo", "goodbye": "bar"}
 
-    @lambda_solid(input_defs=[InputDefinition("dict_input", dagster_type=typing.Dict[str, int])])
+    @lambda_solid(
+        input_defs=[InputDefinition("dict_input", dagster_type=typing.Dict[str, int])]
+    )
     def emit_dict(dict_input):
         return dict_input
 
@@ -220,5 +262,7 @@ def test_dict_type_loader_inner_type_mismatch():
     with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(
             emit_dict,
-            run_config={"solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
+            run_config={
+                "solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}
+            },
         )

@@ -10,12 +10,12 @@ from dagster import (
     Nothing,
     PythonObjectDagsterType,
     dagster_type_loader,
-    dagster_type_materializer,
-    execute_solid,
-    make_python_type_usable_as_dagster_type,
     usable_as_dagster_type,
 )
 from dagster._legacy import (
+    dagster_type_materializer,
+    execute_solid,
+    make_python_type_usable_as_dagster_type,
     InputDefinition,
     OutputDefinition,
     execute_pipeline,

@@ -3,9 +3,7 @@ import uuid
 
 import yaml
 from dagster_spark import create_spark_solid, spark_resource
-
-from dagster import execute_solid
-from dagster._legacy import ModeDefinition
+from dagster._legacy import execute_solid, ModeDefinition
 from dagster._utils import file_relative_path
 
 CONFIG_FILE = """
@@ -71,5 +69,6 @@ def test_no_spark_home():
     assert result.failure_data
     assert (
         "No spark home set. You must either pass spark_home in config or set "
-        "$SPARK_HOME in your environment (got None)." in result.failure_data.error.cause.message
+        "$SPARK_HOME in your environment (got None)."
+        in result.failure_data.error.cause.message
     )

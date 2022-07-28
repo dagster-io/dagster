@@ -2,7 +2,17 @@ import hashlib
 import json
 import os
 import textwrap
-from typing import AbstractSet, Any, Callable, Dict, Mapping, Optional, Sequence, Set, Tuple
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+)
 
 from dagster_dbt.cli.types import DbtCliOutput
 from dagster_dbt.cli.utils import execute_cli
@@ -16,7 +26,6 @@ from dagster import (
     MetadataValue,
     Nothing,
     Out,
-    PartitionsDefinition,
     TableColumn,
     TableSchema,
 )
@@ -26,7 +35,7 @@ from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._legacy import SolidExecutionContext
+from dagster._legacy import PartitionsDefinition, SolidExecutionContext
 from dagster._utils.backcompat import experimental_arg_warning
 
 # dbt resource types that may be considered assets
@@ -83,12 +92,18 @@ def _select_unique_ids_from_manifest_json(
             return _DictShim(ret) if isinstance(ret, dict) else ret
 
     # generate a dbt-compatible graph from the existing child map
-    graph = graph_selector.Graph(DiGraph(incoming_graph_data=manifest_json["child_map"]))
+    graph = graph_selector.Graph(
+        DiGraph(incoming_graph_data=manifest_json["child_map"])
+    )
     manifest = Manifest(
         # dbt expects dataclasses that can be accessed with dot notation, not bare dictionaries
-        nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},
+        nodes={
+            unique_id: _DictShim(info)
+            for unique_id, info in manifest_json["nodes"].items()
+        },
         sources={
-            unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()
+            unique_id: _DictShim(info)
+            for unique_id, info in manifest_json["sources"].items()
         },
     )
 
@@ -99,7 +114,9 @@ def _select_unique_ids_from_manifest_json(
     selector = graph_selector.NodeSelector(graph, manifest)
     selected, _ = selector.select_nodes(parsed_spec)
     if len(selected) == 0:
-        raise DagsterInvalidSubsetError(f"No dbt models match the selection string '{select}'.")
+        raise DagsterInvalidSubsetError(
+            f"No dbt models match the selection string '{select}'."
+        )
     return selected
 
 
@@ -134,7 +151,8 @@ def _get_node_group_name(node_info: Mapping[str, Any]) -> Optional[str]:
 def _get_node_description(node_info):
     code_block = textwrap.indent(node_info["raw_sql"], "    ")
     description_sections = [
-        node_info["description"] or f"dbt {node_info['resource_type']} {node_info['name']}",
+        node_info["description"]
+        or f"dbt {node_info['resource_type']} {node_info['name']}",
         f"#### Raw SQL:\n```\n{code_block}\n```",
     ]
     return "\n\n".join(filter(None, description_sections))
@@ -194,7 +212,9 @@ def _get_dbt_op(
     node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]],
     runtime_metadata_fn: Optional[
-        Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
+        Callable[
+            [SolidExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]
+        ]
     ],
 ):
     @op(
@@ -235,7 +255,9 @@ def _get_dbt_op(
             # in the case that the project only partially runs successfully, still attempt to generate
             # events for the parts that were successful
             if dbt_output is None:
-                dbt_output = DbtOutput(result=context.resources.dbt.get_run_results_json())
+                dbt_output = DbtOutput(
+                    result=context.resources.dbt.get_run_results_json()
+                )
 
             manifest_json = context.resources.dbt.get_manifest_json()
 
@@ -262,14 +284,20 @@ def _dbt_nodes_to_assets(
     select: str,
     selected_unique_ids: AbstractSet[str],
     runtime_metadata_fn: Optional[
-        Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]]
+        Callable[
+            [SolidExecutionContext, Mapping[str, Any]], Mapping[str, RawMetadataValue]
+        ]
     ] = None,
     io_manager_key: Optional[str] = None,
-    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
+    node_info_to_asset_key: Callable[
+        [Mapping[str, Any]], AssetKey
+    ] = _get_node_asset_key,
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Callable[[Dict[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_group_fn: Callable[
+        [Dict[str, Any]], Optional[str]
+    ] = _get_node_group_name,
 ) -> AssetsDefinition:
 
     asset_deps: Dict[AssetKey, Set[AssetKey]] = {}
@@ -284,7 +312,9 @@ def _dbt_nodes_to_assets(
 
     if use_build_command:
         deps = _get_deps(
-            dbt_nodes, selected_unique_ids, asset_resource_types=["model", "seed", "snapshot"]
+            dbt_nodes,
+            selected_unique_ids,
+            asset_resource_types=["model", "seed", "snapshot"],
         )
     else:
         deps = _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types=["model"])
@@ -369,11 +399,15 @@ def load_assets_from_dbt_project(
         Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
     io_manager_key: Optional[str] = None,
-    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
+    node_info_to_asset_key: Callable[
+        [Mapping[str, Any]], AssetKey
+    ] = _get_node_asset_key,
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Callable[[Dict[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_group_fn: Callable[
+        [Dict[str, Any]], Optional[str]
+    ] = _get_node_group_name,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models from a dbt project into Dagster assets.
@@ -418,7 +452,9 @@ def load_assets_from_dbt_project(
     profiles_dir = check.opt_str_param(
         profiles_dir, "profiles_dir", os.path.join(project_dir, "config")
     )
-    target_dir = check.opt_str_param(target_dir, "target_dir", os.path.join(project_dir, "target"))
+    target_dir = check.opt_str_param(
+        target_dir, "target_dir", os.path.join(project_dir, "target")
+    )
     select = check.opt_str_param(select, "select", "*")
 
     manifest_json, cli_output = _load_manifest_for_project(
@@ -453,11 +489,15 @@ def load_assets_from_dbt_manifest(
     ] = None,
     io_manager_key: Optional[str] = None,
     selected_unique_ids: Optional[AbstractSet[str]] = None,
-    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
+    node_info_to_asset_key: Callable[
+        [Mapping[str, Any]], AssetKey
+    ] = _get_node_asset_key,
     use_build_command: bool = False,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_key_to_vars_fn: Optional[Callable[[str], Mapping[str, Any]]] = None,
-    node_info_to_group_fn: Callable[[Dict[str, Any]], Optional[str]] = _get_node_group_name,
+    node_info_to_group_fn: Callable[
+        [Dict[str, Any]], Optional[str]
+    ] = _get_node_group_name,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of dbt models, described in a manifest.json, into Dagster assets.
@@ -499,7 +539,9 @@ def load_assets_from_dbt_manifest(
     if partitions_def:
         experimental_arg_warning("partitions_def", "load_assets_from_dbt_manifest")
     if partition_key_to_vars_fn:
-        experimental_arg_warning("partition_key_to_vars_fn", "load_assets_from_dbt_manifest")
+        experimental_arg_warning(
+            "partition_key_to_vars_fn", "load_assets_from_dbt_manifest"
+        )
         check.invariant(
             partitions_def is not None,
             "Cannot supply a `partition_key_to_vars_fn` without a `partitions_def`.",
@@ -510,7 +552,9 @@ def load_assets_from_dbt_manifest(
     if select is None:
         if selected_unique_ids:
             # generate selection string from unique ids
-            select = " ".join(".".join(dbt_nodes[uid]["fqn"]) for uid in selected_unique_ids)
+            select = " ".join(
+                ".".join(dbt_nodes[uid]["fqn"]) for uid in selected_unique_ids
+            )
         else:
             # if no selection specified, default to "*"
             select = "*"
@@ -518,7 +562,9 @@ def load_assets_from_dbt_manifest(
 
     if selected_unique_ids is None:
         # must resolve the selection string using the existing manifest.json data (hacky)
-        selected_unique_ids = _select_unique_ids_from_manifest_json(manifest_json, select)
+        selected_unique_ids = _select_unique_ids_from_manifest_json(
+            manifest_json, select
+        )
 
     dbt_assets_def = _dbt_nodes_to_assets(
         dbt_nodes,
@@ -535,13 +581,17 @@ def load_assets_from_dbt_manifest(
     if source_key_prefix:
         if isinstance(source_key_prefix, str):
             source_key_prefix = [source_key_prefix]
-        source_key_prefix = check.list_param(source_key_prefix, "source_key_prefix", of_type=str)
+        source_key_prefix = check.list_param(
+            source_key_prefix, "source_key_prefix", of_type=str
+        )
         input_key_replacements = {
             input_key: AssetKey(source_key_prefix + input_key.path)
             for input_key in dbt_assets_def.keys_by_input_name.values()
         }
         dbt_assets = [
-            dbt_assets_def.with_prefix_or_group(input_asset_key_replacements=input_key_replacements)
+            dbt_assets_def.with_prefix_or_group(
+                input_asset_key_replacements=input_key_replacements
+            )
         ]
     else:
         dbt_assets = [dbt_assets_def]

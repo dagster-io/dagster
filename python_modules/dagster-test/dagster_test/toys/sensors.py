@@ -2,10 +2,10 @@ import os
 
 from slack_sdk.web.client import WebClient
 
-from dagster import AssetKey, PipelineFailureSensorContext, RunRequest, SkipReason
+from dagster import AssetKey, RunRequest, SkipReason
 from dagster import _check as check
 from dagster import asset_sensor, sensor
-from dagster._legacy import pipeline_failure_sensor
+from dagster._legacy import PipelineFailureSensorContext, pipeline_failure_sensor
 
 
 def get_directory_files(directory_name, since=None):
@@ -48,7 +48,9 @@ def get_toys_sensors():
 
         directory_files = get_directory_files(directory_name, context.cursor)
         if not directory_files:
-            yield SkipReason(f"No new files found in {directory_name} (after {context.cursor})")
+            yield SkipReason(
+                f"No new files found in {directory_name} (after {context.cursor})"
+            )
             return
 
         for filename, mtime in directory_files:
@@ -86,11 +88,15 @@ def get_toys_sensors():
             yield RunRequest(
                 run_key=s3_key,
                 run_config={
-                    "solids": {"read_s3_key": {"config": {"bucket": bucket, "s3_key": s3_key}}}
+                    "solids": {
+                        "read_s3_key": {"config": {"bucket": bucket, "s3_key": s3_key}}
+                    }
                 },
             )
 
-    @pipeline_failure_sensor(pipeline_selection=["error_monster", "unreliable_pipeline"])
+    @pipeline_failure_sensor(
+        pipeline_selection=["error_monster", "unreliable_pipeline"]
+    )
     def custom_slack_on_pipeline_failure(context: PipelineFailureSensorContext):
 
         base_url = "http://localhost:3000"

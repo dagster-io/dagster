@@ -16,13 +16,14 @@ from dagster import (
     TypeCheck,
 )
 from dagster import _check as check
-from dagster import dagster_type_loader, dagster_type_materializer
+from dagster import dagster_type_loader
 from dagster._annotations import experimental
 from dagster._check import CheckError
 from dagster._config import Selector
 from dagster._core.definitions.metadata import normalize_metadata
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._utils import dict_without_keys
+from dagster._legacy import dagster_type_materializer
 
 CONSTRAINT_BLACKLIST = {ColumnDTypeFnConstraint, ColumnDTypeInSetConstraint}
 
@@ -123,7 +124,9 @@ def _construct_constraint_list(constraints):
     constraint_list = ""
     for constraint in constraints:
         if constraint.__class__ not in CONSTRAINT_BLACKLIST:
-            constraint_list = add_bullet(constraint_list, constraint.markdown_description)
+            constraint_list = add_bullet(
+                constraint_list, constraint.markdown_description
+            )
     return constraint_list
 
 
@@ -133,7 +136,9 @@ def _build_column_header(column_name, constraints):
         if isinstance(constraint, ColumnDTypeInSetConstraint):
             dtypes_tuple = tuple(constraint.expected_dtype_set)
             return header + ": `{expected_dtypes}`".format(
-                expected_dtypes=dtypes_tuple if len(dtypes_tuple) > 1 else dtypes_tuple[0]
+                expected_dtypes=dtypes_tuple
+                if len(dtypes_tuple) > 1
+                else dtypes_tuple[0]
             )
         elif isinstance(constraint, ColumnDTypeFnConstraint):
             return header + ": Validator `{expected_dtype_fn}`".format(
@@ -203,7 +208,9 @@ def create_dagster_pandas_dataframe_type(
 
         try:
             validate_constraints(
-                value, pandas_columns=columns, dataframe_constraints=dataframe_constraints
+                value,
+                pandas_columns=columns,
+                dataframe_constraints=dataframe_constraints,
             )
         except ConstraintViolationException as e:
             return TypeCheck(success=False, description=str(e))
@@ -277,9 +284,9 @@ def create_structured_dataframe_type(
             individual_result_dict["columns"] = columns_validator.validate(value)
 
         if columns_aggregate_validator is not None:
-            individual_result_dict["column-aggregates"] = columns_aggregate_validator.validate(
-                value
-            )
+            individual_result_dict[
+                "column-aggregates"
+            ] = columns_aggregate_validator.validate(value)
 
         typechecks_succeeded = True
         metadata = []
@@ -297,7 +304,9 @@ def create_structured_dataframe_type(
                     value=result_dict,
                 )
             )
-            constraint_clauses.append("{} failing constraints, {}".format(key, result.description))
+            constraint_clauses.append(
+                "{} failing constraints, {}".format(key, result.description)
+            )
         # returns aggregates, then column, then dataframe
         return TypeCheck(
             success=typechecks_succeeded,

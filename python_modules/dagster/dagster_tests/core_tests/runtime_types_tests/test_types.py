@@ -17,7 +17,6 @@ from dagster import (
     Tuple,
     TypeCheck,
     check_dagster_type,
-    make_python_type_usable_as_dagster_type,
     resource,
 )
 from dagster._core.test_utils import default_mode_def_for_test
@@ -28,6 +27,7 @@ from dagster._core.types.dagster_type import (
     resolve_dagster_type,
 )
 from dagster._legacy import (
+    make_python_type_usable_as_dagster_type,
     InputDefinition,
     ModeDefinition,
     OutputDefinition,
@@ -143,7 +143,9 @@ def execute_no_throw(pipeline_def):
 
 
 def _type_check_data_for_input(solid_result, input_name):
-    return solid_result.compute_input_event_dict[input_name].event_specific_data.type_check_data
+    return solid_result.compute_input_event_dict[
+        input_name
+    ].event_specific_data.type_check_data
 
 
 def test_input_types_succeed_in_pipeline():
@@ -215,10 +217,16 @@ def test_input_types_fail_in_pipeline():
 
     type_check_data = _type_check_data_for_input(solid_result, "string")
     assert not type_check_data.success
-    assert type_check_data.description == 'Value "1" of python type "int" must be a string.'
+    assert (
+        type_check_data.description
+        == 'Value "1" of python type "int" must be a string.'
+    )
 
     step_failure_event = solid_result.compute_step_failure_event
-    assert step_failure_event.event_specific_data.error.cls_name == "DagsterTypeCheckDidNotPass"
+    assert (
+        step_failure_event.event_specific_data.error.cls_name
+        == "DagsterTypeCheckDidNotPass"
+    )
 
 
 def test_output_types_fail_in_pipeline():
@@ -244,10 +252,16 @@ def test_output_types_fail_in_pipeline():
     output_event = solid_result.get_output_event_for_compute()
     type_check_data = output_event.event_specific_data.type_check_data
     assert not type_check_data.success
-    assert type_check_data.description == 'Value "1" of python type "int" must be a string.'
+    assert (
+        type_check_data.description
+        == 'Value "1" of python type "int" must be a string.'
+    )
 
     step_failure_event = solid_result.compute_step_failure_event
-    assert step_failure_event.event_specific_data.error.cls_name == "DagsterTypeCheckDidNotPass"
+    assert (
+        step_failure_event.event_specific_data.error.cls_name
+        == "DagsterTypeCheckDidNotPass"
+    )
 
 
 # TODO add more step output use cases
@@ -380,7 +394,8 @@ def define_custom_dict(name, permitted_key_names):
                 return TypeCheck(
                     False,
                     description=(
-                        "Key {name} is not a permitted value, values can only be of: " "{name_list}"
+                        "Key {name} is not a permitted value, values can only be of: "
+                        "{name_list}"
                     ).format(name=value.name, name_list=permitted_key_names),
                 )
         return TypeCheck(
@@ -456,7 +471,9 @@ def test_raise_on_error_type_check_returns_false():
     ]
     for event in pipeline_result.step_event_list:
         if event.event_type_value == DagsterEventType.STEP_FAILURE.value:
-            assert event.event_specific_data.error.cls_name == "DagsterTypeCheckDidNotPass"
+            assert (
+                event.event_specific_data.error.cls_name == "DagsterTypeCheckDidNotPass"
+            )
 
 
 def test_raise_on_error_true_type_check_returns_unsuccessful_type_check():
@@ -490,14 +507,18 @@ def test_raise_on_error_true_type_check_returns_unsuccessful_type_check():
     ]
     for event in pipeline_result.step_event_list:
         if event.event_type_value == DagsterEventType.STEP_FAILURE.value:
-            assert event.event_specific_data.error.cls_name == "DagsterTypeCheckDidNotPass"
+            assert (
+                event.event_specific_data.error.cls_name == "DagsterTypeCheckDidNotPass"
+            )
 
 
 def test_raise_on_error_true_type_check_raises_exception():
     def raise_exception_inner(_context, _):
         raise Failure("I am dissapoint")
 
-    ThrowExceptionType = DagsterType(name="ThrowExceptionType", type_check_fn=raise_exception_inner)
+    ThrowExceptionType = DagsterType(
+        name="ThrowExceptionType", type_check_fn=raise_exception_inner
+    )
 
     @solid(output_defs=[OutputDefinition(ThrowExceptionType)])
     def foo_solid(_):
@@ -568,9 +589,14 @@ def test_raise_on_error_true_type_check_returns_successful_type_check():
     for event in pipeline_result.step_event_list:
         if event.event_type_value == DagsterEventType.STEP_OUTPUT.value:
             assert event.event_specific_data.type_check_data
-            assert event.event_specific_data.type_check_data.metadata_entries[0].label == "bar"
             assert (
-                event.event_specific_data.type_check_data.metadata_entries[0].entry_data.text
+                event.event_specific_data.type_check_data.metadata_entries[0].label
+                == "bar"
+            )
+            assert (
+                event.event_specific_data.type_check_data.metadata_entries[
+                    0
+                ].entry_data.text
                 == "foo"
             )
             assert event.event_specific_data.type_check_data.metadata_entries[0]
@@ -627,9 +653,12 @@ def test_type_equality():
     assert resolve_dagster_type(List[int]) == resolve_dagster_type(List[int])
     assert not (resolve_dagster_type(List[int]) != resolve_dagster_type(List[int]))
 
-    assert resolve_dagster_type(Optional[List[int]]) == resolve_dagster_type(Optional[List[int]])
+    assert resolve_dagster_type(Optional[List[int]]) == resolve_dagster_type(
+        Optional[List[int]]
+    )
     assert not (
-        resolve_dagster_type(Optional[List[int]]) != resolve_dagster_type(Optional[List[int]])
+        resolve_dagster_type(Optional[List[int]])
+        != resolve_dagster_type(Optional[List[int]])
     )
 
 
@@ -647,7 +676,9 @@ def test_make_usable_as_dagster_type_called_twice():
     )
 
     make_python_type_usable_as_dagster_type(AType, ADagsterType)
-    make_python_type_usable_as_dagster_type(AType, ADagsterType)  # should not raise an error
+    make_python_type_usable_as_dagster_type(
+        AType, ADagsterType
+    )  # should not raise an error
 
     with pytest.raises(DagsterInvalidDefinitionError):
         make_python_type_usable_as_dagster_type(AType, BDagsterType)
@@ -657,7 +688,9 @@ def test_tuple_inner_types_not_mutable():
     tuple_type = Tuple[List[String]]
     inner_types_1st_call = list(tuple_type.inner_types)
     inner_types = list(tuple_type.inner_types)
-    assert inner_types_1st_call == inner_types, "inner types mutated on subsequent calls"
+    assert (
+        inner_types_1st_call == inner_types
+    ), "inner types mutated on subsequent calls"
 
     assert isinstance(inner_types[0], ListType)
     assert inner_types[0].inner_type == inner_types[1]

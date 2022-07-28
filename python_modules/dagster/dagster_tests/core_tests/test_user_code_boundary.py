@@ -1,12 +1,7 @@
-from dagster import (
-    String,
-    dagster_type_loader,
-    dagster_type_materializer,
-    resource,
-    usable_as_dagster_type,
-)
+from dagster import String, dagster_type_loader, resource, usable_as_dagster_type
 from dagster._core.types.dagster_type import create_any_type
 from dagster._legacy import (
+    dagster_type_materializer,
     InputDefinition,
     ModeDefinition,
     OutputDefinition,

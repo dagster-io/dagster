@@ -6,12 +6,11 @@ from contextlib import contextmanager
 
 import boto3
 import pytest
-
-from dagster import ExperimentalWarning
 from dagster._core.test_utils import in_process_test_workspace, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 
 from . import repo
+from dagster._legacy import ExperimentalWarning
 
 Secret = namedtuple("Secret", ["name", "arn"])
 
@@ -179,7 +178,9 @@ def external_pipeline(workspace):
 
 @pytest.fixture
 def other_external_pipeline(other_workspace):
-    location = other_workspace.get_repository_location(other_workspace.repository_location_names[0])
+    location = other_workspace.get_repository_location(
+        other_workspace.repository_location_names[0]
+    )
     return location.get_repository(repo.repository.__name__).get_full_external_pipeline(
         repo.pipeline.__name__
     )

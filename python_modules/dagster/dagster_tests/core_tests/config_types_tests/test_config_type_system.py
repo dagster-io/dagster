@@ -21,7 +21,6 @@ from dagster import (
     Set,
     String,
     Tuple,
-    execute_solid,
 )
 from dagster._check import ParameterCheckError
 from dagster._config import (
@@ -33,6 +32,7 @@ from dagster._config import (
     validate_config,
 )
 from dagster._legacy import (
+    execute_solid,
     ModeDefinition,
     PipelineDefinition,
     composite_solid,
@@ -48,7 +48,9 @@ def test_noop_config():
 
 def test_int_field():
     config_field = convert_potential_field({"int_field": Int})
-    assert validate_config(config_field.config_type, {"int_field": 1}).value == {"int_field": 1}
+    assert validate_config(config_field.config_type, {"int_field": 1}).value == {
+        "int_field": 1
+    }
 
 
 def test_float_field():
@@ -59,7 +61,9 @@ def test_float_field():
     assert process_config(config_field.config_type, {"float_field": 1.0}).value == {
         "float_field": 1.0
     }
-    assert validate_config(config_field.config_type, {"float_field": 1}).value == {"float_field": 1}
+    assert validate_config(config_field.config_type, {"float_field": 1}).value == {
+        "float_field": 1
+    }
     assert process_config(config_field.config_type, {"float_field": 1}).value == {
         "float_field": 1.0
     }
@@ -130,7 +134,9 @@ def _single_optional_string_field_config_dict_with_default():
 def _mixed_required_optional_string_config_dict_with_default():
     return convert_potential_field(
         {
-            "optional_arg": Field(String, is_required=False, default_value="some_default"),
+            "optional_arg": Field(
+                String, is_required=False, default_value="some_default"
+            ),
             "required_arg": Field(String, is_required=True),
             "optional_arg_no_default": Field(String, is_required=False),
         }
@@ -148,9 +154,9 @@ def _validate(config_field, value):
 
 
 def test_single_required_enum_field_config_type():
-    assert _validate(_single_required_enum_config_dict(), {"enum_field": "OptionA"}) == {
-        "enum_field": "OptionA"
-    }
+    assert _validate(
+        _single_required_enum_config_dict(), {"enum_field": "OptionA"}
+    ) == {"enum_field": "OptionA"}
 
     expected_suggested_config = {"enum_field": "OptionA"}
     with pytest.raises(
@@ -161,9 +167,9 @@ def test_single_required_enum_field_config_type():
 
 
 def test_single_required_string_field_config_type():
-    assert _validate(_single_required_string_config_dict(), {"string_field": "value"}) == {
-        "string_field": "value"
-    }
+    assert _validate(
+        _single_required_string_config_dict(), {"string_field": "value"}
+    ) == {"string_field": "value"}
 
     with pytest.raises(
         AssertionError,
@@ -240,15 +246,15 @@ def test_multiple_required_fields_failing():
 
 
 def test_single_optional_field_passing():
-    assert _validate(_single_optional_string_config_dict(), {"optional_field": "value"}) == {
-        "optional_field": "value"
-    }
+    assert _validate(
+        _single_optional_string_config_dict(), {"optional_field": "value"}
+    ) == {"optional_field": "value"}
     assert _validate(_single_optional_string_config_dict(), {}) == {}
 
     with pytest.raises(AssertionError):
-        assert _validate(_single_optional_string_config_dict(), {"optional_field": None}) == {
-            "optional_field": None
-        }
+        assert _validate(
+            _single_optional_string_config_dict(), {"optional_field": None}
+        ) == {"optional_field": None}
 
 
 def test_single_optional_field_failing():
@@ -306,7 +312,9 @@ def test_permissive_multiple_required_fields_failing():
         _validate(_multiple_required_fields_config_permissive_dict(), {})
 
     with pytest.raises(AssertionError):
-        _validate(_multiple_required_fields_config_permissive_dict(), {"field_one": "yup"})
+        _validate(
+            _multiple_required_fields_config_permissive_dict(), {"field_one": "yup"}
+        )
 
     with pytest.raises(AssertionError):
         _validate(
@@ -506,7 +514,9 @@ def _nested_optional_config_with_default():
 
 
 def _nested_optional_config_with_no_default():
-    return convert_potential_field({"nested": {"int_field": Field(Int, is_required=False)}})
+    return convert_potential_field(
+        {"nested": {"int_field": Field(Int, is_required=False)}}
+    )
 
 
 def test_single_nested_config():
@@ -535,19 +545,23 @@ def test_single_nested_config_undefined_errors():
             '"{ int_field: Int }".'
         ),
     ):
-        _validate(_single_nested_config(), {"nested": {"int_field": 2, "not_a_field": 1}})
+        _validate(
+            _single_nested_config(), {"nested": {"int_field": 2, "not_a_field": 1}}
+        )
 
     with pytest.raises(
         AssertionError,
         match="Invalid scalar at path root:nested:int_field. Value \"{'too_nested': 'dkjfdk'}\" of type .* is not valid for expected type \"Int\".",
     ):
-        _validate(_single_nested_config(), {"nested": {"int_field": {"too_nested": "dkjfdk"}}})
+        _validate(
+            _single_nested_config(), {"nested": {"int_field": {"too_nested": "dkjfdk"}}}
+        )
 
 
 def test_nested_optional_with_default():
-    assert _validate(_nested_optional_config_with_default(), {"nested": {"int_field": 2}}) == {
-        "nested": {"int_field": 2}
-    }
+    assert _validate(
+        _nested_optional_config_with_default(), {"nested": {"int_field": 2}}
+    ) == {"nested": {"int_field": 2}}
 
     assert _validate(_nested_optional_config_with_default(), {"nested": {}}) == {
         "nested": {"int_field": 3}
@@ -555,11 +569,13 @@ def test_nested_optional_with_default():
 
 
 def test_nested_optional_with_no_default():
-    assert _validate(_nested_optional_config_with_no_default(), {"nested": {"int_field": 2}}) == {
-        "nested": {"int_field": 2}
-    }
+    assert _validate(
+        _nested_optional_config_with_no_default(), {"nested": {"int_field": 2}}
+    ) == {"nested": {"int_field": 2}}
 
-    assert _validate(_nested_optional_config_with_no_default(), {"nested": {}}) == {"nested": {}}
+    assert _validate(_nested_optional_config_with_no_default(), {"nested": {}}) == {
+        "nested": {}
+    }
 
 
 def test_config_defaults():
@@ -635,15 +651,24 @@ def test_config_with_and_without_config():
     )
 
     assert result.success
-    assert result.result_for_solid("print_value").output_value() == "_customprefix_12345"
+    assert (
+        result.result_for_solid("print_value").output_value() == "_customprefix_12345"
+    )
 
     result_using_default = execute_pipeline(
         config_issue_pipeline,
-        {"solids": {"prefix_id": {"config": {}, "inputs": {"val": {"value": "12345"}}}}},
+        {
+            "solids": {
+                "prefix_id": {"config": {}, "inputs": {"val": {"value": "12345"}}}
+            }
+        },
     )
 
     assert result_using_default.success
-    assert result_using_default.result_for_solid("print_value").output_value() == "_id_12345"
+    assert (
+        result_using_default.result_for_solid("print_value").output_value()
+        == "_id_12345"
+    )
 
 
 def test_build_optionality():
@@ -674,7 +699,9 @@ def test_wrong_solid_name():
 
     pe = pe_info.value
 
-    assert 'Received unexpected config entry "another_name" at path root:solids' in str(pe)
+    assert 'Received unexpected config entry "another_name" at path root:solids' in str(
+        pe
+    )
 
 
 def fail_me():
@@ -737,7 +764,9 @@ def test_two_list_types():
 
     assert execute_solid(
         two_list_type,
-        run_config={"solids": {"two_list_type": {"config": {"list_one": [1], "list_two": [2]}}}},
+        run_config={
+            "solids": {"two_list_type": {"config": {"list_one": [1], "list_two": [2]}}}
+        },
     ).output_value() == {"list_one": [1], "list_two": [2]}
 
     @solid(
@@ -751,7 +780,9 @@ def test_two_list_types():
         two_list_type_condensed_syntax,
         run_config={
             "solids": {
-                "two_list_type_condensed_syntax": {"config": {"list_one": [1], "list_two": [2]}}
+                "two_list_type_condensed_syntax": {
+                    "config": {"list_one": [1], "list_two": [2]}
+                }
             }
         },
     ).output_value() == {"list_one": [1], "list_two": [2]}
@@ -788,7 +819,9 @@ def test_multilevel_default_handling():
     assert execute_pipeline(pipeline_def, run_config=None).success
     assert execute_pipeline(pipeline_def, run_config={}).success
     assert execute_pipeline(pipeline_def, run_config={"solids": {}}).success
-    assert execute_pipeline(pipeline_def, run_config={"solids": {"has_default_value": {}}}).success
+    assert execute_pipeline(
+        pipeline_def, run_config={"solids": {"has_default_value": {}}}
+    ).success
 
     assert execute_pipeline(
         pipeline_def, run_config={"solids": {"has_default_value": {"config": 234}}}
@@ -815,7 +848,9 @@ def test_no_env_missing_required_error_handling():
     assert len(pe.errors) == 1
 
     expected_suggested_config = {"solids": {"required_int_solid": {"config": 0}}}
-    assert pe.errors[0].message.startswith('Missing required config entry "solids" at the root.')
+    assert pe.errors[0].message.startswith(
+        'Missing required config entry "solids" at the root.'
+    )
     assert str(expected_suggested_config) in pe.errors[0].message
 
 
@@ -909,7 +944,10 @@ def test_item_error_list_path():
     rtm = pe.errors[0]
     assert rtm.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
-    assert "Invalid scalar at path root:solids:required_list_int_solid:config[1]" in str(pe)
+    assert (
+        "Invalid scalar at path root:solids:required_list_int_solid:config[1]"
+        in str(pe)
+    )
 
 
 def test_list_in_config_error():
@@ -939,7 +977,9 @@ def test_working_map_path():
 
     result = execute_pipeline(
         pipeline_def,
-        run_config={"solids": {"required_map_int_solid": {"config": {"foo": 1, "bar": 2}}}},
+        run_config={
+            "solids": {"required_map_int_solid": {"config": {"foo": 1, "bar": 2}}}
+        },
     )
 
     assert result.success
@@ -962,7 +1002,9 @@ def test_item_error_map_path():
         execute_pipeline(
             pipeline_def,
             run_config={
-                "solids": {"required_map_int_solid": {"config": {"foo": 1, "bar": "nope"}}}
+                "solids": {
+                    "required_map_int_solid": {"config": {"foo": 1, "bar": "nope"}}
+                }
             },
         )
 
@@ -971,7 +1013,10 @@ def test_item_error_map_path():
     rtm = pe.errors[0]
     assert rtm.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
-    assert "Invalid scalar at path root:solids:required_map_int_solid:config:'bar'" in str(pe)
+    assert (
+        "Invalid scalar at path root:solids:required_map_int_solid:config:'bar'"
+        in str(pe)
+    )
 
 
 def test_required_resource_not_given():
@@ -991,7 +1036,8 @@ def test_required_resource_not_given():
 
     assert len(not_none_pe_info.value.errors) == 1
     assert (
-        "Value at path root:resources must not be None." in not_none_pe_info.value.errors[0].message
+        "Value at path root:resources must not be None."
+        in not_none_pe_info.value.errors[0].message
     )
 
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
@@ -1021,7 +1067,10 @@ def test_multilevel_good_error_handling_solids():
         execute_pipeline(pipeline_def, run_config={"solids": None})
 
     assert len(not_none_pe_info.value.errors) == 1
-    assert "Value at path root:solids must not be None." in not_none_pe_info.value.errors[0].message
+    assert (
+        "Value at path root:solids must not be None."
+        in not_none_pe_info.value.errors[0].message
+    )
 
     with pytest.raises(DagsterInvalidConfigError) as missing_field_pe_info:
         execute_pipeline(pipeline_def, run_config={"solids": {}})
@@ -1032,7 +1081,9 @@ def test_multilevel_good_error_handling_solids():
     assert missing_field_pe_info.value.errors[0].message.startswith(
         """Missing required config entry "good_error_handling" at path root:solids."""
     )
-    assert str(expected_suggested_config) in missing_field_pe_info.value.errors[0].message
+    assert (
+        str(expected_suggested_config) in missing_field_pe_info.value.errors[0].message
+    )
 
 
 def test_multilevel_good_error_handling_solid_name_solids():
@@ -1045,7 +1096,9 @@ def test_multilevel_good_error_handling_solid_name_solids():
         good_error_handling()
 
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
-        execute_pipeline(pipeline_def, run_config={"solids": {"good_error_handling": {}}})
+        execute_pipeline(
+            pipeline_def, run_config={"solids": {"good_error_handling": {}}}
+        )
 
     assert len(pe_info.value.errors) == 1
 
@@ -1065,7 +1118,9 @@ def test_multilevel_good_error_handling_config_solids_name_solids():
     def pipeline_def():
         good_error_handling()
 
-    execute_pipeline(pipeline_def, run_config={"solids": {"good_error_handling": {"config": None}}})
+    execute_pipeline(
+        pipeline_def, run_config={"solids": {"good_error_handling": {"config": None}}}
+    )
 
 
 def test_invalid_default_values():

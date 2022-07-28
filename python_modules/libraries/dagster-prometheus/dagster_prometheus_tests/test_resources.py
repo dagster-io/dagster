@@ -2,9 +2,7 @@ import time
 
 from dagster_prometheus import prometheus_resource
 from prometheus_client import Counter, Enum, Gauge, Histogram, Info, Summary
-
-from dagster import execute_solid
-from dagster._legacy import ModeDefinition, solid
+from dagster._legacy import execute_solid, ModeDefinition, solid
 
 EPS = 0.001
 ENV = {"resources": {"prometheus": {"config": {"gateway": "localhost:9091"}}}}

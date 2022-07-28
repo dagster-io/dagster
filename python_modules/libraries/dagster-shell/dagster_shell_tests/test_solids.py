@@ -10,22 +10,28 @@ from dagster_shell import (
     shell_solid,
 )
 
-from dagster import Failure, execute_solid, job, op
-from dagster._legacy import OutputDefinition, composite_solid
+from dagster import Failure, job, op
+from dagster._legacy import execute_solid, OutputDefinition, composite_solid
 
 
-@pytest.mark.parametrize("factory", [create_shell_command_solid, create_shell_command_op])
+@pytest.mark.parametrize(
+    "factory", [create_shell_command_solid, create_shell_command_op]
+)
 def test_shell_command(factory):
     solid = factory('echo "this is a test message: $MY_ENV_VAR"', name="foobar")
 
     result = execute_solid(
         solid,
-        run_config={"solids": {"foobar": {"config": {"env": {"MY_ENV_VAR": "foobar"}}}}},
+        run_config={
+            "solids": {"foobar": {"config": {"env": {"MY_ENV_VAR": "foobar"}}}}
+        },
     )
     assert result.output_values == {"result": "this is a test message: foobar\n"}
 
 
-@pytest.mark.parametrize("factory", [create_shell_command_solid, create_shell_command_op])
+@pytest.mark.parametrize(
+    "factory", [create_shell_command_solid, create_shell_command_op]
+)
 def test_shell_command_inherits_environment(monkeypatch, factory):
     # OUTSIDE_ENV_VAR represents an environment variable that should be available
     # to jobs. eg. 12-factor app secrets, defined in your Docker container, etc.
@@ -45,7 +51,9 @@ def test_shell_command_inherits_environment(monkeypatch, factory):
     assert result.output_values == {"result": "foo:bar\n"}
 
 
-@pytest.mark.parametrize("shell_defn,name", [(shell_op, "shell_op"), (shell_solid, "shell_solid")])
+@pytest.mark.parametrize(
+    "shell_defn,name", [(shell_op, "shell_op"), (shell_solid, "shell_solid")]
+)
 def test_shell(shell_defn, name):
     result = execute_solid(
         shell_defn,
@@ -66,12 +74,16 @@ def test_shell_op_inside_job():
         shell_op(get_shell_cmd_op())
 
     result = shell_job.execute_in_process(
-        run_config={"ops": {"shell_op": {"config": {"env": {"MY_ENV_VAR": "hello world!"}}}}}
+        run_config={
+            "ops": {"shell_op": {"config": {"env": {"MY_ENV_VAR": "hello world!"}}}}
+        }
     )
     assert result.output_for_node("shell_op") == "hello world!\n"
 
 
-@pytest.mark.parametrize("factory", [create_shell_command_op, create_shell_command_solid])
+@pytest.mark.parametrize(
+    "factory", [create_shell_command_op, create_shell_command_solid]
+)
 def test_shell_command_retcode(factory):
     with pytest.raises(Failure, match="Shell command execution failed"):
         execute_solid(factory("exit 1", name="exit_solid"))
@@ -83,7 +95,9 @@ def test_shell_solid_retcode(shell_defn):
         execute_solid(shell_defn, input_values={"shell_command": "exit 1"})
 
 
-@pytest.mark.parametrize("factory", [create_shell_command_op, create_shell_command_solid])
+@pytest.mark.parametrize(
+    "factory", [create_shell_command_op, create_shell_command_solid]
+)
 def test_shell_command_stream_logs(factory):
     solid = factory('for i in 1 2 3 4 5; do echo "hello ${i}"; done', name="foobar")
 
@@ -100,7 +114,9 @@ def test_shell_command_stream_logs(factory):
             }
         },
     )
-    assert result.output_values == {"result": "hello 1\nhello 2\nhello 3\nhello 4\nhello 5\n"}
+    assert result.output_values == {
+        "result": "hello 1\nhello 2\nhello 3\nhello 4\nhello 5\n"
+    }
 
 
 @pytest.mark.parametrize("factory", [create_shell_script_op, create_shell_script_solid])
@@ -109,7 +125,9 @@ def test_shell_script_solid(factory):
     solid = factory(os.path.join(script_dir, "test.sh"), name="foobar")
     result = execute_solid(
         solid,
-        run_config={"solids": {"foobar": {"config": {"env": {"MY_ENV_VAR": "foobar"}}}}},
+        run_config={
+            "solids": {"foobar": {"config": {"env": {"MY_ENV_VAR": "foobar"}}}}
+        },
     )
     assert result.output_values == {"result": "this is a test message: foobar\n"}
 
@@ -139,7 +157,9 @@ def test_shell_script_solid_no_config_composite(factory):
     assert result.output_values == {"result": "this is a test message: \n"}
 
 
-@pytest.mark.parametrize("factory", [create_shell_command_op, create_shell_command_solid])
+@pytest.mark.parametrize(
+    "factory", [create_shell_command_op, create_shell_command_solid]
+)
 def test_shell_command_solid_overrides(factory):
     solid = factory(
         'echo "this is a test message: $MY_ENV_VAR"',
@@ -149,7 +169,9 @@ def test_shell_command_solid_overrides(factory):
 
     result = execute_solid(
         solid,
-        run_config={"solids": {"foobar": {"config": {"env": {"MY_ENV_VAR": "foobar"}}}}},
+        run_config={
+            "solids": {"foobar": {"config": {"env": {"MY_ENV_VAR": "foobar"}}}}
+        },
     )
     assert result.output_values == {"result": "this is a test message: foobar\n"}
 

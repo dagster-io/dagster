@@ -2,11 +2,12 @@ import datetime
 
 import pendulum
 
-from dagster import Partition, PartitionSetDefinition, ScheduleEvaluationContext
+from dagster import Partition, ScheduleEvaluationContext
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.test_utils import instance_for_test
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils.partitions import date_partition_range
+from dagster._legacy import PartitionSetDefinition
 
 
 def test_multirun_partition_schedule_definition():
@@ -30,7 +31,9 @@ def test_multirun_partition_schedule_definition():
     )
 
     with instance_for_test() as instance:
-        with ScheduleEvaluationContext(instance.get_ref(), pendulum.now("UTC")) as schedule_context:
+        with ScheduleEvaluationContext(
+            instance.get_ref(), pendulum.now("UTC")
+        ) as schedule_context:
             execution_data = multi_run_schedule.evaluate_tick(schedule_context)
             assert isinstance(execution_data, ScheduleExecutionData)
             assert execution_data.run_requests
@@ -46,7 +49,9 @@ def test_multirun_partition_schedule_definition():
     def _invalid_partition_selector(_cotnext, _partition_set_def):
         return [
             Partition(
-                value=create_pendulum_time(year=2019, month=1, day=27, hour=1, minute=25),
+                value=create_pendulum_time(
+                    year=2019, month=1, day=27, hour=1, minute=25
+                ),
                 name="made_up",
             )
         ]
@@ -56,7 +61,9 @@ def test_multirun_partition_schedule_definition():
     )
 
     with instance_for_test() as instance:
-        with ScheduleEvaluationContext(instance.get_ref(), pendulum.now("UTC")) as schedule_context:
+        with ScheduleEvaluationContext(
+            instance.get_ref(), pendulum.now("UTC")
+        ) as schedule_context:
             execution_data = invalid_schedule.evaluate_tick(schedule_context)
             assert isinstance(execution_data, ScheduleExecutionData)
             assert execution_data.skip_message

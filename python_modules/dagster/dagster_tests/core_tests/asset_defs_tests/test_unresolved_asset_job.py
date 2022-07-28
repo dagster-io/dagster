@@ -18,7 +18,6 @@ from dagster import (
     io_manager,
     op,
     repository,
-    schedule_from_partitions,
 )
 from dagster._check import CheckError
 from dagster._core.definitions import asset, multi_asset
@@ -27,10 +26,14 @@ from dagster._core.definitions.partition import (
     StaticPartitionsDefinition,
     static_partitioned_config,
 )
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidSubsetError,
+)
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import instance_for_test
+from dagster._legacy import schedule_from_partitions
 
 
 def _all_asset_keys(result):
@@ -260,10 +263,14 @@ def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
     c_asset = AssetsDefinition.from_graph(c)
 
     _, io_manager_def = asset_aware_io_manager()
-    final_assets = with_resources([a_asset, b_asset, c_asset], {"asset_io_manager": io_manager_def})
+    final_assets = with_resources(
+        [a_asset, b_asset, c_asset], {"asset_io_manager": io_manager_def}
+    )
 
     # run once so values exist to load from
-    define_asset_job("initial").resolve(final_assets, source_assets=[]).execute_in_process()
+    define_asset_job("initial").resolve(
+        final_assets, source_assets=[]
+    ).execute_in_process()
 
     # now build the subset job
     job = define_asset_job("asset_job", selection=job_selection).resolve(
@@ -319,7 +326,11 @@ def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
             "start,a,b,c,d",
             None,
         ),
-        (AssetSelection.keys("c").upstream() | AssetSelection.keys("final"), "b,c,final", None),
+        (
+            AssetSelection.keys("c").upstream() | AssetSelection.keys("final"),
+            "b,c,final",
+            None,
+        ),
         (AssetSelection.all(), "start,a,b,c,d,e,f,final", ["core", "models"]),
         (
             AssetSelection.keys("core/models/a").upstream(depth=1)
@@ -344,7 +355,9 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
     )
 
     # run once so values exist to load from
-    define_asset_job("initial").resolve(final_assets, source_assets=[]).execute_in_process()
+    define_asset_job("initial").resolve(
+        final_assets, source_assets=[]
+    ).execute_in_process()
 
     # now build the subset job
     job = define_asset_job("asset_job", selection=job_selection).resolve(
@@ -381,7 +394,16 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
             "final": 5,
         }
     else:
-        expected_outputs = {"start": 1, "a": 2, "b": 1, "c": 2, "d": 3, "e": 3, "f": 6, "final": 5}
+        expected_outputs = {
+            "start": 1,
+            "a": 2,
+            "b": 1,
+            "c": 2,
+            "d": 3,
+            "e": 3,
+            "f": 6,
+            "final": 5,
+        }
 
     # check if the output values are as we expect
     for output, value in expected_outputs.items():
@@ -428,8 +450,12 @@ def foo():
 
 
 def test_executor_def():
-    job = define_asset_job("with_exec", executor_def=in_process_executor).resolve([foo], [])
-    assert job.executor_def == in_process_executor  # pylint: disable=comparison-with-callable
+    job = define_asset_job("with_exec", executor_def=in_process_executor).resolve(
+        [foo], []
+    )
+    assert (
+        job.executor_def == in_process_executor
+    )  # pylint: disable=comparison-with-callable
 
 
 def test_tags():
@@ -491,7 +517,10 @@ def test_config():
 @pytest.mark.parametrize(
     "selection,config",
     [
-        (AssetSelection.keys("other_config_asset"), {"other_config_asset": {"config": {"val": 3}}}),
+        (
+            AssetSelection.keys("other_config_asset"),
+            {"other_config_asset": {"config": {"val": 3}}},
+        ),
         (
             AssetSelection.keys("other_config_asset").upstream(depth=1),
             {
@@ -519,11 +548,12 @@ def test_subselect_config(selection, config):
     io_manager_obj.db[AssetKey("config_asset")] = 1 + 2
 
     all_assets = with_resources(
-        [foo, config_asset, other_config_asset], resource_defs={"asset_io_manager": io_manager_def}
+        [foo, config_asset, other_config_asset],
+        resource_defs={"asset_io_manager": io_manager_def},
     )
-    job = define_asset_job("config_job", config={"ops": config}, selection=selection).resolve(
-        assets=all_assets, source_assets=[]
-    )
+    job = define_asset_job(
+        "config_job", config={"ops": config}, selection=selection
+    ).resolve(assets=all_assets, source_assets=[])
 
     result = job.execute_in_process()
 
@@ -544,7 +574,9 @@ def test_partitioned_schedule():
 
     schedule = schedule_from_partitions(job)
 
-    spd = schedule.get_partition_set()._partitions_def  # pylint: disable=protected-access
+    spd = (
+        schedule.get_partition_set()._partitions_def
+    )  # pylint: disable=protected-access
     assert spd == partitions_def
 
 
@@ -632,7 +664,9 @@ def test_job_run_request():
     )
 
     for partition_key in ["a", "b", "c", "d"]:
-        run_request = my_job.run_request_for_partition(partition_key=partition_key, run_key=None)
+        run_request = my_job.run_request_for_partition(
+            partition_key=partition_key, run_key=None
+        )
         assert run_request.run_config == partition_fn(partition_key)
         assert run_request.tags
         assert run_request.tags.get(PARTITION_NAME_TAG) == partition_key

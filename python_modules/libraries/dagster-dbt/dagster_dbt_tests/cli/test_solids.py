@@ -11,7 +11,8 @@ from dagster_dbt import (
 )
 from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError
 
-from dagster import configured, execute_solid
+from dagster import configured
+from dagster._legacy import execute_solid
 
 
 class TestDbtCliSolids:
