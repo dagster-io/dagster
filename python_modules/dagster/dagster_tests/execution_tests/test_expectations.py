@@ -1,13 +1,7 @@
 import pytest
 
-from dagster import (
-    DagsterEventType,
-    DagsterInvariantViolationError,
-    ExpectationResult,
-    PipelineDefinition,
-    execute_pipeline,
-)
-from dagster._legacy import solid
+from dagster import DagsterEventType, DagsterInvariantViolationError, ExpectationResult
+from dagster._legacy import PipelineDefinition, execute_pipeline, solid
 
 
 def expt_results_for_compute_step(result, solid_name):
@@ -25,7 +19,8 @@ def test_successful_expectation_in_compute_step():
         yield ExpectationResult(success=True, description="This is always true.")
 
     pipeline_def = PipelineDefinition(
-        name="success_expectation_in_compute_pipeline", solid_defs=[success_expectation_solid]
+        name="success_expectation_in_compute_pipeline",
+        solid_defs=[success_expectation_solid],
     )
 
     result = execute_pipeline(pipeline_def)
@@ -47,7 +42,8 @@ def test_failed_expectation_in_compute_step():
         yield ExpectationResult(success=False, description="This is always false.")
 
     pipeline_def = PipelineDefinition(
-        name="failure_expectation_in_compute_pipeline", solid_defs=[failure_expectation_solid]
+        name="failure_expectation_in_compute_pipeline",
+        solid_defs=[failure_expectation_solid],
     )
 
     result = execute_pipeline(pipeline_def)
@@ -68,7 +64,8 @@ def test_return_expectation_failure():
         return ExpectationResult(success=True, description="This is always true.")
 
     pipeline_def = PipelineDefinition(
-        name="success_expectation_in_compute_pipeline", solid_defs=[return_expectation_failure]
+        name="success_expectation_in_compute_pipeline",
+        solid_defs=[return_expectation_failure],
     )
 
     with pytest.raises(

@@ -12,17 +12,18 @@ from moto import mock_emr
 from pyspark.sql import Row
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
-from dagster import (
+from dagster import reconstructable
+from dagster._core.definitions.no_step_launcher import no_step_launcher
+from dagster._core.errors import DagsterSubprocessError
+from dagster._core.test_utils import instance_for_test
+from dagster._legacy import (
     InputDefinition,
     ModeDefinition,
     OutputDefinition,
     execute_pipeline,
-    reconstructable,
+    pipeline,
+    solid,
 )
-from dagster._core.definitions.no_step_launcher import no_step_launcher
-from dagster._core.errors import DagsterSubprocessError
-from dagster._core.test_utils import instance_for_test
-from dagster._legacy import pipeline, solid
 from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.test import create_test_pipeline_execution_context
 
@@ -44,7 +45,11 @@ BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG = {
 )
 def make_df_solid(context):
     schema = StructType([StructField("name", StringType()), StructField("age", IntegerType())])
-    rows = [Row(name="John", age=19), Row(name="Jennifer", age=29), Row(name="Henry", age=50)]
+    rows = [
+        Row(name="John", age=19),
+        Row(name="Jennifer", age=29),
+        Row(name="Henry", age=50),
+    ]
     return context.resources.pyspark.spark_session.createDataFrame(rows, schema)
 
 
@@ -71,7 +76,10 @@ MODE_DEFS = [
     ),
     ModeDefinition(
         "local",
-        resource_defs={"pyspark_step_launcher": no_step_launcher, "pyspark": pyspark_resource},
+        resource_defs={
+            "pyspark_step_launcher": no_step_launcher,
+            "pyspark": pyspark_resource,
+        },
     ),
 ]
 
@@ -149,7 +157,10 @@ def test_pyspark_emr(mock_is_emr_step_complete, mock_read_events, mock_s3_bucket
                 "pyspark_step_launcher": {
                     "config": deep_merge_dicts(
                         BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG,
-                        {"cluster_id": cluster_id, "staging_bucket": mock_s3_bucket.name},
+                        {
+                            "cluster_id": cluster_id,
+                            "staging_bucket": mock_s3_bucket.name,
+                        },
                     ),
                 }
             },
@@ -175,14 +186,17 @@ def sync_code():
     ]
     if (
         subprocess.call(
-            " ".join(sync_code_command), stdout=sys.stdout, stderr=sys.stderr, shell=True
+            " ".join(sync_code_command),
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+            shell=True,
         )
         != 0
     ):
         raise DagsterSubprocessError("Failed to sync code to EMR")
 
     # Install dagster packages on remote node
-    remote_install_dagster_packages_command = ["sudo", "python3", "-m", "pip", "install"] + [
+    remote_install_dagster_packages_command = ["sudo", "python3", "-m", "pip", "install",] + [
         token
         for package_subpath in ["dagster", "libraries/dagster-pyspark"]
         for token in ["-e", "/home/hadoop/dagster/python_modules/" + package_subpath]

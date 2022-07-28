@@ -4,10 +4,10 @@ from dagster_pandas import DataFrame
 from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
 from google.cloud.bigquery.table import EncryptionConfiguration, TimePartitioning
 
-from dagster import InputDefinition, List, Nothing, OutputDefinition
+from dagster import List, Nothing
 from dagster import _check as check
 from dagster import op
-from dagster._legacy import solid
+from dagster._legacy import InputDefinition, OutputDefinition, solid
 
 from .configs import (
     define_bigquery_create_dataset_config,

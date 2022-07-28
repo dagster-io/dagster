@@ -1,16 +1,7 @@
 from typing import Any, Optional, Set
 
-from dagster import (
-    InputDefinition,
-    ResourceDefinition,
-    SkipReason,
-    SolidDefinition,
-    graph,
-    repository,
-    schedule,
-    sensor,
-)
-from dagster._legacy import solid
+from dagster import ResourceDefinition, SkipReason, graph, repository, schedule, sensor
+from dagster._legacy import InputDefinition, SolidDefinition, solid
 
 
 def make_solid(
@@ -75,7 +66,8 @@ crm_ingest_dev = crm_ingest.to_job(resource_defs={"crm": ResourceDefinition.none
 
 @schedule(
     job=crm_ingest.to_job(
-        name="crm_ingest_instance1", resource_defs={"crm": ResourceDefinition.none_resource()}
+        name="crm_ingest_instance1",
+        resource_defs={"crm": ResourceDefinition.none_resource()},
     ),
     cron_schedule="0 0 * * *",
 )
@@ -85,7 +77,8 @@ def crm_ingest_instance1_schedule(_):
 
 @schedule(
     job=crm_ingest.to_job(
-        name="crm_ingest_instance2", resource_defs={"crm": ResourceDefinition.none_resource()}
+        name="crm_ingest_instance2",
+        resource_defs={"crm": ResourceDefinition.none_resource()},
     ),
     cron_schedule="0 0 * * *",
 )

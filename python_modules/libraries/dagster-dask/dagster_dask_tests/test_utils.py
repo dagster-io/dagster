@@ -1,8 +1,8 @@
 import dask.dataframe as dd
 from dagster_dask import DataFrame
 
-from dagster import InputDefinition, execute_solid, file_relative_path
-from dagster._legacy import solid
+from dagster import execute_solid, file_relative_path
+from dagster._legacy import InputDefinition, solid
 
 
 @solid(input_defs=[InputDefinition(dagster_type=DataFrame, name="input_df")])

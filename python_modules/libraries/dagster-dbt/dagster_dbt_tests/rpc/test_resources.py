@@ -9,8 +9,8 @@ from dagster_dbt import (
     local_dbt_rpc_resource,
 )
 
-from dagster import ModeDefinition, execute_solid
-from dagster._legacy import solid
+from dagster import execute_solid
+from dagster._legacy import ModeDefinition, solid
 
 
 def test_url(client):
@@ -164,7 +164,9 @@ def test_dbt_rpc_resource_status(
     assert isinstance(result.output_value("result"), DbtRpcOutput)
 
 
-def test_dbt_rpc_resource_is_not_waiting(dbt_rpc_server):  # pylint: disable=unused-argument
+def test_dbt_rpc_resource_is_not_waiting(
+    dbt_rpc_server,
+):  # pylint: disable=unused-argument
     @solid(required_resource_keys={"dbt_rpc"})
     def cli_solid(context):
         assert isinstance(context.resources.dbt_rpc, DbtRpcResource)
@@ -187,7 +189,9 @@ def test_dbt_rpc_resource_is_not_waiting(dbt_rpc_server):  # pylint: disable=unu
     assert "request_token" in response
 
 
-def test_dbt_rpc_sync_resource_is_waiting(dbt_rpc_server):  # pylint: disable=unused-argument
+def test_dbt_rpc_sync_resource_is_waiting(
+    dbt_rpc_server,
+):  # pylint: disable=unused-argument
     @solid(required_resource_keys={"dbt_rpc"})
     def cli_solid(context):
         assert isinstance(context.resources.dbt_rpc, DbtRpcSyncResource)

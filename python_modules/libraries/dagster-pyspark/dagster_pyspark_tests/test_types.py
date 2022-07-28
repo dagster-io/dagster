@@ -5,14 +5,8 @@ from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
 from dagster_pyspark import pyspark_resource
 from pyspark.sql import Row, SparkSession
 
-from dagster import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    execute_solid,
-    file_relative_path,
-)
-from dagster._legacy import solid
+from dagster import execute_solid, file_relative_path
+from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, solid
 from dagster._utils import dict_without_keys
 from dagster._utils.test import get_temp_dir
 

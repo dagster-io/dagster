@@ -6,12 +6,10 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DagsterTypeCheckDidNotPass,
     Dict,
-    InputDefinition,
-    OutputDefinition,
     execute_solid,
-    lambda_solid,
     usable_as_dagster_type,
 )
+from dagster._legacy import InputDefinition, OutputDefinition, lambda_solid
 
 
 def test_basic_python_dictionary_output():
@@ -92,7 +90,8 @@ def test_basic_typing_dictionary_output():
 
 def test_basic_typing_dictionary_input():
     @lambda_solid(
-        input_defs=[InputDefinition("data", typing.Dict)], output_def=OutputDefinition(str)
+        input_defs=[InputDefinition("data", typing.Dict)],
+        output_def=OutputDefinition(str),
     )
     def input_dict(data):
         return data["key"]

@@ -1,7 +1,6 @@
-from dagster import InputDefinition, OutputDefinition, composite_solid
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.snap import create_pipeline_snapshot_id, snapshot_from_execution_plan
-from dagster._legacy import pipeline, solid
+from dagster._legacy import InputDefinition, OutputDefinition, composite_solid, pipeline, solid
 from dagster._serdes import serialize_pp
 
 
@@ -19,7 +18,8 @@ def test_create_noop_execution_plan(snapshot):
     snapshot.assert_match(
         serialize_pp(
             snapshot_from_execution_plan(
-                execution_plan, create_pipeline_snapshot_id(noop_pipeline.get_pipeline_snapshot())
+                execution_plan,
+                create_pipeline_snapshot_id(noop_pipeline.get_pipeline_snapshot()),
             )
         )
     )
@@ -43,7 +43,8 @@ def test_create_execution_plan_with_dep(snapshot):
     snapshot.assert_match(
         serialize_pp(
             snapshot_from_execution_plan(
-                execution_plan, create_pipeline_snapshot_id(noop_pipeline.get_pipeline_snapshot())
+                execution_plan,
+                create_pipeline_snapshot_id(noop_pipeline.get_pipeline_snapshot()),
             )
         )
     )
@@ -82,7 +83,8 @@ def test_create_with_composite(snapshot):
     snapshot.assert_match(
         serialize_pp(
             snapshot_from_execution_plan(
-                execution_plan, create_pipeline_snapshot_id(do_comps.get_pipeline_snapshot())
+                execution_plan,
+                create_pipeline_snapshot_id(do_comps.get_pipeline_snapshot()),
             )
         )
     )
@@ -102,7 +104,8 @@ def test_create_noop_execution_plan_with_tags(snapshot):
     snapshot.assert_match(
         serialize_pp(
             snapshot_from_execution_plan(
-                execution_plan, create_pipeline_snapshot_id(noop_pipeline.get_pipeline_snapshot())
+                execution_plan,
+                create_pipeline_snapshot_id(noop_pipeline.get_pipeline_snapshot()),
             )
         )
     )

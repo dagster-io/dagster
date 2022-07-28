@@ -11,7 +11,6 @@ from dagster import (
     StaticPartitionsDefinition,
     VersionStrategy,
     asset,
-    build_assets_job,
     graph,
     job,
     op,
@@ -19,6 +18,7 @@ from dagster import (
 )
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.test_utils import instance_for_test
+from dagster._legacy import build_assets_job
 
 
 @resource

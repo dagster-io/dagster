@@ -2,12 +2,12 @@ import click
 import pytest
 from click.testing import CliRunner
 
-from dagster import execute_pipeline
 from dagster._cli.job import job_launch_command
 from dagster._cli.pipeline import execute_launch_command, pipeline_launch_command
 from dagster._core.errors import DagsterRunAlreadyExists
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.test_utils import new_cwd
+from dagster._legacy import execute_pipeline
 from dagster._utils import file_relative_path
 
 from .test_cli_commands import (

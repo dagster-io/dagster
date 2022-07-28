@@ -1,9 +1,9 @@
 import pytest
 
-from dagster import Field, composite_solid
+from dagster import Field
 from dagster._check import CheckError
 from dagster._config import ConfigAnyInstance
-from dagster._legacy import solid
+from dagster._legacy import composite_solid, solid
 
 
 def test_solid_field_backcompat():
@@ -66,7 +66,8 @@ def test_composite_field_backwards_compat():
         composite_with_int.config_schema.default_value_as_json_str  # pylint: disable=pointless-statement
 
     @composite_solid(
-        config_schema=Field(int, default_value=2, description="bar"), config_fn=lambda _: 4
+        config_schema=Field(int, default_value=2, description="bar"),
+        config_fn=lambda _: 4,
     )
     def composite_kitchen_sink():
         noop()

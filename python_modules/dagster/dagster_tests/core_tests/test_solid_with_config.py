@@ -1,16 +1,14 @@
 import pytest
 
-from dagster import (
-    DagsterInvalidConfigError,
-    Field,
+from dagster import DagsterInvalidConfigError, Field, String, root_input_manager
+from dagster._legacy import (
     InputDefinition,
     ModeDefinition,
-    String,
     composite_solid,
     execute_pipeline,
-    root_input_manager,
+    pipeline,
+    solid,
 )
-from dagster._legacy import pipeline, solid
 
 
 def test_basic_solid_with_config():
@@ -30,7 +28,8 @@ def test_basic_solid_with_config():
         solid_with_context()
 
     execute_pipeline(
-        pipeline_def, {"solids": {"solid_with_context": {"config": {"some_config": "foo"}}}}
+        pipeline_def,
+        {"solids": {"solid_with_context": {"config": {"some_config": "foo"}}}},
     )
 
     assert "yep" in did_get
@@ -56,7 +55,8 @@ def test_config_arg_mismatch():
 
     with pytest.raises(DagsterInvalidConfigError):
         execute_pipeline(
-            pipeline_def, {"solids": {"solid_with_context": {"config": {"some_config": 1}}}}
+            pipeline_def,
+            {"solids": {"solid_with_context": {"config": {"some_config": 1}}}},
         )
 
 
