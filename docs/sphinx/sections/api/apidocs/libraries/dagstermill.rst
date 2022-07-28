@@ -3,8 +3,6 @@ Dagstermill
 
 .. currentmodule:: dagstermill
 
-.. autofunction:: define_dagstermill_solid
-
 .. autofunction:: define_dagstermill_op
 
 .. autofunction:: local_output_notebook_io_manager

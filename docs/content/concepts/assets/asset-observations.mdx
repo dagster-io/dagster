@@ -55,7 +55,7 @@ height={917}
 There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject object="MetadataEntry" /> class. Each observation event optionally takes a dictionary of metadata entries that are then displayed in the event log and the [Asset Details](/concepts/dagit/dagit#asset-details) page. Check our API docs for <PyObject object="MetadataEntry" /> for more details on the types of event metadata available.
 
 ```python file=concepts/assets/observations.py startafter=start_observation_asset_marker_2 endbefore=end_observation_asset_marker_2
-from dagster import op, AssetObservation, EventMetadata
+from dagster import op, AssetObservation, MetadataValue
 
 
 @op
@@ -67,8 +67,8 @@ def observes_dataset_op(context):
             asset_key="my_dataset",
             metadata={
                 "text_metadata": "Text-based metadata for this event",
-                "path": EventMetadata.path(remote_storage_path),
-                "dashboard_url": EventMetadata.url(
+                "path": MetadataValue.path(remote_storage_path),
+                "dashboard_url": MetadataValue.url(
                     "http://mycoolsite.com/url_for_my_data"
                 ),
                 "size (bytes)": calculate_bytes(df),

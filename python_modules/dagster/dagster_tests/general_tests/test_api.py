@@ -23,9 +23,12 @@ def test_all():
 
 
 def test_deprecated_imports():
-    with pytest.warns(DeprecationWarning, match=re.escape('"EventMetadataEntry" is deprecated')):
-        from dagster import EventMetadataEntry, MetadataEntry
-    assert EventMetadataEntry is MetadataEntry
+    with pytest.warns(
+        DeprecationWarning, match=re.escape("dagster_type_materializer is deprecated")
+    ):
+        from dagster import dagster_type_materializer  # pylint: disable=unused-import
+    with pytest.warns(DeprecationWarning, match=re.escape("DagsterTypeMaterializer is deprecated")):
+        from dagster import DagsterTypeMaterializer  # pylint: disable=unused-import
 
 
 @pytest.fixture

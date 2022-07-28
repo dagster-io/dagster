@@ -52,7 +52,7 @@ def partitioned_dataset_op(context):
 
 
 # start_observation_asset_marker_2
-from dagster import op, AssetObservation, EventMetadata
+from dagster import op, AssetObservation, MetadataValue
 
 
 @op
@@ -64,8 +64,8 @@ def observes_dataset_op(context):
             asset_key="my_dataset",
             metadata={
                 "text_metadata": "Text-based metadata for this event",
-                "path": EventMetadata.path(remote_storage_path),
-                "dashboard_url": EventMetadata.url(
+                "path": MetadataValue.path(remote_storage_path),
+                "dashboard_url": MetadataValue.url(
                     "http://mycoolsite.com/url_for_my_data"
                 ),
                 "size (bytes)": calculate_bytes(df),
