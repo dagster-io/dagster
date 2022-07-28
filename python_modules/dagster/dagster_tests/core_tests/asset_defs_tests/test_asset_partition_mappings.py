@@ -14,6 +14,7 @@ from dagster import (
     Out,
     Output,
     StaticPartitionsDefinition,
+    PartitionsDefinition,
     graph,
     op,
 )
@@ -26,7 +27,6 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindow
-from dagster._legacy import PartitionsDefinition
 
 
 def test_filter_mapping_partitions_dep():
