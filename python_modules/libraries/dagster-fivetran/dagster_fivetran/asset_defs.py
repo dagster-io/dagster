@@ -44,7 +44,7 @@ def build_fivetran_assets(
 
     .. code-block:: python
 
-        from dagster import AssetKey, build_assets_job
+        from dagster import AssetKey, repository, with_resources
 
         from dagster_fivetran import fivetran_resource
         from dagster_fivetran.assets import build_fivetran_assets
@@ -61,11 +61,12 @@ def build_fivetran_assets(
             table_names=["schema1.table1", "schema2.table2"],
         ])
 
-        my_fivetran_job = build_assets_job(
-            "my_fivetran_job",
-            assets=[fivetran_assets],
-            resource_defs={"fivetran": my_fivetran_resource}
-        )
+        @repository
+        def repo():
+            return with_resources(
+                fivetran_assets,
+                resource_defs={"fivetran": my_fivetran_resource},
+            )
 
     """
 
