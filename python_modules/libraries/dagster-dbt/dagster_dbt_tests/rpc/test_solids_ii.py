@@ -1,9 +1,8 @@
 import responses
-from dagster_dbt import (
-    DbtRpcOutput,
+from dagster_dbt import DbtRpcOutput, dbt_rpc_resource
+from dagster_dbt.rpc.solids import (
     dbt_rpc_docs_generate,
     dbt_rpc_docs_generate_and_wait,
-    dbt_rpc_resource,
     dbt_rpc_run,
     dbt_rpc_run_and_wait,
     dbt_rpc_run_operation,
