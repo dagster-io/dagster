@@ -1,7 +1,7 @@
 from dagster._core.utils import check_dagster_package_version
 
 from .asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
-from .cli import DbtCliOutput, DbtCliResource
+from .cli import DbtCliOutput, DbtCliResource, dbt_cli_resource
 from .cloud import DbtCloudOutput, DbtCloudResourceV2, dbt_cloud_resource, dbt_cloud_run_op
 from .dbt_resource import DbtResource
 from .errors import (
@@ -28,6 +28,8 @@ from .rpc import (
     DbtRpcResource,
     DbtRpcSyncResource,
     local_dbt_rpc_resource,
+    dbt_rpc_resource,
+    dbt_rpc_sync_resource,
 )
 from .types import DbtOutput
 from .version import __version__
@@ -39,6 +41,9 @@ __all__ = [
     "DagsterDbtCliFatalRuntimeError",
     "DagsterDbtCliHandledRuntimeError",
     "DagsterDbtCliOutputsNotFoundError",
+    "dbt_cli_resource",
+    "dbt_rpc_resource",
+    "dbt_rpc_sync_resource",
     "DagsterDbtCliUnexpectedOutputError",
     "DagsterDbtError",
     "DagsterDbtRpcUnexpectedPollOutputError",
