@@ -4,7 +4,7 @@ import string
 import sys
 import tempfile
 import time
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 
 import pendulum
 import pytest
@@ -316,15 +316,11 @@ def the_repo():
     ]
 
 
-@pipeline
-def the_other_pipeline():
-    the_solid()
-
-
 @repository
 def the_other_repo():
     return [
-        the_other_pipeline,
+        the_pipeline,
+        run_key_sensor,
     ]
 
 
@@ -2496,6 +2492,88 @@ def test_sensor_custom_purge(executor):
         with pendulum.test(freeze_datetime):
             # create another tick, but the first tick should be purged
             evaluate_sensors(instance, workspace, executor)
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
+            assert len(ticks) == 2
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_repository_namespacing(executor):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(
+            year=2019,
+            month=2,
+            day=27,
+            hour=23,
+            minute=59,
+            second=59,
+            tz="UTC",
+        ),
+        "US/Central",
+    )
+    with ExitStack() as exit_stack:
+        instance = exit_stack.enter_context(instance_for_test())
+        full_workspace = exit_stack.enter_context(
+            create_test_daemon_workspace(
+                workspace_load_target(attribute=None),  # load all repos
+                instance=instance,
+            )
+        )
+
+        full_location = next(
+            iter(full_workspace.get_workspace_snapshot().values())
+        ).repository_location
+        external_repo = full_location.get_repository("the_repo")
+        other_repo = full_location.get_repository("the_other_repo")
+
+        # stop always on sensor
+        status_in_code_repo = full_location.get_repository("the_status_in_code_repo")
+        running_sensor = status_in_code_repo.get_external_sensor("always_running_sensor")
+        instance.stop_sensor(
+            running_sensor.get_external_origin_id(), running_sensor.selector_id, running_sensor
+        )
+
+        external_sensor = external_repo.get_external_sensor("run_key_sensor")
+        other_sensor = other_repo.get_external_sensor("run_key_sensor")
+
+        with pendulum.test(freeze_datetime):
+            instance.start_sensor(external_sensor)
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
+            assert len(ticks) == 0
+
+            instance.start_sensor(other_sensor)
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_ticks(
+                other_sensor.get_external_origin_id(), other_sensor.selector_id
+            )
+            assert len(ticks) == 0
+
+            evaluate_sensors(instance, full_workspace, executor)
+
+            wait_for_all_runs_to_start(instance)
+
+            assert instance.get_runs_count() == 2  # both copies of the sensor
+
+            ticks = instance.get_ticks(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
+            assert len(ticks) == 1
+            assert ticks[0].status == TickStatus.SUCCESS
+
+            ticks = instance.get_ticks(
+                other_sensor.get_external_origin_id(), other_sensor.selector_id
+            )
+            assert len(ticks) == 1
+
+        # run again (after 30 seconds), to ensure that the run key maintains idempotence
+        freeze_datetime = freeze_datetime.add(seconds=30)
+        with pendulum.test(freeze_datetime):
+            evaluate_sensors(instance, full_workspace, executor)
+            assert instance.get_runs_count() == 2  # still 2
             ticks = instance.get_ticks(
                 external_sensor.get_external_origin_id(), external_sensor.selector_id
             )
