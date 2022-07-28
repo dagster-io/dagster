@@ -26,6 +26,10 @@ class InputContext:
     """
     The ``context`` object available to the load_input method of :py:class:`RootInputManager`.
 
+    Users should not instantiate this object directly. In order to construct
+    an `InputContext` for testing an IO Manager's `load_input` method, use
+    :py:func:`dagster.build_input_context`.
+
     Attributes:
         name (Optional[str]): The name of the input that we're loading.
         pipeline_name (Optional[str]): The name of the pipeline.
@@ -43,6 +47,17 @@ class InputContext:
             input manager. If using the :py:func:`@root_input_manager` decorator, these resources
             correspond to those requested with the `required_resource_keys` parameter.
         op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
+
+    Example:
+
+    .. code-block:: python
+
+        from dagster import IOManager, InputContext
+
+        class MyIOManager(IOManager):
+            def load_input(self, context: InputContext):
+                ...
+
     """
 
     def __init__(

@@ -45,6 +45,45 @@ RUN_ID_PLACEHOLDER = "__EPHEMERAL_RUN_ID"
 
 
 class OutputContext:
+    """
+    The context object that is available to the `handle_output` method of an :py:class:`IOManager`.
+
+    Users should not instantiate this object directly. To construct an
+    `OutputContext` for testing an IO Manager's `handle_output` method, use
+    :py:func:`dagster.build_output_context`.
+
+    Attributes:
+        step_key (Optional[str]): The step_key for the compute step that produced the output.
+        name (Optional[str]): The name of the output that produced the output.
+        pipeline_name (Optional[str]): The name of the pipeline definition.
+        run_id (Optional[str]): The id of the run that produced the output.
+        metadata (Optional[Mapping[str, RawMetadataValue]]): A dict of the metadata that is assigned to the
+            OutputDefinition that produced the output.
+        mapping_key (Optional[str]): The key that identifies a unique mapped output. None for regular outputs.
+        config (Optional[Any]): The configuration for the output.
+        solid_def (Optional[SolidDefinition]): The definition of the solid that produced the output.
+        dagster_type (Optional[DagsterType]): The type of this output.
+        log (Optional[DagsterLogManager]): The log manager to use for this output.
+        version (Optional[str]): (Experimental) The version of the output.
+        resource_config (Optional[Mapping[str, Any]]): The config associated with the resource that
+            initializes the RootInputManager.
+        resources (Optional[Resources]): The resources required by the output manager, specified by the
+            `required_resource_keys` parameter.
+        op_def (Optional[OpDefinition]): The definition of the op that produced the output.
+        asset_info: Optional[AssetOutputInfo]: (Experimental) Asset info corresponding to the
+            output.
+
+    Example:
+
+    .. code-block:: python
+
+        from dagster import IOManager, OutputContext
+
+        class MyIOManager(IOManager):
+            def handle_output(self, context: OutputContext, obj):
+                ...
+
+    """
 
     _step_key: Optional[str]
     _name: Optional[str]
@@ -68,31 +107,6 @@ class OutputContext:
     _events: List["DagsterEvent"]
     _user_events: List[Union[AssetMaterialization, AssetObservation, Materialization]]
     _metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]]
-
-    """
-    The context object that is available to the `handle_output` method of an :py:class:`IOManager`.
-
-    Attributes:
-        step_key (Optional[str]): The step_key for the compute step that produced the output.
-        name (Optional[str]): The name of the output that produced the output.
-        pipeline_name (Optional[str]): The name of the pipeline definition.
-        run_id (Optional[str]): The id of the run that produced the output.
-        metadata (Optional[Mapping[str, RawMetadataValue]]): A dict of the metadata that is assigned to the
-            OutputDefinition that produced the output.
-        mapping_key (Optional[str]): The key that identifies a unique mapped output. None for regular outputs.
-        config (Optional[Any]): The configuration for the output.
-        solid_def (Optional[SolidDefinition]): The definition of the solid that produced the output.
-        dagster_type (Optional[DagsterType]): The type of this output.
-        log (Optional[DagsterLogManager]): The log manager to use for this output.
-        version (Optional[str]): (Experimental) The version of the output.
-        resource_config (Optional[Mapping[str, Any]]): The config associated with the resource that
-            initializes the RootInputManager.
-        resources (Optional[Resources]): The resources required by the output manager, specified by the
-            `required_resource_keys` parameter.
-        op_def (Optional[OpDefinition]): The definition of the op that produced the output.
-        asset_info: Optional[AssetOutputInfo]: (Experimental) Asset info corresponding to the
-            output.
-    """
 
     def __init__(
         self,
