@@ -415,7 +415,6 @@ def dataframe_loader(_context, config):
 
 
 def _innermost_list2tuple(data):
-
     def converted(x):
         if not any(isinstance(a, list) for a in x):
             return tuple(x)
