@@ -5,9 +5,7 @@ description: Develop and test in the cloud.
 
 # Using Branch Deployments with GitHub Actions
 
-<Note>
-  This guide is applicable to Dagster Cloud.
-</Note>
+<Note>This guide is applicable to Dagster Cloud.</Note>
 
 In this guide, we'll walk you through setting up [Branch Deployments](/dagster-cloud/developing-testing/branch-deployments) with GitHub Actions.
 
@@ -48,7 +46,7 @@ While you can use your existing production agent, we recommend creating a dedica
 
 1. **Create a new Amazon ECS agent**. [Click here to spin up the agent](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3.amazonaws.com/dagster.cloud/cloudformation/ecs-agent-branch-deployments.yaml) using our CloudFormation template.
 
-    **Note**: Creating the CloudFormation stack may take a few minutes; refreshing the [AWS console Stacks page](https://console.aws.amazon.com/cloudformation/home#/stacks) will show its status. For more information, see the [ECS agent setup guide](/dagster-cloud/deployment/agents/amazon-ecs).
+   **Note**: Creating the CloudFormation stack may take a few minutes; refreshing the [AWS console Stacks page](https://console.aws.amazon.com/cloudformation/home#/stacks) will show its status. For more information, see the [ECS agent setup guide](/dagster-cloud/deployment/agents/amazon-ecs).
 
 2. **Create a private [Amazon Elastic Registry (ECR) repository](https://console.aws.amazon.com/ecr/repositories).** Refer to the [AWS ECR documentation](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html) for instructions.
 
@@ -56,15 +54,26 @@ While you can use your existing production agent, we recommend creating a dedica
 
    In the list, locate the repository and its **URI**:
 
-   ![Highlighted repository URI in the AWS ECR console](/images/dagster-cloud/developing-testing/branch-deployments/aws-ecr-uri.png)
+   <Image
+   alt="Highlighted repository URI in the AWS ECR console"
+   src="/images/dagster-cloud/developing-testing/branch-deployments/aws-ecr-uri.png"
+   width={1086}
+   height={159}
+   />
 
 3. [**Create an IAM user.**](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html) This user must:
+
    - Have push access to the ECR repository, and
    - Have programmatic access to AWS using an [access key](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html)
 
    After the user is created, save the **Access key ID** and **Secret access key** values shown on the confirmation page:
 
-   ![Highlighted repository URI in the AWS ECR console](/images/dagster-cloud/developing-testing/branch-deployments/aws-iam-user-keys.png)
+   <Image
+   alt="Highlighted repository URI in the AWS ECR console"
+   src="/images/dagster-cloud/developing-testing/branch-deployments/aws-iam-user-keys.png"
+   width={999}
+   height={420}
+   />
 
 </details>
 
@@ -79,27 +88,27 @@ While you can use your existing production agent, we recommend creating a dedica
 
    For example:
 
-    ```yaml
-    # dagster.yaml
+   ```yaml
+   # dagster.yaml
 
-    instance_class:
-      module: dagster_cloud.instance
-      class: DagsterCloudAgentInstance
+   instance_class:
+     module: dagster_cloud.instance
+     class: DagsterCloudAgentInstance
 
-    dagster_cloud_api:
-      agent_token: <YOUR_AGENT_TOKEN>
-      branch_deployments: true   ## true enables branch deployments
+   dagster_cloud_api:
+     agent_token: <YOUR_AGENT_TOKEN>
+     branch_deployments: true ## true enables branch deployments
 
-    user_code_launcher:
-      module: dagster_cloud.workspace.docker
-      class: DockerUserCodeLauncher
-      config:
-        networks:
-          - dagster_cloud_agent
-        server_ttl:
-          enabled: true
-          ttl_seconds: 7200 #2 hours
-    ```
+   user_code_launcher:
+     module: dagster_cloud.workspace.docker
+     class: DockerUserCodeLauncher
+     config:
+       networks:
+         - dagster_cloud_agent
+       server_ttl:
+         enabled: true
+         ttl_seconds: 7200 #2 hours
+   ```
 
 </details>
 
@@ -110,16 +119,16 @@ While you can use your existing production agent, we recommend creating a dedica
 
 2. After the agent is set up, modify your Helm values file to include the following:
 
-    ```yaml
-    dagsterCloud:
-      branchDeployments: true
-    ---
-    workspace:
-      serverTTL:
-        enabled: true
-        ttlSeconds: 7200
-    ```
-    
+   ```yaml
+   dagsterCloud:
+     branchDeployments: true
+   ---
+   workspace:
+     serverTTL:
+       enabled: true
+       ttlSeconds: 7200
+   ```
+
 </details>
 
 ---
@@ -178,7 +187,12 @@ Repeat steps 3-6 for each of the secrets required by your agent type:
 
 The **Actions secrets** page should look like the following:
 
-![Configured GitHub Actions secrets for an AWS ECS agent](/images/dagster-cloud/developing-testing/branch-deployments/github-aws-ecr.png)
+<Image
+alt="Configured GitHub Actions secrets for an AWS ECS agent"
+src="/images/dagster-cloud/developing-testing/branch-deployments/github-aws-ecr.png"
+width={1091}
+height={623}
+/>
 
 </details>
 
@@ -192,12 +206,19 @@ The **Actions secrets** page should look like the following:
 
 The **Actions secrets** page should look like the following:
 
-![Required GitHub Actions secrets for a Docker agent](/images/dagster-cloud/developing-testing/branch-deployments/github-dockerhub.png)
+<Image
+alt="Required GitHub Actions secrets for a Docker agent"
+src="/images/dagster-cloud/developing-testing/branch-deployments/github-dockerhub.png"
+width={790}
+height={318}
+/>
 
 </details>
 
 <details>
-  <summary><strong>KUBERNETES AGENTS</strong></summary>
+  <summary>
+    <strong>KUBERNETES AGENTS</strong>
+  </summary>
 </details>
 
 <!--
@@ -213,13 +234,13 @@ In the `.github/workflows/deploy.yml` and `.github/workflows/branch_deployments.
 For example, for an Amazon ECR registry, we'd uncomment the following portion of the workflow files:
 
 ```yaml
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: YOUR_REGISTRY_REGION
+steps:
+  - name: Configure AWS credentials
+    uses: aws-actions/configure-aws-credentials@v1
+    with:
+      aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      aws-region: YOUR_REGISTRY_REGION
 ```
 
 Save and commit the files to the repository.
@@ -230,8 +251,13 @@ The last step is to verify that the Action runs successfully.
 
 1. In the repository, click the **Actions** tab.
 2. In the list of workflows, locate the latest branch deployment run. For example:
-   
-   ![A successful run for a Branch Deployment Action](/images/dagster-cloud/developing-testing/branch-deployments/github-verify-run.png)
+
+   <Image
+   alt="A successful run for a Branch Deployment Action"
+   src="/images/dagster-cloud/developing-testing/branch-deployments/github-verify-run.png"
+   width={1263}
+   height={651}
+   />
 
 If the run finished successfully, that's it!
 
@@ -248,14 +274,29 @@ Now that Branch Deployments are configured, you can check out the preview in Dag
 
 Every pull request in the repository contains a **View in Cloud** link:
 
-![TODO](/images/dagster-cloud/developing-testing/branch-deployments/github-cloud-preview-link.png)
+<Image
+alt="TODO"
+src="/images/dagster-cloud/developing-testing/branch-deployments/github-cloud-preview-link.png"
+width={922}
+height={521}
+/>
 
 Clicking the link will open a branch deployment - or a preview of the changes - in Dagster Cloud:
 
-![TODO](/images/dagster-cloud/developing-testing/branch-deployments/github-preview-link-click.gif)
+<Image
+alt="TODO"
+src="/images/dagster-cloud/developing-testing/branch-deployments/github-preview-link-click.gif"
+width={640}
+height={480}
+/>
 
 ### Directly in Dagster Cloud
 
 You can also access branch deployments directly in Dagster Cloud from the **deployment switcher**:
 
-![TODO](/images/dagster-cloud/developing-testing/branch-deployments/dagit-deployment-switcher.png)
+<Image
+alt="TODO"
+src="/images/dagster-cloud/developing-testing/branch-deployments/dagit-deployment-switcher.png"
+width={563}
+height={311}
+/>
