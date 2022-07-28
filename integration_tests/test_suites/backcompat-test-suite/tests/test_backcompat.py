@@ -136,7 +136,7 @@ def docker_service_up(docker_compose_file, build_args=None):
 
     try:
         subprocess.check_output(["docker-compose", "-f", docker_compose_file, "stop"])
-        # subprocess.check_output(["docker-compose", "-f", docker_compose_file, "rm", "-f"])
+        subprocess.check_output(["docker-compose", "-f", docker_compose_file, "rm", "-f"])
     except subprocess.CalledProcessError:
         pass
 
