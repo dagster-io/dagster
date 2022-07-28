@@ -1,7 +1,8 @@
 # pylint: disable=unused-argument
 import pytest
+
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._legacy import execute_solid, InputDefinition, lambda_solid, solid
+from dagster._legacy import InputDefinition, execute_solid, lambda_solid, solid
 
 
 def test_solid_input_arguments():
@@ -102,20 +103,14 @@ def test_execution_cases():
     def underscore_inputs(x, _):
         return x + _
 
-    assert (
-        execute_solid(underscore_inputs, input_values={"x": 5, "_": 6}).output_value()
-        == 11
-    )
+    assert execute_solid(underscore_inputs, input_values={"x": 5, "_": 6}).output_value() == 11
 
     @solid
     def context_underscore_inputs(context, x, _):
         return x + _
 
     assert (
-        execute_solid(
-            context_underscore_inputs, input_values={"x": 5, "_": 6}
-        ).output_value()
-        == 11
+        execute_solid(context_underscore_inputs, input_values={"x": 5, "_": 6}).output_value() == 11
     )
 
     @solid

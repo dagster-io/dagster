@@ -7,12 +7,11 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from dagster_github import github_resource
 from dagster_github.resources import GithubResource
-from dagster._legacy import execute_solid, ModeDefinition, solid
+
+from dagster._legacy import ModeDefinition, execute_solid, solid
 
 FAKE_PRIVATE_RSA_KEY = (
-    rsa.generate_private_key(
-        public_exponent=65537, key_size=1024, backend=default_backend()
-    )
+    rsa.generate_private_key(public_exponent=65537, key_size=1024, backend=default_backend())
     .private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.TraditionalOpenSSL,
@@ -196,9 +195,7 @@ def test_github_resource_execute():
 @responses.activate
 def test_github_resource_token_expiration():
     class GithubResourceTesting(GithubResource):
-        def __init__(
-            self, client, app_id, app_private_rsa_key, default_installation_id
-        ):
+        def __init__(self, client, app_id, app_private_rsa_key, default_installation_id):
             GithubResource.__init__(
                 self,
                 client=client,

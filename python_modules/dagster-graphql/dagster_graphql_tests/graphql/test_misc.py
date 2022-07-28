@@ -12,11 +12,11 @@ from dagster import (
     repository,
 )
 from dagster._legacy import (
-    dagster_type_materializer,
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
     SolidDefinition,
+    dagster_type_materializer,
 )
 
 from .production_query import PRODUCTION_QUERY
@@ -25,10 +25,7 @@ from .production_query import PRODUCTION_QUERY
 @dagster_type_loader(str)
 def df_input_schema(_context, path):
     with open(path, "r", encoding="utf8") as fd:
-        return [
-            OrderedDict(sorted(x.items(), key=lambda x: x[0]))
-            for x in csv.DictReader(fd)
-        ]
+        return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
 @dagster_type_materializer(str)
@@ -143,12 +140,8 @@ query TypeRenderQuery($selector: PipelineSelector!) {
 
 
 def test_type_rendering(graphql_context):
-    selector = infer_pipeline_selector(
-        graphql_context, "more_complicated_nested_config"
-    )
-    result = execute_dagster_graphql(
-        graphql_context, TYPE_RENDER_QUERY, {"selector": selector}
-    )
+    selector = infer_pipeline_selector(graphql_context, "more_complicated_nested_config")
+    result = execute_dagster_graphql(graphql_context, TYPE_RENDER_QUERY, {"selector": selector})
     assert not result.errors
     assert result.data
 

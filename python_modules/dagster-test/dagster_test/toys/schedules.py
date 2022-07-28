@@ -3,7 +3,6 @@ from collections import defaultdict
 
 from dagster import ScheduleEvaluationContext
 from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
-from dagster._utils.partitions import date_partition_range
 from dagster._legacy import (
     PartitionSetDefinition,
     daily_schedule,
@@ -11,6 +10,7 @@ from dagster._legacy import (
     monthly_schedule,
     weekly_schedule,
 )
+from dagster._utils.partitions import date_partition_range
 
 
 def _fetch_runs_by_partition(instance, partition_set_def, status_filters=None):
@@ -70,13 +70,9 @@ def backfill_should_execute(context, partition_set_def, retry_failed=False):
             if run.status == PipelineRunStatus.STARTED:
                 return False  # would be nice to return a reason here
 
-    available_partitions = set(
-        [partition.name for partition in partition_set_def.get_partitions()]
-    )
+    available_partitions = set([partition.name for partition in partition_set_def.get_partitions()])
     satisfied_partitions = set(runs_by_partition.keys())
-    is_remaining_partitions = bool(
-        available_partitions.difference(satisfied_partitions)
-    )
+    is_remaining_partitions = bool(available_partitions.difference(satisfied_partitions))
     return is_remaining_partitions
 
 

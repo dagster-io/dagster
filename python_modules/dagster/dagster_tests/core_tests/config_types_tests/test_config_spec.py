@@ -136,9 +136,7 @@ def test_bad_solid_config_argument_map_bad_value():
         def _bad_map(_):
             pass
 
-    assert "Map must have a single value and contain a valid type" in str(
-        exc_info.value
-    )
+    assert "Map must have a single value and contain a valid type" in str(exc_info.value)
 
 
 def test_bad_solid_config_argument_list_bad_item():

@@ -3,12 +3,7 @@ import typing
 import pytest
 
 from dagster import DagsterTypeCheckDidNotPass
-from dagster._legacy import (
-    execute_solid,
-    InputDefinition,
-    OutputDefinition,
-    lambda_solid,
-)
+from dagster._legacy import InputDefinition, OutputDefinition, execute_solid, lambda_solid
 
 
 def test_basic_list_output_pass():
@@ -138,9 +133,7 @@ def test_typing_list_of_list_of_int_input_pass():
     def ingest_list(alist):
         return alist
 
-    assert execute_solid(
-        ingest_list, input_values={"alist": [[1, 2], [3, 4]]}
-    ).output_value() == [
+    assert execute_solid(ingest_list, input_values={"alist": [[1, 2], [3, 4]]}).output_value() == [
         [1, 2],
         [3, 4],
     ]

@@ -65,9 +65,7 @@ def test_incorrect_cron_schedule_invocation():
         DagsterInvalidInvocationError,
         match="Schedule invocation expected argument '_'.",
     ):
-        basic_schedule(
-            foo=None
-        )  # pylint: disable=no-value-for-parameter,unexpected-keyword-arg
+        basic_schedule(foo=None)  # pylint: disable=no-value-for-parameter,unexpected-keyword-arg
 
 
 def partition_schedule_factory():

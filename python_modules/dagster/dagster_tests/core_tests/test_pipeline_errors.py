@@ -11,12 +11,12 @@ from dagster import (
 )
 from dagster import _check as check
 from dagster._legacy import (
-    execute_solid,
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
     SolidDefinition,
     execute_pipeline,
+    execute_solid,
     lambda_solid,
     pipeline,
     solid,
@@ -173,9 +173,7 @@ def test_yield_non_result():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape(
-            'Compute function for solid "yield_wrong_thing" yielded a value of type <'
-        )
+        match=re.escape('Compute function for solid "yield_wrong_thing" yielded a value of type <')
         + r"(class|type)"
         + re.escape(
             " 'str'> rather than an instance of Output, AssetMaterialization, or ExpectationResult."
@@ -242,6 +240,4 @@ def test_explicit_failure():
         execute_pipeline(pipe)
 
     assert exc_info.value.description == "Always fails."
-    assert exc_info.value.metadata_entries == [
-        MetadataEntry("always_fails", value="why")
-    ]
+    assert exc_info.value.metadata_entries == [MetadataEntry("always_fails", value="why")]

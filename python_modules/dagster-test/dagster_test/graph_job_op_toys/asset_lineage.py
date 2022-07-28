@@ -109,8 +109,7 @@ def download_data():
     data = {
         "user_id": [user_id() for i in range(n_entries)],
         "action_type": [
-            random.choices(["story", "comment"], [0.15, 0.85])[0]
-            for i in range(n_entries)
+            random.choices(["story", "comment"], [0.15, 0.85])[0] for i in range(n_entries)
         ],
         "score": [random.randint(0, 10000) for i in range(n_entries)],
     }
@@ -120,12 +119,8 @@ def download_data():
 
 @op(
     out={
-        "reviews": Out(
-            io_manager_key="my_db_io_manager", metadata={"table_name": "reviews"}
-        ),
-        "comments": Out(
-            io_manager_key="my_db_io_manager", metadata={"table_name": "comments"}
-        ),
+        "reviews": Out(io_manager_key="my_db_io_manager", metadata={"table_name": "reviews"}),
+        "comments": Out(io_manager_key="my_db_io_manager", metadata={"table_name": "comments"}),
     }
 )
 def split_action_types(df):
@@ -179,6 +174,4 @@ def asset_lineage():
     daily_top_action(top_10_reviews(reviews), top_10_comments(comments))
 
 
-asset_lineage_job = asset_lineage.to_job(
-    resource_defs={"my_db_io_manager": my_db_io_manager}
-)
+asset_lineage_job = asset_lineage.to_job(resource_defs={"my_db_io_manager": my_db_io_manager})

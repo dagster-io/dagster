@@ -151,9 +151,7 @@ def iterate_metadata_entries(metadata_entries):
         else:
             # skip rest for now
             check.not_implemented(
-                "{} unsupported metadata entry for now".format(
-                    type(metadata_entry.entry_data)
-                )
+                "{} unsupported metadata entry for now".format(type(metadata_entry.entry_data))
             )
 
 
@@ -241,9 +239,7 @@ def from_dagster_event_record(event_record, pipeline_name):
         )
     elif dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
         asset_lineage = dagster_event.step_materialization_data.asset_lineage
-        return GrapheneMaterializationEvent(
-            event=event_record, assetLineage=asset_lineage
-        )
+        return GrapheneMaterializationEvent(event=event_record, assetLineage=asset_lineage)
     elif dagster_event.event_type == DagsterEventType.ASSET_OBSERVATION:
         return GrapheneObservationEvent(
             event=event_record,
@@ -310,10 +306,7 @@ def from_dagster_event_record(event_record, pipeline_name):
         return GrapheneRunFailureEvent(
             pipelineName=pipeline_name,
             error=GraphenePythonError(dagster_event.pipeline_failure_data.error)
-            if (
-                dagster_event.pipeline_failure_data
-                and dagster_event.pipeline_failure_data.error
-            )
+            if (dagster_event.pipeline_failure_data and dagster_event.pipeline_failure_data.error)
             else None,
             **basic_params,
         )
@@ -346,14 +339,10 @@ def from_dagster_event_record(event_record, pipeline_name):
         )
     elif dagster_event.event_type == DagsterEventType.OBJECT_STORE_OPERATION:
         operation_result = dagster_event.event_specific_data
-        return GrapheneObjectStoreOperationEvent(
-            operation_result=operation_result, **basic_params
-        )
+        return GrapheneObjectStoreOperationEvent(operation_result=operation_result, **basic_params)
     elif dagster_event.event_type == DagsterEventType.ENGINE_EVENT:
         return GrapheneEngineEvent(
-            metadataEntries=_to_metadata_entries(
-                dagster_event.engine_event_data.metadata_entries
-            ),
+            metadataEntries=_to_metadata_entries(dagster_event.engine_event_data.metadata_entries),
             error=GraphenePythonError(dagster_event.engine_event_data.error)
             if dagster_event.engine_event_data.error
             else None,
@@ -379,45 +368,35 @@ def from_dagster_event_record(event_record, pipeline_name):
         )
     elif dagster_event.event_type == DagsterEventType.STEP_WORKER_STARTING:
         return GrapheneStepWorkerStartingEvent(
-            metadataEntries=_to_metadata_entries(
-                dagster_event.engine_event_data.metadata_entries
-            ),
+            metadataEntries=_to_metadata_entries(dagster_event.engine_event_data.metadata_entries),
             markerStart=dagster_event.engine_event_data.marker_start,
             markerEnd=dagster_event.engine_event_data.marker_end,
             **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.STEP_WORKER_STARTED:
         return GrapheneStepWorkerStartedEvent(
-            metadataEntries=_to_metadata_entries(
-                dagster_event.engine_event_data.metadata_entries
-            ),
+            metadataEntries=_to_metadata_entries(dagster_event.engine_event_data.metadata_entries),
             markerStart=dagster_event.engine_event_data.marker_start,
             markerEnd=dagster_event.engine_event_data.marker_end,
             **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.RESOURCE_INIT_STARTED:
         return GrapheneResourceInitStartedEvent(
-            metadataEntries=_to_metadata_entries(
-                dagster_event.engine_event_data.metadata_entries
-            ),
+            metadataEntries=_to_metadata_entries(dagster_event.engine_event_data.metadata_entries),
             markerStart=dagster_event.engine_event_data.marker_start,
             markerEnd=dagster_event.engine_event_data.marker_end,
             **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.RESOURCE_INIT_SUCCESS:
         return GrapheneResourceInitSuccessEvent(
-            metadataEntries=_to_metadata_entries(
-                dagster_event.engine_event_data.metadata_entries
-            ),
+            metadataEntries=_to_metadata_entries(dagster_event.engine_event_data.metadata_entries),
             markerStart=dagster_event.engine_event_data.marker_start,
             markerEnd=dagster_event.engine_event_data.marker_end,
             **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.RESOURCE_INIT_FAILURE:
         return GrapheneResourceInitFailureEvent(
-            metadataEntries=_to_metadata_entries(
-                dagster_event.engine_event_data.metadata_entries
-            ),
+            metadataEntries=_to_metadata_entries(dagster_event.engine_event_data.metadata_entries),
             markerStart=dagster_event.engine_event_data.marker_start,
             markerEnd=dagster_event.engine_event_data.marker_end,
             error=GraphenePythonError(dagster_event.engine_event_data.error),

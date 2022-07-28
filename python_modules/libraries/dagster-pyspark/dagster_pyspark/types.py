@@ -16,8 +16,8 @@ from dagster import (
     dagster_type_loader,
 )
 from dagster._config import Selector
-from dagster._utils import dict_without_keys
 from dagster._legacy import dagster_type_materializer
+from dagster._utils import dict_without_keys
 
 WriteModeOptions = Enum(
     "WriteMode",
@@ -288,9 +288,7 @@ WriteCompressionParquetOptions = Enum(
             ),
             "saveAsTable": Permissive(
                 {
-                    "name": Field(
-                        String, is_required=True, description="the table name."
-                    ),
+                    "name": Field(String, is_required=True, description="the table name."),
                     "format": Field(
                         String,
                         is_required=False,
@@ -366,9 +364,7 @@ def dataframe_materializer(_context, config, spark_df):
             file_options.get("path", 'There was no "path" key in "file_options".')
         )
     else:
-        raise DagsterInvariantViolationError(
-            "Unsupported file_type {}".format(file_type)
-        )
+        raise DagsterInvariantViolationError("Unsupported file_type {}".format(file_type))
 
 
 @dagster_type_loader(

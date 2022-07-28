@@ -13,8 +13,8 @@ from dagster import (
     LastPartitionMapping,
     Out,
     Output,
-    StaticPartitionsDefinition,
     PartitionsDefinition,
+    StaticPartitionsDefinition,
     graph,
     op,
 )
@@ -144,26 +144,17 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
 
     @asset(
         partitions_def=downstream_partitions_def,
-        ins={
-            "upstream_asset": AssetIn(
-                partition_mapping=TrailingWindowPartitionMapping()
-            )
-        },
+        ins={"upstream_asset": AssetIn(partition_mapping=TrailingWindowPartitionMapping())},
     )
     def downstream_asset(context, upstream_asset):
         assert context.asset_partition_key_for_output() == "2"
         assert upstream_asset is None
-        assert (
-            context.asset_partitions_def_for_input("upstream_asset")
-            == upstream_partitions_def
-        )
+        assert context.asset_partitions_def_for_input("upstream_asset") == upstream_partitions_def
 
     my_job = build_assets_job(
         "my_job",
         assets=[upstream_asset, downstream_asset],
-        resource_defs={
-            "io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())
-        },
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     result = my_job.execute_in_process(partition_key="2")
     assert result.asset_materializations_for_node("upstream_asset") == [
@@ -222,11 +213,7 @@ def test_asset_partitions_time_window_non_identity_partition_mapping():
 
     @asset(
         partitions_def=downstream_partitions_def,
-        ins={
-            "upstream_asset": AssetIn(
-                partition_mapping=TrailingWindowPartitionMapping()
-            )
-        },
+        ins={"upstream_asset": AssetIn(partition_mapping=TrailingWindowPartitionMapping())},
     )
     def downstream_asset(upstream_asset):
         assert upstream_asset is None
@@ -234,9 +221,7 @@ def test_asset_partitions_time_window_non_identity_partition_mapping():
     my_job = build_assets_job(
         "my_job",
         assets=[upstream_asset, downstream_asset],
-        resource_defs={
-            "io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())
-        },
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     my_job.execute_in_process(partition_key="2020-01-02")
 
@@ -293,11 +278,7 @@ def test_multi_asset_non_identity_partition_mapping():
 
     @asset(
         partitions_def=downstream_partitions_def,
-        ins={
-            "upstream_asset_1": AssetIn(
-                partition_mapping=TrailingWindowPartitionMapping()
-            )
-        },
+        ins={"upstream_asset_1": AssetIn(partition_mapping=TrailingWindowPartitionMapping())},
     )
     def downstream_asset_1(context, upstream_asset_1):
         assert context.asset_partition_key_for_output() == "2"
@@ -305,11 +286,7 @@ def test_multi_asset_non_identity_partition_mapping():
 
     @asset(
         partitions_def=downstream_partitions_def,
-        ins={
-            "upstream_asset_2": AssetIn(
-                partition_mapping=TrailingWindowPartitionMapping()
-            )
-        },
+        ins={"upstream_asset_2": AssetIn(partition_mapping=TrailingWindowPartitionMapping())},
     )
     def downstream_asset_2(context, upstream_asset_2):
         assert context.asset_partition_key_for_output() == "2"
@@ -318,9 +295,7 @@ def test_multi_asset_non_identity_partition_mapping():
     my_job = build_assets_job(
         "my_job",
         assets=[upstream_asset, downstream_asset_1, downstream_asset_2],
-        resource_defs={
-            "io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())
-        },
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     result = my_job.execute_in_process(partition_key="2")
     assert result.asset_materializations_for_node("upstream_asset") == [
@@ -404,9 +379,7 @@ def test_from_graph():
                 partition_mappings={"upstream_asset": partition_mapping},
             ),
         ],
-        resource_defs={
-            "io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())
-        },
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     assert my_job.execute_in_process(partition_key="a").success
     assert partition_mapping.downstream_calls == 0
@@ -437,9 +410,7 @@ def test_non_partitioned_depends_on_last_partition():
     my_job = build_assets_job(
         "my_job",
         assets=[upstream, downstream],
-        resource_defs={
-            "io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())
-        },
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     result = my_job.execute_in_process(partition_key="b")
     assert result.asset_materializations_for_node("upstream") == [
@@ -474,9 +445,7 @@ def test_non_partitioned_depends_on_all_partitions():
     my_job = build_assets_job(
         "my_job",
         assets=[upstream, downstream],
-        resource_defs={
-            "io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())
-        },
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     result = my_job.execute_in_process(partition_key="b")
     assert result.asset_materializations_for_node("upstream") == [

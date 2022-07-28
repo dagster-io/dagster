@@ -21,9 +21,9 @@ from dagster import (
 )
 from dagster import _check as check
 from dagster import dagster_type_loader
+from dagster._legacy import dagster_type_materializer
 
 from .utils import DataFrameUtilities, apply_utilities_to_df
-from dagster._legacy import dagster_type_materializer
 
 WriteCompressionTextOptions = Enum(
     "WriteCompressionText",
@@ -447,9 +447,7 @@ def dataframe_loader(_context, config):
     read_type, read_options = next(iter(config["read"].items()))
 
     if not read_type:
-        raise DagsterInvariantViolationError(
-            "No read_type found. Expected read key in config."
-        )
+        raise DagsterInvariantViolationError("No read_type found. Expected read key in config.")
     if not read_type in DataFrameReadTypes:
         raise DagsterInvariantViolationError(
             "Unsupported read_type {read_type}.".format(read_type=read_type)
@@ -463,9 +461,7 @@ def dataframe_loader(_context, config):
 
     # Get the read function and prepare its arguments.
     read_function = read_meta["function"]
-    read_args = (
-        [read_options.pop("path")] if read_meta.get("is_path_based", False) else []
-    )
+    read_args = [read_options.pop("path")] if read_meta.get("is_path_based", False) else []
     read_kwargs = read_options
 
     # Read the dataframe and apply any utility functions
@@ -527,9 +523,7 @@ def dataframe_materializer(_context, config, dask_df):
 
         # Get the to function and prepare its arguments.
         to_function = to_meta["function"]
-        to_path = (
-            to_options.pop("path") if to_meta.get("is_path_based", False) else None
-        )
+        to_path = to_options.pop("path") if to_meta.get("is_path_based", False) else None
         to_args = [to_path] if to_path else []
         to_kwargs = to_options
 

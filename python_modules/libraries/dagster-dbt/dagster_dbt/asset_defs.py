@@ -2,17 +2,7 @@ import hashlib
 import json
 import os
 import textwrap
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Dict,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-)
+from typing import AbstractSet, Any, Callable, Dict, Mapping, Optional, Sequence, Set, Tuple
 
 from dagster_dbt.cli.types import DbtCliOutput
 from dagster_dbt.cli.utils import execute_cli
@@ -26,9 +16,9 @@ from dagster import (
     MetadataValue,
     Nothing,
     Out,
+    PartitionsDefinition,
     TableColumn,
     TableSchema,
-    PartitionsDefinition,
 )
 from dagster import _check as check
 from dagster import get_dagster_logger, op

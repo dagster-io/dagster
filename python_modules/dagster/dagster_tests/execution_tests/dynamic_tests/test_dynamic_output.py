@@ -7,16 +7,13 @@ import pytest
 from dagster import DynamicOut, DynamicOutput, Out, graph, job, op, reconstructable
 from dagster._core.definitions.events import Output
 from dagster._core.definitions.output import OutputDefinition
-from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
-)
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import (
-    execute_solid,
     DynamicOutputDefinition,
     build_solid_context,
     execute_pipeline,
+    execute_solid,
     pipeline,
     solid,
 )
@@ -57,9 +54,7 @@ def test_fails_without_def():
     def should_fail(_):
         yield DynamicOutput(True, mapping_key="foo")
 
-    with pytest.raises(
-        DagsterInvariantViolationError, match="did not use DynamicOutputDefinition"
-    ):
+    with pytest.raises(DagsterInvariantViolationError, match="did not use DynamicOutputDefinition"):
         execute_solid(should_fail)
 
 
@@ -68,9 +63,7 @@ def test_fails_with_wrong_output():
     def should_fail(_):
         yield Output(1)
 
-    with pytest.raises(
-        DagsterInvariantViolationError, match="must yield DynamicOutput"
-    ):
+    with pytest.raises(DagsterInvariantViolationError, match="must yield DynamicOutput"):
         execute_solid(should_fail)
 
     @solid(output_defs=[DynamicOutputDefinition()])
@@ -90,9 +83,7 @@ def test_fails_dupe_keys():
         yield DynamicOutput(True, mapping_key="dunk")
         yield DynamicOutput(True, mapping_key="dunk")
 
-    with pytest.raises(
-        DagsterInvariantViolationError, match='mapping_key "dunk" multiple times'
-    ):
+    with pytest.raises(DagsterInvariantViolationError, match='mapping_key "dunk" multiple times'):
         execute_solid(should_fail)
 
 
@@ -189,9 +180,7 @@ def test_multi_out_map():
     result = execute_pipeline(destructure)
     assert result.result_for_solid("echo_a").output_value() == [1]
     assert result.result_for_solid("echo_b").output_value() == [2, 3]
-    assert result.result_for_solid(
-        "echo_c"
-    ).skipped  # all fanned in inputs skipped -> solid skips
+    assert result.result_for_solid("echo_c").skipped  # all fanned in inputs skipped -> solid skips
 
 
 def test_context_mapping_key():
@@ -245,9 +234,7 @@ class DangerNoodle(NamedTuple):
 @op(out={"items": DynamicOut(), "refs": Out()})
 def spawn():
     for i in range(10):
-        yield DynamicOutput(
-            DangerNoodle(i), output_name="items", mapping_key=f"num_{i}"
-        )
+        yield DynamicOutput(DangerNoodle(i), output_name="items", mapping_key=f"num_{i}")
 
     gc.collect()
     yield Output(len(objgraph.by_type("DangerNoodle")), output_name="refs")

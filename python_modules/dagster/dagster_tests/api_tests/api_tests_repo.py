@@ -6,9 +6,9 @@ from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.errors import DagsterError
 from dagster._core.test_utils import default_mode_def_for_test
 from dagster._legacy import (
-    PartitionSetDefinition,
     InputDefinition,
     OutputDefinition,
+    PartitionSetDefinition,
     lambda_solid,
     pipeline,
     solid,

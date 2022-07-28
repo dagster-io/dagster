@@ -5,12 +5,9 @@ from unittest import mock
 import boto3
 import psycopg2
 import pytest
-from dagster_aws.redshift import (
-    FakeRedshiftResource,
-    fake_redshift_resource,
-    redshift_resource,
-)
-from dagster._legacy import execute_solid, ModeDefinition, solid
+from dagster_aws.redshift import FakeRedshiftResource, fake_redshift_resource, redshift_resource
+
+from dagster._legacy import ModeDefinition, execute_solid, solid
 
 REDSHIFT_ENV = {
     "resources": {
@@ -91,15 +88,11 @@ def test_multi_select(_redshift_connect):
 def test_fake_redshift():
     fake_mode = ModeDefinition(resource_defs={"redshift": fake_redshift_resource})
 
-    result = execute_solid(
-        single_redshift_solid, run_config=REDSHIFT_ENV, mode_def=fake_mode
-    )
+    result = execute_solid(single_redshift_solid, run_config=REDSHIFT_ENV, mode_def=fake_mode)
     assert result.success
     assert result.output_value() == FakeRedshiftResource.QUERY_RESULT
 
-    result = execute_solid(
-        multi_redshift_solid, run_config=REDSHIFT_ENV, mode_def=fake_mode
-    )
+    result = execute_solid(multi_redshift_solid, run_config=REDSHIFT_ENV, mode_def=fake_mode)
     assert result.success
     assert result.output_value() == [FakeRedshiftResource.QUERY_RESULT] * 3
 

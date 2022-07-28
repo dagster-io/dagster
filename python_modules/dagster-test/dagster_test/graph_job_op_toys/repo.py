@@ -1,5 +1,7 @@
 import warnings
 
+from dagster import ExperimentalWarning
+
 # squelch experimental warnings since we often include experimental things in toys for development
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
@@ -30,10 +32,7 @@ from dagster_test.graph_job_op_toys.log_s3 import log_s3_job
 from dagster_test.graph_job_op_toys.log_spew import log_spew
 from dagster_test.graph_job_op_toys.long_asset_keys import long_asset_keys_group
 from dagster_test.graph_job_op_toys.longitudinal import longitudinal_job
-from dagster_test.graph_job_op_toys.many_events import (
-    many_events,
-    many_events_subset_job,
-)
+from dagster_test.graph_job_op_toys.many_events import many_events, many_events_subset_job
 from dagster_test.graph_job_op_toys.metadata import with_metadata
 from dagster_test.graph_job_op_toys.multi_inputs_outputs import multi_inputs_outputs_job
 from dagster_test.graph_job_op_toys.notebooks import hello_world_notebook_pipeline
@@ -51,23 +50,13 @@ from dagster_test.graph_job_op_toys.run_status_sensors import (
     yield_run_request_succeeds_sensor,
 )
 from dagster_test.graph_job_op_toys.sleepy import sleepy_job
-from dagster_test.graph_job_op_toys.software_defined_assets import (
-    software_defined_assets,
-)
+from dagster_test.graph_job_op_toys.software_defined_assets import software_defined_assets
 from dagster_test.graph_job_op_toys.unreliable import unreliable_job
 
-from dagster import (
-    AssetMaterialization,
-    Output,
-    graph,
-    load_assets_from_modules,
-    op,
-    repository,
-)
+from dagster import AssetMaterialization, Output, graph, load_assets_from_modules, op, repository
 
 from .schedules import get_toys_schedules
 from .sensors import get_toys_sensors
-from dagster._legacy import ExperimentalWarning
 
 
 @op

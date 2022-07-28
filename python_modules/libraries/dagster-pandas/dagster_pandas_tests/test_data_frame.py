@@ -6,10 +6,7 @@ from dagster_pandas.constraints import (
     InRangeColumnConstraint,
     NonNullableColumnConstraint,
 )
-from dagster_pandas.data_frame import (
-    _execute_summary_stats,
-    create_dagster_pandas_dataframe_type,
-)
+from dagster_pandas.data_frame import _execute_summary_stats, create_dagster_pandas_dataframe_type
 from dagster_pandas.validation import PandasColumn
 from pandas import DataFrame, read_csv
 
@@ -30,18 +27,14 @@ from dagster import (
     job,
     op,
 )
-from dagster._utils import safe_tempfile_path
 from dagster._legacy import dagster_type_materializer
+from dagster._utils import safe_tempfile_path
 
 
 def test_create_pandas_dataframe_dagster_type():
     TestDataFrame = create_dagster_pandas_dataframe_type(
         name="TestDataFrame",
-        columns=[
-            PandasColumn(
-                name="foo", constraints=[ColumnDTypeInSetConstraint({"int64"})]
-            )
-        ],
+        columns=[PandasColumn(name="foo", constraints=[ColumnDTypeInSetConstraint({"int64"})])],
     )
     assert isinstance(TestDataFrame, DagsterType)
 
@@ -78,9 +71,7 @@ def test_basic_pipeline_with_pandas_dataframe_dagster_type():
                 event.event_specific_data.type_check_data.metadata_entries
             )
             assert len(mock_df_output_event_metadata) == 1
-            assert any(
-                [entry.label == "max_pid" for entry in mock_df_output_event_metadata]
-            )
+            assert any([entry.label == "max_pid" for entry in mock_df_output_event_metadata])
 
 
 def test_create_dagster_pandas_dataframe_type_with_null_event_metadata_fn():
@@ -93,9 +84,7 @@ def test_create_dagster_pandas_dataframe_type_with_null_event_metadata_fn():
         event_metadata_fn=None,
     )
     assert isinstance(BasicDF, DagsterType)
-    basic_type_check = check_dagster_type(
-        BasicDF, DataFrame({"pid": [1], "names": ["foo"]})
-    )
+    basic_type_check = check_dagster_type(BasicDF, DataFrame({"pid": [1], "names": ["foo"]}))
     assert basic_type_check.success
 
 
@@ -116,11 +105,7 @@ def test_bad_dataframe_type_returns_bad_stuff():
 def test_dataframe_description_generation_just_type_constraint():
     TestDataFrame = create_dagster_pandas_dataframe_type(
         name="TestDataFrame",
-        columns=[
-            PandasColumn(
-                name="foo", constraints=[ColumnDTypeInSetConstraint({"int64"})]
-            )
-        ],
+        columns=[PandasColumn(name="foo", constraints=[ColumnDTypeInSetConstraint({"int64"})])],
     )
     assert TestDataFrame.description == "\n### Columns\n**foo**: `int64`\n\n"
 
@@ -244,16 +229,12 @@ def test_custom_dagster_dataframe_parametrizable_input():
         elif which_door == "door_c":
             return DataFrame({"foo": ["goat"]})
         raise DagsterInvariantViolationError(
-            "You did not pick a door. You chose: {which_door}".format(
-                which_door=which_door
-            )
+            "You did not pick a door. You chose: {which_door}".format(which_door=which_door)
         )
 
     @dagster_type_materializer(Selector({"devnull": Field(str), "nothing": Field(str)}))
     def silly_materializer(_, _config, _value):
-        return AssetMaterialization(
-            asset_key="nothing", description="just one of those days"
-        )
+        return AssetMaterialization(asset_key="nothing", description="just one of those days")
 
     TestDataFrame = create_dagster_pandas_dataframe_type(
         name="TestDataFrame",
@@ -293,9 +274,7 @@ def test_custom_dagster_dataframe_parametrizable_input():
         event for event in result.all_node_events if event.is_step_materialization
     ]
     assert len(materialization_events) == 1
-    assert (
-        materialization_events[0].event_specific_data.materialization.label == "nothing"
-    )
+    assert materialization_events[0].event_specific_data.materialization.label == "nothing"
 
 
 def test_basic_pipeline_with_pandas_dataframe_dagster_type_metadata_entries():
@@ -332,9 +311,7 @@ def test_basic_pipeline_with_pandas_dataframe_dagster_type_metadata_entries():
                 event.event_specific_data.type_check_data.metadata_entries
             )
             assert len(mock_df_output_event_metadata) == 1
-            assert any(
-                [entry.label == "max_pid" for entry in mock_df_output_event_metadata]
-            )
+            assert any([entry.label == "max_pid" for entry in mock_df_output_event_metadata])
 
 
 def execute_op_in_job(the_op):

@@ -2,9 +2,9 @@ import string
 
 from dagster import Int, ScheduleDefinition, repository, usable_as_dagster_type
 from dagster._legacy import (
-    PartitionSetDefinition,
     InputDefinition,
     OutputDefinition,
+    PartitionSetDefinition,
     lambda_solid,
     pipeline,
     solid,

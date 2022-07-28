@@ -22,12 +22,12 @@ from dagster._core.definitions.events import Failure, RetryRequested
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.instance import InstanceRef
 from dagster._legacy import (
-    execute_solid,
     InputDefinition,
     ModeDefinition,
     OutputDefinition,
     composite_solid,
     execute_pipeline,
+    execute_solid,
     pipeline,
     solid,
 )
@@ -256,9 +256,7 @@ def test_input_config():
     with pytest.raises(DagsterInvalidConfigError):
         check_input_managers.execute_in_process(
             run_config={
-                "ops": {
-                    "second_op": {"inputs": {"an_input": {"config_value": "a_string"}}}
-                }
+                "ops": {"second_op": {"inputs": {"an_input": {"config_value": "a_string"}}}}
             }
         )
 
@@ -426,9 +424,7 @@ def test_root_input_manager():
     def solid1(_, input1):
         assert input1 == 5
 
-    @pipeline(
-        mode_defs=[ModeDefinition(resource_defs={"my_loader": my_hardcoded_csv_loader})]
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_loader": my_hardcoded_csv_loader})])
     def my_pipeline():
         solid1()
 
@@ -436,9 +432,7 @@ def test_root_input_manager():
 
 
 def test_configurable_root_input_manager():
-    @root_input_manager(
-        config_schema={"base_dir": str}, input_config_schema={"value": int}
-    )
+    @root_input_manager(config_schema={"base_dir": str}, input_config_schema={"value": int})
     def my_configurable_csv_loader(context):
         assert context.resource_config["base_dir"] == "abc"
         return context.config["value"]
@@ -447,11 +441,7 @@ def test_configurable_root_input_manager():
     def solid1(_, input1):
         assert input1 == 5
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(resource_defs={"my_loader": my_configurable_csv_loader})
-        ]
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_loader": my_configurable_csv_loader})])
     def my_configurable_pipeline():
         solid1()
 
@@ -486,9 +476,7 @@ def test_only_used_for_root():
 
     @solid(
         output_defs=[
-            OutputDefinition(
-                name="my_output", io_manager_key="my_io_manager", metadata=metadata
-            )
+            OutputDefinition(name="my_output", io_manager_key="my_io_manager", metadata=metadata)
         ]
     )
     def solid1(_):
@@ -534,8 +522,7 @@ def test_configured():
     assert isinstance(configured_input_manager, RootInputManagerDefinition)
     assert configured_input_manager.description == my_input_manager.description
     assert (
-        configured_input_manager.required_resource_keys
-        == my_input_manager.required_resource_keys
+        configured_input_manager.required_resource_keys == my_input_manager.required_resource_keys
     )
     assert configured_input_manager.version is None
 
@@ -570,9 +557,7 @@ def test_input_manager_with_failure():
 
         assert failure_data.user_failure_data.description == "Foolure"
         assert failure_data.user_failure_data.metadata_entries[0].label == "label"
-        assert (
-            failure_data.user_failure_data.metadata_entries[0].entry_data.text == "text"
-        )
+        assert failure_data.user_failure_data.metadata_entries[0].entry_data.text == "text"
 
 
 def test_input_manager_with_retries():
@@ -590,11 +575,7 @@ def test_input_manager_with_retries():
         raise RetryRequested(max_retries=3)
 
     @solid(
-        input_defs=[
-            InputDefinition(
-                "solid_input", root_manager_key="should_succeed_after_retries"
-            )
-        ]
+        input_defs=[InputDefinition("solid_input", root_manager_key="should_succeed_after_retries")]
     )
     def take_input_1(_, solid_input):
         return solid_input
@@ -629,25 +610,19 @@ def test_input_manager_with_retries():
         step_stats = instance.get_run_step_stats(result.run_id)
         assert len(step_stats) == 2
 
-        step_stats_1 = instance.get_run_step_stats(
-            result.run_id, step_keys=["take_input_1"]
-        )
+        step_stats_1 = instance.get_run_step_stats(result.run_id, step_keys=["take_input_1"])
         assert len(step_stats_1) == 1
         step_stat_1 = step_stats_1[0]
         assert step_stat_1.status.value == "SUCCESS"
         assert step_stat_1.attempts == 3
 
-        step_stats_2 = instance.get_run_step_stats(
-            result.run_id, step_keys=["take_input_2"]
-        )
+        step_stats_2 = instance.get_run_step_stats(result.run_id, step_keys=["take_input_2"])
         assert len(step_stats_2) == 1
         step_stat_2 = step_stats_2[0]
         assert step_stat_2.status.value == "FAILURE"
         assert step_stat_2.attempts == 4
 
-        step_stats_3 = instance.get_run_step_stats(
-            result.run_id, step_keys=["take_input_3"]
-        )
+        step_stats_3 = instance.get_run_step_stats(result.run_id, step_keys=["take_input_3"])
         assert len(step_stats_3) == 0
 
 
@@ -683,9 +658,7 @@ def test_input_manager_required_resource_keys():
 
     @solid(
         input_defs=[
-            InputDefinition(
-                "_manager_input", root_manager_key="root_input_manager_reqs_resources"
-            )
+            InputDefinition("_manager_input", root_manager_key="root_input_manager_reqs_resources")
         ]
     )
     def big_solid(_, _manager_input):
@@ -723,11 +696,7 @@ def test_resource_not_input_manager():
         match="input manager with key 'not_manager' required by input '_input' of solid 'solid_requires_manager', but received <class 'dagster._core.definitions.resource_definition.ResourceDefinition'>",
     ):
 
-        @pipeline(
-            mode_defs=[
-                ModeDefinition(resource_defs={"not_manager": resource_not_manager})
-            ]
-        )
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"not_manager": resource_not_manager})])
         def basic():
             solid_requires_manager()
 
@@ -764,9 +733,7 @@ def test_no_root_manager_composite():
     ):
 
         @composite_solid(
-            input_defs=[
-                InputDefinition("data", dagster_type=str, root_manager_key="my_root")
-            ]
+            input_defs=[InputDefinition("data", dagster_type=str, root_manager_key="my_root")]
         )
         def _(data):
             _ = inner_solid(data=data)
@@ -777,11 +744,7 @@ def test_root_manager_inside_composite():
     def my_root(context):
         return context.config["test"]
 
-    @solid(
-        input_defs=[
-            InputDefinition("data", dagster_type=str, root_manager_key="my_root")
-        ]
-    )
+    @solid(input_defs=[InputDefinition("data", dagster_type=str, root_manager_key="my_root")])
     def inner_solid(_, data):
         return data
 
@@ -789,9 +752,7 @@ def test_root_manager_inside_composite():
     def my_composite_solid():
         return inner_solid()
 
-    @pipeline(
-        mode_defs=[ModeDefinition(name="default", resource_defs={"my_root": my_root})]
-    )
+    @pipeline(mode_defs=[ModeDefinition(name="default", resource_defs={"my_root": my_root})])
     def my_pipeline():
         my_composite_solid()
 

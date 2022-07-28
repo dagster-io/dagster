@@ -2,7 +2,8 @@ import json
 
 from dagster_slack import slack_resource
 from mock import patch
-from dagster._legacy import execute_solid, ModeDefinition, solid
+
+from dagster._legacy import ModeDefinition, execute_solid, solid
 
 
 @patch("slack_sdk.WebClient.api_call")
@@ -17,18 +18,14 @@ def test_slack_resource(mock_api_call):
             "headers": "",
         }
 
-        context.resources.slack.chat_postMessage(
-            channel="#random", text=":wave: hey there!"
-        )
+        context.resources.slack.chat_postMessage(channel="#random", text=":wave: hey there!")
 
         assert mock_api_call.called
 
     result = execute_solid(
         slack_solid,
         run_config={
-            "resources": {
-                "slack": {"config": {"token": "xoxp-1234123412341234-12341234-1234"}}
-            }
+            "resources": {"slack": {"config": {"token": "xoxp-1234123412341234-12341234-1234"}}}
         },
         mode_def=ModeDefinition(resource_defs={"slack": slack_resource}),
     )
