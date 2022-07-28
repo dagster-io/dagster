@@ -5,14 +5,14 @@ It utilizes dagster's run configuration system and swappable resources to ensure
 is not overwritten by local developers. It also contains tests that provide mock data to assets to ensure
 correctness.
 
-To follow along with this example, you can read this [guide](https://docs.dagster.io/guides/dagster/local-to-production-tutorial).
+To follow along with this example, you can read this [guide](https://docs.dagster.io/guides/dagster/transitioning-data-pipelines-from-development-to-production).
 
 ## Setup
 To run this example locally
 
 ```
 git clone git@github.com:dagster-io/dagster.git
-cd dagster/examples/local_to_production
+cd dagster/examples/development_to_production
 pip install -e .
 
 # Load it in the web UI

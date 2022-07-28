@@ -1,2 +1,2 @@
 load_from:
-  - python_package: local_to_production
+  - python_package: development_to_production
