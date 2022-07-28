@@ -469,6 +469,9 @@ class ExternalTimeWindowPartitionsDefinitionData(
             ("timezone", Optional[str]),
             ("fmt", str),
             ("end_offset", int),
+            ("minute_offset", int),
+            ("hour_offset", int),
+            ("day_offset", Optional[int]),
         ],
     ),
 ):
@@ -479,6 +482,9 @@ class ExternalTimeWindowPartitionsDefinitionData(
         timezone: Optional[str],
         fmt: str,
         end_offset: int,
+        minute_offset: int,
+        hour_offset: int,
+        day_offset: Optional[int],
     ):
         return super(ExternalTimeWindowPartitionsDefinitionData, cls).__new__(
             cls,
@@ -487,6 +493,9 @@ class ExternalTimeWindowPartitionsDefinitionData(
             timezone=check.opt_str_param(timezone, "timezone"),
             fmt=check.str_param(fmt, "fmt"),
             end_offset=check.int_param(end_offset, "end_offset"),
+            minute_offset=check.int_param(minute_offset, "minute_offset"),
+            hour_offset=check.int_param(hour_offset, "hour_offset"),
+            day_offset=check.opt_int_param(day_offset, "day_offset"),
         )
 
     def get_partitions_definition(self):
@@ -496,6 +505,9 @@ class ExternalTimeWindowPartitionsDefinitionData(
             self.timezone,
             self.fmt,
             self.end_offset,
+            self.minute_offset,
+            self.hour_offset,
+            self.day_offset,
         )
 
 
@@ -995,6 +1007,9 @@ def external_time_window_partitions_definition_from_def(
         timezone=partitions_def.timezone,
         fmt=partitions_def.fmt,
         end_offset=partitions_def.end_offset,
+        minute_offset=partitions_def.minute_offset,
+        hour_offset=partitions_def.hour_offset,
+        day_offset=partitions_def.day_offset,
     )
 
 
