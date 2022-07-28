@@ -11,7 +11,7 @@ fi
 
 if [ "$USER_CODE_BACKCOMPAT_VERSION" = "current_branch" ]; then
     export USER_CODE_DOCKERFILE="./Dockerfile_user_code_source"
-elif [ $USER_CODE_MAJOR_VERSION = "0" ]; then # If the dagster version is 0.x.x, then use the legacy dockerfile, which will test pipeline code.
+elif [ "$USER_CODE_MAJOR_VERSION" = "0" ]; then # If the dagster version is 0.x.x, then use the legacy dockerfile, which will test pipeline code.
     export USER_CODE_DOCKERFILE="./Dockerfile_user_code_legacy_release"
 else
     export USER_CODE_DOCKERFILE="./Dockerfile_user_code_release"
