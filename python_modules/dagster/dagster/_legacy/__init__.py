@@ -23,6 +23,7 @@ from dagster._core.execution.api import (
     execute_pipeline_iterator,
     reexecute_pipeline,
 )
+from dagster._core.execution.context.compute import SolidExecutionContext
 from dagster._core.execution.context.invocation import build_solid_context
 from dagster._core.execution.results import (
     CompositeSolidExecutionResult,
