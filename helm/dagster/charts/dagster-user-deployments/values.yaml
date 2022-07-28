@@ -114,7 +114,7 @@ deployments:
       # exec:
       #   command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
       periodSeconds: 20
-      timeoutSeconds: 3
+      timeoutSeconds: 10
       successThreshold: 1
       failureThreshold: 3
 
