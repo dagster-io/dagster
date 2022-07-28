@@ -147,7 +147,7 @@ dagit:
       path: "/dagit_info"
       port: 80
     periodSeconds: 20
-    timeoutSeconds: 3
+    timeoutSeconds: 10
     successThreshold: 1
     failureThreshold: 3
 
