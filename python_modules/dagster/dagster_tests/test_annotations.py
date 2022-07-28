@@ -61,7 +61,7 @@ class TestAnnotations:
         class Foo:
             @decorator
             @abstractmethod
-            def bar(cls):
+            def bar(self):
                 pass
 
         assert predicate(Foo, "bar")

@@ -11,12 +11,14 @@ from dagster._utils.backcompat import (
     experimental_fn_warning,
 )
 
-T = TypeVar("T", bound=Union[Callable, property])
+Annotatable: TypeAlias = Union[Callable, property, staticmethod, classmethod]
+
+T_Annotatable = TypeVar("T_Annotatable", bound=Annotatable)
 
 ##### PUBLIC
 
 
-def public(obj: T) -> T:
+def public(obj: T_Annotatable) -> T_Annotatable:
     """
     Mark a method on a public class as public. This distinguishes the method from "internal"
     methods, which are methods that are public in the Python sense of being non-underscored, but
@@ -27,7 +29,7 @@ def public(obj: T) -> T:
     return obj
 
 
-def is_public(obj: object, attr: Optional[str] = None) -> bool:
+def is_public(obj: Annotatable, attr: Optional[str] = None) -> bool:
     target = _get_target(obj, attr)
     return hasattr(target, "_is_public") and getattr(target, "_is_public")
 
@@ -49,7 +51,7 @@ PublicAttr: TypeAlias = Annotated[T, PUBLIC]
 ##### DEPRECATED
 
 
-def deprecated(obj: T) -> T:
+def deprecated(obj: T_Annotatable) -> T_Annotatable:
     """
     Mark a class/method/function as deprecated. This appends some metadata to tee fucntion that
     causes it to be rendered with a "deprecated" tag in the docs.
@@ -61,7 +63,7 @@ def deprecated(obj: T) -> T:
     return obj
 
 
-def is_deprecated(obj: object, attr: Optional[str] = None) -> bool:
+def is_deprecated(obj: Annotatable, attr: Optional[str] = None) -> bool:
     target = _get_target(obj, attr)
     return hasattr(target, "_is_deprecated") and getattr(target, "_is_deprecated")
 
@@ -69,7 +71,7 @@ def is_deprecated(obj: object, attr: Optional[str] = None) -> bool:
 ##### EXPERIMENTAL
 
 
-def experimental(obj: T, *, decorator: bool = False) -> T:
+def experimental(obj: T_Annotatable, *, decorator: bool = False) -> T_Annotatable:
     """
     Mark a class/method/function as experimental. This appends some metadata to the function that
     causes it to be rendered with an "experimental" tag in the docs.
@@ -94,7 +96,7 @@ def experimental(obj: T, *, decorator: bool = False) -> T:
 
     if isinstance(obj, (property, staticmethod, classmethod)):
         # warning not currently supported for these cases
-        return obj
+        return obj  # type: ignore
 
     elif inspect.isfunction(target):
 
@@ -105,7 +107,7 @@ def experimental(obj: T, *, decorator: bool = False) -> T:
             warning_fn(target.__name__, stacklevel=3)
             return target(*args, **kwargs)
 
-        return cast(T, inner)
+        return cast(T_Annotatable, inner)
 
     elif inspect.isclass(target):
 
@@ -122,21 +124,17 @@ def experimental(obj: T, *, decorator: bool = False) -> T:
 
         target.__init__ = __init__
 
-        return cast(T, obj)
+        return cast(T_Annotatable, obj)
 
     else:
         check.failed("obj must be a function or a class")
 
 
-def is_experimental(obj: object, attr: Optional[str] = None) -> bool:
+def is_experimental(obj: Annotatable, attr: Optional[str] = None) -> bool:
     target = _get_target(obj, attr)
     return hasattr(target, "_is_experimental") and getattr(target, "_is_experimental")
 
 
-def _get_target(obj: object, attr: Optional[str] = None):
+def _get_target(obj: Annotatable, attr: Optional[str] = None):
     lookup_obj = obj.__dict__[attr] if attr else obj
     return lookup_obj.fget if isinstance(lookup_obj, property) else lookup_obj
-
-
-def _is_descriptor(obj: object):
-    return hasattr(obj, "__set__")
