@@ -49,10 +49,11 @@ DEFAULT_SENSOR_DAEMON_INTERVAL = 30
 
 
 class SensorEvaluationContext:
-    """Sensor execution context.
+    """The context object available as the argument to the evaluation function of a :py:class:`dagster.SensorDefinition`.
 
-    An instance of this class is made available as the first argument to the evaluation function
-    on SensorDefinition.
+    Users should not instantiate this object directly. To construct a
+    `SensorEvaluationContext` for testing purposes, use :py:func:`dagster.
+    build_sensor_context`.
 
     Attributes:
         instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
@@ -64,6 +65,17 @@ class SensorEvaluationContext:
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
         instance (Optional[DagsterInstance]): The deserialized instance can also be passed in
             directly (primarily useful in testing contexts).
+
+    Example:
+
+    .. code-block:: python
+
+        from dagster import sensor, SensorEvaluationContext
+
+        @sensor
+        def the_sensor(context: SensorEvaluationContext):
+            ...
+
     """
 
     def __init__(
