@@ -18,7 +18,7 @@ from typing import (
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._annotations import experimental, public
+from dagster._annotations import PublicAttr, experimental, public
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.backcompat import (
@@ -519,7 +519,7 @@ class TextMetadataValue(  # type: ignore
     NamedTuple(
         "_TextMetadataValue",
         [
-            ("text", Optional[str]),
+            ("text", PublicAttr[Optional[str]]),
         ],
     ),
     MetadataValue,
@@ -545,7 +545,7 @@ class UrlMetadataValue(  # type: ignore
     NamedTuple(
         "_UrlMetadataValue",
         [
-            ("url", Optional[str]),
+            ("url", PublicAttr[Optional[str]]),
         ],
     ),
     MetadataValue,
@@ -568,7 +568,7 @@ class UrlMetadataValue(  # type: ignore
 
 @whitelist_for_serdes(storage_name="PathMetadataEntryData")
 class PathMetadataValue(  # type: ignore
-    NamedTuple("_PathMetadataValue", [("path", Optional[str])]), MetadataValue
+    NamedTuple("_PathMetadataValue", [("path", PublicAttr[Optional[str]])]), MetadataValue
 ):
     """Container class for path metadata entry data.
 
@@ -591,7 +591,7 @@ class JsonMetadataValue(
     NamedTuple(
         "_JsonMetadataValue",
         [
-            ("data", Dict[str, Any]),
+            ("data", PublicAttr[Dict[str, Any]]),
         ],
     ),
     MetadataValue,
@@ -621,7 +621,7 @@ class MarkdownMetadataValue(
     NamedTuple(
         "_MarkdownMetadataValue",
         [
-            ("md_str", Optional[str]),
+            ("md_str", PublicAttr[Optional[str]]),
         ],
     ),
     MetadataValue,
@@ -647,8 +647,8 @@ class PythonArtifactMetadataValue(
     NamedTuple(
         "_PythonArtifactMetadataValue",
         [
-            ("module", str),
-            ("name", str),
+            ("module", PublicAttr[str]),
+            ("name", PublicAttr[str]),
         ],
     ),
     MetadataValue,
@@ -675,7 +675,7 @@ class FloatMetadataValue(
     NamedTuple(
         "_FloatMetadataValue",
         [
-            ("value", Optional[float]),
+            ("value", PublicAttr[Optional[float]]),
         ],
     ),
     MetadataValue,
@@ -695,7 +695,7 @@ class IntMetadataValue(
     NamedTuple(
         "_IntMetadataValue",
         [
-            ("value", Optional[int]),
+            ("value", PublicAttr[Optional[int]]),
         ],
     ),
     MetadataValue,
@@ -712,7 +712,7 @@ class IntMetadataValue(
 
 @whitelist_for_serdes(storage_name="BoolMetadataEntryData")
 class BoolMetadataValue(
-    NamedTuple("_BoolMetadataValue", [("value", Optional[bool])]),
+    NamedTuple("_BoolMetadataValue", [("value", PublicAttr[Optional[bool]])]),
     MetadataValue,
 ):
     """Container class for bool metadata entry data.
@@ -730,7 +730,7 @@ class DagsterRunMetadataValue(
     NamedTuple(
         "_DagsterRunMetadataValue",
         [
-            ("run_id", str),
+            ("run_id", PublicAttr[str]),
         ],
     ),
     MetadataValue,
@@ -751,7 +751,7 @@ class DagsterRunMetadataValue(
 
 @whitelist_for_serdes(storage_name="DagsterAssetMetadataEntryData")
 class DagsterAssetMetadataValue(
-    NamedTuple("_DagsterAssetMetadataValue", [("asset_key", "AssetKey")]), MetadataValue
+    NamedTuple("_DagsterAssetMetadataValue", [("asset_key", PublicAttr["AssetKey"])]), MetadataValue
 ):
     """Representation of a dagster asset.
 
@@ -777,8 +777,8 @@ class TableMetadataValue(
     NamedTuple(
         "_TableMetadataValue",
         [
-            ("records", List[TableRecord]),
-            ("schema", TableSchema),
+            ("records", PublicAttr[List[TableRecord]]),
+            ("schema", PublicAttr[TableSchema]),
         ],
     ),
     MetadataValue,
@@ -834,7 +834,7 @@ class TableMetadataValue(
 
 @whitelist_for_serdes(storage_name="TableSchemaMetadataEntryData")
 class TableSchemaMetadataValue(
-    NamedTuple("_TableSchemaMetadataValue", [("schema", TableSchema)]), MetadataValue
+    NamedTuple("_TableSchemaMetadataValue", [("schema", PublicAttr[TableSchema])]), MetadataValue
 ):
     """Representation of a schema for arbitrary tabular data.
 
@@ -890,9 +890,9 @@ class MetadataEntry(
     NamedTuple(
         "_MetadataEntry",
         [
-            ("label", str),
-            ("description", Optional[str]),
-            ("entry_data", MetadataValue),
+            ("label", PublicAttr[str]),
+            ("description", PublicAttr[Optional[str]]),
+            ("entry_data", PublicAttr[MetadataValue]),
         ],
     ),
 ):
@@ -956,8 +956,8 @@ class PartitionMetadataEntry(
     NamedTuple(
         "_PartitionMetadataEntry",
         [
-            ("partition", str),
-            ("entry", "MetadataEntry"),
+            ("partition", PublicAttr[str]),
+            ("entry", PublicAttr["MetadataEntry"]),
         ],
     )
 ):
