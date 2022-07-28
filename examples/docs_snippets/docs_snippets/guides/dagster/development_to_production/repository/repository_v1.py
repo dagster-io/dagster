@@ -2,7 +2,7 @@
 # repository.py
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler
-from local_to_production.assets import comments, items, stories
+from development_to_production.assets import comments, items, stories
 
 from dagster import repository, with_resources
 

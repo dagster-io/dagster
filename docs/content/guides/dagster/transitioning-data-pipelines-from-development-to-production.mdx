@@ -29,13 +29,13 @@ Using these Dagster concepts we will:
 
 ## Setup
 
-<CodeReferenceLink filePath="examples/local_to_production/" />
+<CodeReferenceLink filePath="examples/development_to_production/" />
 
 To follow along with this guide, you can clone the full code example and install a few additional pip libraries:
 
 ```bash
 git clone git@github.com:dagster-io/dagster.git
-cd dagster/examples/local_to_production
+cd dagster/examples/development_to_production
 pip install -e .
 ```
 
@@ -52,7 +52,7 @@ In this section we will:
 
 Let’s start by writing our three assets. We'll use Pandas DataFrames to interact with the data.
 
-```python file=/guides/dagster/local_to_production/assets.py startafter=start_assets endbefore=end_assets
+```python file=/guides/dagster/development_to_production/assets.py startafter=start_assets endbefore=end_assets
 # assets.py
 import pandas as pd
 import requests
@@ -101,21 +101,21 @@ This results in an asset graph that looks like this:
 
 <Image
 alt="alt"
-src="/images/guides/local_to_production/hacker_news_asset_graph.png"
+src="/images/guides/development_to_production/hacker_news_asset_graph.png"
 width={1538}
 height={730}
 />
 
 Now we can add these assets to our repository and materialize them via Dagit as part of our local development workflow. We will use the [configured API](/concepts/configuration/configured) to add configuration for the `snowflake_io_manager`.
 
-```python file=/guides/dagster/local_to_production/repository/repository_v1.py startafter=start endbefore=end
+```python file=/guides/dagster/development_to_production/repository/repository_v1.py startafter=start endbefore=end
 # repository.py
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler
 
 from dagster import repository, with_resources
 
-from local_to_production.assets import comments, items, stories
+from development_to_production.assets import comments, items, stories
 
 snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
 
@@ -145,7 +145,7 @@ Now we can materialize the assets the Dagit and ensure that the data appears in 
 
 <Image
 alt="alt"
-src="/images/guides/local_to_production/snowflake_data.png"
+src="/images/guides/development_to_production/snowflake_data.png"
 width={2304}
 height={1064}
 />
@@ -169,7 +169,7 @@ We want to store the assets in a production Snowflake database, so we need to up
 
 Instead, we can set up the repository to determine the configuration for resources based on the environment:
 
-```python file=/guides/dagster/local_to_production/repository/repository_v2.py startafter=start endbefore=end
+```python file=/guides/dagster/development_to_production/repository/repository_v2.py startafter=start endbefore=end
 # repository.py
 
 # Note that storing passwords in configuration is bad practice. It will be resolved soon.
@@ -226,7 +226,7 @@ We still have some problems with this setup:
 
 We can easily solve these problems because the Snowflake I/O manager accepts configuration from environment variables using the <PyObject object="StringSource" /> configuration type. This allows us to store configuration values as environment variables and point Dagster to those environment variables in the run configuration:
 
-```python file=/guides/dagster/local_to_production/repository/repository_v3.py startafter=start endbefore=end
+```python file=/guides/dagster/development_to_production/repository/repository_v3.py startafter=start endbefore=end
 # repository.py
 
 
@@ -273,7 +273,7 @@ Depending on your organization’s Dagster setup, there are a couple of options 
 
 - **For a self-hosted staging deployment**, we’ve already done most of the necessary work to run our assets in staging! All we need to do is add another entry to the `resource_defs` dictionary in our repository and set `DAGSTER_DEPLOYMENT=staging` in our staging deployment.
 
-```python file=/guides/dagster/local_to_production/repository/repository_v3.py startafter=start_staging endbefore=end_staging
+```python file=/guides/dagster/development_to_production/repository/repository_v3.py startafter=start_staging endbefore=end_staging
 resource_defs = {
     "local": {...},
     "production": {...},
@@ -314,7 +314,7 @@ Determining when it makes sense to stub a resource for a unit test can be a topi
 
 We'll start by writing the "real" Hacker News API Client:
 
-```python file=/guides/dagster/local_to_production/resources/resources_v1.py startafter=start_resource endbefore=end_resource
+```python file=/guides/dagster/development_to_production/resources/resources_v1.py startafter=start_resource endbefore=end_resource
 # resources.py
 from typing import Any, Dict, Optional
 
@@ -348,7 +348,7 @@ def hn_api_client():
 
 We'll also need to update the `items` asset to use this resource:
 
-```python file=/guides/dagster/local_to_production/assets_v2.py startafter=start_items endbefore=end_items
+```python file=/guides/dagster/development_to_production/assets_v2.py startafter=start_items endbefore=end_items
 # assets.py
 
 
@@ -378,14 +378,14 @@ def items(context) -> pd.DataFrame:
   For the sake of brevity in this guide, we've omitted the implementation of the
   property
   <code>item_field_names</code> in <code>HNAPIClient</code>. You can find the full
-  implementation of this resource in the <a href="https://github.com/dagster-io/dagster/tree/master/examples/local_to_production">
+  implementation of this resource in the <a href="https://github.com/dagster-io/dagster/tree/master/examples/development_to_production">
     full code example
   </a> on GitHub.
 </Note>
 
 Now we can write a stubbed version of the Hacker News resource. We want to make sure the stub has implementations for each method `HNAPIClient` implements.
 
-```python file=/guides/dagster/local_to_production/resources/resources_v2.py startafter=start_mock endbefore=end_mock
+```python file=/guides/dagster/development_to_production/resources/resources_v2.py startafter=start_mock endbefore=end_mock
 # resources.py
 
 
@@ -425,7 +425,7 @@ def stub_hn_client():
   Since the stub Hacker News resource and the real Hacker News resource need to
   implement the same methods, this would be a great time to write an interface.
   We’ll skip the implementation in this guide, but you can find it in the{" "}
-  <a href="https://github.com/dagster-io/dagster/tree/master/examples/local_to_production">
+  <a href="https://github.com/dagster-io/dagster/tree/master/examples/development_to_production">
     full code example
   </a>
   .
@@ -433,7 +433,7 @@ def stub_hn_client():
 
 Now we can use the stub Hacker News resource to test that the `items` asset transforms the data in the way we expect:
 
-```python file=/guides/dagster/local_to_production/test_assets.py startafter=start endbefore=end
+```python file=/guides/dagster/development_to_production/test_assets.py startafter=start endbefore=end
 # test_assets.py
 
 

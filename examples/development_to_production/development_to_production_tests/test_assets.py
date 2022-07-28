@@ -1,6 +1,6 @@
 import pandas as pd
-from local_to_production.assets import comments, items, stories
-from local_to_production.resources import StubHNClient, stub_hn_client
+from development_to_production.assets import comments, items, stories
+from development_to_production.resources import StubHNClient, stub_hn_client
 
 from dagster import build_op_context
 

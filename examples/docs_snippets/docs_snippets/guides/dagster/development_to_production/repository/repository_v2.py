@@ -2,7 +2,7 @@ import os
 
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler
-from local_to_production.assets import comments, items, stories
+from development_to_production.assets import comments, items, stories
 
 from dagster import repository, with_resources
 
@@ -13,7 +13,7 @@ snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()]
 # start
 # repository.py
 
-
+# Note that storing passwords in configuration is bad practice. It will be resolved soon.
 @repository
 def repo():
     resource_defs = {
@@ -21,10 +21,11 @@ def repo():
             "snowflake_io_manager": snowflake_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
-                    "user": {"env": "DEV_SNOWFLAKE_USER"},
-                    "password": {"env": "DEV_SNOWFLAKE_PASSWORD"},
+                    "user": "me@company.com",
+                    # password in config is bad practice
+                    "password": "my_super_secret_password",
                     "database": "LOCAL",
-                    "schema": {"env": "DEV_SNOWFLAKE_SCHEMA"},
+                    "schema": "ALICE",
                 }
             ),
         },
@@ -32,8 +33,9 @@ def repo():
             "snowflake_io_manager": snowflake_io_manager.configured(
                 {
                     "account": "abc1234.us-east-1",
-                    "user": "system@company.com",
-                    "password": {"env": "SYSTEM_SNOWFLAKE_PASSWORD"},
+                    "user": "dev@company.com",
+                    # password in config is bad practice
+                    "password": "company_super_secret_password",
                     "database": "PRODUCTION",
                     "schema": "HACKER_NEWS",
                 }
@@ -50,24 +52,3 @@ def repo():
 
 
 # end
-
-
-# start_staging
-
-resource_defs = {
-    "local": {...},
-    "production": {...},
-    "staging": {
-        "snowflake_io_manager": snowflake_io_manager.configured(
-            {
-                "account": "abc1234.us-east-1",
-                "user": "system@company.com",
-                "password": {"env": "SYSTEM_SNOWFLAKE_PASSWORD"},
-                "database": "STAGING",
-                "schema": "HACKER_NEWS",
-            }
-        ),
-    },
-}
-
-# end_staging
