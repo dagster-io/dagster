@@ -1,0 +1,261 @@
+---
+title: Using Branch Deployments with GitHub Actions | Dagster Cloud
+description: Develop and test in the cloud.
+---
+
+# Using Branch Deployments with GitHub Actions
+
+<Note>
+  This guide is applicable to Dagster Cloud.
+</Note>
+
+In this guide, we'll walk you through setting up [Branch Deployments](/dagster-cloud/developing-testing/branch-deployments) with GitHub Actions.
+
+**If you don't use GitHub for version control**, check out the dedicated [Branch deployments with TODO guide](/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments).
+
+---
+
+## Prerequisites
+
+Utilizing Branch Deployments requires setting up two components: the Branch Deployment agent and continuous integration (CI) with GitHub Actions. You will need:
+
+- **Editor** or **Admin** permissions in Dagster Cloud
+- The ability to run a new agent in your infrastructure
+- The ability to configure GitHub Actions for your repository
+
+---
+
+## Step 1: Generate a Dagster Cloud agent token
+
+In this step, you'll generate a token for the agent. The Dagster Cloud agent will use this to authenticate to the agent API.
+
+1. Sign in to your Dagster Cloud instance.
+2. Click the **user menu (your icon) > Cloud settings**.
+3. In the **Cloud settings** page, click the **Configure tokens** tab.
+4. Click the **+ Create agent token** button.
+5. After the token has been created, click **Reveal token**.
+
+Keep the token somewhere handy - you'll need it to complete the setup.
+
+---
+
+## Step 2: Create and configure an agent
+
+While you can use your existing production agent, we recommend creating a dedicated branch deployment agent. This ensures that your production instance isn't negatively impacted by the workload associated with branch deployments.
+
+<details>
+	<summary><strong>AMAZON ECS AGENTS</strong></summary>
+
+1. **Create a new Amazon ECS agent**. [Click here to spin up the agent](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3.amazonaws.com/dagster.cloud/cloudformation/ecs-agent-branch-deployments.yaml) using our CloudFormation template.
+
+    **Note**: Creating the CloudFormation stack may take a few minutes; refreshing the [AWS console Stacks page](https://console.aws.amazon.com/cloudformation/home#/stacks) will show its status. For more information, see the [ECS agent setup guide](/dagster-cloud/deployment/agents/amazon-ecs).
+
+2. **Create a private [Amazon Elastic Registry (ECR) repository](https://console.aws.amazon.com/ecr/repositories).** Refer to the [AWS ECR documentation](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html) for instructions.
+
+   After the repository has been created, navigate back to the list of [ECR repositories](https://console.aws.amazon.com/ecr/repositories).
+
+   In the list, locate the repository and its **URI**:
+
+   ![Highlighted repository URI in the AWS ECR console](/images/dagster-cloud/developing-testing/branch-deployments/aws-ecr-uri.png)
+
+3. [**Create an IAM user.**](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html) This user must:
+   - Have push access to the ECR repository, and
+   - Have programmatic access to AWS using an [access key](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html)
+
+   After the user is created, save the **Access key ID** and **Secret access key** values shown on the confirmation page:
+
+   ![Highlighted repository URI in the AWS ECR console](/images/dagster-cloud/developing-testing/branch-deployments/aws-iam-user-keys.png)
+
+</details>
+
+<details>
+	<summary><strong>DOCKER AGENTS</strong></summary>
+
+1. Set up a new Docker agent. Refer to the [Docker agent setup guide](/dagster-cloud/deployment/agents/docker) for instructions.
+2. After the agent is set up, modify the `dagster.yaml` file as follows:
+
+   - Set the `dagster_cloud_api.branch_deployments` field to `true`
+   - Remove any `deployment` field(s)
+
+   For example:
+
+    ```yaml
+    # dagster.yaml
+
+    instance_class:
+      module: dagster_cloud.instance
+      class: DagsterCloudAgentInstance
+
+    dagster_cloud_api:
+      agent_token: <YOUR_AGENT_TOKEN>
+      branch_deployments: true   ## true enables branch deployments
+
+    user_code_launcher:
+      module: dagster_cloud.workspace.docker
+      class: DockerUserCodeLauncher
+      config:
+        networks:
+          - dagster_cloud_agent
+        server_ttl:
+          enabled: true
+          ttl_seconds: 7200 #2 hours
+    ```
+
+</details>
+
+<details>
+  <summary><strong>KUBERNETES AGENTS</strong></summary>
+
+1. Set up a new Kubernetes agent. Refer to the [Kubernetes agent setup guide](/dagster-cloud/deployment/agents/Kubernetes/running-configuring-kubernetes-agent) for instructions.
+
+2. After the agent is set up, modify your Helm values file to include the following:
+
+    ```yaml
+    dagsterCloud:
+      branchDeployments: true
+    ---
+    workspace:
+      serverTTL:
+        enabled: true
+        ttlSeconds: 7200
+    ```
+    
+</details>
+
+---
+
+## Step 3: GitHub app
+
+TODO?
+
+---
+
+## Step 4: Configure the GitHub repository
+
+In this section, you'll:
+
+1. [Add the Docker registry to `cloud_workspace.yaml`](#step-41-add-the-docker-registry-to-cloud_workspaceyaml)
+2. [Configure GitHub Action secrets](#step-42-configure-github-action-secrets)
+3. [Update GitHub Workflow files](#step-43-update-github-workflow-files)
+4. [TODO: Verify builds]()
+
+### Step 4.1: Add the Docker registry to cloud_workspace.yaml
+
+In the `cloud_workspace.yaml` file, replace `build.registry` with the registry used by the [agent you created in Step 2](#step-2-create-and-configure-an-agent).
+
+For example:
+
+```yaml
+# cloud_workspace.yaml
+
+locations:
+  - location_name: example_location
+    code_source:
+      python_file: repo.py
+    build:
+      directory: ./example_location
+      registry: 764506304434.dkr.ecr.us-east-1.amazonaws.com/branch-deployment-agent
+```
+
+### Step 4.2: Configure GitHub Action secrets
+
+1. In the repository, click the **Settings** tab.
+2. In the **Security** section of the sidebar, click **Secrets > Actions**.
+3. Click **New repository secret**.
+4. In the **Name** field, enter the name of the secret. For example, `DAGSTER_CLOUD_API_TOKEN`
+5. In the **Value** field, paste the value of the secret.
+6. Click **Add secret**.
+
+Repeat steps 3-6 for each of the secrets required by your agent type:
+
+<details>
+  <summary><strong>AMAZON ECS AGENTS</strong></summary>
+
+- `DAGSTER_CLOUD_API_TOKEN` - The Dagster Cloud agent token you created in [Step 1](#step-1-generate-a-dagster-cloud-agent-token)
+- `ORGANIZATION_ID` - Your Dagster Cloud organization ID
+- `AWS_ACCESS_KEY` - The **Access key ID** of the AWS IAM user you created in [Step 2](#step-2-create-and-configure-an-agent)
+- `AWS_SECRET_ACCESS_KEY` - The **Secret access key** of the AWS IAM user you created in [Step 2](#step-2-create-and-configure-an-agent)
+
+The **Actions secrets** page should look like the following:
+
+![Configured GitHub Actions secrets for an AWS ECS agent](/images/dagster-cloud/developing-testing/branch-deployments/github-aws-ecr.png)
+
+</details>
+
+<details>
+  <summary><strong>DOCKER AGENTS</strong></summary>
+
+- `DAGSTER_CLOUD_API_TOKEN` - The Dagster Cloud agent token you created in [Step 1](#step-1-generate-a-dagster-cloud-agent-token)
+- `ORGANIZATION_ID` - Your Dagster Cloud organization ID
+- `DOCKERHUB_USERNAME` - Your DockerHub username
+- `DOCKERHUB_TOKEN` - <!-- https://docs.docker.com/docker-hub/access-tokens/#create-an-access-token -->
+
+The **Actions secrets** page should look like the following:
+
+![Required GitHub Actions secrets for a Docker agent](/images/dagster-cloud/developing-testing/branch-deployments/github-dockerhub.png)
+
+</details>
+
+<details>
+  <summary><strong>KUBERNETES AGENTS</strong></summary>
+</details>
+
+<!--
+Google Cloud Registry
+  - GCR_JSON_KEY (https://cloud.google.com/container-registry/docs/advanced-authentication#json-key) -->
+
+### Step 4.3: Update GitHub Workflow files
+
+In this step, you'll update the GitHub Workflow files in the repository to set up Docker registry access.
+
+In the `.github/workflows/deploy.yml` and `.github/workflows/branch_deployments.yml` files, uncomment the `step` associated with your registry.
+
+For example, for an Amazon ECR registry, we'd uncomment the following portion of the workflow files:
+
+```yaml
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: YOUR_REGISTRY_REGION
+```
+
+Save and commit the files to the repository.
+
+### Step 4.4: Verify Action runs
+
+The last step is to verify that the Action runs successfully.
+
+1. In the repository, click the **Actions** tab.
+2. In the list of workflows, locate the latest branch deployment run. For example:
+   
+   ![A successful run for a Branch Deployment Action](/images/dagster-cloud/developing-testing/branch-deployments/github-verify-run.png)
+
+If the run finished successfully, that's it!
+
+---
+
+## Step 5: Access the branch deployment
+
+Now that Branch Deployments are configured, you can check out the preview in Dagster Cloud. There are two ways to do this:
+
+- [From a pull request](#from-a-pull-request)
+- [Directly in Dagster Cloud](#directly-in-dagster-cloud)
+
+### From a pull request
+
+Every pull request in the repository contains a **View in Cloud** link:
+
+![TODO](/images/dagster-cloud/developing-testing/branch-deployments/github-cloud-preview-link.png)
+
+Clicking the link will open a branch deployment - or a preview of the changes - in Dagster Cloud:
+
+![TODO](/images/dagster-cloud/developing-testing/branch-deployments/github-preview-link-click.gif)
+
+### Directly in Dagster Cloud
+
+You can also access branch deployments directly in Dagster Cloud from the **deployment switcher**:
+
+![TODO](/images/dagster-cloud/developing-testing/branch-deployments/dagit-deployment-switcher.png)
