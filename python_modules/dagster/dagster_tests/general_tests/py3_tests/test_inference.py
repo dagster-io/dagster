@@ -9,12 +9,12 @@ from dagster import (
     Int,
     op,
     usable_as_dagster_type,
+    make_python_type_usable_as_dagster_type,
 )
 from dagster._core.definitions.inference import infer_input_props, infer_output_props
 from dagster._core.types.dagster_type import DagsterTypeKind
 from dagster._legacy import (
     execute_solid,
-    make_python_type_usable_as_dagster_type,
     InputDefinition,
     composite_solid,
     execute_pipeline,
@@ -237,9 +237,7 @@ def test_dict_dagster_input():
     def intake_dagster_dict(inp: Dict) -> str:
         return inp["foo"]
 
-    solid_result = execute_solid(
-        intake_dagster_dict, input_values={"inp": {"foo": "bar"}}
-    )
+    solid_result = execute_solid(intake_dagster_dict, input_values={"inp": {"foo": "bar"}})
     assert solid_result.output_value() == "bar"
 
 
@@ -261,9 +259,7 @@ def test_python_tuple_output():
 
 def test_nested_kitchen_sink():
     @lambda_solid
-    def no_execute() -> Optional[
-        List[Tuple[List[int], str, Dict[str, Optional[List[str]]]]]
-    ]:
+    def no_execute() -> Optional[List[Tuple[List[int], str, Dict[str, Optional[List[str]]]]]]:
         pass
 
     assert (
@@ -327,9 +323,7 @@ def test_infer_descriptions_from_docstring_numpy():
         """
         return hello + str(optional)
 
-    defs = infer_input_props(
-        good_numpy.compute_fn.decorated_fn, context_arg_provided=True
-    )
+    defs = infer_input_props(good_numpy.compute_fn.decorated_fn, context_arg_provided=True)
     assert len(defs) == 2
 
     hello_param = defs[0]
@@ -356,9 +350,7 @@ def test_infer_descriptions_from_docstring_google():
         """
         return hello + str(optional)
 
-    defs = infer_input_props(
-        good_google.compute_fn.decorated_fn, context_arg_provided=True
-    )
+    defs = infer_input_props(good_google.compute_fn.decorated_fn, context_arg_provided=True)
     assert len(defs) == 2
 
     hello_param = defs[0]

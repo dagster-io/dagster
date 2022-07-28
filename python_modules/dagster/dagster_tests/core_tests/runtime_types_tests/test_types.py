@@ -18,6 +18,7 @@ from dagster import (
     TypeCheck,
     check_dagster_type,
     resource,
+    make_python_type_usable_as_dagster_type
 )
 from dagster._core.test_utils import default_mode_def_for_test
 from dagster._core.types.dagster_type import (
@@ -27,7 +28,6 @@ from dagster._core.types.dagster_type import (
     resolve_dagster_type,
 )
 from dagster._legacy import (
-    make_python_type_usable_as_dagster_type,
     InputDefinition,
     ModeDefinition,
     OutputDefinition,

@@ -10,7 +10,7 @@ from dagster._core.test_utils import in_process_test_workspace, instance_for_tes
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 
 from . import repo
-from dagster._legacy import ExperimentalWarning
+from dagster import ExperimentalWarning
 
 Secret = namedtuple("Secret", ["name", "arn"])
 

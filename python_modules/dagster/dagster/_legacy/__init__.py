@@ -21,7 +21,6 @@ from dagster._core.definitions import (
     pipeline,
     pipeline_failure_sensor,
     solid,
-    PartitionsDefinition,
     PartitionSetDefinition,
     schedule_from_partitions,
     ScheduleExecutionContext,
@@ -34,7 +33,6 @@ from dagster._utils.partitions import (
     date_partition_range,
     identity_partition_selector,
 )
-from dagster._utils.backcompat import ExperimentalWarning
 from dagster._core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
 
 from dagster._core.execution.api import (
@@ -43,7 +41,6 @@ from dagster._core.execution.api import (
     reexecute_pipeline,
 )
 from dagster._core.types.config_schema import dagster_type_materializer, DagsterTypeMaterializer
-from dagster._core.types.decorator import make_python_type_usable_as_dagster_type
 from dagster._core.execution.context.compute import SolidExecutionContext
 from dagster._core.execution.context.invocation import build_solid_context
 from dagster._core.execution.results import (
