@@ -27,8 +27,6 @@ def project_cli():
 def scaffold_command(name: str):
     """
     Create a new Dagster project using the default template.
-
-    TODO
     """
     project_dir_abspath = os.path.abspath(name)
     if os.path.isdir(project_dir_abspath) and os.path.exists(project_dir_abspath):
