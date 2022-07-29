@@ -1,14 +1,6 @@
-from dagster import (
-    Field,
-    Int,
-    ModeDefinition,
-    execute_pipeline,
-    fs_io_manager,
-    reconstructable,
-    resource,
-)
-from dagster._legacy import pipeline, solid
-from dagster.utils import merge_dicts
+from dagster import Field, Int, fs_io_manager, reconstructable, resource
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster._utils import merge_dicts
 
 
 def define_resource(num):

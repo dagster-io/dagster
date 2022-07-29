@@ -379,6 +379,36 @@ const Pre = ({ children, ...props }) => {
   );
 };
 
+const ArticleList = ({ children }) => {
+  return (
+    <div className="category-container">
+      <div className="category-inner-container">
+        <ul style={{ 
+          columnCount: 2,
+          columnGap: "20px",
+          padding: 0,
+          margin: 0
+        }}>
+          {children}
+        </ul>
+      </div>
+    </div>
+  );
+};
+
+const ArticleListItem = ({ title, href }) => {
+  return (
+      <li style={{
+        marginTop: 0,
+        }}>
+        <Link href={href}>
+          {title}
+        </Link>
+      </li>
+    );
+};
+
+
 export default {
   a: ({ children, ...props }) => {
     // Skip in-page links and external links
@@ -450,4 +480,6 @@ export default {
   Experimental,
   Icons,
   OpenUserSettings,
+  ArticleList,
+  ArticleListItem,
 };

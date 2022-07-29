@@ -1,8 +1,8 @@
 import os
 
 from dagster import Array, BoolSource, IntSource, Noneable, StringSource
-from dagster.config.validate import process_config
-from dagster.core.test_utils import environ
+from dagster._config import process_config
+from dagster._core.test_utils import environ
 
 
 def test_string_source():

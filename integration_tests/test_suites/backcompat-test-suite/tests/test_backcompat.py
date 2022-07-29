@@ -13,7 +13,7 @@ import requests
 from dagster_graphql import DagsterGraphQLClient
 
 from dagster import file_relative_path
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.pipeline_run import PipelineRunStatus
 
 DAGSTER_CURRENT_BRANCH = "current_branch"
 MAX_TIMEOUT_SECONDS = 20
@@ -170,19 +170,23 @@ def graphql_client(release_test_map, retrying_requests):
 
     with docker_service_up(
         os.path.join(os.getcwd(), "dagit_service", "docker-compose.yml"),
-        build_args=[dagit_version, user_code_version],
+        build_args=[dagit_version, user_code_version, extract_major_version(user_code_version)],
     ):
         result = retrying_requests.get(f"http://{dagit_host}:3000/dagit_info")
         assert result.json().get("dagit_version")
         yield DagsterGraphQLClient(dagit_host, port_number=3000)
 
 
-def test_backcompat_deployed_pipeline(graphql_client):
-    assert_runs_and_exists(graphql_client, "the_pipeline")
+def test_backcompat_deployed_pipeline(graphql_client, release_test_map):
+    # Only run this test on backcompat versions
+    if is_0_release(release_test_map["user_code"]):
+        assert_runs_and_exists(graphql_client, "the_pipeline")
 
 
-def test_backcompat_deployed_pipeline_subset(graphql_client):
-    assert_runs_and_exists(graphql_client, "the_pipeline", subset_selection=["my_solid"])
+def test_backcompat_deployed_pipeline_subset(graphql_client, release_test_map):
+    # Only run this test on backcompat versions
+    if is_0_release(release_test_map["user_code"]):
+        assert_runs_and_exists(graphql_client, "the_pipeline", subset_selection=["my_solid"])
 
 
 def test_backcompat_deployed_job(graphql_client):
@@ -209,3 +213,17 @@ def assert_runs_and_exists(client: DagsterGraphQLClient, name, subset_selection=
     )
     assert len(locations) == 1
     assert locations[0].pipeline_name == name
+
+
+def is_0_release(release):
+    """Returns true if 0.x.x release of dagster, false otherwise"""
+    if release == "current_branch":
+        return False
+    return release.split(".")[0] == "0"
+
+
+def extract_major_version(release):
+    """Returns major version if 0.x.x release, returns 'current_branch' if master."""
+    if release == "current_branch":
+        return release
+    return release.split(".")[0]

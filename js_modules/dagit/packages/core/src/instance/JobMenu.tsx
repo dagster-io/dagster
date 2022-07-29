@@ -2,7 +2,7 @@ import {gql, useLazyQuery} from '@apollo/client';
 import {Button, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
+import {usePermissions} from '../app/Permissions';
 import {canRunAllSteps, canRunFromFailure} from '../runs/RunActionButtons';
 import {RunFragments} from '../runs/RunFragments';
 import {useJobReExecution} from '../runs/useJobReExecution';
@@ -43,7 +43,7 @@ export const JobMenu = (props: Props) => {
       icon="replay"
       text="Re-execute latest run"
       onClick={() => onLaunch({type: 'all'})}
-      disabled={!canLaunchPipelineReexecution || !run || !canRunAllSteps(run)}
+      disabled={!canLaunchPipelineReexecution.enabled || !run || !canRunAllSteps(run)}
     />
   );
 
@@ -52,7 +52,7 @@ export const JobMenu = (props: Props) => {
       icon="sync_problem"
       text="Re-execute latest run from failure"
       onClick={() => onLaunch({type: 'from-failure'})}
-      disabled={!canLaunchPipelineReexecution || !run || !canRunFromFailure(run)}
+      disabled={!canLaunchPipelineReexecution.enabled || !run || !canRunFromFailure(run)}
     />
   );
 
@@ -82,17 +82,17 @@ export const JobMenu = (props: Props) => {
             icon="checklist"
             text="View all recent runs"
           />
-          {canLaunchPipelineReexecution ? (
+          {canLaunchPipelineReexecution.enabled ? (
             reExecuteAllItem
           ) : (
-            <Tooltip content={DISABLED_MESSAGE} display="block">
+            <Tooltip content={canLaunchPipelineReexecution.disabledReason} display="block">
               {reExecuteAllItem}
             </Tooltip>
           )}
-          {canLaunchPipelineReexecution ? (
+          {canLaunchPipelineReexecution.enabled ? (
             reExecuteFromFailureItem
           ) : (
-            <Tooltip content={DISABLED_MESSAGE} display="block">
+            <Tooltip content={canLaunchPipelineReexecution.disabledReason} display="block">
               {reExecuteFromFailureItem}
             </Tooltip>
           )}

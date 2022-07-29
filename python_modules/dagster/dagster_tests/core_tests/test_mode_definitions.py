@@ -12,17 +12,14 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     Field,
-    ModeDefinition,
-    PipelineDefinition,
     String,
-    execute_pipeline,
     logger,
     resource,
 )
 from dagster._check import CheckError
-from dagster._legacy import pipeline, solid
-from dagster.core.utils import coerce_valid_log_level
-from dagster.utils.test import execute_solids_within_pipeline
+from dagster._core.utils import coerce_valid_log_level
+from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline, solid
+from dagster._utils.test import execute_solids_within_pipeline
 
 
 def test_default_mode_definition():
@@ -56,7 +53,8 @@ def test_mode_from_resources():
         return context.resources.three
 
     @pipeline(
-        name="takesamode", mode_defs=[ModeDefinition.from_resources({"three": 3}, name="three")]
+        name="takesamode",
+        mode_defs=[ModeDefinition.from_resources({"three": 3}, name="three")],
     )
     def pipeline_def():
         ret_three()
@@ -91,7 +89,9 @@ def test_wrong_single_mode():
 def test_mode_double_default_name():
     with pytest.raises(DagsterInvalidDefinitionError) as ide:
         PipelineDefinition(
-            name="double_default", solid_defs=[], mode_defs=[ModeDefinition(), ModeDefinition()]
+            name="double_default",
+            solid_defs=[],
+            mode_defs=[ModeDefinition(), ModeDefinition()],
         )
 
     assert (
@@ -283,7 +283,8 @@ def define_multi_mode_with_loggers_pipeline():
             mode_defs=[
                 ModeDefinition(name="foo_mode", logger_defs={"foo": foo_logger}),
                 ModeDefinition(
-                    name="foo_bar_mode", logger_defs={"foo": foo_logger, "bar": bar_logger}
+                    name="foo_bar_mode",
+                    logger_defs={"foo": foo_logger, "bar": bar_logger},
                 ),
             ],
         ),

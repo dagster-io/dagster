@@ -7,6 +7,7 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    DagsterEventType,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
     Field,
@@ -14,10 +15,12 @@ from dagster import (
     GraphOut,
     IOManager,
     In,
+    Nothing,
     Out,
     Output,
     ResourceDefinition,
     StaticPartitionsDefinition,
+    build_reconstructable_job,
     define_asset_job,
     graph,
     io_manager,
@@ -25,21 +28,23 @@ from dagster import (
     multi_asset,
     op,
     resource,
+    with_resources,
 )
-from dagster.config.source import StringSource
-from dagster.core.definitions import AssetGroup, AssetIn, SourceAsset, asset, build_assets_job
-from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.definitions.executor_definition import in_process_executor
-from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
-from dagster.core.execution.api import execute_pipeline
-from dagster.core.snap import DependencyStructureIndex
-from dagster.core.snap.dep_snapshot import (
+from dagster._config import StringSource
+from dagster._core.definitions import AssetGroup, AssetIn, SourceAsset, asset, build_assets_job
+from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
+from dagster._core.execution.api import execute_pipeline, execute_run_iterator
+from dagster._core.snap import DependencyStructureIndex
+from dagster._core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_icontains_solids,
 )
-from dagster.core.test_utils import instance_for_test
-from dagster.utils import safe_tempfile_path
-from dagster.utils.backcompat import ExperimentalWarning
+from dagster._core.storage.event_log.base import EventRecordsFilter
+from dagster._core.test_utils import instance_for_test
+from dagster._utils import safe_tempfile_path
+from dagster._utils.backcompat import ExperimentalWarning
 
 
 @pytest.fixture(autouse=True)
@@ -1317,6 +1322,93 @@ def test_subset_of_build_assets_job():
                 instance=instance,
                 asset_selection=[AssetKey("unconnected")],
             )
+
+
+@resource
+def my_resource():
+    return 1
+
+
+@resource
+def my_resource_2():
+    return 1
+
+
+@multi_asset(
+    name="fivetran_sync",
+    outs={key: Out(asset_key=AssetKey(key)) for key in ["a", "b", "c"]},
+)
+def fivetran_asset():
+    return 1, 2, 3
+
+
+@op(
+    name="dbt",
+    ins={
+        "a": In(Nothing),
+        "b": In(Nothing),
+        "c": In(Nothing),
+    },
+    out={
+        "d": Out(is_required=False),
+        "e": Out(is_required=False),
+        "f": Out(is_required=False),
+    },
+    required_resource_keys={"my_resource_2"},
+)
+def dbt_op():
+    yield Output(4, "f")
+
+
+dbt_asset_def = AssetsDefinition(
+    keys_by_output_name={l: AssetKey(l) for l in ["d", "e", "f"]},
+    keys_by_input_name={l: AssetKey(l) for l in ["a", "b", "c"]},
+    node_def=dbt_op,
+    can_subset=True,
+    asset_deps={
+        AssetKey("d"): {AssetKey("a")},
+        AssetKey("e"): {AssetKey("d"), AssetKey("b")},
+        AssetKey("f"): {AssetKey("d"), AssetKey("e")},
+    },
+)
+
+my_job = define_asset_job("foo", selection=["a", "b", "c", "d", "e", "f"]).resolve(
+    with_resources(
+        [dbt_asset_def, fivetran_asset],
+        resource_defs={"my_resource": my_resource, "my_resource_2": my_resource_2},
+    ),
+    [],
+)
+
+
+def reconstruct_asset_job():
+    return my_job
+
+
+def test_asset_selection_reconstructable():
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=ExperimentalWarning)
+        warnings.simplefilter("ignore", category=DeprecationWarning)
+        with instance_for_test() as instance:
+            run = instance.create_run_for_pipeline(
+                pipeline_def=my_job, asset_selection=frozenset([AssetKey("f")])
+            )
+            reconstructable_foo_job = build_reconstructable_job(
+                "dagster_tests.core_tests.asset_defs_tests.test_assets_job",
+                "reconstruct_asset_job",
+                reconstructable_args=tuple(),
+                reconstructable_kwargs={},
+            ).subset_for_execution(asset_selection=frozenset([AssetKey("f")]))
+
+            events = list(execute_run_iterator(reconstructable_foo_job, run, instance=instance))
+            assert len([event for event in events if event.is_pipeline_success]) == 1
+
+            materialization_planned = list(
+                instance.get_event_records(
+                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
+                )
+            )
+            assert len(materialization_planned) == 1
 
 
 def test_job_preserved_with_asset_subset():

@@ -1,8 +1,8 @@
 import tempfile
 
-from dagster import execute_pipeline
-from dagster.core.definitions.reconstruct import ReconstructablePipeline
-from dagster.core.test_utils import instance_for_test
+from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.test_utils import instance_for_test
+from dagster._legacy import execute_pipeline
 
 CEREALS_DATASET_URL = "https://gist.githubusercontent.com/mgasner/bd2c0f66dff4a9f01855cfa6870b1fce/raw/2de62a57fb08da7c58d6480c987077cf91c783a1/cereal.csv"
 

@@ -4,8 +4,8 @@ from dagster_graphql.client.query import (
 )
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
-from dagster.core.test_utils import wait_for_runs_to_finish
-from dagster.core.utils import make_new_run_id
+from dagster._core.test_utils import wait_for_runs_to_finish
+from dagster._core.utils import make_new_run_id
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .setup import csv_hello_world_solids_config

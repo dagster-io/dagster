@@ -1,4 +1,4 @@
-from dagster.core.test_utils import instance_for_test
+from dagster._core.test_utils import instance_for_test
 from docs_snippets.guides.dagster.versioning_memoization import memoization_enabled_job
 
 

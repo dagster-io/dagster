@@ -1,7 +1,11 @@
+from dagster._utils import script_relative_path
+
+# isort: split
+# start
+
 from urllib.request import urlretrieve
 
-from dagster import Field, OutputDefinition, String, op
-from dagster.utils import script_relative_path
+from dagster import Field, Out, String, op
 
 
 @op(
@@ -10,11 +14,7 @@ from dagster.utils import script_relative_path
         "url": Field(String, description="The URL from which to download the file"),
         "path": Field(String, description="The path to which to download the file"),
     },
-    output_defs=[
-        OutputDefinition(
-            String, name="path", description="The path to which the file was downloaded"
-        )
-    ],
+    out={"path": Out(String, description="The path to which the file was downloaded")},
     description=(
         "A simple utility op that downloads a file from a URL to a path using urllib.urlretrieve"
     ),

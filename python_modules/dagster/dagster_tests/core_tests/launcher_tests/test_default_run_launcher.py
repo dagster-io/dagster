@@ -11,29 +11,28 @@ import pytest
 from dagster import (
     DagsterEventType,
     DefaultRunLauncher,
-    ModeDefinition,
+    _seven,
     file_relative_path,
     fs_io_manager,
     repository,
-    seven,
 )
-from dagster._legacy import pipeline, solid
-from dagster.core.errors import DagsterLaunchFailedError
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.storage.tags import GRPC_INFO_TAG
-from dagster.core.test_utils import (
+from dagster._core.errors import DagsterLaunchFailedError
+from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.tags import GRPC_INFO_TAG
+from dagster._core.test_utils import (
     environ,
     instance_for_test,
     poll_for_event,
     poll_for_finished_run,
     poll_for_step_start,
 )
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.core.workspace import WorkspaceProcessContext
-from dagster.core.workspace.load_target import GrpcServerTarget, PythonFileTarget
-from dagster.grpc.client import DagsterGrpcClient
-from dagster.grpc.server import GrpcServerProcess
-from dagster.grpc.types import CancelExecutionRequest
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.workspace import WorkspaceProcessContext
+from dagster._core.workspace.load_target import GrpcServerTarget, PythonFileTarget
+from dagster._grpc.client import DagsterGrpcClient
+from dagster._grpc.server import GrpcServerProcess
+from dagster._grpc.types import CancelExecutionRequest
+from dagster._legacy import ModeDefinition, pipeline, solid
 
 default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 
@@ -249,7 +248,7 @@ def test_invalid_instance_run(get_workspace):
                 temp_dir=temp_dir,
                 overrides={
                     "run_storage": {
-                        "module": "dagster.core.storage.runs",
+                        "module": "dagster._core.storage.runs",
                         "class": "SqliteRunStorage",
                         "config": {"base_dir": {"env": "RUN_STORAGE_ENV"}},
                     }
@@ -295,7 +294,7 @@ def test_invalid_instance_run(get_workspace):
     run_configs(),
 )
 @pytest.mark.skipif(
-    seven.IS_WINDOWS,
+    _seven.IS_WINDOWS,
     reason="Crashy pipelines leave resources open on windows, causing filesystem contention",
 )
 def test_crashy_run(get_workspace, run_config):  # pylint: disable=redefined-outer-name
@@ -346,7 +345,7 @@ def test_crashy_run(get_workspace, run_config):  # pylint: disable=redefined-out
 
 @pytest.mark.parametrize("run_config", run_configs())
 @pytest.mark.skipif(
-    seven.IS_WINDOWS,
+    _seven.IS_WINDOWS,
     reason="Crashy pipelines leave resources open on windows, causing filesystem contention",
 )
 def test_exity_run(run_config):  # pylint: disable=redefined-outer-name
@@ -699,7 +698,10 @@ def test_engine_events(get_workspace, run_config):  # pylint: disable=redefined-
             assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
 
             poll_for_event(
-                instance, run_id, event_type="ENGINE_EVENT", message="Process for run exited"
+                instance,
+                run_id,
+                event_type="ENGINE_EVENT",
+                message="Process for run exited",
             )
             event_records = instance.all_logs(run_id)
 

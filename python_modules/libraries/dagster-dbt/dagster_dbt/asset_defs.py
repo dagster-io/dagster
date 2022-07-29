@@ -17,17 +17,17 @@ from dagster import (
     Nothing,
     Out,
     PartitionsDefinition,
-    SolidExecutionContext,
     TableColumn,
     TableSchema,
 )
 from dagster import _check as check
 from dagster import get_dagster_logger, op
-from dagster.core.definitions.events import CoercibleToAssetKeyPrefix
-from dagster.core.definitions.load_assets_from_modules import prefix_assets
-from dagster.core.definitions.metadata import RawMetadataValue
-from dagster.core.errors import DagsterInvalidSubsetError
-from dagster.utils.backcompat import experimental_arg_warning
+from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
+from dagster._core.definitions.load_assets_from_modules import prefix_assets
+from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.errors import DagsterInvalidSubsetError
+from dagster._legacy import SolidExecutionContext
+from dagster._utils.backcompat import experimental_arg_warning
 
 # dbt resource types that may be considered assets
 ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]

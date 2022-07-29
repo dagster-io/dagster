@@ -5,28 +5,27 @@ import types
 import pytest
 import yaml
 
-from dagster import (
-    DagsterEventType,
-    DagsterInvalidConfigError,
+from dagster import DagsterEventType, DagsterInvalidConfigError, Output
+from dagster import _check as check
+from dagster._core.definitions.events import RetryRequested
+from dagster._core.execution.stats import StepEventStatus
+from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
+from dagster._core.launcher import DefaultRunLauncher
+from dagster._core.run_coordinator import DefaultRunCoordinator
+from dagster._core.storage.event_log import SqliteEventLogStorage
+from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
+from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.root import LocalArtifactStorage
+from dagster._core.storage.runs import SqliteRunStorage
+from dagster._core.test_utils import environ
+from dagster._legacy import (
     InputDefinition,
-    Output,
     OutputDefinition,
     PipelineRun,
+    execute_pipeline,
+    pipeline,
+    solid,
 )
-from dagster import _check as check
-from dagster import execute_pipeline
-from dagster._legacy import pipeline, solid
-from dagster.core.definitions.events import RetryRequested
-from dagster.core.execution.stats import StepEventStatus
-from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
-from dagster.core.launcher import DefaultRunLauncher
-from dagster.core.run_coordinator import DefaultRunCoordinator
-from dagster.core.storage.event_log import SqliteEventLogStorage
-from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.storage.root import LocalArtifactStorage
-from dagster.core.storage.runs import SqliteRunStorage
-from dagster.core.test_utils import environ
 
 
 def test_fs_stores():
@@ -75,7 +74,8 @@ def test_init_compute_log_with_bad_config():
         with open(os.path.join(tmpdir_path, "dagster.yaml"), "w", encoding="utf8") as fd:
             yaml.dump({"compute_logs": {"garbage": "flargh"}}, fd, default_flow_style=False)
         with pytest.raises(
-            DagsterInvalidConfigError, match='Received unexpected config entry "garbage"'
+            DagsterInvalidConfigError,
+            match='Received unexpected config entry "garbage"',
         ):
             DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
 
@@ -83,7 +83,8 @@ def test_init_compute_log_with_bad_config():
 def test_init_compute_log_with_bad_config_override():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         with pytest.raises(
-            DagsterInvalidConfigError, match='Received unexpected config entry "garbage"'
+            DagsterInvalidConfigError,
+            match='Received unexpected config entry "garbage"',
         ):
             DagsterInstance.from_ref(
                 InstanceRef.from_dir(tmpdir_path, overrides={"compute_logs": {"garbage": "flargh"}})
@@ -172,7 +173,10 @@ def test_run_step_stats():
             context.log.info("succeed")
             return "yay"
 
-        @solid(input_defs=[InputDefinition("_input", str)], output_defs=[OutputDefinition(str)])
+        @solid(
+            input_defs=[InputDefinition("_input", str)],
+            output_defs=[OutputDefinition(str)],
+        )
         def should_fail(context, _input):
             context.log.info("fail")
             raise Exception("booo")
@@ -216,7 +220,10 @@ def test_run_step_stats_with_retries():
 
             yield Output("yay")
 
-        @solid(input_defs=[InputDefinition("_input", str)], output_defs=[OutputDefinition(str)])
+        @solid(
+            input_defs=[InputDefinition("_input", str)],
+            output_defs=[OutputDefinition(str)],
+        )
         def should_retry(context, _input):
             raise RetryRequested(max_retries=3)
 

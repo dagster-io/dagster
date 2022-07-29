@@ -13,7 +13,7 @@ from dagster_k8s.utils import sanitize_k8s_label
 
 from dagster import __version__ as dagster_version
 from dagster import graph
-from dagster.core.test_utils import environ, remove_none_recursively
+from dagster._core.test_utils import environ, remove_none_recursively
 
 
 def test_job_serialization():
@@ -234,6 +234,37 @@ def test_construct_dagster_k8s_job_with_user_defined_env_camelcase():
     assert env_mapping["DD_AGENT_HOST"]["value_from"] == {
         "field_ref": {"field_path": "status.hostIP"}
     }
+
+
+def test_construct_dagster_k8s_job_with_user_defined_command():
+    @graph
+    def user_defined_k8s_env_tags_graph():
+        pass
+
+    user_defined_k8s_config = get_user_defined_k8s_config(
+        user_defined_k8s_env_tags_graph.to_job(
+            tags={
+                USER_DEFINED_K8S_CONFIG_KEY: {
+                    "container_config": {
+                        "command": ["echo", "hi"],
+                    }
+                }
+            }
+        ).tags
+    )
+
+    cfg = DagsterK8sJobConfig(
+        job_image="test/foo:latest",
+        dagster_home="/opt/dagster/dagster_home",
+        instance_config_map="some-instance-configmap",
+    )
+
+    job = construct_dagster_k8s_job(
+        cfg, ["foo", "bar"], "job", user_defined_k8s_config=user_defined_k8s_config
+    ).to_dict()
+
+    command = job["spec"]["template"]["spec"]["containers"][0]["command"]
+    assert command == ["echo", "hi"]
 
 
 def test_construct_dagster_k8s_job_with_user_defined_env_snake_case():

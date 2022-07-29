@@ -4,26 +4,21 @@ import time
 
 import pytest
 
-from dagster import (
-    Failure,
-    Field,
+from dagster import Failure, Field, MetadataEntry, Nothing, Output, String, reconstructable
+from dagster._core.errors import DagsterUnmetExecutorRequirementsError
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
+from dagster._legacy import (
     InputDefinition,
-    MetadataEntry,
-    Nothing,
-    Output,
     OutputDefinition,
     PresetDefinition,
-    String,
     execute_pipeline,
     lambda_solid,
-    reconstructable,
+    pipeline,
+    solid,
 )
-from dagster._legacy import pipeline, solid
-from dagster.core.errors import DagsterUnmetExecutorRequirementsError
-from dagster.core.instance import DagsterInstance
-from dagster.core.storage.compute_log_manager import ComputeIOType
-from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster.utils import safe_tempfile_path, segfault
+from dagster._utils import safe_tempfile_path, segfault
 
 
 def test_diamond_simple_execution():
@@ -316,7 +311,7 @@ def test_ephemeral_event_log():
     with instance_for_test(
         overrides={
             "event_log_storage": {
-                "module": "dagster.core.storage.event_log",
+                "module": "dagster._core.storage.event_log",
                 "class": "InMemoryEventLogStorage",
             }
         }

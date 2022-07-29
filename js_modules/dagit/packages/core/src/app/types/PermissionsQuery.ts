@@ -11,6 +11,7 @@ export interface PermissionsQuery_permissions {
   __typename: "Permission";
   permission: string;
   value: boolean;
+  disabledReason: string | null;
 }
 
 export interface PermissionsQuery {

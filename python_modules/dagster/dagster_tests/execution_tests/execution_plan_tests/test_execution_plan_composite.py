@@ -1,8 +1,8 @@
-from dagster import Field, Int, String, composite_solid
-from dagster._legacy import pipeline, solid
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.instance import DagsterInstance
+from dagster import Field, Int, String
+from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.execution.api import create_execution_plan, execute_plan
+from dagster._core.instance import DagsterInstance
+from dagster._legacy import composite_solid, pipeline, solid
 
 
 @solid(config_schema={"foo": Field(String)})
@@ -45,7 +45,10 @@ def test_execution_plan_for_composite_solid():
     run_config = {
         "solids": {
             "composite_with_nested_config_solid": {
-                "solids": {"node_a": {"config": {"foo": "baz"}}, "node_b": {"config": {"bar": 3}}}
+                "solids": {
+                    "node_a": {"config": {"foo": "baz"}},
+                    "node_b": {"config": {"bar": 3}},
+                }
             }
         }
     }
@@ -93,7 +96,8 @@ def test_execution_plan_for_composite_solid_with_config_mapping():
     )
     instance = DagsterInstance.ephemeral()
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=composite_pipeline_with_config_mapping, execution_plan=execution_plan
+        pipeline_def=composite_pipeline_with_config_mapping,
+        execution_plan=execution_plan,
     )
 
     events = execute_plan(

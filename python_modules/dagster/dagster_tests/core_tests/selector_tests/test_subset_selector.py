@@ -1,10 +1,9 @@
 import pytest
 
-from dagster import AssetGroup, InputDefinition, asset, lambda_solid
-from dagster._legacy import pipeline
-from dagster.core.definitions.executor_definition import execute_in_process_executor
-from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
-from dagster.core.selector.subset_selector import (
+from dagster import asset
+from dagster._core.definitions.executor_definition import execute_in_process_executor
+from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
+from dagster._core.selector.subset_selector import (
     MAX_NUM,
     Traverser,
     clause_to_subset,
@@ -13,7 +12,8 @@ from dagster.core.selector.subset_selector import (
     parse_solid_selection,
     parse_step_selection,
 )
-from dagster.core.test_utils import default_mode_def_for_test
+from dagster._core.test_utils import default_mode_def_for_test
+from dagster._legacy import AssetGroup, InputDefinition, lambda_solid, pipeline
 
 
 @lambda_solid
@@ -115,7 +115,12 @@ def test_parse_solid_selection_single():
 
     solid_selection_both = parse_solid_selection(foo_pipeline, ["*add_nums+"])
     assert len(solid_selection_both) == 4
-    assert set(solid_selection_both) == {"return_one", "return_two", "add_nums", "multiply_two"}
+    assert set(solid_selection_both) == {
+        "return_one",
+        "return_two",
+        "add_nums",
+        "multiply_two",
+    }
 
 
 def test_parse_solid_selection_multi():
@@ -123,13 +128,21 @@ def test_parse_solid_selection_multi():
         foo_pipeline, ["return_one", "add_nums+"]
     )
     assert len(solid_selection_multi_disjoint) == 3
-    assert set(solid_selection_multi_disjoint) == {"return_one", "add_nums", "multiply_two"}
+    assert set(solid_selection_multi_disjoint) == {
+        "return_one",
+        "add_nums",
+        "multiply_two",
+    }
 
     solid_selection_multi_overlap = parse_solid_selection(
         foo_pipeline, ["*add_nums", "return_one+"]
     )
     assert len(solid_selection_multi_overlap) == 3
-    assert set(solid_selection_multi_overlap) == {"return_one", "return_two", "add_nums"}
+    assert set(solid_selection_multi_overlap) == {
+        "return_one",
+        "return_two",
+        "add_nums",
+    }
 
     with pytest.raises(
         DagsterInvalidSubsetError,

@@ -2,24 +2,22 @@ import warnings
 
 import pytest
 
-from dagster import (
-    DependencyDefinition,
+from dagster import DependencyDefinition, Int, Nothing, Output
+from dagster._core.definitions.decorators.hook_decorator import event_list_hook, success_hook
+from dagster._core.definitions.events import DynamicOutput, HookExecutionResult
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.execution.api import create_execution_plan
+from dagster._legacy import (
     InputDefinition,
-    Int,
-    Nothing,
-    Output,
     OutputDefinition,
     PipelineDefinition,
     SolidDefinition,
     composite_solid,
     execute_pipeline,
     lambda_solid,
+    pipeline,
+    solid,
 )
-from dagster._legacy import pipeline, solid
-from dagster.core.definitions.decorators.hook_decorator import event_list_hook, success_hook
-from dagster.core.definitions.events import DynamicOutput, HookExecutionResult
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.core.execution.api import create_execution_plan
 
 
 def builder(graph):
@@ -236,7 +234,12 @@ def test_basic_aliasing_with_dsl():
 
 
 def test_diamond_graph():
-    @solid(output_defs=[OutputDefinition(name="value_one"), OutputDefinition(name="value_two")])
+    @solid(
+        output_defs=[
+            OutputDefinition(name="value_one"),
+            OutputDefinition(name="value_two"),
+        ]
+    )
     def emit_values(_context):
         yield Output(1, "value_one")
         yield Output(2, "value_two")
@@ -248,7 +251,10 @@ def test_diamond_graph():
     @composite_solid
     def diamond():
         value_one, value_two = emit_values()
-        subtract(num_one=add_one(num=value_one), num_two=add_one.alias("renamed")(num=value_two))
+        subtract(
+            num_one=add_one(num=value_one),
+            num_two=add_one.alias("renamed")(num=value_two),
+        )
 
     result = execute_pipeline(PipelineDefinition(solid_defs=[diamond], name="test"))
 
@@ -257,13 +263,15 @@ def test_diamond_graph():
 
 def test_mapping():
     @lambda_solid(
-        input_defs=[InputDefinition("num_in", Int)], output_def=OutputDefinition(Int, "num_out")
+        input_defs=[InputDefinition("num_in", Int)],
+        output_def=OutputDefinition(Int, "num_out"),
     )
     def double(num_in):
         return num_in * 2
 
     @composite_solid(
-        input_defs=[InputDefinition("num_in", Int)], output_defs=[OutputDefinition(Int, "num_out")]
+        input_defs=[InputDefinition("num_in", Int)],
+        output_defs=[OutputDefinition(Int, "num_out")],
     )
     def composed_inout(num_in):
         return double(num_in=num_in)
@@ -489,7 +497,11 @@ def test_mapping_args_ordering():
         {
             "solids": {
                 "swizzle_2": {
-                    "inputs": {"a": {"value": "a"}, "b": {"value": "b"}, "c": {"value": "c"}}
+                    "inputs": {
+                        "a": {"value": "a"},
+                        "b": {"value": "b"},
+                        "c": {"value": "c"},
+                    }
                 }
             }
         },
@@ -820,7 +832,8 @@ def test_uninvoked_aliased_solid_fails():
 
 def test_alias_on_invoked_solid_fails():
     with pytest.raises(
-        DagsterInvariantViolationError, match=r".*Consider checking the location of parentheses."
+        DagsterInvariantViolationError,
+        match=r".*Consider checking the location of parentheses.",
     ):
 
         @pipeline
@@ -836,7 +849,8 @@ def test_warn_on_pipeline_return():
         pass
 
     with pytest.warns(
-        UserWarning, match="You have returned a value out of a @pipeline-decorated function. "
+        UserWarning,
+        match="You have returned a value out of a @pipeline-decorated function. ",
     ):
 
         @pipeline

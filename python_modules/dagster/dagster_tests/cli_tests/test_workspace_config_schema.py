@@ -1,7 +1,7 @@
 import yaml
 
-from dagster.core.test_utils import environ
-from dagster.core.workspace.config_schema import process_workspace_config
+from dagster._core.test_utils import environ
+from dagster._core.workspace.config_schema import process_workspace_config
 
 
 def _validate_yaml_contents(yaml_contents):

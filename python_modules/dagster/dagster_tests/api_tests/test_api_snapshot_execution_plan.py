@@ -2,10 +2,10 @@ import re
 
 import pytest
 
-from dagster.api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
-from dagster.core.errors import DagsterUserCodeProcessError
-from dagster.core.host_representation.handle import PipelineHandle
-from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
+from dagster._api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
+from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.host_representation.handle import PipelineHandle
+from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 
 from .utils import get_bar_repo_repository_location
 

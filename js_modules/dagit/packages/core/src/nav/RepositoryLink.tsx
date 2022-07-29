@@ -33,7 +33,7 @@ export const RepositoryLink: React.FC<{
       <RepositoryName to={workspacePathFromAddress(repoAddress)}>
         {repoAddressTruncated}
       </RepositoryName>
-      {canReloadRepositoryLocation && showRefresh ? (
+      {canReloadRepositoryLocation.enabled && showRefresh ? (
         <ReloadRepositoryLocationButton location={location}>
           {({tryReload, reloading}) => (
             <ReloadTooltip

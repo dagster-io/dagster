@@ -16,30 +16,33 @@ from dagster import (
     Bool,
     Field,
     In,
-    InputDefinition,
     Int,
     IntSource,
     List,
-    ModeDefinition,
     Output,
-    OutputDefinition,
     RetryRequested,
     String,
     VersionStrategy,
-    default_executors,
     file_relative_path,
     fs_io_manager,
     job,
-    lambda_solid,
     op,
     repository,
     resource,
 )
-from dagster._legacy import pipeline, solid
-from dagster.core.definitions.decorators import daily_schedule, schedule
-from dagster.core.test_utils import nesting_composite_pipeline
-from dagster.utils import merge_dicts, segfault
-from dagster.utils.yaml_utils import merge_yamls
+from dagster._core.definitions.decorators import daily_schedule, schedule
+from dagster._core.test_utils import nesting_composite_pipeline
+from dagster._legacy import (
+    InputDefinition,
+    ModeDefinition,
+    OutputDefinition,
+    default_executors,
+    lambda_solid,
+    pipeline,
+    solid,
+)
+from dagster._utils import merge_dicts, segfault
+from dagster._utils.yaml_utils import merge_yamls
 
 IS_BUILDKITE = bool(os.getenv("BUILDKITE"))
 
@@ -405,7 +408,10 @@ def define_long_running_pipeline_celery():
 
 def define_large_pipeline_celery():
     return nesting_composite_pipeline(
-        depth=1, num_children=6, mode_defs=celery_mode_defs(), name="large_pipeline_celery"
+        depth=1,
+        num_children=6,
+        mode_defs=celery_mode_defs(),
+        name="large_pipeline_celery",
     )
 
 

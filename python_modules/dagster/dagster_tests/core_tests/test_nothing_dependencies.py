@@ -7,7 +7,6 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DagsterTypeCheckDidNotPass,
     DependencyDefinition,
-    InputDefinition,
     Int,
     List,
     MultiDependencyDefinition,
@@ -15,13 +14,16 @@ from dagster import (
     Nothing,
     Optional,
     Output,
+)
+from dagster._core.execution.api import create_execution_plan
+from dagster._legacy import (
+    InputDefinition,
     OutputDefinition,
     PipelineDefinition,
     execute_pipeline,
     lambda_solid,
+    solid,
 )
-from dagster._legacy import solid
-from dagster.core.execution.api import create_execution_plan
 
 
 def _define_nothing_dep_pipeline():
@@ -43,7 +45,10 @@ def _define_nothing_dep_pipeline():
         return 1
 
     @lambda_solid(
-        input_defs=[InputDefinition("on_complete", Nothing), InputDefinition("num", Int)],
+        input_defs=[
+            InputDefinition("on_complete", Nothing),
+            InputDefinition("num", Int),
+        ],
         output_def=OutputDefinition(Int),
     )
     def add_value(num):
@@ -241,7 +246,8 @@ def test_valid_nothing_fns():
         yield AssetMaterialization.file("/path/to/nowhere")
 
     pipeline = PipelineDefinition(
-        name="fn_test", solid_defs=[just_pass, just_pass2, ret_none, yield_none, yield_stuff]
+        name="fn_test",
+        solid_defs=[just_pass, just_pass2, ret_none, yield_none, yield_stuff],
     )
     result = execute_pipeline(pipeline)
     assert result.success

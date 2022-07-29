@@ -4,30 +4,31 @@ import pickle
 import sys
 import tempfile
 import uuid
-from typing import Any, Dict, List, Optional, Sequence, Set, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Set, Union, cast
 
 import nbformat
 import papermill
 from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
 
-from dagster import InputDefinition, OpDefinition, Output, OutputDefinition, SolidDefinition
+from dagster import In, OpDefinition, Out, Output
 from dagster import _check as check
-from dagster import seven
-from dagster.core.definitions.events import AssetMaterialization, Failure, RetryRequested
-from dagster.core.definitions.metadata import MetadataValue
-from dagster.core.definitions.reconstruct import ReconstructablePipeline
-from dagster.core.definitions.utils import validate_tags
-from dagster.core.execution.context.compute import SolidExecutionContext
-from dagster.core.execution.context.input import build_input_context
-from dagster.core.execution.context.system import StepExecutionContext
-from dagster.core.execution.plan.outputs import StepOutputHandle
-from dagster.core.storage.file_manager import FileHandle
-from dagster.serdes import pack_value
-from dagster.seven import get_system_temp_directory
-from dagster.utils import mkdir_p, safe_tempfile_path
-from dagster.utils.backcompat import rename_warning
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster import _seven
+from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.definitions.utils import validate_tags
+from dagster._core.execution.context.compute import SolidExecutionContext
+from dagster._core.execution.context.input import build_input_context
+from dagster._core.execution.context.system import StepExecutionContext
+from dagster._core.execution.plan.outputs import StepOutputHandle
+from dagster._core.storage.file_manager import FileHandle
+from dagster._legacy import InputDefinition, OutputDefinition, SolidDefinition
+from dagster._serdes import pack_value
+from dagster._seven import get_system_temp_directory
+from dagster._utils import mkdir_p, safe_tempfile_path
+from dagster._utils.backcompat import rename_warning
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .compat import ExecutionError
 from .engine import DagstermillEngine
@@ -92,7 +93,7 @@ def replace_parameters(context, nb, parameters):
         after = nb.cells
 
     nb.cells = before + [newcell] + after
-    nb.metadata.papermill["parameters"] = seven.json.dumps(parameters)
+    nb.metadata.papermill["parameters"] = _seven.json.dumps(parameters)
 
     return nb
 
@@ -190,7 +191,10 @@ def _dm_compute(
                     step_execution_context,
                     nb,
                     get_papermill_parameters(
-                        step_execution_context, inputs, output_log_path, compute_descriptor
+                        step_execution_context,
+                        inputs,
+                        output_log_path,
+                        compute_descriptor,
                     ),
                 )
                 write_ipynb(nb_no_parameters, parameterized_notebook_path)
@@ -275,12 +279,16 @@ def _dm_compute(
 
             output_nb = scrapbook.read_notebook(executed_notebook_path)
 
-            for (output_name, _) in step_execution_context.solid_def.output_dict.items():
+            for (
+                output_name,
+                _,
+            ) in step_execution_context.solid_def.output_dict.items():
                 data_dict = output_nb.scraps.data_dict
                 if output_name in data_dict:
                     # read outputs that were passed out of process via io manager from `yield_result`
                     step_output_handle = StepOutputHandle(
-                        step_key=step_execution_context.step.key, output_name=output_name
+                        step_key=step_execution_context.step.key,
+                        output_name=output_name,
                     )
                     output_context = step_execution_context.get_output_context(step_output_handle)
                     io_manager = step_execution_context.get_io_manager(step_output_handle)
@@ -327,7 +335,7 @@ def define_dagstermill_solid(
         output_notebook (Optional[str]): If set, will be used as the name of an injected output of
             type :py:class:`~dagster.FileHandle` that will point to the executed notebook (in
             addition to the :py:class:`~dagster.AssetMaterialization` that is always created). This
-            respects the :py:class:`~dagster.core.storage.file_manager.FileManager` configured on
+            respects the :py:class:`~dagster._core.storage.file_manager.FileManager` configured on
             the pipeline resources via the "file_manager" resource key, so, e.g.,
             if :py:class:`~dagster_aws.s3.s3_file_manager` is configured, the output will be a :
             py:class:`~dagster_aws.s3.S3FileHandle`.
@@ -363,7 +371,9 @@ def define_dagstermill_solid(
     # backcompact
     if output_notebook is not None:
         rename_warning(
-            new_name="output_notebook_name", old_name="output_notebook", breaking_version="0.14.0"
+            new_name="output_notebook_name",
+            old_name="output_notebook",
+            breaking_version="0.14.0",
         )
         required_resource_keys.add("file_manager")
         extra_output_defs.append(OutputDefinition(dagster_type=FileHandle, name=output_notebook))
@@ -410,6 +420,8 @@ def define_dagstermill_solid(
 def define_dagstermill_op(
     name: str,
     notebook_path: str,
+    ins: Optional[Mapping[str, In]] = None,
+    outs: Optional[Mapping[str, Out]] = None,
     input_defs: Optional[Sequence[InputDefinition]] = None,
     output_defs: Optional[Sequence[OutputDefinition]] = None,
     config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
@@ -419,44 +431,56 @@ def define_dagstermill_op(
     description: Optional[str] = None,
     tags: Optional[Dict[str, Any]] = None,
 ):
-    """Wrap a Jupyter notebook in a solid.
+    """Wrap a Jupyter notebook in a op.
 
     Arguments:
-        name (str): The name of the solid.
+        name (str): The name of the op.
         notebook_path (str): Path to the backing notebook.
-        input_defs (Optional[List[InputDefinition]]): The solid's inputs.
-        output_defs (Optional[List[OutputDefinition]]): The solid's outputs. Your notebook should
+        ins (Optional[List[InputDefinition]]): The op's inputs.
+        output_defs (Optional[List[OutputDefinition]]): The op's outputs. Your notebook should
             call :py:func:`~dagstermill.yield_result` to yield each of these outputs.
         required_resource_keys (Optional[Set[str]]): The string names of any required resources.
         output_notebook_name: (Optional[str]): If set, will be used as the name of an injected output
             of type of :py:class:`~dagster.BufferedIOBase` that is the file object of the executed
             notebook (in addition to the :py:class:`~dagster.AssetMaterialization` that is always
-            created). It allows the downstream solids to access the executed notebook via a file
+            created). It allows the downstream ops to access the executed notebook via a file
             object.
         asset_key_prefix (Optional[Union[List[str], str]]): If set, will be used to prefix the
             asset keys for materialized notebooks.
-        description (Optional[str]): If set, description used for solid.
-        tags (Optional[Dict[str, str]]): If set, additional tags used to annotate solid.
+        description (Optional[str]): If set, description used for op.
+        tags (Optional[Dict[str, str]]): If set, additional tags used to annotate op.
             Dagster uses the tag keys `notebook_path` and `kind`, which cannot be
             overwritten by the user.
 
     Returns:
-        :py:class:`~dagster.SolidDefinition`
+        :py:class:`~dagster.OpDefinition`
     """
     check.str_param(name, "name")
     check.str_param(notebook_path, "notebook_path")
-    input_defs = check.opt_list_param(input_defs, "input_defs", of_type=InputDefinition)
-    output_defs = check.opt_list_param(output_defs, "output_defs", of_type=OutputDefinition)
+    check.opt_list_param(input_defs, "input_defs", of_type=InputDefinition)
+    check.opt_list_param(output_defs, "output_defs", of_type=OutputDefinition)
     required_resource_keys = set(
         check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
     )
+    outs = check.opt_mapping_param(outs, "outs", key_type=str, value_type=Out)
+    ins = check.opt_mapping_param(ins, "ins", key_type=str, value_type=In)
 
-    extra_output_defs = []
-    if output_notebook_name is not None:
-        required_resource_keys.add("output_notebook_io_manager")
-        extra_output_defs.append(
-            OutputDefinition(name=output_notebook_name, io_manager_key="output_notebook_io_manager")
-        )
+    if output_defs is not None:
+        extra_output_defs = []
+        if output_notebook_name is not None:
+            required_resource_keys.add("output_notebook_io_manager")
+            extra_output_defs.append(
+                OutputDefinition(
+                    name=output_notebook_name,
+                    io_manager_key="output_notebook_io_manager",
+                )
+            )
+        output_defs = cast(List[OutputDefinition], output_defs) + extra_output_defs
+    elif output_notebook_name is not None:
+        outs = {
+            cast(str, output_notebook_name): Out(io_manager_key="output_notebook_io_manager"),
+            **outs,
+        }
 
     if isinstance(asset_key_prefix, str):
         asset_key_prefix = [asset_key_prefix]
@@ -480,7 +504,6 @@ def define_dagstermill_op(
 
     return OpDefinition(
         name=name,
-        input_defs=input_defs,
         compute_fn=_dm_compute(
             "define_dagstermill_op",
             name,
@@ -488,7 +511,10 @@ def define_dagstermill_op(
             output_notebook_name,
             asset_key_prefix=asset_key_prefix,
         ),
-        output_defs=output_defs + extra_output_defs,
+        ins=ins,
+        outs=outs,
+        input_defs=input_defs,
+        output_defs=output_defs,
         config_schema=config_schema,
         required_resource_keys=required_resource_keys,
         description=description,

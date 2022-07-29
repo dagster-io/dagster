@@ -14,8 +14,14 @@ from dagster import (
 )
 from dagster import _check as check
 from dagster import build_op_context, io_manager, resource
-from dagster.core.definitions import AssetIn, AssetsDefinition, asset, build_assets_job, multi_asset
-from dagster.core.definitions.resource_requirement import ensure_requirements_satisfied
+from dagster._core.definitions import (
+    AssetIn,
+    AssetsDefinition,
+    asset,
+    build_assets_job,
+    multi_asset,
+)
+from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 
 
 @pytest.fixture(autouse=True)

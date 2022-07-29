@@ -15,7 +15,7 @@ from schema.charts.dagster_user_deployments.subschema.user_deployments import Us
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
 
-from dagster.core.instance.config import sensors_daemon_config
+from dagster._core.instance.config import sensors_daemon_config
 
 from .utils import create_simple_user_deployment
 

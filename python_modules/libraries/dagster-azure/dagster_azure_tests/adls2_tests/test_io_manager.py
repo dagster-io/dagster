@@ -9,17 +9,12 @@ from dagster_azure.adls2.resources import adls2_resource
 from dagster_azure.blob import create_blob_client
 
 from dagster import (
-    AssetGroup,
     AssetIn,
     AssetKey,
     DagsterInstance,
     DynamicOutput,
-    DynamicOutputDefinition,
     GraphOut,
-    InputDefinition,
     Int,
-    OutputDefinition,
-    PipelineRun,
     asset,
     build_input_context,
     build_output_context,
@@ -27,13 +22,20 @@ from dagster import (
     op,
     resource,
 )
-from dagster.core.definitions.assets import AssetsDefinition
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.events import DagsterEventType
-from dagster.core.execution.api import execute_plan
-from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster.core.utils import make_new_run_id
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.events import DagsterEventType
+from dagster._core.execution.api import execute_plan
+from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.utils import make_new_run_id
+from dagster._legacy import (
+    AssetGroup,
+    DynamicOutputDefinition,
+    InputDefinition,
+    OutputDefinition,
+    PipelineRun,
+)
 
 
 def fake_io_manager_factory(io_manager):
@@ -85,7 +87,10 @@ def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_syste
         "resources": {
             "io_manager": {"config": {"adls2_file_system": file_system}},
             "adls2": {
-                "config": {"storage_account": storage_account, "credential": {"key": credential}}
+                "config": {
+                    "storage_account": storage_account,
+                    "credential": {"key": credential},
+                }
             },
         }
     }
@@ -148,7 +153,10 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
         "resources": {
             "io_manager": {"config": {"adls2_file_system": file_system}},
             "adls2": {
-                "config": {"storage_account": storage_account, "credential": {"key": credential}}
+                "config": {
+                    "storage_account": storage_account,
+                    "credential": {"key": credential},
+                }
             },
         }
     }
@@ -242,7 +250,8 @@ def test_asset_io_manager(storage_account, file_system, credential):
         return asset3 + 1
 
     @asset(
-        name=f"downstream_{_id}", ins={"upstream": AssetIn(asset_key=AssetKey([f"upstream_{_id}"]))}
+        name=f"downstream_{_id}",
+        ins={"upstream": AssetIn(asset_key=AssetKey([f"upstream_{_id}"]))},
     )
     def downstream(upstream):
         assert upstream == 7
@@ -258,7 +267,10 @@ def test_asset_io_manager(storage_account, file_system, credential):
         "resources": {
             "io_manager": {"config": {"adls2_file_system": file_system}},
             "adls2": {
-                "config": {"storage_account": storage_account, "credential": {"key": credential}}
+                "config": {
+                    "storage_account": storage_account,
+                    "credential": {"key": credential},
+                }
             },
         }
     }

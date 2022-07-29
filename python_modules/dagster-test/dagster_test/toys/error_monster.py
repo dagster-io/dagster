@@ -2,19 +2,22 @@ from dagster import (
     Failure,
     Field,
     IOManager,
-    InputDefinition,
     Int,
-    ModeDefinition,
-    OutputDefinition,
-    PresetDefinition,
     ResourceDefinition,
     RetryRequested,
     String,
-    execute_pipeline,
     io_manager,
 )
-from dagster._legacy import pipeline, solid
-from dagster.utils import segfault
+from dagster._legacy import (
+    InputDefinition,
+    ModeDefinition,
+    OutputDefinition,
+    PresetDefinition,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
+from dagster._utils import segfault
 
 
 class ExampleException(Exception):

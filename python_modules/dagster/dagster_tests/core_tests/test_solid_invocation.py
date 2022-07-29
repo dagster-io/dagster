@@ -9,29 +9,22 @@ from dagster import (
     AssetObservation,
     DynamicOut,
     DynamicOutput,
-    DynamicOutputDefinition,
     ExpectationResult,
     Failure,
     Field,
     In,
-    InputDefinition,
-    Materialization,
     Noneable,
     Nothing,
     Out,
     Output,
-    OutputDefinition,
     RetryRequested,
     Selector,
     build_op_context,
-    build_solid_context,
-    composite_solid,
     execute_solid,
     op,
     resource,
 )
-from dagster._legacy import pipeline, solid
-from dagster.core.errors import (
+from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -40,6 +33,16 @@ from dagster.core.errors import (
     DagsterResourceFunctionError,
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckDidNotPass,
+)
+from dagster._legacy import (
+    DynamicOutputDefinition,
+    InputDefinition,
+    Materialization,
+    OutputDefinition,
+    build_solid_context,
+    composite_solid,
+    pipeline,
+    solid,
 )
 
 
@@ -793,7 +796,13 @@ def test_solid_invocation_nothing_deps():
     # Ensure that not providing nothing dependency also works.
     assert nothing_dep() == 5
 
-    @solid(input_defs=[InputDefinition("x"), InputDefinition("y", Nothing), InputDefinition("z")])
+    @solid(
+        input_defs=[
+            InputDefinition("x"),
+            InputDefinition("y", Nothing),
+            InputDefinition("z"),
+        ]
+    )
     def sandwiched_nothing_dep(x, z):
         return x + z
 

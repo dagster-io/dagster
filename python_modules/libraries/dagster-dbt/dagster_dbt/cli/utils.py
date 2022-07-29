@@ -4,7 +4,7 @@ import subprocess
 from typing import Any, Dict, Optional, Sequence
 
 import dagster._check as check
-from dagster.core.utils import coerce_valid_log_level
+from dagster._core.utils import coerce_valid_log_level
 
 from ..errors import (
     DagsterDbtCliFatalRuntimeError,
@@ -119,8 +119,10 @@ def execute_cli(
             except json.JSONDecodeError:
                 pass
             else:
-                message = json_line.get("message", json_line.get("msg", message))
-                log_level = json_line.get("levelname", json_line.get("level", "debug"))
+                # in rare cases, the loaded json line may be a string rather than a dictionary
+                if isinstance(json_line, dict):
+                    message = json_line.get("message", json_line.get("msg", message))
+                    log_level = json_line.get("levelname", json_line.get("level", "debug"))
 
         messages.append(message)
         if capture_logs:

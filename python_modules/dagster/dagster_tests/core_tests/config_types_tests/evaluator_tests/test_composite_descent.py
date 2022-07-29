@@ -6,17 +6,20 @@ from dagster import (
     Enum,
     EnumValue,
     Field,
-    InputDefinition,
     Output,
     String,
-    composite_solid,
     configured,
-    execute_pipeline,
-    lambda_solid,
     mem_io_manager,
 )
-from dagster._legacy import pipeline, solid
-from dagster.core.system_config.composite_descent import composite_descent
+from dagster._core.system_config.composite_descent import composite_descent
+from dagster._legacy import (
+    InputDefinition,
+    composite_solid,
+    execute_pipeline,
+    lambda_solid,
+    pipeline,
+    solid,
+)
 
 
 def test_single_level_pipeline():
@@ -104,7 +107,9 @@ def test_single_layer_pipeline_hardcoded_config_mapping():
         return_int_hardcode_wrap()
 
     solid_config_dict = composite_descent(
-        return_int_hardcode_wrap_pipeline, {}, resource_defs={"io_manager": mem_io_manager}
+        return_int_hardcode_wrap_pipeline,
+        {},
+        resource_defs={"io_manager": mem_io_manager},
     )
 
     assert solid_config_dict["return_int_hardcode_wrap.return_int"].config == 35
@@ -154,7 +159,8 @@ def test_mix_layer_computed_mapping():
             return {"layer_three_wrap": {"config": {"number": cfg["number"] + 1}}}
 
     @composite_solid(
-        config_schema={"number": int, "inject_error": bool}, config_fn=_layer_two_double_wrap_cfg_fn
+        config_schema={"number": int, "inject_error": bool},
+        config_fn=_layer_two_double_wrap_cfg_fn,
     )
     def layer_two_double_wrap():
         layer_three_wrap()
@@ -243,7 +249,8 @@ def test_nested_input_via_config_mapping():
         return num + 1
 
     @composite_solid(
-        config_schema={}, config_fn=lambda _cfg: {"add_one": {"inputs": {"num": {"value": 2}}}}
+        config_schema={},
+        config_fn=lambda _cfg: {"add_one": {"inputs": {"num": {"value": 2}}}},
     )
     def wrap_add_one():
         add_one()
@@ -268,7 +275,8 @@ def test_double_nested_input_via_config_mapping():
         return num
 
     @composite_solid(
-        config_fn=lambda _: {"number": {"inputs": {"num": {"value": 4}}}}, config_schema={}
+        config_fn=lambda _: {"number": {"inputs": {"num": {"value": 4}}}},
+        config_schema={},
     )
     def wrap_solid():  # pylint: disable=unused-variable
         return number()
@@ -299,8 +307,14 @@ def test_double_nested_input_via_config_mapping():
 
 def test_provide_one_of_two_inputs_via_config():
     @solid(
-        config_schema={"config_field_a": Field(String), "config_field_b": Field(String)},
-        input_defs=[InputDefinition("input_a", String), InputDefinition("input_b", String)],
+        config_schema={
+            "config_field_a": Field(String),
+            "config_field_b": Field(String),
+        },
+        input_defs=[
+            InputDefinition("input_a", String),
+            InputDefinition("input_b", String),
+        ],
     )
     def basic(context, input_a, input_b):
         res = ".".join(
@@ -324,7 +338,10 @@ def test_provide_one_of_two_inputs_via_config():
                 "inputs": {"input_b": {"value": "set_input_b"}},
             }
         },
-        config_schema={"config_field_a": Field(String), "config_field_b": Field(String)},
+        config_schema={
+            "config_field_a": Field(String),
+            "config_field_b": Field(String),
+        },
     )
     def wrap_all_config_one_input(input_a):
         return basic(input_a)
@@ -600,7 +617,8 @@ def test_single_level_pipeline_with_complex_configured_solid_within_composite():
         introduce_wrapper()
 
     result = execute_pipeline(
-        introduce_pipeline, {"solids": {"introduce_wrapper": {"config": {"num_as_str": "20"}}}}
+        introduce_pipeline,
+        {"solids": {"introduce_wrapper": {"config": {"num_as_str": "20"}}}},
     )
 
     assert result.success
@@ -745,7 +763,8 @@ def test_configured_composite_solid_with_inputs():
         return_int_composite_x()
 
     result = execute_pipeline(
-        test_pipeline, {"solids": {"return_int_composite": {"inputs": {"x": 6, "y": 4}}}}
+        test_pipeline,
+        {"solids": {"return_int_composite": {"inputs": {"x": 6, "y": 4}}}},
     )
 
     assert result.success

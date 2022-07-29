@@ -7,15 +7,10 @@ from dagster import (
     DagsterInvalidDefinitionError,
     IOManager,
     In,
-    InputDefinition,
     InputManager,
     MetadataEntry,
-    ModeDefinition,
-    OutputDefinition,
     PythonObjectDagsterType,
     RootInputManagerDefinition,
-    composite_solid,
-    execute_pipeline,
     execute_solid,
     input_manager,
     io_manager,
@@ -24,10 +19,18 @@ from dagster import (
     resource,
     root_input_manager,
 )
-from dagster._legacy import pipeline, solid
-from dagster.core.definitions.events import Failure, RetryRequested
-from dagster.core.errors import DagsterInvalidConfigError
-from dagster.core.instance import InstanceRef
+from dagster._core.definitions.events import Failure, RetryRequested
+from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.instance import InstanceRef
+from dagster._legacy import (
+    InputDefinition,
+    ModeDefinition,
+    OutputDefinition,
+    composite_solid,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
 
 ### input manager tests
 
@@ -63,7 +66,12 @@ def test_input_manager_override():
     def second_op(an_input):
         assert an_input == 4
 
-    @job(resource_defs={"io_manager": my_io_manager, "my_input_manager": my_input_manager})
+    @job(
+        resource_defs={
+            "io_manager": my_io_manager,
+            "my_input_manager": my_input_manager,
+        }
+    )
     def check_input_managers():
         out = first_op()
         second_op(out)
@@ -102,7 +110,12 @@ def test_input_manager_root_input():
     def second_op(an_input):
         assert an_input == 4
 
-    @job(resource_defs={"io_manager": my_io_manager, "my_input_manager": my_input_manager})
+    @job(
+        resource_defs={
+            "io_manager": my_io_manager,
+            "my_input_manager": my_input_manager,
+        }
+    )
     def check_input_managers():
         first_op()
         second_op()
@@ -142,7 +155,8 @@ def test_root_input_and_input_managers():
         @op(
             ins={
                 "an_input": In(
-                    input_manager_key="my_input_manager", root_manager_key="my_root_manager"
+                    input_manager_key="my_input_manager",
+                    root_manager_key="my_root_manager",
                 )
             }
         )
@@ -181,7 +195,12 @@ def test_input_manager_calls_super():
     def second_op(an_input):
         assert an_input == 6
 
-    @job(resource_defs={"io_manager": my_io_manager, "my_input_manager": my_input_manager})
+    @job(
+        resource_defs={
+            "io_manager": my_io_manager,
+            "my_input_manager": my_input_manager,
+        }
+    )
     def check_input_managers():
         out = first_op()
         second_op(out)
@@ -220,7 +239,12 @@ def test_input_config():
     def second_op(an_input):
         assert an_input == 6
 
-    @job(resource_defs={"io_manager": my_io_manager, "my_input_manager": my_input_manager})
+    @job(
+        resource_defs={
+            "io_manager": my_io_manager,
+            "my_input_manager": my_input_manager,
+        }
+    )
     def check_input_managers():
         out = first_op()
         second_op(out)
@@ -268,7 +292,12 @@ def test_input_manager_decorator():
     def second_op(an_input):
         assert an_input == 4
 
-    @job(resource_defs={"io_manager": my_io_manager, "my_input_manager": my_input_manager})
+    @job(
+        resource_defs={
+            "io_manager": my_io_manager,
+            "my_input_manager": my_input_manager,
+        }
+    )
     def check_input_managers():
         out = first_op()
         second_op(out)
@@ -300,7 +329,12 @@ def test_input_manager_w_function():
     def second_op(an_input):
         assert an_input == 4
 
-    @job(resource_defs={"io_manager": my_io_manager, "my_input_manager": my_input_manager})
+    @job(
+        resource_defs={
+            "io_manager": my_io_manager,
+            "my_input_manager": my_input_manager,
+        }
+    )
     def check_input_managers():
         out = first_op()
         second_op(out)
@@ -339,7 +373,12 @@ def test_input_manager_class():
     def second_op(an_input):
         assert an_input == 4
 
-    @job(resource_defs={"io_manager": my_io_manager, "my_input_manager": my_input_manager})
+    @job(
+        resource_defs={
+            "io_manager": my_io_manager,
+            "my_input_manager": my_input_manager,
+        }
+    )
     def check_input_managers():
         out = first_op()
         second_op(out)
@@ -360,7 +399,9 @@ def test_validate_inputs():
     @solid(
         input_defs=[
             InputDefinition(
-                "input1", dagster_type=PythonObjectDagsterType(int), root_manager_key="my_loader"
+                "input1",
+                dagster_type=PythonObjectDagsterType(int),
+                root_manager_key="my_loader",
             )
         ]
     )
@@ -599,7 +640,8 @@ def test_input_manager_resource_config():
         return source_solid(source_solid())
 
     result = execute_pipeline(
-        basic_pipeline, run_config={"resources": {"emit_dog": {"config": {"dog": "poodle"}}}}
+        basic_pipeline,
+        run_config={"resources": {"emit_dog": {"config": {"dog": "poodle"}}}},
     )
 
     assert result.success
@@ -651,7 +693,7 @@ def test_resource_not_input_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="input manager with key 'not_manager' required by input '_input' of solid 'solid_requires_manager', but received <class 'dagster.core.definitions.resource_definition.ResourceDefinition'>",
+        match="input manager with key 'not_manager' required by input '_input' of solid 'solid_requires_manager', but received <class 'dagster._core.definitions.resource_definition.ResourceDefinition'>",
     ):
 
         @pipeline(mode_defs=[ModeDefinition(resource_defs={"not_manager": resource_not_manager})])
@@ -686,7 +728,8 @@ def test_no_root_manager_composite():
         return data
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="Root input manager cannot be set on a composite solid"
+        DagsterInvalidDefinitionError,
+        match="Root input manager cannot be set on a composite solid",
     ):
 
         @composite_solid(

@@ -241,7 +241,7 @@ def dict_param(
     """Ensures argument obj is a native Python dictionary, raises an exception if not, and otherwise
     returns obj.
     """
-    from dagster.utils import frozendict
+    from dagster._utils import frozendict
 
     if not isinstance(obj, (frozendict, dict)):
         raise _param_type_mismatch_exception(
@@ -264,7 +264,7 @@ def opt_dict_param(
     """Ensures argument obj is either a dictionary or None; if the latter, instantiates an empty
     dictionary.
     """
-    from dagster.utils import frozendict
+    from dagster._utils import frozendict
 
     if obj is not None and not isinstance(obj, (frozendict, dict)):
         raise _param_type_mismatch_exception(
@@ -308,7 +308,7 @@ def opt_nullable_dict_param(
     additional_message: Optional[str] = None,
 ) -> Optional[Dict]:
     """Ensures argument obj is either a dictionary or None."""
-    from dagster.utils import frozendict
+    from dagster._utils import frozendict
 
     if obj is not None and not isinstance(obj, (frozendict, dict)):
         raise _param_type_mismatch_exception(
@@ -357,7 +357,7 @@ def dict_elem(
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Dict:
-    from dagster.utils import frozendict
+    from dagster._utils import frozendict
 
     dict_param(obj, "obj")
     str_param(key, "key")
@@ -379,7 +379,7 @@ def opt_dict_elem(
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Dict:
-    from dagster.utils import frozendict
+    from dagster._utils import frozendict
 
     dict_param(obj, "obj")
     str_param(key, "key")
@@ -401,7 +401,7 @@ def opt_nullable_dict_elem(
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Optional[Dict]:
-    from dagster.utils import frozendict
+    from dagster._utils import frozendict
 
     dict_param(obj, "obj")
     str_param(key, "key")
@@ -422,7 +422,7 @@ def is_dict(
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Dict[T, U]:
-    from dagster.utils import frozendict
+    from dagster._utils import frozendict
 
     if not isinstance(obj, (frozendict, dict)):
         raise _type_mismatch_error(obj, (frozendict, dict), additional_message)
@@ -711,7 +711,7 @@ def list_param(
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> List[Any]:
-    from dagster.utils import frozenlist
+    from dagster._utils import frozenlist
 
     if not isinstance(obj, (frozenlist, list)):
         raise _param_type_mismatch_exception(
@@ -736,7 +736,7 @@ def opt_list_param(
     If the of_type argument is provided, also ensures that list items conform to the type specified
     by of_type.
     """
-    from dagster.utils import frozenlist
+    from dagster._utils import frozenlist
 
     if obj is not None and not isinstance(obj, (frozenlist, list)):
         raise _param_type_mismatch_exception(
@@ -783,7 +783,7 @@ def opt_nullable_list_param(
     If the of_type argument is provided, also ensures that list items conform to the type specified
     by of_type.
     """
-    from dagster.utils import frozenlist
+    from dagster._utils import frozenlist
 
     if obj is not None and not isinstance(obj, (frozenlist, list)):
         raise _param_type_mismatch_exception(

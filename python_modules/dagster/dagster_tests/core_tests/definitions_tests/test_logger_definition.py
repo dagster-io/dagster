@@ -1,17 +1,8 @@
 import logging
 
-from dagster import (
-    Enum,
-    EnumValue,
-    Field,
-    Int,
-    ModeDefinition,
-    configured,
-    execute_pipeline,
-    logger,
-)
-from dagster._legacy import pipeline
-from dagster.core.utils import coerce_valid_log_level
+from dagster import Enum, EnumValue, Field, Int, configured, logger
+from dagster._core.utils import coerce_valid_log_level
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 
 def assert_pipeline_runs_with_logger(logger_def, logger_config):

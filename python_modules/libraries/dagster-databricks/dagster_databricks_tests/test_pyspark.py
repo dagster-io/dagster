@@ -15,18 +15,18 @@ from dagster_pyspark import DataFrame, pyspark_resource
 from pyspark.sql import Row
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
-from dagster import (
+from dagster import fs_io_manager, reconstructable
+from dagster._core.definitions.no_step_launcher import no_step_launcher
+from dagster._core.test_utils import instance_for_test
+from dagster._legacy import (
     InputDefinition,
     ModeDefinition,
     OutputDefinition,
     execute_pipeline,
-    fs_io_manager,
-    reconstructable,
+    pipeline,
+    solid,
 )
-from dagster._legacy import pipeline, solid
-from dagster.core.definitions.no_step_launcher import no_step_launcher
-from dagster.core.test_utils import instance_for_test
-from dagster.utils.merger import deep_merge_dicts
+from dagster._utils.merger import deep_merge_dicts
 
 S3_BUCKET = "dagster-databricks-tests"
 ADLS2_STORAGE_ACCOUNT = "dagsterdatabrickstests"
@@ -78,7 +78,11 @@ BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG: Dict[str, object] = {
 )
 def make_df_solid(context):
     schema = StructType([StructField("name", StringType()), StructField("age", IntegerType())])
-    rows = [Row(name="John", age=19), Row(name="Jennifer", age=29), Row(name="Henry", age=50)]
+    rows = [
+        Row(name="John", age=19),
+        Row(name="Jennifer", age=29),
+        Row(name="Henry", age=50),
+    ]
     return context.resources.pyspark.spark_session.createDataFrame(rows, schema)
 
 
@@ -123,7 +127,10 @@ MODE_DEFS = [
     ),
     ModeDefinition(
         "local",
-        resource_defs={"pyspark_step_launcher": no_step_launcher, "pyspark": pyspark_resource},
+        resource_defs={
+            "pyspark_step_launcher": no_step_launcher,
+            "pyspark": pyspark_resource,
+        },
     ),
 ]
 
@@ -189,7 +196,9 @@ def test_pyspark_databricks(
 
     with instance_for_test() as instance:
         result = execute_pipeline(
-            pipeline=reconstructable(define_do_nothing_pipe), mode="local", instance=instance
+            pipeline=reconstructable(define_do_nothing_pipe),
+            mode="local",
+            instance=instance,
         )
         mock_get_step_events.return_value = [
             event
@@ -277,7 +286,10 @@ def test_do_it_live_databricks_s3():
             "resources": {
                 "pyspark_step_launcher": {"config": BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG},
                 "io_manager": {
-                    "config": {"s3_bucket": "elementl-databricks", "s3_prefix": "dagster-test"}
+                    "config": {
+                        "s3_bucket": "elementl-databricks",
+                        "s3_prefix": "dagster-test",
+                    }
                 },
             },
         },

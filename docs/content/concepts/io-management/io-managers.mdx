@@ -318,7 +318,7 @@ The provided `context` argument for `handle_output` is an <PyObject module="dags
 
 IO managers interoperate smoothly with [partitions](/concepts/partitions-schedules-sensors/partitions). You can access the partition key for the current run using the `context` for both `load_input` and `handle_output`. If working with [assets](/concepts/assets/software-defined-assets), you can also access the asset-specific partition key or partition key range, though most of the time the run partition key will be equal to the asset partition key.
 
-```python literalinclude file=/concepts/io_management/custom_io_manager.py startafter=start_partitioned_marker endbefore=end_partitioned_marker
+```python file=/concepts/io_management/custom_io_manager.py startafter=start_partitioned_marker endbefore=end_partitioned_marker
 from dagster import IOManager
 
 
@@ -425,7 +425,7 @@ def my_better_job():
 
 If your ops produce Pandas DataFrames that populate tables in a data warehouse, you might write something like the following. This IO manager uses the name assigned to the output as the name of the table to write the output to.
 
-```python literalinclude file=/concepts/io_management/custom_io_manager.py startafter=start_df_marker endbefore=end_df_marker
+```python file=/concepts/io_management/custom_io_manager.py startafter=start_df_marker endbefore=end_df_marker
 from dagster import IOManager, io_manager
 
 

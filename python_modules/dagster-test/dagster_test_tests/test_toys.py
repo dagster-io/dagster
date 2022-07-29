@@ -19,12 +19,12 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterResourceFunctionError,
     DagsterTypeCheckDidNotPass,
-    execute_pipeline,
     reconstructable,
 )
-from dagster.core.test_utils import instance_for_test
-from dagster.utils import file_relative_path
-from dagster.utils.temp_file import get_temp_dir
+from dagster._core.test_utils import instance_for_test
+from dagster._legacy import execute_pipeline
+from dagster._utils import file_relative_path
+from dagster._utils.temp_file import get_temp_dir
 
 
 def test_repo():
@@ -110,7 +110,8 @@ def test_pyspark_assets_pipeline():
                 "source_data_dir": {
                     "config": {
                         "dir": file_relative_path(
-                            __file__, "../dagster_test/toys/pyspark_assets/asset_pipeline_files"
+                            __file__,
+                            "../dagster_test/toys/pyspark_assets/asset_pipeline_files",
                         ),
                     }
                 },

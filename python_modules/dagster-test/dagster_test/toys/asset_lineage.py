@@ -11,15 +11,13 @@ from dagster import (
     Field,
     MetadataEntry,
     MetadataValue,
-    ModeDefinition,
     Output,
-    OutputDefinition,
     Partition,
     PartitionSetDefinition,
 )
-from dagster._legacy import pipeline, solid
-from dagster.core.storage.fs_io_manager import PickledObjectFilesystemIOManager
-from dagster.core.storage.io_manager import io_manager
+from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
+from dagster._core.storage.io_manager import io_manager
+from dagster._legacy import ModeDefinition, OutputDefinition, pipeline, solid
 
 
 def get_date_partitions():
@@ -76,7 +74,9 @@ class MyDatabaseIOManager(PickledObjectFilesystemIOManager):
         super().handle_output(context, obj)
         # can pretend this actually came from a library call
         yield MetadataEntry(
-            label="num rows written to db", description=None, entry_data=MetadataValue.int(len(obj))
+            label="num rows written to db",
+            description=None,
+            entry_data=MetadataValue.int(len(obj)),
         )
 
     def get_output_asset_key(self, context):
@@ -122,10 +122,14 @@ def download_data(_):
 @solid(
     output_defs=[
         OutputDefinition(
-            name="reviews", io_manager_key="my_db_io_manager", metadata={"table_name": "reviews"}
+            name="reviews",
+            io_manager_key="my_db_io_manager",
+            metadata={"table_name": "reviews"},
         ),
         OutputDefinition(
-            name="comments", io_manager_key="my_db_io_manager", metadata={"table_name": "comments"}
+            name="comments",
+            io_manager_key="my_db_io_manager",
+            metadata={"table_name": "comments"},
         ),
     ]
 )

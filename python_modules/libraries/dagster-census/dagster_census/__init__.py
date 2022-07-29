@@ -1,4 +1,4 @@
-from dagster.core.utils import check_dagster_package_version
+from dagster._core.utils import check_dagster_package_version
 
 from .ops import census_trigger_sync_op
 from .resources import CensusResource, census_resource

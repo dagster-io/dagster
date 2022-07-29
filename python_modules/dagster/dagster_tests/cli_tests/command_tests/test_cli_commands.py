@@ -9,36 +9,39 @@ import pytest
 from click.testing import CliRunner
 
 from dagster import (
-    ModeDefinition,
     Out,
     Output,
     Partition,
     PartitionSetDefinition,
-    PresetDefinition,
     ScheduleDefinition,
     String,
-    execute_pipeline,
     graph,
     in_process_executor,
     job,
-    lambda_solid,
     op,
     repository,
 )
-from dagster._legacy import pipeline, solid
-from dagster.cli import ENV_PREFIX, cli
-from dagster.cli.job import job_execute_command
-from dagster.cli.pipeline import pipeline_execute_command
-from dagster.cli.run import run_delete_command, run_list_command, run_wipe_command
-from dagster.core.definitions.decorators.sensor_decorator import sensor
-from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
-from dagster.core.definitions.sensor_definition import RunRequest
-from dagster.core.storage.memoizable_io_manager import versioned_filesystem_io_manager
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG
-from dagster.core.test_utils import instance_for_test
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.grpc.server import GrpcServerProcess
-from dagster.utils import file_relative_path, merge_dicts
+from dagster._cli import ENV_PREFIX, cli
+from dagster._cli.job import job_execute_command
+from dagster._cli.pipeline import pipeline_execute_command
+from dagster._cli.run import run_delete_command, run_list_command, run_wipe_command
+from dagster._core.definitions.decorators.sensor_decorator import sensor
+from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
+from dagster._core.definitions.sensor_definition import RunRequest
+from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
+from dagster._core.storage.tags import MEMOIZED_RUN_TAG
+from dagster._core.test_utils import instance_for_test
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._grpc.server import GrpcServerProcess
+from dagster._legacy import (
+    ModeDefinition,
+    PresetDefinition,
+    execute_pipeline,
+    lambda_solid,
+    pipeline,
+    solid,
+)
+from dagster._utils import file_relative_path, merge_dicts
 from dagster.version import __version__
 
 
@@ -83,7 +86,8 @@ def qux():
 
 qux_job = qux.to_job(
     config=PartitionedConfig(
-        partitions_def=StaticPartitionsDefinition(["abc"]), run_config_for_partition_fn=lambda _: {}
+        partitions_def=StaticPartitionsDefinition(["abc"]),
+        run_config_for_partition_fn=lambda _: {},
     ),
     tags={"foo": "bar"},
     executor_def=in_process_executor,
@@ -273,7 +277,7 @@ multiproc_job = multiproc.to_job()
 def _default_cli_test_instance_tempdir(temp_dir, overrides=None):
     default_overrides = {
         "run_launcher": {
-            "module": "dagster.core.test_utils",
+            "module": "dagster._core.test_utils",
             "class": "MockedRunLauncher",
         }
     }
@@ -281,7 +285,7 @@ def _default_cli_test_instance_tempdir(temp_dir, overrides=None):
         temp_dir=temp_dir,
         overrides=merge_dicts(default_overrides, (overrides if overrides else {})),
     ) as instance:
-        with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
+        with mock.patch("dagster._core.instance.DagsterInstance.get") as _instance:
             _instance.return_value = instance
             yield instance
 
@@ -574,7 +578,14 @@ def valid_external_pipeline_target_args():
 
 def valid_pipeline_python_origin_target_cli_args():
     return [
-        ["-f", file_relative_path(__file__, "test_cli_commands.py"), "-a", "bar", "-p", "foo"],
+        [
+            "-f",
+            file_relative_path(__file__, "test_cli_commands.py"),
+            "-a",
+            "bar",
+            "-p",
+            "foo",
+        ],
         [
             "-f",
             file_relative_path(__file__, "test_cli_commands.py"),
@@ -593,7 +604,12 @@ def valid_pipeline_python_origin_target_cli_args():
             "-p",
             "foo",
         ],
-        ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands", "-a", "foo_pipeline"],
+        [
+            "-m",
+            "dagster_tests.cli_tests.command_tests.test_cli_commands",
+            "-a",
+            "foo_pipeline",
+        ],
         [
             "-f",
             file_relative_path(__file__, "test_cli_commands.py"),
@@ -613,7 +629,14 @@ def valid_pipeline_python_origin_target_cli_args():
 
 def valid_job_python_origin_target_cli_args():
     return [
-        ["-f", file_relative_path(__file__, "test_cli_commands.py"), "-a", "bar", "-j", "qux"],
+        [
+            "-f",
+            file_relative_path(__file__, "test_cli_commands.py"),
+            "-a",
+            "bar",
+            "-j",
+            "qux",
+        ],
         [
             "-f",
             file_relative_path(__file__, "test_cli_commands.py"),
@@ -836,7 +859,8 @@ def test_run_list_limit():
 
 def runner_pipeline_or_job_execute(runner, cli_args, using_job_op_graph_apis=False):
     result = runner.invoke(
-        job_execute_command if using_job_op_graph_apis else pipeline_execute_command, cli_args
+        job_execute_command if using_job_op_graph_apis else pipeline_execute_command,
+        cli_args,
     )
     if result.exit_code != 0:
         # CliRunner captures stdout so printing it out here

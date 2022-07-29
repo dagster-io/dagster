@@ -12,7 +12,7 @@ from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
 
-from dagster.core.test_utils import remove_none_recursively
+from dagster._core.test_utils import remove_none_recursively
 
 
 @pytest.fixture(name="deployment_template")

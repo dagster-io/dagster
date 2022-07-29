@@ -64,7 +64,7 @@ export const JobLaunchpad: React.FC<{repoAddress: RepoAddress}> = (props) => {
   const {pipelinePath, repoPath} = useParams<{repoPath: string; pipelinePath: string}>();
   const {canLaunchPipelineExecution} = usePermissions();
 
-  if (!canLaunchPipelineExecution) {
+  if (!canLaunchPipelineExecution.enabled) {
     return <Redirect to={`/workspace/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
   }
 

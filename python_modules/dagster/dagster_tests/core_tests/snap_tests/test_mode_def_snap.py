@@ -1,7 +1,7 @@
-from dagster import ModeDefinition, logger, resource
-from dagster._legacy import pipeline
-from dagster.core.snap import PipelineSnapshot
-from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster import logger, resource
+from dagster._core.snap import PipelineSnapshot
+from dagster._legacy import ModeDefinition, pipeline
+from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
 
 def test_mode_snap(snapshot):
@@ -30,7 +30,10 @@ def test_mode_snap(snapshot):
                     "some_resource": a_resource,
                     "no_config_resource": no_config_resource,
                 },
-                logger_defs={"some_logger": a_logger, "no_config_logger": no_config_logger},
+                logger_defs={
+                    "some_logger": a_logger,
+                    "no_config_logger": no_config_logger,
+                },
             )
         ]
     )

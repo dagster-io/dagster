@@ -22,8 +22,8 @@ To accomplish this, we'll use a custom Run Coordinator to read Flask HTTP header
 In this use case, we'd like to add a hook to customize submitted runs while still using a queue to submit runs to the [Dagster Daemon](/deployment/dagster-daemon). To accomplish this, we can use the <Link href="/deployment/run-coordinator#queuedruncoordinator">Queued Run Coordinator</Link> in the example below. The `context` object available in `submit_run` has a `get_request_header` method we can use to read HTTP headers:
 
 ```python file=/guides/dagster/run-attribution/custom_run_coordinator_skeleton.py startafter=start_custom_run_coordinator_marker endbefore=end_custom_run_coordinator_marker
-from dagster.core.run_coordinator import QueuedRunCoordinator, SubmitRunContext
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster._core.run_coordinator import QueuedRunCoordinator, SubmitRunContext
+from dagster._core.storage.pipeline_run import PipelineRun
 
 
 class CustomRunCoordinator(QueuedRunCoordinator):

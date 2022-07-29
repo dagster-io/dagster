@@ -6,10 +6,10 @@ from unittest import mock
 import pytest
 from dagster_graphql.test.utils import define_out_of_process_workspace, main_repo_location_name
 
-from dagster import lambda_solid, repository
-from dagster._legacy import pipeline
-from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
-from dagster.core.test_utils import instance_for_test
+from dagster import repository
+from dagster._core.host_representation.repository_location import GrpcServerRepositoryLocation
+from dagster._core.test_utils import instance_for_test
+from dagster._legacy import lambda_solid, pipeline
 
 
 def get_repo():
@@ -42,7 +42,7 @@ def test_can_reload_on_external_repository_error():
                 # note it where the function is *used* that needs to mocked, not
                 # where it is defined.
                 # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
-                "dagster.core.host_representation.repository_location.sync_get_streaming_external_repositories_data_grpc"
+                "dagster._core.host_representation.repository_location.sync_get_streaming_external_repositories_data_grpc"
             ) as external_repository_mock:
                 external_repository_mock.side_effect = Exception("get_external_repo_failure")
 

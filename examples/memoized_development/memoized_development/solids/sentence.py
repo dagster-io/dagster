@@ -1,7 +1,6 @@
 from memoized_development.solids.solid_utils import get_hash_for_file
 
-from dagster import InputDefinition
-from dagster._legacy import solid
+from dagster._legacy import InputDefinition, solid
 
 
 @solid(

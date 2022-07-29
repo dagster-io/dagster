@@ -7,14 +7,18 @@ from dagster import (
     DagsterInstance,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
+)
+from dagster import _check as check
+from dagster._legacy import (
     ModeDefinition,
     PipelineDefinition,
     PresetDefinition,
+    execute_pipeline,
+    lambda_solid,
+    pipeline,
+    solid,
 )
-from dagster import _check as check
-from dagster import execute_pipeline, lambda_solid
-from dagster._legacy import pipeline, solid
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 def test_presets():
@@ -53,7 +57,8 @@ def test_presets():
                 solid_selection=["can_fail"],
             ),
             PresetDefinition.from_files(
-                "failing_2", config_files=[file_relative_path(__file__, "pass_env.yaml")]
+                "failing_2",
+                config_files=[file_relative_path(__file__, "pass_env.yaml")],
             ),
             PresetDefinition(
                 "subset",
@@ -169,7 +174,8 @@ final: "result"
         "final": "result",
     }
     with pytest.raises(
-        DagsterInvariantViolationError, match="Encountered error attempting to parse yaml"
+        DagsterInvariantViolationError,
+        match="Encountered error attempting to parse yaml",
     ):
         PresetDefinition.from_yaml_strings("failing", ["--- `"])
 

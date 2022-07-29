@@ -1,12 +1,18 @@
 import logging
 from collections import defaultdict
 
-from dagster import DagsterEvent, ModeDefinition, PipelineDefinition, execute_pipeline, lambda_solid
-from dagster._legacy import pipeline
-from dagster.core.events import DagsterEventType
-from dagster.core.events.log import EventLogEntry, construct_event_logger
-from dagster.loggers import colored_console_logger
-from dagster.serdes import deserialize_as
+from dagster import DagsterEvent
+from dagster._core.events import DagsterEventType
+from dagster._core.events.log import EventLogEntry, construct_event_logger
+from dagster._legacy import (
+    ModeDefinition,
+    PipelineDefinition,
+    execute_pipeline,
+    lambda_solid,
+    pipeline,
+)
+from dagster._loggers import colored_console_logger
+from dagster._serdes import deserialize_as
 
 
 def mode_def(event_callback):
@@ -25,7 +31,10 @@ def single_dagster_event(events, event_type):
 
 def define_event_logging_pipeline(name, solids, event_callback, deps=None):
     return PipelineDefinition(
-        name=name, solid_defs=solids, description=deps, mode_defs=[mode_def(event_callback)]
+        name=name,
+        solid_defs=solids,
+        description=deps,
+        mode_defs=[mode_def(event_callback)],
     )
 
 
@@ -67,7 +76,9 @@ def test_single_solid_pipeline_success():
             events[record.dagster_event.event_type].append(record)
 
     pipeline_def = PipelineDefinition(
-        name="single_solid_pipeline", solid_defs=[solid_one], mode_defs=[mode_def(_event_callback)]
+        name="single_solid_pipeline",
+        solid_defs=[solid_one],
+        mode_defs=[mode_def(_event_callback)],
     )
 
     result = execute_pipeline(pipeline_def, {"loggers": {"callback": {}}})
@@ -102,7 +113,9 @@ def test_single_solid_pipeline_failure():
             events[record.dagster_event.event_type].append(record)
 
     pipeline_def = PipelineDefinition(
-        name="single_solid_pipeline", solid_defs=[solid_one], mode_defs=[mode_def(_event_callback)]
+        name="single_solid_pipeline",
+        solid_defs=[solid_one],
+        mode_defs=[mode_def(_event_callback)],
     )
 
     result = execute_pipeline(pipeline_def, {"loggers": {"callback": {}}}, raise_on_error=False)

@@ -10,7 +10,7 @@ from dagster import (
     build_output_context,
     resource,
 )
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvariantViolationError
 
 
 def test_basic_build_input_context():

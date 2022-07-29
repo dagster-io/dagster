@@ -1,21 +1,19 @@
 import pytest
 
-from dagster import (
-    AssetKey,
-    DynamicOutput,
+from dagster import AssetKey, DynamicOutput, Output, io_manager
+from dagster._core.definitions.events import AssetLineageInfo
+from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.storage.io_manager import IOManager
+from dagster._legacy import (
     DynamicOutputDefinition,
     InputDefinition,
     ModeDefinition,
-    Output,
     OutputDefinition,
     execute_pipeline,
-    io_manager,
+    pipeline,
+    solid,
 )
-from dagster._legacy import pipeline, solid
-from dagster.core.definitions.events import AssetLineageInfo
-from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
-from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.storage.io_manager import IOManager
 
 
 def n_asset_keys(path, n):
@@ -157,7 +155,9 @@ def test_input_definition_multiple_partition_lineage():
         input_defs=[
             # here, only take 1 of the asset keys specified by the output
             InputDefinition(
-                name="_input1", asset_key=AssetKey("table1"), asset_partitions=set(["0"])
+                name="_input1",
+                asset_key=AssetKey("table1"),
+                asset_partitions=set(["0"]),
             )
         ],
         output_defs=[OutputDefinition(name="output2", asset_key=lambda _: AssetKey("table2"))],
