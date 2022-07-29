@@ -18,7 +18,7 @@ dagit
 
 Open http://localhost:3000 with your browser to see the project.
 
-You can start writing assets in `{{ repo_name }}/assets.py`. The assets are automatically loaded into the Dagster repository as you define them.
+You can start writing assets in `{{ repo_name }}/assets/`. The assets are automatically loaded into the Dagster repository as you define them.
 
 ## Development
 
