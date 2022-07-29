@@ -19,8 +19,10 @@ from dagster import (
     build_input_context,
     build_output_context,
     graph,
+    materialize,
     op,
     resource,
+    with_resources,
 )
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
@@ -28,6 +30,7 @@ from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_plan
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utils import make_new_run_id
 from dagster._legacy import (
     AssetGroup,
@@ -122,7 +125,9 @@ def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_syste
             step_key="return_one",
             name="result",
             run_id=run_id,
-        )
+            dagster_type=resolve_dagster_type(int),
+        ),
+        dagster_type=resolve_dagster_type(int),
     )
 
     io_manager = PickledObjectADLS2IOManager(
@@ -188,7 +193,9 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
             step_key="return_one",
             name="result",
             run_id=run_id,
-        )
+            dagster_type=resolve_dagster_type(int),
+        ),
+        dagster_type=resolve_dagster_type(int),
     )
 
     io_manager = PickledObjectADLS2IOManager(
@@ -215,7 +222,9 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
             name="result",
             run_id=run_id,
             mapping_key="foo",
-        )
+            dagster_type=resolve_dagster_type(int),
+        ),
+        dagster_type=resolve_dagster_type(int),
     )
 
     assert get_step_output(add_one_step_events, "add_one")
@@ -291,3 +300,31 @@ def test_with_fake_adls2_resource():
 
     result = job.execute_in_process(run_config=run_config)
     assert result.success
+
+
+def test_nothing():
+    @asset
+    def asset1() -> None:
+        ...
+
+    @asset(non_argument_deps={"asset1"})
+    def asset2() -> None:
+        ...
+
+    result = materialize(
+        with_resources(
+            [asset1, asset2],
+            resource_defs={
+                "io_manager": adls2_pickle_io_manager.configured(
+                    {"adls2_file_system": "fake_file_system"}
+                ),
+                "adls2": fake_adls2_resource.configured({"account_name": "my_account"}),
+            },
+        )
+    )
+
+    handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.all_node_events))
+    assert len(handled_output_events) == 2
+
+    for event in handled_output_events:
+        assert len(event.event_specific_data.metadata_entries) == 0

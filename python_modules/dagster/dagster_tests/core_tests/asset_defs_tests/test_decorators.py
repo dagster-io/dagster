@@ -415,7 +415,7 @@ def test_infer_output_dagster_type_none():
     def my_asset() -> None:
         pass
 
-    assert my_asset.op.outs["result"].dagster_type.typing_type is None
+    assert my_asset.op.outs["result"].dagster_type.typing_type == type(None)
     assert my_asset.op.outs["result"].dagster_type.display_name == "Nothing"
 
 

@@ -108,7 +108,7 @@ class DagsterType(RequiresResources):
         materializer: t.Optional[DagsterTypeMaterializer] = None,
         required_resource_keys: t.Optional[t.Set[str]] = None,
         kind: DagsterTypeKind = DagsterTypeKind.REGULAR,
-        typing_type: t.Any = None,
+        typing_type: t.Any = t.Any,
         metadata_entries: t.Optional[t.List[MetadataEntry]] = None,
         metadata: t.Optional[t.Dict[str, RawMetadataValue]] = None,
     ):
@@ -471,6 +471,7 @@ class _Nothing(DagsterType):
             materializer=None,
             type_check_fn=self.type_check_method,
             is_builtin=True,
+            typing_type=type(None),
         )
 
     def type_check_method(self, _context: "TypeCheckContext", value: object) -> TypeCheck:

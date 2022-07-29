@@ -17,6 +17,7 @@ from dagster import (
     IOManagerDefinition,
     In,
     MetadataEntry,
+    Nothing,
     Out,
     build_input_context,
     build_output_context,
@@ -919,3 +920,65 @@ def test_metadata_dynamic_outputs():
 
     assert materializations[0].metadata_entries[0].label == "one"
     assert materializations[1].metadata_entries[0].label == "two"
+
+
+def test_nothing_output_nothing_input():
+    class MyIOManager(IOManager):
+        def __init__(self):
+            self.handle_output_calls = 0
+
+        def load_input(self, context):
+            assert False
+
+        def handle_output(self, context, obj):
+            self.handle_output_calls += 1
+
+    my_io_manager = MyIOManager()
+
+    @op(out=Out(Nothing))
+    def op1():
+        ...
+
+    @op(ins={"input1": In(Nothing)})
+    def op2():
+        ...
+
+    @job(resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(my_io_manager)})
+    def job1():
+        op2(op1())
+
+    job1.execute_in_process()
+
+    assert my_io_manager.handle_output_calls == 2
+
+
+def test_nothing_output_something_input():
+    class MyIOManager(IOManager):
+        def __init__(self):
+            self.handle_output_calls = 0
+            self.handle_input_calls = 0
+
+        def load_input(self, context):
+            self.handle_input_calls += 1
+
+        def handle_output(self, context, obj):
+            self.handle_output_calls += 1
+
+    my_io_manager = MyIOManager()
+
+    @op(out=Out(Nothing))
+    def op1():
+        ...
+
+    @op
+    def op2(_input1):
+        ...
+
+    @job(resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(my_io_manager)})
+    def job1():
+        op2(op1())
+
+    job1.execute_in_process()
+
+    assert my_io_manager.handle_output_calls == 2
+    assert my_io_manager.handle_input_calls == 1
