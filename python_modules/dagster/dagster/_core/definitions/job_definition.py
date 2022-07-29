@@ -550,6 +550,7 @@ class JobDefinition(PipelineDefinition):
         partition_key: str,
         run_key: Optional[str],
         tags: Optional[Mapping[str, str]] = None,
+        job_name: Optional[str] = None,        
     ) -> RunRequest:
         partition_set = self.get_partition_set_def()
         if not partition_set:
@@ -563,7 +564,7 @@ class JobDefinition(PipelineDefinition):
             else partition_set.tags_for_partition(partition)
         )
 
-        return RunRequest(run_key=run_key, run_config=run_config, tags=run_request_tags)
+        return RunRequest(run_key=run_key, run_config=run_config, tags=run_request_tags, job_name=job_name)
 
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "JobDefinition":
         """Apply a set of hooks to all op instances within the job."""
