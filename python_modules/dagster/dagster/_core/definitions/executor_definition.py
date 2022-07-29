@@ -16,6 +16,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._builtins import Int
 from dagster._config import Field, Selector, UserConfigSchema
 from dagster._core.definitions.configurable import (
@@ -111,12 +112,16 @@ class ExecutorDefinition(NamedConfigurableDefinition):
         )
         self._description = check.opt_str_param(description, "description")
 
+    @public  # type: ignore
     @property
     def name(self) -> str:
+        """Name of the executor"""
         return self._name
 
+    @public  # type: ignore
     @property
     def description(self) -> Optional[str]:
+        """Description of executor, if provided."""
         return self._description
 
     @property
@@ -128,6 +133,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
     ) -> Sequence[ExecutorRequirement]:
         return self._requirements_fn(executor_config)
 
+    @public  # type: ignore
     @property
     def executor_creation_fn(self) -> Optional[ExecutorCreationFunction]:
         return self._executor_creation_fn
@@ -143,6 +149,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
 
     # Backcompat: Overrides configured method to provide name as a keyword argument.
     # If no name is provided, the name is pulled off of this ExecutorDefinition.
+    @public
     def configured(
         self,
         config_or_config_fn: Any,
