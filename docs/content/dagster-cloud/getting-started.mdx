@@ -45,10 +45,10 @@ Using a hybrid deployment requires setting up an agent for use with Dagster Clou
 
 Dagster Cloud currently supports the following agents:
 
-- [Amazon Elastic Container Service (ECS)](/agents#amazon-ecs-agent)
-- [Local](/agents#local-agent)
-- [Docker](/agents#docker-agent)
-- [Kubernetes](/agent#kubernetes-agent)
+- [Amazon Elastic Container Service (ECS)](/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc)
+- [Local](/dagster-cloud/deployment/agents/local)
+- [Docker](/dagster-cloud/deployment/agents/docker)
+- [Kubernetes](/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent)
 
 **To use this deployment type**, follow the steps for setting up and deploying your agent of choice. Continue to the next step when finished.
 
@@ -66,7 +66,7 @@ If you find that Serverless isn't right for you, you can switch to a hybrid depl
 
 Now that you've set up your deployment, you'll need to tell it the location of your Dagster code.
 
-A code location specifies a single Python package or file that defines your Dagster code. Each Dagster Cloud deployment can include code from one or more code locations. Refer to the [Adding a code location guide]() for more info.
+A code location specifies a single Python package or file that defines your Dagster code. Each Dagster Cloud deployment can include code from one or more code locations. Refer to the [Adding a code location guide](/dagster-cloud/developing-testing/code-locations) for more info.
 
 <details>
 	<summary><strong>USING THE GITHUB APP</strong></summary>
@@ -184,7 +184,7 @@ In this step, you'll run your first job in Dagster Cloud. Our example uses the `
 
 Branch Deployments allow you to quickly and collaboratively develop your Dagster jobs. When a branch is created or updated in your Dagster repository, Branch Deployments will create a testing environment in your Dagster Cloud instance.
 
-Check out the [Branch deployment docs]() for more info. If you skip this step now, you can always set it up later.
+Check out the [Branch deployment docs](/dagster-cloud/developing-testing/branch-deployments) for more info. If you skip this step now, you can always set it up later.
 
 ---
 
@@ -192,8 +192,7 @@ Check out the [Branch deployment docs]() for more info. If you skip this step no
 
 Congrats - your Dagster Cloud deployment is all set up! From here, you can:
 
-- [Invite your team]()
-- [Add additional instance deployments]()
-- [Configure authentication for your account]()
-- [Set up monitoring and alerting]()
-- [Learn more about Branch Deployments]()
+- [Invite your team](/dagster-cloud/account/managing-users)
+- [Configure authentication for your account](/dagster-cloud/account/authentication)
+- [Set up monitoring and alerting](/dagster-cloud/account/setting-up-alerts)
+- [Learn more about Branch Deployments](/dagster-cloud/developing-testing/branch-deployments)
