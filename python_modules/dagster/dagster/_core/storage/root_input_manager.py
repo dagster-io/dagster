@@ -1,12 +1,9 @@
 from abc import abstractmethod
 from functools import update_wrapper
-from typing import AbstractSet, Callable, Optional, Union, cast
-
-from typing_extensions import TypeAlias
+from typing import TYPE_CHECKING, AbstractSet, Callable, Optional, Union, cast
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.definition_config_schema import (
     CoercableToConfigSchema,
@@ -18,9 +15,11 @@ from dagster._core.definitions.resource_definition import (
     ResourceFunction,
     is_context_provided,
 )
-from dagster._core.execution.context.input import InputContext
 from dagster._core.storage.input_manager import IInputManagerDefinition, InputLoadFn, InputManager
 from dagster._utils.backcompat import deprecation_warning
+
+if TYPE_CHECKING:
+    from dagster._core.execution.context.input import InputContext
 
 
 class RootInputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
@@ -81,7 +80,7 @@ class RootInputManager(InputManager):
     """
 
     @abstractmethod
-    def load_input(self, context: InputContext) -> object:
+    def load_input(self, context: "InputContext") -> object:
         """The user-defined read method that loads data given its metadata.
 
         Args:
@@ -171,7 +170,7 @@ class RootInputManagerWrapper(RootInputManager):
     def __init__(self, load_fn: InputLoadFn):
         self._load_fn = load_fn
 
-    def load_input(self, context: InputContext) -> object:
+    def load_input(self, context: "InputContext") -> object:
         # type-ignore because function being used as attribute
         return self._load_fn(context) if is_context_provided(self._load_fn) else self._load_fn()  # type: ignore
 

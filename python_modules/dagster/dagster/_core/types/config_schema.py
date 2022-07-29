@@ -1,6 +1,7 @@
 import hashlib
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, AbstractSet, Callable, Iterator, Optional, Union, cast
+
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -181,7 +182,9 @@ def _create_type_loader_for_decorator(
         config_type, func, required_resource_keys, loader_version, external_version_fn
     )
 
-DagsterTypeLoaderFn: TypeAlias = Callable[[StepExecutionContext, object], object]
+
+DagsterTypeLoaderFn: TypeAlias = Callable[["StepExecutionContext", object], object]
+
 
 def dagster_type_loader(
     config_schema: object,
@@ -216,7 +219,9 @@ def dagster_type_loader(
     from dagster._config import resolve_to_config_type
 
     config_type = resolve_to_config_type(config_schema)
-    assert isinstance(config_type, ConfigType), f"{config_schema} could not be resolved to config type"
+    assert isinstance(
+        config_type, ConfigType
+    ), f"{config_schema} could not be resolved to config type"
     EXPECTED_POSITIONALS = ["context", "*"]
 
     def wrapper(func: DagsterTypeLoaderFn) -> DagsterTypeLoaderFromDecorator:

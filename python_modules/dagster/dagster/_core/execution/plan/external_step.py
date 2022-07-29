@@ -162,7 +162,7 @@ def step_context_to_step_run_ref(
 
 
 def external_instance_from_step_run_ref(
-    step_run_ref: StepRunRef, event_listener_fn: Optional[Callable[[EventLogEntry], object]]=None
+    step_run_ref: StepRunRef, event_listener_fn: Optional[Callable[[EventLogEntry], object]] = None
 ) -> DagsterInstance:
     """
     Create an ephemeral DagsterInstance that is suitable for executing steps that are specified

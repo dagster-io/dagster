@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import update_wrapper
-from typing import AbstractSet, Callable, Optional
+from typing import TYPE_CHECKING, AbstractSet, Callable, Optional
 
 from typing_extensions import TypeAlias
 
@@ -16,9 +16,11 @@ from dagster._core.definitions.resource_definition import (
     ResourceFunction,
     is_context_provided,
 )
-from dagster._core.execution.context.input import InputContext
 
-InputLoadFn: TypeAlias = Callable[[InputContext, object], object]
+if TYPE_CHECKING:
+    from dagster._core.execution.context.input import InputContext
+
+InputLoadFn: TypeAlias = Callable[["InputContext", object], object]
 
 
 class InputManager(ABC):
@@ -27,7 +29,7 @@ class InputManager(ABC):
     """
 
     @abstractmethod
-    def load_input(self, context: InputContext) -> object:
+    def load_input(self, context: "InputContext") -> object:
         """The user-defined read method that loads an input to a solid.
 
         Args:
@@ -173,7 +175,9 @@ class InputManagerWrapper(InputManager):
         # result is an InputManager. If so we call it's load_input method
         intermediate = (
             # type-ignore because function being used as attribute
-            self._load_fn(context) if is_context_provided(self._load_fn) else self._load_fn()  # type: ignore
+            self._load_fn(context)
+            if is_context_provided(self._load_fn)
+            else self._load_fn()  # type: ignore
         )
 
         if isinstance(intermediate, InputManager):

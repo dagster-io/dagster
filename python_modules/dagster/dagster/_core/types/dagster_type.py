@@ -6,8 +6,9 @@ from typing import AbstractSet as TypingAbstractSet
 from typing import Iterator as TypingIterator
 from typing import Mapping
 from typing import Optional as TypingOptional
-from typing import Sequence, cast
+from typing import Sequence
 from typing import Type as TypingType
+from typing import cast
 
 from typing_compat import get_args, get_origin
 
@@ -794,7 +795,9 @@ _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY: t.Dict[type, DagsterType] = {}
 as_dagster_type are registered here so that we can remap the Python types to runtime types."""
 
 
-def make_python_type_usable_as_dagster_type(python_type: TypingType[t.Any], dagster_type: DagsterType) -> None:
+def make_python_type_usable_as_dagster_type(
+    python_type: TypingType[t.Any], dagster_type: DagsterType
+) -> None:
     """
     Take any existing python type and map it to a dagster type (generally created with
     :py:class:`DagsterType <dagster.DagsterType>`) This can only be called once

@@ -355,7 +355,7 @@ class ReconstructablePipeline(
 ReconstructableJob = ReconstructablePipeline
 
 
-def reconstructable(target: Callable[..., PipelineDefinition]) -> ReconstructablePipeline:
+def reconstructable(target: Callable[..., "PipelineDefinition"]) -> ReconstructablePipeline:
     """
     Create a :py:class:`~dagster._core.definitions.reconstructable.ReconstructablePipeline` from a
     function that returns a :py:class:`~dagster.PipelineDefinition`/:py:class:`~dagster.JobDefinition`,
@@ -476,9 +476,9 @@ def reconstructable(target: Callable[..., PipelineDefinition]) -> Reconstructabl
 def build_reconstructable_job(
     reconstructor_module_name: str,
     reconstructor_function_name: str,
-    reconstructable_args: Optional[Tuple[object]]=None,
-    reconstructable_kwargs: Optional[Mapping[str, object]]=None,
-    reconstructor_working_directory: Optional[str]=None,
+    reconstructable_args: Optional[Tuple[object]] = None,
+    reconstructable_kwargs: Optional[Mapping[str, object]] = None,
+    reconstructor_working_directory: Optional[str] = None,
 ) -> ReconstructablePipeline:
     """
     Create a :py:class:`dagster._core.definitions.reconstructable.ReconstructablePipeline`.
@@ -548,7 +548,9 @@ def build_reconstructable_job(
         reconstructor_working_directory, "reconstructor_working_directory", os.getcwd()
     )
 
-    _reconstructable_args = list(check.opt_tuple_param(reconstructable_args, "reconstructable_args"))
+    _reconstructable_args = list(
+        check.opt_tuple_param(reconstructable_args, "reconstructable_args")
+    )
     _reconstructable_kwargs = list(
         (
             [key, value]
