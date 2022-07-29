@@ -20,6 +20,7 @@ from typing import (
 from toposort import CircularDependencyError, toposort_flatten
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster._core.definitions.policy import RetryPolicy
@@ -501,6 +502,7 @@ class GraphDefinition(NodeDefinition):
     def node_names(self):
         return list(self._node_dict.keys())
 
+    @public
     def to_job(
         self,
         name: Optional[str] = None,
@@ -612,6 +614,7 @@ class GraphDefinition(NodeDefinition):
                 "Use to_job instead, passing the required information."
             ) from err
 
+    @public
     def execute_in_process(
         self,
         run_config: Any = None,
