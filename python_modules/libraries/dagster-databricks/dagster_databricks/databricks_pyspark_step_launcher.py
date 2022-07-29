@@ -1,8 +1,10 @@
+import gzip
 import io
 import os.path
 import pickle
 import tempfile
 import time
+import zlib
 
 from dagster_databricks import databricks_step_main
 from dagster_databricks.databricks import (
@@ -262,15 +264,15 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             serialized_records = self.databricks_runner.client.read_file(path)
             if not serialized_records:
                 return []
-            return deserialize_value(pickle.loads(serialized_records))
+            return deserialize_value(pickle.loads(gzip.decompress(serialized_records)))
 
         try:
             # reading from dbfs while it writes can be flaky
             # allow for retry if we get malformed data
             return backoff(
                 fn=_get_step_records,
-                retry_on=(pickle.UnpicklingError,),
-                max_retries=2,
+                retry_on=(pickle.UnpicklingError, gzip.BadGzipFile, zlib.error, EOFError),
+                max_retries=4,
             )
         # if you poll before the Databricks process has had a chance to create the file,
         # we expect to get this error
