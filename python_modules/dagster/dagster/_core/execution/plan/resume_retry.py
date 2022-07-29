@@ -55,7 +55,7 @@ def get_retry_steps_from_parent_run(
     )
 
     execution_plan_snapshot = instance.get_execution_plan_snapshot(
-        parent_run.execution_plan_snapshot_id
+        check.not_none(parent_run.execution_plan_snapshot_id)
     )
 
     if not execution_plan_snapshot:

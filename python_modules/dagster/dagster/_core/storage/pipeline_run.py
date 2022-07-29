@@ -140,9 +140,6 @@ class PipelineRunStatsSnapshot(
         ],
     )
 ):
-    def run_id(self):
-        return super().run_id
-
     def __new__(
         cls,
         run_id: str,

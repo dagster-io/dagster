@@ -417,14 +417,14 @@ class ReexecutionOptions(NamedTuple):
         """
         from dagster._core.execution.plan.resume_retry import get_retry_steps_from_parent_run
 
-        parent_run = instance.get_run_by_id(run_id)
+        parent_run = check.not_none(instance.get_run_by_id(run_id))
         check.invariant(
             parent_run.status == DagsterRunStatus.FAILURE,
             "Cannot reexecute from failure a run that is not failed",
         )
         # Tried to thread through KnownExecutionState to execution plan creation, but little benefit. It is recalculated later by the re-execution machinery.
         step_keys_to_execute, _ = get_retry_steps_from_parent_run(
-            instance, parent_run=instance.get_run_by_id(run_id)
+            instance, parent_run=cast(DagsterRun, instance.get_run_by_id(run_id))
         )
         return ReexecutionOptions(parent_run_id=run_id, step_selection=step_keys_to_execute)
 
@@ -434,9 +434,9 @@ def execute_job(
     job: ReconstructableJob,
     instance: "DagsterInstance",
     run_config: Any = None,
-    tags: Optional[Dict[str, Any]] = None,
+    tags: Optional[Mapping[str, Any]] = None,
     raise_on_error: bool = False,
-    op_selection: Optional[List[str]] = None,
+    op_selection: Optional[Sequence[str]] = None,
     reexecution_options: Optional[ReexecutionOptions] = None,
     asset_selection: Optional[Sequence[AssetKey]] = None,
 ) -> ExecuteJobResult:
@@ -547,7 +547,8 @@ def execute_job(
 
     if reexecution_options:
         if run_config is None:
-            run_config = instance.get_run_by_id(reexecution_options.parent_run_id).run_config
+            run = check.not_none(instance.get_run_by_id(reexecution_options.parent_run_id))
+            run_config = run.run_config
         result = reexecute_pipeline(
             pipeline=job,
             parent_run_id=reexecution_options.parent_run_id,
@@ -775,7 +776,7 @@ def reexecute_pipeline(
                 pipeline,
                 mode,
                 run_config,
-                parent_pipeline_run,
+                cast(DagsterRun, parent_pipeline_run),
                 step_selection,
             )
 
@@ -890,7 +891,7 @@ def reexecute_pipeline_iterator(
                 pipeline,
                 mode,
                 run_config,
-                parent_pipeline_run,
+                cast(DagsterRun, parent_pipeline_run),
                 step_selection,
             )
 

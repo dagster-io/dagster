@@ -147,7 +147,7 @@ class Scheduler(abc.ABC):
         else:
             stopped_state = stored_state.with_status(InstigatorStatus.STOPPED).with_data(
                 ScheduleInstigatorData(
-                    cron_schedule=computed_state.instigator_data.cron_schedule,
+                    cron_schedule=computed_state.instigator_data.cron_schedule,  # type: ignore
                 )
             )
             instance.update_instigator_state(stopped_state)

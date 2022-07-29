@@ -839,8 +839,8 @@ class DagsterInstance:
         asset_selection=None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
-        repository_load_data=None,
-    ):
+        repository_load_data=None
+    ) -> PipelineRun:
         from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.execution.api import create_execution_plan
         from dagster._core.execution.plan.plan import ExecutionPlan

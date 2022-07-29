@@ -40,7 +40,7 @@ def dagster_instance_config(
             f"If this is the desired behavior, create an empty {config_filename} file in {base_dir}."
         )
 
-    dagster_config_dict = merge_dicts(load_yaml_from_globs(config_yaml_path), overrides)
+    dagster_config_dict = merge_dicts(load_yaml_from_globs(config_yaml_path) or {}, overrides)
 
     if "instance_class" in dagster_config_dict:
         custom_instance_class_data = dagster_config_dict["instance_class"]

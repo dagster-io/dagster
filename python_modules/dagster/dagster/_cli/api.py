@@ -197,10 +197,8 @@ def _resume_run_command_body(
         cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(
             instance, pipeline_run_id
         )
-    pipeline_run = instance.get_run_by_id(pipeline_run_id)
-    check.inst(
-        pipeline_run,
-        PipelineRun,
+    pipeline_run = check.not_none(
+        instance.get_run_by_id(pipeline_run_id),  # type: ignore
         "Pipeline run with id '{}' not found for run execution.".format(pipeline_run_id),
     )
     check.inst(

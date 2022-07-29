@@ -22,12 +22,12 @@ def monitor_starting_run(instance: DagsterInstance, run, logger):
     check.invariant(run.status == PipelineRunStatus.STARTING)
     run_stats = instance.get_run_stats(run.run_id)
 
-    check.invariant(
-        run_stats.launch_time is not None, "Run in status STARTING doesn't have a launch time."
+    launch_time = check.not_none(
+        run_stats.launch_time, "Run in status STARTING doesn't have a launch time."
     )
-    if time.time() - run_stats.launch_time >= instance.run_monitoring_start_timeout_seconds:
+    if time.time() - launch_time >= instance.run_monitoring_start_timeout_seconds:
         msg = (
-            f"Run {run.run_id} has been running for {time.time() - run_stats.launch_time} seconds, "
+            f"Run {run.run_id} has been running for {time.time() - launch_time} seconds, "
             f"which is longer than the timeout of {instance.run_monitoring_start_timeout_seconds} seconds to start. "
             "Marking run failed"
         )
@@ -52,7 +52,7 @@ def monitor_started_run(
     check_health_result = instance.run_launcher.check_run_worker_health(run)
     if check_health_result.status not in [WorkerStatus.RUNNING, WorkerStatus.SUCCESS]:
         num_prev_attempts = count_resume_run_attempts(instance, run.run_id)
-        recheck_run = instance.get_run_by_id(run.run_id)
+        recheck_run = check.not_none(instance.get_run_by_id(run.run_id))
         status_changed = run.status != recheck_run.status
         if status_changed:
             msg = (

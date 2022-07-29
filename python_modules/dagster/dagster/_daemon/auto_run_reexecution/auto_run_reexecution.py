@@ -43,7 +43,8 @@ def filter_runs_to_should_retry(
         run_group = instance.get_run_group(run.run_id)
 
         if run_group:
-            _, run_group_list = run_group
+            _, run_group_iter = run_group
+            run_group_list = list(run_group_iter)
 
             # Has the parent run already been retried the maximum number of times? (Group includes the parent)
             if len(run_group_list) >= max_retries + 1:
@@ -52,8 +53,9 @@ def filter_runs_to_should_retry(
             # Does this run already have a child run?
             if any([run.run_id == run_.parent_run_id for run_ in run_group_list]):
                 return None
-
-        return 1 if not run_group else len(run_group_list)
+            return len(run_group_list)
+        else:
+            return 1
 
     for run in runs:
         retry_number = get_retry_number(run)

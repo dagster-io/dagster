@@ -46,7 +46,7 @@ def _get_host_mode_executor(recon_pipeline, run_config, executor_defs, instance)
             execution_config,
         )
 
-    execution_config_value = config_evr.value
+    execution_config_value = check.not_none(config_evr.value)
 
     executor_name, executor_config = ensure_single_item(execution_config_value)
 
@@ -191,7 +191,7 @@ def execute_run_host_mode(
     )
 
     execution_plan_snapshot = instance.get_execution_plan_snapshot(
-        pipeline_run.execution_plan_snapshot_id
+        check.not_none(pipeline_run.execution_plan_snapshot_id)
     )
     execution_plan = ExecutionPlan.rebuild_from_snapshot(
         pipeline_run.pipeline_name,
