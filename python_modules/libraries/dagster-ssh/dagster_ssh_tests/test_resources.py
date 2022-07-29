@@ -8,8 +8,8 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from dagster_ssh.resources import SSHResource, key_from_str
 from dagster_ssh.resources import ssh_resource as sshresource
 
-from dagster import Field, execute_solid
-from dagster._legacy import ModeDefinition, solid
+from dagster import Field
+from dagster._legacy import ModeDefinition, execute_solid, solid
 from dagster._seven import get_system_temp_directory
 
 

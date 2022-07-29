@@ -12,13 +12,14 @@ from dagster_dbt import (
 )
 from mock import MagicMock
 
-from dagster import AssetKey, DagsterInstance, configured, execute_solid, resource
+from dagster import AssetKey, DagsterInstance, configured, resource
 from dagster._legacy import (
     ModeDefinition,
     PipelineDefinition,
     SolidDefinition,
     SolidExecutionResult,
     execute_pipeline,
+    execute_solid,
 )
 
 

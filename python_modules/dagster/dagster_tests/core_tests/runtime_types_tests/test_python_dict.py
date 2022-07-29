@@ -6,10 +6,9 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DagsterTypeCheckDidNotPass,
     Dict,
-    execute_solid,
     usable_as_dagster_type,
 )
-from dagster._legacy import InputDefinition, OutputDefinition, lambda_solid
+from dagster._legacy import InputDefinition, OutputDefinition, execute_solid, lambda_solid
 
 
 def test_basic_python_dictionary_output():

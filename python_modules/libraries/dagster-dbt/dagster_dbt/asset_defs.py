@@ -284,7 +284,9 @@ def _dbt_nodes_to_assets(
 
     if use_build_command:
         deps = _get_deps(
-            dbt_nodes, selected_unique_ids, asset_resource_types=["model", "seed", "snapshot"]
+            dbt_nodes,
+            selected_unique_ids,
+            asset_resource_types=["model", "seed", "snapshot"],
         )
     else:
         deps = _get_deps(dbt_nodes, selected_unique_ids, asset_resource_types=["model"])
