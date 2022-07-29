@@ -37,13 +37,17 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
           </div>
         ) : null}
         {stack ? <Trace>{stack.join('')}</Trace> : null}
-        {causes.map((cause) => (
-          <>
-            <CauseHeader>The above exception was caused by the following exception:</CauseHeader>
-            <ErrorHeader>{cause.message}</ErrorHeader>
-            {stack ? <Trace>{cause.stack.join('')}</Trace> : null}
-          </>
-        ))}
+        {causes
+          ? causes.map((cause) => (
+              <>
+                <CauseHeader>
+                  The above exception was caused by the following exception:
+                </CauseHeader>
+                <ErrorHeader>{cause.message}</ErrorHeader>
+                {stack ? <Trace>{cause.stack.join('')}</Trace> : null}
+              </>
+            ))
+          : null}
         {props.showReload && (
           <Button icon={<Icon name="refresh" />} onClick={() => window.location.reload()}>
             Reload
