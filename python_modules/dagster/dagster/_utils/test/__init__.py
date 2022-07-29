@@ -127,7 +127,7 @@ def _dep_key_of(solid):
 
 
 def build_pipeline_with_input_stubs(
-    pipeline_def: PipelineDefinition, inputs: Mapping[str, dict]
+    pipeline_def: PipelineDefinition, inputs: Mapping[str, Mapping[str, object]]
 ) -> PipelineDefinition:
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     check.mapping_param(inputs, "inputs", key_type=str, value_type=dict)
@@ -170,7 +170,7 @@ def build_pipeline_with_input_stubs(
 def execute_solids_within_pipeline(
     pipeline_def: PipelineDefinition,
     solid_names: AbstractSet[str],
-    inputs: Optional[Mapping[str, dict]] = None,
+    inputs: Optional[Mapping[str, Mapping[str, object]]] = None,
     run_config: Optional[Mapping[str, object]] = None,
     mode: Optional[str] = None,
     preset: Optional[str] = None,
