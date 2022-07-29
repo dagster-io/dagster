@@ -9,19 +9,14 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
     Failure,
-    InputDefinition,
     Int,
     List,
     MetadataEntry,
-    ModeDefinition,
     Optional,
-    OutputDefinition,
     String,
     Tuple,
     TypeCheck,
     check_dagster_type,
-    execute_pipeline,
-    lambda_solid,
     make_python_type_usable_as_dagster_type,
     resource,
 )
@@ -32,7 +27,15 @@ from dagster._core.types.dagster_type import (
     PythonObjectDagsterType,
     resolve_dagster_type,
 )
-from dagster._legacy import pipeline, solid
+from dagster._legacy import (
+    InputDefinition,
+    ModeDefinition,
+    OutputDefinition,
+    execute_pipeline,
+    lambda_solid,
+    pipeline,
+    solid,
+)
 
 
 class BarObj:
@@ -588,7 +591,10 @@ def test_contextual_type_check():
         return TypeCheck(success=context.resources.foo.check(value))
 
     custom = DagsterType(
-        key="custom", name="custom", type_check_fn=fancy_type_check, required_resource_keys={"foo"}
+        key="custom",
+        name="custom",
+        type_check_fn=fancy_type_check,
+        required_resource_keys={"foo"},
     )
 
     @resource

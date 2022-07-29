@@ -5,7 +5,6 @@ from typing import Sequence
 import pytest
 
 from dagster import (
-    AssetGroup,
     AssetKey,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
@@ -13,10 +12,8 @@ from dagster import (
     DailyPartitionsDefinition,
     IOManager,
     JobDefinition,
-    PipelineDefinition,
     ResourceDefinition,
     SensorDefinition,
-    SolidDefinition,
     SourceAsset,
     asset,
     build_schedule_from_partitioned_job,
@@ -28,7 +25,6 @@ from dagster import (
     in_process_executor,
     io_manager,
     job,
-    lambda_solid,
     logger,
     op,
     repository,
@@ -43,7 +39,14 @@ from dagster._core.definitions.executor_definition import (
 )
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._legacy import pipeline, solid
+from dagster._legacy import (
+    AssetGroup,
+    PipelineDefinition,
+    SolidDefinition,
+    lambda_solid,
+    pipeline,
+    solid,
+)
 from dagster._loggers import default_loggers
 
 # pylint: disable=comparison-with-callable
@@ -673,7 +676,8 @@ def test_list_dupe_graph():
         pass
 
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="Duplicate job definition found for graph 'foo'"
+        DagsterInvalidDefinitionError,
+        match="Duplicate job definition found for graph 'foo'",
     ):
 
         @repository
@@ -925,7 +929,11 @@ def test_source_asset_unsatisfied_resource_transitive():
         @repository
         def the_repo():
             return [
-                SourceAsset("foo", io_manager_def=the_manager, resource_defs={"foo": foo_resource})
+                SourceAsset(
+                    "foo",
+                    io_manager_def=the_manager,
+                    resource_defs={"foo": foo_resource},
+                )
             ]
 
 
@@ -1157,7 +1165,11 @@ def test_duplicate_job_target_valid():
 
     @repository
     def the_repo_dupe_job_valid():
-        return [the_job, _create_schedule_from_target(the_job), _create_sensor_from_target(the_job)]
+        return [
+            the_job,
+            _create_schedule_from_target(the_job),
+            _create_sensor_from_target(the_job),
+        ]
 
 
 def test_duplicate_job_target_invalid():
@@ -1448,7 +1460,8 @@ def test_default_executor_config():
         # The config provided to the_job matches in_process_executor, but not the default executor.
         return [
             define_asset_job(
-                "the_job", config={"execution": {"config": {"retries": {"enabled": {}}}}}
+                "the_job",
+                config={"execution": {"config": {"retries": {"enabled": {}}}}},
             ),
             some_asset,
         ]

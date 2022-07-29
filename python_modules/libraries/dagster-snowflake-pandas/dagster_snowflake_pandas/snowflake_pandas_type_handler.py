@@ -11,11 +11,16 @@ from dagster._core.definitions.metadata import RawMetadataValue
 
 
 def _connect_snowflake(context: Union[InputContext, OutputContext], table_slice: TableSlice):
+    no_schema_config = (
+        {k: v for k, v in context.resource_config.items() if k != "schema"}
+        if context.resource_config
+        else {}
+    )
     return SnowflakeConnection(
         dict(
             schema=table_slice.schema,
             connector="sqlalchemy",
-            **cast(Mapping[str, str], context.resource_config),
+            **cast(Mapping[str, str], no_schema_config),
         ),
         context.log,
     ).get_connection(raw_conn=False)

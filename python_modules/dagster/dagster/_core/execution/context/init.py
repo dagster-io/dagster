@@ -14,7 +14,9 @@ from dagster._core.storage.pipeline_run import PipelineRun
 
 
 class InitResourceContext:
-    """Resource-specific initialization context.
+    """The context object available as the argument to the initialization function of a :py:class:`dagster.ResourceDefinition`.
+
+    Users should not instantiate this object directly. To construct an `InitResourceContext` for testing purposes, use :py:func:`dagster.build_init_resource_context`.
 
     Attributes:
         resource_config (Any): The configuration data provided by the run config. The schema
@@ -31,6 +33,16 @@ class InitResourceContext:
             outside of execution context, this will be None.
         pipeline_run (Optional[PipelineRun]): (legacy) The dagster run to use. When initializing resources
             outside of execution context, this will be None.
+
+    Example:
+
+    .. code-block:: python
+
+        from dagster import resource, InitResourceContext
+
+        @resource
+        def the_resource(init_context: InitResourceContext):
+            init_context.log.info("Hello, world!")
 
     """
 

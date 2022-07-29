@@ -16,7 +16,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._builtins import Nothing
-from dagster._config import Field, UserConfigSchema
+from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import IOManagerDefinition
@@ -453,14 +453,6 @@ def multi_asset(
                 tags={
                     **({"kind": compute_kind} if compute_kind else {}),
                     **(op_tags or {}),
-                },
-                config_schema={
-                    "assets": {
-                        "input_partitions": Field(dict, is_required=False),
-                        "output_partitions": Field(dict, is_required=False),
-                    },
-                    # Mypy scoping bug causing incorrect type inference here
-                    **config_schema,  # type: ignore
                 },
             )(fn)
 

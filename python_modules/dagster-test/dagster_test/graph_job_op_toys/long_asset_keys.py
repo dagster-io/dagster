@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
-from dagster import AssetGroup, AssetIn, asset
+from dagster import AssetIn, asset
+from dagster._legacy import AssetGroup
 
 namespace1 = ["s3", "superdomain_1", "subdomain_1", "subsubdomain_1"]
 

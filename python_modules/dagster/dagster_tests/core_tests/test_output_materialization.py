@@ -6,21 +6,23 @@ from dagster import (
     AssetMaterialization,
     DagsterEventType,
     DagsterInvalidConfigError,
-    InputDefinition,
     Int,
     Output,
-    OutputDefinition,
-    PipelineDefinition,
     String,
     dagster_type_materializer,
-    execute_pipeline,
-    lambda_solid,
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.step import StepKind
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import create_any_type
-from dagster._legacy import solid
+from dagster._legacy import (
+    InputDefinition,
+    OutputDefinition,
+    PipelineDefinition,
+    execute_pipeline,
+    lambda_solid,
+    solid,
+)
 from dagster._utils.test import get_temp_file_name, get_temp_file_names
 
 
@@ -41,7 +43,12 @@ def single_string_output_pipeline():
 
 
 def multiple_output_pipeline():
-    @solid(output_defs=[OutputDefinition(Int, "number"), OutputDefinition(String, "string")])
+    @solid(
+        output_defs=[
+            OutputDefinition(Int, "number"),
+            OutputDefinition(String, "string"),
+        ]
+    )
     def return_one_and_foo(_context):
         yield Output(1, "number")
         yield Output("foo", "string")
@@ -181,7 +188,10 @@ def test_basic_materialization_event():
         solid_result = result.result_for_solid("return_one")
         step_events = solid_result.step_events_by_kind[StepKind.COMPUTE]
         mat_event = list(
-            filter(lambda de: de.event_type == DagsterEventType.ASSET_MATERIALIZATION, step_events)
+            filter(
+                lambda de: de.event_type == DagsterEventType.ASSET_MATERIALIZATION,
+                step_events,
+            )
         )[0]
 
         mat = mat_event.event_specific_data.materialization
@@ -344,7 +354,8 @@ def test_basic_yield_multiple_materializations():
 
     pipeline_def = PipelineDefinition(name="single_int_output_pipeline", solid_defs=[return_one])
     result = execute_pipeline(
-        pipeline_def, run_config={"solids": {"return_one": {"outputs": [{"result": 2}]}}}
+        pipeline_def,
+        run_config={"solids": {"return_one": {"outputs": [{"result": 2}]}}},
     )
     assert result.success
 
@@ -378,5 +389,6 @@ def test_basic_bad_output_materialization():
         DagsterInvariantViolationError, match="You must return an AssetMaterialization"
     ):
         execute_pipeline(
-            pipeline_def, run_config={"solids": {"return_one": {"outputs": [{"result": 2}]}}}
+            pipeline_def,
+            run_config={"solids": {"return_one": {"outputs": [{"result": 2}]}}},
         )

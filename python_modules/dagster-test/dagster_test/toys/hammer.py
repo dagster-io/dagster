@@ -1,9 +1,9 @@
 import random
 import time
 
-from dagster import Field, InputDefinition, ModeDefinition, Output, OutputDefinition, fs_io_manager
+from dagster import Field, Output, fs_io_manager
 from dagster._core.definitions.executor_definition import default_executors
-from dagster._legacy import pipeline, solid
+from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, pipeline, solid
 
 
 def get_executor_defs():
@@ -79,7 +79,8 @@ def reducer(_, in_1, in_2, in_3, in_4):
     # Needed for Dask tests which use this pipeline
     mode_defs=[
         ModeDefinition(
-            resource_defs={"io_manager": fs_io_manager}, executor_defs=get_executor_defs()
+            resource_defs={"io_manager": fs_io_manager},
+            executor_defs=get_executor_defs(),
         )
     ]
 )

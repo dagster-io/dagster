@@ -1,4 +1,4 @@
-from dagster import execute_pipeline
+from dagster._legacy import execute_pipeline
 
 
 def test_example_shell_command_solid():

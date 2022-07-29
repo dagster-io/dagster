@@ -1,13 +1,13 @@
 import pytest
 
-from dagster import (
-    DagsterInvalidDefinitionError,
-    DynamicOutput,
+from dagster import DagsterInvalidDefinitionError, DynamicOutput
+from dagster._legacy import (
     DynamicOutputDefinition,
     OutputDefinition,
     composite_solid,
+    pipeline,
+    solid,
 )
-from dagster._legacy import pipeline, solid
 
 
 @solid(output_defs=[DynamicOutputDefinition()])

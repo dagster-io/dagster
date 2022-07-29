@@ -16,7 +16,6 @@ from dagster import (
     Dict,
     Field,
     Float,
-    InputDefinition,
     Int,
     List,
     Nothing,
@@ -28,8 +27,8 @@ from dagster import (
     Tuple,
 )
 from dagster import _check as check
-from dagster import execute_pipeline, execute_solid
-from dagster._legacy import pipeline, solid
+from dagster import execute_solid
+from dagster._legacy import InputDefinition, execute_pipeline, pipeline, solid
 
 
 @solid
@@ -233,7 +232,13 @@ def test_set_solid_configable_input():
         run_config={
             "solids": {
                 "set_solid": {
-                    "inputs": {"set_input": [{"value": "foo"}, {"value": "bar"}, {"value": "baz"}]}
+                    "inputs": {
+                        "set_input": [
+                            {"value": "foo"},
+                            {"value": "bar"},
+                            {"value": "baz"},
+                        ]
+                    }
                 }
             }
         },
@@ -396,7 +401,9 @@ def test_add_n():
 
 def test_div_y():
     res = execute_solid(
-        div_y, input_values={"x": 3.0}, run_config={"solids": {"div_y": {"config": 2.0}}}
+        div_y,
+        input_values={"x": 3.0},
+        run_config={"solids": {"div_y": {"config": 2.0}}},
     )
     assert res.output_value() == 1.5
 

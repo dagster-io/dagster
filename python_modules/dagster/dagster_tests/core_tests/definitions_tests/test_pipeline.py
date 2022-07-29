@@ -3,17 +3,20 @@ import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
     DependencyDefinition,
-    InputDefinition,
     Int,
     Output,
+    usable_as_dagster_type,
+)
+from dagster._legacy import (
+    InputDefinition,
     OutputDefinition,
     PipelineDefinition,
     composite_solid,
     execute_pipeline,
     lambda_solid,
-    usable_as_dagster_type,
+    pipeline,
+    solid,
 )
-from dagster._legacy import pipeline, solid
 
 
 def builder(graph):
@@ -98,7 +101,12 @@ def test_basic_aliasing_with_dsl():
 
 
 def test_diamond_graph():
-    @solid(output_defs=[OutputDefinition(name="value_one"), OutputDefinition(name="value_two")])
+    @solid(
+        output_defs=[
+            OutputDefinition(name="value_one"),
+            OutputDefinition(name="value_two"),
+        ]
+    )
     def emit_values(_context):
         yield Output(1, "value_one")
         yield Output(2, "value_two")
@@ -110,7 +118,10 @@ def test_diamond_graph():
     @pipeline
     def diamond_pipeline():
         value_one, value_two = emit_values()
-        subtract(num_one=add_one(num=value_one), num_two=add_one.alias("renamed")(num=value_two))
+        subtract(
+            num_one=add_one(num=value_one),
+            num_two=add_one.alias("renamed")(num=value_two),
+        )
 
     result = execute_pipeline(diamond_pipeline)
 
