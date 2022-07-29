@@ -11,7 +11,6 @@ parameters:
 import gzip
 import os
 import pickle
-import shutil
 import site
 import sys
 import tempfile
@@ -112,10 +111,8 @@ def main(
             pass
 
         def put_events(events):
-            tmp_path = f"/tmp/{PICKLED_EVENTS_FILE_NAME}"
-            with gzip.open(tmp_path, "wb") as handle:
+            with gzip.open(events_filepath, "wb") as handle:
                 pickle.dump(serialize_value(events), handle)
-            shutil.copy(tmp_path, events_filepath)
 
         # Set up a thread to handle writing events back to the plan process, so execution doesn't get
         # blocked on remote communication
