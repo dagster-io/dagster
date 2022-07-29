@@ -8,20 +8,12 @@ import time
 
 import pytest
 
-from dagster import (
-    DagsterEventType,
-    InputDefinition,
-    ModeDefinition,
-    execute_pipeline,
-    fs_io_manager,
-    reconstructable,
-    resource,
-)
+from dagster import DagsterEventType, fs_io_manager, reconstructable, resource
 from dagster._core.execution.compute_logs import should_disable_io_stream_redirect
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.test_utils import create_run_for_test, instance_for_test
-from dagster._legacy import pipeline, solid
+from dagster._legacy import InputDefinition, ModeDefinition, execute_pipeline, pipeline, solid
 from dagster._utils import ensure_dir, touch_file
 
 HELLO_SOLID = "HELLO SOLID"
@@ -360,7 +352,8 @@ def test_multi():
 
             for step_key in step_keys:
                 process = ctx.Process(
-                    target=execute_inner, args=(step_key, pipeline_run, instance.get_ref())
+                    target=execute_inner,
+                    args=(step_key, pipeline_run, instance.get_ref()),
                 )
                 process.start()
                 process.join()

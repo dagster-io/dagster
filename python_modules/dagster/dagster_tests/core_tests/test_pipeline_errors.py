@@ -6,16 +6,21 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
     DependencyDefinition,
-    InputDefinition,
     MetadataEntry,
     Output,
+)
+from dagster import _check as check
+from dagster import execute_solid
+from dagster._legacy import (
+    InputDefinition,
     OutputDefinition,
     PipelineDefinition,
     SolidDefinition,
+    execute_pipeline,
+    lambda_solid,
+    pipeline,
+    solid,
 )
-from dagster import _check as check
-from dagster import execute_pipeline, execute_solid, lambda_solid
-from dagster._legacy import pipeline, solid
 
 
 def create_root_success_solid(name):

@@ -5,9 +5,9 @@ import logging
 import mock
 import pytest
 
-from dagster import ModeDefinition, execute_pipeline, get_dagster_logger, reconstructable, resource
+from dagster import get_dagster_logger, reconstructable, resource
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import pipeline, solid
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
 
 
 def _reset_logging():
@@ -371,7 +371,10 @@ def test_execution_logging(managed_loggers, run_config, reset_logging):
 def test_failure_logging(managed_loggers, reset_logging):
     with instance_for_test(
         overrides={
-            "python_logs": {"managed_python_loggers": managed_loggers, "python_log_level": "INFO"}
+            "python_logs": {
+                "managed_python_loggers": managed_loggers,
+                "python_log_level": "INFO",
+            }
         }
     ) as instance:
         result = execute_pipeline(

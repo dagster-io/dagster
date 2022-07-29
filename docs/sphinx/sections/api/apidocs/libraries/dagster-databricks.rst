@@ -23,9 +23,3 @@ APIs
   :annotation: ResourceDefinition
 
 .. autoclass:: dagster_databricks.DatabricksError
-
-Legacy APIs
------------
-.. currentmodule:: dagster_databricks
-
-.. autofunction:: dagster_databricks.create_databricks_job_solid

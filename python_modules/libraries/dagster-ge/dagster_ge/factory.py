@@ -5,19 +5,10 @@ from dagster_pandas import DataFrame
 from great_expectations.render.renderer import ValidationResultsPageRenderer
 from great_expectations.render.view import DefaultMarkdownPageView
 
-from dagster import (
-    ExpectationResult,
-    InputDefinition,
-    MetadataEntry,
-    MetadataValue,
-    Noneable,
-    Output,
-    OutputDefinition,
-    StringSource,
-)
+from dagster import ExpectationResult, MetadataEntry, MetadataValue, Noneable, Output, StringSource
 from dagster import _check as check
 from dagster import op, resource
-from dagster._legacy import solid
+from dagster._legacy import InputDefinition, OutputDefinition, solid
 
 try:
     # ge < v0.13.0

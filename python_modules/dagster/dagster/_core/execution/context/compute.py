@@ -549,4 +549,22 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
 
 
 class OpExecutionContext(SolidExecutionContext):
-    pass
+    """The ``context`` object that can be made available as the first argument to an op's compute
+    function.
+
+    The context object provides system information such as resources, config,
+    and logging to an op's compute function. Users should not instantiate this
+    object directly. To construct an `OpExecutionContext` for testing
+    purposes, use :py:func:`dagster.build_op_context`.
+
+    Example:
+
+    .. code-block:: python
+
+        from dagster import op
+
+        @op
+        def hello_world(context: OpExecutionContext):
+            context.log.info("Hello, world!")
+
+    """

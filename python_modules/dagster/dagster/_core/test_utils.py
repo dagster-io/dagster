@@ -12,9 +12,9 @@ from contextlib import ExitStack, contextmanager
 import pendulum
 import yaml
 
-from dagster import ModeDefinition, Shape
+from dagster import Shape
 from dagster import _check as check
-from dagster import composite_solid, fs_io_manager
+from dagster import fs_io_manager
 from dagster._config import Array, Field
 from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
@@ -28,7 +28,7 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._daemon.controller import create_daemon_grpc_server_registry
 from dagster._daemon.workspace import DaemonWorkspace
-from dagster._legacy import pipeline, solid
+from dagster._legacy import ModeDefinition, composite_solid, pipeline, solid
 from dagster._serdes import ConfigurableClass
 from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
 from dagster._utils import Counter, merge_dicts, traced, traced_counter
@@ -246,7 +246,11 @@ def poll_for_finished_run(instance, run_id=None, timeout=20, run_tags=None):
     filters = RunsFilter(
         run_ids=[run_id] if run_id else None,
         tags=run_tags,
-        statuses=[PipelineRunStatus.SUCCESS, PipelineRunStatus.FAILURE, PipelineRunStatus.CANCELED],
+        statuses=[
+            PipelineRunStatus.SUCCESS,
+            PipelineRunStatus.FAILURE,
+            PipelineRunStatus.CANCELED,
+        ],
     )
 
     while True:

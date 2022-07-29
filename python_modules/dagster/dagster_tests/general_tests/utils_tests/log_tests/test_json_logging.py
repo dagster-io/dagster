@@ -1,8 +1,8 @@
 import json
 import logging
 
-from dagster import PipelineDefinition
 from dagster._core.execution.context.logger import InitLoggerContext
+from dagster._legacy import PipelineDefinition
 from dagster._utils.log import define_json_file_logger
 from dagster._utils.test import create_test_pipeline_execution_context, get_temp_file_name
 

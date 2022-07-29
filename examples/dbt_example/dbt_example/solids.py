@@ -3,8 +3,8 @@ import requests
 from dagster_dbt.cli.types import DbtCliOutput
 from dagstermill import define_dagstermill_solid
 
-from dagster import Array, InputDefinition, Nothing, OutputDefinition
-from dagster._legacy import solid
+from dagster import Array, Nothing
+from dagster._legacy import InputDefinition, OutputDefinition, solid
 from dagster._utils import file_relative_path
 
 CEREAL_DATASET_URL = "https://gist.githubusercontent.com/mgasner/bd2c0f66dff4a9f01855cfa6870b1fce/raw/2de62a57fb08da7c58d6480c987077cf91c783a1/cereal.csv"
