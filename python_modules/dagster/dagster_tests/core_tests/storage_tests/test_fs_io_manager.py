@@ -1,6 +1,7 @@
 import os
 import pickle
 import tempfile
+from typing import Tuple
 
 import pytest
 
@@ -284,7 +285,7 @@ def test_fs_io_manager_partitioned_multi_asset():
                 "out_2": Out(asset_key=AssetKey("upstream_asset_2")),
             },
         )
-        def upstream_asset():
+        def upstream_asset() -> Tuple[Output[int], Output[int]]:
             return (Output(1, output_name="out_1"), Output(2, output_name="out_2"))
 
         @asset(

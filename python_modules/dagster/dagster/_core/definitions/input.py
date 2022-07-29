@@ -1,3 +1,4 @@
+import inspect
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -326,7 +327,15 @@ class InputDefinition:
 
 def _checked_inferred_type(inferred: InferredInputProps, decorator_name: str) -> DagsterType:
     try:
-        resolved_type = resolve_dagster_type(inferred.annotation)
+        if inferred.annotation == inspect.Parameter.empty:
+            resolved_type = resolve_dagster_type(None)
+        elif inferred.annotation is None:
+            # When inferred.annotation is None, it means someone explicitly put "None" as the
+            # annotation, so want to map it to a DagsterType that checks for the None type
+            resolved_type = resolve_dagster_type(type(None))
+        else:
+            resolved_type = resolve_dagster_type(inferred.annotation)
+
     except DagsterError as e:
         raise DagsterInvalidDefinitionError(
             f"Problem using type '{inferred.annotation}' from type annotation for argument "
