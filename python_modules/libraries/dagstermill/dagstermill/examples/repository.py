@@ -8,15 +8,11 @@ from dagstermill.io_managers import local_output_notebook_io_manager
 from dagster import (
     Field,
     FileHandle,
-    InputDefinition,
     Int,
     List,
-    ModeDefinition,
     Out,
-    OutputDefinition,
     ResourceDefinition,
     String,
-    composite_solid,
     fs_io_manager,
     job,
     repository,
@@ -24,7 +20,14 @@ from dagster import (
 )
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.storage.file_manager import local_file_manager
-from dagster._legacy import pipeline, solid
+from dagster._legacy import (
+    InputDefinition,
+    ModeDefinition,
+    OutputDefinition,
+    composite_solid,
+    pipeline,
+    solid,
+)
 from dagster._utils import PICKLE_PROTOCOL, file_relative_path
 
 try:
@@ -427,7 +430,9 @@ def bad_kernel_pipeline():
 
 
 reimport = test_nb_solid(
-    "reimport", input_defs=[InputDefinition("l", List[int])], output_defs=[OutputDefinition(int)]
+    "reimport",
+    input_defs=[InputDefinition("l", List[int])],
+    output_defs=[OutputDefinition(int)],
 )
 
 

@@ -156,7 +156,6 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         job_name = get_job_name_from_run_id(run.run_id)
         pod_name = job_name
         exc_config = _get_validated_celery_k8s_executor_config(run.run_config)
-        env_vars = None
 
         job_image_from_executor_config = exc_config.get("job_image")
 
@@ -214,7 +213,6 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             pod_name=pod_name,
             component="run_worker",
             user_defined_k8s_config=user_defined_k8s_config,
-            env_vars=env_vars,
             labels={
                 "dagster/job": pipeline_origin.pipeline_name,
                 "dagster/run-id": run.run_id,

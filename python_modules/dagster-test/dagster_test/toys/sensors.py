@@ -55,7 +55,12 @@ def get_toys_sensors():
                 run_key="{}:{}".format(filename, str(mtime)),
                 run_config={
                     "solids": {
-                        "read_file": {"config": {"directory": directory_name, "filename": filename}}
+                        "read_file": {
+                            "config": {
+                                "directory": directory_name,
+                                "filename": filename,
+                            }
+                        }
                     }
                 },
             )
@@ -114,7 +119,10 @@ def get_toys_sensors():
             run_config={
                 "solids": {
                     "read_materialization": {
-                        "config": {"asset_key": ["model"], "pipeline": asset_event.pipeline_name}
+                        "config": {
+                            "asset_key": ["model"],
+                            "pipeline": asset_event.pipeline_name,
+                        }
                     }
                 }
             },

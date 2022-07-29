@@ -12,18 +12,14 @@ from dagster import (
     Failure,
     Field,
     MetadataEntry,
-    ModeDefinition,
     ResourceDefinition,
     RetryPolicy,
     RetryRequested,
     String,
-    execute_pipeline,
-    execute_pipeline_iterator,
     fs_io_manager,
     job,
     op,
     reconstructable,
-    reexecute_pipeline,
     resource,
 )
 from dagster._core.definitions.no_step_launcher import no_step_launcher
@@ -41,7 +37,14 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import pipeline, solid
+from dagster._legacy import (
+    ModeDefinition,
+    execute_pipeline,
+    execute_pipeline_iterator,
+    pipeline,
+    reexecute_pipeline,
+    solid,
+)
 from dagster._utils import safe_tempfile_path, send_interrupt
 from dagster._utils.merger import deep_merge_dicts, merge_dicts
 
@@ -212,7 +215,10 @@ def define_basic_job_last_launched():
 
 
 def define_basic_pipeline():
-    @solid(required_resource_keys=set(["first_step_launcher"]), config_schema={"a": Field(str)})
+    @solid(
+        required_resource_keys=set(["first_step_launcher"]),
+        config_schema={"a": Field(str)},
+    )
     def return_two(_):
         return 2
 

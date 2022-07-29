@@ -2,15 +2,9 @@ from os import path
 
 import pytest
 
-from dagster import ExecutorRequirement, ModeDefinition, PipelineDefinition
+from dagster import ExecutorRequirement
 from dagster import _check as check
-from dagster import (
-    execute_pipeline,
-    fs_io_manager,
-    in_process_executor,
-    multiprocess_executor,
-    reconstructable,
-)
+from dagster import fs_io_manager, in_process_executor, multiprocess_executor, reconstructable
 from dagster._core.definitions.executor_definition import executor
 from dagster._core.errors import (
     DagsterInvalidConfigError,
@@ -20,7 +14,7 @@ from dagster._core.errors import (
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.retries import RetryMode
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import pipeline, solid
+from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline, solid
 
 
 def assert_pipeline_runs_with_executor(executor_defs, execution_config, instance=None):
@@ -80,7 +74,8 @@ def test_in_process_executor_dict_config():
         )
 
     assert_pipeline_runs_with_executor(
-        [test_executor], {"test_executor": {"config": {"value": "secret testing value!!"}}}
+        [test_executor],
+        {"test_executor": {"config": {"value": "secret testing value!!"}}},
     )
 
 
@@ -103,7 +98,8 @@ def test_in_process_executor_with_requirement():
 
     with pytest.raises(DagsterUnmetExecutorRequirementsError):
         assert_pipeline_runs_with_executor(
-            [test_executor], {"test_executor": {"config": {"value": "secret testing value!!"}}}
+            [test_executor],
+            {"test_executor": {"config": {"value": "secret testing value!!"}}},
         )
 
     with instance_for_test() as instance:
@@ -138,7 +134,9 @@ def test_in_process_executor_dict_config_configured():
 
     with instance_for_test() as instance:
         assert_pipeline_runs_with_executor(
-            [test_executor_configured], {"configured_test_executor": None}, instance=instance
+            [test_executor_configured],
+            {"configured_test_executor": None},
+            instance=instance,
         )
 
 

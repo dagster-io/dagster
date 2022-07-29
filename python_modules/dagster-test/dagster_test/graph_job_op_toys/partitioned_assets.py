@@ -1,13 +1,8 @@
 # pylint: disable=redefined-outer-name
 from datetime import datetime
 
-from dagster import (
-    AssetGroup,
-    DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
-    MetadataValue,
-    asset,
-)
+from dagster import DailyPartitionsDefinition, HourlyPartitionsDefinition, MetadataValue, asset
+from dagster._legacy import AssetGroup
 
 daily_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
 
@@ -22,7 +17,9 @@ def upstream_daily_partitioned_asset():
 
 
 @asset(
-    metadata={"owner": "alice@example.com"}, compute_kind="sql", partitions_def=daily_partitions_def
+    metadata={"owner": "alice@example.com"},
+    compute_kind="sql",
+    partitions_def=daily_partitions_def,
 )
 def downstream_daily_partitioned_asset(upstream_daily_partitioned_asset):
     assert upstream_daily_partitioned_asset is None

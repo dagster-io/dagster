@@ -16,19 +16,13 @@ from dagster import (
     Field,
     IOManagerDefinition,
     In,
-    InputDefinition,
     MetadataEntry,
-    ModeDefinition,
     Out,
-    OutputDefinition,
     build_input_context,
     build_output_context,
-    composite_solid,
-    execute_pipeline,
     graph,
     job,
     op,
-    reexecute_pipeline,
     resource,
 )
 from dagster._check import CheckError
@@ -42,7 +36,16 @@ from dagster._core.storage.io_manager import IOManager, io_manager
 from dagster._core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import pipeline, solid
+from dagster._legacy import (
+    InputDefinition,
+    ModeDefinition,
+    OutputDefinition,
+    composite_solid,
+    execute_pipeline,
+    pipeline,
+    reexecute_pipeline,
+    solid,
+)
 
 
 def test_io_manager_with_config():

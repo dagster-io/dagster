@@ -1,0 +1,23 @@
+FROM python:3.8-slim
+
+ARG USER_CODE_BACKCOMPAT_VERSION
+
+COPY pins.txt pins.txt
+
+RUN pip install \
+    -r pins.txt \
+    dagster=="${USER_CODE_BACKCOMPAT_VERSION}" \
+    dagster-postgres=="${USER_CODE_BACKCOMPAT_VERSION}" \
+    dagster-docker=="${USER_CODE_BACKCOMPAT_VERSION}"
+
+WORKDIR /opt/dagster/app
+
+COPY legacy_repo.py /opt/dagster/app
+
+# Run dagster gRPC server on port 8090
+
+EXPOSE 8090
+
+# CMD allows this to be overridden from run launchers or executors that want
+# to run other commands against your repository
+CMD ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "8090", "-f", "legacy_repo.py"]

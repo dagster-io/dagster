@@ -1,8 +1,8 @@
 from dagster_dbt import dbt_cli_resource
 from dagster_slack import slack_resource
 
-from dagster import ModeDefinition, PresetDefinition, file_relative_path, fs_io_manager
-from dagster._legacy import pipeline
+from dagster import file_relative_path, fs_io_manager
+from dagster._legacy import ModeDefinition, PresetDefinition, pipeline
 
 from .resources import mock_slack_resource, postgres
 from .solids import (
@@ -50,7 +50,10 @@ DBT_PROJECT_DIR = file_relative_path(__file__, "../dbt_example_project")
             run_config={
                 "solids": {
                     "download_file": {
-                        "config": {"url": CEREALS_DATASET_URL, "target_path": "cereals.csv"}
+                        "config": {
+                            "url": CEREALS_DATASET_URL,
+                            "target_path": "cereals.csv",
+                        }
                     },
                     "post_plot_to_slack": {"config": {"channels": ["foo_channel"]}},
                 },
@@ -70,7 +73,10 @@ DBT_PROJECT_DIR = file_relative_path(__file__, "../dbt_example_project")
             run_config={
                 "solids": {
                     "download_file": {
-                        "config": {"url": CEREALS_DATASET_URL, "target_path": "cereals.csv"}
+                        "config": {
+                            "url": CEREALS_DATASET_URL,
+                            "target_path": "cereals.csv",
+                        }
                     },
                     "post_plot_to_slack": {"config": {"channels": ["foo_channel"]}},
                 },

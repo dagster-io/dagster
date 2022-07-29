@@ -7,7 +7,6 @@ from dagster import (
     DagsterInvariantViolationError,
     Field,
     StringSource,
-    execute_pipeline,
     graph,
     job,
     op,
@@ -16,6 +15,7 @@ from dagster import (
 )
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import environ, instance_for_test
+from dagster._legacy import execute_pipeline
 
 
 def define_the_job():
