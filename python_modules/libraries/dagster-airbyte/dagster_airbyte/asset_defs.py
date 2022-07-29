@@ -178,11 +178,11 @@ def _build_airbyte_assets_from_metadata(
 def build_airbyte_assets(
     connection_id: str,
     destination_tables: List[str],
-    asset_key_prefix: Optional[List[str]] = None,
+    asset_key_prefix: Optional[Sequence[str]] = None,
     normalization_tables: Optional[Mapping[str, Set[str]]] = None,
     upstream_assets: Optional[Set[AssetKey]] = None,
     schema_by_table_name: Optional[Mapping[str, TableSchema]] = None,
-) -> List[AssetsDefinition]:
+) -> Sequence[AssetsDefinition]:
     """
     Builds a set of assets representing the tables created by an Airbyte sync operation.
 
@@ -200,7 +200,7 @@ def build_airbyte_assets(
         upstream_assets (Optional[Set[AssetKey]]): A list of assets to add as sources.
     """
 
-    asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
+    asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
     # Generate a list of outputs, the set of destination tables plus any affiliated
     # normalization tables

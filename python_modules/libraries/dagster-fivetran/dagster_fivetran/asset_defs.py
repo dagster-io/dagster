@@ -29,13 +29,13 @@ from dagster._core.execution.with_resources import with_resources
 @experimental
 def build_fivetran_assets(
     connector_id: str,
-    destination_tables: List[str],
+    destination_tables: Sequence[str],
     poll_interval: float = DEFAULT_POLL_INTERVAL,
     poll_timeout: Optional[float] = None,
     io_manager_key: Optional[str] = None,
     asset_key_prefix: Optional[List[str]] = None,
     metadata_by_table_name: Optional[Dict[str, MetadataUserInput]] = None,
-) -> List[AssetsDefinition]:
+) -> Sequence[AssetsDefinition]:
 
     """
     Build a set of assets for a given Fivetran connector.
@@ -88,10 +88,10 @@ def build_fivetran_assets(
 
     """
 
-    asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
+    asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
 
     tracked_asset_keys = {
-        table: AssetKey(asset_key_prefix + table.split(".")) for table in destination_tables
+        table: AssetKey(*[asset_key_prefix, *table.split(".")]) for table in destination_tables
     }
 
     metadata_by_table_name = check.opt_dict_param(

@@ -1,4 +1,4 @@
-from typing import Any, Dict, NamedTuple, Optional
+from typing import Any, Dict, Mapping, NamedTuple, Optional
 
 from dagster._core.definitions.metadata.table import TableSchema
 
@@ -20,8 +20,8 @@ class AirbyteOutput(
     NamedTuple(
         "_AirbyteOutput",
         [
-            ("job_details", Dict[str, Any]),
-            ("connection_details", Dict[str, Any]),
+            ("job_details", Mapping[str, Any]),
+            ("connection_details", Mapping[str, Any]),
         ],
     )
 ):

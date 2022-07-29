@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Optional, Sequence
 
 import dagster._check as check
 from dagster._config import Field
@@ -13,7 +13,7 @@ from dagster._utils import mkdir_p
 
 
 class OutputNotebookIOManager(IOManager):
-    def __init__(self, asset_key_prefix: Optional[List[str]] = None):
+    def __init__(self, asset_key_prefix: Optional[Sequence[str]] = None):
         self.asset_key_prefix = asset_key_prefix if asset_key_prefix else []
 
     def get_output_asset_key(self, context: OutputContext):
@@ -31,7 +31,7 @@ class OutputNotebookIOManager(IOManager):
 class LocalOutputNotebookIOManager(OutputNotebookIOManager):
     """Built-in IO Manager for handling output notebook."""
 
-    def __init__(self, base_dir: str, asset_key_prefix: Optional[List[str]] = None):
+    def __init__(self, base_dir: str, asset_key_prefix: Optional[Sequence[str]] = None):
         super(LocalOutputNotebookIOManager, self).__init__(asset_key_prefix=asset_key_prefix)
         self.base_dir = base_dir
         self.write_mode = "wb"

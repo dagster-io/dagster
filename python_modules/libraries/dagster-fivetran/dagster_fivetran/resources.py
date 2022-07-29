@@ -2,7 +2,7 @@ import datetime
 import json
 import logging
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Mapping, Optional, Sequence, Tuple
 from urllib.parse import urljoin
 
 import requests
@@ -61,7 +61,7 @@ class FivetranResource:
 
     def make_request(
         self, method: str, endpoint: str, data: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> Mapping[str, Any]:
         """
         Creates and sends a request to the desired Fivetran Connector API endpoint.
 
@@ -101,7 +101,7 @@ class FivetranResource:
 
         raise Failure("Exceeded max number of retries.")
 
-    def get_connector_details(self, connector_id: str) -> Dict[str, Any]:
+    def get_connector_details(self, connector_id: str) -> Mapping[str, Any]:
         """
         Gets details about a given connector from the Fivetran Connector API.
 
@@ -156,8 +156,8 @@ class FivetranResource:
         )
 
     def update_connector(
-        self, connector_id: str, properties: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        self, connector_id: str, properties: Optional[Mapping[str, Any]] = None
+    ) -> Mapping[str, Any]:
         """
         Updates properties of a Fivetran Connector.
 
@@ -176,7 +176,7 @@ class FivetranResource:
 
     def update_schedule_type(
         self, connector_id: str, schedule_type: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> Mapping[str, Any]:
         """
         Updates the schedule type property of the connector to either "auto" or "manual".
 
@@ -193,10 +193,10 @@ class FivetranResource:
             check.failed(f"schedule_type must be either 'auto' or 'manual': got '{schedule_type}'")
         return self.update_connector(connector_id, properties={"schedule_type": schedule_type})
 
-    def get_connector_schema_config(self, connector_id: str) -> Dict[str, Any]:
+    def get_connector_schema_config(self, connector_id: str) -> Mapping[str, Any]:
         return self.make_connector_request("GET", endpoint=f"{connector_id}/schemas")
 
-    def start_sync(self, connector_id: str) -> Dict[str, Any]:
+    def start_sync(self, connector_id: str) -> Mapping[str, Any]:
         """
         Initiates a sync of a Fivetran connector.
 
@@ -221,8 +221,8 @@ class FivetranResource:
         return connector_details
 
     def start_resync(
-        self, connector_id: str, resync_parameters: Optional[Dict[str, List[str]]] = None
-    ) -> Dict[str, Any]:
+        self, connector_id: str, resync_parameters: Optional[Mapping[str, Sequence[str]]] = None
+    ) -> Mapping[str, Any]:
         """
         Initiates a historical sync of all data for multiple schema tables within a Fivetran connector.
 
@@ -260,7 +260,7 @@ class FivetranResource:
         initial_last_sync_completion: datetime.datetime,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
-    ) -> Dict[str, Any]:
+    ) -> Mapping[str, Any]:
         """
         Given a Fivetran connector and the timestamp at which the previous sync completed, poll
         until the next sync completes.

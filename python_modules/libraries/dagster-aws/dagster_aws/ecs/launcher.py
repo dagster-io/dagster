@@ -2,7 +2,7 @@ import json
 import os
 import warnings
 from collections import namedtuple
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -375,7 +375,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             cls=self.__class__,
         )
 
-    def get_cpu_and_memory_overrides(self, run: PipelineRun) -> Dict[str, str]:
+    def get_cpu_and_memory_overrides(self, run: PipelineRun) -> Mapping[str, str]:
         overrides = {}
 
         cpu = run.tags.get("ecs/cpu")

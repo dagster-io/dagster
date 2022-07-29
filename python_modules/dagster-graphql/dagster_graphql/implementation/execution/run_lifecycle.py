@@ -1,4 +1,5 @@
 from graphene import ResolveInfo
+from typing import cast
 
 import dagster._check as check
 from dagster._core.errors import DagsterRunNotFoundError
@@ -19,7 +20,7 @@ def _get_run(instance: DagsterInstance, run_id: str) -> DagsterRun:
     run = instance.get_run_by_id(run_id)
     if not run:
         raise DagsterRunNotFoundError(invalid_run_id=run_id)
-    return run
+    return cast(DagsterRun, run)
 
 
 def compute_step_keys_to_execute(graphene_info, execution_params):

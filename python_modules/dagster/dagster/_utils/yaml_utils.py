@@ -89,7 +89,6 @@ def merge_yamls(file_list, loader=DagsterRunConfigYamlLoader):
 
         if isinstance(yaml_dict, dict):
             merged = deep_merge_dicts(merged, yaml_dict)
-            return merged
         else:
             check.failed(
                 (
@@ -97,6 +96,7 @@ def merge_yamls(file_list, loader=DagsterRunConfigYamlLoader):
                     'instead got: "{yaml_dict}"'
                 ).format(yaml_file=yaml_file, yaml_dict=yaml_dict)
             )
+    return merged
 
 
 def merge_yaml_strings(yaml_strs: Sequence[str], loader=DagsterRunConfigYamlLoader) -> Mapping:

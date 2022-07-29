@@ -102,7 +102,7 @@ class ResolvedRunConfig(
             ("solids", Mapping[str, SolidConfig]),
             ("execution", "ExecutionConfig"),
             ("resources", Mapping[str, ResourceConfig]),
-            ("loggers", Mapping[str, dict]),
+            ("loggers", Mapping[str, Mapping[str, object]]),
             ("original_config_dict", Any),
             ("mode", Optional[str]),
             ("inputs", Mapping[str, Any]),
@@ -133,9 +133,7 @@ class ResolvedRunConfig(
             solids=check.opt_mapping_param(solids, "solids", key_type=str, value_type=SolidConfig),
             execution=execution,
             resources=resources,
-            loggers=check.two_dim_mapping_param(
-                loggers, "loggers", key_type=str, value_type=Mapping
-            ),
+            loggers=check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=Mapping),
             original_config_dict=original_config_dict,
             mode=mode,
             inputs=inputs,

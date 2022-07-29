@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Mapping, Optional
 
 from dateutil.parser import isoparse
 
@@ -29,14 +29,14 @@ class DbtCloudOutput(DbtOutput):
 
     def __init__(
         self,
-        run_details: Dict[str, Any],
-        result: Dict[str, Any],
+        run_details: Mapping[str, Any],
+        result: Mapping[str, Any],
     ):
-        self._run_details = check.dict_param(run_details, "run_details", key_type=str)
+        self._run_details = check.mapping_param(run_details, "run_details", key_type=str)
         super().__init__(result)
 
     @property
-    def run_details(self) -> Dict[str, Any]:
+    def run_details(self) -> Mapping[str, Any]:
         return self._run_details
 
     @property

@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Mapping
 
 import requests
 
@@ -27,5 +27,5 @@ class DbtRpcOutput(DbtOutput):
         return self._response
 
     @property
-    def response_dict(self) -> Dict[str, Any]:
+    def response_dict(self) -> Mapping[str, Any]:
         return self._response_dict
