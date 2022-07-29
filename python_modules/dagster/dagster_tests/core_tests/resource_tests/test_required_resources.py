@@ -8,6 +8,7 @@ from dagster import (
     ResourceDefinition,
     String,
     dagster_type_loader,
+    dagster_type_materializer,
     resource,
     usable_as_dagster_type,
 )
@@ -22,7 +23,6 @@ from dagster._legacy import (
     ModeDefinition,
     OutputDefinition,
     composite_solid,
-    dagster_type_materializer,
     execute_pipeline,
     pipeline,
     solid,

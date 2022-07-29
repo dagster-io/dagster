@@ -9,6 +9,7 @@ from dagster import (
     Int,
     Output,
     String,
+    dagster_type_materializer,
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.step import StepKind
@@ -18,7 +19,6 @@ from dagster._legacy import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    dagster_type_materializer,
     execute_pipeline,
     lambda_solid,
     solid,

@@ -59,6 +59,7 @@ from dagster import _check as check
 from dagster import (
     asset,
     dagster_type_loader,
+    dagster_type_materializer,
     graph,
     job,
     logger,
@@ -91,7 +92,6 @@ from dagster._legacy import (
     SolidExecutionContext,
     build_assets_job,
     composite_solid,
-    dagster_type_materializer,
     daily_schedule,
     hourly_schedule,
     lambda_solid,

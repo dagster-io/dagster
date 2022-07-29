@@ -20,8 +20,7 @@ from dagster import (
     TypeCheck,
 )
 from dagster import _check as check
-from dagster import dagster_type_loader
-from dagster._legacy import dagster_type_materializer
+from dagster import dagster_type_loader, dagster_type_materializer
 
 from .utils import DataFrameUtilities, apply_utilities_to_df
 

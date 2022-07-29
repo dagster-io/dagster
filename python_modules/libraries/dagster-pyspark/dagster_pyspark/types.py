@@ -14,9 +14,9 @@ from dagster import (
     PythonObjectDagsterType,
     String,
     dagster_type_loader,
+    dagster_type_materializer,
 )
 from dagster._config import Selector
-from dagster._legacy import dagster_type_materializer
 from dagster._utils import dict_without_keys
 
 WriteModeOptions = Enum(

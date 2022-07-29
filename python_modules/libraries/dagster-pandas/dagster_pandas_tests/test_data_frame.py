@@ -23,11 +23,11 @@ from dagster import (
     Selector,
     check_dagster_type,
     dagster_type_loader,
+    dagster_type_materializer,
     graph,
     job,
     op,
 )
-from dagster._legacy import dagster_type_materializer
 from dagster._utils import safe_tempfile_path
 
 

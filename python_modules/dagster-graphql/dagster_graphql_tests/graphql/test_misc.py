@@ -9,15 +9,10 @@ from dagster import (
     DependencyDefinition,
     PythonObjectDagsterType,
     dagster_type_loader,
+    dagster_type_materializer,
     repository,
 )
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    SolidDefinition,
-    dagster_type_materializer,
-)
+from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, SolidDefinition
 
 from .production_query import PRODUCTION_QUERY
 
