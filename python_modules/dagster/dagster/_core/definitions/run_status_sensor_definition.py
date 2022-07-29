@@ -22,6 +22,7 @@ from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import register_serdes_tuple_fallbacks
 from dagster._seven import JSONDecodeError
 from dagster._utils import utc_datetime_from_timestamp
+from dagster._utils.backcompat import deprecation_warning
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from ..decorator_utils import get_function_params
@@ -190,6 +191,9 @@ def run_failure_sensor(
     monitored_jobs: Optional[
         List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
     ] = None,
+    job_selection: Optional[
+        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+    ] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
@@ -212,6 +216,9 @@ def run_failure_sensor(
         monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]]): The jobs that
             will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails.
+        job_selection (Optional[List[Union[JobDefinition, GraphDefinition]]]): (deprecated in favor of monitored_jobs)
+            The jobs that will be monitored by this failure sensor. Defaults to None, which means
+            the alert will be sent when any job in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job a RunRequest should
@@ -229,12 +236,16 @@ def run_failure_sensor(
         else:
             sensor_name = name
 
+        if job_selection:
+            deprecation_warning("job_selection", "2.0.0", "Use monitored_jobs instead.")
+        jobs = monitored_jobs if monitored_jobs else job_selection
+
         @run_status_sensor(
             run_status=DagsterRunStatus.FAILURE,
             name=sensor_name,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
-            monitored_jobs=monitored_jobs,
+            monitored_jobs=jobs,
             default_status=default_status,
             request_job=request_job,
             request_jobs=request_jobs,
@@ -516,6 +527,9 @@ def run_status_sensor(
     monitored_jobs: Optional[
         List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
     ] = None,
+    job_selection: Optional[
+        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+    ] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     request_jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
@@ -539,6 +553,9 @@ def run_status_sensor(
         monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]]):
             Jobs that will be monitored by this sensor. Defaults to None, which means the alert will
             be sent when any job in the repository matches the requested run_status.
+        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): (deprecated in favor of monitored_jobs)
+            Jobs that will be monitored by this sensor. Defaults to None, which means the alert will be sent when
+            any job in the repository matches the requested run_status.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should be
@@ -554,13 +571,17 @@ def run_status_sensor(
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
+        if job_selection:
+            deprecation_warning("job_selection", "2.0.0", "Use monitored_jobs instead.")
+        jobs = monitored_jobs if monitored_jobs else job_selection
+
         return RunStatusSensorDefinition(
             name=sensor_name,
             run_status=run_status,
             run_status_sensor_fn=fn,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
-            monitored_jobs=monitored_jobs,
+            monitored_jobs=jobs,
             default_status=default_status,
             request_job=request_job,
             request_jobs=request_jobs,
