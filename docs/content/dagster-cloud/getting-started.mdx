@@ -6,9 +6,7 @@ platform_type: "cloud"
 
 # Getting Started with Dagster Cloud
 
-<Note>
-   This guide is applicable to Dagster Cloud.
-</Note>
+<Note>This guide is applicable to Dagster Cloud.</Note>
 
 Welcome to Dagster Cloud!
 
@@ -70,7 +68,7 @@ To use this deployment type, click **Activate** and confirm when prompted. It ma
 
 ## Step 3: Deploy your code
 
-Now that you've set up your deployment, you'll need to tell it the location of your Dagster code. 
+Now that you've set up your deployment, you'll need to tell it the location of your Dagster code.
 
 A code location specifies a single Python package or file that defines your Dagster code. Each Dagster Cloud deployment can include code from one or more code locations. Refer to the [Adding a code location guide]() for more info.
 
@@ -94,7 +92,7 @@ To install the `dagster-cloud` CLI and the `dagster-cloud-examples` package, run
 
 ```shell
 pip install dagster-cloud dagster-cloud-examples
-````
+```
 
 Select your agent type below to add a new location:
 
@@ -103,31 +101,32 @@ Select your agent type below to add a new location:
 
 1. Install the `dagster-cloud-examples` package in your Python environment:
 
-	```shell
-	pip install dagster-cloud-examples
-	```
+   ```shell
+   pip install dagster-cloud-examples
+   ```
 
 2. In Dagster Cloud, click **Workspace**.
+
 3. Click the **Add sample code location** button:
 
-	<Image
-	alt="Dagit Workspace Screen"
-	src="/images/adding_code_location.png"
-	width={1118}
-	height={451}
-	/>
+   <Image
+     alt="Dagit Workspace Screen"
+     src="/images/adding_code_location.png"
+     width={1118}
+     height={451}
+   />
 
 4. A pre-filled YAML editor with the following config will display:
 
-	```yaml
-	location_name: cloud-examples
-	code_source:
-	  package_name: dagster_cloud_examples
-	```
+   ```yaml
+   location_name: cloud-examples
+   code_source:
+     package_name: dagster_cloud_examples
+   ```
 
-	This config tells the agent to load jobs from the `dagster_cloud_examples` Python package.
+   This config tells the agent to load jobs from the `dagster_cloud_examples` Python package.
 
-5. Click **Add code location** to save the config. 
+5. Click **Add code location** to save the config.
 
 The agent will attempt to load the sample code. After the code is loaded, the new code location will show a **Loaded** status and a sample Dagster job will display in Dagster Cloud.
 
@@ -137,27 +136,28 @@ The agent will attempt to load the sample code. After the code is loaded, the ne
 	<summary><strong>AMAZON ECS, KUBERNETES, OR DOCKER AGENTS</strong></summary>
 
 1. In Dagster Cloud, click **Workspace**.
+
 2. Click the **Add sample code location** button:
 
    <Image
-   alt="Dagit Workspace Screen"
-   src="/images/adding_code_location.png"
-   width={1118}
-   height={451}
+     alt="Dagit Workspace Screen"
+     src="/images/adding_code_location.png"
+     width={1118}
+     height={451}
    />
 
 3. A pre-filled YAML editor with the following config will display:
 
-	```yaml
-	location_name: cloud-examples
-	image: dagster/dagster-cloud-examples
-	code_source:
-	  package_name: dagster_cloud_examples
-	```
+   ```yaml
+   location_name: cloud-examples
+   image: dagster/dagster-cloud-examples
+   code_source:
+     package_name: dagster_cloud_examples
+   ```
 
-	This config tells the agent to pull the `dagster/dagster-cloud-examples` Docker image and load jobs from the `dagster_cloud_examples` Python package in that image.
+   This config tells the agent to pull the `dagster/dagster-cloud-examples` Docker image and load jobs from the `dagster_cloud_examples` Python package in that image.
 
-4. Click **Add code location** to save the config. 
+4. Click **Add code location** to save the config.
 
 The agent will attempt to pull the image and load the sample code. After the code is loaded, the new code location will show a **Loaded** status and a sample Dagster job will display in Dagster Cloud.
 
@@ -176,10 +176,10 @@ In this step, you'll run your first job in Dagster Cloud. Our example uses the `
 4. Click **Launch Run** in the bottom right corner to launch the run:
 
    <Image
-   alt="Dagit Launchpad for compute_cereal_properties Job"
-   src="/images/dagster-cloud/getting-started/run_cereal_job.png"
-   width={1451}
-   height={702}
+     alt="Dagit Launchpad for compute_cereal_properties Job"
+     src="/images/dagster-cloud/getting-started/run_cereal_job.png"
+     width={1451}
+     height={702}
    />
 
 ---

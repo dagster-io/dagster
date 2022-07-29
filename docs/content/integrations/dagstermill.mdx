@@ -68,10 +68,10 @@ dagit -f iris_classify.py
 What's more, every time we run the notebook from Dagit, a copy of the notebook _as executed_ will be written to disk and the path of this output notebook will be made available in Dagit:
 
 <Image
-alt="iris_output_notebook.png"
-src="/images/guides/data_science/iris_output_notebook.png"
-width={3580}
-height={2030}
+  alt="iris_output_notebook.png"
+  src="/images/guides/data_science/iris_output_notebook.png"
+  width={3580}
+  height={2030}
 />
 
 The output notebook is both a rich log of notebook computations as they actually occurred, including all inline plots and results, and also an important tool for interactive debugging. When a notebook fails, the output notebook can be used to determine the cause of the failure.
@@ -163,21 +163,21 @@ We need to make one more change to our notebook so that the `path` parameter is 
 Dagstermill is built on Papermill ([3](#references)), which uses Jupyter cell tags to identify the cell into which it should inject parameters at runtime. You will need to be running Jupyter 5.0 or later and may need to turn the display of cell tags on (select _View > Cell Toolbar > Tags_ from the Jupyter menu).
 
 <Image
-alt="tags"
-src="/images/guides/data_science/tags.png"
-width={800}
-height={452}
+  alt="tags"
+  src="/images/guides/data_science/tags.png"
+  width={800}
+  height={452}
 />
 
 Tag the cell you want Dagstermill to replace at runtime with the tag `parameters`.
 
-In the [source notebook](https://github.com/dagster-io/dagster/blob/0.10.8/examples/docs_snippets/docs_snippets/legacy/data_science/iris-kmeans\_2.ipynb)., this cell will look like this:
+In the [source notebook](https://github.com/dagster-io/dagster/blob/0.10.8/examples/docs_snippets/docs_snippets/legacy/data_science/iris-kmeans_2.ipynb)., this cell will look like this:
 
 <Image
-alt="parameters.png"
-src="/images/guides/data_science/parameters.png"
-width={2408}
-height={150}
+  alt="parameters.png"
+  src="/images/guides/data_science/parameters.png"
+  width={2408}
+  height={150}
 />
 
 In the source notebook, we can give our parameters values that are useful for interactive development (say, with a test dataset).
@@ -185,10 +185,10 @@ In the source notebook, we can give our parameters values that are useful for in
 Now we are ready to execute a job that flows the output of arbitrary Python code into a notebook:
 
 <Image
-alt="iris_classify.png"
-src="/images/guides/data_science/iris_pipeline.png"
-width={1680}
-height={874}
+  alt="iris_classify.png"
+  src="/images/guides/data_science/iris_pipeline.png"
+  width={1680}
+  height={874}
 />
 
 We'll use the following config:
