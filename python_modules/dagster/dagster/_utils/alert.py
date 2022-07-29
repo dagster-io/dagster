@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Callable, List, Optional, Union
 
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._utils.backcompat import deprecation_warning
 
 if TYPE_CHECKING:
     from dagster._core.definitions.graph_definition import GraphDefinition
@@ -86,6 +87,9 @@ def make_email_on_run_failure_sensor(
     monitored_jobs: Optional[
         List[Union["PipelineDefinition", "GraphDefinition", "UnresolvedAssetJobDefinition"]]
     ] = None,
+    job_selection: Optional[
+        List[Union["PipelineDefinition", "GraphDefinition", "UnresolvedAssetJobDefinition"]]
+    ] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
     """Create a job failure sensor that sends email via the SMTP protocol.
@@ -109,6 +113,9 @@ def make_email_on_run_failure_sensor(
         monitored_jobs (Optional[List[Union[JobDefinition, GraphDefinition, PipelineDefinition]]]): The jobs that
             will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails.
+        job_selection (Optional[List[Union[JobDefinition, GraphDefinition, PipelineDefinition]]]):
+            (deprecated in favor of monitored_jobs) The jobs that will be monitored by this failure
+            sensor. Defaults to None, which means the alert will be sent when any job in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
 
@@ -151,7 +158,11 @@ def make_email_on_run_failure_sensor(
         run_failure_sensor,
     )
 
-    @run_failure_sensor(name=name, monitored_jobs=monitored_jobs, default_status=default_status)
+    if job_selection:
+        deprecation_warning("job_selection", "2.0.0", "Use monitored_jobs instead.")
+    jobs = monitored_jobs if monitored_jobs else job_selection
+
+    @run_failure_sensor(name=name, monitored_jobs=jobs, default_status=default_status)
     def email_on_run_failure(context: RunFailureSensorContext):
 
         email_body = email_body_fn(context)

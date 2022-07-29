@@ -10,6 +10,7 @@ from dagster._core.definitions.run_status_sensor_definition import (
     run_failure_sensor,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from dagster._utils.backcompat import deprecation_warning
 
 T = TypeVar("T", bound=RunStatusSensorContext)
 
@@ -71,6 +72,9 @@ def make_slack_on_run_failure_sensor(
     monitored_jobs: Optional[
         List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
     ] = None,
+    job_selection: Optional[
+        List[Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]
+    ] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
     """Create a sensor on job failures that will message the given Slack channel.
@@ -96,6 +100,9 @@ def make_slack_on_run_failure_sensor(
             messages to include deeplinks to the failed job run.
         monitored_jobs (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): The jobs that
             will be monitored by this failure sensor. Defaults to None, which means the alert will
+            be sent when any job in the repository fails.
+        job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): (deprecated in favor of monitored_jobs)
+            The jobs that will be monitored by this failure sensor. Defaults to None, which means the alert will
             be sent when any job in the repository fails.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
@@ -133,7 +140,11 @@ def make_slack_on_run_failure_sensor(
 
     slack_client = WebClient(token=slack_token)
 
-    @run_failure_sensor(name=name, monitored_jobs=monitored_jobs, default_status=default_status)
+    if job_selection:
+        deprecation_warning("job_selection", "2.0.0", "Use monitored_jobs instead.")
+    jobs = monitored_jobs if monitored_jobs else job_selection
+
+    @run_failure_sensor(name=name, monitored_jobs=jobs, default_status=default_status)
     def slack_on_run_failure(context: RunFailureSensorContext):
         blocks, main_body_text = _build_slack_blocks_and_text(
             context=context, text_fn=text_fn, blocks_fn=blocks_fn, dagit_base_url=dagit_base_url
