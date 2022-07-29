@@ -84,7 +84,7 @@ def test_clean_event_generator_exit():
         resource_def=resource_def,
         resources=ScopedResourcesBuilder().build(None),
         resource_config=None,
-        pipeline_run=pipeline_run,
+        dagster_run=pipeline_run,
         instance=instance,
     )
     generator = single_resource_event_generator(resource_context, resource_name, resource_def)

@@ -11,6 +11,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._annotations import public
 
 
 class InitResourceContext:
@@ -53,65 +54,54 @@ class InitResourceContext:
         resource_def: Optional[ResourceDefinition] = None,
         instance: Optional[DagsterInstance] = None,
         dagster_run: Optional[PipelineRun] = None,
-        pipeline_run: Optional[PipelineRun] = None,
         log_manager: Optional[DagsterLogManager] = None,
-        pipeline_def_for_backwards_compat: Optional[PipelineDefinition] = None,
     ):
-
-        if dagster_run and pipeline_run:
-            raise DagsterInvariantViolationError(
-                "Provided both ``dagster_run`` and ``pipeline_run`` to InitResourceContext "
-                "initialization. Please provide one or the other."
-            )
         self._resource_config = resource_config
         self._resource_def = resource_def
         self._log_manager = log_manager
         self._instance = instance
         self._resources = resources
+        self._dagster_run = dagster_run
 
-        self._pipeline_def_for_backwards_compat = pipeline_def_for_backwards_compat
-        self._dagster_run = dagster_run or pipeline_run
-
+    @public  # type: ignore
     @property
     def resource_config(self) -> Any:
         return self._resource_config
 
+    @public  # type: ignore
     @property
     def resource_def(self) -> Optional[ResourceDefinition]:
         return self._resource_def
 
+    @public  # type: ignore
     @property
     def resources(self) -> Resources:
         return self._resources
 
+    @public  # type: ignore
     @property
     def instance(self) -> Optional[DagsterInstance]:
         return self._instance
 
     @property
-    def pipeline_def_for_backwards_compat(self) -> Optional[PipelineDefinition]:
-        return self._pipeline_def_for_backwards_compat
-
-    @property
     def dagster_run(self) -> Optional[PipelineRun]:
         return self._dagster_run
 
-    @property
-    def pipeline_run(self) -> Optional[PipelineRun]:
-        return self.dagster_run
-
+    @public  # type: ignore
     @property
     def log(self) -> Optional[DagsterLogManager]:
         return self._log_manager
 
     # backcompat: keep around this property from when InitResourceContext used to be a NamedTuple
+    @public  # type: ignore
     @property
     def log_manager(self) -> Optional[DagsterLogManager]:
         return self._log_manager
 
+    @public  # type: ignore
     @property
     def run_id(self) -> Optional[str]:
-        return self.pipeline_run.run_id if self.pipeline_run else None
+        return self.dagster_run.run_id if self.dagster_run else None
 
     def replace_config(self, config: Any) -> "InitResourceContext":
         return InitResourceContext(
@@ -119,7 +109,7 @@ class InitResourceContext:
             resources=self.resources,
             instance=self.instance,
             resource_def=self.resource_def,
-            pipeline_run=self.pipeline_run,
+            dagster_run=self.dagster_run,
             log_manager=self.log,
         )
 
@@ -172,9 +162,8 @@ class UnboundInitResourceContext(InitResourceContext):
             resources=resources,
             resource_def=None,
             instance=instance,
-            pipeline_run=None,
+            dagster_run=None,
             log_manager=initialize_console_manager(None),
-            pipeline_def_for_backwards_compat=None,
         )
 
     def __enter__(self):

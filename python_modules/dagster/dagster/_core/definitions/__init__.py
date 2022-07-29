@@ -9,6 +9,7 @@ from .dependency import (
     SolidInvocation,
     SolidOutputHandle,
 )
+from .composition import PendingNodeInvocation
 from .events import (
     AssetKey,
     AssetMaterialization,

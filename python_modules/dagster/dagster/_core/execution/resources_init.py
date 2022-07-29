@@ -173,7 +173,7 @@ def _core_resource_initialization_event_generator(
                 resource_context = InitResourceContext(
                     resource_def=resource_def,
                     resource_config=resource_configs[resource_name].config,
-                    pipeline_run=pipeline_run,
+                    dagster_run=pipeline_run,
                     # Add tags with information about the resource
                     log_manager=resource_log_manager.with_tags(
                         resource_name=resource_name,

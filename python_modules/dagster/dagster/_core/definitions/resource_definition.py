@@ -118,14 +118,17 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
     def config_schema(self) -> IDefinitionConfigSchema:
         return self._config_schema
 
+    @public  # type: ignore
     @property
     def description(self) -> Optional[str]:
         return self._description
 
+    @public  # type: ignore
     @property
     def version(self) -> Optional[str]:
         return self._version
 
+    @public  # type: ignore
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
         return self._required_resource_keys

@@ -15,6 +15,7 @@ from typing import (
     Union,
     cast,
 )
+from dagster._annotations import public
 
 import pendulum
 from typing_extensions import TypeAlias, TypeGuard
@@ -122,6 +123,7 @@ class ScheduleEvaluationContext:
     def __exit__(self, _exception_type, _exception_value, _traceback):
         self._exit_stack.close()
 
+    @public  # type: ignore
     @property
     def instance(self) -> "DagsterInstance":
         # self._instance_ref should only ever be None when this ScheduleEvaluationContext was
@@ -136,6 +138,7 @@ class ScheduleEvaluationContext:
             )
         return cast(DagsterInstance, self._instance)
 
+    @public  # type: ignore
     @property
     def scheduled_execution_time(self) -> Optional[datetime]:
         return self._scheduled_execution_time
@@ -444,13 +447,24 @@ class ScheduleDefinition:
         else:
             return result
 
+    @public  # type: ignore
     @property
     def name(self) -> str:
         return self._name
 
+    @public  # type: ignore
+    @property
+    def job_name(self) -> str:
+        return self.pipeline_name
+
     @property
     def pipeline_name(self) -> str:
         return self._target.pipeline_name
+
+    @public  # type: ignore
+    @property
+    def op_selection(self) -> Optional[Sequence[str]]:
+        return self._target.solid_selection
 
     @property
     def solid_selection(self) -> Optional[Sequence[str]]:
@@ -460,22 +474,27 @@ class ScheduleDefinition:
     def mode(self) -> str:
         return self._target.mode
 
+    @public  # type: ignore
     @property
     def description(self) -> Optional[str]:
         return self._description
 
+    @public  # type: ignore
     @property
     def cron_schedule(self) -> str:
         return self._cron_schedule
 
+    @public  # type: ignore
     @property
     def environment_vars(self) -> Mapping[str, str]:
         return self._environment_vars
 
+    @public  # type: ignore
     @property
     def execution_timezone(self) -> Optional[str]:
         return self._execution_timezone
 
+    @public  # type: ignore
     @property
     def job(self) -> Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition]:
         if isinstance(self._target, DirectTarget):
@@ -560,6 +579,7 @@ class ScheduleDefinition:
 
         check.failed("Target is not loadable")
 
+    @public  # type: ignore
     @property
     def default_status(self) -> DefaultScheduleStatus:
         return self._default_status
