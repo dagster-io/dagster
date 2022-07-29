@@ -413,7 +413,7 @@
       },
       {
         "title": "Transitioning Data Pipelines from Development to Production",
-        "path":"/guides/dagster/transitioning-data-pipelines-from-development-to-production.mdx"
+        "path":"/guides/dagster/transitioning-data-pipelines-from-development-to-production"
       },
       {
         "title": "Versioning and Memoization (Experimental)",
