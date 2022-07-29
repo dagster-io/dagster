@@ -3,7 +3,7 @@ import pandas as pd
 from dagster import build_op_context
 
 from .assets_v2 import items
-from .resources.resources_v2 import StubHNClient, stub_hn_client
+from .resources import StubHNClient, stub_hn_client
 
 # start
 # test_assets.py
