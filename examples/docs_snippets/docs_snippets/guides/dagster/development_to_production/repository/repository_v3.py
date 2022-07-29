@@ -71,3 +71,15 @@ resource_defs = {
 }
 
 # end_staging
+
+from ..resources.resources_v1 import hn_api_client
+
+# start_hn_resource
+
+resource_defs = {
+    "local": {"hn_client": hn_api_client, "snowflake_io_manager": {...}},
+    "production": {"hn_client": hn_api_client, "snowflake_io_manager": {...}},
+    "staging": {"hn_client": hn_api_client, "snowflake_io_manager": {...}},
+}
+
+# end_hn_resource

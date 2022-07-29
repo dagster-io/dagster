@@ -5,8 +5,6 @@ description: This guide walks through how to transition your data pipelines from
 
 # Transitioning Data Pipelines from Development to Production
 
-# putting this change in so vercel runs :/
-
 In this guide, we'll walk through how to transition your data pipelines from local development to staging and production deployments.
 
 Let's say we’ve been tasked with fetching the N most recent entries from Hacker News and splitting it into two datasets: one containing all of the data about stories and one containing all of the data about comments. In order to make the pipeline maintainable and testable, we have two additional requirements:
@@ -99,25 +97,15 @@ def stories(items: pd.DataFrame) -> pd.DataFrame:
     return items[items["type"] == "story"]
 ```
 
-This results in an asset graph that looks like this:
-
-<Image
-alt="alt"
-src="/images/guides/development_to_production/hacker_news_asset_graph.png"
-width={1538}
-height={730}
-/>
-
 Now we can add these assets to our repository and materialize them via Dagit as part of our local development workflow. We will use the [configured API](/concepts/configuration/configured) to add configuration for the `snowflake_io_manager`.
 
 ```python file=/guides/dagster/development_to_production/repository/repository_v1.py startafter=start endbefore=end
 # repository.py
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+from development_to_production.assets import comments, items, stories
 
 from dagster import repository, with_resources
-
-from development_to_production.assets import comments, items, stories
 
 snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
 
@@ -143,7 +131,16 @@ def repo():
 
 Note that we have passwords in our configuration in this code snippet. This is bad practice, and we will resolve it shortly.
 
-Now we can materialize the assets the Dagit and ensure that the data appears in Snowflake as we expect:
+This results in an asset graph that looks like this:
+
+<Image
+alt="alt"
+src="/images/guides/development_to_production/hacker_news_asset_graph.png"
+width={1538}
+height={730}
+/>
+
+We can materialize the assets the Dagit and ensure that the data appears in Snowflake as we expect:
 
 <Image
 alt="alt"
@@ -305,7 +302,7 @@ Before we get into implementation, let's go over some best practices:
 
 ### When to use resources
 
-In many cases, it is often most convenient to interact with an external service directly in assets or ops, rather than write a resource. We recommend refactoring code to use resources in the following cases:
+In many cases, interacting with an external service directly in assets or ops is more convenient than refactoring the interactions with the service as a resource. We recommend refactoring code to use resources in the following cases:
 
 - Multiple assets or ops need to interact with the service in a consistent way
 - Different implementations of a service need to be used in certain scenarios (ie. a staging environment, or unit tests)
@@ -385,6 +382,12 @@ def items(context) -> pd.DataFrame:
   </a> on GitHub.
 </Note>
 
+We'll also need to add the `hn_api_client` to the `resource_defs` in our repository.
+
+```python file=/guides/dagster/development_to_production/repository/repository_v3.py startafter=start_hn_resource endbefore=start_hn_resource
+No match for endBefore value "start_hn_resource"
+```
+
 Now we can write a stubbed version of the Hacker News resource. We want to make sure the stub has implementations for each method `HNAPIClient` implements.
 
 ```python file=/guides/dagster/development_to_production/resources/resources_v2.py startafter=start_mock endbefore=end_mock
@@ -440,7 +443,10 @@ Now we can use the stub Hacker News resource to test that the `items` asset tran
 
 
 def test_items():
-    context = build_op_context(resources={"hn_client": stub_hn_client})
+    context = build_op_context(
+        resources={"hn_client": stub_hn_client},
+        op_config={"N": StubHNClient().fetch_max_item_id()},
+    )
     hn_dataset = items(context)
     assert isinstance(hn_dataset, pd.DataFrame)
 

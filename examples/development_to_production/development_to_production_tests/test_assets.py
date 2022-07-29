@@ -6,7 +6,9 @@ from dagster import build_op_context
 
 
 def test_items():
-    context = build_op_context(resources={"hn_client": stub_hn_client})
+    context = build_op_context(
+        resources={"hn_client": stub_hn_client}, op_config={"N": StubHNClient().fetch_max_item_id()}
+    )
     hn_dataset = items(context)
     assert isinstance(hn_dataset, pd.DataFrame)
 
