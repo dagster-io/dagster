@@ -91,7 +91,7 @@ def build_run_step_stats_from_events(
     by_step_key: Dict[str, Dict[str, Any]] = defaultdict(dict)
     attempts = defaultdict(list)
     attempt_events = defaultdict(list)
-    markers: Mapping[str, Mapping[str, Any]] = defaultdict(dict)
+    markers: Dict[str, Dict[str, Any]] = defaultdict(dict)
     for event in records:
         if not event.is_dagster_event:
             continue
