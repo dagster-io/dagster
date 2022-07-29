@@ -1,11 +1,7 @@
 import os
 
 import pytest
-from dagster_shell import (
-    create_shell_command_op,
-    create_shell_script_op,
-    shell_op,
-)
+from dagster_shell import create_shell_command_op, create_shell_script_op, shell_op
 from dagster_shell.solids import create_shell_command_solid, create_shell_script_solid, shell_solid
 
 from dagster import Failure, job, op
