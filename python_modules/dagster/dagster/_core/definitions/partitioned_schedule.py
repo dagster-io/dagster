@@ -1,5 +1,5 @@
 from datetime import time
-from typing import Optional, Union, cast
+from typing import Callable, Optional, Union, cast
 
 import dagster._check as check
 
@@ -21,6 +21,19 @@ from .time_window_partitions import TimeWindow, TimeWindowPartitionsDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 
+def latest_window_partition_selector(
+    context: ScheduleEvaluationContext, partition_set_def: PartitionSetDefinition[TimeWindow]
+) -> Union[SkipReason, Partition[TimeWindow]]:
+    """Creates a selector for partitions that are time windows. Selects the latest partition that
+    exists as of the schedule tick time.
+    """
+    partitions = partition_set_def.get_partitions(context.scheduled_execution_time)
+    if len(partitions) == 0:
+        return SkipReason()
+    else:
+        return partitions[-1]
+
+
 def build_schedule_from_partitioned_job(
     job: Union[JobDefinition, UnresolvedAssetJobDefinition],
     description: Optional[str] = None,
@@ -30,6 +43,10 @@ def build_schedule_from_partitioned_job(
     day_of_week: Optional[int] = None,
     day_of_month: Optional[int] = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
+    partition_selector: Callable[
+            [ScheduleEvaluationContext, PartitionSetDefinition[TimeWindow]],
+            Union[SkipReason, Partition[TimeWindow]]
+        ] = latest_window_partition_selector,
 ) -> ScheduleDefinition:
     """
     Creates a schedule from a time window-partitioned job.
@@ -91,7 +108,7 @@ def build_schedule_from_partitioned_job(
     schedule_def = partition_set.create_schedule_definition(
         schedule_name=check.opt_str_param(name, "name", f"{job.name}_schedule"),
         cron_schedule=cron_schedule,
-        partition_selector=latest_window_partition_selector,
+        partition_selector=partition_selector,
         execution_timezone=partitions_def.timezone,
         description=description,
         job=job,
@@ -102,16 +119,3 @@ def build_schedule_from_partitioned_job(
 
 
 schedule_from_partitions = build_schedule_from_partitioned_job
-
-
-def latest_window_partition_selector(
-    context: ScheduleEvaluationContext, partition_set_def: PartitionSetDefinition[TimeWindow]
-) -> Union[SkipReason, Partition[TimeWindow]]:
-    """Creates a selector for partitions that are time windows. Selects the latest partition that
-    exists as of the schedule tick time.
-    """
-    partitions = partition_set_def.get_partitions(context.scheduled_execution_time)
-    if len(partitions) == 0:
-        return SkipReason()
-    else:
-        return partitions[-1]
