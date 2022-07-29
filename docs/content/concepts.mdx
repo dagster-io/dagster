@@ -1,89 +1,241 @@
+---
+title: Concepts | Dagster Docs
+---
+
 # Concepts
 
-Dagster is a data orchestrator. It lets you define jobs in terms of the data flow between logical components called ops. These jobs can be developed locally and run anywhere.
+TODO
 
-## How to use the Concepts section
+---
 
-Each page in this section contains:
+## Software-defined assets
 
-- **Overview**: Description of the concept.
-- **Relevant APIs**: Index of top-level Dagster APIs that are relevant to the concept.
-- **Examples**: Easy-to-copy code snippets for the concept.
-- **Patterns**: A list of advanced patterns to use and anti-patterns to avoid with the concept.
+An asset is an object in persistent storage, such as a table, file, or persisted machine learning model. A software-defined asset is a Dagster object that couples an asset to the function and upstream assets that are used to produce its contents.
 
-## Sections
+<ArticleList>
+  <ArticleListItem
+    title="Software-defined assets"
+    href="/concepts/assets/software-defined-assets"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Asset materializations"
+    href="/concepts/assets/sasset-materializations"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Asset observations"
+    href="/concepts/assets/asset-observations"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Multi-assets"
+    href="/concepts/assets/multi-assets"
+  ></ArticleListItem>
+</ArticleList>
 
-<LinkGrid>
-  <LinkGridItem title="Assets" href="/concepts/assets/software-defined-assets">
-    Assets are data objects that you produce during a run. This section walks
-    you through how to inform Dagster about these assets so that they can be
-    tracked over time.
-  </LinkGridItem>
-  <LinkGridItem
-    title="Ops, Jobs, and Graphs"
+---
+
+## Ops
+
+Ops are the core unit of computation in Dagster. They typically perform relatively simple tasks, such as executing a database query or sending a Slack message.
+
+<ArticleList>
+  <ArticleListItem
+    title="Ops"
     href="/concepts/ops-jobs-graphs/ops"
-  >
-    Ops, Jobs, and Graphs are the building blocks of Dagster code. This section
-    covers how to define and use both ops and jobs.
-  </LinkGridItem>
-  <LinkGridItem
-    title="Schedules, Sensors, and Partitions"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Op events"
+    href="/concepts/ops-jobs-graphs/op-events"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Op hooks"
+    href="/concepts/ops-jobs-graphs/op-hooks"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Op retries"
+    href="/concepts/ops-jobs-graphs/op-retries"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Graphs
+
+A graph is a set of interconnected ops or sub-graphs. While individual ops typically perform simple tasks, ops can be assembled into a graph to accomplish complex tasks.
+
+<ArticleList>
+  <ArticleListItem
+    title="Graphs"
+    href="/concepts/ops-jobs-graphs/graphs"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Nesting graphs"
+    href="/concepts/ops-jobs-graphs/nesting-graphs"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dynamic graphs"
+    href="/concepts/ops-jobs-graphs/dynamic-graphs"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Jobs
+
+Jobs are the main unit of execution and monitoring in Dagster. The core of a job is a graph of ops connected via data dependencies.
+
+<ArticleList>
+  <ArticleListItem
+    title="Jobs"
+    href="/concepts/ops-jobs-graphs/jobs"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Job execution"
+    href="/concepts/ops-jobs-graphs/job-execution"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Metadata and tags"
+    href="/concepts/ops-jobs-graphs/metadata-tags"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Schedules
+
+Schedules launch runs on a fixed interval, while sensors allow you to do so based on an external state change. These features also support partitioning and backfilling.
+
+<ArticleList>
+  <ArticleListItem
+    title="Schedules"
     href="/concepts/partitions-schedules-sensors/schedules"
-  >
-    Schedulers can launch runs on a fixed interval, while sensors allow you to
-    run based on any external state change. This section demonstrates how to
-    define them and their convenient capabilities like partitioning and
-    backfilling.
-  </LinkGridItem>
-  <LinkGridItem
-    title="IO Management"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Sensors"
+    href="/concepts/partitions-schedules-sensors/sensors"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Partitions"
+    href="/concepts/partitions-schedules-sensors/partitions"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Backfills"
+    href="/concepts/partitions-schedules-sensors/backfills"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## I/O management
+
+IO Managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops.
+
+<ArticleList>
+  <ArticleListItem
+    title="I/O managers"
     href="/concepts/io-management/io-managers"
-  >
-    IO Managers are user-provided objects that store op outputs and load them as
-    inputs to downstream ops. This section explains how Dagster thinks about IO
-    management and shows how to define and use IO managers and other IO-related
-    features.
-  </LinkGridItem>
-  <LinkGridItem
-    title="Configuration"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Sensors"
+    href="/concepts/io-management/unconnected-inputs"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Configuration
+
+Dagster provides a configuration system that allows you to document, schematize, and error-check your configuration.
+
+<ArticleList>
+  <ArticleListItem
+    title="Run configuration"
     href="/concepts/configuration/config-schema"
-  >
-    Dagster provides a configuration system that allows you to document,
-    schematize, and error-check your configuration. This section demonstrates
-    how configurations work with different Dagster entities.
-  </LinkGridItem>
-  <LinkGridItem
-    title="Repositories and Workspaces"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Definition-time configuration"
+    href="/concepts/configuration/configured"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Workspaces and repositories
+
+Workspaces are collections of repositories and info about where to find them. Dagster tools like Dagit and the Dagster CLI use workspaces to load your code.
+
+<ArticleList>
+  <ArticleListItem
+    title="Workspaces"
+    href="/concepts/repositories-workspaces/workspaces"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Repositories"
     href="/concepts/repositories-workspaces/repositories"
-  >
-    A workspace is a collection of user-defined repositories and information
-    about where to find them. Dagster tools, like Dagit and the Dagster CLI, use
-    workspaces to load user code. This section shows how to define and when to
-    use repositories and workspaces.
-  </LinkGridItem>
-  <LinkGridItem title="Resources" href="/concepts/resources">
-    Resources enable you to separate logic from its heavyweight external
-    dependencies. This makes testing and developing data jobs possible in
-    various environments.
-  </LinkGridItem>
-  <LinkGridItem title="Dagit & GraphQL API" href="/concepts/dagit/dagit">
-    Dagit is a web-based interface for viewing and interacting with Dagster
-    objects. This section walks you through Dagit's functionalities and the
-    GraphQL API used to interact with Dagster programatically.
-  </LinkGridItem>
-  <LinkGridItem title="Dagster Types" href="/concepts/types">
-    Dagster includes gradual, opt-in typing for the inputs and outputs of ops.
-    This section explains how to define, use, and test types in Dagster.
-  </LinkGridItem>
-  <LinkGridItem title="Logging" href="/concepts/logging/loggers">
-    Dagster includes a rich and extensible logging system. This section
-    showcases Dagster's built-in logger and shows how you can customize loggers
-    to fit your logging and monitoring infrastructure.
-  </LinkGridItem>
-  <LinkGridItem title="Testing" href="/concepts/testing">
-    Dagster enables you to build testable and maintainable data applications.
-    This section shows that Dagster enables you to unit-test your data jobs,
-    separate business logic from external dependencies, and run data quality
-    tests.
-  </LinkGridItem>
-</LinkGrid>
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Resources
+
+Resources enable you to separate logic from external dependencies, making developing and testing possible in multiple environments.
+
+[Learn more about resources](/concepts/resources).
+
+---
+
+## Dagit
+
+Dagit is a web-based interface for viewing and interacting with Dagster objects.
+
+[Learn more about Dagit](/concepts/dagit/dagit).
+
+---
+
+## GraphQL API
+
+The GraphQL API allows you to programmatically interact with Dagster.
+
+<ArticleList>
+  <ArticleListItem
+    title="GraphQL API"
+    href="/concepts/dagit/graphql"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="GraphQL Python client"
+    href="/concepts/dagit/graphql-client"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Dagster types
+
+The Dagster type system provides gradual, opt-in typing for the inputs and outputs of assets and ops.
+
+[Learn more about Dagster types](/concepts/types).
+
+---
+
+## Logging
+
+A rich, extensible logging system, Dagster's built-in logger tracks all execution events. Loggers can also be customized to fit your infrastructure.
+
+<ArticleList>
+  <ArticleListItem
+    title="Loggers"
+    href="/concepts/logging/loggers"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Python logging"
+    href="/concepts/logging/python-logging"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Testing
+
+Dagster enables you to build testable and maintainable data applications. It provides ways to allow you unit-test your data applications, separate business logic from environments, and set explicit expectations on uncontrollable inputs.
+
+[Learn more about testing](/concepts/testing).
