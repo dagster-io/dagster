@@ -7,20 +7,27 @@ import {MetadataEntries} from '../metadata/MetadataEntry';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
 import {ErrorSource} from '../types/globalTypes';
 
-import {PythonErrorFragment} from './types/PythonErrorFragment';
+import {
+  PythonErrorFragment,
+  PythonErrorFragment_causes as Cause,
+} from './types/PythonErrorFragment';
+
+export type GenericError = {
+  message: string;
+  stack?: string[];
+  causes?: Cause[];
+};
 
 interface IPythonErrorInfoProps {
   showReload?: boolean;
   centered?: boolean;
-  error: {message: string} | PythonErrorFragment;
+  error: GenericError | PythonErrorFragment;
   failureMetadata?: {metadataEntries: MetadataEntryFragment[]} | null;
   errorSource?: ErrorSource | null;
 }
 
 export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
-  const message = props.error.message;
-  const stack = (props.error as PythonErrorFragment).stack;
-  const causes = (props.error as PythonErrorFragment).causes;
+  const {message, stack = [], causes = []} = props.error;
 
   const Wrapper = props.centered ? ErrorWrapperCentered : ErrorWrapper;
   const context = props.errorSource ? <ErrorContext errorSource={props.errorSource} /> : null;
@@ -37,12 +44,12 @@ export const PythonErrorInfo: React.FC<IPythonErrorInfoProps> = (props) => {
           </div>
         ) : null}
         {stack ? <Trace>{stack.join('')}</Trace> : null}
-        {causes.map((cause) => (
-          <>
+        {causes.map((cause, ii) => (
+          <React.Fragment key={ii}>
             <CauseHeader>The above exception was caused by the following exception:</CauseHeader>
             <ErrorHeader>{cause.message}</ErrorHeader>
             {stack ? <Trace>{cause.stack.join('')}</Trace> : null}
-          </>
+          </React.Fragment>
         ))}
         {props.showReload && (
           <Button icon={<Icon name="refresh" />} onClick={() => window.location.reload()}>
