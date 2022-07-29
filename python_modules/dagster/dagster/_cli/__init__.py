@@ -30,7 +30,7 @@ def create_dagster_cli():
         "asset": asset_cli,
         "debug": debug_cli,
         "new-project": new_project_cli,
-        "project": project_cli
+        "project": project_cli,
     }
 
     @click.group(

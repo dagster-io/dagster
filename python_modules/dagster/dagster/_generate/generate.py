@@ -3,8 +3,8 @@ import posixpath
 
 import jinja2
 
-from dagster.version import __version__ as dagster_version
 from dagster._utils import file_relative_path
+from dagster.version import __version__ as dagster_version
 
 
 def generate_project(path: str):
