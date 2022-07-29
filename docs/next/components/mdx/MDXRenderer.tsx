@@ -26,6 +26,7 @@ export type MDXData = {
   frontMatter: {
     title: string;
     description: string;
+    noindex?: boolean;
   };
   searchIndex: any;
   tableOfContents: any;
@@ -356,6 +357,7 @@ function VersionedMDXRenderer({
           title: frontMatter.title,
           description: frontMatter.description,
         }}
+        noindex={frontMatter.noindex}
       />
 
       <VersionedContentLayout asPath={asPath}>
