@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from functools import update_wrapper
-from typing import AbstractSet, Callable, Optional
+from typing import AbstractSet, Callable, Optional, Union, cast
 
 from typing_extensions import TypeAlias
 
@@ -94,7 +94,7 @@ class RootInputManager(InputManager):
 
 @experimental
 def root_input_manager(
-    config_schema: CoercableToConfigSchema = None,
+    config_schema: Optional[Union[Callable, CoercableToConfigSchema]] = None,
     description: Optional[str] = None,
     input_config_schema: CoercableToConfigSchema = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
@@ -157,7 +157,7 @@ def root_input_manager(
 
     def _wrap(load_fn: InputLoadFn) -> RootInputManagerDefinition:
         return _InputManagerDecoratorCallable(
-            config_schema=config_schema,
+            config_schema=cast(CoercableToConfigSchema, config_schema),
             description=description,
             version=version,
             input_config_schema=input_config_schema,

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, Optional, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Callable, Optional, Type, TypeVar, Union, overload
 
 import dagster._check as check
 
@@ -7,9 +7,24 @@ from .dagster_type import PythonObjectDagsterType, make_python_type_usable_as_da
 if TYPE_CHECKING:
     from dagster._core.types.config_schema import DagsterTypeLoader, DagsterTypeMaterializer
 
-T_Type = TypeVar("T_Type", bound=Type)
+T_Type = TypeVar("T_Type", bound=Type[object])
 
+@overload
 def usable_as_dagster_type(
+    name: Optional[str] = ...,
+    description: Optional[str] = ...,
+    loader: Optional[DagsterTypeLoader] = ...,
+    materializer: Optional[DagsterTypeMaterializer] = ...,
+) -> Callable[[T_Type], T_Type]: 
+    ...
+
+@overload
+def usable_as_dagster_type(
+    name: T_Type,
+) -> T_Type:
+    ...
+
+def usable_as_dagster_type(  # type: ignore  # bug
     name: Optional[Union[str, T_Type]] = None,
     description: Optional[str] = None,
     loader: Optional[DagsterTypeLoader] = None,
@@ -76,7 +91,7 @@ def usable_as_dagster_type(
 
     def _with_args(bare_cls: T_Type) -> T_Type:
         check.class_param(bare_cls, "bare_cls")
-        new_name = name if name else bare_cls.__name__
+        new_name =  check.opt_str_param(name, "name") if name else bare_cls.__name__
 
         make_python_type_usable_as_dagster_type(
             bare_cls,

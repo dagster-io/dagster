@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Mapping, Sequence, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Sequence, Type, Union
 
 from typing_extensions import TypeAlias
 

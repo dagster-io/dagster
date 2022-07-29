@@ -23,9 +23,6 @@ def sync_get_external_sensor_execution_data_ephemeral_grpc(
 ) -> SensorExecutionData:
     from dagster._grpc.client import ephemeral_grpc_api_client
 
-    y = ephemeral_grpc_api_client(origin.repository_location_origin.loadable_target_origin)
-    y.__exit__
-
     origin = repository_handle.get_external_origin()
     with ephemeral_grpc_api_client(
         origin.repository_location_origin.loadable_target_origin
