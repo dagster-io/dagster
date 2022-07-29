@@ -67,9 +67,7 @@ from dagster import asset
 def items(context) -> pd.DataFrame:
     """Items from the Hacker News API: each is a story or a comment on a story."""
     rows = []
-    max_id = requests.get(
-        "https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5
-    ).json()
+    max_id = requests.get("https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5).json()
     # Hacker News API is 1-indexed, so adjust range by 1
     for item_id in range(max_id - context.op_config["N"] + 1, max_id + 1):
         item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
@@ -268,7 +266,7 @@ def repo():
 
 Depending on your organization’s Dagster setup, there are a couple of options for a staging environment.
 
-- **For Dagster Cloud users**, we recommend using [Branch Deployments](https://docs.dagster.cloud/guides/branch-deployments) as your staging step. A Branch Deployment is a new Dagster deployment that is automatically generated for each git branch. Check out our \[comprehensive guide to Branch Deployments]\(link to claire’s doc) to learn how to use Branch Deployments to verify data pipelines before deploying them to production.
+- **For Dagster Cloud users**, we recommend using [Branch Deployments](https://docs.dagster.cloud/guides/branch-deployments) as your staging step. A branch deployment is a new Dagster deployment that is automatically generated for each git branch. Check out our \[comprehensive guide to branch deployments]\(link to claire’s doc) to learn how to use branch deployments to verify data pipelines before deploying them to production.
 
 - **For a self-hosted staging deployment**, we’ve already done most of the necessary work to run our assets in staging! All we need to do is add another entry to the `resource_defs` dictionary in our repository and set `DAGSTER_DEPLOYMENT=staging` in our staging deployment.
 

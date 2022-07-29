@@ -1,4 +1,16 @@
-ITEM_FIELD_NAMES = []
+ITEM_FIELD_NAMES = [
+    "id",
+    "parent",
+    "time",
+    "type",
+    "by",
+    "text",
+    "kids",
+    "score",
+    "title",
+    "descendants",
+    "url",
+]
 
 # start_assets
 # assets.py
@@ -15,9 +27,7 @@ from dagster import asset
 def items(context) -> pd.DataFrame:
     """Items from the Hacker News API: each is a story or a comment on a story."""
     rows = []
-    max_id = requests.get(
-        "https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5
-    ).json()
+    max_id = requests.get("https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5).json()
     # Hacker News API is 1-indexed, so adjust range by 1
     for item_id in range(max_id - context.op_config["N"] + 1, max_id + 1):
         item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
