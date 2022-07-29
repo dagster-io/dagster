@@ -12,14 +12,14 @@ from dagster_graphql.schema.solids import (
 
 from dagster import AssetKey
 from dagster import _check as check
-from dagster.core.host_representation import ExternalRepository, RepositoryLocation
-from dagster.core.host_representation.external import ExternalPipeline
-from dagster.core.host_representation.external_data import (
+from dagster._core.host_representation import ExternalRepository, RepositoryLocation
+from dagster._core.host_representation.external import ExternalPipeline
+from dagster._core.host_representation.external_data import (
     ExternalAssetNode,
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
 )
-from dagster.core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
+from dagster._core.snap.solid import CompositeSolidDefSnap, SolidDefSnap
 
 from ..implementation.fetch_runs import AssetComputeStatus
 from ..implementation.loader import BatchMaterializationLoader, CrossRepoAssetDependedByLoader

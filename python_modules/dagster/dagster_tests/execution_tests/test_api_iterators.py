@@ -1,21 +1,20 @@
 import pytest
 
-from dagster import ModeDefinition, PipelineDefinition
 from dagster import _check as check
 from dagster import resource
-from dagster._legacy import solid
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.events.log import EventLogEntry, construct_event_logger
-from dagster.core.execution.api import (
+from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.events.log import EventLogEntry, construct_event_logger
+from dagster._core.execution.api import (
     create_execution_plan,
     execute_pipeline_iterator,
     execute_plan_iterator,
     execute_run,
     execute_run_iterator,
 )
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.test_utils import instance_for_test
+from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.test_utils import instance_for_test
+from dagster._legacy import ModeDefinition, PipelineDefinition, solid
 
 
 @resource
@@ -146,7 +145,9 @@ def test_execute_run_iterator():
         ) as run_monitoring_instance:
             event = next(
                 execute_run_iterator(
-                    InMemoryPipeline(pipeline_def), pipeline_run, instance=run_monitoring_instance
+                    InMemoryPipeline(pipeline_def),
+                    pipeline_run,
+                    instance=run_monitoring_instance,
                 )
             )
             assert (

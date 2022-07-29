@@ -8,8 +8,8 @@ from dagster_pandera import pandera_schema_to_dagster_type
 from pandera.typing.config import BaseConfig
 
 from dagster import DagsterType, TypeCheck, check_dagster_type
-from dagster.core.definitions.metadata import TableSchemaMetadataValue
-from dagster.core.definitions.metadata.table import (
+from dagster._core.definitions.metadata import TableSchemaMetadataValue
+from dagster._core.definitions.metadata.table import (
     TableColumn,
     TableColumnConstraints,
     TableConstraints,

@@ -2,25 +2,19 @@ from os import path
 
 import pytest
 
-from dagster import ExecutorRequirement, ModeDefinition, PipelineDefinition
+from dagster import ExecutorRequirement
 from dagster import _check as check
-from dagster import (
-    execute_pipeline,
-    fs_io_manager,
-    in_process_executor,
-    multiprocess_executor,
-    reconstructable,
-)
-from dagster._legacy import pipeline, solid
-from dagster.core.definitions.executor_definition import executor
-from dagster.core.errors import (
+from dagster import fs_io_manager, in_process_executor, multiprocess_executor, reconstructable
+from dagster._core.definitions.executor_definition import executor
+from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
     DagsterUnmetExecutorRequirementsError,
 )
-from dagster.core.events import DagsterEventType
-from dagster.core.execution.retries import RetryMode
-from dagster.core.test_utils import instance_for_test
+from dagster._core.events import DagsterEventType
+from dagster._core.execution.retries import RetryMode
+from dagster._core.test_utils import instance_for_test
+from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline, solid
 
 
 def assert_pipeline_runs_with_executor(executor_defs, execution_config, instance=None):
@@ -48,7 +42,7 @@ def test_in_process_executor_primitive_config():
         config_schema=str,
     )
     def test_executor(init_context):
-        from dagster.core.executor.in_process import InProcessExecutor
+        from dagster._core.executor.in_process import InProcessExecutor
 
         assert init_context.executor_config == "secret testing value!!"
 
@@ -69,7 +63,7 @@ def test_in_process_executor_dict_config():
         config_schema={"value": str},
     )
     def test_executor(init_context):
-        from dagster.core.executor.in_process import InProcessExecutor
+        from dagster._core.executor.in_process import InProcessExecutor
 
         assert init_context.executor_config["value"] == "secret testing value!!"
 
@@ -80,7 +74,8 @@ def test_in_process_executor_dict_config():
         )
 
     assert_pipeline_runs_with_executor(
-        [test_executor], {"test_executor": {"config": {"value": "secret testing value!!"}}}
+        [test_executor],
+        {"test_executor": {"config": {"value": "secret testing value!!"}}},
     )
 
 
@@ -91,7 +86,7 @@ def test_in_process_executor_with_requirement():
         requirements=[ExecutorRequirement.NON_EPHEMERAL_INSTANCE],
     )
     def test_executor(init_context):
-        from dagster.core.executor.in_process import InProcessExecutor
+        from dagster._core.executor.in_process import InProcessExecutor
 
         assert init_context.executor_config["value"] == "secret testing value!!"
 
@@ -103,7 +98,8 @@ def test_in_process_executor_with_requirement():
 
     with pytest.raises(DagsterUnmetExecutorRequirementsError):
         assert_pipeline_runs_with_executor(
-            [test_executor], {"test_executor": {"config": {"value": "secret testing value!!"}}}
+            [test_executor],
+            {"test_executor": {"config": {"value": "secret testing value!!"}}},
         )
 
     with instance_for_test() as instance:
@@ -121,7 +117,7 @@ def test_in_process_executor_dict_config_configured():
         requirements=[ExecutorRequirement.NON_EPHEMERAL_INSTANCE],
     )
     def test_executor(init_context):
-        from dagster.core.executor.in_process import InProcessExecutor
+        from dagster._core.executor.in_process import InProcessExecutor
 
         assert init_context.executor_config["value"] == "secret testing value!!"
 
@@ -138,7 +134,9 @@ def test_in_process_executor_dict_config_configured():
 
     with instance_for_test() as instance:
         assert_pipeline_runs_with_executor(
-            [test_executor_configured], {"configured_test_executor": None}, instance=instance
+            [test_executor_configured],
+            {"configured_test_executor": None},
+            instance=instance,
         )
 
 
@@ -249,7 +247,7 @@ def test_defaulting_behavior():
 
     @executor(config_schema=str)
     def needs_config(_):
-        from dagster.core.executor.in_process import InProcessExecutor
+        from dagster._core.executor.in_process import InProcessExecutor
 
         return InProcessExecutor(
             retries=RetryMode.from_config({"enabled": {}}),

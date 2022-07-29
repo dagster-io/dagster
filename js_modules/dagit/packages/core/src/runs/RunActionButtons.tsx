@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {SharedToaster} from '../app/DomUtils';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
-import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
+import {usePermissions} from '../app/Permissions';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
@@ -220,7 +220,9 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
     if (pipelineError?.tooltip) {
       return pipelineError?.tooltip;
     }
-    return canLaunchPipelineReexecution ? undefined : DISABLED_MESSAGE;
+    return canLaunchPipelineReexecution.enabled
+      ? undefined
+      : canLaunchPipelineReexecution.disabledReason;
   };
 
   return (
@@ -239,7 +241,7 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = (props) => {
           }
           tooltip={tooltip()}
           icon={pipelineError?.icon}
-          disabled={pipelineError?.disabled || !canLaunchPipelineReexecution}
+          disabled={pipelineError?.disabled || !canLaunchPipelineReexecution.enabled}
         />
       </Box>
       {!doneStatuses.has(run.status) ? <CancelRunButton run={run} /> : null}

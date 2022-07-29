@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from google.cloud import storage  # type: ignore
 
 import dagster._check as check
-from dagster.core.storage.file_manager import (
+from dagster._core.storage.file_manager import (
     FileHandle,
     FileManager,
     TempfileManager,

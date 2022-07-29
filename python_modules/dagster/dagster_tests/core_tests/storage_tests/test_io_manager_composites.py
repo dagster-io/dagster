@@ -1,17 +1,16 @@
 import pytest
 
-from dagster import (
-    DagsterInvalidDefinitionError,
-    DagsterType,
+from dagster import DagsterInvalidDefinitionError, DagsterType, root_input_manager
+from dagster._core.storage.io_manager import IOManager, io_manager
+from dagster._legacy import (
     InputDefinition,
     ModeDefinition,
     OutputDefinition,
     composite_solid,
     execute_pipeline,
-    root_input_manager,
+    pipeline,
+    solid,
 )
-from dagster._legacy import pipeline, solid
-from dagster.core.storage.io_manager import IOManager, io_manager
 
 
 def named_io_manager(storage_dict, name):
@@ -49,7 +48,8 @@ def test_composite_solid_output():
 
     # Error on io_manager_key on composite
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="IO manager cannot be set on a composite solid"
+        DagsterInvalidDefinitionError,
+        match="IO manager cannot be set on a composite solid",
     ):
 
         @composite_solid(output_defs=[OutputDefinition(io_manager_key="outer_manager")])

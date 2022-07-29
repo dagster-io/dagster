@@ -2,20 +2,17 @@ import time
 
 from dagster_celery import celery_executor
 
-from dagster import (
+from dagster import Int, Output, RetryRequested, VersionStrategy, fs_io_manager
+from dagster._core.test_utils import nesting_composite_pipeline
+from dagster._legacy import (
     InputDefinition,
-    Int,
     ModeDefinition,
-    Output,
     OutputDefinition,
-    RetryRequested,
-    VersionStrategy,
     default_executors,
-    fs_io_manager,
     lambda_solid,
+    pipeline,
+    solid,
 )
-from dagster._legacy import pipeline, solid
-from dagster.core.test_utils import nesting_composite_pipeline
 
 celery_mode_defs = [
     ModeDefinition(

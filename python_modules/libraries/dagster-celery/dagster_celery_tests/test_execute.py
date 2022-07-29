@@ -8,17 +8,17 @@ from unittest import mock
 import pytest
 from dagster_celery_tests.repo import COMPOSITE_DEPTH
 
-from dagster import (
+from dagster._core.definitions.reconstruct import ReconstructablePipeline
+from dagster._core.errors import DagsterSubprocessError
+from dagster._core.events import DagsterEventType
+from dagster._legacy import (
     CompositeSolidExecutionResult,
     PipelineExecutionResult,
     SolidExecutionResult,
     execute_pipeline,
     execute_pipeline_iterator,
 )
-from dagster.core.definitions.reconstruct import ReconstructablePipeline
-from dagster.core.errors import DagsterSubprocessError
-from dagster.core.events import DagsterEventType
-from dagster.utils import send_interrupt
+from dagster._utils import send_interrupt
 
 from .utils import (  # isort:skip
     execute_eagerly_on_celery,
@@ -169,12 +169,14 @@ def test_execute_eagerly_on_celery(instance):
             if dagster_event and dagster_event.is_engine_event:
                 if dagster_event.engine_event_data.marker_start:
                     key = "{step}.{marker}".format(
-                        step=event.step_key, marker=dagster_event.engine_event_data.marker_start
+                        step=event.step_key,
+                        marker=dagster_event.engine_event_data.marker_start,
                     )
                     start_markers[key] = event.timestamp
                 if dagster_event.engine_event_data.marker_end:
                     key = "{step}.{marker}".format(
-                        step=event.step_key, marker=dagster_event.engine_event_data.marker_end
+                        step=event.step_key,
+                        marker=dagster_event.engine_event_data.marker_end,
                     )
                     end_markers[key] = event.timestamp
 
@@ -281,7 +283,7 @@ def test_execute_eagerly_retries_pipeline_on_celery():
 
 def test_engine_error(instance, tempdir):
     with mock.patch(
-        "dagster.core.execution.context.system.PlanData.raise_on_error",
+        "dagster._core.execution.context.system.PlanData.raise_on_error",
         return_value=True,
     ):
         with pytest.raises(DagsterSubprocessError):

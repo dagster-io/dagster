@@ -3,7 +3,7 @@ import subprocess
 
 import dagster._check as check
 from dagster import resource
-from dagster.core.log_manager import DagsterLogManager
+from dagster._core.log_manager import DagsterLogManager
 
 from .types import SparkOpError
 from .utils import construct_spark_shell_command

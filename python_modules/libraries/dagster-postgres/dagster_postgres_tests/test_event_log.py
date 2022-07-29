@@ -8,8 +8,8 @@ from dagster_tests.core_tests.storage_tests.utils.event_log_storage import (
     create_test_event_log_record,
 )
 
-from dagster.core.storage.event_log.base import EventLogCursor
-from dagster.core.test_utils import instance_for_test
+from dagster._core.storage.event_log.base import EventLogCursor
+from dagster._core.test_utils import instance_for_test
 
 
 class TestPostgresEventLogStorage(TestEventLogStorage):

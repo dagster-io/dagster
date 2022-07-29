@@ -1,6 +1,11 @@
-from docs_snippets.guides.dagster.reexecution.unreliable_job import unreliable_job
+from docs_snippets.guides.dagster.reexecution.reexecution_api import (
+    from_failure_result,
+    initial_result,
+    result,
+)
 
 
-def test_job_compiles_and_executes():
-    result = unreliable_job.execute_in_process(raise_on_error=False)
-    assert result
+def test_reexecution_results():
+    assert not initial_result.success
+    assert from_failure_result.success
+    assert result.success

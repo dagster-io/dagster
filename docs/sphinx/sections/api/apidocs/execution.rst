@@ -18,6 +18,11 @@ Executing Jobs
   :noindex:
   :members: execute_in_process
 
+.. autofunction:: execute_job
+
+.. autoclass:: ReexecutionOptions
+  :members: from_failure
+
 Executing Graphs
 ----------------
 
@@ -32,6 +37,8 @@ Execution results
 .. autoclass:: ExecuteInProcessResult
    :members:
    :inherited-members:
+
+.. autoclass:: ExecuteJobResult
 
 .. autoclass:: DagsterEvent
    :members:

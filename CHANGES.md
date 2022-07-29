@@ -1,5 +1,43 @@
 # Changelog
 
+# 0.15.8
+
+### New
+
+* Software-defined asset config schemas are no longer restricted to `dict`s.
+* The `OpDefinition` constructor now accept `ins` and `outs` arguments, to make direct construction easier.
+* `define_dagstermill_op` accepts `ins` and `outs` in order to make direct construction easier.
+
+### Bugfixes
+
+* Fixed a bug where default configuration was not applied when assets were selected for materialization in Dagit.
+* Fixed a bug where `RunRequests` returned from `run_status_sensors` caused the sensor to error.
+* When supplying config to `define_asset_job`, an error would occur when selecting most asset subsets. This has been fixed.
+* Fixed an error introduced in 0.15.7 that would prevent viewing the execution plan for a job re-execution from 0.15.0  → 0.15.6
+* [dagit] The Dagit server now returns `500` http status codes for GraphQL requests that encountered an unexpected server error.
+* [dagit] Fixed a bug that made it impossible to kick off materializations of partitioned asset if the `day_offset`, `hour_offset`, or `minute_offset` parameters were set on the asset’s partitions definition.
+* [dagster-k8s] Fixed a bug where overriding the Kubernetes command to use to run a Dagster job by setting the `dagster-k8s/config` didn’t actually override the command.
+* [dagster-datahub] Pinned version of `acryl-datahub` to avoid build error.
+
+### Breaking Changes
+
+* The constructor of `JobDefinition` objects now accept a config argument, and the `preset_defs` argument has been removed.
+
+### Deprecations
+
+* `DagsterPipelineRunMetadataValue` has been renamed to `DagsterRunMetadataValue`. `DagsterPipelineRunMetadataValue` will be removed in 1.0.
+
+### Community Contributions
+
+* Thanks to @hassen-io for fixing a broken link in the docs!
+
+### Documentation
+
+* `MetadataEntry` static methods are now marked as deprecated in the docs.
+* `PartitionMapping`s are now included in the API reference.
+* A dbt example and memoization example using legacy APIs have been removed from the docs site.
+
+
 # 0.15.7
 
 ### New

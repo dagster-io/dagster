@@ -11,12 +11,11 @@ import kubernetes
 import dagster._check as check
 from dagster import Array, BoolSource, Field, Noneable, StringSource
 from dagster import __version__ as dagster_version
-from dagster.config.field_utils import Permissive, Shape
-from dagster.config.validate import validate_config
-from dagster.core.errors import DagsterInvalidConfigError
-from dagster.core.utils import parse_env_var
-from dagster.serdes import whitelist_for_serdes
-from dagster.utils import frozentags, merge_dicts
+from dagster._config import Permissive, Shape, validate_config
+from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.utils import parse_env_var
+from dagster._serdes import whitelist_for_serdes
+from dagster._utils import frozentags, merge_dicts
 
 from .models import k8s_model_from_dict, k8s_snake_case_dict
 from .utils import sanitize_k8s_label
@@ -529,8 +528,6 @@ def construct_dagster_k8s_job(
     pod_name=None,
     component=None,
     labels=None,
-    env_vars=None,
-    command=None,
 ):
     """Constructs a Kubernetes Job object for a dagster-graphql invocation.
 
@@ -539,14 +536,14 @@ def construct_dagster_k8s_job(
             Job object.
         args (List[str]): CLI arguments to use with dagster-graphql in this Job.
         job_name (str): The name of the Job. Note that this name must be <= 63 characters in length.
-        resources (Dict[str, Dict[str, str]]): The resource requirements for the container
+        user_defined_k8s_config(Optional[UserDefinedDagsterK8sConfig]): Additional k8s config in tags or Dagster config
+            to apply to the job.
         pod_name (str, optional): The name of the Pod. Note that this name must be <= 63 characters
             in length. Defaults to "<job_name>-pod".
         component (str, optional): The name of the component, used to provide the Job label
             app.kubernetes.io/component. Defaults to None.
         labels(Dict[str, str]): Additional labels to be attached to k8s jobs and pod templates.
             Long label values are may be truncated.
-        env_vars(Dict[str, str]): Additional environment variables to add to the K8s Container.
 
     Returns:
         kubernetes.client.V1Job: A Kubernetes Job object.
@@ -563,7 +560,6 @@ def construct_dagster_k8s_job(
 
     pod_name = check.opt_str_param(pod_name, "pod_name", default=job_name + "-pod")
     check.opt_str_param(component, "component")
-    check.opt_dict_param(env_vars, "env_vars", key_type=str, value_type=str)
     check.opt_dict_param(labels, "labels", key_type=str, value_type=str)
 
     check.invariant(
@@ -610,21 +606,11 @@ def construct_dagster_k8s_job(
             }
         )
 
-    additional_k8s_env_vars = []
-    if env_vars:
-        for key, value in env_vars.items():
-            additional_k8s_env_vars.append({"name": key, "value": value})
-
     container_config = copy.deepcopy(user_defined_k8s_config.container_config)
 
-    user_defined_k8s_env_vars = container_config.pop("env", [])
-    for env_var in user_defined_k8s_env_vars:
-        additional_k8s_env_vars.append(env_var)
+    user_defined_env_vars = container_config.pop("env", [])
 
-    user_defined_k8s_env_from = container_config.pop("env_from", [])
-    additional_k8s_env_from = []
-    for env_from in user_defined_k8s_env_from:
-        additional_k8s_env_from.append(env_from)
+    user_defined_env_from = container_config.pop("env_from", [])
 
     job_image = container_config.pop("image", job_config.job_image)
 
@@ -641,11 +627,10 @@ def construct_dagster_k8s_job(
         {
             "name": "dagster",
             "image": job_image,
-            "command": command,
             "args": args,
             "image_pull_policy": job_config.image_pull_policy,
-            "env": env + job_config.env + additional_k8s_env_vars,
-            "env_from": job_config.env_from_sources + additional_k8s_env_from,
+            "env": env + job_config.env + user_defined_env_vars,
+            "env_from": job_config.env_from_sources + user_defined_env_from,
             "volume_mounts": volume_mounts,
             "resources": resources,
         },

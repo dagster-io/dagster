@@ -3,16 +3,16 @@ from unittest import mock
 
 import pytest
 
-from dagster import DagsterEventType, ModeDefinition, NodeInvocation, PipelineDefinition
+from dagster import DagsterEventType, NodeInvocation
 from dagster import _check as check
-from dagster import build_hook_context, execute_pipeline, graph, job, op, reconstructable, resource
-from dagster._legacy import pipeline, solid
-from dagster.core.definitions import NodeHandle, PresetDefinition, failure_hook, success_hook
-from dagster.core.definitions.decorators.hook_decorator import event_list_hook
-from dagster.core.definitions.events import HookExecutionResult
-from dagster.core.definitions.policy import RetryPolicy
-from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvalidDefinitionError
-from dagster.core.test_utils import instance_for_test
+from dagster import build_hook_context, graph, job, op, reconstructable, resource
+from dagster._core.definitions import NodeHandle, PresetDefinition, failure_hook, success_hook
+from dagster._core.definitions.decorators.hook_decorator import event_list_hook
+from dagster._core.definitions.events import HookExecutionResult
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidDefinitionError
+from dagster._core.test_utils import instance_for_test
+from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline, solid
 
 
 class SomeUserException(Exception):
@@ -79,7 +79,10 @@ def test_hook_user_error():
     assert result.success
 
     hook_errored_events = list(
-        filter(lambda event: event.event_type == DagsterEventType.HOOK_ERRORED, result.event_list)
+        filter(
+            lambda event: event.event_type == DagsterEventType.HOOK_ERRORED,
+            result.event_list,
+        )
     )
     assert len(hook_errored_events) == 1
     assert hook_errored_events[0].solid_handle.name == "a_solid_with_hook"
@@ -278,7 +281,7 @@ def test_failure_hook_framework_exception():
         my_op()
 
     with mock.patch(
-        "dagster.core.execution.plan.execute_plan.core_dagster_event_sequence_for_step"
+        "dagster._core.execution.plan.execute_plan.core_dagster_event_sequence_for_step"
     ) as mocked_event_sequence:
         mocked_event_sequence.side_effect = Exception("Framework exception during execution")
 

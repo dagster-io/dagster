@@ -12,7 +12,7 @@ import {
 } from '@dagster-io/ui';
 import React from 'react';
 
-import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
+import {usePermissions} from '../app/Permissions';
 import {Timestamp} from '../app/time/Timestamp';
 import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationButton';
 import {
@@ -91,9 +91,9 @@ const ReloadButton: React.FC<{
   const {location} = props;
   const {canReloadRepositoryLocation} = usePermissions();
 
-  if (!canReloadRepositoryLocation) {
+  if (!canReloadRepositoryLocation.enabled) {
     return (
-      <Tooltip content={DISABLED_MESSAGE}>
+      <Tooltip content={canReloadRepositoryLocation.disabledReason}>
         <ButtonLink color={Colors.Gray400}>Reload</ButtonLink>
       </Tooltip>
     );

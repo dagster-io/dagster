@@ -7,15 +7,12 @@ from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_s
 from dagster import (
     AssetMaterialization,
     DependencyDefinition,
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
     PythonObjectDagsterType,
-    SolidDefinition,
     dagster_type_loader,
     dagster_type_materializer,
     repository,
 )
+from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, SolidDefinition
 
 from .production_query import PRODUCTION_QUERY
 

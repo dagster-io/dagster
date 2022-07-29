@@ -1,7 +1,7 @@
 Errors
 =========
 
-.. automodule:: dagster.core.errors
+.. automodule:: dagster._core.errors
 
 .. currentmodule:: dagster
 
@@ -20,6 +20,8 @@ Errors
 .. autoexception:: DagsterInvalidConfigDefinitionError
 
 .. autoexception:: DagsterInvalidDefinitionError
+
+.. autoexception:: DagsterInvalidSubsetError
 
 .. autoexception:: DagsterInvariantViolationError
 

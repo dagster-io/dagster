@@ -1,17 +1,7 @@
-from dagster import (
-    Array,
-    Bool,
-    InputDefinition,
-    Noneable,
-    Nothing,
-    Output,
-    OutputDefinition,
-    Permissive,
-    StringSource,
-)
-from dagster._legacy import solid
-from dagster.config.field import Field
-from dagster.utils.backcompat import experimental
+from dagster import Array, Bool, Noneable, Nothing, Output, Permissive, StringSource
+from dagster._annotations import experimental
+from dagster._config.field import Field
+from dagster._legacy import InputDefinition, OutputDefinition, solid
 
 from ..utils import generate_materializations
 from .constants import (
@@ -22,7 +12,10 @@ from .constants import (
 from .types import DbtCliOutput
 from .utils import execute_cli
 
-CLI_CONFIG_SCHEMA = {**CLI_COMMON_FLAGS_CONFIG_SCHEMA, **CLI_COMMON_OPTIONS_CONFIG_SCHEMA}
+CLI_CONFIG_SCHEMA = {
+    **CLI_COMMON_FLAGS_CONFIG_SCHEMA,
+    **CLI_COMMON_OPTIONS_CONFIG_SCHEMA,
+}
 CLI_COMMON_FLAGS = set(CLI_COMMON_FLAGS_CONFIG_SCHEMA.keys())
 
 
@@ -107,7 +100,8 @@ def dbt_cli_run(context):
         context.solid_config["dbt_executable"],
         command="run",
         flags_dict=passthrough_flags_only(
-            context.solid_config, ("threads", "models", "exclude", "full-refresh", "fail-fast")
+            context.solid_config,
+            ("threads", "models", "exclude", "full-refresh", "fail-fast"),
         ),
         log=context.log,
         warn_error=context.solid_config["warn-error"],
@@ -191,7 +185,8 @@ def dbt_cli_test(context):
         context.solid_config["dbt_executable"],
         command="test",
         flags_dict=passthrough_flags_only(
-            context.solid_config, ("data", "schema", "fail-fast", "threads", "models", "exclude")
+            context.solid_config,
+            ("data", "schema", "fail-fast", "threads", "models", "exclude"),
         ),
         log=context.log,
         warn_error=context.solid_config["warn-error"],

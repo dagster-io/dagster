@@ -1,9 +1,9 @@
 from graphql.execution.base import ResolveInfo
 
 import dagster._check as check
-from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.host_representation import PipelineSelector, RepositorySelector, ScheduleSelector
-from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
+from dagster._core.definitions.run_request import InstigatorType
+from dagster._core.host_representation import PipelineSelector, RepositorySelector, ScheduleSelector
+from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 
 from .utils import UserFacingGraphQLError, capture_error
 
@@ -122,11 +122,12 @@ def get_schedule_or_error(graphene_info, schedule_selector):
     location = graphene_info.context.get_repository_location(schedule_selector.location_name)
     repository = location.get_repository(schedule_selector.repository_name)
 
-    external_schedule = repository.get_external_schedule(schedule_selector.schedule_name)
-    if not external_schedule:
+    if not repository.has_external_schedule(schedule_selector.schedule_name):
         raise UserFacingGraphQLError(
             GrapheneScheduleNotFoundError(schedule_name=schedule_selector.schedule_name)
         )
+
+    external_schedule = repository.get_external_schedule(schedule_selector.schedule_name)
 
     schedule_state = graphene_info.context.instance.get_instigator_state(
         external_schedule.get_external_origin_id(), external_schedule.selector_id

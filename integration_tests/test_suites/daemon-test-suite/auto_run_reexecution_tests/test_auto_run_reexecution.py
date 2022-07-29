@@ -2,14 +2,15 @@
 import logging
 import time
 
-from dagster import DagsterEvent, DagsterEventType, EventLogEntry, PipelineRunStatus
-from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.plan.resume_retry import ReexecutionStrategy
-from dagster.core.instance import DagsterInstance
-from dagster.core.snap import snapshot_from_execution_plan
-from dagster.core.storage.pipeline_run import RunsFilter
-from dagster.core.storage.tags import MAX_RETRIES_TAG, RETRY_STRATEGY_TAG
-from dagster.core.test_utils import create_run_for_test, instance_for_test
+from dagster import DagsterEvent, DagsterEventType, EventLogEntry
+from dagster._core.execution.api import create_execution_plan
+from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
+from dagster._core.instance import DagsterInstance
+from dagster._core.snap import snapshot_from_execution_plan
+from dagster._core.storage.pipeline_run import RunsFilter
+from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_STRATEGY_TAG
+from dagster._core.test_utils import create_run_for_test, instance_for_test
+from dagster._legacy import PipelineRunStatus
 from dagster.daemon.auto_run_reexecution.auto_run_reexecution import (
     consume_new_runs_for_automatic_reexecution,
     filter_runs_to_should_retry,

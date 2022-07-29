@@ -83,7 +83,7 @@ To configure storage, you should set the `storage` attribute in your `dagster.ya
 #### Sqlite storage (Default)
 
 <PyObject
-module="dagster.core.storage.sqlite_storage"
+module="dagster._core.storage.sqlite_storage"
 object="DagsterSqliteStorage"
 /> uses a Sqlite DB for storage.
 
@@ -205,7 +205,7 @@ To configure the Run Launcher, set `run_launcher` in your `dagster.yaml` in one 
 
 #### DefaultRunLauncher (Default)
 
-The <PyObject module="dagster.core.launcher" object="DefaultRunLauncher" /> spawns a new process in the same node as a job's repository location. Please see the <Link href="/deployment/run-launcher#default-run-launcher">Run Launcher</Link> docs for deployment information.
+The <PyObject module="dagster._core.launcher" object="DefaultRunLauncher" /> spawns a new process in the same node as a job's repository location. Please see the <Link href="/deployment/run-launcher#default-run-launcher">Run Launcher</Link> docs for deployment information.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_launcher_default endbefore=end_marker_run_launcher_default
 run_launcher:
@@ -263,7 +263,7 @@ To configure the Run Coordinator, set the `run_coodinator` key in your `dagster.
 
 #### DefaultRunCoordinator (Default)
 
-The <PyObject module="dagster.core.run_coordinator" object="DefaultRunCoordinator" /> immediately sends runs to the run launcher (no notion of `Queued` runs).
+The <PyObject module="dagster._core.run_coordinator" object="DefaultRunCoordinator" /> immediately sends runs to the run launcher (no notion of `Queued` runs).
 
 See the <Link href="/deployment/run-coordinator#defaultruncoordinator">Run Coordinator</Link> docs for more information.
 
@@ -277,7 +277,7 @@ run_coordinator:
 
 #### QueuedRunCoordinator
 
-The <PyObject module="dagster.core.run_coordinator" object="QueuedRunCoordinator" /> allows you to set limits on the number of runs that can be executing at once. Note that this requires a [dagster-daemon process](/deployment/dagster-daemon) to be active to actually launch the runs.
+The <PyObject module="dagster._core.run_coordinator" object="QueuedRunCoordinator" /> allows you to set limits on the number of runs that can be executing at once. Note that this requires a [dagster-daemon process](/deployment/dagster-daemon) to be active to actually launch the runs.
 
 This run coordinator has several configuration options, which allow for both limiting the overall number of concurrent runs as well as more specific limits based on run tags - for example, you can configure a limit on the number of runs that interact with a particular cloud service that can run concurrently to avoid being throttled.
 
@@ -330,7 +330,7 @@ To configure Compute Log Storage, set the `compute_logs` key in your `dagster.ya
 #### LocalComputeLogManager (Default)
 
 <PyObject
-module="dagster.core.storage.local_compute_log_manager"
+module="dagster._core.storage.local_compute_log_manager"
 object="LocalComputeLogManager"
 /> writes stdout & stderr logs to disk.
 
@@ -425,7 +425,7 @@ To configure Local Artifact Storage, set `local_artifact_storage` as follows in 
 
 #### LocalArtifactStorage (Default)
 
-<PyObject module="dagster.core.storage.root" object="LocalArtifactStorage" /> is
+<PyObject module="dagster._core.storage.root" object="LocalArtifactStorage" /> is
 currently the only option for Local Artifact Storage. This configures the directory
 used by the default filesystem IO Manager, as well as any artifacts that require
 a local disk.

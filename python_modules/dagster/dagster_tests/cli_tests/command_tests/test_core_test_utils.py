@@ -1,6 +1,6 @@
 import os
 
-from dagster.core.test_utils import environ
+from dagster._core.test_utils import environ
 
 
 def test_environ():

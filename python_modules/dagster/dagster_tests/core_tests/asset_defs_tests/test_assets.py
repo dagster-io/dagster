@@ -18,10 +18,10 @@ from dagster import (
     resource,
 )
 from dagster._check import CheckError
-from dagster.core.definitions import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
-from dagster.core.storage.mem_io_manager import InMemoryIOManager
-from dagster.core.test_utils import instance_for_test
+from dagster._core.definitions import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.storage.mem_io_manager import InMemoryIOManager
+from dagster._core.test_utils import instance_for_test
 
 
 def test_with_replaced_asset_keys():

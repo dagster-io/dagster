@@ -1,8 +1,0 @@
-
-target/
-dbt_modules/
-logs/
-
-# unignore data (ignored at a higher level)
-!data/
-.user.yml

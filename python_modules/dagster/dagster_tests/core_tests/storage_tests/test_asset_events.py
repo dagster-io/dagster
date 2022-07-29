@@ -4,27 +4,30 @@ from dagster import (
     AssetKey,
     AssetObservation,
     In,
-    InputDefinition,
-    ModeDefinition,
     Out,
     Output,
-    OutputDefinition,
     StaticPartitionsDefinition,
     asset,
-    build_assets_job,
     build_input_context,
-    execute_pipeline,
     io_manager,
     job,
     op,
     root_input_manager,
 )
 from dagster._check import CheckError
-from dagster._legacy import pipeline, solid
-from dagster.core.definitions.events import AssetLineageInfo
-from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
-from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.storage.io_manager import IOManager
+from dagster._core.definitions.events import AssetLineageInfo
+from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.storage.io_manager import IOManager
+from dagster._legacy import (
+    InputDefinition,
+    ModeDefinition,
+    OutputDefinition,
+    build_assets_job,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
 
 
 def n_asset_keys(path, n):
@@ -86,7 +89,9 @@ def test_output_definition_multiple_partition_materialization():
     @solid(
         output_defs=[
             OutputDefinition(
-                name="output1", asset_key=AssetKey("table1"), asset_partitions=set(["0", "1", "2"])
+                name="output1",
+                asset_key=AssetKey("table1"),
+                asset_partitions=set(["0", "1", "2"]),
             )
         ]
     )
@@ -266,7 +271,10 @@ def test_io_manager_single_partition_add_input_metadata():
 
     assert observations[0].step_key == "asset_2"
     assert get_observation(observations[0]) == AssetObservation(
-        asset_key="asset_1", metadata={"foo": "bar"}, description="hello world", partition="a"
+        asset_key="asset_1",
+        metadata={"foo": "bar"},
+        description="hello world",
+        partition="a",
     )
 
 

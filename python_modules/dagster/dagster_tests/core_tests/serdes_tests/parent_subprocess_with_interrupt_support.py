@@ -4,9 +4,9 @@ correctly propagated and handled."""
 import sys
 import time
 
-from dagster.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
-from dagster.utils import file_relative_path
-from dagster.utils.interrupts import setup_interrupt_handlers
+from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
+from dagster._utils import file_relative_path
+from dagster._utils.interrupts import setup_interrupt_handlers
 
 if __name__ == "__main__":
     setup_interrupt_handlers()

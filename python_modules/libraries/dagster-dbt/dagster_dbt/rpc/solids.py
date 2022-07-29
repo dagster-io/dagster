@@ -11,19 +11,17 @@ from dagster import (
     DagsterInvalidDefinitionError,
     Failure,
     Field,
-    InputDefinition,
     Int,
     Noneable,
     Nothing,
     Output,
-    OutputDefinition,
     Permissive,
     RetryRequested,
     String,
 )
 from dagster import _check as check
-from dagster._legacy import solid
-from dagster.core.execution.context.compute import SolidExecutionContext
+from dagster._core.execution.context.compute import SolidExecutionContext
+from dagster._legacy import InputDefinition, OutputDefinition, solid
 
 from ..errors import DagsterDbtRpcUnexpectedPollOutputError
 from .types import DbtRpcOutput
@@ -31,7 +29,9 @@ from .utils import log_rpc, raise_for_rpc_error
 
 
 def _poll_rpc(
-    context: SolidExecutionContext, request_token: str, should_yield_materializations: bool = True
+    context: SolidExecutionContext,
+    request_token: str,
+    should_yield_materializations: bool = True,
 ):
     """Polls the dbt RPC server for the status of a request until the state is ``success``."""
     from ..utils import generate_materializations
@@ -46,7 +46,9 @@ def _poll_rpc(
         # Poll for the dbt RPC request.
         context.log.debug(f"RequestToken: {request_token}")
         out = context.resources.dbt_rpc.poll(
-            request_token=request_token, logs=context.solid_config["logs"], logs_start=logs_start
+            request_token=request_token,
+            logs=context.solid_config["logs"],
+            logs_start=logs_start,
         )
         raise_for_rpc_error(context, out.response)
 
@@ -876,7 +878,9 @@ def create_dbt_rpc_run_sql_solid(
         output_defs=[
             output_def
             or OutputDefinition(
-                name="df", description="The results of the SQL query.", dagster_type=DataFrame
+                name="df",
+                description="The results of the SQL query.",
+                dagster_type=DataFrame,
             )
         ],
         config_schema={

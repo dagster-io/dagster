@@ -2,7 +2,7 @@ import {gql, useMutation} from '@apollo/client';
 import {Checkbox, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
+import {usePermissions} from '../app/Permissions';
 import {InstigationStatus} from '../types/globalTypes';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -54,7 +54,7 @@ export const SensorSwitch: React.FC<Props> = (props) => {
 
   const running = status === InstigationStatus.RUNNING;
 
-  if (canStartSensor && canStopSensor) {
+  if (canStartSensor.enabled && canStopSensor.enabled) {
     return (
       <Checkbox
         format="switch"
@@ -66,7 +66,8 @@ export const SensorSwitch: React.FC<Props> = (props) => {
     );
   }
 
-  const lacksPermission = (running && !canStartSensor) || (!running && !canStopSensor);
+  const lacksPermission =
+    (running && !canStartSensor.enabled) || (!running && !canStopSensor.enabled);
   const disabled = toggleOffInFlight || toggleOnInFlight || lacksPermission;
 
   const switchElement = (
@@ -80,7 +81,10 @@ export const SensorSwitch: React.FC<Props> = (props) => {
   );
 
   return lacksPermission ? (
-    <Tooltip content={DISABLED_MESSAGE} display="flex">
+    <Tooltip
+      content={running ? canStartSensor.disabledReason : canStopSensor.disabledReason}
+      display="flex"
+    >
       {switchElement}
     </Tooltip>
   ) : (

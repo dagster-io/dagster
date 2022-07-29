@@ -17,21 +17,26 @@ from dagster import (
     DynamicOutput,
     ExpectationResult,
     In,
-    Materialization,
     Nothing,
     Out,
     Output,
-    SolidDefinition,
     build_op_context,
     graph,
     job,
     mem_io_manager,
     op,
 )
-from dagster._legacy import solid
-from dagster.core.definitions.op_definition import OpDefinition
-from dagster.core.test_utils import instance_for_test
-from dagster.core.types.dagster_type import Int, String
+from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.test_utils import instance_for_test
+from dagster._core.types.dagster_type import Int, String
+from dagster._legacy import Materialization, SolidDefinition, solid
+
+
+def some_fn(a):
+    return a
+
+
+the_lambda = lambda a: a
 
 
 def execute_op_in_graph(an_op, instance=None):
@@ -41,6 +46,22 @@ def execute_op_in_graph(an_op, instance=None):
 
     result = my_graph.execute_in_process(instance=instance)
     return result
+
+
+def test_no_outs():
+    @op(output_defs=[])
+    def the_op():
+        pass
+
+    assert len(the_op.output_defs) == 0
+    result = execute_op_in_graph(the_op)
+    assert result.success
+
+    @op(out={})
+    def the_out_op():
+        pass
+
+    assert len(the_op.outs) == 0
 
 
 def test_op():
@@ -107,7 +128,10 @@ def test_out():
 
     assert my_op.outs == {
         "result": Out(
-            metadata={"x": 1}, dagster_type=Int, is_required=True, io_manager_key="io_manager"
+            metadata={"x": 1},
+            dagster_type=Int,
+            is_required=True,
+            io_manager_key="io_manager",
         )
     }
     assert my_op.output_defs[0].metadata == {"x": 1}
@@ -132,10 +156,16 @@ def test_multi_out():
 
     assert my_op.outs == {
         "a": Out(
-            metadata={"x": 1}, dagster_type=Int, is_required=True, io_manager_key="io_manager"
+            metadata={"x": 1},
+            dagster_type=Int,
+            is_required=True,
+            io_manager_key="io_manager",
         ),
         "b": Out(
-            metadata={"y": 2}, dagster_type=String, is_required=True, io_manager_key="io_manager"
+            metadata={"y": 2},
+            dagster_type=String,
+            is_required=True,
+            io_manager_key="io_manager",
         ),
     }
     assert my_op.output_defs[0].metadata == {"x": 1}
@@ -176,7 +206,12 @@ def test_multi_out_yields():
 
 
 def test_multi_out_optional():
-    @op(out={"a": Out(metadata={"x": 1}, is_required=False), "b": Out(metadata={"y": 2})})
+    @op(
+        out={
+            "a": Out(metadata={"x": 1}, is_required=False),
+            "b": Out(metadata={"y": 2}),
+        }
+    )
     def my_op():
         yield Output(output_name="b", value=2)
 
@@ -757,7 +792,7 @@ def test_log_metadata_asset_materialization():
 
     result = execute_op_in_graph(the_op)
     materialization = result.asset_materializations_for_node("the_op")[0]
-    assert len(materialization.metadata_entries) == 1
+    assert len(materialization.metadata_entries) == 2
     assert materialization.metadata_entries[0].label == "bar"
     assert materialization.metadata_entries[0].entry_data.text == "baz"
 
@@ -946,7 +981,10 @@ def test_generic_output_name_mismatch():
 def test_generic_dynamic_output():
     @op
     def basic() -> List[DynamicOutput[int]]:
-        return [DynamicOutput(mapping_key="1", value=1), DynamicOutput(mapping_key="2", value=2)]
+        return [
+            DynamicOutput(mapping_key="1", value=1),
+            DynamicOutput(mapping_key="2", value=2),
+        ]
 
     result = execute_op_in_graph(basic)
     assert result.success
@@ -962,7 +1000,10 @@ def test_generic_dynamic_output():
 def test_generic_dynamic_output_type_mismatch():
     @op
     def basic() -> List[DynamicOutput[int]]:
-        return [DynamicOutput(mapping_key="1", value=1), DynamicOutput(mapping_key="2", value="2")]
+        return [
+            DynamicOutput(mapping_key="1", value=1),
+            DynamicOutput(mapping_key="2", value="2"),
+        ]
 
     with pytest.raises(
         DagsterTypeCheckDidNotPass,

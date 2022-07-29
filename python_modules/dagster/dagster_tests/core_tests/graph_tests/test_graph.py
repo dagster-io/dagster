@@ -13,7 +13,6 @@ from dagster import (
     Enum,
     Field,
     In,
-    InputDefinition,
     Nothing,
     Out,
     Permissive,
@@ -25,21 +24,22 @@ from dagster import (
     success_hook,
 )
 from dagster._check import CheckError
-from dagster.core.definitions.graph_definition import GraphDefinition
-from dagster.core.definitions.partition import (
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.partition import (
     Partition,
     PartitionedConfig,
     StaticPartitionsDefinition,
 )
-from dagster.core.definitions.pipeline_definition import PipelineSubsetDefinition
-from dagster.core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
-from dagster.core.errors import (
+from dagster._core.definitions.pipeline_definition import PipelineSubsetDefinition
+from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
+from dagster._core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
 )
-from dagster.core.test_utils import instance_for_test
-from dagster.loggers import json_console_logger
+from dagster._core.test_utils import instance_for_test
+from dagster._legacy import InputDefinition
+from dagster._loggers import json_console_logger
 
 
 def get_ops():
@@ -492,7 +492,7 @@ def test_to_job_incomplete_default_config():
     def my_graph():
         my_op()
 
-    default_config_error = "Error in config when building job 'my_job' from graph 'my_graph' "
+    default_config_error = "Error in config when building job 'my_job' "
     invalid_default_error = "Invalid default_value for Field."
     invalid_configs = [
         (
@@ -569,7 +569,9 @@ def test_enum_config_mapping():
         config_schema=Shape(
             {
                 "my_field": Field(
-                    Enum.from_python_enum(TestEnum), is_required=False, default_value="TWO"
+                    Enum.from_python_enum(TestEnum),
+                    is_required=False,
+                    default_value="TWO",
                 )
             }
         ),
@@ -972,7 +974,8 @@ def test_job_non_default_logger_config():
         pass
 
     your_job = your_graph.to_job(
-        logger_defs={"json": json_console_logger}, config={"loggers": {"json": {"config": {}}}}
+        logger_defs={"json": json_console_logger},
+        config={"loggers": {"json": {"config": {}}}},
     )
 
     result = your_job.execute_in_process()

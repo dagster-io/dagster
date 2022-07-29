@@ -67,7 +67,9 @@ if __name__ == "__main__":
             # alembic 1.7.0 is a breaking change
             "alembic>=1.2.1,!=1.6.3,<1.7.0",
             "croniter>=0.3.34",
-            "grpcio>=1.32.0",  # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
+            # ensure grpcio version we require is >= that with which we generated the grpc code (set in dev-requirements)
+            # https://github.com/dagster-io/dagster/issues/9099
+            "grpcio>=1.32.0,<1.48.0",
             "grpcio-health-checking>=1.32.0,<1.44.0",
             "packaging>=20.9",
             "pendulum",
@@ -95,7 +97,6 @@ if __name__ == "__main__":
             "test": [
                 "coverage==5.3",
                 "docker",
-                "freezegun>=0.3.15",
                 "grpcio-tools",
                 "mock==3.0.5",
                 "objgraph",
@@ -110,9 +111,7 @@ if __name__ == "__main__":
                 "responses==0.10.*",
                 "snapshottest==0.6.0",
                 "tox==3.25.0",
-                "tqdm==4.48.0",  # pylint crash 48.1+
                 "yamllint",
-                "flake8>=3.7.8",
                 "astroid",  # let pylint determine the version
                 "pylint==2.13.7",
             ],

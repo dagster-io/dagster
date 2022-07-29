@@ -2,18 +2,15 @@ import string
 import time
 
 from dagster import (
-    InputDefinition,
     Int,
-    OutputDefinition,
     PartitionSetDefinition,
     ScheduleDefinition,
     SkipReason,
-    lambda_solid,
     repository,
     sensor,
     usable_as_dagster_type,
 )
-from dagster._legacy import pipeline, solid
+from dagster._legacy import InputDefinition, OutputDefinition, lambda_solid, pipeline, solid
 
 
 @lambda_solid

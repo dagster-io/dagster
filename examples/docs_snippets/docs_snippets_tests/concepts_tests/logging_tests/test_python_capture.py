@@ -1,4 +1,4 @@
-from dagster.core.test_utils import instance_for_test
+from dagster._core.test_utils import instance_for_test
 from docs_snippets.concepts.logging.python_logger import (
     scope_logged_job,
     scope_logged_job2,

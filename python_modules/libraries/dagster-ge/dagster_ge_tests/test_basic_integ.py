@@ -10,10 +10,10 @@ from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
 from dagster_pyspark import pyspark_resource
 from pandas import read_csv
 
-from dagster import InputDefinition, ModeDefinition, Output, execute_pipeline, reconstructable
-from dagster._legacy import pipeline, solid
-from dagster.core.test_utils import instance_for_test
-from dagster.utils import file_relative_path
+from dagster import Output, reconstructable
+from dagster._core.test_utils import instance_for_test
+from dagster._legacy import InputDefinition, ModeDefinition, execute_pipeline, pipeline, solid
+from dagster._utils import file_relative_path
 
 
 @solid
@@ -65,7 +65,11 @@ def hello_world_pandas_pipeline_v3():
 @pipeline(
     mode_defs=[
         ModeDefinition(
-            "basic", resource_defs={"ge_data_context": ge_data_context, "pyspark": pyspark_resource}
+            "basic",
+            resource_defs={
+                "ge_data_context": ge_data_context,
+                "pyspark": pyspark_resource,
+            },
         )
     ],
 )

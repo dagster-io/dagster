@@ -7,15 +7,20 @@ from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, TableSlice
 from snowflake.connector.pandas_tools import pd_writer
 
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster.core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.metadata import RawMetadataValue
 
 
 def _connect_snowflake(context: Union[InputContext, OutputContext], table_slice: TableSlice):
+    no_schema_config = (
+        {k: v for k, v in context.resource_config.items() if k != "schema"}
+        if context.resource_config
+        else {}
+    )
     return SnowflakeConnection(
         dict(
             schema=table_slice.schema,
             connector="sqlalchemy",
-            **cast(Mapping[str, str], context.resource_config),
+            **cast(Mapping[str, str], no_schema_config),
         ),
         context.log,
     ).get_connection(raw_conn=False)

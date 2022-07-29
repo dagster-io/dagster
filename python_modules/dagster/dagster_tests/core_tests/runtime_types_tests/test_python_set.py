@@ -2,16 +2,10 @@ import typing
 
 import pytest
 
-from dagster import (
-    DagsterTypeCheckDidNotPass,
-    InputDefinition,
-    Optional,
-    OutputDefinition,
-    execute_solid,
-    lambda_solid,
-)
-from dagster.core.types.dagster_type import resolve_dagster_type
-from dagster.core.types.python_set import create_typed_runtime_set
+from dagster import DagsterTypeCheckDidNotPass, Optional, execute_solid
+from dagster._core.types.dagster_type import resolve_dagster_type
+from dagster._core.types.python_set import create_typed_runtime_set
+from dagster._legacy import InputDefinition, OutputDefinition, lambda_solid
 
 
 def test_vanilla_set_output():

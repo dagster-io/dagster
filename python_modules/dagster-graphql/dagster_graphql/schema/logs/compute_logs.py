@@ -1,7 +1,7 @@
 import graphene
 
 import dagster._check as check
-from dagster.core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
+from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 
 
 class GrapheneComputeIOType(graphene.Enum):

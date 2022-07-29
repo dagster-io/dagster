@@ -63,7 +63,12 @@ class DagsterDbtCliFatalRuntimeError(DagsterDbtCliRuntimeError):
     """Represents a fatal error in the dbt CLI (return code 2)."""
 
     def __init__(self, logs: Sequence[Mapping[str, Any]], raw_output: str, messages: Sequence[str]):
-        super().__init__("Fatal error in the dbt CLI (return code 2)", logs, raw_output, messages)
+        super().__init__(
+            "Fatal error in the dbt CLI (return code 2): " + " ".join(messages),
+            logs,
+            raw_output,
+            messages,
+        )
 
 
 class DagsterDbtRpcUnexpectedPollOutputError(DagsterDbtError):

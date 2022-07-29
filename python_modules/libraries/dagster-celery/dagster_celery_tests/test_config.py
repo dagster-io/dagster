@@ -2,8 +2,8 @@ import os
 
 from dagster_celery.cli import get_config_dir
 
-from dagster.core.test_utils import environ, instance_for_test
-from dagster.seven import tempfile
+from dagster._core.test_utils import environ, instance_for_test
+from dagster._seven import tempfile
 
 CONFIG_YAML = """
 execution:

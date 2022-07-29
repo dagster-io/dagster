@@ -38,11 +38,10 @@ Like many notebooks, this example does some fairly sophisticated work, producing
 
 We can simply turn a notebook into an op using <PyObject module="dagstermill" object="define_dagstermill_op" />. Once we create an op, we can start to make its outputs more accessible.
 
-```python file=/legacy/data_science/iris_classify.py
+```python file=/legacy/data_science/iris_classify.py startafter=start
 import dagstermill as dm
 
 from dagster import job
-from dagster.utils import script_relative_path
 
 k_means_iris = dm.define_dagstermill_op(
     "k_means_iris",
@@ -95,20 +94,17 @@ The ability to express data dependencies between heterogeneous units of computat
 
 We'll illustrate this process by adding a non-notebook op to our job, which will take care of downloading the Iris data from the UCI repository. This is a somewhat contrived example; in practice, your notebook ops are more likely to rely on upstream jobs whose outputs might be handles to tables in the data warehouse or to files on S3, and your notebook will likely handle the task of fetching the data.
 
-```python literalinclude showLines emphasize-lines=2,10,16 caption=iris_classify_2.py file=/legacy/data_science/iris_classify_2.py
+```python file=/legacy/data_science/iris_classify_2.py startafter=start
 import dagstermill as dm
 
-from dagster import InputDefinition, job
-from dagster.utils import script_relative_path
+from dagster import In, job
 from docs_snippets.legacy.data_science.download_file import download_file
 
 k_means_iris = dm.define_dagstermill_op(
     "k_means_iris",
     script_relative_path("iris-kmeans_2.ipynb"),
     output_notebook_name="iris_kmeans_output",
-    input_defs=[
-        InputDefinition("path", str, description="Local path to the Iris dataset")
-    ],
+    ins={"path": In(str, description="Local path to the Iris dataset")},
 )
 
 
@@ -123,11 +119,10 @@ def iris_classify():
 
 We'll configure the `download_file` op with the URL to download the file from, and the local path at which to save it. This op has one output—the path to the downloaded file.
 
-```python file=/legacy/data_science/download_file.py
+```python file=/legacy/data_science/download_file.py startafter=start
 from urllib.request import urlretrieve
 
-from dagster import Field, OutputDefinition, String, op
-from dagster.utils import script_relative_path
+from dagster import Field, Out, String, op
 
 
 @op(
@@ -136,11 +131,7 @@ from dagster.utils import script_relative_path
         "url": Field(String, description="The URL from which to download the file"),
         "path": Field(String, description="The path to which to download the file"),
     },
-    output_defs=[
-        OutputDefinition(
-            String, name="path", description="The path to which the file was downloaded"
-        )
-    ],
+    out={"path": Out(String, description="The path to which the file was downloaded")},
     description=(
         "A simple utility op that downloads a file from a URL to a path using urllib.urlretrieve"
     ),
@@ -222,20 +213,17 @@ You can use the development context to access op config and resources, to log me
 
 For instance, suppose we want to make the number of clusters (the \_k\_ in k-means) configurable. We'll change our op definition to include a config field:
 
-```python literalinclude showLines emphasize-lines=10-12 caption=iris_classify_3.py file=/legacy/data_science/iris_classify_3.py
+```python file=/legacy/data_science/iris_classify_3.py startafter=start
 import dagstermill as dm
 
-from dagster import Field, InputDefinition, Int, job
-from dagster.utils import script_relative_path
+from dagster import Field, In, Int, job
 from docs_snippets.legacy.data_science.download_file import download_file
 
 k_means_iris = dm.define_dagstermill_op(
     "k_means_iris",
     script_relative_path("iris-kmeans_2.ipynb"),
     output_notebook_name="iris_kmeans_output",
-    input_defs=[
-        InputDefinition("path", str, description="Local path to the Iris dataset")
-    ],
+    ins={"path": In(str, description="Local path to the Iris dataset")},
     config_schema=Field(
         Int,
         default_value=3,

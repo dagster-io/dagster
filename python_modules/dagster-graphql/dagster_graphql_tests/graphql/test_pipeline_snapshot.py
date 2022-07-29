@@ -9,8 +9,8 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
-from dagster import execute_pipeline
-from dagster.seven import json
+from dagster._legacy import execute_pipeline
+from dagster._seven import json
 
 from .setup import noop_pipeline
 

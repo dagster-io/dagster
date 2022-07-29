@@ -12,8 +12,8 @@ import requests
 from dagster import Failure, Field, IntSource, RetryRequested, StringSource
 from dagster import _check as check
 from dagster import resource
-from dagster.core.definitions.resource_definition import ResourceDefinition
-from dagster.core.utils import coerce_valid_log_level
+from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.utils import coerce_valid_log_level
 
 from ..dbt_resource import DbtResource
 from .types import DbtRpcOutput
@@ -80,7 +80,7 @@ class DbtRpcResource(DbtResource):
         headers["User-Agent"] = self._construct_user_agent()
         headers["Content-Type"] = "application/json"
         headers["Accept"] = "application/json"
-        return headers
+        return cast(Dict[str, str], headers)
 
     def _post(self, data: Optional[str] = None) -> DbtRpcOutput:
         """Constructs and sends a POST request to the dbt RPC server.

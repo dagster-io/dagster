@@ -148,7 +148,7 @@ export const AssetTable = ({
                   isSelected={checkedPaths.has(pathStr)}
                   onToggleChecked={onToggleFactory(pathStr)}
                   onWipe={(assets: Asset[]) => setToWipe(assets.map((asset) => asset.key))}
-                  canWipe={canWipeAssets}
+                  canWipe={canWipeAssets.enabled}
                 />
               );
             })
@@ -361,7 +361,7 @@ const MoreActionsDropdown: React.FC<{
   const [showBulkWipeDialog, setShowBulkWipeDialog] = React.useState<boolean>(false);
   const {canWipeAssets} = usePermissions();
 
-  if (!canWipeAssets) {
+  if (!canWipeAssets.enabled) {
     return null;
   }
 

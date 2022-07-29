@@ -21,9 +21,9 @@ The `dagster-daemon` process reads from your [Dagster instance](/deployment/dags
 
 The following daemons are currently available:
 
-- The _scheduler daemon_ is responsible for creating runs from any [schedules](/concepts/partitions-schedules-sensors/schedules) that are turned on. This daemon will run as long as you have not overridden the default <PyObject module="dagster.core.scheduler" object="DagsterDaemonScheduler" /> as the scheduler on your instance.
+- The _scheduler daemon_ is responsible for creating runs from any [schedules](/concepts/partitions-schedules-sensors/schedules) that are turned on. This daemon will run as long as you have not overridden the default <PyObject module="dagster._core.scheduler" object="DagsterDaemonScheduler" /> as the scheduler on your instance.
 
-- The _run queue daemon_ is responsible for launching queued runs, taking into account any limits and prioritization rules you've set on your instance. You can enable this daemon by setting the [run coordinator](/deployment/run-coordinator) on your instance to <PyObject module="dagster.core.run_coordinator" object="QueuedRunCoordinator" />.
+- The _run queue daemon_ is responsible for launching queued runs, taking into account any limits and prioritization rules you've set on your instance. You can enable this daemon by setting the [run coordinator](/deployment/run-coordinator) on your instance to <PyObject module="dagster._core.run_coordinator" object="QueuedRunCoordinator" />.
 
 - The _sensor daemon_ is responsible for creating runs from any [sensors](/concepts/partitions-schedules-sensors/sensors) that are turned on. This daemon is always enabled.
 

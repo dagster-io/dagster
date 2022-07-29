@@ -11,19 +11,19 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
-from dagster.core.host_representation import (
+from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
 )
-from dagster.core.scheduler.instigation import (
+from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
     InstigatorType,
     ScheduleInstigatorData,
 )
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.seven.compat.pendulum import create_pendulum_time
-from dagster.utils import Counter, traced_counter
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._utils import Counter, traced_counter
 
 from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
 
@@ -307,6 +307,13 @@ def test_start_and_stop_schedule(graphql_context):
 
 def test_get_single_schedule_definition(graphql_context):
     context = graphql_context
+
+    bad_selector = infer_schedule_selector(context, "does_not_exist")
+    result = execute_dagster_graphql(
+        context, GET_SCHEDULE_QUERY, variables={"scheduleSelector": bad_selector}
+    )
+    assert result.data
+    assert result.data["scheduleOrError"]["__typename"] == "ScheduleNotFoundError"
 
     schedule_selector = infer_schedule_selector(context, "partition_based_multi_mode_decorator")
 

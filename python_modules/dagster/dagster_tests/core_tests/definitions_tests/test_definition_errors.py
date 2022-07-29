@@ -7,15 +7,17 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DependencyDefinition,
     Field,
+    ResourceDefinition,
+)
+from dagster._check import ParameterCheckError
+from dagster._core.utility_solids import define_stub_solid
+from dagster._legacy import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    ResourceDefinition,
     SolidDefinition,
+    solid,
 )
-from dagster._check import ParameterCheckError
-from dagster._legacy import solid
-from dagster.core.utility_solids import define_stub_solid
 
 
 def solid_a_b_list():
@@ -56,7 +58,8 @@ def test_circular_dep():
 
 def test_from_solid_not_there():
     with pytest.raises(
-        DagsterInvalidDefinitionError, match='node "NOTTHERE" in dependency dictionary not found'
+        DagsterInvalidDefinitionError,
+        match='node "NOTTHERE" in dependency dictionary not found',
     ):
         PipelineDefinition(
             solid_defs=solid_a_b_list(),
@@ -71,7 +74,8 @@ def test_from_solid_not_there():
 
 def test_from_non_existant_input():
     with pytest.raises(
-        DagsterInvalidDefinitionError, match='solid "B" does not have input "not_an_input"'
+        DagsterInvalidDefinitionError,
+        match='solid "B" does not have input "not_an_input"',
     ):
         PipelineDefinition(
             solid_defs=solid_a_b_list(),
@@ -118,7 +122,9 @@ def test_one_layer_off_dependencies():
         match="Received a IDependencyDefinition one layer too high under key B",
     ):
         PipelineDefinition(
-            solid_defs=solid_a_b_list(), name="test", dependencies={"B": DependencyDefinition("A")}
+            solid_defs=solid_a_b_list(),
+            name="test",
+            dependencies={"B": DependencyDefinition("A")},
         )
 
 
@@ -136,7 +142,8 @@ def test_malformed_dependencies():
 
 def test_list_dependencies():
     with pytest.raises(
-        DagsterInvalidDefinitionError, match='The expected type for "dependencies" is Dict'
+        DagsterInvalidDefinitionError,
+        match='The expected type for "dependencies" is Dict',
     ):
         PipelineDefinition(solid_defs=solid_a_b_list(), name="test", dependencies=[])
 

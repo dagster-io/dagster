@@ -15,23 +15,31 @@ from dagster import (
     Float,
     Int,
     List,
-    ModeDefinition,
     Noneable,
     Permissive,
-    PipelineDefinition,
     ResourceDefinition,
     Set,
     String,
     Tuple,
-    composite_solid,
-    execute_pipeline,
     execute_solid,
 )
 from dagster._check import ParameterCheckError
-from dagster._legacy import pipeline, solid
-from dagster.config.errors import DagsterEvaluationErrorReason
-from dagster.config.field_utils import Map, Shape, convert_potential_field
-from dagster.config.validate import process_config, validate_config
+from dagster._config import (
+    DagsterEvaluationErrorReason,
+    Map,
+    Shape,
+    convert_potential_field,
+    process_config,
+    validate_config,
+)
+from dagster._legacy import (
+    ModeDefinition,
+    PipelineDefinition,
+    composite_solid,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
 
 
 def test_noop_config():
@@ -167,7 +175,10 @@ def test_single_required_string_field_config_type():
         _validate(_single_required_string_config_dict(), {"extra": "yup"})
 
     with pytest.raises(AssertionError):
-        _validate(_single_required_string_config_dict(), {"string_field": "yupup", "extra": "yup"})
+        _validate(
+            _single_required_string_config_dict(),
+            {"string_field": "yupup", "extra": "yup"},
+        )
 
     with pytest.raises(AssertionError):
         _validate(_single_required_string_config_dict(), {"string_field": 1})
@@ -182,7 +193,8 @@ def test_undefined_field_error():
         ),
     ):
         _validate(
-            _single_required_string_config_dict(), {"string_field": "value", "extra": "extra"}
+            _single_required_string_config_dict(),
+            {"string_field": "value", "extra": "extra"},
         )
 
 
@@ -209,7 +221,10 @@ def test_multiple_required_fields_failing():
         _validate(_multiple_required_fields_config_dict(), {"field_one": "yup"})
 
     with pytest.raises(AssertionError):
-        _validate(_multiple_required_fields_config_dict(), {"field_one": "yup", "extra": "yup"})
+        _validate(
+            _multiple_required_fields_config_dict(),
+            {"field_one": "yup", "extra": "yup"},
+        )
 
     with pytest.raises(AssertionError):
         _validate(
@@ -219,7 +234,8 @@ def test_multiple_required_fields_failing():
 
     with pytest.raises(AssertionError):
         _validate(
-            _multiple_required_fields_config_dict(), {"field_one": "value_one", "field_two": 2}
+            _multiple_required_fields_config_dict(),
+            {"field_one": "value_one", "field_two": 2},
         )
 
 
@@ -250,7 +266,8 @@ def test_single_optional_field_passing_with_default():
     }
 
     assert _validate(
-        _single_optional_string_field_config_dict_with_default(), {"optional_field": "override"}
+        _single_optional_string_field_config_dict_with_default(),
+        {"optional_field": "override"},
     ) == {"optional_field": "override"}
 
 
@@ -464,7 +481,8 @@ def test_mixed_args_passing():
     ) == {"optional_arg": "value_one", "required_arg": "value_two"}
 
     assert _validate(
-        _mixed_required_optional_string_config_dict_with_default(), {"required_arg": "value_two"}
+        _mixed_required_optional_string_config_dict_with_default(),
+        {"required_arg": "value_two"},
     ) == {"optional_arg": "some_default", "required_arg": "value_two"}
 
     assert _validate(
@@ -576,7 +594,8 @@ def test_config_defaults():
         addition_composite_solid()
 
     result = execute_pipeline(
-        addition_pipeline, {"solids": {"addition_composite_solid": {"config": {"c": 3}}}}
+        addition_pipeline,
+        {"solids": {"addition_composite_solid": {"config": {"c": 3}}}},
     )
 
     assert result.success
@@ -671,7 +690,10 @@ def test_wrong_resources():
         name="pipeline_test_multiple_context",
         mode_defs=[
             ModeDefinition(
-                resource_defs={"resource_one": dummy_resource(), "resource_two": dummy_resource()}
+                resource_defs={
+                    "resource_one": dummy_resource(),
+                    "resource_two": dummy_resource(),
+                }
             )
         ],
         solid_defs=[],
@@ -809,7 +831,10 @@ def test_root_extra_field():
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(
             pipeline_def,
-            run_config={"solids": {"required_int_solid": {"config": 948594}}, "nope": None},
+            run_config={
+                "solids": {"required_int_solid": {"config": 948594}},
+                "nope": None,
+            },
         )
 
     pe = pe_info.value
@@ -830,7 +855,8 @@ def test_deeper_path():
 
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(
-            pipeline_def, run_config={"solids": {"required_int_solid": {"config": "asdf"}}}
+            pipeline_def,
+            run_config={"solids": {"required_int_solid": {"config": "asdf"}}},
         )
 
     pe = pe_info.value
@@ -852,7 +878,8 @@ def test_working_list_path():
         required_list_int_solid()
 
     result = execute_pipeline(
-        pipeline_def, run_config={"solids": {"required_list_int_solid": {"config": [1, 2]}}}
+        pipeline_def,
+        run_config={"solids": {"required_list_int_solid": {"config": [1, 2]}}},
     )
 
     assert result.success
