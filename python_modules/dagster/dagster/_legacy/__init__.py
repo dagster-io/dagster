@@ -15,7 +15,6 @@ from dagster._core.definitions import (
     default_executors,
     lambda_solid,
     pipeline,
-    pipeline_failure_sensor,
     solid,
 )
 from dagster._core.execution.api import (
