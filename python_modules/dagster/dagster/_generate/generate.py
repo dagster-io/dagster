@@ -1,16 +1,16 @@
 import os
 import posixpath
 
+import click
 import jinja2
 
-from dagster._utils import file_relative_path
 from dagster.version import __version__ as dagster_version
 
 
 def generate_repository(path: str):
     REPO_NAME_PLACEHOLDER = "REPO_NAME_PLACEHOLDER"
 
-    print(f"Creating a Dagster repository at {path}.")
+    click.echo(f"Creating a Dagster repository at {path}.")
 
     # Step 1: Generate files for Dagster repository
     _generate_files_from_template(
@@ -21,13 +21,13 @@ def generate_repository(path: str):
         ),
     )
 
-    print(f"Generated files for Dagster repository in {path}.")
+    click.echo(f"Generated files for Dagster repository in {path}.")
 
 
 def generate_project(path: str):
     PROJECT_NAME_PLACEHOLDER = "PROJECT_NAME_PLACEHOLDER"
 
-    print(f"Creating a Dagster project at {path}.")
+    click.echo(f"Creating a Dagster project at {path}.")
 
     # Step 1: Generate files for Dagster repository
     generate_repository(path)
@@ -42,7 +42,7 @@ def generate_project(path: str):
         skip_mkdir=True,
     )
 
-    print(f"Generated files for Dagster project in {path}.")
+    click.echo(f"Generated files for Dagster project in {path}.")
 
 
 def generate_new_project(path: str):
