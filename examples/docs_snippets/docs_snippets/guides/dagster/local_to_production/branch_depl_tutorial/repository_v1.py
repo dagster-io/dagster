@@ -1,20 +1,21 @@
-from dagster import repository, with_resources
 from ..assets import comments, items, stories
+
+# start_repository
+# repository.py
+from dagster import repository, with_resources
 from dagster_snowflake import build_snowflake_io_manager
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler
 import os
 
-# the snowflake io manager can be initialized to handle different data types
-# here we use the pandas type handler so we can store pandas DataFrames
 snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
 
-# start_repository
+
 @repository
 def repo():
     snowflake_config = {
-        "account": {"env": "SNOWFLAKE_ACCOUNT"},
-        "user": {"env": "SNOWFLAKE_USER"},
-        "password": {"env": "SNOWFLAKE_PASSWORD"},
+        "account": "abc1234.us-east-1",
+        "user": "system@company.com",
+        "password": {"env": "SYSTEM_SNOWFLAKE_PASSWORD"},
         "schema": "HACKER_NEWS",
     }
     resource_defs = {

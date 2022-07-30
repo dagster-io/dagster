@@ -53,9 +53,10 @@ def get_current_env():
 @repository
 def repo():
     ...
+    branch_deployment_jobs = [clone_prod.to_job(resource_defs=resource_defs[get_current_env()])]
     return [
         with_resources([items, comments, stories], resource_defs=resource_defs[get_current_env()]),
-        clone_prod.to_job(resource_defs=resource_defs[get_current_env()]),
+        *(branch_deployment_jobs if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") else []),
     ]
 
 
