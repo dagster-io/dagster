@@ -2,15 +2,18 @@ import os
 import re
 import shlex
 from typing import List, Optional
+from typing_extensions import Final
 
 from dagster_buildkite.python_version import AvailablePythonVersion
 from dagster_buildkite.step_builder import BuildkiteQueue, CommandStepBuilder
 from dagster_buildkite.utils import CommandStep, make_buildkite_section_header
 
-_COMMAND_TYPE_TO_EMOJI_MAP = {
+_COMMAND_TYPE_TO_EMOJI_MAP: Final = {
     "pytest": ":pytest:",
     "mypy": ":mypy:",
     "pylint": ":lint-roller:",
+    "pyright": ":node:",
+    "pyright-coverage": ":node::coverage:",
     "miscellaneous": ":sparkle",
 }
 
