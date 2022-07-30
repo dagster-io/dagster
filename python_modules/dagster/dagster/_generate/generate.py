@@ -7,16 +7,42 @@ from dagster._utils import file_relative_path
 from dagster.version import __version__ as dagster_version
 
 
+def generate_repository(path: str):
+    REPO_NAME_PLACEHOLDER = "REPO_NAME_PLACEHOLDER"
+
+    print(f"Creating a Dagster repository at {path}.")
+
+    # Step 1: Generate files for Dagster repository
+    _generate_files_from_template(
+        path=path,
+        name_placeholder=REPO_NAME_PLACEHOLDER,
+        project_template_path=os.path.join(
+            os.path.dirname(__file__), "templates", REPO_NAME_PLACEHOLDER
+        ),
+    )
+
+    print(f"Generated files for Dagster repository in {path}.")
+
+
 def generate_project(path: str):
     PROJECT_NAME_PLACEHOLDER = "PROJECT_NAME_PLACEHOLDER"
 
-    _generate_new_project(
+    print(f"Creating a Dagster project at {path}.")
+
+    # Step 1: Generate files for Dagster repository
+    generate_repository(path)
+
+    # Step 2: Generate project-level files, e.g. README, workspace.yaml, requirements.txt
+    _generate_files_from_template(
         path=path,
         name_placeholder=PROJECT_NAME_PLACEHOLDER,
         project_template_path=os.path.join(
             os.path.dirname(__file__), "templates", PROJECT_NAME_PLACEHOLDER
         ),
+        skip_mkdir=True,
     )
+
+    print(f"Generated files for Dagster project in {path}.")
 
 
 def generate_new_project(path: str):
@@ -28,18 +54,21 @@ def generate_new_project(path: str):
     """
     NEW_PROJECT_PLACEHOLDER = "new_project"
 
-    _generate_new_project(
+    _generate_files_from_template(
         path=path,
         name_placeholder=NEW_PROJECT_PLACEHOLDER,
         project_template_path=os.path.join(os.path.dirname(__file__), NEW_PROJECT_PLACEHOLDER),
     )
 
 
-def _generate_new_project(path: str, name_placeholder: str, project_template_path: str):
+def _generate_files_from_template(
+    path: str, name_placeholder: str, project_template_path: str, skip_mkdir: bool = False
+):
     normalized_path = os.path.normpath(path)
     repo_name = os.path.basename(normalized_path).replace("-", "_")
 
-    os.mkdir(normalized_path)
+    if not skip_mkdir:  # skip if the dir is created by previous command
+        os.mkdir(normalized_path)
 
     loader = jinja2.FileSystemLoader(searchpath=project_template_path)
     env = jinja2.Environment(loader=loader)
