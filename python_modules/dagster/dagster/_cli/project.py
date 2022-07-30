@@ -48,7 +48,7 @@ def scaffold_repository_command(name: str):
             """
         )
 
-    generate_repository(name)
+    generate_repository(dir_abspath)
     click.echo(_styled_success_statement(name, dir_abspath))
 
 
@@ -74,7 +74,7 @@ def scaffold_command(name: str):
             """
         )
 
-    generate_project(name)
+    generate_project(dir_abspath)
     click.echo(_styled_success_statement(name, dir_abspath))
 
 
