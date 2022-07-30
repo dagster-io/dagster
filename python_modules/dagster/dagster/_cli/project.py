@@ -4,7 +4,7 @@ import sys
 import click
 
 from dagster._annotations import experimental
-from dagster._generate import generate_project, generate_repository
+from dagster._generate import generate_project, generate_project_from_example, generate_repository
 
 
 @click.group(name="project")
@@ -74,6 +74,40 @@ def scaffold_command(name: str):
         sys.exit(1)
 
     generate_project(dir_abspath)
+    click.echo(_styled_success_statement(name, dir_abspath))
+
+
+@project_cli.command(
+    name="from-example",
+    help="Create a new Dagster project using one of the official Dagster examples.",
+)
+@click.option(
+    "--name",
+    required=True,
+    type=click.STRING,
+    help="Name of the new Dagster project",
+)
+@click.option(
+    "--example",
+    required=True,
+    type=click.STRING,
+    help=(
+        "Name of the example to bootstrap with. You can use an example name from the official "
+        "examples in Dagster repo: https://github.com/dagster-io/dagster/tree/master/examples"
+    ),
+)
+@experimental
+def from_example_command(name: str, example: str):
+    dir_abspath = os.path.abspath(name)
+    if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
+        click.echo(
+            click.style(f"The directory {dir_abspath} already exists. ", fg="red")
+            + "\nPlease delete the contents of this path or choose another location."
+        )
+        sys.exit(1)
+
+    generate_project_from_example(dir_abspath, example)
+
     click.echo(_styled_success_statement(name, dir_abspath))
 
 

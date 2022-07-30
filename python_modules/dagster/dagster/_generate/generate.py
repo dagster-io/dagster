@@ -1,10 +1,14 @@
 import os
 import posixpath
+import shutil
+import sys
 
 import click
 import jinja2
 
 from dagster.version import __version__ as dagster_version
+
+IGNORE_PATTERN_LIST = ["__pycache__", ".pytest_cache", ".egg-info", ".DS_Store"]
 
 
 def generate_repository(path: str):
@@ -120,6 +124,37 @@ def _generate_files_from_template(
                 f.write("\n")
 
 
+def generate_project_from_example(path: str, example: str):
+
+    EXAMPLE_WHITELIST = ["docs_snippets"]
+
+    normalized_path = os.path.normpath(path)
+
+    example_folder = file_relative_path(__file__, "../../../../examples")
+    example_list = [
+        e
+        for e in os.listdir(example_folder)
+        if (e not in EXAMPLE_WHITELIST and not _should_skip_file(e))
+    ]
+
+    if example not in example_list:
+        click.echo(
+            click.style(f'Can\'t find example "{example}". ', fg="red")
+            + "\nPlease specify one of the official Dagster examples. "
+            + "You can find the examples in the Dagster repo: https://github.com/dagster-io/dagster/tree/master/examples"
+        )
+        sys.exit(1)
+
+    print(f"Creating a Dagster project at {normalized_path}.")
+
+    selected_example_path = os.path.join(example_folder, example)
+    shutil.copytree(
+        src=selected_example_path,
+        dst=normalized_path,
+        ignore=shutil.ignore_patterns(*IGNORE_PATTERN_LIST),
+    )
+
+
 def _should_skip_file(path):
     """
     Given a file path `path` in a source template, returns whether or not the file should be skipped
@@ -127,16 +162,8 @@ def _should_skip_file(path):
 
     Technically, `path` could also be a directory path that should be skipped.
     """
-    if "__pycache__" in path:
-        return True
-
-    if ".pytest_cache" in path:
-        return True
-
-    if ".egg-info" in path:
-        return True
-
-    if ".DS_Store" in path:
-        return True
+    for pattern in IGNORE_PATTERN_LIST:
+        if pattern in path:
+            return True
 
     return False
