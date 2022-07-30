@@ -9,13 +9,27 @@ from dagster._generate import generate_project, generate_repository
 @click.group(name="project")
 def project_cli():
     """
-    Commands for scaffolding new Dagster projects.
+    Commands for bootstrapping new Dagster projects and repositories.
     """
+
+
+scaffold_repository_command_help_text = (
+    "Create a folder structure with a single Dagster repository, in the current directory. "
+    "This CLI helps you to scaffold a new Dagster repository within a folder structure that "
+    "includes multiple Dagster repositories"
+)
+
+scaffold_command_help_text = (
+    "Create a folder structure with a single Dagster repository and other files such as "
+    "workspace.yaml, in the current directory. This CLI enables you to quickly start building "
+    "a new Dagster project with everything set up."
+)
 
 
 @project_cli.command(
     name="scaffold-repository",
-    help="Create a new Dagster repository using the default template",
+    short_help=scaffold_repository_command_help_text,
+    help=scaffold_repository_command_help_text,
 )
 @click.option(
     "--name",
@@ -25,9 +39,6 @@ def project_cli():
 )
 @experimental
 def scaffold_repository_command(name: str):
-    """
-    Create a new Dagster project using the default template.
-    """
     dir_abspath = os.path.abspath(name)
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
         raise FileExistsError(
@@ -43,7 +54,8 @@ def scaffold_repository_command(name: str):
 
 @project_cli.command(
     name="scaffold",
-    help="Create a new Dagster project using the default template",
+    short_help=scaffold_command_help_text,
+    help=scaffold_command_help_text,
 )
 @click.option(
     "--name",
@@ -53,9 +65,6 @@ def scaffold_repository_command(name: str):
 )
 @experimental
 def scaffold_command(name: str):
-    """
-    Create a new Dagster project using the default template.
-    """
     dir_abspath = os.path.abspath(name)
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
         raise FileExistsError(
