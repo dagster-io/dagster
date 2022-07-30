@@ -1,4 +1,5 @@
 import os
+import sys
 
 import click
 
@@ -41,12 +42,11 @@ scaffold_command_help_text = (
 def scaffold_repository_command(name: str):
     dir_abspath = os.path.abspath(name)
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
-        raise FileExistsError(
-            f"""
-            The directory {dir_abspath} already exists. Please delete the contents of this path
-            or choose another repository location.
-            """
+        click.echo(
+            click.style(f"The directory {dir_abspath} already exists. ", fg="red")
+            + "\nPlease delete the contents of this path or choose another location."
         )
+        sys.exit(1)
 
     generate_repository(dir_abspath)
     click.echo(_styled_success_statement(name, dir_abspath))
@@ -67,12 +67,11 @@ def scaffold_repository_command(name: str):
 def scaffold_command(name: str):
     dir_abspath = os.path.abspath(name)
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
-        raise FileExistsError(
-            f"""
-            The directory {dir_abspath} already exists. Please delete the contents of this path
-            or choose another project location.
-            """
+        click.echo(
+            click.style(f"The directory {dir_abspath} already exists. ", fg="red")
+            + "\nPlease delete the contents of this path or choose another location."
         )
+        sys.exit(1)
 
     generate_project(dir_abspath)
     click.echo(_styled_success_statement(name, dir_abspath))
