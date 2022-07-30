@@ -1,0 +1,18 @@
+from setuptools import find_packages, setup
+
+if __name__ == "__main__":
+    setup(
+        name="dagster_graph_backed_assets",
+        packages=find_packages(exclude=["dagster_graph_backed_assets_tests"]),
+        install_requires=["dagster", "dagit", "pytest", "pandas"],
+        license="Apache-2.0",
+        description="Dagster example of op and graph-backed assets.",
+        url="https://github.com/dagster-io/dagster/tree/master/examples/airline_assets",
+        classifiers=[
+            "Programming Language :: Python :: 3.7",
+            "Programming Language :: Python :: 3.8",
+            "Programming Language :: Python :: 3.9",
+            "License :: OSI Approved :: Apache Software License",
+            "Operating System :: OS Independent",
+        ],
+    )
