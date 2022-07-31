@@ -4,6 +4,7 @@ import shutil
 import sys
 
 import click
+from dagster import file_relative_path
 import jinja2
 
 from dagster.version import __version__ as dagster_version
@@ -145,7 +146,7 @@ def generate_project_from_example(path: str, example: str):
         )
         sys.exit(1)
 
-    print(f"Creating a Dagster project at {normalized_path}.")
+    click.echo(f"Creating a Dagster project at {normalized_path}.")
 
     selected_example_path = os.path.join(example_folder, example)
     shutil.copytree(
