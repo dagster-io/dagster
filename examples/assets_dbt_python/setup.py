@@ -14,6 +14,6 @@ if __name__ == "__main__":
             "scipy",
             "dbt-core",
             "dbt-duckdb",
+            "pytest",
         ],
-        extras_require={"tests": ["mypy", "pylint", "pytest"]},
     )
