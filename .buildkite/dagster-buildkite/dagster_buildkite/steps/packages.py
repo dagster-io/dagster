@@ -312,7 +312,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
-        "examples/dbt_python_assets",
+        "examples/assets_dbt_python",
         unsupported_python_versions=[
             # dependency on dagster-dbt
             AvailablePythonVersion.V3_6,
