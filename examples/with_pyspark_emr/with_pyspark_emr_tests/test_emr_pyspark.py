@@ -3,7 +3,7 @@ import os
 
 from dagster._core.execution.api import create_execution_plan
 
-from ..repo import make_and_filter_data_emr, make_and_filter_data_local
+from with_pyspark_emr.repository import make_and_filter_data_emr, make_and_filter_data_local
 
 
 def test_emr_pyspark_execution_plan():
