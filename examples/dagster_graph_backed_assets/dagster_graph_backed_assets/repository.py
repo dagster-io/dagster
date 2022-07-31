@@ -1,8 +1,5 @@
-from dagster import load_assets_from_package_module, repository
-
-from dagster_graph_backed_assets import assets
-
 import pandas as pd
+from dagster_graph_backed_assets import assets
 
 from dagster import (
     AssetSelection,
@@ -10,6 +7,7 @@ from dagster import (
     GraphOut,
     define_asset_job,
     graph,
+    load_assets_from_package_module,
     op,
     repository,
 )
