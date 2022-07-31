@@ -51,5 +51,5 @@ make_and_filter_data_job = make_and_filter_data.to_job(
 
 
 @repository
-def basic_pyspark_repo():
+def with_pyspark():
     return [make_and_filter_data_job]
