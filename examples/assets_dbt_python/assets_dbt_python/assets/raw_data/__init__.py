@@ -3,7 +3,7 @@ import pandas as pd
 
 from dagster import asset
 
-from ..utils import random_data
+from assets_dbt_python.utils import random_data
 
 
 @asset(compute_kind="random")
