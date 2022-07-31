@@ -4,7 +4,7 @@ if __name__ == "__main__":
     setup(
         name="assets_dbt_python",
         packages=find_packages(exclude=["assets_dbt_python_tests"]),
-        package_data={"dbt_python_assets": ["dbt_project/*"]},
+        package_data={"assets_dbt_python": ["dbt_project/*"]},
         install_requires=[
             "dagster",
             "dagit",
