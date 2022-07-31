@@ -33,7 +33,7 @@ The downside is that this approach only works with PySpark, and setting up a ste
 
 ### Running PySpark code in ops
 
-<CodeReferenceLink filePath="examples/basic_pyspark" />
+<CodeReferenceLink filePath="examples/with_pyspark" />
 
 Passing PySpark DataFrames between ops requires a little bit of extra care, compared to other data types, for a couple reasons:
 
@@ -46,7 +46,7 @@ This example assumes that all the outputs within the dagster job will be PySpark
 
 This example writes out DataFrames to the local file system, but can be tweaked to write to cloud object stores like S3 by changing to the `write` and `read` invocations.
 
-```python file=../../basic_pyspark/repo.py startafter=start_repo_marker_0 endbefore=end_repo_marker_0
+```python file=../../with_pyspark/with_pyspark/repository.py startafter=start_repo_marker_0 endbefore=end_repo_marker_0
 import os
 
 from pyspark.sql import DataFrame, Row, SparkSession
