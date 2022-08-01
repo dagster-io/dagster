@@ -80,8 +80,6 @@ def schedule(
     Args:
         cron_schedule (str): A valid cron string specifying when the schedule will run, e.g.,
             ``'45 23 * * 6'`` for a schedule that runs at 11:45 PM every Saturday.
-        pipeline_name (Optional[str]): (legacy)  The name of the pipeline to execute when the
-            schedule runs.
         name (Optional[str]): The name of the schedule to create.
         tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.
@@ -89,10 +87,6 @@ def schedule(
             that generates tags to attach to the schedules runs. Takes a
             :py:class:`~dagster.ScheduleEvaluationContext` and returns a dictionary of tags (string
             key-value pairs). You may set only one of ``tags`` and ``tags_fn``.
-        solid_selection (Optional[List[str]]): A list of solid subselection (including single
-            solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
-        mode (Optional[str]): The pipeline mode in which to execute this schedule.
-            (Default: 'default')
         should_execute (Optional[Callable[[ScheduleEvaluationContext], bool]]): A function that runs at
             schedule execution time to determine whether a schedule should execute or skip. Takes a
             :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the

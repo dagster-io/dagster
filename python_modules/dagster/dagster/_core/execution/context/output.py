@@ -55,13 +55,11 @@ class OutputContext:
     Attributes:
         step_key (Optional[str]): The step_key for the compute step that produced the output.
         name (Optional[str]): The name of the output that produced the output.
-        pipeline_name (Optional[str]): The name of the pipeline definition.
         run_id (Optional[str]): The id of the run that produced the output.
         metadata (Optional[Mapping[str, RawMetadataValue]]): A dict of the metadata that is assigned to the
             OutputDefinition that produced the output.
         mapping_key (Optional[str]): The key that identifies a unique mapped output. None for regular outputs.
         config (Optional[Any]): The configuration for the output.
-        solid_def (Optional[SolidDefinition]): The definition of the solid that produced the output.
         dagster_type (Optional[DagsterType]): The type of this output.
         log (Optional[DagsterLogManager]): The log manager to use for this output.
         version (Optional[str]): (Experimental) The version of the output.
