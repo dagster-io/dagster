@@ -315,9 +315,7 @@ class AssetsDefinition(ResourceAddable):
         metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ) -> "AssetsDefinition":
-        from .graph_definition import GraphDefinition
-
-        node_def = check.inst_param(node_def, "node_def", (GraphDefinition, OpDefinition))
+        node_def = check.inst_param(node_def, "node_def", NodeDefinition)
         keys_by_input_name = _infer_keys_by_input_names(
             node_def,
             check.opt_dict_param(

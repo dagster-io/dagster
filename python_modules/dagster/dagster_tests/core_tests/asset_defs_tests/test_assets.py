@@ -655,3 +655,12 @@ def test_from_op_w_key_prefix():
         "the",
         "asset",
     ]
+
+
+def test_from_op_w_configured():
+    @op(config_schema={"bar": str})
+    def foo():
+        return 1
+
+    the_asset = AssetsDefinition.from_op(op_def=foo.configured({"bar": "abc"}, name="foo2"))
+    assert the_asset.keys_by_output_name["result"].path == ["foo2"]

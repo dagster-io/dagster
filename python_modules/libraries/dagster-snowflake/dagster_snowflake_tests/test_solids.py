@@ -1,6 +1,7 @@
 from unittest import mock
 
-from dagster_snowflake import snowflake_resource, snowflake_solid_for_query
+from dagster_snowflake import snowflake_resource
+from dagster_snowflake.solids import snowflake_solid_for_query
 
 from dagster._legacy import ModeDefinition, execute_solid
 
