@@ -15,6 +15,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import AssetKey, DynamicAssetKey
 from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster._core.errors import DagsterError, DagsterInvalidDefinitionError
@@ -360,17 +361,19 @@ class Out(
     NamedTuple(
         "_Out",
         [
-            ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
-            ("description", Optional[str]),
-            ("is_required", bool),
-            ("io_manager_key", str),
-            ("metadata", Optional[MetadataUserInput]),
-            ("asset_key", Optional[Union[AssetKey, DynamicAssetKey]]),
+            ("dagster_type", PublicAttr[Union[DagsterType, Type[NoValueSentinel]]]),
+            ("description", PublicAttr[Optional[str]]),
+            ("is_required", PublicAttr[bool]),
+            ("io_manager_key", PublicAttr[str]),
+            ("metadata", PublicAttr[Optional[MetadataUserInput]]),
+            ("asset_key", PublicAttr[Optional[Union[AssetKey, DynamicAssetKey]]]),
             (
                 "asset_partitions",
-                Optional[Union[AbstractSet[str], Callable[["OutputContext"], AbstractSet[str]]]],
+                PublicAttr[
+                    Optional[Union[AbstractSet[str], Callable[["OutputContext"], AbstractSet[str]]]]
+                ],
             ),
-            ("asset_partitions_def", Optional["PartitionsDefinition"]),
+            ("asset_partitions_def", PublicAttr[Optional["PartitionsDefinition"]]),
         ],
     )
 ):
@@ -525,7 +528,7 @@ class DynamicOut(Out):
         )
 
 
-class GraphOut(NamedTuple("_GraphOut", [("description", Optional[str])])):
+class GraphOut(NamedTuple("_GraphOut", [("description", PublicAttr[Optional[str]])])):
     """
     Represents information about the outputs that a graph maps.
 

@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
 
+from dagster._annotations import public
 from dagster._core.execution.retries import RetryMode
 
 
 class Executor(ABC):  # pylint: disable=no-init
+    @public
     @abstractmethod
     def execute(self, plan_context, execution_plan):
         """
@@ -17,6 +19,7 @@ class Executor(ABC):  # pylint: disable=no-init
             A stream of dagster events.
         """
 
+    @public  # type: ignore
     @property
     @abstractmethod
     def retries(self) -> RetryMode:

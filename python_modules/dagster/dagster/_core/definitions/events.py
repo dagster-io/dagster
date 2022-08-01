@@ -230,10 +230,12 @@ class Output(Generic[T]):
     def metadata_entries(self) -> Sequence[Union[PartitionMetadataEntry, MetadataEntry]]:
         return self._metadata_entries
 
+    @public  # type: ignore
     @property
     def value(self) -> Any:
         return self._value
 
+    @public  # type: ignore
     @property
     def output_name(self) -> str:
         return self._output_name
@@ -296,14 +298,17 @@ class DynamicOutput(Generic[T]):
     def metadata_entries(self) -> Sequence[Union[PartitionMetadataEntry, MetadataEntry]]:
         return self._metadata_entries
 
+    @public  # type: ignore
     @property
     def mapping_key(self) -> str:
         return self._mapping_key
 
+    @public  # type: ignore
     @property
     def value(self) -> T:
         return self._value
 
+    @public  # type: ignore
     @property
     def output_name(self) -> str:
         return self._output_name
@@ -638,9 +643,9 @@ class TypeCheck(
     NamedTuple(
         "_TypeCheck",
         [
-            ("success", bool),
-            ("description", Optional[str]),
-            ("metadata_entries", List[MetadataEntry]),
+            ("success", PublicAttr[bool]),
+            ("description", PublicAttr[Optional[str]]),
+            ("metadata_entries", PublicAttr[List[MetadataEntry]]),
         ],
     )
 ):

@@ -16,6 +16,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey
 from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
@@ -459,22 +460,27 @@ class PipelineRun(
 
         return {**repository_tags, **self.tags}
 
+    @public  # type: ignore
     @property
     def is_finished(self):
         return self.status in FINISHED_STATUSES
 
+    @public  # type: ignore
     @property
     def is_success(self):
         return self.status == PipelineRunStatus.SUCCESS
 
+    @public  # type: ignore
     @property
     def is_failure(self):
         return self.status == PipelineRunStatus.FAILURE
 
+    @public  # type: ignore
     @property
     def is_failure_or_canceled(self):
         return self.status == PipelineRunStatus.FAILURE or self.status == PipelineRunStatus.CANCELED
 
+    @public  # type: ignore
     @property
     def is_resume_retry(self):
         return self.tags.get(RESUME_RETRY_TAG) == "true"
@@ -484,6 +490,7 @@ class PipelineRun(
         # Compat
         return self.parent_run_id
 
+    @public  # type: ignore
     @property
     def job_name(self) -> str:
         return self.pipeline_name

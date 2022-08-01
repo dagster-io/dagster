@@ -97,6 +97,7 @@ Run storage
 .. autoclass:: DagsterRunStatus
    :members:
    :undoc-members:
+   :inherited-members:
 
 .. currentmodule:: dagster._core.storage.runs
 

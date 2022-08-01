@@ -15,6 +15,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
     MetadataEntry,
@@ -403,14 +404,20 @@ class In(
     NamedTuple(
         "_In",
         [
-            ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
-            ("description", Optional[str]),
-            ("default_value", Any),
-            ("root_manager_key", Optional[str]),
-            ("metadata", Optional[Mapping[str, Any]]),
-            ("asset_key", Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]),
-            ("asset_partitions", Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]]),
-            ("input_manager_key", Optional[str]),
+            ("dagster_type", PublicAttr[Union[DagsterType, Type[NoValueSentinel]]]),
+            ("description", PublicAttr[Optional[str]]),
+            ("default_value", PublicAttr[Any]),
+            ("root_manager_key", PublicAttr[Optional[str]]),
+            ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
+            (
+                "asset_key",
+                PublicAttr[Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]],
+            ),
+            (
+                "asset_partitions",
+                PublicAttr[Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]]],
+            ),
+            ("input_manager_key", PublicAttr[Optional[str]]),
         ],
     )
 ):
@@ -503,7 +510,7 @@ class In(
         )
 
 
-class GraphIn(NamedTuple("_GraphIn", [("description", Optional[str])])):
+class GraphIn(NamedTuple("_GraphIn", [("description", PublicAttr[Optional[str]])])):
     """
     Represents information about an input that a graph maps.
 
