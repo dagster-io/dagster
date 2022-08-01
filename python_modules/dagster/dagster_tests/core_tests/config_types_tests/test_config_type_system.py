@@ -21,7 +21,6 @@ from dagster import (
     Set,
     String,
     Tuple,
-    execute_solid,
 )
 from dagster._check import ParameterCheckError
 from dagster._config import (
@@ -37,6 +36,7 @@ from dagster._legacy import (
     PipelineDefinition,
     composite_solid,
     execute_pipeline,
+    execute_solid,
     pipeline,
     solid,
 )

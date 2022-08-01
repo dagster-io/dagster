@@ -12,18 +12,21 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvariantViolationError
 
 from ..._seven.typing import get_origin
 from .definition_config_schema import IDefinitionConfigSchema
+from .hook_definition import HookDefinition
 from .inference import infer_output_props
 from .input import In, InputDefinition
 from .output import Out, OutputDefinition
 from .solid_definition import SolidDefinition
 
 if TYPE_CHECKING:
+    from .composition import PendingNodeInvocation
     from .decorators.solid_decorator import DecoratedSolidFunction
 
 
@@ -145,13 +148,56 @@ class OpDefinition(SolidDefinition):
     def is_graph_job_op_node(self) -> bool:
         return True
 
+    @public  # type: ignore
     @property
     def ins(self) -> Dict[str, In]:
         return {input_def.name: In.from_definition(input_def) for input_def in self.input_defs}
 
+    @public  # type: ignore
     @property
     def outs(self) -> Dict[str, Out]:
         return {output_def.name: Out.from_definition(output_def) for output_def in self.output_defs}
+
+    @public  # type: ignore
+    @property
+    def required_resource_keys(self) -> AbstractSet[str]:
+        return super(OpDefinition, self).required_resource_keys
+
+    @public  # type: ignore
+    @property
+    def version(self) -> Optional[str]:
+        return super(OpDefinition, self).version
+
+    @public  # type: ignore
+    @property
+    def retry_policy(self) -> Optional[RetryPolicy]:
+        return super(OpDefinition, self).retry_policy
+
+    @public  # type: ignore
+    @property
+    def name(self) -> str:
+        return super(OpDefinition, self).name
+
+    @public  # type: ignore
+    @property
+    def tags(self) -> Mapping[str, str]:
+        return super(OpDefinition, self).tags
+
+    @public
+    def alias(self, name: str) -> "PendingNodeInvocation":
+        return super(OpDefinition, self).alias(name)
+
+    @public
+    def tag(self, tags: Optional[Dict[str, str]]) -> "PendingNodeInvocation":
+        return super(OpDefinition, self).tag(tags)
+
+    @public
+    def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PendingNodeInvocation":
+        return super(OpDefinition, self).with_hooks(hook_defs)
+
+    @public
+    def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
+        return super(OpDefinition, self).with_retry_policy(retry_policy)
 
 
 def _resolve_output_defs_from_outs(

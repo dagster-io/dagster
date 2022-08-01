@@ -1,18 +1,18 @@
 import string
 
-from dagster import (
-    Int,
-    PartitionSetDefinition,
-    ScheduleDefinition,
-    op,
-    repository,
-    usable_as_dagster_type,
-)
+from dagster import Int, ScheduleDefinition, op, repository, usable_as_dagster_type
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.errors import DagsterError
 from dagster._core.test_utils import default_mode_def_for_test
-from dagster._legacy import InputDefinition, OutputDefinition, lambda_solid, pipeline, solid
+from dagster._legacy import (
+    InputDefinition,
+    OutputDefinition,
+    PartitionSetDefinition,
+    lambda_solid,
+    pipeline,
+    solid,
+)
 
 
 @lambda_solid

@@ -6,7 +6,6 @@ from typing import (
     Dict,
     Mapping,
     Optional,
-    Sequence,
     Set,
     Tuple,
     Union,
@@ -22,11 +21,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.types.dagster_type import DagsterType
 from dagster._seven import funcsigs
-from dagster._utils.backcompat import (
-    ExperimentalWarning,
-    canonicalize_backcompat_args,
-    deprecation_warning,
-)
+from dagster._utils.backcompat import ExperimentalWarning, deprecation_warning
 
 from ..asset_in import AssetIn
 from ..asset_out import AssetOut
@@ -36,7 +31,6 @@ from ..events import AssetKey, CoercibleToAssetKeyPrefix
 from ..input import In
 from ..output import Out
 from ..partition import PartitionsDefinition
-from ..partition_mapping import PartitionMapping
 from ..resource_definition import ResourceDefinition
 from ..utils import DEFAULT_IO_MANAGER_KEY, NoValueSentinel
 
@@ -51,7 +45,6 @@ def asset(
 @overload
 def asset(
     name: Optional[str] = ...,
-    namespace: Optional[Sequence[str]] = ...,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = ...,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
@@ -65,7 +58,6 @@ def asset(
     compute_kind: Optional[str] = ...,
     dagster_type: Optional[DagsterType] = ...,
     partitions_def: Optional[PartitionsDefinition] = ...,
-    partition_mappings: Optional[Mapping[str, PartitionMapping]] = ...,
     op_tags: Optional[Dict[str, Any]] = ...,
     group_name: Optional[str] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
@@ -74,7 +66,6 @@ def asset(
 
 def asset(
     name: Optional[Union[Callable[..., Any], Optional[str]]] = None,
-    namespace: Optional[Sequence[str]] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
@@ -88,7 +79,6 @@ def asset(
     compute_kind: Optional[str] = None,
     dagster_type: Optional[DagsterType] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
-    partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
     op_tags: Optional[Dict[str, Any]] = None,
     group_name: Optional[str] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
@@ -107,16 +97,12 @@ def asset(
         name (Optional[str]): The name of the asset.  If not provided, defaults to the name of the
             decorated function. The asset's name must be a valid name in dagster (ie only contains
             letters, numbers, and _) and may not contain python reserved keywords.
-        namespace (Optional[Sequence[str]]): **Deprecated (use `key_prefix`)**. The namespace that
-            the asset resides in.  The concatenation of namespace and name forms the asset key. Each
-            item in namespace must be a valid name in dagster (ie only contains letters, numbers,
-            and _) and may not contain python reserved keywords.
         key_prefix (Optional[Union[str, Sequence[str]]]): If provided, the asset's key is the
             concatenation of the key_prefix and the asset's name, which defaults to the name of
             the decorated function. Each item in key_prefix must be a valid name in dagster (ie only
             contains letters, numbers, and _) and may not contain python reserved keywords.
-        ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
-            and namespaces.
+        ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
+            about the input.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Set of asset keys that are
             upstream dependencies, but do not pass an input to the asset.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
@@ -158,25 +144,6 @@ def asset(
     if callable(name):
         return _Asset()(name)
 
-    key_prefix = canonicalize_backcompat_args(
-        key_prefix,
-        "key_prefix",
-        namespace,
-        "namespace",
-        "1.0.0",
-        additional_warn_txt="key_prefix applies only to the output AssetKey. If you want to modify "
-        "the prefix of the input AssetKeys as well, you can do this by explicitly setting the ins "
-        "parameter of this asset to a dictionary of the form "
-        "'input_name': AssetIn(key_prefix=...).",
-    )
-
-    if partition_mappings is not None:
-        deprecation_warning(
-            "The partition_mappings argument of @asset",
-            "1.0.0",
-            "Use the partition_mapping argument on AssetIn instead.",
-        )
-
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         check.invariant(
             not (io_manager_key and io_manager_def),
@@ -185,7 +152,6 @@ def asset(
         return _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             key_prefix=key_prefix,
-            namespace=namespace,
             ins=ins,
             non_argument_deps=_make_asset_keys(non_argument_deps),
             metadata=metadata,
@@ -197,7 +163,6 @@ def asset(
             compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
             dagster_type=dagster_type,
             partitions_def=partitions_def,
-            partition_mappings=partition_mappings,
             op_tags=op_tags,
             group_name=group_name,
         )(fn)
@@ -209,7 +174,6 @@ class _Asset:
     def __init__(
         self,
         name: Optional[str] = None,
-        namespace: Optional[Sequence[str]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         ins: Optional[Mapping[str, AssetIn]] = None,
         non_argument_deps: Optional[Set[AssetKey]] = None,
@@ -222,13 +186,11 @@ class _Asset:
         compute_kind: Optional[str] = None,
         dagster_type: Optional[DagsterType] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         op_tags: Optional[Dict[str, Any]] = None,
         group_name: Optional[str] = None,
     ):
         self.name = name
 
-        self.namespace = namespace
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
         self.key_prefix = key_prefix
@@ -244,7 +206,6 @@ class _Asset:
         self.compute_kind = compute_kind
         self.dagster_type = dagster_type
         self.partitions_def = partitions_def
-        self.partition_mappings = partition_mappings
         self.op_tags = op_tags
         self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
         self.group_name = group_name
@@ -252,8 +213,7 @@ class _Asset:
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
 
-        # for backcompat, we prefix input asset keys with the namespace
-        asset_ins = build_asset_ins(fn, self.namespace, self.ins or {}, self.non_argument_deps)
+        asset_ins = build_asset_ins(fn, self.ins or {}, self.non_argument_deps)
 
         out_asset_key = AssetKey(list(filter(None, [*(self.key_prefix or []), asset_name])))
         with warnings.catch_warnings():
@@ -298,24 +258,11 @@ class _Asset:
         keys_by_input_name = {
             input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
         }
-        partition_mappings_by_key_from_asset_ins = {
+        partition_mappings = {
             keys_by_input_name[input_name]: asset_in.partition_mapping
             for input_name, asset_in in self.ins.items()
             if asset_in.partition_mapping
         }
-        if partition_mappings_by_key_from_asset_ins:
-            check.invariant(
-                not self.partition_mappings,
-                "If providing partition mappings on AssetIns, can't also provide partition_mappings "
-                "argument on @asset decorator",
-            )
-
-            partition_mappings = partition_mappings_by_key_from_asset_ins
-        else:
-            partition_mappings = {
-                keys_by_input_name[input_name]: partition_mapping
-                for input_name, partition_mapping in (self.partition_mappings or {}).items()
-            }
 
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
@@ -329,7 +276,7 @@ class _Asset:
 
 
 def multi_asset(
-    outs: Mapping[str, Union[Out, AssetOut]],
+    outs: Mapping[str, AssetOut],
     name: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
@@ -339,7 +286,6 @@ def multi_asset(
     compute_kind: Optional[str] = None,
     internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
-    partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
     op_tags: Optional[Dict[str, Any]] = None,
     can_subset: bool = False,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -353,9 +299,9 @@ def multi_asset(
 
     Args:
         name (Optional[str]): The name of the op.
-        outs: (Optional[Dict[str, Out]]): The Outs representing the produced assets.
-        ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
-            and namespaces.
+        outs: (Optional[Dict[str, AssetOut]]): The AssetOuts representing the produced assets.
+        ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
+            about the input.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Set of asset keys that are upstream
             dependencies, but do not pass an input to the multi_asset.
         config_schema (Optional[ConfigSchema): The configuration schema for the asset's underlying
@@ -374,12 +320,6 @@ def multi_asset(
             used as input to the asset or produced within the op.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the assets.
-        partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
-            keys for this asset to partition keys of upstream assets. Each key in the dictionary
-            correponds to one of the input assets, and each value is a PartitionMapping.
-            If no entry is provided for a particular asset dependency, the partition mapping defaults
-            to the default partition mapping for the partitions definition, which is typically maps
-            partition keys to the same partition keys in upstream assets.
         op_tags (Optional[Dict[str, Any]]): A dictionary of tags for the op that computes the asset.
             Frameworks may expect and require certain metadata to be attached to a op. Values that
             are not strings will be json encoded and must meet the criteria that
@@ -421,7 +361,7 @@ def multi_asset(
 
         op_name = name or fn.__name__
         asset_ins = build_asset_ins(
-            fn, None, ins or {}, non_argument_deps=_make_asset_keys(non_argument_deps)
+            fn, ins or {}, non_argument_deps=_make_asset_keys(non_argument_deps)
         )
         asset_outs = build_asset_outs(outs)
 
@@ -479,18 +419,19 @@ def multi_asset(
                 asset_key: group_name for asset_key in keys_by_output_name.values()
             }
 
+        partition_mappings = {
+            keys_by_input_name[input_name]: asset_in.partition_mapping
+            for input_name, asset_in in (ins or {}).items()
+            if asset_in.partition_mapping
+        }
+
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name=keys_by_output_name,
             node_def=op,
             asset_deps={keys_by_output_name[name]: asset_deps[name] for name in asset_deps},
             partitions_def=partitions_def,
-            partition_mappings={
-                keys_by_input_name[input_name]: partition_mapping
-                for input_name, partition_mapping in partition_mappings.items()
-            }
-            if partition_mappings
-            else None,
+            partition_mappings=partition_mappings if partition_mappings else None,
             can_subset=can_subset,
             resource_defs=resource_defs,
             group_names_by_key=group_names_by_key,
@@ -501,7 +442,6 @@ def multi_asset(
 
 def build_asset_ins(
     fn: Callable,
-    asset_key_prefix: Optional[Sequence[str]],
     asset_ins: Mapping[str, AssetIn],
     non_argument_deps: Optional[AbstractSet[AssetKey]],
 ) -> Mapping[AssetKey, Tuple[str, In]]:
@@ -546,9 +486,7 @@ def build_asset_ins(
             key_prefix = None
             input_manager_key = None
 
-        asset_key = asset_key or AssetKey(
-            list(filter(None, [*(key_prefix or asset_key_prefix or []), input_name]))
-        )
+        asset_key = asset_key or AssetKey(list(filter(None, [*(key_prefix or []), input_name])))
 
         ins_by_asset_key[asset_key] = (
             input_name.replace("-", "_"),

@@ -2,11 +2,12 @@ from typing import Optional
 
 import pytest
 
-from dagster import DagsterInvalidDefinitionError, Nothing, execute_solid, job, op
+from dagster import DagsterInvalidDefinitionError, Nothing, job, op
 from dagster._legacy import (
     InputDefinition,
     composite_solid,
     execute_pipeline,
+    execute_solid,
     lambda_solid,
     pipeline,
 )

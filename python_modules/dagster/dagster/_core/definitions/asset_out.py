@@ -1,6 +1,7 @@
 from typing import Any, Mapping, NamedTuple, Optional, Sequence, Type, Union
 
 import dagster._check as check
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import (
     AssetKey,
     CoercibleToAssetKey,
@@ -17,14 +18,14 @@ class AssetOut(
     NamedTuple(
         "_AssetOut",
         [
-            ("key", Optional[AssetKey]),
-            ("key_prefix", Optional[Sequence[str]]),
-            ("metadata", Optional[Mapping[str, Any]]),
-            ("io_manager_key", str),
-            ("description", Optional[str]),
-            ("is_required", bool),
-            ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
-            ("group_name", Optional[str]),
+            ("key", PublicAttr[Optional[AssetKey]]),
+            ("key_prefix", PublicAttr[Optional[Sequence[str]]]),
+            ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
+            ("io_manager_key", PublicAttr[str]),
+            ("description", PublicAttr[Optional[str]]),
+            ("is_required", PublicAttr[bool]),
+            ("dagster_type", PublicAttr[Union[DagsterType, Type[NoValueSentinel]]]),
+            ("group_name", PublicAttr[Optional[str]]),
         ],
     )
 ):

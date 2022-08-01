@@ -8,7 +8,6 @@ from dagster import (
     DagsterRunStatus,
     RunRequest,
     SensorEvaluationContext,
-    SensorExecutionContext,
     build_run_status_sensor_context,
     build_sensor_context,
     job,
@@ -19,6 +18,7 @@ from dagster import (
 )
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
+from dagster._legacy import SensorExecutionContext
 
 
 def test_sensor_context_backcompat():

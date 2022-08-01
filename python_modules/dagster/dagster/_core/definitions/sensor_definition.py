@@ -16,6 +16,7 @@ from typing import (
 from typing_extensions import TypeGuard
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -49,10 +50,11 @@ DEFAULT_SENSOR_DAEMON_INTERVAL = 30
 
 
 class SensorEvaluationContext:
-    """Sensor execution context.
+    """The context object available as the argument to the evaluation function of a :py:class:`dagster.SensorDefinition`.
 
-    An instance of this class is made available as the first argument to the evaluation function
-    on SensorDefinition.
+    Users should not instantiate this object directly. To construct a
+    `SensorEvaluationContext` for testing purposes, use :py:func:`dagster.
+    build_sensor_context`.
 
     Attributes:
         instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
@@ -64,6 +66,17 @@ class SensorEvaluationContext:
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
         instance (Optional[DagsterInstance]): The deserialized instance can also be passed in
             directly (primarily useful in testing contexts).
+
+    Example:
+
+    .. code-block:: python
+
+        from dagster import sensor, SensorEvaluationContext
+
+        @sensor
+        def the_sensor(context: SensorEvaluationContext):
+            ...
+
     """
 
     def __init__(
@@ -91,6 +104,7 @@ class SensorEvaluationContext:
     def __exit__(self, _exception_type, _exception_value, _traceback):
         self._exit_stack.close()
 
+    @public  # type: ignore
     @property
     def instance(self) -> DagsterInstance:
         # self._instance_ref should only ever be None when this SensorEvaluationContext was
@@ -105,19 +119,23 @@ class SensorEvaluationContext:
             )
         return cast(DagsterInstance, self._instance)
 
+    @public  # type: ignore
     @property
     def last_completion_time(self) -> Optional[float]:
         return self._last_completion_time
 
+    @public  # type: ignore
     @property
     def last_run_key(self) -> Optional[str]:
         return self._last_run_key
 
+    @public  # type: ignore
     @property
     def cursor(self) -> Optional[str]:
         """The cursor value for this sensor, which was set in an earlier sensor evaluation."""
         return self._cursor
 
+    @public
     def update_cursor(self, cursor: Optional[str]) -> None:
         """Updates the cursor value for this sensor, which will be provided on the context for the
         next sensor evaluation.
@@ -130,6 +148,7 @@ class SensorEvaluationContext:
         """
         self._cursor = check.opt_str_param(cursor, "cursor")
 
+    @public  # type: ignore
     @property
     def repository_name(self) -> Optional[str]:
         return self._repository_name
@@ -309,14 +328,17 @@ class SensorDefinition:
 
             return self._raw_fn()  # type: ignore [TypeGuard limitation]
 
+    @public  # type: ignore
     @property
     def name(self) -> str:
         return self._name
 
+    @public  # type: ignore
     @property
     def description(self) -> Optional[str]:
         return self._description
 
+    @public  # type: ignore
     @property
     def minimum_interval_seconds(self) -> Optional[int]:
         return self._min_interval
@@ -325,6 +347,7 @@ class SensorDefinition:
     def targets(self) -> Sequence[Union[DirectTarget, RepoRelativeTarget]]:
         return self._targets
 
+    @public  # type: ignore
     @property
     def job(self) -> Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]:
         if self._targets:
@@ -439,6 +462,11 @@ class SensorDefinition:
     def _target(self) -> Optional[Union[DirectTarget, RepoRelativeTarget]]:
         return self._targets[0] if self._targets else None
 
+    @public  # type: ignore
+    @property
+    def job_name(self) -> Optional[str]:
+        return self.pipeline_name
+
     @property
     def pipeline_name(self) -> Optional[str]:
         return self._target.pipeline_name if self._target else None
@@ -451,6 +479,7 @@ class SensorDefinition:
     def mode(self) -> Optional[str]:
         return self._target.mode if self._target else None
 
+    @public  # type: ignore
     @property
     def default_status(self) -> DefaultSensorStatus:
         return self._default_status

@@ -25,3 +25,7 @@ Explicit dependencies
 .. autoclass:: MultiDependencyDefinition
 
 .. autoclass:: NodeInvocation
+
+.. autoclass:: OutputMapping
+
+.. autoclass:: InputMapping

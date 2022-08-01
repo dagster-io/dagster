@@ -7,7 +7,6 @@ import dagster._seven as seven
 from dagster import (
     BoolMetadataValue,
     DagsterAssetMetadataValue,
-    DagsterPipelineRunMetadataValue,
     FloatMetadataValue,
     IntMetadataValue,
     JsonMetadataValue,
@@ -23,6 +22,7 @@ from dagster import (
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.objects import StepFailureData
+from dagster._legacy import DagsterPipelineRunMetadataValue
 
 MAX_INT = 2147483647
 MIN_INT = -2147483648
@@ -225,7 +225,9 @@ def from_dagster_event_record(event_record, pipeline_name):
     elif dagster_event.event_type == DagsterEventType.STEP_INPUT:
         input_data = dagster_event.event_specific_data
         return GrapheneExecutionStepInputEvent(
-            input_name=input_data.input_name, type_check=input_data.type_check_data, **basic_params
+            input_name=input_data.input_name,
+            type_check=input_data.type_check_data,
+            **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.STEP_OUTPUT:
         output_data = dagster_event.step_output_data
@@ -287,7 +289,10 @@ def from_dagster_event_record(event_record, pipeline_name):
         DagsterEventType.PIPELINE_CANCELED,
     ):
         return GrapheneRunCanceledEvent(pipelineName=pipeline_name, **basic_params)
-    elif dagster_event.event_type in (DagsterEventType.RUN_START, DagsterEventType.PIPELINE_START):
+    elif dagster_event.event_type in (
+        DagsterEventType.RUN_START,
+        DagsterEventType.PIPELINE_START,
+    ):
         return GrapheneRunStartEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type in (
         DagsterEventType.RUN_SUCCESS,
@@ -351,7 +356,8 @@ def from_dagster_event_record(event_record, pipeline_name):
         return GrapheneHookSkippedEvent(**basic_params)
     elif dagster_event.event_type == DagsterEventType.HOOK_ERRORED:
         return GrapheneHookErroredEvent(
-            error=GraphenePythonError(dagster_event.hook_errored_data.error), **basic_params
+            error=GraphenePythonError(dagster_event.hook_errored_data.error),
+            **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.LOGS_CAPTURED:
         return GrapheneLogsCapturedEvent(

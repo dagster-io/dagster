@@ -5,19 +5,16 @@ import string
 
 import pandas as pd
 
-from dagster import (
-    Array,
-    AssetKey,
-    Field,
-    MetadataEntry,
-    MetadataValue,
-    Output,
-    Partition,
-    PartitionSetDefinition,
-)
+from dagster import Array, AssetKey, Field, MetadataEntry, MetadataValue, Output, Partition
 from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 from dagster._core.storage.io_manager import io_manager
-from dagster._legacy import ModeDefinition, OutputDefinition, pipeline, solid
+from dagster._legacy import (
+    ModeDefinition,
+    OutputDefinition,
+    PartitionSetDefinition,
+    pipeline,
+    solid,
+)
 
 
 def get_date_partitions():

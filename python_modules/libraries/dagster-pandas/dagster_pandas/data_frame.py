@@ -203,7 +203,9 @@ def create_dagster_pandas_dataframe_type(
 
         try:
             validate_constraints(
-                value, pandas_columns=columns, dataframe_constraints=dataframe_constraints
+                value,
+                pandas_columns=columns,
+                dataframe_constraints=dataframe_constraints,
             )
         except ConstraintViolationException as e:
             return TypeCheck(success=False, description=str(e))
