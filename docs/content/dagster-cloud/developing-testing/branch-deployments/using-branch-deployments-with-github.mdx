@@ -14,7 +14,7 @@ Using this approach to branch deployments may be a good fit if:
 - You use GitHub for version control
 - You want Dagster to fully automate Branch Deployments
 
-**If you don't use GitHub for version control or want full control over your setup**, check out the dedicated [Branch deployments with TODO guide](/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments).
+**If you don't use GitHub for version control or want full control over your setup**, check out the dedicated [Branch deployments with the dagster-cloud CLI guide](/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments).
 
 ---
 
@@ -24,7 +24,7 @@ To complete the steps in this guide, you'll need:
 
 - **Editor** or **Admin** permissions in Dagster Cloud
 - **The ability to run a new agent in your infrastructure**. This isn't required if you're using [Serverless deployment](/dagster-cloud/deployment/serverless).
-- **The ability to configure GitHub Actions for your repository**. This isn't required if you used the GitHub app to connect your repository as a [code location](/dagster-cloud/developing-testing/code-locations).
+- **The ability to configure GitHub Actions for your repository**. This isn't required if you used the Dagster Cloud GitHub app to connect your repository as a [code location](/dagster-cloud/developing-testing/code-locations).
 
 ---
 
@@ -120,7 +120,7 @@ While you can use your existing production agent, we recommend creating a dedica
 <details>
   <summary><strong>KUBERNETES AGENTS</strong></summary>
 
-1. Set up a new Kubernetes agent. Refer to the [Kubernetes agent setup guide](/dagster-cloud/deployment/agents/Kubernetes/running-configuring-kubernetes-agent) for instructions.
+1. Set up a new Kubernetes agent. Refer to the [Kubernetes agent setup guide](/dagster-cloud/deployment/agents/kubernetes/running-configuring-kubernetes-agent) for instructions.
 
 2. After the agent is set up, modify your Helm values file to include the following:
 
