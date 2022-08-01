@@ -372,13 +372,7 @@ class InputMapping(
         [("definition", InputDefinition), ("maps_to", Union[InputPointer, FanInInputPointer])],
     )
 ):
-    """Defines an input mapping for a composite solid.
-
-    Args:
-        definition (InputDefinition): Defines the input to the composite solid.
-        solid_name (str): The name of the child solid onto which to map the input.
-        input_name (str): The name of the input to the child solid onto which to map the input.
-    """
+    """Defines an input mapping for a graph."""
 
     def __new__(cls, definition: InputDefinition, maps_to: Union[InputPointer, FanInInputPointer]):
         return super(InputMapping, cls).__new__(
