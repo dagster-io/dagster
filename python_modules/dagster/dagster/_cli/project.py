@@ -4,7 +4,7 @@ import sys
 import click
 
 from dagster._annotations import experimental
-from dagster._generate import generate_project, generate_project_from_example, generate_repository
+from dagster._generate import download_example_from_github, generate_project, generate_repository
 
 
 @click.group(name="project")
@@ -106,7 +106,7 @@ def from_example_command(name: str, example: str):
         )
         sys.exit(1)
 
-    generate_project_from_example(dir_abspath, example)
+    download_example_from_github(dir_abspath, example)
 
     click.echo(_styled_success_statement(name, dir_abspath))
 
