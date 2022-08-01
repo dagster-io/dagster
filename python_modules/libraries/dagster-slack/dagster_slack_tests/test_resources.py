@@ -3,8 +3,7 @@ import json
 from dagster_slack import slack_resource
 from mock import patch
 
-from dagster import execute_solid
-from dagster._legacy import ModeDefinition, solid
+from dagster._legacy import ModeDefinition, execute_solid, solid
 
 
 @patch("slack_sdk.WebClient.api_call")

@@ -292,36 +292,6 @@ def test_asset_with_key_prefix():
     }
 
 
-def test_asset_with_namespace():
-
-    with pytest.warns(DeprecationWarning):
-
-        @asset(namespace="my_namespace")
-        def my_asset():
-            pass
-
-    assert isinstance(my_asset, AssetsDefinition)
-    assert len(my_asset.op.output_defs) == 1
-    assert len(my_asset.op.input_defs) == 0
-    assert my_asset.op.name == "my_namespace__my_asset"
-    assert my_asset.keys == {AssetKey(["my_namespace", "my_asset"])}
-
-    @asset(namespace=["one", "two", "three"])
-    def multi_component_namespace_asset():
-        pass
-
-    assert isinstance(multi_component_namespace_asset, AssetsDefinition)
-    assert len(multi_component_namespace_asset.op.output_defs) == 1
-    assert len(multi_component_namespace_asset.op.input_defs) == 0
-    assert (
-        multi_component_namespace_asset.op.name
-        == "one__two__three__multi_component_namespace_asset"
-    )
-    assert multi_component_namespace_asset.keys == {
-        AssetKey(["one", "two", "three", "multi_component_namespace_asset"])
-    }
-
-
 def test_asset_with_inputs_and_key_prefix():
     @asset(key_prefix="my_prefix")
     def my_asset(arg1):
@@ -330,7 +300,7 @@ def test_asset_with_inputs_and_key_prefix():
     assert isinstance(my_asset, AssetsDefinition)
     assert len(my_asset.op.output_defs) == 1
     assert len(my_asset.op.input_defs) == 1
-    # this functions differently than the namespace arg in this scenario
+    # this functions differently than the key_prefix arg in this scenario
     assert AssetKey(["my_prefix", "arg1"]) not in my_asset.keys_by_input_name.values()
     assert AssetKey(["arg1"]) in my_asset.keys_by_input_name.values()
 
@@ -371,28 +341,12 @@ def test_input_asset_key_and_key_prefix():
             assert arg1
 
 
-def test_input_namespace_str():
-    @asset(ins={"arg1": AssetIn(namespace="abc")})
+def test_input_key_prefix_str():
+    @asset(ins={"arg1": AssetIn(key_prefix="abc")})
     def my_asset(arg1):
         assert arg1
 
     assert AssetKey(["abc", "arg1"]) in my_asset.keys_by_input_name.values()
-
-
-def test_input_namespace_list():
-    @asset(ins={"arg1": AssetIn(namespace=["abc", "xyz"])})
-    def my_asset(arg1):
-        assert arg1
-
-    assert AssetKey(["abc", "xyz", "arg1"]) in my_asset.keys_by_input_name.values()
-
-
-def test_input_key_prefix_str():
-    @asset(ins={"arg1": AssetIn(key_prefix=["abc", "xyz"])})
-    def my_asset(arg1):
-        assert arg1
-
-    assert AssetKey(["abc", "xyz", "arg1"]) in my_asset.keys_by_input_name.values()
 
 
 def test_input_key_prefix_list():

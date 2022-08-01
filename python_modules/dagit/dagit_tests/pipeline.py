@@ -1,6 +1,12 @@
-from dagster import Int, daily_schedule, repository
+from dagster import Int, repository
 from dagster._core.test_utils import today_at_midnight
-from dagster._legacy import InputDefinition, OutputDefinition, lambda_solid, pipeline
+from dagster._legacy import (
+    InputDefinition,
+    OutputDefinition,
+    daily_schedule,
+    lambda_solid,
+    pipeline,
+)
 
 
 @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))

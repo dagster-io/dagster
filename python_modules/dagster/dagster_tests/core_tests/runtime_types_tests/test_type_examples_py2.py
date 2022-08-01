@@ -1,5 +1,5 @@
-from dagster import Any, Bool, Dict, Float, Int, List, Optional, Set, String, Tuple, execute_solid
-from dagster._legacy import InputDefinition, OutputDefinition, solid
+from dagster import Any, Bool, Dict, Float, Int, List, Optional, Set, String, Tuple
+from dagster._legacy import InputDefinition, OutputDefinition, execute_solid, solid
 
 
 @solid(

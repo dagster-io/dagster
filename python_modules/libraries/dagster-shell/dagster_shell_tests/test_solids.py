@@ -10,8 +10,8 @@ from dagster_shell import (
     shell_solid,
 )
 
-from dagster import Failure, execute_solid, job, op
-from dagster._legacy import OutputDefinition, composite_solid
+from dagster import Failure, job, op
+from dagster._legacy import OutputDefinition, composite_solid, execute_solid
 
 
 @pytest.mark.parametrize("factory", [create_shell_command_solid, create_shell_command_op])

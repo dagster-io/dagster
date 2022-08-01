@@ -3,7 +3,7 @@ from typing import List, Optional
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL
 from dagster_fivetran.utils import generate_materializations
 
-from dagster import AssetKey, AssetsDefinition, Out, Output
+from dagster import AssetKey, AssetOut, AssetsDefinition, Output
 from dagster import _check as check
 from dagster import multi_asset
 from dagster._annotations import experimental
@@ -79,7 +79,7 @@ def build_fivetran_assets(
     @multi_asset(
         name=f"fivetran_sync_{connector_id}",
         outs={
-            "_".join(key.path): Out(io_manager_key=io_manager_key, asset_key=key)
+            "_".join(key.path): AssetOut(io_manager_key=io_manager_key, key=key)
             for key in tracked_asset_keys
         },
         required_resource_keys={"fivetran"},

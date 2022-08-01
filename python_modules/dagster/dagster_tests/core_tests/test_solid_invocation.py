@@ -20,7 +20,6 @@ from dagster import (
     RetryRequested,
     Selector,
     build_op_context,
-    execute_solid,
     op,
     resource,
 )
@@ -41,6 +40,7 @@ from dagster._legacy import (
     OutputDefinition,
     build_solid_context,
     composite_solid,
+    execute_solid,
     pipeline,
     solid,
 )

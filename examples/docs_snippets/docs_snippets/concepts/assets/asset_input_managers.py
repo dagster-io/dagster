@@ -92,7 +92,9 @@ def upstream_asset():
     return pd.DataFrame([1, 2, 3])
 
 
-@asset(ins={"upstream": AssetIn(namespace="public", input_manager_key="numpy_manager")})
+@asset(
+    ins={"upstream": AssetIn(key_prefix="public", input_manager_key="numpy_manager")}
+)
 def downstream_asset(upstream):
     return upstream.shape
 

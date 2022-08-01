@@ -7,11 +7,17 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
     Output,
-    execute_solid,
     reconstructable,
 )
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import InputDefinition, OutputDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import (
+    InputDefinition,
+    OutputDefinition,
+    execute_pipeline,
+    execute_solid,
+    pipeline,
+    solid,
+)
 
 
 def test_multiple_outputs():

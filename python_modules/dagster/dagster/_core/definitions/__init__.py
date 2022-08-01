@@ -1,3 +1,4 @@
+from .composition import PendingNodeInvocation
 from .config import ConfigMapping
 from .dependency import (
     DependencyDefinition,

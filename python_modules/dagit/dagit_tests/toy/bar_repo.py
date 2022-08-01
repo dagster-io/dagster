@@ -1,7 +1,7 @@
 import string
 
-from dagster import PartitionSetDefinition, ScheduleDefinition, repository
-from dagster._legacy import lambda_solid, pipeline
+from dagster import ScheduleDefinition, repository
+from dagster._legacy import PartitionSetDefinition, lambda_solid, pipeline
 
 
 @lambda_solid

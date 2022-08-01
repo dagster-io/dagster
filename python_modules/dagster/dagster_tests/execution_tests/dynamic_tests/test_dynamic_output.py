@@ -4,7 +4,7 @@ from typing import NamedTuple
 import objgraph
 import pytest
 
-from dagster import DynamicOut, DynamicOutput, Out, execute_solid, graph, job, op, reconstructable
+from dagster import DynamicOut, DynamicOutput, Out, graph, job, op, reconstructable
 from dagster._core.definitions.events import Output
 from dagster._core.definitions.output import OutputDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
@@ -13,6 +13,7 @@ from dagster._legacy import (
     DynamicOutputDefinition,
     build_solid_context,
     execute_pipeline,
+    execute_solid,
     pipeline,
     solid,
 )

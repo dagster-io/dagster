@@ -42,7 +42,6 @@ from dagster import (
     Nothing,
     Output,
     Partition,
-    PartitionSetDefinition,
     PythonObjectDagsterType,
     ScheduleDefinition,
     ScheduleEvaluationContext,
@@ -61,17 +60,13 @@ from dagster import (
     asset,
     dagster_type_loader,
     dagster_type_materializer,
-    daily_schedule,
     graph,
-    hourly_schedule,
     job,
     logger,
-    monthly_schedule,
     op,
     repository,
     resource,
     usable_as_dagster_type,
-    weekly_schedule,
 )
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.executor_definition import in_process_executor
@@ -92,13 +87,18 @@ from dagster._legacy import (
     Materialization,
     ModeDefinition,
     OutputDefinition,
+    PartitionSetDefinition,
     PresetDefinition,
     SolidExecutionContext,
     build_assets_job,
     composite_solid,
+    daily_schedule,
+    hourly_schedule,
     lambda_solid,
+    monthly_schedule,
     pipeline,
     solid,
+    weekly_schedule,
 )
 from dagster._seven import get_system_temp_directory
 from dagster._utils import file_relative_path, segfault
@@ -723,7 +723,7 @@ def materialization_pipeline():
                 MetadataEntry("int", value=1),
                 MetadataEntry("float NaN", value=float("nan")),
                 MetadataEntry("long int", value=LONG_INT),
-                MetadataEntry("pipeline run", value=MetadataValue.pipeline_run("fake_run_id")),
+                MetadataEntry("pipeline run", value=MetadataValue.dagster_run("fake_run_id")),
                 MetadataEntry("my asset", value=AssetKey("my_asset")),
                 MetadataEntry(
                     "table",

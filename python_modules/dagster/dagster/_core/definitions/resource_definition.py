@@ -15,6 +15,7 @@ from typing import (
 from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.decorator_utils import format_docstring_for_description
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.configurable import AnonymousConfigurableDefinition
@@ -117,18 +118,22 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
     def config_schema(self) -> IDefinitionConfigSchema:
         return self._config_schema
 
+    @public  # type: ignore
     @property
     def description(self) -> Optional[str]:
         return self._description
 
+    @public  # type: ignore
     @property
     def version(self) -> Optional[str]:
         return self._version
 
+    @public  # type: ignore
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
         return self._required_resource_keys
 
+    @public
     @staticmethod
     def none_resource(description: Optional[str] = None) -> "ResourceDefinition":
         """A helper function that returns a none resource.
@@ -141,6 +146,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
         """
         return ResourceDefinition.hardcoded_resource(value=None, description=description)
 
+    @public
     @staticmethod
     def hardcoded_resource(value: Any, description: Optional[str] = None) -> "ResourceDefinition":
         """A helper function that creates a ``ResourceDefinition`` with a hardcoded object.
@@ -154,6 +160,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
         """
         return ResourceDefinition(resource_fn=lambda _init_context: value, description=description)
 
+    @public
     @staticmethod
     def mock_resource(description: Optional[str] = None) -> "ResourceDefinition":
         """A helper function that creates a ``ResourceDefinition`` which wraps a ``mock.MagicMock``.
@@ -171,6 +178,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, RequiresResources):
             resource_fn=lambda _init_context: mock.MagicMock(), description=description
         )
 
+    @public
     @staticmethod
     def string_resource(description: Optional[str] = None) -> "ResourceDefinition":
         return ResourceDefinition(
