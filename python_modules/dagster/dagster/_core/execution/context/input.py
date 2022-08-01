@@ -33,8 +33,6 @@ class InputContext:
 
     Attributes:
         name (Optional[str]): The name of the input that we're loading.
-        pipeline_name (Optional[str]): The name of the pipeline.
-        solid_def (Optional[SolidDefinition]): The definition of the solid that's loading the input.
         config (Optional[Any]): The config attached to the input that we're loading.
         metadata (Optional[Dict[str, Any]]): A dict of metadata that is assigned to the
             InputDefinition that we're loading for.

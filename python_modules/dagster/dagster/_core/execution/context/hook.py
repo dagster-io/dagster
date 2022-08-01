@@ -48,14 +48,11 @@ class HookContext:
     Attributes:
         log (DagsterLogManager): Centralized log dispatch from user code.
         hook_def (HookDefinition): The hook that the context object belongs to.
-        solid (Solid): The solid instance associated with the hook.
         op (Op): The op instance associated with the hook.
         step_key (str): The key for the step where this hook is being triggered.
         required_resource_keys (Set[str]): Resources required by this hook.
         resources (Resources): Resources available in the hook context.
-        solid_config (Any): The parsed config specific to this solid.
         op_config (Any): The parsed config specific to this op.
-        pipeline_name (str): The name of the pipeline where this hook is being triggered.
         job_name (str): The name of the job where this hook is being triggered.
         run_id (str): The id of the run where this hook is being triggered.
         mode_def (ModeDefinition): The mode with which the pipeline is being run.

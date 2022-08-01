@@ -46,17 +46,8 @@ def sensor(
     Takes a :py:class:`~dagster.SensorEvaluationContext`.
 
     Args:
-        pipeline_name (Optional[str]): (legacy) Name of the target pipeline. Cannot be used in
-            conjunction with `job` or `jobs` parameters.
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated
             function.
-        solid_selection (Optional[List[str]]): (legacy) A list of solid subselection (including single
-            solid names) to execute for runs for this sensor e.g.
-            ``['*some_solid+', 'other_solid']``.
-            Cannot be used in conjunction with `job` or `jobs` parameters.
-        mode (Optional[str]): (legacy) The mode to apply when executing runs for this sensor. Cannot be used
-            in conjunction with `job` or `jobs` parameters.
-            (default: 'default')
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
@@ -119,16 +110,8 @@ def asset_sensor(
 
     Args:
         asset_key (AssetKey): The asset_key this sensor monitors.
-        pipeline_name (Optional[str]): (legacy) Name of the target pipeline. Cannot be used in conjunction with `job` or `jobs` parameters.
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated
             function.
-        solid_selection (Optional[List[str]]): (legacy) A list of solid subselection (including single
-            solid names) to execute for runs for this sensor e.g.
-            ``['*some_solid+', 'other_solid']``. Cannot be used in conjunction with `job` or `jobs`
-            parameters.
-        mode (Optional[str]): (legacy) The mode to apply when executing runs for this sensor. Cannot be used
-            in conjunction with `job` or `jobs` parameters.
-            (default: 'default')
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
