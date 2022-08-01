@@ -1,5 +1,6 @@
 import hashlib
 import inspect
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 if TYPE_CHECKING:
@@ -31,7 +32,7 @@ SolidVersionContext = OpVersionContext
 
 
 class ResourceVersionContext(NamedTuple):
-    """Version-specific resource context.
+    """Provides execution-time information for computing the version for a resource.
 
     Attributes:
         resource_def (ResourceDefinition): The definition of the resource whose version will be computed.
@@ -42,24 +43,22 @@ class ResourceVersionContext(NamedTuple):
     resource_config: Any
 
 
-class VersionStrategy:
-    """Abstract class for defining a strategy to version solids and resources.
+class VersionStrategy(ABC):
+    """Abstract class for defining a strategy to version ops and resources.
 
-    When subclassing, `get_solid_version` must be implemented, and `get_resource_version` can be
+    When subclassing, `get_op_version` must be implemented, and `get_resource_version` can be
     optionally implemented.
 
-    `get_solid_version` should ingest a SolidVersionContext, and `get_resource_version` should ingest a
+    `get_op_vresion` should ingest an OpVersionContext, and `get_resource_version` should ingest a
     ResourceVersionContext. From that,  each synthesize a unique string called a `version`, which will
     be tagged to outputs of that solid in the pipeline. Providing a `VersionStrategy` instance to a
     job will enable memoization on that job, such that only steps whose outputs do not have an
     up-to-date version will run.
     """
 
-    def get_solid_version(self, context: SolidVersionContext) -> str:
-        pass
-
+    @abstractmethod
     def get_op_version(self, context: OpVersionContext) -> str:
-        return self.get_solid_version(context)
+        raise NotImplementedError()
 
     def get_resource_version(
         self, context: ResourceVersionContext  # pylint: disable=unused-argument
@@ -68,6 +67,11 @@ class VersionStrategy:
 
 
 class SourceHashVersionStrategy(VersionStrategy):
+    """VersionStrategy that checks for changes to the source code of ops and resources.
+
+    Only checks for changes within the immediate body of the op/resource's decorated function (or compute function, if the op/resource was constructed directly from a definition).
+    """
+
     def _get_source_hash(self, fn):
         code_as_str = inspect.getsource(fn)
         return hashlib.sha1(code_as_str.encode("utf-8")).hexdigest()

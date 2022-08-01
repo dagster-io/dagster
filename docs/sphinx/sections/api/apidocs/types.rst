@@ -49,11 +49,6 @@ Built-in types
             done(wait_int())
 
 
-.. autoclass:: FileHandle
-   :members:
-
-.. autoclass:: LocalFileHandle
-
 Making New Types
 ----------------
 

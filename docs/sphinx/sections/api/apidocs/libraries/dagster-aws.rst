@@ -10,12 +10,6 @@ S3
 
 .. autoclass:: dagster_aws.s3.S3ComputeLogManager
 
-.. autoclass:: dagster_aws.s3.S3FileHandle
-  :members:
-
-.. autoconfigurable:: dagster_aws.s3.s3_file_manager
-  :annotation: ResourceDefinition
-
 .. autoconfigurable:: dagster_aws.s3.s3_resource
   :annotation: ResourceDefinition
 
@@ -37,6 +31,17 @@ S3
 
 .. autoconfigurable:: dagster_aws.s3.s3_pickle_io_manager
   :annotation: IOManagerDefinition
+
+File Manager (Experimental)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+File Manager APIs will be removed from the main dagster library in version ``1.1.0``, and these APIs will be removed in version ``0.17.0`` of ``dagster-aws``.
+
+.. autoclass:: dagster_aws.s3.S3FileHandle
+  :members:
+
+.. autoconfigurable:: dagster_aws.s3.s3_file_manager
+  :annotation: ResourceDefinition
 
 
 ECS

@@ -20,11 +20,15 @@ dependency on an old version, via ``snowflake-connector-python``.
 
 .. autoclass:: dagster_azure.blob.AzureBlobComputeLogManager
 
+.. autoconfigurable:: dagster_azure.adls2.adls2_pickle_io_manager
+  :annotation: IOManagerDefinition
+
+File Manager (Experimental)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+File Manager APIs will be removed from the main dagster library in version ``1.1.0``, and these APIs will be removed in version ``0.17.0`` of ``dagster-azure``.
 .. autoconfigurable:: dagster_azure.adls2.adls2_file_manager
   :annotation: ResourceDefinition
 
 .. autoclass:: dagster_azure.adls2.ADLS2FileHandle
   :members:
-
-.. autoconfigurable:: dagster_azure.adls2.adls2_pickle_io_manager
-  :annotation: IOManagerDefinition

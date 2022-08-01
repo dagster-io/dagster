@@ -39,11 +39,16 @@ GCS
 .. autoconfigurable:: gcs_resource
   :annotation: ResourceDefinition
 
+.. autoconfigurable:: dagster_gcp.gcs.gcs_pickle_io_manager
+  :annotation: IOManagerDefinition
+
+File Manager (Experimental)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+File Manager APIs will be removed from the main dagster library in version ``1.1.0``, and these APIs will be removed in version ``0.17.0`` of ``dagster-gcp``.
+
 .. autoclass:: GCSFileHandle
   :members:
 
 .. autodata:: gcs_file_manager
   :annotation: ResourceDefinition
-
-.. autoconfigurable:: dagster_gcp.gcs.gcs_pickle_io_manager
-  :annotation: IOManagerDefinition
