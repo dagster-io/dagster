@@ -154,7 +154,7 @@ class RunFailureSensorContext(RunStatusSensorContext):
 
     Attributes:
         sensor_name (str): the name of the sensor.
-        pipeline_run (PipelineRun): the failed pipeline run.
+        dagster_run (DagsterRun): the failed pipeline run.
         failure_event (DagsterEvent): the pipeline failure event.
     """
 
