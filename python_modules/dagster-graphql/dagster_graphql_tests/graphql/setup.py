@@ -723,7 +723,7 @@ def materialization_pipeline():
                 MetadataEntry("int", value=1),
                 MetadataEntry("float NaN", value=float("nan")),
                 MetadataEntry("long int", value=LONG_INT),
-                MetadataEntry("pipeline run", value=MetadataValue.pipeline_run("fake_run_id")),
+                MetadataEntry("pipeline run", value=MetadataValue.dagster_run("fake_run_id")),
                 MetadataEntry("my asset", value=AssetKey("my_asset")),
                 MetadataEntry(
                     "table",
