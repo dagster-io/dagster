@@ -2,12 +2,10 @@ import os
 from tempfile import TemporaryDirectory
 
 from dagster import (
-    ModeDefinition,
     ResourceDefinition,
     build_init_resource_context,
     build_input_context,
     build_output_context,
-    execute_pipeline,
     io_manager,
 )
 from dagster._core.storage.memoizable_io_manager import (
@@ -17,7 +15,7 @@ from dagster._core.storage.memoizable_io_manager import (
 )
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import pipeline, solid
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
 
 
 def test_versioned_pickled_object_filesystem_io_manager():

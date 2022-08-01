@@ -16,8 +16,8 @@ from .config import ConfigMapping
 from .dependency import DependencyDefinition, IDependencyDefinition, NodeHandle, NodeInvocation
 from .events import AssetKey
 from .executor_definition import ExecutorDefinition
-from .graph_definition import GraphDefinition, default_job_io_manager
-from .job_definition import JobDefinition
+from .graph_definition import GraphDefinition
+from .job_definition import JobDefinition, default_job_io_manager
 from .partition import PartitionedConfig, PartitionsDefinition
 from .resolved_asset_deps import ResolvedAssetDependencies
 from .resource_definition import ResourceDefinition

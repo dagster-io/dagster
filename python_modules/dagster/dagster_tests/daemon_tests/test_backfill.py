@@ -8,15 +8,7 @@ from contextlib import contextmanager
 import pendulum
 import pytest
 
-from dagster import (
-    Any,
-    Field,
-    ModeDefinition,
-    daily_partitioned_config,
-    fs_io_manager,
-    graph,
-    repository,
-)
+from dagster import Any, Field, daily_partitioned_config, fs_io_manager, graph, repository
 from dagster._core.definitions import Partition, PartitionSetDefinition
 from dagster._core.execution.api import execute_pipeline
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -37,7 +29,7 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
-from dagster._legacy import pipeline, solid
+from dagster._legacy import ModeDefinition, pipeline, solid
 from dagster._seven import IS_WINDOWS, get_system_temp_directory
 from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo

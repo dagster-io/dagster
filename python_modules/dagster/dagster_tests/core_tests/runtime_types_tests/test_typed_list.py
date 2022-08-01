@@ -2,13 +2,8 @@ import typing
 
 import pytest
 
-from dagster import (
-    DagsterTypeCheckDidNotPass,
-    InputDefinition,
-    OutputDefinition,
-    execute_solid,
-    lambda_solid,
-)
+from dagster import DagsterTypeCheckDidNotPass
+from dagster._legacy import InputDefinition, OutputDefinition, execute_solid, lambda_solid
 
 
 def test_basic_list_output_pass():

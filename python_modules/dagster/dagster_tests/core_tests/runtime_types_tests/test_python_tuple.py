@@ -2,14 +2,9 @@ from typing import Tuple
 
 import pytest
 
-from dagster import (
-    DagsterTypeCheckDidNotPass,
-    InputDefinition,
-    OutputDefinition,
-    execute_solid,
-    lambda_solid,
-)
+from dagster import DagsterTypeCheckDidNotPass
 from dagster._core.types.python_tuple import create_typed_tuple
+from dagster._legacy import InputDefinition, OutputDefinition, execute_solid, lambda_solid
 
 
 def test_vanilla_tuple_output():
@@ -34,7 +29,10 @@ def test_vanilla_tuple_input():
     def take_tuple(tt):
         return tt
 
-    assert execute_solid(take_tuple, input_values={"tt": (2, 3)}).output_value() == (2, 3)
+    assert execute_solid(take_tuple, input_values={"tt": (2, 3)}).output_value() == (
+        2,
+        3,
+    )
 
 
 def test_vanilla_tuple_input_fail():
@@ -68,7 +66,10 @@ def test_open_typing_tuple_input():
     def take_tuple(tt):
         return tt
 
-    assert execute_solid(take_tuple, input_values={"tt": (2, 3)}).output_value() == (2, 3)
+    assert execute_solid(take_tuple, input_values={"tt": (2, 3)}).output_value() == (
+        2,
+        3,
+    )
 
 
 def test_open_typing_tuple_input_fail():
@@ -155,7 +156,10 @@ def test_closed_typing_tuple_input():
     def take_tuple(tt):
         return tt
 
-    assert execute_solid(take_tuple, input_values={"tt": (2, 3)}).output_value() == (2, 3)
+    assert execute_solid(take_tuple, input_values={"tt": (2, 3)}).output_value() == (
+        2,
+        3,
+    )
 
 
 def test_closed_typing_tuple_input_fail():

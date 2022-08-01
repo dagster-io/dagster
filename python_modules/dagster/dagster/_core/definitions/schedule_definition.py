@@ -76,11 +76,12 @@ class DefaultScheduleStatus(Enum):
 
 
 class ScheduleEvaluationContext:
-    """Schedule-specific execution context.
+    """The context object available as the first argument various functions defined on a :py:class:`dagster.ScheduleDefinition`.
 
-    An instance of this class is made available as the first argument to various ScheduleDefinition
-    functions. It is passed as the first argument to ``run_config_fn``, ``tags_fn``,
+    A `ScheduleEvaluationContext` object is passed as the first argument to ``run_config_fn``, ``tags_fn``,
     and ``should_execute``.
+
+    Users should not instantiate this object directly. To construct a `ScheduleEvaluationContext` for testing purposes, use :py:func:`dagster.build_schedule_context`.
 
     Attributes:
         instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
@@ -89,6 +90,17 @@ class ScheduleEvaluationContext:
             from both the actual execution time and the time at which the run config is computed.
             Not available in all schedulers - currently only set in deployments using
             DagsterDaemonScheduler.
+
+    Example:
+
+    .. code-block:: python
+
+        from dagster import schedule, ScheduleEvaluationContext
+
+        @schedule
+        def the_schedule(context: ScheduleEvaluationContext):
+            ...
+
     """
 
     __slots__ = ["_instance_ref", "_scheduled_execution_time", "_exit_stack", "_instance"]

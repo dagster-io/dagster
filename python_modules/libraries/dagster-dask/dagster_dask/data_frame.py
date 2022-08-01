@@ -49,7 +49,11 @@ DataFrameReadTypes = {
         "is_path_based": True,
         "options": {
             "path": (Any, True, "Absolute or relative filepath(s)."),
-            "blocksize": (Any, False, "Number of bytes by which to cut up larger files."),
+            "blocksize": (
+                Any,
+                False,
+                "Number of bytes by which to cut up larger files.",
+            ),
             "sample": (Int, False, "Number of bytes to use when determining dtypes."),
             "assume_missing": (
                 Bool,
@@ -73,7 +77,11 @@ DataFrameReadTypes = {
         "is_path_based": True,
         "options": {
             "path": (Any, True, "Absolute or relative filepath(s)."),
-            "columns": (Any, False, "Field name(s) to read in as columns in the output."),
+            "columns": (
+                Any,
+                False,
+                "Field name(s) to read in as columns in the output.",
+            ),
             "filters": (Any, False, "List of filters to apply."),
             "index": (Any, False, "Field name(s) to use as the output frame index."),
             "categories": (
@@ -87,7 +95,11 @@ DataFrameReadTypes = {
                 "Key/value pairs to be passed on to the file-system backend, if any.",
             ),
             "engine": (EngineParquetOptions, False, "Parquet reader library to use."),
-            "gather_statistics": (Bool, False, "Gather the statistics for each dataset partition."),
+            "gather_statistics": (
+                Bool,
+                False,
+                "Gather the statistics for each dataset partition.",
+            ),
             "split_row_groups": (
                 Bool,
                 False,
@@ -111,7 +123,11 @@ DataFrameReadTypes = {
                 False,
                 "Option to specify whether or not the input hdf files have a sorted index.",
             ),
-            "lock": (Bool, False, "Option to use a lock to prevent concurrency issues."),
+            "lock": (
+                Bool,
+                False,
+                "Option to use a lock to prevent concurrency issues.",
+            ),
             "mode": (String, False, "Mode to use when opening file(s)."),
         },
     },
@@ -127,7 +143,11 @@ DataFrameReadTypes = {
                 False,
                 "Passed to backend file-system implementation.",
             ),
-            "blocksize": (Int, False, "Each partition will be approximately this size in bytes."),
+            "blocksize": (
+                Int,
+                False,
+                "Each partition will be approximately this size in bytes.",
+            ),
             "sample": (
                 Int,
                 False,
@@ -147,10 +167,22 @@ DataFrameReadTypes = {
                 True,
                 "Column which becomes the index, and defines the partitioning.",
             ),
-            "divisions": (Any, False, "Values of the index column to split the table by."),
-            "npartitions": (Int, False, "Number of partitions, if divisions is not given."),
+            "divisions": (
+                Any,
+                False,
+                "Values of the index column to split the table by.",
+            ),
+            "npartitions": (
+                Int,
+                False,
+                "Number of partitions, if divisions is not given.",
+            ),
             "columns": (Any, False, "Which columns to select."),
-            "bytes_per_chunk": (Any, False, "The target size of each partition, in bytes."),
+            "bytes_per_chunk": (
+                Any,
+                False,
+                "The target size of each partition, in bytes.",
+            ),
             "head_rows": (
                 Int,
                 False,
@@ -168,7 +200,11 @@ DataFrameReadTypes = {
         "is_path_based": True,
         "options": {
             "path": (Any, True, "Absolute or relative filepath(s)."),
-            "blocksize": (Any, False, "Number of bytes by which to cut up larger files."),
+            "blocksize": (
+                Any,
+                False,
+                "Number of bytes by which to cut up larger files.",
+            ),
             "sample": (Int, False, "Number of bytes to use when determining dtypes."),
             "assume_missing": (
                 Bool,
@@ -192,7 +228,11 @@ DataFrameReadTypes = {
         "is_path_based": True,
         "options": {
             "path": (Any, True, "Absolute or relative filepath(s)."),
-            "blocksize": (Any, False, "Number of bytes by which to cut up larger files."),
+            "blocksize": (
+                Any,
+                False,
+                "Number of bytes by which to cut up larger files.",
+            ),
             "sample": (Int, False, "Number of bytes to use when determining dtypes."),
             "assume_missing": (
                 Bool,
@@ -232,8 +272,16 @@ DataFrameToTypes = {
         "function": dd.DataFrame.to_csv,
         "is_path_based": True,
         "options": {
-            "path": (Any, True, "Path glob indicating the naming scheme for the output files"),
-            "single_file": (Bool, False, "Whether to save everything into a single CSV file."),
+            "path": (
+                Any,
+                True,
+                "Path glob indicating the naming scheme for the output files",
+            ),
+            "single_file": (
+                Bool,
+                False,
+                "Whether to save everything into a single CSV file.",
+            ),
             "encoding": (
                 String,
                 False,
@@ -264,7 +312,11 @@ DataFrameToTypes = {
                 'Either a string like ``"snappy"`` or a dictionary mapping column names to compressors like ``{"name": "gzip", "values": "snappy"}``.',
             ),
             "write_index": (Bool, False, "Whether or not to write the index."),
-            "append": (Bool, False, "Whether to add new row-group(s) to an existing data-set."),
+            "append": (
+                Bool,
+                False,
+                "Whether to add new row-group(s) to an existing data-set.",
+            ),
             "ignore_divisions": (
                 Bool,
                 False,
@@ -303,7 +355,11 @@ DataFrameToTypes = {
         "options": {
             "path": (Any, True, "Path to a target filename."),
             "key": (String, True, "Datapath within the files."),
-            "scheduler": (String, False, 'The scheduler to use, like "threads" or "processes".'),
+            "scheduler": (
+                String,
+                False,
+                'The scheduler to use, like "threads" or "processes".',
+            ),
         },
     },
     "json": {
@@ -332,7 +388,11 @@ DataFrameToTypes = {
         "options": {
             "name": (String, True, "Name of SQL table."),
             "uri": (String, True, "Full sqlalchemy URI for the database connection."),
-            "schema": (String, False, "Specify the schema (if database flavor supports this)."),
+            "schema": (
+                String,
+                False,
+                "Specify the schema (if database flavor supports this).",
+            ),
             "if_exists": (String, False, "How to behave if the table already exists."),
             "index": (Bool, False, "Write DataFrame index as a column."),
             "index_label": (Any, False, "Column label for index column(s)."),
@@ -358,7 +418,9 @@ def _dataframe_loader_config():
         read_from: Permissive(
             {
                 option_name: Field(
-                    option_args[0], is_required=option_args[1], description=option_args[2]
+                    option_args[0],
+                    is_required=option_args[1],
+                    description=option_args[2],
                 )
                 for option_name, option_args in read_opts["options"].items()
             }
@@ -414,7 +476,9 @@ def _dataframe_materializer_config():
         write_to: Permissive(
             {
                 option_name: Field(
-                    option_args[0], is_required=option_args[1], description=option_args[2]
+                    option_args[0],
+                    is_required=option_args[1],
+                    description=option_args[2],
                 )
                 for option_name, option_args in to_opts["options"].items()
             }

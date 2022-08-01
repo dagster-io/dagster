@@ -6,7 +6,6 @@ from dagster import (
     DagsterInstance,
     DagsterInvariantViolationError,
     build_schedule_context,
-    daily_schedule,
     schedule,
 )
 from dagster._core.definitions.schedule_definition import (
@@ -15,6 +14,7 @@ from dagster._core.definitions.schedule_definition import (
 )
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.test_utils import instance_for_test
+from dagster._legacy import daily_schedule
 
 
 def test_schedule_context_backcompat():

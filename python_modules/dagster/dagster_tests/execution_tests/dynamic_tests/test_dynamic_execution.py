@@ -1,24 +1,19 @@
 import pytest
 
-from dagster import (
-    DynamicOut,
-    DynamicOutput,
-    DynamicOutputDefinition,
-    Field,
-    InputDefinition,
-    Output,
-    OutputDefinition,
-    composite_solid,
-    execute_pipeline,
-    job,
-    op,
-    reconstructable,
-)
+from dagster import DynamicOut, DynamicOutput, Field, Output, job, op, reconstructable
 from dagster._core.errors import DagsterExecutionStepNotFoundError
 from dagster._core.execution.api import create_execution_plan, reexecute_pipeline
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import pipeline, solid
+from dagster._legacy import (
+    DynamicOutputDefinition,
+    InputDefinition,
+    OutputDefinition,
+    composite_solid,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
 from dagster._utils import merge_dicts
 
 
@@ -176,7 +171,11 @@ def test_composite_wrapping():
 
     result = execute_pipeline(shallow)
     assert result.success
-    assert result.result_for_solid("do_multiple_steps").output_value() == {"0": 0, "1": 1, "2": 2}
+    assert result.result_for_solid("do_multiple_steps").output_value() == {
+        "0": 0,
+        "1": 1,
+        "2": 2,
+    }
 
     @composite_solid(input_defs=[InputDefinition("x", int)], output_defs=[OutputDefinition(int)])
     def inner(x):

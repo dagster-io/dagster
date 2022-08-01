@@ -14,12 +14,12 @@ from dagster import (
     Out,
     Output,
     Partition,
-    PartitionSetDefinition,
     graph,
     op,
 )
 from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 from dagster._core.storage.io_manager import io_manager
+from dagster._legacy import PartitionSetDefinition
 
 
 def get_date_partitions():
@@ -76,7 +76,9 @@ class MyDatabaseIOManager(PickledObjectFilesystemIOManager):
         super().handle_output(context, obj)
         # can pretend this actually came from a library call
         yield MetadataEntry(
-            label="num rows written to db", description=None, entry_data=MetadataValue.int(len(obj))
+            label="num rows written to db",
+            description=None,
+            entry_data=MetadataValue.int(len(obj)),
         )
 
     def get_output_asset_key(self, context):

@@ -11,15 +11,7 @@ import papermill
 from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
 
-from dagster import (
-    In,
-    InputDefinition,
-    OpDefinition,
-    Out,
-    Output,
-    OutputDefinition,
-    SolidDefinition,
-)
+from dagster import In, OpDefinition, Out, Output
 from dagster import _check as check
 from dagster import _seven
 from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
@@ -31,6 +23,7 @@ from dagster._core.execution.context.input import build_input_context
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.storage.file_manager import FileHandle
+from dagster._legacy import InputDefinition, OutputDefinition, SolidDefinition
 from dagster._serdes import pack_value
 from dagster._seven import get_system_temp_directory
 from dagster._utils import mkdir_p, safe_tempfile_path
@@ -198,7 +191,10 @@ def _dm_compute(
                     step_execution_context,
                     nb,
                     get_papermill_parameters(
-                        step_execution_context, inputs, output_log_path, compute_descriptor
+                        step_execution_context,
+                        inputs,
+                        output_log_path,
+                        compute_descriptor,
                     ),
                 )
                 write_ipynb(nb_no_parameters, parameterized_notebook_path)
@@ -283,12 +279,16 @@ def _dm_compute(
 
             output_nb = scrapbook.read_notebook(executed_notebook_path)
 
-            for (output_name, _) in step_execution_context.solid_def.output_dict.items():
+            for (
+                output_name,
+                _,
+            ) in step_execution_context.solid_def.output_dict.items():
                 data_dict = output_nb.scraps.data_dict
                 if output_name in data_dict:
                     # read outputs that were passed out of process via io manager from `yield_result`
                     step_output_handle = StepOutputHandle(
-                        step_key=step_execution_context.step.key, output_name=output_name
+                        step_key=step_execution_context.step.key,
+                        output_name=output_name,
                     )
                     output_context = step_execution_context.get_output_context(step_output_handle)
                     io_manager = step_execution_context.get_io_manager(step_output_handle)
@@ -371,7 +371,9 @@ def define_dagstermill_solid(
     # backcompact
     if output_notebook is not None:
         rename_warning(
-            new_name="output_notebook_name", old_name="output_notebook", breaking_version="0.14.0"
+            new_name="output_notebook_name",
+            old_name="output_notebook",
+            breaking_version="0.14.0",
         )
         required_resource_keys.add("file_manager")
         extra_output_defs.append(OutputDefinition(dagster_type=FileHandle, name=output_notebook))
@@ -469,7 +471,8 @@ def define_dagstermill_op(
             required_resource_keys.add("output_notebook_io_manager")
             extra_output_defs.append(
                 OutputDefinition(
-                    name=output_notebook_name, io_manager_key="output_notebook_io_manager"
+                    name=output_notebook_name,
+                    io_manager_key="output_notebook_io_manager",
                 )
             )
         output_defs = cast(List[OutputDefinition], output_defs) + extra_output_defs

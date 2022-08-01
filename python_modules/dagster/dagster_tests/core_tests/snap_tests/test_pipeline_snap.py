@@ -2,16 +2,7 @@ import itertools
 
 import pytest
 
-from dagster import (
-    Field,
-    InputDefinition,
-    Map,
-    Nothing,
-    OutputDefinition,
-    Permissive,
-    Selector,
-    Shape,
-)
+from dagster import Field, Map, Nothing, Permissive, Selector, Shape
 from dagster._config import Array, Bool, Enum, EnumValue, Float, Int, Noneable, String
 from dagster._core.snap import (
     DependencyStructureIndex,
@@ -25,7 +16,7 @@ from dagster._core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_icontains_solids,
 )
-from dagster._legacy import pipeline, solid
+from dagster._legacy import InputDefinition, OutputDefinition, pipeline, solid
 from dagster._serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
@@ -211,7 +202,10 @@ def test_basic_fan_in(snapshot):
     @pipeline
     def fan_in_test():
         take_nothings(
-            [return_nothing.alias("nothing_one")(), return_nothing.alias("nothing_two")()]
+            [
+                return_nothing.alias("nothing_one")(),
+                return_nothing.alias("nothing_two")(),
+            ]
         )
 
     dep_structure_snapshot = build_dep_structure_snapshot_from_icontains_solids(fan_in_test.graph)
@@ -280,7 +274,8 @@ def test_deserialize_solid_def_snaps_default_field():
     assert not recevied_config_type.fields["foo"].is_required
     assert recevied_config_type.fields["foo"].default_value == "hello"
     _dict_has_stable_hashes(
-        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+        recevied_config_type,
+        pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key,
     )
 
 
@@ -325,7 +320,8 @@ def test_deserialize_solid_def_snaps_strict_shape():
     assert isinstance(recevied_config_type.fields["bar"].config_type, String)
     assert not recevied_config_type.fields["foo"].is_required
     _dict_has_stable_hashes(
-        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+        recevied_config_type,
+        pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key,
     )
 
 
@@ -345,7 +341,8 @@ def test_deserialize_solid_def_snaps_selector():
     assert isinstance(recevied_config_type.fields["foo"].config_type, String)
     assert isinstance(recevied_config_type.fields["bar"].config_type, Int)
     _dict_has_stable_hashes(
-        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+        recevied_config_type,
+        pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key,
     )
 
 
@@ -364,7 +361,8 @@ def test_deserialize_solid_def_snaps_permissive():
     assert isinstance(recevied_config_type, Permissive)
     assert isinstance(recevied_config_type.fields["foo"].config_type, String)
     _dict_has_stable_hashes(
-        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+        recevied_config_type,
+        pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key,
     )
 
 
@@ -383,7 +381,8 @@ def test_deserialize_solid_def_snaps_array():
     assert isinstance(recevied_config_type, Array)
     assert isinstance(recevied_config_type.inner_type, String)
     _array_has_stable_hashes(
-        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+        recevied_config_type,
+        pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key,
     )
 
 
@@ -403,7 +402,8 @@ def test_deserialize_solid_def_snaps_map():
     assert isinstance(recevied_config_type.key_type, String)
     assert isinstance(recevied_config_type.inner_type, String)
     _map_has_stable_hashes(
-        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+        recevied_config_type,
+        pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key,
     )
 
 
@@ -424,7 +424,8 @@ def test_deserialize_solid_def_snaps_map_with_name():
     assert isinstance(recevied_config_type.inner_type, Float)
     assert recevied_config_type.given_name == "title"
     _map_has_stable_hashes(
-        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+        recevied_config_type,
+        pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key,
     )
 
 
@@ -458,7 +459,11 @@ def test_deserialize_solid_def_snaps_multi_type_config(snapshot):
                                 "corge": Field(
                                     Enum(
                                         "RGB",
-                                        [EnumValue("red"), EnumValue("green"), EnumValue("blue")],
+                                        [
+                                            EnumValue("red"),
+                                            EnumValue("green"),
+                                            EnumValue("blue"),
+                                        ],
                                     )
                                 ),
                             },
@@ -480,7 +485,8 @@ def test_deserialize_solid_def_snaps_multi_type_config(snapshot):
     recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
     snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
     _dict_has_stable_hashes(
-        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+        recevied_config_type,
+        pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key,
     )
 
 
@@ -499,7 +505,8 @@ def test_multi_type_config_array_dict_fields(dict_config_type, snapshot):
     recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
     snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
     _array_has_stable_hashes(
-        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+        recevied_config_type,
+        pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key,
     )
 
 
@@ -517,7 +524,8 @@ def test_multi_type_config_array_map(snapshot):
     recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
     snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
     _array_has_stable_hashes(
-        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+        recevied_config_type,
+        pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key,
     )
 
 
@@ -541,5 +549,6 @@ def test_multi_type_config_nested_dicts(nested_dict_types, snapshot):
     recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
     snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
     _dict_has_stable_hashes(
-        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+        recevied_config_type,
+        pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key,
     )

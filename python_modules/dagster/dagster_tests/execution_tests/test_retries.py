@@ -12,18 +12,12 @@ from dagster import (
     Failure,
     Jitter,
     Output,
-    OutputDefinition,
-    PipelineRun,
     RetryPolicy,
     RetryRequested,
-    execute_pipeline,
-    execute_pipeline_iterator,
     graph,
     job,
-    lambda_solid,
     op,
     reconstructable,
-    reexecute_pipeline,
     success_hook,
 )
 from dagster._core.definitions.events import HookExecutionResult
@@ -33,7 +27,16 @@ from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.retries import RetryMode
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import pipeline, solid
+from dagster._legacy import (
+    OutputDefinition,
+    PipelineRun,
+    execute_pipeline,
+    execute_pipeline_iterator,
+    lambda_solid,
+    pipeline,
+    reexecute_pipeline,
+    solid,
+)
 
 executors = pytest.mark.parametrize(
     "environment",

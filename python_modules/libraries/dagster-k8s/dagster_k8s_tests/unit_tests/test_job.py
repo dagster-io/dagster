@@ -236,6 +236,37 @@ def test_construct_dagster_k8s_job_with_user_defined_env_camelcase():
     }
 
 
+def test_construct_dagster_k8s_job_with_user_defined_command():
+    @graph
+    def user_defined_k8s_env_tags_graph():
+        pass
+
+    user_defined_k8s_config = get_user_defined_k8s_config(
+        user_defined_k8s_env_tags_graph.to_job(
+            tags={
+                USER_DEFINED_K8S_CONFIG_KEY: {
+                    "container_config": {
+                        "command": ["echo", "hi"],
+                    }
+                }
+            }
+        ).tags
+    )
+
+    cfg = DagsterK8sJobConfig(
+        job_image="test/foo:latest",
+        dagster_home="/opt/dagster/dagster_home",
+        instance_config_map="some-instance-configmap",
+    )
+
+    job = construct_dagster_k8s_job(
+        cfg, ["foo", "bar"], "job", user_defined_k8s_config=user_defined_k8s_config
+    ).to_dict()
+
+    command = job["spec"]["template"]["spec"]["containers"][0]["command"]
+    assert command == ["echo", "hi"]
+
+
 def test_construct_dagster_k8s_job_with_user_defined_env_snake_case():
     @graph
     def user_defined_k8s_env_from_tags_graph():

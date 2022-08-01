@@ -10,12 +10,11 @@ from .output import RUN_ID_PLACEHOLDER
 
 
 class InitLoggerContext:
-    """Logger-specific initialization context.
+    """The context object available as the argument to the initialization function of a :py:class:`dagster.LoggerDefinition`.
 
-    An instance of this class is made available as the first argument to the ``logger_fn`` decorated
-    by :py:func:`@logger <logger>` or set on a :py:class:`LoggerDefinition`.
-
-    Users should not instantiate this class.
+    Users should not instantiate this object directly. To construct an
+    `InitLoggerContext` for testing purposes, use :py:func:`dagster.
+    build_init_logger_context`.
 
     Attributes:
         logger_config (Any): The configuration data provided by the run config. The
@@ -23,6 +22,17 @@ class InitLoggerContext:
         pipeline_def (Optional[PipelineDefinition]): The pipeline/job definition currently being executed.
         logger_def (Optional[LoggerDefinition]): The logger definition for the logger being constructed.
         run_id (str): The ID for this run of the pipeline.
+
+    Example:
+
+    .. code-block:: python
+
+        from dagster import logger, InitLoggerContext
+
+        @logger
+        def hello_world(init_context: InitLoggerContext):
+            ...
+
     """
 
     def __init__(

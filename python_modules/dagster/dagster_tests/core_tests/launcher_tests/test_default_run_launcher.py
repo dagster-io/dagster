@@ -11,7 +11,6 @@ import pytest
 from dagster import (
     DagsterEventType,
     DefaultRunLauncher,
-    ModeDefinition,
     _seven,
     file_relative_path,
     fs_io_manager,
@@ -33,7 +32,7 @@ from dagster._core.workspace.load_target import GrpcServerTarget, PythonFileTarg
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import GrpcServerProcess
 from dagster._grpc.types import CancelExecutionRequest
-from dagster._legacy import pipeline, solid
+from dagster._legacy import ModeDefinition, pipeline, solid
 
 default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 
@@ -699,7 +698,10 @@ def test_engine_events(get_workspace, run_config):  # pylint: disable=redefined-
             assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
 
             poll_for_event(
-                instance, run_id, event_type="ENGINE_EVENT", message="Process for run exited"
+                instance,
+                run_id,
+                event_type="ENGINE_EVENT",
+                message="Process for run exited",
             )
             event_records = instance.all_logs(run_id)
 
