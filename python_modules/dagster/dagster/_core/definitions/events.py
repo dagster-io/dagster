@@ -472,7 +472,7 @@ class AssetMaterialization(
         return AssetMaterialization(
             asset_key=cast(Union[str, AssetKey, List[str]], asset_key),
             description=description,
-            metadata_entries=[MetadataEntry("path", value=MetadataValue.path(path))],
+            metadata={"path": MetadataValue.path(path)},
         )
 
 
