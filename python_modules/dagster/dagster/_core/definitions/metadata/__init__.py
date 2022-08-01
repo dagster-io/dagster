@@ -463,10 +463,6 @@ class MetadataValue(ABC):
                         ),
                     },
                 )
-
-        Args:
-            records (List[TableRecord]): The data as a list of records (i.e. rows).
-            schema (Optional[TableSchema]): A schema for the table.
         """
         return TableMetadataValue(records, schema)
 
@@ -956,7 +952,9 @@ class MetadataEntry(
     def text(text: Optional[str], label: str, description: Optional[str] = None) -> "MetadataEntry":
         """Static constructor for a metadata entry containing text as
         :py:class:`TextMetadataValue`. For example:
+
         .. code-block:: python
+
             @op
             def emit_metadata(context, df):
                 yield AssetMaterialization(
@@ -965,6 +963,7 @@ class MetadataEntry(
                         MetadataEntry.text("Text-based metadata for this event", "text_metadata")
                     ],
                 )
+
         Args:
             text (Optional[str]): The text of this metadata entry.
             label (str): Short display label for this metadata entry.
@@ -977,7 +976,9 @@ class MetadataEntry(
     def url(url: Optional[str], label: str, description: Optional[str] = None) -> "MetadataEntry":
         """Static constructor for a metadata entry containing a URL as
         :py:class:`UrlMetadataValue`. For example:
+
         .. code-block:: python
+
             @op
             def emit_metadata(context):
                 yield AssetMaterialization(
@@ -988,6 +989,7 @@ class MetadataEntry(
                         ),
                     ],
                 )
+
         Args:
             url (Optional[str]): The URL contained by this metadata entry.
             label (str): Short display label for this metadata entry.
@@ -1000,13 +1002,16 @@ class MetadataEntry(
     def path(path: Optional[str], label: str, description: Optional[str] = None) -> "MetadataEntry":
         """Static constructor for a metadata entry containing a path as
         :py:class:`PathMetadataValue`. For example:
+
         .. code-block:: python
+
             @op
             def emit_metadata(context):
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata_entries=[MetadataEntry.path("path/to/file", label="filepath")],
                 )
+
         Args:
             path (Optional[str]): The path contained by this metadata entry.
             label (str): Short display label for this metadata entry.
@@ -1021,13 +1026,16 @@ class MetadataEntry(
     ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing a filesystem path as
         :py:class:`PathMetadataValue`. For example:
+
         .. code-block:: python
+
             @op
             def emit_metadata(context):
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata_entries=[MetadataEntry.fspath("path/to/file")],
                 )
+
         Args:
             path (Optional[str]): The path contained by this metadata entry.
             label (Optional[str]): Short display label for this metadata entry. Defaults to the
@@ -1049,7 +1057,9 @@ class MetadataEntry(
     ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing JSON data as
         :py:class:`JsonMetadataValue`. For example:
+
         .. code-block:: python
+
             @op
             def emit_metadata(context):
                 yield ExpectationResult(
@@ -1061,6 +1071,7 @@ class MetadataEntry(
                         )
                     ],
                 )
+
         Args:
             data (Optional[Dict[str, Any]]): The JSON data contained by this metadata entry.
             label (str): Short display label for this metadata entry.
@@ -1073,13 +1084,16 @@ class MetadataEntry(
     def md(md_str: Optional[str], label: str, description: Optional[str] = None) -> "MetadataEntry":
         """Static constructor for a metadata entry containing markdown data as
         :py:class:`MarkdownMetadataValue`. For example:
+
         .. code-block:: python
+
             @op
             def emit_metadata(context, md_str):
                 yield AssetMaterialization(
                     asset_key="info",
                     metadata_entries=[MetadataEntry.md(md_str=md_str)],
                 )
+
         Args:
             md_str (Optional[str]): The markdown contained by this metadata entry.
             label (str): Short display label for this metadata entry.
@@ -1106,13 +1120,16 @@ class MetadataEntry(
     ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing float as
         :py:class:`FloatMetadataValue`. For example:
+
         .. code-block:: python
+
             @op
             def emit_metadata(context, df):
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata_entries=[MetadataEntry.float(calculate_bytes(df), "size (bytes)")],
                 )
+
         Args:
             value (Optional[float]): The float value contained by this metadata entry.
             label (str): Short display label for this metadata entry.
@@ -1126,13 +1143,16 @@ class MetadataEntry(
     def int(value: Optional[int], label: str, description: Optional[str] = None) -> "MetadataEntry":
         """Static constructor for a metadata entry containing int as
         :py:class:`IntMetadataValue`. For example:
+
         .. code-block:: python
+
             @op
             def emit_metadata(context, df):
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata_entries=[MetadataEntry.int(len(df), "number of rows")],
                 )
+
         Args:
             value (Optional[int]): The int value contained by this metadata entry.
             label (str): Short display label for this metadata entry.
@@ -1154,7 +1174,9 @@ class MetadataEntry(
     ) -> "MetadataEntry":
         """Static constructor for a metadata entry referencing a Dagster asset, by key.
         For example:
+
         .. code-block:: python
+
             @op
             def validate_table(context, df):
                 yield AssetMaterialization(
@@ -1163,6 +1185,7 @@ class MetadataEntry(
                          MetadataEntry.asset(AssetKey('my_other_table'), "Related asset"),
                     ],
                 )
+
         Args:
             asset_key (AssetKey): The asset key referencing the asset.
             label (str): Short display label for this metadata entry.
@@ -1185,7 +1208,9 @@ class MetadataEntry(
     ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing tabluar data as
         :py:class:`TableMetadataValue`. For example:
+
         .. code-block:: python
+
             @op
             def emit_metadata(context):
                 yield ExpectationResult(
@@ -1207,6 +1232,7 @@ class MetadataEntry(
                         ),
                     ],
                 )
+
         Args:
             records (List[TableRecord]): The data as a list of records (i.e. rows).
             label (str): Short display label for this metadata entry.
@@ -1226,7 +1252,9 @@ class MetadataEntry(
     ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing a table schema as
         :py:class:`TableSchemaMetadataValue`. For example:
+
         .. code-block:: python
+
             schema = TableSchema(
                 columns = [
                     TableColumn(name="id", type="int"),
@@ -1243,6 +1271,7 @@ class MetadataEntry(
                     )
                 ]
             )
+
         Args:
             schema (TableSchema): The table schema for a metadata entry.
             label (str): Short display label for this metadata entry.
