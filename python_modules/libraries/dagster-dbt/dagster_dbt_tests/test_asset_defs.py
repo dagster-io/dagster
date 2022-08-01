@@ -520,7 +520,7 @@ def test_subsetting(
     def hanger1(sort_by_calories):
         return None
 
-    @asset(ins={"least_caloric": AssetIn(namespace="subdir_schema")})
+    @asset(ins={"least_caloric": AssetIn(key_prefix="subdir_schema")})
     def hanger2(least_caloric):
         return None
 
