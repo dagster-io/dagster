@@ -82,7 +82,7 @@ def child_context(basic_context, mlflow_run_config):
         resource_config=resource_config,
         log=basic_context.log,
         run_id=str(uuid.uuid4()),
-        pipeline_run=basic_context.pipeline_run,
+        dagster_run=basic_context.dagster_ryn,
         extra_tags={"wala": "lala"},
     )
 
@@ -118,7 +118,7 @@ def test_mlflow_constructor_basic(
 
     # - the context associated attributes passed have been set
     assert mlf.log == context.log
-    assert mlf.run_name == context.pipeline_run.pipeline_name
+    assert mlf.run_name == context.dagster_run.pipeline_name
     assert mlf.dagster_run_id == context.run_id
 
     # - the tracking URI is the same as what was passed
