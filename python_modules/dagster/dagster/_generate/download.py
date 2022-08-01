@@ -2,6 +2,7 @@ import os
 import sys
 import tarfile
 from io import BytesIO
+from typing import IO, cast
 
 import click
 import requests
@@ -58,6 +59,7 @@ def download_example_from_github(path: str, example: str):
                 os.mkdir(dest)
             elif member.isreg():
                 fileobject = tar_file.extractfile(member)
+                cast(fileobject, IO[bytes])
                 with open(dest, "wb") as f:
                     f.write(fileobject.read())
                 fileobject.close()
