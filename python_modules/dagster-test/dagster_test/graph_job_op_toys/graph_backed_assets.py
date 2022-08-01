@@ -1,4 +1,5 @@
-from dagster import AssetGroup, AssetsDefinition, graph, op
+from dagster import AssetsDefinition, graph, op
+from dagster._legacy import AssetGroup
 
 
 @op

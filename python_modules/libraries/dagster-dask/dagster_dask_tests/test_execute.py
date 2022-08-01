@@ -10,11 +10,7 @@ from dask.distributed import Scheduler, Worker
 
 from dagster import (
     DagsterUnmetExecutorRequirementsError,
-    InputDefinition,
-    ModeDefinition,
     VersionStrategy,
-    execute_pipeline,
-    execute_pipeline_iterator,
     file_relative_path,
     fs_io_manager,
     job,
@@ -25,7 +21,14 @@ from dagster._core.definitions.executor_definition import default_executors
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.events import DagsterEventType
 from dagster._core.test_utils import instance_for_test, nesting_composite_pipeline
-from dagster._legacy import pipeline, solid
+from dagster._legacy import (
+    InputDefinition,
+    ModeDefinition,
+    execute_pipeline,
+    execute_pipeline_iterator,
+    pipeline,
+    solid,
+)
 from dagster._utils import send_interrupt
 
 

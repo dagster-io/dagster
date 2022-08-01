@@ -17,7 +17,7 @@ from .databricks_pyspark_step_launcher import (
     databricks_pyspark_step_launcher,
 )
 from .resources import databricks_client
-from .solids import create_databricks_job_op, create_databricks_job_solid
+from .solids import create_databricks_job_op
 from .types import (
     DATABRICKS_RUN_TERMINATED_STATES,
     DatabricksRunLifeCycleState,
@@ -28,7 +28,6 @@ from .version import __version__
 check_dagster_package_version("dagster-databricks", __version__)
 
 __all__ = [
-    "create_databricks_job_solid",
     "create_databricks_job_op",
     "databricks_client",
     "DatabricksConfig",

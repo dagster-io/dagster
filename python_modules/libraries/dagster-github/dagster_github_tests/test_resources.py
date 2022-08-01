@@ -8,8 +8,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from dagster_github import github_resource
 from dagster_github.resources import GithubResource
 
-from dagster import ModeDefinition, execute_solid
-from dagster._legacy import solid
+from dagster._legacy import ModeDefinition, execute_solid, solid
 
 FAKE_PRIVATE_RSA_KEY = (
     rsa.generate_private_key(public_exponent=65537, key_size=1024, backend=default_backend())

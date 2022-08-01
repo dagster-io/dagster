@@ -2,25 +2,20 @@ from collections import defaultdict
 
 import pytest
 
-from dagster import (
-    DynamicOutput,
-    DynamicOutputDefinition,
-    Int,
-    ModeDefinition,
-    Output,
-    OutputDefinition,
-    composite_solid,
-    execute_pipeline,
-    graph,
-    job,
-    op,
-    resource,
-)
+from dagster import DynamicOutput, Int, Output, graph, job, op, resource
 from dagster._core.definitions import failure_hook, success_hook
 from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 from dagster._core.definitions.events import Failure, HookExecutionResult
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._legacy import pipeline, solid
+from dagster._legacy import (
+    DynamicOutputDefinition,
+    ModeDefinition,
+    OutputDefinition,
+    composite_solid,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
 
 
 class SomeUserException(Exception):
@@ -482,7 +477,11 @@ def test_hook_decorate_pipeline_def():
     result = execute_pipeline(a_pipeline, raise_on_error=False)
     assert not result.success
     # a generic hook runs on all solids
-    assert called_hook_to_solids["hook_a_generic"] == {"solid_a", "solid_b", "failed_solid"}
+    assert called_hook_to_solids["hook_a_generic"] == {
+        "solid_a",
+        "solid_b",
+        "failed_solid",
+    }
     # a success hook runs on all succeeded solids
     assert called_hook_to_solids["hook_b_success"] == {"solid_a", "solid_b"}
     # a failure hook runs on all failed solids
@@ -529,7 +528,11 @@ def test_hook_on_pipeline_def_and_solid_instance():
     result = execute_pipeline(a_pipeline, raise_on_error=False)
     assert not result.success
     # a generic hook runs on all solids
-    assert called_hook_to_solids["hook_a_generic"] == {"solid_a", "solid_b", "failed_solid"}
+    assert called_hook_to_solids["hook_a_generic"] == {
+        "solid_a",
+        "solid_b",
+        "failed_solid",
+    }
     # a success hook runs on "solid_a"
     assert called_hook_to_solids["hook_b_success"] == {"solid_a"}
     # a failure hook runs on "failed_solid"

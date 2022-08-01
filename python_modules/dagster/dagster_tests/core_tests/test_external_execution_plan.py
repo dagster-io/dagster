@@ -8,11 +8,7 @@ from dagster import (
     DagsterEventType,
     DagsterExecutionStepNotFoundError,
     DependencyDefinition,
-    InputDefinition,
     Int,
-    OutputDefinition,
-    PipelineDefinition,
-    lambda_solid,
     reconstructable,
 )
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
@@ -21,6 +17,7 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.instance import DagsterInstance
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
+from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, lambda_solid
 
 
 def define_inty_pipeline(using_file_system=False):
@@ -136,7 +133,12 @@ def test_using_file_system_for_subplan_multiprocessing():
 
         assert get_step_output(return_one_step_events, "return_one")
         with open(
-            os.path.join(instance.storage_directory(), pipeline_run.run_id, "return_one", "result"),
+            os.path.join(
+                instance.storage_directory(),
+                pipeline_run.run_id,
+                "return_one",
+                "result",
+            ),
             "rb",
         ) as read_obj:
             assert pickle.load(read_obj) == 1

@@ -1,15 +1,14 @@
 import pytest
 
-from dagster import (
-    Any,
-    DagsterInvalidDefinitionError,
-    DynamicOutput,
+from dagster import Any, DagsterInvalidDefinitionError, DynamicOutput
+from dagster._legacy import (
     DynamicOutputDefinition,
     OutputDefinition,
     composite_solid,
     execute_pipeline,
+    pipeline,
+    solid,
 )
-from dagster._legacy import pipeline, solid
 
 
 @solid(output_defs=[DynamicOutputDefinition()])
@@ -88,7 +87,10 @@ def test_mapping_multi():
 
 def test_composite_multi_out():
     @composite_solid(
-        output_defs=[OutputDefinition(Any, "one"), DynamicOutputDefinition(Any, "numbers")]
+        output_defs=[
+            OutputDefinition(Any, "one"),
+            DynamicOutputDefinition(Any, "numbers"),
+        ]
     )
     def multi_out():
         one = emit_one()

@@ -308,6 +308,13 @@ def test_start_and_stop_schedule(graphql_context):
 def test_get_single_schedule_definition(graphql_context):
     context = graphql_context
 
+    bad_selector = infer_schedule_selector(context, "does_not_exist")
+    result = execute_dagster_graphql(
+        context, GET_SCHEDULE_QUERY, variables={"scheduleSelector": bad_selector}
+    )
+    assert result.data
+    assert result.data["scheduleOrError"]["__typename"] == "ScheduleNotFoundError"
+
     schedule_selector = infer_schedule_selector(context, "partition_based_multi_mode_decorator")
 
     # fetch schedule before reconcile

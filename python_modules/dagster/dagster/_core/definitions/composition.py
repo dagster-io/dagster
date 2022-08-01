@@ -646,7 +646,7 @@ class PendingNodeInvocation:
             tags=self.tags,
             hook_defs=self.hook_defs,
             op_retry_policy=self.retry_policy,
-            _input_values=input_values,
+            input_values=input_values,
         )
 
         return core_execute_in_process(
