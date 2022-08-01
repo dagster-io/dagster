@@ -10,24 +10,24 @@ from typing import (
     Union,
     cast,
 )
-from dagster._annotations import public
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvariantViolationError
 
 from ..._seven.typing import get_origin
 from .definition_config_schema import IDefinitionConfigSchema
-from .inference import infer_output_props
 from .hook_definition import HookDefinition
+from .inference import infer_output_props
 from .input import In, InputDefinition
 from .output import Out, OutputDefinition
 from .solid_definition import SolidDefinition
 
 if TYPE_CHECKING:
-    from .decorators.solid_decorator import DecoratedSolidFunction
     from .composition import PendingNodeInvocation
+    from .decorators.solid_decorator import DecoratedSolidFunction
 
 
 class OpDefinition(SolidDefinition):

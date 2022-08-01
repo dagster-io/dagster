@@ -1,6 +1,7 @@
 from typing import Any, Dict, Optional, Union
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import (
     IContainsGenerator,
@@ -11,7 +12,6 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import PipelineRun
-from dagster._annotations import public
 
 
 class InitResourceContext:
@@ -204,10 +204,6 @@ class UnboundInitResourceContext(InitResourceContext):
     @property
     def instance(self) -> Optional[DagsterInstance]:
         return self._instance
-
-    @property
-    def pipeline_def_for_backwards_compat(self) -> Optional[PipelineDefinition]:
-        return None
 
     @property
     def pipeline_run(self) -> Optional[PipelineRun]:

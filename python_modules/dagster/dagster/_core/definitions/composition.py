@@ -17,9 +17,9 @@ from typing import (
     Type,
     Union,
 )
-from dagster._annotations import public
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,

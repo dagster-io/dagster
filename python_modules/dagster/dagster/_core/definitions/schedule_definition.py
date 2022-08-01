@@ -15,12 +15,12 @@ from typing import (
     Union,
     cast,
 )
-from dagster._annotations import public
 
 import pendulum
 from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import ensure_gen, merge_dicts
 from dagster._utils.schedules import is_valid_cron_string

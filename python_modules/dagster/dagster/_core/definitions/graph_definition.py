@@ -57,11 +57,11 @@ if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
 
     from .asset_layer import AssetLayer
+    from .composition import PendingNodeInvocation
     from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
     from .partition import PartitionedConfig, PartitionsDefinition
     from .solid_definition import SolidDefinition
-    from .composition import PendingNodeInvocation
 
 
 def _check_node_defs_arg(

@@ -102,7 +102,6 @@ def test_clean_event_generator_exit():
         resource_keys_to_init={"a"},
         instance=instance,
         emit_persistent_events=True,
-        pipeline_def_for_backwards_compat=pipeline_def,
     )
     next(generator)
     generator.close()
