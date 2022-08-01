@@ -339,15 +339,9 @@ class OutputPointer(NamedTuple("_OutputPointer", [("solid_name", str), ("output_
 class OutputMapping(
     NamedTuple("_OutputMapping", [("definition", OutputDefinition), ("maps_from", OutputPointer)])
 ):
-    """Defines an output mapping for a composite solid.
+    """Defines an output mapping for a graph."""
 
-    Args:
-        definition (OutputDefinition): Defines the output of the composite solid.
-        solid_name (str): The name of the child solid from which to map the output.
-        output_name (str): The name of the child solid's output from which to map the output.
-    """
-
-    def __new__(cls, definition: OutputDefinition, maps_from: OutputPointer):
+    def __new__(cls, definition: Union[OutputDefinition], maps_from: OutputPointer):
         return super(OutputMapping, cls).__new__(
             cls,
             check.inst_param(definition, "definition", OutputDefinition),

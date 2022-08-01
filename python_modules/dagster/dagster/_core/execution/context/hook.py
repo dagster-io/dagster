@@ -2,6 +2,7 @@ import warnings
 from typing import AbstractSet, Any, Dict, Mapping, Optional, Set, Union
 
 import dagster._check as check
+from dagster._annotations import public
 
 from ...definitions.composition import PendingNodeInvocation
 from ...definitions.decorators.graph_decorator import graph
@@ -79,14 +80,17 @@ class HookContext:
     def pipeline_name(self) -> str:
         return self.job_name
 
+    @public  # type: ignore
     @property
     def job_name(self) -> str:
         return self._step_execution_context.job_name
 
+    @public  # type: ignore
     @property
     def run_id(self) -> str:
         return self._step_execution_context.run_id
 
+    @public  # type: ignore
     @property
     def hook_def(self) -> HookDefinition:
         return self._hook_def
@@ -107,6 +111,7 @@ class HookContext:
         )
         return self._step_execution_context.step
 
+    @public  # type: ignore
     @property
     def step_key(self) -> str:
         return self._step_execution_context.step.key
@@ -115,10 +120,12 @@ class HookContext:
     def mode_def(self) -> Optional[ModeDefinition]:
         return self._step_execution_context.mode_def
 
+    @public  # type: ignore
     @property
     def required_resource_keys(self) -> AbstractSet[str]:
         return self._required_resource_keys
 
+    @public  # type: ignore
     @property
     def resources(self) -> "Resources":
         return self._resources
@@ -130,6 +137,7 @@ class HookContext:
         )
         return solid_config.config if solid_config else None
 
+    @public  # type: ignore
     @property
     def op_config(self) -> Any:
         return self.solid_config
@@ -137,6 +145,7 @@ class HookContext:
     # Because of the fact that we directly use the log manager of the step, if a user calls
     # hook_context.log.with_tags, then they will end up mutating the step's logging tags as well.
     # This is not problematic because the hook only runs after the step has been completed.
+    @public  # type: ignore
     @property
     def log(self) -> DagsterLogManager:
         return self._step_execution_context.log
@@ -150,6 +159,7 @@ class HookContext:
         """
         return self.op_exception
 
+    @public  # type: ignore
     @property
     def op_exception(self):
         return self._step_execution_context.step_exception
@@ -182,6 +192,7 @@ class HookContext:
 
         return results
 
+    @public  # type: ignore
     @property
     def op_output_values(self):
         return self.solid_output_values
