@@ -25,7 +25,7 @@ from dagster._core.test_utils import instance_for_test
 
 
 def test_with_replaced_asset_keys():
-    @asset(ins={"input2": AssetIn(namespace="something_else")})
+    @asset(ins={"input2": AssetIn(key_prefix="something_else")})
     def asset1(input1, input2):
         assert input1
         assert input2

@@ -38,7 +38,7 @@ def is_public(obj: Annotatable, attr: Optional[str] = None) -> bool:
 #
 # from dagster._annotations import PublicAttr
 #
-# class Foo(NamedTuple("_Foo", [("bar", PublicAttr(int))])):
+# class Foo(NamedTuple("_Foo", [("bar", PublicAttr[int])])):
 #     ...
 
 T = TypeVar("T")

@@ -47,15 +47,11 @@ class AssetIn(
         cls,
         key: Optional[CoercibleToAssetKey] = None,
         metadata: Optional[Mapping[str, Any]] = None,
-        namespace: Optional[Sequence[str]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         asset_key: Optional[CoercibleToAssetKey] = None,
         input_manager_key: Optional[str] = None,
         partition_mapping: Optional[PartitionMapping] = None,
     ):
-        key_prefix = canonicalize_backcompat_args(
-            key_prefix, "key_prefix", namespace, "namespace", "1.0.0"
-        )
         key = canonicalize_backcompat_args(key, "key", asset_key, "asset_key", "1.0.0")
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]

@@ -68,7 +68,6 @@ class Manager:
         resource_keys_to_init,
         instance,
         emit_persistent_events,
-        pipeline_def_for_backwards_compat,
     ):
         """
         Drop-in replacement for
@@ -84,7 +83,6 @@ class Manager:
             resource_keys_to_init=resource_keys_to_init,
             instance=instance,
             emit_persistent_events=emit_persistent_events,
-            pipeline_def_for_backwards_compat=pipeline_def_for_backwards_compat,
         )
         self.resource_manager = DagstermillResourceEventGenerationManager(
             generator, ScopedResourcesBuilder

@@ -10,13 +10,13 @@ from dagster import (
     Output,
 )
 from dagster import _check as check
-from dagster import execute_solid
 from dagster._legacy import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
     SolidDefinition,
     execute_pipeline,
+    execute_solid,
     lambda_solid,
     pipeline,
     solid,
