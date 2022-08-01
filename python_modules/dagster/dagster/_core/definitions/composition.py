@@ -19,6 +19,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -285,8 +286,26 @@ class CompleteCompositionContext(NamedTuple):
 
 
 class PendingNodeInvocation:
-    """An intermediate object in composition to allow for binding information such as
-    an alias before invoking.
+    """An intermediate object in composition that allows binding additional information before invoking.
+
+    Users should not invoke this object directly.
+
+    Examples:
+        ..code-block:: python
+
+            from dagster import graph, op
+
+            @op
+            def some_op():
+                ...
+
+            @graph
+            def the_graph():
+                # renamed_op is a PendingNodeInvocation object with an added
+                # name attribute
+                renamed_op = some_op.alias("new_name")
+                renamed_op()
+
     """
 
     node_def: NodeDefinition
@@ -534,7 +553,8 @@ class PendingNodeInvocation:
                 )
             )
 
-    def alias(self, name):
+    @public
+    def alias(self, name: str) -> "PendingNodeInvocation":
         return PendingNodeInvocation(
             node_def=self.node_def,
             given_alias=name,
@@ -543,7 +563,8 @@ class PendingNodeInvocation:
             retry_policy=self.retry_policy,
         )
 
-    def tag(self, tags):
+    @public
+    def tag(self, tags: Optional[Dict[str, str]]) -> "PendingNodeInvocation":
         tags = validate_tags(tags)
         return PendingNodeInvocation(
             node_def=self.node_def,
@@ -553,16 +574,18 @@ class PendingNodeInvocation:
             retry_policy=self.retry_policy,
         )
 
-    def with_hooks(self, hook_defs):
+    @public
+    def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PendingNodeInvocation":
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
         return PendingNodeInvocation(
             node_def=self.node_def,
             given_alias=self.given_alias,
             tags=self.tags,
-            hook_defs=hook_defs.union(self.hook_defs),
+            hook_defs=set(hook_defs).union(self.hook_defs),
             retry_policy=self.retry_policy,
         )
 
+    @public
     def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
         return PendingNodeInvocation(
             node_def=self.node_def,
@@ -572,6 +595,7 @@ class PendingNodeInvocation:
             retry_policy=retry_policy,
         )
 
+    @public
     def to_job(
         self,
         name: Optional[str] = None,
@@ -615,6 +639,7 @@ class PendingNodeInvocation:
             input_values=input_values,
         )
 
+    @public
     def execute_in_process(
         self,
         run_config: Optional[Any] = None,

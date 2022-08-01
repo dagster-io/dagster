@@ -1157,7 +1157,7 @@ def test_resource_with_enum_in_schema_configured():
 def test_resource_run_info_exists_during_execution():
     @resource
     def resource_checks_run_info(init_context):
-        assert init_context.pipeline_run.run_id == init_context.run_id
+        assert init_context.dagster_run.run_id == init_context.run_id
         return 1
 
     assert_pipeline_runs_with_resource(resource_checks_run_info, {}, 1)
