@@ -5,7 +5,7 @@ description: Develop and test in the cloud.
 
 # Branch Deployments in Dagster Cloud
 
-Branch Deployments allow you to quickly and collaboratively develop your Dagster jobs. Testing a feature branch in your cloud environment is as simple as creating a branch in version control and kicking off a run in the corresponding Branch Deployment.
+Branch Deployments automatically create staging environments of your Dagster code, right in Dagster Cloud. For every push to a branch in your git repository, Dagster Cloud will create a unique deployment, allowing you to preview the changes in the branch in real-time.
 
 ---
 
@@ -18,8 +18,6 @@ Branch Deployments allow you to quickly and collaboratively develop your Dagster
 - [Asset handling](#asset-handling)
 
 ### Overview
-
-Branch Deployments automatically create staging environments of your Dagster code, right in Dagster Cloud. For every push to a branch in your git repository, Dagster Cloud will create a unique deployment, allowing you to preview the changes in the branch in real-time.
 
 Think of a branch deployment as a branch of your data platform, one where you can preview changes without impacting production or overwriting a testing environment.
 
@@ -37,7 +35,7 @@ Let's take a closer look:
 
 Now that you know how Branch Deployments work, **why should you use them**?
 
-- **Improve collaboration.** TODO
+- **Improved collaboration.** TODO
 - **Reduced development cycle.** TODO
 
 ### Requirements
@@ -46,7 +44,7 @@ To use Branch Deployments, you'll need a [Dagster Cloud account](https://dagster
 
 ### Supported platforms
 
-Branch Deployments can be used with any git or CI provider. However, setup is easiest with the [Dagster GitHub app](/dagster-cloud/developing-testing/using-branch-deployments-with-github) as parts of the process are automated.
+Branch Deployments can be used with any git or CI provider. However, setup is easiest with the [Dagster GitHub app](/dagster-cloud/developing-testing/using-branch-deployments-with-github) as parts of the process are automated. Refer to the [Setting up Branch Deployments section](#setting-up-branch-deployments) for more info.
 
 ### Limitations
 
@@ -68,7 +66,11 @@ Output created from a branch deployment - such a database, table, etc. - won't b
 
 ### Setting up Branch Deployments
 
-There are currently two ways to set up Branch Deployoments for Dagster Cloud - refer to the table below for more info.
+There are currently two ways to set up Branch Deployoments for Dagster Cloud. In the table below:
+
+- **Platform** - The name of the git/CI platform, which is also a link to a setup guide
+- **How it works** - Summary of how Branch Deployments work with the platform
+- **May be a good fit if...** - A high-level summary of when the platform may be a good fit
 
 <table
   className="table"
