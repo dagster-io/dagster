@@ -471,11 +471,6 @@ class SensorDefinition:
     def pipeline_name(self) -> Optional[str]:
         return self._target.pipeline_name if self._target else None
 
-    @public  # type: ignore
-    @property
-    def op_selection(self) -> Optional[Sequence[str]]:
-        return self.solid_selection
-
     @property
     def solid_selection(self) -> Optional[Sequence[str]]:
         return self._target.solid_selection if self._target else None

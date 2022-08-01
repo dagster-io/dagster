@@ -461,11 +461,6 @@ class ScheduleDefinition:
     def pipeline_name(self) -> str:
         return self._target.pipeline_name
 
-    @public  # type: ignore
-    @property
-    def op_selection(self) -> Optional[Sequence[str]]:
-        return self._target.solid_selection
-
     @property
     def solid_selection(self) -> Optional[Sequence[str]]:
         return self._target.solid_selection
