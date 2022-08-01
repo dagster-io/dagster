@@ -360,7 +360,7 @@ class AssetsDefinition(ResourceAddable):
         # For graph backed assets, we assign all assets to the same group_name, if specified.
         # To assign to different groups, use .with_prefix_or_groups.
         group_names_by_key = (
-            {asset_key: group_name for asset_key in keys_by_output_name.values()}
+            {asset_key: group_name for asset_key in keys_by_output_name_with_prefix.values()}
             if group_name
             else None
         )

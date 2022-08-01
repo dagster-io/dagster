@@ -597,8 +597,8 @@ def test_from_graph_w_key_prefix():
         keys_by_input_name={},
         keys_by_output_name={"result": AssetKey(["the", "asset"])},
         key_prefix=["this", "is", "a", "prefix"],
+        group_name="abc",
     )
-
     assert the_asset.keys_by_output_name["result"].path == [
         "this",
         "is",
@@ -607,6 +607,10 @@ def test_from_graph_w_key_prefix():
         "the",
         "asset",
     ]
+
+    assert the_asset.group_names_by_key == {
+        AssetKey(["this", "is", "a", "prefix", "the", "asset"]): "abc"
+    }
 
     str_prefix = AssetsDefinition.from_graph(
         graph_def=silly_graph,
@@ -632,6 +636,7 @@ def test_from_op_w_key_prefix():
         keys_by_input_name={},
         keys_by_output_name={"result": AssetKey(["the", "asset"])},
         key_prefix=["this", "is", "a", "prefix"],
+        group_name="abc",
     )
 
     assert the_asset.keys_by_output_name["result"].path == [
@@ -642,6 +647,10 @@ def test_from_op_w_key_prefix():
         "the",
         "asset",
     ]
+
+    assert the_asset.group_names_by_key == {
+        AssetKey(["this", "is", "a", "prefix", "the", "asset"]): "abc"
+    }
 
     str_prefix = AssetsDefinition.from_op(
         op_def=foo,
