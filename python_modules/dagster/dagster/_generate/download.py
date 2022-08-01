@@ -1,10 +1,11 @@
-from io import BytesIO
-import tarfile
 import os
-import click
 import sys
+import tarfile
+from io import BytesIO
 
+import click
 import requests
+
 from .generate import _should_skip_file
 
 # Currently we only download from 'master' branch
