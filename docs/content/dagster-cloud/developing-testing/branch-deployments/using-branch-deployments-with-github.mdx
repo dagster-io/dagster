@@ -14,7 +14,7 @@ Using this approach to branch deployments may be a good fit if:
 - You use GitHub for version control
 - You want Dagster to fully automate Branch Deployments
 
-**If you don't use GitHub for version control or want full control over your setup**, check out the dedicated [Branch deployments with the dagster-cloud CLI guide](/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments).
+**If you don't use GitHub for version control or want full control over your setup**, check out the [Branch deployments with the `dagster-cloud CLI` guide](/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments).
 
 ---
 
@@ -51,7 +51,7 @@ While you can use your existing production agent, we recommend creating a dedica
 
 1. **Create a new Amazon ECS agent**. [Click here to spin up the agent](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3.amazonaws.com/dagster.cloud/cloudformation/ecs-agent-branch-deployments.yaml) using our CloudFormation template.
 
-   **Note**: Creating the CloudFormation stack may take a few minutes; refreshing the [AWS console Stacks page](https://console.aws.amazon.com/cloudformation/home#/stacks) will show its status. For more information, see the [ECS agent setup guide](/dagster-cloud/deployment/agents/amazon-ecs).
+   **Note**: Creating the CloudFormation stack may take a few minutes; refreshing the [AWS console Stacks page](https://console.aws.amazon.com/cloudformation/home#/stacks) will show its status. For more information, see the [ECS agent setup guide](/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc).
 
 2. **Create a private [Amazon Elastic Registry (ECR) repository](https://console.aws.amazon.com/ecr/repositories).** Refer to the [AWS ECR documentation](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html) for instructions.
 
@@ -120,7 +120,7 @@ While you can use your existing production agent, we recommend creating a dedica
 <details>
   <summary><strong>KUBERNETES AGENTS</strong></summary>
 
-1. Set up a new Kubernetes agent. Refer to the [Kubernetes agent setup guide](/dagster-cloud/deployment/agents/kubernetes/running-configuring-kubernetes-agent) for instructions.
+1. Set up a new Kubernetes agent. Refer to the [Kubernetes agent setup guide](/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent) for instructions.
 
 2. After the agent is set up, modify your Helm values file to include the following:
 
@@ -138,13 +138,23 @@ While you can use your existing production agent, we recommend creating a dedica
 
 ---
 
-## Step 3: Add GitHub files
+## Step 3: Add GitHub workflow files to your repository
 
 <Note>
   If you used the GitHub app to add the repository as a code location, this step
   isn't required.{" "}
   <a href="#step-4-configure-the-github-repository">Skip to the next step</a>.
 </Note>
+
+In this step, you'll add the required GitHub workflow files to your GitHub repository. The files can be found in our [Branch Deployments quickstart repository](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart).
+
+Copy the following files to your repository:
+
+- [`cloud_workspace.yaml`](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart/blob/main/cloud_workspace.yaml)
+- [`.github/workflows/branch_deployments.yml`](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart/blob/main/.github/workflows/branch_deployments.yml)
+- [`.github/workflows/deploy.yml`](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart/blob/main/.github/workflows/deploy.yml)
+
+In the next step, you'll modify these files to work with your Dagster Cloud setup.
 
 ---
 
