@@ -8,7 +8,6 @@ from dagster._core.definitions import (
     OutputDefinition,
     PartitionSetDefinition,
     PipelineDefinition,
-    PipelineFailureSensorContext,
     PresetDefinition,
     ScheduleExecutionContext,
     SensorExecutionContext,
