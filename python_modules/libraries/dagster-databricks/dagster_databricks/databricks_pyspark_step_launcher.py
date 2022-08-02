@@ -60,22 +60,22 @@ PICKLED_CONFIG_FILE_NAME = "config.pkl"
         "local_pipeline_package_path": Field(
             StringSource,
             is_required=False,
-            description="Absolute path to the package that contains the pipeline definition(s) "
-            "whose steps will execute remotely on Databricks. This is a path on the local "
-            "fileystem of the process executing the pipeline. Before every step run, the "
-            "launcher will zip up the code in this path, upload it to DBFS, and unzip it "
-            "into the Python path of the remote Spark process. This gives the remote process "
-            "access to up-to-date user code.",
+            description="Absolute path to root python package containing your Dagster code. If you "
+            "set this value to a directory lower than the root package, and have user relative "
+            "imports in your code (e.g. `from .foo import bar`), it's likely you'll encounter an "
+            "import error on the remote step. Before every step run, the launcher will zip up the "
+            "code in this local path, upload it to DBFS, and unzip it into the Python path of the "
+            "remote Spark process. This gives the remote process access to up-to-date user code.",
         ),
         "local_dagster_job_package_path": Field(
             StringSource,
             is_required=False,
-            description="Absolute path to the package that contains the dagster job definition(s) "
-            "whose steps will execute remotely on Databricks. This is a path on the local "
-            "fileystem of the process executing the dagster job. Before every step run, the "
-            "launcher will zip up the code in this path, upload it to DBFS, and unzip it "
-            "into the Python path of the remote Spark process. This gives the remote process "
-            "access to up-to-date user code.",
+            description="Absolute path to root python package containing your Dagster code. If you "
+            "set this value to a directory lower than the root package, and have user relative "
+            "imports in your code (e.g. `from .foo import bar`), it's likely you'll encounter an "
+            "import error on the remote step. Before every step run, the launcher will zip up the "
+            "code in this local path, upload it to DBFS, and unzip it into the Python path of the "
+            "remote Spark process. This gives the remote process access to up-to-date user code.",
         ),
         "staging_prefix": Field(
             StringSource,
