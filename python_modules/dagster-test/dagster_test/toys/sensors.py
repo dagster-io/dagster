@@ -1,11 +1,12 @@
 import os
 
+from dagster_test.toys.error_monster import error_monster
+from dagster_test.toys.unreliable import unreliable_pipeline
 from slack_sdk.web.client import WebClient
 
-from dagster import AssetKey, RunRequest, SkipReason
+from dagster import AssetKey, RunFailureSensorContext, RunRequest, SkipReason
 from dagster import _check as check
-from dagster import asset_sensor, sensor
-from dagster._legacy import PipelineFailureSensorContext, pipeline_failure_sensor
+from dagster import asset_sensor, run_failure_sensor, sensor
 
 
 def get_directory_files(directory_name, since=None):
@@ -90,8 +91,8 @@ def get_toys_sensors():
                 },
             )
 
-    @pipeline_failure_sensor(pipeline_selection=["error_monster", "unreliable_pipeline"])
-    def custom_slack_on_pipeline_failure(context: PipelineFailureSensorContext):
+    @run_failure_sensor(monitored_jobs=[error_monster, unreliable_pipeline])
+    def custom_slack_on_pipeline_failure(context: RunFailureSensorContext):
 
         base_url = "http://localhost:3000"
 
