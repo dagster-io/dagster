@@ -309,7 +309,7 @@ In many cases, interacting with an external service directly in assets or ops is
 
 ### When to use stub resources
 
-Determining when it makes sense to stub a resource for a unit test can be a topic of much debate. There are certainly some resources where it would be too complicated to write and maintain a stub. For example, it would be difficult to mock a database like Snowflake with a lightweight database since the SQL syntax may vary. In general, if a resource is relatively simple, writing a stub can be really helpful for unit testing the assets and ops that use the resource.
+Determining when it makes sense to stub a resource for a unit test can be a topic of much debate. There are certainly some resources where it would be too complicated to write and maintain a stub. For example, it would be difficult to mock a database like Snowflake with a lightweight database since the SQL syntax may vary. In general, if a resource is relatively simple, writing a stub can be helpful for unit testing the assets and ops that use the resource.
 
 We'll start by writing the "real" Hacker News API Client:
 
