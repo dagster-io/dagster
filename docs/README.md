@@ -125,25 +125,7 @@ All non-remotely-sourced images should be stored in `next/public/images`. This d
 
 ### Screenshots
 
-Most of the site's images are screenshots of Dagit. There is a semi-automated system in place to ease the generation and maintenance of screenshots. Screenshots are specified in "specs" which are stored in `screenshot/screenshots.yaml` as a flat array. Specs are objects with the following fields:
-
-- `path`: output path (relative to `next/public/images`) indicating where the screenshot should be stored.
-- `defs_file`: path (relative to the repo root) to a python or workspace YAML file. The script will pass the path to `dagit --python-file` or `dagit --workspace` (depending on file type) to load a set of Dagster definitions.
-- `route`: Dagit route (i.e. path part of the URL) that will be loaded before taking a screenshot.
-- `vetted`: boolean indicating whether the current screenshot in the repo was generated using the spec.
-- `steps` (optional): manual steps that the person generating the screenshot should carry out before the screenshot is taken.
-- `width` (optional): width in pixels of the browser window in which the screenshot will be taken.
-- `height` (optional): height in pixels of the browser window in which the screenshot will be taken.
-
-To generate the screenshot for a spec, pass its path to `screenshot/capture_screenshot.py`. This will attempt to render the specified Dagit view using the browser automation tool [Selenium](https://www.selenium.dev). If no `steps` are specified in the target spec, the screenshot will be taken and saved in `next/public/images` automatically. If `steps` were specified, after the initial Dagit view has rendered, the user will be prompted to execute the steps and then press a key to trigger screenshot capture and write. Note that successfully executing `capture_screenshot.py` will overwrite any existing image at the output path.
-
-Note that to run `capture_screenshot.py` you need to have `selenium` installed in your Python environment, which in turn depends on a system package `chromedriver`. On macOS, this should work to install the dependencies:
-
-```
-$ pip install selenium
-$ brew install chromedriver
-$ xattr -d com.apple.quarantine /opt/homebrew/bin/chromedriver  # May not need to run this
-```
+Most of the site's images are screenshots of Dagit. There is a semi-automated system in place to ease the generation and maintenance of screenshots. Screenshots are specified in "specs" which are stored in YAML files in the `screenshots` directory. This directory contains a "screenshot spec database", which is just a tree of YAML files that matches the hierarchical structure of `content`. These files are intended to be read by the command-line tool `dagit-screenshot`, which generates and writes screenshot image files to `next/public/images`. See `dagit-screenshot/README.md` for details.
 
 ## Navigation schema
 

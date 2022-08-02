@@ -1,5 +1,7 @@
 - id: tutorial1.png
+  workspace: python_modules/libraries/dagster-pandas/dagster_pandas/examples/workspace.yaml
   vetted: false
 
 - id: tutorial2.png
+  workspace: python_modules/libraries/dagster-pandas/dagster_pandas/examples/workspace.yaml
   vetted: false

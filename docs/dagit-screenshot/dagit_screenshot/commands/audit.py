@@ -47,14 +47,24 @@ def _validate_spec(
 
     error: Optional[str] = None
 
-    workspace = spec["workspace"]
-    workspace_path = normalize_workspace_path(workspace, workspace_root)
+    try:
+        if spec["base_url"].startswith("http://localhost"):
+            if not "workspace" in spec:
+                raise Exception("No workspace defined. Workspace required for local dagit.")
+            workspace = spec["workspace"]
+            workspace_path = normalize_workspace_path(workspace, workspace_root)
+            if not os.path.exists(workspace_path):
+                raise Exception(f"No workspace-defining file exists at {workspace_path}.")
 
-    if not os.path.exists(workspace_path):
-        error = f"No workspace-defining file exists at {workspace_path}."
-    elif verify_outputs:
-        output_path = normalize_output_path(spec_id_to_relative_path(spec["id"]), output_root)
-        if not os.path.exists(output_path):
-            error = f"No screenshot image file exists at {output_path}."
+        if verify_outputs:
+            output_path = normalize_output_path(
+                spec_id_to_relative_path(spec["id"]), output_root
+            )
+            if not os.path.exists(output_path):
+                raise Exception(f"No screenshot image file exists at {output_path}.")
 
-    return {"id": spec["id"], "success": False, "error": error}
+    except Exception as e:
+        error = repr(e)
+
+    success = error is None
+    return {"id": spec["id"], "success": success, "error": error}

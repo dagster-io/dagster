@@ -5,7 +5,7 @@ from dagster_buildkite.steps.tox import build_tox_step
 from ..python_version import AvailablePythonVersion
 from ..step_builder import CommandStepBuilder
 from ..utils import BuildkiteLeafStep, BuildkiteStep, GroupStep
-from .packages import build_example_packages_steps
+from .packages import build_dagit_screenshot_steps, build_example_packages_steps
 
 
 def build_docs_steps() -> List[BuildkiteStep]:
@@ -63,5 +63,6 @@ def build_docs_steps() -> List[BuildkiteStep]:
     ]
 
     steps += build_example_packages_steps()
+    steps += build_dagit_screenshot_steps()
 
     return steps

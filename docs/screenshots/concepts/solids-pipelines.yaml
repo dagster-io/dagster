@@ -1,6 +1,5 @@
 - id: pipeline-def.png
   workspace: examples/docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py
-  route: /
   vetted: false
 
 - id: pipeline-run.png
