@@ -5,9 +5,7 @@ noindex: True
 
 # Hybrid deployment in Dagster Cloud
 
-<Note>
-  This guide is applicable to Dagster Cloud.
-</Note>
+<Note>This guide is applicable to Dagster Cloud.</Note>
 
 In this guide, we'll cover how Hybrid deployment works in Dagster Cloud, including its system architecture, agent, and security.
 
@@ -15,7 +13,7 @@ In this guide, we'll cover how Hybrid deployment works in Dagster Cloud, includi
 
 ## Hybrid architecture overview
 
-A **hybrid deployment** utilizes a combination of your infrastructure and Dagster-hosted backend services. 
+A **hybrid deployment** utilizes a combination of your infrastructure and Dagster-hosted backend services.
 
 The Dagster backend services - including the web frontend, GraphQL API, metadata database, and daemons (responsible for executing schedules and sensors) - are hosted in Dagster Cloud. You are responsible for running an [agent](/dagster-cloud/deployment/agents) in your environment.
 
@@ -34,7 +32,7 @@ All user code runs within your environment, in isolation from Dagster system cod
 
 ## The agent
 
-Because the agent communicates with the Dagster Cloud control plane over the agent API, it’s possible to support agents that operate in arbitrary compute environments. 
+Because the agent communicates with the Dagster Cloud control plane over the agent API, it’s possible to support agents that operate in arbitrary compute environments.
 
 This means that over time, Dagster Cloud’s support for different user deployment environments will expand and custom agents can take advantage of bespoke compute environments such as HPC.
 
@@ -54,7 +52,7 @@ When Dagster Cloud needs to interact with user code - for instance, to display t
 
 Depending on the agent implementation, user code may run in isolated OS processes, in Docker containers, in ECS Tasks, in Kubernetes Jobs and Services, or in a custom isolation strategy.
 
-Queries to user code run over a [well-defined grpc interface](https://github.com/dagster-io/dagster/blob/master/python_modules/dagster/dagster/grpc/protos/api.proto). Dagster Cloud uses this interface to:
+Queries to user code run over a well-defined grpc interface. Dagster Cloud uses this interface to:
 
 - Retrieve the names, config schemas, descriptions, tags, and structures of jobs, ops, repositories, partitions, schedules, and sensors defined in your code
 - Evaluate schedule and sensor ticks and determine whether a run should be launched
