@@ -23,9 +23,7 @@ def test_default_name_job():
     def my_graph():
         pass
 
-    schedule = ScheduleDefinition(
-        job=my_graph.to_job(name="my_job"), cron_schedule="0 0 * * *"
-    )
+    schedule = ScheduleDefinition(job=my_graph.to_job(name="my_job"), cron_schedule="0 0 * * *")
     assert schedule.name == "my_job_schedule"
 
 

@@ -133,7 +133,7 @@ def failure_graph():
 failure_job = failure_graph.to_job()
 
 
-@sensor(pipeline_name="the_pipeline")
+@sensor(job_name="the_pipeline")
 def simple_sensor(context):
     if not context.last_completion_time or not int(context.last_completion_time) % 2:
         return SkipReason()
@@ -141,33 +141,33 @@ def simple_sensor(context):
     return RunRequest(run_key=None, run_config={}, tags={})
 
 
-@sensor(pipeline_name="the_pipeline")
+@sensor(job_name="the_pipeline")
 def always_on_sensor(_context):
     return RunRequest(run_key=None, run_config={}, tags={})
 
 
-@sensor(pipeline_name="the_pipeline")
+@sensor(job_name="the_pipeline")
 def run_key_sensor(_context):
     return RunRequest(run_key="only_once", run_config={}, tags={})
 
 
-@sensor(pipeline_name="the_pipeline")
+@sensor(job_name="the_pipeline")
 def error_sensor(context):
     context.update_cursor("the exception below should keep this from being persisted")
     raise Exception("womp womp")
 
 
-@sensor(pipeline_name="the_pipeline")
+@sensor(job_name="the_pipeline")
 def wrong_config_sensor(_context):
     return RunRequest(run_key="bad_config_key", run_config={"bad_key": "bad_val"}, tags={})
 
 
-@sensor(pipeline_name="the_pipeline", minimum_interval_seconds=60)
+@sensor(job_name="the_pipeline", minimum_interval_seconds=60)
 def custom_interval_sensor(_context):
     return SkipReason()
 
 
-@sensor(pipeline_name="the_pipeline")
+@sensor(job_name="the_pipeline")
 def skip_cursor_sensor(context):
     if not context.cursor:
         cursor = 1
@@ -178,7 +178,7 @@ def skip_cursor_sensor(context):
     return SkipReason()
 
 
-@sensor(pipeline_name="the_pipeline")
+@sensor(job_name="the_pipeline")
 def run_cursor_sensor(context):
     if not context.cursor:
         cursor = 1
@@ -193,7 +193,7 @@ def _random_string(length):
     return "".join(random.choice(string.ascii_lowercase) for x in range(length))
 
 
-@sensor(pipeline_name="config_pipeline")
+@sensor(job_name="config_pipeline")
 def large_sensor(_context):
     # create a gRPC response payload larger than the limit (4194304)
     REQUEST_COUNT = 25
@@ -209,7 +209,7 @@ def large_sensor(_context):
         yield RunRequest(run_key=None, run_config=config, tags=tags_garbage)
 
 
-@asset_sensor(pipeline_name="the_pipeline", asset_key=AssetKey("foo"))
+@asset_sensor(job_name="the_pipeline", asset_key=AssetKey("foo"))
 def asset_foo_sensor(context, _event):
     return RunRequest(run_key=context.cursor, run_config={})
 
@@ -328,7 +328,7 @@ def the_other_repo():
     ]
 
 
-@sensor(pipeline_name="the_pipeline", default_status=DefaultSensorStatus.RUNNING)
+@sensor(job_name="the_pipeline", default_status=DefaultSensorStatus.RUNNING)
 def always_running_sensor(context):
     if not context.last_completion_time or not int(context.last_completion_time) % 2:
         return SkipReason()
@@ -336,7 +336,7 @@ def always_running_sensor(context):
     return RunRequest(run_key=None, run_config={}, tags={})
 
 
-@sensor(pipeline_name="the_pipeline", default_status=DefaultSensorStatus.STOPPED)
+@sensor(job_name="the_pipeline", default_status=DefaultSensorStatus.STOPPED)
 def never_running_sensor(context):
     if not context.last_completion_time or not int(context.last_completion_time) % 2:
         return SkipReason()

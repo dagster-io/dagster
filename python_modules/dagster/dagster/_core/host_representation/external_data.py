@@ -984,9 +984,9 @@ def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> Externa
     return ExternalScheduleData(
         name=schedule_def.name,
         cron_schedule=schedule_def.cron_schedule,
-        pipeline_name=schedule_def.pipeline_name,
-        solid_selection=schedule_def.solid_selection,
-        mode=schedule_def.mode,
+        pipeline_name=schedule_def.job_name,
+        solid_selection=None,
+        mode=None,
         environment_vars=schedule_def.environment_vars,
         partition_set_name=schedule_def.get_partition_set().name
         if isinstance(schedule_def, PartitionScheduleDefinition)

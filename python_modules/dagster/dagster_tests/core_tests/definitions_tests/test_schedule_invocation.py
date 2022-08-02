@@ -23,7 +23,7 @@ def test_schedule_context_backcompat():
 
 
 def cron_test_schedule_factory_context():
-    @schedule(cron_schedule="* * * * *", pipeline_name="no_pipeline")
+    @schedule(cron_schedule="* * * * *", job_name="no_pipeline")
     def basic_schedule(_):
         return {}
 
@@ -31,7 +31,7 @@ def cron_test_schedule_factory_context():
 
 
 def cron_test_schedule_factory_no_context():
-    @schedule(cron_schedule="* * * * *", pipeline_name="no_pipeline")
+    @schedule(cron_schedule="* * * * *", job_name="no_pipeline")
     def basic_schedule():
         return {}
 

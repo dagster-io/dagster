@@ -1,14 +1,7 @@
 import string
 import time
 
-from dagster import (
-    Int,
-    ScheduleDefinition,
-    SkipReason,
-    repository,
-    sensor,
-    usable_as_dagster_type,
-)
+from dagster import Int, ScheduleDefinition, SkipReason, repository, sensor, usable_as_dagster_type
 from dagster._legacy import (
     InputDefinition,
     OutputDefinition,
@@ -74,7 +67,7 @@ def define_bar_schedules():
     }
 
 
-@sensor(pipeline_name="bar")
+@sensor(job_name="bar")
 def slow_sensor(_):
     time.sleep(5)
     yield SkipReason("Oops fell asleep")

@@ -151,18 +151,18 @@ def define_baz_partitions():
     }
 
 
-@sensor(pipeline_name="foo")
+@sensor(job_name="foo")
 def sensor_foo(_):
     yield RunRequest(run_key=None, run_config={"foo": "FOO"}, tags={"foo": "foo_tag"})
     yield RunRequest(run_key=None, run_config={"foo": "FOO"})
 
 
-@sensor(pipeline_name="foo")
+@sensor(job_name="foo")
 def sensor_error(_):
     raise Exception("womp womp")
 
 
-@sensor(pipeline_name="foo")
+@sensor(job_name="foo")
 def sensor_raises_dagster_error(_):
     raise DagsterError("Dagster error")
 

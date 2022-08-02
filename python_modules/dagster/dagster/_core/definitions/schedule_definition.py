@@ -248,8 +248,6 @@ class ScheduleDefinition:
         run_config_fn: Optional[ScheduleRunConfigFunction] = None,
         tags: Optional[Mapping[str, str]] = None,
         tags_fn: Optional[ScheduleTagsFunction] = None,
-        solid_selection: Optional[Sequence[Any]] = None,
-        mode: Optional[str] = None,
         should_execute: Optional[ScheduleShouldExecuteFunction] = None,
         environment_vars: Optional[Mapping[str, str]] = None,
         execution_timezone: Optional[str] = None,
@@ -272,10 +270,8 @@ class ScheduleDefinition:
         else:
             self._target = RepoRelativeTarget(
                 pipeline_name=check.str_param(job_name, "job_name"),
-                mode=check.opt_str_param(mode, "mode") or DEFAULT_MODE_NAME,
-                solid_selection=check.opt_nullable_sequence_param(
-                    solid_selection, "solid_selection", of_type=str
-                ),
+                mode=DEFAULT_MODE_NAME,
+                solid_selection=None,
             )
 
         if name:
@@ -451,15 +447,7 @@ class ScheduleDefinition:
     @public  # type: ignore
     @property
     def job_name(self) -> str:
-        return self.job_name
-
-    @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
-        return self._target.solid_selection
-
-    @property
-    def mode(self) -> str:
-        return self._target.mode
+        return self._target.pipeline_name
 
     @public  # type: ignore
     @property

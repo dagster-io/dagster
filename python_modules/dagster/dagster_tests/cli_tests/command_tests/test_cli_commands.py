@@ -25,10 +25,7 @@ from dagster._cli.job import job_execute_command
 from dagster._cli.pipeline import pipeline_execute_command
 from dagster._cli.run import run_delete_command, run_list_command, run_wipe_command
 from dagster._core.definitions.decorators.sensor_decorator import sensor
-from dagster._core.definitions.partition import (
-    PartitionedConfig,
-    StaticPartitionsDefinition,
-)
+from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
@@ -174,7 +171,7 @@ def define_bar_partitions():
 
 
 def define_bar_sensors():
-    @sensor(pipeline_name="baz")
+    @sensor(job_name="baz")
     def foo_sensor(context):
         run_config = {"foo": "FOO"}
         if context.last_completion_time:
@@ -191,9 +188,7 @@ def my_solid():
 
 @pipeline(
     name="memoizable",
-    mode_defs=[
-        ModeDefinition(resource_defs={"io_manager": versioned_filesystem_io_manager})
-    ],
+    mode_defs=[ModeDefinition(resource_defs={"io_manager": versioned_filesystem_io_manager})],
     tags={MEMOIZED_RUN_TAG: "true"},
 )
 def memoizable_pipeline():
@@ -390,9 +385,7 @@ def launch_command_contexts():
 def pipeline_or_job_python_origin_contexts(using_job_op_graph_apis=False):
     return [
         args_with_default_cli_test_instance(target_args)
-        for target_args in valid_pipeline_or_job_python_origin_target_args(
-            using_job_op_graph_apis
-        )
+        for target_args in valid_pipeline_or_job_python_origin_target_args(using_job_op_graph_apis)
     ]
 
 
@@ -773,9 +766,7 @@ def test_run_wipe_incorrect_delete_message():
     with instance_for_test():
         runner = CliRunner()
         result = runner.invoke(run_wipe_command, input="WRONG\n")
-        assert (
-            "Exiting without deleting all run history and event logs" in result.output
-        )
+        assert "Exiting without deleting all run history and event logs" in result.output
         assert result.exit_code == 1
 
 
@@ -791,9 +782,7 @@ def test_run_delete_correct_delete_message():
     with instance_for_test() as instance:
         pipeline_result = execute_pipeline(foo_pipeline, instance=instance)
         runner = CliRunner()
-        result = runner.invoke(
-            run_delete_command, args=[pipeline_result.run_id], input="DELETE\n"
-        )
+        result = runner.invoke(run_delete_command, args=[pipeline_result.run_id], input="DELETE\n")
         assert "Deleted run" in result.output
         assert result.exit_code == 0
 
@@ -812,9 +801,7 @@ def test_run_delete_incorrect_delete_message():
     with instance_for_test() as instance:
         pipeline_result = execute_pipeline(foo_pipeline, instance=instance)
         runner = CliRunner()
-        result = runner.invoke(
-            run_delete_command, args=[pipeline_result.run_id], input="Wrong\n"
-        )
+        result = runner.invoke(run_delete_command, args=[pipeline_result.run_id], input="Wrong\n")
         assert "Exiting without deleting" in result.output
         assert result.exit_code == 1
 
@@ -867,9 +854,7 @@ def test_run_list_limit():
         shows_two_results = runner.invoke(run_list_command, args="--limit 3")
         assert shows_two_results.exit_code == 0
         assert shows_two_results.output.count("Run: ") == 2
-        assert (
-            shows_two_results.output.count("Pipeline: multi_mode_with_resources") == 2
-        )
+        assert shows_two_results.output.count("Pipeline: multi_mode_with_resources") == 2
 
 
 def runner_pipeline_or_job_execute(runner, cli_args, using_job_op_graph_apis=False):
