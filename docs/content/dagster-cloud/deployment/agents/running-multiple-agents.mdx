@@ -47,29 +47,26 @@ In this step, you'll enable the `agent_replicas` option to turn on running multi
 
 Follow the instructions for your agent:
 
-- [Docker](#docker)
-- [Kubernetes](#kubernetes)
-- [Local](#local)
-
-### Docker
+<details>
+  <summary><strong>DOCKER AGENTS</strong></summary>
 
 **Docker agents must run in containers orchestrated by separate Docker daemons** (e.g. on a separate host machine). Running multiple agents on one Docker daemon isn't currently supported.
 
 Add the following to the `dagster.yaml` file:
 
-```yaml file=/concepts/agent/dagster.yaml
-ENOENT: no such file or directory, open '/Users/erincochran/Desktop/dagster-repo/examples/docs_snippets/docs_snippets/concepts/agent/dagster.yaml'
+```yaml
+agent_replicas:
+  enabled: true
+
+dagster_cloud_api:
+  # <your other config>
+  agent_label: "My agent" # optional
 ```
 
-### Local
+</details>
 
-Add the following to the `dagster.yaml` file:
-
-```yaml file=/concepts/agent/dagster.yaml
-ENOENT: no such file or directory, open '/Users/erincochran/Desktop/dagster-repo/examples/docs_snippets/docs_snippets/concepts/agent/dagster.yaml'
-```
-
-### Kubernetes
+<details>
+  <summary><strong>KUBERNETES AGENTS</strong></summary>
 
 **Kubernetes agents must run in their own namespace or container.** Running multiple agents within a single namespace isn't currently supported.
 
@@ -91,3 +88,21 @@ agentReplicas:
 dagsterCloud:
   agentLabel: "My agent" # optional, only supported on 0.13.14 and later
 ```
+
+</details>
+
+<details>
+  <summary><strong>LOCAL AGENTS</strong></summary>
+
+Add the following to the `dagster.yaml` file:
+
+```yaml
+agent_replicas:
+  enabled: true
+
+dagster_cloud_api:
+  # <your other config>
+  agent_label: "My agent" # optional
+```
+
+</details>
