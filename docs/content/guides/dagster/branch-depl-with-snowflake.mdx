@@ -180,7 +180,7 @@ def repo():
 
 ## Step 3: Clone a production database per branch deployment
 
-The `branch_deployments.yml` workflow file from the [quickstart template](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart) defines a `dagster_cloud_build_push` job that builds each branch deployment. In order to add this workflow file, it must be located in your project directory under `/.github/workflows`. We can modify this workflow file to add a custom step that launches a job within our repository that will clone the production database upon deployment.
+The `branch_deployments.yml` workflow file from the [quickstart template](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart) defines a `dagster_cloud_build_push` job that builds each branch deployment. In order to add this workflow file, it must be located in your project directory under `.github/workflows`. We can modify this workflow file to add a custom step that launches a job within our repository that will clone the production database upon deployment.
 
 We’ll first need to define a job that clones our `PRODUCTION` database for each branch deployment. Later, in our GitHub actions workflow, we can trigger this job to run upon each redeploy. Each clone will be named `PRODUCTION_CLONE_<ID>` with `<ID>` representing the pull request ID, ensuring each branch deployment has a unique clone. This job will drop a database clone if it exists and then reclone from production, ensuring each redeployment has a fresh clone of `PRODUCTION`:
 
@@ -292,7 +292,7 @@ width={1301}
 height={805}
 />
 
-Alternatively, in the logs for the branch deployment workflow can be found in the "Actions" tab on the GitHub pull request.
+Alternatively, the logs for the branch deployment workflow can be found in the "Actions" tab on the GitHub pull request.
 
 We can also view our database in Snowflake to confirm that a clone exists for each branch deployment. When we materialize our assets within our branch deployment, we’ll now be writing to our clone of `PRODUCTION`. Within Snowflake, we can run queries against this clone to confirm the validity of our data:
 
