@@ -128,10 +128,10 @@ def from_example_command(name: str, example: str):
 def from_example_list_command():
     click.echo(f"Examples available in `dagster project from-example`:")
 
-    click.echo(_style_list_example_prints(AVAILABLE_EXAMPLES))
+    click.echo(_styled_list_example_prints(AVAILABLE_EXAMPLES))
 
 
-def _style_list_example_prints(examples: List[str]) -> str:
+def _styled_list_example_prints(examples: List[str]) -> str:
     return "\n".join([f"* {name}" for name in examples])
 
 
