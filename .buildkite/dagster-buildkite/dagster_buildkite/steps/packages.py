@@ -315,7 +315,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "examples/assets_dbt_python",
         unsupported_python_versions=[
             # dependency on dagster-dbt
-            AvailablePythonVersion.V3_6,
             AvailablePythonVersion.V3_10,
         ],
     ),
@@ -328,26 +327,15 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         pytest_extra_cmds=docs_snippets_extra_cmds,
         run_mypy=False,
         unsupported_python_versions=[
-            # dependency on various 3.6 and 3.9-incompatible extension libs
-            AvailablePythonVersion.V3_6,
+            # dependency on 3.9-incompatible extension libs
             AvailablePythonVersion.V3_9,
         ],
     ),
     PackageSpec(
         "examples/ge_example",
         unsupported_python_versions=[
-            # dependency on dagster-ge
-            AvailablePythonVersion.V3_6,
             # Issue with pinned of great_expectations
             AvailablePythonVersion.V3_10,
-        ],
-    ),
-    PackageSpec(
-        "examples/hacker_news_assets",
-        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
-        unsupported_python_versions=[
-            # dependency on dagster-dbt
-            AvailablePythonVersion.V3_6,
         ],
     ),
 ]
@@ -396,9 +384,8 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-dbt",
         pytest_extra_cmds=dbt_extra_cmds,
-        # dbt-core no longer supports python 3.6 and does not yet support python 3.10
+        # dbt-core no longer supports does not yet support python 3.10
         unsupported_python_versions=[
-            AvailablePythonVersion.V3_6,
             AvailablePythonVersion.V3_10,
         ],
     ),
@@ -480,22 +467,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec("python_modules/libraries/dagster-mlflow", upload_coverage=False),
     PackageSpec("python_modules/libraries/dagster-mysql", pytest_extra_cmds=mysql_extra_cmds),
     PackageSpec(
-        "python_modules/libraries/dagster-pandera",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_6,
-        ],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-snowflake",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_6,
-        ],
-    ),
-    PackageSpec(
         "python_modules/libraries/dagster-snowflake-pandas",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_6,
-        ],
         env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PASSWORD"],
     ),
     PackageSpec("python_modules/libraries/dagster-postgres", pytest_extra_cmds=postgres_extra_cmds),
@@ -508,12 +480,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagstermill",
         pytest_tox_factors=["papermill1", "papermill2"],
-    ),
-    PackageSpec(
-        "python_modules/libraries/dagster-ge",
-        unsupported_python_versions=[
-            AvailablePythonVersion.V3_6,
-        ],
     ),
     PackageSpec(
         ".buildkite/dagster-buildkite",
