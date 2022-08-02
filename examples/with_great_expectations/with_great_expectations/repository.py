@@ -1,5 +1,6 @@
-from dagster import repository
 from with_great_expectations.ge_demo import payroll_data
+
+from dagster import repository
 
 
 @repository
