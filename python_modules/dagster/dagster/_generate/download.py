@@ -18,7 +18,6 @@ AVAILABLE_EXAMPLES = [
     "airflow_ingest",
     "basic_pyspark",
     "bollinger",
-    "dbt_example",
     "dbt_python_assets",
     "deploy_docker",
     "deploy_ecs",
