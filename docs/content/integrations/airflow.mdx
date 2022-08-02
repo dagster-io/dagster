@@ -140,8 +140,16 @@ def my_http_job():
 
 To specify extra parameters to an instantiated Airflow connection, pass a JSON string into the `set_extra()` function of the Airflow connection object:
 
-```python file=../../with_airflow/airflow_operator_to_op.py startafter=start_operator_to_op_2 endbefore=end_operator_to_op_2
-ENOENT: no such file or directory, open '/Users/yuhan/dev/dagster/examples/with_airflow/airflow_operator_to_op.py'
+```python file=../../with_airflow/with_airflow/airflow_operator_to_op.py startafter=start_operator_to_op_2 endbefore=end_operator_to_op_2
+s3_conn = Connection(conn_id="s3_conn", conn_type="s3")
+s3_conn.set_extra(
+    json.dumps(
+        {
+            "aws_access_key_id": "my_access_key",
+            "aws_secret_access_key": "my_secret_key",
+        }
+    )
+)
 ```
 
 ## Ingesting DAGs from Airflow
@@ -154,9 +162,9 @@ There are two jobs in the repo:
 - `airflow_complex_dag` shows the translation of a more complex dependency structure.
 
 ```python file=../../with_airflow/with_airflow/repository.py startafter=start_repo_marker_0 endbefore=end_repo_marker_0
+from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
 from with_airflow.airflow_complex_dag import complex_dag
 from with_airflow.airflow_simple_dag import simple_dag
-from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
 
 from dagster import repository
 
