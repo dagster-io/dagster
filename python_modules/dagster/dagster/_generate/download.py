@@ -16,7 +16,7 @@ EXAMPLES_TO_IGNORE = ["docs_snippets"]
 # repo to make sure it's up-to-date.
 AVAILABLE_EXAMPLES = [
     "airflow_ingest",
-    "airline_assets",
+    "feature_graph_backed_assets",
     "basic_pyspark",
     "bollinger",
     "dbt_example",

@@ -1,2 +1,0 @@
-load_from:
-  - python_package: dagster_graph_backed_assets

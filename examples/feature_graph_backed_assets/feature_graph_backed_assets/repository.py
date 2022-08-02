@@ -1,5 +1,5 @@
 import pandas as pd
-from dagster_graph_backed_assets import assets
+from feature_graph_backed_assets import assets
 
 from dagster import (
     AssetSelection,
@@ -56,7 +56,7 @@ airline_job = define_asset_job("airline_job", AssetSelection.keys("passenger_fli
 
 
 @repository
-def dagster_graph_backed_assets():
+def feature_graph_backed_assets():
     return [
         load_assets_from_package_module(assets),
         define_asset_job("airline_job", AssetSelection.keys("passenger_flights").downstream()),
