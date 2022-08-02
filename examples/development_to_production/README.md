@@ -11,8 +11,8 @@ To follow along with this example, you can read this [guide](https://docs.dagste
 To run this example locally
 
 ```
-git clone git@github.com:dagster-io/dagster.git
-cd dagster/examples/development_to_production
+dagster project from-example --name my-dagster-project --example development_to_production
+cd my-dagster-project
 pip install -e .
 
 # Load it in the web UI

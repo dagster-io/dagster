@@ -36,10 +36,6 @@ function renderTypeRecursive(
           <DictBlockComment indent={innerIndent} content="One of the following:" />
         )}
         {type.fields.map((fieldData) => {
-          // TODO: temporary hack while we figure this out
-          if (fieldData.name === 'assets') {
-            return null;
-          }
           const keyDisplay = (
             <DictKey
               theme={props.theme}

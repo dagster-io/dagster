@@ -4,7 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ASSET_NODE_CONFIG_FRAGMENT, configSchemaForAssetNode} from '../assets/AssetConfig';
+import {ASSET_NODE_CONFIG_FRAGMENT} from '../assets/AssetConfig';
 import {AssetEvents} from '../assets/AssetEvents';
 import {
   AssetMetadataTable,
@@ -51,7 +51,7 @@ export const SidebarAssetInfo: React.FC<{
   const repoAddress = buildRepoAddress(asset.repository.name, asset.repository.location.name);
   const {assetMetadata, assetType} = metadataForAssetNode(asset);
   const hasAssetMetadata = assetType || assetMetadata.length > 0;
-  const assetConfigSchema = configSchemaForAssetNode(asset);
+  const assetConfigSchema = asset.configField?.configType;
 
   const OpMetadataPlugin = asset.op?.metadata && pluginForMetadata(asset.op.metadata);
 

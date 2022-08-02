@@ -89,7 +89,7 @@ def get_toys_sensors():
                 },
             )
 
-    @run_failure_sensor(job_selection=[error_monster_failing_job])
+    @run_failure_sensor(monitored_jobs=[error_monster_failing_job])
     def custom_slack_on_job_failure(context: RunFailureSensorContext):
 
         base_url = "http://localhost:3000"
@@ -116,7 +116,7 @@ def get_toys_sensors():
         name="built_in_slack_on_run_failure_sensor",
         channel="#toy-test",
         slack_token=os.environ.get("SLACK_DAGSTER_ETL_BOT_TOKEN"),
-        job_selection=[error_monster_failing_job],
+        monitored_jobs=[error_monster_failing_job],
         dagit_base_url="http://localhost:3000",
     )
 

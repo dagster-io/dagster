@@ -12,6 +12,7 @@ from .instance import instance_cli
 from .job import job_cli
 from .new_project import new_project_cli
 from .pipeline import pipeline_cli
+from .project import project_cli
 from .run import run_cli
 from .schedule import schedule_cli
 from .sensor import sensor_cli
@@ -29,6 +30,7 @@ def create_dagster_cli():
         "asset": asset_cli,
         "debug": debug_cli,
         "new-project": new_project_cli,
+        "project": project_cli,
     }
 
     @click.group(

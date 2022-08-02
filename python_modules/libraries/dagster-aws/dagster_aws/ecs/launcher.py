@@ -418,7 +418,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 return CheckRunHealthResult(
                     WorkerStatus.FAILED,
                     f"ECS task failed. Stop code: {t.get('stopCode')}. Stop reason {t.get('stopReason')}. "
-                    f"{container_str} {c.get('name') for c in failed_containers} failed."
+                    f"{container_str} {[c.get('name') for c in failed_containers]} failed."
                     f"Check the logs for task {t.get('taskArn')} for details.",
                 )
 

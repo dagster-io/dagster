@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Set, Tuple, Union
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._core.types.dagster_type import DagsterTypeKind
 
 from .dependency import DependencyStructure, IDependencyDefinition, Node, NodeInvocation
 
@@ -258,7 +257,6 @@ def _validate_dependencies(dependencies, solid_dict, alias_to_name):
                     )
 
                 input_def = solid_dict[from_solid].definition.input_def_named(from_input)
-                output_def = solid_dict[dep.solid].definition.output_def_named(dep.output)
 
                 if dep_def.is_fan_in() and not input_def.dagster_type.supports_fan_in:
                     raise DagsterInvalidDefinitionError(
@@ -266,32 +264,3 @@ def _validate_dependencies(dependencies, solid_dict, alias_to_name):
                         f'DagsterType "{input_def.dagster_type.display_name}" does not support fanning in '
                         "(MultiDependencyDefinition). Use the List type, since fanning in will result in a list."
                     )
-
-                _validate_input_output_pair(input_def, output_def, from_solid, dep)
-
-
-def _validate_input_output_pair(input_def, output_def, from_solid, dep):
-    # Currently, we opt to be overly permissive with input/output type mismatches.
-
-    # Here we check for the case where no value will be provided where one is expected.
-    if (
-        output_def.dagster_type.kind == DagsterTypeKind.NOTHING
-        and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
-    ):
-        raise DagsterInvalidDefinitionError(
-            (
-                'Input "{input_def.name}" to node "{from_solid}" can not depend on the output '
-                '"{output_def.name}" from node "{dep.solid}". '
-                'Input "{input_def.name}" expects a value of type '
-                '{input_def.dagster_type.display_name} and output "{output_def.name}" returns '
-                "type {output_def.dagster_type.display_name}{extra}."
-            ).format(
-                from_solid=from_solid,
-                dep=dep,
-                output_def=output_def,
-                input_def=input_def,
-                extra=" (which produces no value)"
-                if output_def.dagster_type.kind == DagsterTypeKind.NOTHING
-                else "",
-            )
-        )
