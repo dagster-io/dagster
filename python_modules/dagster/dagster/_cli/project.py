@@ -126,7 +126,7 @@ def from_example_command(name: str, example: str):
 )
 @experimental
 def from_example_list_command():
-    click.echo(f"Examples available in `dagster project from-example`:")
+    click.echo("Examples available in `dagster project from-example`:")
 
     click.echo(_styled_list_example_prints(AVAILABLE_EXAMPLES))
 
