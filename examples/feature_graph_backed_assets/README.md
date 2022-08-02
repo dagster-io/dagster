@@ -4,6 +4,8 @@ If generating an asset involves multiple discrete computations, you can use grap
 
 Check out [Graph-backed assets](https://docs.dagster.io/concepts/assets/software-defined-assets#graph-backed-assets) for more details.
 
+This example creates an asset containing airline passenger info and parses the data using ops and graphs.
+
 ## Getting started
 
 ```bash
