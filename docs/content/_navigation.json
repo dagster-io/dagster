@@ -684,7 +684,7 @@
     "path": "/community",
     "children": [
       {
-        "title": "Code of Conduct",
+        "title": "Code of conduct",
         "path": "/community/code-of-conduct"
       },
       {
@@ -692,8 +692,14 @@
         "path": "/community/contributing"
       },
       {
-        "title": "Changing Public APIs",
-        "path": "/community/public-apis"
+        "title": "Slack",
+        "path": "https://dagster-slackin.herokuapp.com/",
+        "isExternalLink": true
+      },
+      {
+        "title": "GitHub",
+        "path": "https://github.com/dagster-io/dagster",
+        "isExternalLink": true
       }
     ]
   },
