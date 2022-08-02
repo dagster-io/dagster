@@ -16,6 +16,7 @@ EXAMPLES_TO_IGNORE = ["docs_snippets"]
 # repo to make sure it's up-to-date.
 AVAILABLE_EXAMPLES = [
     "airflow_ingest",
+    "assets_modern_data_stack",
     "bollinger",
     "dbt_python_assets",
     "deploy_docker",
