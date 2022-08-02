@@ -442,7 +442,7 @@ const ExampleItem = ({
       <div className="inline-flex flex-row space-x-4">
         <a href={hrefCode}>
           <button className="py-1 px-4 rounded-lg bg-gable-green text-white hover:bg-transparent hover:text-gable-green hover: border hover:border-gable-green">
-            Code
+            View
           </button>
         </a>
         {hrefDoc && (
