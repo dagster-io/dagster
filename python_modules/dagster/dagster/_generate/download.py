@@ -11,18 +11,38 @@ from .generate import _should_skip_file
 
 # Currently we only download from 'master' branch
 DEFAULT_GITHUB_URL = "https://codeload.github.com/dagster-io/dagster/tar.gz/master"
-# Examples that can't be downloaded from the dagster project CLI
+# Examples aren't that can't be downloaded from the dagster project CLI
 EXAMPLES_TO_IGNORE = ["docs_snippets"]
+# Hard
+AVAILABLE_EXAMPLES = [
+    "airflow_ingest",
+    "airline_assets",
+    "basic_pyspark",
+    "bollinger",
+    "dbt_example",
+    "dbt_python_assets",
+    "deploy_docker",
+    "deploy_ecs",
+    "deploy_k8s",
+    "emr_pyspark",
+    "ge_example",
+    "hacker_news_assets",
+    "memoized_development",
+    "modern_data_stack_assets",
+    "nyt-feed",
+    "run_attribution_example",
+    "software_defined_assets",
+]
 
 
 def download_example_from_github(path: str, example: str):
-    if example in EXAMPLES_TO_IGNORE:
+    if example not in AVAILABLE_EXAMPLES:
         click.echo(
             click.style(
                 f'Example "{example}" not available from the `dagster project` CLI. ', fg="red"
             )
-            + "\nPlease specify another official Dagster example. "
-            + "You can find the examples in the Dagster repo: https://github.com/dagster-io/dagster/tree/master/examples"
+            + "\nPlease specify the name of an official Dagster example. "
+            + "You can find the available examples via `dagster project list-example`."
         )
         sys.exit(1)
 
@@ -33,16 +53,6 @@ def download_example_from_github(path: str, example: str):
 
     response = requests.get(DEFAULT_GITHUB_URL, stream=True)
     with tarfile.open(fileobj=BytesIO(response.raw.read()), mode="r:gz") as tar_file:
-        try:
-            tar_file.getmember(path_to_selected_example)
-        except KeyError:
-            click.echo(
-                click.style(f'Can\'t find example "{example}". ', fg="red")
-                + "\nPlease specify one of the official Dagster examples. "
-                + "You can find the examples in the Dagster repo: https://github.com/dagster-io/dagster/tree/master/examples"
-            )
-            sys.exit(1)
-
         # Extract the selected example folder to destination
         subdir_and_files = [
             tarinfo
@@ -59,7 +69,7 @@ def download_example_from_github(path: str, example: str):
                 os.mkdir(dest)
             elif member.isreg():
                 fileobject = tar_file.extractfile(member)
-                cast(fileobject, IO[bytes])
+
                 with open(dest, "wb") as f:
-                    f.write(fileobject.read())
-                fileobject.close()
+                    f.write(fileobject.read())  # type: ignore
+                fileobject.close()  # type: ignore

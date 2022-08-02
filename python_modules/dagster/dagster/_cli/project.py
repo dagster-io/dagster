@@ -1,10 +1,12 @@
 import os
 import sys
+from typing import List
 
 import click
 
 from dagster._annotations import experimental
 from dagster._generate import download_example_from_github, generate_project, generate_repository
+from dagster._generate.download import AVAILABLE_EXAMPLES
 
 
 @click.group(name="project")
@@ -24,6 +26,11 @@ scaffold_command_help_text = (
     "Create a folder structure with a single Dagster repository and other files such as "
     "workspace.yaml, in the current directory. This CLI enables you to quickly start building "
     "a new Dagster project with everything set up."
+)
+
+from_example_command_help_text = (
+    "Download one of the official Dagster examples to the current directory. "
+    "This CLI enables you to quickly bootstrap your project with an officially maintained example."
 )
 
 
@@ -79,7 +86,8 @@ def scaffold_command(name: str):
 
 @project_cli.command(
     name="from-example",
-    help="Create a new Dagster project using one of the official Dagster examples.",
+    short_help=from_example_command_help_text,
+    help=from_example_command_help_text,
 )
 @click.option(
     "--name",
@@ -93,7 +101,8 @@ def scaffold_command(name: str):
     type=click.STRING,
     help=(
         "Name of the example to bootstrap with. You can use an example name from the official "
-        "examples in Dagster repo: https://github.com/dagster-io/dagster/tree/master/examples"
+        "examples in Dagster repo: https://github.com/dagster-io/dagster/tree/master/examples. "
+        "You can also find the available examples via `dagster project list-example`."
     ),
 )
 @experimental
@@ -109,6 +118,21 @@ def from_example_command(name: str, example: str):
     download_example_from_github(dir_abspath, example)
 
     click.echo(_styled_success_statement(name, dir_abspath))
+
+
+@project_cli.command(
+    name="list-example",
+    help="List the examples that available to bootstrap with.",
+)
+@experimental
+def from_example_list_command():
+    click.echo(f"Examples available in `dagster project from-example`:")
+
+    click.echo(_style_list_example_prints(AVAILABLE_EXAMPLES))
+
+
+def _style_list_example_prints(examples: List[str]) -> str:
+    return "\n".join([f"* {name}" for name in examples])
 
 
 def _styled_success_statement(name: str, path: str):
