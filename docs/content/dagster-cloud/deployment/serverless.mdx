@@ -5,3 +5,53 @@ noindex: True
 ---
 
 # Serverless deployment in Dagster Cloud
+
+Dagster Cloud Serverless is a fully managed version of Dagster Cloud, and is the easiest way to get started with Dagster. With Serverless, you can run your Dagster jobs without spinning up any infrastructure.
+
+---
+
+## When to choose Serverless
+
+Serverless works best with lightweight jobs that do not require significant computational resources within the orchestrator itself. Most orchestration workloads fit into this category, especially those that orchestrate third-party SaaS products like cloud data warehouses and ETL tools.
+
+Serverless is not the right fit for all workloads. If any of the following are applicable, you should select [Hybrid deployment](/dagster-cloud/deployment/hybrid):
+
+- Dagster jobs require substantial computation resources. For example, training a large machine learning (ML) model in-process.
+- You need access to private services or data within your own cloud or on-prem environment
+- You don't want to add Elementl as a data processor
+
+---
+
+## Limitations
+
+Serverless is currently in early access and is subject to the following limitations:
+
+- Maximum of 100 GB of bandwidth per day
+- Maximum of 4500 step-minutes per day
+- Runs receive 4 vCPU cores, 16 GB of RAM and 20 GB of ephemeral disk
+- Sensors receive 0.25 vCPU cores and 512 MB of RAM
+- The Serverless base image is `debian:bullseye-slim`. Custom Dockerfiles are not supported.
+- All Serverless jobs run in the United States
+- Only HTTP(S) to the open internet is supported
+
+Enterprise customers may request a quota increase by [contacting Sales](mailto:sales@elementl.com).
+
+---
+
+## Getting started with Serverless
+
+When you create a new Dagster Cloud organization, you'll need to activate a deployment type: Hybrid or Serverless. Once activated, you'll be prompted to fork the starter GitHub repo and install the GitHub app. Pushing to the main branch will deploy to your prod Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-cloud/developing-testing/branch-deployments) using the Serverless agent.
+
+If you’re using another git hosting provider, CI service, or simply want to do local development without using a CI service, you can use Serverless via the [dagster-cloud CLI](/dagster-cloud/developing-testing/dagster-cloud-cli). Run the following to learn more:
+
+```shell
+dagster-cloud serverless --help
+```
+
+---
+
+## Transitioning to Hybrid
+
+If your organization begins to hit the limitations of Serverless, you should transition to a Hybrid deployment. Hybrid deployments allow you to run an [agent in your own infrastructure](/dagster-cloud/deployment/agents) and give you substantially more flexibility and control over the Dagster environment.
+
+To switch to Hybrid, navigate to **Status > Agents** in your Dagster Cloud account. On this page, you can disable the Serverless agent on and view instructions for enabling Hybrid.
