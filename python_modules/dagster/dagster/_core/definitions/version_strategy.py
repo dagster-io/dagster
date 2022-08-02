@@ -46,14 +46,16 @@ class ResourceVersionContext(NamedTuple):
 class VersionStrategy(ABC):
     """Abstract class for defining a strategy to version ops and resources.
 
-    When subclassing, `get_op_version` must be implemented, and `get_resource_version` can be
-    optionally implemented.
+    When subclassing, `get_op_version` must be implemented, and
+    `get_resource_version` can be optionally implemented.
 
-    `get_op_vresion` should ingest an OpVersionContext, and `get_resource_version` should ingest a
-    ResourceVersionContext. From that,  each synthesize a unique string called a `version`, which will
-    be tagged to outputs of that solid in the pipeline. Providing a `VersionStrategy` instance to a
-    job will enable memoization on that job, such that only steps whose outputs do not have an
-    up-to-date version will run.
+    `get_op_version` should ingest an OpVersionContext, and `get_resource_version` should ingest a
+    ResourceVersionContext. From that,  each synthesize a unique string called
+    a `version`, which will
+    be tagged to outputs of that solid in the pipeline. Providing a
+    `VersionStrategy` instance to a
+    job will enable memoization on that job, such that only steps whose
+    outputs do not have an up-to-date version will run.
     """
 
     @abstractmethod
@@ -69,7 +71,9 @@ class VersionStrategy(ABC):
 class SourceHashVersionStrategy(VersionStrategy):
     """VersionStrategy that checks for changes to the source code of ops and resources.
 
-    Only checks for changes within the immediate body of the op/resource's decorated function (or compute function, if the op/resource was constructed directly from a definition).
+    Only checks for changes within the immediate body of the op/resource's
+    decorated function (or compute function, if the op/resource was
+    constructed directly from a definition).
     """
 
     def _get_source_hash(self, fn):

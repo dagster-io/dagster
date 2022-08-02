@@ -14,7 +14,7 @@ customize it.
 Executors (Experimental)
 ------------------------
 
-APIs for constructing custom executors. While this is considered advanced experimental usage, significant advanced warning will be given before any breakages occur to this set of APIs. Please note that using dagster-provided executors is considered stable, common usage.
+APIs for constructing custom executors. This is considered advanced experimental usage. Please note that using Dagster-provided executors is considered stable, common usage.
 
 .. autodecorator:: executor
 
