@@ -520,6 +520,7 @@ export type SidebarAssetFragment_configField_configType = SidebarAssetFragment_c
 export interface SidebarAssetFragment_configField {
   __typename: "ConfigTypeField";
   name: string;
+  isRequired: boolean;
   configType: SidebarAssetFragment_configField_configType;
 }
 

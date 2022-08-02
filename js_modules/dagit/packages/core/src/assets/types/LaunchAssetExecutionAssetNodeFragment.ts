@@ -548,6 +548,7 @@ export type LaunchAssetExecutionAssetNodeFragment_configField_configType = Launc
 export interface LaunchAssetExecutionAssetNodeFragment_configField {
   __typename: "ConfigTypeField";
   name: string;
+  isRequired: boolean;
   configType: LaunchAssetExecutionAssetNodeFragment_configField_configType;
 }
 
