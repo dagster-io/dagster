@@ -301,7 +301,7 @@ postgres_extra_cmds = [
 # special-case those here
 EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
-        "examples/airflow_ingest",
+        "examples/with_airflow",
         unsupported_python_versions=[AvailablePythonVersion.V3_9, AvailablePythonVersion.V3_10],
     ),
     PackageSpec(
