@@ -26,6 +26,7 @@ import {
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {InstancePageContext} from '../instance/InstancePageContext';
 import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 import {RunStatus} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
@@ -340,6 +341,7 @@ const RUNS_ROOT_QUERY = gql`
 
 const QueueDaemonAlert = () => {
   const {data} = useQuery<QueueDaemonStatusQuery>(QUEUE_DAEMON_STATUS_QUERY);
+  const {pageTitle} = React.useContext(InstancePageContext);
   const status = data?.instance.daemonHealth.daemonStatus;
   if (status?.required && !status?.healthy) {
     return (
@@ -348,7 +350,7 @@ const QueueDaemonAlert = () => {
         title="The queued run coordinator is not healthy."
         description={
           <div>
-            View <Link to="/instance/health">Instance status</Link> for details.
+            View <Link to="/instance/health">{pageTitle}</Link> for details.
           </div>
         }
       />

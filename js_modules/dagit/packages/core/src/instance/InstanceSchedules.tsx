@@ -16,12 +16,14 @@ import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {buildRepoPath, buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
+import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceSchedulesQuery} from './types/InstanceSchedulesQuery';
 
 export const InstanceSchedules = React.memo(() => {
   useTrackPageView();
 
+  const {pageTitle} = React.useContext(InstancePageContext);
   const queryData = useQuery<InstanceSchedulesQuery>(INSTANCE_SCHEDULES_QUERY, {
     fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
@@ -31,7 +33,7 @@ export const InstanceSchedules = React.memo(() => {
   return (
     <>
       <PageHeader
-        title={<Heading>Instance status</Heading>}
+        title={<Heading>{pageTitle}</Heading>}
         tabs={<InstanceTabs tab="schedules" refreshState={refreshState} />}
       />
       <Loading queryResult={queryData} allowStaleData={true}>
