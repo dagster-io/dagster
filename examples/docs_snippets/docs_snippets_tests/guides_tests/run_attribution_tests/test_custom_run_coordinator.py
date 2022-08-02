@@ -5,7 +5,9 @@ from dagster_tests.core_tests.run_coordinator_tests.test_queued_run_coordinator 
     TestQueuedRunCoordinator,
 )
 from mock import patch
-from run_attribution_example.custom_run_coordinator import CustomRunCoordinator
+from docs_snippets.guides.dagster.run_attribution.custom_run_coordinator import (
+    CustomRunCoordinator,
+)
 
 from dagster._core.run_coordinator import SubmitRunContext
 from dagster._core.storage.pipeline_run import PipelineRunStatus
@@ -22,7 +24,9 @@ class TestCustomRunCoordinator(TestQueuedRunCoordinator):
         self, instance, coordinator, workspace, external_pipeline
     ):
         run_id = "foo-1"
-        with patch("run_attribution_example.custom_run_coordinator.warnings") as mock_warnings:
+        with patch(
+            "docs_snippets.guides.dagster.run_attribution.custom_run_coordinator.warnings"
+        ) as mock_warnings:
 
             run = self.create_run(
                 instance,
