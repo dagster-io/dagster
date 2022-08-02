@@ -26,7 +26,6 @@ AVAILABLE_EXAMPLES = [
     "feature_graph_backed_assets",
     "ge_example",
     "hacker_news_assets",
-    "memoized_development",
     "nyt-feed",
     "run_attribution_example",
     "software_defined_assets",
