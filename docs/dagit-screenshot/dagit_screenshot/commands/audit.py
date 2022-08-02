@@ -39,6 +39,7 @@ def audit(
         print(f"{len(error_results)} errors:")
         for result in error_results:
             print(f'  {result["id"]}: {result["error"]}')
+        exit(1)
 
 
 def _validate_spec(

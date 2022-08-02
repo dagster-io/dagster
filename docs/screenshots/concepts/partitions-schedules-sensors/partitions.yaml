@@ -17,7 +17,7 @@
     - Wait for the run to complete
     - Refresh the page
 
-- id: materialized-partitioned-asset_activity.png
+- id: materialized-partitioned-asset-activity.png
   workspace: examples/docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_asset.py
   route: /instance/assets/my_daily_partitioned_asset?view=definition
   steps:

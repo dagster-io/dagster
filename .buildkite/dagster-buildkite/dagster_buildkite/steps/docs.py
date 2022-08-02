@@ -44,10 +44,7 @@ def build_docs_steps() -> List[BuildkiteStep]:
         .on_test_image(AvailablePythonVersion.V3_9)
         .build(),
         # Verify screenshot integrity.
-        CommandStepBuilder("docs screenshot spec")
-        .run("python docs/screenshot_capture/match_screenshots.py")
-        .on_test_image(AvailablePythonVersion.V3_8)
-        .build(),
+        build_tox_step("docs", "audit-screenshots"),
         # mypy for build scripts
         build_tox_step("docs", "mypy", command_type="mypy"),
         # pylint for build scripts

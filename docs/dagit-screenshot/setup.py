@@ -5,7 +5,7 @@ setup(
     version="0+dev",
     author_email="hello@elementl.com",
     packages=find_packages(exclude=["dagit_screenshot_tests*"]),  # same as name
-    install_requires=["click>=6", "selenium"],  # external packages as dependencies
+    install_requires=["click>=6", "selenium", "pyyaml", "typing-extensions>=4"],  # external packages as dependencies
     author="Elementl",
     license="Apache-2.0",
     description="Utility for taking automated screenshots from dagit",
