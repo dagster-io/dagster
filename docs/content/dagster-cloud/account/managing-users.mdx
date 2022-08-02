@@ -5,3 +5,259 @@ noindex: True
 ---
 
 # Managing users in Dagster Cloud
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+In this guide, we'll walk you through adding, removing, and assigning user roles to users in Dagster Cloud.
+
+---
+
+## Seeding users
+
+When your organization is first created, we will seed your database with admin users as requested. If you need to add more users, configure SAML or SSO, or are having trouble with your permissions, please contact these seed users.
+
+---
+
+## Adding and removing users
+
+<Note>
+  <strong>Organization Admin</strong> or <strong>Admin</strong> permissions are
+  required to add or remove users in Dagster Cloud.
+</Note>
+
+- [Adding a user](#adding-a-user)
+- [Removing a user](#removing-a-user)
+
+### Adding a user
+
+Before you start, note that:
+
+- **If using Google for SSO**, users must be added in Dagster Cloud before they can log in.
+
+- **If using a SAML-based solution like Okta**, users must be assigned to the Dagster app in the SSO portal to log in. These users will be granted Viewer permissions by default.
+
+To add a new user:
+
+1. Sign in to your Dagster Cloud account.
+
+2. Click the **user menu (your icon) > Cloud Settings**.
+
+3. Fill in the following:
+
+   - **Email** - Enter the user's email address
+   - **Role** - Select the [user role](#understanding-user-permissions) for the user
+
+   For example:
+
+   <Image
+   alt="Cloud Settings Interface for Permissions"
+   src="/images/dagster-cloud/user-token-management/cloud_settings_permissions.png"
+   width={842}
+   height={346}
+   />
+
+4. Click **+ Add**.
+
+### Removing a user
+
+To remove a user:
+
+1. Sign in to your Dagster Cloud account.
+2. Click the **user menu (your icon) > Cloud Settings**.
+3. Locate the user in the user list.
+4. Click **Remove**.
+5. When prompted, confirm the removal.
+
+---
+
+## Understanding user permissions
+
+User roles are set on a per-deployment basis and enforced both in Dagster Cloud and the GraphQL API.
+
+Dagster Cloud currently includes support for four levels of role-based access control:
+
+- **Viewer** - The least permissive role
+- **Editor**
+- **Admin**
+- **Organization Admin** - The most permissive role
+
+<table>
+  <thead>
+    <tr>
+      <th>&nbsp;</th>
+      <th>Viewer</th>
+      <th>Editor</th>
+      <th>Admin</th>
+      <th>Organization Admin</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td colspan="5">
+        <strong>GENERAL</strong>
+      </td>
+    </tr>
+    <tr>
+      <td>Launch, re-execute, terminate, and delete runs of jobs</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+    </tr>
+    <tr>
+      <td>Start and stop schedules</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+    </tr>
+    <tr>
+      <td>Start and stop sensors</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+    </tr>
+    <tr>
+      <td>Wipe assets</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+    </tr>
+    <tr>
+      <td>Launch and cancel backfills</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+    </tr>
+    <tr>
+      <td colspan="5">
+        <strong>DEPLOYMENTS</strong>
+      </td>
+    </tr>
+    <tr>
+      <td>View deployments</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+    </tr>
+    <tr>
+      <td>
+        Modify{" "}
+        <a href="/guides/managing-deployments#deployment-settings">
+          deployment settings
+        </a>
+      </td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/tutorial/managing-deployments#managing-deployments">
+          Create and delete deployments
+        </a>
+      </td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-green-50">Y</td>
+    </tr>
+    <tr>
+      <td colspan="5">
+        <strong>USER AND AGENT TOKENS</strong>
+      </td>
+    </tr>
+    <tr>
+      <td>View agent tokens</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+    </tr>
+    <tr>
+      <td>Edit agent tokens</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+    </tr>
+    <tr>
+      <td>View and create own user tokens</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+    </tr>
+    <tr>
+      <td>List all user tokens</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+    </tr>
+    <tr>
+      <td>Revoke all user tokens</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+    </tr>
+    <tr>
+      <td colspan="5">
+        <strong>USER MANAGEMENT</strong>
+      </td>
+    </tr>
+    <tr>
+      <td>View users</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+    </tr>
+    <tr>
+      <td>Edit users</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+    </tr>
+    <tr>
+      <td colspan="5">
+        <strong>WORKSPACE ADMINISTRATION</strong>
+      </td>
+    </tr>
+    <tr>
+      <td>Edit alerts</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+    </tr>
+    <tr>
+      <td>Edit workspace</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+    </tr>
+    <tr>
+      <td>Reload code locations and workspaces</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+      <td className="bg-green-50">Y</td>
+    </tr>
+    <tr>
+      <td>Administer SAML</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-red-50">N</td>
+      <td className="bg-green-50">Y</td>
+    </tr>
+  </tbody>
+</table>
