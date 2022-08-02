@@ -89,7 +89,7 @@ All metadata types inherit from `MetadataValue`. The following types are defined
 .. autoclass:: DagsterAssetMetadataValue
     :members:
 
-.. autoclass:: DagsterPipelineRunMetadataValue
+.. autoclass:: DagsterRunMetadataValue
     :members:
 
 .. autoclass:: FloatMetadataValue

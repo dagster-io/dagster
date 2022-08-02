@@ -190,14 +190,6 @@ class SensorDefinition:
             This function must return a generator, which must yield either a single SkipReason
             or one or more RunRequest objects.
         name (Optional[str]): The name of the sensor to create. Defaults to name of evaluation_fn
-        pipeline_name (Optional[str]): (legacy) The name of the pipeline to execute when the sensor
-            fires. Cannot be used in conjunction with `job` or `jobs` parameters.
-        solid_selection (Optional[Sequence[str]]): (legacy) A list of solid subselection (including single
-            solid names) to execute when the sensor runs. e.g. ``['*some_solid+', 'other_solid']``.
-            Cannot be used in conjunction with `job` or `jobs` parameters.
-        mode (Optional[str]): (legacy) The mode to apply when executing runs triggered by this
-            sensor. Cannot be used in conjunction with `job` or `jobs` parameters. (default:
-            'default')
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
@@ -602,8 +594,6 @@ class AssetSensorDefinition(SensorDefinition):
     Args:
         name (str): The name of the sensor to create.
         asset_key (AssetKey): The asset_key this sensor monitors.
-        pipeline_name (Optional[str]): (legacy) The name of the pipeline to execute when the sensor
-            fires. Cannot be used in conjunction with `job` or `jobs` parameters.
         asset_materialization_fn (Callable[[SensorEvaluationContext, EventLogEntry], Union[Iterator[Union[RunRequest, SkipReason]], RunRequest, SkipReason]]): The core
             evaluation function for the sensor, which is run at an interval to determine whether a
             run should be launched or not. Takes a :py:class:`~dagster.SensorEvaluationContext` and
@@ -611,12 +601,6 @@ class AssetSensorDefinition(SensorDefinition):
 
             This function must return a generator, which must yield either a single SkipReason
             or one or more RunRequest objects.
-        solid_selection (Optional[Sequence[str]]): (legacy) A list of solid subselection (including single
-            solid names) to execute when the sensor runs. e.g. ``['*some_solid+', 'other_solid']``.
-            Cannot be used in conjunction with `job` or `jobs` parameters.
-        mode (Optional[str]): (legacy) The mode to apply when executing runs triggered by this sensor.
-            (default: 'default').
-            Cannot be used in conjunction with `job` or `jobs` parameters.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.

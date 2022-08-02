@@ -14,6 +14,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataUserInput
@@ -178,6 +179,7 @@ class AssetsDefinition(ResourceAddable):
 
         return solid_def(*args, **kwargs)
 
+    @public
     @staticmethod
     def from_graph(
         graph_def: "GraphDefinition",
@@ -243,6 +245,7 @@ class AssetsDefinition(ResourceAddable):
             key_prefix=key_prefix,
         )
 
+    @public
     @staticmethod
     def from_op(
         op_def: OpDefinition,
@@ -389,14 +392,17 @@ class AssetsDefinition(ResourceAddable):
             else None,
         )
 
+    @public  # type: ignore
     @property
     def can_subset(self) -> bool:
         return self._can_subset
 
+    @public  # type: ignore
     @property
     def group_names_by_key(self) -> Mapping[AssetKey, str]:
         return self._group_names_by_key
 
+    @public  # type: ignore
     @property
     def op(self) -> OpDefinition:
         check.invariant(
@@ -405,10 +411,12 @@ class AssetsDefinition(ResourceAddable):
         )
         return cast(OpDefinition, self._node_def)
 
+    @public  # type: ignore
     @property
     def node_def(self) -> NodeDefinition:
         return self._node_def
 
+    @public  # type: ignore
     @property
     def asset_deps(self) -> Mapping[AssetKey, AbstractSet[AssetKey]]:
         return self._asset_deps
@@ -417,6 +425,7 @@ class AssetsDefinition(ResourceAddable):
     def input_names(self) -> Iterable[str]:
         return self.keys_by_input_name.keys()
 
+    @public  # type: ignore
     @property
     def key(self) -> AssetKey:
         check.invariant(
@@ -434,10 +443,12 @@ class AssetsDefinition(ResourceAddable):
         )
         return self.key
 
+    @public  # type: ignore
     @property
     def resource_defs(self) -> Dict[str, ResourceDefinition]:
         return dict(self._resource_defs)
 
+    @public  # type: ignore
     @property
     def keys(self) -> AbstractSet[AssetKey]:
         return self._selected_asset_keys
@@ -449,6 +460,7 @@ class AssetsDefinition(ResourceAddable):
         )
         return self.keys
 
+    @public  # type: ignore
     @property
     def dependency_keys(self) -> Iterable[AssetKey]:
         # the input asset keys that are directly upstream of a selected asset key
@@ -479,6 +491,7 @@ class AssetsDefinition(ResourceAddable):
             name: key for name, key in self.node_keys_by_input_name.items() if key in upstream_keys
         }
 
+    @public  # type: ignore
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         return self._partitions_def
@@ -487,6 +500,7 @@ class AssetsDefinition(ResourceAddable):
     def metadata_by_key(self):
         return self._metadata_by_key
 
+    @public
     def get_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
@@ -625,6 +639,7 @@ class AssetsDefinition(ResourceAddable):
         for source_key, resource_def in self.resource_defs.items():
             yield from resource_def.get_resource_requirements(outer_context=source_key)
 
+    @public  # type: ignore
     @property
     def required_resource_keys(self) -> Set[str]:
         return {requirement.key for requirement in self.get_resource_requirements()}

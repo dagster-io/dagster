@@ -13,9 +13,8 @@ from dagster._core.definitions.run_status_sensor_definition import (
 def _default_failure_message(context: RunFailureSensorContext) -> str:
     return "\n".join(
         [
-            f"Job {context.dagster_run.pipeline_name} failed!",
+            f"Job {context.dagster_run.job_name} failed!",
             f"Run ID: {context.dagster_run.run_id}",
-            f"Mode: {context.dagster_run.mode}",
             f"Error: {context.failure_event.message}",
         ]
     )
@@ -38,14 +37,14 @@ def make_teams_on_run_failure_sensor(
         hook_url (str): MS Teams incoming webhook URL.
         message_fn (Optional(Callable[[RunFailureSensorContext], str])): Function which
             takes in the ``RunFailureSensorContext`` and outputs the message you want to send.
-            Defaults to a text message that contains error message, pipeline name, and run ID.
+            Defaults to a text message that contains error message, job name, and run ID.
         http_proxy : (Optional[str]): Proxy for requests using http protocol.
         https_proxy : (Optional[str]): Proxy for requests using https protocol.
         timeout: (Optional[float]): Connection timeout in seconds. Defaults to 60.
         verify: (Optional[bool]): Whether to verify the servers TLS certificate.
-        name: (Optional[str]): The name of the sensor. Defaults to "teams_on_pipeline_failure".
+        name: (Optional[str]): The name of the sensor. Defaults to "teams_on_run_failure".
         dagit_base_url: (Optional[str]): The base url of your Dagit instance. Specify this to allow
-            messages to include deeplinks to the failed pipeline run.
+            messages to include deeplinks to the failed run.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from Dagit or via the GraphQL API.
 
@@ -65,11 +64,11 @@ def make_teams_on_run_failure_sensor(
 
             def my_message_fn(context: RunFailureSensorContext) -> str:
                 return "Job {job_name} failed! Error: {error}".format(
-                    job_name=context.dagster_run.pipeline_name,
+                    job_name=context.dagster_run.job_name,
                     error=context.failure_event.message,
                 )
 
-            teams_on_run_failure = make_teams_on_run_run_sensor(
+            teams_on_run_failure = make_teams_on_run_failure_sensor(
                 hook_url=os.getenv("TEAMS_WEBHOOK_URL"),
                 message_fn=my_message_fn,
                 dagit_base_url="http://localhost:3000",
@@ -93,7 +92,7 @@ def make_teams_on_run_failure_sensor(
         if dagit_base_url:
             text += "<a href='{base_url}/instance/runs/{run_id}'>View in Dagit</a>".format(
                 base_url=dagit_base_url,
-                run_id=context.pipeline_run.run_id,
+                run_id=context.dagster_run.run_id,
             )
         card = Card()
         card.add_attachment(text_message=text)

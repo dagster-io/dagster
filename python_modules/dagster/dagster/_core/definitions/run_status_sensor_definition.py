@@ -5,6 +5,7 @@ from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Union, c
 import pendulum
 
 import dagster._check as check
+from dagster._annotations import PublicAttr
 from dagster._core.errors import (
     DagsterInvalidInvocationError,
     RunStatusSensorExecutionError,
@@ -81,10 +82,10 @@ class RunStatusSensorContext(
     NamedTuple(
         "_RunStatusSensorContext",
         [
-            ("sensor_name", str),
-            ("dagster_run", DagsterRun),
-            ("dagster_event", DagsterEvent),
-            ("instance", DagsterInstance),
+            ("sensor_name", PublicAttr[str]),
+            ("dagster_run", PublicAttr[DagsterRun]),
+            ("dagster_event", PublicAttr[DagsterEvent]),
+            ("instance", PublicAttr[DagsterInstance]),
         ],
     )
 ):
@@ -130,7 +131,7 @@ class RunFailureSensorContext(RunStatusSensorContext):
 
     Attributes:
         sensor_name (str): the name of the sensor.
-        pipeline_run (PipelineRun): the failed pipeline run.
+        dagster_run (DagsterRun): the failed pipeline run.
         failure_event (DagsterEvent): the pipeline failure event.
     """
 

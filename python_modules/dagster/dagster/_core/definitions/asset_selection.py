@@ -4,6 +4,7 @@ from functools import reduce
 from typing import AbstractSet, FrozenSet, Optional, Sequence, Union
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import (
     fetch_connected,
@@ -39,28 +40,33 @@ class AssetSelection(ABC):
             AssetSelection.groups("marketing") & AssetSelection.keys("leads").downstream()
     """
 
+    @public  # type: ignore
     @staticmethod
     def all() -> "AllAssetSelection":
         """Returns a selection that includes all assets."""
         return AllAssetSelection()
 
+    @public  # type: ignore
     @staticmethod
     def assets(*assets_defs: AssetsDefinition) -> "KeysAssetSelection":
         """Returns a selection that includes all of the provided assets."""
         return KeysAssetSelection(*(key for assets_def in assets_defs for key in assets_def.keys))
 
+    @public  # type: ignore
     @staticmethod
     def keys(*asset_keys: CoercibleToAssetKey) -> "KeysAssetSelection":
         """Returns a selection that includes assets with any of the provided keys."""
         _asset_keys = [AssetKey.from_coerceable(key) for key in asset_keys]
         return KeysAssetSelection(*_asset_keys)
 
+    @public  # type: ignore
     @staticmethod
     def groups(*group_strs) -> "GroupsAssetSelection":
         """Returns a selection that includes assets that belong to any of the provided groups"""
         check.tuple_param(group_strs, "group_strs", of_type=str)
         return GroupsAssetSelection(*group_strs)
 
+    @public  # type: ignore
     def downstream(self, depth: Optional[int] = None) -> "DownstreamAssetSelection":
         """
         Returns a selection that includes all assets that are downstream of any of the assets in
@@ -73,6 +79,7 @@ class AssetSelection(ABC):
         check.opt_int_param(depth, "depth")
         return DownstreamAssetSelection(self, depth=depth)
 
+    @public  # type: ignore
     def upstream(self, depth: Optional[int] = None) -> "UpstreamAssetSelection":
         """
         Returns a selection that includes all assets that are upstream of any of the assets in

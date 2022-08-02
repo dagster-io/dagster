@@ -154,7 +154,7 @@ def repository(
 
     The decorated function should take no arguments and its return value should one of:
 
-    1. ``List[Union[JobDefinition, PipelineDefinition, PartitionSetDefinition, ScheduleDefinition, SensorDefinition]]``.
+    1. ``List[Union[JobDefinition, ScheduleDefinition, SensorDefinition]]``.
     Use this form when you have no need to lazy load pipelines or other definitions. This is the
     typical use case.
 
@@ -164,8 +164,6 @@ def repository(
 
         {
             'jobs': Dict[str, Callable[[], JobDefinition]],
-            'pipelines': Dict[str, Callable[[], PipelineDefinition]],
-            'partition_sets': Dict[str, Callable[[], PartitionSetDefinition]],
             'schedules': Dict[str, Callable[[], ScheduleDefinition]]
             'sensors': Dict[str, Callable[[], SensorDefinition]]
         }

@@ -1,6 +1,7 @@
 from typing import Dict, Iterator, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.metadata import (
     MetadataEntry,
@@ -31,13 +32,13 @@ class SourceAsset(
     NamedTuple(
         "_SourceAsset",
         [
-            ("key", AssetKey),
+            ("key", PublicAttr[AssetKey]),
             ("metadata_entries", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
-            ("io_manager_key", Optional[str]),
-            ("description", Optional[str]),
-            ("partitions_def", Optional[PartitionsDefinition]),
-            ("group_name", str),
-            ("resource_defs", Dict[str, ResourceDefinition]),
+            ("io_manager_key", PublicAttr[Optional[str]]),
+            ("description", PublicAttr[Optional[str]]),
+            ("partitions_def", PublicAttr[Optional[PartitionsDefinition]]),
+            ("group_name", PublicAttr[str]),
+            ("resource_defs", PublicAttr[Dict[str, ResourceDefinition]]),
         ],
     ),
     ResourceAddable,
@@ -100,6 +101,7 @@ class SourceAsset(
             resource_defs=resource_defs,
         )
 
+    @public  # type: ignore
     @property
     def metadata(self) -> MetadataMapping:
         # PartitionMetadataEntry (unstable API) case is unhandled

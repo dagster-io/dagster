@@ -71,4 +71,3 @@ Sensors
 .. autodecorator:: run_status_sensor
 
 .. autodecorator:: run_failure_sensor
-
