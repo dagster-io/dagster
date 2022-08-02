@@ -26,7 +26,6 @@ AVAILABLE_EXAMPLES = [
     "ge_example",
     "hacker_news_assets",
     "nyt-feed",
-    "run_attribution_example",
     "software_defined_assets",
     "with_pyspark",
     "with_pyspark_emr",
