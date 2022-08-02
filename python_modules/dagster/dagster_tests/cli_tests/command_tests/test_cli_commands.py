@@ -22,7 +22,6 @@ from dagster import (
 )
 from dagster._cli import ENV_PREFIX, cli
 from dagster._cli.job import job_execute_command
-from dagster._cli.pipeline import pipeline_execute_command
 from dagster._cli.run import run_delete_command, run_list_command, run_wipe_command
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
@@ -195,6 +194,16 @@ def memoizable_pipeline():
     my_solid()
 
 
+@op(version="foo")
+def my_op():
+    return 5
+
+
+@job(tags={MEMOIZED_RUN_TAG: "true"})
+def memoizable_job():
+    my_op()
+
+
 @repository
 def bar():
     return {
@@ -204,7 +213,7 @@ def bar():
             "partitioned_scheduled_pipeline": partitioned_scheduled_pipeline,
             "memoizable": memoizable_pipeline,
         },
-        "jobs": {"qux": qux_job, "quux": quux_job},
+        "jobs": {"qux": qux_job, "quux": quux_job, "memoizable": memoizable_job},
         "schedules": define_bar_schedules(),
         "partition_sets": define_bar_partitions(),
         "sensors": define_bar_sensors(),
@@ -857,9 +866,9 @@ def test_run_list_limit():
         assert shows_two_results.output.count("Pipeline: multi_mode_with_resources") == 2
 
 
-def runner_pipeline_or_job_execute(runner, cli_args, using_job_op_graph_apis=False):
+def runner_pipeline_or_job_execute(runner, cli_args):
     result = runner.invoke(
-        job_execute_command if using_job_op_graph_apis else pipeline_execute_command,
+        job_execute_command,
         cli_args,
     )
     if result.exit_code != 0:
@@ -874,7 +883,7 @@ def runner_pipeline_or_job_execute(runner, cli_args, using_job_op_graph_apis=Fal
                 exit_code=result.exit_code,
                 stdout=result.stdout,
                 result=result,
-                pipeline_or_job="job" if using_job_op_graph_apis else "pipeline",
+                pipeline_or_job="job",
             )
         )
     return result

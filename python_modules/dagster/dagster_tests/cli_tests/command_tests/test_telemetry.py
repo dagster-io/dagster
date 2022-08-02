@@ -5,7 +5,7 @@ from difflib import SequenceMatcher
 
 from click.testing import CliRunner
 
-from dagster._cli.pipeline import pipeline_execute_command
+from dagster._cli.job import job_execute_command
 from dagster._core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster._core.telemetry import (
     TELEMETRY_STR,
@@ -46,15 +46,15 @@ def test_dagster_telemetry_enabled(caplog):
     with instance_for_test(overrides={"telemetry": {"enabled": True}}):
         runner = CliRunner()
         with pushd(path_to_file("")):
-            pipeline_attribute = "foo_pipeline"
-            pipeline_name = "foo"
+            job_attribute = "qux_job"
+            job_name = "qux"
             result = runner.invoke(
-                pipeline_execute_command,
+                job_execute_command,
                 [
                     "-f",
                     path_to_file("test_cli_commands.py"),
                     "-a",
-                    pipeline_attribute,
+                    job_attribute,
                 ],
             )
 
@@ -62,10 +62,10 @@ def test_dagster_telemetry_enabled(caplog):
                 message = json.loads(record.getMessage())
                 if message.get("action") == UPDATE_REPO_STATS:
                     metadata = message.get("metadata")
-                    assert metadata.get("pipeline_name_hash") == hash_name(pipeline_name)
+                    assert metadata.get("pipeline_name_hash") == hash_name(job_name)
                     assert metadata.get("num_pipelines_in_repo") == str(1)
                     assert metadata.get("repo_hash") == hash_name(
-                        get_ephemeral_repository_name(pipeline_name)
+                        get_ephemeral_repository_name(job_name)
                     )
                 assert set(message.keys()) == EXPECTED_KEYS
             assert len(caplog.records) == 5
@@ -79,14 +79,14 @@ def test_dagster_telemetry_disabled(caplog):
     with instance_for_test(overrides={"telemetry": {"enabled": False}}):
         runner = CliRunner()
         with pushd(path_to_file("")):
-            pipeline_name = "foo_pipeline"
+            job_name = "qux_job"
             result = runner.invoke(
-                pipeline_execute_command,
+                job_execute_command,
                 [
                     "-f",
                     path_to_file("test_cli_commands.py"),
                     "-a",
-                    pipeline_name,
+                    job_name,
                 ],
             )
 
@@ -102,21 +102,21 @@ def test_dagster_telemetry_unset(caplog):
         with instance_for_test(temp_dir=temp_dir, overrides={"telemetry": {"enabled": True}}):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             with pushd(path_to_file("")):
-                pipeline_attribute = "foo_pipeline"
-                pipeline_name = "foo"
+                job_attribute = "qux_job"
+                job_name = "qux"
                 result = runner.invoke(
-                    pipeline_execute_command,
-                    ["-f", path_to_file("test_cli_commands.py"), "-a", pipeline_attribute],
+                    job_execute_command,
+                    ["-f", path_to_file("test_cli_commands.py"), "-a", job_attribute],
                 )
 
                 for record in caplog.records:
                     message = json.loads(record.getMessage())
                     if message.get("action") == UPDATE_REPO_STATS:
                         metadata = message.get("metadata")
-                        assert metadata.get("pipeline_name_hash") == hash_name(pipeline_name)
+                        assert metadata.get("pipeline_name_hash") == hash_name(job_name)
                         assert metadata.get("num_pipelines_in_repo") == str(1)
                         assert metadata.get("repo_hash") == hash_name(
-                            get_ephemeral_repository_name(pipeline_name)
+                            get_ephemeral_repository_name(job_name)
                         )
                     assert set(message.keys()) == EXPECTED_KEYS
 
@@ -127,6 +127,7 @@ def test_dagster_telemetry_unset(caplog):
             cleanup_telemetry_logger()
 
 
+# TODO - not sure what this test is testing for, so unclear as to how to update it to jobs
 def test_repo_stats(caplog):
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test(temp_dir=temp_dir, overrides={"telemetry": {"enabled": True}}):
@@ -134,7 +135,7 @@ def test_repo_stats(caplog):
             with pushd(path_to_file("")):
                 pipeline_name = "multi_mode_with_resources"
                 result = runner.invoke(
-                    pipeline_execute_command,
+                    job_execute_command,
                     [
                         "-f",
                         file_relative_path(__file__, "../../general_tests/test_repository.py"),

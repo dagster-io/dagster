@@ -6,8 +6,7 @@ import pytest
 from click import UsageError
 from click.testing import CliRunner
 
-from dagster._cli.job import job_execute_command
-from dagster._cli.pipeline import execute_execute_command, pipeline_execute_command
+from dagster._cli.job import execute_execute_command, job_execute_command
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.test_utils import instance_for_test, new_cwd
 from dagster._utils import file_relative_path, merge_dicts
@@ -89,9 +88,6 @@ def test_execute_mode_command():
 def test_empty_execute_command():
     with instance_for_test():
         runner = CliRunner()
-        result = runner.invoke(pipeline_execute_command, [])
-        assert result.exit_code == 2
-        assert "Must specify a python file or module name" in result.output
 
         result = runner.invoke(job_execute_command, [])
         assert result.exit_code == 2
@@ -116,26 +112,6 @@ def test_execute_preset_command():
         )
 
         assert "RUN_SUCCESS" in add_result.output
-
-        # Can't use --preset with --config
-        bad_res = runner.invoke(
-            pipeline_execute_command,
-            [
-                "-f",
-                file_relative_path(__file__, "../../general_tests/test_repository.py"),
-                "-a",
-                "dagster_test_repository",
-                "--preset",
-                "add",
-                "--config",
-                file_relative_path(
-                    __file__, "../../environments/multi_mode_with_resources/double_adder_mode.yaml"
-                ),
-                "-p",
-                "multi_mode_with_resources",  # pipeline name
-            ],
-        )
-        assert bad_res.exit_code == 2
 
 
 @pytest.mark.parametrize("gen_execute_args", pipeline_or_job_python_origin_contexts())
@@ -478,33 +454,11 @@ def test_multiproc():
         assert "RUN_SUCCESS" in add_result.output
 
 
-def test_multiproc_ephemeral_directory():
-    # force ephemeral directory by removing out DAGSTER_HOME
-    runner = CliRunner(env={"DAGSTER_HOME": None})
-    add_result = runner.invoke(
-        pipeline_execute_command,
-        [
-            "-f",
-            file_relative_path(__file__, "../../general_tests/test_repository.py"),
-            "-a",
-            "dagster_test_repository",
-            "--preset",
-            "multiproc",
-            "-p",
-            "multi_mode_with_resources",  # pipeline name
-        ],
-    )
-    # which is valid for multiproc
-    assert add_result.exit_code == 0
-    # Echoed message to let user know that we've utilized temporary storage in order to run job / pipeline.
-    assert re.match("Using temporary directory", add_result.output)
-
-
 def test_tags_pipeline_or_job():
     runner = CliRunner()
     with instance_for_test() as instance:
         result = runner.invoke(
-            pipeline_execute_command,
+            job_execute_command,
             [
                 "-m",
                 "dagster_tests.cli_tests.command_tests.test_cli_commands",
@@ -512,8 +466,8 @@ def test_tags_pipeline_or_job():
                 "bar",
                 "--tags",
                 '{ "foo": "bar" }',
-                "-p",
-                "foo",
+                "-j",
+                "qux",
             ],
         )
         assert result.exit_code == 0
@@ -544,6 +498,7 @@ def test_tags_pipeline_or_job():
         assert len(run.tags) == 1
         assert run.tags.get("foo") == "bar"
 
+    # TODO figure out how to handle general_tests test_repository 
     with instance_for_test() as instance:
         result = runner.invoke(
             pipeline_execute_command,

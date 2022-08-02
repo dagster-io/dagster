@@ -6,8 +6,7 @@ from click import UsageError
 from click.testing import CliRunner
 
 from dagster import _seven
-from dagster._cli.job import job_list_command
-from dagster._cli.pipeline import execute_list_command, pipeline_list_command
+from dagster._cli.job import execute_list_command, job_list_command
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.server import GrpcServerProcess
@@ -118,14 +117,14 @@ def test_list_command_grpc_socket():
                 no_print,
             )
 
-            result = runner.invoke(pipeline_list_command, ["--grpc-socket", api_client.socket])
-            assert_correct_bar_repository_output(result)
+            result = runner.invoke(job_list_command, ["--grpc-socket", api_client.socket])
+            assert_correct_job_list_bar_repository_output(result)
 
             result = runner.invoke(
-                pipeline_list_command,
+                job_list_command,
                 ["--grpc-socket", api_client.socket, "--grpc-host", api_client.host],
             )
-            assert_correct_bar_repository_output(result)
+            assert_correct_job_list_bar_repository_output(result)
 
         server_process.wait()
 
@@ -144,20 +143,20 @@ def test_list_command_deployed_grpc():
         )
 
         with server_process.create_ephemeral_client() as api_client:
-            result = runner.invoke(pipeline_list_command, ["--grpc-port", api_client.port])
-            assert_correct_bar_repository_output(result)
+            result = runner.invoke(job_list_command, ["--grpc-port", api_client.port])
+            assert_correct_job_list_bar_repository_output(result)
 
             result = runner.invoke(
-                pipeline_list_command,
+                job_list_command,
                 ["--grpc-port", api_client.port, "--grpc-host", api_client.host],
             )
-            assert_correct_bar_repository_output(result)
+            assert_correct_job_list_bar_repository_output(result)
 
-            result = runner.invoke(pipeline_list_command, ["--grpc-port", api_client.port])
-            assert_correct_bar_repository_output(result)
+            result = runner.invoke(job_list_command, ["--grpc-port", api_client.port])
+            assert_correct_job_list_bar_repository_output(result)
 
             result = runner.invoke(
-                pipeline_list_command,
+                job_list_command,
                 ["--grpc-port", api_client.port, "--grpc-socket", "foonamedsocket"],
             )
             assert result.exit_code != 0
@@ -183,29 +182,10 @@ def test_list_command_cli():
         runner = CliRunner()
 
         result = runner.invoke(
-            pipeline_list_command,
-            ["-f", file_relative_path(__file__, "test_cli_commands.py"), "-a", "bar"],
-        )
-        assert_correct_bar_repository_output(result)
-
-        result = runner.invoke(
             job_list_command,
             ["-f", file_relative_path(__file__, "test_cli_commands.py"), "-a", "bar"],
         )
         assert_correct_job_list_bar_repository_output(result)
-
-        result = runner.invoke(
-            pipeline_list_command,
-            [
-                "-f",
-                file_relative_path(__file__, "test_cli_commands.py"),
-                "-a",
-                "bar",
-                "-d",
-                os.path.dirname(__file__),
-            ],
-        )
-        assert_correct_bar_repository_output(result)
 
         result = runner.invoke(
             job_list_command,
@@ -221,37 +201,15 @@ def test_list_command_cli():
         assert_correct_job_list_bar_repository_output(result)
 
         result = runner.invoke(
-            pipeline_list_command,
-            ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands", "-a", "bar"],
-        )
-        assert_correct_bar_repository_output(result)
-
-        result = runner.invoke(
             job_list_command,
             ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands", "-a", "bar"],
         )
         assert_correct_job_list_bar_repository_output(result)
-
-        result = runner.invoke(
-            pipeline_list_command, ["-w", file_relative_path(__file__, "workspace.yaml")]
-        )
-        assert_correct_bar_repository_output(result)
 
         result = runner.invoke(
             job_list_command, ["-w", file_relative_path(__file__, "workspace.yaml")]
         )
         assert_correct_job_list_bar_repository_output(result)
-
-        result = runner.invoke(
-            pipeline_list_command,
-            [
-                "-w",
-                file_relative_path(__file__, "workspace.yaml"),
-                "-w",
-                file_relative_path(__file__, "override.yaml"),
-            ],
-        )
-        assert_correct_extra_repository_output(result)
 
         result = runner.invoke(
             job_list_command,
@@ -265,19 +223,6 @@ def test_list_command_cli():
         assert_correct_job_list_extra_repository_output(result)
 
         result = runner.invoke(
-            pipeline_list_command,
-            [
-                "-f",
-                "foo.py",
-                "-m",
-                "dagster_tests.cli_tests.command_tests.test_cli_commands",
-                "-a",
-                "bar",
-            ],
-        )
-        assert result.exit_code == 2
-
-        result = runner.invoke(
             job_list_command,
             [
                 "-f",
@@ -289,23 +234,12 @@ def test_list_command_cli():
             ],
         )
         assert result.exit_code == 2
-
-        result = runner.invoke(
-            pipeline_list_command,
-            ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands"],
-        )
-        assert_correct_bar_repository_output(result)
 
         result = runner.invoke(
             job_list_command,
             ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands"],
         )
         assert_correct_job_list_bar_repository_output(result)
-
-        result = runner.invoke(
-            pipeline_list_command, ["-f", file_relative_path(__file__, "test_cli_commands.py")]
-        )
-        assert_correct_bar_repository_output(result)
 
         result = runner.invoke(
             job_list_command, ["-f", file_relative_path(__file__, "test_cli_commands.py")]
