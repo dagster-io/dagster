@@ -6,6 +6,8 @@ import jinja2
 
 from dagster.version import __version__ as dagster_version
 
+IGNORE_PATTERN_LIST = ["__pycache__", ".pytest_cache", "*.egg-info", ".DS_Store", "tox.ini"]
+
 
 def generate_repository(path: str):
     REPO_NAME_PLACEHOLDER = "REPO_NAME_PLACEHOLDER"
@@ -127,16 +129,8 @@ def _should_skip_file(path):
 
     Technically, `path` could also be a directory path that should be skipped.
     """
-    if "__pycache__" in path:
-        return True
-
-    if ".pytest_cache" in path:
-        return True
-
-    if ".egg-info" in path:
-        return True
-
-    if ".DS_Store" in path:
-        return True
+    for pattern in IGNORE_PATTERN_LIST:
+        if pattern in path:
+            return True
 
     return False
