@@ -215,7 +215,7 @@ def test_dynamic_with_op():
     def passthrough(_ctx, _dep=None):
         pass
 
-    @op(output_defs=[DynamicOutputDefinition()])
+    @op(out=Out())
     def emit():
         yield DynamicOutput(1, mapping_key="key_1")
         yield DynamicOutput(2, mapping_key="key_2")

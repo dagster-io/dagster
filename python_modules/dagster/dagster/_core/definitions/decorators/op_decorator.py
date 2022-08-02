@@ -1,25 +1,12 @@
 from functools import update_wrapper
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Set, Union, overload
 
 import dagster._check as check
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import format_docstring_for_description
-from dagster._core.errors import DagsterInvariantViolationError
 
-from ..input import In, InputDefinition
-from ..output import Out, OutputDefinition
+from ..input import In
+from ..output import Out
 from ..policy import RetryPolicy
 from ..utils import DEFAULT_OUTPUT
 from .solid_decorator import DecoratedSolidFunction, NoContextDecoratedSolidFunction
@@ -32,8 +19,6 @@ class _Op:
     def __init__(
         self,
         name: Optional[str] = None,
-        input_defs: Optional[Sequence[InputDefinition]] = None,
-        output_defs: Optional[Sequence[OutputDefinition]] = None,
         description: Optional[str] = None,
         required_resource_keys: Optional[Set[str]] = None,
         config_schema: Optional[Union[Any, Dict[str, Any]]] = None,
@@ -45,10 +30,6 @@ class _Op:
         out: Optional[Union[Out, Mapping[str, Out]]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
-        self.input_defs = check.opt_nullable_sequence_param(
-            input_defs, "input_defs", of_type=InputDefinition
-        )
-        self.output_defs = output_defs
         self.decorator_takes_context = check.bool_param(
             decorator_takes_context, "decorator_takes_context"
         )
@@ -79,16 +60,6 @@ class _Op:
             else NoContextDecoratedSolidFunction(decorated_fn=fn)
         )
 
-        if self.ins and self.input_defs:
-            raise DagsterInvariantViolationError(
-                f"Error constructing op '{self.name}': cannot provide both ins and input_defs arguments."
-            )
-
-        if self.out and self.output_defs:
-            raise DagsterInvariantViolationError(
-                f"Error constructing op '{self.name}': cannot provide both out and output_defs arguments."
-            )
-
         outs: Optional[Mapping[str, Out]] = None
         if self.out is not None and isinstance(self.out, Out):
             outs = {DEFAULT_OUTPUT: self.out}
@@ -106,8 +77,6 @@ class _Op:
             tags=self.tags,
             version=self.version,
             retry_policy=self.retry_policy,
-            input_defs=self.input_defs,
-            output_defs=self.output_defs,
         )
         update_wrapper(op_def, compute_fn.decorated_fn)
         return op_def
@@ -129,8 +98,6 @@ def op(
     tags: Optional[Dict[str, Any]] = ...,
     version: Optional[str] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
-    input_defs: Optional[List[InputDefinition]] = ...,
-    output_defs: Optional[List[OutputDefinition]] = ...,
 ) -> _Op:
     ...
 
@@ -145,8 +112,6 @@ def op(
     tags: Optional[Dict[str, Any]] = None,
     version: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
-    input_defs: Optional[List[InputDefinition]] = None,
-    output_defs: Optional[List[OutputDefinition]] = None,
 ) -> Union["OpDefinition", _Op]:
     """
     Create an op with the specified parameters from the decorated function.
@@ -191,10 +156,6 @@ def op(
             the same version if and only if they deterministically produce the same outputs when
             provided the same inputs.
         retry_policy (Optional[RetryPolicy]): The retry policy for this op.
-        input_defs (Optional[List[InputDefinition]]):
-            (legacy) Preserved to ease migration from :py:class:`solid`. Can be used in place of ins argument.
-        output_defs (Optional[List[OutputDefinition]]):
-            (legacy) Preserved to ease migration from :py:class:`solid`. Can be used in place of out argument.
 
     Examples:
 
@@ -224,8 +185,6 @@ def op(
 
     # This case is for when decorator is used bare, without arguments. e.g. @op versus @op()
     if callable(name):
-        check.invariant(input_defs is None)
-        check.invariant(output_defs is None)
         check.invariant(description is None)
         check.invariant(config_schema is None)
         check.invariant(required_resource_keys is None)
@@ -237,8 +196,6 @@ def op(
     return _Op(
         name=name,
         description=description,
-        input_defs=input_defs,
-        output_defs=output_defs,
         config_schema=config_schema,
         required_resource_keys=required_resource_keys,
         tags=tags,
