@@ -300,12 +300,12 @@ _DEPRECATED = {
     "dagster_type_materializer": (
         "dagster._core.types.config_schema",
         "1.1.0",
-        "Instead, use an input manager or root input manager.",
+        "Instead, use an IOManager.",
     ),
     "DagsterTypeMaterializer": (
         "dagster._core.types.config_schema",
         "1.1.0",
-        "Instead, use an input manager or root input manager.",
+        "Instead, use an IOManager.",
     ),
 }
 
