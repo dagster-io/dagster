@@ -1,7 +1,14 @@
 import string
 import time
 
-from dagster import Int, ScheduleDefinition, SkipReason, repository, sensor, usable_as_dagster_type
+from dagster import (
+    Int,
+    ScheduleDefinition,
+    SkipReason,
+    repository,
+    sensor,
+    usable_as_dagster_type,
+)
 from dagster._legacy import (
     InputDefinition,
     OutputDefinition,
@@ -61,7 +68,7 @@ def define_bar_schedules():
         "foo_schedule": ScheduleDefinition(
             "foo_schedule",
             cron_schedule="* * * * *",
-            pipeline_name="foo",
+            job_name="foo",
             run_config={},
         )
     }
