@@ -161,10 +161,6 @@ from dagster._core.definitions import (
     multiple_process_executor_requirements,
     multiprocess_executor,
     op,
-<<<<<<< HEAD
-    pipeline,
-=======
->>>>>>> main
     reconstructable,
     repository,
     resource,
