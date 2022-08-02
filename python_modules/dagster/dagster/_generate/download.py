@@ -16,7 +16,6 @@ EXAMPLES_TO_IGNORE = ["docs_snippets"]
 # repo to make sure it's up-to-date.
 AVAILABLE_EXAMPLES = [
     "airflow_ingest",
-    "basic_pyspark",
     "bollinger",
     "dbt_example",
     "dbt_python_assets",
@@ -32,6 +31,7 @@ AVAILABLE_EXAMPLES = [
     "nyt-feed",
     "run_attribution_example",
     "software_defined_assets",
+    "with_pyspark",
 ]
 
 
