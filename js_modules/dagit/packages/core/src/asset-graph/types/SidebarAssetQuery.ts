@@ -526,6 +526,7 @@ export type SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType 
 export interface SidebarAssetQuery_assetNodeOrError_AssetNode_configField {
   __typename: "ConfigTypeField";
   name: string;
+  isRequired: boolean;
   configType: SidebarAssetQuery_assetNodeOrError_AssetNode_configField_configType;
 }
 
