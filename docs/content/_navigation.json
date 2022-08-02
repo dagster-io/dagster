@@ -15,10 +15,6 @@
       {
         "title": "Telemetry",
         "path": "/getting-started/telemetry"
-      },
-      {
-        "title": "Releases and Changes",
-        "path": "/getting-started/releases"
       }
     ]
   },
@@ -704,18 +700,21 @@
     ]
   },
   {
-    "title": "Changelog",
-    "icon": "Change",
-    "path": "/changelog",
+    "title": "About",
+    "icon": "InfoCircle",
     "isUnversioned": true,
     "children": [
+      {
+        "title": "Releases and Changes",
+        "path": "/getting-started/releases"
+      },
       {
         "title": "Changelog",
         "path": "/changelog",
         "isUnversioned": true
       },
       {
-        "title": "Migration Guides",
+        "title": "Migration guides",
         "path": "/migration",
         "isUnversioned": true
       }
