@@ -126,7 +126,7 @@ def make_slack_on_pipeline_failure_sensor(
             slack_on_pipeline_failure = make_slack_on_pipeline_failure_sensor(
                 channel="#my_channel",
                 slack_token=os.getenv("MY_SLACK_TOKEN"),
-                message_fn=my_message_fn,
+                text_fn=my_message_fn,
                 dagit_base_url="http://mycoolsite.com",
             )
 
@@ -212,7 +212,7 @@ def make_slack_on_run_failure_sensor(
             slack_on_run_failure = make_slack_on_run_failure_sensor(
                 channel="#my_channel",
                 slack_token=os.getenv("MY_SLACK_TOKEN"),
-                message_fn=my_message_fn,
+                text_fn=my_message_fn,
                 dagit_base_url="http://mycoolsite.com",
             )
 
