@@ -2,10 +2,10 @@ import os
 import re
 
 from click.testing import CliRunner
-from dagster import file_relative_path
 
-from dagster._cli.project import scaffold_command, scaffold_repository_command, from_example_command
-from dagster._generate.download import EXAMPLES_TO_IGNORE, AVAILABLE_EXAMPLES
+from dagster import file_relative_path
+from dagster._cli.project import from_example_command, scaffold_command, scaffold_repository_command
+from dagster._generate.download import AVAILABLE_EXAMPLES, EXAMPLES_TO_IGNORE
 from dagster._generate.generate import _should_skip_file
 
 
@@ -56,7 +56,6 @@ def test_from_example_command_fails_when_example_not_available():
         result = runner.invoke(
             from_example_command, ["--name", "my_dagster_project", "--example", "foo"]
         )
-        print(result.output)
         assert re.match(r"Example .* not available", result.output)
         assert result.exit_code != 0
 
