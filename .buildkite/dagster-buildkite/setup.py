@@ -9,7 +9,6 @@ setup(
     description="Tools for buildkite automation",
     url="https://github.com/dagster-io/dagster/tree/master/.buildkite/dagster-buildkite",
     classifiers=[
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
