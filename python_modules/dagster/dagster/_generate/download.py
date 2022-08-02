@@ -2,7 +2,6 @@ import os
 import sys
 import tarfile
 from io import BytesIO
-from typing import IO, cast
 
 import click
 import requests
@@ -13,7 +12,8 @@ from .generate import _should_skip_file
 DEFAULT_GITHUB_URL = "https://codeload.github.com/dagster-io/dagster/tar.gz/master"
 # Examples aren't that can't be downloaded from the dagster project CLI
 EXAMPLES_TO_IGNORE = ["docs_snippets"]
-# Hard
+# Hardcoded list of available examples. The list is tested against the examples folder in this mono
+# repo to make sure it's up-to-date.
 AVAILABLE_EXAMPLES = [
     "airflow_ingest",
     "airline_assets",
