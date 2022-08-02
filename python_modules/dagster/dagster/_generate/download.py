@@ -27,7 +27,6 @@ AVAILABLE_EXAMPLES = [
     "memoized_development",
     "modern_data_stack_assets",
     "nyt-feed",
-    "run_attribution_example",
     "software_defined_assets",
     "with_pyspark",
     "with_pyspark_emr",
