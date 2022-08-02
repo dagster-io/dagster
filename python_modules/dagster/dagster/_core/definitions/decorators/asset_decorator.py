@@ -21,7 +21,11 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.types.dagster_type import DagsterType
 from dagster._seven import funcsigs
-from dagster._utils.backcompat import ExperimentalWarning, deprecation_warning
+from dagster._utils.backcompat import (
+    ExperimentalWarning,
+    deprecation_warning,
+    experimental_arg_warning,
+)
 
 from ..asset_in import AssetIn
 from ..asset_out import AssetOut
@@ -113,7 +117,7 @@ def asset(
         io_manager_key (Optional[str]): The resource key of the IOManager used
             for storing the output of the op as an asset, and for loading it in downstream ops
             (default: "io_manager"). Only one of io_manager_key and io_manager_def can be provided.
-        io_manager_def (Optional[IOManagerDefinition]): The definition of the IOManager used for
+        io_manager_def (Optional[IOManagerDefinition]): (Experimental) The definition of the IOManager used for
             storing the output of the op as an asset,  and for loading it in
             downstream ops. Only one of io_manager_def and io_manager_key can be provided.
         compute_kind (Optional[str]): A string to represent the kind of computation that produces
@@ -129,7 +133,7 @@ def asset(
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If not provided,
             the name "default" is used.
         resource_defs (Optional[Mapping[str, ResourceDefinition]]):
-            A mapping of resource keys to resource definitions. These resources
+            (Experimental) A mapping of resource keys to resource definitions. These resources
             will be initialized during execution, and can be accessed from the
             context within the body of the function.
 
@@ -149,6 +153,12 @@ def asset(
             not (io_manager_key and io_manager_def),
             "Both io_manager_key and io_manager_def were provided to `@asset` decorator. Please provide one or the other. ",
         )
+        if resource_defs is not None:
+            experimental_arg_warning("resource_defs", "asset")
+
+        if io_manager_def is not None:
+            experimental_arg_warning("io_manager_def", "asset")
+
         return _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             key_prefix=key_prefix,
@@ -327,12 +337,15 @@ def multi_asset(
         can_subset (bool): If this asset's computation can emit a subset of the asset
             keys based on the context.selected_assets argument. Defaults to False.
         resource_defs (Optional[Mapping[str, ResourceDefinition]]):
-            A mapping of resource keys to resource definitions. These resources
+            (Experimental) A mapping of resource keys to resource definitions. These resources
             will be initialized during execution, and can be accessed from the
             context within the body of the function.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. This
             group name will be applied to all assets produced by this multi_asset.
     """
+    if resource_defs is not None:
+        experimental_arg_warning("resource_defs", "multi_asset")
+
     asset_deps = check.opt_dict_param(
         internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
     )

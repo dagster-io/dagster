@@ -37,6 +37,10 @@ def check_experimental_warnings():
         yield
 
         for w in record:
+            # Expect experimental warnings to be thrown for direct
+            # resource_defs and io_manager_def arguments.
+            if "resource_defs" in w.message.args[0] or "io_manager_def" in w.message.args[0]:
+                continue
             assert False, f"Unexpected warning: {w.message.args[0]}"
 
 
