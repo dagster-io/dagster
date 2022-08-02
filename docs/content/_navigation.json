@@ -720,5 +720,11 @@
         "isUnversioned": true
       }
     ]
+  },
+  {
+    "title": "Dagster Cloud Docs",
+    "icon": "Cloud",
+    "path": "https://docs.dagster.cloud/",
+    "isExternalLink": true
   }
 ]
