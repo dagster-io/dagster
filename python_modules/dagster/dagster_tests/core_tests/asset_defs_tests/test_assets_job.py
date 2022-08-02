@@ -53,8 +53,15 @@ def check_experimental_warnings():
         yield
 
         for w in record:
-            if "build_assets_job" not in w.message.args[0]:
-                assert False, f"Unexpected warning: {w.message.args[0]}"
+            # Expect experimental warnings to be thrown for direct
+            # resource_defs and io_manager_def arguments.
+            if (
+                "resource_defs" in w.message.args[0]
+                or "io_manager_def" in w.message.args[0]
+                or "build_assets_job" in w.message.args[0]
+            ):
+                continue
+            assert False, f"Unexpected warning: {w.message.args[0]}"
 
 
 def _asset_keys_for_node(result, node_name):
