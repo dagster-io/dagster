@@ -325,7 +325,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
     ),
     PackageSpec(
-        "examples/ge_example",
+        "examples/with_great_expectations",
         unsupported_python_versions=[
             # Issue with pinned of great_expectations
             AvailablePythonVersion.V3_10,
