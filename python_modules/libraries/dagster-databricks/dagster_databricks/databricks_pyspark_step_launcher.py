@@ -201,16 +201,28 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                 self._log_logs_from_cluster(log, databricks_run_id)
 
     def log_compute_logs(self, log, run_id, step_key):
-        stdout = self.databricks_runner.client.read_file(
-            self._dbfs_path(run_id, step_key, "stdout")
-        ).decode()
-        stderr = self.databricks_runner.client.read_file(
-            self._dbfs_path(run_id, step_key, "stderr")
-        ).decode()
-        log.info(f"Captured stdout for step {step_key}:")
-        log.info(stdout)
-        log.info(f"Captured stderr for step {step_key}:")
-        log.info(stderr)
+        try:
+            stdout = self.databricks_runner.client.read_file(
+                self._dbfs_path(run_id, step_key, "stdout")
+            ).decode()
+            log.info(f"Captured stdout for step {step_key}:")
+            log.info(stdout)
+        except Exception as e:
+            log.error(
+                f"Encountered exception {e} when attempting to load stdout logs for step {step_key}. "
+                "Check the databricks console for more info."
+            )
+        try:
+            stderr = self.databricks_runner.client.read_file(
+                self._dbfs_path(run_id, step_key, "stderr")
+            ).decode()
+            log.info(f"Captured stderr for step {step_key}:")
+            log.info(stderr)
+        except Exception as e:
+            log.error(
+                f"Encountered exception {e} when attempting to load stderr logs for step {step_key}. "
+                "Check the databricks console for more info."
+            )
 
     def step_events_iterator(self, step_context, step_key: str, databricks_run_id: int):
         """The launched Databricks job writes all event records to a specific dbfs file. This iterator
