@@ -12,7 +12,6 @@ from dagster import (
     Out,
     Output,
     Partition,
-    PartitionSetDefinition,
     ScheduleDefinition,
     String,
     graph,
@@ -35,6 +34,7 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.server import GrpcServerProcess
 from dagster._legacy import (
     ModeDefinition,
+    PartitionSetDefinition,
     PresetDefinition,
     execute_pipeline,
     lambda_solid,

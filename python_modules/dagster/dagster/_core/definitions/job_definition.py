@@ -16,6 +16,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._config import Field, Shape
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
@@ -267,6 +268,7 @@ class JobDefinition(PipelineDefinition):
     def loggers(self) -> Mapping[str, LoggerDefinition]:
         return self.get_mode_definition().loggers
 
+    @public
     def execute_in_process(
         self,
         run_config: Optional[Mapping[str, Any]] = None,
@@ -545,6 +547,7 @@ class JobDefinition(PipelineDefinition):
 
         return mode.partitioned_config.partitions_def
 
+    @public
     def run_request_for_partition(
         self,
         partition_key: str,
@@ -565,6 +568,7 @@ class JobDefinition(PipelineDefinition):
 
         return RunRequest(run_key=run_key, run_config=run_config, tags=run_request_tags)
 
+    @public
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "JobDefinition":
         """Apply a set of hooks to all op instances within the job."""
 

@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Se
 import pendulum
 
 import dagster._check as check
+from dagster._annotations import PublicAttr
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import schedule_execution_time_iterator
 
@@ -21,8 +22,8 @@ from .partition_key_range import PartitionKeyRange
 class TimeWindow(NamedTuple):
     """An interval that is closed at the start and open at the end"""
 
-    start: datetime
-    end: datetime
+    start: PublicAttr[datetime]
+    end: PublicAttr[datetime]
 
 
 class TimeWindowPartitionsDefinition(
@@ -30,14 +31,14 @@ class TimeWindowPartitionsDefinition(
     NamedTuple(
         "_TimeWindowPartitions",
         [
-            ("schedule_type", ScheduleType),
-            ("start", datetime),
-            ("timezone", str),
-            ("fmt", str),
-            ("end_offset", int),
-            ("minute_offset", int),
-            ("hour_offset", int),
-            ("day_offset", Optional[int]),
+            ("schedule_type", PublicAttr[ScheduleType]),
+            ("start", PublicAttr[datetime]),
+            ("timezone", PublicAttr[str]),
+            ("fmt", PublicAttr[str]),
+            ("end_offset", PublicAttr[int]),
+            ("minute_offset", PublicAttr[int]),
+            ("hour_offset", PublicAttr[int]),
+            ("day_offset", PublicAttr[Optional[int]]),
         ],
     ),
 ):

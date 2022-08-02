@@ -1,17 +1,11 @@
 import os
 
 import pytest
-from dagster_shell import (
-    create_shell_command_op,
-    create_shell_command_solid,
-    create_shell_script_op,
-    create_shell_script_solid,
-    shell_op,
-    shell_solid,
-)
+from dagster_shell import create_shell_command_op, create_shell_script_op, shell_op
+from dagster_shell.solids import create_shell_command_solid, create_shell_script_solid, shell_solid
 
-from dagster import Failure, execute_solid, job, op
-from dagster._legacy import OutputDefinition, composite_solid
+from dagster import Failure, job, op
+from dagster._legacy import OutputDefinition, composite_solid, execute_solid
 
 
 @pytest.mark.parametrize("factory", [create_shell_command_solid, create_shell_command_op])

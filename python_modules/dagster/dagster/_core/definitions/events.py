@@ -20,6 +20,7 @@ from typing import (
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._annotations import PublicAttr
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
 from .metadata import (
@@ -582,9 +583,9 @@ class ExpectationResult(
     NamedTuple(
         "_ExpectationResult",
         [
-            ("success", bool),
-            ("label", Optional[str]),
-            ("description", Optional[str]),
+            ("success", PublicAttr[bool]),
+            ("label", PublicAttr[Optional[str]]),
+            ("description", PublicAttr[Optional[str]]),
             ("metadata_entries", List[MetadataEntry]),
         ],
     )

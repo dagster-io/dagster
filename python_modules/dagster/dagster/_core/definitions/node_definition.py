@@ -224,7 +224,7 @@ class NodeDefinition(NamedConfigurableDefinition):
             retry_policy=None,
         )
 
-    def with_hooks(self, hook_defs: AbstractSet[HookDefinition]):
+    def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PendingNodeInvocation":
         from .composition import PendingNodeInvocation
 
         hook_defs = frozenset(check.set_param(hook_defs, "hook_defs", of_type=HookDefinition))

@@ -47,10 +47,3 @@ GCS
 
 .. autoconfigurable:: dagster_gcp.gcs.gcs_pickle_io_manager
   :annotation: IOManagerDefinition
-
-Legacy APIs
------------
-
-.. autofunction:: bq_solid_for_queries
-
-.. autofunction:: dataproc_solid

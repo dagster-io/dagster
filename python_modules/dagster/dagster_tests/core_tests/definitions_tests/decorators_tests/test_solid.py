@@ -9,7 +9,6 @@ from dagster import (
     DependencyDefinition,
     Field,
     Output,
-    execute_solid,
     graph,
     op,
 )
@@ -20,6 +19,7 @@ from dagster._legacy import (
     PipelineDefinition,
     composite_solid,
     execute_pipeline,
+    execute_solid,
     lambda_solid,
     pipeline,
     solid,
