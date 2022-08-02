@@ -2,9 +2,7 @@ import { DocSearchModal, useDocSearchKeyboardEvents } from "@docsearch/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import Head from "next/head";
-import Link from "next/link";
 import { createPortal } from "react-dom";
-import { useRouter } from "next/router";
 
 const ACTION_KEY_DEFAULT = ["Ctrl ", "Control"];
 const ACTION_KEY_APPLE = ["⌘", "Command"];
@@ -18,15 +16,13 @@ function Hit({ hit, children }) {
       </a>
     );
   }
-  return (
-    <Link href={hit.url}>
-      <a>{children}</a>
-    </Link>
-  );
+  const onClick = () => {
+    window.location.href = hit.url;
+  };
+  return <a onClick={onClick}>{children}</a>;
 }
 
 export function Search() {
-  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const searchButtonRef = useRef();
   const [initialQuery, setInitialQuery] = useState(null);
@@ -133,7 +129,7 @@ export function Search() {
             navigator={{
               navigate({ itemUrl }) {
                 setIsOpen(false);
-                router.push(itemUrl);
+                window.location.href = itemUrl;
               },
             }}
             hitComponent={Hit}
