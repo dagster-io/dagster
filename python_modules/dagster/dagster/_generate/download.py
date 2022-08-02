@@ -25,7 +25,6 @@ AVAILABLE_EXAMPLES = [
     "ge_example",
     "hacker_news_assets",
     "memoized_development",
-    "modern_data_stack_assets",
     "nyt-feed",
     "run_attribution_example",
     "software_defined_assets",
