@@ -14,8 +14,8 @@ Let's say we’ve been tasked with fetching the N most recent entries from Hacke
 
 Using a few Dagster concepts, we can easily tackle this task! Here’s an overview of the main concepts we’ll be using in this guide:
 
-- [Assets](/concepts/software-defined-assets) - An asset is a software object that models a data asset. The prototypical example is a table in a database or a file in cloud storage.
-- [Resources](/concepts/resource) - A resource is an object that models a connection to a (typically) external service. Resources can be shared between assets, and different implementations of resources can be used depending on the environment. For example, a resource may provide methods to send messages in Slack.
+- [Assets](/concepts/assets/software-defined-assets) - An asset is a software object that models a data asset. The prototypical example is a table in a database or a file in cloud storage.
+- [Resources](/concepts/resources) - A resource is an object that models a connection to a (typically) external service. Resources can be shared between assets, and different implementations of resources can be used depending on the environment. For example, a resource may provide methods to send messages in Slack.
 - [I/O managers](/concepts/io-management/io-managers) - An I/O manager is a special kind of resource that handles storing and loading assets. For example, if we wanted to store assets in S3, we could use Dagster’s built-in S3 I/O manager.
 - [Run config](/concepts/configuration/config-schema) - Assets and resources sometimes require configuration to set certain values, like the password to a database. Run config allows you to set these values at run time. In this guide, we will also use an API to set some default run configuration.
 
@@ -67,7 +67,9 @@ from dagster import asset
 def items(context) -> pd.DataFrame:
     """Items from the Hacker News API: each is a story or a comment on a story."""
     rows = []
-    max_id = requests.get("https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5).json()
+    max_id = requests.get(
+        "https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5
+    ).json()
     # Hacker News API is 1-indexed, so adjust range by 1
     for item_id in range(max_id - context.op_config["N"] + 1, max_id + 1):
         item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"

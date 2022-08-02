@@ -1,1 +1,1 @@
-from .hacker_news_assets import items, comments, stories
+from .hacker_news_assets import comments, items, stories
