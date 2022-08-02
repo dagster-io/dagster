@@ -2,9 +2,10 @@ import os
 import uuid
 
 import yaml
-from dagster_spark import create_spark_solid, spark_resource
+from dagster_spark import spark_resource
+from dagster_spark.ops import create_spark_solid
 
-from dagster import ModeDefinition, execute_solid
+from dagster._legacy import ModeDefinition, execute_solid
 from dagster._utils import file_relative_path
 
 CONFIG_FILE = """

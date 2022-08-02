@@ -1,9 +1,8 @@
 import responses
-from dagster_dbt import (
-    DbtRpcOutput,
+from dagster_dbt import DbtRpcOutput, dbt_rpc_resource
+from dagster_dbt.rpc.solids import (
     dbt_rpc_docs_generate,
     dbt_rpc_docs_generate_and_wait,
-    dbt_rpc_resource,
     dbt_rpc_run,
     dbt_rpc_run_and_wait,
     dbt_rpc_run_operation,
@@ -18,7 +17,7 @@ from dagster_dbt import (
     dbt_rpc_test_and_wait,
 )
 
-from dagster import ModeDefinition, execute_solid
+from dagster._legacy import ModeDefinition, execute_solid
 
 
 def test_dbt_rpc_snapshot(rsps):

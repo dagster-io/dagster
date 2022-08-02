@@ -7,16 +7,19 @@ from dagster import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     Field,
-    InputDefinition,
     Int,
     Output,
     String,
+    graph,
+)
+from dagster._legacy import (
+    InputDefinition,
     composite_solid,
     execute_pipeline,
-    graph,
     lambda_solid,
+    pipeline,
+    solid,
 )
-from dagster._legacy import pipeline, solid
 
 
 # have to use "pipe" solid since "result_for_solid" doesnt work with composite mappings
@@ -324,7 +327,8 @@ def test_nested_with_inputs():
         pipe(outer_wrap())
 
     result = execute_pipeline(
-        config_mapping_pipeline, {"solids": {"outer_wrap": {"config": {"outer_first": "foo"}}}}
+        config_mapping_pipeline,
+        {"solids": {"outer_wrap": {"config": {"outer_first": "foo"}}}},
     )
 
     assert result.success
@@ -333,8 +337,14 @@ def test_nested_with_inputs():
 
 def test_wrap_none_config_and_inputs():
     @solid(
-        config_schema={"config_field_a": Field(String), "config_field_b": Field(String)},
-        input_defs=[InputDefinition("input_a", String), InputDefinition("input_b", String)],
+        config_schema={
+            "config_field_a": Field(String),
+            "config_field_b": Field(String),
+        },
+        input_defs=[
+            InputDefinition("input_a", String),
+            InputDefinition("input_b", String),
+        ],
     )
     def basic(context, input_a, input_b):
         res = ".".join(
@@ -444,8 +454,14 @@ def test_wrap_none_config_and_inputs():
 
 def test_wrap_all_config_no_inputs():
     @solid(
-        config_schema={"config_field_a": Field(String), "config_field_b": Field(String)},
-        input_defs=[InputDefinition("input_a", String), InputDefinition("input_b", String)],
+        config_schema={
+            "config_field_a": Field(String),
+            "config_field_b": Field(String),
+        },
+        input_defs=[
+            InputDefinition("input_a", String),
+            InputDefinition("input_b", String),
+        ],
     )
     def basic(context, input_a, input_b):
         res = ".".join(
@@ -459,7 +475,10 @@ def test_wrap_all_config_no_inputs():
         yield Output(res)
 
     @composite_solid(
-        input_defs=[InputDefinition("input_a", String), InputDefinition("input_b", String)],
+        input_defs=[
+            InputDefinition("input_a", String),
+            InputDefinition("input_b", String),
+        ],
         config_fn=lambda cfg: {
             "basic": {
                 "config": {
@@ -468,7 +487,10 @@ def test_wrap_all_config_no_inputs():
                 }
             }
         },
-        config_schema={"config_field_a": Field(String), "config_field_b": Field(String)},
+        config_schema={
+            "config_field_a": Field(String),
+            "config_field_b": Field(String),
+        },
     )
     def wrap_all_config_no_inputs(input_a, input_b):
         return basic(input_a, input_b)
@@ -482,7 +504,10 @@ def test_wrap_all_config_no_inputs():
         {
             "solids": {
                 "wrap_all_config_no_inputs": {
-                    "config": {"config_field_a": "override_a", "config_field_b": "override_b"},
+                    "config": {
+                        "config_field_a": "override_a",
+                        "config_field_b": "override_b",
+                    },
                     "inputs": {
                         "input_a": {"value": "set_input_a"},
                         "input_b": {"value": "set_input_b"},
@@ -503,7 +528,10 @@ def test_wrap_all_config_no_inputs():
             {
                 "solids": {
                     "wrap_all_config_no_inputs": {
-                        "config": {"config_field_a": 1234, "config_field_b": "override_b"},
+                        "config": {
+                            "config_field_a": 1234,
+                            "config_field_b": "override_b",
+                        },
                         "inputs": {
                             "input_a": {"value": "set_input_a"},
                             "input_b": {"value": "set_input_b"},
@@ -524,8 +552,14 @@ def test_wrap_all_config_no_inputs():
             {
                 "solids": {
                     "wrap_all_config_no_inputs": {
-                        "config": {"config_field_a": "override_a", "config_field_b": "override_b"},
-                        "inputs": {"input_a": {"value": 1234}, "input_b": {"value": "set_input_b"}},
+                        "config": {
+                            "config_field_a": "override_a",
+                            "config_field_b": "override_b",
+                        },
+                        "inputs": {
+                            "input_a": {"value": 1234},
+                            "input_b": {"value": "set_input_b"},
+                        },
                     }
                 }
             },
@@ -539,8 +573,14 @@ def test_wrap_all_config_no_inputs():
 
 def test_wrap_all_config_one_input():
     @solid(
-        config_schema={"config_field_a": Field(String), "config_field_b": Field(String)},
-        input_defs=[InputDefinition("input_a", String), InputDefinition("input_b", String)],
+        config_schema={
+            "config_field_a": Field(String),
+            "config_field_b": Field(String),
+        },
+        input_defs=[
+            InputDefinition("input_a", String),
+            InputDefinition("input_b", String),
+        ],
     )
     def basic(context, input_a, input_b):
         res = ".".join(
@@ -564,7 +604,10 @@ def test_wrap_all_config_one_input():
                 "inputs": {"input_b": {"value": "set_input_b"}},
             }
         },
-        config_schema={"config_field_a": Field(String), "config_field_b": Field(String)},
+        config_schema={
+            "config_field_a": Field(String),
+            "config_field_b": Field(String),
+        },
     )
     def wrap_all_config_one_input(input_a):
         return basic(input_a)
@@ -578,7 +621,10 @@ def test_wrap_all_config_one_input():
         {
             "solids": {
                 "wrap_all_config_one_input": {
-                    "config": {"config_field_a": "override_a", "config_field_b": "override_b"},
+                    "config": {
+                        "config_field_a": "override_a",
+                        "config_field_b": "override_b",
+                    },
                     "inputs": {"input_a": {"value": "set_input_a"}},
                 }
             }
@@ -596,7 +642,10 @@ def test_wrap_all_config_one_input():
             {
                 "solids": {
                     "wrap_all_config_one_input": {
-                        "config": {"config_field_a": 1234, "config_field_b": "override_b"},
+                        "config": {
+                            "config_field_a": 1234,
+                            "config_field_b": "override_b",
+                        },
                         "inputs": {"input_a": {"value": "set_input_a"}},
                     }
                 }
@@ -614,7 +663,10 @@ def test_wrap_all_config_one_input():
             {
                 "solids": {
                     "wrap_all_config_one_input": {
-                        "config": {"config_field_a": "override_a", "config_field_b": "override_b"},
+                        "config": {
+                            "config_field_a": "override_a",
+                            "config_field_b": "override_b",
+                        },
                         "inputs": {"input_a": {"value": 1234}},
                     }
                 }
@@ -629,8 +681,14 @@ def test_wrap_all_config_one_input():
 
 def test_wrap_all_config_and_inputs():
     @solid(
-        config_schema={"config_field_a": Field(String), "config_field_b": Field(String)},
-        input_defs=[InputDefinition("input_a", String), InputDefinition("input_b", String)],
+        config_schema={
+            "config_field_a": Field(String),
+            "config_field_b": Field(String),
+        },
+        input_defs=[
+            InputDefinition("input_a", String),
+            InputDefinition("input_b", String),
+        ],
     )
     def basic(context, input_a, input_b):
         res = ".".join(
@@ -656,7 +714,10 @@ def test_wrap_all_config_and_inputs():
                 },
             }
         },
-        config_schema={"config_field_a": Field(String), "config_field_b": Field(String)},
+        config_schema={
+            "config_field_a": Field(String),
+            "config_field_b": Field(String),
+        },
     )
     def wrap_all():
         return basic()
@@ -670,7 +731,10 @@ def test_wrap_all_config_and_inputs():
         {
             "solids": {
                 "wrap_all": {
-                    "config": {"config_field_a": "override_a", "config_field_b": "override_b"}
+                    "config": {
+                        "config_field_a": "override_a",
+                        "config_field_b": "override_b",
+                    }
                 }
             }
         },
@@ -714,7 +778,8 @@ def test_empty_config():
     # Testing that this definition does *not* raise
     # See: https://github.com/dagster-io/dagster/issues/1606
     @composite_solid(
-        config_fn=lambda _: {"scalar_config_solid": {"config": "an input"}}, config_schema={}
+        config_fn=lambda _: {"scalar_config_solid": {"config": "an input"}},
+        config_schema={},
     )
     def wrap_solid():  # pylint: disable=unused-variable
         return scalar_config_solid()
@@ -732,7 +797,8 @@ def test_empty_config():
 
 def test_nested_empty_config():
     @composite_solid(
-        config_fn=lambda _: {"scalar_config_solid": {"config": "an input"}}, config_schema={}
+        config_fn=lambda _: {"scalar_config_solid": {"config": "an input"}},
+        config_schema={},
     )
     def wrap_solid():  # pylint: disable=unused-variable
         return scalar_config_solid()
@@ -758,7 +824,8 @@ def test_nested_empty_config_input():
         return num
 
     @composite_solid(
-        config_fn=lambda _: {"number": {"inputs": {"num": {"value": 4}}}}, config_schema={}
+        config_fn=lambda _: {"number": {"inputs": {"num": {"value": 4}}}},
+        config_schema={},
     )
     def wrap_solid():  # pylint: disable=unused-variable
         return number()

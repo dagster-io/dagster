@@ -12,4 +12,4 @@ Microsoft Teams (dagster-msteams)
 .. autodata:: teams_on_success
   :annotation: HookDefinition
 
-.. autofunction:: make_teams_on_pipeline_failure_sensor
+.. autofunction:: make_teams_on_run_failure_sensor

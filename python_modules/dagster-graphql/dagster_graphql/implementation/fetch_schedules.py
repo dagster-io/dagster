@@ -122,11 +122,12 @@ def get_schedule_or_error(graphene_info, schedule_selector):
     location = graphene_info.context.get_repository_location(schedule_selector.location_name)
     repository = location.get_repository(schedule_selector.repository_name)
 
-    external_schedule = repository.get_external_schedule(schedule_selector.schedule_name)
-    if not external_schedule:
+    if not repository.has_external_schedule(schedule_selector.schedule_name):
         raise UserFacingGraphQLError(
             GrapheneScheduleNotFoundError(schedule_name=schedule_selector.schedule_name)
         )
+
+    external_schedule = repository.get_external_schedule(schedule_selector.schedule_name)
 
     schedule_state = graphene_info.context.instance.get_instigator_state(
         external_schedule.get_external_origin_id(), external_schedule.selector_id

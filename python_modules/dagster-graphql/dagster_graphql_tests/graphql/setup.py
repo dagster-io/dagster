@@ -19,7 +19,6 @@ from dagster_graphql.test.utils import (
 
 from dagster import (
     Any,
-    AssetGroup,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
@@ -29,7 +28,6 @@ from dagster import (
     DefaultScheduleStatus,
     DefaultSensorStatus,
     DynamicOutput,
-    DynamicOutputDefinition,
     Enum,
     EnumValue,
     ExpectationResult,
@@ -37,23 +35,16 @@ from dagster import (
     HourlyPartitionsDefinition,
     IOManager,
     IOManagerDefinition,
-    InputDefinition,
     Int,
     Map,
-    Materialization,
     MetadataEntry,
-    ModeDefinition,
     Noneable,
     Nothing,
     Output,
-    OutputDefinition,
     Partition,
-    PartitionSetDefinition,
-    PresetDefinition,
     PythonObjectDagsterType,
     ScheduleDefinition,
     ScheduleEvaluationContext,
-    SolidExecutionContext,
     SourceAsset,
     SourceHashVersionStrategy,
     StaticPartitionsDefinition,
@@ -67,22 +58,15 @@ from dagster import (
 from dagster import _check as check
 from dagster import (
     asset,
-    build_assets_job,
-    composite_solid,
     dagster_type_loader,
     dagster_type_materializer,
-    daily_schedule,
     graph,
-    hourly_schedule,
     job,
-    lambda_solid,
     logger,
-    monthly_schedule,
     op,
     repository,
     resource,
     usable_as_dagster_type,
-    weekly_schedule,
 )
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.executor_definition import in_process_executor
@@ -96,7 +80,26 @@ from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.test_utils import default_mode_def_for_test, today_at_midnight
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import PythonFileTarget
-from dagster._legacy import pipeline, solid
+from dagster._legacy import (
+    AssetGroup,
+    DynamicOutputDefinition,
+    InputDefinition,
+    Materialization,
+    ModeDefinition,
+    OutputDefinition,
+    PartitionSetDefinition,
+    PresetDefinition,
+    SolidExecutionContext,
+    build_assets_job,
+    composite_solid,
+    daily_schedule,
+    hourly_schedule,
+    lambda_solid,
+    monthly_schedule,
+    pipeline,
+    solid,
+    weekly_schedule,
+)
 from dagster._seven import get_system_temp_directory
 from dagster._utils import file_relative_path, segfault
 
@@ -713,13 +716,14 @@ def materialization_pipeline():
                 MetadataEntry("json", value={"is_dope": True}),
                 MetadataEntry("python class", value=MetadataValue.python_artifact(MetadataEntry)),
                 MetadataEntry(
-                    "python function", value=MetadataValue.python_artifact(file_relative_path)
+                    "python function",
+                    value=MetadataValue.python_artifact(file_relative_path),
                 ),
                 MetadataEntry("float", value=1.2),
                 MetadataEntry("int", value=1),
                 MetadataEntry("float NaN", value=float("nan")),
                 MetadataEntry("long int", value=LONG_INT),
-                MetadataEntry("pipeline run", value=MetadataValue.pipeline_run("fake_run_id")),
+                MetadataEntry("pipeline run", value=MetadataValue.dagster_run("fake_run_id")),
                 MetadataEntry("my asset", value=AssetKey("my_asset")),
                 MetadataEntry(
                     "table",
@@ -776,7 +780,10 @@ def retry_config_resource(context):
 @pipeline(
     mode_defs=[
         ModeDefinition(
-            resource_defs={"io_manager": fs_io_manager, "retry_count": retry_config_resource}
+            resource_defs={
+                "io_manager": fs_io_manager,
+                "retry_count": retry_config_resource,
+            }
         )
     ]
 )
@@ -856,7 +863,11 @@ def will_fail(context, num):  # pylint: disable=unused-argument
 @pipeline(
     mode_defs=[
         ModeDefinition(
-            resource_defs={"a": resource_a, "b": resource_b, "io_manager": fs_io_manager}
+            resource_defs={
+                "a": resource_a,
+                "b": resource_b,
+                "io_manager": fs_io_manager,
+            }
         )
     ]
 )
@@ -965,7 +976,10 @@ def retry_multi_input_early_terminate_pipeline():
         return one
 
     @lambda_solid(
-        input_defs=[InputDefinition("input_one", Int), InputDefinition("input_two", Int)],
+        input_defs=[
+            InputDefinition("input_one", Int),
+            InputDefinition("input_two", Int),
+        ],
         output_def=OutputDefinition(Int),
     )
     def sum_inputs(input_one, input_two):
@@ -1320,7 +1334,10 @@ def chained_failure_pipeline():
     @lambda_solid
     def conditionally_fail(_):
         if os.path.isfile(
-            os.path.join(get_system_temp_directory(), "chained_failure_pipeline_conditionally_fail")
+            os.path.join(
+                get_system_temp_directory(),
+                "chained_failure_pipeline_conditionally_fail",
+            )
         ):
             raise Exception("blah")
 
@@ -1347,7 +1364,8 @@ def backcompat_materialization_pipeline():
                 MetadataEntry("json", value={"is_dope": True}),
                 MetadataEntry("python class", value=MetadataValue.python_artifact(MetadataEntry)),
                 MetadataEntry(
-                    "python function", value=MetadataValue.python_artifact(file_relative_path)
+                    "python function",
+                    value=MetadataValue.python_artifact(file_relative_path),
                 ),
                 MetadataEntry("float", value=1.2),
                 MetadataEntry("int", value=1),
@@ -1399,7 +1417,9 @@ dummy_source_asset = SourceAsset(key=AssetKey("dummy_source_asset"))
 
 
 @asset
-def first_asset(dummy_source_asset):  # pylint: disable=redefined-outer-name,unused-argument
+def first_asset(
+    dummy_source_asset,
+):  # pylint: disable=redefined-outer-name,unused-argument
     return 1
 
 
@@ -1416,7 +1436,9 @@ def hanging_asset(context, first_asset):  # pylint: disable=redefined-outer-name
 
 
 @asset
-def never_runs_asset(hanging_asset):  # pylint: disable=redefined-outer-name,unused-argument
+def never_runs_asset(
+    hanging_asset,
+):  # pylint: disable=redefined-outer-name,unused-argument
     pass
 
 
@@ -1553,7 +1575,9 @@ def asset_yields_observation():
 
 
 observation_job = build_assets_job(
-    "observation_job", assets=[asset_yields_observation], executor_def=in_process_executor
+    "observation_job",
+    assets=[asset_yields_observation],
+    executor_def=in_process_executor,
 )
 
 
@@ -1673,7 +1697,13 @@ def ungrouped_asset_5():
 # For now the only way to add assets to repositories is via AssetGroup
 # When AssetGroup is removed, these assets should be added directly to repository_with_named_groups
 named_groups_job = AssetGroup(
-    [grouped_asset_1, grouped_asset_2, ungrouped_asset_3, grouped_asset_4, ungrouped_asset_5]
+    [
+        grouped_asset_1,
+        grouped_asset_2,
+        ungrouped_asset_3,
+        grouped_asset_4,
+        ungrouped_asset_5,
+    ]
 ).build_job("named_groups_job")
 
 

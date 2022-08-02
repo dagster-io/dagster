@@ -1,10 +1,12 @@
 import os
+import warnings
 from tempfile import TemporaryDirectory
 
 import pytest
 
 from dagster import (
     AssetKey,
+    AssetOut,
     AssetsDefinition,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -27,6 +29,15 @@ from dagster import (
     with_resources,
 )
 from dagster._core.test_utils import instance_for_test
+
+
+@pytest.fixture(autouse=True)
+def check_experimental_warnings():
+    with warnings.catch_warnings(record=True) as record:
+        yield
+
+        for w in record:
+            assert False, f"Unexpected warning: {w.message.args[0]}"
 
 
 def test_basic_materialize():
@@ -227,8 +238,8 @@ def test_materialize_multi_asset():
 
     @multi_asset(
         outs={
-            "my_out_name": Out(metadata={"foo": "bar"}),
-            "my_other_out_name": Out(metadata={"bar": "foo"}),
+            "my_out_name": AssetOut(metadata={"foo": "bar"}),
+            "my_other_out_name": AssetOut(metadata={"bar": "foo"}),
         },
         internal_asset_deps={
             "my_out_name": {AssetKey("my_other_out_name")},

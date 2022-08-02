@@ -537,27 +537,6 @@
         ]
       },
       {
-        "title": "Legacy",
-        "children": [
-          {
-            "title": "Solids",
-            "path": "/_apidocs/solids"
-          },
-          {
-            "title": "Pipelines",
-            "path": "/_apidocs/pipeline"
-          },
-          {
-            "title": "Modes",
-            "path": "/_apidocs/modes"
-          },
-          {
-            "title": "Presets",
-            "path": "/_apidocs/presets"
-          }
-        ]
-      },
-      {
         "title": "Libraries",
         "children": [
           {

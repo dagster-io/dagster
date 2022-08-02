@@ -1,7 +1,7 @@
 import pytest
 
-from dagster import DagsterInvariantViolationError, ModeDefinition, execute_pipeline, resource
-from dagster._legacy import pipeline, solid
+from dagster import DagsterInvariantViolationError, resource
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
 
 
 @resource

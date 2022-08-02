@@ -1,19 +1,9 @@
 import os
 
-from dagster import (
-    Enum,
-    EnumValue,
-    Failure,
-    Field,
-    InputDefinition,
-    Noneable,
-    Nothing,
-    OutputDefinition,
-    Permissive,
-)
+from dagster import Enum, EnumValue, Failure, Field, Noneable, Nothing, Permissive
 from dagster import _check as check
 from dagster import op
-from dagster._legacy import solid
+from dagster._legacy import InputDefinition, OutputDefinition, solid
 
 from .utils import execute, execute_script_file
 

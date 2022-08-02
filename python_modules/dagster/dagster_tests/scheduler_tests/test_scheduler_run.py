@@ -11,10 +11,7 @@ from dagster import (
     DefaultScheduleStatus,
     Field,
     Partition,
-    PartitionSetDefinition,
     ScheduleDefinition,
-    daily_schedule,
-    hourly_schedule,
     job,
     op,
     repository,
@@ -46,7 +43,7 @@ from dagster._core.workspace.load_target import EmptyWorkspaceTarget, GrpcServer
 from dagster._daemon import get_default_daemon_logger
 from dagster._grpc.client import EphemeralDagsterGrpcClient
 from dagster._grpc.server import open_server_process
-from dagster._legacy import pipeline, solid
+from dagster._legacy import PartitionSetDefinition, daily_schedule, hourly_schedule, pipeline, solid
 from dagster._scheduler.scheduler import launch_scheduled_runs
 from dagster._seven import wait_for_process
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
@@ -101,14 +98,18 @@ def daily_schedule_without_timezone(date):
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="US/Central"
+    pipeline_name="the_pipeline",
+    start_date=_COUPLE_DAYS_AGO,
+    execution_timezone="US/Central",
 )
 def daily_central_time_schedule(date):
     return _solid_config(date)
 
 
 @schedule(
-    pipeline_name="the_pipeline", cron_schedule="*/5 * * * *", execution_timezone="US/Central"
+    pipeline_name="the_pipeline",
+    cron_schedule="*/5 * * * *",
+    execution_timezone="US/Central",
 )
 def partitionless_schedule(context):
     return _solid_config(context.scheduled_execution_time)
@@ -199,7 +200,9 @@ def simple_hourly_schedule(date):
 
 
 @hourly_schedule(
-    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="US/Central"
+    pipeline_name="the_pipeline",
+    start_date=_COUPLE_DAYS_AGO,
+    execution_timezone="US/Central",
 )
 def hourly_central_time_schedule(date):
     return _solid_config(date)
@@ -331,7 +334,9 @@ def config_pipeline():
 
 
 @daily_schedule(
-    pipeline_name="config_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="UTC"
+    pipeline_name="config_pipeline",
+    start_date=_COUPLE_DAYS_AGO,
+    execution_timezone="UTC",
 )
 def large_schedule(_):
     REQUEST_CONFIG_COUNT = 120000
@@ -395,7 +400,9 @@ def define_default_config_job():
 
 
 default_config_schedule = ScheduleDefinition(
-    name="default_config_schedule", cron_schedule="* * * * *", job=define_default_config_job()
+    name="default_config_schedule",
+    cron_schedule="* * * * *",
+    job=define_default_config_job(),
 )
 
 
@@ -1488,7 +1495,8 @@ def test_multiple_schedules_on_different_time_ranges(instance, workspace, extern
         assert ticks[0].status == TickStatus.SUCCESS
 
         hourly_ticks = instance.get_ticks(
-            external_hourly_schedule.get_external_origin_id(), external_hourly_schedule.selector_id
+            external_hourly_schedule.get_external_origin_id(),
+            external_hourly_schedule.selector_id,
         )
         assert len(hourly_ticks) == 1
         assert hourly_ticks[0].status == TickStatus.SUCCESS
@@ -1506,7 +1514,8 @@ def test_multiple_schedules_on_different_time_ranges(instance, workspace, extern
         assert ticks[0].status == TickStatus.SUCCESS
 
         hourly_ticks = instance.get_ticks(
-            external_hourly_schedule.get_external_origin_id(), external_hourly_schedule.selector_id
+            external_hourly_schedule.get_external_origin_id(),
+            external_hourly_schedule.selector_id,
         )
         assert len(hourly_ticks) == 2
         assert len([tick for tick in hourly_ticks if tick.status == TickStatus.SUCCESS]) == 2

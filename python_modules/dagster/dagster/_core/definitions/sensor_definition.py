@@ -16,6 +16,7 @@ from typing import (
 from typing_extensions import TypeGuard
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -49,10 +50,11 @@ DEFAULT_SENSOR_DAEMON_INTERVAL = 30
 
 
 class SensorEvaluationContext:
-    """Sensor execution context.
+    """The context object available as the argument to the evaluation function of a :py:class:`dagster.SensorDefinition`.
 
-    An instance of this class is made available as the first argument to the evaluation function
-    on SensorDefinition.
+    Users should not instantiate this object directly. To construct a
+    `SensorEvaluationContext` for testing purposes, use :py:func:`dagster.
+    build_sensor_context`.
 
     Attributes:
         instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
@@ -64,6 +66,17 @@ class SensorEvaluationContext:
         repository_name (Optional[str]): The name of the repository that the sensor belongs to.
         instance (Optional[DagsterInstance]): The deserialized instance can also be passed in
             directly (primarily useful in testing contexts).
+
+    Example:
+
+    .. code-block:: python
+
+        from dagster import sensor, SensorEvaluationContext
+
+        @sensor
+        def the_sensor(context: SensorEvaluationContext):
+            ...
+
     """
 
     def __init__(
@@ -91,6 +104,7 @@ class SensorEvaluationContext:
     def __exit__(self, _exception_type, _exception_value, _traceback):
         self._exit_stack.close()
 
+    @public  # type: ignore
     @property
     def instance(self) -> DagsterInstance:
         # self._instance_ref should only ever be None when this SensorEvaluationContext was
@@ -105,19 +119,23 @@ class SensorEvaluationContext:
             )
         return cast(DagsterInstance, self._instance)
 
+    @public  # type: ignore
     @property
     def last_completion_time(self) -> Optional[float]:
         return self._last_completion_time
 
+    @public  # type: ignore
     @property
     def last_run_key(self) -> Optional[str]:
         return self._last_run_key
 
+    @public  # type: ignore
     @property
     def cursor(self) -> Optional[str]:
         """The cursor value for this sensor, which was set in an earlier sensor evaluation."""
         return self._cursor
 
+    @public
     def update_cursor(self, cursor: Optional[str]) -> None:
         """Updates the cursor value for this sensor, which will be provided on the context for the
         next sensor evaluation.
@@ -130,6 +148,7 @@ class SensorEvaluationContext:
         """
         self._cursor = check.opt_str_param(cursor, "cursor")
 
+    @public  # type: ignore
     @property
     def repository_name(self) -> Optional[str]:
         return self._repository_name
@@ -171,14 +190,6 @@ class SensorDefinition:
             This function must return a generator, which must yield either a single SkipReason
             or one or more RunRequest objects.
         name (Optional[str]): The name of the sensor to create. Defaults to name of evaluation_fn
-        pipeline_name (Optional[str]): (legacy) The name of the pipeline to execute when the sensor
-            fires. Cannot be used in conjunction with `job` or `jobs` parameters.
-        solid_selection (Optional[Sequence[str]]): (legacy) A list of solid subselection (including single
-            solid names) to execute when the sensor runs. e.g. ``['*some_solid+', 'other_solid']``.
-            Cannot be used in conjunction with `job` or `jobs` parameters.
-        mode (Optional[str]): (legacy) The mode to apply when executing runs triggered by this
-            sensor. Cannot be used in conjunction with `job` or `jobs` parameters. (default:
-            'default')
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
@@ -309,14 +320,17 @@ class SensorDefinition:
 
             return self._raw_fn()  # type: ignore [TypeGuard limitation]
 
+    @public  # type: ignore
     @property
     def name(self) -> str:
         return self._name
 
+    @public  # type: ignore
     @property
     def description(self) -> Optional[str]:
         return self._description
 
+    @public  # type: ignore
     @property
     def minimum_interval_seconds(self) -> Optional[int]:
         return self._min_interval
@@ -325,6 +339,7 @@ class SensorDefinition:
     def targets(self) -> Sequence[Union[DirectTarget, RepoRelativeTarget]]:
         return self._targets
 
+    @public  # type: ignore
     @property
     def job(self) -> Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]:
         if self._targets:
@@ -439,6 +454,11 @@ class SensorDefinition:
     def _target(self) -> Optional[Union[DirectTarget, RepoRelativeTarget]]:
         return self._targets[0] if self._targets else None
 
+    @public  # type: ignore
+    @property
+    def job_name(self) -> Optional[str]:
+        return self.pipeline_name
+
     @property
     def pipeline_name(self) -> Optional[str]:
         return self._target.pipeline_name if self._target else None
@@ -451,6 +471,7 @@ class SensorDefinition:
     def mode(self) -> Optional[str]:
         return self._target.mode if self._target else None
 
+    @public  # type: ignore
     @property
     def default_status(self) -> DefaultSensorStatus:
         return self._default_status
@@ -573,8 +594,6 @@ class AssetSensorDefinition(SensorDefinition):
     Args:
         name (str): The name of the sensor to create.
         asset_key (AssetKey): The asset_key this sensor monitors.
-        pipeline_name (Optional[str]): (legacy) The name of the pipeline to execute when the sensor
-            fires. Cannot be used in conjunction with `job` or `jobs` parameters.
         asset_materialization_fn (Callable[[SensorEvaluationContext, EventLogEntry], Union[Iterator[Union[RunRequest, SkipReason]], RunRequest, SkipReason]]): The core
             evaluation function for the sensor, which is run at an interval to determine whether a
             run should be launched or not. Takes a :py:class:`~dagster.SensorEvaluationContext` and
@@ -582,12 +601,6 @@ class AssetSensorDefinition(SensorDefinition):
 
             This function must return a generator, which must yield either a single SkipReason
             or one or more RunRequest objects.
-        solid_selection (Optional[Sequence[str]]): (legacy) A list of solid subselection (including single
-            solid names) to execute when the sensor runs. e.g. ``['*some_solid+', 'other_solid']``.
-            Cannot be used in conjunction with `job` or `jobs` parameters.
-        mode (Optional[str]): (legacy) The mode to apply when executing runs triggered by this sensor.
-            (default: 'default').
-            Cannot be used in conjunction with `job` or `jobs` parameters.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.

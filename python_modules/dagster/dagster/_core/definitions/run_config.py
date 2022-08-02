@@ -97,7 +97,7 @@ def define_logger_dictionary_cls(creation_data: RunConfigSchemaCreationData) -> 
     )
 
 
-def define_execution_field(executor_defs: Sequence[ExecutorDefinition]) -> Field:
+def define_execution_field(executor_defs: Sequence[ExecutorDefinition], description: str) -> Field:
     default_in_process = False
     for executor_def in executor_defs:
         if executor_def == in_process_executor:  # pylint: disable=comparison-with-callable
@@ -106,7 +106,9 @@ def define_execution_field(executor_defs: Sequence[ExecutorDefinition]) -> Field
     selector = selector_for_named_defs(executor_defs)
 
     if default_in_process:
-        return Field(selector, default_value={in_process_executor.name: {}})
+        return Field(
+            selector, default_value={in_process_executor.name: {}}, description=description
+        )
 
     # If we are using the execute_in_process executor, then ignore all executor config.
     if (
@@ -114,22 +116,27 @@ def define_execution_field(executor_defs: Sequence[ExecutorDefinition]) -> Field
         and executor_defs[0]  # pylint: disable=comparison-with-callable
         == execute_in_process_executor
     ):
-        return Field(Permissive(), is_required=False, default_value={})
+        return Field(Permissive(), is_required=False, default_value={}, description=description)
 
-    return Field(selector)
+    return Field(selector, description=description)
 
 
-def define_single_execution_field(executor_def: ExecutorDefinition) -> Field:
-    return def_config_field(executor_def)
+def define_single_execution_field(executor_def: ExecutorDefinition, description: str) -> Field:
+    return def_config_field(executor_def, description=description)
 
 
 def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) -> ConfigType:
     execution_field = (
-        define_execution_field(creation_data.mode_definition.executor_defs)
+        define_execution_field(
+            creation_data.mode_definition.executor_defs,
+            "Configure how steps are executed within a run.",
+        )
         if not creation_data.is_using_graph_job_op_apis
-        else define_single_execution_field(creation_data.mode_definition.executor_defs[0])
+        else define_single_execution_field(
+            creation_data.mode_definition.executor_defs[0],
+            "Configure how steps are executed within a run.",
+        )
     )
-    execution_field.description = "Configure how steps are executed within a run."
 
     top_level_node = Node(
         name=creation_data.graph_def.name,
@@ -164,7 +171,10 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
 
     if creation_data.graph_def.has_config_mapping:
         config_schema = cast(IDefinitionConfigSchema, creation_data.graph_def.config_schema)
-        nodes_field = Field({"config": config_schema.as_field()})
+        nodes_field = Field(
+            {"config": config_schema.as_field()},
+            description="Configure runtime parameters for ops or assets.",
+        )
     else:
         nodes_field = Field(
             define_solid_dictionary_cls(
@@ -174,9 +184,9 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
                 resource_defs=creation_data.mode_definition.resource_defs,
                 is_using_graph_job_op_apis=creation_data.is_using_graph_job_op_apis,
                 asset_layer=creation_data.asset_layer,
-            )
+            ),
+            description="Configure runtime parameters for ops or assets.",
         )
-    nodes_field.description = "Configure runtime parameters for ops or assets."
 
     if creation_data.is_using_graph_job_op_apis:
         fields["ops"] = nodes_field

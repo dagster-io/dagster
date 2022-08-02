@@ -1,13 +1,7 @@
 import pytest
 
-from dagster import (
-    DagsterTypeCheckDidNotPass,
-    Dict,
-    InputDefinition,
-    OutputDefinition,
-    execute_solid,
-    lambda_solid,
-)
+from dagster import DagsterTypeCheckDidNotPass, Dict
+from dagster._legacy import InputDefinition, OutputDefinition, execute_solid, lambda_solid
 
 
 def test_typed_python_dict():

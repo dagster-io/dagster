@@ -1,16 +1,14 @@
 import string
 
-from dagster import (
+from dagster import Int, ScheduleDefinition, repository, usable_as_dagster_type
+from dagster._legacy import (
     InputDefinition,
-    Int,
     OutputDefinition,
     PartitionSetDefinition,
-    ScheduleDefinition,
     lambda_solid,
-    repository,
-    usable_as_dagster_type,
+    pipeline,
+    solid,
 )
-from dagster._legacy import pipeline, solid
 
 
 @lambda_solid

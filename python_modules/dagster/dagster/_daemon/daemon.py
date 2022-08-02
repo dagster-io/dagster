@@ -61,14 +61,14 @@ class DagsterDaemon(AbstractContextManager):
         self,
         daemon_uuid: str,
         daemon_shutdown_event: Event,
-        context_fn: Callable[[], ContextManager[Tuple[DagsterInstance, IWorkspace]]],
+        context_fn: Callable[[str], ContextManager[Tuple[DagsterInstance, IWorkspace]]],
         heartbeat_interval_seconds: int,
         error_interval_seconds: int,
     ):
         from dagster._core.telemetry_upload import uploading_logging_thread
 
         # Each loop runs in its own thread with its own instance and IWorkspace
-        with context_fn() as (instance, workspace):
+        with context_fn(self.daemon_type()) as (instance, workspace):
             with uploading_logging_thread():
                 check.inst_param(workspace, "workspace", IWorkspace)
 

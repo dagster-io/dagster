@@ -12,16 +12,19 @@ from dagster import (
     RunRequest,
     ScheduleDefinition,
     build_schedule_context,
-    daily_schedule,
-    hourly_schedule,
     job,
-    monthly_schedule,
     op,
     schedule,
     validate_run_config,
+)
+from dagster._legacy import (
+    daily_schedule,
+    hourly_schedule,
+    monthly_schedule,
+    pipeline,
+    solid,
     weekly_schedule,
 )
-from dagster._legacy import pipeline, solid
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster._utils import merge_dicts
 from dagster._utils.partitions import (
@@ -59,7 +62,9 @@ def test_scheduler():
         }
 
     @schedule(
-        cron_schedule="* * * * *", pipeline_name="foo_pipeline", should_execute=lambda x: False
+        cron_schedule="* * * * *",
+        pipeline_name="foo_pipeline",
+        should_execute=lambda x: False,
     )
     def always_skip_schedule():
         return {}
@@ -199,7 +204,9 @@ HOURS_UNTIL_FEBRUARY_27 = 24 * (31 + 26)
 
 
 @pytest.mark.parametrize("partition_hours_offset", [0, 1, 2])
-def test_partitions_for_hourly_schedule_decorators_without_timezone(partition_hours_offset: int):
+def test_partitions_for_hourly_schedule_decorators_without_timezone(
+    partition_hours_offset: int,
+):
     with pendulum.test(
         to_timezone(create_pendulum_time(2019, 2, 27, 0, 1, 1, tz="UTC"), "US/Eastern")
     ):
@@ -248,7 +255,9 @@ def test_partitions_for_hourly_schedule_decorators_without_timezone(partition_ho
 
 
 @pytest.mark.parametrize("partition_hours_offset", [0, 1, 2])
-def test_partitions_for_hourly_schedule_decorators_with_timezone(partition_hours_offset: int):
+def test_partitions_for_hourly_schedule_decorators_with_timezone(
+    partition_hours_offset: int,
+):
     with pendulum.test(create_pendulum_time(2019, 2, 27, 0, 1, 1, tz="US/Central")):
         start_date = datetime(year=2019, month=1, day=1)
 
@@ -316,7 +325,9 @@ def test_partitions_for_hourly_schedule_decorators_with_timezone(partition_hours
 
 
 @pytest.mark.parametrize("partition_days_offset", [0, 1, 2])
-def test_partitions_for_daily_schedule_decorators_without_timezone(partition_days_offset: int):
+def test_partitions_for_daily_schedule_decorators_without_timezone(
+    partition_days_offset: int,
+):
     with pendulum.test(
         to_timezone(create_pendulum_time(2019, 2, 27, 0, 1, 1, tz="UTC"), "US/Eastern")
     ):
@@ -366,7 +377,9 @@ def test_partitions_for_daily_schedule_decorators_without_timezone(partition_day
 
 
 @pytest.mark.parametrize("partition_days_offset", [0, 1, 2])
-def test_partitions_for_daily_schedule_decorators_with_timezone(partition_days_offset: int):
+def test_partitions_for_daily_schedule_decorators_with_timezone(
+    partition_days_offset: int,
+):
     with pendulum.test(create_pendulum_time(2019, 2, 27, 0, 1, 1, tz="US/Central")):
         start_date = datetime(year=2019, month=1, day=1)
 
@@ -406,7 +419,9 @@ def test_partitions_for_daily_schedule_decorators_with_timezone(partition_days_o
 
 
 @pytest.mark.parametrize("partition_weeks_offset", [0, 1, 2])
-def test_partitions_for_weekly_schedule_decorators_without_timezone(partition_weeks_offset: int):
+def test_partitions_for_weekly_schedule_decorators_without_timezone(
+    partition_weeks_offset: int,
+):
     with pendulum.test(
         to_timezone(create_pendulum_time(2019, 2, 27, 0, 1, 1, tz="UTC"), "US/Eastern")
     ):
@@ -457,7 +472,9 @@ def test_partitions_for_weekly_schedule_decorators_without_timezone(partition_we
 
 
 @pytest.mark.parametrize("partition_weeks_offset", [0, 1, 2])
-def test_partitions_for_weekly_schedule_decorators_with_timezone(partition_weeks_offset: int):
+def test_partitions_for_weekly_schedule_decorators_with_timezone(
+    partition_weeks_offset: int,
+):
     with pendulum.test(create_pendulum_time(2019, 2, 27, 0, 1, 1, tz="US/Central")):
 
         start_date = datetime(year=2019, month=1, day=1)
@@ -499,7 +516,9 @@ def test_partitions_for_weekly_schedule_decorators_with_timezone(partition_weeks
 
 
 @pytest.mark.parametrize("partition_months_offset", [0, 1, 2])
-def test_partitions_for_monthly_schedule_decorators_without_timezone(partition_months_offset: int):
+def test_partitions_for_monthly_schedule_decorators_without_timezone(
+    partition_months_offset: int,
+):
     with pendulum.test(
         to_timezone(create_pendulum_time(2019, 3, 27, 0, 1, 1, tz="UTC"), "US/Eastern")
     ):
@@ -552,7 +571,9 @@ def test_partitions_for_monthly_schedule_decorators_without_timezone(partition_m
 
 
 @pytest.mark.parametrize("partition_months_offset", [0, 1, 2])
-def test_partitions_for_monthly_schedule_decorators_with_timezone(partition_months_offset: int):
+def test_partitions_for_monthly_schedule_decorators_with_timezone(
+    partition_months_offset: int,
+):
     with pendulum.test(create_pendulum_time(2019, 3, 27, 0, 1, 1, tz="US/Central")):
         start_date = datetime(year=2019, month=1, day=1)
 

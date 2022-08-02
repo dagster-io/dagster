@@ -1336,7 +1336,7 @@ def my_resource_2():
 
 @multi_asset(
     name="fivetran_sync",
-    outs={key: Out(asset_key=AssetKey(key)) for key in ["a", "b", "c"]},
+    outs={key: AssetOut(key=AssetKey(key)) for key in ["a", "b", "c"]},
 )
 def fivetran_asset():
     return 1, 2, 3

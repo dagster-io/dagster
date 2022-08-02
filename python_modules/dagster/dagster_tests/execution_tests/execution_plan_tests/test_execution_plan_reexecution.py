@@ -4,16 +4,7 @@ import pickle
 import pytest
 
 import dagster._check as check
-from dagster import (
-    DependencyDefinition,
-    InputDefinition,
-    Int,
-    OutputDefinition,
-    PipelineDefinition,
-    execute_pipeline,
-    lambda_solid,
-    reexecute_pipeline,
-)
+from dagster import DependencyDefinition, Int
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster._core.events import get_step_output_event
@@ -23,6 +14,14 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import default_mode_def_for_test
+from dagster._legacy import (
+    InputDefinition,
+    OutputDefinition,
+    PipelineDefinition,
+    execute_pipeline,
+    lambda_solid,
+    reexecute_pipeline,
+)
 
 
 def define_addy_pipeline(using_file_system=False):
@@ -206,12 +205,18 @@ def test_pipeline_step_key_subset_execution():
     assert step_events
     assert not os.path.exists(
         os.path.join(
-            instance.storage_directory(), pipeline_reexecution_result.run_id, "add_one", "result"
+            instance.storage_directory(),
+            pipeline_reexecution_result.run_id,
+            "add_one",
+            "result",
         )
     )
     with open(
         os.path.join(
-            instance.storage_directory(), pipeline_reexecution_result.run_id, "add_two", "result"
+            instance.storage_directory(),
+            pipeline_reexecution_result.run_id,
+            "add_two",
+            "result",
         ),
         "rb",
     ) as read_obj:
