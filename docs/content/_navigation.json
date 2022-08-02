@@ -368,37 +368,36 @@
     "path": "/integrations",
     "children": [
       {
-        "title": "Integration Guides",
-        "children": [
-          {
-            "title": "Dagster with dbt",
-            "path": "/integrations/dbt"
-          },
-          {
-            "title": "Dagster with Airflow",
-            "path": "/integrations/airflow"
-          },
-          {
-            "title": "Dagster with Great Expectations",
-            "path": "/integrations/great-expectations"
-          },
-          {
-            "title": "Dagster with PySpark",
-            "path": "/integrations/spark"
-          },
-          {
-            "title": "Dagster with Pandas",
-            "path": "/integrations/pandas"
-          },
-          {
-            "title": "Dagster with Pandera",
-            "path": "/integrations/pandera"
-          },
-          {
-            "title": "Dagster with Jupyter/Papermill",
-            "path": "/integrations/dagstermill"
-          }
-        ]
+        "title": "Airflow",
+        "path": "/integrations/airflow"
+      },
+      {
+        "title": "dbt",
+        "path": "/integrations/dbt"
+      },
+      {
+        "title": "Great Expectations",
+        "path": "/integrations/great-expectations"
+      },
+      {
+        "title": "Jupyter/Papermill",
+        "path": "/integrations/dagstermill"
+      },
+      {
+        "title": "Pandas",
+        "path": "/integrations/pandas"
+      },
+      {
+        "title": "Pandera",
+        "path": "/integrations/pandera"
+      },
+      {
+        "title": "PySpark",
+        "path": "/integrations/spark"
+      },
+      {
+        "title": "All integrations",
+        "path": "/integrations"
       }
     ]
   },
