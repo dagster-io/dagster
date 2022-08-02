@@ -1,0 +1,63 @@
+---
+title: Managing user and agent tokens in Dagster Cloud | Dagster Docs
+
+noindex: True
+---
+
+# Managing user and agent tokens in Dagster Cloud
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+In this guide, we'll walk you through creating and revoking user and agent tokens in Dagster Cloud.
+
+---
+
+## Managing agent tokens
+
+<Note>
+  <strong>Editor</strong>, <strong>Admin</strong>, or{" "}
+  <strong>Organization Admin</strong> permissions are required to manage agent
+  tokens. This includes viewing existing tokens.
+</Note>
+
+Agent tokens are used to authenticate [agents](/dagster-cloud/deployment/agents) to the Dagster Cloud Agents API.
+
+1. Sign in to your Dagster Cloud account.
+2. Click the **user menu (your icon) > Cloud Settings**.
+3. Click the **Configure tokens** tab.
+4. Click **+ Create agent token**.
+
+After the token is created:
+
+- **To view a token**, click **Reveal token**.
+- **To revoke a token**, click **Revoke**.
+
+---
+
+## Managing user tokens
+
+<Note>
+  <strong>Editor</strong>, <strong>Admin</strong>, or{" "}
+  <strong>Organization Admin</strong> permissions are required to manage user
+  tokens.
+</Note>
+
+1. Sign in to your Dagster Cloud account.
+2. Click the **user menu (your icon) > Cloud Settings**.
+3. Click the **Configure tokens** tab.
+4. Click **+ Create user token**.
+
+After the token is created:
+
+- **To view a token**, click **Reveal token**.
+- **To revoke a token**, click **Revoke**.
+
+To manage tokens for another user, select the user from the **Manage tokens for** dropdown:
+
+<Image
+src="/images/dagster-cloud/user-token-management/manage-user-tokens-for.png"
+width={1059}
+height={208}
+/>
+
+**Note**: **Admin** or **Organization Admin** permissions are required to manage another user's tokens.
