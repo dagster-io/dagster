@@ -19,7 +19,6 @@ AVAILABLE_EXAMPLES = [
     "assets_dbt_python",
     "assets_modern_data_stack",
     "bollinger",
-    "dbt_example",
     "deploy_docker",
     "deploy_ecs",
     "deploy_k8s",
