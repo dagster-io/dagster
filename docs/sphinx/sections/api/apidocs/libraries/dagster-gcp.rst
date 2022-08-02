@@ -45,8 +45,6 @@ GCS
 File Manager (Experimental)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-File Manager APIs will be removed from the main dagster library in version ``1.1.0``, and these APIs will be removed in version ``0.17.0`` of ``dagster-gcp``.
-
 .. autoclass:: GCSFileHandle
   :members:
 
