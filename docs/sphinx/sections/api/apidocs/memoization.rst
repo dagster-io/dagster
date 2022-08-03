@@ -1,5 +1,5 @@
-Versioning and Memoization
-==========================
+Versioning and Memoization (Experimental)
+=========================================
 
 Dagster allows for code versioning and memoization of previous outputs based upon that versioning.
 Listed here are APIs related to versioning and memoization.
@@ -11,8 +11,13 @@ Versioning
 .. currentmodule:: dagster
 
 .. autoclass:: VersionStrategy
+    :members:
 
 .. autoclass:: SourceHashVersionStrategy
+
+.. autoclass:: OpVersionContext
+
+.. autoclass:: ResourceVersionContext
 
 Memoization
 -----------

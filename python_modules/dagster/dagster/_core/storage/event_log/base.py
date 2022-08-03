@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Callable, Iterable, List, Mapping, NamedTuple, Optional, Sequence, Set, Union
 
 import dagster._check as check
+from dagster._annotations import PublicAttr
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.events import AssetKey
 from dagster._core.events import DagsterEventType
@@ -35,8 +36,8 @@ class EventLogRecord(NamedTuple):
     :py:class:`~dagster._core.storage.event_log.EventLogStorage`.
     """
 
-    storage_id: int
-    event_log_entry: EventLogEntry
+    storage_id: PublicAttr[int]
+    event_log_entry: PublicAttr[EventLogEntry]
 
 
 class EventLogConnection(NamedTuple):

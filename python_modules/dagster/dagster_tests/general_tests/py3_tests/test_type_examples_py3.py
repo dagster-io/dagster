@@ -27,8 +27,7 @@ from dagster import (
     Tuple,
 )
 from dagster import _check as check
-from dagster import execute_solid
-from dagster._legacy import InputDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import InputDefinition, execute_pipeline, execute_solid, pipeline, solid
 
 
 @solid

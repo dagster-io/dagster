@@ -535,7 +535,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         root_run = self.get_run_by_id(root_run_id)
         if not root_run:
             raise DagsterRunNotFoundError(
-                f"Run id {root_run} set as root run id for run {run_id} was not found in instance.",
+                f"Run id {root_run_id} set as root run id for run {run_id} was not found in instance.",
                 invalid_run_id=root_run_id,
             )
 

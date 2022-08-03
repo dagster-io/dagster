@@ -1,0 +1,12 @@
+from setuptools import find_packages, setup
+
+if __name__ == "__main__":
+    setup(
+        name="{{ repo_name }}",
+        packages=find_packages(exclude=["{{ repo_name }}_tests"]),
+        install_requires=[
+            "dagster",
+            "dagit",
+            "pytest",
+        ],
+    )

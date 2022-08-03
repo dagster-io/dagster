@@ -13,16 +13,12 @@
    sections/api/apidocs/internals
    sections/api/apidocs/jobs
    sections/api/apidocs/loggers
-   sections/api/apidocs/modes
    sections/api/apidocs/ops
    sections/api/apidocs/io-managers
    sections/api/apidocs/partitions
-   sections/api/apidocs/pipeline
-   sections/api/apidocs/presets
    sections/api/apidocs/repositories
    sections/api/apidocs/resources
    sections/api/apidocs/schedules-sensors
-   sections/api/apidocs/solids
    sections/api/apidocs/dynamic
    sections/api/apidocs/types
    sections/api/apidocs/utilities

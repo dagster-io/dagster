@@ -88,7 +88,17 @@ def core_execute_run(
         )
         yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
         raise
+
+    # Reload the run to verify that its status didn't change while the pipeline was loaded
+    pipeline_run = instance.get_run_by_id(pipeline_run.run_id)
+    check.inst(
+        pipeline_run,
+        PipelineRun,
+        f"Pipeline run with id '{pipeline_run.run_id}' was deleted after the run worker started.",
+    )
+
     try:
+        pipeline_run = instance.get_run_by_id(pipeline_run.run_id)
         yield from execute_run_iterator(
             recon_pipeline, pipeline_run, instance, resume_from_failure=resume_from_failure
         )

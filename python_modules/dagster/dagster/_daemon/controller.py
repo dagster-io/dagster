@@ -92,7 +92,7 @@ def daemon_controller_from_instance(
 
             # Create this in each daemon to generate a workspace per-daemon
             @contextmanager
-            def _context_fn():
+            def _context_fn(_):
                 with DaemonWorkspace(
                     grpc_server_registry, workspace_load_target
                 ) as workspace, DagsterInstance.from_ref(  # clone instance object so each thread has its own
@@ -119,7 +119,7 @@ class DagsterDaemonController:
         self,
         instance: DagsterInstance,
         daemons: Sequence[DagsterDaemon],
-        context_fn: Callable[[], ContextManager[Tuple[DagsterInstance, IWorkspace]]],
+        context_fn: Callable[[str], ContextManager[Tuple[DagsterInstance, IWorkspace]]],
         heartbeat_interval_seconds: int = DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
         heartbeat_tolerance_seconds: int = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
         error_interval_seconds: int = DEFAULT_DAEMON_ERROR_INTERVAL_SECONDS,
@@ -137,7 +137,7 @@ class DagsterDaemonController:
             for daemon in check.list_param(daemons, "daemons", of_type=DagsterDaemon)
         }
 
-        self._context_fn = check.callable_param(context_fn, "context_fn")
+        check.callable_param(context_fn, "context_fn")
 
         self._heartbeat_interval_seconds = check.numeric_param(
             heartbeat_interval_seconds, "heartbeat_interval_seconds"

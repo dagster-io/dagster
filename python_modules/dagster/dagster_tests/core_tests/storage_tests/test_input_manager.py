@@ -11,7 +11,6 @@ from dagster import (
     MetadataEntry,
     PythonObjectDagsterType,
     RootInputManagerDefinition,
-    execute_solid,
     input_manager,
     io_manager,
     job,
@@ -28,6 +27,7 @@ from dagster._legacy import (
     OutputDefinition,
     composite_solid,
     execute_pipeline,
+    execute_solid,
     pipeline,
     solid,
 )

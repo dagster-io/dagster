@@ -3,13 +3,13 @@ from unittest import mock
 import pytest
 from dagster_databricks import create_databricks_job_op, databricks_client
 from dagster_databricks.databricks import DatabricksRunState
-from dagster_databricks.solids import create_databricks_job_solid, create_ui_url
+from dagster_databricks.solids import create_ui_url
 from dagster_databricks.types import DatabricksRunLifeCycleState, DatabricksRunResultState
 
 from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 
-@pytest.mark.parametrize("job_creator", [create_databricks_job_solid, create_databricks_job_op])
+@pytest.mark.parametrize("job_creator", [create_databricks_job_op])
 @mock.patch("dagster_databricks.databricks.DatabricksClient.get_run_state")
 @mock.patch("dagster_databricks.databricks.DatabricksClient.submit_run")
 def test_run_create_databricks_job_solid(
@@ -48,7 +48,7 @@ def test_run_create_databricks_job_solid(
     assert mock_get_run_state.call_args[0][0] == RUN_ID
 
 
-@pytest.mark.parametrize("job_creator", [create_databricks_job_solid, create_databricks_job_op])
+@pytest.mark.parametrize("job_creator", [create_databricks_job_op])
 def test_create_databricks_job_args(job_creator):
     assert job_creator().name == "databricks_job"
     assert job_creator("my_name").name == "my_name"

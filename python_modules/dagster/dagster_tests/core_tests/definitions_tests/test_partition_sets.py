@@ -2,9 +2,10 @@ import datetime
 
 import pendulum
 
-from dagster import Partition, PartitionSetDefinition, ScheduleEvaluationContext
+from dagster import Partition, ScheduleEvaluationContext
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.test_utils import instance_for_test
+from dagster._legacy import PartitionSetDefinition
 from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils.partitions import date_partition_range
 

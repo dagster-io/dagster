@@ -1,8 +1,10 @@
+import gzip
 import io
 import os.path
 import pickle
 import tempfile
 import time
+import zlib
 
 from dagster_databricks import databricks_step_main
 from dagster_databricks.databricks import (
@@ -58,22 +60,22 @@ PICKLED_CONFIG_FILE_NAME = "config.pkl"
         "local_pipeline_package_path": Field(
             StringSource,
             is_required=False,
-            description="Absolute path to the package that contains the pipeline definition(s) "
-            "whose steps will execute remotely on Databricks. This is a path on the local "
-            "fileystem of the process executing the pipeline. Before every step run, the "
-            "launcher will zip up the code in this path, upload it to DBFS, and unzip it "
-            "into the Python path of the remote Spark process. This gives the remote process "
-            "access to up-to-date user code.",
+            description="Absolute path to root python package containing your Dagster code. If you "
+            "set this value to a directory lower than the root package, and have user relative "
+            "imports in your code (e.g. `from .foo import bar`), it's likely you'll encounter an "
+            "import error on the remote step. Before every step run, the launcher will zip up the "
+            "code in this local path, upload it to DBFS, and unzip it into the Python path of the "
+            "remote Spark process. This gives the remote process access to up-to-date user code.",
         ),
         "local_dagster_job_package_path": Field(
             StringSource,
             is_required=False,
-            description="Absolute path to the package that contains the dagster job definition(s) "
-            "whose steps will execute remotely on Databricks. This is a path on the local "
-            "fileystem of the process executing the dagster job. Before every step run, the "
-            "launcher will zip up the code in this path, upload it to DBFS, and unzip it "
-            "into the Python path of the remote Spark process. This gives the remote process "
-            "access to up-to-date user code.",
+            description="Absolute path to root python package containing your Dagster code. If you "
+            "set this value to a directory lower than the root package, and have user relative "
+            "imports in your code (e.g. `from .foo import bar`), it's likely you'll encounter an "
+            "import error on the remote step. Before every step run, the launcher will zip up the "
+            "code in this local path, upload it to DBFS, and unzip it into the Python path of the "
+            "remote Spark process. This gives the remote process access to up-to-date user code.",
         ),
         "staging_prefix": Field(
             StringSource,
@@ -199,16 +201,28 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                 self._log_logs_from_cluster(log, databricks_run_id)
 
     def log_compute_logs(self, log, run_id, step_key):
-        stdout = self.databricks_runner.client.read_file(
-            self._dbfs_path(run_id, step_key, "stdout")
-        ).decode()
-        stderr = self.databricks_runner.client.read_file(
-            self._dbfs_path(run_id, step_key, "stderr")
-        ).decode()
-        log.info(f"Captured stdout for step {step_key}:")
-        log.info(stdout)
-        log.info(f"Captured stderr for step {step_key}:")
-        log.info(stderr)
+        try:
+            stdout = self.databricks_runner.client.read_file(
+                self._dbfs_path(run_id, step_key, "stdout")
+            ).decode()
+            log.info(f"Captured stdout for step {step_key}:")
+            log.info(stdout)
+        except Exception as e:
+            log.error(
+                f"Encountered exception {e} when attempting to load stdout logs for step {step_key}. "
+                "Check the databricks console for more info."
+            )
+        try:
+            stderr = self.databricks_runner.client.read_file(
+                self._dbfs_path(run_id, step_key, "stderr")
+            ).decode()
+            log.info(f"Captured stderr for step {step_key}:")
+            log.info(stderr)
+        except Exception as e:
+            log.error(
+                f"Encountered exception {e} when attempting to load stderr logs for step {step_key}. "
+                "Check the databricks console for more info."
+            )
 
     def step_events_iterator(self, step_context, step_key: str, databricks_run_id: int):
         """The launched Databricks job writes all event records to a specific dbfs file. This iterator
@@ -262,15 +276,15 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             serialized_records = self.databricks_runner.client.read_file(path)
             if not serialized_records:
                 return []
-            return deserialize_value(pickle.loads(serialized_records))
+            return deserialize_value(pickle.loads(gzip.decompress(serialized_records)))
 
         try:
             # reading from dbfs while it writes can be flaky
             # allow for retry if we get malformed data
             return backoff(
                 fn=_get_step_records,
-                retry_on=(pickle.UnpicklingError,),
-                max_retries=2,
+                retry_on=(pickle.UnpicklingError, gzip.BadGzipFile, zlib.error, EOFError),
+                max_retries=4,
             )
         # if you poll before the Databricks process has had a chance to create the file,
         # we expect to get this error

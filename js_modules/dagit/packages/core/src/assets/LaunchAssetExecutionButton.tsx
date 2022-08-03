@@ -16,7 +16,7 @@ import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
-import {ASSET_NODE_CONFIG_FRAGMENT, configSchemaForAssetNode} from './AssetConfig';
+import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 import {AssetKey} from './types';
 import {LaunchAssetExecutionAssetNodeFragment} from './types/LaunchAssetExecutionAssetNodeFragment';
@@ -226,11 +226,10 @@ async function stateForLaunchingAssets(
   const resources = pipeline.modes[0].resources.filter((r) =>
     requiredResourceKeys.includes(r.name),
   );
-  const anyResourcesHaveConfig = resources.some((r) => r.configField);
   const anyResourcesHaveRequiredConfig = resources.some((r) => r.configField?.isRequired);
 
-  const anyAssetsHaveConfig = assets.some((a) => configSchemaForAssetNode(a));
-  if ((anyAssetsHaveConfig || anyResourcesHaveRequiredConfig) && partitionDefinition) {
+  const anyAssetsHaveRequiredConfig = assets.some((a) => a.configField?.isRequired);
+  if ((anyAssetsHaveRequiredConfig || anyResourcesHaveRequiredConfig) && partitionDefinition) {
     return {
       type: 'error',
       error:
@@ -256,7 +255,7 @@ async function stateForLaunchingAssets(
       upstreamAssetKeys,
     };
   }
-  if (anyAssetsHaveConfig || anyResourcesHaveConfig || forceLaunchpad) {
+  if (anyAssetsHaveRequiredConfig || anyResourcesHaveRequiredConfig || forceLaunchpad) {
     const assetOpNames = assets.flatMap((a) => a.opNames || []);
     return {
       type: 'launchpad',

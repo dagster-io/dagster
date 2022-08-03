@@ -72,8 +72,6 @@ class EventLogEntry(
             generated outside of a job context.
         dagster_event (Optional[DagsterEvent]): For framework and user events, the associated
             structured event.
-        pipeline_name (Optional[str]): (legacy) The pipeline which generated this event. Some events are
-            generated outside of a pipeline context.
     """
 
     def __new__(

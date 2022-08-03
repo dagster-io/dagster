@@ -3,6 +3,7 @@ import hashlib
 from typing import TYPE_CHECKING, Any, Dict, List
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidConfigDefinitionError
 
 from .config_type import Array, ConfigType, ConfigTypeKind
@@ -193,6 +194,7 @@ class Map(ConfigType):
             kind=ConfigTypeKind.MAP,
         )
 
+    @public  # type: ignore
     @property
     def key_label_name(self):
         return self.given_name

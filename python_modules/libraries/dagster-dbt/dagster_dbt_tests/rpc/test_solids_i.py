@@ -2,23 +2,18 @@ import uuid
 from typing import Any, Dict, Tuple
 
 import pytest
-from dagster_dbt import (
-    DbtRpcOutput,
-    DbtRpcResource,
-    dbt_rpc_run,
-    dbt_rpc_run_and_wait,
-    dbt_rpc_test,
-    local_dbt_rpc_resource,
-)
+from dagster_dbt import DbtRpcOutput, DbtRpcResource, local_dbt_rpc_resource
+from dagster_dbt.rpc.solids import dbt_rpc_run, dbt_rpc_run_and_wait, dbt_rpc_test
 from mock import MagicMock
 
-from dagster import AssetKey, DagsterInstance, configured, execute_solid, resource
+from dagster import AssetKey, DagsterInstance, configured, resource
 from dagster._legacy import (
     ModeDefinition,
     PipelineDefinition,
     SolidDefinition,
     SolidExecutionResult,
     execute_pipeline,
+    execute_solid,
 )
 
 

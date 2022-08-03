@@ -588,6 +588,7 @@ export type AssetQuery_assetOrError_Asset_definition_configField_configType = As
 export interface AssetQuery_assetOrError_Asset_definition_configField {
   __typename: "ConfigTypeField";
   name: string;
+  isRequired: boolean;
   configType: AssetQuery_assetOrError_Asset_definition_configField_configType;
 }
 

@@ -23,12 +23,17 @@ WriteModeOptions = Enum(
     "WriteMode",
     [
         EnumValue(
-            "append", description="Append contents of this :class:`DataFrame` to existing data."
+            "append",
+            description="Append contents of this :class:`DataFrame` to existing data.",
         ),
         EnumValue("overwrite", description="Overwrite existing data."),
-        EnumValue("ignore", description="Silently ignore this operation if data already exists."),
         EnumValue(
-            "error", description="(default case): Throw an exception if data already exists."
+            "ignore",
+            description="Silently ignore this operation if data already exists.",
+        ),
+        EnumValue(
+            "error",
+            description="(default case): Throw an exception if data already exists.",
         ),
         EnumValue(
             "errorifexists",
@@ -183,7 +188,9 @@ WriteCompressionParquetOptions = Enum(
                         description="specifies the behavior of the save operation when data already exists.",
                     ),
                     "partitionBy": Field(
-                        String, is_required=False, description="names of partitioning columns."
+                        String,
+                        is_required=False,
+                        description="names of partitioning columns.",
                     ),
                     "compression": Field(
                         WriteCompressionParquetOptions,
@@ -268,7 +275,9 @@ WriteCompressionParquetOptions = Enum(
                         description="specifies the behavior of the save operation when data already exists.",
                     ),
                     "partitionBy": Field(
-                        String, is_required=False, description="names of partitioning columns."
+                        String,
+                        is_required=False,
+                        description="names of partitioning columns.",
                     ),
                     "compression": Field(
                         WriteCompressionOrcOptions,
@@ -281,7 +290,9 @@ WriteCompressionParquetOptions = Enum(
                 {
                     "name": Field(String, is_required=True, description="the table name."),
                     "format": Field(
-                        String, is_required=False, description="the format used to save."
+                        String,
+                        is_required=False,
+                        description="the format used to save.",
                     ),
                     "mode": Field(
                         WriteModeOptions,
@@ -289,10 +300,14 @@ WriteCompressionParquetOptions = Enum(
                         description="specifies the behavior of the save operation when data already exists.",
                     ),
                     "partitionBy": Field(
-                        String, is_required=False, description="names of partitioning columns."
+                        String,
+                        is_required=False,
+                        description="names of partitioning columns.",
                     ),
                     "options": Field(
-                        Permissive(), is_required=False, description="all other string options."
+                        Permissive(),
+                        is_required=False,
+                        description="all other string options.",
                     ),
                 }
             ),

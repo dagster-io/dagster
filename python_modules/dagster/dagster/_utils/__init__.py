@@ -66,14 +66,6 @@ def convert_dagster_submodule_name(name: str, mode: Literal["private", "public"]
         check.failed("`mode` must be 'private' or 'public'")
 
 
-# Back-compat after make_email_on_pipeline_failure_sensor and make_email_on_run_failure_sensor
-# were moved to avoid circular-dependency issues
-def make_email_on_pipeline_failure_sensor(*args, **kwargs):
-    from .alert import make_email_on_pipeline_failure_sensor  # pylint: disable=redefined-outer-name
-
-    return make_email_on_pipeline_failure_sensor(*args, **kwargs)
-
-
 def make_email_on_run_failure_sensor(*args, **kwargs):
     from .alert import make_email_on_run_failure_sensor  # pylint: disable=redefined-outer-name
 

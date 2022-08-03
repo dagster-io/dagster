@@ -1,4 +1,4 @@
-from dagstermill import define_dagstermill_solid
+from dagstermill.factory import define_dagstermill_solid
 
 from dagster._legacy import pipeline
 from dagster._utils import file_relative_path

@@ -55,11 +55,3 @@ Dagster CLI
 
 .. click:: dagster._cli.api:grpc_command
    :prog: dagster api grpc
-
-
-Legacy APIs
------------
-
-.. click:: dagster._cli.pipeline:pipeline_cli
-   :prog: dagster pipeline
-   :nested:
