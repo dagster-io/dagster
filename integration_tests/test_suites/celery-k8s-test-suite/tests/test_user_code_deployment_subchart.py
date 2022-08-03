@@ -16,7 +16,7 @@ def test_execute_on_celery_k8s_subchart_disabled(  # pylint: disable=redefined-o
     helm_namespace_for_user_deployments_subchart_disabled,
 ):
     namespace = helm_namespace_for_user_deployments_subchart_disabled
-    pipeline_name = "demo_pipeline_celery"
+    job_name = "demo_job_celery"
 
     core_api = kubernetes.client.CoreV1Api()
     batch_api = kubernetes.client.BatchV1Api()
@@ -44,18 +44,18 @@ def test_execute_on_celery_k8s_subchart_disabled(  # pylint: disable=redefined-o
             }
         },
         "loggers": {"console": {"config": {"log_level": "DEBUG"}}},
-        "solids": {"multiply_the_word": {"inputs": {"word": "bar"}, "config": {"factor": 2}}},
+        "ops": {"multiply_the_word": {"inputs": {"word": "bar"}, "config": {"factor": 2}}},
     }
     run_config_json = json.dumps(run_config_dict)
 
     exec_command = [
         "dagster",
-        "pipeline",
+        "job",
         "launch",
         "--repository",
         "demo_execution_repo",
-        "--pipeline",
-        pipeline_name,
+        "--job",
+        job_name,
         "--workspace",
         "/dagster-workspace/workspace.yaml",
         "--location",
