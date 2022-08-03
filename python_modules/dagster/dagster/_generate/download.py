@@ -21,6 +21,7 @@ AVAILABLE_EXAMPLES = [
     "deploy_docker",
     "deploy_ecs",
     "deploy_k8s",
+    "development_to_production",
     "feature_graph_backed_assets",
     "ge_example",
     "hacker_news_assets",
