@@ -3,9 +3,16 @@ from unittest import mock
 
 import pytest
 
-from dagster import DagsterEventType, NodeInvocation
-from dagster import _check as check
-from dagster import build_hook_context, graph, job, op, reconstructable, resource
+from dagster import (
+    DagsterEventType,
+    NodeInvocation,
+    build_hook_context,
+    graph,
+    job,
+    op,
+    reconstructable,
+    resource,
+)
 from dagster._core.definitions import NodeHandle, PresetDefinition, failure_hook, success_hook
 from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 from dagster._core.definitions.events import HookExecutionResult
@@ -536,15 +543,6 @@ def test_multiproc_hook_resource_deps():
 
     with instance_for_test() as instance:
         assert execute_pipeline(reconstructable(res_hook_job), instance=instance).success
-
-
-def test_hook_context_op_solid_provided():
-    @op
-    def hook_op(_):
-        pass
-
-    with pytest.raises(check.CheckError):
-        build_hook_context(op=hook_op, solid=hook_op)
 
 
 def test_hook_decorator_graph_job_op():

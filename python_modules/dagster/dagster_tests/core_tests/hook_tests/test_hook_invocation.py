@@ -215,8 +215,8 @@ def test_hook_invocation_with_solid():
     def not_foo():
         pass
 
-    basic_hook(build_hook_context(solid=foo))
-    basic_hook(build_hook_context(solid=not_foo.alias("foo")))
+    basic_hook(build_hook_context(op=foo))
+    basic_hook(build_hook_context(op=not_foo.alias("foo")))
 
 
 def test_properties_on_hook_context():
