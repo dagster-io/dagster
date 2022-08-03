@@ -579,6 +579,7 @@ class PathMetadataValue(  # type: ignore
             cls, check.opt_path_param(path, "path", default="")
         )
 
+    @public  # type: ignore
     @property
     def value(self) -> Optional[str]:
         return self.path
@@ -609,6 +610,7 @@ class JsonMetadataValue(
             raise DagsterInvalidMetadata("Value is a dictionary but is not JSON serializable.")
         return super(JsonMetadataValue, cls).__new__(cls, data)
 
+    @public  # type: ignore
     @property
     def value(self) -> Dict[str, Any]:
         return self.data
@@ -663,6 +665,7 @@ class PythonArtifactMetadataValue(
             cls, check.str_param(module, "module"), check.str_param(name, "name")
         )
 
+    @public  # type: ignore
     @property
     def value(self) -> object:
         return self
