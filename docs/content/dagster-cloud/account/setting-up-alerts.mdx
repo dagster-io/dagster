@@ -136,7 +136,7 @@ dagster-cloud deployment alert-policies list
 
 ### Configuring a Slack alert policy
 
-In this example, we'll configure a Slack notification to trigger whenever a run of a job succeeds or fails. This job, named `sales_job`, has a tag of `{"team", "sales"}`:
+In this example, we'll configure a Slack notification to trigger whenever a run of a job succeeds or fails. This job, named `sales_job`, has a `team` tag of `sales`:
 
 ```python
 @op
@@ -149,7 +149,7 @@ def sales_job():
     sales_computation()
 ```
 
-In the alert policies YAML file, we'll define a policy that listens for jobs with the `{"team", "sales"}` tag to succeed or fail. When this occurs, a notification will be sent to the `sales-notification` channel in the `hooli` workspace:
+In the alert policies YAML file, we'll define a policy that listens for jobs with a `team` tag of `sales` to succeed or fail. When this occurs, a notification will be sent to the `sales-notification` channel in the `hooli` workspace:
 
 ```yaml
 alert_policies:
@@ -169,7 +169,7 @@ alert_policies:
 
 ### Configuring an email alert policy
 
-In this example, we'll configure an email alert when a job fails. This job, named `important_job`, has a tag of `{"level": "critical"}`:
+In this example, we'll configure an email alert when a job fails. This job, named `important_job`, has a `level` tag of `"critical"`:
 
 ```python
 def important_computation():
@@ -181,7 +181,7 @@ def important_job():
     important_computation()
 ```
 
-In the alert policies YAML file, we'll define a policy that listens for jobs with the `{"level": "critical"}` tag to fail. When this occurs, an email notification will be sent to `richard.hendricks@hooli.com` and `nelson.bighetti@hooli.com`:
+In the alert policies YAML file, we'll define a policy that listens for jobs with a `level` tag of `critical` to fail. When this occurs, an email notification will be sent to `richard.hendricks@hooli.com` and `nelson.bighetti@hooli.com`:
 
 ```yaml
 alert_policies:
