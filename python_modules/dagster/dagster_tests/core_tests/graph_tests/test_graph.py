@@ -12,6 +12,7 @@ from dagster import (
     DagsterTypeCheckDidNotPass,
     Enum,
     Field,
+    GraphIn,
     In,
     Nothing,
     Out,
@@ -38,7 +39,6 @@ from dagster._core.errors import (
     DagsterInvalidDefinitionError,
 )
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import InputDefinition
 from dagster._loggers import json_console_logger
 
 
@@ -1028,17 +1028,17 @@ def test_graph_top_level_input():
 
 
 def test_nothing_inputs_graph():
+    # Document that there is no way to use Nothing inputs on a top-level graph.
     @op(ins={"sync_signal": In(Nothing)})
     def my_op():
         ...
 
-    @graph(input_defs=[InputDefinition("sync_signal", Nothing)])
+    @graph(ins={"sync_signal": GraphIn()})
     def my_pipeline(sync_signal):
         my_op(sync_signal)
 
-    the_job = my_pipeline.to_job()
-    result = the_job.execute_in_process()
-    assert result.success
+    with pytest.raises(DagsterInvalidConfigError):
+        my_pipeline.execute_in_process()
 
 
 def test_run_id_execute_in_process():

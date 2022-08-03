@@ -96,37 +96,30 @@ class OpDefinition(SolidDefinition):
         tags: Optional[Mapping[str, Any]] = None,
         version: Optional[str] = None,
         retry_policy: Optional[RetryPolicy] = None,
-        input_defs: Optional[Sequence[InputDefinition]] = None,
-        output_defs: Optional[Sequence[OutputDefinition]] = None,
     ):
         from .decorators.solid_decorator import (
             DecoratedSolidFunction,
             resolve_checked_solid_fn_inputs,
         )
 
-        if input_defs is None:
-            ins = check.opt_mapping_param(ins, "ins")
-            input_defs = [
-                inp.to_definition(name)
-                for name, inp in sorted(ins.items(), key=lambda input: input[0])
-            ]  # sort so that input definition order is deterministic
+        ins = check.opt_mapping_param(ins, "ins")
+        input_defs = [
+            inp.to_definition(name) for name, inp in sorted(ins.items(), key=lambda input: input[0])
+        ]  # sort so that input definition order is deterministic
 
-            if isinstance(compute_fn, DecoratedSolidFunction):
-                resolved_input_defs: Sequence[InputDefinition] = resolve_checked_solid_fn_inputs(
-                    decorator_name="@op",
-                    fn_name=name,
-                    compute_fn=cast(DecoratedSolidFunction, compute_fn),
-                    explicit_input_defs=input_defs,
-                    exclude_nothing=True,
-                )
-            else:
-                resolved_input_defs = input_defs
+        if isinstance(compute_fn, DecoratedSolidFunction):
+            resolved_input_defs: Sequence[InputDefinition] = resolve_checked_solid_fn_inputs(
+                decorator_name="@op",
+                fn_name=name,
+                compute_fn=cast(DecoratedSolidFunction, compute_fn),
+                explicit_input_defs=input_defs,
+                exclude_nothing=True,
+            )
         else:
             resolved_input_defs = input_defs
 
-        if output_defs is None:
-            check.opt_mapping_param(outs, "outs")
-            output_defs = _resolve_output_defs_from_outs(compute_fn=compute_fn, outs=outs)
+        check.opt_mapping_param(outs, "outs")
+        output_defs = _resolve_output_defs_from_outs(compute_fn=compute_fn, outs=outs)
 
         super(OpDefinition, self).__init__(
             compute_fn=compute_fn,
