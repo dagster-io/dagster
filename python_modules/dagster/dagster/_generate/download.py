@@ -23,10 +23,10 @@ AVAILABLE_EXAMPLES = [
     "deploy_k8s",
     "development_to_production",
     "feature_graph_backed_assets",
-    "ge_example",
     "hacker_news_assets",
     "software_defined_assets",
     "with_airflow",
+    "with_great_expectations",
     "with_pyspark",
     "with_pyspark_emr",
 ]
