@@ -8,10 +8,10 @@ description: IO Managers determine how to store asset/op outputs and load asset/
 IO Managers are user-provided objects that store asset and op outputs and load them as inputs to downstream assets and ops.
 
 <Image
-  alt="IO Manager Diagram"
-  src="/images/io-managers.png"
-  width={3200}
-  height={1040}
+alt="IO Manager Diagram"
+src="/images/io-managers.png"
+width={3200}
+height={1040}
 />
 
 ## Relevant APIs
@@ -41,10 +41,10 @@ from files on a filesystem.
 For ops, each op output can have its own IO manager, or multiple op outputs can share an IO manager. The IO manager that's used for handling a particular op output is automatically used for loading it in downstream ops.
 
 <Image
-  alt="two-io-managers"
-  src="/images/concepts/two-io-managers.png"
-  width={3200}
-  height={1040}
+alt="two-io-managers"
+src="/images/concepts/two-io-managers.png"
+width={3200}
+height={1040}
 />
 
 <!-- https://excalidraw.com/#json=4546514944786432,52cpcHHoWfzOMro2eFC6MQ -->
@@ -666,6 +666,6 @@ For more examples of IO Managers, check out the following in our [Hacker News ex
 
 - [Snowflake IO Manager](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/resources/snowflake_io_manager.py)
 - [Parquet IO Manager](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/resources/parquet_io_manager.py)
-- [S3 IO Manager with custom bucket](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/resources/common_bucket_s3_pickle_io_manager.py)
+- [S3 IO Manager with custom bucket](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/resources/common_bucket_s3\_pickle_io_manager.py)
 
 Our [Type and Metadata example](https://github.com/dagster-io/dagster/tree/master/examples/assets_pandas_type_metadata) also covers writing custom IO managers.
