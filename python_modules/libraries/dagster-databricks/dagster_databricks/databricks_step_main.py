@@ -8,6 +8,7 @@ parameters:
 - paths to any other zipped packages which have been uploaded to DBFS.
 """
 
+import gzip
 import os
 import pickle
 import site
@@ -110,7 +111,7 @@ def main(
             pass
 
         def put_events(events):
-            with open(events_filepath, "wb") as handle:
+            with gzip.open(events_filepath, "wb") as handle:
                 pickle.dump(serialize_value(events), handle)
 
         # Set up a thread to handle writing events back to the plan process, so execution doesn't get
