@@ -17,6 +17,7 @@ EXAMPLES_TO_IGNORE = ["docs_snippets"]
 AVAILABLE_EXAMPLES = [
     "airflow_ingest",
     "assets_dbt_python",
+    "assets_modern_data_stack",
     "bollinger",
     "deploy_docker",
     "deploy_ecs",
@@ -25,7 +26,6 @@ AVAILABLE_EXAMPLES = [
     "ge_example",
     "hacker_news_assets",
     "memoized_development",
-    "modern_data_stack_assets",
     "nyt-feed",
     "run_attribution_example",
     "software_defined_assets",

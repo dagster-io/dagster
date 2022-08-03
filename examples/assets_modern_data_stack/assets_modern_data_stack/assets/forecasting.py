@@ -4,10 +4,9 @@ from dagster_airbyte import build_airbyte_assets
 from dagster_dbt import load_assets_from_dbt_project
 from scipy import optimize
 
-from dagster import AssetIn, asset, load_assets_from_current_module, repository, with_resources
+from dagster import AssetIn, asset
 
-from .constants import AIRBYTE_CONNECTION_ID, DBT_PROJECT_DIR, model_func
-from .resources import resource_defs
+from ..utils.constants import AIRBYTE_CONNECTION_ID, DBT_PROJECT_DIR
 
 airbyte_assets = build_airbyte_assets(
     connection_id=AIRBYTE_CONNECTION_ID,
@@ -15,9 +14,14 @@ airbyte_assets = build_airbyte_assets(
     asset_key_prefix=["postgres_replica"],
 )
 
+
 dbt_assets = load_assets_from_dbt_project(
     project_dir=DBT_PROJECT_DIR, io_manager_key="db_io_manager"
 )
+
+
+def model_func(x, a, b):
+    return a * np.exp(b * (x / 10**18 - 1.6095))
 
 
 @asset(compute_kind="python", ins={"daily_order_summary": AssetIn(key_prefix="public")})
@@ -39,8 +43,3 @@ def predicted_orders(
     future_dates = pd.date_range(start=start_date, end=start_date + pd.DateOffset(days=30))
     predicted_data = model_func(x=future_dates.astype(np.int64), a=a, b=b)
     return pd.DataFrame({"order_date": future_dates, "num_orders": predicted_data})
-
-
-@repository
-def mds_repo():
-    return with_resources(load_assets_from_current_module(), resource_defs=resource_defs)
