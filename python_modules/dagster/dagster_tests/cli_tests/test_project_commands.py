@@ -65,7 +65,7 @@ def test_from_example_command_succeeds():
     with runner.isolated_filesystem():
         result = runner.invoke(
             from_example_command,
-            ["--name", "my_dagster_project", "--example", "project_fully_featured"],
+            ["--name", "my_dagster_project", "--example", "assets_dbt_python"],
         )
         assert result.exit_code == 0
         assert os.path.exists("my_dagster_project")
