@@ -12,9 +12,13 @@ from dagster import (
     AssetIn,
     AssetKey,
     DagsterInstance,
+    DagsterRun,
+    DynamicOut,
     DynamicOutput,
     GraphOut,
+    In,
     Int,
+    Out,
     asset,
     build_input_context,
     build_output_context,
@@ -29,13 +33,7 @@ from dagster._core.execution.api import execute_plan
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import (
-    AssetGroup,
-    DynamicOutputDefinition,
-    InputDefinition,
-    OutputDefinition,
-    PipelineRun,
-)
+from dagster._legacy import AssetGroup
 
 
 def fake_io_manager_factory(io_manager):
@@ -58,13 +56,13 @@ def get_step_output(step_events, step_key, output_name="result"):
 
 
 def define_inty_job(adls_io_resource=adls2_resource):
-    @op(output_defs=[OutputDefinition(Int)])
+    @op(out=Out(int))
     def return_one():
         return 1
 
     @op(
-        input_defs=[InputDefinition("num", Int)],
-        output_defs=[DynamicOutputDefinition(Int)],
+        ins={"num": In(Int)},
+        out=DynamicOut(Int),
     )
     def add_one(num):
         yield DynamicOutput(num + 1, "foo")
@@ -104,7 +102,7 @@ def test_adls2_pickle_io_manager_deletes_recursively(storage_account, file_syste
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(pipeline_name=job.name, run_id=run_id, run_config=run_config)
+    pipeline_run = DagsterRun(pipeline_name=job.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(
@@ -170,7 +168,7 @@ def test_adls2_pickle_io_manager_execution(storage_account, file_system, credent
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(pipeline_name=job.name, run_id=run_id, run_config=run_config)
+    pipeline_run = DagsterRun(pipeline_name=job.name, run_id=run_id, run_config=run_config)
 
     return_one_step_events = list(
         execute_plan(
