@@ -17,7 +17,7 @@ Feel free to poke around!
 Bootstrap your own Dagster project with this example:
 
 ```bash
-dagster project from-example --name my-dagster-project --example hacker_news_assets
+dagster project from-example --name my-dagster-project --example project_fully_featured
 ```
 
 To install this example and its Python dependencies, run:

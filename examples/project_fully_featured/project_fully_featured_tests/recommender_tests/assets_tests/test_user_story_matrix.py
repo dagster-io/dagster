@@ -1,6 +1,6 @@
 import pytest
-from hacker_news_assets.assets.recommender.user_story_matrix import user_story_matrix
 from pandas import DataFrame
+from project_fully_featured.assets.recommender.user_story_matrix import user_story_matrix
 
 
 @pytest.mark.parametrize(

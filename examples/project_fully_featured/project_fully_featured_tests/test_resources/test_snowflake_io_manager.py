@@ -5,13 +5,13 @@ from contextlib import contextmanager
 from typing import Iterator
 
 import pytest
-from hacker_news_assets.resources.snowflake_io_manager import (
+from pandas import DataFrame as PandasDataFrame
+from project_fully_featured.resources.snowflake_io_manager import (
     SHARED_SNOWFLAKE_CONF,
     connect_snowflake,
     snowflake_io_manager,
     spark_columns_to_markdown,
 )
-from pandas import DataFrame as PandasDataFrame
 from pyspark.sql import Row, SparkSession
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 

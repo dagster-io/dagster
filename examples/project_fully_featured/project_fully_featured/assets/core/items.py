@@ -1,7 +1,7 @@
 # pylint: disable=redefined-outer-name
 
-from hacker_news_assets.partitions import hourly_partitions
 from pandas import DataFrame
+from project_fully_featured.partitions import hourly_partitions
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql.types import ArrayType, DoubleType, LongType, StringType, StructField, StructType
 

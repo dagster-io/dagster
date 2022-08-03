@@ -2,7 +2,7 @@ import gzip
 import json
 from concurrent.futures import ThreadPoolExecutor
 
-from hacker_news_assets.resources.hn_resource import HNAPIClient
+from project_fully_featured.resources.hn_resource import HNAPIClient
 from tqdm import tqdm
 
 from dagster._utils import file_relative_path

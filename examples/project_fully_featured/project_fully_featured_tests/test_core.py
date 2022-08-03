@@ -1,9 +1,9 @@
 import tempfile
 
 from dagster_pyspark import pyspark_resource
-from hacker_news_assets.assets import core
-from hacker_news_assets.resources.hn_resource import hn_snapshot_client
-from hacker_news_assets.resources.parquet_io_manager import local_partitioned_parquet_io_manager
+from project_fully_featured.assets import core
+from project_fully_featured.resources.hn_resource import hn_snapshot_client
+from project_fully_featured.resources.parquet_io_manager import local_partitioned_parquet_io_manager
 
 from dagster import (
     ResourceDefinition,

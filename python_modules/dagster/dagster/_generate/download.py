@@ -24,7 +24,7 @@ AVAILABLE_EXAMPLES = [
     "deploy_k8s",
     "development_to_production",
     "feature_graph_backed_assets",
-    "hacker_news_assets",
+    "project_fully_featured",
     "with_airflow",
     "with_great_expectations",
     "with_pyspark",
