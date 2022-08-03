@@ -1,5 +1,5 @@
 ---
-title: "Hybrid deployment in Dagster Cloud | Dagster Docs"
+title: "Dagster Cloud agents | Dagster Docs"
 noindex: True
 
 platform_type: "cloud"
@@ -20,20 +20,10 @@ In this guide, we'll cover:
 
 Dagster Cloud currently supports agents running on the following backends:
 
-- [Local](#local-agent)
-- [Kubernetes](#kubernetes-agent)
 - [Amazon Elastic Container Service (ECS)](#amazon-ecs-agent)
 - [Docker](#docker-agent)
-
-### Local agent
-
-The local agent executes Dagster jobs as processes on your computer. Refer to the [setup guide](/dagster-cloud/deployment/agents/local) for more info.
-
-### Kubernetes agent
-
-The Kubernetes agent executes Dagster jobs on a Kubernetes cluster. This agent is appropriate for scaled production deployments and is a good choice for teams who have already standardized on Kubernetes. Refer to the [setup guide](/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent) for more info.
-
-**Already set up a Kubernetes agent?** Refer to the [Kubernetes agent configuration reference](/dagster-cloud/deployment/agents/kubernetes/configuration-reference) for info about configuration options.
+- [Kubernetes](#kubernetes-agent)
+- [Local](#local-agent)
 
 ### Amazon ECS agent
 
@@ -50,6 +40,16 @@ There are three ways you can create an Amazon ECS agent:
 ### Docker agent
 
 The Docker agent executes Dagster jobs in Docker containers on your computer. Refer to the [setup guide](/dagster-cloud/deployment/agents/docker) for more info.
+
+### Kubernetes agent
+
+The Kubernetes agent executes Dagster jobs on a Kubernetes cluster. This agent is appropriate for scaled production deployments and is a good choice for teams who have already standardized on Kubernetes. Refer to the [setup guide](/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent) for more info.
+
+**Already set up a Kubernetes agent?** Refer to the [Kubernetes agent configuration reference](/dagster-cloud/deployment/agents/kubernetes/configuration-reference) for info about configuration options.
+
+### Local agent
+
+The local agent executes Dagster jobs as processes on your computer. Refer to the [setup guide](/dagster-cloud/deployment/agents/local) for more info.
 
 ---
 
