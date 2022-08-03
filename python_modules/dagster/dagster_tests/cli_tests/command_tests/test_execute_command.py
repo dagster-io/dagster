@@ -16,7 +16,6 @@ from .test_cli_commands import (
     pipeline_or_job_python_origin_contexts,
     runner_pipeline_or_job_execute,
     valid_job_python_origin_target_cli_args,
-    valid_pipeline_python_origin_target_cli_args,
 )
 
 
@@ -117,8 +116,8 @@ def test_job_execute_command_env(gen_execute_args):
         execute_execute_command(kwargs=kwargs, instance=instance, using_job_op_graph_apis=True)
 
 
-@pytest.mark.parametrize("cli_args", valid_pipeline_python_origin_target_cli_args())
-def test_execute_command_runner(cli_args):
+@pytest.mark.parametrize("cli_args", valid_job_python_origin_target_cli_args())
+def test_job_execute_command_runner(cli_args):
     runner = CliRunner()
     with instance_for_test():
         runner_pipeline_or_job_execute(runner, cli_args)
@@ -126,19 +125,6 @@ def test_execute_command_runner(cli_args):
         runner_pipeline_or_job_execute(
             runner,
             ["--config", file_relative_path(__file__, "default_log_error_env.yaml")] + cli_args,
-        )
-
-
-@pytest.mark.parametrize("cli_args", valid_job_python_origin_target_cli_args())
-def test_job_execute_command_runner(cli_args):
-    runner = CliRunner()
-    with instance_for_test():
-        runner_pipeline_or_job_execute(runner, cli_args, True)
-
-        runner_pipeline_or_job_execute(
-            runner,
-            ["--config", file_relative_path(__file__, "default_log_error_env.yaml")] + cli_args,
-            True,
         )
 
 
@@ -397,10 +383,10 @@ def test_multiproc():
                 file_relative_path(__file__, "../../general_tests/test_repository.py"),
                 "-a",
                 "dagster_test_repository",
-                "--preset",
-                "multiproc",
-                "-p",
-                "multi_mode_with_resources",  # pipeline name
+                "--config",
+                file_relative_path(__file__, "../../environments/adder_job.yaml"),
+                "-j",
+                "multi_job",  # job name
             ],
         )
         assert add_result.exit_code == 0
@@ -415,7 +401,6 @@ def test_multiproc():
                 "-a",
                 "multiproc",
             ],
-            True,
         )
         assert add_result.exit_code == 0
 

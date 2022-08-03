@@ -236,7 +236,7 @@ def test_dagit_logs(_, caplog):
 
             expected_repo_stats = {
                 hash_name("test_repository"): 1,
-                hash_name("dagster_test_repository"): 5,
+                hash_name("dagster_test_repository"): 6,
             }
             actions = set()
             records = []

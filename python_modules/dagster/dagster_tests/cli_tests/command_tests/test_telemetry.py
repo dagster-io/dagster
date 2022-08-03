@@ -157,7 +157,7 @@ def test_repo_stats(caplog):
                     if message.get("action") == UPDATE_REPO_STATS:
                         metadata = message.get("metadata")
                         assert metadata.get("pipeline_name_hash") == hash_name(job_name)
-                        assert metadata.get("num_pipelines_in_repo") == str(4)
+                        assert metadata.get("num_pipelines_in_repo") == str(6)
                         assert metadata.get("repo_hash") == hash_name("dagster_test_repository")
                     assert set(message.keys()) == EXPECTED_KEYS
 

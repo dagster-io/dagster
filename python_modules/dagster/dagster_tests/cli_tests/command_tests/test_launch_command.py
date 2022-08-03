@@ -16,7 +16,6 @@ from .test_cli_commands import (
     non_existant_python_origin_target_args,
     python_bar_cli_args,
     valid_external_job_target_cli_args,
-    valid_external_pipeline_target_cli_args_with_preset,
 )
 
 
@@ -58,12 +57,6 @@ def test_launch_non_existant_file():
             run_launch(kwargs, instance)
 
 
-@pytest.mark.parametrize("pipeline_cli_args", valid_external_pipeline_target_cli_args_with_preset())
-def test_launch_pipeline_cli(pipeline_cli_args):
-    with default_cli_test_instance() as instance:
-        run_launch_cli(pipeline_cli_args, instance, expected_count=1)
-
-
 @pytest.mark.parametrize("job_cli_args", valid_external_job_target_cli_args())
 def test_launch_job_cli(job_cli_args):
     with default_cli_test_instance() as instance:
@@ -72,7 +65,7 @@ def test_launch_job_cli(job_cli_args):
 
 @pytest.mark.parametrize(
     "gen_pipeline_args",
-    [python_bar_cli_args("qux", True), grpc_server_bar_cli_args("foo")],
+    [python_bar_cli_args("qux", True), grpc_server_bar_cli_args("qux", True)],
 )
 def test_launch_with_run_id(gen_pipeline_args):
     runner = CliRunner()
@@ -142,7 +135,7 @@ def test_job_launch_with_run_id(gen_job_args):
 
 @pytest.mark.parametrize(
     "gen_pipeline_args",
-    [python_bar_cli_args("qux", True), grpc_server_bar_cli_args("foo")],
+    [python_bar_cli_args("qux", True), grpc_server_bar_cli_args("qux", True)],
 )
 def test_launch_queued(gen_pipeline_args):
     runner = CliRunner()
@@ -221,7 +214,7 @@ def test_default_working_directory():
             )
             assert result.exit_code == 0
             runs = instance.get_runs()
-            assert len(runs) == 2
+            assert len(runs) == 1
 
 
 def test_launch_using_memoization():

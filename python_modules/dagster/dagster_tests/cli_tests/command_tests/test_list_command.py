@@ -57,6 +57,10 @@ def assert_correct_job_list_bar_repository_output(result):
     assert result.output == (
         "Repository bar\n"
         "**************\n"
+        "Job: memoizable_job\n"
+        "Ops: (Execution Order)\n"
+        "    my_op\n"
+        "*************\n"
         "Job: quux_job\n"
         "Ops: (Execution Order)\n"
         "    do_something_op\n"
@@ -65,10 +69,6 @@ def assert_correct_job_list_bar_repository_output(result):
         "Ops: (Execution Order)\n"
         "    do_something_op\n"
         "    do_input_op\n"
-        "********\n"
-        "Job: memoizable_job\n"
-        "Ops: (Execution Order)\n"
-        "    my_op\n"
     )
 
 

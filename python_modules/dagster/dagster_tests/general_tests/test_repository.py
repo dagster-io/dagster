@@ -4,7 +4,17 @@ Repository of test pipelines
 
 import pytest
 
-from dagster import GraphDefinition, Int, JobDefinition, graph, job, op, repository, resource
+from dagster import (
+    GraphDefinition,
+    Int,
+    JobDefinition,
+    graph,
+    job,
+    multiprocess_executor,
+    op,
+    repository,
+    resource,
+)
 from dagster._check import CheckError
 
 
@@ -54,8 +64,11 @@ def define_with_resources_job():
     double_adder_job = my_graph.to_job(
         name="double_adder_job", resource_defs={"modifier": double_adder_resource}
     )
+    multi_job = my_graph.to_job(
+        "multi_job", resource_defs={"modifier": adder_resource}, executor_def=multiprocess_executor
+    )
 
-    return [adder_job, multer_job, double_adder_job]
+    return [adder_job, multer_job, double_adder_job, multi_job]
 
 
 @repository

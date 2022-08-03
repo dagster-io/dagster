@@ -199,7 +199,7 @@ def my_op():
     return 5
 
 
-@job(tags={MEMOIZED_RUN_TAG: "true"})
+@job(tags={MEMOIZED_RUN_TAG: "true"}, resource_defs={"io_manager": versioned_filesystem_io_manager})
 def memoizable_job():
     my_op()
 
@@ -851,19 +851,19 @@ def test_run_list_limit():
         result = runner.invoke(run_list_command, args="--limit 1")
         assert result.exit_code == 0
         assert result.output.count("Run: ") == 1
-        assert result.output.count("Job: double_adder_job") == 1
+        assert result.output.count("Pipeline: double_adder_job") == 1
 
         # Shows two runs because of the limit argument is now 2
         two_results = runner.invoke(run_list_command, args="--limit 2")
         assert two_results.exit_code == 0
         assert two_results.output.count("Run: ") == 2
-        assert two_results.output.count("Job: double_adder_job") == 2
+        assert two_results.output.count("Pipeline: double_adder_job") == 2
 
         # Should only shows two runs although the limit argument is 3 because there are only 2 runs
         shows_two_results = runner.invoke(run_list_command, args="--limit 3")
         assert shows_two_results.exit_code == 0
         assert shows_two_results.output.count("Run: ") == 2
-        assert shows_two_results.output.count("Job: double_adder_job") == 2
+        assert shows_two_results.output.count("Pipeline: double_adder_job") == 2
 
 
 def runner_pipeline_or_job_execute(runner, cli_args):
