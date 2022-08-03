@@ -25,7 +25,6 @@ AVAILABLE_EXAMPLES = [
     "feature_graph_backed_assets",
     "ge_example",
     "hacker_news_assets",
-    "software_defined_assets",
     "with_airflow",
     "with_pyspark",
     "with_pyspark_emr",
