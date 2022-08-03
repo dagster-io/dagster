@@ -2,7 +2,7 @@ from dagster import AssetSelection, build_schedule_from_partitioned_job, define_
 
 from .assets import ACTIVITY_ANALYTICS, CORE, RECOMMENDER
 from .partitions import hourly_partitions
-from .sensors import make_hn_tables_updated_sensor, make_slack_on_failure_sensor
+from .sensors import make_hn_tables_updated_sensor
 
 activity_analytics_assets_sensor = make_hn_tables_updated_sensor(
     # selecting by group allows us to include the activity_analytics assets that are defined in dbt
