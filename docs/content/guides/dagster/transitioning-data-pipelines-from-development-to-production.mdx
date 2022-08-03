@@ -383,8 +383,12 @@ def items(context) -> pd.DataFrame:
 
 We'll also need to add the `hn_api_client` to the `resource_defs` in our repository.
 
-```python file=/guides/dagster/development_to_production/repository/repository_v3.py startafter=start_hn_resource endbefore=start_hn_resource
-No match for endBefore value "start_hn_resource"
+```python file=/guides/dagster/development_to_production/repository/repository_v3.py startafter=start_hn_resource endbefore=end_hn_resource
+resource_defs = {
+    "local": {"hn_client": hn_api_client, "snowflake_io_manager": {...}},
+    "production": {"hn_client": hn_api_client, "snowflake_io_manager": {...}},
+    "staging": {"hn_client": hn_api_client, "snowflake_io_manager": {...}},
+}
 ```
 
 Now we can write a stubbed version of the Hacker News resource. We want to make sure the stub has implementations for each method `HNAPIClient` implements.
