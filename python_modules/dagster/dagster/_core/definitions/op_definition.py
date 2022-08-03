@@ -1,3 +1,4 @@
+import inspect
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -12,18 +13,21 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvariantViolationError
 
 from ..._seven.typing import get_origin
 from .definition_config_schema import IDefinitionConfigSchema
+from .hook_definition import HookDefinition
 from .inference import infer_output_props
 from .input import In, InputDefinition
 from .output import Out, OutputDefinition
 from .solid_definition import SolidDefinition
 
 if TYPE_CHECKING:
+    from .composition import PendingNodeInvocation
     from .decorators.solid_decorator import DecoratedSolidFunction
 
 
@@ -145,13 +149,56 @@ class OpDefinition(SolidDefinition):
     def is_graph_job_op_node(self) -> bool:
         return True
 
+    @public  # type: ignore
     @property
     def ins(self) -> Dict[str, In]:
         return {input_def.name: In.from_definition(input_def) for input_def in self.input_defs}
 
+    @public  # type: ignore
     @property
     def outs(self) -> Dict[str, Out]:
         return {output_def.name: Out.from_definition(output_def) for output_def in self.output_defs}
+
+    @public  # type: ignore
+    @property
+    def required_resource_keys(self) -> AbstractSet[str]:
+        return super(OpDefinition, self).required_resource_keys
+
+    @public  # type: ignore
+    @property
+    def version(self) -> Optional[str]:
+        return super(OpDefinition, self).version
+
+    @public  # type: ignore
+    @property
+    def retry_policy(self) -> Optional[RetryPolicy]:
+        return super(OpDefinition, self).retry_policy
+
+    @public  # type: ignore
+    @property
+    def name(self) -> str:
+        return super(OpDefinition, self).name
+
+    @public  # type: ignore
+    @property
+    def tags(self) -> Mapping[str, str]:
+        return super(OpDefinition, self).tags
+
+    @public
+    def alias(self, name: str) -> "PendingNodeInvocation":
+        return super(OpDefinition, self).alias(name)
+
+    @public
+    def tag(self, tags: Optional[Dict[str, str]]) -> "PendingNodeInvocation":
+        return super(OpDefinition, self).tag(tags)
+
+    @public
+    def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PendingNodeInvocation":
+        return super(OpDefinition, self).with_hooks(hook_defs)
+
+    @public
+    def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
+        return super(OpDefinition, self).with_retry_policy(retry_policy)
 
 
 def _resolve_output_defs_from_outs(
@@ -167,7 +214,7 @@ def _resolve_output_defs_from_outs(
         annotation = inferred_output_props.annotation
     else:
         inferred_output_props = None
-        annotation = None
+        annotation = inspect.Parameter.empty
 
     if outs is None:
         return [OutputDefinition.create_from_inferred(inferred_output_props)]
@@ -183,18 +230,22 @@ def _resolve_output_defs_from_outs(
 
     # Introspection on type annotations is experimental, so checking
     # metaclass is the best we can do.
-    if annotation and not get_origin(annotation) == tuple:
+    if annotation != inspect.Parameter.empty and not get_origin(annotation) == tuple:
         raise DagsterInvariantViolationError(
             "Expected Tuple annotation for multiple outputs, but received non-tuple annotation."
         )
-    if annotation and not len(annotation.__args__) == len(outs):
+    if annotation != inspect.Parameter.empty and not len(annotation.__args__) == len(outs):
         raise DagsterInvariantViolationError(
             "Expected Tuple annotation to have number of entries matching the "
             f"number of outputs for more than one output. Expected {len(outs)} "
             f"outputs but annotation has {len(annotation.__args__)}."
         )
     for idx, (name, cur_out) in enumerate(outs.items()):
-        annotation_type = annotation.__args__[idx] if annotation else None
+        annotation_type = (
+            annotation.__args__[idx]
+            if annotation != inspect.Parameter.empty
+            else inspect.Parameter.empty
+        )
         output_defs.append(cur_out.to_definition(annotation_type, name=name))
 
     return output_defs

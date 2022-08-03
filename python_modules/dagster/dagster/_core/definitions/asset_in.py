@@ -1,6 +1,7 @@
 from typing import Any, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import (
     AssetKey,
     CoercibleToAssetKey,
@@ -15,11 +16,11 @@ class AssetIn(
     NamedTuple(
         "_AssetIn",
         [
-            ("key", Optional[AssetKey]),
-            ("metadata", Optional[Mapping[str, Any]]),
-            ("key_prefix", Optional[Sequence[str]]),
-            ("input_manager_key", Optional[str]),
-            ("partition_mapping", Optional[PartitionMapping]),
+            ("key", PublicAttr[Optional[AssetKey]]),
+            ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
+            ("key_prefix", PublicAttr[Optional[Sequence[str]]]),
+            ("input_manager_key", PublicAttr[Optional[str]]),
+            ("partition_mapping", PublicAttr[Optional[PartitionMapping]]),
         ],
     )
 ):
@@ -46,15 +47,11 @@ class AssetIn(
         cls,
         key: Optional[CoercibleToAssetKey] = None,
         metadata: Optional[Mapping[str, Any]] = None,
-        namespace: Optional[Sequence[str]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         asset_key: Optional[CoercibleToAssetKey] = None,
         input_manager_key: Optional[str] = None,
         partition_mapping: Optional[PartitionMapping] = None,
     ):
-        key_prefix = canonicalize_backcompat_args(
-            key_prefix, "key_prefix", namespace, "namespace", "1.0.0"
-        )
         key = canonicalize_backcompat_args(key, "key", asset_key, "asset_key", "1.0.0")
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]

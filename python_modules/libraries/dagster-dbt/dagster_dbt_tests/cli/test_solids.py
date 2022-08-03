@@ -1,5 +1,5 @@
 import pytest
-from dagster_dbt import (
+from dagster_dbt.cli.solids import (
     dbt_cli_compile,
     dbt_cli_docs_generate,
     dbt_cli_run,
@@ -11,7 +11,8 @@ from dagster_dbt import (
 )
 from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError
 
-from dagster import configured, execute_solid
+from dagster import configured
+from dagster._legacy import execute_solid
 
 
 class TestDbtCliSolids:

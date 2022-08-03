@@ -550,6 +550,7 @@ export type LaunchAssetLoaderQuery_assetNodes_configField_configType = LaunchAss
 export interface LaunchAssetLoaderQuery_assetNodes_configField {
   __typename: "ConfigTypeField";
   name: string;
+  isRequired: boolean;
   configType: LaunchAssetLoaderQuery_assetNodes_configField_configType;
 }
 

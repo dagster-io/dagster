@@ -20,6 +20,7 @@ import pendulum
 from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import ensure_gen, merge_dicts
 from dagster._utils.schedules import is_valid_cron_string
@@ -76,11 +77,12 @@ class DefaultScheduleStatus(Enum):
 
 
 class ScheduleEvaluationContext:
-    """Schedule-specific execution context.
+    """The context object available as the first argument various functions defined on a :py:class:`dagster.ScheduleDefinition`.
 
-    An instance of this class is made available as the first argument to various ScheduleDefinition
-    functions. It is passed as the first argument to ``run_config_fn``, ``tags_fn``,
+    A `ScheduleEvaluationContext` object is passed as the first argument to ``run_config_fn``, ``tags_fn``,
     and ``should_execute``.
+
+    Users should not instantiate this object directly. To construct a `ScheduleEvaluationContext` for testing purposes, use :py:func:`dagster.build_schedule_context`.
 
     Attributes:
         instance_ref (Optional[InstanceRef]): The serialized instance configured to run the schedule
@@ -89,6 +91,17 @@ class ScheduleEvaluationContext:
             from both the actual execution time and the time at which the run config is computed.
             Not available in all schedulers - currently only set in deployments using
             DagsterDaemonScheduler.
+
+    Example:
+
+    .. code-block:: python
+
+        from dagster import schedule, ScheduleEvaluationContext
+
+        @schedule
+        def the_schedule(context: ScheduleEvaluationContext):
+            ...
+
     """
 
     __slots__ = ["_instance_ref", "_scheduled_execution_time", "_exit_stack", "_instance"]
@@ -110,6 +123,7 @@ class ScheduleEvaluationContext:
     def __exit__(self, _exception_type, _exception_value, _traceback):
         self._exit_stack.close()
 
+    @public  # type: ignore
     @property
     def instance(self) -> "DagsterInstance":
         # self._instance_ref should only ever be None when this ScheduleEvaluationContext was
@@ -124,6 +138,7 @@ class ScheduleEvaluationContext:
             )
         return cast(DagsterInstance, self._instance)
 
+    @public  # type: ignore
     @property
     def scheduled_execution_time(self) -> Optional[datetime]:
         return self._scheduled_execution_time
@@ -190,7 +205,6 @@ class ScheduleDefinition:
             "_schedule".
         cron_schedule (str): A valid cron string specifying when the schedule will run, e.g.,
             '45 23 * * 6' for a schedule that runs at 11:45 PM every Saturday.
-        pipeline_name (Optional[str]): (legacy) The name of the pipeline to execute when the schedule runs.
         execution_fn (Callable[ScheduleEvaluationContext]): The core evaluation function for the
             schedule, which is run at an interval to determine whether a run should be launched or
             not. Takes a :py:class:`~dagster.ScheduleEvaluationContext`.
@@ -209,9 +223,6 @@ class ScheduleDefinition:
             function that generates tags to attach to the schedules runs. Takes a
             :py:class:`~dagster.ScheduleEvaluationContext` and returns a dictionary of tags (string
             key-value pairs). You may set only one of ``tags``, ``tags_fn``, and ``execution_fn``.
-        solid_selection (Optional[Sequence[str]]): A list of solid subselection (including single
-            solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
-        mode (Optional[str]): (legacy) The mode to apply when executing this schedule. (default: 'default')
         should_execute (Optional[Callable[[ScheduleEvaluationContext], bool]]): A function that runs
             at schedule execution time to determine whether a schedule should execute or skip. Takes
             a :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
@@ -432,9 +443,15 @@ class ScheduleDefinition:
         else:
             return result
 
+    @public  # type: ignore
     @property
     def name(self) -> str:
         return self._name
+
+    @public  # type: ignore
+    @property
+    def job_name(self) -> str:
+        return self.pipeline_name
 
     @property
     def pipeline_name(self) -> str:
@@ -448,22 +465,27 @@ class ScheduleDefinition:
     def mode(self) -> str:
         return self._target.mode
 
+    @public  # type: ignore
     @property
     def description(self) -> Optional[str]:
         return self._description
 
+    @public  # type: ignore
     @property
     def cron_schedule(self) -> str:
         return self._cron_schedule
 
+    @public  # type: ignore
     @property
     def environment_vars(self) -> Mapping[str, str]:
         return self._environment_vars
 
+    @public  # type: ignore
     @property
     def execution_timezone(self) -> Optional[str]:
         return self._execution_timezone
 
+    @public  # type: ignore
     @property
     def job(self) -> Union[GraphDefinition, PipelineDefinition, UnresolvedAssetJobDefinition]:
         if isinstance(self._target, DirectTarget):
@@ -548,6 +570,7 @@ class ScheduleDefinition:
 
         check.failed("Target is not loadable")
 
+    @public  # type: ignore
     @property
     def default_status(self) -> DefaultScheduleStatus:
         return self._default_status

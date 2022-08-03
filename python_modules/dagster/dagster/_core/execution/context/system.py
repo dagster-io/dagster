@@ -22,6 +22,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey, AssetLineageInfo
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_definition import JobDefinition
@@ -874,14 +875,17 @@ class TypeCheckContext:
         self._log = log_manager
         self._resources = scoped_resources_builder.build(dagster_type.required_resource_keys)
 
+    @public  # type: ignore
     @property
     def resources(self) -> "Resources":
         return self._resources
 
+    @public  # type: ignore
     @property
     def run_id(self) -> str:
         return self._run_id
 
+    @public  # type: ignore
     @property
     def log(self) -> DagsterLogManager:
         return self._log

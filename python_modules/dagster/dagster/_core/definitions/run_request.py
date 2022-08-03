@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Any, Mapping, NamedTuple, Optional
 
 import dagster._check as check
+from dagster._annotations import PublicAttr
 from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster._serdes.serdes import register_serdes_enum_fallbacks, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
@@ -19,7 +20,7 @@ JobType = InstigatorType
 
 
 @whitelist_for_serdes
-class SkipReason(NamedTuple("_SkipReason", [("skip_message", Optional[str])])):
+class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[Optional[str]])])):
     """
     Represents a skipped evaluation, where no runs are requested. May contain a message to indicate
     why no runs were requested.
@@ -41,10 +42,10 @@ class RunRequest(
     NamedTuple(
         "_RunRequest",
         [
-            ("run_key", Optional[str]),
-            ("run_config", Mapping[str, Any]),
-            ("tags", Mapping[str, str]),
-            ("job_name", Optional[str]),
+            ("run_key", PublicAttr[Optional[str]]),
+            ("run_config", PublicAttr[Mapping[str, Any]]),
+            ("tags", PublicAttr[Mapping[str, str]]),
+            ("job_name", PublicAttr[Optional[str]]),
         ],
     )
 ):

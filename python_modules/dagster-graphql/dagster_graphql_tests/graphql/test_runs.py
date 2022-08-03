@@ -11,21 +11,13 @@ from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
 )
 
-from dagster import (
-    AssetMaterialization,
-    Output,
-    execute_pipeline,
-    job,
-    lambda_solid,
-    op,
-    repository,
-)
+from dagster import AssetMaterialization, Output, job, op, repository
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.execution.api import execute_run
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import pipeline
+from dagster._legacy import execute_pipeline, lambda_solid, pipeline
 from dagster._utils import Counter, traced_counter
 
 RUNS_QUERY = """
@@ -634,7 +626,9 @@ def test_filtered_runs():
         ).run_id
         with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
             result = execute_dagster_graphql(
-                context, FILTERED_RUN_QUERY, variables={"filter": {"runIds": [run_id_1]}}
+                context,
+                FILTERED_RUN_QUERY,
+                variables={"filter": {"runIds": [run_id_1]}},
             )
             assert result.data
             run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
@@ -653,7 +647,9 @@ def test_filtered_runs():
 
             # test multiple run ids
             result = execute_dagster_graphql(
-                context, FILTERED_RUN_QUERY, variables={"filter": {"runIds": [run_id_1, run_id_2]}}
+                context,
+                FILTERED_RUN_QUERY,
+                variables={"filter": {"runIds": [run_id_1, run_id_2]}},
             )
             assert result.data
             run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
@@ -672,7 +668,9 @@ def test_filtered_runs_status():
         ).run_id
         with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
             result = execute_dagster_graphql(
-                context, FILTERED_RUN_QUERY, variables={"filter": {"statuses": ["FAILURE"]}}
+                context,
+                FILTERED_RUN_QUERY,
+                variables={"filter": {"statuses": ["FAILURE"]}},
             )
             assert result.data
             run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
@@ -710,10 +708,14 @@ def test_filtered_runs_multiple_filters():
         repo = get_repo_at_time_1()
 
         started_run_with_tags = instance.create_run_for_pipeline(
-            repo.get_pipeline("foo_pipeline"), status=PipelineRunStatus.STARTED, tags={"foo": "bar"}
+            repo.get_pipeline("foo_pipeline"),
+            status=PipelineRunStatus.STARTED,
+            tags={"foo": "bar"},
         )
         failed_run_with_tags = instance.create_run_for_pipeline(
-            repo.get_pipeline("foo_pipeline"), status=PipelineRunStatus.FAILURE, tags={"foo": "bar"}
+            repo.get_pipeline("foo_pipeline"),
+            status=PipelineRunStatus.FAILURE,
+            tags={"foo": "bar"},
         )
         started_run_without_tags = instance.create_run_for_pipeline(
             repo.get_pipeline("foo_pipeline"),
@@ -726,7 +728,10 @@ def test_filtered_runs_multiple_filters():
                 context,
                 FILTERED_RUN_QUERY,
                 variables={
-                    "filter": {"statuses": ["STARTED"], "tags": [{"key": "foo", "value": "bar"}]}
+                    "filter": {
+                        "statuses": ["STARTED"],
+                        "tags": [{"key": "foo", "value": "bar"}],
+                    }
                 },
             )
             assert result.data
@@ -748,7 +753,9 @@ def test_filtered_runs_count():
         ).run_id
         with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
             result = execute_dagster_graphql(
-                context, FILTERED_RUN_COUNT_QUERY, variables={"filter": {"statuses": ["FAILURE"]}}
+                context,
+                FILTERED_RUN_COUNT_QUERY,
+                variables={"filter": {"statuses": ["FAILURE"]}},
             )
             assert result.data
             count = result.data["pipelineRunsOrError"]["count"]
@@ -853,14 +860,22 @@ def test_run_groups():
 
 def test_repository_batching():
     with instance_for_test() as instance:
-        repo = get_repo_at_time_1()
-        foo_pipeline = repo.get_pipeline("foo_pipeline")
-        evolving_pipeline = repo.get_pipeline("evolving_pipeline")
-        foo_run_ids = [execute_pipeline(foo_pipeline, instance=instance).run_id for i in range(3)]
-        evolving_run_ids = [
-            execute_pipeline(evolving_pipeline, instance=instance).run_id for i in range(2)
-        ]
+        from .utils import sync_execute_get_run_log_data
+
+        def _execute_run(graphql_context, pipeline_name):
+            payload = sync_execute_get_run_log_data(
+                context=graphql_context,
+                variables={
+                    "executionParams": {
+                        "selector": infer_pipeline_selector(graphql_context, pipeline_name)
+                    }
+                },
+            )
+            return payload["run"]["runId"]
+
         with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
+            foo_run_ids = [_execute_run(context, "foo_pipeline") for _ in range(3)]
+            evolving_run_ids = [_execute_run(context, "evolving_pipeline") for _ in range(2)]
             traced_counter.set(Counter())
             result = execute_dagster_graphql(
                 context,

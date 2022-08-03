@@ -15,10 +15,6 @@
       {
         "title": "Telemetry",
         "path": "/getting-started/telemetry"
-      },
-      {
-        "title": "Releases and Changes",
-        "path": "/getting-started/releases"
       }
     ]
   },
@@ -368,37 +364,36 @@
     "path": "/integrations",
     "children": [
       {
-        "title": "Integration Guides",
-        "children": [
-          {
-            "title": "Dagster with dbt",
-            "path": "/integrations/dbt"
-          },
-          {
-            "title": "Dagster with Airflow",
-            "path": "/integrations/airflow"
-          },
-          {
-            "title": "Dagster with Great Expectations",
-            "path": "/integrations/great-expectations"
-          },
-          {
-            "title": "Dagster with PySpark",
-            "path": "/integrations/spark"
-          },
-          {
-            "title": "Dagster with Pandas",
-            "path": "/integrations/pandas"
-          },
-          {
-            "title": "Dagster with Pandera",
-            "path": "/integrations/pandera"
-          },
-          {
-            "title": "Dagster with Jupyter/Papermill",
-            "path": "/integrations/dagstermill"
-          }
-        ]
+        "title": "Airflow",
+        "path": "/integrations/airflow"
+      },
+      {
+        "title": "dbt",
+        "path": "/integrations/dbt"
+      },
+      {
+        "title": "Great Expectations",
+        "path": "/integrations/great-expectations"
+      },
+      {
+        "title": "Jupyter/Papermill",
+        "path": "/integrations/dagstermill"
+      },
+      {
+        "title": "Pandas",
+        "path": "/integrations/pandas"
+      },
+      {
+        "title": "Pandera",
+        "path": "/integrations/pandera"
+      },
+      {
+        "title": "PySpark",
+        "path": "/integrations/spark"
+      },
+      {
+        "title": "All integrations",
+        "path": "/integrations"
       }
     ]
   },
@@ -413,7 +408,7 @@
       },
       {
         "title": "Transitioning Data Pipelines from Development to Production",
-        "path":"/guides/dagster/local-to-production-tutorial"
+        "path":"/guides/dagster/transitioning-data-pipelines-from-development-to-production"
       },
       {
         "title": "Testing Against Production with Dagster Cloud Branch Deployments",
@@ -537,27 +532,6 @@
           {
             "title": "Internals",
             "path": "/_apidocs/internals"
-          }
-        ]
-      },
-      {
-        "title": "Legacy",
-        "children": [
-          {
-            "title": "Solids",
-            "path": "/_apidocs/solids"
-          },
-          {
-            "title": "Pipelines",
-            "path": "/_apidocs/pipeline"
-          },
-          {
-            "title": "Modes",
-            "path": "/_apidocs/modes"
-          },
-          {
-            "title": "Presets",
-            "path": "/_apidocs/presets"
           }
         ]
       },
@@ -714,7 +688,7 @@
     "path": "/community",
     "children": [
       {
-        "title": "Code of Conduct",
+        "title": "Code of conduct",
         "path": "/community/code-of-conduct"
       },
       {
@@ -722,24 +696,33 @@
         "path": "/community/contributing"
       },
       {
-        "title": "Changing Public APIs",
-        "path": "/community/public-apis"
+        "title": "Slack",
+        "path": "https://dagster-slackin.herokuapp.com/",
+        "isExternalLink": true
+      },
+      {
+        "title": "GitHub",
+        "path": "https://github.com/dagster-io/dagster",
+        "isExternalLink": true
       }
     ]
   },
   {
-    "title": "Changelog",
-    "icon": "Change",
-    "path": "/changelog",
+    "title": "About",
+    "icon": "InfoCircle",
     "isUnversioned": true,
     "children": [
+      {
+        "title": "Releases and changes",
+        "path": "/getting-started/releases"
+      },
       {
         "title": "Changelog",
         "path": "/changelog",
         "isUnversioned": true
       },
       {
-        "title": "Migration Guides",
+        "title": "Migration guides",
         "path": "/migration",
         "isUnversioned": true
       }

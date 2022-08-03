@@ -1,3 +1,4 @@
+from .composition import PendingNodeInvocation
 from .config import ConfigMapping
 from .dependency import (
     DependencyDefinition,
@@ -155,11 +156,9 @@ from .partitioned_schedule import build_schedule_from_partitioned_job, schedule_
 from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
 from .run_status_sensor_definition import (
-    PipelineFailureSensorContext,
     RunFailureSensorContext,
     RunStatusSensorContext,
     RunStatusSensorDefinition,
-    pipeline_failure_sensor,
     run_failure_sensor,
     run_status_sensor,
 )

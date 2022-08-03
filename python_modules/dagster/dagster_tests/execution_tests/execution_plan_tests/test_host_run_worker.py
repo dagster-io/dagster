@@ -1,6 +1,6 @@
 import os
 
-from dagster import ModeDefinition, executor, fs_io_manager, reconstructable, resource
+from dagster import executor, fs_io_manager, reconstructable, resource
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.host_mode import execute_run_host_mode
@@ -8,7 +8,7 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.multiprocess import MultiprocessExecutor
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import pipeline, solid
+from dagster._legacy import ModeDefinition, pipeline, solid
 
 
 @resource
@@ -35,10 +35,12 @@ def solid_that_uses_adder_resource(context, number):
 @pipeline(
     mode_defs=[
         ModeDefinition(
-            name="add_one", resource_defs={"adder": add_one_resource, "io_manager": fs_io_manager}
+            name="add_one",
+            resource_defs={"adder": add_one_resource, "io_manager": fs_io_manager},
         ),
         ModeDefinition(
-            name="add_two", resource_defs={"adder": add_two_resource, "io_manager": fs_io_manager}
+            name="add_two",
+            resource_defs={"adder": add_two_resource, "io_manager": fs_io_manager},
         ),
     ]
 )

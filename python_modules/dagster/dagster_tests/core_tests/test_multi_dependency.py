@@ -4,20 +4,23 @@ from dagster import (
     Any,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
-    InputDefinition,
     Int,
     List,
     MultiDependencyDefinition,
     Nothing,
+)
+from dagster._core.definitions.composition import MappedInputPlaceholder
+from dagster._core.definitions.solid_definition import CompositeSolidDefinition
+from dagster._legacy import (
+    InputDefinition,
     OutputDefinition,
     PipelineDefinition,
     composite_solid,
     execute_pipeline,
     lambda_solid,
+    pipeline,
+    solid,
 )
-from dagster._core.definitions.composition import MappedInputPlaceholder
-from dagster._core.definitions.solid_definition import CompositeSolidDefinition
-from dagster._legacy import pipeline, solid
 
 
 def test_simple_values():
@@ -222,24 +225,18 @@ def test_fan_in_manual():
 
 
 def test_nothing_deps():
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=r'Input "stuff" expects a value of type \[Any\] and output '
-        '"result" returns type Nothing',
-    ):
-        PipelineDefinition(
-            name="input_test",
-            solid_defs=[emit_num, emit_nothing, emit_str, collect],
-            dependencies={
-                "collect": {
-                    "stuff": MultiDependencyDefinition(
-                        [
-                            DependencyDefinition("emit_num"),
-                            DependencyDefinition("emit_nothing"),
-                            DependencyDefinition("emit_str"),
-                        ]
-                    )
-                }
-            },
-        )
+    PipelineDefinition(
+        name="input_test",
+        solid_defs=[emit_num, emit_nothing, emit_str, collect],
+        dependencies={
+            "collect": {
+                "stuff": MultiDependencyDefinition(
+                    [
+                        DependencyDefinition("emit_num"),
+                        DependencyDefinition("emit_nothing"),
+                        DependencyDefinition("emit_str"),
+                    ]
+                )
+            }
+        },
+    )

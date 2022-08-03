@@ -15,7 +15,7 @@ from dagster._core.host_representation.external_data import (
 )
 from dagster._core.scheduler.instigation import InstigatorType
 from dagster._core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
-from dagster._core.storage.tags import SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
+from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
 from dagster._core.workspace.context import WorkspaceRequestContext
 
 
@@ -69,6 +69,11 @@ class RepositoryScopedBatchLoader:
             job_names = [x.name for x in self._repository.get_all_external_pipelines()]
             if self._instance.supports_bucket_queries:
                 records = self._instance.get_run_records(
+                    filters=RunsFilter(
+                        tags={
+                            REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
+                        },
+                    ),
                     bucket_by=JobBucket(bucket_limit=limit, job_names=job_names),
                 )
             else:
@@ -77,7 +82,13 @@ class RepositoryScopedBatchLoader:
                     records.extend(
                         list(
                             self._instance.get_run_records(
-                                filters=RunsFilter(pipeline_name=job_name), limit=limit
+                                filters=RunsFilter(
+                                    pipeline_name=job_name,
+                                    tags={
+                                        REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
+                                    },
+                                ),
+                                limit=limit,
                             )
                         )
                     )
@@ -90,6 +101,11 @@ class RepositoryScopedBatchLoader:
             ]
             if self._instance.supports_bucket_queries:
                 records = self._instance.get_run_records(
+                    filters=RunsFilter(
+                        tags={
+                            REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
+                        }
+                    ),
                     bucket_by=TagBucket(
                         tag_key=SCHEDULE_NAME_TAG,
                         bucket_limit=limit,
@@ -102,7 +118,12 @@ class RepositoryScopedBatchLoader:
                     records.extend(
                         list(
                             self._instance.get_run_records(
-                                filters=RunsFilter(tags={SCHEDULE_NAME_TAG: schedule_name}),
+                                filters=RunsFilter(
+                                    tags={
+                                        SCHEDULE_NAME_TAG: schedule_name,
+                                        REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
+                                    }
+                                ),
                                 limit=limit,
                             )
                         )
@@ -114,6 +135,11 @@ class RepositoryScopedBatchLoader:
             sensor_names = [sensor.name for sensor in self._repository.get_external_sensors()]
             if self._instance.supports_bucket_queries:
                 records = self._instance.get_run_records(
+                    filters=RunsFilter(
+                        tags={
+                            REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
+                        }
+                    ),
                     bucket_by=TagBucket(
                         tag_key=SENSOR_NAME_TAG,
                         bucket_limit=limit,
@@ -126,7 +152,12 @@ class RepositoryScopedBatchLoader:
                     records.extend(
                         list(
                             self._instance.get_run_records(
-                                filters=RunsFilter(tags={SENSOR_NAME_TAG: sensor_name}),
+                                filters=RunsFilter(
+                                    tags={
+                                        SENSOR_NAME_TAG: sensor_name,
+                                        REPOSITORY_LABEL_TAG: self._repository.get_external_origin().get_label(),
+                                    }
+                                ),
                                 limit=limit,
                             )
                         )

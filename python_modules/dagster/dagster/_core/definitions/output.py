@@ -1,3 +1,4 @@
+import inspect
 import warnings
 from typing import (
     TYPE_CHECKING,
@@ -272,7 +273,13 @@ class OutputDefinition:
 
 def _checked_inferred_type(inferred: Any) -> DagsterType:
     try:
-        return resolve_dagster_type(inferred)
+        if inferred == inspect.Parameter.empty:
+            return resolve_dagster_type(None)
+        elif inferred is None:
+            return resolve_dagster_type(type(None))
+        else:
+            return resolve_dagster_type(inferred)
+
     except DagsterError as e:
         raise DagsterInvalidDefinitionError(
             f"Problem using type '{inferred}' from return type annotation, correct the issue "
@@ -339,15 +346,9 @@ class OutputPointer(NamedTuple("_OutputPointer", [("solid_name", str), ("output_
 class OutputMapping(
     NamedTuple("_OutputMapping", [("definition", OutputDefinition), ("maps_from", OutputPointer)])
 ):
-    """Defines an output mapping for a composite solid.
+    """Defines an output mapping for a graph."""
 
-    Args:
-        definition (OutputDefinition): Defines the output of the composite solid.
-        solid_name (str): The name of the child solid from which to map the output.
-        output_name (str): The name of the child solid's output from which to map the output.
-    """
-
-    def __new__(cls, definition: OutputDefinition, maps_from: OutputPointer):
+    def __new__(cls, definition: Union[OutputDefinition], maps_from: OutputPointer):
         return super(OutputMapping, cls).__new__(
             cls,
             check.inst_param(definition, "definition", OutputDefinition),
@@ -449,7 +450,9 @@ class Out(
 
     def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
         dagster_type = (
-            self.dagster_type if self.dagster_type is not NoValueSentinel else annotation_type
+            self.dagster_type
+            if self.dagster_type is not NoValueSentinel
+            else _checked_inferred_type(annotation_type)
         )
 
         return OutputDefinition(
@@ -505,7 +508,9 @@ class DynamicOut(Out):
 
     def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
         dagster_type = (
-            self.dagster_type if self.dagster_type is not NoValueSentinel else annotation_type
+            self.dagster_type
+            if self.dagster_type is not NoValueSentinel
+            else _checked_inferred_type(annotation_type)
         )
 
         return DynamicOutputDefinition(

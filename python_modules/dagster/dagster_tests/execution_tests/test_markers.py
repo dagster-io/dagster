@@ -1,7 +1,7 @@
-from dagster import execute_pipeline, lambda_solid, reconstructable
+from dagster import reconstructable
 from dagster._core.events import MARKER_EVENTS
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import pipeline
+from dagster._legacy import execute_pipeline, lambda_solid, pipeline
 
 
 def define_pipeline():
@@ -34,12 +34,14 @@ def test_multiproc_markers():
             if dagster_event and dagster_event.event_type in MARKER_EVENTS:
                 if dagster_event.engine_event_data.marker_start:
                     key = "{step}.{marker}".format(
-                        step=event.step_key, marker=dagster_event.engine_event_data.marker_start
+                        step=event.step_key,
+                        marker=dagster_event.engine_event_data.marker_start,
                     )
                     start_markers[key] = event.timestamp
                 if dagster_event.engine_event_data.marker_end:
                     key = "{step}.{marker}".format(
-                        step=event.step_key, marker=dagster_event.engine_event_data.marker_end
+                        step=event.step_key,
+                        marker=dagster_event.engine_event_data.marker_end,
                     )
                     end_markers[key] = event.timestamp
 

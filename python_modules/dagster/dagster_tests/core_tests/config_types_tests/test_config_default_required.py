@@ -1,5 +1,5 @@
-from dagster import Field, Noneable, execute_solid
-from dagster._legacy import solid
+from dagster import Field, Noneable
+from dagster._legacy import execute_solid, solid
 
 
 def test_default_implies_not_required_field_correct():

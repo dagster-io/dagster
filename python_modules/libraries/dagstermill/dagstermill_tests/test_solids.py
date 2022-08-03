@@ -6,17 +6,17 @@ from contextlib import contextmanager
 
 import nbformat
 import pytest
-from dagstermill import DagstermillError, define_dagstermill_solid
+from dagstermill import DagstermillError
 from dagstermill.compat import ExecutionError
+from dagstermill.factory import define_dagstermill_solid
 from jupyter_client.kernelspec import NoSuchKernel
 from nbconvert.preprocessors import ExecutePreprocessor
 
-from dagster import execute_pipeline
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import PathMetadataValue
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import pipeline
+from dagster._legacy import execute_pipeline, pipeline
 from dagster._utils import file_relative_path, safe_tempfile_path
 
 DAGSTER_PANDAS_PRESENT = importlib.util.find_spec("dagster_pandas") is not None
@@ -138,7 +138,8 @@ def test_reexecute_result_notebook():
         return nb
 
     with exec_for_test(
-        "hello_world_pipeline", {"loggers": {"console": {"config": {"log_level": "ERROR"}}}}
+        "hello_world_pipeline",
+        {"loggers": {"console": {"config": {"log_level": "ERROR"}}}},
     ) as result:
         assert result.success
 
@@ -188,7 +189,8 @@ def test_add_pipeline():
 @pytest.mark.notebook_test
 def test_double_add_pipeline():
     with exec_for_test(
-        "double_add_pipeline", {"loggers": {"console": {"config": {"log_level": "ERROR"}}}}
+        "double_add_pipeline",
+        {"loggers": {"console": {"config": {"log_level": "ERROR"}}}},
     ) as result:
         assert result.success
         assert result.result_for_solid("add_two_numbers_1").output_value() == 3
@@ -277,7 +279,8 @@ def test_error_notebook():
 )
 def test_tutorial_pipeline():
     with exec_for_test(
-        "tutorial_pipeline", {"loggers": {"console": {"config": {"log_level": "DEBUG"}}}}
+        "tutorial_pipeline",
+        {"loggers": {"console": {"config": {"log_level": "DEBUG"}}}},
     ) as result:
         assert result.success
 
@@ -295,7 +298,7 @@ def test_hello_world_reexecution():
             reexecution_notebook_file.write(
                 (
                     "from dagster._legacy import pipeline\n"
-                    "from dagstermill import define_dagstermill_solid\n\n\n"
+                    "from dagstermill.factory import define_dagstermill_solid\n\n\n"
                     "reexecution_solid = define_dagstermill_solid(\n"
                     "    'hello_world_reexecution', '{output_notebook_path}'\n"
                     ")\n\n"

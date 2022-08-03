@@ -1,15 +1,15 @@
 import datetime
 from collections import defaultdict
 
-from dagster import (
+from dagster import ScheduleEvaluationContext
+from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._legacy import (
     PartitionSetDefinition,
-    ScheduleEvaluationContext,
     daily_schedule,
     hourly_schedule,
     monthly_schedule,
     weekly_schedule,
 )
-from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster._utils.partitions import date_partition_range
 
 

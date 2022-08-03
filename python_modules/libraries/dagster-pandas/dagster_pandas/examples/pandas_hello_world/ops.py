@@ -1,7 +1,8 @@
 import dagster_pandas as dagster_pd
 import dagstermill
 
-from dagster import In, InputDefinition, Out, OutputDefinition, file_relative_path, op
+from dagster import In, Out, file_relative_path, op
+from dagster._legacy import InputDefinition, OutputDefinition
 
 from ...data_frame import DataFrame
 
@@ -38,7 +39,7 @@ def nb_test_path(name):
     return file_relative_path(__file__, "../notebooks/{name}.ipynb".format(name=name))
 
 
-papermill_pandas_hello_world = dagstermill.define_dagstermill_solid(
+papermill_pandas_hello_world = dagstermill.factory.define_dagstermill_solid(
     name="papermill_pandas_hello_world",
     notebook_path=nb_test_path("papermill_pandas_hello_world"),
     input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],

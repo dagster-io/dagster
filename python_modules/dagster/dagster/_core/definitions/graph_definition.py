@@ -20,6 +20,7 @@ from typing import (
 from toposort import CircularDependencyError, toposort_flatten
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster._core.definitions.policy import RetryPolicy
@@ -56,6 +57,7 @@ if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
 
     from .asset_layer import AssetLayer
+    from .composition import PendingNodeInvocation
     from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
     from .partition import PartitionedConfig, PartitionsDefinition
@@ -345,14 +347,17 @@ class GraphDefinition(NodeDefinition):
                 yield from graph_def.iterate_node_handles(cur_node_handle)
             yield cur_node_handle
 
+    @public  # type: ignore
     @property
     def input_mappings(self) -> Sequence[InputMapping]:
         return self._input_mappings
 
+    @public  # type: ignore
     @property
     def output_mappings(self) -> Sequence[OutputMapping]:
         return self._output_mappings
 
+    @public  # type: ignore
     @property
     def config_mapping(self) -> Optional[ConfigMapping]:
         return self._config_mapping
@@ -501,6 +506,7 @@ class GraphDefinition(NodeDefinition):
     def node_names(self):
         return list(self._node_dict.keys())
 
+    @public
     def to_job(
         self,
         name: Optional[str] = None,
@@ -612,6 +618,7 @@ class GraphDefinition(NodeDefinition):
                 "Use to_job instead, passing the required information."
             ) from err
 
+    @public
     def execute_in_process(
         self,
         run_config: Any = None,
@@ -699,6 +706,32 @@ class GraphDefinition(NodeDefinition):
 
         for dagster_type in self.all_dagster_types():
             yield from dagster_type.get_resource_requirements()
+
+    @public  # type: ignore
+    @property
+    def name(self) -> str:
+        return super(GraphDefinition, self).name
+
+    @public  # type: ignore
+    @property
+    def tags(self) -> Mapping[str, str]:
+        return super(GraphDefinition, self).tags
+
+    @public
+    def alias(self, name: str) -> "PendingNodeInvocation":
+        return super(GraphDefinition, self).alias(name)
+
+    @public
+    def tag(self, tags: Optional[Dict[str, str]]) -> "PendingNodeInvocation":
+        return super(GraphDefinition, self).tag(tags)
+
+    @public
+    def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PendingNodeInvocation":
+        return super(GraphDefinition, self).with_hooks(hook_defs)
+
+    @public
+    def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
+        return super(GraphDefinition, self).with_retry_policy(retry_policy)
 
 
 class SubselectedGraphDefinition(GraphDefinition):

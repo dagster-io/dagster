@@ -1,17 +1,10 @@
 import pytest
 
-from dagster import (
-    Any,
-    Bool,
-    DagsterInvalidConfigError,
-    Float,
+from dagster import Any, Bool, DagsterInvalidConfigError, Float, Int, List, Optional, String
+from dagster._legacy import (
     InputDefinition,
-    Int,
-    List,
-    Optional,
     OutputDefinition,
     PipelineDefinition,
-    String,
     execute_pipeline,
     lambda_solid,
 )

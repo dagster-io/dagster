@@ -6,11 +6,11 @@ from dagster_k8s.job import (
     get_user_defined_k8s_config,
 )
 
-from dagster import DynamicOutput, DynamicOutputDefinition
+from dagster import DynamicOutput
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._legacy import pipeline, solid
+from dagster._legacy import DynamicOutputDefinition, pipeline, solid
 
 
 # CPU units are millicpu
@@ -202,7 +202,8 @@ def test_bad_user_defined_k8s_config_tags():
         pass
 
     with pytest.raises(
-        DagsterInvalidConfigError, match='Received unexpected config entry "other" at the root'
+        DagsterInvalidConfigError,
+        match='Received unexpected config entry "other" at the root',
     ):
         get_user_defined_k8s_config(my_pipeline.tags)
 

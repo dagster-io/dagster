@@ -26,6 +26,7 @@ export type MDXData = {
   frontMatter: {
     title: string;
     description: string;
+    noindex?: boolean;
   };
   searchIndex: any;
   tableOfContents: any;
@@ -214,7 +215,7 @@ const RightSidebar = ({
           </div>
           <div className="py-2 px-4 flex items-center group">
             <GitHubButton
-              href="https://github.com/dagster-io/dagster"
+              href={process.env.DAGSTER_REPO_URL}
               data-icon="octicon-star"
               data-show-count="true"
               aria-label="Star dagster-io/dagster on GitHub"
@@ -356,6 +357,7 @@ function VersionedMDXRenderer({
           title: frontMatter.title,
           description: frontMatter.description,
         }}
+        noindex={frontMatter.noindex}
       />
 
       <VersionedContentLayout asPath={asPath}>

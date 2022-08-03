@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, cast
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import (
     AssetKey,
@@ -119,6 +120,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
     def solid_config(self) -> Any:
         return self._step_execution_context.op_config
 
+    @public  # type: ignore
     @property
     def op_config(self) -> Any:
         return self.solid_config
@@ -133,11 +135,13 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """DagsterRun: The current run"""
         return cast(DagsterRun, self.pipeline_run)
 
+    @public  # type: ignore
     @property
     def instance(self) -> DagsterInstance:
         """DagsterInstance: The current Dagster instance"""
         return self._step_execution_context.instance
 
+    @public  # type: ignore
     @property
     def pdb(self) -> ForkedPdb:
         """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the op.
@@ -167,6 +171,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
             "Please access it via `context.resources.file_manager` instead."
         )
 
+    @public  # type: ignore
     @property
     def resources(self) -> Any:
         """Resources: The currently available resources."""
@@ -177,11 +182,13 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """Optional[StepLauncher]: The current step launcher, if any."""
         return self._step_execution_context.step_launcher
 
+    @public  # type: ignore
     @property
     def run_id(self) -> str:
         """str: The id of the current execution's run."""
         return self._step_execution_context.run_id
 
+    @public  # type: ignore
     @property
     def run_config(self) -> Mapping[str, object]:
         """dict: The run config for the current execution."""
@@ -192,6 +199,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """PipelineDefinition: The currently executing pipeline."""
         return self._step_execution_context.pipeline_def
 
+    @public  # type: ignore
     @property
     def job_def(self) -> JobDefinition:
         """JobDefinition: The currently executing job."""
@@ -209,6 +217,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """str: The name of the currently executing pipeline."""
         return self._step_execution_context.pipeline_name
 
+    @public  # type: ignore
     @property
     def job_name(self) -> str:
         """str: The name of the currently executing job."""
@@ -219,6 +228,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """ModeDefinition: The mode of the current execution."""
         return self._step_execution_context.mode_def
 
+    @public  # type: ignore
     @property
     def log(self) -> DagsterLogManager:
         """DagsterLogManager: The log manager available in the execution context."""
@@ -263,6 +273,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """SolidDefinition: The current solid definition."""
         return self._step_execution_context.pipeline_def.get_solid(self.solid_handle).definition
 
+    @public  # type: ignore
     @property
     def op_def(self) -> OpDefinition:
         """OpDefinition: The current op definition."""
@@ -275,11 +286,13 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
             ),
         )
 
+    @public  # type: ignore
     @property
     def has_partition_key(self) -> bool:
         """Whether the current run is a partitioned run"""
         return self._step_execution_context.has_partition_key
 
+    @public  # type: ignore
     @property
     def partition_key(self) -> str:
         """The partition key for the current run.
@@ -288,6 +301,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.partition_key
 
+    @public  # type: ignore
     @property
     def partition_time_window(self) -> str:
         """The partition time window for the current run.
@@ -297,6 +311,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.partition_time_window
 
+    @public  # type: ignore
     @property
     def selected_asset_keys(self) -> AbstractSet[AssetKey]:
         assets_def = self.job_def.asset_layer.assets_def_for_node(self.solid_handle)
@@ -304,6 +319,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
             return set()
         return assets_def.keys
 
+    @public  # type: ignore
     @property
     def selected_output_names(self) -> AbstractSet[str]:
         # map selected asset keys to the output names they correspond to
@@ -317,6 +333,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
                 selected_outputs.add(output_name)
         return selected_outputs
 
+    @public
     def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
         asset_output_info = self.pipeline_def.asset_layer.asset_info_for_output(
             node_handle=self.op_handle, output_name=output_name
@@ -326,6 +343,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         else:
             return asset_output_info.key
 
+    @public
     def asset_key_for_input(self, input_name: str) -> AssetKey:
         key = self.pipeline_def.asset_layer.asset_key_for_input(
             node_handle=self.op_handle, input_name=input_name
@@ -344,6 +362,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
 
         return self.asset_partition_key_for_output(output_name)
 
+    @public
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
         """Returns the asset partition key for the given output. Defaults to "result", which is the
         name of the default output.
@@ -359,6 +378,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
 
         return self.asset_partitions_time_window_for_output(output_name)
 
+    @public
     def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
         """The time window for the partitions of the output asset.
 
@@ -368,12 +388,14 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
 
+    @public
     def asset_partition_key_for_input(self, input_name: str) -> str:
         """Returns the asset partition key for the given output. Defaults to "result", which is the
         name of the default output.
         """
         return self._step_execution_context.asset_partition_key_for_input(input_name)
 
+    @public
     def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
         """The PartitionsDefinition on the upstream asset corresponding to this input."""
         asset_key = self.asset_key_for_output(output_name)
@@ -387,6 +409,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
 
         return result
 
+    @public
     def asset_partitions_def_for_input(self, input_name: str) -> PartitionsDefinition:
         """The PartitionsDefinition on the upstream asset corresponding to this input."""
         asset_key = self.asset_key_for_input(input_name)
@@ -400,6 +423,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
 
         return result
 
+    @public
     def has_tag(self, key: str) -> bool:
         """Check if a logging tag is set.
 
@@ -411,6 +435,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.has_tag(key)
 
+    @public
     def get_tag(self, key: str) -> Optional[str]:
         """Get a logging tag.
 
@@ -434,6 +459,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         self._events = []
         yield from events
 
+    @public
     def log_event(self, event: UserEvent) -> None:
         """Log an AssetMaterialization, AssetObservation, or ExpectationResult from within the body of an op.
 
@@ -530,6 +556,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context
 
+    @public  # type: ignore
     @property
     def retry_number(self) -> int:
         """
@@ -541,6 +568,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
     def describe_op(self):
         return self._step_execution_context.describe_op()
 
+    @public
     def get_mapping_key(self) -> Optional[str]:
         """
         Which mapping_key this execution is for if downstream of a DynamicOutput, otherwise None.
@@ -549,4 +577,22 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
 
 
 class OpExecutionContext(SolidExecutionContext):
-    pass
+    """The ``context`` object that can be made available as the first argument to an op's compute
+    function.
+
+    The context object provides system information such as resources, config,
+    and logging to an op's compute function. Users should not instantiate this
+    object directly. To construct an `OpExecutionContext` for testing
+    purposes, use :py:func:`dagster.build_op_context`.
+
+    Example:
+
+    .. code-block:: python
+
+        from dagster import op
+
+        @op
+        def hello_world(context: OpExecutionContext):
+            context.log.info("Hello, world!")
+
+    """

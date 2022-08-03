@@ -112,10 +112,15 @@ class BaseWorkspaceRequestContext(IWorkspace):
         if location_entry.repository_location:
             return location_entry.repository_location
 
-        error_info = cast(SerializableErrorInfo, location_entry.load_error)
-        raise DagsterRepositoryLocationLoadError(
-            f"Failure loading {location_name}: {error_info.to_string()}",
-            load_error_infos=[error_info],
+        if location_entry.load_error:
+            error_info = cast(SerializableErrorInfo, location_entry.load_error)
+            raise DagsterRepositoryLocationLoadError(
+                f"Failure loading {location_name}: {error_info.to_string()}",
+                load_error_infos=[error_info],
+            )
+
+        raise DagsterRepositoryLocationNotFoundError(
+            f"Location {location_name} is still loading",
         )
 
     @property
@@ -172,14 +177,13 @@ class BaseWorkspaceRequestContext(IWorkspace):
 
     def has_external_pipeline(self, selector: PipelineSelector) -> bool:
         check.inst_param(selector, "selector", PipelineSelector)
+        if not self.has_repository_location(selector.location_name):
+            return False
+
         loc = self.get_repository_location(selector.location_name)
-        return (
-            loc is not None
-            and loc.has_repository(selector.repository_name)
-            and loc.get_repository(selector.repository_name).has_external_pipeline(
-                selector.pipeline_name
-            )
-        )
+        return loc.has_repository(selector.repository_name) and loc.get_repository(
+            selector.repository_name
+        ).has_external_pipeline(selector.pipeline_name)
 
     def get_full_external_pipeline(self, selector: PipelineSelector) -> ExternalPipeline:
         return (

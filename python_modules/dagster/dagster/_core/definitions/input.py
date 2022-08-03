@@ -1,3 +1,4 @@
+import inspect
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -326,7 +327,15 @@ class InputDefinition:
 
 def _checked_inferred_type(inferred: InferredInputProps, decorator_name: str) -> DagsterType:
     try:
-        resolved_type = resolve_dagster_type(inferred.annotation)
+        if inferred.annotation == inspect.Parameter.empty:
+            resolved_type = resolve_dagster_type(None)
+        elif inferred.annotation is None:
+            # When inferred.annotation is None, it means someone explicitly put "None" as the
+            # annotation, so want to map it to a DagsterType that checks for the None type
+            resolved_type = resolve_dagster_type(type(None))
+        else:
+            resolved_type = resolve_dagster_type(inferred.annotation)
+
     except DagsterError as e:
         raise DagsterInvalidDefinitionError(
             f"Problem using type '{inferred.annotation}' from type annotation for argument "
@@ -372,13 +381,7 @@ class InputMapping(
         [("definition", InputDefinition), ("maps_to", Union[InputPointer, FanInInputPointer])],
     )
 ):
-    """Defines an input mapping for a composite solid.
-
-    Args:
-        definition (InputDefinition): Defines the input to the composite solid.
-        solid_name (str): The name of the child solid onto which to map the input.
-        input_name (str): The name of the input to the child solid onto which to map the input.
-    """
+    """Defines an input mapping for a graph."""
 
     def __new__(cls, definition: InputDefinition, maps_to: Union[InputPointer, FanInInputPointer]):
         return super(InputMapping, cls).__new__(

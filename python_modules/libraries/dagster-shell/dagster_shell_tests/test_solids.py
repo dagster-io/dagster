@@ -1,16 +1,11 @@
 import os
 
 import pytest
-from dagster_shell import (
-    create_shell_command_op,
-    create_shell_command_solid,
-    create_shell_script_op,
-    create_shell_script_solid,
-    shell_op,
-    shell_solid,
-)
+from dagster_shell import create_shell_command_op, create_shell_script_op, shell_op
+from dagster_shell.solids import create_shell_command_solid, create_shell_script_solid, shell_solid
 
-from dagster import Failure, OutputDefinition, composite_solid, execute_solid, job, op
+from dagster import Failure, job, op
+from dagster._legacy import OutputDefinition, composite_solid, execute_solid
 
 
 @pytest.mark.parametrize("factory", [create_shell_command_solid, create_shell_command_op])
@@ -90,7 +85,12 @@ def test_shell_command_stream_logs(factory):
         solid,
         run_config={
             "solids": {
-                "foobar": {"config": {"output_logging": "STREAM", "env": {"MY_ENV_VAR": "foobar"}}}
+                "foobar": {
+                    "config": {
+                        "output_logging": "STREAM",
+                        "env": {"MY_ENV_VAR": "foobar"},
+                    }
+                }
             }
         },
     )
@@ -122,7 +122,9 @@ def test_shell_script_solid_no_config_composite(factory):
     solid = factory(os.path.join(script_dir, "test.sh"), name="foobar")
 
     @composite_solid(
-        config_schema={}, config_fn=lambda cfg: {}, output_defs=[OutputDefinition(str, "result")]
+        config_schema={},
+        config_fn=lambda cfg: {},
+        output_defs=[OutputDefinition(str, "result")],
     )
     def composite():
         return solid()
@@ -162,7 +164,9 @@ def test_shell_script_solid_run_time_config_composite(factory, monkeypatch):
     solid = factory(os.path.join(script_dir, "test.sh"), name="foobar")
 
     @composite_solid(
-        config_schema={}, config_fn=lambda cfg: {}, output_defs=[OutputDefinition(str, "result")]
+        config_schema={},
+        config_fn=lambda cfg: {},
+        output_defs=[OutputDefinition(str, "result")],
     )
     def composite():
         return solid()

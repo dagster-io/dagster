@@ -2,6 +2,7 @@ import pytest
 
 from dagster import (
     AssetKey,
+    AssetOut,
     AssetSelection,
     AssetsDefinition,
     DagsterEventType,
@@ -18,7 +19,6 @@ from dagster import (
     io_manager,
     op,
     repository,
-    schedule_from_partitions,
 )
 from dagster._check import CheckError
 from dagster._core.definitions import asset, multi_asset
@@ -31,6 +31,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSu
 from dagster._core.execution.with_resources import with_resources
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import instance_for_test
+from dagster._legacy import schedule_from_partitions
 
 
 def _all_asset_keys(result):
@@ -105,9 +106,9 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
 
     @multi_asset(
         outs={
-            "a": Out(is_required=False),
-            "b": Out(is_required=False),
-            "c": Out(is_required=False),
+            "a": AssetOut(is_required=False),
+            "b": AssetOut(is_required=False),
+            "c": AssetOut(is_required=False),
         },
         internal_asset_deps={
             "a": {AssetKey("start")},
@@ -139,9 +140,9 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
 
     @multi_asset(
         outs={
-            "d": Out(is_required=False),
-            "e": Out(is_required=False),
-            "f": Out(is_required=False),
+            "d": AssetOut(is_required=False),
+            "e": AssetOut(is_required=False),
+            "f": AssetOut(is_required=False),
         },
         internal_asset_deps={
             "d": {AssetKey("a"), AssetKey("b")},
@@ -319,7 +320,11 @@ def test_simple_graph_backed_asset_subset(job_selection, expected_assets):
             "start,a,b,c,d",
             None,
         ),
-        (AssetSelection.keys("c").upstream() | AssetSelection.keys("final"), "b,c,final", None),
+        (
+            AssetSelection.keys("c").upstream() | AssetSelection.keys("final"),
+            "b,c,final",
+            None,
+        ),
         (AssetSelection.all(), "start,a,b,c,d,e,f,final", ["core", "models"]),
         (
             AssetSelection.keys("core/models/a").upstream(depth=1)
@@ -381,7 +386,16 @@ def test_define_selection_job(job_selection, expected_assets, use_multi, prefixe
             "final": 5,
         }
     else:
-        expected_outputs = {"start": 1, "a": 2, "b": 1, "c": 2, "d": 3, "e": 3, "f": 6, "final": 5}
+        expected_outputs = {
+            "start": 1,
+            "a": 2,
+            "b": 1,
+            "c": 2,
+            "d": 3,
+            "e": 3,
+            "f": 6,
+            "final": 5,
+        }
 
     # check if the output values are as we expect
     for output, value in expected_outputs.items():
@@ -491,7 +505,10 @@ def test_config():
 @pytest.mark.parametrize(
     "selection,config",
     [
-        (AssetSelection.keys("other_config_asset"), {"other_config_asset": {"config": {"val": 3}}}),
+        (
+            AssetSelection.keys("other_config_asset"),
+            {"other_config_asset": {"config": {"val": 3}}},
+        ),
         (
             AssetSelection.keys("other_config_asset").upstream(depth=1),
             {
@@ -519,7 +536,8 @@ def test_subselect_config(selection, config):
     io_manager_obj.db[AssetKey("config_asset")] = 1 + 2
 
     all_assets = with_resources(
-        [foo, config_asset, other_config_asset], resource_defs={"asset_io_manager": io_manager_def}
+        [foo, config_asset, other_config_asset],
+        resource_defs={"asset_io_manager": io_manager_def},
     )
     job = define_asset_job("config_job", config={"ops": config}, selection=selection).resolve(
         assets=all_assets, source_assets=[]

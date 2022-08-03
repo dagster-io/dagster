@@ -14,7 +14,7 @@ import sqlalchemy as db
 
 from dagster import AssetKey, AssetMaterialization, Output
 from dagster import _check as check
-from dagster import execute_pipeline, file_relative_path, job
+from dagster import file_relative_path, job
 from dagster._cli.debug import DebugRunPayload
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.events import DagsterEvent
@@ -27,7 +27,7 @@ from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
-from dagster._legacy import pipeline, solid
+from dagster._legacy import execute_pipeline, pipeline, solid
 from dagster._serdes import DefaultNamedTupleSerializer, create_snapshot_id
 from dagster._serdes.serdes import (
     WhitelistMap,
@@ -628,7 +628,10 @@ def test_external_job_origin_instigator_origin():
 
         @_whitelist_for_serdes(legacy_env)
         class ExternalRepositoryOrigin(
-            namedtuple("_ExternalRepositoryOrigin", "repository_location_origin repository_name")
+            namedtuple(
+                "_ExternalRepositoryOrigin",
+                "repository_location_origin repository_name",
+            )
         ):
             def get_id(self):
                 return create_snapshot_id(self)

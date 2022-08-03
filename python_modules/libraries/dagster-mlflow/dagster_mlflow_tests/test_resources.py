@@ -15,8 +15,7 @@ import pandas as pd
 import pytest
 from dagster_mlflow.resources import MlFlow, mlflow_tracking
 
-from dagster import ModeDefinition, execute_pipeline
-from dagster._legacy import pipeline, solid
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
 
 
 @pytest.fixture
@@ -83,7 +82,7 @@ def child_context(basic_context, mlflow_run_config):
         resource_config=resource_config,
         log=basic_context.log,
         run_id=str(uuid.uuid4()),
-        pipeline_run=basic_context.pipeline_run,
+        dagster_run=basic_context.dagster_ryn,
         extra_tags={"wala": "lala"},
     )
 
@@ -119,7 +118,7 @@ def test_mlflow_constructor_basic(
 
     # - the context associated attributes passed have been set
     assert mlf.log == context.log
-    assert mlf.run_name == context.pipeline_run.pipeline_name
+    assert mlf.run_name == context.dagster_run.pipeline_name
     assert mlf.dagster_run_id == context.run_id
 
     # - the tracking URI is the same as what was passed
@@ -191,7 +190,10 @@ def test_start_run(mock_start_run, context):
 @patch("mlflow.end_run")
 @pytest.mark.parametrize("any_error", [KeyboardInterrupt(), OSError(), RuntimeError(), None])
 def test_cleanup_on_error(
-    mock_mlflow_end_run, any_error, context, cleanup_mlflow_runs  # pylint: disable=unused-argument
+    mock_mlflow_end_run,
+    any_error,
+    context,
+    cleanup_mlflow_runs,  # pylint: disable=unused-argument
 ):
     with patch.object(MlFlow, "_setup"):
         # Given: a context  passed into the __init__ for MlFlow

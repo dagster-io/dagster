@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Type
+from typing import Any, Callable, Dict, List, NamedTuple, Optional
 
 from dagster._seven import funcsigs, is_module_available
 
@@ -55,9 +55,9 @@ def _infer_output_description_from_docstring(fn: Callable) -> Optional[str]:
 def infer_output_props(fn: Callable) -> InferredOutputProps:
     signature = funcsigs.signature(fn)
 
-    annotation = None
+    annotation = inspect.Parameter.empty
     if not inspect.isgeneratorfunction(fn):
-        annotation = _coerce_annotation(signature.return_annotation)
+        annotation = signature.return_annotation
 
     return InferredOutputProps(
         annotation=annotation,
@@ -70,12 +70,6 @@ def has_explicit_return_type(fn: Callable) -> bool:
     return not signature.return_annotation is funcsigs.Signature.empty
 
 
-def _coerce_annotation(type_annotation: Type) -> Optional[Type]:
-    if type_annotation is not inspect.Parameter.empty:
-        return type_annotation
-    return None
-
-
 def _infer_inputs_from_params(
     params: List[funcsigs.Parameter],
     descriptions: Optional[Dict[str, Optional[str]]] = None,
@@ -86,14 +80,14 @@ def _infer_inputs_from_params(
         if param.default is not funcsigs.Parameter.empty:
             input_def = InferredInputProps(
                 param.name,
-                _coerce_annotation(param.annotation),
+                param.annotation,
                 default_value=param.default,
                 description=descriptions.get(param.name),
             )
         else:
             input_def = InferredInputProps(
                 param.name,
-                _coerce_annotation(param.annotation),
+                param.annotation,
                 description=descriptions.get(param.name),
             )
 

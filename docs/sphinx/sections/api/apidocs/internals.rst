@@ -85,13 +85,9 @@ Run storage
 
 .. currentmodule:: dagster
 
-.. autoclass:: PipelineRun
+.. autoclass:: DagsterRun
 
 .. autoclass:: DagsterRunStatus
-   :members:
-   :undoc-members:
-
-.. autoclass:: PipelineRunStatus
    :members:
    :undoc-members:
 
