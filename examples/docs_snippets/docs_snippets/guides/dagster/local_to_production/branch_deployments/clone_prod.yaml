@@ -1,4 +1,4 @@
-# /.github/workflows/branch_deployments.yml
+# .github/workflows/branch_deployments.yml
 
 name: Dagster Branch Deployments
   on:
@@ -6,7 +6,6 @@ name: Dagster Branch Deployments
       types: [opened, synchronize, reopened, closed]
   env:
     DAGSTER_CLOUD_URL: ${{ secrets.DAGSTER_CLOUD_URL }}
-    REGISTRY_URL: ${{ secrets.REGISTRY_URL }}
 
   jobs:
     dagster_cloud_build_push:
