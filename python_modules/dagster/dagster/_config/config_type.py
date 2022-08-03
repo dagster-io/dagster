@@ -3,6 +3,7 @@ from enum import Enum as PythonEnum
 from typing import Dict, List, Optional, cast
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._builtins import BuiltinEnum
 from dagster._config import UserConfigSchema
 from dagster._serdes import whitelist_for_serdes
@@ -205,6 +206,7 @@ class Array(ConfigType):
             kind=ConfigTypeKind.ARRAY,
         )
 
+    @public  # type: ignore
     @property
     def description(self):
         return "List of {inner_type}".format(inner_type=self.key)

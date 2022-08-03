@@ -5,3 +5,226 @@ noindex: True
 ---
 
 # Setting up alerts in Dagster Cloud
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+In this guide, we'll walk you through configuring job alerts in Dagster Cloud.
+
+---
+
+## Understanding alert policies
+
+Alert policies define which jobs will trigger an alert, the conditions under which an alert will be sent, and how the alert will be sent.
+
+An alert policy includes a set of configured tags. If an alert policy has no configured tags, all jobs will be eligible for that alert. Otherwise, only jobs that contain all the tags for a given alert policy are eligible for that alert.
+
+Currently, Slack and email notifications are supported.
+
+---
+
+## Managing alert policies in Dagster Cloud
+
+<Note>
+  <strong>Organization Admin</strong> or <strong>Admin</strong> permissions are
+  required to manage alerts in Dagster Cloud.
+</Note>
+
+- [Creating alert policies](#creating-alert-policies)
+- [Editing alert policies](#editing-alert-policies)
+- [Enabling and disabling alert policies](#enabling-and-disabling-alert-policies)
+- [Deleting alert policies](#deleting-alert-policies)
+
+### Creating alert policies
+
+1. Sign in to your Dagster Cloud account.
+
+2. Click the **user menu (your icon) > Cloud Settings**.
+
+3. Click the **Alerts** tab.
+
+4. Click **+ Create alert policy**.
+
+5. In the **Create alert policy** window, fill in the following:
+
+   - **Alert policy name** - Enter a name for the alert policy. For example, `slack_urgent_failure`
+   - **Description** - Enter a description for the alert policy
+   - **Tags** - Add tag(s) for the alert policy. Jobs with these tags will trigger the alert. For example: `level:critical` or `team:sales`
+   - **Events** - Select whether the alert should trigger on job success, failure, or both
+   - **Notification service** - Select the service for the alert policy:
+
+     - **Slack** - If you haven't connected Slack, click **Connect** to add the Dagster Cloud Slack app to your workspace. After the installation completes, invite the bot user to the desired channel.
+
+       You can then configure the alert policy to message this channel. **Note**: Only messaging one channel per alert policy is currently supported:
+
+       <Image
+       alt="Slack alert configured to alert the sales-notifications channel"
+       src="/images/dagster-cloud/alerts/cloud-slack-alert-creation.png"
+       width={1580}
+       height={511}
+       />
+
+     - **Email** - Email alerts can be sent to one or more recipients. For example:
+
+       <Image
+       alt="Email alert configured to alert two recipients"
+       src="/images/dagster-cloud/alerts/cloud-email-alert-creation.png"
+       width={1571}
+       height={514}
+       />
+
+6. When finished, click **Save policy**.
+
+### Editing alert policies
+
+To edit an existing alert policy, click the **Edit** button next to the policy:
+
+<Image
+alt="Highlighted Edit button next to an alert policy in Dagster Cloud"
+src="/images/dagster-cloud/alerts/edit-alert-policy.png"
+width={1349}
+height={153}
+/>
+
+### Enabling and disabling alert policies
+
+To enable or disable an alert, use the toggle on the left side of the alert policy:
+
+<Image
+alt="Enabling and disabling an alert policy in Dagster Cloud"
+src="/images/dagster-cloud/alerts/enable-disable-alert-policy.gif"
+width={822}
+height={158}
+/>
+
+### Deleting alert policies
+
+To delete an alert policy, click the **Delete** button next to the policy. When prompted, confirm the deletion.
+
+<Image
+alt="Highlighted Delete button next to an alert policy in Dagster Cloud"
+src="/images/dagster-cloud/alerts/delete-alert-policy.png"
+width={1349}
+height={153}
+/>
+
+---
+
+## Managing alert policies with the dagster-cloud CLI
+
+With the [`dagster-cloud` CLI](/dagster-cloud/developing-testing/dagster-cloud-cli), you can:
+
+- [Set an instance deployment's policies](#setting-an-instance-deployments-policies)
+- [View an instance deployment's policies](#viewing-an-instance-deployments-policies)
+- [Configure a Slack alert policy](#configuring-a-slack-alert-policy)
+- [Configure an email alert policy](#configuring-an-email-alert-policy)
+
+### Setting an instance deployment's policies
+
+A list of alert policies can be defined in a single YAML file. After declaring your policies, set them for your instance deployment using the following command:
+
+```bash
+dagster-cloud deployment alert-policies sync -a <ALERT_POLICIES_PATH>
+```
+
+### Viewing an instance deployment's policies
+
+List the policies currently configured on your instance deployment by running:
+
+```bash
+dagster-cloud deployment alert-policies list
+```
+
+### Configuring a Slack alert policy
+
+In this example, we'll configure a Slack notification to trigger whenever a run of a job succeeds or fails. This job, named `sales_job`, has a `team` tag of `sales`:
+
+```python
+@op
+def sales_computation():
+    ...
+
+
+@job(tags={"team": "sales"})
+def sales_job():
+    sales_computation()
+```
+
+In the alert policies YAML file, we'll define a policy that listens for jobs with a `team` tag of `sales` to succeed or fail. When this occurs, a notification will be sent to the `sales-notification` channel in the `hooli` workspace:
+
+```yaml
+alert_policies:
+  - name: "slack-alert-policy"
+    description: "An alert policy to send a Slack notification to sales on job failure or success."
+    tags:
+      - key: "team"
+        value: "sales"
+    event_types:
+      - "JOB_SUCCESS"
+      - "JOB_FAILURE"
+    notification_service:
+      slack:
+        slack_workspace_name: "hooli"
+        slack_channel_name: "sales-notifications"
+```
+
+### Configuring an email alert policy
+
+In this example, we'll configure an email alert when a job fails. This job, named `important_job`, has a `level` tag of `"critical"`:
+
+```python
+def important_computation():
+    ...
+
+
+@job(tags={"level": "critical"})
+def important_job():
+    important_computation()
+```
+
+In the alert policies YAML file, we'll define a policy that listens for jobs with a `level` tag of `critical` to fail. When this occurs, an email notification will be sent to `richard.hendricks@hooli.com` and `nelson.bighetti@hooli.com`:
+
+```yaml
+alert_policies:
+  - name: "email-alert-policy"
+    description: "An alert policy to email company executives during job failure."
+    tags:
+      - key: "level"
+        value: "critical"
+    event_types:
+      - "JOB_FAILURE"
+    notification_service:
+      email:
+        email_addresses:
+          - "richard.hendricks@hooli.com"
+          - "nelson.bighetti@hooli.com"
+```
+
+---
+
+## Using system tags to configure alert emails
+
+For a job, alert emails can be configured by setting the `dagster-cloud/alert_emails` tag on a job. When a job run fails, a notification will be sent to the alert emails.
+
+In this example, we've defined two alert emails for the `important_job` job: `richard.hendricks@hooli.com` and `nelson.bighetti@hooli.com`. On run failure, these two emails will be sent a notification:
+
+```python
+from dagster import job, op
+from dagster_cloud import ALERT_EMAILS_TAG
+
+
+@op
+def important_computation():
+    ...
+
+
+@job(
+    tags={
+        ALERT_EMAILS_TAG: [
+            "richard.hendricks@hooli.com",
+            "nelson.bighetti@hooli.com",
+        ]
+    }
+)
+def important_job():
+    important_computation()
+```

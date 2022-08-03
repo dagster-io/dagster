@@ -184,7 +184,12 @@ from dagster._core.definitions.utils import (
     config_from_pkg_resources,
     config_from_yaml_strings,
 )
-from dagster._core.definitions.version_strategy import SourceHashVersionStrategy, VersionStrategy
+from dagster._core.definitions.version_strategy import (
+    OpVersionContext,
+    ResourceVersionContext,
+    SourceHashVersionStrategy,
+    VersionStrategy,
+)
 from dagster._core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterError,
@@ -291,7 +296,6 @@ from dagster._utils.log import get_dagster_logger
 
 if typing.TYPE_CHECKING:
     # pylint:disable=reimported
-
     from dagster._core.types.config_schema import DagsterTypeMaterializer, dagster_type_materializer
 
     # pylint:enable=reimported
@@ -300,12 +304,12 @@ _DEPRECATED = {
     "dagster_type_materializer": (
         "dagster._core.types.config_schema",
         "1.1.0",
-        "Instead, use an input manager or root input manager.",
+        "Instead, use an IOManager.",
     ),
     "DagsterTypeMaterializer": (
         "dagster._core.types.config_schema",
         "1.1.0",
-        "Instead, use an input manager or root input manager.",
+        "Instead, use an IOManager.",
     ),
 }
 
@@ -608,6 +612,8 @@ __all__ = [
     "MEMOIZED_RUN_TAG",
     "MemoizableIOManager",
     "SourceHashVersionStrategy",
+    "OpVersionContext",
+    "ResourceVersionContext",
     "colored_console_logger",
     "default_loggers",
     "default_system_loggers",

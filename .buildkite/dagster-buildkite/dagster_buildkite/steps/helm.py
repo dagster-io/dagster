@@ -14,7 +14,6 @@ def build_helm_steps() -> List[BuildkiteStep]:
         os.path.join("helm", "dagster", "schema"),
         unsupported_python_versions=[
             # run helm schema tests only once, on the latest python version
-            AvailablePythonVersion.V3_6,
             AvailablePythonVersion.V3_7,
             AvailablePythonVersion.V3_8,
         ],
