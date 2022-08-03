@@ -17,6 +17,7 @@ EXAMPLES_TO_IGNORE = ["docs_snippets"]
 AVAILABLE_EXAMPLES = [
     "assets_dbt_python",
     "assets_modern_data_stack",
+    "assets_pandas_pyspark",
     "bollinger",
     "deploy_docker",
     "deploy_ecs",
