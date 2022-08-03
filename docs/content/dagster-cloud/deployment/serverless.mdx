@@ -16,7 +16,7 @@ Serverless works best with lightweight jobs that do not require significant comp
 
 Serverless is not the right fit for all workloads. If any of the following are applicable, you should select [Hybrid deployment](/dagster-cloud/deployment/hybrid):
 
-- Dagster jobs require substantial computation resources. For example, training a large machine learning (ML) model in-process.
+- You require substantial computation resources. For example, training a large machine learning (ML) model in-process.
 - You need access to private services or data within your own cloud or on-prem environment
 - You don't want to add Elementl as a data processor
 
@@ -32,7 +32,6 @@ Serverless is currently in early access and is subject to the following limitati
 - Sensors receive 0.25 vCPU cores and 512 MB of RAM
 - The Serverless base image is `debian:bullseye-slim`. Custom Dockerfiles are not supported.
 - All Serverless jobs run in the United States
-- Only HTTP(S) to the open internet is supported
 
 Enterprise customers may request a quota increase by [contacting Sales](mailto:sales@elementl.com).
 
@@ -55,3 +54,13 @@ dagster-cloud serverless --help
 If your organization begins to hit the limitations of Serverless, you should transition to a Hybrid deployment. Hybrid deployments allow you to run an [agent in your own infrastructure](/dagster-cloud/deployment/agents) and give you substantially more flexibility and control over the Dagster environment.
 
 To switch to Hybrid, navigate to **Status > Agents** in your Dagster Cloud account. On this page, you can disable the Serverless agent on and view instructions for enabling Hybrid.
+
+---
+
+## Security and data protection
+
+Unlike Hybrid, Serverless Deployments on Dagster Cloud require direct access to your data, secrets and source code.
+* Dagster Cloud Serverless does not provide persistent storage. Ephemeral storage is deleted when a run concludes.
+* Secrets and source code are built into the image directly. Images are stored in a per-customer container registry with restricted access.
+* User code is securely sandboxed using modern container sandboxing techniques.
+* All production access is governed by industry-standard best practices which are regularly audited.
