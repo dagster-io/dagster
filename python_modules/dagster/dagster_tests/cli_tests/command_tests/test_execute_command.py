@@ -20,7 +20,7 @@ from .test_cli_commands import (
 )
 
 
-def test_execute_mode_command():
+def test_execute_with_config_command():
     runner = CliRunner()
 
     with instance_for_test():
@@ -32,13 +32,9 @@ def test_execute_mode_command():
                 "-a",
                 "dagster_test_repository",
                 "--config",
-                file_relative_path(
-                    __file__, "../../environments/multi_mode_with_resources/add_mode.yaml"
-                ),
-                "--mode",
-                "add_mode",
-                "-p",
-                "multi_mode_with_resources",  # pipeline name
+                file_relative_path(__file__, "../../environments/adder_job.yaml"),
+                "-j",
+                "adder_job",  # job name
             ],
         )
 
@@ -52,13 +48,9 @@ def test_execute_mode_command():
                 "-a",
                 "dagster_test_repository",
                 "--config",
-                file_relative_path(
-                    __file__, "../../environments/multi_mode_with_resources/mult_mode.yaml"
-                ),
-                "--mode",
-                "mult_mode",
-                "-p",
-                "multi_mode_with_resources",  # pipeline name
+                file_relative_path(__file__, "../../environments/multer_job.yaml"),
+                "-j",
+                "multer_job",  # job name
             ],
         )
 
@@ -72,13 +64,9 @@ def test_execute_mode_command():
                 "-a",
                 "dagster_test_repository",
                 "--config",
-                file_relative_path(
-                    __file__, "../../environments/multi_mode_with_resources/double_adder_mode.yaml"
-                ),
-                "--mode",
-                "double_adder_mode",
-                "-p",
-                "multi_mode_with_resources",  # pipeline name
+                file_relative_path(__file__, "../../environments/double_adder_job.yaml"),
+                "-j",
+                "double_adder_job",  # job name
             ],
         )
 
@@ -92,26 +80,6 @@ def test_empty_execute_command():
         result = runner.invoke(job_execute_command, [])
         assert result.exit_code == 2
         assert "Must specify a python file or module name" in result.output
-
-
-def test_execute_preset_command():
-    with instance_for_test():
-        runner = CliRunner()
-        add_result = runner_pipeline_or_job_execute(
-            runner,
-            [
-                "-f",
-                file_relative_path(__file__, "../../general_tests/test_repository.py"),
-                "-a",
-                "dagster_test_repository",
-                "--preset",
-                "add",
-                "-p",
-                "multi_mode_with_resources",  # pipeline name
-            ],
-        )
-
-        assert "RUN_SUCCESS" in add_result.output
 
 
 @pytest.mark.parametrize("gen_execute_args", pipeline_or_job_python_origin_contexts())
@@ -498,21 +466,20 @@ def test_tags_pipeline_or_job():
         assert len(run.tags) == 1
         assert run.tags.get("foo") == "bar"
 
-    # TODO figure out how to handle general_tests test_repository 
     with instance_for_test() as instance:
         result = runner.invoke(
-            pipeline_execute_command,
+            job_execute_command,
             [
                 "-f",
                 file_relative_path(__file__, "../../general_tests/test_repository.py"),
                 "-a",
                 "dagster_test_repository",
-                "--preset",
-                "add",
                 "--tags",
                 '{ "foo": "bar" }',
-                "-p",
-                "multi_mode_with_resources",  # pipeline name
+                "--config",
+                file_relative_path(__file__, "../../environments/adder_job.yaml"),
+                "-j",
+                "adder_job",  # job name
             ],
         )
         assert result.exit_code == 0
@@ -523,107 +490,8 @@ def test_tags_pipeline_or_job():
         assert run.tags.get("foo") == "bar"
 
 
-def test_execute_subset_pipeline_single_clause_solid_name():
-    runner = CliRunner()
-    with instance_for_test() as instance:
-        result = runner.invoke(
-            pipeline_execute_command,
-            [
-                "-f",
-                file_relative_path(__file__, "test_cli_commands.py"),
-                "-a",
-                "foo_pipeline",
-                "--solid-selection",
-                "do_something",
-            ],
-        )
-        assert result.exit_code == 0
-        runs = instance.get_runs()
-        assert len(runs) == 1
-        run = runs[0]
-        assert run.solid_selection == ["do_something"]
-        assert run.solids_to_execute == {"do_something"}
-
-
-def test_execute_subset_pipeline_single_clause_dsl():
-    runner = CliRunner()
-    with instance_for_test() as instance:
-        result = runner.invoke(
-            pipeline_execute_command,
-            [
-                "-f",
-                file_relative_path(__file__, "test_cli_commands.py"),
-                "-a",
-                "foo_pipeline",
-                "--solid-selection",
-                "*do_something+",
-            ],
-        )
-        assert result.exit_code == 0
-        runs = instance.get_runs()
-        assert len(runs) == 1
-        run = runs[0]
-        assert run.solid_selection == ["*do_something+"]
-        assert run.solids_to_execute == {"do_something", "do_input"}
-
-
-def test_execute_subset_pipeline_multiple_clauses_dsl_and_solid_name():
-    runner = CliRunner()
-    with instance_for_test() as instance:
-        result = runner.invoke(
-            pipeline_execute_command,
-            [
-                "-f",
-                file_relative_path(__file__, "test_cli_commands.py"),
-                "-a",
-                "foo_pipeline",
-                "--solid-selection",
-                "*do_something+,do_input",
-            ],
-        )
-        assert result.exit_code == 0
-        runs = instance.get_runs()
-        assert len(runs) == 1
-        run = runs[0]
-        assert set(run.solid_selection) == set(["*do_something+", "do_input"])
-        assert run.solids_to_execute == {"do_something", "do_input"}
-
-
-def test_execute_subset_pipeline_invalid():
-    runner = CliRunner()
-    with instance_for_test():
-        result = runner.invoke(
-            pipeline_execute_command,
-            [
-                "-f",
-                file_relative_path(__file__, "test_cli_commands.py"),
-                "-a",
-                "foo_pipeline",
-                "--solid-selection",
-                "a, b",
-            ],
-        )
-        assert result.exit_code == 1
-        assert "No qualified solids to execute found for solid_selection" in str(result.exception)
-
-
 def test_empty_working_directory():
     runner = CliRunner()
-
-    with instance_for_test() as instance:
-        with new_cwd(os.path.dirname(__file__)):
-            result = runner.invoke(
-                pipeline_execute_command,
-                [
-                    "-f",
-                    file_relative_path(__file__, "file_with_local_import.py"),
-                    "-a",
-                    "foo_pipeline",
-                ],
-            )
-            assert result.exit_code == 0
-            runs = instance.get_runs()
-            assert len(runs) == 1
 
     with instance_for_test() as instance:
         with new_cwd(os.path.dirname(__file__)):

@@ -227,7 +227,7 @@ def test_default_working_directory():
 def test_launch_using_memoization():
     runner = CliRunner()
     with default_cli_test_instance() as instance:
-        with python_bar_cli_args("memoizable", True) as args:
+        with python_bar_cli_args("memoizable_job", True) as args:
             result = runner.invoke(job_launch_command, args + ["--run-id", "first"])
             assert result.exit_code == 0
             run = instance.get_run_by_id("first")

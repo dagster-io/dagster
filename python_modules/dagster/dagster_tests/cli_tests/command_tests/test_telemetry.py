@@ -133,7 +133,7 @@ def test_repo_stats(caplog):
         with instance_for_test(temp_dir=temp_dir, overrides={"telemetry": {"enabled": True}}):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             with pushd(path_to_file("")):
-                pipeline_name = "multi_mode_with_resources"
+                job_name = "double_adder_job"
                 result = runner.invoke(
                     job_execute_command,
                     [
@@ -141,10 +141,10 @@ def test_repo_stats(caplog):
                         file_relative_path(__file__, "../../general_tests/test_repository.py"),
                         "-a",
                         "dagster_test_repository",
-                        "-p",
-                        pipeline_name,
-                        "--preset",
-                        "add",
+                        "--config",
+                        file_relative_path(__file__, "../../environments/double_adder_job.yaml"),
+                        "-j",
+                        job_name,
                         "--tags",
                         '{ "foo": "bar" }',
                     ],
@@ -156,7 +156,7 @@ def test_repo_stats(caplog):
                     message = json.loads(record.getMessage())
                     if message.get("action") == UPDATE_REPO_STATS:
                         metadata = message.get("metadata")
-                        assert metadata.get("pipeline_name_hash") == hash_name(pipeline_name)
+                        assert metadata.get("pipeline_name_hash") == hash_name(job_name)
                         assert metadata.get("num_pipelines_in_repo") == str(4)
                         assert metadata.get("repo_hash") == hash_name("dagster_test_repository")
                     assert set(message.keys()) == EXPECTED_KEYS

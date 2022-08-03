@@ -69,7 +69,7 @@ def test_valid_loading_combos_single_pipeline_repo_location(cli_args):
 
 def test_repository_target_argument_one_repo_and_specified_wrong():
     result, _ = load_pipeline_via_cli_runner(
-        ["-w", PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE, "-p", "not_present"]
+        ["-w", PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE, "-j", "not_present"]
     )
 
     assert result.exit_code == 2
@@ -85,14 +85,14 @@ MULTI_PIPELINE_WORKSPACE = file_relative_path(__file__, "multi_pipeline/multi_pi
 def test_successfully_find_pipeline():
     assert (
         successfully_load_pipeline_via_cli(
-            ["-w", MULTI_PIPELINE_WORKSPACE, "-p", "pipeline_one"]
+            ["-w", MULTI_PIPELINE_WORKSPACE, "-j", "pipeline_one"]
         ).name
         == "pipeline_one"
     )
 
     assert (
         successfully_load_pipeline_via_cli(
-            ["-w", MULTI_PIPELINE_WORKSPACE, "-p", "pipeline_two"]
+            ["-w", MULTI_PIPELINE_WORKSPACE, "-j", "pipeline_two"]
         ).name
         == "pipeline_two"
     )
@@ -103,6 +103,6 @@ def test_must_provide_name_to_multi_pipeline():
 
     assert result.exit_code == 2
     assert (
-        """Must provide --pipeline as there is more than one pipeline/job in """
+        """Must provide --job as there is more than one pipeline/job in """
         """multi_pipeline. Options are: ['pipeline_one', 'pipeline_two']."""
     ) in result.stdout

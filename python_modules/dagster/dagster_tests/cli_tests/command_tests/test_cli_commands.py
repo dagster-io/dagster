@@ -213,7 +213,7 @@ def bar():
             "partitioned_scheduled_pipeline": partitioned_scheduled_pipeline,
             "memoizable": memoizable_pipeline,
         },
-        "jobs": {"qux": qux_job, "quux": quux_job, "memoizable": memoizable_job},
+        "jobs": {"qux": qux_job, "quux": quux_job, "memoizable_job": memoizable_job},
         "schedules": define_bar_schedules(),
         "partition_sets": define_bar_partitions(),
         "sensors": define_bar_sensors(),
@@ -826,10 +826,10 @@ def test_run_list_limit():
                 file_relative_path(__file__, "../../general_tests/test_repository.py"),
                 "-a",
                 "dagster_test_repository",
-                "--preset",
-                "add",
-                "-p",
-                "multi_mode_with_resources",  # pipeline name
+                "--config",
+                file_relative_path(__file__, "../../environments/double_adder_job.yaml"),
+                "-j",
+                "double_adder_job",  # job name
             ],
         )
 
@@ -840,10 +840,10 @@ def test_run_list_limit():
                 file_relative_path(__file__, "../../general_tests/test_repository.py"),
                 "-a",
                 "dagster_test_repository",
-                "--preset",
-                "add",
-                "-p",
-                "multi_mode_with_resources",  # pipeline name
+                "--config",
+                file_relative_path(__file__, "../../environments/double_adder_job.yaml"),
+                "-j",
+                "double_adder_job",  # job name
             ],
         )
 
@@ -851,19 +851,19 @@ def test_run_list_limit():
         result = runner.invoke(run_list_command, args="--limit 1")
         assert result.exit_code == 0
         assert result.output.count("Run: ") == 1
-        assert result.output.count("Pipeline: multi_mode_with_resources") == 1
+        assert result.output.count("Job: double_adder_job") == 1
 
         # Shows two runs because of the limit argument is now 2
         two_results = runner.invoke(run_list_command, args="--limit 2")
         assert two_results.exit_code == 0
         assert two_results.output.count("Run: ") == 2
-        assert two_results.output.count("Pipeline: multi_mode_with_resources") == 2
+        assert two_results.output.count("Job: double_adder_job") == 2
 
         # Should only shows two runs although the limit argument is 3 because there are only 2 runs
         shows_two_results = runner.invoke(run_list_command, args="--limit 3")
         assert shows_two_results.exit_code == 0
         assert shows_two_results.output.count("Run: ") == 2
-        assert shows_two_results.output.count("Pipeline: multi_mode_with_resources") == 2
+        assert shows_two_results.output.count("Job: double_adder_job") == 2
 
 
 def runner_pipeline_or_job_execute(runner, cli_args):
