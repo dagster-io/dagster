@@ -10,7 +10,7 @@ platform_type: "cloud"
 
 Welcome to Dagster Cloud!
 
-In this guide, we'll give you everything you need to get up and running with Dagster Cloud. We'll walk you through setting up your Dagster Cloud account, configuring deployment, loading your code, launching your first run, and configuring continuous integration.
+In this guide, we'll give you everything you need to get up and running with Dagster Cloud. We'll walk you through setting up your Dagster Cloud account, selecting a deployment type, loading your code, launching your first run, and configuring continuous integration.
 
 ---
 
@@ -26,7 +26,7 @@ You can either use your own code or our [sample code (`dagster-cloud-examples`)]
 
 If you don't already have a Dagster Cloud account, [sign up for one](https://dagster.cloud/) before continuing.
 
-You'll also be asked to create a **Dagster Cloud organization.** When your organization is created, a single instance deployment, named `prod`, will also be created.
+You'll also be asked to create a **Dagster Cloud organization.** When your organization is created, a single instance deployment, named `prod`, will also be created. Instance deployments are similar to environments in that they allow you to operate independent instances of Dagster, with separately managed permissions.
 
 ---
 
@@ -54,11 +54,15 @@ Dagster Cloud currently supports the following agents:
 
 ### Serverless deployment
 
+<Note>
+  Serverless deployment is currently in <strong>early access</strong>.
+</Note>
+
 Serverless deployment is a fully-managed version of Dagster Cloud that allows you to run your Dagster jobs without spinning up any infrastructure. While Serverless is the easiest way to get started with Dagster, this deployment type works best with jobs that aren't computationally expensive. Refer to the [Serverless guide](/dagster-cloud/deployment/serverless) for more info.
 
 If you find that Serverless isn't right for you, you can switch to a hybrid deployment at any time.
 
-**To use this deployment type**, click **Activate** and confirm when prompted. **Note**: It may take a few minutes to complete the setup.
+**To use this deployment type**, click **Select** and confirm when prompted. **Note**: It may take a few minutes to complete the setup.
 
 ---
 
