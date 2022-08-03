@@ -4,9 +4,9 @@
 import os
 import sys
 
-import assets_type_metadata.lib as bol
+import assets_pandas_type_metadata.lib as bol
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "../../assets_type_metadata"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../assets_pandas_type_metadata"))
 
 
 path = bol.normalize_path("all_stocks_5yr.csv")

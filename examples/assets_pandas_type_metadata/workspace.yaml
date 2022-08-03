@@ -1,2 +1,2 @@
 load_from:
-  - python_package: assets_type_metadata
+  - python_package: assets_pandas_type_metadata
