@@ -79,5 +79,5 @@ make_and_filter_data_emr = make_and_filter_data.to_job(name="prod", resource_def
 
 
 @repository
-def emr_pyspark_example():
+def with_pyspark_emr():
     return [make_and_filter_data_emr, make_and_filter_data_local]
