@@ -1,13 +1,6 @@
 import os
 
-
-from dagster import (
-    AssetSelection,
-    define_asset_job,
-    repository,
-    with_resources,
-    build_schedule_from_partitioned_job,
-)
+from dagster import AssetSelection, define_asset_job, repository, with_resources
 
 from .assets import (
     ACTIVITY_ANALYTICS,
@@ -18,12 +11,9 @@ from .assets import (
     dbt_assets,
     recommender_assets,
 )
-from .partitions import hourly_partitions
+from .jobs import core_assets_schedule
 from .resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
-from .sensors import (
-    make_hn_tables_updated_sensor,
-    make_slack_on_failure_sensor,
-)
+from .sensors import make_hn_tables_updated_sensor, make_slack_on_failure_sensor
 
 all_assets = [*core_assets, *recommender_assets, *dbt_assets, *activity_analytics_assets]
 
@@ -34,23 +24,6 @@ activity_analytics_assets_sensor = make_hn_tables_updated_sensor(
 
 recommender_assets_sensor = make_hn_tables_updated_sensor(
     define_asset_job("story_recommender_job", selection=AssetSelection.groups(RECOMMENDER))
-)
-
-core_assets_schedule = build_schedule_from_partitioned_job(
-    define_asset_job(
-        "core_job",
-        selection=AssetSelection.groups(CORE),
-        tags={
-            "dagster-k8s/config": {
-                "container_config": {
-                    "resources": {
-                        "requests": {"cpu": "500m", "memory": "2Gi"},
-                    }
-                },
-            }
-        },
-        partitions_def=hourly_partitions,
-    )
 )
 
 resource_defs_by_deployment_name = {
