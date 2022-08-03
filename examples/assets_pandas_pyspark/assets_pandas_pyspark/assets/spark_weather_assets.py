@@ -79,11 +79,11 @@ class LocalFileSystemIOManager(IOManager):
 # io_manager_end
 
 # gather_assets_start
-from . import assets, spark_asset
+from . import table_assets, spark_asset
 from dagster import load_assets_from_modules, with_resources
 
 spark_weather_assets = with_resources(
-    load_assets_from_modules(modules=[assets, spark_asset]),
+    load_assets_from_modules(modules=[table_assets, spark_asset]),
     resource_defs={
         "io_manager": IOManagerDefinition.hardcoded_io_manager(LocalFileSystemIOManager())
     },

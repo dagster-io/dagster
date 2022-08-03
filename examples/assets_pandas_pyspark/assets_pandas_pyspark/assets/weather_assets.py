@@ -35,11 +35,11 @@ class LocalFileSystemIOManager(IOManager):
 # gather_assets_start
 # imports the module called "assets" from the package containing the current module
 # the "assets" module contains the asset definitions
-from . import assets
+from . import table_assets
 from dagster import load_assets_from_modules, with_resources
 
 weather_assets = with_resources(
-    load_assets_from_modules(modules=[assets]),
+    load_assets_from_modules(modules=[table_assets]),
     resource_defs={
         "io_manager": IOManagerDefinition.hardcoded_io_manager(LocalFileSystemIOManager())
     },
