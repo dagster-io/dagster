@@ -2,6 +2,7 @@ import warnings
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
+from dagster._annotations import experimental
 from dagster._utils import merge_dicts
 from dagster._utils.backcompat import ExperimentalWarning
 
@@ -19,6 +20,7 @@ if TYPE_CHECKING:
     from ..execution.execute_in_process_result import ExecuteInProcessResult
 
 
+@experimental
 def materialize(
     assets: Sequence[Union[AssetsDefinition, SourceAsset]],
     run_config: Any = None,
@@ -70,6 +72,7 @@ def materialize(
         ).execute_in_process(run_config=run_config, instance=instance, partition_key=partition_key)
 
 
+@experimental
 def materialize_to_memory(
     assets: Sequence[Union[AssetsDefinition, SourceAsset]],
     run_config: Any = None,
