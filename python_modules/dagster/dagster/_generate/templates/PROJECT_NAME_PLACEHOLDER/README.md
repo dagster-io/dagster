@@ -27,9 +27,6 @@ You can start writing assets in `{{ repo_name }}/assets/`. The assets are automa
 
 You can specify new Python dependencies in `setup.py`.
 
-If you have concrete requirements, such as pins, index selection, or other pip flags needed for a specific environment (e.g. cloud deployment), you can include these in `requirements.txt`.
-
-
 ### Unit testing
 
 Tests are in the `{{ repo_name }}_tests` directory and you can run tests using `pytest`:
