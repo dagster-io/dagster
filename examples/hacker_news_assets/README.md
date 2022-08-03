@@ -38,7 +38,7 @@ to view this example in Dagster's UI, Dagit.
 
 It contains three asset groups:
 
-- `activity`
+- `core`
   - Contains data sets of activity on Hacker News, fetched from the Hacker News API. These are partitioned by hour and updated every hour.
 - `recommender`
   - A machine learning model that recommends stories to specific users based on their comment history, as well as the features and training set used to fit that model. These are dropped and recreated whenever the core assets receive updates.
