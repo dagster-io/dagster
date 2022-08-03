@@ -15,7 +15,7 @@ import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
 export const SearchIndexContext = React.createContext(null);
 import path from "path";
-import { Transition } from "@headlessui/react";
+import { Tab, Transition } from "@headlessui/react";
 
 const PyObject: React.FunctionComponent<{
   module: string;
@@ -382,12 +382,14 @@ const ArticleList = ({ children }) => {
   return (
     <div className="category-container">
       <div className="category-inner-container">
-        <ul style={{ 
-          columnCount: 2,
-          columnGap: "20px",
-          padding: 0,
-          margin: 0
-        }}>
+        <ul
+          style={{
+            columnCount: 2,
+            columnGap: "20px",
+            padding: 0,
+            margin: 0,
+          }}
+        >
           {children}
         </ul>
       </div>
@@ -397,16 +399,58 @@ const ArticleList = ({ children }) => {
 
 const ArticleListItem = ({ title, href }) => {
   return (
-      <li style={{
+    <li
+      style={{
         marginTop: 0,
-        }}>
-        <Link href={href}>
-          {title}
-        </Link>
-      </li>
-    );
+      }}
+    >
+      <Link href={href}>{title}</Link>
+    </li>
+  );
 };
 
+interface Entry {
+  name: string;
+  content: any;
+}
+
+function classNames(...classes) {
+  return classes.filter(Boolean).join(" ");
+}
+
+function TabGroup({ entries }: { entries: Entry[] }) {
+  return (
+    <div className="w-full px-2 py-2 sm:px-0">
+      <Tab.Group>
+        <Tab.List className="flex space-x-2 m-2">
+          {entries.map((entry, idx) => (
+            <Tab
+              key={idx}
+              className={({ selected }) =>
+                classNames(
+                  "w-full py-3 text-sm font-bold leading-5",
+                  "focus:outline-none border-gray-200",
+                  selected
+                    ? "border-b-2 border-primary-500 text-primary-500"
+                    : "border-b hover:border-gray-500 hover:text-gray-700"
+                )
+              }
+            >
+              {entry?.name}
+            </Tab>
+          ))}
+        </Tab.List>
+        <Tab.Panels>
+          {entries.map((entry, idx) => (
+            <Tab.Panel key={idx} className={classNames("p-3")}>
+              {entry?.content}
+            </Tab.Panel>
+          ))}
+        </Tab.Panels>
+      </Tab.Group>
+    </div>
+  );
+}
 
 export default {
   a: ({ children, ...props }) => {
@@ -480,4 +524,5 @@ export default {
   Icons,
   ArticleList,
   ArticleListItem,
+  TabGroup,
 };
