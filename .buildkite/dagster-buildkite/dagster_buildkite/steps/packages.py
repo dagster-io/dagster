@@ -305,14 +305,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         unsupported_python_versions=[AvailablePythonVersion.V3_9, AvailablePythonVersion.V3_10],
     ),
     PackageSpec(
-        "examples/bollinger",
-        unsupported_python_versions=[
-            # dependency on dagster-pandera
-            AvailablePythonVersion.V3_6,
-        ],
-    ),
-    PackageSpec(
-        "examples/assets_dbt_python",
+        "examples/dbt_python_assets",
         unsupported_python_versions=[
             # dependency on dagster-dbt
             AvailablePythonVersion.V3_10,
