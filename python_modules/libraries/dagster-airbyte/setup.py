@@ -14,7 +14,6 @@ def get_version() -> str:
 if __name__ == "__main__":
     ver = get_version()
     # dont pin dev installs to avoid pip dep resolver issues
-    pin = "" if ver == "0+dev" else f"=={ver}"
     setup(
         name="dagster-airbyte",
         version=ver,
@@ -32,7 +31,7 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_airbyte_tests*"]),
         install_requires=[
-            f"dagster{pin}",
+            f"dagster==1.0.0",
             "requests",
         ],
         zip_safe=False,

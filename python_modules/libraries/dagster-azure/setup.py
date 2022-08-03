@@ -14,7 +14,6 @@ def get_version() -> str:
 if __name__ == "__main__":
     ver = get_version()
     # dont pin dev installs to avoid pip dep resolver issues
-    pin = "" if ver == "0+dev" else f"=={ver}"
     setup(
         name="dagster-azure",
         version=ver,
@@ -37,7 +36,7 @@ if __name__ == "__main__":
             "azure-core<2.0.0,>=1.7.0",
             "azure-storage-blob<13.0.0,>=12.5.0",
             "azure-storage-file-datalake<13.0.0,>=12.5",
-            f"dagster{pin}",
+            f"dagster==1.0.0",
         ],
         entry_points={"console_scripts": ["dagster-azure = dagster_azure.cli.cli:main"]},
         zip_safe=False,

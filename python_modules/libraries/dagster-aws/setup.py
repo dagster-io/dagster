@@ -14,7 +14,6 @@ def get_version() -> str:
 if __name__ == "__main__":
     ver = get_version()
     # dont pin dev installs to avoid pip dep resolver issues
-    pin = "" if ver == "0+dev" else f"=={ver}"
     setup(
         name="dagster-aws",
         version=ver,
@@ -35,7 +34,7 @@ if __name__ == "__main__":
         include_package_data=True,
         install_requires=[
             "boto3",
-            f"dagster{pin}",
+            f"dagster==1.0.0",
             "packaging",
             "requests",
         ],

@@ -14,7 +14,6 @@ def get_version() -> str:
 if __name__ == "__main__":
     ver = get_version()
     # dont pin dev installs to avoid pip dep resolver issues
-    pin = "" if ver == "0+dev" else f"=={ver}"
     setup(
         name="dagster-graphql",
         version=ver,
@@ -33,7 +32,7 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_graphql_tests*"]),
         install_requires=[
-            f"dagster{pin}",
+            f"dagster==1.0.0",
             "graphene>=2.1.3,<3",  # compatability with graphql-ws in dagit
             "graphql-core>=2.1,<3",  # compatability with graphql-ws in dagit
             "requests",

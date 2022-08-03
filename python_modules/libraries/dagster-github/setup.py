@@ -14,7 +14,6 @@ def get_version() -> str:
 if __name__ == "__main__":
     ver = get_version()
     # dont pin dev installs to avoid pip dep resolver issues
-    pin = "" if ver == "0+dev" else f"=={ver}"
     setup(
         name="dagster-github",
         version=ver,
@@ -33,7 +32,7 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_github_tests*"]),
         install_requires=[
-            f"dagster{pin}",
+            f"dagster==1.0.0",
             # Using a Github app requires signing your own JWT :(
             # https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/
             "pyjwt[crypto]",

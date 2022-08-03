@@ -20,7 +20,6 @@ def get_version():
 if __name__ == "__main__":
     ver = get_version()
     # dont pin dev installs to avoid pip dep resolver issues
-    pin = "" if ver == "0+dev" else f"=={ver}"
     setup(
         name="dagit",
         version=ver,
@@ -45,7 +44,7 @@ if __name__ == "__main__":
             "PyYAML",
             # cli
             "click>=7.0,<9.0",
-            f"dagster{pin}",
+            f"dagster==1.0.0",
             f"dagster-graphql{pin}",
             "requests",
             # watchdog
