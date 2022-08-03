@@ -217,6 +217,51 @@ def launch_run(pipeline, external_pipeline, workspace):
 
 
 @pytest.fixture
+def custom_instance_cm(stub_aws, stub_ecs_metadata):
+    @contextmanager
+    def cm(config=None):
+        overrides = {
+            "run_launcher": {
+                "module": "dagster_aws.ecs.test_utils",
+                "class": "CustomECSRunLauncher",
+                "config": {**(config or {})},
+            }
+        }
+        with instance_for_test(overrides) as dagster_instance:
+            yield dagster_instance
+
+    return cm
+
+
+@pytest.fixture
+def custom_instance(custom_instance_cm):
+    with custom_instance_cm() as dagster_instance:
+        yield dagster_instance
+
+
+@pytest.fixture
+def custom_workspace(custom_instance, image):
+    with in_process_test_workspace(
+        custom_instance,
+        loadable_target_origin=LoadableTargetOrigin(
+            python_file=repo.__file__,
+            attribute=repo.repository.__name__,
+        ),
+        container_image=image,
+    ) as workspace:
+        yield workspace
+
+
+@pytest.fixture
+def custom_run(custom_instance, pipeline, external_pipeline):
+    return custom_instance.create_run_for_pipeline(
+        pipeline,
+        external_pipeline_origin=external_pipeline.get_external_origin(),
+        pipeline_code_origin=external_pipeline.get_python_origin(),
+    )
+
+
+@pytest.fixture
 def tagged_secret(secrets_manager):
     # A secret tagged with "dagster"
     name = "tagged_secret"

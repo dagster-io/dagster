@@ -1,7 +1,7 @@
 import warnings
 from collections import namedtuple
 from contextlib import suppress
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -273,16 +273,24 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         arn = tasks[0]["taskArn"]
         self._set_run_tags(run.run_id, task_arn=arn)
         self._set_ecs_tags(run.run_id, task_arn=arn)
+        self.report_launch_events(run, arn, metadata.cluster)
+
+    def report_launch_events(
+        self, run: PipelineRun, arn: Optional[str] = None, cluster: Optional[str] = None
+    ):
+        # Extracted method to allow for subclasses to customize the launch reporting behavior
+
+        metadata_entries = []
+        if arn:
+            metadata_entries.append(MetadataEntry("ECS Task ARN", value=arn))
+        if cluster:
+            metadata_entries.append(MetadataEntry("ECS Cluster", value=cluster))
+
+        metadata_entries.append(MetadataEntry("Run ID", value=run.run_id))
         self._instance.report_engine_event(
             message="Launching run in ECS task",
             pipeline_run=run,
-            engine_event_data=EngineEventData(
-                [
-                    MetadataEntry("ECS Task ARN", value=arn),
-                    MetadataEntry("ECS Cluster", value=metadata.cluster),
-                    MetadataEntry("Run ID", value=run.run_id),
-                ]
-            ),
+            engine_event_data=EngineEventData(metadata_entries),
             cls=self.__class__,
         )
 
