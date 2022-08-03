@@ -38,8 +38,6 @@ if TYPE_CHECKING:
     from dagster._core.definitions import AssetGroup
 
 VALID_REPOSITORY_DATA_DICT_KEYS = {
-    "pipelines",
-    "partition_sets",
     "schedules",
     "sensors",
     "jobs",
@@ -1052,7 +1050,7 @@ class CachingRepositoryData(RepositoryData):
                     raise DagsterInvalidDefinitionError(
                         (
                             f"Conflicting definitions found in repository with name '{solid_def.name}'. "
-                            "Op/Graph/Solid definition names must be unique within a "
+                            "Op/Graph definition names must be unique within a "
                             f"repository. {solid_def.__class__.__name__} is defined in {pipeline.target_type} "
                             f"'{first_name}' and in {pipeline.target_type} '{second_name}'."
                         )
@@ -1069,7 +1067,7 @@ class CachingRepositoryData(RepositoryData):
 
         if schedule.pipeline_name not in pipelines:
             raise DagsterInvalidDefinitionError(
-                f'ScheduleDefinition "{schedule.name}" targets job/pipeline "{schedule.pipeline_name}" '
+                f'ScheduleDefinition "{schedule.name}" targets job "{schedule.pipeline_name}" '
                 "which was not found in this repository."
             )
 
@@ -1084,7 +1082,7 @@ class CachingRepositoryData(RepositoryData):
         for target in sensor.targets:
             if target.pipeline_name not in pipelines:
                 raise DagsterInvalidDefinitionError(
-                    f'SensorDefinition "{sensor.name}" targets job/pipeline "{sensor.pipeline_name}" '
+                    f'SensorDefinition "{sensor.name}" targets job "{sensor.pipeline_name}" '
                     "which was not found in this repository."
                 )
 
