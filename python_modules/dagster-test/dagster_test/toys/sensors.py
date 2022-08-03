@@ -114,7 +114,7 @@ def get_toys_sensors():
             blocks=[{"type": "section", "text": {"type": "mrkdwn", "text": message}}],
         )
 
-    @asset_sensor(asset_key=AssetKey("model"), pipeline_name="log_asset_pipeline")
+    @asset_sensor(asset_key=AssetKey("model"), job_name="log_asset_pipeline")
     def toy_asset_sensor(context, asset_event):
         yield RunRequest(
             run_key=context.cursor,

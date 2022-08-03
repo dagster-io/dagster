@@ -985,8 +985,8 @@ def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> Externa
         name=schedule_def.name,
         cron_schedule=schedule_def.cron_schedule,
         pipeline_name=schedule_def.job_name,
-        solid_selection=None,
-        mode=None,
+        solid_selection=schedule_def._target.solid_selection,  # pylint: disable=protected-access
+        mode=schedule_def._target.mode,  # pylint: disable=protected-access
         environment_vars=schedule_def.environment_vars,
         partition_set_name=schedule_def.get_partition_set().name
         if isinstance(schedule_def, PartitionScheduleDefinition)
