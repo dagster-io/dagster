@@ -16,7 +16,7 @@ from .parquet_io_manager import (
 )
 from .snowflake_io_manager import snowflake_io_manager
 
-DBT_PROJECT_DIR = file_relative_path(__file__, "../../hacker_news_dbt")
+DBT_PROJECT_DIR = file_relative_path(__file__, "../../dbt_project")
 DBT_PROFILES_DIR = DBT_PROJECT_DIR + "/config"
 dbt_local_resource = dbt_cli_resource.configured(
     {"profiles_dir": DBT_PROFILES_DIR, "project_dir": DBT_PROJECT_DIR, "target": "local"}

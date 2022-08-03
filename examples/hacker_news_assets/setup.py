@@ -26,6 +26,7 @@ setup(
         "dbt-core",
         "dbt-duckdb",
         "dbt-snowflake",
+        "dagit",
         "duckdb!=0.3.3",  # missing wheels
         "mock",
         # DataFrames were not written to Snowflake, causing errors
