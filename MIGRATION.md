@@ -8,7 +8,7 @@ When new releases include breaking changes or deprecations, this document descri
 - In an upcoming 1.x release, we plan to make a change that renders values supplied to `configured` in Dagit. Up through this point, values provided to `configured` have not been sent anywhere outside the process where they were used. This change will mean that, like other places you can supply configuration, `configured` is not a good place to put secrets: **You should not include any values in configuration that you don't want to be stored in the Dagster database and displayed inside Dagit.**
 - **All submodules of dagster have been marked private.** We currently provide aliasing to avoid incurring linting errors, but in a future 1.x release, this will be removed, and imports from submodules of dagster may incur errors.
 - The `dagster.experimental` submodule has been deleted, which previously contained dynamic output APIs, which are available from the top level of the `dagster` module.
-- As of 1.0, **Dagster no longer guarantees support python 3.6.** This is in line with [PEP 494](https://peps.python.org/pep-0494/), which outlines that 3.6 has reached end of life.
+- As of 1.0, **Dagster no longer guarantees support for python 3.6.** This is in line with [PEP 494](https://peps.python.org/pep-0494/), which outlines that 3.6 has reached end of life.
 - Deprecated arguments to library ops have been switched to reflect stable APIs. This includes `input_defs`/`output_defs` arguments on `define_dagstermill_op`, which have been changed to `ins`/`outs` respectively, and `input_defs` argument on `create_shell_script_op`, which has been changed to `ins`.
 
 ### Legacy API Removals
