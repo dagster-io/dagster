@@ -99,7 +99,7 @@ def test_s3_pickle_io_manager_prefix(mock_s3_bucket):
 
 def test_memoization_s3_io_manager(mock_s3_bucket):
     class BasicVersionStrategy(VersionStrategy):
-        def get_solid_version(self, _):
+        def get_op_version(self, _):
             return "foo"
 
     @op

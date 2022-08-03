@@ -105,7 +105,7 @@ def test_memoization_with_default_strategy():
         my_op()
 
     class MyVersionStrategy(VersionStrategy):
-        def get_solid_version(self, _):
+        def get_op_version(self, _):
             return "foo"
 
         def get_resource_version(self, _):
@@ -197,7 +197,7 @@ def test_memoization_with_default_strategy_overriden():
     version = ["foo"]
 
     class MyVersionStrategy(VersionStrategy):
-        def get_solid_version(self, _):
+        def get_op_version(self, _):
             return version[0]
 
     recorder = []
@@ -257,7 +257,7 @@ def test_version_strategy_depends_from_context():
     graph_executed = []
 
     class ContextDependantVersionStrategy(VersionStrategy):
-        def get_solid_version(self, context):
+        def get_op_version(self, context):
             version_strategy_called.append("versioned")
             solid_arg = context.solid_config["arg"]
             return version[solid_arg]
@@ -327,7 +327,7 @@ def test_version_strategy_depends_from_context():
 
 def test_version_strategy_root_input_manager():
     class MyVersionStrategy(VersionStrategy):
-        def get_solid_version(self, _):
+        def get_op_version(self, _):
             return "foo"
 
         def get_resource_version(self, _):
@@ -362,7 +362,7 @@ def test_version_strategy_root_input_manager():
 
 def test_dynamic_memoization_error():
     class MyVersionStrategy(VersionStrategy):
-        def get_solid_version(self, _):
+        def get_op_version(self, _):
             return "foo"
 
         def get_resource_version(self, _):

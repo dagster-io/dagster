@@ -18,6 +18,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._utils import merge_dicts
 
@@ -224,6 +225,7 @@ class RepositoryData(ABC):
             List[PipelineDefinition]: All pipelines/jobs in the repository.
         """
 
+    @public
     def get_all_jobs(self) -> List[JobDefinition]:
         """Return all jobs in the repository as a list.
 
@@ -240,6 +242,7 @@ class RepositoryData(ABC):
         """
         return [pipeline_def.name for pipeline_def in self.get_all_pipelines()]
 
+    @public
     def get_job_names(self) -> List[str]:
         """Get the names of all jobs in the repository.
 
@@ -259,6 +262,7 @@ class RepositoryData(ABC):
         """
         return pipeline_name in self.get_pipeline_names()
 
+    @public
     def has_job(self, job_name: str) -> bool:
         """Check if a job with a given name is present in the repository.
 
@@ -288,6 +292,7 @@ class RepositoryData(ABC):
             )
         return pipelines_with_name[0]
 
+    @public
     def get_job(self, job_name: str) -> JobDefinition:
         """Get a job by name.
 
@@ -349,6 +354,7 @@ class RepositoryData(ABC):
             )
         return partition_sets_with_name[0]
 
+    @public
     def get_schedule_names(self) -> List[str]:
         """Get the names of all schedules in the repository.
 
@@ -357,6 +363,7 @@ class RepositoryData(ABC):
         """
         return [schedule.name for schedule in self.get_all_schedules()]
 
+    @public
     def get_all_schedules(self) -> List[ScheduleDefinition]:
         """Return all schedules in the repository as a list.
 
@@ -365,6 +372,7 @@ class RepositoryData(ABC):
         """
         return []
 
+    @public
     def get_schedule(self, schedule_name: str) -> ScheduleDefinition:
         """Get a schedule by name.
 
@@ -386,12 +394,15 @@ class RepositoryData(ABC):
     def has_schedule(self, schedule_name: str) -> bool:
         return schedule_name in self.get_schedule_names()
 
+    @public
     def get_all_sensors(self) -> List[SensorDefinition]:
         return []
 
+    @public
     def get_sensor_names(self) -> List[str]:
         return [sensor.name for sensor in self.get_all_sensors()]
 
+    @public
     def get_sensor(self, sensor_name: str) -> SensorDefinition:
         sensors_with_name = [
             sensor for sensor in self.get_all_sensors() if sensor.name == sensor_name
@@ -402,9 +413,11 @@ class RepositoryData(ABC):
             )
         return sensors_with_name[0]
 
+    @public
     def has_sensor(self, sensor_name: str) -> bool:
         return sensor_name in self.get_sensor_names()
 
+    @public
     def get_source_assets_by_key(self) -> Mapping[AssetKey, SourceAsset]:
         return {}
 

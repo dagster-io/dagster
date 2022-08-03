@@ -763,7 +763,7 @@ bad_str = "'well this doesn't work !'"
 
 
 class BadSolidStrategy(VersionStrategy):
-    def get_solid_version(self, _):
+    def get_op_version(self, _):
         return bad_str
 
     def get_resource_version(self, _):
@@ -771,7 +771,7 @@ class BadSolidStrategy(VersionStrategy):
 
 
 class BadResourceStrategy(VersionStrategy):
-    def get_solid_version(self, _):
+    def get_op_version(self, _):
         return "foo"
 
     def get_resource_version(self, _):
@@ -856,7 +856,7 @@ def get_version_strategy_pipeline():
         return 5
 
     class MyVersionStrategy(VersionStrategy):
-        def get_solid_version(self, _):
+        def get_op_version(self, _):
             return "foo"
 
     @pipeline(
@@ -891,7 +891,7 @@ def test_version_strategy_no_resource_version():
         return "bar"
 
     class MyVersionStrategy(VersionStrategy):
-        def get_solid_version(self, _):
+        def get_op_version(self, _):
             return "foo"
 
     @pipeline(

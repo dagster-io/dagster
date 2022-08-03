@@ -205,8 +205,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> Union[CompositeSolidDefSnap, SolidDefSnap]:
         if self._node_definition_snap is None and len(self._external_asset_node.job_names) > 0:
             node_key = check.not_none(
-                self._external_asset_node.graph_name
-                or self._external_asset_node.node_definition_name
+                self._external_asset_node.node_definition_name
+                # nodes serialized using an older Dagster version may not have node_definition_name
+                or self._external_asset_node.graph_name
                 or self._external_asset_node.op_name
             )
             self._node_definition_snap = self.get_external_pipeline().get_node_def_snap(node_key)

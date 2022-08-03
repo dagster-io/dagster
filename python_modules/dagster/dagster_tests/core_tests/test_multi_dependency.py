@@ -225,24 +225,18 @@ def test_fan_in_manual():
 
 
 def test_nothing_deps():
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=r'Input "stuff" expects a value of type \[Any\] and output '
-        '"result" returns type Nothing',
-    ):
-        PipelineDefinition(
-            name="input_test",
-            solid_defs=[emit_num, emit_nothing, emit_str, collect],
-            dependencies={
-                "collect": {
-                    "stuff": MultiDependencyDefinition(
-                        [
-                            DependencyDefinition("emit_num"),
-                            DependencyDefinition("emit_nothing"),
-                            DependencyDefinition("emit_str"),
-                        ]
-                    )
-                }
-            },
-        )
+    PipelineDefinition(
+        name="input_test",
+        solid_defs=[emit_num, emit_nothing, emit_str, collect],
+        dependencies={
+            "collect": {
+                "stuff": MultiDependencyDefinition(
+                    [
+                        DependencyDefinition("emit_num"),
+                        DependencyDefinition("emit_nothing"),
+                        DependencyDefinition("emit_str"),
+                    ]
+                )
+            }
+        },
+    )

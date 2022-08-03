@@ -1,3 +1,4 @@
+import inspect
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -95,37 +96,30 @@ class OpDefinition(SolidDefinition):
         tags: Optional[Mapping[str, Any]] = None,
         version: Optional[str] = None,
         retry_policy: Optional[RetryPolicy] = None,
-        input_defs: Optional[Sequence[InputDefinition]] = None,
-        output_defs: Optional[Sequence[OutputDefinition]] = None,
     ):
         from .decorators.solid_decorator import (
             DecoratedSolidFunction,
             resolve_checked_solid_fn_inputs,
         )
 
-        if input_defs is None:
-            ins = check.opt_mapping_param(ins, "ins")
-            input_defs = [
-                inp.to_definition(name)
-                for name, inp in sorted(ins.items(), key=lambda input: input[0])
-            ]  # sort so that input definition order is deterministic
+        ins = check.opt_mapping_param(ins, "ins")
+        input_defs = [
+            inp.to_definition(name) for name, inp in sorted(ins.items(), key=lambda input: input[0])
+        ]  # sort so that input definition order is deterministic
 
-            if isinstance(compute_fn, DecoratedSolidFunction):
-                resolved_input_defs: Sequence[InputDefinition] = resolve_checked_solid_fn_inputs(
-                    decorator_name="@op",
-                    fn_name=name,
-                    compute_fn=cast(DecoratedSolidFunction, compute_fn),
-                    explicit_input_defs=input_defs,
-                    exclude_nothing=True,
-                )
-            else:
-                resolved_input_defs = input_defs
+        if isinstance(compute_fn, DecoratedSolidFunction):
+            resolved_input_defs: Sequence[InputDefinition] = resolve_checked_solid_fn_inputs(
+                decorator_name="@op",
+                fn_name=name,
+                compute_fn=cast(DecoratedSolidFunction, compute_fn),
+                explicit_input_defs=input_defs,
+                exclude_nothing=True,
+            )
         else:
             resolved_input_defs = input_defs
 
-        if output_defs is None:
-            check.opt_mapping_param(outs, "outs")
-            output_defs = _resolve_output_defs_from_outs(compute_fn=compute_fn, outs=outs)
+        check.opt_mapping_param(outs, "outs")
+        output_defs = _resolve_output_defs_from_outs(compute_fn=compute_fn, outs=outs)
 
         super(OpDefinition, self).__init__(
             compute_fn=compute_fn,
@@ -213,7 +207,7 @@ def _resolve_output_defs_from_outs(
         annotation = inferred_output_props.annotation
     else:
         inferred_output_props = None
-        annotation = None
+        annotation = inspect.Parameter.empty
 
     if outs is None:
         return [OutputDefinition.create_from_inferred(inferred_output_props)]
@@ -229,18 +223,22 @@ def _resolve_output_defs_from_outs(
 
     # Introspection on type annotations is experimental, so checking
     # metaclass is the best we can do.
-    if annotation and not get_origin(annotation) == tuple:
+    if annotation != inspect.Parameter.empty and not get_origin(annotation) == tuple:
         raise DagsterInvariantViolationError(
             "Expected Tuple annotation for multiple outputs, but received non-tuple annotation."
         )
-    if annotation and not len(annotation.__args__) == len(outs):
+    if annotation != inspect.Parameter.empty and not len(annotation.__args__) == len(outs):
         raise DagsterInvariantViolationError(
             "Expected Tuple annotation to have number of entries matching the "
             f"number of outputs for more than one output. Expected {len(outs)} "
             f"outputs but annotation has {len(annotation.__args__)}."
         )
     for idx, (name, cur_out) in enumerate(outs.items()):
-        annotation_type = annotation.__args__[idx] if annotation else None
+        annotation_type = (
+            annotation.__args__[idx]
+            if annotation != inspect.Parameter.empty
+            else inspect.Parameter.empty
+        )
         output_defs.append(cur_out.to_definition(annotation_type, name=name))
 
     return output_defs

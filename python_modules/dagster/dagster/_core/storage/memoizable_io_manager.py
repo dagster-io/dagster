@@ -4,7 +4,7 @@ from abc import abstractmethod
 from typing import Union
 
 import dagster._check as check
-from dagster._annotations import experimental
+from dagster._annotations import experimental, public
 from dagster._config import Field, StringSource
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.input import InputContext
@@ -20,6 +20,7 @@ class MemoizableIOManager(IOManager):
     ``has_output`` method, which returns a boolean representing whether a data object can be found.
     """
 
+    @public
     @abstractmethod
     def has_output(self, context: OutputContext) -> bool:
         """The user-defined method that returns whether data exists given the metadata.
