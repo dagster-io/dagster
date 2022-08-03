@@ -1,0 +1,365 @@
+---
+title: Testing Against Production with Dagster Cloud Branch Deployments | Dagster
+description: This guide illustrates a workflow that enables testing Dagster code in your cloud environment without impacting your production data.
+---
+
+# Testing Against Production with Dagster Cloud Branch Deployments
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+This guide details a workflow to test Dagster code in your cloud environment without impacting your production data. To highlight this functionality, we’ll leverage Dagster Cloud branch deployments and a Snowflake database to:
+
+- Execute code on a feature branch directly on Dagster Cloud
+- Read and write to a unique per-branch clone of our Snowflake data
+
+With these tools, we can merge changes with confidence in the impact on our data platform and with assurance that our code will execute as intended.
+
+Here’s an overview of the main concepts we’ll be using:
+
+- [Assets](/concepts/assets/software-defined-assets) - We'll define three assets that each persist a table to Snowflake.
+- [Ops](/concepts/ops-jobs-graphs/ops) - We'll define two ops that query Snowflake: the first will clone a database, and the second will drop database clones.
+- [Graphs](/concepts/ops-jobs-graphs/graphs) - We'll build graphs that define the order our ops should run.
+- [Jobs](/concepts/ops-jobs-graphs/jobs) - We'll define jobs by binding our graphs to resources.
+- [Resources](/concepts/resources) - We'll use the [Snowflake resource](/\_apidocs/libraries/dagster-snowflake#dagster_snowflake.snowflake_resource) to swap in different Snowflake connections to our jobs depending on environment.
+- [I/O managers](/concepts/io-management/io-managers) - We'll use a Snowflake I/O manager to persist asset outputs to Snowflake.
+
+---
+
+## Prerequisites
+
+<Note>
+  This guide is an extension of the{" "}
+  <a href="/guides/dagster/local-to-production-tutorial">
+    Transitioning Data Pipelines from Development to Production
+  </a>{" "}
+  guide, illustrating a workflow for staging deployments. We’ll use the examples
+  from this guide to build a workflow atop Dagster Cloud’s branch deployment
+  feature.
+</Note>
+
+To complete the steps in this guide, you'll need:
+
+- A Dagster Cloud account
+- An existing [Branch Deployments setup that uses GitHub actions](https://docs.dagster.cloud/guides/branch-deployments). Your setup should contain a Dagster project set up for branch deployments containing:
+  - `branch_deployments.yml` GitHub workflow file
+  - Dagster repository (we’ve named ours `repo`)
+  - Dockerfile that installs your Dagster project
+
+---
+
+## Overview
+
+We have a `PRODUCTION` Snowflake database with a schema named `HACKER_NEWS`. In our production cloud environment, we’d like to write tables to Snowflake containing subsets of Hacker News data. These tables will be:
+
+- `ITEMS` - A table containing the entire dataset
+- `COMMENTS` - A table containing data about comments
+- `STORIES` - A table containing data about stories
+
+To set up a branch deployment workflow to construct and test these tables, we will:
+
+1. Define these tables as [assets](/concepts/assets/software-defined-assets).
+2. Configure our assets to write to Snowflake using a different connection (credentials and database name) for two environments: production and branch deployment.
+3. Write a job that will clone the production database upon each branch deployment launch. Each clone will be named `PRODUCTION_CLONE_<ID>`, where `<ID>` is the pull request ID of the branch. Then we'll create a branch deployment and test our Hacker News assets against our newly cloned database.
+4. Write a job that will delete the corresponding database clone upon closing the feature branch.
+
+---
+
+## Step 1: Create our job
+
+In production, we want to write three tables to Snowflake:`ITEMS`, `COMMENTS`, and `STORIES`. We can define these tables as [assets](/concepts/assets/software-defined-assets) as follows:
+
+```python file=/guides/dagster/development_to_production/assets.py startafter=start_assets endbefore=end_assets
+# assets.py
+import pandas as pd
+import requests
+
+from dagster import asset
+
+
+@asset(
+    config_schema={"N": int},
+    io_manager_key="snowflake_io_manager",
+)
+def items(context) -> pd.DataFrame:
+    """Items from the Hacker News API: each is a story or a comment on a story."""
+    rows = []
+    max_id = requests.get(
+        "https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5
+    ).json()
+    # Hacker News API is 1-indexed, so adjust range by 1
+    for item_id in range(max_id - context.op_config["N"] + 1, max_id + 1):
+        item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
+        rows.append(requests.get(item_url, timeout=5).json())
+
+    # ITEM_FIELD_NAMES is a list of the column names in the Hacker News dataset
+    result = pd.DataFrame(rows, columns=ITEM_FIELD_NAMES).drop_duplicates(subset=["id"])
+    result.rename(columns={"by": "user_id"}, inplace=True)
+    return result
+
+
+@asset(
+    io_manager_key="snowflake_io_manager",
+)
+def comments(items: pd.DataFrame) -> pd.DataFrame:
+    """Comments from the Hacker News API."""
+    return items[items["type"] == "comment"]
+
+
+@asset(
+    io_manager_key="snowflake_io_manager",
+)
+def stories(items: pd.DataFrame) -> pd.DataFrame:
+    """Stories from the Hacker News API."""
+    return items[items["type"] == "story"]
+```
+
+As you can see, our assets use an [I/O manager](/concepts/io-management/io-managers) named `snowflake_io_manager`. Using I/O managers and other resources allow us to swap out implementations per environment without modifying our business logic.
+
+---
+
+## Step 2: Configure our job for each environment
+
+At runtime, we’d like to determine which environment our code is running in: branch deployment, or production. This information dictates how our code should execute, specifically with which credentials and with which database.
+
+To ensure we can't accidentally write to production from within our branch deployment, we’ll use a different set of credentials from production and write to our database clone.
+
+Dagster automatically sets certain environment variables containing deployment metadata, allowing us to read these environment variables to discern between deployments. We can access the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable to determine the currently executing environment.
+
+Because we want to configure our assets to write to Snowflake using a different set of credentials and database in each environment, we’ll configure a separate I/O manager for each environment:
+
+```python file=/guides/dagster/development_to_production/branch_deployments/repository_v1.py startafter=start_repository endbefore=end_repository
+# repository.py
+from dagster import repository, with_resources
+from dagster_snowflake import build_snowflake_io_manager
+from dagster_snowflake_pandas import SnowflakePandasTypeHandler
+import os
+
+snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
+
+
+@repository
+def repo():
+    snowflake_config = {
+        "account": "abc1234.us-east-1",
+        "user": "system@company.com",
+        "password": {"env": "SYSTEM_SNOWFLAKE_PASSWORD"},
+        "schema": "HACKER_NEWS",
+    }
+    resource_defs = {
+        "branch": {
+            "snowflake_io_manager": snowflake_io_manager.configured(
+                {
+                    **snowflake_config,
+                    "database": f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
+                }
+            ),
+        },
+        "production": {
+            "snowflake_io_manager": snowflake_io_manager.configured(
+                {
+                    **snowflake_config,
+                    "database": "PRODUCTION",
+                }
+            ),
+        },
+    }
+
+    def get_current_env():
+        is_branch_depl = os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT")
+        assert is_branch_depl != None  # env var must be set
+        return "branch" if is_branch_depl else "prod"
+
+    return [
+        with_resources([items, comments, stories], resource_defs=resource_defs[get_current_env()]),
+    ]
+```
+
+---
+
+## Step 3: Clone a production database per branch deployment
+
+The `branch_deployments.yml` workflow file from the in `.github/workflows` defines a `dagster_cloud_build_push` job that builds each branch deployment. In order to add this workflow file, it must be located in your project directory under `.github/workflows`. We can modify this workflow file to add a custom step that launches a job within our repository that will clone the production database upon deployment.
+
+We’ll first need to define a job that clones our `PRODUCTION` database for each branch deployment. Later, in our GitHub actions workflow, we can trigger this job to run upon each redeploy. Each clone will be named `PRODUCTION_CLONE_<ID>` with `<ID>` representing the pull request ID, ensuring each branch deployment has a unique clone. This job will drop a database clone if it exists and then reclone from production, ensuring each redeployment has a fresh clone of `PRODUCTION`:
+
+```python file=/guides/dagster/development_to_production/branch_deployments/clone_and_drop_db.py startafter=start_clone_db endbefore=end_clone_db
+@op(required_resource_keys={"snowflake"})
+def drop_database_clone(context):
+    context.resources.snowflake.execute_query(
+        f"DROP DATABASE IF EXISTS PRODUCTION_CLONE_{os.environ['DAGSTER_CLOUD_PULL_REQUEST_ID']}"
+    )
+
+
+@op(required_resource_keys={"snowflake"}, ins={"start": In(Nothing)})
+def clone_production_database(context):
+    context.resources.snowflake.execute_query(
+        f"CREATE DATABASE PRODUCTION_CLONE_{os.environ['DAGSTER_CLOUD_PULL_REQUEST_ID']} CLONE \"PRODUCTION\""
+    )
+
+
+@graph
+def clone_prod():
+    clone_production_database(start=drop_database_clone())
+```
+
+We’ve defined `drop_database_clone` and `clone_production_database` to utilize the [Snowflake resource](/\_apidocs/libraries/dagster-snowflake#dagster_snowflake.snowflake_resource). The Snowflake resource will use the same configuration as the Snowflake I/O manager to generate a connection to Snowflake. However, while our I/O manager writes outputs to Snowflake, the Snowflake resource executes queries against Snowflake.
+
+We can then add the `clone_prod` job to our repository, configuring it with the resources corresponding to the current environment. We can modify the resource mapping by environment in our repository as follows:
+
+```python file=/guides/dagster/development_to_production/branch_deployments/repository_v2.py startafter=start_resources endbefore=end_resources
+resource_defs = {
+    "branch": {
+        "snowflake_io_manager": snowflake_io_manager.configured(
+            {
+                **snowflake_config,
+                "database": f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
+            }
+        ),
+        "snowflake": snowflake_resource.configured(
+            {
+                **snowflake_config,
+                "database": f"PRODUCTION_CLONE_{os.getenv('DAGSTER_CLOUD_PULL_REQUEST_ID')}",
+            }
+        ),
+    },
+    "production": {
+        "snowflake_io_manager": snowflake_io_manager.configured(
+            {
+                **snowflake_config,
+                "database": "PRODUCTION",
+            }
+        ),
+        "snowflake": snowflake_resource.configured({**snowflake_config, "database": "PRODUCTION"}),
+    },
+}
+```
+
+Then, we can add the `clone_prod` job to our repository:
+
+```python file=/guides/dagster/development_to_production/branch_deployments/repository_v2.py startafter=start_repository endbefore=end_repository
+@repository
+def repo():
+    ...
+    branch_deployment_jobs = [clone_prod.to_job(resource_defs=resource_defs[get_current_env()])]
+    return [
+        with_resources([items, comments, stories], resource_defs=resource_defs[get_current_env()]),
+        *(branch_deployment_jobs if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") else []),
+    ]
+```
+
+The `branch_deployments.yml` file located in `.github/workflows/branch_deployments.yml` defines a `dagster_cloud_build_push` job with a series of steps that launch a branch deployment. Because we want to queue a run of `clone_prod` within each deployment after it launches, we'll add an additional step at the end `dagster_cloud_build_push`. This job is triggered on multiple pull request events: `opened`, `synchronize`, `reopen`, and `closed`. This means that upon future pushes to the branch, we'll trigger a run of `clone_prod`. The `if` condition below ensures that `clone_prod` will not be be run if the pull request is closed:
+
+```yaml file=/guides/dagster/development_to_production/branch_deployments/clone_prod.yaml
+# .github/workflows/branch_deployments.yml
+
+name: Dagster Branch Deployments
+  on:
+    pull_request:
+      types: [opened, synchronize, reopened, closed]
+  env:
+    DAGSTER_CLOUD_URL: ${{ secrets.DAGSTER_CLOUD_URL }}
+
+  jobs:
+    dagster_cloud_build_push:
+      runs-on: ubuntu-latest
+      name: Dagster Branch Deployments
+      strategy:
+        ...
+      steps:
+        # Existing steps here
+        ...
+        - name: Clone Snowflake schema upon launch
+          if: github.event.action != 'closed'
+          uses: dagster-io/cloud-branch-deployments-action/run@main
+          with:
+            location: ${{ toJson(matrix.location) }}
+            deployment: ${{ steps.deploy.outputs.deployment }}
+            repository: repo
+            job: clone_prod
+          env:
+            DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
+```
+
+Opening a pull request for our current branch will automatically kick off a branch deployment. After the deployment launches, we can confirm that the `clone_prod` job has run:
+
+<Image
+alt="instance-overview"
+src="/images/guides/development_to_production/branch_deployments/instance_overview.png"
+width={1301}
+height={805}
+/>
+
+Alternatively, the logs for the branch deployment workflow can be found in the "Actions" tab on the GitHub pull request.
+
+We can also view our database in Snowflake to confirm that a clone exists for each branch deployment. When we materialize our assets within our branch deployment, we’ll now be writing to our clone of `PRODUCTION`. Within Snowflake, we can run queries against this clone to confirm the validity of our data:
+
+<Image
+alt="instance-overview"
+src="/images/guides/development_to_production/branch_deployments/snowflake.png"
+width={1431}
+height={537}
+/>
+
+---
+
+## Step 4: Delete our database clone upon closing a branch
+
+Now that we’ve confirmed that our assets materialize correctly, we can merge this branch! But first, we’ll configure our branch deployments to drop the schema clone upon closing our branch. We can add another job to our repository that reuses our `drop_database_clone` op:
+
+```python file=/guides/dagster/development_to_production/branch_deployments/repository_v3.py startafter=start_drop_db endbefore=end_drop_db
+@graph
+def drop_prod_clone():
+    drop_database_clone()
+
+
+@repository
+def repo():
+    ...
+    branch_deployment_jobs = [
+        clone_prod.to_job(resource_defs=resource_defs[get_current_env()]),
+        drop_prod_clone.to_job(resource_defs=resource_defs[get_current_env()]),
+    ]
+    return [
+        with_resources([items, comments, stories], resource_defs=resource_defs[get_current_env()]),
+        *(branch_deployment_jobs if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") else []),
+    ]
+```
+
+Then, we can add an additional step to our `branch_deployments.yml` file that queues a run of our `drop_prod_clone` job:
+
+```yaml file=/guides/dagster/development_to_production/branch_deployments/drop_db_clone.yaml
+# .github/workflows/branch_deployments.yml
+
+name: Dagster Branch Deployments
+  on:
+    pull_request:
+      types: [opened, synchronize, reopened, closed]
+  env:
+    DAGSTER_CLOUD_URL: ${{ secrets.DAGSTER_CLOUD_URL }}
+
+  jobs:
+    dagster_cloud_build_push:
+      runs-on: ubuntu-latest
+      name: Dagster Branch Deployments
+      strategy:
+        ...
+      steps:
+        # Existing steps here
+        ...
+        - name: Clone Snowflake schema upon launch
+          ...
+        - name: Delete schema clone upon PR close
+          if: github.event.action == 'closed'
+          uses: dagster-io/cloud-branch-deployments-action/run@main
+          with:
+            location: ${{ toJson(matrix.location) }}
+            deployment: ${{ steps.deploy.outputs.deployment }}
+            repository: repo
+            job: drop_prod_clone
+          env:
+            DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
+```
+
+After merging our branch, viewing our Snowflake database will confirm that our branch deployment step has successfully deleted our database clone.
+
+We’ve now built an elegant workflow that enables future branch deployments to automatically have access to their own clones of our production database that are cleaned up upon merge!

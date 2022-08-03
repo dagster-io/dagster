@@ -411,6 +411,10 @@
         "path":"/guides/dagster/transitioning-data-pipelines-from-development-to-production"
       },
       {
+        "title": "Testing Against Production with Dagster Cloud Branch Deployments",
+        "path": "/guides/dagster/branch_deployments"
+      },
+      {
         "title": "Versioning and Memoization (Experimental)",
         "path": "/guides/dagster/memoization"
       },
