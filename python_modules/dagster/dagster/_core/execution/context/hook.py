@@ -402,7 +402,6 @@ class BoundHookContext(HookContext):
 def build_hook_context(
     resources: Optional[Mapping[str, Any]] = None,
     mode_def: Optional[ModeDefinition] = None,
-    solid: Optional[Union[SolidDefinition, PendingNodeInvocation]] = None,
     op: Optional[Union[OpDefinition, PendingNodeInvocation]] = None,
     run_id: Optional[str] = None,
     job_name: Optional[str] = None,
@@ -421,8 +420,6 @@ def build_hook_context(
         mode_def (Optional[ModeDefinition]): The mode definition used with the context.
         op (Optional[OpDefinition, PendingNodeInvocation]): The op definition which the
             hook may be associated with.
-        solid (Optional[SolidDefinition, PendingNodeInvocation]): (legacy) The solid definition which the
-            hook may be associated with.
         run_id (Optional[str]): The id of the run in which the hook is invoked (provided for mocking purposes).
         job_name (Optional[str]): The name of the job in which the hook is used (provided for mocking purposes).
         op_exception (Optional[Exception]): The exception that caused the hook to be triggered.
@@ -436,16 +433,13 @@ def build_hook_context(
             with build_hook_context(resources={"foo": context_manager_resource}) as context:
                 hook_to_invoke(context)
     """
-    check.invariant(not (solid and op), "cannot set both `solid` and `op` on `build_hook_context`.")
 
     op = check.opt_inst_param(op, "op", (OpDefinition, PendingNodeInvocation))
-    solid = check.opt_inst_param(solid, "solid", (SolidDefinition, PendingNodeInvocation))
-    op_or_solid = op or solid
 
     return UnboundHookContext(
         resources=check.opt_dict_param(resources, "resources", key_type=str),
         mode_def=check.opt_inst_param(mode_def, "mode_def", ModeDefinition),
-        op=op_or_solid,  # type: ignore[arg-type] # (mypy bug)
+        op=op,  # type: ignore[arg-type] # (mypy bug)
         run_id=check.opt_str_param(run_id, "run_id"),
         job_name=check.opt_str_param(job_name, "job_name"),
         op_exception=check.opt_inst_param(op_exception, "op_exception", Exception),
