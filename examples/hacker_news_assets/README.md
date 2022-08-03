@@ -12,21 +12,33 @@ This is meant to be a full "realistic" demo of Dagster, that takes advantage of 
 
 Feel free to poke around!
 
-## Running locally
+## Getting started
 
+Bootstrap your own Dagster project with this example:
+
+```bash
+dagster project from-example --name my-dagster-project --example hacker_news_assets
 ```
-# Install the example so that it will be on your Python path
+
+To install this example and its Python dependencies, run:
+
+```bash
 pip install -e .
-
-# Load it in the web UI
-dagit -w workspace.yaml
 ```
+
+Once you've done this, you can run:
+
+```
+dagit
+```
+
+to view this example in Dagster's UI, Dagit.
 
 ## Asset groups
 
 It contains three asset groups:
 
-- `core`
+- `activity`
   - Contains data sets of activity on Hacker News, fetched from the Hacker News API. These are partitioned by hour and updated every hour.
 - `recommender`
   - A machine learning model that recommends stories to specific users based on their comment history, as well as the features and training set used to fit that model. These are dropped and recreated whenever the core assets receive updates.
@@ -42,5 +54,3 @@ This example is meant to be loaded from three deployments:
 - A local deployment, which stores assets in the local filesystem and DuckDB.
 
 By default, it will load for the local deployment. You can toggle deployments by setting the `DAGSTER_DEPLOYMENT` env var to `prod` or `staging`.
-
-

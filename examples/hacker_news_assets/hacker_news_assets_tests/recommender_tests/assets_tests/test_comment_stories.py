@@ -1,5 +1,5 @@
 import pytest
-from hacker_news_assets.recommender.assets.comment_stories import comment_stories
+from hacker_news_assets.assets.recommender.comment_stories import comment_stories
 from pandas import DataFrame
 
 

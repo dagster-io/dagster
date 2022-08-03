@@ -43,7 +43,7 @@ class HNAPIClient(HNClient):
 
 class HNSnapshotClient(HNClient):
     def __init__(self):
-        file_path = file_relative_path(__file__, "../snapshot.gzip")
+        file_path = file_relative_path(__file__, "../utils/snapshot.gzip")
         with gzip.open(file_path, "r") as f:
             self._items: Dict[str, HNItemRecord] = json.loads(f.read().decode())
 

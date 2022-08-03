@@ -23,5 +23,5 @@ if __name__ == "__main__":
     for x in results:
         items[int(x["id"])] = x
 
-    with gzip.open(file_relative_path(__file__, "../snapshot.gzip"), "w") as f:
+    with gzip.open(file_relative_path(__file__, "../utils/snapshot.gzip"), "w") as f:
         f.write(json.dumps(items).encode())
