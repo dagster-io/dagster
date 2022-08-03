@@ -13,7 +13,9 @@ from dagster import (
     Optional,
     Out,
     Output,
+    asset,
     job,
+    materialize_to_memory,
     op,
 )
 from dagster._core.execution.api import create_execution_plan
@@ -74,7 +76,7 @@ def test_valid_nothing_dependencies():
     assert result.success
 
 
-def test_invalid_input_dependency():
+def test_nothing_output_something_input():
     @op(out=Out(Nothing))
     def do_nothing():
         pass
@@ -83,11 +85,12 @@ def test_invalid_input_dependency():
     def add_one(num) -> int:
         return num + 1
 
-    with pytest.raises(DagsterInvalidDefinitionError):
+    @job
+    def bad_dep():
+        add_one(do_nothing())
 
-        @job
-        def bad_dep():
-            add_one(do_nothing())
+    with pytest.raises(DagsterTypeCheckDidNotPass):
+        bad_dep.execute_in_process()
 
 
 def test_result_type_check():
@@ -321,3 +324,43 @@ def test_nothing_infer():
         @op
         def _bad(_previous_steps_complete: Nothing):
             pass
+
+
+def test_none_output_non_none_input():
+    @op
+    def op1() -> None:
+        pass
+
+    @op
+    def op2(input1):
+        assert input1 is None
+
+    @job
+    def job1():
+        op2(op1())
+
+    assert job1.execute_in_process().success
+
+
+def test_asset_none_output_non_none_input():
+    @asset
+    def asset1() -> None:
+        pass
+
+    @asset
+    def asset2(asset1):
+        assert asset1 is None
+
+    assert materialize_to_memory([asset1, asset2]).success
+
+
+def test_asset_nothing_output_non_none_input():
+    @asset(dagster_type=Nothing)
+    def asset1():
+        pass
+
+    @asset
+    def asset2(asset1):
+        assert asset1 is None
+
+    assert materialize_to_memory([asset1, asset2]).success

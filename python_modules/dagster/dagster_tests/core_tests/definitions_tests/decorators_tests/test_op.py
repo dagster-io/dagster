@@ -1359,3 +1359,11 @@ def test_output_mismatch_tuple_lengths():
 
     with pytest.raises(DagsterInvariantViolationError, match="Length mismatch"):
         the_op()
+
+
+def test_none_annotated_input():
+    with pytest.raises(DagsterInvalidDefinitionError, match="is annotated with Nothing"):
+
+        @op
+        def op1(input1: None):
+            ...
