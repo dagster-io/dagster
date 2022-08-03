@@ -159,7 +159,9 @@ export function Search() {
             }}
             resultsFooterComponent={({ state }) => {
               console.log(state.query);
-              return <h1>{state.context.nbHits} hits found</h1>;
+              console.log(state);
+              // return (<a onClick={() => window.location.href=`/search?queryID=${}`}>{state.context.nbHits} hits found</a>);
+              return <h1>yay</h1>;
             }}
           />,
           document.body,

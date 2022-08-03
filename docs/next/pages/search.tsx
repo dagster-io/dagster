@@ -37,6 +37,33 @@ const client = algoliasearch(
 
 const index = client.initIndex(process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME);
 
+// createURL({ qsModule, routeState, location }) {
+//   const urlParts = location.href.match(/^(.*?)\/search/);
+//   const baseUrl = `${urlParts ? urlParts[1] : ''}/`;
+
+//   const categoryPath = routeState.category
+//     ? `${getCategorySlug(routeState.category)}/`
+//     : '';
+//   const queryParameters = {};
+
+//   if (routeState.query) {
+//     queryParameters.query = encodeURIComponent(routeState.query);
+//   }
+//   if (routeState.page !== 1) {
+//     queryParameters.page = routeState.page;
+//   }
+//   if (routeState.brands) {
+//     queryParameters.brands = routeState.brands.map(encodeURIComponent);
+//   }
+
+//   const queryString = qsModule.stringify(queryParameters, {
+//     addQueryPrefix: true,
+//     arrayFormat: 'repeat'
+//   });
+
+//   return `${baseUrl}search/${categoryPath}${queryString}`;
+// },
+
 export const SearchPage = (query) => {
   index.search(query).then(({ hits }) => {
     console.log(hits);
