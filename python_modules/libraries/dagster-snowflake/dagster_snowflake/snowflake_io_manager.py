@@ -80,10 +80,6 @@ class SnowflakeDbClient(DbClient):
             return f"""SELECT {col_str} FROM {table_slice.database}.{table_slice.schema}.{table_slice.table}"""
 
 
-def _check_table_exists_statement(table_slice: TableSlice) -> str:
-    return f"SELECT EXISTS (SELECT * FROM information_schema.tables WHERE table_schema = '{table_slice.schema}' AND table_name = '{table_slice.table}');"
-
-
 def _get_cleanup_statement(table_slice: TableSlice) -> str:
     """
     Returns a SQL statement that deletes data in the given table to make way for the output data
