@@ -15,7 +15,6 @@ EXAMPLES_TO_IGNORE = ["docs_snippets"]
 # Hardcoded list of available examples. The list is tested against the examples folder in this mono
 # repo to make sure it's up-to-date.
 AVAILABLE_EXAMPLES = [
-    "airflow_ingest",
     "assets_dbt_python",
     "assets_modern_data_stack",
     "bollinger",
@@ -26,6 +25,7 @@ AVAILABLE_EXAMPLES = [
     "ge_example",
     "hacker_news_assets",
     "software_defined_assets",
+    "with_airflow",
     "with_pyspark",
     "with_pyspark_emr",
 ]
