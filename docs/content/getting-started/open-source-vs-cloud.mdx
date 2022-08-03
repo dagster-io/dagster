@@ -1,0 +1,505 @@
+---
+title: Dagster Open Source and Dagster Cloud | Dagster Docs
+---
+
+# Dagster Open Source vs Cloud
+
+Dagster Open Source and Dagster Cloud - what's the difference?
+
+In this guide, we'll walk you through each of these offerings, including a side-by-side comparison.
+
+---
+
+## Dagster Open Source
+
+Available (and free!) for anyone to use, Dagster itself is an open source data orchestration platform built for data teams.
+
+With Dagster Open Source, you manage the operational needs to run and deploy Dagster, including infrastructure and system upgrades.
+
+---
+
+## Dagster Cloud
+
+Dagster Cloud builds upon the Dagster you know and (hopefully!) love.
+
+A fully-managed service, Dagster Cloud allows you to offload operational needs and focus on development. With the same user-friendly UI as Dagster Open Source, Dagster Cloud is both easy-to-use and scalable.
+
+Along with all Dagster Open Source functionality, Dagster Cloud also offers:
+
+- Two deployment options - [Serverless](/dagster-cloud/deployment/serverless) and [Hybrid](/dagster-cloud/deployment/hybrid), allowing you to choose between a fully-hosted solution and one where you bring-your-own-compute via an [agent](/dagster-cloud/deployment/agents)
+- Automatic system upgrades
+- Integrated CI/CD capabilities via [Branch deployments](/dagster-cloud/developing-testing/branch-deployments)
+- [Role-based access control](/dagster-cloud/account/managing-users)
+- [Single Sign-on (SSO)](/dagster-cloud/account/authentication)
+- Additional support options
+
+Check out the [side-by-side comparison](#side-by-side-comparison) for the full list of features, or the [Dagster Cloud docs](/dagster-cloud) to get started.
+
+---
+
+## Side-by-side comparison
+
+Want to compare Dagster Open Source and Cloud side-by-side? Use the following table to see where they differ on topics like infrastructure, system upgrades, and more.
+
+Items with an arrow contain additional info - click the arrow to display it.
+
+<table>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "50%",
+        }}
+      ></th>
+      <th
+        style={{
+          width: "25%",
+        }}
+      >
+        OPEN SOURCE
+      </th>
+      <th>CLOUD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td colspan="3" style={{ backgroundColor: "#DAD8D6" }}>
+        <strong>GENERAL</strong>
+      </td>
+    </tr>
+    <tr>
+      <td>Modularized testing and programming model</td>
+      <td>
+        <Check></Check> Supported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>Reusable, configurable data processing components</td>
+      <td>
+        <Check></Check> Supported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>Cross-job dependency tracking</td>
+      <td>
+        <Check></Check> Supported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>Ability to isolate codebases, dependencies, and Python versions</td>
+      <td>
+        <Check></Check> Supported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Extend using third-party{" "}
+        <a href="/integrations">integration libraries</a>
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>Support</td>
+      <td>Community + Dagster team</td>
+      <td>Dedicated support</td>
+    </tr>
+    <tr>
+      <td colspan="3" style={{ backgroundColor: "#DAD8D6" }}>
+        <strong>DAGSTER CORE CONCEPTS</strong>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>
+          <a href="/concepts/assets/software-defined-assets">
+            Software-defined assets (SDAs)
+          </a>
+        </strong>
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>
+          <a href="/concepts/ops-jobs-graphs/ops">Ops</a>,
+          <a href="/concepts/ops-jobs-graphs/graphs">Graphs</a>, and
+          <a href="/concepts/ops-jobs-graphs/jobs">Jobs</a>
+        </strong>
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>
+          <a href="/concepts/partitions-schedules-sensors/sensors">Sensors</a>{" "}
+          and
+          <a href="/concepts/partitions-schedules-sensors/sensors">
+            Scheduling
+          </a>
+        </strong>
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>
+          <a href="/concepts/partitions-schedules-sensors/partitions">
+            Partitions
+          </a>{" "}
+          and
+          <a href="/concepts/partitions-schedules-sensors/backfills">
+            Backfills
+          </a>
+        </strong>
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>
+          <a href="/concepts/io-management/io-managers">I/O management</a>
+        </strong>
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>
+          <a href="/concepts/configuration/config-schema">Configuration</a>
+        </strong>
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>
+          <a href="/concepts/repositories-workspaces/repositories">
+            Repositories
+          </a>
+        </strong>
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>
+          <a href="/concepts/repositories-workspaces/workspaces">Workspaces</a>
+        </strong>
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>
+          <a href="/concepts/resources">Resources</a>
+        </strong>
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>
+          <a href="/concepts/types">Data types</a>
+        </strong>
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>
+          <a href="/concepts/dagit/dagit">Dagit (UI)</a> and
+          <a href="/concepts/dagit/graphql">GraphQL API</a>
+        </strong>
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>
+          <a href="/concepts/logging/loggers">Logging</a>
+        </strong>
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td colspan="3" style={{ backgroundColor: "#DAD8D6" }}>
+        <strong>MONITORING AND ALERTING</strong>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <details>
+          <summary>
+            <strong>Monitoring via Dagit</strong>
+          </summary>
+          <p>
+            Including{" "}
+            <a href="/concepts/dagit/dagit#viewing-a-single-run">
+              Run Timelines
+            </a>
+            , <a href="/concepts/dagit/dagit#asset-details">
+              Asset-level status reports
+            </a>, etc.
+          </p>
+        </details>
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <details>
+          <summary>
+            <strong>Alerts</strong>
+          </summary>
+          <p>The methods supported for configuring alerts.</p>
+        </details>
+      </td>
+      <td>Scripted</td>
+      <td>
+        Scripted and{" "}
+        <a href="/dagster-cloud/account/setting-up-alerts">UI-based</a>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="3" style={{ backgroundColor: "#DAD8D6" }}>
+        <strong>INFRASTRUCTURE AND DEPLOYMENT</strong>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <details>
+          <summary>
+            <strong>Infrastructure</strong>
+          </summary>
+          <p>
+            Dagster Cloud offers a hosted infrastructure, including Serverless
+            and Hybrid (bring-your-own-compute) deployment options.
+          </p>
+          <p>
+            With Dagster Open Source, you're responsible for maintaining the
+            infrastructure Dagster runs on.
+          </p>
+        </details>
+      </td>
+      <td>Hosted by you</td>
+      <td>Hosted by Dagster</td>
+    </tr>
+    <tr>
+      <td>
+        <details>
+          <summary>
+            <strong>Flexible deployment options</strong>
+          </summary>
+          <p>
+            Such as Kubernetes, Amazon Elastic Container Service, Docker, etc.
+          </p>
+        </details>
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+      <td>
+        <Check></Check> Supported (Hybrid only)
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <details>
+          <summary>
+            <strong>Multiple instance deployments</strong>
+          </summary>
+          <p>
+            Indicates if multiple deployments, such as <code>prod</code>,{" "}
+            <code>test</code>, etc. are supported out-of-the-box.
+          </p>
+        </details>
+      </td>
+      <td>
+        <Cross></Cross> Unsupported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <details>
+          <summary>
+            <strong>CI/CD via Branch deployments</strong>
+          </summary>
+          <p>
+            Indicates if{" "}
+            <a href="/dagster-cloud/developing-testing/branch-deployments">
+              Branch deployments
+            </a>{" "}
+            are supported as part of a CI/CD strategy.
+          </p>
+        </details>
+      </td>
+      <td>
+        <Cross></Cross> Unsupported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td colspan="3" style={{ backgroundColor: "#DAD8D6" }}>
+        <strong>OPERATIONS</strong>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <details>
+          <summary>
+            <strong>System upgrades</strong>
+          </summary>
+          <p>
+            Indicates if system upgrades (Dagit and Dagster daemon) are
+            automatic (managed by Dagster) or manual (managed by you).
+          </p>
+        </details>
+      </td>
+      <td>Manual</td>
+      <td>Automatic</td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Single sign-on (SSO)</strong>
+      </td>
+      <td>
+        <Cross></Cross> Unsupported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>SAML-based SSO</strong>
+      </td>
+      <td>
+        <Cross></Cross> Unsupported
+      </td>
+      <td>
+        <Check></Check> Supported (Enterprise only)
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <details>
+          <summary>
+            <strong>Role-based access control (RBAC) - 2 tiers</strong>
+          </summary>
+          <p>Indicates if two RBAC tiers (Editor, Admin) are supported.</p>
+        </details>
+      </td>
+      <td>
+        <Cross></Cross> Unsupported
+      </td>
+      <td>
+        <Check></Check> Supported
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <details>
+          <summary>
+            <strong>RBAC - 3 tiers, deployment-scoped</strong>
+          </summary>
+          <p>
+            Indicates if three RBAC tiers (Viewer, Editor, Admin) are supported.
+          </p>
+        </details>
+      </td>
+      <td>
+        <Cross></Cross> Unsupported
+      </td>
+      <td>
+        <Check></Check> Supported (Enterprise only)
+      </td>
+    </tr>
+  </tbody>
+</table>
