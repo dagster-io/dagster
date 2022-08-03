@@ -22,7 +22,11 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME, validate_group_name
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._utils import merge_dicts
-from dagster._utils.backcompat import ExperimentalWarning, deprecation_warning
+from dagster._utils.backcompat import (
+    ExperimentalWarning,
+    deprecation_warning,
+    experimental_arg_warning,
+)
 
 from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKeyPrefix
@@ -218,7 +222,7 @@ class AssetsDefinition(ResourceAddable):
             group_name (Optional[str]): A group name for the constructed asset. Assets without a
                 group name are assigned to a group called "default".
             resource_defs (Optional[Mapping[str, ResourceDefinition]]):
-                A mapping of resource keys to resource definitions. These resources
+                (Experimental) A mapping of resource keys to resource definitions. These resources
                 will be initialized during execution, and can be accessed from the
                 body of ops in the graph during execution.
             partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
@@ -232,6 +236,8 @@ class AssetsDefinition(ResourceAddable):
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
         """
+        if resource_defs is not None:
+            experimental_arg_warning("resource_defs", "AssetsDefinition.from_graph")
         return AssetsDefinition._from_node(
             graph_def,
             keys_by_input_name,
@@ -361,7 +367,7 @@ class AssetsDefinition(ResourceAddable):
         # For graph backed assets, we assign all assets to the same group_name, if specified.
         # To assign to different groups, use .with_prefix_or_groups.
         group_names_by_key = (
-            {asset_key: group_name for asset_key in keys_by_output_name.values()}
+            {asset_key: group_name for asset_key in keys_by_output_name_with_prefix.values()}
             if group_name
             else None
         )

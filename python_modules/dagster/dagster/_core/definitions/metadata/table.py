@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, NamedTuple, Optional, Type, Union, cast
 
 import dagster._check as check
-from dagster._annotations import experimental
+from dagster._annotations import PublicAttr, experimental
 from dagster._serdes.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
 # ########################
@@ -21,7 +21,9 @@ class _TableRecordSerializer(DefaultNamedTupleSerializer):
 
 @experimental
 @whitelist_for_serdes(serializer=_TableRecordSerializer)
-class TableRecord(NamedTuple("TableRecord", [("data", Dict[str, Union[str, int, float, bool]])])):
+class TableRecord(
+    NamedTuple("TableRecord", [("data", PublicAttr[Dict[str, Union[str, int, float, bool]]])])
+):
     """Represents one record in a table. All passed keyword arguments are treated as field key/value
     pairs in the record. Field keys are arbitrary strings-- field values must be strings, integers,
     floats, or bools.
@@ -47,8 +49,8 @@ class TableSchema(
     NamedTuple(
         "TableSchema",
         [
-            ("columns", List["TableColumn"]),
-            ("constraints", "TableConstraints"),
+            ("columns", PublicAttr[List["TableColumn"]]),
+            ("constraints", PublicAttr["TableConstraints"]),
         ],
     )
 ):
@@ -130,7 +132,7 @@ class TableConstraints(
     NamedTuple(
         "TableConstraints",
         [
-            ("other", List[str]),
+            ("other", PublicAttr[List[str]]),
         ],
     )
 ):
@@ -165,10 +167,10 @@ class TableColumn(
     NamedTuple(
         "TableColumn",
         [
-            ("name", str),
-            ("type", str),
-            ("description", Optional[str]),
-            ("constraints", "TableColumnConstraints"),
+            ("name", PublicAttr[str]),
+            ("type", PublicAttr[str]),
+            ("description", PublicAttr[Optional[str]]),
+            ("constraints", PublicAttr["TableColumnConstraints"]),
         ],
     )
 ):
@@ -220,9 +222,9 @@ class TableColumnConstraints(
     NamedTuple(
         "TableColumnConstraints",
         [
-            ("nullable", bool),
-            ("unique", bool),
-            ("other", Optional[List[str]]),
+            ("nullable", PublicAttr[bool]),
+            ("unique", PublicAttr[bool]),
+            ("other", PublicAttr[Optional[List[str]]]),
         ],
     )
 ):

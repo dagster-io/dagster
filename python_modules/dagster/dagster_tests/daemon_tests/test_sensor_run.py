@@ -42,7 +42,7 @@ from dagster._core.test_utils import (
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
-from dagster._legacy import pipeline, pipeline_failure_sensor, solid
+from dagster._legacy import pipeline, solid
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
 
@@ -219,12 +219,12 @@ def asset_job_sensor(context, _event):
     return RunRequest(run_key=context.cursor, run_config={})
 
 
-@pipeline_failure_sensor
-def my_pipeline_failure_sensor(context):
+@run_failure_sensor
+def my_run_failure_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
 
 
-@run_failure_sensor(job_selection=[failure_job])
+@run_failure_sensor(monitored_jobs=[failure_job])
 def my_run_failure_sensor_filtered(context):
     assert isinstance(context.instance, DagsterInstance)
 
@@ -234,12 +234,12 @@ def my_run_failure_sensor_that_itself_fails(context):
     raise Exception("How meta")
 
 
-@run_status_sensor(pipeline_run_status=PipelineRunStatus.SUCCESS)
+@run_status_sensor(run_status=PipelineRunStatus.SUCCESS)
 def my_pipeline_success_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
 
 
-@run_status_sensor(pipeline_run_status=PipelineRunStatus.STARTED)
+@run_status_sensor(run_status=PipelineRunStatus.STARTED)
 def my_pipeline_started_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
 
@@ -300,7 +300,7 @@ def the_repo():
         run_cursor_sensor,
         asset_foo_sensor,
         asset_job_sensor,
-        my_pipeline_failure_sensor,
+        my_run_failure_sensor,
         my_run_failure_sensor_filtered,
         my_run_failure_sensor_that_itself_fails,
         my_pipeline_success_sensor,
@@ -1544,7 +1544,7 @@ def test_asset_sensor_not_triggered_on_observation(executor):
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())
-def test_pipeline_failure_sensor(executor):
+def test_run_failure_sensor(executor):
     freeze_datetime = pendulum.now()
     with instance_with_sensors() as (
         instance,
@@ -1552,7 +1552,7 @@ def test_pipeline_failure_sensor(executor):
         external_repo,
     ):
         with pendulum.test(freeze_datetime):
-            failure_sensor = external_repo.get_external_sensor("my_pipeline_failure_sensor")
+            failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor")
             instance.start_sensor(failure_sensor)
 
             evaluate_sensors(instance, workspace, executor)
@@ -1941,7 +1941,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor):
         ):
             # start sensor
             with pendulum.test(freeze_datetime):
-                failure_sensor = external_repo.get_external_sensor("my_pipeline_failure_sensor")
+                failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor")
                 instance.start_sensor(failure_sensor)
 
                 evaluate_sensors(instance, workspace, executor)
@@ -2033,7 +2033,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor):
 
 @pytest.mark.parametrize("storage_config_fn", [sql_event_log_storage_config_fn])
 @pytest.mark.parametrize("executor", get_sensor_executors())
-def test_pipeline_failure_sensor_empty_run_records(storage_config_fn, executor):
+def test_run_failure_sensor_empty_run_records(storage_config_fn, executor):
     freeze_datetime = pendulum.now()
     with tempfile.TemporaryDirectory() as temp_dir:
 
@@ -2044,7 +2044,7 @@ def test_pipeline_failure_sensor_empty_run_records(storage_config_fn, executor):
         ):
 
             with pendulum.test(freeze_datetime):
-                failure_sensor = external_repo.get_external_sensor("my_pipeline_failure_sensor")
+                failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor")
                 instance.start_sensor(failure_sensor)
 
                 evaluate_sensors(instance, workspace, executor)

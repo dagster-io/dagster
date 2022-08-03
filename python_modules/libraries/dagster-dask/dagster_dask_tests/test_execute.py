@@ -282,7 +282,7 @@ def foo_solid():
 
 
 class BasicVersionStrategy(VersionStrategy):
-    def get_solid_version(self, _):
+    def get_op_version(self, _):
         return "foo"
 
 

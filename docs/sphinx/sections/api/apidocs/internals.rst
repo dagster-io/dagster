@@ -3,8 +3,7 @@ Internals
 
 .. currentmodule:: dagster
 
-Please note that internal APIs are likely to be in much greater flux pre-1.0 than user-facing APIs,
-particularly if not exported in the top level ``dagster`` module.
+Note that APIs imported from Dagster submodules are not considered stable, and are potentially subject to change in the future.
 
 If you find yourself consulting these docs because you are writing custom components and plug-ins,
 please get in touch with the core team `on our Slack <https://join.slack.com/t/dagster/shared_invite/enQtNjEyNjkzNTA2OTkzLTI0MzdlNjU0ODVhZjQyOTMyMGM1ZDUwZDQ1YjJmYjI3YzExZGViMDI1ZDlkNTY5OThmYWVlOWM1MWVjN2I3NjU>`_.
@@ -12,8 +11,11 @@ We're curious what you're up to, happy to help, excited for new community contri
 to make the system as easy to work with as possible -- including for teams who are looking to
 customize it.
 
-Executors
----------
+Executors (Experimental)
+------------------------
+
+APIs for constructing custom executors. This is considered advanced experimental usage. Please note that using Dagster-provided executors is considered stable, common usage.
+
 .. autodecorator:: executor
 
 .. autoclass:: ExecutorDefinition
@@ -27,8 +29,8 @@ Executors
 
 ----
 
-File Manager
---------------
+File Manager (Experimental)
+---------------------------
 
 .. currentmodule:: dagster._core.storage.file_manager
 
@@ -39,6 +41,11 @@ File Manager
 
 .. autodata:: local_file_manager
    :annotation: ResourceDefinition
+
+.. autoclass:: FileHandle
+   :members:
+
+.. autoclass:: LocalFileHandle
 
 ----
 
@@ -90,6 +97,7 @@ Run storage
 .. autoclass:: DagsterRunStatus
    :members:
    :undoc-members:
+   :inherited-members:
 
 .. currentmodule:: dagster._core.storage.runs
 
@@ -98,6 +106,10 @@ Run storage
 .. autoclass:: SqlRunStorage
 
 .. autoclass:: SqliteRunStorage
+
+.. currentmodule:: dagster._core.storage.pipeline_run
+
+.. autoclass:: RunRecord
 
 
 See also: :py:class:`dagster_postgres.PostgresRunStorage` and :py:class:`dagster_mysql.MySQLRunStorage`.
@@ -124,6 +136,8 @@ Event log storage
 .. autoclass:: SqliteEventLogStorage
 
 .. autoclass:: ConsolidatedSqliteEventLogStorage
+
+.. autoclass:: AssetRecord
 
 See also: :py:class:`dagster_postgres.PostgresEventLogStorage` and :py:class:`dagster_mysql.MySQLEventLogStorage`.
 

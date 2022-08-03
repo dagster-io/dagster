@@ -1,6 +1,7 @@
 from typing import Any, Mapping, Optional, Sequence
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions import JobDefinition, NodeHandle
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterInvariantViolationError
@@ -14,7 +15,7 @@ from .execution_result import ExecutionResult
 class ExecuteInProcessResult(ExecutionResult):
     """Result object returned by in-process testing APIs.
 
-    Used for retrieving run success, events, and outputs from execution methods that return this object.
+    Users should not instantiate this object directly. Used for retrieving run success, events, and outputs from execution methods that return this object.
 
     This object is returned by:
     - :py:meth:`dagster.GraphDefinition.execute_in_process`
@@ -45,20 +46,24 @@ class ExecuteInProcessResult(ExecutionResult):
             output_capture, "output_capture", key_type=StepOutputHandle
         )
 
+    @public  # type: ignore
     @property
     def job_def(self) -> JobDefinition:
         return self._job_def
 
+    @public  # type: ignore
     @property
     def dagster_run(self) -> DagsterRun:
         return self._dagster_run
 
+    @public  # type: ignore
     @property
     def all_events(self) -> Sequence[DagsterEvent]:
         """List[DagsterEvent]: All dagster events emitted during execution."""
 
         return self._event_list
 
+    @public  # type: ignore
     @property
     def run_id(self) -> str:
         return self.dagster_run.run_id
@@ -97,6 +102,7 @@ class ExecuteInProcessResult(ExecutionResult):
             )
         return mapped_outputs
 
+    @public
     def output_for_node(self, node_str: str, output_name: str = DEFAULT_OUTPUT) -> Any:
         """Retrieves output value with a particular name from the in-process run of the job.
 
@@ -113,6 +119,7 @@ class ExecuteInProcessResult(ExecutionResult):
             node_str, output_name=output_name
         )
 
+    @public
     def output_value(self, output_name: str = DEFAULT_OUTPUT) -> Any:
         """Retrieves output of top-level job, if an output is returned.
 

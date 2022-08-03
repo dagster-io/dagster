@@ -1,3 +1,4 @@
+import inspect
 import warnings
 from typing import (
     TYPE_CHECKING,
@@ -14,6 +15,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import AssetKey, DynamicAssetKey
 from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster._core.errors import DagsterError, DagsterInvalidDefinitionError
@@ -272,7 +274,13 @@ class OutputDefinition:
 
 def _checked_inferred_type(inferred: Any) -> DagsterType:
     try:
-        return resolve_dagster_type(inferred)
+        if inferred == inspect.Parameter.empty:
+            return resolve_dagster_type(None)
+        elif inferred is None:
+            return resolve_dagster_type(type(None))
+        else:
+            return resolve_dagster_type(inferred)
+
     except DagsterError as e:
         raise DagsterInvalidDefinitionError(
             f"Problem using type '{inferred}' from return type annotation, correct the issue "
@@ -353,17 +361,19 @@ class Out(
     NamedTuple(
         "_Out",
         [
-            ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
-            ("description", Optional[str]),
-            ("is_required", bool),
-            ("io_manager_key", str),
-            ("metadata", Optional[MetadataUserInput]),
-            ("asset_key", Optional[Union[AssetKey, DynamicAssetKey]]),
+            ("dagster_type", PublicAttr[Union[DagsterType, Type[NoValueSentinel]]]),
+            ("description", PublicAttr[Optional[str]]),
+            ("is_required", PublicAttr[bool]),
+            ("io_manager_key", PublicAttr[str]),
+            ("metadata", PublicAttr[Optional[MetadataUserInput]]),
+            ("asset_key", PublicAttr[Optional[Union[AssetKey, DynamicAssetKey]]]),
             (
                 "asset_partitions",
-                Optional[Union[AbstractSet[str], Callable[["OutputContext"], AbstractSet[str]]]],
+                PublicAttr[
+                    Optional[Union[AbstractSet[str], Callable[["OutputContext"], AbstractSet[str]]]]
+                ],
             ),
-            ("asset_partitions_def", Optional["PartitionsDefinition"]),
+            ("asset_partitions_def", PublicAttr[Optional["PartitionsDefinition"]]),
         ],
     )
 ):
@@ -443,7 +453,9 @@ class Out(
 
     def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
         dagster_type = (
-            self.dagster_type if self.dagster_type is not NoValueSentinel else annotation_type
+            self.dagster_type
+            if self.dagster_type is not NoValueSentinel
+            else _checked_inferred_type(annotation_type)
         )
 
         return OutputDefinition(
@@ -499,7 +511,9 @@ class DynamicOut(Out):
 
     def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
         dagster_type = (
-            self.dagster_type if self.dagster_type is not NoValueSentinel else annotation_type
+            self.dagster_type
+            if self.dagster_type is not NoValueSentinel
+            else _checked_inferred_type(annotation_type)
         )
 
         return DynamicOutputDefinition(
@@ -514,7 +528,7 @@ class DynamicOut(Out):
         )
 
 
-class GraphOut(NamedTuple("_GraphOut", [("description", Optional[str])])):
+class GraphOut(NamedTuple("_GraphOut", [("description", PublicAttr[Optional[str]])])):
     """
     Represents information about the outputs that a graph maps.
 

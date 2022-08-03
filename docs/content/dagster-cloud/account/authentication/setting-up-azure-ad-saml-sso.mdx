@@ -2,6 +2,140 @@
 title: "Setting up Azure Active Directory SSO for Dagster Cloud | Dagster Docs"
 
 noindex: True
+
+platform_type: "cloud"
+display_name: "Azure AD"
+feature_name: "saml_sso_azure"
+pricing_plan: "enterprise"
 ---
 
 # Setting up Azure Active Directory SSO for Dagster Cloud
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+In this guide, you'll configure Azure Active Directory (AD) to use single sign-on (SSO) with your Dagster Cloud organization.
+
+---
+
+## Prerequisites
+
+To complete the steps in this guide, you'll need:
+
+- An existing Azure AD account
+- To have installed the [`dagster-cloud-cli`](https://pypi.org/project/dagster-cloud-cli/) Python package and have access to the `dagster-cloud` CLI
+- The following in Dagster Cloud:
+  - [Access to a user token](/dagster-cloud/account/managing-user-agent-tokens#managing-user-tokens)
+  - [Organization Admin permissions](/dagster-cloud/account/managing-users) in your organization
+
+---
+
+## Step 1: Add the Dagster Cloud app in Azure AD
+
+In this step, you'll add the Dagster Cloud app to your list of managed SaaS apps in Azure AD.
+
+1. Sign in to the Azure portal.
+2. On the left navigation pane, click the **Azure Active Directory** service.
+3. Navigate to **Enterprise Applications** and then **All Applications**.
+4. Click **New application**.
+5. In the **Add from the gallery** section, type **Dagster Cloud** in the search box.
+6. Select **Dagster Cloud** from the results panel and then add the app. Wait a few seconds while the app is added to your tenant.
+
+---
+
+## Step 2: Configure SSO in Azure AD
+
+In this step, you'll configure and enable SSO for Azure AD in your Azure portal.
+
+1. On the **Dagster Cloud** application integration page, locate the **Manage** section and select **single sign-on**.
+
+2. On the **Select a single sign-on method** page, select **SAML**.
+
+3. On the **Set up single sign-on with SAML** page, click the pencil icon for **Basic SAML Configuration** to edit the settings.
+
+   <Image
+   alt="Settings Dropdown"
+   src="/images/dagster-cloud/sso/azure/set-up-single-sign-on.png"
+   width={623}
+   height={179}
+   />
+
+4. In the **Basic SAML Configuration** section, fill in the **Identifier** and **Reply URL** fields as follows:
+
+   Copy and paste the following URL, replacing `<organization_name>` with your Dagster Cloud organization name:
+
+       https://<organization_name>.dagster.cloud/auth/saml/consume
+
+5. Click **Set additional URLs**.
+
+6. In the **Sign-on URL** field, copy and paste the URL you entered in the **Identifier** and **Reply URL** fields.
+
+7. Next, you'll configure the SAML assertions. In addition to the default attributes, Dagster Cloud requires the following:
+
+   - `FirstName` - `user.givenname`
+   - `LastName` - `user.surname`
+   - `Email` - `user.userprincipalname`
+
+   Add these attribute mappings to the SAML assertion.
+
+8. On the **Set up single sign-on with SAML** page:
+
+   1. Locate the **SAML Signing Certificate** section.
+
+   2. Next to **Federation Metadata XML**, click **Download**:
+
+      <Image
+      alt="Download SAML Certificate"
+      src="/images/dagster-cloud/sso/azure/download.png"
+      width={753}
+      height={223}
+      />
+
+   When prompted, save the SAML metadata file to your computer.
+
+---
+
+## Step 3: Upload the SAML metadata to Dagster Cloud
+
+After you've downloaded the SAML metadata file, upload it to Dagster Cloud using the `dagster-cloud` CLI:
+
+```shell
+dagster-cloud organization settings saml upload-identity-provider-metadata <path/to/metadata> \
+   --api-token=<user_token> \
+   --url https://<organization_name>.dagster.cloud
+```
+
+---
+
+## Step 4: Create a test user
+
+In this section, you'll create a test user in the Azure portal.
+
+1. From the left pane in the Azure portal, click **Azure Active Directory**.
+2. Click **Users > All users**.
+3. Click **New user** at the top of the screen.
+4. In the **User\_** properties, fill in the following fields:
+   - **Name**: Enter `B.Simon`.
+   - **User name**: Enter `B.Simon@contoso.com`.
+   - Select the **Show password** check box and write down the value displayed in the **Password** box.
+5. Click **Create**.
+
+---
+
+## Step 5: Test your SSO configuration
+
+Lastly, you'll test your SSO configuration:
+
+- [Service provider (SP)-initiated login](#testing-a-service-provider-initiated-login)
+- [Identity provider (idP)-initiated login](#testing-an-identity-provider-initiated-login)
+
+### Testing a service provider-initiated login
+
+1. Navigate to your Dagster Cloud sign in page at `https://<organization_name>.dagster.cloud`
+
+2. Click the **Sign in with SSO** button.
+
+3. Initiate the login flow and address issues that arise, if any.
+
+### Testing an identity provider-initiated login
+
+Click **Test this application** in the Azure portal. If successful, you'll be automatically signed into your Dagster Cloud organization.

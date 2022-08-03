@@ -19,7 +19,7 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-import {ASSET_NODE_CONFIG_FRAGMENT, configSchemaForAssetNode} from './AssetConfig';
+import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
 import {
   AssetMetadataTable,
@@ -39,7 +39,7 @@ export const AssetNodeDefinition: React.FC<{
   const partitionHealthData = usePartitionHealthData([assetNode.assetKey]);
   const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
 
-  const assetConfigSchema = configSchemaForAssetNode(assetNode);
+  const assetConfigSchema = assetNode.configField?.configType;
   const repoAddress = buildRepoAddress(
     assetNode.repository.name,
     assetNode.repository.location.name,
