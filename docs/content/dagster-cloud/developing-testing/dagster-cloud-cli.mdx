@@ -57,45 +57,46 @@ The recommended way to set up your CLI's config for long-term use is through the
 2. Select your authentication method. **Note**: Browser authentication is the easiest method to configure.
 
    <details>
-    <summary><strong>BROWSER AUTHENTICATION</strong></summary>
 
-   The easiest way to set up is to authenticate through the browser.
+ <summary><strong>BROWSER AUTHENTICATION</strong></summary>
 
-   ```shell
-   $ dagster-cloud config setup
-   ? How would you like to authenticate the CLI? (Use arrow keys)
-    » Authenticate in browser
-      Authenticate using token
-   Authorized for organization `hooli`
+The easiest way to set up is to authenticate through the browser.
 
-   ? Default deployment: prod
-   ```
+```shell
+$ dagster-cloud config setup
+? How would you like to authenticate the CLI? (Use arrow keys)
+ » Authenticate in browser
+   Authenticate using token
+Authorized for organization `hooli`
 
-   When prompted, you can specify a default deployment. If specified, a deployment won't be required in subsequent `dagster-cloud` commands. The default deployment for a new Dagster Cloud organization is `prod`.
+? Default deployment: prod
+```
+
+When prompted, you can specify a default deployment. If specified, a deployment won't be required in subsequent `dagster-cloud` commands. The default deployment for a new Dagster Cloud organization is `prod`.
 
    </details>
 
    <details>
-   <summary><strong>TOKEN AUTHENTICATION</strong></summary>
+<summary><strong>TOKEN AUTHENTICATION</strong></summary>
 
-   Alternatively, you may authenticate using a user token. Refer to the [Managing user and agent tokens guide](/dagster-cloud/account/managing-user-agent-tokens) for more info.
+Alternatively, you may authenticate using a user token. Refer to the [Managing user and agent tokens guide](/dagster-cloud/account/managing-user-agent-tokens) for more info.
 
-   ```shell
-   $ dagster-cloud config setup
-   ? How would you like to authenticate the CLI? (Use arrow keys)
-      Authenticate in browser
-    » Authenticate using token
+```shell
+$ dagster-cloud config setup
+? How would you like to authenticate the CLI? (Use arrow keys)
+   Authenticate in browser
+ » Authenticate using token
 
-   ? Dagster Cloud organization: hooli
-   ? Dagster Cloud user token: *************************************
-   ? Default deployment: prod
-   ```
+? Dagster Cloud organization: hooli
+? Dagster Cloud user token: *************************************
+? Default deployment: prod
+```
 
-   When prompted, specify the following:
+When prompted, specify the following:
 
-   - **Organization** - Your organization name as it appears in the Dagit URL. For example, if your Dagster Cloud instance is `https://hooli.dagster.cloud/`, this would be `hooli`.
-   - **User token** - The user token.
-   - **Default deployment** - **Optional**. A default deployment. If specified, a deployment won't be required in subsequent `dagster-cloud` commands. The default deployment for a new Dagster Cloud organization is `prod`.
+- **Organization** - Your organization name as it appears in the Dagit URL. For example, if your Dagster Cloud instance is `https://hooli.dagster.cloud/`, this would be `hooli`.
+- **User token** - The user token.
+- **Default deployment** - **Optional**. A default deployment. If specified, a deployment won't be required in subsequent `dagster-cloud` commands. The default deployment for a new Dagster Cloud organization is `prod`.
 
    </details>
 
@@ -115,7 +116,9 @@ Specify the `--show-token` flag to show the full user token.
 
 To modify the existing config, re-run:
 
-    dagster-cloud config setup
+```shell
+dagster-cloud config setup
+```
 
 ---
 
@@ -123,7 +126,9 @@ To modify the existing config, re-run:
 
 To quickly toggle between deployments, run:
 
-    dagster-cloud set-deployment <deployment_name>
+```shell
+dagster-cloud set-deployment <deployment_name>
+```
 
 ---
 
