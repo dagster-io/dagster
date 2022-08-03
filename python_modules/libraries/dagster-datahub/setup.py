@@ -34,7 +34,7 @@ if __name__ == "__main__":
         include_package_data=True,
         install_requires=[
             "acryl-datahub[datahub-rest, datahub-kafka]<0.8.41.2",
-            f"dagster==1.0.0",
+            "dagster==1.0.0",
             "packaging",
             "requests",
         ],

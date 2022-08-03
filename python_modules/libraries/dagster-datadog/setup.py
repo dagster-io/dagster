@@ -31,6 +31,6 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["dagster_datadog_tests*"]),
-        install_requires=[f"dagster==1.0.0", "datadog"],
+        install_requires=["dagster==1.0.0", "datadog"],
         zip_safe=False,
     )

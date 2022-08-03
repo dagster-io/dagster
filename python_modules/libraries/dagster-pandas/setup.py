@@ -44,5 +44,5 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_pandas_tests*"]),
         include_package_data=True,
-        install_requires=[f"dagster==1.0.0", "pandas"],
+        install_requires=["dagster==1.0.0", "pandas"],
     )

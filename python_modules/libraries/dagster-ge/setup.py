@@ -31,8 +31,8 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_ge_tests*"]),
         install_requires=[
-            f"dagster==1.0.0",
-            f"dagster-pandas{pin}",
+            "dagster==1.0.0",
+            "dagster-pandas==0.16.0",
             "pandas",
             "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27",
         ],

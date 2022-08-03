@@ -31,6 +31,6 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["dagster_prometheus_tests*"]),
-        install_requires=[f"dagster==1.0.0", "prometheus_client"],
+        install_requires=["dagster==1.0.0", "prometheus_client"],
         zip_safe=False,
     )
