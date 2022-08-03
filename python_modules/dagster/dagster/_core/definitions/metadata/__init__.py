@@ -531,6 +531,7 @@ class TextMetadataValue(  # type: ignore
             cls, check.opt_str_param(text, "text", default="")
         )
 
+    @public  # type: ignore
     @property
     def value(self) -> Optional[str]:
         return self.text
@@ -557,6 +558,7 @@ class UrlMetadataValue(  # type: ignore
             cls, check.opt_str_param(url, "url", default="")
         )
 
+    @public  # type: ignore
     @property
     def value(self) -> Optional[str]:
         return self.url
@@ -762,6 +764,7 @@ class DagsterAssetMetadataValue(
             cls, check.inst_param(asset_key, "asset_key", AssetKey)
         )
 
+    @public  # type: ignore
     @property
     def value(self) -> "AssetKey":
         return self.value
@@ -786,6 +789,7 @@ class TableMetadataValue(
         schema (Optional[TableSchema]): A schema for the table.
     """
 
+    @public  # type: ignore
     @staticmethod
     def infer_column_type(value):
         if isinstance(value, bool):
@@ -823,6 +827,7 @@ class TableMetadataValue(
             schema,
         )
 
+    @public  # type: ignore
     @property
     def value(self):
         return self

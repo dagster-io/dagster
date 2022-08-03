@@ -1,6 +1,7 @@
 from typing import Mapping, NamedTuple
 
 import dagster._check as check
+from dagster._annotations import PublicAttr
 from dagster._core.definitions import ExecutorDefinition, IPipeline
 from dagster._core.instance import DagsterInstance
 
@@ -9,10 +10,10 @@ class InitExecutorContext(
     NamedTuple(
         "InitExecutorContext",
         [
-            ("job", IPipeline),
-            ("executor_def", ExecutorDefinition),
-            ("executor_config", Mapping[str, object]),
-            ("instance", DagsterInstance),
+            ("job", PublicAttr[IPipeline]),
+            ("executor_def", PublicAttr[ExecutorDefinition]),
+            ("executor_config", PublicAttr[Mapping[str, object]]),
+            ("instance", PublicAttr[DagsterInstance]),
         ],
     )
 ):

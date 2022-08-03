@@ -3,6 +3,8 @@ import inspect
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
+from dagster._annotations import public
+
 if TYPE_CHECKING:
     from .op_definition import OpDefinition
     from .resource_definition import ResourceDefinition
@@ -58,10 +60,12 @@ class VersionStrategy(ABC):
     outputs do not have an up-to-date version will run.
     """
 
+    @public
     @abstractmethod
     def get_op_version(self, context: OpVersionContext) -> str:
         raise NotImplementedError()
 
+    @public
     def get_resource_version(
         self, context: ResourceVersionContext  # pylint: disable=unused-argument
     ) -> Optional[str]:
@@ -80,6 +84,7 @@ class SourceHashVersionStrategy(VersionStrategy):
         code_as_str = inspect.getsource(fn)
         return hashlib.sha1(code_as_str.encode("utf-8")).hexdigest()
 
+    @public
     def get_op_version(self, context: OpVersionContext) -> str:
         compute_fn = context.op_def.compute_fn
         if callable(compute_fn):
@@ -87,5 +92,6 @@ class SourceHashVersionStrategy(VersionStrategy):
         else:
             return self._get_source_hash(compute_fn.decorated_fn)
 
+    @public
     def get_resource_version(self, context: ResourceVersionContext) -> Optional[str]:
         return self._get_source_hash(context.resource_def.resource_fn)

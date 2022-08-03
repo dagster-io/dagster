@@ -97,6 +97,7 @@ Run storage
 .. autoclass:: DagsterRunStatus
    :members:
    :undoc-members:
+   :inherited-members:
 
 .. currentmodule:: dagster._core.storage.runs
 
@@ -105,6 +106,10 @@ Run storage
 .. autoclass:: SqlRunStorage
 
 .. autoclass:: SqliteRunStorage
+
+.. currentmodule:: dagster._core.storage.pipeline_run
+
+.. autoclass:: RunRecord
 
 
 See also: :py:class:`dagster_postgres.PostgresRunStorage` and :py:class:`dagster_mysql.MySQLRunStorage`.
@@ -131,6 +136,8 @@ Event log storage
 .. autoclass:: SqliteEventLogStorage
 
 .. autoclass:: ConsolidatedSqliteEventLogStorage
+
+.. autoclass:: AssetRecord
 
 See also: :py:class:`dagster_postgres.PostgresEventLogStorage` and :py:class:`dagster_mysql.MySQLEventLogStorage`.
 
