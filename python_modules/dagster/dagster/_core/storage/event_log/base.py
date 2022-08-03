@@ -34,6 +34,8 @@ class RunShardedEventsCursor(NamedTuple):
 class EventLogRecord(NamedTuple):
     """Internal representation of an event record, as stored in a
     :py:class:`~dagster._core.storage.event_log.EventLogStorage`.
+
+    Users should not instantiate this class directly.
     """
 
     storage_id: PublicAttr[int]
@@ -122,6 +124,11 @@ class AssetEntry(
 
 
 class AssetRecord(NamedTuple):
+    """Internal representation of an asset record, as stored in a :py:class:`~dagster._core.storage.event_log.EventLogStorage`.
+
+    Users should not invoke this class directly.
+    """
+
     storage_id: int
     asset_entry: AssetEntry
 

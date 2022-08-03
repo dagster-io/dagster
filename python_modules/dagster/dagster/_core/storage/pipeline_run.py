@@ -657,6 +657,8 @@ class RunRecord(
 ):
     """Internal representation of a run record, as stored in a
     :py:class:`~dagster._core.storage.runs.RunStorage`.
+
+    Users should not invoke this class directly.
     """
 
     def __new__(

@@ -750,8 +750,8 @@ class DagsterInstance:
     # run storage
     @public
     @traced
-    def get_run_by_id(self, run_id: str) -> Optional[PipelineRun]:
-        return self._run_storage.get_run_by_id(run_id)
+    def get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
+        return cast(DagsterRun, self._run_storage.get_run_by_id(run_id))
 
     @traced
     def get_pipeline_snapshot(self, snapshot_id: str) -> "PipelineSnapshot":
@@ -1380,7 +1380,6 @@ class DagsterInstance:
 
     # asset storage
 
-    @public
     @traced
     def all_asset_keys(self):
         return self._event_storage.all_asset_keys()
@@ -1395,13 +1394,13 @@ class DagsterInstance:
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         return self._event_storage.has_asset_key(asset_key)
 
-    @public
     @traced
     def get_latest_materialization_events(
         self, asset_keys: Sequence[AssetKey]
     ) -> Mapping[AssetKey, Optional["EventLogEntry"]]:
         return self._event_storage.get_latest_materialization_events(asset_keys)
 
+    @public
     @traced
     def get_event_records(
         self,
@@ -1430,7 +1429,6 @@ class DagsterInstance:
     ) -> Iterable["AssetRecord"]:
         return self._event_storage.get_asset_records(asset_keys)
 
-    @public
     @traced
     def run_ids_for_asset_key(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
