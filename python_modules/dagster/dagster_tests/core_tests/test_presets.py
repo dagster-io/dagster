@@ -1,4 +1,4 @@
-from dagster_tests.general_tests.test_repository import define_multi_mode_with_resources_pipeline
+from dagster_tests.general_tests.test_legacy_repository import define_multi_mode_with_resources_pipeline
 
 from dagster._legacy import PresetDefinition
 from dagster._utils import file_relative_path
