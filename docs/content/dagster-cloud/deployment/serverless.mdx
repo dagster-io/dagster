@@ -60,7 +60,8 @@ To switch to Hybrid, navigate to **Status > Agents** in your Dagster Cloud accou
 ## Security and data protection
 
 Unlike Hybrid, Serverless Deployments on Dagster Cloud require direct access to your data, secrets and source code.
-* Dagster Cloud Serverless does not provide persistent storage. Ephemeral storage is deleted when a run concludes.
-* Secrets and source code are built into the image directly. Images are stored in a per-customer container registry with restricted access.
-* User code is securely sandboxed using modern container sandboxing techniques.
-* All production access is governed by industry-standard best practices which are regularly audited.
+
+- Dagster Cloud Serverless does not provide persistent storage. Ephemeral storage is deleted when a run concludes.
+- Secrets and source code are built into the image directly. Images are stored in a per-customer container registry with restricted access.
+- User code is securely sandboxed using modern container sandboxing techniques.
+- All production access is governed by industry-standard best practices which are regularly audited.
