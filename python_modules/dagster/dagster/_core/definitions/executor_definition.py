@@ -161,7 +161,9 @@ class ExecutorDefinition(NamedConfigurableDefinition):
         Wraps this object in an object of the same type that provides configuration to the inner
         object.
 
-        Using ``configured`` may result in config values being displayed in Dagit, so it is not recommended to use this API with sensitive values, such as secrets.
+        Using ``configured`` may result in config values being displayed in
+        Dagit, so it is not recommended to use this API with sensitive values,
+        such as secrets.
 
         Args:
             config_or_config_fn (Union[Any, Callable[[Any], Any]]): Either (1) Run configuration
