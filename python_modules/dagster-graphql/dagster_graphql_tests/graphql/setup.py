@@ -1274,41 +1274,37 @@ def define_partitions():
 
 
 def define_sensors():
-    @sensor(pipeline_name="no_config_pipeline", mode="default")
+    @sensor(job_name="no_config_pipeline")
     def always_no_config_sensor(_):
         return RunRequest(
             run_key=None,
             tags={"test": "1234"},
         )
 
-    @sensor(pipeline_name="no_config_pipeline", mode="default")
+    @sensor(job_name="no_config_pipeline")
     def once_no_config_sensor(_):
         return RunRequest(
             run_key="once",
             tags={"test": "1234"},
         )
 
-    @sensor(pipeline_name="no_config_pipeline", mode="default")
+    @sensor(job_name="no_config_pipeline")
     def never_no_config_sensor(_):
         return SkipReason("never")
 
-    @sensor(pipeline_name="no_config_pipeline", mode="default")
+    @sensor(job_name="no_config_pipeline")
     def multi_no_config_sensor(_):
         yield RunRequest(run_key="A")
         yield RunRequest(run_key="B")
 
-    @sensor(pipeline_name="no_config_pipeline", mode="default", minimum_interval_seconds=60)
+    @sensor(job_name="no_config_pipeline", minimum_interval_seconds=60)
     def custom_interval_sensor(_):
         return RunRequest(
             run_key=None,
             tags={"test": "1234"},
         )
 
-    @sensor(
-        pipeline_name="no_config_pipeline",
-        mode="default",
-        default_status=DefaultSensorStatus.RUNNING,
-    )
+    @sensor(job_name="no_config_pipeline", default_status=DefaultSensorStatus.RUNNING)
     def running_in_code_sensor(_):
         return RunRequest(
             run_key=None,

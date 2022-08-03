@@ -37,7 +37,7 @@ def define_schedules():
     math_hourly_schedule = ScheduleDefinition(
         name="math_hourly_schedule",
         cron_schedule="0 0 * * *",
-        pipeline_name="math",
+        job_name="math",
         run_config={"solids": {"add_one": {"inputs": {"num": {"value": 123}}}}},
     )
 

@@ -35,7 +35,7 @@ def get_toys_sensors():
 
     directory_name = os.environ.get("DAGSTER_TOY_SENSOR_DIRECTORY")
 
-    @sensor(pipeline_name="log_file_pipeline")
+    @sensor(job_name="log_file_pipeline")
     def toy_file_sensor(context):
         if not directory_name:
             yield SkipReason(
@@ -71,7 +71,7 @@ def get_toys_sensors():
 
     from dagster_aws.s3.sensor import get_s3_keys
 
-    @sensor(pipeline_name="log_s3_pipeline")
+    @sensor(job_name="log_s3_pipeline")
     def toy_s3_sensor(context):
         if not bucket:
             raise Exception(

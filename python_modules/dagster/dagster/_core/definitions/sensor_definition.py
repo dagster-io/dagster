@@ -414,7 +414,7 @@ class SensorDefinition:
 
     def check_valid_run_requests(self, run_requests: Sequence[RunRequest]):
         has_multiple_targets = len(self._targets) > 1
-        target_names = [target.job_name for target in self._targets]
+        target_names = [target.pipeline_name for target in self._targets]
 
         if run_requests and not self._targets:
             raise Exception(
@@ -443,7 +443,11 @@ class SensorDefinition:
     @public  # type: ignore
     @property
     def job_name(self) -> Optional[str]:
-        return self._target.pipeline_name
+        if len(self._targets) > 1:
+            raise DagsterInvalidInvocationError(
+                f"Cannot use `job_name` property for sensor {self.name}, which targets multiple jobs."
+            )
+        return self._targets[0].pipeline_name
 
     @public  # type: ignore
     @property

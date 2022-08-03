@@ -35,7 +35,7 @@ def always_run_schedule(_context):
     return {}
 
 
-@sensor(pipeline_name="foo_pipeline", minimum_interval_seconds=10)
+@sensor(job_name="foo_pipeline", minimum_interval_seconds=10)
 def always_on_sensor(_context):
     return RunRequest(run_key=None, run_config={}, tags={})
 
