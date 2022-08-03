@@ -39,11 +39,14 @@ GCS
 .. autoconfigurable:: gcs_resource
   :annotation: ResourceDefinition
 
+.. autoconfigurable:: dagster_gcp.gcs.gcs_pickle_io_manager
+  :annotation: IOManagerDefinition
+
+File Manager (Experimental)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. autoclass:: GCSFileHandle
   :members:
 
 .. autodata:: gcs_file_manager
   :annotation: ResourceDefinition
-
-.. autoconfigurable:: dagster_gcp.gcs.gcs_pickle_io_manager
-  :annotation: IOManagerDefinition

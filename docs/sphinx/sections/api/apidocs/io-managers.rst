@@ -46,6 +46,16 @@ Built-in IO Managers
   :annotation: IOManagerDefinition
 
 
+Input Managers (Experimental)
+----------------------------------
+
+Input managers load inputs from either upstream outputs or from provided default values.
+
+.. autodecorator:: input_manager
+
+.. autoclass:: InputManager
+    :members:
+
 Root Input Managers (Experimental)
 ----------------------------------
 
