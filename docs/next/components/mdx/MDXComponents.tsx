@@ -15,7 +15,7 @@ import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
 export const SearchIndexContext = React.createContext(null);
 import path from "path";
-// import GenerateAgentToken from "./includes/dagster-cloud/GenerateAgentToken.mdx";
+import GenerateAgentToken from "./includes/dagster-cloud/GenerateAgentToken.mdx";
 import { Tab, Transition } from "@headlessui/react";
 
 const PyObject: React.FunctionComponent<{
@@ -563,7 +563,7 @@ export default {
   Icons,
   ReferenceTable,
   ReferenceTableItem,
-  // GenerateAgentToken,
+  GenerateAgentToken,
   ArticleList,
   ArticleListItem,
   TabGroup,
