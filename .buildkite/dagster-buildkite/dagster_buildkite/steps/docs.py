@@ -20,7 +20,7 @@ def build_docs_steps() -> List[BuildkiteStep]:
         # To fix this, run 'make snapshot' in the /docs directory to update the snapshots.
         # Be sure to check the diff to make sure the literalincludes are as you expect them."
         CommandStepBuilder("docs code snippets")
-        .run("cd docs", "make docs_dev_install", "make mdx-format", "git diff --exit-code")
+        .run("cd docs", "make next-dev-install", "make mdx-format", "git diff --exit-code")
         .on_test_image(AvailablePythonVersion.V3_7)
         .build(),
         # Make sure the docs site can build end-to-end.

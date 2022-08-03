@@ -14,15 +14,15 @@ import imageTransformer, { ImageStats } from "../util/imageTransformer";
   const stream = fg.stream(['../content/**/*.mdx']);
 
   let stats: CodeBlockStats & ImageStats = {
-    totalSnapshots: 0,
-    updatedSnapshots: [],
+    totalCodeBlocks: 0,
+    updatedCodeBlocks: [],
     totalImages: 0,
     updatedImages: [],
   };
   const setCodeBlockStats = (newStats: CodeBlockStats) => {
-    const { totalSnapshots, updatedSnapshots } = newStats;
-    stats.totalSnapshots += totalSnapshots;
-    stats.updatedSnapshots = stats.updatedSnapshots.concat(updatedSnapshots);
+    const { totalCodeBlocks, updatedCodeBlocks } = newStats;
+    stats.totalCodeBlocks += totalCodeBlocks;
+    stats.updatedCodeBlocks = stats.updatedCodeBlocks.concat(updatedCodeBlocks);
   };
   const setImageStats = (newStats: ImageStats) => {
     const {totalImages, updatedImages} = newStats;
