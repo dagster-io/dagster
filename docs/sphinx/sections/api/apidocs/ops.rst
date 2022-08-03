@@ -12,7 +12,8 @@ Defining ops
 .. autodecorator:: op
 
 .. autoclass:: OpDefinition
-    :members: configured
+   :members:
+   :undoc-members:
 
 -------
 

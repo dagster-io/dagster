@@ -1,9 +1,10 @@
 import json
 import textwrap
-from typing import Any, List, Type, Union, cast
+from typing import Any, List, Tuple, Type, Union, cast
 
 import dagster._check as check
 from dagster import BoolSource, Field, IntSource, StringSource
+from dagster._annotations import is_public
 from dagster._config.config_type import (
     Array,
     ConfigScalar,
@@ -15,7 +16,7 @@ from dagster._config.config_type import (
 )
 from dagster._core.definitions.configurable import ConfigurableDefinition
 from dagster._serdes import ConfigurableClass
-from sphinx.ext.autodoc import ClassDocumenter, DataDocumenter
+from sphinx.ext.autodoc import ClassDocumenter, DataDocumenter, ObjectMembers
 
 
 def type_repr(config_type: ConfigType) -> str:
@@ -153,6 +154,9 @@ class DagsterClassDocumenter(ClassDocumenter):
         for alias in self.options.get('deprecated_aliases', []):
             self.add_line(f"ALIAS: {alias}", source_name)
 
+    def get_object_members(self, want_all: bool) -> Tuple[bool, ObjectMembers]:
+        _, unfiltered_members = super().get_object_members(want_all)
+        return False, [m for m in unfiltered_members if is_public(m[1])]
 
 def setup(app):
     app.setup_extension("sphinx.ext.autodoc")  # Require autodoc extension
