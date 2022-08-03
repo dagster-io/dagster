@@ -15,6 +15,10 @@
       {
         "title": "Telemetry",
         "path": "/getting-started/telemetry"
+      },
+      {
+        "title": "Open Source vs Cloud",
+        "path": "/getting-started/open-source-vs-cloud"
       }
     ]
   },
