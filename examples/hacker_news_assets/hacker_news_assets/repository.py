@@ -1,30 +1,13 @@
 import os
 
-from dagster import AssetSelection, define_asset_job, repository, with_resources
+from dagster import repository, with_resources
 
-from .assets import (
-    ACTIVITY_ANALYTICS,
-    CORE,
-    RECOMMENDER,
-    activity_analytics_assets,
-    core_assets,
-    dbt_assets,
-    recommender_assets,
-)
-from .jobs import core_assets_schedule
+from .assets import activity_analytics_assets, core_assets, dbt_assets, recommender_assets
+from .jobs import activity_analytics_assets_sensor, core_assets_schedule, recommender_assets_sensor
 from .resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
-from .sensors import make_hn_tables_updated_sensor, make_slack_on_failure_sensor
+from .sensors import make_slack_on_failure_sensor
 
 all_assets = [*core_assets, *recommender_assets, *dbt_assets, *activity_analytics_assets]
-
-activity_analytics_assets_sensor = make_hn_tables_updated_sensor(
-    # selecting by group allows us to include the activity_analytics assets that are defined in dbt
-    define_asset_job("activity_analytics_job", selection=AssetSelection.groups(ACTIVITY_ANALYTICS))
-)
-
-recommender_assets_sensor = make_hn_tables_updated_sensor(
-    define_asset_job("story_recommender_job", selection=AssetSelection.groups(RECOMMENDER))
-)
 
 resource_defs_by_deployment_name = {
     "prod": RESOURCES_PROD,
