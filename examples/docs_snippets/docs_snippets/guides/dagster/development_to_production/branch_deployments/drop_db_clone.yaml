@@ -1,0 +1,30 @@
+# .github/workflows/branch_deployments.yml
+
+name: Dagster Branch Deployments
+  on:
+    pull_request:
+      types: [opened, synchronize, reopened, closed]
+  env:
+    DAGSTER_CLOUD_URL: ${{ secrets.DAGSTER_CLOUD_URL }}
+
+  jobs:
+    dagster_cloud_build_push:
+      runs-on: ubuntu-latest
+      name: Dagster Branch Deployments
+      strategy:
+        ...
+      steps:
+        # Existing steps here
+        ...
+        - name: Clone Snowflake schema upon launch
+          ...
+        - name: Delete schema clone upon PR close
+          if: github.event.action == 'closed'
+          uses: dagster-io/cloud-branch-deployments-action/run@main
+          with:
+            location: ${{ toJson(matrix.location) }}
+            deployment: ${{ steps.deploy.outputs.deployment }}
+            repository: repo
+            job: drop_prod_clone
+          env:
+            DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
