@@ -6,8 +6,9 @@ from contextlib import contextmanager
 
 import nbformat
 import pytest
-from dagstermill import DagstermillError, define_dagstermill_solid
+from dagstermill import DagstermillError
 from dagstermill.compat import ExecutionError
+from dagstermill.factory import define_dagstermill_solid
 from jupyter_client.kernelspec import NoSuchKernel
 from nbconvert.preprocessors import ExecutePreprocessor
 
@@ -297,7 +298,7 @@ def test_hello_world_reexecution():
             reexecution_notebook_file.write(
                 (
                     "from dagster._legacy import pipeline\n"
-                    "from dagstermill import define_dagstermill_solid\n\n\n"
+                    "from dagstermill.factory import define_dagstermill_solid\n\n\n"
                     "reexecution_solid = define_dagstermill_solid(\n"
                     "    'hello_world_reexecution', '{output_notebook_path}'\n"
                     ")\n\n"

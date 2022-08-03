@@ -115,7 +115,7 @@ def _get_annotation_for_output_position(
     position: int, solid_def: SolidDefinition, output_defs: Sequence[OutputDefinition]
 ) -> Any:
     if solid_def.is_from_decorator():
-        if len(output_defs) > 1 and solid_def.get_output_annotation():
+        if len(output_defs) > 1 and solid_def.get_output_annotation() != inspect.Parameter.empty:
             return get_args(solid_def.get_output_annotation())[position]
         else:
             return solid_def.get_output_annotation()
@@ -191,7 +191,9 @@ def validate_and_coerce_solid_result_to_iterator(
                         metadata_entries=list(dynamic_output.metadata_entries),
                     )
             elif isinstance(element, Output):
-                if annotation and not is_generic_output_annotation(annotation):
+                if annotation != inspect.Parameter.empty and not is_generic_output_annotation(
+                    annotation
+                ):
                     raise DagsterInvariantViolationError(
                         f"Error with output for {context.describe_op()}: received Output object for output '{output_def.name}' which does not have an Output annotation. Annotation has type {annotation}."
                     )

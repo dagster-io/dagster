@@ -15,6 +15,7 @@ export enum DagsterTag {
   RootRunId = 'dagster/root_run_id',
   ScheduleName = 'dagster/schedule_name',
   SensorName = 'dagster/sensor_name',
+  RepositoryLabelTag = '.dagster/repository',
 }
 
 export type TagType = {

@@ -170,11 +170,10 @@ def local_file_manager(init_context):
 
         import tempfile
 
-        from dagster import ModeDefinition, local_file_manager
-        from dagster._legacy import pipeline, solid
+        from dagster import job, local_file_manager, op
 
 
-        @solid(required_resource_keys={"file_manager"})
+        @op(required_resource_keys={"file_manager"})
         def write_files(context):
             fh_1 = context.resources.file_manager.write_data(b"foo")
 
@@ -186,7 +185,7 @@ def local_file_manager(init_context):
             return (fh_1, fh_2)
 
 
-        @solid(required_resource_keys={"file_manager"})
+        @op(required_resource_keys={"file_manager"})
         def read_files(context, file_handles):
             fh_1, fh_2 = file_handles
             assert context.resources.file_manager.read_data(fh_2) == b"bar"
@@ -195,7 +194,7 @@ def local_file_manager(init_context):
             fd.close()
 
 
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={"file_manager": local_file_manager})])
+        @job(resource_defs={"file_manager": local_file_manager})
         def files_pipeline():
             read_files(write_files())
 
@@ -203,14 +202,10 @@ def local_file_manager(init_context):
 
     .. code-block:: python
 
-        @pipeline(
-            mode_defs=[
-                ModeDefinition(
-                    resource_defs={
-                        "file_manager": local_file_manager.configured({"base_dir": "/my/base/dir"})
-                    }
-                )
-            ]
+        @job(
+            resource_defs={
+                "file_manager": local_file_manager.configured({"base_dir": "/my/base/dir"})
+            }
         )
         def files_pipeline():
             read_files(write_files())

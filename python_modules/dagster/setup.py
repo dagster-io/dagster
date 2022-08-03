@@ -67,9 +67,7 @@ if __name__ == "__main__":
             # alembic 1.7.0 is a breaking change
             "alembic>=1.2.1,!=1.6.3,<1.7.0",
             "croniter>=0.3.34",
-            # ensure grpcio version we require is >= that with which we generated the grpc code (set in dev-requirements)
-            # https://github.com/dagster-io/dagster/issues/9099
-            "grpcio>=1.32.0,<1.48.0",
+            "grpcio>=1.32.0",  # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
             "grpcio-health-checking>=1.32.0,<1.44.0",
             "packaging>=20.9",
             "pendulum",

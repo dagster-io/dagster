@@ -67,7 +67,7 @@ def nb_test_path(name):
 def test_nb_solid(name, **kwargs):
     output_defs = kwargs.pop("output_defs", [OutputDefinition(is_required=False)])
 
-    return dagstermill.define_dagstermill_solid(
+    return dagstermill.factory.define_dagstermill_solid(
         name=name,
         notebook_path=nb_test_path(name),
         output_notebook_name="notebook",
@@ -125,7 +125,7 @@ def build_hello_world_job():
     return hello_world_job
 
 
-hello_world_with_custom_tags_and_description = dagstermill.define_dagstermill_solid(
+hello_world_with_custom_tags_and_description = dagstermill.factory.define_dagstermill_solid(
     name="hello_world_custom",
     notebook_path=nb_test_path("hello_world"),
     output_notebook_name="notebook",
@@ -145,7 +145,7 @@ hello_world_config = test_nb_solid(
 )
 
 
-goodbye_config = dagstermill.define_dagstermill_solid(
+goodbye_config = dagstermill.factory.define_dagstermill_solid(
     name="goodbye_config",
     notebook_path=nb_test_path("print_dagstermill_context_solid_config"),
     output_notebook_name="notebook",
@@ -176,7 +176,7 @@ def hello_world_with_output_notebook_pipeline():
     load_notebook(notebook)
 
 
-hello_world_no_output_notebook_no_file_manager = dagstermill.define_dagstermill_solid(
+hello_world_no_output_notebook_no_file_manager = dagstermill.factory.define_dagstermill_solid(
     name="hello_world_no_output_notebook_no_file_manager",
     notebook_path=nb_test_path("hello_world"),
 )
@@ -187,7 +187,7 @@ def hello_world_no_output_notebook_no_file_manager_pipeline():
     hello_world_no_output_notebook_no_file_manager()
 
 
-hello_world_no_output_notebook = dagstermill.define_dagstermill_solid(
+hello_world_no_output_notebook = dagstermill.factory.define_dagstermill_solid(
     name="hello_world_no_output_notebook",
     notebook_path=nb_test_path("hello_world"),
 )
@@ -540,7 +540,7 @@ def composite_pipeline():
 # Back compat
 ###################################################################################################
 
-hello_world_legacy = dagstermill.define_dagstermill_solid(
+hello_world_legacy = dagstermill.factory.define_dagstermill_solid(
     name="hello_world_legacy",
     notebook_path=nb_test_path("hello_world"),
     output_notebook="notebook",

@@ -1,2 +1,0 @@
-load_from:
-  - python_file: airline_assets/airline_repository.py

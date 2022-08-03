@@ -520,6 +520,7 @@ export type AssetNodeConfigFragment_configField_configType = AssetNodeConfigFrag
 export interface AssetNodeConfigFragment_configField {
   __typename: "ConfigTypeField";
   name: string;
+  isRequired: boolean;
   configType: AssetNodeConfigFragment_configField_configType;
 }
 

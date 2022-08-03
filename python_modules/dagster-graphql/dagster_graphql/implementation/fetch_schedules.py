@@ -5,6 +5,7 @@ from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.host_representation import PipelineSelector, RepositorySelector, ScheduleSelector
 from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 
+from .loader import RepositoryScopedBatchLoader
 from .utils import UserFacingGraphQLError, capture_error
 
 
@@ -67,6 +68,7 @@ def get_schedules_or_error(graphene_info, repository_selector):
 
     location = graphene_info.context.get_repository_location(repository_selector.location_name)
     repository = location.get_repository(repository_selector.repository_name)
+    batch_loader = RepositoryScopedBatchLoader(graphene_info.context.instance, repository)
     external_schedules = repository.get_external_schedules()
     schedule_states_by_name = {
         state.name: state
@@ -79,8 +81,7 @@ def get_schedules_or_error(graphene_info, repository_selector):
 
     results = [
         GrapheneSchedule(
-            external_schedule,
-            schedule_states_by_name.get(external_schedule.name),
+            external_schedule, schedule_states_by_name.get(external_schedule.name), batch_loader
         )
         for external_schedule in external_schedules
     ]

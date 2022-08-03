@@ -9,7 +9,7 @@ from dagster._core.events import DagsterEventType
 from dagster._core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster._core.host_representation.external_data import ExternalPresetData
 from dagster._core.storage.pipeline_run import PipelineRunStatus, RunRecord, RunsFilter
-from dagster._core.storage.tags import TagType, get_tag_type
+from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
 from dagster._utils import datetime_as_float
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
@@ -581,7 +581,16 @@ class GrapheneIPipelineSnapshotMixin:
         return self.get_represented_pipeline().solid_selection
 
     def resolve_runs(self, graphene_info, **kwargs):
-        runs_filter = RunsFilter(pipeline_name=self.get_represented_pipeline().name)
+        pipeline = self.get_represented_pipeline()
+        if isinstance(pipeline, ExternalPipeline):
+            runs_filter = RunsFilter(
+                pipeline_name=pipeline.name,
+                tags={
+                    REPOSITORY_LABEL_TAG: pipeline.get_external_origin().external_repository_origin.get_label()
+                },
+            )
+        else:
+            runs_filter = RunsFilter(pipeline_name=pipeline.name)
         return get_runs(graphene_info, runs_filter, kwargs.get("cursor"), kwargs.get("limit"))
 
     def resolve_schedules(self, graphene_info):

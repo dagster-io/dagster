@@ -6,309 +6,296 @@ from dagster import (
     AssetMaterialization,
     DagsterInvalidDefinitionError,
     DagsterTypeCheckDidNotPass,
-    DependencyDefinition,
+    In,
     Int,
     List,
-    MultiDependencyDefinition,
-    NodeInvocation,
     Nothing,
     Optional,
+    Out,
     Output,
+    asset,
+    job,
+    materialize_to_memory,
+    op,
 )
 from dagster._core.execution.api import create_execution_plan
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    execute_pipeline,
-    lambda_solid,
-    solid,
-)
 
 
 def _define_nothing_dep_pipeline():
-    @lambda_solid(output_def=OutputDefinition(Nothing, "complete"))
+    @op(out={"complete": Out(Nothing)})
     def start_nothing():
         pass
 
-    @lambda_solid(
-        input_defs=[
-            InputDefinition("add_complete", Nothing),
-            InputDefinition("yield_complete", Nothing),
-        ]
+    @op(
+        ins={
+            "add_complete": In(Nothing),
+            "yield_complete": In(Nothing),
+        }
     )
     def end_nothing():
         pass
 
-    @lambda_solid(output_def=OutputDefinition(Int))
-    def emit_value():
+    @op
+    def emit_value() -> int:
         return 1
 
-    @lambda_solid(
-        input_defs=[
-            InputDefinition("on_complete", Nothing),
-            InputDefinition("num", Int),
-        ],
-        output_def=OutputDefinition(Int),
-    )
-    def add_value(num):
+    @op(ins={"on_complete": In(Nothing), "num": In(Int)})
+    def add_value(num) -> int:
         return 1 + num
 
-    @solid(
+    @op(
         name="yield_values",
-        input_defs=[InputDefinition("on_complete", Nothing)],
-        output_defs=[
-            OutputDefinition(Int, "num_1"),
-            OutputDefinition(Int, "num_2"),
-            OutputDefinition(Nothing, "complete"),
-        ],
+        ins={"on_complete": In(Nothing)},
+        out={
+            "num_1": Out(Int),
+            "num_2": Out(Int),
+            "complete": Out(Nothing),
+        },
     )
-    def yield_values(_context):
+    def yield_values():
         yield Output(1, "num_1")
         yield Output(2, "num_2")
         yield Output(None, "complete")
 
-    return PipelineDefinition(
-        name="simple_exc",
-        solid_defs=[emit_value, add_value, start_nothing, end_nothing, yield_values],
-        dependencies={
-            "add_value": {
-                "on_complete": DependencyDefinition("start_nothing", "complete"),
-                "num": DependencyDefinition("emit_value"),
-            },
-            "yield_values": {"on_complete": DependencyDefinition("start_nothing", "complete")},
-            "end_nothing": {
-                "add_complete": DependencyDefinition("add_value"),
-                "yield_complete": DependencyDefinition("yield_values", "complete"),
-            },
-        },
-    )
+    @job
+    def simple_exc():
+        start_complete = start_nothing()
+        _, _, yield_complete = yield_values(start_complete)
+        end_nothing(
+            add_complete=add_value(on_complete=start_complete, num=emit_value()),
+            yield_complete=yield_complete,
+        )
+
+    return simple_exc
 
 
 def test_valid_nothing_dependencies():
 
-    result = execute_pipeline(_define_nothing_dep_pipeline())
+    result = _define_nothing_dep_pipeline().execute_in_process()
 
     assert result.success
 
 
-def test_invalid_input_dependency():
-    @lambda_solid(output_def=OutputDefinition(Nothing))
+def test_nothing_output_something_input():
+    @op(out=Out(Nothing))
     def do_nothing():
         pass
 
-    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
-    def add_one(num):
+    @op(ins={"num": In(Int)})
+    def add_one(num) -> int:
         return num + 1
 
-    with pytest.raises(DagsterInvalidDefinitionError):
-        PipelineDefinition(
-            name="bad_dep",
-            solid_defs=[do_nothing, add_one],
-            dependencies={"add_one": {"num": DependencyDefinition("do_nothing")}},
-        )
+    @job
+    def bad_dep():
+        add_one(do_nothing())
+
+    with pytest.raises(DagsterTypeCheckDidNotPass):
+        bad_dep.execute_in_process()
 
 
 def test_result_type_check():
-    @solid(output_defs=[OutputDefinition(Nothing)])
-    def bad(_context):
+    @op(out=Out(Nothing))
+    def bad():
         yield Output("oops")
 
-    pipeline = PipelineDefinition(name="fail", solid_defs=[bad])
+    @job
+    def fail():
+        bad()
+
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_pipeline(pipeline)
+        fail.execute_in_process()
 
 
 def test_nothing_inputs():
-    @lambda_solid(input_defs=[InputDefinition("never_defined", Nothing)])
+    @op(ins={"never_defined": In(Nothing)})
     def emit_one():
         return 1
 
-    @lambda_solid
+    @op
     def emit_two():
         return 2
 
-    @lambda_solid
+    @op
     def emit_three():
         return 3
 
-    @lambda_solid(output_def=OutputDefinition(Nothing))
+    @op(out=Out(Nothing))
     def emit_nothing():
         pass
 
-    @solid(
-        input_defs=[
-            InputDefinition("_one", Nothing),
-            InputDefinition("one", Int),
-            InputDefinition("_two", Nothing),
-            InputDefinition("two", Int),
-            InputDefinition("_three", Nothing),
-            InputDefinition("three", Int),
-        ]
+    @op(
+        ins={
+            "_one": In(Nothing),
+            "one": In(Int),
+            "_two": In(Nothing),
+            "two": In(Int),
+            "_three": In(Nothing),
+            "three": In(Int),
+        }
     )
-    def adder(_context, one, two, three):
+    def adder(one, two, three):
         assert one == 1
         assert two == 2
         assert three == 3
         return one + two + three
 
-    pipeline = PipelineDefinition(
-        name="input_test",
-        solid_defs=[emit_one, emit_two, emit_three, emit_nothing, adder],
-        dependencies={
-            NodeInvocation("emit_nothing", "_one"): {},
-            NodeInvocation("emit_nothing", "_two"): {},
-            NodeInvocation("emit_nothing", "_three"): {},
-            "adder": {
-                "_one": DependencyDefinition("_one"),
-                "_two": DependencyDefinition("_two"),
-                "_three": DependencyDefinition("_three"),
-                "one": DependencyDefinition("emit_one"),
-                "two": DependencyDefinition("emit_two"),
-                "three": DependencyDefinition("emit_three"),
-            },
-        },
-    )
-    result = execute_pipeline(pipeline)
+    @job
+    def input_test():
+        _one = emit_nothing.alias("_one")()
+        _two = emit_nothing.alias("_two")()
+        _three = emit_nothing.alias("_three")()
+        adder(
+            _one=_one,
+            _two=_two,
+            _three=_three,
+            one=emit_one(),
+            two=emit_two(),
+            three=emit_three(),
+        )
+
+    result = input_test.execute_in_process()
     assert result.success
 
 
 def test_fanin_deps():
     called = defaultdict(int)
 
-    @lambda_solid
+    @op
     def emit_two():
         return 2
 
-    @lambda_solid(output_def=OutputDefinition(Nothing))
+    @op(out=Out(Nothing))
     def emit_nothing():
         called["emit_nothing"] += 1
 
-    @solid(
-        input_defs=[
-            InputDefinition("ready", Nothing),
-            InputDefinition("num_1", Int),
-            InputDefinition("num_2", Int),
-        ]
+    @op(
+        ins={
+            "ready": In(Nothing),
+            "num_1": In(Int),
+            "num_2": In(Int),
+        }
     )
-    def adder(_context, num_1, num_2):
+    def adder(num_1, num_2):
         assert called["emit_nothing"] == 3
         called["adder"] += 1
         return num_1 + num_2
 
-    pipeline = PipelineDefinition(
-        name="input_test",
-        solid_defs=[emit_two, emit_nothing, adder],
-        dependencies={
-            NodeInvocation("emit_two", "emit_1"): {},
-            NodeInvocation("emit_two", "emit_2"): {},
-            NodeInvocation("emit_nothing", "_one"): {},
-            NodeInvocation("emit_nothing", "_two"): {},
-            NodeInvocation("emit_nothing", "_three"): {},
-            "adder": {
-                "ready": MultiDependencyDefinition(
-                    [
-                        DependencyDefinition("_one"),
-                        DependencyDefinition("_two"),
-                        DependencyDefinition("_three"),
-                    ]
-                ),
-                "num_1": DependencyDefinition("emit_1"),
-                "num_2": DependencyDefinition("emit_2"),
-            },
-        },
-    )
-    result = execute_pipeline(pipeline)
+    @job
+    def input_test():
+        adder(
+            ready=[
+                emit_nothing.alias("_one")(),
+                emit_nothing.alias("_two")(),
+                emit_nothing.alias("_three")(),
+            ],
+            num_1=emit_two.alias("emit_1")(),
+            num_2=emit_two.alias("emit_2")(),
+        )
+
+    result = input_test.execute_in_process()
     assert result.success
     assert called["adder"] == 1
     assert called["emit_nothing"] == 3
 
 
 def test_valid_nothing_fns():
-    @lambda_solid(output_def=OutputDefinition(Nothing))
+    @op(out=Out(Nothing))
     def just_pass():
         pass
 
-    @solid(output_defs=[OutputDefinition(Nothing)])
-    def just_pass2(_context):
+    @op(out=Out(Nothing))
+    def just_pass2():
         pass
 
-    @lambda_solid(output_def=OutputDefinition(Nothing))
+    @op(out=Out(Nothing))
     def ret_none():
         return None
 
-    @solid(output_defs=[OutputDefinition(Nothing)])
-    def yield_none(_context):
+    @op(out=Out(Nothing))
+    def yield_none():
         yield Output(None)
 
-    @solid(output_defs=[OutputDefinition(Nothing)])
-    def yield_stuff(_context):
+    @op(out=Out(Nothing))
+    def yield_stuff():
         yield AssetMaterialization.file("/path/to/nowhere")
 
-    pipeline = PipelineDefinition(
-        name="fn_test",
-        solid_defs=[just_pass, just_pass2, ret_none, yield_none, yield_stuff],
-    )
-    result = execute_pipeline(pipeline)
+    @job
+    def fn_test():
+        just_pass()
+        just_pass2()
+        ret_none()
+        yield_none()
+        yield_stuff()
+
+    result = fn_test.execute_in_process()
     assert result.success
 
 
 def test_invalid_nothing_fns():
-    @lambda_solid(output_def=OutputDefinition(Nothing))
+    @op(out=Out(Nothing))
     def ret_val():
         return "val"
 
-    @solid(output_defs=[OutputDefinition(Nothing)])
-    def yield_val(_context):
+    @op(out=Out(Nothing))
+    def yield_val():
         yield Output("val")
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_pipeline(PipelineDefinition(name="fn_test", solid_defs=[ret_val]))
+
+        @job
+        def fn_test():
+            ret_val()
+
+        fn_test.execute_in_process()
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_pipeline(PipelineDefinition(name="fn_test", solid_defs=[yield_val]))
+
+        @job
+        def fn_test2():
+            yield_val()
+
+        fn_test2.execute_in_process()
 
 
 def test_wrapping_nothing():
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lambda_solid(output_def=OutputDefinition(List[Nothing]))
+        @op(out=Out(List[Nothing]))
         def _():
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lambda_solid(input_defs=[InputDefinition("in", List[Nothing])])
+        @op(ins={"in": In(List[Nothing])})
         def _(_in):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lambda_solid(output_def=OutputDefinition(Optional[Nothing]))
+        @op(out=Out(Optional[Nothing]))
         def _():
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lambda_solid(input_defs=[InputDefinition("in", Optional[Nothing])])
+        @op(ins={"in": In(Optional[Nothing])})
         def _(_in):
             pass
 
 
 def test_execution_plan():
-    @solid(output_defs=[OutputDefinition(Nothing)])
-    def emit_nothing(_context):
+    @op(out=Out(Nothing))
+    def emit_nothing():
         yield AssetMaterialization.file(path="/path/")
 
-    @lambda_solid(input_defs=[InputDefinition("ready", Nothing)])
+    @op(ins={"ready": In(Nothing)})
     def consume_nothing():
         pass
 
-    pipe = PipelineDefinition(
-        name="execution_plan_test",
-        solid_defs=[emit_nothing, consume_nothing],
-        dependencies={"consume_nothing": {"ready": DependencyDefinition("emit_nothing")}},
-    )
+    @job
+    def pipe():
+        consume_nothing(emit_nothing())
+
     plan = create_execution_plan(pipe)
 
     levels = plan.get_steps_to_execute_by_level()
@@ -316,7 +303,7 @@ def test_execution_plan():
     assert "emit_nothing" in levels[0][0].key
     assert "consume_nothing" in levels[1][0].key
 
-    assert execute_pipeline(pipe).success
+    assert pipe.execute_in_process().success
 
 
 def test_nothing_infer():
@@ -325,15 +312,55 @@ def test_nothing_infer():
         match="which should not be included since no data will be passed for it",
     ):
 
-        @solid(input_defs=[InputDefinition("_previous_steps_complete", Nothing)])
-        def _bad(_, _previous_steps_complete):
+        @op(ins={"_previous_steps_complete": In(Nothing)})
+        def _bad(_previous_steps_complete):
             pass
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="must be used via InputDefinition and no parameter should be included in the @solid decorated function",
+        match="must be used via InputDefinition and no parameter should be included in the @op decorated function",
     ):
 
-        @solid
-        def _bad(_, _previous_steps_complete: Nothing):
+        @op
+        def _bad(_previous_steps_complete: Nothing):
             pass
+
+
+def test_none_output_non_none_input():
+    @op
+    def op1() -> None:
+        pass
+
+    @op
+    def op2(input1):
+        assert input1 is None
+
+    @job
+    def job1():
+        op2(op1())
+
+    assert job1.execute_in_process().success
+
+
+def test_asset_none_output_non_none_input():
+    @asset
+    def asset1() -> None:
+        pass
+
+    @asset
+    def asset2(asset1):
+        assert asset1 is None
+
+    assert materialize_to_memory([asset1, asset2]).success
+
+
+def test_asset_nothing_output_non_none_input():
+    @asset(dagster_type=Nothing)
+    def asset1():
+        pass
+
+    @asset
+    def asset2(asset1):
+        assert asset1 is None
+
+    assert materialize_to_memory([asset1, asset2]).success
