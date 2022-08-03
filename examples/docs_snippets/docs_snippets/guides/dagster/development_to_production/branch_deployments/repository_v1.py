@@ -1,11 +1,13 @@
-from ..assets import comments, items, stories
+import os
+
+from dagster_snowflake import build_snowflake_io_manager
+from dagster_snowflake_pandas import SnowflakePandasTypeHandler
 
 # start_repository
 # repository.py
 from dagster import repository, with_resources
-from dagster_snowflake import build_snowflake_io_manager
-from dagster_snowflake_pandas import SnowflakePandasTypeHandler
-import os
+
+from ..assets import comments, items, stories
 
 snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
 
@@ -43,7 +45,9 @@ def repo():
         return "branch" if is_branch_depl else "prod"
 
     return [
-        with_resources([items, comments, stories], resource_defs=resource_defs[get_current_env()]),
+        with_resources(
+            [items, comments, stories], resource_defs=resource_defs[get_current_env()]
+        ),
     ]
 
 

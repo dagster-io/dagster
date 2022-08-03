@@ -1,8 +1,11 @@
-from dagster import repository, with_resources
-from ..assets import comments, items, stories
+import os
+
 from dagster_snowflake import build_snowflake_io_manager, snowflake_resource
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler
-import os
+
+from dagster import repository, with_resources
+
+from ..assets import comments, items, stories
 from .clone_and_drop_db import clone_prod
 
 snowflake_io_manager = build_snowflake_io_manager([SnowflakePandasTypeHandler()])
@@ -37,7 +40,9 @@ resource_defs = {
                 "database": "PRODUCTION",
             }
         ),
-        "snowflake": snowflake_resource.configured({**snowflake_config, "database": "PRODUCTION"}),
+        "snowflake": snowflake_resource.configured(
+            {**snowflake_config, "database": "PRODUCTION"}
+        ),
     },
 }
 # end_resources
@@ -53,10 +58,18 @@ def get_current_env():
 @repository
 def repo():
     ...
-    branch_deployment_jobs = [clone_prod.to_job(resource_defs=resource_defs[get_current_env()])]
+    branch_deployment_jobs = [
+        clone_prod.to_job(resource_defs=resource_defs[get_current_env()])
+    ]
     return [
-        with_resources([items, comments, stories], resource_defs=resource_defs[get_current_env()]),
-        *(branch_deployment_jobs if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") else []),
+        with_resources(
+            [items, comments, stories], resource_defs=resource_defs[get_current_env()]
+        ),
+        *(
+            branch_deployment_jobs
+            if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT")
+            else []
+        ),
     ]
 
 
