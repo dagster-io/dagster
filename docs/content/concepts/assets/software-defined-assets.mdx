@@ -364,10 +364,10 @@ If you want Dagit to contain both assets and [jobs](/concepts/ops-jobs-graphs/jo
 To view a list of all your assets, click **Assets** in the top-right corner of the page. This opens the Assets page:
 
 <Image
-alt="Assets page"
-src="/images/concepts/assets/software-defined-assets/catalog.png"
-width={2662}
-height={1506}
+  alt="Assets page"
+  src="/images/concepts/assets/software-defined-assets/catalog.png"
+  width={2662}
+  height={1506}
 />
 
 #### Asset Details
@@ -375,10 +375,10 @@ height={1506}
 View the Asset Details page for an asset by clicking on its name:
 
 <Image
-alt="Asset Details"
-src="/images/concepts/assets/software-defined-assets/details.png"
-width={2662}
-height={1506}
+  alt="Asset Details"
+  src="/images/concepts/assets/software-defined-assets/details.png"
+  width={2662}
+  height={1506}
 />
 
 #### Dependency graph
@@ -389,10 +389,10 @@ To view a graph of all assets and their dependencies, you can:
 - Click **View in Graph** on any asset
 
 <Image
-alt="Asset Graph"
-src="/images/concepts/assets/software-defined-assets/graph.png"
-width={2662}
-height={1506}
+  alt="Asset Graph"
+  src="/images/concepts/assets/software-defined-assets/graph.png"
+  width={2662}
+  height={1506}
 />
 
 #### Upstream changed indicator
@@ -400,10 +400,10 @@ height={1506}
 On occasion, you might see an **upstream changed** indicator on an asset in the dependency graph or on the Asset Details page:
 
 <Image
-alt="Asset Graph with an upstream changed indicator"
-src="/images/concepts/assets/software-defined-assets/upstream-changed.png"
-width={1556}
-height={790}
+  alt="Asset Graph with an upstream changed indicator"
+  src="/images/concepts/assets/software-defined-assets/upstream-changed.png"
+  width={1556}
+  height={790}
 />
 
 This occurs when a downstream asset's last materialization took place **earlier than the asset it depends on.** Dagit displays this alert to notify you that the contents of an asset may be stale. For example:
@@ -495,19 +495,19 @@ Group name already exists on assets [list_of_asset_keys]
 To view your asset groups in Dagit, open the left navigation by clicking the **menu icon in the top left corner**. As asset groups are grouped in repositories, you may need to open a repository to view its asset groups:
 
 <Image
-alt="Asset Groups in Dagit left navigation"
-src="/images/concepts/assets/asset-groups-in-sidenav.png"
-width={903}
-height={454}
+  alt="Asset Groups in Dagit left navigation"
+  src="/images/concepts/assets/asset-groups-in-sidenav.png"
+  width={903}
+  height={454}
 />
 
 Click the asset group to open a dependency graph for all assets in the group:
 
 <Image
-alt="Dependency graph for an asset group"
-src="/images/concepts/assets/asset-group-dependency-graph.png"
-width={1899}
-height={945}
+  alt="Dependency graph for an asset group"
+  src="/images/concepts/assets/asset-group-dependency-graph.png"
+  width={1899}
+  height={945}
 />
 
 ---
@@ -594,7 +594,7 @@ def downstream_asset(upstream_asset):
 
 ### Attaching metadata
 
-Dagster supports attaching arbitrary [metadata](/\_apidocs/ops#dagster.MetadataEntry) to assets. To attach metadata, supply a `metadata` dictionary to the asset:
+Dagster supports attaching arbitrary [metadata](/_apidocs/ops#dagster.MetadataEntry) to assets. To attach metadata, supply a `metadata` dictionary to the asset:
 
 ```python file=/concepts/assets/asset_metadata.py startafter=start_example endbefore=end_example
 @asset(metadata={"cereal_name": "Sugar Sprinkles"})
@@ -619,7 +619,7 @@ For more examples of software-defined assets, check out these examples:
 - In the [SDA Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news_assets):
 
   - [Defining an asset](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/activity_analytics/assets/activity_forecast.py)
-  - [Loading assets from dbt](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/activity_analytics/\__init\_\_.py)
+  - [Loading assets from dbt](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/activity_analytics/__init__.py)
   - [Per-asset IO manager](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/core/assets/items.py)
   - [Partitioned assets](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/core/assets/items.py)
 
@@ -629,4 +629,4 @@ For more examples of software-defined assets, check out these examples:
   - [Loading assets from dbt](https://github.com/dagster-io/dagster/blob/master/examples/assets_modern_data_stack/assets_modern_data_stack/assets/forecasting.py)
   - [Loading assets from Airbyte](https://github.com/dagster-io/dagster/blob/master/examples/assets_modern_data_stack/assets_modern_data_stack/assets/forecasting.py)
 
-- The [Type and Metadata example](https://github.com/dagster-io/dagster/tree/master/examples/assets_type_metadata)
+- The [Type and Metadata example](https://github.com/dagster-io/dagster/tree/master/examples/assets_pandas_type_metadata)

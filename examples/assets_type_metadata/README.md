@@ -15,7 +15,7 @@ The example builds a small graph of software-defined assets that compute bolling
 Bootstrap your own Dagster project with this example:
 
 ```bash
-dagster project from-example --name my-dagster-project --example assets_type_metadata
+dagster project from-example --name my-dagster-project --example assets_pandas_type_metadata
 ```
 
 To install this example and its Python dependencies, run:

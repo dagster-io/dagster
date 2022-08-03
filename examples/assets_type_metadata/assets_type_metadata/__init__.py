@@ -1,2 +1,2 @@
 from . import lib
-from .repository import assets_type_metadata
+from .repository import assets_pandas_type_metadata
