@@ -5,79 +5,86 @@ description: Dagster comes with a convenient CLI command for creating a new proj
 
 # Create a New Project
 
-This section will show you how to create a new Dagster project and organize your files as you build larger and larger jobs. Dagster comes with a convenient CLI command for generating a project skeleton, but you can also choose to organize your files differently as your project evolves.
+The easiest way to start building a Dagster project is by using the `dagster project` CLI. This CLI tool helps generates files and folder structures that enables you to quickly get started with Dagster. You can scaffold a new project using the default project skeleton, or start with using one of the official Dagster examples.
 
-If you're completely new to Dagster, we recommend that you visit our [Tutorial](/tutorial) to learn all the basic concepts of Dagster.
+## Option 1: Starting with an empty project skeleton
 
-## Generating a Project Skeleton
-
-If you're just starting a new Dagster project, the CLI command `dagster new-project` will generate a project skeleton with boilerplate code for development and testing. If you have `dagster` installed in your Python environment, then you can run the following shell command to generate a Dagster project called `PROJECT_NAME`:
+To get started, you can run:
 
 ```bash
-dagster new-project PROJECT_NAME
-cd PROJECT_NAME
+pip install dagster
+dagster project scaffold --name my-dagster-project
 ```
 
-The newly generated `PROJECT_NAME` directory is in fact a fully functioning [Python package](https://docs.python.org/3/tutorial/modules.html#packages) and can be installed with `pip`. A `workspace.yaml` file is also created that tells Dagit to load your code from this package. See the [Workspaces](/concepts/repositories-workspaces/workspaces) page for more information on how to tell Dagster how to load your code.
+The command `dagster project scaffold` will generate a folder structure with a single Dagster repository and other boilerplate files such as [`workspace.yaml`](/concepts/repositories-workspaces/workspaces). This helps you to quickly start with an empty project with everything set up.
 
-Here's a breakdown of the files and directories that are generated:
+## Option 2: Starting with an official example
 
-| File/Directory        | Description                                                                                                                                                                    |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `PROJECT_NAME/`       | A Python package that contains code for your new Dagster repository                                                                                                            |
-| `PROJECT_NAME_tests/` | A Python package that contains tests for `PROJECT_NAME`                                                                                                                        |
-| `workspace.yaml`      | A file that specifies the location of your code for Dagit and the Dagster CLI. Visit the [Workspaces overview](/concepts/repositories-workspaces/workspaces) for more details. |
-| `README.md`           | A description and guide for your new code repository                                                                                                                           |
-| `setup.py`            | A build script with Python package dependencies for your new code repository                                                                                                   |
-
-Inside of the directory `PROJECT_NAME/`, the following files and directories are generated:
-
-| File/Directory               | Description                                                                                                                          |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `PROJECT_NAME/ops/`          | A Python package that contains OpDefinitions, which represent individual units of computation                                        |
-| `PROJECT_NAME/jobs/`         | A Python package that contains JobDefinitions, which are built up from ops                                                           |
-| `PROJECT_NAME/schedules/`    | A Python package that contains ScheduleDefinitions, to trigger recurring job runs based on time                                      |
-| `PROJECT_NAME/sensors/`      | A Python package that contains SensorDefinitions, to trigger job runs based on external state                                        |
-| `PROJECT_NAME/repository.py` | A Python module that contains a RepositoryDefinition, to specify which jobs, schedules, and sensors are available in your repository |
-
-This file structure is a good starting point and suitable for most Dagster projects. As you build more and more jobs, you may eventually find your own way of structuring your code that works best for you.
-
-## Local Development
-
-1. Install your repository as a Python package. By using the `--editable` flag, `pip` will install your repository in ["editable mode"](https://pip.pypa.io/en/latest/reference/pip_install/?highlight=editable#editable-installs) so that as you develop, local code changes will automatically apply.
+To get started, you can run:
 
 ```bash
-pip install --editable .
+pip install dagster
+dagster project from-example --name my-dagster-project --example project_fully_featured
 ```
 
-2. Start the Dagit process. This will start a Dagit web server that, by default, is served on <http://localhost:3000>.
+The command `dagster project from-example` will download one of the official Dagster examples to the current directory. This CLI enables you to quickly bootstrap your project with an officially maintained example.
+
+To find out the available examples, you can visit the [Dagster GitHub repository](https://github.com/dagster-io/dagster/tree/master/examples) or use `dagster project list-example`.
+
+## Getting started
+
+The newly generated `my-dagster-project` directory is in fact a fully functioning [Python package](https://docs.python.org/3/tutorial/modules.html#packages) and can be installed with `pip`. To install it as a package and its Python dependencies, run:
+
+```bash
+pip install -e .
+```
+
+<Note>
+  By using the `--editable` flag, `pip` will install your repository in{" "}
+  <a href="https://pip.pypa.io/en/latest/reference/pip_install/?highlight=editable#editable-installsl">
+    "editable mode"
+  </a>{" "}
+  so that as you develop, local code changes will automatically apply.
+</Note>
+
+Then, start the Dagit web server:
 
 ```bash
 dagit
 ```
 
-The Dagit process automatically uses the file `workspace.yaml` to find your repositories, from which Dagster will load your jobs, schedules, and sensors. To see how you can customize the Dagit process, run `dagit --help`.
+Open `http://localhost:3000` with your browser to see the project.
 
-3. (Optional) If you want to enable Dagster [Schedules](/concepts/partitions-schedules-sensors/schedules) or [Sensors](/concepts/partitions-schedules-sensors/sensors) for your jobs, start the [Dagster Daemon process](/deployment/dagster-daemon) **in the same folder as your `workspace.yaml` file, but in a different shell or terminal**. The `$DAGSTER_HOME` environment variable must be set to a directory for the daemon to work. Note: using directories within `/tmp` may cause issues. See <https://docs.dagster.io/deployment/dagster-instance#default-local-behavior> for more details.
+Now, you can start writing assets in `my_dagster_project/assets/`. The assets are automatically loaded into the Dagster repository as you define them.
+
+## Development
+
+### Adding new Python dependencies
+
+You can specify new Python dependencies in `setup.py`.
+
+### Unit testing
+
+Tests can be added in the `my_dagster_project_tests` directory and you can run tests using `pytest`:
+
+```bash
+pytest my_dagster_project_tests_tests
+```
+
+### Schedules and sensors
+
+If you want to enable Dagster [Schedules](/concepts/partitions-schedules-sensors/schedules) or [Sensors](/concepts/partitions-schedules-sensors/sensors) for your jobs, start the [Dagster Daemon](/deployment/dagster-daemon) process in the same folder as your `workspace.yaml` file, but in a different shell or terminal.
+
+The `$DAGSTER_HOME` environment variable must be set to a directory for the daemon to work. Note: using directories within /tmp may cause issues. See [Dagster Instance default local behavior](/deployment/dagster-instance#default-local-behavior) for more details.
 
 ```bash
 dagster-daemon run
 ```
 
-Once your Dagster Daemon process is running, you should be able to enable schedules and sensors for your Dagster jobs.
-
-## Local Testing
-
-Once you have created a new Dagster repository with the CLI command `dagster new-project`, you can find tests in `PROJECT_NAME_tests`, where `PROJECT_NAME` is the name of your project. You can run all of your tests with the following command:
-
-```bash
-pytest PROJECT_NAME_tests
-```
-
-As you create Dagster ops and jobs, add tests in `PROJECT_NAME_tests/` to check that your code behaves as desired and does not break over time.
-
-For hints on how to write tests for ops and jobs in Dagster, [see our documentation tutorial on Testing](/tutorial/ops-jobs/testable).
+Once your Dagster Daemon is running, you can start turning on schedules and sensors for your jobs.
 
 ## Deployment
 
-Once your Dagster project is ready, visit the [Deployment Guides](/deployment) to learn how to run Dagster in production environments, such as Docker, Kubernetes, AWS EC2, etc.
+Once your project is ready for moving to production, check out our recommendation for [Transitioning Data Pipelines from Development to Production](/guides/dagster/transitioning-data-pipelines-from-development-to-production).
+
+Visit the [Deployment Guides](/deployment) to learn more how to run Dagster in production environments, such as Docker, Kubernetes, AWS EC2, etc.
