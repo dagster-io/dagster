@@ -32,6 +32,9 @@ if __name__ == "__main__":
             "dagster-slack",
         ],
         extras_require={
+            "test": [
+                "dagster[test]",
+            ],
             "full": [
                 "click",
                 "matplotlib",

@@ -33,5 +33,8 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_k8s_tests*"]),
         install_requires=[f"dagster{pin}", "kubernetes"],
+        extras_require={
+            "test": ["dagster[test]"],
+        },
         zip_safe=False,
     )

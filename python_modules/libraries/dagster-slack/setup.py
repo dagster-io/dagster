@@ -34,5 +34,8 @@ if __name__ == "__main__":
             f"dagster{pin}",
             "slack_sdk",
         ],
+        extras_require={
+            "test": ["dagster[test]"],
+        },
         zip_safe=False,
     )

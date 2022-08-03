@@ -40,5 +40,8 @@ if __name__ == "__main__":
             "snowflake-connector-python[pandas]",
             "snowflake-sqlalchemy",
         ],
+        extras_require={
+            "test": ["dagster[test]"],
+        },
         zip_safe=False,
     )

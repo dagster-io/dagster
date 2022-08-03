@@ -33,5 +33,8 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_fivetran_tests*"]),
         install_requires=[f"dagster{pin}"],
+        extras_require={
+            "test": ["dagster[test]"],
+        },
         zip_safe=False,
     )

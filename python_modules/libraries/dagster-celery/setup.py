@@ -42,7 +42,7 @@ if __name__ == "__main__":
             "flower": ["flower"],
             "redis": ["redis"],
             "kubernetes": ["kubernetes"],
-            "test": ["docker"],
+            "test": ["dagster[test]", "docker"],
         },
         zip_safe=False,
     )

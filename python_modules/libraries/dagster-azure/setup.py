@@ -39,6 +39,9 @@ if __name__ == "__main__":
             "azure-storage-file-datalake<13.0.0,>=12.5",
             f"dagster{pin}",
         ],
+        extras_require={
+            "test": ["dagster[test]"],
+        },
         entry_points={"console_scripts": ["dagster-azure = dagster_azure.cli.cli:main"]},
         zip_safe=False,
     )

@@ -42,6 +42,6 @@ if __name__ == "__main__":
             "oauth2client",
         ],
         # we need `pyarrow` for testing read/write parquet files.
-        extras_require={"pyarrow": ["pyarrow"]},
+        extras_require={"pyarrow": ["pyarrow"], "test": ["dagster[test]"]},
         zip_safe=False,
     )

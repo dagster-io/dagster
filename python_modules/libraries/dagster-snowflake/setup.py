@@ -35,6 +35,7 @@ if __name__ == "__main__":
         extras_require={
             "snowflake.sqlalchemy": ["sqlalchemy", "snowflake-sqlalchemy"],
             "pandas": ["pandas"],
+            "test": ["dagster[test]"],
         },
         zip_safe=False,
     )

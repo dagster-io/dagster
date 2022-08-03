@@ -33,6 +33,6 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_shell_tests*"]),
         install_requires=[f"dagster{pin}"],
-        extras_require={"test": ["psutil"]},
+        extras_require={"test": ["dagster[test]", "psutil"]},
         zip_safe=False,
     )

@@ -29,6 +29,9 @@ setup(
         "wheel==0.33.6",
         "urllib3",
     ],
+    extras_require={
+        "test": ["dagster[test]"],
+    },
     entry_points={
         "console_scripts": [
             "dagster-buildkite = automation.buildkite.cli:main",

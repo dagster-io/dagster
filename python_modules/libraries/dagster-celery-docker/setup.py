@@ -37,5 +37,8 @@ if __name__ == "__main__":
             f"dagster-graphql{pin}",
             "docker",
         ],
+        extras_require={
+            "test": ["dagster[test]"],
+        },
         zip_safe=False,
     )

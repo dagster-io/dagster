@@ -35,5 +35,8 @@ if __name__ == "__main__":
             f"dagster{pin}",
             "requests",
         ],
+        extras_require={
+            "test": ["dagster[test]"],
+        },
         zip_safe=False,
     )

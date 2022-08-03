@@ -38,5 +38,8 @@ if __name__ == "__main__":
             f"dagster-pyspark{pin}",
             "databricks_api",
         ],
+        extras_require={
+            "test": ["dagster[test]"],
+        },
         zip_safe=False,
     )

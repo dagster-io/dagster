@@ -43,6 +43,7 @@ if __name__ == "__main__":
         ],
         extras_require={
             "test": [
+                "dagster[test]",
                 "Jinja2",
                 "dbt-rpc",
                 "dbt-postgres",

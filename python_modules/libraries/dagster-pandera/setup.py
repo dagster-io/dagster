@@ -35,7 +35,7 @@ if __name__ == "__main__":
         install_requires=[f"dagster{pin}", "pandas", "pandera>=0.9.0"],
         extras_require={
             "test": [
-                "pytest",
+                "dagster[test]",
             ],
         },
     )

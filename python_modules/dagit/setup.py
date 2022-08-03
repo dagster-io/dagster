@@ -55,6 +55,9 @@ if __name__ == "__main__":
             "starlette",
             "uvicorn[standard]",
         ],
+        extras_require={
+            "test": ["dagster[test]"],
+        },
         entry_points={
             "console_scripts": ["dagit = dagit.cli:main", "dagit-debug = dagit.debug:main"]
         },

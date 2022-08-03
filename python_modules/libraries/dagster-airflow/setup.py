@@ -43,6 +43,7 @@ if __name__ == "__main__":
         extras_require={
             "kubernetes": ["kubernetes>=3.0.0", "cryptography>=2.0.0"],
             "test": [
+                "dagster[test]",
                 # Airflow should be provided by the end user, not us. For example, GCP Cloud
                 # Composer ships a fork of Airflow; we don't want to override it with our install.
                 # See https://github.com/dagster-io/dagster/issues/2701

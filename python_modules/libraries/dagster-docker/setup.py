@@ -33,5 +33,8 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_docker_tests*"]),
         install_requires=[f"dagster{pin}", "docker", "docker-image-py"],
+        extras_require={
+            "test": ["dagster[test]"],
+        },
         zip_safe=False,
     )

@@ -34,5 +34,8 @@ if __name__ == "__main__":
             "mlflow<=1.26.0",  # https://github.com/mlflow/mlflow/issues/5968
             "pandas",
         ],
+        extras_require={
+            "test": ["dagster[test]"],
+        },
         zip_safe=False,
     )

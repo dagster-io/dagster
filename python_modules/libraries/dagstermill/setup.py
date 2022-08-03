@@ -50,6 +50,7 @@ if __name__ == "__main__":
         ],
         extras_require={
             "test": [
+                "dagster[test]",
                 "matplotlib",
                 "nbconvert",
                 "scikit-learn>=0.19.0",

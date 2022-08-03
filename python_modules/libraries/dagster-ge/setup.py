@@ -37,5 +37,8 @@ if __name__ == "__main__":
             "pandas",
             "great_expectations >=0.11.9, !=0.12.8, !=0.13.17, !=0.13.27",
         ],
+        extras_require={
+            "test": ["dagster[test]"],
+        },
         zip_safe=False,
     )

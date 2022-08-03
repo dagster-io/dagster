@@ -18,5 +18,8 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["test"]),
         install_requires=["dagster", "docker", "boto3"],
+        extras_require={
+            "test": ["dagster[test]"],
+        },
         zip_safe=False,
     )

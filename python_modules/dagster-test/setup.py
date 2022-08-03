@@ -22,5 +22,8 @@ if __name__ == "__main__":
             "dagster",
             "pyspark",
         ],
+        extras_require={
+            "test": ["dagster[test]"],
+        },
         zip_safe=False,
     )

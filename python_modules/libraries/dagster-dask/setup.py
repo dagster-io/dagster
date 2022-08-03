@@ -43,7 +43,7 @@ if __name__ == "__main__":
             "pbs": ["dask-jobqueue"],
             "kube": ["dask-kubernetes"],
             # we need `pyarrow` for testing read/write parquet files.
-            "test": ["pyarrow"],
+            "test": ["dagster[test]", "pyarrow"],
         },
         zip_safe=False,
     )

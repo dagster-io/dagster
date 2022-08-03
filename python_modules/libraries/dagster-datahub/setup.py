@@ -39,6 +39,6 @@ if __name__ == "__main__":
             "packaging",
             "requests",
         ],
-        extras_require={},
+        extras_require={"test": ["dagster[test]"]},
         zip_safe=False,
     )

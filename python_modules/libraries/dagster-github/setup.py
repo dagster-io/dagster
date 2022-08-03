@@ -40,5 +40,8 @@ if __name__ == "__main__":
             # No officially supported python sdk for github :(
             "requests",
         ],
+        extras_require={
+            "test": ["dagster[test]"],
+        },
         zip_safe=False,
     )

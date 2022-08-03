@@ -13,4 +13,7 @@ setup(
         "pandera",
         "pandas",
     ],
+    extras_require={
+        "test": ["dagster[test]"],
+    },
 )

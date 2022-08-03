@@ -8,4 +8,7 @@ setup(
         "astroid",  # let pylint determine the version
         "pylint>=2",
     ],
+    extras_require={
+        "test": ["dagster[test]"],
+    },
 )

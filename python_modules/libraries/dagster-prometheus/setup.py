@@ -33,5 +33,8 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_prometheus_tests*"]),
         install_requires=[f"dagster{pin}", "prometheus_client"],
+        extras_require={
+            "test": ["dagster[test]"],
+        },
         zip_safe=False,
     )
