@@ -3,13 +3,15 @@ FROM "${BASE_IMAGE}"
 
 ARG DAGSTER_VERSION
 
+# All packages are hard-pinned to `dagster`, so setting the version on just `DAGSTER` will ensure
+# compatible versions.
 RUN pip install \
     dagster==${DAGSTER_VERSION} \
-    dagster-postgres==${DAGSTER_VERSION} \
-    dagster-aws==${DAGSTER_VERSION} \
-    dagster-k8s==${DAGSTER_VERSION} \
-    dagster-celery[flower,redis,kubernetes]==${DAGSTER_VERSION} \
-    dagster-celery-k8s==${DAGSTER_VERSION}
+    dagster-postgres \
+    dagster-aws \
+    dagster-k8s \
+    dagster-celery[flower,redis,kubernetes] \
+    dagster-celery-k8s
 
 # Get example pipelines
 COPY build_cache/ /
