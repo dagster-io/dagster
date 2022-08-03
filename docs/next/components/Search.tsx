@@ -157,6 +157,10 @@ export function Search() {
                 };
               });
             }}
+            resultsFooterComponent={({ state }) => {
+              console.log(state.query);
+              return <h1>{state.context.nbHits} hits found</h1>;
+            }}
           />,
           document.body,
         )}
