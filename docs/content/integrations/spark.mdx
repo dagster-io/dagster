@@ -33,7 +33,7 @@ The downside is that this approach only works with PySpark, and setting up a ste
 
 ### Running PySpark code in ops
 
-<CodeReferenceLink filePath="examples/basic_pyspark" />
+<CodeReferenceLink filePath="examples/with_pyspark" />
 
 Passing PySpark DataFrames between ops requires a little bit of extra care, compared to other data types, for a couple reasons:
 
@@ -46,7 +46,7 @@ This example assumes that all the outputs within the dagster job will be PySpark
 
 This example writes out DataFrames to the local file system, but can be tweaked to write to cloud object stores like S3 by changing to the `write` and `read` invocations.
 
-```python file=../../basic_pyspark/repo.py startafter=start_repo_marker_0 endbefore=end_repo_marker_0
+```python file=../../with_pyspark/with_pyspark/repository.py startafter=start_repo_marker_0 endbefore=end_repo_marker_0
 import os
 
 from pyspark.sql import DataFrame, Row, SparkSession
@@ -97,11 +97,11 @@ make_and_filter_data_job = make_and_filter_data.to_job(
 
 ### Submitting PySpark ops on EMR
 
-<CodeReferenceLink filePath="examples/emr_pyspark" />
+<CodeReferenceLink filePath="examples/with_pyspark_emr" />
 
 This example demonstrates how to use the <PyObject module='dagster_aws.emr' object='emr_pyspark_step_launcher' /> to have an op run as a Spark step on an EMR cluster. In it, each of the two ops will be executed as a separate EMR step on the same EMR cluster.
 
-```python file=../../emr_pyspark/repo.py startafter=start-snippet endbefore=end-snippet
+```python file=../../with_pyspark_emr/with_pyspark_emr/repository.py startafter=start-snippet endbefore=end-snippet
 from pathlib import Path
 
 from dagster_aws.emr import emr_pyspark_step_launcher
