@@ -1,0 +1,44 @@
+---
+title: Recommended Project Structure  | Dagster
+description: This guide talks about Dagster's recommendations on structuring larger projects
+---
+
+# Recommended Project Structure
+
+Before jumping into details, Dagster aims to enable teams to ship data pipelines with extraordinary velocity. This section talks about how we imagine structuring larger Dagster projects which help achieve that goal.
+
+At a high level, here are the aspects we'd like to optimize when structuring a complex project:
+
+- You can quickly get stuff done (e.g. write a new job, fix a breakage, or retire existing data pipelines) without thinking much about where the change should be or how it may break others.
+- You can quickly find the code regardless of your familiarity to the detailed business logic.
+- You can organize at your own pace when you feel things have grown too big, but don't over optimize too early.
+
+TODO: show and talk about the dir of project_fully_featured
+
+Concretely, we recommend the following patterns for a Dagster repository:
+
+- Keep all assets together in an `assets/` directory. Keep all assets in the directory, or group assets by business domains in multiple directory inside `assets/` as your business logic grows.
+
+  - In this example, we keep all assets together in the [`project_fully_featured/assets/`](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured/project_fully_featured/assets) directory. It is useful because you can use <PyObject object="load_assets_from_package_module" /> or <PyObject object="load_assets_from_modules" /> to load assets into your repository, as opposed to needing to add assets to the repository every time you define one. It also helps collaboration as your teammates can quickly navigate in the codebase to find the core business logic (i.e. assets) regardless of their familiarity to the specific repository.
+
+- Keep schedules ans sensors that target a particular job together.
+
+  - In this example, we put sensors and schedules in [`jobs.py`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/jobs.py). When we build sensors or schedules from a job, they are considered as policies for when to trigger a particular job. So, keeping all the policies together with jobs makes it clear when and how certain jobs are being launched.
+
+  - Note: Certain sensors like [run status sensors](/concepts/partitions-schedules-sensors/sensors#run-status-sensors) can listen to multiple jobs and do not trigger a job. We recommend keeping these sensors in the repository definition as they are often for alerting and monitoring at the repository level.
+
+- Make resources reusable and share them across jobs or asset groups.
+
+  - In this example, resources (e.g., database connections, Spark sessions, API clients, and I/O managers) are grouped in the [`resources/__init__.py`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/\__init\_\_.py) file, where they are bound to configuration sets which vary based on environment. In complex projects, we find it very useful to make resources reusable and configured with pre-defined values via <PyObject object="configured" />. So when developing a project, instead of trying to find their own way to model external components, teammates can all quickly get stuff done using a pre-defined resource set, or make changes to resources that are shared among the team.
+
+  - This patten also helps you to easily execute jobs in different environment without code changes. In this example, we dynamically define repository based on the deployment in [`repository.py`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/repository.py) and are able to keep all code the same across testing, local development, staging, and production. Read more about our recommendations in [Transitioning Data Pipelines from Development to Production](/guides/dagster/transitioning-data-pipelines-from-development-to-production)
+
+- TODO: What to do with ops/graphs/jobs???
+
+So far, we've discussed our recommendations for structuring a large project which contains one repository. Dagster also allows you to structure a project with multiple Dagster repositories. We don't recommend over abstract too early, and in most cases, one repository should be sufficient. The pattern we found useful is to use multiple repositories is to keep conflicting dependencies separate, where each Dagster repository can keep their own package requirements (e.g., `setup.py`) and deployment specs (e.g., `Dockerfile`).
+
+## Conclusion
+
+As your experience with Dagster grows, you may find certain aspects of this guide no longer apply to your use cases and you may want to change the structure to adapt to your business needs. We believe every team is unique and every team finds its own way to collaborate and be productive in the end.
+
+We're constantly learning -- If you have anything you'd like to add about project layouts, we invite you to join this [GitHub Discussion](https://github.com/dagster-io/dagster/discussions/8972) to share how you organize your Dagster code.
