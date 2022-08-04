@@ -267,10 +267,11 @@
   {
     "title": "Deployment",
     "icon": "CloudUpload",
+    "path": "/deployment",
     "children": [
       {
         "title": "Open Source",
-        "path": "/deployment",
+        "path": "/deployment/open-source",
         "children": [
           {
             "title": "Overview and architecture",
