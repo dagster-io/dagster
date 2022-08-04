@@ -1,13 +1,13 @@
 ---
 title: Fully Featured Project  | Dagster
-description: This guide walk through a fully featured Dagster project that uses many of Dagster's features.
+description: This guide walks through a fully featured Dagster project that uses many of Dagster's features.
 ---
 
 # Fully Featured Project
 
 In this guide, we'll walk through a fully featured Dagster project that takes advantage of a wide range of Dagster features. This example can be useful as a point of reference for [using different Dagster APIs](#using-dagster-concepts) and [integrating other tools](#integrating-other-tools).
 
-At a high level, this project consists of three asset groups, all centered around a (contrived) use case of downloading [Hacker News](https://news.ycombinator.com/) user activity data, loading it into a database, and doing analysis / training an ML model on the aggregated data.
+At a high level, this project consists of three asset groups, all centered around a contrived organization that wants to do ML and analysis on \[Hacker News]\(<https://news.ycombinator.com/> user activity data.
 
 ---
 
@@ -48,7 +48,7 @@ This example shows useful patterns for many Dagster concepts, including:
 
 [Software-defined assets](/concepts/assets/software-defined-assets) - An asset is a software object that models a data asset. The prototypical example is a table in a database or a file in cloud storage.
 
-This example contains [three asset group](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/assets/\__init\_\_.py):
+This example contains [three asset groups](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/assets/\__init\_\_.py):
 
 <Image
 alt="Global Asset Lineage"
@@ -59,24 +59,24 @@ height={2488}
 
 - [`core`](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured/project_fully_featured/assets/core): Contains data sets of activity on Hacker News, fetched from the [Hacker News API](https://github.com/HackerNews/API). These are partitioned by hour and updated every hour.
 
-- [`recommender`](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured/project_fully_featured/assets/recommender): A machine learning model that recommends stories to specific users based on their comment history, as well as the features and training set used to fit that model. These are dropped and recreated whenever the core assets receive updates.
+- [`recommender`](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured/project_fully_featured/assets/recommender): A machine learning model that recommends stories to specific users based on their comment history, as well as the features and training set used to fit that model. These are dropped and recreated whenever the `core` assets receive updates.
 
-- [`activity_analytics`](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured/project_fully_featured/assets/activity_analytics): Aggregate statistics computed about Hacker News activity. dbt models and a Python model that depends on them. These are dropped and recreated whenever the core assets receive updates.
+- [`activity_analytics`](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured/project_fully_featured/assets/activity_analytics): Aggregate statistics computed about Hacker News activity represented by dbt models and a Python model that depends on them. These are dropped and recreated whenever the `core` assets receive updates.
 
-### Varying connections or I/O without changing your DAG
+### Varying external services or I/O without changing your DAG
 
 [Resources](/concepts/resources) - A resource is an object that models a connection to a (typically) external service. Resources can be shared between assets, and different implementations of resources can be used depending on the environment. In this example, we built [multiple Hacker News API resources](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/hn_resource.py), all of which have the same interface but different implementations:
 
 - `HNAPIClient` interacts with the real Hacker News API and gets the full data set, which will be used in production.
-- `HNAPISubsampleClient` talks to the real API but subsample the data, which is much faster than the normal implementation and is great for demoing purposes.
+- `HNAPISubsampleClient` talks to the real API but subsamples the data, which is much faster than the normal implementation and is great for demoing purposes.
 - `HNSnapshotClient` reads from a local snapshot, which is useful for unit testing or environments where the connection isn't available.
 
 The way we model resources helps separate the business logic in code from environments, e.g. you can easily switch resources without changing your pipeline code.
 
 [I/O managers](/concepts/io-management/io-managers) - An I/O manager is a special kind of resource that handles storing and loading assets. This example includes [a wide range of I/O managers](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured/project_fully_featured/resources) such as:
 
-- [`DuckDBPartitionedParquetIOManager`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/duckdb_parquet_io_manager.py): It can interact with Spark and dbt without any long-running process. It minimizes setup difficulty and is useful for local development.
-- [`SnowflakeIOManager`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/snowflake_io_manager.py): It handles outputs that are either Spark or Pandas DataFrames and write data to a Snowflake table specified by metadata on the relevant <PyObject object="Out" />. The metadata is helpful for observability, especially in production.
+- [`DuckDBPartitionedParquetIOManager`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/duckdb_parquet_io_manager.py): interacts with Spark and dbt without any long-running process. It minimizes setup difficulty and is useful for local development.
+- [`SnowflakeIOManager`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/snowflake_io_manager.py): handles outputs that are either Spark or Pandas DataFrames and write data to a Snowflake table specified by metadata on the relevant <PyObject object="Out" />. The metadata is helpful for observability, especially in production.
 
 ### Scheduling and triggering jobs
 
@@ -93,7 +93,7 @@ The way we model resources helps separate the business logic in code from enviro
 
 - [Testing sensors](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured_tests/test_sensors) by mocking event storage and ticks and verifying definitions can load. Visit [Testing sensors](/concepts/partitions-schedules-sensors/sensors#testing-sensors) for more details.
 - [Testing assets](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured/project_fully_featured_tests/recommender_tests/assets_tests) by directly invoking the <PyObject object="asset" decorator />-decorated functions. Read more about testing assets on the [Testing](https://docs.dagster.io/concepts/testing#testing-software-defined-assets) page.
-- [Testing I/O managers](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured/project_fully_featured_tests/test_resources) by mocking the I/O and constructing <PyObject object="OutputContext" /> and <PyObject object="InputContext" /> with the mocks. Check out [Testing an IO manager](/io-managers#testing-an-io-manager) to learn more.
+- [Testing I/O managers](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured/project_fully_featured_tests/test_resources) by mocking the I/O and constructing <PyObject object="OutputContext" /> and <PyObject object="InputContext" /> with the mocks. Check out [Testing an IO manager](/concepts/io-management/io-managers#testing-an-io-manager) to learn more.
 
 ### Environments
 
@@ -111,7 +111,7 @@ Beyond leveraging Dagster core concepts, this project also uses several dagster 
 
 - [dagster_dbt](/\_apidocs/libraries/dagster-dbt)
 
-  - Dagster orchestrates dbt alongside other tools, so you can combine dbt with Python, Spark, etc. in a single workflow. This exapmle includes a standalone [`dbt_project`](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured/dbt_project), and load dbt models from an existing dbt `manifest.json` file in the dbt project to Dagster assets. It is useful for larger dbt projects as you may not want to recompile the entire dbt project every time you load the Dagster project.
+  - Dagster orchestrates dbt alongside other tools, so you can combine dbt with Python, Spark, etc. in a single workflow. This example includes a standalone [`dbt_project`](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured/dbt_project), and loads dbt models from an existing dbt `manifest.json` file in the dbt project to Dagster assets. It is useful for larger dbt projects as you may not want to recompile the entire dbt project every time you load the Dagster project.
   - Check out [Using dbt with Dagster](/integrations/dbt) for more recommendations.
 
 - [dagster_aws](/\_apidocs/libraries/dagster-aws)
@@ -120,7 +120,7 @@ Beyond leveraging Dagster core concepts, this project also uses several dagster 
 
 - [dagster_slack](/\_apidocs/libraries/dagster-slack)
 
-  - We provide out-of-box support for messaging a given Slack channel. Dagster also comes with a resource for connecting to Slack. Resources are useful for interacting with Slack, as you may want to send messages in production but mock the Slack resource while testing.
+  - Dagster provides out-of-the-box support for messaging a given Slack channel, via a resource that connects to Slack. Resources are useful for interacting with Slack, as you may want to send messages in production but mock the Slack resource while testing.
 
 - [dagster_pyspark](/\_apidocs/libraries/dagster-pyspark)
 
@@ -129,4 +129,4 @@ Beyond leveraging Dagster core concepts, this project also uses several dagster 
 
 ## Conclusion
 
-Lastly, as time goes on, this guide will be kept up to date, taking advantage of new Dagster features and learnings from the community. If you have anything you'd like to add, or like to see an example of, don't hesitate to reach out!
+As time goes on, this guide will be kept up to date, taking advantage of new Dagster features and learnings from the community. If you have anything you'd like to add, or an additional example you'd like to see, don't hesitate to reach out!
