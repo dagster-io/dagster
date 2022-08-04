@@ -53,5 +53,3 @@ Dagster CLI
 .. click:: dagster._daemon.cli:debug_heartbeat_dump_command
    :prog: dagster-daemon debug heartbeat-dump
 
-.. click:: dagster._cli.api:grpc_command
-   :prog: dagster api grpc

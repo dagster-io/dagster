@@ -35,7 +35,6 @@ class DatabricksClient:
 
     def read_file(self, dbfs_path, block_size=1024**2):
         """Read a file from DBFS to a **byte string**."""
-
         if dbfs_path.startswith("dbfs://"):
             dbfs_path = dbfs_path[7:]
         data = b""
@@ -48,6 +47,7 @@ class DatabricksClient:
                 path=dbfs_path, offset=bytes_read, length=block_size
             )
             data += base64.b64decode(jdoc["data"])
+
         return data
 
     def put_file(self, file_obj, dbfs_path, overwrite=False, block_size=1024**2):

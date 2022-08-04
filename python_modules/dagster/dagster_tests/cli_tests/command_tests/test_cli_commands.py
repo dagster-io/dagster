@@ -130,7 +130,7 @@ def define_bar_schedules():
         "foo_schedule": ScheduleDefinition(
             "foo_schedule",
             cron_schedule="* * * * *",
-            pipeline_name="foo",
+            job_name="foo",
             run_config={},
         ),
         "partitioned_schedule": partition_set.create_schedule_definition(
@@ -171,7 +171,7 @@ def define_bar_partitions():
 
 
 def define_bar_sensors():
-    @sensor(pipeline_name="baz")
+    @sensor(job_name="baz")
     def foo_sensor(context):
         run_config = {"foo": "FOO"}
         if context.last_completion_time:

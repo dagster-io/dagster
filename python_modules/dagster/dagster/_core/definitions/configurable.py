@@ -76,6 +76,10 @@ class AnonymousConfigurableDefinition(ConfigurableDefinition):
         Wraps this object in an object of the same type that provides configuration to the inner
         object.
 
+        Using ``configured`` may result in config values being displayed in
+        Dagit, so it is not recommended to use this API with sensitive values,
+        such as secrets.
+
         Args:
             config_or_config_fn (Union[Any, Callable[[Any], Any]]): Either (1) Run configuration
                 that fully satisfies this object's config schema or (2) A function that accepts run
@@ -119,6 +123,10 @@ class NamedConfigurableDefinition(ConfigurableDefinition):
         """
         Wraps this object in an object of the same type that provides configuration to the inner
         object.
+
+        Using ``configured`` may result in config values being displayed in
+        Dagit, so it is not recommended to use this API with sensitive values,
+        such as secrets.
 
         Args:
             config_or_config_fn (Union[Any, Callable[[Any], Any]]): Either (1) Run configuration
@@ -197,11 +205,15 @@ def configured(
     A decorator that makes it easy to create a function-configured version of an object.
     The following definition types can be configured using this function:
 
-    * :py:class:`CompositeSolidDefinition`
+    * :py:class:`GraphDefinition`
     * :py:class:`ExecutorDefinition`
     * :py:class:`LoggerDefinition`
     * :py:class:`ResourceDefinition`
-    * :py:class:`SolidDefinition`
+    * :py:class:`OpDefinition`
+
+    Using ``configured`` may result in config values being displayed in Dagit,
+    so it is not recommended to use this API with sensitive values, such as
+    secrets.
 
     If the config that will be supplied to the object is constant, you may alternatively invoke this
     and call the result with a dict of config values to be curried. Examples of both strategies

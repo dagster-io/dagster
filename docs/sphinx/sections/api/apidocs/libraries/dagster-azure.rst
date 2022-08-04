@@ -20,11 +20,14 @@ dependency on an old version, via ``snowflake-connector-python``.
 
 .. autoclass:: dagster_azure.blob.AzureBlobComputeLogManager
 
+.. autoconfigurable:: dagster_azure.adls2.adls2_pickle_io_manager
+  :annotation: IOManagerDefinition
+
+File Manager (Experimental)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. autoconfigurable:: dagster_azure.adls2.adls2_file_manager
   :annotation: ResourceDefinition
 
 .. autoclass:: dagster_azure.adls2.ADLS2FileHandle
   :members:
-
-.. autoconfigurable:: dagster_azure.adls2.adls2_pickle_io_manager
-  :annotation: IOManagerDefinition

@@ -4,7 +4,7 @@ title: Dagster with Great Expectations | Dagster
 
 # Using Dagster with Great Expectations
 
-<CodeReferenceLink filePath="examples/ge_example" />
+<CodeReferenceLink filePath="examples/with_great_expectations" />
 
 This example demonstrates how to use the GE op factory [`dagster-ge`](/\_apidocs/libraries/dagster-ge) to test incoming data against a set of expectations built through [Great Expectations](https://docs.greatexpectations.io/en/latest/)' tooling.
 
@@ -12,7 +12,7 @@ For this example, we'll be using two versions of a dataset of baseball team payr
 
 You can use <PyObject module="dagster_ge" object="ge_validation_op_factory" /> to generate Dagster ops that integrate with Great Expectations. For example, here we show a basic call to this GE op factory, with two required arguments: `datasource_name` and expectation `suite_name`.
 
-```python file=../../ge_example/ge_example/ge_demo.py startafter=start_ge_demo_marker_factory endbefore=end_ge_demo_marker_factory
+```python file=../../with_great_expectations/with_great_expectations/ge_demo.py startafter=start_ge_demo_marker_factory endbefore=end_ge_demo_marker_factory
 payroll_expectations = ge_validation_op_factory(
     name="ge_validation_op", datasource_name="getest", suite_name="basic.warning"
 )
@@ -20,7 +20,7 @@ payroll_expectations = ge_validation_op_factory(
 
 The GE validations will happen inside the ops created above. Each of the ops will yield an <PyObject object="ExpectationResult" /> with a structured dict of metadata from the GE suite. The structured metadata contain both summary stats from the suite and expectation by expectation results. The op will output the full result in case you want to process it differently. Here's how other ops could use the full result, where `expectation` is the result:
 
-```python file=../../ge_example/ge_example/ge_demo.py startafter=start_ge_demo_marker_op endbefore=end_ge_demo_marker_op
+```python file=../../with_great_expectations/with_great_expectations/ge_demo.py startafter=start_ge_demo_marker_op endbefore=end_ge_demo_marker_op
 @op
 def postprocess_payroll(numrows, expectation):
     if expectation["success"]:
@@ -33,7 +33,7 @@ You can configure the GE Data Context via the `ge_data_context` resource from `d
 
 Finally, here's the full job definition using the GE op, with a default run configuration to use the correct set of data:
 
-```python file=../../ge_example/ge_example/ge_demo.py startafter=start_ge_demo_marker_job endbefore=end_ge_demo_marker_job
+```python file=../../with_great_expectations/with_great_expectations/ge_demo.py startafter=start_ge_demo_marker_job endbefore=end_ge_demo_marker_job
 @job(
     resource_defs={"ge_data_context": ge_data_context},
     config={

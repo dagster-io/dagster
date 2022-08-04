@@ -203,9 +203,7 @@ class SensorDefinition:
         self,
         name: Optional[str] = None,
         evaluation_fn: Optional[RawSensorEvaluationFunction] = None,
-        pipeline_name: Optional[str] = None,
-        solid_selection: Optional[Sequence[str]] = None,
-        mode: Optional[str] = None,
+        job_name: Optional[str] = None,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         job: Optional[ExecutableDefinition] = None,
@@ -224,31 +222,19 @@ class SensorDefinition:
         job_param_name = "job" if job else "jobs"
         jobs = jobs if jobs else [job] if job else None
 
-        if pipeline_name and jobs:
+        if job_name and jobs:
             raise DagsterInvalidDefinitionError(
-                f"Attempted to provide both pipeline_name and {job_param_name} to "
+                f"Attempted to provide both job_name and {job_param_name} to "
                 "SensorDefinition. Must provide only one of the two."
-            )
-        if solid_selection and jobs:
-            raise DagsterInvalidDefinitionError(
-                f"Attempted to provide solid_selection and {job_param_name} to SensorDefinition. "
-                "The solid_selection argument is incompatible with jobs."
-            )
-        if mode and jobs:
-            raise DagsterInvalidDefinitionError(
-                f"Attempted to provide mode and {job_param_name} to SensorDefinition. "
-                "The mode argument is incompatible with jobs."
             )
 
         targets: Optional[List[Union[RepoRelativeTarget, DirectTarget]]] = None
-        if pipeline_name:
+        if job_name:
             targets = [
                 RepoRelativeTarget(
-                    pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
-                    mode=check.opt_str_param(mode, "mode") or DEFAULT_MODE_NAME,
-                    solid_selection=check.opt_nullable_sequence_param(
-                        solid_selection, "solid_selection", of_type=str
-                    ),
+                    pipeline_name=check.str_param(job_name, "job_name"),
+                    mode=DEFAULT_MODE_NAME,
+                    solid_selection=None,
                 )
             ]
         elif job:
@@ -433,8 +419,8 @@ class SensorDefinition:
         if run_requests and not self._targets:
             raise Exception(
                 f"Error in sensor {self._name}: Sensor evaluation function returned a RunRequest "
-                "for a sensor lacking a specified target (pipeline_name, job, or jobs). Targets "
-                "can be specified by providing job, jobs, or pipeline_name to the @sensor "
+                "for a sensor lacking a specified target (job_name, job, or jobs). Targets "
+                "can be specified by providing job, jobs, or job_name to the @sensor "
                 "decorator."
             )
 
@@ -457,19 +443,11 @@ class SensorDefinition:
     @public  # type: ignore
     @property
     def job_name(self) -> Optional[str]:
-        return self.pipeline_name
-
-    @property
-    def pipeline_name(self) -> Optional[str]:
-        return self._target.pipeline_name if self._target else None
-
-    @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
-        return self._target.solid_selection if self._target else None
-
-    @property
-    def mode(self) -> Optional[str]:
-        return self._target.mode if self._target else None
+        if len(self._targets) > 1:
+            raise DagsterInvalidInvocationError(
+                f"Cannot use `job_name` property for sensor {self.name}, which targets multiple jobs."
+            )
+        return self._targets[0].pipeline_name
 
     @public  # type: ignore
     @property
@@ -616,13 +594,11 @@ class AssetSensorDefinition(SensorDefinition):
         self,
         name: str,
         asset_key: AssetKey,
-        pipeline_name: Optional[str],
+        job_name: Optional[str],
         asset_materialization_fn: Callable[
             ["SensorExecutionContext", "EventLogEntry"],
             RawSensorEvaluationFunctionReturn,
         ],
-        solid_selection: Optional[Sequence[str]] = None,
-        mode: Optional[str] = None,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         job: Optional[ExecutableDefinition] = None,
@@ -669,12 +645,10 @@ class AssetSensorDefinition(SensorDefinition):
 
         super(AssetSensorDefinition, self).__init__(
             name=check_valid_name(name),
-            pipeline_name=pipeline_name,
+            job_name=job_name,
             evaluation_fn=_wrap_asset_fn(
                 check.callable_param(asset_materialization_fn, "asset_materialization_fn"),
             ),
-            solid_selection=solid_selection,
-            mode=mode,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job=job,
@@ -682,6 +656,7 @@ class AssetSensorDefinition(SensorDefinition):
             default_status=default_status,
         )
 
+    @public  # type: ignore
     @property
     def asset_key(self):
         return self._asset_key

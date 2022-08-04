@@ -7,4 +7,4 @@ from docs_snippets.concepts.partitions_schedules_sensors.schedule_from_partition
 
 
 def test_build_schedule_from_partitioned_job():
-    assert do_stuff_partitioned_schedule.pipeline_name == do_stuff_partitioned.name
+    assert do_stuff_partitioned_schedule.job_name == do_stuff_partitioned.name

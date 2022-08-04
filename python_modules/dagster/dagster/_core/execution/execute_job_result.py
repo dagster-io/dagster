@@ -1,6 +1,7 @@
 from typing import Any, Sequence
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions import JobDefinition, NodeHandle
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterInvariantViolationError
@@ -41,22 +42,27 @@ class ExecuteJobResult(ExecutionResult):
         self._context = None
         return exit_result
 
+    @public  # type: ignore
     @property
     def job_def(self) -> JobDefinition:
         return self._job_def
 
+    @public  # type: ignore
     @property
     def dagster_run(self) -> DagsterRun:
         return self._dagster_run
 
+    @public  # type: ignore
     @property
     def all_events(self) -> Sequence[DagsterEvent]:
         return self._event_list
 
+    @public  # type: ignore
     @property
     def run_id(self) -> str:
         return self.dagster_run.run_id
 
+    @public
     def output_value(self, output_name: str = DEFAULT_OUTPUT) -> Any:
         """Retrieves output of top-level job, if an output is returned.
 
@@ -71,6 +77,7 @@ class ExecuteJobResult(ExecutionResult):
         """
         return super(ExecuteJobResult, self).output_value(output_name=output_name)
 
+    @public
     def output_for_node(self, node_str: str, output_name: str = DEFAULT_OUTPUT) -> Any:
         """Retrieves output value with a particular name from the run of the job.
 

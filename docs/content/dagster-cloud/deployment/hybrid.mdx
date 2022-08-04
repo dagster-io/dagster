@@ -1,7 +1,87 @@
 ---
-title: "Hybrid deployment in Dagster Cloud | Dagster Docs"
-
+title: Hybrid deployments in Dagster Cloud | Dagster Docs
 noindex: True
 ---
 
-# Hybrid deployment in Dagster Cloud
+# Hybrid deployments in Dagster Cloud
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+In this guide, we'll cover how a Hybrid deployment works in Dagster Cloud, including its system architecture, agent, and security.
+
+---
+
+## Hybrid architecture overview
+
+A **hybrid deployment** utilizes a combination of your infrastructure and Dagster-hosted backend services.
+
+The Dagster backend services - including the web frontend, GraphQL API, metadata database, and daemons (responsible for executing schedules and sensors) - are hosted in Dagster Cloud. You are responsible for running an [agent](/dagster-cloud/deployment/agents) in your environment.
+
+<Image
+alt="Dagster Cloud Architecture Diagram"
+src="/images/dagster-cloud/deployment/hybrid-architecture.png"
+width={1583}
+height={765}
+/>
+
+Work is enqueued for your agent when:
+
+- Users interact with the web front end,
+- The GraphQL API is queried, or
+- Schedules and sensors tick
+
+The agent polls the agent API to see if any work needs to be done and launches user code as appropriate to fulfill requests. User code then streams metadata back to the agent API (GraphQL over HTTPS) to make it available in Dagster Cloud.
+
+All user code runs within your environment, in isolation from Dagster system code.
+
+---
+
+## The agent
+
+Because the agent communicates with the Dagster Cloud control plane over the agent API, it’s possible to support agents that operate in arbitrary compute environments.
+
+This means that over time, Dagster Cloud’s support for different user deployment environments will expand and custom agents can take advantage of bespoke compute environments such as HPC.
+
+Refer to the [Agents documentation](/dagster-cloud/deployment/agents) for more info, including the agents that are currently supported.
+
+---
+
+## Security
+
+This section describes how Dagster Cloud interacts with user code. To summarize:
+
+- No ingress is required from Dagster Cloud to user environments
+- Dagster Cloud doesn't have access to user code. Metadata about the code is fetched over constrained APIs.
+
+These highlights are described in more detail below:
+
+- [Interactions and queries](#interactions-and-queries)
+- [Runs](#runs)
+- [Ingress](#ingress)
+
+### Interactions and queries
+
+When Dagster Cloud needs to interact with user code - for instance, to display the structure of a job in the Dagster Cloud user interface, to run the body of a sensor definition, or to launch a run for a job - it enqueues a message for the Dagster Cloud Agent. The Dagster Cloud Agent picks up this message and then launches or queries user code running on the appropriate compute substrate.
+
+Depending on the agent implementation, user code may run in isolated OS processes, in Docker containers, in ECS Tasks, in Kubernetes Jobs and Services, or in a custom isolation strategy.
+
+Queries to user code run over a well-defined grpc interface. Dagster Cloud uses this interface to:
+
+- Retrieve the names, config schemas, descriptions, tags, and structures of jobs, ops, repositories, partitions, schedules, and sensors defined in your code
+- Evaluate schedule and sensor ticks and determine whether a run should be launched
+
+When the agent queries user code, it writes the response back to Dagster Cloud over a well-defined GraphQL interface.
+
+### Runs
+
+Runs are launched by calling the `dagster api` CLI command in a separate process/container as appropriate to the agent type. Run termination is handled by interrupting the user code process/container as appropriate for the compute substrate.
+
+When runs are launched, the user code process/container streams structured metadata (containing everything that is viewable in the integrated logs viewer in the Dagster Cloud UI) back to Dagster Cloud over a well-defined GraphQL interface. Structured metadata is stored in Amazon RDS, encrypted at rest.
+
+At present, the run worker also uploads the compute logs (raw `stdout` and `stderr` from runs) to Dagster Cloud.
+
+### Ingress
+
+No ingress is required from Dagster Cloud to user environments. All dataflow and network requests are unidirectional from user environments to Dagster Cloud.
+
+**Note:** To ensure that user code remains completely isolated in the user environment, Dagster Cloud does not currently support previews of Dagstermill notebooks. Supporting these previews securely is a roadmap feature.

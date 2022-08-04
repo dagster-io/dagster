@@ -39,6 +39,8 @@ Execution results
    :inherited-members:
 
 .. autoclass:: ExecuteJobResult
+   :members:
+   :inherited-members:
 
 .. autoclass:: DagsterEvent
    :members:

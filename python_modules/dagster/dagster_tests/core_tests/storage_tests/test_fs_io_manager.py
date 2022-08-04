@@ -1,6 +1,7 @@
 import os
 import pickle
 import tempfile
+from typing import Tuple
 
 import pytest
 
@@ -8,12 +9,17 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     DailyPartitionsDefinition,
+    In,
     MetadataValue,
+    Nothing,
     Out,
     Output,
     StaticPartitionsDefinition,
     graph,
+    job,
+    materialize,
     op,
+    with_resources,
 )
 from dagster._core.definitions import AssetGroup, AssetIn, asset, build_assets_job, multi_asset
 from dagster._core.definitions.version_strategy import VersionStrategy
@@ -105,7 +111,7 @@ def test_fs_io_manager_memoization():
         my_op()
 
     class MyVersionStrategy(VersionStrategy):
-        def get_solid_version(self, _):
+        def get_op_version(self, _):
             return "foo"
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -284,7 +290,7 @@ def test_fs_io_manager_partitioned_multi_asset():
                 "out_2": Out(asset_key=AssetKey("upstream_asset_2")),
             },
         )
-        def upstream_asset():
+        def upstream_asset() -> Tuple[Output[int], Output[int]]:
             return (Output(1, output_name="out_1"), Output(2, output_name="out_2"))
 
         @asset(
@@ -360,3 +366,57 @@ def test_fs_io_manager_partitioned_graph_backed_asset():
         assert os.path.isfile(filepath_b)
         with open(filepath_b, "rb") as read_obj:
             assert pickle.load(read_obj) == 4
+
+
+def test_fs_io_manager_none():
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
+
+        @asset
+        def asset1() -> None:
+            pass
+
+        @asset(non_argument_deps={"asset1"})
+        def asset2() -> None:
+            pass
+
+        result = materialize(
+            with_resources([asset1, asset2], resource_defs={"io_manager": io_manager_def})
+        )
+
+        assert not os.path.exists(os.path.join(tmpdir_path, "asset1"))
+        assert not os.path.exists(os.path.join(tmpdir_path, "asset2"))
+        handled_output_events = list(
+            filter(lambda evt: evt.is_handled_output, result.all_node_events)
+        )
+        assert len(handled_output_events) == 2
+
+        for event in handled_output_events:
+            assert len(event.event_specific_data.metadata_entries) == 0
+
+
+def test_fs_io_manager_ops_none():
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        io_manager_def = fs_io_manager.configured({"base_dir": tmpdir_path})
+
+        @op
+        def op1() -> None:
+            pass
+
+        @op(ins={"abc": In(Nothing)})
+        def op2() -> None:
+            pass
+
+        @job(resource_defs={"io_manager": io_manager_def})
+        def job1():
+            op2(op1())
+
+        result = job1.execute_in_process()
+
+        handled_output_events = list(
+            filter(lambda evt: evt.is_handled_output, result.all_node_events)
+        )
+        assert len(handled_output_events) == 2
+
+        for event in handled_output_events:
+            assert len(event.event_specific_data.metadata_entries) == 0

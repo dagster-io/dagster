@@ -248,22 +248,27 @@ class JobDefinition(PipelineDefinition):
     def describe_target(self):
         return f"{self.target_type} '{self.name}'"
 
+    @public  # type: ignore
     @property
     def executor_def(self) -> ExecutorDefinition:
         return self.get_mode_definition().executor_defs[0]
 
+    @public  # type: ignore
     @property
     def resource_defs(self) -> Mapping[str, ResourceDefinition]:
         return self.get_mode_definition().resource_defs
 
+    @public  # type: ignore
     @property
     def partitioned_config(self) -> Optional[PartitionedConfig]:
         return self.get_mode_definition().partitioned_config
 
+    @public  # type: ignore
     @property
     def config_mapping(self) -> Optional[ConfigMapping]:
         return self.get_mode_definition().config_mapping
 
+    @public  # type: ignore
     @property
     def loggers(self) -> Mapping[str, LoggerDefinition]:
         return self.get_mode_definition().loggers
@@ -539,6 +544,7 @@ class JobDefinition(PipelineDefinition):
 
         return self._cached_partition_set
 
+    @public  # type: ignore
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         mode = self.get_mode_definition()

@@ -1,4 +1,5 @@
 import warnings
+from typing import Any
 
 import pytest
 
@@ -397,6 +398,34 @@ def test_infer_input_dagster_type():
         pass
 
     assert my_asset.op.input_defs[0].dagster_type.display_name == "String"
+    assert my_asset.op.input_defs[0].dagster_type.typing_type == str
+
+
+def test_infer_output_dagster_type():
+    @asset
+    def my_asset() -> str:
+        pass
+
+    assert my_asset.op.outs["result"].dagster_type.display_name == "String"
+    assert my_asset.op.outs["result"].dagster_type.typing_type == str
+
+
+def test_infer_output_dagster_type_none():
+    @asset
+    def my_asset() -> None:
+        pass
+
+    assert my_asset.op.outs["result"].dagster_type.typing_type == type(None)
+    assert my_asset.op.outs["result"].dagster_type.display_name == "Nothing"
+
+
+def test_infer_output_dagster_type_empty():
+    @asset
+    def my_asset():
+        pass
+
+    assert my_asset.op.outs["result"].dagster_type.typing_type is Any
+    assert my_asset.op.outs["result"].dagster_type.display_name == "Any"
 
 
 def test_invoking_simple_assets():

@@ -1,6 +1,7 @@
 import pendulum
 
 import dagster._check as check
+from dagster._core.errors import DagsterError
 from dagster._core.execution.backfill import (
     BulkActionStatus,
     PartitionBackfill,
@@ -51,7 +52,7 @@ def create_and_launch_partition_backfill(graphene_info, backfill_params):
     elif backfill_params.get("partitionNames"):
         partition_names = backfill_params.get("partitionNames")
     else:
-        raise Exception(
+        raise DagsterError(
             'Backfill requested without specifying either "allPartitions" or "partitionNames" '
             "arguments"
         )

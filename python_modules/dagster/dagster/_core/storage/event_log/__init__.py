@@ -1,4 +1,5 @@
 from .base import (
+    AssetRecord,
     EventLogEntry,
     EventLogRecord,
     EventLogStorage,

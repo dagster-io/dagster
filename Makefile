@@ -50,7 +50,7 @@ pylint:
 	pylint \
     `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' \
       'helm/*.py' 'python_modules/*.py' 'scripts/*.py' \
-      ':!:examples/airflow_ingest' \
+      ':!:examples/with_airflow' \
       ':!:python_modules/libraries/dagster-airflow' \
       ':!:vendor' \
       ':!:*/snapshots/*.py'`

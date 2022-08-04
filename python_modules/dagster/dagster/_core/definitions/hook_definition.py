@@ -1,6 +1,7 @@
 from typing import AbstractSet, Any, Callable, Iterator, NamedTuple, Optional, cast
 
 import dagster._check as check
+from dagster._annotations import PublicAttr
 
 from ..decorator_utils import get_function_params
 from ..errors import DagsterInvalidInvocationError
@@ -12,10 +13,10 @@ class HookDefinition(
     NamedTuple(
         "_HookDefinition",
         [
-            ("name", str),
-            ("hook_fn", Callable),
-            ("required_resource_keys", AbstractSet[str]),
-            ("decorated_fn", Optional[Callable]),
+            ("name", PublicAttr[str]),
+            ("hook_fn", PublicAttr[Callable]),
+            ("required_resource_keys", PublicAttr[AbstractSet[str]]),
+            ("decorated_fn", PublicAttr[Optional[Callable]]),
         ],
     ),
     RequiresResources,

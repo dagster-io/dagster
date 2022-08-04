@@ -461,7 +461,7 @@ def define_schedules():
         return {}
 
     @schedule(
-        pipeline_name="demo_pipeline_celery",
+        job_name="demo_pipeline_celery",
         cron_schedule="* * * * *",
     )
     def frequent_celery():
@@ -676,7 +676,7 @@ def define_memoization_pipeline():
         return "foo"
 
     class BasicVersionStrategy(VersionStrategy):
-        def get_solid_version(self, _):
+        def get_op_version(self, _):
             return "foo"
 
     @pipeline(

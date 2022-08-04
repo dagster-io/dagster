@@ -1076,26 +1076,26 @@ def define_schedules():
     no_config_pipeline_hourly_schedule = ScheduleDefinition(
         name="no_config_pipeline_hourly_schedule",
         cron_schedule="0 0 * * *",
-        pipeline_name="no_config_pipeline",
+        job_name="no_config_pipeline",
     )
 
     no_config_pipeline_hourly_schedule_with_config_fn = ScheduleDefinition(
         name="no_config_pipeline_hourly_schedule_with_config_fn",
         cron_schedule="0 0 * * *",
-        pipeline_name="no_config_pipeline",
+        job_name="no_config_pipeline",
     )
 
     no_config_should_execute = ScheduleDefinition(
         name="no_config_should_execute",
         cron_schedule="0 0 * * *",
-        pipeline_name="no_config_pipeline",
+        job_name="no_config_pipeline",
         should_execute=lambda _context: False,
     )
 
     dynamic_config = ScheduleDefinition(
         name="dynamic_config",
         cron_schedule="0 0 * * *",
-        pipeline_name="no_config_pipeline",
+        job_name="no_config_pipeline",
     )
 
     partition_based = integer_partition_set.create_schedule_definition(
@@ -1201,20 +1201,20 @@ def define_schedules():
     tagged_pipeline_schedule = ScheduleDefinition(
         name="tagged_pipeline_schedule",
         cron_schedule="0 0 * * *",
-        pipeline_name="tagged_pipeline",
+        job_name="tagged_pipeline",
     )
 
     tagged_pipeline_override_schedule = ScheduleDefinition(
         name="tagged_pipeline_override_schedule",
         cron_schedule="0 0 * * *",
-        pipeline_name="tagged_pipeline",
+        job_name="tagged_pipeline",
         tags={"foo": "notbar"},
     )
 
     invalid_config_schedule = ScheduleDefinition(
         name="invalid_config_schedule",
         cron_schedule="0 0 * * *",
-        pipeline_name="pipeline_with_enum_config",
+        job_name="pipeline_with_enum_config",
         run_config={"solids": {"takes_an_enum": {"config": "invalid"}}},
     )
 
@@ -1274,41 +1274,37 @@ def define_partitions():
 
 
 def define_sensors():
-    @sensor(pipeline_name="no_config_pipeline", mode="default")
+    @sensor(job_name="no_config_pipeline")
     def always_no_config_sensor(_):
         return RunRequest(
             run_key=None,
             tags={"test": "1234"},
         )
 
-    @sensor(pipeline_name="no_config_pipeline", mode="default")
+    @sensor(job_name="no_config_pipeline")
     def once_no_config_sensor(_):
         return RunRequest(
             run_key="once",
             tags={"test": "1234"},
         )
 
-    @sensor(pipeline_name="no_config_pipeline", mode="default")
+    @sensor(job_name="no_config_pipeline")
     def never_no_config_sensor(_):
         return SkipReason("never")
 
-    @sensor(pipeline_name="no_config_pipeline", mode="default")
+    @sensor(job_name="no_config_pipeline")
     def multi_no_config_sensor(_):
         yield RunRequest(run_key="A")
         yield RunRequest(run_key="B")
 
-    @sensor(pipeline_name="no_config_pipeline", mode="default", minimum_interval_seconds=60)
+    @sensor(job_name="no_config_pipeline", minimum_interval_seconds=60)
     def custom_interval_sensor(_):
         return RunRequest(
             run_key=None,
             tags={"test": "1234"},
         )
 
-    @sensor(
-        pipeline_name="no_config_pipeline",
-        mode="default",
-        default_status=DefaultSensorStatus.RUNNING,
-    )
+    @sensor(job_name="no_config_pipeline", default_status=DefaultSensorStatus.RUNNING)
     def running_in_code_sensor(_):
         return RunRequest(
             run_key=None,

@@ -66,6 +66,9 @@ class PickledObjectS3IOManager(MemoizableIOManager):
         return "s3://" + self.bucket + "/" + "{key}".format(key=key)
 
     def load_input(self, context):
+        if context.dagster_type.typing_type == type(None):
+            return None
+
         key = self._get_path(context)
         context.log.debug(f"Loading S3 object from: {self._uri_for_key(key)}")
         obj = pickle.loads(self.s3.get_object(Bucket=self.bucket, Key=key)["Body"].read())
@@ -73,6 +76,14 @@ class PickledObjectS3IOManager(MemoizableIOManager):
         return obj
 
     def handle_output(self, context, obj):
+        if context.dagster_type.typing_type == type(None):
+            check.invariant(
+                obj is None,
+                "Output had Nothing type or 'None' annotation, but handle_output received value "
+                f"that was not None and was of type {type(obj)}.",
+            )
+            return None
+
         key = self._get_path(context)
         path = self._uri_for_key(key)
         context.log.debug(f"Writing S3 object at: {path}")

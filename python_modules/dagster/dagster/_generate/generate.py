@@ -6,6 +6,8 @@ import jinja2
 
 from dagster.version import __version__ as dagster_version
 
+IGNORE_PATTERN_LIST = ["__pycache__", ".pytest_cache", "*.egg-info", ".DS_Store", "tox.ini"]
+
 
 def generate_repository(path: str):
     REPO_NAME_PLACEHOLDER = "REPO_NAME_PLACEHOLDER"
@@ -43,22 +45,6 @@ def generate_project(path: str):
     )
 
     click.echo(f"Generated files for Dagster project in {path}.")
-
-
-def generate_new_project(path: str):
-    """
-    [Deprecated]
-    Generates a new repository skeleton in the filesystem at `path`.
-
-    The name of the repository is the base of `path`.
-    """
-    NEW_PROJECT_PLACEHOLDER = "new_project"
-
-    _generate_files_from_template(
-        path=path,
-        name_placeholder=NEW_PROJECT_PLACEHOLDER,
-        project_template_path=os.path.join(os.path.dirname(__file__), NEW_PROJECT_PLACEHOLDER),
-    )
 
 
 def _generate_files_from_template(
@@ -127,16 +113,8 @@ def _should_skip_file(path):
 
     Technically, `path` could also be a directory path that should be skipped.
     """
-    if "__pycache__" in path:
-        return True
-
-    if ".pytest_cache" in path:
-        return True
-
-    if ".egg-info" in path:
-        return True
-
-    if ".DS_Store" in path:
-        return True
+    for pattern in IGNORE_PATTERN_LIST:
+        if pattern in path:
+            return True
 
     return False

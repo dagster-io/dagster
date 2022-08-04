@@ -111,6 +111,7 @@ DataFrame = DagsterType(
     loader=dataframe_loader,
     materializer=dataframe_materializer,
     type_check_fn=df_type_check,
+    typing_type=pd.DataFrame,
 )
 
 
