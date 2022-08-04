@@ -17,7 +17,7 @@ def hook_invocation_result(
 ):
     if not hook_context:
         hook_context = UnboundHookContext(
-            resources={}, mode_def=None, op=None, run_id=None, job_name=None, op_exception=None
+            resources={}, op=None, run_id=None, job_name=None, op_exception=None
         )
 
     # Validate that all required resources are provided in the context
@@ -29,7 +29,6 @@ def hook_invocation_result(
     bound_context = BoundHookContext(
         hook_def=hook_def,
         resources=hook_context.resources,
-        mode_def=hook_context.mode_def,
         log_manager=hook_context.log,
         op=hook_context._op,
         run_id=hook_context._run_id,

@@ -3,9 +3,16 @@ from unittest import mock
 
 import pytest
 
-from dagster import DagsterEventType, NodeInvocation
-from dagster import _check as check
-from dagster import build_hook_context, graph, job, op, reconstructable, resource
+from dagster import (
+    DagsterEventType,
+    NodeInvocation,
+    build_hook_context,
+    graph,
+    job,
+    op,
+    reconstructable,
+    resource,
+)
 from dagster._core.definitions import NodeHandle, PresetDefinition, failure_hook, success_hook
 from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 from dagster._core.definitions.events import HookExecutionResult
@@ -29,13 +36,13 @@ def test_hook():
 
     @event_list_hook
     def a_hook(context, event_list):
-        called[context.hook_def.name] = context.solid.name
+        called[context.hook_def.name] = context.op.name
         called["step_event_list"] = [i for i in event_list]
         return HookExecutionResult(hook_name="a_hook")
 
     @event_list_hook(name="a_named_hook")
     def named_hook(context, _):
-        called[context.hook_def.name] = context.solid.name
+        called[context.hook_def.name] = context.op.name
         return HookExecutionResult(hook_name="a_hook")
 
     @solid
@@ -113,7 +120,7 @@ def test_hook_with_resource():
 
     @event_list_hook(required_resource_keys={"resource_a"})
     def a_hook(context, _):
-        called[context.solid.name] = True
+        called[context.op.name] = True
         assert context.resources.resource_a == 1
         return HookExecutionResult(hook_name="a_hook")
 
@@ -160,15 +167,15 @@ def test_success_hook():
 
     @success_hook
     def a_success_hook(context):
-        called_hook_to_solids[context.hook_def.name].append(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].append(context.op.name)
 
     @success_hook(name="a_named_success_hook")
     def named_success_hook(context):
-        called_hook_to_solids[context.hook_def.name].append(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].append(context.op.name)
 
     @success_hook(required_resource_keys={"resource_a"})
     def success_hook_resource(context):
-        called_hook_to_solids[context.hook_def.name].append(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].append(context.op.name)
         assert context.resources.resource_a == 1
 
     @solid
@@ -215,15 +222,15 @@ def test_failure_hook():
 
     @failure_hook
     def a_failure_hook(context):
-        called_hook_to_solids[context.hook_def.name].append(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].append(context.op.name)
 
     @failure_hook(name="a_named_failure_hook")
     def named_failure_hook(context):
-        called_hook_to_solids[context.hook_def.name].append(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].append(context.op.name)
 
     @failure_hook(required_resource_keys={"resource_a"})
     def failure_hook_resource(context):
-        called_hook_to_solids[context.hook_def.name].append(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].append(context.op.name)
         assert context.resources.resource_a == 1
 
     @solid
@@ -269,7 +276,7 @@ def test_failure_hook_framework_exception():
 
     @failure_hook
     def a_failure_hook(context):
-        called_hook_to_solids[context.hook_def.name].append(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].append(context.op.name)
 
     @op
     def my_op(_):
@@ -400,7 +407,7 @@ def test_hook_decorator():
 
     @success_hook
     def a_success_hook(context):
-        called_hook_to_solids[context.hook_def.name].append(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].append(context.op.name)
 
     @solid
     def a_solid(_):
@@ -438,7 +445,7 @@ def test_hook_with_resource_to_resource_dep():
 
     @event_list_hook(required_resource_keys={"resource_b"})
     def hook_requires_b(context, _):
-        called[context.solid.name] = True
+        called[context.op.name] = True
         assert context.resources.resource_b == 1
         return HookExecutionResult(hook_name="a_hook")
 
@@ -538,21 +545,12 @@ def test_multiproc_hook_resource_deps():
         assert execute_pipeline(reconstructable(res_hook_job), instance=instance).success
 
 
-def test_hook_context_op_solid_provided():
-    @op
-    def hook_op(_):
-        pass
-
-    with pytest.raises(check.CheckError):
-        build_hook_context(op=hook_op, solid=hook_op)
-
-
 def test_hook_decorator_graph_job_op():
     called_hook_to_solids = defaultdict(list)
 
     @success_hook
     def a_success_hook(context):
-        called_hook_to_solids[context.hook_def.name].append(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].append(context.op.name)
 
     @op
     def my_op(_):

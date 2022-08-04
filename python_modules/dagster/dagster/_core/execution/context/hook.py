@@ -8,10 +8,8 @@ from ...definitions.composition import PendingNodeInvocation
 from ...definitions.decorators.graph_decorator import graph
 from ...definitions.dependency import Node
 from ...definitions.hook_definition import HookDefinition
-from ...definitions.mode import ModeDefinition
 from ...definitions.op_definition import OpDefinition
 from ...definitions.resource_definition import IContainsGenerator, Resources
-from ...definitions.solid_definition import SolidDefinition
 from ...errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
 from ...log_manager import DagsterLogManager
 from ..plan.step import ExecutionStep
@@ -56,7 +54,6 @@ class HookContext:
         op_config (Any): The parsed config specific to this op.
         job_name (str): The name of the job where this hook is being triggered.
         run_id (str): The id of the run where this hook is being triggered.
-        mode_def (ModeDefinition): The mode with which the pipeline is being run.
         op_exception (Optional[BaseException]): The thrown exception in a failed op.
         op_output_values (Dict): Computed output values in an op.
     """
@@ -93,10 +90,6 @@ class HookContext:
         return self._hook_def
 
     @property
-    def solid(self) -> Node:
-        return self.op
-
-    @property
     def op(self) -> Node:
         return self._step_execution_context.solid
 
@@ -112,10 +105,6 @@ class HookContext:
     @property
     def step_key(self) -> str:
         return self._step_execution_context.step.key
-
-    @property
-    def mode_def(self) -> Optional[ModeDefinition]:
-        return self._step_execution_context.mode_def
 
     @public  # type: ignore
     @property
@@ -199,16 +188,13 @@ class UnboundHookContext(HookContext):
     def __init__(
         self,
         resources: Mapping[str, Any],
-        mode_def: Optional[ModeDefinition],
-        op: Optional[Union[SolidDefinition, PendingNodeInvocation]],
+        op: Optional[Union[OpDefinition, PendingNodeInvocation]],
         run_id: Optional[str],
         job_name: Optional[str],
         op_exception: Optional[Exception],
     ):  # pylint: disable=super-init-not-called
         from ..build_resources import build_resources, wrap_resources_for_execution
         from ..context_creation_pipeline import initialize_console_manager
-
-        self._mode_def = mode_def
 
         self._op = None
         if op is not None:
@@ -273,10 +259,6 @@ class UnboundHookContext(HookContext):
         raise DagsterInvalidPropertyError(_property_msg("step_key", "property"))
 
     @property
-    def mode_def(self) -> Optional[ModeDefinition]:
-        return self._mode_def
-
-    @property
     def required_resource_keys(self) -> Set[str]:
         raise DagsterInvalidPropertyError(_property_msg("hook_def", "property"))
 
@@ -319,7 +301,6 @@ class BoundHookContext(HookContext):
         hook_def: HookDefinition,
         resources: Resources,
         op: Optional[Node],
-        mode_def: Optional[ModeDefinition],
         log_manager: DagsterLogManager,
         run_id: Optional[str],
         job_name: Optional[str],
@@ -328,7 +309,6 @@ class BoundHookContext(HookContext):
         self._hook_def = hook_def
         self._resources = resources
         self._op = op
-        self._mode_def = mode_def
         self._log_manager = log_manager
         self._run_id = run_id
         self._job_name = job_name
@@ -365,10 +345,6 @@ class BoundHookContext(HookContext):
         raise DagsterInvalidPropertyError(_property_msg("step_key", "property"))
 
     @property
-    def mode_def(self) -> Optional[ModeDefinition]:
-        return self._mode_def
-
-    @property
     def required_resource_keys(self) -> AbstractSet[str]:
         return self._hook_def.required_resource_keys
 
@@ -401,8 +377,6 @@ class BoundHookContext(HookContext):
 
 def build_hook_context(
     resources: Optional[Mapping[str, Any]] = None,
-    mode_def: Optional[ModeDefinition] = None,
-    solid: Optional[Union[SolidDefinition, PendingNodeInvocation]] = None,
     op: Optional[Union[OpDefinition, PendingNodeInvocation]] = None,
     run_id: Optional[str] = None,
     job_name: Optional[str] = None,
@@ -418,10 +392,7 @@ def build_hook_context(
     Args:
         resources (Optional[Dict[str, Any]]): The resources to provide to the context. These can
             either be values or resource definitions.
-        mode_def (Optional[ModeDefinition]): The mode definition used with the context.
         op (Optional[OpDefinition, PendingNodeInvocation]): The op definition which the
-            hook may be associated with.
-        solid (Optional[SolidDefinition, PendingNodeInvocation]): (legacy) The solid definition which the
             hook may be associated with.
         run_id (Optional[str]): The id of the run in which the hook is invoked (provided for mocking purposes).
         job_name (Optional[str]): The name of the job in which the hook is used (provided for mocking purposes).
@@ -436,16 +407,12 @@ def build_hook_context(
             with build_hook_context(resources={"foo": context_manager_resource}) as context:
                 hook_to_invoke(context)
     """
-    check.invariant(not (solid and op), "cannot set both `solid` and `op` on `build_hook_context`.")
 
     op = check.opt_inst_param(op, "op", (OpDefinition, PendingNodeInvocation))
-    solid = check.opt_inst_param(solid, "solid", (SolidDefinition, PendingNodeInvocation))
-    op_or_solid = op or solid
 
     return UnboundHookContext(
         resources=check.opt_dict_param(resources, "resources", key_type=str),
-        mode_def=check.opt_inst_param(mode_def, "mode_def", ModeDefinition),
-        op=op_or_solid,  # type: ignore[arg-type] # (mypy bug)
+        op=op,  # type: ignore[arg-type] # (mypy bug)
         run_id=check.opt_str_param(run_id, "run_id"),
         job_name=check.opt_str_param(job_name, "job_name"),
         op_exception=check.opt_inst_param(op_exception, "op_exception", Exception),
