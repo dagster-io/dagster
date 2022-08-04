@@ -4,13 +4,13 @@ import * as React from 'react';
 
 import {TestProvider} from '../testing/TestProvider';
 
-import {WorkspaceWarningIcon} from './WorkspaceWarningIcon';
+import {WorkspaceStatus} from './WorkspaceStatus';
 
-describe('WorkspaceWarningIcon', () => {
+describe('WorkspaceStatus', () => {
   const Test: React.FC<{mocks?: any}> = ({mocks}) => {
     return (
       <TestProvider apolloProps={{mocks}}>
-        <WorkspaceWarningIcon />
+        <WorkspaceStatus />
       </TestProvider>
     );
   };
