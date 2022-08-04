@@ -22,6 +22,7 @@ from dateutil.relativedelta import relativedelta
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.target import ExecutableDefinition
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
@@ -205,6 +206,7 @@ class PartitionsDefinition(ABC, Generic[T]):
         joined_keys = ", ".join([f"'{key}'" for key in self.get_partition_keys()])
         return joined_keys
 
+    @public
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Sequence[str]:
         return [partition.name for partition in self.get_partitions(current_time)]
 
@@ -386,7 +388,9 @@ class DynamicPartitionsDefinition(
         [
             (
                 "partition_fn",
-                Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]],
+                PublicAttr[
+                    Callable[[Optional[datetime]], Union[Sequence[Partition], Sequence[str]]]
+                ],
             )
         ],
     ),
@@ -699,8 +703,6 @@ class PartitionSetDefinition(Generic[T]):
             cron_schedule=cron_schedule,
             pipeline_name=self._pipeline_name,
             tags_fn=None,
-            solid_selection=self._solid_selection,
-            mode=self._mode,
             should_execute=None,
             environment_vars=environment_vars,
             partition_set=self,
@@ -722,8 +724,6 @@ class PartitionScheduleDefinition(ScheduleDefinition):
         cron_schedule: str,
         pipeline_name: Optional[str],
         tags_fn: Optional[ScheduleTagsFunction],
-        solid_selection: Optional[Sequence[str]],
-        mode: Optional[str],
         should_execute: Optional[ScheduleShouldExecuteFunction],
         partition_set: PartitionSetDefinition,
         environment_vars: Optional[Mapping[str, str]] = None,
@@ -738,11 +738,9 @@ class PartitionScheduleDefinition(ScheduleDefinition):
         super(PartitionScheduleDefinition, self).__init__(
             name=check_valid_name(name),
             cron_schedule=cron_schedule,
-            pipeline_name=pipeline_name,
+            job_name=pipeline_name,
             run_config_fn=run_config_fn,
             tags_fn=tags_fn,
-            solid_selection=solid_selection,
-            mode=mode,
             should_execute=should_execute,
             environment_vars=environment_vars,
             execution_timezone=execution_timezone,
@@ -814,14 +812,17 @@ class PartitionedConfig(Generic[T]):
             tags_for_partition_fn, "tags_for_partition_fn"
         )
 
+    @public  # type: ignore
     @property
     def partitions_def(self) -> PartitionsDefinition[T]:  # pylint: disable=unsubscriptable-object
         return self._partitions
 
+    @public  # type: ignore
     @property
     def run_config_for_partition_fn(self) -> Callable[[Partition[T]], Mapping[str, Any]]:
         return self._run_config_for_partition_fn
 
+    @public  # type: ignore
     @property
     def tags_for_partition_fn(self) -> Optional[Callable[[Partition[T]], Mapping[str, str]]]:
         return self._tags_for_partition_fn

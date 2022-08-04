@@ -1,6 +1,7 @@
-from typing import Any, Union, overload
+from typing import Any, Optional, Union, overload
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._builtins import BuiltinEnum
 from dagster._config import UserConfigSchema
 from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
@@ -293,7 +294,7 @@ class Field:
 
         self.config_type = check.inst(self._resolve_config_arg(config), ConfigType)
 
-        self.description = check.opt_str_param(description, "description")
+        self._description = check.opt_str_param(description, "description")
 
         check.opt_bool_param(is_required, "is_required")
 
@@ -350,10 +351,12 @@ class Field:
                 self._default_value = evr.value
         self._is_required = is_required
 
+    @public  # type: ignore
     @property
     def is_required(self) -> bool:
         return self._is_required
 
+    @public  # type: ignore
     @property
     def default_provided(self) -> bool:
         """Was a default value provided
@@ -363,10 +366,16 @@ class Field:
         """
         return self._default_value != FIELD_NO_DEFAULT_PROVIDED
 
+    @public  # type: ignore
     @property
     def default_value(self) -> Any:
         check.invariant(self.default_provided, "Asking for default value when none was provided")
         return self._default_value
+
+    @public  # type: ignore
+    @property
+    def description(self) -> Optional[str]:
+        return self._description
 
     @property
     def default_value_as_json_str(self) -> str:

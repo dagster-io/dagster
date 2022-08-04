@@ -16,6 +16,7 @@ from typing import (
 from typing_extensions import TypeGuard
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -103,6 +104,7 @@ class SensorEvaluationContext:
     def __exit__(self, _exception_type, _exception_value, _traceback):
         self._exit_stack.close()
 
+    @public  # type: ignore
     @property
     def instance(self) -> DagsterInstance:
         # self._instance_ref should only ever be None when this SensorEvaluationContext was
@@ -117,19 +119,23 @@ class SensorEvaluationContext:
             )
         return cast(DagsterInstance, self._instance)
 
+    @public  # type: ignore
     @property
     def last_completion_time(self) -> Optional[float]:
         return self._last_completion_time
 
+    @public  # type: ignore
     @property
     def last_run_key(self) -> Optional[str]:
         return self._last_run_key
 
+    @public  # type: ignore
     @property
     def cursor(self) -> Optional[str]:
         """The cursor value for this sensor, which was set in an earlier sensor evaluation."""
         return self._cursor
 
+    @public
     def update_cursor(self, cursor: Optional[str]) -> None:
         """Updates the cursor value for this sensor, which will be provided on the context for the
         next sensor evaluation.
@@ -142,6 +148,7 @@ class SensorEvaluationContext:
         """
         self._cursor = check.opt_str_param(cursor, "cursor")
 
+    @public  # type: ignore
     @property
     def repository_name(self) -> Optional[str]:
         return self._repository_name
@@ -183,14 +190,6 @@ class SensorDefinition:
             This function must return a generator, which must yield either a single SkipReason
             or one or more RunRequest objects.
         name (Optional[str]): The name of the sensor to create. Defaults to name of evaluation_fn
-        pipeline_name (Optional[str]): (legacy) The name of the pipeline to execute when the sensor
-            fires. Cannot be used in conjunction with `job` or `jobs` parameters.
-        solid_selection (Optional[Sequence[str]]): (legacy) A list of solid subselection (including single
-            solid names) to execute when the sensor runs. e.g. ``['*some_solid+', 'other_solid']``.
-            Cannot be used in conjunction with `job` or `jobs` parameters.
-        mode (Optional[str]): (legacy) The mode to apply when executing runs triggered by this
-            sensor. Cannot be used in conjunction with `job` or `jobs` parameters. (default:
-            'default')
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
@@ -204,9 +203,7 @@ class SensorDefinition:
         self,
         name: Optional[str] = None,
         evaluation_fn: Optional[RawSensorEvaluationFunction] = None,
-        pipeline_name: Optional[str] = None,
-        solid_selection: Optional[Sequence[str]] = None,
-        mode: Optional[str] = None,
+        job_name: Optional[str] = None,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         job: Optional[ExecutableDefinition] = None,
@@ -225,31 +222,19 @@ class SensorDefinition:
         job_param_name = "job" if job else "jobs"
         jobs = jobs if jobs else [job] if job else None
 
-        if pipeline_name and jobs:
+        if job_name and jobs:
             raise DagsterInvalidDefinitionError(
-                f"Attempted to provide both pipeline_name and {job_param_name} to "
+                f"Attempted to provide both job_name and {job_param_name} to "
                 "SensorDefinition. Must provide only one of the two."
-            )
-        if solid_selection and jobs:
-            raise DagsterInvalidDefinitionError(
-                f"Attempted to provide solid_selection and {job_param_name} to SensorDefinition. "
-                "The solid_selection argument is incompatible with jobs."
-            )
-        if mode and jobs:
-            raise DagsterInvalidDefinitionError(
-                f"Attempted to provide mode and {job_param_name} to SensorDefinition. "
-                "The mode argument is incompatible with jobs."
             )
 
         targets: Optional[List[Union[RepoRelativeTarget, DirectTarget]]] = None
-        if pipeline_name:
+        if job_name:
             targets = [
                 RepoRelativeTarget(
-                    pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
-                    mode=check.opt_str_param(mode, "mode") or DEFAULT_MODE_NAME,
-                    solid_selection=check.opt_nullable_sequence_param(
-                        solid_selection, "solid_selection", of_type=str
-                    ),
+                    pipeline_name=check.str_param(job_name, "job_name"),
+                    mode=DEFAULT_MODE_NAME,
+                    solid_selection=None,
                 )
             ]
         elif job:
@@ -321,14 +306,17 @@ class SensorDefinition:
 
             return self._raw_fn()  # type: ignore [TypeGuard limitation]
 
+    @public  # type: ignore
     @property
     def name(self) -> str:
         return self._name
 
+    @public  # type: ignore
     @property
     def description(self) -> Optional[str]:
         return self._description
 
+    @public  # type: ignore
     @property
     def minimum_interval_seconds(self) -> Optional[int]:
         return self._min_interval
@@ -337,6 +325,7 @@ class SensorDefinition:
     def targets(self) -> Sequence[Union[DirectTarget, RepoRelativeTarget]]:
         return self._targets
 
+    @public  # type: ignore
     @property
     def job(self) -> Union[PipelineDefinition, GraphDefinition, UnresolvedAssetJobDefinition]:
         if self._targets:
@@ -430,8 +419,8 @@ class SensorDefinition:
         if run_requests and not self._targets:
             raise Exception(
                 f"Error in sensor {self._name}: Sensor evaluation function returned a RunRequest "
-                "for a sensor lacking a specified target (pipeline_name, job, or jobs). Targets "
-                "can be specified by providing job, jobs, or pipeline_name to the @sensor "
+                "for a sensor lacking a specified target (job_name, job, or jobs). Targets "
+                "can be specified by providing job, jobs, or job_name to the @sensor "
                 "decorator."
             )
 
@@ -451,18 +440,16 @@ class SensorDefinition:
     def _target(self) -> Optional[Union[DirectTarget, RepoRelativeTarget]]:
         return self._targets[0] if self._targets else None
 
+    @public  # type: ignore
     @property
-    def pipeline_name(self) -> Optional[str]:
-        return self._target.pipeline_name if self._target else None
+    def job_name(self) -> Optional[str]:
+        if len(self._targets) > 1:
+            raise DagsterInvalidInvocationError(
+                f"Cannot use `job_name` property for sensor {self.name}, which targets multiple jobs."
+            )
+        return self._targets[0].pipeline_name
 
-    @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
-        return self._target.solid_selection if self._target else None
-
-    @property
-    def mode(self) -> Optional[str]:
-        return self._target.mode if self._target else None
-
+    @public  # type: ignore
     @property
     def default_status(self) -> DefaultSensorStatus:
         return self._default_status
@@ -585,8 +572,6 @@ class AssetSensorDefinition(SensorDefinition):
     Args:
         name (str): The name of the sensor to create.
         asset_key (AssetKey): The asset_key this sensor monitors.
-        pipeline_name (Optional[str]): (legacy) The name of the pipeline to execute when the sensor
-            fires. Cannot be used in conjunction with `job` or `jobs` parameters.
         asset_materialization_fn (Callable[[SensorEvaluationContext, EventLogEntry], Union[Iterator[Union[RunRequest, SkipReason]], RunRequest, SkipReason]]): The core
             evaluation function for the sensor, which is run at an interval to determine whether a
             run should be launched or not. Takes a :py:class:`~dagster.SensorEvaluationContext` and
@@ -594,12 +579,6 @@ class AssetSensorDefinition(SensorDefinition):
 
             This function must return a generator, which must yield either a single SkipReason
             or one or more RunRequest objects.
-        solid_selection (Optional[Sequence[str]]): (legacy) A list of solid subselection (including single
-            solid names) to execute when the sensor runs. e.g. ``['*some_solid+', 'other_solid']``.
-            Cannot be used in conjunction with `job` or `jobs` parameters.
-        mode (Optional[str]): (legacy) The mode to apply when executing runs triggered by this sensor.
-            (default: 'default').
-            Cannot be used in conjunction with `job` or `jobs` parameters.
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
@@ -615,13 +594,11 @@ class AssetSensorDefinition(SensorDefinition):
         self,
         name: str,
         asset_key: AssetKey,
-        pipeline_name: Optional[str],
+        job_name: Optional[str],
         asset_materialization_fn: Callable[
             ["SensorExecutionContext", "EventLogEntry"],
             RawSensorEvaluationFunctionReturn,
         ],
-        solid_selection: Optional[Sequence[str]] = None,
-        mode: Optional[str] = None,
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         job: Optional[ExecutableDefinition] = None,
@@ -668,12 +645,10 @@ class AssetSensorDefinition(SensorDefinition):
 
         super(AssetSensorDefinition, self).__init__(
             name=check_valid_name(name),
-            pipeline_name=pipeline_name,
+            job_name=job_name,
             evaluation_fn=_wrap_asset_fn(
                 check.callable_param(asset_materialization_fn, "asset_materialization_fn"),
             ),
-            solid_selection=solid_selection,
-            mode=mode,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job=job,
@@ -681,6 +656,7 @@ class AssetSensorDefinition(SensorDefinition):
             default_status=default_status,
         )
 
+    @public  # type: ignore
     @property
     def asset_key(self):
         return self._asset_key

@@ -1,17 +1,16 @@
-from dagster import schedule
-from dagster._legacy import pipeline
+from dagster import job, schedule
 
 # start_marker_priority
 
 
-@pipeline(tags={"dagster/priority": "3"})
-def important_pipeline():
+@job(tags={"dagster/priority": "3"})
+def important_job():
     ...
 
 
 @schedule(
     cron_schedule="* * * * *",
-    pipeline_name="my_pipeline",
+    job_name="important_job",
     execution_timezone="US/Central",
     tags={"dagster/priority": "-1"},
 )

@@ -1,5 +1,108 @@
 ---
 title: Running multiple agents | Dagster Docs
+noindex: True
+
+platform_type: "cloud"
 ---
 
-# Running multiple agents
+# Running multiple agents <Experimental />
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+Each Dagster Cloud instance deployment needs to have at least one agent running. Since the agent is lightweight and can tolerate short downtimes (e.g. during an upgrade), a single agent is adequate for most use cases.
+
+If you want to distribute runs across multiple Kubernetes clusters, ECS clusters, EC2 instances, or other environments, you can run multiple agents. For example, one in each cluster, instance, etc.
+
+It's recommended to only use multiple agents of the same type (e.g. multiple Kubernetes agents). Submitting runs to a specific agent isn't currently supported.
+
+---
+
+## Prerequisites
+
+To complete the steps in this guide, you'll need:
+
+- **dagster-cloud version 0.13.0 or later for both agents and job code.**
+- **To use a Kubernetes, Docker, or local agent.** These agent types can support running multiple agents. Additionally, note that:
+
+  - **Kubernetes agents must run in their own namespace or container.** Running multiple agents within a single namespace isn't currently supported.
+  - **Docker agents must run in containers orchestrated by separate Docker daemons** (e.g. on a separate host machine). Running multiple agents on one Docker daemon isn't currently supported.
+
+---
+
+## Step 1: Set up the agent
+
+Follow the setup guide for your agent:
+
+- [Docker](/dagster-cloud/deployment/agents/docker)
+- [Kubernetes](/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent)
+- [Local](/dagster-cloud/deployment/agents/local)
+
+After the agent is up and running, move on to the next step.
+
+---
+
+## Step 2: Enable the agent_replicas setting
+
+In this step, you'll enable the `agent_replicas` option to turn on running multiple agents. You can also choose to label the agent, making it easily identifiable on Dagster Cloud's **Status** page.
+
+Follow the instructions for your agent:
+
+<details>
+  <summary><strong>DOCKER AGENTS</strong></summary>
+
+**Docker agents must run in containers orchestrated by separate Docker daemons** (e.g. on a separate host machine). Running multiple agents on one Docker daemon isn't currently supported.
+
+Add the following to the `dagster.yaml` file:
+
+```yaml
+agent_replicas:
+  enabled: true
+
+dagster_cloud_api:
+  # <your other config>
+  agent_label: "My agent" # optional
+```
+
+</details>
+
+<details>
+  <summary><strong>KUBERNETES AGENTS</strong></summary>
+
+**Kubernetes agents must run in their own namespace or container.** Running multiple agents within a single namespace isn't currently supported.
+
+Add the following options to your Helm command:
+
+```shell
+helm upgrade \
+    ...
+    --set agentReplicas.enabled=true \
+    --set dagsterCloud.agentLabel="My agent" # optional, only supported on 0.13.14 and later
+```
+
+Or if you're using a `values.yaml` file:
+
+```yaml
+agentReplicas:
+  enabled: true
+
+dagsterCloud:
+  agentLabel: "My agent" # optional, only supported on 0.13.14 and later
+```
+
+</details>
+
+<details>
+  <summary><strong>LOCAL AGENTS</strong></summary>
+
+Add the following to the `dagster.yaml` file:
+
+```yaml
+agent_replicas:
+  enabled: true
+
+dagster_cloud_api:
+  # <your other config>
+  agent_label: "My agent" # optional
+```
+
+</details>

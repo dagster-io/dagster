@@ -20,6 +20,7 @@ from typing import (
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._annotations import PublicAttr, public
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
 from .metadata import (
@@ -45,7 +46,7 @@ def parse_asset_key_string(s: str) -> List[str]:
 
 
 @whitelist_for_serdes
-class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
+class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[List[str]])])):
     """Object representing the structure of an asset key.  Takes in a sanitized string, list of
     strings, or tuple of strings.
 
@@ -229,10 +230,12 @@ class Output(Generic[T]):
     def metadata_entries(self) -> Sequence[Union[PartitionMetadataEntry, MetadataEntry]]:
         return self._metadata_entries
 
+    @public  # type: ignore
     @property
     def value(self) -> Any:
         return self._value
 
+    @public  # type: ignore
     @property
     def output_name(self) -> str:
         return self._output_name
@@ -295,14 +298,17 @@ class DynamicOutput(Generic[T]):
     def metadata_entries(self) -> Sequence[Union[PartitionMetadataEntry, MetadataEntry]]:
         return self._metadata_entries
 
+    @public  # type: ignore
     @property
     def mapping_key(self) -> str:
         return self._mapping_key
 
+    @public  # type: ignore
     @property
     def value(self) -> T:
         return self._value
 
+    @public  # type: ignore
     @property
     def output_name(self) -> str:
         return self._output_name
@@ -322,10 +328,10 @@ class AssetObservation(
     NamedTuple(
         "_AssetObservation",
         [
-            ("asset_key", AssetKey),
-            ("description", Optional[str]),
+            ("asset_key", PublicAttr[AssetKey]),
+            ("description", PublicAttr[Optional[str]]),
             ("metadata_entries", List[MetadataEntry]),
-            ("partition", Optional[str]),
+            ("partition", PublicAttr[Optional[str]]),
         ],
     )
 ):
@@ -386,10 +392,10 @@ class AssetMaterialization(
     NamedTuple(
         "_AssetMaterialization",
         [
-            ("asset_key", AssetKey),
-            ("description", Optional[str]),
+            ("asset_key", PublicAttr[AssetKey]),
+            ("description", PublicAttr[Optional[str]]),
             ("metadata_entries", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
-            ("partition", Optional[str]),
+            ("partition", PublicAttr[Optional[str]]),
         ],
     )
 ):
@@ -453,6 +459,7 @@ class AssetMaterialization(
     def label(self) -> str:
         return " ".join(self.asset_key.path)
 
+    @public
     @staticmethod
     def file(
         path: str,
@@ -471,7 +478,7 @@ class AssetMaterialization(
         return AssetMaterialization(
             asset_key=cast(Union[str, AssetKey, List[str]], asset_key),
             description=description,
-            metadata_entries=[MetadataEntry("path", value=MetadataValue.path(path))],
+            metadata={"path": MetadataValue.path(path)},
         )
 
 
@@ -582,9 +589,9 @@ class ExpectationResult(
     NamedTuple(
         "_ExpectationResult",
         [
-            ("success", bool),
-            ("label", Optional[str]),
-            ("description", Optional[str]),
+            ("success", PublicAttr[bool]),
+            ("label", PublicAttr[Optional[str]]),
+            ("description", PublicAttr[Optional[str]]),
             ("metadata_entries", List[MetadataEntry]),
         ],
     )
@@ -636,9 +643,9 @@ class TypeCheck(
     NamedTuple(
         "_TypeCheck",
         [
-            ("success", bool),
-            ("description", Optional[str]),
-            ("metadata_entries", List[MetadataEntry]),
+            ("success", PublicAttr[bool]),
+            ("description", PublicAttr[Optional[str]]),
+            ("metadata_entries", PublicAttr[List[MetadataEntry]]),
         ],
     )
 ):

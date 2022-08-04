@@ -18,7 +18,7 @@ from typing import (
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._annotations import experimental
+from dagster._annotations import PublicAttr, experimental, public
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.backcompat import (
@@ -93,7 +93,10 @@ def normalize_metadata(
                     stacklevel=4,  # to get the caller of `normalize_metadata`
                 )
                 metadata_entries.append(
-                    MetadataEntry.text(f"[{v.__class__.__name__}] (unserializable)", k)
+                    MetadataEntry(
+                        entry_data=TextMetadataValue(f"[{v.__class__.__name__}] (unserializable)"),
+                        label=k,
+                    )
                 )
         return metadata_entries
 
@@ -171,11 +174,13 @@ class MetadataValue(ABC):
             )
     """
 
+    @public  # type: ignore
     @property
     @abstractmethod
     def value(self) -> object:
         raise NotImplementedError()
 
+    @public
     @staticmethod
     def text(text: str) -> "TextMetadataValue":
         """Static constructor for a metadata value wrapping text as
@@ -198,6 +203,7 @@ class MetadataValue(ABC):
         """
         return TextMetadataValue(text)
 
+    @public
     @staticmethod
     def url(url: str) -> "UrlMetadataValue":
         """Static constructor for a metadata value wrapping a URL as
@@ -221,6 +227,7 @@ class MetadataValue(ABC):
         """
         return UrlMetadataValue(url)
 
+    @public
     @staticmethod
     def path(path: Union[str, os.PathLike]) -> "PathMetadataValue":
         """Static constructor for a metadata value wrapping a path as
@@ -242,6 +249,7 @@ class MetadataValue(ABC):
         """
         return PathMetadataValue(path)
 
+    @public
     @staticmethod
     def json(data: Dict[str, Any]) -> "JsonMetadataValue":
         """Static constructor for a metadata value wrapping a path as
@@ -265,6 +273,7 @@ class MetadataValue(ABC):
         """
         return JsonMetadataValue(data)
 
+    @public
     @staticmethod
     def md(data: str) -> "MarkdownMetadataValue":
         """Static constructor for a metadata value wrapping markdown data as
@@ -288,6 +297,7 @@ class MetadataValue(ABC):
         """
         return MarkdownMetadataValue(data)
 
+    @public
     @staticmethod
     def python_artifact(python_artifact: Callable) -> "PythonArtifactMetadataValue":
         """Static constructor for a metadata value wrapping a python artifact as
@@ -312,6 +322,7 @@ class MetadataValue(ABC):
         check.callable_param(python_artifact, "python_artifact")
         return PythonArtifactMetadataValue(python_artifact.__module__, python_artifact.__name__)
 
+    @public
     @staticmethod
     def float(value: float) -> "FloatMetadataValue":
         """Static constructor for a metadata value wrapping a float as
@@ -335,6 +346,7 @@ class MetadataValue(ABC):
 
         return FloatMetadataValue(value)
 
+    @public
     @staticmethod
     def int(value: int) -> "IntMetadataValue":
         """Static constructor for a metadata value wrapping an int as
@@ -358,6 +370,7 @@ class MetadataValue(ABC):
 
         return IntMetadataValue(value)
 
+    @public
     @staticmethod
     def bool(value: bool) -> "BoolMetadataValue":
         """Static constructor for a metadata value wrapping a bool as
@@ -381,11 +394,7 @@ class MetadataValue(ABC):
 
         return BoolMetadataValue(value)
 
-    @staticmethod
-    def pipeline_run(run_id: str) -> "DagsterRunMetadataValue":
-        check.str_param(run_id, "run_id")
-        return DagsterRunMetadataValue(run_id)
-
+    @public
     @staticmethod
     def dagster_run(run_id: str) -> "DagsterRunMetadataValue":
         """Static constructor for a metadata value wrapping a reference to a Dagster run.
@@ -393,8 +402,9 @@ class MetadataValue(ABC):
         Args:
             run_id (str): The ID of the run.
         """
-        return MetadataValue.pipeline_run(run_id)
+        return DagsterRunMetadataValue(run_id)
 
+    @public
     @staticmethod
     def asset(asset_key: "AssetKey") -> "DagsterAssetMetadataValue":
         """Static constructor for a metadata value referencing a Dagster asset, by key.
@@ -421,6 +431,7 @@ class MetadataValue(ABC):
         check.inst_param(asset_key, "asset_key", AssetKey)
         return DagsterAssetMetadataValue(asset_key)
 
+    @public
     @staticmethod
     @experimental
     def table(
@@ -452,13 +463,10 @@ class MetadataValue(ABC):
                         ),
                     },
                 )
-
-        Args:
-            records (List[TableRecord]): The data as a list of records (i.e. rows).
-            schema (Optional[TableSchema]): A schema for the table.
         """
         return TableMetadataValue(records, schema)
 
+    @public
     @staticmethod
     def table_schema(
         schema: TableSchema,
@@ -507,7 +515,7 @@ class TextMetadataValue(  # type: ignore
     NamedTuple(
         "_TextMetadataValue",
         [
-            ("text", Optional[str]),
+            ("text", PublicAttr[Optional[str]]),
         ],
     ),
     MetadataValue,
@@ -523,6 +531,7 @@ class TextMetadataValue(  # type: ignore
             cls, check.opt_str_param(text, "text", default="")
         )
 
+    @public  # type: ignore
     @property
     def value(self) -> Optional[str]:
         return self.text
@@ -533,7 +542,7 @@ class UrlMetadataValue(  # type: ignore
     NamedTuple(
         "_UrlMetadataValue",
         [
-            ("url", Optional[str]),
+            ("url", PublicAttr[Optional[str]]),
         ],
     ),
     MetadataValue,
@@ -549,6 +558,7 @@ class UrlMetadataValue(  # type: ignore
             cls, check.opt_str_param(url, "url", default="")
         )
 
+    @public  # type: ignore
     @property
     def value(self) -> Optional[str]:
         return self.url
@@ -556,7 +566,7 @@ class UrlMetadataValue(  # type: ignore
 
 @whitelist_for_serdes(storage_name="PathMetadataEntryData")
 class PathMetadataValue(  # type: ignore
-    NamedTuple("_PathMetadataValue", [("path", Optional[str])]), MetadataValue
+    NamedTuple("_PathMetadataValue", [("path", PublicAttr[Optional[str]])]), MetadataValue
 ):
     """Container class for path metadata entry data.
 
@@ -569,6 +579,7 @@ class PathMetadataValue(  # type: ignore
             cls, check.opt_path_param(path, "path", default="")
         )
 
+    @public  # type: ignore
     @property
     def value(self) -> Optional[str]:
         return self.path
@@ -579,7 +590,7 @@ class JsonMetadataValue(
     NamedTuple(
         "_JsonMetadataValue",
         [
-            ("data", Dict[str, Any]),
+            ("data", PublicAttr[Dict[str, Any]]),
         ],
     ),
     MetadataValue,
@@ -599,6 +610,7 @@ class JsonMetadataValue(
             raise DagsterInvalidMetadata("Value is a dictionary but is not JSON serializable.")
         return super(JsonMetadataValue, cls).__new__(cls, data)
 
+    @public  # type: ignore
     @property
     def value(self) -> Dict[str, Any]:
         return self.data
@@ -609,7 +621,7 @@ class MarkdownMetadataValue(
     NamedTuple(
         "_MarkdownMetadataValue",
         [
-            ("md_str", Optional[str]),
+            ("md_str", PublicAttr[Optional[str]]),
         ],
     ),
     MetadataValue,
@@ -635,8 +647,8 @@ class PythonArtifactMetadataValue(
     NamedTuple(
         "_PythonArtifactMetadataValue",
         [
-            ("module", str),
-            ("name", str),
+            ("module", PublicAttr[str]),
+            ("name", PublicAttr[str]),
         ],
     ),
     MetadataValue,
@@ -653,6 +665,7 @@ class PythonArtifactMetadataValue(
             cls, check.str_param(module, "module"), check.str_param(name, "name")
         )
 
+    @public  # type: ignore
     @property
     def value(self) -> object:
         return self
@@ -663,7 +676,7 @@ class FloatMetadataValue(
     NamedTuple(
         "_FloatMetadataValue",
         [
-            ("value", Optional[float]),
+            ("value", PublicAttr[Optional[float]]),
         ],
     ),
     MetadataValue,
@@ -683,7 +696,7 @@ class IntMetadataValue(
     NamedTuple(
         "_IntMetadataValue",
         [
-            ("value", Optional[int]),
+            ("value", PublicAttr[Optional[int]]),
         ],
     ),
     MetadataValue,
@@ -700,7 +713,7 @@ class IntMetadataValue(
 
 @whitelist_for_serdes(storage_name="BoolMetadataEntryData")
 class BoolMetadataValue(
-    NamedTuple("_BoolMetadataValue", [("value", Optional[bool])]),
+    NamedTuple("_BoolMetadataValue", [("value", PublicAttr[Optional[bool]])]),
     MetadataValue,
 ):
     """Container class for bool metadata entry data.
@@ -718,7 +731,7 @@ class DagsterRunMetadataValue(
     NamedTuple(
         "_DagsterRunMetadataValue",
         [
-            ("run_id", str),
+            ("run_id", PublicAttr[str]),
         ],
     ),
     MetadataValue,
@@ -739,7 +752,7 @@ class DagsterRunMetadataValue(
 
 @whitelist_for_serdes(storage_name="DagsterAssetMetadataEntryData")
 class DagsterAssetMetadataValue(
-    NamedTuple("_DagsterAssetMetadataValue", [("asset_key", "AssetKey")]), MetadataValue
+    NamedTuple("_DagsterAssetMetadataValue", [("asset_key", PublicAttr["AssetKey"])]), MetadataValue
 ):
     """Representation of a dagster asset.
 
@@ -754,6 +767,7 @@ class DagsterAssetMetadataValue(
             cls, check.inst_param(asset_key, "asset_key", AssetKey)
         )
 
+    @public  # type: ignore
     @property
     def value(self) -> "AssetKey":
         return self.value
@@ -765,8 +779,8 @@ class TableMetadataValue(
     NamedTuple(
         "_TableMetadataValue",
         [
-            ("records", List[TableRecord]),
-            ("schema", TableSchema),
+            ("records", PublicAttr[List[TableRecord]]),
+            ("schema", PublicAttr[TableSchema]),
         ],
     ),
     MetadataValue,
@@ -778,6 +792,7 @@ class TableMetadataValue(
         schema (Optional[TableSchema]): A schema for the table.
     """
 
+    @public  # type: ignore
     @staticmethod
     def infer_column_type(value):
         if isinstance(value, bool):
@@ -815,6 +830,7 @@ class TableMetadataValue(
             schema,
         )
 
+    @public  # type: ignore
     @property
     def value(self):
         return self
@@ -822,7 +838,7 @@ class TableMetadataValue(
 
 @whitelist_for_serdes(storage_name="TableSchemaMetadataEntryData")
 class TableSchemaMetadataValue(
-    NamedTuple("_TableSchemaMetadataValue", [("schema", TableSchema)]), MetadataValue
+    NamedTuple("_TableSchemaMetadataValue", [("schema", PublicAttr[TableSchema])]), MetadataValue
 ):
     """Representation of a schema for arbitrary tabular data.
 
@@ -878,9 +894,9 @@ class MetadataEntry(
     NamedTuple(
         "_MetadataEntry",
         [
-            ("label", str),
-            ("description", Optional[str]),
-            ("entry_data", MetadataValue),
+            ("label", PublicAttr[str]),
+            ("description", PublicAttr[Optional[str]]),
+            ("entry_data", PublicAttr[MetadataValue]),
         ],
     ),
 ):
@@ -1165,7 +1181,6 @@ class MetadataEntry(
         asset_key: "AssetKey", label: str, description: Optional[str] = None
     ) -> "MetadataEntry":
         """Static constructor for a metadata entry referencing a Dagster asset, by key.
-
         For example:
 
         .. code-block:: python
@@ -1254,7 +1269,6 @@ class MetadataEntry(
                     TableColumn(name="status", type="bool"),
                 ]
             )
-
             DagsterType(
                 type_check_fn=some_validation_fn,
                 name='MyTable',
@@ -1282,8 +1296,8 @@ class PartitionMetadataEntry(
     NamedTuple(
         "_PartitionMetadataEntry",
         [
-            ("partition", str),
-            ("entry", "MetadataEntry"),
+            ("partition", PublicAttr[str]),
+            ("entry", PublicAttr["MetadataEntry"]),
         ],
     )
 ):

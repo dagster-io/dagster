@@ -2,6 +2,7 @@ import pytest
 
 from dagster import (
     AssetKey,
+    AssetOut,
     AssetSelection,
     AssetsDefinition,
     DagsterEventType,
@@ -105,9 +106,9 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
 
     @multi_asset(
         outs={
-            "a": Out(is_required=False),
-            "b": Out(is_required=False),
-            "c": Out(is_required=False),
+            "a": AssetOut(is_required=False),
+            "b": AssetOut(is_required=False),
+            "c": AssetOut(is_required=False),
         },
         internal_asset_deps={
             "a": {AssetKey("start")},
@@ -139,9 +140,9 @@ def _get_assets_defs(use_multi: bool = False, allow_subset: bool = False):
 
     @multi_asset(
         outs={
-            "d": Out(is_required=False),
-            "e": Out(is_required=False),
-            "f": Out(is_required=False),
+            "d": AssetOut(is_required=False),
+            "e": AssetOut(is_required=False),
+            "f": AssetOut(is_required=False),
         },
         internal_asset_deps={
             "d": {AssetKey("a"), AssetKey("b")},

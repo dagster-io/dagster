@@ -1,38 +1,74 @@
 import os
 import posixpath
 
+import click
 import jinja2
 
 from dagster.version import __version__ as dagster_version
 
-NEW_PROJECT_PLACEHOLDER = "new_project"
-NEW_PROJECT_PATH = os.path.join(os.path.dirname(__file__), NEW_PROJECT_PLACEHOLDER)
+IGNORE_PATTERN_LIST = ["__pycache__", ".pytest_cache", "*.egg-info", ".DS_Store", "tox.ini"]
 
 
-def generate_new_project(path: str):
-    """
-    Generates a new repository skeleton in the filesystem at `path`.
+def generate_repository(path: str):
+    REPO_NAME_PLACEHOLDER = "REPO_NAME_PLACEHOLDER"
 
-    The name of the repository is the base of `path`.
-    """
+    click.echo(f"Creating a Dagster repository at {path}.")
+
+    # Step 1: Generate files for Dagster repository
+    _generate_files_from_template(
+        path=path,
+        name_placeholder=REPO_NAME_PLACEHOLDER,
+        project_template_path=os.path.join(
+            os.path.dirname(__file__), "templates", REPO_NAME_PLACEHOLDER
+        ),
+    )
+
+    click.echo(f"Generated files for Dagster repository in {path}.")
+
+
+def generate_project(path: str):
+    PROJECT_NAME_PLACEHOLDER = "PROJECT_NAME_PLACEHOLDER"
+
+    click.echo(f"Creating a Dagster project at {path}.")
+
+    # Step 1: Generate files for Dagster repository
+    generate_repository(path)
+
+    # Step 2: Generate project-level files, e.g. README, workspace.yaml, requirements.txt
+    _generate_files_from_template(
+        path=path,
+        name_placeholder=PROJECT_NAME_PLACEHOLDER,
+        project_template_path=os.path.join(
+            os.path.dirname(__file__), "templates", PROJECT_NAME_PLACEHOLDER
+        ),
+        skip_mkdir=True,
+    )
+
+    click.echo(f"Generated files for Dagster project in {path}.")
+
+
+def _generate_files_from_template(
+    path: str, name_placeholder: str, project_template_path: str, skip_mkdir: bool = False
+):
     normalized_path = os.path.normpath(path)
     repo_name = os.path.basename(normalized_path).replace("-", "_")
 
-    os.mkdir(normalized_path)
+    if not skip_mkdir:  # skip if the dir is created by previous command
+        os.mkdir(normalized_path)
 
-    loader = jinja2.FileSystemLoader(searchpath=NEW_PROJECT_PATH)
+    loader = jinja2.FileSystemLoader(searchpath=project_template_path)
     env = jinja2.Environment(loader=loader)
 
-    for root, dirs, files in os.walk(NEW_PROJECT_PATH):
+    for root, dirs, files in os.walk(project_template_path):
         # For each subdirectory in the source template, create a subdirectory in the destination.
         for dirname in dirs:
             src_dir_path = os.path.join(root, dirname)
             if _should_skip_file(src_dir_path):
                 continue
 
-            src_relative_dir_path = os.path.relpath(src_dir_path, NEW_PROJECT_PATH)
+            src_relative_dir_path = os.path.relpath(src_dir_path, project_template_path)
             dst_relative_dir_path = src_relative_dir_path.replace(
-                NEW_PROJECT_PLACEHOLDER,
+                name_placeholder,
                 repo_name,
                 1,
             )
@@ -46,9 +82,9 @@ def generate_new_project(path: str):
             if _should_skip_file(src_file_path):
                 continue
 
-            src_relative_file_path = os.path.relpath(src_file_path, NEW_PROJECT_PATH)
+            src_relative_file_path = os.path.relpath(src_file_path, project_template_path)
             dst_relative_file_path = src_relative_file_path.replace(
-                NEW_PROJECT_PLACEHOLDER,
+                name_placeholder,
                 repo_name,
                 1,
             )
@@ -77,16 +113,8 @@ def _should_skip_file(path):
 
     Technically, `path` could also be a directory path that should be skipped.
     """
-    if "__pycache__" in path:
-        return True
-
-    if ".pytest_cache" in path:
-        return True
-
-    if ".egg-info" in path:
-        return True
-
-    if ".DS_Store" in path:
-        return True
+    for pattern in IGNORE_PATTERN_LIST:
+        if pattern in path:
+            return True
 
     return False

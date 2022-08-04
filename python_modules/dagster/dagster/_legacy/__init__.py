@@ -8,7 +8,6 @@ from dagster._core.definitions import (
     OutputDefinition,
     PartitionSetDefinition,
     PipelineDefinition,
-    PipelineFailureSensorContext,
     PresetDefinition,
     ScheduleExecutionContext,
     SensorExecutionContext,
@@ -22,7 +21,6 @@ from dagster._core.definitions import (
     lambda_solid,
     monthly_schedule,
     pipeline,
-    pipeline_failure_sensor,
     schedule_from_partitions,
     solid,
     weekly_schedule,
@@ -31,6 +29,7 @@ from dagster._core.execution.api import (
     execute_pipeline,
     execute_pipeline_iterator,
     reexecute_pipeline,
+    reexecute_pipeline_iterator,
 )
 from dagster._core.execution.context.compute import SolidExecutionContext
 from dagster._core.execution.context.invocation import build_solid_context

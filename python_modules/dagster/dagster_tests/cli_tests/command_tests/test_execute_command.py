@@ -6,8 +6,7 @@ import pytest
 from click import UsageError
 from click.testing import CliRunner
 
-from dagster._cli.job import job_execute_command
-from dagster._cli.pipeline import execute_execute_command, pipeline_execute_command
+from dagster._cli.job import execute_execute_command, job_execute_command
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.test_utils import instance_for_test, new_cwd
 from dagster._utils import file_relative_path, merge_dicts
@@ -17,11 +16,10 @@ from .test_cli_commands import (
     pipeline_or_job_python_origin_contexts,
     runner_pipeline_or_job_execute,
     valid_job_python_origin_target_cli_args,
-    valid_pipeline_python_origin_target_cli_args,
 )
 
 
-def test_execute_mode_command():
+def test_execute_with_config_command():
     runner = CliRunner()
 
     with instance_for_test():
@@ -33,13 +31,9 @@ def test_execute_mode_command():
                 "-a",
                 "dagster_test_repository",
                 "--config",
-                file_relative_path(
-                    __file__, "../../environments/multi_mode_with_resources/add_mode.yaml"
-                ),
-                "--mode",
-                "add_mode",
-                "-p",
-                "multi_mode_with_resources",  # pipeline name
+                file_relative_path(__file__, "../../environments/adder_job.yaml"),
+                "-j",
+                "adder_job",  # job name
             ],
         )
 
@@ -53,13 +47,9 @@ def test_execute_mode_command():
                 "-a",
                 "dagster_test_repository",
                 "--config",
-                file_relative_path(
-                    __file__, "../../environments/multi_mode_with_resources/mult_mode.yaml"
-                ),
-                "--mode",
-                "mult_mode",
-                "-p",
-                "multi_mode_with_resources",  # pipeline name
+                file_relative_path(__file__, "../../environments/multer_job.yaml"),
+                "-j",
+                "multer_job",  # job name
             ],
         )
 
@@ -73,13 +63,9 @@ def test_execute_mode_command():
                 "-a",
                 "dagster_test_repository",
                 "--config",
-                file_relative_path(
-                    __file__, "../../environments/multi_mode_with_resources/double_adder_mode.yaml"
-                ),
-                "--mode",
-                "double_adder_mode",
-                "-p",
-                "multi_mode_with_resources",  # pipeline name
+                file_relative_path(__file__, "../../environments/double_adder_job.yaml"),
+                "-j",
+                "double_adder_job",  # job name
             ],
         )
 
@@ -89,53 +75,10 @@ def test_execute_mode_command():
 def test_empty_execute_command():
     with instance_for_test():
         runner = CliRunner()
-        result = runner.invoke(pipeline_execute_command, [])
-        assert result.exit_code == 2
-        assert "Must specify a python file or module name" in result.output
 
         result = runner.invoke(job_execute_command, [])
         assert result.exit_code == 2
         assert "Must specify a python file or module name" in result.output
-
-
-def test_execute_preset_command():
-    with instance_for_test():
-        runner = CliRunner()
-        add_result = runner_pipeline_or_job_execute(
-            runner,
-            [
-                "-f",
-                file_relative_path(__file__, "../../general_tests/test_repository.py"),
-                "-a",
-                "dagster_test_repository",
-                "--preset",
-                "add",
-                "-p",
-                "multi_mode_with_resources",  # pipeline name
-            ],
-        )
-
-        assert "RUN_SUCCESS" in add_result.output
-
-        # Can't use --preset with --config
-        bad_res = runner.invoke(
-            pipeline_execute_command,
-            [
-                "-f",
-                file_relative_path(__file__, "../../general_tests/test_repository.py"),
-                "-a",
-                "dagster_test_repository",
-                "--preset",
-                "add",
-                "--config",
-                file_relative_path(
-                    __file__, "../../environments/multi_mode_with_resources/double_adder_mode.yaml"
-                ),
-                "-p",
-                "multi_mode_with_resources",  # pipeline name
-            ],
-        )
-        assert bad_res.exit_code == 2
 
 
 @pytest.mark.parametrize("gen_execute_args", pipeline_or_job_python_origin_contexts())
@@ -173,8 +116,8 @@ def test_job_execute_command_env(gen_execute_args):
         execute_execute_command(kwargs=kwargs, instance=instance, using_job_op_graph_apis=True)
 
 
-@pytest.mark.parametrize("cli_args", valid_pipeline_python_origin_target_cli_args())
-def test_execute_command_runner(cli_args):
+@pytest.mark.parametrize("cli_args", valid_job_python_origin_target_cli_args())
+def test_job_execute_command_runner(cli_args):
     runner = CliRunner()
     with instance_for_test():
         runner_pipeline_or_job_execute(runner, cli_args)
@@ -182,19 +125,6 @@ def test_execute_command_runner(cli_args):
         runner_pipeline_or_job_execute(
             runner,
             ["--config", file_relative_path(__file__, "default_log_error_env.yaml")] + cli_args,
-        )
-
-
-@pytest.mark.parametrize("cli_args", valid_job_python_origin_target_cli_args())
-def test_job_execute_command_runner(cli_args):
-    runner = CliRunner()
-    with instance_for_test():
-        runner_pipeline_or_job_execute(runner, cli_args, True)
-
-        runner_pipeline_or_job_execute(
-            runner,
-            ["--config", file_relative_path(__file__, "default_log_error_env.yaml")] + cli_args,
-            True,
         )
 
 
@@ -453,10 +383,10 @@ def test_multiproc():
                 file_relative_path(__file__, "../../general_tests/test_repository.py"),
                 "-a",
                 "dagster_test_repository",
-                "--preset",
-                "multiproc",
-                "-p",
-                "multi_mode_with_resources",  # pipeline name
+                "--config",
+                file_relative_path(__file__, "../../environments/adder_job.yaml"),
+                "-j",
+                "multi_job",  # job name
             ],
         )
         assert add_result.exit_code == 0
@@ -471,40 +401,17 @@ def test_multiproc():
                 "-a",
                 "multiproc",
             ],
-            True,
         )
         assert add_result.exit_code == 0
 
         assert "RUN_SUCCESS" in add_result.output
 
 
-def test_multiproc_ephemeral_directory():
-    # force ephemeral directory by removing out DAGSTER_HOME
-    runner = CliRunner(env={"DAGSTER_HOME": None})
-    add_result = runner.invoke(
-        pipeline_execute_command,
-        [
-            "-f",
-            file_relative_path(__file__, "../../general_tests/test_repository.py"),
-            "-a",
-            "dagster_test_repository",
-            "--preset",
-            "multiproc",
-            "-p",
-            "multi_mode_with_resources",  # pipeline name
-        ],
-    )
-    # which is valid for multiproc
-    assert add_result.exit_code == 0
-    # Echoed message to let user know that we've utilized temporary storage in order to run job / pipeline.
-    assert re.match("Using temporary directory", add_result.output)
-
-
 def test_tags_pipeline_or_job():
     runner = CliRunner()
     with instance_for_test() as instance:
         result = runner.invoke(
-            pipeline_execute_command,
+            job_execute_command,
             [
                 "-m",
                 "dagster_tests.cli_tests.command_tests.test_cli_commands",
@@ -512,8 +419,8 @@ def test_tags_pipeline_or_job():
                 "bar",
                 "--tags",
                 '{ "foo": "bar" }',
-                "-p",
-                "foo",
+                "-j",
+                "qux",
             ],
         )
         assert result.exit_code == 0
@@ -546,18 +453,18 @@ def test_tags_pipeline_or_job():
 
     with instance_for_test() as instance:
         result = runner.invoke(
-            pipeline_execute_command,
+            job_execute_command,
             [
                 "-f",
                 file_relative_path(__file__, "../../general_tests/test_repository.py"),
                 "-a",
                 "dagster_test_repository",
-                "--preset",
-                "add",
                 "--tags",
                 '{ "foo": "bar" }',
-                "-p",
-                "multi_mode_with_resources",  # pipeline name
+                "--config",
+                file_relative_path(__file__, "../../environments/adder_job.yaml"),
+                "-j",
+                "adder_job",  # job name
             ],
         )
         assert result.exit_code == 0
@@ -568,107 +475,8 @@ def test_tags_pipeline_or_job():
         assert run.tags.get("foo") == "bar"
 
 
-def test_execute_subset_pipeline_single_clause_solid_name():
-    runner = CliRunner()
-    with instance_for_test() as instance:
-        result = runner.invoke(
-            pipeline_execute_command,
-            [
-                "-f",
-                file_relative_path(__file__, "test_cli_commands.py"),
-                "-a",
-                "foo_pipeline",
-                "--solid-selection",
-                "do_something",
-            ],
-        )
-        assert result.exit_code == 0
-        runs = instance.get_runs()
-        assert len(runs) == 1
-        run = runs[0]
-        assert run.solid_selection == ["do_something"]
-        assert run.solids_to_execute == {"do_something"}
-
-
-def test_execute_subset_pipeline_single_clause_dsl():
-    runner = CliRunner()
-    with instance_for_test() as instance:
-        result = runner.invoke(
-            pipeline_execute_command,
-            [
-                "-f",
-                file_relative_path(__file__, "test_cli_commands.py"),
-                "-a",
-                "foo_pipeline",
-                "--solid-selection",
-                "*do_something+",
-            ],
-        )
-        assert result.exit_code == 0
-        runs = instance.get_runs()
-        assert len(runs) == 1
-        run = runs[0]
-        assert run.solid_selection == ["*do_something+"]
-        assert run.solids_to_execute == {"do_something", "do_input"}
-
-
-def test_execute_subset_pipeline_multiple_clauses_dsl_and_solid_name():
-    runner = CliRunner()
-    with instance_for_test() as instance:
-        result = runner.invoke(
-            pipeline_execute_command,
-            [
-                "-f",
-                file_relative_path(__file__, "test_cli_commands.py"),
-                "-a",
-                "foo_pipeline",
-                "--solid-selection",
-                "*do_something+,do_input",
-            ],
-        )
-        assert result.exit_code == 0
-        runs = instance.get_runs()
-        assert len(runs) == 1
-        run = runs[0]
-        assert set(run.solid_selection) == set(["*do_something+", "do_input"])
-        assert run.solids_to_execute == {"do_something", "do_input"}
-
-
-def test_execute_subset_pipeline_invalid():
-    runner = CliRunner()
-    with instance_for_test():
-        result = runner.invoke(
-            pipeline_execute_command,
-            [
-                "-f",
-                file_relative_path(__file__, "test_cli_commands.py"),
-                "-a",
-                "foo_pipeline",
-                "--solid-selection",
-                "a, b",
-            ],
-        )
-        assert result.exit_code == 1
-        assert "No qualified solids to execute found for solid_selection" in str(result.exception)
-
-
 def test_empty_working_directory():
     runner = CliRunner()
-
-    with instance_for_test() as instance:
-        with new_cwd(os.path.dirname(__file__)):
-            result = runner.invoke(
-                pipeline_execute_command,
-                [
-                    "-f",
-                    file_relative_path(__file__, "file_with_local_import.py"),
-                    "-a",
-                    "foo_pipeline",
-                ],
-            )
-            assert result.exit_code == 0
-            runs = instance.get_runs()
-            assert len(runs) == 1
 
     with instance_for_test() as instance:
         with new_cwd(os.path.dirname(__file__)):

@@ -7,7 +7,13 @@ from dagster._core.host_representation import (
     RepositorySelector,
 )
 from dagster._core.storage.pipeline_run import RunsFilter
-from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, TagType, get_tag_type
+from dagster._core.storage.tags import (
+    PARTITION_NAME_TAG,
+    PARTITION_SET_TAG,
+    REPOSITORY_LABEL_TAG,
+    TagType,
+    get_tag_type,
+)
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
 from .utils import capture_error
@@ -179,6 +185,7 @@ def get_partition_set_partition_statuses(
     run_partition_data = graphene_info.context.instance.run_storage.get_run_partition_data(
         runs_filter=RunsFilter(
             pipeline_name=job_name,
+            tags={REPOSITORY_LABEL_TAG: repository_handle.get_external_origin().get_label()},
         )
     )
     names_result = graphene_info.context.get_external_partition_names(

@@ -1,5 +1,5 @@
 import pytest
-from dagster_dbt import (
+from dagster_dbt.cli.solids import (
     dbt_cli_compile,
     dbt_cli_docs_generate,
     dbt_cli_run,

@@ -1,28 +1,47 @@
 ---
-title: Releases and Changes | Dagster
+title: Releases and Compatibility | Dagster
 ---
 
-# Releases and Changes
+# Releases and Compability
 
-## Releases
+We follow [Semantic Versioning](https://semver.org/) for compatibility between Dagster releases.
 
-We currently publish two kinds of Dagster releases:
+---
 
-- Minor releases, e.g. 0.7.0, 0.8.0. We publish a new minor release every few months.
-- Dot releases, e.g. 0.8.1, 0.8.2. We publish a new dot release at least once per week.
+## Dagster core
 
-## Breaking Changes & Deprecations
+Dagster's public, stable APIs will not break within any major release. I.e. if a public, stable API exists in Dagster 1.x.y, upgrading to 1.(x+1).y or 1.x.(y+1) should not result in broken code. If a version does break your code, help us out by filing an issue on [Github](https://github.com/dagster-io/dagster/issues)
 
-We are in the 0.y.z of [SemVer](https://semver.org/). While technically this is "anything goes", we provide guidance to set expectations around deprecations and breaking changes:
+Our public, stable Python API includes:
 
-- Upgrading to a new dot version within a minor release, e.g. 0.8.1 → 0.8.2, should never result in broken code. If a new dot version does break your code, please help us out by filing an issue on [Github](https://github.com/dagster-io/dagster/issues).
-- An exception to the above is “experimental APIs”, which allow us to offer new APIs to users and rapidly iterate based on their feedback. Experimental APIs will emit a warning whenever used, and may be broken even in dot releases.
-- As often as possible, deprecation warnings will precede removals. E.g. if we’re currently on version 0.8.5, and we wish to remove an API, we’ll start issuing a deprecation warning when the API is used, and then we’ll omit it from 0.9.0.
-- Upgrading to a new minor version, e.g. 0.7.5 → 0.8.0 may result in breakages or new deprecation warnings.
-- We'll aim to batch deprecations every four weeks (or so).
+- All classes, functions, and variables that are exported at the top-level of the `dagster` package, unless they're marked [experimental](#experimental-apis)).
+- Public, non-[experimental](#experimental-apis) methods and properties of public, stable classes. Public methods and properties are those show up in the [API reference](/\_apidocs). Within the codebase, they're marked with a `@public` decorator.
 
-## Following Along
+### Experimental APIs
 
-The best way to stay on top of what changes are included in each release is through the [changelog](https://docs.dagster.io/changelog). We call out breaking changes in the “Breaking Changes” section of the changelog and deprecations in the “Deprecations” section.
+The "experimental" marker allows us to offer new APIs to users and rapidly iterate based on their feedback. Experimental APIs are marked as such in the [API reference](/\_apidocs) and usually raise an <PyObject object="ExperimentalWarning" /> when used.
 
-We also publish a [migration guide](https://docs.dagster.io/migration) with each minor release, which details the changes you need to make to upgrade from the last minor release.
+Experimental APIs may change or disappear within any release, but we try to avoid breaking them within minor releases if they have been around for a long time.
+
+### Deprecated APIs
+
+The "deprecated" marker indicates that we recommend avoiding an API, usually because there's a preferred option that should be used instead.
+
+Like non-deprecated public stable APIs, deprecated public stable APIs will not break within any major release after 1.0.
+
+---
+
+## Dagster integration libraries
+
+Dagster's integration libraries are in the 0.y.z of [Semantic Versioning](https://semver.org/). While technically this is "anything goes", we are conservative about making changes and provide guidance about when to expect breaking changes:
+
+- Upgrading to a new dot version within a minor release, e.g. 0.8.1 → 0.8.2, should never result in broken code.
+- An exception to this guarantee is [experimental APIs](#experimental-apis).
+- As often as possible, deprecation warnings will precede removals. E.g. if the current version is 0.8.5 and we want to remove an API, we'll issue a deprecation [warning](https://docs.python.org/3/library/warnings.html) when the API is used and remove it from 0.9.0.
+- Upgrading to a new minor version, e.g. 0.7.5 → 0.8.0 may result in breakages or new deprecation [warnings](https://docs.python.org/3/library/warnings.html).
+
+---
+
+## Following along
+
+The best way to stay on top of what changes are included in each release is through the [changelog](https://github.com/dagster-io/dagster/blob/master/CHANGES.md). We call out breaking changes in “Breaking Changes” sections and deprecations in “Deprecations” sections.

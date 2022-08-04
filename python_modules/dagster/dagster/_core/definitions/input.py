@@ -1,3 +1,4 @@
+import inspect
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -14,6 +15,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
     MetadataEntry,
@@ -326,7 +328,15 @@ class InputDefinition:
 
 def _checked_inferred_type(inferred: InferredInputProps, decorator_name: str) -> DagsterType:
     try:
-        resolved_type = resolve_dagster_type(inferred.annotation)
+        if inferred.annotation == inspect.Parameter.empty:
+            resolved_type = resolve_dagster_type(None)
+        elif inferred.annotation is None:
+            # When inferred.annotation is None, it means someone explicitly put "None" as the
+            # annotation, so want to map it to a DagsterType that checks for the None type
+            resolved_type = resolve_dagster_type(type(None))
+        else:
+            resolved_type = resolve_dagster_type(inferred.annotation)
+
     except DagsterError as e:
         raise DagsterInvalidDefinitionError(
             f"Problem using type '{inferred.annotation}' from type annotation for argument "
@@ -372,13 +382,7 @@ class InputMapping(
         [("definition", InputDefinition), ("maps_to", Union[InputPointer, FanInInputPointer])],
     )
 ):
-    """Defines an input mapping for a composite solid.
-
-    Args:
-        definition (InputDefinition): Defines the input to the composite solid.
-        solid_name (str): The name of the child solid onto which to map the input.
-        input_name (str): The name of the input to the child solid onto which to map the input.
-    """
+    """Defines an input mapping for a graph."""
 
     def __new__(cls, definition: InputDefinition, maps_to: Union[InputPointer, FanInInputPointer]):
         return super(InputMapping, cls).__new__(
@@ -400,14 +404,20 @@ class In(
     NamedTuple(
         "_In",
         [
-            ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
-            ("description", Optional[str]),
-            ("default_value", Any),
-            ("root_manager_key", Optional[str]),
-            ("metadata", Optional[Mapping[str, Any]]),
-            ("asset_key", Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]),
-            ("asset_partitions", Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]]),
-            ("input_manager_key", Optional[str]),
+            ("dagster_type", PublicAttr[Union[DagsterType, Type[NoValueSentinel]]]),
+            ("description", PublicAttr[Optional[str]]),
+            ("default_value", PublicAttr[Any]),
+            ("root_manager_key", PublicAttr[Optional[str]]),
+            ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
+            (
+                "asset_key",
+                PublicAttr[Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]],
+            ),
+            (
+                "asset_partitions",
+                PublicAttr[Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]]],
+            ),
+            ("input_manager_key", PublicAttr[Optional[str]]),
         ],
     )
 ):
@@ -500,7 +510,7 @@ class In(
         )
 
 
-class GraphIn(NamedTuple("_GraphIn", [("description", Optional[str])])):
+class GraphIn(NamedTuple("_GraphIn", [("description", PublicAttr[Optional[str]])])):
     """
     Represents information about an input that a graph maps.
 

@@ -1,5 +1,85 @@
 ---
 title: Creating an Amazon Elastic Container Service agent in an existing VPC | Dagster Docs
+noindex: True
 ---
 
 # Creating an Amazon Elastic Container Service agent in an existing VPC
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+In this guide, you'll set up and deploy an Amazon Elastic Container Service (ECS) agent in an existing VPC using CloudFormation. Amazon ECS agents are used to launch user code in ECS tasks.
+
+Our CloudFormation template allows you to quickly spin up the ECS agent stack in an existing VPC. It also supports using a new or existing ECS cluster. The template code can be found [here](https://s3.amazonaws.com/dagster.cloud/cloudformation/ecs-agent.yaml). Refer to the [CloudFormation docs](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html) for more info about CloudFormation.
+
+**For info about deploying an ECS agent in a new VPC**, check out the [ECS agents in new VPCs guide](/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc).
+
+---
+
+## Prerequisites
+
+To complete the steps in this guide, you'll need:
+
+- **In Dagster Cloud**:
+
+  - **Your organization and deployment names.**
+  - **Permissions in Dagster Cloud that allow you to manage agent tokens**. Refer to the [User permissions documentation](/dagster-cloud/account/managing-users) for more info.
+
+- **In Amazon Web Services (AWS)**:
+  - **An existing VPC with the following:**
+    - **Public subnets**. Refer to the [AWS Work with VPCs guide](https://docs.aws.amazon.com/vpc/latest/userguide/working-with-vpcs.html) for more info.
+    - **Enabled `enableDnsHostnames` and `enableDnsSupport` DNS attributes**. Refer to the [AWS DNS attributes documentation](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-dns.html#vpc-dns-support) for more info.
+  - **Optional**: An existing ECS cluster with a [fargate capacity provider](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/fargate-capacity-providers.html). The CloudFormation template will create a cluster for you if one isn't specified.
+
+---
+
+## Step 1: Generate a Dagster Cloud agent token
+
+<GenerateAgentToken />
+
+---
+
+## Step 2: Install the CloudFormation stack in AWS
+
+Click [this link](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3.amazonaws.com/dagster.cloud/cloudformation/ecs-agent.yaml) to install the CloudFormation stack in your AWS account.
+
+**Note**: Creating the CloudFormation stack may take a few minutes. Refresh the [AWS console **Stacks** page](https://console.aws.amazon.com/cloudformation/home#/stacks) to check the status.
+
+---
+
+## Step 3: Configure the agent
+
+After the stack is installed, you'll be prompted to configure it. In the ECS wizard, fill in the following fields:
+
+- **Dagster Cloud Organization**: Enter the name of your Dagster Cloud organization.
+- **Dagster Cloud Deployment**: Enter the name of the Dagster Cloud deployment you want to use.
+- **Agent Token**: Paste the agent token you generated in [Step 1](#step-1-generate-a-dagster-cloud-agent-token).
+
+The page should look similar to the following image. In this example, our organization name is `hooli` and our deployment is `prod`:
+
+<Image
+alt="Example Configuration for the ECS Agent CloudFormation Template"
+src="/images/dagster-cloud/agents/aws-ecs-stack-wizard.png"
+width={689}
+height={663}
+/>
+
+After you've finished configuring the stack in AWS, you can view the agent in Dagster Cloud. To do so, navigate to the **Status** page and click the **Agents** tab. You should see the agent running in the **Agent statuses** section:
+
+<Image
+alt="Instance Status"
+src="/images/dagster-cloud/agents/dagster-cloud-instance-status.png"
+width={1152}
+height={320}
+/>
+
+---
+
+## Next steps
+
+Now that you've got your agent running, what's next?
+
+- **If you're getting Dagster Cloud set up**, the next step is to [add a code location](/dagster-cloud/developing-testing/code-locations) using the agent.
+
+- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster Cloud](/dagster-cloud/developing-testing/code-locations) guide for more info.
+
+If you need to upgrade your ECS agent's CloudFormation template, refer to the [upgrade guide](/dagster-cloud/deployment/agents/amazon-ecs/upgrading-cloudformation-template) for more info.

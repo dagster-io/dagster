@@ -1,6 +1,7 @@
 from typing import Dict, Iterator, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 import dagster._check as check
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.metadata import (
     MetadataEntry,
@@ -25,19 +26,20 @@ from dagster._core.definitions.utils import (
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._utils import merge_dicts
+from dagster._utils.backcompat import experimental_arg_warning
 
 
 class SourceAsset(
     NamedTuple(
         "_SourceAsset",
         [
-            ("key", AssetKey),
+            ("key", PublicAttr[AssetKey]),
             ("metadata_entries", Sequence[Union[MetadataEntry, PartitionMetadataEntry]]),
-            ("io_manager_key", Optional[str]),
-            ("description", Optional[str]),
-            ("partitions_def", Optional[PartitionsDefinition]),
-            ("group_name", str),
-            ("resource_defs", Dict[str, ResourceDefinition]),
+            ("io_manager_key", PublicAttr[Optional[str]]),
+            ("description", PublicAttr[Optional[str]]),
+            ("partitions_def", PublicAttr[Optional[PartitionsDefinition]]),
+            ("group_name", PublicAttr[str]),
+            ("resource_defs", PublicAttr[Dict[str, ResourceDefinition]]),
         ],
     ),
     ResourceAddable,
@@ -49,8 +51,9 @@ class SourceAsset(
         metadata_entries (List[MetadataEntry]): Metadata associated with the asset.
         io_manager_key (Optional[str]): The key for the IOManager that will be used to load the contents of
             the asset when it's used as an input to other assets inside a job.
-        io_manager_def (Optional[IOManagerDefinition]): The definition of the IOManager that will be used to load the contents of
+        io_manager_def (Optional[IOManagerDefinition]): (Experimental) The definition of the IOManager that will be used to load the contents of
             the asset when it's used as an input to other assets inside a job.
+        resource_defs (Optional[Mapping[str, ResourceDefinition]]): (Experimental) resource definitions that may be required by the :py:class:`dagster.IOManagerDefinition` provided in the `io_manager_def` argument.
         description (Optional[str]): The description of the asset.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
@@ -69,6 +72,12 @@ class SourceAsset(
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         # Add additional fields to with_resources and with_group below
     ):
+
+        if resource_defs is not None:
+            experimental_arg_warning("resource_defs", "SourceAsset.__new__")
+
+        if io_manager_def is not None:
+            experimental_arg_warning("io_manager_def", "SourceAsset.__new__")
 
         key = AssetKey.from_coerceable(key)
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
@@ -100,6 +109,7 @@ class SourceAsset(
             resource_defs=resource_defs,
         )
 
+    @public  # type: ignore
     @property
     def metadata(self) -> MetadataMapping:
         # PartitionMetadataEntry (unstable API) case is unhandled

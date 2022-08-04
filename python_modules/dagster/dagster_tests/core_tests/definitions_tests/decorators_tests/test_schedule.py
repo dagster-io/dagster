@@ -44,12 +44,12 @@ def test_scheduler():
             ScheduleDefinition(
                 name="my_schedule",
                 cron_schedule="* * * * *",
-                pipeline_name="test_pipeline",
+                job_name="test_pipeline",
                 run_config={},
             )
         ]
 
-    @schedule(cron_schedule="* * * * *", pipeline_name="foo_pipeline")
+    @schedule(cron_schedule="* * * * *", job_name="foo_pipeline")
     def echo_time_schedule(context):
         return {
             "echo_time": (
@@ -63,7 +63,7 @@ def test_scheduler():
 
     @schedule(
         cron_schedule="* * * * *",
-        pipeline_name="foo_pipeline",
+        job_name="foo_pipeline",
         should_execute=lambda x: False,
     )
     def always_skip_schedule():
@@ -102,7 +102,7 @@ def test_schedule_decorators_sanity():
     def foo_pipeline():
         do_nothing()
 
-    @schedule(cron_schedule="* * * * *", pipeline_name="foo_pipeline")
+    @schedule(cron_schedule="* * * * *", job_name="foo_pipeline")
     def foo_schedule():
         """Fake doc block"""
         return {}
@@ -156,7 +156,7 @@ def test_schedule_decorators_sanity():
 
     @schedule(
         cron_schedule="* * * * *",
-        pipeline_name="foo_pipeline",
+        job_name="foo_pipeline",
         execution_timezone="US/Central",
     )
     def foo_schedule_timezone():
@@ -745,19 +745,19 @@ def test_schedule_decorators_bad():
 
     with pytest.raises(DagsterInvalidDefinitionError, match="invalid cron schedule"):
 
-        @schedule(cron_schedule="", pipeline_name="foo_pipeline")
+        @schedule(cron_schedule="", job_name="foo_pipeline")
         def bad_cron_string(context):
             return {}
 
     with pytest.raises(DagsterInvalidDefinitionError, match="invalid cron schedule"):
 
-        @schedule(cron_schedule="bad_schedule_two", pipeline_name="foo_pipeline")
+        @schedule(cron_schedule="bad_schedule_two", job_name="foo_pipeline")
         def bad_cron_string_two(context):
             return {}
 
     with pytest.raises(DagsterInvalidDefinitionError, match="invalid cron schedule"):
 
-        @schedule(cron_schedule="* * * * * *", pipeline_name="foo_pipeline")
+        @schedule(cron_schedule="* * * * * *", job_name="foo_pipeline")
         def bad_cron_string_three(context):
             return {}
 
@@ -766,7 +766,7 @@ def test_schedule_with_nested_tags():
 
     nested_tags = {"foo": {"bar": "baz"}}
 
-    @schedule(cron_schedule="* * * * *", pipeline_name="foo_pipeline", tags=nested_tags)
+    @schedule(cron_schedule="* * * * *", job_name="foo_pipeline", tags=nested_tags)
     def my_tag_schedule():
         return {}
 

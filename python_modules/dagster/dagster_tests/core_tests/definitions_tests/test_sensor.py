@@ -15,7 +15,7 @@ def test_jobs_attr():
     sensor = SensorDefinition(evaluation_fn=eval_fn, job=my_graph)
     assert sensor.job.name == my_graph.name
 
-    sensor = SensorDefinition(evaluation_fn=eval_fn, pipeline_name="my_pipeline")
+    sensor = SensorDefinition(evaluation_fn=eval_fn, job_name="my_pipeline")
     with pytest.raises(
         DagsterInvalidDefinitionError, match="No job was provided to SensorDefinition."
     ):
@@ -35,6 +35,7 @@ def test_jobs_attr():
 
 def test_direct_sensor_definition_instantiation():
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="Must provide evaluation_fn to SensorDefinition."
+        DagsterInvalidDefinitionError,
+        match="Must provide evaluation_fn to SensorDefinition.",
     ):
         SensorDefinition()

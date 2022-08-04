@@ -57,7 +57,6 @@ def resource_initialization_manager(
     resource_keys_to_init: Optional[AbstractSet[str]],
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
-    pipeline_def_for_backwards_compat: Optional[PipelineDefinition],
 ):
     generator = resource_initialization_event_generator(
         resource_defs=resource_defs,
@@ -68,7 +67,6 @@ def resource_initialization_manager(
         resource_keys_to_init=resource_keys_to_init,
         instance=instance,
         emit_persistent_events=emit_persistent_events,
-        pipeline_def_for_backwards_compat=pipeline_def_for_backwards_compat,
     )
     return EventGenerationManager(generator, ScopedResourcesBuilder)
 
@@ -135,7 +133,6 @@ def _core_resource_initialization_event_generator(
     resource_keys_to_init: Optional[AbstractSet[str]],
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
-    pipeline_def_for_backwards_compat: Optional[PipelineDefinition],
 ):
 
     pipeline_name = ""  # Must be initialized to a string to satisfy typechecker
@@ -173,7 +170,7 @@ def _core_resource_initialization_event_generator(
                 resource_context = InitResourceContext(
                     resource_def=resource_def,
                     resource_config=resource_configs[resource_name].config,
-                    pipeline_run=pipeline_run,
+                    dagster_run=pipeline_run,
                     # Add tags with information about the resource
                     log_manager=resource_log_manager.with_tags(
                         resource_name=resource_name,
@@ -181,7 +178,6 @@ def _core_resource_initialization_event_generator(
                     ),
                     resources=resources,
                     instance=instance,
-                    pipeline_def_for_backwards_compat=pipeline_def_for_backwards_compat,
                 )
                 manager = single_resource_generation_manager(
                     resource_context, resource_name, resource_def
@@ -233,7 +229,6 @@ def resource_initialization_event_generator(
     resource_keys_to_init: Optional[AbstractSet[str]],
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
-    pipeline_def_for_backwards_compat: Optional[PipelineDefinition],
 ):
     check.inst_param(log_manager, "log_manager", DagsterLogManager)
     resource_keys_to_init = check.opt_set_param(
@@ -269,7 +264,6 @@ def resource_initialization_event_generator(
             resource_keys_to_init=resource_keys_to_init,
             instance=instance,
             emit_persistent_events=emit_persistent_events,
-            pipeline_def_for_backwards_compat=pipeline_def_for_backwards_compat,
         )
     except GeneratorExit:
         # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed

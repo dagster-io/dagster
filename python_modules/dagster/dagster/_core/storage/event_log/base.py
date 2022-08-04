@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Callable, Iterable, List, Mapping, NamedTuple, Optional, Sequence, Set, Union
 
 import dagster._check as check
+from dagster._annotations import PublicAttr
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.events import AssetKey
 from dagster._core.events import DagsterEventType
@@ -33,10 +34,12 @@ class RunShardedEventsCursor(NamedTuple):
 class EventLogRecord(NamedTuple):
     """Internal representation of an event record, as stored in a
     :py:class:`~dagster._core.storage.event_log.EventLogStorage`.
+
+    Users should not instantiate this class directly.
     """
 
-    storage_id: int
-    event_log_entry: EventLogEntry
+    storage_id: PublicAttr[int]
+    event_log_entry: PublicAttr[EventLogEntry]
 
 
 class EventLogConnection(NamedTuple):
@@ -121,6 +124,11 @@ class AssetEntry(
 
 
 class AssetRecord(NamedTuple):
+    """Internal representation of an asset record, as stored in a :py:class:`~dagster._core.storage.event_log.EventLogStorage`.
+
+    Users should not invoke this class directly.
+    """
+
     storage_id: int
     asset_entry: AssetEntry
 

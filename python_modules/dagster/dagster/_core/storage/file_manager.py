@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from typing import BinaryIO, Optional, TextIO, Union
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._config import Field, StringSource
 from dagster._core.definitions.resource_definition import resource
 from dagster._core.instance import DagsterInstance
@@ -28,6 +29,7 @@ class FileHandle(ABC):
     such as S3.
     """
 
+    @public  # type: ignore
     @property
     @abstractmethod
     def path_desc(self) -> str:
@@ -41,11 +43,13 @@ class LocalFileHandle(FileHandle):
     def __init__(self, path: str):
         self._path = check.str_param(path, "path")
 
+    @public  # type: ignore
     @property
     def path(self) -> str:
         """The file's path."""
         return self._path
 
+    @public  # type: ignore
     @property
     def path_desc(self) -> str:
         """A representation of the file path for display purposes only."""
@@ -61,6 +65,7 @@ class FileManager(ABC):  # pylint: disable=no-init
     For examples of usage, see the documentation of the concrete file manager implementations.
     """
 
+    @public
     @abstractmethod
     def copy_handle_to_local_temp(self, file_handle: FileHandle) -> str:
         """Copy a file represented by a file handle to a temp file.
@@ -84,6 +89,7 @@ class FileManager(ABC):  # pylint: disable=no-init
         """
         raise NotImplementedError()
 
+    @public
     @abstractmethod
     def delete_local_temp(self):
         """Delete all local temporary files created by previous calls to
@@ -93,6 +99,7 @@ class FileManager(ABC):  # pylint: disable=no-init
         """
         raise NotImplementedError()
 
+    @public
     @abstractmethod
     def read(self, file_handle: FileHandle, mode: str = "rb") -> Union[TextIO, BinaryIO]:
         """Return a file-like stream for the file handle.
@@ -109,6 +116,7 @@ class FileManager(ABC):  # pylint: disable=no-init
         """
         raise NotImplementedError()
 
+    @public
     @abstractmethod
     def read_data(self, file_handle: FileHandle) -> bytes:
         """Return the bytes for a given file handle. This may incur an expensive network
@@ -122,6 +130,7 @@ class FileManager(ABC):  # pylint: disable=no-init
         """
         raise NotImplementedError()
 
+    @public
     @abstractmethod
     def write(
         self, file_obj: Union[TextIO, BinaryIO], mode: str = "wb", ext: Optional[str] = None
@@ -140,6 +149,7 @@ class FileManager(ABC):  # pylint: disable=no-init
         """
         raise NotImplementedError()
 
+    @public
     @abstractmethod
     def write_data(self, data: bytes, ext: Optional[str] = None) -> FileHandle:
         """Write raw bytes into the file manager.
@@ -170,11 +180,10 @@ def local_file_manager(init_context):
 
         import tempfile
 
-        from dagster import ModeDefinition, local_file_manager
-        from dagster._legacy import pipeline, solid
+        from dagster import job, local_file_manager, op
 
 
-        @solid(required_resource_keys={"file_manager"})
+        @op(required_resource_keys={"file_manager"})
         def write_files(context):
             fh_1 = context.resources.file_manager.write_data(b"foo")
 
@@ -186,7 +195,7 @@ def local_file_manager(init_context):
             return (fh_1, fh_2)
 
 
-        @solid(required_resource_keys={"file_manager"})
+        @op(required_resource_keys={"file_manager"})
         def read_files(context, file_handles):
             fh_1, fh_2 = file_handles
             assert context.resources.file_manager.read_data(fh_2) == b"bar"
@@ -195,7 +204,7 @@ def local_file_manager(init_context):
             fd.close()
 
 
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={"file_manager": local_file_manager})])
+        @job(resource_defs={"file_manager": local_file_manager})
         def files_pipeline():
             read_files(write_files())
 
@@ -203,14 +212,10 @@ def local_file_manager(init_context):
 
     .. code-block:: python
 
-        @pipeline(
-            mode_defs=[
-                ModeDefinition(
-                    resource_defs={
-                        "file_manager": local_file_manager.configured({"base_dir": "/my/base/dir"})
-                    }
-                )
-            ]
+        @job(
+            resource_defs={
+                "file_manager": local_file_manager.configured({"base_dir": "/my/base/dir"})
+            }
         )
         def files_pipeline():
             read_files(write_files())

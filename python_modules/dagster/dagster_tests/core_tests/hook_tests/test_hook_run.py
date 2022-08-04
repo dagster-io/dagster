@@ -33,7 +33,7 @@ def test_hook_on_solid_instance():
 
     @event_list_hook(required_resource_keys={"resource_a"})
     def a_hook(context, _):
-        called_hook_to_solids[context.hook_def.name].add(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].add(context.op.name)
         assert context.resources.resource_a == 1
         return HookExecutionResult("a_hook")
 
@@ -157,7 +157,7 @@ def test_success_hook_on_solid_instance():
 
     @success_hook(required_resource_keys={"resource_a"})
     def a_hook(context):
-        called_hook_to_solids[context.hook_def.name].add(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].add(context.op.name)
         assert context.resources.resource_a == 1
 
     @solid
@@ -186,7 +186,7 @@ def test_success_hook_on_solid_instance_subset():
 
     @success_hook(required_resource_keys={"resource_a"})
     def a_hook(context):
-        called_hook_to_solids[context.hook_def.name].add(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].add(context.op.name)
         assert context.resources.resource_a == 1
 
     @solid
@@ -217,7 +217,7 @@ def test_failure_hook_on_solid_instance():
 
     @failure_hook(required_resource_keys={"resource_a"})
     def a_hook(context):
-        called_hook_to_solids[context.hook_def.name].add(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].add(context.op.name)
         assert context.resources.resource_a == 1
 
     @solid
@@ -245,7 +245,7 @@ def test_failure_hook_solid_exception():
 
     @failure_hook
     def a_hook(context):
-        called[context.solid.name] = context.solid_exception
+        called[context.op.name] = context.solid_exception
 
     @solid
     def a_solid(_):
@@ -278,7 +278,7 @@ def test_none_solid_exception_access():
 
     @success_hook
     def a_hook(context):
-        called[context.solid.name] = context.solid_exception
+        called[context.op.name] = context.solid_exception
 
     @solid
     def a_solid(_):
@@ -360,12 +360,12 @@ def test_hook_on_pipeline_def():
 
     @event_list_hook
     def hook_a_generic(context, _):
-        called_hook_to_solids[context.hook_def.name].add(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].add(context.op.name)
         return HookExecutionResult("hook_a_generic")
 
     @event_list_hook
     def hook_b_generic(context, _):
-        called_hook_to_solids[context.hook_def.name].add(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].add(context.op.name)
         return HookExecutionResult("hook_b_generic")
 
     @solid
@@ -442,16 +442,16 @@ def test_hook_decorate_pipeline_def():
 
     @event_list_hook
     def hook_a_generic(context, _):
-        called_hook_to_solids[context.hook_def.name].add(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].add(context.op.name)
         return HookExecutionResult("hook_a_generic")
 
     @success_hook
     def hook_b_success(context):
-        called_hook_to_solids[context.hook_def.name].add(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].add(context.op.name)
 
     @failure_hook
     def hook_c_failure(context):
-        called_hook_to_solids[context.hook_def.name].add(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].add(context.op.name)
 
     @solid
     def solid_a(_):
@@ -494,16 +494,16 @@ def test_hook_on_pipeline_def_and_solid_instance():
 
     @event_list_hook
     def hook_a_generic(context, _):
-        called_hook_to_solids[context.hook_def.name].add(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].add(context.op.name)
         return HookExecutionResult("hook_a_generic")
 
     @success_hook
     def hook_b_success(context):
-        called_hook_to_solids[context.hook_def.name].add(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].add(context.op.name)
 
     @failure_hook
     def hook_c_failure(context):
-        called_hook_to_solids[context.hook_def.name].add(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].add(context.op.name)
 
     @solid
     def solid_a(_):
@@ -548,7 +548,7 @@ def test_hook_context_config_schema():
 
     @event_list_hook
     def a_hook(context, _):
-        called_hook_to_solids[context.hook_def.name].add(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].add(context.op.name)
         assert context.solid_config == {"config_1": 1}
         return HookExecutionResult("a_hook")
 
@@ -603,7 +603,7 @@ def test_hook_subpipeline():
 
     @event_list_hook
     def hook_a_generic(context, _):
-        called_hook_to_solids[context.hook_def.name].add(context.solid.name)
+        called_hook_to_solids[context.hook_def.name].add(context.op.name)
         return HookExecutionResult("hook_a_generic")
 
     @solid
@@ -637,7 +637,7 @@ def test_hook_ops():
 
     @success_hook
     def my_hook(context):
-        called_hook_to_ops[context.hook_def.name].add(context.solid.name)
+        called_hook_to_ops[context.hook_def.name].add(context.op.name)
         return HookExecutionResult("my_hook")
 
     @op
@@ -660,12 +660,12 @@ def test_hook_graph():
 
     @success_hook
     def a_hook(context):
-        called_hook_to_ops[context.hook_def.name].add(context.solid.name)
+        called_hook_to_ops[context.hook_def.name].add(context.op.name)
         return HookExecutionResult("a_hook")
 
     @success_hook
     def b_hook(context):
-        called_hook_to_ops[context.hook_def.name].add(context.solid.name)
+        called_hook_to_ops[context.hook_def.name].add(context.op.name)
         return HookExecutionResult("a_hook")
 
     @op
@@ -705,7 +705,7 @@ def test_hook_on_job():
 
     @success_hook
     def a_hook(context):
-        called_hook_to_ops[context.hook_def.name].add(context.solid.name)
+        called_hook_to_ops[context.hook_def.name].add(context.op.name)
         return HookExecutionResult("a_hook")
 
     @op

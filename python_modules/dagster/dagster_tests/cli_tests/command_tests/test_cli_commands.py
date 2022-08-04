@@ -22,7 +22,6 @@ from dagster import (
 )
 from dagster._cli import ENV_PREFIX, cli
 from dagster._cli.job import job_execute_command
-from dagster._cli.pipeline import pipeline_execute_command
 from dagster._cli.run import run_delete_command, run_list_command, run_wipe_command
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
@@ -130,7 +129,7 @@ def define_bar_schedules():
         "foo_schedule": ScheduleDefinition(
             "foo_schedule",
             cron_schedule="* * * * *",
-            pipeline_name="foo",
+            job_name="foo",
             run_config={},
         ),
         "partitioned_schedule": partition_set.create_schedule_definition(
@@ -171,7 +170,7 @@ def define_bar_partitions():
 
 
 def define_bar_sensors():
-    @sensor(pipeline_name="baz")
+    @sensor(job_name="baz")
     def foo_sensor(context):
         run_config = {"foo": "FOO"}
         if context.last_completion_time:
@@ -195,6 +194,16 @@ def memoizable_pipeline():
     my_solid()
 
 
+@op(version="foo")
+def my_op():
+    return 5
+
+
+@job(tags={MEMOIZED_RUN_TAG: "true"}, resource_defs={"io_manager": versioned_filesystem_io_manager})
+def memoizable_job():
+    my_op()
+
+
 @repository
 def bar():
     return {
@@ -204,7 +213,7 @@ def bar():
             "partitioned_scheduled_pipeline": partitioned_scheduled_pipeline,
             "memoizable": memoizable_pipeline,
         },
-        "jobs": {"qux": qux_job, "quux": quux_job},
+        "jobs": {"qux": qux_job, "quux": quux_job, "memoizable_job": memoizable_job},
         "schedules": define_bar_schedules(),
         "partition_sets": define_bar_partitions(),
         "sensors": define_bar_sensors(),
@@ -817,10 +826,10 @@ def test_run_list_limit():
                 file_relative_path(__file__, "../../general_tests/test_repository.py"),
                 "-a",
                 "dagster_test_repository",
-                "--preset",
-                "add",
-                "-p",
-                "multi_mode_with_resources",  # pipeline name
+                "--config",
+                file_relative_path(__file__, "../../environments/double_adder_job.yaml"),
+                "-j",
+                "double_adder_job",  # job name
             ],
         )
 
@@ -831,10 +840,10 @@ def test_run_list_limit():
                 file_relative_path(__file__, "../../general_tests/test_repository.py"),
                 "-a",
                 "dagster_test_repository",
-                "--preset",
-                "add",
-                "-p",
-                "multi_mode_with_resources",  # pipeline name
+                "--config",
+                file_relative_path(__file__, "../../environments/double_adder_job.yaml"),
+                "-j",
+                "double_adder_job",  # job name
             ],
         )
 
@@ -842,24 +851,24 @@ def test_run_list_limit():
         result = runner.invoke(run_list_command, args="--limit 1")
         assert result.exit_code == 0
         assert result.output.count("Run: ") == 1
-        assert result.output.count("Pipeline: multi_mode_with_resources") == 1
+        assert result.output.count("Pipeline: double_adder_job") == 1
 
         # Shows two runs because of the limit argument is now 2
         two_results = runner.invoke(run_list_command, args="--limit 2")
         assert two_results.exit_code == 0
         assert two_results.output.count("Run: ") == 2
-        assert two_results.output.count("Pipeline: multi_mode_with_resources") == 2
+        assert two_results.output.count("Pipeline: double_adder_job") == 2
 
         # Should only shows two runs although the limit argument is 3 because there are only 2 runs
         shows_two_results = runner.invoke(run_list_command, args="--limit 3")
         assert shows_two_results.exit_code == 0
         assert shows_two_results.output.count("Run: ") == 2
-        assert shows_two_results.output.count("Pipeline: multi_mode_with_resources") == 2
+        assert shows_two_results.output.count("Pipeline: double_adder_job") == 2
 
 
-def runner_pipeline_or_job_execute(runner, cli_args, using_job_op_graph_apis=False):
+def runner_pipeline_or_job_execute(runner, cli_args):
     result = runner.invoke(
-        job_execute_command if using_job_op_graph_apis else pipeline_execute_command,
+        job_execute_command,
         cli_args,
     )
     if result.exit_code != 0:
@@ -874,7 +883,7 @@ def runner_pipeline_or_job_execute(runner, cli_args, using_job_op_graph_apis=Fal
                 exit_code=result.exit_code,
                 stdout=result.stdout,
                 result=result,
-                pipeline_or_job="job" if using_job_op_graph_apis else "pipeline",
+                pipeline_or_job="job",
             )
         )
     return result

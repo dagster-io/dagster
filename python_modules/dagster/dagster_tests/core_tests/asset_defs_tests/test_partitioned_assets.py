@@ -32,8 +32,13 @@ def check_experimental_warnings():
         yield
 
         for w in record:
-            if "build_assets_job" not in w.message.args[0]:
-                assert False, f"Unexpected warning: {w.message.args[0]}"
+            if (
+                "resource_defs" in w.message.args[0]
+                or "io_manager_def" in w.message.args[0]
+                or "build_assets_job" in w.message.args[0]
+            ):
+                continue
+            assert False, f"Unexpected warning: {w.message.args[0]}"
 
 
 def test_assets_with_same_partitioning():

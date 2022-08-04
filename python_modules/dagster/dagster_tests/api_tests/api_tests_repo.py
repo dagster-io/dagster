@@ -83,20 +83,20 @@ def define_bar_schedules():
         "foo_schedule": ScheduleDefinition(
             "foo_schedule",
             cron_schedule="* * * * *",
-            pipeline_name="foo",
+            job_name="foo",
             run_config={"fizz": "buzz"},
         ),
         "foo_schedule_never_execute": ScheduleDefinition(
             "foo_schedule_never_execute",
             cron_schedule="* * * * *",
-            pipeline_name="foo",
+            job_name="foo",
             run_config={"fizz": "buzz"},
             should_execute=lambda _context: False,
         ),
         "foo_schedule_echo_time": ScheduleDefinition(
             "foo_schedule_echo_time",
             cron_schedule="* * * * *",
-            pipeline_name="foo",
+            job_name="foo",
             run_config_fn=lambda context: {
                 "passed_in_time": context.scheduled_execution_time.isoformat()
                 if context.scheduled_execution_time
@@ -151,18 +151,18 @@ def define_baz_partitions():
     }
 
 
-@sensor(pipeline_name="foo")
+@sensor(job_name="foo")
 def sensor_foo(_):
     yield RunRequest(run_key=None, run_config={"foo": "FOO"}, tags={"foo": "foo_tag"})
     yield RunRequest(run_key=None, run_config={"foo": "FOO"})
 
 
-@sensor(pipeline_name="foo")
+@sensor(job_name="foo")
 def sensor_error(_):
     raise Exception("womp womp")
 
 
-@sensor(pipeline_name="foo")
+@sensor(job_name="foo")
 def sensor_raises_dagster_error(_):
     raise DagsterError("Dagster error")
 

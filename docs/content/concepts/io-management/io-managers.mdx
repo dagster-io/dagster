@@ -576,7 +576,9 @@ def upstream_asset():
     return pd.DataFrame([1, 2, 3])
 
 
-@asset(ins={"upstream": AssetIn(namespace="public", input_manager_key="numpy_manager")})
+@asset(
+    ins={"upstream": AssetIn(key_prefix="public", input_manager_key="numpy_manager")}
+)
 def downstream_asset(upstream):
     return upstream.shape
 
@@ -660,10 +662,10 @@ Additionally, if you have specified that this `handle_output` function will be w
 
 ## See it in action
 
-For more examples of IO Managers, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news_assets):
+For more examples of IO Managers, check out the following in our [Hacker News example](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured):
 
-- [Snowflake IO Manager](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/resources/snowflake_io_manager.py)
-- [Parquet IO Manager](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/resources/parquet_io_manager.py)
-- [S3 IO Manager with custom bucket](https://github.com/dagster-io/dagster/blob/master/examples/hacker_news_assets/hacker_news_assets/resources/common_bucket_s3\_pickle_io_manager.py)
+- [Snowflake IO Manager](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/snowflake_io_manager.py)
+- [Parquet IO Manager](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/parquet_io_manager.py)
+- [S3 IO Manager with custom bucket](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/common_bucket_s3\_pickle_io_manager.py)
 
-Our [Bollinger example](https://github.com/dagster-io/dagster/tree/master/examples/bollinger) and [New York Times example](https://github.com/dagster-io/dagster/tree/master/examples/nyt-feed) also cover writing custom IO managers.
+Our [Type and Metadata example](https://github.com/dagster-io/dagster/tree/master/examples/assets_pandas_type_metadata) also covers writing custom IO managers.

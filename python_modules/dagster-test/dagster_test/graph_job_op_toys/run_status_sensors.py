@@ -42,7 +42,7 @@ def status_job():
     status_printer()
 
 
-@run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS, request_job=status_job)
+@run_status_sensor(run_status=DagsterRunStatus.SUCCESS, request_job=status_job)
 def yield_run_request_succeeds_sensor(context):
     """
     We recommend returning RunRequests, but it's possible to yield, so this is here to test it
@@ -64,7 +64,7 @@ def yield_run_request_succeeds_sensor(context):
         yield SkipReason("Don't report status of status_job.")
 
 
-@run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS, request_job=status_job)
+@run_status_sensor(run_status=DagsterRunStatus.SUCCESS, request_job=status_job)
 def return_run_request_succeeds_sensor(context):
     if context.dagster_run.pipeline_name != status_job.name:
         return RunRequest(
@@ -98,14 +98,14 @@ def fails_sensor(context):
 
 
 @run_status_sensor(
-    pipeline_run_status=DagsterRunStatus.SUCCESS,
+    run_status=DagsterRunStatus.SUCCESS,
 )
 def success_sensor_with_pipeline_run_reaction(context):
     """Some users do this, so here's a way to test it out"""
     return PipelineRunReaction(context.dagster_run)
 
 
-@run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS, request_job=status_job)
+@run_status_sensor(run_status=DagsterRunStatus.SUCCESS, request_job=status_job)
 def yield_multi_run_request_success_sensor(context):
     if context.dagster_run.pipeline_name != status_job.name:
         for _ in range(3):
@@ -125,7 +125,7 @@ def yield_multi_run_request_success_sensor(context):
         return SkipReason("Don't report status of status_job.")
 
 
-@run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS, request_job=status_job)
+@run_status_sensor(run_status=DagsterRunStatus.SUCCESS, request_job=status_job)
 def return_multi_run_request_success_sensor(context):
     """
     Also test returning a list of run requests

@@ -14,13 +14,3 @@ APIs
 .. autofunction:: create_shell_script_op
 
 .. autofunction:: shell_op
-
-Legacy APIs
------------
-.. currentmodule:: dagster_shell
-
-.. autofunction:: create_shell_command_solid
-
-.. autofunction:: create_shell_script_solid
-
-.. autofunction:: shell_solid

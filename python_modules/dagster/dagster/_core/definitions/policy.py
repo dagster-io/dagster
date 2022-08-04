@@ -3,6 +3,7 @@ from random import random
 from typing import NamedTuple, Optional
 
 import dagster._check as check
+from dagster._annotations import PublicAttr
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 
@@ -33,11 +34,11 @@ class RetryPolicy(
     NamedTuple(
         "_RetryPolicy",
         [
-            ("max_retries", int),
-            ("delay", Optional[check.Numeric]),
+            ("max_retries", PublicAttr[int]),
+            ("delay", PublicAttr[Optional[check.Numeric]]),
             # declarative time modulation to allow calc witout running user function
-            ("backoff", Optional[Backoff]),
-            ("jitter", Optional[Jitter]),
+            ("backoff", PublicAttr[Optional[Backoff]]),
+            ("jitter", PublicAttr[Optional[Jitter]]),
         ],
     ),
 ):

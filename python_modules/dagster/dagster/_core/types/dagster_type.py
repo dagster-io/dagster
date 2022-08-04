@@ -11,6 +11,7 @@ from typing import Sequence, cast
 from typing_compat import get_args, get_origin
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._builtins import BuiltinEnum
 from dagster._config import Array, ConfigType
 from dagster._config import Noneable as ConfigNoneable
@@ -107,7 +108,7 @@ class DagsterType(RequiresResources):
         materializer: t.Optional[DagsterTypeMaterializer] = None,
         required_resource_keys: t.Optional[t.Set[str]] = None,
         kind: DagsterTypeKind = DagsterTypeKind.REGULAR,
-        typing_type: t.Any = None,
+        typing_type: t.Any = t.Any,
         metadata_entries: t.Optional[t.List[MetadataEntry]] = None,
         metadata: t.Optional[t.Dict[str, RawMetadataValue]] = None,
     ):
@@ -131,8 +132,8 @@ class DagsterType(RequiresResources):
             check.invariant(key and name)
             self.key, self._name = key, name
 
-        self.description = check.opt_str_param(description, "description")
-        self.loader = check.opt_inst_param(loader, "loader", DagsterTypeLoader)
+        self._description = check.opt_str_param(description, "description")
+        self._loader = check.opt_inst_param(loader, "loader", DagsterTypeLoader)
         self.materializer = check.opt_inst_param(
             materializer, "materializer", DagsterTypeMaterializer
         )
@@ -153,7 +154,7 @@ class DagsterType(RequiresResources):
 
         self.kind = check.inst_param(kind, "kind", DagsterTypeKind)
 
-        self.typing_type = typing_type
+        self._typing_type = typing_type
 
         metadata_entries = check.opt_list_param(
             metadata_entries, "metadata_entries", of_type=MetadataEntry
@@ -161,6 +162,7 @@ class DagsterType(RequiresResources):
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         self._metadata_entries = normalize_metadata(metadata, metadata_entries)
 
+    @public  # type: ignore
     def type_check(self, context: "TypeCheckContext", value: object) -> TypeCheck:
         retval = self._type_check_fn(context, value)
 
@@ -190,15 +192,18 @@ class DagsterType(RequiresResources):
     def metadata_entries(self) -> t.List[MetadataEntry]:
         return self._metadata_entries  # type: ignore
 
+    @public  # type: ignore
     @property
     def required_resource_keys(self) -> TypingAbstractSet[str]:
         return self._required_resource_keys
 
+    @public  # type: ignore
     @property
     def display_name(self) -> str:
         """Either the name or key (if name is `None`) of the type, overridden in many subclasses"""
         return cast(str, self._name or self.key)
 
+    @public  # type: ignore
     @property
     def unique_name(self) -> t.Optional[str]:
         """The unique name of this type. Can be None if the type is not unique, such as container types"""
@@ -209,9 +214,25 @@ class DagsterType(RequiresResources):
         )
         return self._name
 
+    @public  # type: ignore
     @property
     def has_unique_name(self) -> bool:
         return self._name is not None
+
+    @public  # type: ignore
+    @property
+    def typing_type(self) -> t.Any:
+        return self._typing_type
+
+    @public  # type: ignore
+    @property
+    def loader(self) -> t.Optional[DagsterTypeLoader]:
+        return self._loader
+
+    @public  # type: ignore
+    @property
+    def description(self) -> t.Optional[str]:
+        return self._description
 
     @property
     def inner_types(self) -> t.List["DagsterType"]:
@@ -450,6 +471,7 @@ class _Nothing(DagsterType):
             materializer=None,
             type_check_fn=self.type_check_method,
             is_builtin=True,
+            typing_type=type(None),
         )
 
     def type_check_method(self, _context: "TypeCheckContext", value: object) -> TypeCheck:

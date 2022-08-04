@@ -4,7 +4,8 @@ import os
 
 import pytest
 import yaml
-from dagster_spark import create_spark_op, create_spark_solid, spark_resource
+from dagster_spark import create_spark_op, spark_resource
+from dagster_spark.ops import create_spark_solid
 
 from dagster import job
 from dagster._legacy import ModeDefinition, execute_pipeline, pipeline

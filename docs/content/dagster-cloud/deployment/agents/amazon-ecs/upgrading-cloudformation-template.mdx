@@ -1,5 +1,30 @@
 ---
 title: Upgrading CloudFormation for an Amazon Elastic Container Services agent | Dagster Docs
+noindex: True
 ---
 
 # Upgrading CloudFormation for an Amazon Elastic Container Services agent
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+In this guide, we'll show you how to upgrade an existing [Amazon Elastic Container Services (ECS) agent](/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-existing-vpc)'s CloudFormation template.
+
+**Note**: To complete the steps in this guide, you'll need [permissions in Amazon Web Services (AWS) that allow you to manage ECS agents](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/security-iam-awsmanpol.html).
+
+1. Sign in to your AWS console.
+
+2. Navigate to the deployed stack and click **Update**.
+
+3. Select **Replace current template**. You can specify a specific Dagster Cloud version or upgrade to the latest template.
+
+   To use the latest template:
+
+       https://s3.amazonaws.com/dagster.cloud/cloudformation/ecs-agent-vpc.yaml
+
+   To specify a version:
+
+       https://s3.amazonaws.com/dagster.cloud/cloudformation/ecs-agent-vpc-0-15-0.yaml
+
+4. Proceed through the remaining steps in the wizard.
+
+When finished, the agent will be re-deployed using the newest image and Dagster version.

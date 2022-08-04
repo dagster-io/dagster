@@ -101,7 +101,6 @@ def build_resources(
             resource_keys_to_init=set(resource_defs.keys()),
             instance=dagster_instance,
             emit_persistent_events=False,
-            pipeline_def_for_backwards_compat=None,
         )
         try:
             list(resources_manager.generate_setup_events())

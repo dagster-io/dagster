@@ -1,13 +1,12 @@
-from dagster import repository
-from dagster._legacy import pipeline
+from dagster import job, repository
 
 
-@pipeline
+@job
 def pipeline_one():
     pass
 
 
-@pipeline
+@job
 def pipeline_two():
     pass
 

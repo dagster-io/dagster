@@ -131,6 +131,14 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
 
         filepath = self._get_path(context)
 
+        if context.dagster_type.typing_type == type(None):
+            check.invariant(
+                obj is None,
+                "Output had Nothing type or 'None' annotation, but handle_output received value "
+                f"that was not None and was of type {type(obj)}.",
+            )
+            return None
+
         # Ensure path exists
         mkdir_p(os.path.dirname(filepath))
 
@@ -163,6 +171,9 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
     def load_input(self, context):
         """Unpickle the file and Load it to a data object."""
         check.inst_param(context, "context", InputContext)
+
+        if context.dagster_type.typing_type == type(None):
+            return None
 
         filepath = self._get_path(context)
         context.add_input_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})

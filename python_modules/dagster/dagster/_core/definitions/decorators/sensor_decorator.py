@@ -1,6 +1,6 @@
 import inspect
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Callable, List, Optional, Sequence
+from typing import TYPE_CHECKING, Callable, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError
@@ -23,10 +23,8 @@ if TYPE_CHECKING:
 
 
 def sensor(
-    pipeline_name: Optional[str] = None,
+    job_name: Optional[str] = None,
     name: Optional[str] = None,
-    solid_selection: Optional[List[str]] = None,
-    mode: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     job: Optional[ExecutableDefinition] = None,
@@ -46,17 +44,8 @@ def sensor(
     Takes a :py:class:`~dagster.SensorEvaluationContext`.
 
     Args:
-        pipeline_name (Optional[str]): (legacy) Name of the target pipeline. Cannot be used in
-            conjunction with `job` or `jobs` parameters.
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated
             function.
-        solid_selection (Optional[List[str]]): (legacy) A list of solid subselection (including single
-            solid names) to execute for runs for this sensor e.g.
-            ``['*some_solid+', 'other_solid']``.
-            Cannot be used in conjunction with `job` or `jobs` parameters.
-        mode (Optional[str]): (legacy) The mode to apply when executing runs for this sensor. Cannot be used
-            in conjunction with `job` or `jobs` parameters.
-            (default: 'default')
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
@@ -74,10 +63,8 @@ def sensor(
 
         sensor_def = SensorDefinition(
             name=name,
-            pipeline_name=pipeline_name,
+            job_name=job_name,
             evaluation_fn=fn,
-            solid_selection=solid_selection,
-            mode=mode,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job=job,
@@ -94,10 +81,8 @@ def sensor(
 
 def asset_sensor(
     asset_key: AssetKey,
-    pipeline_name: Optional[str] = None,
+    job_name: Optional[str] = None,
     name: Optional[str] = None,
-    solid_selection: Optional[List[str]] = None,
-    mode: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     job: Optional[ExecutableDefinition] = None,
@@ -119,16 +104,8 @@ def asset_sensor(
 
     Args:
         asset_key (AssetKey): The asset_key this sensor monitors.
-        pipeline_name (Optional[str]): (legacy) Name of the target pipeline. Cannot be used in conjunction with `job` or `jobs` parameters.
         name (Optional[str]): The name of the sensor. Defaults to the name of the decorated
             function.
-        solid_selection (Optional[List[str]]): (legacy) A list of solid subselection (including single
-            solid names) to execute for runs for this sensor e.g.
-            ``['*some_solid+', 'other_solid']``. Cannot be used in conjunction with `job` or `jobs`
-            parameters.
-        mode (Optional[str]): (legacy) The mode to apply when executing runs for this sensor. Cannot be used
-            in conjunction with `job` or `jobs` parameters.
-            (default: 'default')
         minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
@@ -167,10 +144,8 @@ def asset_sensor(
         return AssetSensorDefinition(
             name=sensor_name,
             asset_key=asset_key,
-            pipeline_name=pipeline_name,
+            job_name=job_name,
             asset_materialization_fn=_wrapped_fn,
-            solid_selection=solid_selection,
-            mode=mode,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job=job,

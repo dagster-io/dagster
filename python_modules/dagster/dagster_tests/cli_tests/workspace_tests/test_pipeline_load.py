@@ -4,7 +4,7 @@ from click.testing import CliRunner
 
 from dagster._cli.workspace.cli_target import (
     get_external_pipeline_or_job_from_kwargs,
-    pipeline_target_argument,
+    job_target_argument,
 )
 from dagster._core.host_representation import ExternalPipeline
 from dagster._core.instance import DagsterInstance
@@ -16,10 +16,10 @@ def load_pipeline_via_cli_runner(cli_args):
     capture_result = {"external_pipeline": None}
 
     @click.command(name="test_pipeline_command")
-    @pipeline_target_argument
+    @job_target_argument
     def command(**kwargs):
         with get_external_pipeline_or_job_from_kwargs(
-            DagsterInstance.get(), "", kwargs
+            DagsterInstance.get(), "", kwargs, True
         ) as external_pipeline:
             capture_result["external_pipeline"] = external_pipeline
 
@@ -47,7 +47,7 @@ def get_all_loading_combos():
     def _iterate_combos():
         possible_location_args = [[], ["-l", "hello_world_location"]]
         possible_repo_args = [[], ["-r", "hello_world_repository"]]
-        possible_pipeline_args = [[], ["-p", "hello_world_pipeline"]]
+        possible_pipeline_args = [[], ["-j", "hello_world_pipeline"]]
 
         for location_args in possible_location_args:
             for repo_args in possible_repo_args:
@@ -69,12 +69,12 @@ def test_valid_loading_combos_single_pipeline_repo_location(cli_args):
 
 def test_repository_target_argument_one_repo_and_specified_wrong():
     result, _ = load_pipeline_via_cli_runner(
-        ["-w", PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE, "-p", "not_present"]
+        ["-w", PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE, "-j", "not_present"]
     )
 
     assert result.exit_code == 2
     assert (
-        """Pipeline "not_present" not found in repository """
+        """Job "not_present" not found in repository """
         """"hello_world_repository". Found ['hello_world_pipeline'] instead."""
     ) in result.stdout
 
@@ -85,14 +85,14 @@ MULTI_PIPELINE_WORKSPACE = file_relative_path(__file__, "multi_pipeline/multi_pi
 def test_successfully_find_pipeline():
     assert (
         successfully_load_pipeline_via_cli(
-            ["-w", MULTI_PIPELINE_WORKSPACE, "-p", "pipeline_one"]
+            ["-w", MULTI_PIPELINE_WORKSPACE, "-j", "pipeline_one"]
         ).name
         == "pipeline_one"
     )
 
     assert (
         successfully_load_pipeline_via_cli(
-            ["-w", MULTI_PIPELINE_WORKSPACE, "-p", "pipeline_two"]
+            ["-w", MULTI_PIPELINE_WORKSPACE, "-j", "pipeline_two"]
         ).name
         == "pipeline_two"
     )
@@ -103,6 +103,6 @@ def test_must_provide_name_to_multi_pipeline():
 
     assert result.exit_code == 2
     assert (
-        """Must provide --pipeline as there is more than one pipeline/job in """
+        """Must provide --job as there is more than one pipeline/job in """
         """multi_pipeline. Options are: ['pipeline_one', 'pipeline_two']."""
     ) in result.stdout
