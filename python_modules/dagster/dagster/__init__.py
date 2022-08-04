@@ -110,11 +110,11 @@ from dagster._core.definitions.asset_selection import (
 from dagster._core.definitions.assets import (
     AssetsDefinition as AssetsDefinition,
 )
-from dagster._core.definitions.assets_job import (
-    build_assets_job as build_assets_job,
-)
 from dagster._core.definitions.config import (
     ConfigMapping as ConfigMapping,
+)
+from dagster._core.definitions.composition import (
+    PendingNodeInvocation as PendingNodeInvocation,
 )
 from dagster._core.definitions.configurable import (
     configured as configured,
@@ -122,30 +122,21 @@ from dagster._core.definitions.configurable import (
 from dagster._core.definitions.decorators import (
     asset as asset,
     asset_sensor as asset_sensor,
-    composite_solid as composite_solid,
     config_mapping as config_mapping,
-    daily_schedule as daily_schedule,
     failure_hook as failure_hook,
     graph as graph,
-    hourly_schedule as hourly_schedule,
     job as job,
-    lambda_solid as lambda_solid,
-    monthly_schedule as monthly_schedule,
     multi_asset as multi_asset,
     op as op,
-    pipeline as pipeline,
     repository as repository,
     schedule as schedule,
     sensor as sensor,
-    solid as solid,
     success_hook as success_hook,
-    weekly_schedule as weekly_schedule,
 )
 from dagster._core.definitions.dependency import (
     DependencyDefinition as DependencyDefinition,
     MultiDependencyDefinition as MultiDependencyDefinition,
     NodeInvocation as NodeInvocation,
-    SolidInvocation as SolidInvocation,
 )
 from dagster._core.definitions.events import (
     AssetKey as AssetKey,
@@ -154,7 +145,6 @@ from dagster._core.definitions.events import (
     DynamicOutput as DynamicOutput,
     ExpectationResult as ExpectationResult,
     Failure as Failure,
-    Materialization as Materialization,
     Output as Output,
     RetryRequested as RetryRequested,
     TypeCheck as TypeCheck,
@@ -162,7 +152,6 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.executor_definition import (
     ExecutorDefinition as ExecutorDefinition,
     ExecutorRequirement as ExecutorRequirement,
-    default_executors as default_executors,
     executor as executor,
     in_process_executor as in_process_executor,
     multi_or_in_process_executor as multi_or_in_process_executor,
@@ -178,7 +167,6 @@ from dagster._core.definitions.hook_definition import (
 from dagster._core.definitions.input import (
     GraphIn as GraphIn,
     In as In,
-    InputDefinition as InputDefinition,
     InputMapping as InputMapping,
 )
 from dagster._core.definitions.job_definition import (
@@ -223,25 +211,19 @@ from dagster._core.definitions.metadata.table import (
     TableRecord as TableRecord,
     TableSchema as TableSchema,
 )
-from dagster._core.definitions.mode import (
-    ModeDefinition as ModeDefinition,
-)
 from dagster._core.definitions.op_definition import (
     OpDefinition as OpDefinition,
 )
 from dagster._core.definitions.output import (
     DynamicOut as DynamicOut,
-    DynamicOutputDefinition as DynamicOutputDefinition,
     GraphOut as GraphOut,
     Out as Out,
-    OutputDefinition as OutputDefinition,
     OutputMapping as OutputMapping,
 )
 from dagster._core.definitions.partition import (
     DynamicPartitionsDefinition as DynamicPartitionsDefinition,
     Partition as Partition,
     PartitionScheduleDefinition as PartitionScheduleDefinition,
-    PartitionSetDefinition as PartitionSetDefinition,
     PartitionedConfig as PartitionedConfig,
     PartitionsDefinition as PartitionsDefinition,
     StaticPartitionsDefinition as StaticPartitionsDefinition,
@@ -259,18 +241,11 @@ from dagster._core.definitions.partition_mapping import (
 )
 from dagster._core.definitions.partitioned_schedule import (
     build_schedule_from_partitioned_job as build_schedule_from_partitioned_job,
-    schedule_from_partitions as schedule_from_partitions,
-)
-from dagster._core.definitions.pipeline_definition import (
-    PipelineDefinition as PipelineDefinition,
 )
 from dagster._core.definitions.policy import (
     Backoff as Backoff,
     Jitter as Jitter,
     RetryPolicy as RetryPolicy,
-)
-from dagster._core.definitions.preset import (
-    PresetDefinition as PresetDefinition,
 )
 from dagster._core.definitions.reconstruct import (
     build_reconstructable_job as build_reconstructable_job,
@@ -290,12 +265,10 @@ from dagster._core.definitions.run_request import (
     SkipReason as SkipReason,
 )
 from dagster._core.definitions.run_status_sensor_definition import (
-    PipelineFailureSensorContext as PipelineFailureSensorContext,
     RunFailureSensorContext as RunFailureSensorContext,
     RunStatusSensorContext as RunStatusSensorContext,
     RunStatusSensorDefinition as RunStatusSensorDefinition,
     build_run_status_sensor_context as build_run_status_sensor_context,
-    pipeline_failure_sensor as pipeline_failure_sensor,
     run_failure_sensor as run_failure_sensor,
     run_status_sensor as run_status_sensor,
 )
@@ -303,7 +276,6 @@ from dagster._core.definitions.schedule_definition import (
     DefaultScheduleStatus as DefaultScheduleStatus,
     ScheduleDefinition as ScheduleDefinition,
     ScheduleEvaluationContext as ScheduleEvaluationContext,
-    ScheduleExecutionContext as ScheduleExecutionContext,
     build_schedule_context as build_schedule_context,
 )
 from dagster._core.definitions.sensor_definition import (
@@ -311,12 +283,7 @@ from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus as DefaultSensorStatus,
     SensorDefinition as SensorDefinition,
     SensorEvaluationContext as SensorEvaluationContext,
-    SensorExecutionContext as SensorExecutionContext,
     build_sensor_context as build_sensor_context,
-)
-from dagster._core.definitions.solid_definition import (
-    CompositeSolidDefinition as CompositeSolidDefinition,
-    SolidDefinition as SolidDefinition,
 )
 from dagster._core.definitions.source_asset import (
     SourceAsset as SourceAsset,
@@ -388,17 +355,12 @@ from dagster._core.events.log import (
 from dagster._core.execution.api import (
     ReexecutionOptions as ReexecutionOptions,
     execute_job as execute_job,
-    execute_pipeline as execute_pipeline,
-    execute_pipeline_iterator as execute_pipeline_iterator,
-    reexecute_pipeline as reexecute_pipeline,
-    reexecute_pipeline_iterator as reexecute_pipeline_iterator,
 )
 from dagster._core.execution.build_resources import (
     build_resources as build_resources,
 )
 from dagster._core.execution.context.compute import (
     OpExecutionContext as OpExecutionContext,
-    SolidExecutionContext as SolidExecutionContext,
 )
 from dagster._core.execution.context.hook import (
     HookContext as HookContext,
@@ -507,7 +469,6 @@ from dagster._core.types.dagster_type import (
     List as List,
     Optional as Optional,
     PythonObjectDagsterType as PythonObjectDagsterType,
-    make_python_type_usable_as_dagster_type as make_python_type_usable_as_dagster_type,
 )
 from dagster._core.types.decorator import (
     usable_as_dagster_type as usable_as_dagster_type,
@@ -525,6 +486,7 @@ from dagster._loggers import (
     colored_console_logger as colored_console_logger,
     default_loggers as default_loggers,
     default_system_loggers as default_system_loggers,
+    json_console_logger as json_console_logger,
 )
 from dagster._serdes.serdes import (
     deserialize_value as deserialize_value,
@@ -539,19 +501,10 @@ from dagster._utils.backcompat import (
 from dagster._utils.log import (
     get_dagster_logger as get_dagster_logger,
 )
-from dagster._utils.partitions import (
-    create_offset_partition_selector as create_offset_partition_selector,
-    date_partition_range as date_partition_range,
-    identity_partition_selector as identity_partition_selector,
-)
 from dagster._utils.test import (
     check_dagster_type as check_dagster_type,
-    execute_solid as execute_solid,
-    execute_solid_within_pipeline as execute_solid_within_pipeline,
-    execute_solids_within_pipeline as execute_solids_within_pipeline,
 )
-
-from .version import (
+from dagster.version import (
     __version__ as __version__,
 )
 
