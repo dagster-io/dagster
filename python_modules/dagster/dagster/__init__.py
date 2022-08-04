@@ -520,11 +520,12 @@ from dagster._utils.log import (
 from dagster._utils.test import (
     check_dagster_type as check_dagster_type,
 )
-from dagster.version import (
-    __version__ as __version__,
-)
 
 # isort: on
+
+from dagster.version import (
+    __version__
+)
 
 # ########################
 # ##### DYNAMIC IMPORTS
