@@ -20,6 +20,7 @@ When new releases include breaking changes or deprecations, this document descri
 - The `preset_defs` argument on [JobDefinition](https://docs.dagster.io/_apidocs/jobs#dagster.JobDefinition) has been removed. When constructing a `JobDefinition` directly, config can be provided using the `config` argument instead.  `preset_defs` has been deprecated since 0.13.0.
 - `EventMetadata` and `EventMetadataEntryData` APIs have been removed. Instead, metadata should be specified using the [MetadataValue](https://docs.dagster.io/_apidocs/ops#dagster.MetadataValue) APIs.
 - APIs referencing pipelines/solids in extension libraries have been removed. This includes `define_dagstermill_solid`, `make_dagster_pipeline_from_airflow_dag`, `create_databricks_job_solid`, the various `dbt_cli_*` and `dbt_rpc_*` solids, `bq_solid_for_queries`, `ge_validation_solid_factory`, `end_mlflow_run_on_pipeline_finished`, the various `shell_command_solid` APIs, `make_slack_on_pipeline_failure_sensor`, `snowflake_solid_for_query`, `end_mlflow_run_on_pipeline_finished`, and `create_spark_solid`.
+- `custom_path_fs_io_manager` has been removed, as its functionality is entirely subsumed by the `fs_io_manager`, where a custom path can be specified via config.
 
 ## Migrating to 0.15.0
 
