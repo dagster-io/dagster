@@ -10,55 +10,41 @@ title: "Welcome to Dagster! | Dagster Docs"
 
 Dagster is an orchestrator designed for developing and maintaining data assets, such as tables, data sets, machine learning models, and reports.
 
+**New to Dagster**? Check out the **Concepts** or learn with some hands-on **Tutorials**.
+
+<div className="inline-flex flex-row space-x-4">
+  <a href="/concepts">
+    <button className="py-1 px-4 rounded-lg bg-gable-green text-white hover:bg-transparent hover:text-gable-green hover: border hover:border-gable-green">
+      Concepts
+    </button>
+  </a>
+  <a href="/tutorial">
+    <button className="py-1 px-4 rounded-lg bg-transparent border text-gray-500 hover:text-gray-700 hover:bg-gray-100 hover:border-gray-300">
+      Tutorials
+    </button>
+  </a>
+</div>
+
 ---
 
 ## Quick start templates
 
 Use one of our templates to get started with Dagster in just a few clicks:
 
-<div className="flex flex-row justify-center">
-  <div className="grid md:grid-cols-2 grid-flow-row gap-2">
-    <ExampleItem
-      title="Starter project"
-      hrefCode="examples/project_fully_featured"
-    >
-      Fully-featured starter project
-    </ExampleItem>
-    <ExampleItem
-      title="dbt + Dagster"
-      hrefCode="examples/assets_dbt_python/README.md"
-    >
-      Demonstrates using Python with a dbt project
-    </ExampleItem>
-  </div>
-</div>
-
-<div
-  style={{
-    textAlign: "right",
-  }}
->
-  <a
-    className="border-t-2 border-transparent pt-4 pl-1 inline-flex items-center text-sm md:text-base font-medium text-gray-500 dark:text-gray-200 hover:text-gray-700"
-    href="https://github.com/dagster-io/dagster/tree/master/examples"
-    target="new"
-  >
-    View all templates
-    <svg
-      className="ml-3 h-5 w-5 text-gray-400"
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 20 20"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <path
-        fill-rule="evenodd"
-        d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z"
-        clip-rule="evenodd"
-      ></path>
-    </svg>
-  </a>
-</div>
+<ArticleList>
+  <ArticleListItem
+    title="Fully-featured project"
+    href="https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/README.md"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="View all templates"
+    href="https://github.com/dagster-io/dagster/blob/master/examples"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dbt + Dagster"
+    href="https://github.com/dagster-io/dagster/blob/master/examples/assets_dbt_python/README.md"
+  ></ArticleListItem>
+</ArticleList>
 
 ---
 
