@@ -207,7 +207,7 @@ def get_toys_schedules():
         ScheduleDefinition(
             name="many_events_every_min",
             cron_schedule="* * * * *",
-            pipeline_name="many_events",
+            job_name="many_events",
             execution_timezone=_toys_tz_info(),
         ),
     ]

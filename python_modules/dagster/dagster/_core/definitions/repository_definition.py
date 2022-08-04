@@ -1080,9 +1080,9 @@ class CachingRepositoryData(RepositoryData):
     def _validate_schedule(self, schedule: ScheduleDefinition) -> ScheduleDefinition:
         pipelines = self.get_pipeline_names()
 
-        if schedule.pipeline_name not in pipelines:
+        if schedule.job_name not in pipelines:
             raise DagsterInvalidDefinitionError(
-                f'ScheduleDefinition "{schedule.name}" targets job/pipeline "{schedule.pipeline_name}" '
+                f'ScheduleDefinition "{schedule.name}" targets job/pipeline "{schedule.job_name}" '
                 "which was not found in this repository."
             )
 
@@ -1097,7 +1097,7 @@ class CachingRepositoryData(RepositoryData):
         for target in sensor.targets:
             if target.pipeline_name not in pipelines:
                 raise DagsterInvalidDefinitionError(
-                    f'SensorDefinition "{sensor.name}" targets job/pipeline "{sensor.pipeline_name}" '
+                    f'SensorDefinition "{sensor.name}" targets job/pipeline "{sensor.job_name}" '
                     "which was not found in this repository."
                 )
 

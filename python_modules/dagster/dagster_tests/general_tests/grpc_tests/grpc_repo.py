@@ -61,13 +61,13 @@ def define_bar_schedules():
         "foo_schedule": ScheduleDefinition(
             "foo_schedule",
             cron_schedule="* * * * *",
-            pipeline_name="foo",
+            job_name="foo",
             run_config={},
         )
     }
 
 
-@sensor(pipeline_name="bar")
+@sensor(job_name="bar")
 def slow_sensor(_):
     time.sleep(5)
     yield SkipReason("Oops fell asleep")
