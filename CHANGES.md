@@ -29,7 +29,8 @@ In 1.0.0, a large number of previously-deprecated APIs have been fully removed. 
 
 ### Deprecations
 
-* `dagster_type_materializer` / `DagsterTypeMaterializer` have been marked experimental and will likely be removed within a 1.x release. Instead, use an `IOManager`.
+* `dagster_type_materializer` and `DagsterTypeMaterializer` have been marked experimental and will likely be removed within a 1.x release. Instead, use an `IOManager`.
+* `FileManager` and `FileHandle` have been marked experimental and will likely be removed within a 1.x release. 1.x release.  
 
 ### Other Changes
 
