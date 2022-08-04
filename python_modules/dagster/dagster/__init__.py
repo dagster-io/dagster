@@ -486,6 +486,7 @@ from dagster._core.types.dagster_type import (
     List as List,
     Optional as Optional,
     PythonObjectDagsterType as PythonObjectDagsterType,
+    make_python_type_usable_as_dagster_type as make_python_type_usable_as_dagster_type,
 )
 from dagster._core.types.decorator import (
     usable_as_dagster_type as usable_as_dagster_type,
