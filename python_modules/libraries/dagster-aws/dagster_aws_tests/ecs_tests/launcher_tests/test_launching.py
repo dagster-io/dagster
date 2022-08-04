@@ -469,3 +469,33 @@ def test_overrides_too_long(
     )
 
     instance.launch_run(run.run_id, workspace)
+
+
+def test_custom_launcher(
+    ecs,
+    custom_instance,
+    custom_workspace,
+    custom_run,
+):
+    assert not custom_run.tags
+
+    initial_tasks = ecs.list_tasks()["taskArns"]
+
+    custom_instance.launch_run(custom_run.run_id, custom_workspace)
+
+    tasks = ecs.list_tasks()["taskArns"]
+    task_arn = list(set(tasks).difference(initial_tasks))[0]
+
+    # And we log
+    events = custom_instance.event_log_storage.get_logs_for_run(custom_run.run_id)
+    latest_event = events[-1]
+    assert latest_event.message == "Launching run in custom ECS task"
+    event_metadata = latest_event.dagster_event.engine_event_data.metadata_entries
+    assert MetadataEntry("Run ID", value=custom_run.run_id) in event_metadata
+
+    # check status and stop task
+    assert (
+        custom_instance.run_launcher.check_run_worker_health(custom_run).status
+        == WorkerStatus.RUNNING
+    )
+    ecs.stop_task(task=task_arn)
