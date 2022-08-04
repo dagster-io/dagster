@@ -12,16 +12,9 @@ from dateutil import parser
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 
-from dagster import (
-    Failure,
-    Field,
-    MetadataValue,
-    StringSource,
-    __version__,
-    _check as check,
-    get_dagster_logger,
-    resource,
-)
+from dagster import Failure, Field, MetadataValue, StringSource, __version__
+from dagster import _check as check
+from dagster import get_dagster_logger, resource
 
 FIVETRAN_API_BASE = "https://api.fivetran.com"
 FIVETRAN_CONNECTOR_PATH = "v1/connectors/"

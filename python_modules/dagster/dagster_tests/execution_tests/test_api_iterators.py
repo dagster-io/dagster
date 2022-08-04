@@ -1,6 +1,7 @@
 import pytest
 
-from dagster import _check as check, resource
+from dagster import _check as check
+from dagster import resource
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events.log import EventLogEntry, construct_event_logger

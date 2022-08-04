@@ -119,19 +119,35 @@ from dagster._core.definitions.composition import (
 from dagster._core.definitions.configurable import (
     configured as configured,
 )
-from dagster._core.definitions.decorators import (
+from dagster._core.definitions.decorators.asset_decorator import (
     asset as asset,
-    asset_sensor as asset_sensor,
-    config_mapping as config_mapping,
-    failure_hook as failure_hook,
-    graph as graph,
-    job as job,
     multi_asset as multi_asset,
-    op as op,
-    repository as repository,
-    schedule as schedule,
-    sensor as sensor,
+)
+from dagster._core.definitions.decorators.config_mapping_decorator import (
+    config_mapping as config_mapping,
+)
+from dagster._core.definitions.decorators.graph_decorator import (
+    graph as graph,
+)
+from dagster._core.definitions.decorators.hook_decorator import (
+    failure_hook as failure_hook,
     success_hook as success_hook,
+)
+from dagster._core.definitions.decorators.job_decorator import (
+    job as job,
+)
+from dagster._core.definitions.decorators.op_decorator import (
+    op as op,
+)
+from dagster._core.definitions.decorators.repository_decorator import (
+    repository as repository,
+)
+from dagster._core.definitions.decorators.schedule_decorator import (
+    schedule as schedule,
+)
+from dagster._core.definitions.decorators.sensor_decorator import (
+    asset_sensor as asset_sensor,
+    sensor as sensor,
 )
 from dagster._core.definitions.dependency import (
     DependencyDefinition as DependencyDefinition,
@@ -516,7 +532,10 @@ from dagster.version import (
 
 # isort: split
 import importlib
-from typing import TYPE_CHECKING, Any as TypingAny, Callable, Mapping, Tuple as TypingTuple
+from typing import TYPE_CHECKING
+from typing import Any as TypingAny
+from typing import Callable, Mapping
+from typing import Tuple as TypingTuple
 
 from typing_extensions import Final
 

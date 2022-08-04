@@ -1,4 +1,6 @@
-from dagster import Field, In, Nothing, Out, Permissive, _check as check, op
+from dagster import Field, In, Nothing, Out, Permissive
+from dagster import _check as check
+from dagster import op
 
 from .databricks import wait_for_run_to_complete
 

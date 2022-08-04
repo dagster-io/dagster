@@ -6,7 +6,9 @@ from contextlib import contextmanager
 
 import pytest
 
-from dagster import DagsterInvalidConfigError, _check as check, resource
+from dagster import DagsterInvalidConfigError
+from dagster import _check as check
+from dagster import resource
 from dagster._core.definitions import NodeHandle
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.logger import InitLoggerContext

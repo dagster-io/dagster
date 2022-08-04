@@ -4,15 +4,9 @@ from typing import Union
 from google.api_core.exceptions import Forbidden, TooManyRequests
 from google.cloud import storage  # type: ignore
 
-from dagster import (
-    Field,
-    IOManager,
-    InputContext,
-    OutputContext,
-    StringSource,
-    _check as check,
-    io_manager,
-)
+from dagster import Field, IOManager, InputContext, OutputContext, StringSource
+from dagster import _check as check
+from dagster import io_manager
 from dagster._utils import PICKLE_PROTOCOL
 from dagster._utils.backoff import backoff
 

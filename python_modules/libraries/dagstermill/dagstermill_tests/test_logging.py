@@ -5,7 +5,9 @@ import os
 from dagstermill.examples.repository import hello_logging
 from dagstermill.io_managers import local_output_notebook_io_manager
 
-from dagster import String, _seven as seven, logger, reconstructable
+from dagster import String
+from dagster import _seven as seven
+from dagster import logger, reconstructable
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 from dagster._utils import safe_tempfile_path

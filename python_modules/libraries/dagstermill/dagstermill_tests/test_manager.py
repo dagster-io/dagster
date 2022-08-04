@@ -10,7 +10,8 @@ import pytest
 from dagstermill import DagstermillError
 from dagstermill.manager import Manager
 
-from dagster import AssetMaterialization, ResourceDefinition, _check as check
+from dagster import AssetMaterialization, ResourceDefinition
+from dagster import _check as check
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus

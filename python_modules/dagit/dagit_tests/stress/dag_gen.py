@@ -1,7 +1,8 @@
 import random
 from collections import defaultdict
 
-from dagster import DependencyDefinition, Field, Output, _check as check
+from dagster import DependencyDefinition, Field, Output
+from dagster import _check as check
 from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, SolidDefinition
 
 

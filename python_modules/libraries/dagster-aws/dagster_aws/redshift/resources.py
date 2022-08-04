@@ -4,7 +4,9 @@ from contextlib import contextmanager
 import psycopg2
 import psycopg2.extensions
 
-from dagster import Field, IntSource, StringSource, _check as check, resource
+from dagster import Field, IntSource, StringSource
+from dagster import _check as check
+from dagster import resource
 
 
 class RedshiftError(Exception):

@@ -12,7 +12,9 @@ from contextlib import ExitStack, contextmanager
 import pendulum
 import yaml
 
-from dagster import Shape, _check as check, fs_io_manager
+from dagster import Shape
+from dagster import _check as check
+from dagster import fs_io_manager
 from dagster._config import Array, Field
 from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,

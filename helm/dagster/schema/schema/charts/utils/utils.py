@@ -1,7 +1,8 @@
 from enum import Enum
 from typing import Dict, List
 
-from pydantic import BaseModel as PydanticBaseModel, Extra
+from pydantic import BaseModel as PydanticBaseModel
+from pydantic import Extra
 
 
 class SupportedKubernetes(str, Enum):

@@ -3,7 +3,9 @@ import logging
 
 import boto3
 
-from dagster import Field, StringSource, _check as check, _seven, logger
+from dagster import Field, StringSource
+from dagster import _check as check
+from dagster import _seven, logger
 from dagster._core.utils import coerce_valid_log_level
 
 # The maximum batch size is 1,048,576 bytes, and this size is calculated as the sum of all event

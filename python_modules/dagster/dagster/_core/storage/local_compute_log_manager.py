@@ -7,7 +7,8 @@ from contextlib import contextmanager
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers.polling import PollingObserver
 
-from dagster import Field, Float, StringSource, _check as check
+from dagster import Field, Float, StringSource
+from dagster import _check as check
 from dagster._core.execution.compute_logs import mirror_stream_to_file
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._serdes import ConfigurableClass, ConfigurableClassData

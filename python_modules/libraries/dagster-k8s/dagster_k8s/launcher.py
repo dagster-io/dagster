@@ -3,7 +3,8 @@ from typing import Dict, List, Optional
 
 import kubernetes
 
-from dagster import Field, MetadataEntry, StringSource, _check as check
+from dagster import Field, MetadataEntry, StringSource
+from dagster import _check as check
 from dagster._cli.api import ExecuteRunArgs
 from dagster._core.events import EngineEventData
 from dagster._core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher

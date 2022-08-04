@@ -8,9 +8,8 @@ from dagster import (
     DependencyDefinition,
     MetadataEntry,
     Output,
-    _check as check,
-    execute_solid,
 )
+from dagster import _check as check
 from dagster._legacy import (
     InputDefinition,
     OutputDefinition,

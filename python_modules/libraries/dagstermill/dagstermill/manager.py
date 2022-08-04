@@ -2,7 +2,8 @@ import os
 import pickle
 import uuid
 
-from dagster import AssetMaterialization, ExpectationResult, Failure, TypeCheck, _check as check
+from dagster import AssetMaterialization, ExpectationResult, Failure, TypeCheck
+from dagster import _check as check
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import RetryRequested
 from dagster._core.definitions.pipeline_base import InMemoryPipeline

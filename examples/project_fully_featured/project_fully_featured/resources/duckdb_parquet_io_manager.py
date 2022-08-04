@@ -3,7 +3,9 @@ import os
 import duckdb
 import pandas as pd
 
-from dagster import Field, _check as check, io_manager
+from dagster import Field
+from dagster import _check as check
+from dagster import io_manager
 from dagster._seven.temp_dir import get_system_temp_directory
 
 from .parquet_io_manager import PartitionedParquetIOManager

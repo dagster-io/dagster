@@ -25,8 +25,8 @@ from dagster import (
     Set,
     String,
     Tuple,
-    _check as check,
 )
+from dagster import _check as check
 from dagster._legacy import InputDefinition, execute_pipeline, execute_solid, pipeline, solid
 
 

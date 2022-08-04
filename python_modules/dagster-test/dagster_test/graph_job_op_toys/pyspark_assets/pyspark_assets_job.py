@@ -1,7 +1,8 @@
 import os
 
 from pyspark.sql import SparkSession, Window
-from pyspark.sql.functions import col, concat, lit, max as pyspark_max
+from pyspark.sql.functions import col, concat, lit
+from pyspark.sql.functions import max as pyspark_max
 
 from dagster import Field, In, String, graph, op, resource
 

@@ -38,13 +38,10 @@ known_first_party = ['dagster']
 profile = "black"
 
 # Sorts uppercase imports before lowercase improts.
-case_sensitive = true
-
-# Don't require separate import statemets for every aliased import.
-combine_as_imports = true
+case_sensitive=true
 
 # profile=black just sets defaults, it won't read our line-length override in black's config
-line_length = 100
+line_length=100
 
 # ########################
 # ##### MYPY
@@ -122,7 +119,7 @@ show_error_codes = true
 py-version = 3.6
 
 # Contains assorted Dagster-specific checks (for dev purposes, not users).
-load-plugins=['dagster._utils.linter']
+load-plugins=['dagster.utils.linter']
 
 [tool.pylint.messages-control]
 disable=[

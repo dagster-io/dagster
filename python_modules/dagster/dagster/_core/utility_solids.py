@@ -1,4 +1,5 @@
-from dagster import Output, _check as check
+from dagster import Output
+from dagster import _check as check
 from dagster._core.definitions import (
     InputDefinition,
     OutputDefinition,

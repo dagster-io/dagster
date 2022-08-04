@@ -2,21 +2,19 @@ import typing as t
 from abc import abstractmethod
 from enum import Enum as PythonEnum
 from functools import partial
-from typing import (
-    AbstractSet as TypingAbstractSet,
-    Iterator as TypingIterator,
-    Mapping,
-    Optional as TypingOptional,
-    Sequence,
-    cast,
-)
+from typing import AbstractSet as TypingAbstractSet
+from typing import Iterator as TypingIterator
+from typing import Mapping
+from typing import Optional as TypingOptional
+from typing import Sequence, cast
 
 from typing_compat import get_args, get_origin
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._builtins import BuiltinEnum
-from dagster._config import Array, ConfigType, Noneable as ConfigNoneable
+from dagster._config import Array, ConfigType
+from dagster._config import Noneable as ConfigNoneable
 from dagster._core.definitions.events import DynamicOutput, Output, TypeCheck
 from dagster._core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
@@ -859,7 +857,8 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         is_supported_runtime_python_builtin,
         remap_python_builtin_for_runtime,
     )
-    from .python_dict import Dict as DDict, PythonDict
+    from .python_dict import Dict as DDict
+    from .python_dict import PythonDict
     from .python_set import DagsterSetApi, PythonSet
     from .python_tuple import DagsterTupleApi, PythonTuple
     from .transform_typing import transform_typing_type
