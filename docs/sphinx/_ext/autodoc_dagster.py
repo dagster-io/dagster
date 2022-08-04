@@ -1,12 +1,22 @@
 import json
 import textwrap
-from typing import Any, List
+from typing import Any, List, Tuple, Type, Union, cast
 
+import dagster._check as check
 from dagster import BoolSource, Field, IntSource, StringSource
-from dagster._config import ConfigType, ConfigTypeKind
+from dagster._annotations import is_public
+from dagster._config.config_type import (
+    Array,
+    ConfigScalar,
+    ConfigType,
+    ConfigTypeKind,
+    Enum,
+    Noneable,
+    ScalarUnion,
+)
 from dagster._core.definitions.configurable import ConfigurableDefinition
 from dagster._serdes import ConfigurableClass
-from sphinx.ext.autodoc import DataDocumenter  # pylint: disable=import-error,no-name-in-module
+from sphinx.ext.autodoc import ClassDocumenter, DataDocumenter, ObjectMembers
 
 
 def type_repr(config_type: ConfigType) -> str:
@@ -26,10 +36,13 @@ def type_repr(config_type: ConfigType) -> str:
     elif config_type.kind == ConfigTypeKind.ANY:
         return "Any"
     elif config_type.kind == ConfigTypeKind.SCALAR:
+        config_type = cast(ConfigScalar, config_type)
         return config_type.scalar_kind.name.lower()
     elif config_type.kind == ConfigTypeKind.ENUM:
+        config_type = cast(Enum, config_type)
         return "Enum{" + ", ".join(str(val) for val in config_type.config_values) + "}"
     elif config_type.kind == ConfigTypeKind.ARRAY:
+        config_type = cast(Array, config_type)
         return "List[{}]".format(type_repr(config_type.inner_type))
     elif config_type.kind == ConfigTypeKind.SELECTOR:
         return "selector"
@@ -40,11 +53,15 @@ def type_repr(config_type: ConfigType) -> str:
     elif config_type.kind == ConfigTypeKind.MAP:
         return "dict"
     elif config_type.kind == ConfigTypeKind.SCALAR_UNION:
+        config_type = cast(ScalarUnion, config_type)
         return (
             f"Union[{type_repr(config_type.scalar_type)}, {type_repr(config_type.non_scalar_type)}]"
         )
     elif config_type.kind == ConfigTypeKind.NONEABLE:
+        config_type = cast(Noneable, config_type)
         return f"Union[{type_repr(config_type.inner_type)}, None]"
+    else:
+        raise Exception(f"Unhandled config type {config_type}")
 
 
 def config_field_to_lines(field, name=None) -> List[str]:
@@ -99,10 +116,8 @@ class ConfigurableDocumenter(DataDocumenter):
     directivetype = "data"
 
     @classmethod
-    def can_document_member(
-        cls, member: Any, _membername: str, _isattr: bool, _parent: Any
-    ) -> bool:
-        return isinstance(member, ConfigurableDefinition) or isinstance(member, ConfigurableClass)
+    def can_document_member(cls, member: Any, _membername: str, _isattr: bool, _parent: Any) -> bool:
+        return isinstance(member, ConfigurableDefinition) or isinstance(member, type) and issubclass(member, ConfigurableClass)
 
     def add_content(self, more_content, no_docstring: bool = False) -> None:
         source_name = self.get_sourcename()
@@ -111,10 +126,13 @@ class ConfigurableDocumenter(DataDocumenter):
         self.add_line("|", source_name)
         self.add_line("", source_name)
 
-        if isinstance(self.object, ConfigurableDefinition):
-            config_field = self.object.config_schema.as_field()
-        elif issubclass(self.object, ConfigurableClass):
+        obj = cast(Union[ConfigurableDefinition, Type[ConfigurableClass]], self.object)
+        config_field = None
+        if isinstance(obj, ConfigurableDefinition):
+            config_field = check.not_none(self.object.config_schema).as_field()
+        elif isinstance(obj, type) and issubclass(obj, ConfigurableClass):
             config_field = Field(self.object.config_type())
+
         for line in config_field_to_lines(config_field):
             self.add_line(line, source_name)
 
@@ -123,9 +141,28 @@ class ConfigurableDocumenter(DataDocumenter):
         super().add_content(more_content, no_docstring)
 
 
+class DagsterClassDocumenter(ClassDocumenter):
+    """Overrides the default autodoc ClassDocumenter to adds some extra options."""
+    objtype = "class"
+
+    option_spec = ClassDocumenter.option_spec.copy()
+    option_spec["deprecated_aliases"] = lambda str: [s.strip() for s in str.split(",")]
+
+    def add_content(self, *args, **kwargs):
+        super().add_content(*args, **kwargs)
+        source_name = self.get_sourcename()
+        for alias in self.options.get('deprecated_aliases', []):
+            self.add_line(f"ALIAS: {alias}", source_name)
+
+    def get_object_members(self, want_all: bool) -> Tuple[bool, ObjectMembers]:
+        _, unfiltered_members = super().get_object_members(want_all)
+        return False, [m for m in unfiltered_members if is_public(m[1])]
+
 def setup(app):
     app.setup_extension("sphinx.ext.autodoc")  # Require autodoc extension
     app.add_autodocumenter(ConfigurableDocumenter)
+    # override allows `.. autoclass::` to invoke DagsterClassDocumenter instead of default
+    app.add_autodocumenter(DagsterClassDocumenter, override=True)
 
     return {
         "version": "0.1",

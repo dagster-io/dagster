@@ -49,8 +49,15 @@ extensions = [
     "nbsphinx",
     "sphinx.ext.autosectionlabel",
     "recommonmark",
+
+    # Directives for automatically documenting CLIS built with the `click` package.
+    "sphinx_click.ext",
+
+    # Elementl-authored extension with custom directives and sphinx processing.
+    "autodoc_dagster",
+
+    # Renders a collapsible HTML component. Used by autodoc_dagster.
     "sphinx_toolbox.collapse",
-    "autodoc_configurable",
 ]
 
 # https://stackoverflow.com/a/54843636/324449
