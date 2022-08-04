@@ -56,7 +56,6 @@
   steps:
     - Click asset, navigate to Lineage tab
 
-
 #################
 # Concepts: misc
 #################
@@ -157,6 +156,8 @@
 
 - path: concepts/partitions-schedules-sensors/partitions-page.png
   url: https://demo.elementl.show/workspace/hacker_news_prod@hacker-news/jobs/hacker_news_api_download/partitions
+  steps:
+    - login
   vetted: false
 
 - path: concepts/partitions-schedules-sensors/backfills-launch-modal.png
