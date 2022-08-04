@@ -267,18 +267,18 @@
   {
     "title": "Deployment",
     "icon": "CloudUpload",
-    "path": "/deployment",
     "children": [
       {
-        "title": "Dagster Deployments",
+        "title": "Open Source",
+        "path": "/deployment",
         "children": [
           {
-            "title": "Overview",
+            "title": "Overview and architecture",
             "path": "/deployment/overview"
           },
           {
-            "title": "Dagster Instance",
-            "path": "/deployment/dagster-instance"
+            "title": "Concepts",
+            "path": "/deployment/concepts"
           },
           {
             "title": "Guides",
@@ -287,31 +287,32 @@
         ]
       },
       {
-        "title": "Other Deployment Guides",
+        "title": "Cloud",
+        "path": "/dagster-cloud",
         "children": [
           {
-            "title": "Running Dagster as a Service",
-            "path": "/deployment/guides/service"
+            "title": "Getting started",
+            "path": "/dagster-cloud/getting-started"
           },
           {
-            "title": "Deploying Dagster to Docker",
-            "path": "/deployment/guides/docker"
+            "title": "Understanding deployment types",
+            "path": "/dagster-cloud/deployment"
           },
           {
-            "title": "Deploying Dagster to AWS",
-            "path": "/deployment/guides/aws"
+            "title": "Managing your account",
+            "path": "/dagster-cloud/account"
           },
           {
-            "title": "Deploying Dagster to GCP",
-            "path": "/deployment/guides/gcp"
+            "title": "Configuring authentication",
+            "path": "/dagster-cloud/account/authentication"
           },
           {
-            "title": "Executing on Celery",
-            "path": "/deployment/guides/celery"
+            "title": "Managing Hybrid agents",
+            "path": "/dagster-cloud/deployment/agents"
           },
           {
-            "title": "Executing on Dask",
-            "path": "/deployment/guides/dask"
+            "title": "Developing and testing",
+            "path": "/dagster-cloud/developing-testing"
           }
         ]
       }
