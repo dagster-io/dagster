@@ -5,15 +5,17 @@ ARG DAGSTER_VERSION
 
 COPY build_cache/ /
 
+# All packages are hard-pinned to `dagster`, so setting the version on just `DAGSTER` will ensure
+# compatible versions.
 RUN pip install \
     dagit==${DAGSTER_VERSION} \
-    dagster==${DAGSTER_VERSION} \
-    dagster-aws==${DAGSTER_VERSION} \
-    dagster-celery[flower,redis,kubernetes]==${DAGSTER_VERSION} \
-    dagster-celery-k8s==${DAGSTER_VERSION} \
-    dagster-graphql==${DAGSTER_VERSION} \
-    dagster-k8s==${DAGSTER_VERSION} \
-    dagster-postgres==${DAGSTER_VERSION}
+    dagster \
+    dagster-aws \
+    dagster-celery[flower,redis,kubernetes] \
+    dagster-celery-k8s \
+    dagster-graphql \
+    dagster-k8s \
+    dagster-postgres
 
 COPY example_project/ /
 WORKDIR /example_project
