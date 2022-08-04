@@ -63,13 +63,14 @@ class _Hook:
 
 @overload
 def event_list_hook(
-    name: Callable[..., Any],
+    hook_fn: Callable,
 ) -> HookDefinition:
     pass
 
 
 @overload
 def event_list_hook(
+    *,
     name: Optional[str] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
     decorated_fn: Optional[Callable[..., Any]] = ...,
@@ -78,7 +79,9 @@ def event_list_hook(
 
 
 def event_list_hook(
-    name: Optional[Union[Callable[..., Any], str]] = None,
+    hook_fn: Optional[Callable] = None,
+    *,
+    name: Optional[str] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     decorated_fn: Optional[Callable[..., Any]] = None,
 ) -> Union[HookDefinition, _Hook]:
@@ -119,9 +122,9 @@ def event_list_hook(
     """
     # This case is for when decorator is used bare, without arguments.
     # e.g. @event_list_hook versus @event_list_hook()
-    if callable(name):
+    if hook_fn is not None:
         check.invariant(required_resource_keys is None)
-        return _Hook()(name)
+        return _Hook()(hook_fn)
 
     return _Hook(
         name=name, required_resource_keys=required_resource_keys, decorated_fn=decorated_fn
@@ -132,12 +135,13 @@ SuccessOrFailureHookFn = Callable[["HookContext"], Any]
 
 
 @overload
-def success_hook(name: SuccessOrFailureHookFn) -> HookDefinition:
+def success_hook(hook_fn: SuccessOrFailureHookFn) -> HookDefinition:
     ...
 
 
 @overload
 def success_hook(
+    *,
     name: Optional[str] = ...,
     required_resource_keys: Optional[AbstractSet[str]] = ...,
 ) -> Callable[[SuccessOrFailureHookFn], HookDefinition]:
@@ -145,7 +149,9 @@ def success_hook(
 
 
 def success_hook(
-    name: Optional[Union[SuccessOrFailureHookFn, str]] = None,
+    hook_fn: Optional[SuccessOrFailureHookFn] = None,
+    *,
+    name: Optional[str] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
 ) -> Union[HookDefinition, Callable[[SuccessOrFailureHookFn], HookDefinition]]:
     """Create a hook on step success events with the specified parameters from the decorated function.
@@ -183,7 +189,7 @@ def success_hook(
         else:
             _name = name
 
-        @event_list_hook(_name, required_resource_keys, decorated_fn=fn)
+        @event_list_hook(name=_name, required_resource_keys=required_resource_keys, decorated_fn=fn)
         def _success_hook(
             context: "HookContext", event_list: List["DagsterEvent"]
         ) -> HookExecutionResult:
@@ -198,9 +204,9 @@ def success_hook(
         return _success_hook
 
     # This case is for when decorator is used bare, without arguments, i.e. @success_hook
-    if callable(name):
+    if hook_fn is not None:
         check.invariant(required_resource_keys is None)
-        return wrapper(name)
+        return wrapper(hook_fn)
 
     return wrapper
 
@@ -256,7 +262,7 @@ def failure_hook(
         else:
             _name = name
 
-        @event_list_hook(_name, required_resource_keys, decorated_fn=fn)
+        @event_list_hook(name=_name, required_resource_keys=required_resource_keys, decorated_fn=fn)
         def _failure_hook(
             context: "HookContext", event_list: List["DagsterEvent"]
         ) -> HookExecutionResult:

@@ -83,12 +83,13 @@ class _Op:
 
 
 @overload
-def op(name: Callable[..., Any]) -> "OpDefinition":
+def op(compute_fn: Callable[..., Any]) -> "OpDefinition":
     ...
 
 
 @overload
 def op(
+    *,
     name: Optional[str] = ...,
     description: Optional[str] = ...,
     ins: Optional[Dict[str, In]] = ...,
@@ -103,7 +104,9 @@ def op(
 
 
 def op(
-    name: Optional[Union[Callable[..., Any], str]] = None,
+    compute_fn: Optional[Callable] = None,
+    *,
+    name: Optional[str] = None,
     description: Optional[str] = None,
     ins: Optional[Dict[str, In]] = None,
     out: Optional[Union[Out, Mapping[str, Out]]] = None,
@@ -183,15 +186,14 @@ def op(
                 return 'cool', 4
     """
 
-    # This case is for when decorator is used bare, without arguments. e.g. @op versus @op()
-    if callable(name):
+    if compute_fn is not None:
         check.invariant(description is None)
         check.invariant(config_schema is None)
         check.invariant(required_resource_keys is None)
         check.invariant(tags is None)
         check.invariant(version is None)
 
-        return _Op()(name)
+        return _Op()(compute_fn)
 
     return _Op(
         name=name,

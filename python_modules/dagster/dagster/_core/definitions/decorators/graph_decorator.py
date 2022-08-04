@@ -102,12 +102,13 @@ class _Graph:
 
 
 @overload
-def graph(name: Callable[..., Any]) -> GraphDefinition:
+def graph(compose_fn: Callable) -> GraphDefinition:
     ...
 
 
 @overload
 def graph(
+    *,
     name: Optional[str] = ...,
     description: Optional[str] = ...,
     input_defs: Optional[List[InputDefinition]] = ...,
@@ -121,7 +122,9 @@ def graph(
 
 
 def graph(
-    name: Optional[Union[Callable[..., Any], str]] = None,
+    compose_fn: Optional[Callable] = None,
+    *,
+    name: Optional[str] = None,
     description: Optional[str] = None,
     input_defs: Optional[List[InputDefinition]] = None,
     output_defs: Optional[List[OutputDefinition]] = None,
@@ -172,9 +175,9 @@ def graph(
             `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
             values provided at invocation time.
     """
-    if callable(name):
+    if compose_fn is not None:
         check.invariant(description is None)
-        return _Graph()(name)
+        return _Graph()(compose_fn)
 
     config_mapping = None
     # Case 1: a dictionary of config is provided, convert to config mapping.
