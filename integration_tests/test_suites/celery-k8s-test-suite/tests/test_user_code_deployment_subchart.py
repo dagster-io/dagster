@@ -36,11 +36,9 @@ def test_execute_on_celery_k8s_subchart_disabled(  # pylint: disable=redefined-o
     run_config_dict = {
         "resources": {"io_manager": {"config": {"s3_bucket": "dagster-scratch-80542c2"}}},
         "execution": {
-            "celery-k8s": {
-                "config": {
-                    "image_pull_policy": image_pull_policy(),
-                    "job_namespace": namespace,
-                }
+            "config": {
+                "image_pull_policy": image_pull_policy(),
+                "job_namespace": namespace,
             }
         },
         "loggers": {"console": {"config": {"log_level": "DEBUG"}}},
@@ -73,7 +71,6 @@ def test_execute_on_celery_k8s_subchart_disabled(  # pylint: disable=redefined-o
         stdin=False,
         stdout=True,
         tty=False,
-        _preload_content=False,
     )
     print("Response: ")
     print(resp)
