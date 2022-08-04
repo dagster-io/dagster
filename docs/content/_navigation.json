@@ -299,7 +299,7 @@
               },
               {
                 "title": "Run coordinators",
-                "path": "/deployment/run-coordinators"
+                "path": "/deployment/run-coordinator"
               },
               {
                 "title": "Run monitoring",
