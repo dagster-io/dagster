@@ -34,7 +34,8 @@ if TYPE_CHECKING:
     from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.execution.context.output import OutputContext
 
-TOut = TypeVar("TOut", bound="OutputDefinition")
+TOutputDefinition = TypeVar("TOutputDefinition", bound="OutputDefinition")
+TOut = TypeVar("TOut", bound="Out")
 
 
 class OutputDefinition:
@@ -250,7 +251,9 @@ class OutputDefinition:
                 description=inferred.description,
             )
 
-    def combine_with_inferred(self: TOut, inferred: InferredOutputProps) -> TOut:
+    def combine_with_inferred(
+        self: TOutputDefinition, inferred: InferredOutputProps
+    ) -> TOutputDefinition:
         dagster_type = self.dagster_type
         if self._type_not_set:
             dagster_type = _checked_inferred_type(inferred.annotation)
@@ -438,9 +441,10 @@ class Out(
             asset_partitions_def=asset_partitions_def,
         )
 
-    @staticmethod
-    def from_definition(output_def: "OutputDefinition"):
-        return Out(
+    @classmethod
+    def from_definition(cls, output_def: "OutputDefinition"):
+        klass = Out if not output_def.is_dynamic else DynamicOut
+        return klass(
             dagster_type=output_def.dagster_type,
             description=output_def.description,
             is_required=output_def.is_required,
@@ -458,7 +462,9 @@ class Out(
             else _checked_inferred_type(annotation_type)
         )
 
-        return OutputDefinition(
+        klass = OutputDefinition if not self.is_dynamic else DynamicOutputDefinition
+
+        return klass(
             dagster_type=dagster_type,
             name=name,
             description=self.description,
@@ -466,6 +472,30 @@ class Out(
             io_manager_key=self.io_manager_key,
             metadata=self.metadata,
             asset_key=self.asset_key,
+            asset_partitions=self.asset_partitions,
+            asset_partitions_def=self.asset_partitions_def,
+        )
+
+    @property
+    def is_dynamic(self) -> bool:
+        return False
+
+    def combine_with_inferred(self: TOut, inferred: InferredOutputProps) -> TOut:
+        dagster_type = self.dagster_type
+        if dagster_type == NoValueSentinel:
+            dagster_type = _checked_inferred_type(inferred.annotation)
+        if self.description is None:
+            description = inferred.description
+        else:
+            description = self.description
+
+        return self.__class__(
+            dagster_type=dagster_type,
+            description=description,
+            is_required=self.is_required,
+            io_manager_key=self.io_manager_key,
+            metadata=self.metadata,
+            asset_key=cast(Optional[AssetKey], self.asset_key),
             asset_partitions=self.asset_partitions,
             asset_partitions_def=self.asset_partitions_def,
         )
@@ -526,6 +556,10 @@ class DynamicOut(Out):
             asset_key=self.asset_key,
             asset_partitions=self.asset_partitions,
         )
+
+    @property
+    def is_dynamic(self) -> bool:
+        return True
 
 
 class GraphOut(NamedTuple("_GraphOut", [("description", PublicAttr[Optional[str]])])):
