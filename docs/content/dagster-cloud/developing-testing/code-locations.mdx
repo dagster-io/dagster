@@ -1,7 +1,245 @@
 ---
-title: "Adding code locations to Dagster Cloud  | Dagster Docs"
+title: "Managing code locations in Dagster Cloud | Dagster Docs"
 
 noindex: True
 ---
 
-# Adding code locations to Dagster Cloud
+# Managing code locations in Dagster Cloud
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+In this guide, we'll cover the requirements for Dagster code, how to add code in Dagster Cloud, and how to add code using the `dagster-cloud` CLI.
+
+---
+
+## Understanding code locations
+
+<Note>
+  Learn by example? Check out the{" "}
+  <a href="https://github.com/dagster-io/hooli-data-eng-pipelines">
+    example repo
+  </a>
+  , which is set up to run in Dagster Cloud.
+</Note>
+
+For an example of a Github repo set up to run in Dagster Cloud, see our
+
+A code location specifies a single Python package or file that defines your Dagster code. When you add a code location in Dagster Code, you're instructing the agent where to find your code.
+
+When you add or update a code location, the agent uses the location configuration to load your code and upload metadata about your jobs to Dagster Cloud. Each Dagster Cloud instance deployment can include code from one or more code locations.
+
+Note that, unlike Dagster Open Source, Dagster Cloud doesn't require a `workspace.yaml` file. Instead, you use the Dagster Cloud API to configure your workspace. You can still create a `workspace.yaml` file if you want to load your code in an open-source Dagit instance, but doing so won't affect how your code is loaded in Dagster Cloud.
+
+---
+
+## Dagster Cloud code requirements
+
+To work with Dagster Cloud, your Dagster code:
+
+- **Must be loaded from a single entry point, either a Python file or package.** This entry point can load repositories from other files or packages.
+
+- **Must run in an environment where the `dagster` and `dagster-cloud` 0.13.2 or later Python packages are installed.**
+
+- **If using a [Hybrid deployment](/dagster-cloud/deployment/hybrid)**:
+
+  - **And you're using an Amazon Elastic Container Service (ECS), Kubernetes, or Docker agent**, your code must be packaged into a Docker image and pushed to a registry your agent can access. Dagster Cloud doesn't need access to your image - your agent only needs to be able to pull it.
+
+    Additionally, the Dockerfile for your image doesn't need to specify an entry point or command. These will be supplied by the agent when it runs your code using your supplied image.
+
+  - **And you're using a local agent**, your code must be in a Python environment that can be accessed on the same machine as your agent.
+
+Additionally, note that:
+
+- Your code doesn't need to use the same version of Dagster as your agent
+- Different code locations can use different versions of Dagster
+
+---
+
+## Managing code locations in Dagster Cloud
+
+<Note>
+  <strong>Editor</strong>, <strong>Admin</strong>, or{" "}
+  <strong>Organization Admin</strong> permissions are required to manage code
+  locations in Dagster Cloud.
+</Note>
+
+- [Adding code locations](#adding-code-locations)
+- [Modifying code locations](#modifying-code-locations)
+- [Redeploying code locations](#redeploying-code-locations)
+- [Deleting code locations](#deleting-code-locations)
+
+### Adding code locations
+
+1. Sign in to your Dagster Cloud account.
+
+2. Click **Workspace**.
+
+3. Click **+ Add code location**. This will open a YAML editor with a schema describing the acceptable fields:
+
+   <Image
+   alt="Add Code Location Config Editor"
+   src="/images/dagster-cloud/developing-testing/code-locations/add_location_dagit_config.png"
+   width={1118}
+   height={511}
+   />
+
+4. In the editor, define the code location's configuration:
+
+   - `code_source` - Set this key to either `python_file:` or `package_name:` to specify where to find your code
+
+   - `executable_path` **Optional**. Define a specific Python executable if your code should run in a certain Python environment.
+
+     If not set, the code will run using the default `dagster` command-line entry-point.
+
+   - `image` - **Required if not using a local agent.** Specifies a Docker image for use with containerized agents.
+
+   - `working_directory` - Specifies the directory to use to resolve relative Python imports while loading your code.
+
+   - `attribute` - Specifies only a specific Dagster repository should be loaded
+
+   - `container_context` - **Optional. For agent versions 0.14.9 and later.** Customizes the code location for a specific execution environment. Refer to the [Agent documentation](/dagster-cloud/deployment/agents) for info on available configuration options for each agent type.
+
+   For example, the following config specifies that a code location should include a secret named `my_secret` and run in a k8s namespace (`my_namespace`) whenever the Kubernetes agent creates a pod for the location:
+
+   ```yaml
+   location_name: cloud-examples
+   image: dagster/dagster-cloud-examples:latest
+   code_source:
+     package_name: dagster_cloud_examples
+   container_context:
+     k8s:
+       namespace: my_namespace - my_secret
+   ```
+
+<!-- ```yaml
+location_name: cloud-examples
+image: dagster/dagster-cloud-examples:latest
+code_source:
+  package_name: dagster_cloud_examples
+``` -->
+
+5. When finished, click **Add code location**.
+
+The agent will attempt to load your code and send its metadata to Dagster Cloud. **Note**: This may take some time.
+
+Once your code has loaded, the location will show a green **Loaded** status and jobs will appear in Dagster Cloud. If the agent is unable to load your code, the location will show an error with more information.
+
+### Modifying code locations
+
+To modify a code location, click the **dropdown menu** to the right of the location. In the menu, click **Modify**:
+
+<Image
+alt="Highlighted Modify option in the dropdown menu next to a code location in Dagster Cloud"
+src="/images/dagster-cloud/developing-testing/code-locations/modify-code-location.png"
+width={1940}
+height={480}
+/>
+
+After a code location is updated, the agent will perform a rolling update of your code and jobs will update in Dagster Cloud. **Note**: Updating code won't interrupt any currently launched runs.
+
+### Redeploying code locations
+
+To reload your code and upload job metadata to Dagster Cloud without modifying the code location, click the **Redeploy** button:
+
+<Image
+alt="Highlighted Redeploy option in the dropdown menu next to a code location in Dagster Cloud"
+src="/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png"
+width={1920}
+height={284}
+/>
+
+For example, if the agent was unable to pull your image due to a permissions issue that's since been addressed, clicking **Redeploy** will tell the agent to try again.
+
+### Deleting code locations
+
+To delete a code location, click the **dropdown menu** to the right of the location. In the menu, click **Remove**:
+
+<Image
+alt="Highlighted Remove option in the dropdown menu next to a code location in Dagster Cloud"
+src="/images/dagster-cloud/developing-testing/code-locations/delete-code-location.png"
+width={1940}
+height={480}
+/>
+
+When prompted, confirm the deletion.
+
+---
+
+## Managing code locations using the dagster-cloud CLI
+
+You can also use the `dagster-cloud workspace` CLI commands to:
+
+- [Add and update code locations](#adding-and-updating-code-locations)
+- [Delete code locations](#deleting-code-locations-1)
+- [Sync the workspace and remote](#syncing-the-workspace)
+
+These commands perform the same underlying operations as editing your code locations in the **Workspace** tab in Dagster Cloud. Refer to the [dagster-cloud CLI guide](/dagster-cloud/developing-testing/dagster-cloud-cli) for more info and installation instructions.
+
+### Adding and updating code locations
+
+You can add or update a code location with the `add-location` command. For example, to add our public example image, you can run:
+
+```shell
+# Set up YAML file for example location
+cat > example_location.yaml <<EOL
+location_name: cloud-examples
+image: dagster/dagster-cloud-examples:latest
+code_source:
+  package_name: dagster_cloud_examples
+EOL
+
+dagster-cloud workspace add-location --from example_location.yaml
+```
+
+Instead of creating a YAML file, you may also pass these values inline as command line options:
+
+```shell
+dagster-cloud workspace add-location test_location \
+    --image dagster/dagster-cloud-examples:latest \
+    --package-name dagster_cloud_examples
+```
+
+You may also selectively overwrite parts of your YAML input using inline options:
+
+    dagster-cloud workspace add-location \
+        --from example_location.yaml \
+        --image dagster/dagster-cloud-examples:1d9c5d
+
+The arguments to the `add-location` and `update-location` commands are similar to the [keys in the YAML config editor in the **Workspace** tab](#adding-code-locations). Run `dagster-cloud workspace add-location --help` to see all available options.
+
+**Note**: If updating an existing code location, the full set of information about the location must be specified even if only one piece of configuration is modified.
+
+### Deleting code locations
+
+Delete an existing code location from Dagster Cloud using the `delete-location` command:
+
+```shell
+dagster-cloud workspace delete-location test_location
+```
+
+### Syncing the workspace
+
+You can also keep the YAML configuration for your entire workspace in a file and use the `dagster-cloud sync` command to reconcile the workspace config in Dagster Cloud with that local file.
+
+For example, if you have the following `cloud_workspace.yaml` file:
+
+```yaml caption=cloud_workspace.yaml
+locations:
+  - location_name: machine-learning
+    image: myregistry/dagster-machine-learning:mytag
+    code_source:
+      package_name: dagster_cloud_machine_learning
+    executable_path: /my/folder/python_executable
+    attribute: my_repo
+  - location_name: data-eng
+    image: myregistry/dagster-data-eng:myothertag
+    code_source:
+      python_file: repo.py
+    working_directory: /my/folder/working_dir/
+```
+
+Reconcile the above file with Dagster Cloud's remote workspace by running:
+
+```shell
+dagster-cloud workspace sync -w cloud_workspace.yaml
+```
