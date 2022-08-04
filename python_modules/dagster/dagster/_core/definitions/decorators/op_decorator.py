@@ -10,7 +10,6 @@ from ..output import Out
 from ..policy import RetryPolicy
 from ..utils import DEFAULT_OUTPUT
 from .solid_decorator import DecoratedSolidFunction, NoContextDecoratedSolidFunction
-from ..inference import infer_input_props, infer_output_props
 
 if TYPE_CHECKING:
     from ..op_definition import OpDefinition
@@ -63,14 +62,9 @@ class _Op:
 
         outs: Optional[Mapping[str, Out]] = None
         if self.out is not None and isinstance(self.out, Out):
-            outs = {DEFAULT_OUTPUT: self.out.combine_with_inferred(infer_output_props(fn))}
+            outs = {DEFAULT_OUTPUT: self.out}
         elif self.out is not None:
             outs = check.mapping_param(self.out, "out", key_type=str, value_type=Out)
-
-            outs = {
-                name: out.combine_with_inferred(infer_output_props(fn))
-                for name, out in outs.items()
-            }
 
         op_def = OpDefinition(
             name=self.name,

@@ -124,6 +124,10 @@ def test_ins_dagster_types():
 def test_out():
     @op(out=Out(metadata={"x": 1}))
     def my_op() -> int:
+        """
+        Returns:
+            int: some int
+        """
         return 1
 
     assert my_op.outs == {
@@ -132,6 +136,7 @@ def test_out():
             dagster_type=Int,
             is_required=True,
             io_manager_key="io_manager",
+            description="some int",
         )
     }
     assert my_op.output_defs[0].metadata == {"x": 1}
@@ -150,9 +155,14 @@ def test_out_dagster_types():
 def test_multi_out():
     @op(out={"a": Out(metadata={"x": 1}), "b": Out(metadata={"y": 2})})
     def my_op() -> Tuple[int, str]:
+        """
+        Returns:
+            Tuple[int, str]: A tuple of values
+        """
         return 1, "q"
 
     assert len(my_op.output_defs) == 2
+    assert all([output_def.description is None for output_def in my_op.output_defs])
 
     assert my_op.outs == {
         "a": Out(
