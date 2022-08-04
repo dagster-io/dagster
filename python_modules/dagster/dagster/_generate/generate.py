@@ -47,22 +47,6 @@ def generate_project(path: str):
     click.echo(f"Generated files for Dagster project in {path}.")
 
 
-def generate_new_project(path: str):
-    """
-    [Deprecated]
-    Generates a new repository skeleton in the filesystem at `path`.
-
-    The name of the repository is the base of `path`.
-    """
-    NEW_PROJECT_PLACEHOLDER = "new_project"
-
-    _generate_files_from_template(
-        path=path,
-        name_placeholder=NEW_PROJECT_PLACEHOLDER,
-        project_template_path=os.path.join(os.path.dirname(__file__), NEW_PROJECT_PLACEHOLDER),
-    )
-
-
 def _generate_files_from_template(
     path: str, name_placeholder: str, project_template_path: str, skip_mkdir: bool = False
 ):

@@ -50,7 +50,7 @@ if __name__ == "__main__":
                 "dagster/core/storage/event_log/sqlite/alembic/*",
                 "dagster/core/storage/runs/sqlite/alembic/*",
                 "dagster/core/storage/schedules/sqlite/alembic/*",
-                "dagster/generate/new_project/*",
+                "dagster/_generate/templates/*",
                 "dagster/grpc/protos/*",
             ]
         },

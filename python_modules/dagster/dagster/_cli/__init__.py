@@ -10,7 +10,6 @@ from .asset import asset_cli
 from .debug import debug_cli
 from .instance import instance_cli
 from .job import job_cli
-from .new_project import new_project_cli
 from .pipeline import pipeline_cli
 from .project import project_cli
 from .run import run_cli
@@ -29,7 +28,6 @@ def create_dagster_cli():
         "sensor": sensor_cli,
         "asset": asset_cli,
         "debug": debug_cli,
-        "new-project": new_project_cli,
         "project": project_cli,
     }
 
