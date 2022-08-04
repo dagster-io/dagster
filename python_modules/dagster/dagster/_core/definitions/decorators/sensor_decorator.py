@@ -23,8 +23,8 @@ if TYPE_CHECKING:
 
 
 def sensor(
-    *,
     job_name: Optional[str] = None,
+    *,
     name: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
