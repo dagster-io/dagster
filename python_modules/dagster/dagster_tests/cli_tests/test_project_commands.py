@@ -69,8 +69,8 @@ def test_from_example_command_succeeds():
         )
         assert result.exit_code == 0
         assert os.path.exists("my_dagster_project")
-        assert os.path.exists("my_dagster_project/project_fully_featured")
-        assert os.path.exists("my_dagster_project/project_fully_featured_tests")
+        assert os.path.exists("my_dagster_project/assets_dbt_python")
+        assert os.path.exists("my_dagster_project/assets_dbt_python_tests")
         # ensure we filter out tox.ini because it's used in our own CI
         assert not os.path.exists("my_dagster_project/tox.ini")
 
