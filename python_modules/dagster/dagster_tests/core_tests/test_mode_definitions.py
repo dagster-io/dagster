@@ -1,7 +1,7 @@
 import logging
 
 import pytest
-from dagster_tests.general_tests.test_repository import (
+from dagster_tests.general_tests.test_legacy_repository import (
     define_multi_mode_pipeline,
     define_multi_mode_with_resources_pipeline,
     define_single_mode_pipeline,

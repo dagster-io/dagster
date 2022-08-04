@@ -602,7 +602,7 @@ def _store_output(
     for materialization in manager_materializations:
         if materialization.metadata_entries and manager_metadata_entries:
             raise DagsterInvariantViolationError(
-                f"When handling output '{output_context.name}' of {output_context.solid_def.node_type_str} '{output_context.solid_def.name}', received a materialization with metadata, while context.add_output_metadata was used within the same call to handle_output. Due to potential conflicts, this is not allowed. Please specify metadata in one place within the `handle_output` function."
+                f"When handling output '{output_context.name}' of {output_context.op_def.node_type_str} '{output_context.op_def.name}', received a materialization with metadata, while context.add_output_metadata was used within the same call to handle_output. Due to potential conflicts, this is not allowed. Please specify metadata in one place within the `handle_output` function."
             )
 
         if manager_metadata_entries:

@@ -5,12 +5,12 @@ from io import BytesIO
 
 import yaml
 
-from dagster._cli.pipeline import execute_list_versions_command
+from dagster import execute_job, reconstructable
+from dagster._cli.job import execute_list_versions_command
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import execute_pipeline
 from dagster._utils import file_relative_path
 
-from ...execution_tests.memoized_dev_loop_pipeline import asset_pipeline
+from ...execution_tests.memoized_dev_loop_pipeline import asset_job
 
 
 class Capturing(list):
@@ -31,9 +31,9 @@ def test_execute_display_command():
         with instance_for_test(temp_dir=temp_dir) as instance:
 
             run_config = {
-                "solids": {
-                    "create_string_1_asset": {"config": {"input_str": "apple"}},
-                    "take_string_1_asset": {"config": {"input_str": "apple"}},
+                "ops": {
+                    "create_string_1_asset_op": {"config": {"input_str": "apple"}},
+                    "take_string_1_asset_op": {"config": {"input_str": "apple"}},
                 },
                 "resources": {"io_manager": {"config": {"base_dir": temp_dir}}},
             }
@@ -45,7 +45,7 @@ def test_execute_display_command():
 
             kwargs = {
                 "config": (os.path.join(temp_dir, "pipeline_config.yaml"),),
-                "pipeline": "asset_pipeline",
+                "pipeline": "asset_job",
                 "python_file": file_relative_path(
                     __file__, "../../execution_tests/memoized_dev_loop_pipeline.py"
                 ),
@@ -59,12 +59,8 @@ def test_execute_display_command():
 
             # execute the pipeline once so that addresses have been populated.
 
-            result = execute_pipeline(
-                asset_pipeline,
-                run_config=run_config,
-                mode="only_mode",
-                tags={"dagster/is_memoized_run": "true"},
-                instance=instance,
+            result = execute_job(
+                reconstructable(asset_job), instance=instance, run_config=run_config
             )
             assert result.success
 

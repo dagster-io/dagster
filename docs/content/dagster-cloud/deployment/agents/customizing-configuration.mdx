@@ -1,6 +1,69 @@
 ---
-title: Customizing agent configuration | Dagster Cloud
+title: Customizing agent configuration | Dagster Docs
 description: Configure your agent.
+noindex: True
+
+platform_type: "cloud"
 ---
 
 # Customizing agent configuration
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+The Dagster Cloud Agent is a special variant of the Dagster instance used in [Dagster Open Source](/deployment/dagster-instance) and is configured through the same `dagster.yaml`. You can customize your agent with these settings.
+
+**Note:** For [Kubernetes agents](/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent) deployed with the Dagster Cloud Helm chart, you'll need to refer to the Helm chart's config map for customizing the agent.
+
+---
+
+## Enabling user code server TTL
+
+User code servers support a configurable time-to-live (TTL). The agent will spin down any user code servers that haven’t served requests recently and will spin them back up the next time they’re needed. Configuring TTL can save compute cost because user code servers will spend less time sitting idle.
+
+To configure TTL:
+
+```yaml
+# dagster.yaml
+instance_class:
+  module: dagster_cloud.instance
+  class: DagsterCloudAgentInstance
+
+dagster_cloud_api:
+  agent_token:
+    env: DAGSTER_CLOUD_AGENT_TOKEN
+  deployment: prod
+
+user_code_launcher:
+  module: dagster_cloud.workspace.docker
+  class: DockerUserCodeLauncher
+  config:
+    server_ttl:
+      enabled: true
+      ttl_seconds: 7200 #2 hours
+```
+
+---
+
+## Disabling Compute Logs
+
+You can disable forwarding compute logs to Dagster Cloud by configuring the `NoOpComputeLogManager` setting:
+
+```yaml
+# dagster.yaml
+instance_class:
+  module: dagster_cloud.instance
+  class: DagsterCloudAgentInstance
+
+dagster_cloud_api:
+  agent_token:
+    env: DAGSTER_CLOUD_AGENT_TOKEN
+  deployment: prod
+
+user_code_launcher:
+  module: dagster_cloud.workspace.docker
+  class: DockerUserCodeLauncher
+
+compute_logs:
+  module: dagster.core.storage.noop_compute_log_manager
+  class: NoOpComputeLogManager
+```

@@ -904,7 +904,7 @@ def test_composition_order():
 
     @success_hook
     def test_hook(context):
-        solid_to_tags[context.solid.name] = context.solid.tags
+        solid_to_tags[context.op.name] = context.op.tags
 
     @solid
     def a_solid(_):

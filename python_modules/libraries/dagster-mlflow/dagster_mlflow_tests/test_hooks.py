@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from dagster_mlflow.hooks import _cleanup_on_success, end_mlflow_run_on_pipeline_finished
+from dagster_mlflow.hooks import _cleanup_on_success, end_mlflow_on_run_finished
 
 from dagster import Nothing, ResourceDefinition
 from dagster._legacy import InputDefinition, ModeDefinition, execute_pipeline, pipeline, solid
@@ -21,7 +21,7 @@ def test_cleanup_on_success():
         mock_solid_1,
         mock_solid_2,
     ]
-    mock_context.solid = mock_solid_2
+    mock_context.op = mock_solid_2
 
     # When: the cleanup function is called with the mock context
     _cleanup_on_success(mock_context)
@@ -32,12 +32,12 @@ def test_cleanup_on_success():
 
     # - mlflow.end_run is not called when the solid in the context is not the last solid
     mock_context.reset_mock()
-    mock_context.solid = mock_solid_1
+    mock_context.op = mock_solid_1
     _cleanup_on_success(mock_context)
     mock_context.resources.mlflow.end_run.assert_not_called()
 
 
-def test_end_mlflow_run_on_pipeline_finished():
+def test_end_mlflow_on_run_finished():
     mock_mlflow = Mock()
 
     @solid
@@ -48,7 +48,7 @@ def test_end_mlflow_run_on_pipeline_finished():
     def solid2():
         pass
 
-    @end_mlflow_run_on_pipeline_finished
+    @end_mlflow_on_run_finished
     @pipeline(
         mode_defs=[
             ModeDefinition(

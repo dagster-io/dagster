@@ -1,15 +1,12 @@
 from typing import Callable, Optional
 
-from dagster._core.definitions import OpDefinition, failure_hook
+from dagster._core.definitions import failure_hook
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.execution.context.hook import HookContext
 
 
 def _default_summary_fn(context: HookContext) -> str:
-    if isinstance(context.op, OpDefinition):
-        return f"Op {context.op.name} on job {context.job_name} failed!"
-    else:
-        return f"Solid {context.solid.name} on pipeline {context.pipeline_name} failed!"
+    return f"Op {context.op.name} on job {context.job_name} failed!"
 
 
 def _dedup_key_fn(context: HookContext) -> str:

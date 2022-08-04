@@ -28,9 +28,8 @@ def _cleanup_on_success(context):
         -1
     ].name
 
-    if context.solid.name == last_solid_name:
+    if context.op.name == last_solid_name:
         context.resources.mlflow.end_run()
 
 
-end_mlflow_run_on_pipeline_finished = _create_mlflow_run_hook("end_mlflow_run_on_pipeline_finished")
 end_mlflow_on_run_finished = _create_mlflow_run_hook("end_mlflow_on_run_finished")

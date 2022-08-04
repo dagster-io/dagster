@@ -25,7 +25,6 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.solid_definition import SolidDefinition
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.utils import build_resources_for_manager
@@ -91,7 +90,7 @@ class OutputContext:
     _metadata: Optional[Mapping[str, RawMetadataValue]]
     _mapping_key: Optional[str]
     _config: object
-    _solid_def: Optional["SolidDefinition"]
+    _op_def: Optional["OpDefinition"]
     _dagster_type: Optional["DagsterType"]
     _log: Optional["DagsterLogManager"]
     _version: Optional[str]
@@ -116,7 +115,6 @@ class OutputContext:
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         mapping_key: Optional[str] = None,
         config: object = None,
-        solid_def: Optional["SolidDefinition"] = None,
         dagster_type: Optional["DagsterType"] = None,
         log_manager: Optional["DagsterLogManager"] = None,
         version: Optional[str] = None,
@@ -138,10 +136,7 @@ class OutputContext:
         self._metadata = metadata
         self._mapping_key = mapping_key
         self._config = config
-        check.invariant(
-            solid_def is None or op_def is None, "Can't provide both a solid_def and an op_def arg"
-        )
-        self._solid_def = solid_def or op_def
+        self._op_def = op_def
         self._dagster_type = dagster_type
         self._log = log_manager
         self._version = version
@@ -179,7 +174,12 @@ class OutputContext:
             self._resources_cm.__exit__(*exc)  # pylint: disable=no-member
 
     def __del__(self):
-        if self._resources_cm and self._resources_contain_cm and not self._cm_scope_entered:
+        if (
+            hasattr(self, "_resources_cm")
+            and self._resources_cm
+            and self._resources_contain_cm
+            and not self._cm_scope_entered
+        ):
             self._resources_cm.__exit__(None, None, None)  # pylint: disable=no-member
 
     @public  # type: ignore
@@ -240,28 +240,18 @@ class OutputContext:
     def config(self) -> Any:
         return self._config
 
-    @property
-    def solid_def(self) -> "SolidDefinition":
-        if self._solid_def is None:
-            raise DagsterInvariantViolationError(
-                "Attempting to access solid_def, "
-                "but it was not provided when constructing the OutputContext"
-            )
-
-        return self._solid_def
-
     @public  # type: ignore
     @property
     def op_def(self) -> "OpDefinition":
         from dagster._core.definitions import OpDefinition
 
-        if self._solid_def is None:
+        if self._op_def is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access op_def, "
                 "but it was not provided when constructing the OutputContext"
             )
 
-        return cast(OpDefinition, self._solid_def)
+        return cast(OpDefinition, self._op_def)
 
     @public  # type: ignore
     @property
@@ -751,7 +741,7 @@ def get_output_context(
         metadata=output_def.metadata,
         mapping_key=step_output_handle.mapping_key,
         config=output_config,
-        solid_def=pipeline_def.get_solid(step.solid_handle).definition,
+        op_def=pipeline_def.get_solid(step.solid_handle).definition,
         dagster_type=output_def.dagster_type,
         log_manager=log_manager,
         version=version,
@@ -792,7 +782,6 @@ def build_output_context(
     version: Optional[str] = None,
     resource_config: Optional[Mapping[str, object]] = None,
     resources: Optional[Mapping[str, object]] = None,
-    solid_def: Optional[SolidDefinition] = None,
     op_def: Optional["OpDefinition"] = None,
     asset_key: Optional[Union[AssetKey, str]] = None,
     partition_key: Optional[str] = None,
@@ -818,7 +807,6 @@ def build_output_context(
         resources (Optional[Resources]): The resources to make available from the context.
             For a given key, you can provide either an actual instance of an object, or a resource
             definition.
-        solid_def (Optional[SolidDefinition]): The definition of the solid that produced the output.
         op_def (Optional[OpDefinition]): The definition of the op that produced the output.
         asset_key: Optional[Union[AssetKey, Sequence[str], str]]: The asset key corresponding to the
             output.
@@ -847,7 +835,6 @@ def build_output_context(
     version = check.opt_str_param(version, "version")
     resource_config = check.opt_dict_param(resource_config, "resource_config", key_type=str)
     resources = check.opt_dict_param(resources, "resources", key_type=str)
-    solid_def = check.opt_inst_param(solid_def, "solid_def", SolidDefinition)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
     asset_key = AssetKey.from_coerceable(asset_key) if asset_key else None
     partition_key = check.opt_str_param(partition_key, "partition_key")
@@ -860,7 +847,6 @@ def build_output_context(
         metadata=metadata,
         mapping_key=mapping_key,
         config=config,
-        solid_def=solid_def,
         dagster_type=dagster_type,
         log_manager=initialize_console_manager(None),
         version=version,
