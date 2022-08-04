@@ -10,7 +10,6 @@ from dagster import (
     Any,
     DefaultScheduleStatus,
     Field,
-    Partition,
     ScheduleDefinition,
     job,
     op,
@@ -43,7 +42,7 @@ from dagster._core.workspace.load_target import EmptyWorkspaceTarget, GrpcServer
 from dagster._daemon import get_default_daemon_logger
 from dagster._grpc.client import EphemeralDagsterGrpcClient
 from dagster._grpc.server import open_server_process
-from dagster._legacy import PartitionSetDefinition, daily_schedule, hourly_schedule, pipeline, solid
+from dagster._legacy import daily_schedule, hourly_schedule, pipeline, solid
 from dagster._scheduler.scheduler import launch_scheduled_runs
 from dagster._seven import wait_for_process
 from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
@@ -107,7 +106,7 @@ def daily_central_time_schedule(date):
 
 
 @schedule(
-    pipeline_name="the_pipeline",
+    job_name="the_pipeline",
     cron_schedule="*/5 * * * *",
     execution_timezone="US/Central",
 )
@@ -248,7 +247,7 @@ def wrong_config_schedule(_date):
 
 
 @schedule(
-    pipeline_name="the_pipeline",
+    job_name="the_pipeline",
     cron_schedule="0 0 * * *",
     execution_timezone="UTC",
 )
@@ -269,14 +268,14 @@ def define_multi_run_schedule():
     return ScheduleDefinition(
         name="multi_run_schedule",
         cron_schedule="0 0 * * *",
-        pipeline_name="the_pipeline",
+        job_name="the_pipeline",
         execution_timezone="UTC",
         execution_fn=gen_runs,
     )
 
 
 @schedule(
-    pipeline_name="the_pipeline",
+    job_name="the_pipeline",
     cron_schedule="0 0 * * *",
     execution_timezone="UTC",
 )
@@ -305,7 +304,7 @@ def define_multi_run_schedule_with_missing_run_key():
     return ScheduleDefinition(
         name="multi_run_schedule_with_missing_run_key",
         cron_schedule="0 0 * * *",
-        pipeline_name="the_pipeline",
+        job_name="the_pipeline",
         execution_timezone="UTC",
         execution_fn=gen_runs,
     )
@@ -372,21 +371,6 @@ def two_step_pipeline():
     end(start())
 
 
-manual_partition = PartitionSetDefinition[str](
-    name="manual_partition",
-    pipeline_name="two_step_pipeline",
-    # selects only second step
-    solid_selection=["end"],
-    partition_fn=lambda: [Partition("one")],  # type: ignore
-    # includes config for first step - test that it is ignored
-    run_config_fn_for_partition=lambda _: {"solids": {"start": {"inputs": {"x": {"value": 4}}}}},
-)
-
-manual_partition_schedule = manual_partition.create_schedule_definition(
-    "manual_partition_schedule", "0 0 * * *", lambda _x, _y: Partition("one")
-)
-
-
 def define_default_config_job():
     @op(config_schema=str)
     def my_op(context):
@@ -433,7 +417,6 @@ def the_repo():
         partitionless_schedule,
         large_schedule,
         two_step_pipeline,
-        manual_partition_schedule,
         default_config_schedule,
         empty_schedule,
     ]
@@ -1856,35 +1839,6 @@ def test_large_schedule(instance, workspace, external_repo):
         assert instance.get_runs_count() == 1
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
-
-
-def test_manual_partition_with_solid_selection(instance, workspace, external_repo):
-    freeze_datetime = to_timezone(
-        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
-        "US/Central",
-    )
-    with pendulum.test(freeze_datetime):
-        external_schedule = external_repo.get_external_schedule("manual_partition_schedule")
-        schedule_origin = external_schedule.get_external_origin()
-        instance.start_schedule(external_schedule)
-        freeze_datetime = freeze_datetime.add(seconds=2)
-
-    with pendulum.test(freeze_datetime):
-        list(
-            launch_scheduled_runs(
-                instance,
-                workspace,
-                logger(),
-                pendulum.now("UTC"),
-            )
-        )
-
-        assert instance.get_runs_count() == 1
-        ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
-        assert len(ticks) == 1
-        run_id = ticks[0].run_ids[0]
-
-        assert instance.get_run_by_id(run_id).solid_selection == ["end"]  # matches solid_selection
 
 
 @contextmanager

@@ -71,14 +71,14 @@ The run queue is a first-in-first-out priority queue. By default, all runs have 
 You can specify a custom priority using the dagster/priority tag, which you can set in code on definitions or in the Dagit launchpad. Note that because both tag keys and values must be strings, so you must specify the priority integer as a string. For example, if you wanted to specify a priority of -1, you would set the dagster/priority tag value to be the string "-1".
 
 ```python startafter=start_marker_priority endbefore=end_marker_priority file=/deploying/concurrency_limits/concurrency_limits.py
-@pipeline(tags={"dagster/priority": "3"})
-def important_pipeline():
+@job(tags={"dagster/priority": "3"})
+def important_job():
     ...
 
 
 @schedule(
     cron_schedule="* * * * *",
-    pipeline_name="my_pipeline",
+    job_name="important_job",
     execution_timezone="US/Central",
     tags={"dagster/priority": "-1"},
 )

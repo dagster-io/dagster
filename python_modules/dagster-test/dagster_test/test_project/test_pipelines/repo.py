@@ -461,7 +461,7 @@ def define_schedules():
         return {}
 
     @schedule(
-        pipeline_name="demo_pipeline_celery",
+        job_name="demo_pipeline_celery",
         cron_schedule="* * * * *",
     )
     def frequent_celery():
