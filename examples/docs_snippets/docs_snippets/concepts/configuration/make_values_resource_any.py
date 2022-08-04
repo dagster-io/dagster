@@ -5,12 +5,10 @@ from dagster import job, make_values_resource, op
 # start_file_example
 
 
-
-
 @op(required_resource_keys={"file_dir"})
 def add_file(context):
     filename = f"{context.resources.file_dir}/new_file.txt"
-    open(filename, "x").close()
+    open(filename, "x", encoding="utf8").close()
 
     context.log.info(f"Created file: {filename}")
 

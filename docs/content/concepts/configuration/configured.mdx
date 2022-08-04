@@ -123,9 +123,9 @@ def another_configured_example(config):
 A common pattern in the development cycle is to use different configuration for each environment. For example, you might connect to a local database during local development, and connect to a production database in your cloud environment. You can use the `configured` API to select between different configurations at repository definition time:
 
 ```python file=/concepts/configuration/per_env_config.py startafter=start_database_example endafter=end_database_example
-@op(required_resource_keys={'database'})
+@op(required_resource_keys={"database"})
 def get_one(context):
-    context.resources.database.execute_query('SELECT 1')
+    context.resources.database.execute_query("SELECT 1")
 
 
 @graph
@@ -139,22 +139,22 @@ def my_repo():
         "local": {
             "database": database_client.configured(
                 {
-                    'username': {'env': 'DEV_USER'},
-                    'password': {'env': 'DEV_PASSWORD'},
-                    'hostname': 'localhost',
-                    'db_name': 'DEVELOPMENT',
-                    'port': '5432',
+                    "username": {"env": "DEV_USER"},
+                    "password": {"env": "DEV_PASSWORD"},
+                    "hostname": "localhost",
+                    "db_name": "DEVELOPMENT",
+                    "port": "5432",
                 }
             )
         },
         "production": {
             "database": database_client.configured(
                 {
-                    'username': {'env': 'SYSTEM_USER'},
-                    'password': {'env': 'SYSTEM_PASSWORD'},
-                    'hostname': 'abccompany',
-                    'db_name': 'PRODUCTION',
-                    'port': '5432',
+                    "username": {"env": "SYSTEM_USER"},
+                    "password": {"env": "SYSTEM_PASSWORD"},
+                    "hostname": "abccompany",
+                    "db_name": "PRODUCTION",
+                    "port": "5432",
                 }
             )
         },

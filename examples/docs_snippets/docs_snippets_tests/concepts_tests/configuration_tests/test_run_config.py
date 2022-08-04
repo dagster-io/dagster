@@ -1,8 +1,5 @@
 import tempfile
 
-import yaml
-
-from dagster._utils import file_relative_path
 from docs_snippets.concepts.configuration.make_values_resource_any import file_dir_job
 from docs_snippets.concepts.configuration.make_values_resource_config_schema import (
     file_dirs_job,

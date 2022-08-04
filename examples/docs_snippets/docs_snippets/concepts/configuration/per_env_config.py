@@ -1,6 +1,6 @@
 import os
 
-from dagster import graph, job, op, repository, resource
+from dagster import graph, op, repository, resource
 
 
 @resource
