@@ -36,6 +36,6 @@ if __name__ == "__main__":
             ]
         },
         include_package_data=True,
-        install_requires=["dagster==1.0.0rc1", "mysql-connector-python"],
+        install_requires=["dagster==1.0.0rc2", "mysql-connector-python"],
         zip_safe=False,
     )
