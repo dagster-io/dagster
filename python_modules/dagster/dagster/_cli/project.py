@@ -4,7 +4,6 @@ from typing import List
 
 import click
 
-from dagster._annotations import experimental
 from dagster._generate import download_example_from_github, generate_project, generate_repository
 from dagster._generate.download import AVAILABLE_EXAMPLES
 
@@ -45,7 +44,6 @@ from_example_command_help_text = (
     type=click.STRING,
     help="Name of the new Dagster repository",
 )
-@experimental
 def scaffold_repository_command(name: str):
     dir_abspath = os.path.abspath(name)
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
@@ -70,7 +68,6 @@ def scaffold_repository_command(name: str):
     type=click.STRING,
     help="Name of the new Dagster project",
 )
-@experimental
 def scaffold_command(name: str):
     dir_abspath = os.path.abspath(name)
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
@@ -102,10 +99,9 @@ def scaffold_command(name: str):
     help=(
         "Name of the example to bootstrap with. You can use an example name from the official "
         "examples in Dagster repo: https://github.com/dagster-io/dagster/tree/master/examples. "
-        "You can also find the available examples via `dagster project list-example`."
+        "You can also find the available examples via `dagster project list-examples`."
     ),
 )
-@experimental
 def from_example_command(name: str, example: str):
     dir_abspath = os.path.abspath(name)
     if os.path.isdir(dir_abspath) and os.path.exists(dir_abspath):
@@ -121,17 +117,16 @@ def from_example_command(name: str, example: str):
 
 
 @project_cli.command(
-    name="list-example",
+    name="list-examples",
     help="List the examples that available to bootstrap with.",
 )
-@experimental
 def from_example_list_command():
     click.echo("Examples available in `dagster project from-example`:")
 
-    click.echo(_styled_list_example_prints(AVAILABLE_EXAMPLES))
+    click.echo(_styled_list_examples_prints(AVAILABLE_EXAMPLES))
 
 
-def _styled_list_example_prints(examples: List[str]) -> str:
+def _styled_list_examples_prints(examples: List[str]) -> str:
     return "\n".join([f"* {name}" for name in examples])
 
 

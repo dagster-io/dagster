@@ -47,12 +47,14 @@ To get started, you can run:
 
 ```bash
 pip install dagster
-dagster project from-example --name my-dagster-project --example project_fully_featured
+dagster project from-example \
+  --name my-dagster-project \
+  --example project_fully_featured
 ```
 
 The command `dagster project from-example` downloads one of the official Dagster examples to the current directory. This command enables you to quickly bootstrap your project with an officially maintained example.
 
-For more info about the examples, visit the [Dagster GitHub repository](https://github.com/dagster-io/dagster/tree/master/examples) or use `dagster project list-example`.
+For more info about the examples, visit the [Dagster GitHub repository](https://github.com/dagster-io/dagster/tree/master/examples) or use `dagster project list-examples`.
 
 ## Getting started
 
@@ -79,7 +81,7 @@ dagit
 
 Open `http://localhost:3000` with your browser to see the project.
 
-Now, you can start writing assets in `my_dagster_project/assets`. The assets are automatically loaded into the Dagster repository as you define them.
+Now, you can start writing assets in `my_dagster_project/assets/`, define your own ops or jobs and include them in `my_dagster_project/repository.py/`.
 
 ## Development
 
