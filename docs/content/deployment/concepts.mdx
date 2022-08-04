@@ -1,0 +1,72 @@
+---
+title: Dagster Deployment Concepts | Dagster Docs
+---
+
+# Dagster Deployment Concepts
+
+<Note>
+  This is applicable to Dagster Open Source. If you're looking for Dagster
+  Cloud, <a href="/dagster-cloud">click here</a>.
+</Note>
+
+Learn about the concepts relevant to deploying Dagster.
+
+**Not sure where to start?** Check out the [Dagster architecutre guide](/deployment/overview).
+
+---
+
+## Dagster instance
+
+The `DagsterInstance` defines all of the configuration that Dagster needs for a single deployment - for example, where to store the history of past runs and their associated logs, where to stream the raw logs from op compute functions, and how to launch new runs.
+
+[Learn more about setting up your Dagster instance](/deployment/concepts/dagster-instance).
+
+---
+
+## Dagster daemon
+
+The Dagster Daemon operates schedules, sensors, and run queuing.
+
+[Learn more about the Dagster daemon](/deployment/concepts/dagster-daemon).
+
+---
+
+## Run launchers
+
+A run launcher is an interface to the computational resources used to execute Dagster runs. Dagster supports several types of run launchers and the ability to customize your own.
+
+[Learn more about run launchers](/deployment/concepts/run-launcher).
+
+---
+
+## Executors
+
+An executor is responsible for executing the steps within a job run. Once a run has launched and the process for the run (the run worker) has been allocated and started, the executor assumes responsibility for execution. Executors can range from single-process serial executors to managing per-step computational resources with a sophisticated control plane.
+
+Dagster supports several types of executors and the ability to customize your own.
+
+[Learn more about executors](/deployment/concepts/executors).
+
+---
+
+## Run coordinators
+
+Run launchers allow you to control how Dagster manages the runs in your deployment. When a run is submitted, it's first sent to the run coordinator, which applies the limits or prioritization policies you define before submitting it to the run launcher.
+
+[Learn more about run coordinators](/deployment/concepts/run-coordinator), including configuration, debugging, and how to limit run concurrency.
+
+---
+
+## Run monitoring
+
+Run monitoring allows you to detect hanging runs and restart crashed run workers for certain run launchers.
+
+[Learn more about run monitoring](/deployment/concepts/run-monitoring), including what run workers are supported.
+
+---
+
+## Run retries
+
+Run retries allow you to define a maximum number of retries for failed jobs and handle crashed run workers.
+
+[Learn more about enabling and configuring run retries](/deployment/concepts/run-retries).
