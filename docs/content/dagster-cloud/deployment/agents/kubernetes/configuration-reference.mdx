@@ -1,5 +1,134 @@
 ---
 title: Kubernetes agent configuration reference | Dagster Docs
+noindex: True
+
+platform_type: "cloud"
 ---
 
 # Kubernetes agent configuration reference
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+This reference describes the various configuration options Dagster Cloud currently supports for [Kubernetes agents](/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent).
+
+---
+
+## Viewing the Helm chart
+
+To see the different customizations that can be applied to the Kubernetes agent, you can view the chart's default values:
+
+```shell
+helm repo add dagster-cloud https://dagster-io.github.io/helm-user-cloud
+helm repo update
+helm show values dagster-cloud/dagster-cloud-agent
+```
+
+You can also view the chart values on [ArtifactHub](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values).
+
+---
+
+## Per-deployment configuration
+
+The [`workspace`](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values) value of the Helm chart provides the ability to add configuration for all jobs that are spun up by the agent, across all repositories. To add secrets or mounted volumes to all Kubernetes Pods, you can specify your desired configuration under this value.
+
+Additionally, the [`imagePullSecrets`](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values) value allows you to specify a list of secrets that should be included when pulling the images for your containers.
+
+---
+
+## Per-location configuration
+
+If your agent is at version 0.14.9 or higher, when [adding a code location](/dagster-cloud/developing-testing/code-locations) to Dagster Cloud with a Kubernetes agent, you can use the `container_context` key on the location configuration to add additional Kubernetes-specific configuration. The following example illustrates the available fields:
+
+```yaml
+location_name: cloud-examples
+image: dagster/dagster-cloud-examples:latest
+code_source:
+  package_name: dagster_cloud_examples
+container_context:
+  k8s:
+    env_config_maps:
+      - my_config_map
+    env_secrets:
+      - my_secret
+    env_vars:
+      - FOO_ENV_VAR=foo_value
+      - BAR_ENV_VAR
+    image_pull_policy: Always
+    image_pull_secrets:
+      - name: my_image_pull_secret
+    labels:
+      my_label_key: my_label_value
+    namespace: my_k8s_namespace
+    service_account_name: my_service_account_name
+    volume_mounts:
+      - mount_path: /opt/dagster/test_mount_path/volume_mounted_file.yaml
+        name: test-volume
+        sub_path: volume_mounted_file.yaml
+    volumes:
+      - name: test-volume
+        config_map:
+          name: test-volume-configmap
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+```
+
+---
+
+## Op isolation
+
+By default, each Dagster job will run in its own Kubernetes pod, with each op running in its own subprocess within the pod.
+
+You can also configure your Dagster job with the [`k8s_job_executor`](https://docs.dagster.io/\_apidocs/libraries/dagster-k8s#dagster_k8s.k8s_job_executor) to run each op in its own Kubernetes pod. For example:
+
+```python
+from dagster import job
+from dagster_k8s import k8s_job_executor
+
+@job(executor_def=k8s_job_executor)
+def k8s_job():
+    ...
+```
+
+---
+
+## Per-job and per-op configuration
+
+To add configuration to specific Dagster jobs or ops, use the `dagster-k8s/config` tag. For example, to specify that a job should have certain resource limits when it runs. Refer to [Customizing your Kubernetes deployment for Dagster Open Source](/deployment/guides/kubernetes/customizing-your-deployment#job-or-op-kubernetes-configuration) for more info.
+
+---
+
+## Running as a non-root user
+
+Starting in 0.14.0, the provided `docker.io/dagster/dagster-cloud-agent` image offers a non-root user with id `1001`. To run the agent with this user, you can specify the [`dagsterCloudAgent`](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values) value in the Helm chart to be:
+
+```yaml
+dagsterCloudAgent:
+  podSecurityContext:
+    runAsUser: 1001
+```
+
+We plan to make this user the default in a future release.
+
+---
+
+## Grant AWS permissions
+
+You can provide your Dagster pods with [permissions to assume an AWS IAM role](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) using a [Service Account](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/). For example, you might do this to [configure an S3 IO Manager](/deployment/guides/aws#using-s3-for-io-management).
+
+1. [Create an IAM OIDC provider for your EKS cluster](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html)
+2. [Create an IAM role and and attach IAM policies](https://docs.aws.amazon.com/eks/latest/userguide/create-service-account-iam-policy-and-role.html)
+3. Update the [ Helm chart](#viewing-the-helm-chart) to associate the IAM role with a service account:
+
+   ```bash
+    serviceAccount:
+    create: true
+    annotations:
+      eks.amazonaws.com/role-arn: "arn:aws:iam::1234567890:role/my_service_account_role"
+   ```
+
+This will allow your agent and the pods it creates to assume the `my_service_account_role` IAM role.

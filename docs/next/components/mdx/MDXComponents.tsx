@@ -15,6 +15,7 @@ import Zoom from "react-medium-image-zoom";
 import "react-medium-image-zoom/dist/styles.css";
 export const SearchIndexContext = React.createContext(null);
 import path from "path";
+import GenerateAgentToken from "./includes/dagster-cloud/GenerateAgentToken.mdx";
 import { Tab, Transition } from "@headlessui/react";
 
 const PyObject: React.FunctionComponent<{
@@ -274,6 +275,44 @@ const CodeReferenceLink = ({ filePath, isInline, children }) => {
   }
 };
 
+const ReferenceTable = ({ children }) => {
+  return (
+    <table
+      className="table"
+      style={{
+        width: "100%",
+      }}
+    >
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {children}
+      </tbody>
+    </table>
+  );
+};
+
+const ReferenceTableItem = ({ propertyName, children }) => {
+  return (
+    <tr>
+      <td
+        style={{
+        width: "40%",
+        }}
+        >
+        {propertyName}
+      </td>
+      <td>
+        {children}
+      </td>
+    </tr>
+  );
+};
+
 const InstanceDiagramBox = ({ href = "#", className = "", children }) => {
   return (
     <a
@@ -522,6 +561,9 @@ export default {
   PlaceholderImage,
   Experimental,
   Icons,
+  ReferenceTable,
+  ReferenceTableItem,
+  GenerateAgentToken,
   ArticleList,
   ArticleListItem,
   TabGroup,
