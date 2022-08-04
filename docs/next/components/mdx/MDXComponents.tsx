@@ -9,6 +9,7 @@ import React, { useContext, useRef, useState } from "react";
 
 import Icons from "../Icons";
 import Link from "../Link";
+import NextLink from "next/link";
 import { useVersion } from "../../util/useVersion";
 import Image from "next/image";
 import Zoom from "react-medium-image-zoom";
@@ -404,7 +405,11 @@ const ArticleListItem = ({ title, href }) => {
         marginTop: 0,
       }}
     >
-      <Link href={href}>{title}</Link>
+      {href.startsWith("http") ? (
+        <NextLink href={href}>{title}</NextLink>
+      ) : (
+        <Link href={href}>{title}</Link>
+      )}
     </li>
   );
 };
