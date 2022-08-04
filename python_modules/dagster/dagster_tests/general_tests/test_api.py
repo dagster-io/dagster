@@ -1,25 +1,10 @@
 import importlib
-import inspect
 import re
 import sys
 
 import pytest
 
-import dagster
 from dagster._module_alias_map import AliasedModuleFinder, get_meta_path_insertion_index
-
-
-def test_all():
-    dagster_dir = dir(dagster)
-    for each in dagster.__all__:
-        assert each in dagster_dir
-    for exported in dagster_dir:
-        if (
-            not exported.startswith("_")
-            and not inspect.ismodule(getattr(dagster, exported))
-            and not exported in dagster._DEPRECATED  # pylint: disable=protected-access
-        ):
-            assert exported in dagster.__all__
 
 
 def test_deprecated_imports():
