@@ -1,11 +1,11 @@
 ---
-title: Fully Featured Example with Recommended Project Layout  | Dagster
-description: This guide walk through a fully featured Dagster project that uses many of Dagster's features, with project structure recommendations.
+title: Fully Featured Project  | Dagster
+description: This guide walk through a fully featured Dagster project that uses many of Dagster's features.
 ---
 
-# Fully Featured Example with Recommended Project Layout
+# Fully Featured Project
 
-In this guide, we'll walk through a fully featured Dagster project that takes advantage of a wide range of Dagster features. This example can be useful as a point of reference for [using different Dagster APIs](#using-dagster-concepts) and [integrating other tools](#integrating-other-tools), as well as [how we imagine structuring Dagster projects](#structuring-complex-projects).
+In this guide, we'll walk through a fully featured Dagster project that takes advantage of a wide range of Dagster features. This example can be useful as a point of reference for [using different Dagster APIs](#using-dagster-concepts) and [integrating other tools](#integrating-other-tools).
 
 At a high level, this project consists of three asset groups, all centered around a (contrived) use case of downloading [Hacker News](https://news.ycombinator.com/) user activity data, loading it into a database, and doing analysis / training an ML model on the aggregated data.
 
@@ -48,13 +48,13 @@ This example shows useful patterns for many Dagster concepts, including:
 
 [Software-defined assets](/concepts/assets/software-defined-assets) - An asset is a software object that models a data asset. The prototypical example is a table in a database or a file in cloud storage.
 
-This example contains [three asset group](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/assets/__init__.py):
+This example contains [three asset group](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/assets/\__init\_\_.py):
 
 <Image
-  alt="Global Asset Lineage"
-  src="/images/guides/fully-featured-project/global-asset-lineage.png"
-  width={4064}
-  height={2488}
+alt="Global Asset Lineage"
+src="/images/guides/fully-featured-project/global-asset-lineage.png"
+width={4064}
+height={2488}
 />
 
 - [`core`](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured/project_fully_featured/assets/core): Contains data sets of activity on Hacker News, fetched from the [Hacker News API](https://github.com/HackerNews/API). These are partitioned by hour and updated every hour.
@@ -109,60 +109,24 @@ By default, it will load for the local deployment. You can toggle deployments by
 
 Beyond leveraging Dagster core concepts, this project also uses several dagster integration libraries:
 
-- [dagster_dbt](/_apidocs/libraries/dagster-dbt)
+- [dagster_dbt](/\_apidocs/libraries/dagster-dbt)
 
   - Dagster orchestrates dbt alongside other tools, so you can combine dbt with Python, Spark, etc. in a single workflow. This exapmle includes a standalone [`dbt_project`](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured/dbt_project), and load dbt models from an existing dbt `manifest.json` file in the dbt project to Dagster assets. It is useful for larger dbt projects as you may not want to recompile the entire dbt project every time you load the Dagster project.
   - Check out [Using dbt with Dagster](/integrations/dbt) for more recommendations.
 
-- [dagster_aws](/_apidocs/libraries/dagster-aws)
+- [dagster_aws](/\_apidocs/libraries/dagster-aws)
 
   - Dagster provides utilities for interfacing with AWS services, including S3, ECS, Redshift, EMR, etc.
 
-- [dagster_slack](/_apidocs/libraries/dagster-slack)
+- [dagster_slack](/\_apidocs/libraries/dagster-slack)
 
   - We provide out-of-box support for messaging a given Slack channel. Dagster also comes with a resource for connecting to Slack. Resources are useful for interacting with Slack, as you may want to send messages in production but mock the Slack resource while testing.
 
-- [dagster_pyspark](/_apidocs/libraries/dagster-pyspark)
+- [dagster_pyspark](/\_apidocs/libraries/dagster-pyspark)
 
   - This project builds a [`PartitionedParquetIOManager`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/parquet_io_manager.py) that can take a PySpark DataFrame and store it in Parquet at the given path. It uses <PyObject module="dagster_pyspark" object="pyspark_resource" /> to access to a PySpark SparkSession for executing PySpark code within Dagster.
   - Besides that, Dagster ops also can perform computations using Spark. Visit [Using Dagster with Spark](/integrations/spark) to learn more.
 
-## Structuring larger projects
-
-Before jumping into details, Dagster aims to enable teams to ship data pipelines with extraordinary velocity. This section talks about how we imagine structuring larger Dagster projects which help achieve that goal.
-
-At a high level, here are the aspects we'd like to optimize when structuring a complex project:
-
-- You can quickly get stuff done (e.g. write a new job, fix a breakage, or retire existing data pipelines) without thinking much about where the change should be or how it may break others.
-- You can quickly find the code regardless of your familiarity to the detailed business logic.
-- You can organize at your own pace when you feel things have grown too big, but don't over optimize too early.
-
-Concretely, we recommend the following patterns for a Dagster repository:
-
-- Keep all assets together in an `assets/` directory. Keep all assets in the directory, or group assets by business domains in multiple directory inside `assets/` as your business logic grows.
-
-  - In this example, we keep all assets together in the [`project_fully_featured/assets/`](https://github.com/dagster-io/dagster/tree/master/examples/project_fully_featured/project_fully_featured/assets) directory. It is useful because you can use <PyObject object="load_assets_from_package_module" /> or <PyObject object="load_assets_from_modules" /> to load assets into your repository, as opposed to needing to add assets to the repository every time you define one. It also helps collaboration as your teammates can quickly navigate in the codebase to find the core business logic (i.e. assets) regardless of their familiarity to the specific repository.
-
-- Keep schedules ans sensors that target a particular job together.
-
-  - In this example, we put sensors and schedules in [`jobs.py`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/jobs.py). When we build sensors or schedules from a job, they are considered as policies for when to trigger a particular job. So, keeping all the policies together with jobs makes it clear when and how certain jobs are being launched.
-
-  - Note: Certain sensors like [run status sensors](/concepts/partitions-schedules-sensors/sensors#run-status-sensors) can listen to multiple jobs and do not trigger a job. We recommend keeping these sensors in the repository definition as they are often for alerting and monitoring at the repository level.
-
-- Make resources reusable and share them across jobs or asset groups.
-
-  - In this example, resources (e.g., database connections, Spark sessions, API clients, and I/O managers) are grouped in the [`resources/__init__.py`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/resources/__init__.py) file, where they are bound to configuration sets which vary based on environment. In complex projects, we find it very useful to make resources reusable and configured with pre-defined values via <PyObject object="configured" />. So when developing a project, instead of trying to find their own way to model external components, teammates can all quickly get stuff done using a pre-defined resource set, or make changes to resources that are shared among the team.
-
-  - This patten also helps you to easily execute jobs in different environment without code changes. In this example, we dynamically define repository based on the deployment in [`repository.py`](https://github.com/dagster-io/dagster/blob/master/examples/project_fully_featured/project_fully_featured/repository.py) and are able to keep all code the same across testing, local development, staging, and production. Read more about our recommendations in [Transitioning Data Pipelines from Development to Production](/guides/dagster/transitioning-data-pipelines-from-development-to-production)
-
-- TODO: What to do with ops/graphs/jobs???
-
-So far, we've discussed our recommendations for structuring a large project which contains one repository. Dagster also allows you to structure a project with multiple Dagster repositories. We don't recommend over abstract too early, and in most cases, one repository should be sufficient. The pattern we found useful is to use multiple repositories is to keep conflicting dependencies separate, where each Dagster repository can keep their own package requirements (e.g., `setup.py`) and deployment specs (e.g., `Dockerfile`).
-
-We're constantly learning -- If you have anything you'd like to add about project layouts, we invite you to join this [GitHub Discussion](https://github.com/dagster-io/dagster/discussions/8972) to share how you organize your Dagster code.
-
 ## Conclusion
-
-As your experience with Dagster grows, you may find certain aspects of this guide no longer apply to your use cases and you may want to change the structure to adapt to your business needs. We believe every team is unique and every team finds its own way to collaborate and be productive in the end.
 
 Lastly, as time goes on, this guide will be kept up to date, taking advantage of new Dagster features and learnings from the community. If you have anything you'd like to add, or like to see an example of, don't hesitate to reach out!
