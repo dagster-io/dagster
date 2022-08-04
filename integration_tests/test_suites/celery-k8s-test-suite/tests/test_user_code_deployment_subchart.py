@@ -64,7 +64,7 @@ def test_execute_on_celery_k8s_subchart_disabled(  # pylint: disable=redefined-o
         run_config_json,
     ]
 
-    stream(
+    resp = stream(
         core_api.connect_get_namespaced_pod_exec,
         name=dagit_pod_name,
         namespace=namespace,
@@ -75,6 +75,7 @@ def test_execute_on_celery_k8s_subchart_disabled(  # pylint: disable=redefined-o
         tty=False,
         _preload_content=False,
     )
+    print("Response: " + resp)
 
     runmaster_job_name = None
     timeout = datetime.timedelta(0, 90)
