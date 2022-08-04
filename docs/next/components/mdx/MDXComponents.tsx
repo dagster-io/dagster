@@ -9,6 +9,7 @@ import React, { useContext, useRef, useState } from "react";
 
 import Icons from "../Icons";
 import Link from "../Link";
+import NextLink from "next/link";
 import { useVersion } from "../../util/useVersion";
 import Image from "next/image";
 import Zoom from "react-medium-image-zoom";
@@ -443,8 +444,62 @@ const ArticleListItem = ({ title, href }) => {
         marginTop: 0,
       }}
     >
-      <Link href={href}>{title}</Link>
+      {href.startsWith("http") ? (
+        <NextLink href={href}>{title}</NextLink>
+      ) : (
+        <Link href={href}>{title}</Link>
+      )}
     </li>
+  );
+};
+
+const ExampleItemSmall = ({ title, hrefCode, tags = [] }) => {
+  return (
+    <button className="w-full h-full py-3 px-4 rounded-lg bg-white border hover:border-gray-500 text-gray-500">
+        <span className="font-bold text-gable-green hover:no-underline">
+          {title}
+        </span>
+      <div className="mt-2 text-sm space-x-1 space-y-1 bg-opacity-70">
+        {tags.map((tag) => (
+          <Badge key={tag} text={tag} />
+        ))}
+      </div>
+    </button>
+  );
+};
+
+const ExampleItem = ({
+  title,
+  hrefCloud,
+  hrefDoc = null,
+  hrefCode,
+  children,
+  tags = [],
+}) => {
+  return (
+    <div className="px-6 py-4 rounded-lg shadow-lg shadow-cyan-500/50 relative group bg-white">
+      <span className="font-bold text-2xl text-gable-green">{title}</span>
+      <div className="space-x-2 bg-opacity-70">
+        {tags.map((tag) => (
+          <Badge key={tag} text={tag} />
+        ))}
+      </div>
+      <p className="text-sm text-gray-500">{children}</p>
+      <div className="inline-flex flex-row space-x-4">
+        <a href={hrefCode}>
+          <button className="py-1 px-4 rounded-lg bg-gable-green text-white hover:bg-transparent hover:text-gable-green hover: border hover:border-gable-green">
+            View
+          </button>
+        </a>
+        {hrefDoc && (
+          <Link href={hrefDoc}>
+            <button className="py-1 px-4 rounded-lg bg-transparent border text-gray-500 hover:text-gray-700 hover:bg-gray-100 hover:border-gray-300">
+              Guide
+            </button>
+          </Link>
+        )}
+      </div>
+    </div>
   );
 };
 
@@ -566,5 +621,7 @@ export default {
   GenerateAgentToken,
   ArticleList,
   ArticleListItem,
+  ExampleItemSmall,
+  ExampleItem,
   TabGroup,
 };
