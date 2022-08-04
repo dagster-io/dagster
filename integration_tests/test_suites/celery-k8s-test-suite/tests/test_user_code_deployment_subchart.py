@@ -16,7 +16,7 @@ def test_execute_on_celery_k8s_subchart_disabled(  # pylint: disable=redefined-o
     helm_namespace_for_user_deployments_subchart_disabled,
 ):
     namespace = helm_namespace_for_user_deployments_subchart_disabled
-    pipeline_name = "demo_pipeline_celery"
+    job_name = "demo_job_celery"
 
     core_api = kubernetes.client.CoreV1Api()
     batch_api = kubernetes.client.BatchV1Api()
@@ -36,26 +36,24 @@ def test_execute_on_celery_k8s_subchart_disabled(  # pylint: disable=redefined-o
     run_config_dict = {
         "resources": {"io_manager": {"config": {"s3_bucket": "dagster-scratch-80542c2"}}},
         "execution": {
-            "celery-k8s": {
-                "config": {
-                    "image_pull_policy": image_pull_policy(),
-                    "job_namespace": namespace,
-                }
+            "config": {
+                "image_pull_policy": image_pull_policy(),
+                "job_namespace": namespace,
             }
         },
         "loggers": {"console": {"config": {"log_level": "DEBUG"}}},
-        "solids": {"multiply_the_word": {"inputs": {"word": "bar"}, "config": {"factor": 2}}},
+        "ops": {"multiply_the_word": {"inputs": {"word": "bar"}, "config": {"factor": 2}}},
     }
     run_config_json = json.dumps(run_config_dict)
 
     exec_command = [
         "dagster",
-        "pipeline",
+        "job",
         "launch",
         "--repository",
         "demo_execution_repo",
-        "--pipeline",
-        pipeline_name,
+        "--job",
+        job_name,
         "--workspace",
         "/dagster-workspace/workspace.yaml",
         "--location",
@@ -64,7 +62,7 @@ def test_execute_on_celery_k8s_subchart_disabled(  # pylint: disable=redefined-o
         run_config_json,
     ]
 
-    stream(
+    resp = stream(
         core_api.connect_get_namespaced_pod_exec,
         name=dagit_pod_name,
         namespace=namespace,
@@ -73,8 +71,9 @@ def test_execute_on_celery_k8s_subchart_disabled(  # pylint: disable=redefined-o
         stdin=False,
         stdout=True,
         tty=False,
-        _preload_content=False,
     )
+    print("Response: ")  #  pylint:disable=print-call
+    print(resp)  # pylint:disable=print-call
 
     runmaster_job_name = None
     timeout = datetime.timedelta(0, 90)

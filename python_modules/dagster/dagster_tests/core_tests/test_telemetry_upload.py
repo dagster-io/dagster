@@ -6,7 +6,7 @@ import pytest
 import responses
 from click.testing import CliRunner
 
-from dagster._cli.pipeline import pipeline_execute_command
+from dagster._cli.job import job_execute_command
 from dagster._core.telemetry import cleanup_telemetry_logger
 from dagster._core.telemetry_upload import get_dagster_telemetry_url, upload_logs
 from dagster._core.test_utils import environ, instance_for_test
@@ -35,10 +35,10 @@ def test_dagster_telemetry_upload(env):
         with environ(env):
             runner = CliRunner()
             with pushd(path_to_file("")):
-                pipeline_attribute = "foo_pipeline"
+                job_attribute = "qux_job"
                 runner.invoke(
-                    pipeline_execute_command,
-                    ["-f", path_to_file("test_cli_commands.py"), "-a", pipeline_attribute],
+                    job_execute_command,
+                    ["-f", path_to_file("test_cli_commands.py"), "-a", job_attribute],
                 )
 
             mock_stop_event = mock.MagicMock()
@@ -70,10 +70,10 @@ def test_dagster_telemetry_no_test_env_upload(env):
         with environ(env):
             runner = CliRunner()
             with pushd(path_to_file("")):
-                pipeline_attribute = "foo_pipeline"
+                job_attribute = "qux_job"
                 runner.invoke(
-                    pipeline_execute_command,
-                    ["-f", path_to_file("test_cli_commands.py"), "-a", pipeline_attribute],
+                    job_execute_command,
+                    ["-f", path_to_file("test_cli_commands.py"), "-a", job_attribute],
                 )
 
             upload_logs(mock.MagicMock())

@@ -2,23 +2,20 @@ import click
 import pytest
 from click.testing import CliRunner
 
-from dagster._cli.job import job_launch_command
-from dagster._cli.pipeline import execute_launch_command, pipeline_launch_command
+from dagster._cli.job import execute_launch_command, job_launch_command
 from dagster._core.errors import DagsterRunAlreadyExists
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.test_utils import new_cwd
-from dagster._legacy import execute_pipeline
 from dagster._utils import file_relative_path
 
 from .test_cli_commands import (
     default_cli_test_instance,
     grpc_server_bar_cli_args,
     launch_command_contexts,
-    memoizable_pipeline,
+    memoizable_job,
     non_existant_python_origin_target_args,
     python_bar_cli_args,
     valid_external_job_target_cli_args,
-    valid_external_pipeline_target_cli_args_with_preset,
 )
 
 
@@ -32,7 +29,7 @@ def run_launch(kwargs, instance, expected_count=None):
 
 def run_launch_cli(execution_args, instance, expected_count=None):
     runner = CliRunner()
-    result = runner.invoke(pipeline_launch_command, execution_args)
+    result = runner.invoke(job_launch_command, execution_args)
     assert result.exit_code == 0, result.stdout
     if expected_count:
         assert instance.get_runs_count() == expected_count
@@ -60,12 +57,6 @@ def test_launch_non_existant_file():
             run_launch(kwargs, instance)
 
 
-@pytest.mark.parametrize("pipeline_cli_args", valid_external_pipeline_target_cli_args_with_preset())
-def test_launch_pipeline_cli(pipeline_cli_args):
-    with default_cli_test_instance() as instance:
-        run_launch_cli(pipeline_cli_args, instance, expected_count=1)
-
-
 @pytest.mark.parametrize("job_cli_args", valid_external_job_target_cli_args())
 def test_launch_job_cli(job_cli_args):
     with default_cli_test_instance() as instance:
@@ -74,110 +65,7 @@ def test_launch_job_cli(job_cli_args):
 
 @pytest.mark.parametrize(
     "gen_pipeline_args",
-    [
-        python_bar_cli_args("foo"),
-        grpc_server_bar_cli_args("foo"),
-    ],
-)
-def test_launch_subset_pipeline_single_clause_solid_name(gen_pipeline_args):
-    runner = CliRunner()
-    with default_cli_test_instance() as instance:
-        with gen_pipeline_args as args:
-            result = runner.invoke(
-                pipeline_launch_command,
-                args
-                + [
-                    "--solid-selection",
-                    "do_something",
-                ],
-            )
-            assert result.exit_code == 0
-            runs = instance.get_runs()
-            assert len(runs) == 1
-            run = runs[0]
-            assert run.solid_selection == ["do_something"]
-            assert run.solids_to_execute == {"do_something"}
-
-
-@pytest.mark.parametrize(
-    "gen_pipeline_args",
-    [
-        python_bar_cli_args("foo"),
-        grpc_server_bar_cli_args("foo"),
-    ],
-)
-def test_launch_subset_pipeline_single_clause_dsl_query(gen_pipeline_args):
-    runner = CliRunner()
-    with default_cli_test_instance() as instance:
-        with gen_pipeline_args as args:
-            result = runner.invoke(
-                pipeline_launch_command,
-                args
-                + [
-                    "--solid-selection",
-                    "*do_something+",
-                ],
-            )
-            assert result.exit_code == 0
-            runs = instance.get_runs()
-            assert len(runs) == 1
-            run = runs[0]
-            assert run.solid_selection == ["*do_something+"]
-            assert run.solids_to_execute == {"do_something", "do_input"}
-
-
-@pytest.mark.parametrize(
-    "gen_pipeline_args",
-    [
-        python_bar_cli_args("foo"),
-        grpc_server_bar_cli_args("foo"),
-    ],
-)
-def test_launch_subset_pipeline_multiple_clauses(gen_pipeline_args):
-    runner = CliRunner()
-    with default_cli_test_instance() as instance:
-        with gen_pipeline_args as args:
-            result = runner.invoke(
-                pipeline_launch_command,
-                args
-                + [
-                    "--solid-selection",
-                    "*do_something+,do_input",
-                ],
-            )
-            assert result.exit_code == 0
-            runs = instance.get_runs()
-            assert len(runs) == 1
-            run = runs[0]
-            assert set(run.solid_selection) == set(["*do_something+", "do_input"])
-            assert run.solids_to_execute == {"do_something", "do_input"}
-
-
-@pytest.mark.parametrize(
-    "gen_pipeline_args",
-    [python_bar_cli_args("foo"), grpc_server_bar_cli_args("foo")],
-)
-def test_launch_subset_pipeline_invalid_value(gen_pipeline_args):
-    runner = CliRunner()
-    with default_cli_test_instance() as _instance:
-        with gen_pipeline_args as args:
-            result = runner.invoke(
-                pipeline_launch_command,
-                args
-                + [
-                    "--solid-selection",
-                    "a, b",
-                ],
-            )
-            assert result.exit_code == 1
-            assert "No qualified solids to execute found for solid_selection" in str(
-                result.exception
-            )
-
-
-@pytest.mark.parametrize(
-    "gen_pipeline_args",
-    [python_bar_cli_args("foo"), grpc_server_bar_cli_args("foo")],
+    [python_bar_cli_args("qux", True), grpc_server_bar_cli_args("qux", True)],
 )
 def test_launch_with_run_id(gen_pipeline_args):
     runner = CliRunner()
@@ -185,7 +73,7 @@ def test_launch_with_run_id(gen_pipeline_args):
     with default_cli_test_instance() as instance:
         with gen_pipeline_args as args:
             result = runner.invoke(
-                pipeline_launch_command,
+                job_launch_command,
                 args
                 + [
                     "--run-id",
@@ -199,7 +87,7 @@ def test_launch_with_run_id(gen_pipeline_args):
 
             # running it again should fail since run_id has to be unique
             bad_result = runner.invoke(
-                pipeline_launch_command,
+                job_launch_command,
                 args
                 + [
                     "--run-id",
@@ -247,7 +135,7 @@ def test_job_launch_with_run_id(gen_job_args):
 
 @pytest.mark.parametrize(
     "gen_pipeline_args",
-    [python_bar_cli_args("foo"), grpc_server_bar_cli_args("foo")],
+    [python_bar_cli_args("qux", True), grpc_server_bar_cli_args("qux", True)],
 )
 def test_launch_queued(gen_pipeline_args):
     runner = CliRunner()
@@ -262,7 +150,7 @@ def test_launch_queued(gen_pipeline_args):
     ) as instance:
         with gen_pipeline_args as args:
             result = runner.invoke(
-                pipeline_launch_command,
+                job_launch_command,
                 args
                 + [
                     "--run-id",
@@ -316,20 +204,6 @@ def test_default_working_directory():
     with default_cli_test_instance() as instance:
         with new_cwd(os.path.dirname(__file__)):
             result = runner.invoke(
-                pipeline_launch_command,
-                [
-                    "-f",
-                    file_relative_path(__file__, "file_with_local_import.py"),
-                    "-a",
-                    "foo_pipeline",
-                ],
-            )
-            assert result.exit_code == 0
-            runs = instance.get_runs()
-            assert len(runs) == 1
-
-        with new_cwd(os.path.dirname(__file__)):
-            result = runner.invoke(
                 job_launch_command,
                 [
                     "-f",
@@ -340,14 +214,14 @@ def test_default_working_directory():
             )
             assert result.exit_code == 0
             runs = instance.get_runs()
-            assert len(runs) == 2
+            assert len(runs) == 1
 
 
 def test_launch_using_memoization():
     runner = CliRunner()
     with default_cli_test_instance() as instance:
-        with python_bar_cli_args("memoizable") as args:
-            result = runner.invoke(pipeline_launch_command, args + ["--run-id", "first"])
+        with python_bar_cli_args("memoizable_job", True) as args:
+            result = runner.invoke(job_launch_command, args + ["--run-id", "first"])
             assert result.exit_code == 0
             run = instance.get_run_by_id("first")
 
@@ -355,10 +229,10 @@ def test_launch_using_memoization():
             assert len(run.step_keys_to_execute) == 1
 
             # Execute the pipeline to pretend that the launch went through and memoized some result.
-            result = execute_pipeline(memoizable_pipeline, instance=instance)
+            result = memoizable_job.execute_in_process(instance=instance)
             assert result.success
 
-            result = runner.invoke(pipeline_launch_command, args + ["--run-id", "second"])
+            result = runner.invoke(job_launch_command, args + ["--run-id", "second"])
             assert result.exit_code == 0
             run = instance.get_run_by_id("second")
             assert len(run.step_keys_to_execute) == 0

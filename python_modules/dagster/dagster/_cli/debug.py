@@ -33,7 +33,7 @@ def export_run(instance, run, output_file):
 @click.group(name="debug")
 def debug_cli():
     """
-    Commands for debugging Dagster pipeline/job runs.
+    Commands for debugging Dagster job runs.
     """
 
 
