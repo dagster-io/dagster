@@ -5,9 +5,11 @@ description: Dagster comes with a convenient CLI command for creating a new proj
 
 # Create a New Project
 
-The easiest way to start building a Dagster project is by using the `dagster project` CLI. This CLI tool helps generates files and folder structures that enables you to quickly get started with Dagster. You can scaffold a new project using the default project skeleton, or start with using one of the official Dagster examples.
+The easiest way to start building a Dagster project is by using the `dagster project` CLI. This CLI tool helps generate files and folder structures that enable you to quickly get started with Dagster. You can scaffold a new project using the default project skeleton, or start with using one of the official Dagster examples.
 
-## Option 1: Starting with an empty project skeleton
+---
+
+## Option 1: Starting with the default project skeleton
 
 To get started, you can run:
 
@@ -16,9 +18,30 @@ pip install dagster
 dagster project scaffold --name my-dagster-project
 ```
 
-The command `dagster project scaffold` will generate a folder structure with a single Dagster repository and other boilerplate files such as [`workspace.yaml`](/concepts/repositories-workspaces/workspaces). This helps you to quickly start with an empty project with everything set up.
+The command `dagster project scaffold` generates a folder structure with a single Dagster repository and other boilerplate files such as [`workspace.yaml`](/concepts/repositories-workspaces/workspaces). This helps you to quickly start with an empty project with everything set up.
+
+Here's a breakdown of the files and directories that are generated:
+
+| File/Directory              | Description                                                                                                                                                                                                                                                                                           |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `my_dagster_project/`       | A Python package that contains code for your new Dagster repository.                                                                                                                                                                                                                                  |
+| `my_dagster_project_tests/` | A Python package that contains tests for `my_dagster_project`.                                                                                                                                                                                                                                        |
+| `workspace.yaml`            | A file that specifies the location of your code for Dagit and the Dagster CLI. Check out [Workspaces](/concepts/repositories-workspaces/workspaces) for more details.                                                                                                                                 |
+| `README.md`                 | A description and starter guide for your new Dagster project.                                                                                                                                                                                                                                         |
+| `pyproject.toml`            | A file that specifies package core metadata in static, tool-agnostic way. <br /> Note: `pyproject.toml` was introduced in [PEP-518](https://peps.python.org/pep-0518/) and meant to replace `setup.py`, but we may still include a `setup.py` for compatibility with tools that do not use this spec. |
+| `setup.py`                  | A build script with Python package dependencies for your new project as a package.                                                                                                                                                                                                                    |
+| `setup.cfg`                 | An int file that contains option defaults for `setup.py` commands.                                                                                                                                                                                                                                    |
+
+Inside of the directory `my_dagster_project/`, the following files and directories are generated:
+
+| File/Directory                     | Description                                                                                                                                                                                                                                                                                                                                  |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `my_dagster_project/repository.py` | A Python module that contains a <PyObject object="RepositoryDefinition" />, to specify which assets, jobs, schedules, and sensors are available in your repository.                                                                                                                                                                          |
+| `my_dagster_project/assets/`       | A Python package that contains all the [Assets](/concepts/assets/software-defined-assets). It is helpful to include all assets in a subpackage so that you can use <PyObject object="load_assets_from_package_module" /> to load assets into your repository, rather than needing to add assets to the repository every time you define one. |
 
 ## Option 2: Starting with an official example
+
+Alternatively, you can start with one of the official Dagster examples.
 
 To get started, you can run:
 
@@ -27,20 +50,21 @@ pip install dagster
 dagster project from-example --name my-dagster-project --example project_fully_featured
 ```
 
-The command `dagster project from-example` will download one of the official Dagster examples to the current directory. This CLI enables you to quickly bootstrap your project with an officially maintained example.
+The command `dagster project from-example` downloads one of the official Dagster examples to the current directory. This command enables you to quickly bootstrap your project with an officially maintained example.
 
-To find out the available examples, you can visit the [Dagster GitHub repository](https://github.com/dagster-io/dagster/tree/master/examples) or use `dagster project list-example`.
+For more info about the examples, visit the [Dagster GitHub repository](https://github.com/dagster-io/dagster/tree/master/examples) or use `dagster project list-example`.
 
 ## Getting started
 
-The newly generated `my-dagster-project` directory is in fact a fully functioning [Python package](https://docs.python.org/3/tutorial/modules.html#packages) and can be installed with `pip`. To install it as a package and its Python dependencies, run:
+The newly generated `my-dagster-project` directory is a fully functioning [Python package](https://docs.python.org/3/tutorial/modules.html#packages) and can be installed with `pip`. To install it as a package and its Python dependencies, run:
 
 ```bash
 pip install -e .
 ```
 
 <Note>
-  By using the `--editable` flag, `pip` will install your repository in{" "}
+  By using the <code>--editable</code> flag, <code>pip</code> will install your
+  repository in{" "}
   <a href="https://pip.pypa.io/en/latest/reference/pip_install/?highlight=editable#editable-installsl">
     "editable mode"
   </a>{" "}
@@ -55,7 +79,7 @@ dagit
 
 Open `http://localhost:3000` with your browser to see the project.
 
-Now, you can start writing assets in `my_dagster_project/assets/`. The assets are automatically loaded into the Dagster repository as you define them.
+Now, you can start writing assets in `my_dagster_project/assets`. The assets are automatically loaded into the Dagster repository as you define them.
 
 ## Development
 
@@ -73,18 +97,23 @@ pytest my_dagster_project_tests_tests
 
 ### Schedules and sensors
 
-If you want to enable Dagster [Schedules](/concepts/partitions-schedules-sensors/schedules) or [Sensors](/concepts/partitions-schedules-sensors/sensors) for your jobs, start the [Dagster Daemon](/deployment/dagster-daemon) process in the same folder as your `workspace.yaml` file, but in a different shell or terminal.
+If you want to enable Dagster [Schedules](/concepts/partitions-schedules-sensors/schedules) or [Sensors](/concepts/partitions-schedules-sensors/sensors), You will need to start a [Dagster Daemon](/deployment/dagster-daemon).
 
-The `$DAGSTER_HOME` environment variable must be set to a directory for the daemon to work. Note: using directories within /tmp may cause issues. See [Dagster Instance default local behavior](/deployment/dagster-instance#default-local-behavior) for more details.
+Start a daemon process in the same folder as your `workspace.yaml` file, but in a different shell or terminal:
 
 ```bash
 dagster-daemon run
 ```
 
-Once your Dagster Daemon is running, you can start turning on schedules and sensors for your jobs.
+<Note>
+
+The `$DAGSTER_HOME` environment variable must be set to a directory for the daemon to work. Note: using directories within `/tmp/` may cause issues. See <Link href="/deployment/dagster-instance#default-local-behavior">Dagster Instance default local behavior</Link> for more details.
+
+</Note>
+Once your daemon process is running, you can start turning on schedules and sensors for your jobs.
 
 ## Deployment
 
-Once your project is ready for moving to production, check out our recommendation for [Transitioning Data Pipelines from Development to Production](/guides/dagster/transitioning-data-pipelines-from-development-to-production).
+Once your project is ready to move to production, check out our recommendation for [Transitioning Data Pipelines from Development to Production](/guides/dagster/transitioning-data-pipelines-from-development-to-production).
 
 Visit the [Deployment Guides](/deployment) to learn more how to run Dagster in production environments, such as Docker, Kubernetes, AWS EC2, etc.
