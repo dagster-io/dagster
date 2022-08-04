@@ -1,3 +1,0 @@
--e assets_dbt_python
-# It's recommended to include environment-specific requirements in this file.
-# For example, pinning a package's version for deployment.

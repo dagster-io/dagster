@@ -531,6 +531,7 @@ class TextMetadataValue(  # type: ignore
             cls, check.opt_str_param(text, "text", default="")
         )
 
+    @public  # type: ignore
     @property
     def value(self) -> Optional[str]:
         return self.text
@@ -557,6 +558,7 @@ class UrlMetadataValue(  # type: ignore
             cls, check.opt_str_param(url, "url", default="")
         )
 
+    @public  # type: ignore
     @property
     def value(self) -> Optional[str]:
         return self.url
@@ -577,6 +579,7 @@ class PathMetadataValue(  # type: ignore
             cls, check.opt_path_param(path, "path", default="")
         )
 
+    @public  # type: ignore
     @property
     def value(self) -> Optional[str]:
         return self.path
@@ -607,6 +610,7 @@ class JsonMetadataValue(
             raise DagsterInvalidMetadata("Value is a dictionary but is not JSON serializable.")
         return super(JsonMetadataValue, cls).__new__(cls, data)
 
+    @public  # type: ignore
     @property
     def value(self) -> Dict[str, Any]:
         return self.data
@@ -661,6 +665,7 @@ class PythonArtifactMetadataValue(
             cls, check.str_param(module, "module"), check.str_param(name, "name")
         )
 
+    @public  # type: ignore
     @property
     def value(self) -> object:
         return self
@@ -762,6 +767,7 @@ class DagsterAssetMetadataValue(
             cls, check.inst_param(asset_key, "asset_key", AssetKey)
         )
 
+    @public  # type: ignore
     @property
     def value(self) -> "AssetKey":
         return self.value
@@ -786,6 +792,7 @@ class TableMetadataValue(
         schema (Optional[TableSchema]): A schema for the table.
     """
 
+    @public  # type: ignore
     @staticmethod
     def infer_column_type(value):
         if isinstance(value, bool):
@@ -823,6 +830,7 @@ class TableMetadataValue(
             schema,
         )
 
+    @public  # type: ignore
     @property
     def value(self):
         return self

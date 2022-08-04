@@ -1,6 +1,7 @@
 from typing import Any, Dict, NamedTuple, Optional, Union
 
 import dagster._check as check
+from dagster._annotations import PublicAttr, public
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
 from dagster._core.utils import coerce_valid_log_level
@@ -40,20 +41,20 @@ class EventLogEntry(
     NamedTuple(
         "_EventLogEntry",
         [
-            ("error_info", Optional[SerializableErrorInfo]),
-            ("level", Union[str, int]),
-            ("user_message", str),
-            ("run_id", str),
-            ("timestamp", float),
-            ("step_key", Optional[str]),
+            ("error_info", PublicAttr[Optional[SerializableErrorInfo]]),
+            ("level", PublicAttr[Union[str, int]]),
+            ("user_message", PublicAttr[str]),
+            ("run_id", PublicAttr[str]),
+            ("timestamp", PublicAttr[float]),
+            ("step_key", PublicAttr[Optional[str]]),
             ("pipeline_name", Optional[str]),
-            ("dagster_event", Optional[DagsterEvent]),
+            ("dagster_event", PublicAttr[Optional[DagsterEvent]]),
         ],
     )
 ):
     """Entries in the event log.
 
-    These entries may originate from the logging machinery (DagsterLogManager/context.log), from
+    Users should not instantiate this object directly. These entries may originate from the logging machinery (DagsterLogManager/context.log), from
     framework events (e.g. EngineEvent), or they may correspond to events yielded by user code
     (e.g. Output).
 
@@ -105,14 +106,17 @@ class EventLogEntry(
             check.opt_inst_param(dagster_event, "dagster_event", DagsterEvent),
         )
 
+    @public  # type: ignore
     @property
     def is_dagster_event(self) -> bool:
         return bool(self.dagster_event)
 
+    @public  # type: ignore
     @property
     def job_name(self) -> Optional[str]:
         return self.pipeline_name
 
+    @public  # type: ignore
     def get_dagster_event(self) -> DagsterEvent:
         if not isinstance(self.dagster_event, DagsterEvent):
             check.failed(
@@ -128,10 +132,12 @@ class EventLogEntry(
     def from_json(json_str):
         return deserialize_json_to_dagster_namedtuple(json_str)
 
+    @public  # type: ignore
     @property
     def dagster_event_type(self):
         return self.dagster_event.event_type if self.dagster_event else None
 
+    @public  # type: ignore
     @property
     def message(self) -> str:
         """

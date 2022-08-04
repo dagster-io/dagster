@@ -30,6 +30,7 @@ from typing import (
 import yaml
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import (
@@ -358,6 +359,7 @@ class DagsterInstance:
 
     # ctors
 
+    @public
     @staticmethod
     def ephemeral(
         tempdir: Optional[str] = None, preload: Optional[List["DebugRunPayload"]] = None
@@ -382,6 +384,7 @@ class DagsterInstance:
             run_launcher=SyncInMemoryRunLauncher(),
         )
 
+    @public
     @staticmethod
     def get() -> "DagsterInstance":
         dagster_home_path = os.getenv("DAGSTER_HOME")
@@ -423,6 +426,7 @@ class DagsterInstance:
 
         return DagsterInstance.from_config(dagster_home_path)
 
+    @public
     @staticmethod
     def local_temp(tempdir=None, overrides=None) -> "DagsterInstance":
         if tempdir is None:
@@ -744,9 +748,10 @@ class DagsterInstance:
         self._compute_log_manager.dispose()
 
     # run storage
+    @public
     @traced
-    def get_run_by_id(self, run_id: str) -> Optional[PipelineRun]:
-        return self._run_storage.get_run_by_id(run_id)
+    def get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
+        return cast(DagsterRun, self._run_storage.get_run_by_id(run_id))
 
     @traced
     def get_pipeline_snapshot(self, snapshot_id: str) -> "PipelineSnapshot":
@@ -1289,6 +1294,7 @@ class DagsterInstance:
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
 
+    @public
     @traced
     def get_run_records(
         self,
@@ -1328,6 +1334,7 @@ class DagsterInstance:
         self._run_storage.wipe()
         self._event_storage.wipe()
 
+    @public
     @traced
     def delete_run(self, run_id: str):
         self._run_storage.delete_run(run_id)
@@ -1377,10 +1384,12 @@ class DagsterInstance:
     def all_asset_keys(self):
         return self._event_storage.all_asset_keys()
 
+    @public
     @traced
     def get_asset_keys(self, prefix=None, limit=None, cursor=None):
         return self._event_storage.get_asset_keys(prefix=prefix, limit=limit, cursor=cursor)
 
+    @public
     @traced
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         return self._event_storage.has_asset_key(asset_key)
@@ -1391,6 +1400,7 @@ class DagsterInstance:
     ) -> Mapping[AssetKey, Optional["EventLogEntry"]]:
         return self._event_storage.get_latest_materialization_events(asset_keys)
 
+    @public
     @traced
     def get_event_records(
         self,
@@ -1412,6 +1422,7 @@ class DagsterInstance:
         """
         return self._event_storage.get_event_records(event_records_filter, limit, ascending)
 
+    @public
     @traced
     def get_asset_records(
         self, asset_keys: Optional[Sequence[AssetKey]] = None
@@ -1423,6 +1434,7 @@ class DagsterInstance:
         check.inst_param(asset_key, "asset_key", AssetKey)
         return self._event_storage.get_asset_run_ids(asset_key)
 
+    @public
     @traced
     def wipe_assets(self, asset_keys):
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)

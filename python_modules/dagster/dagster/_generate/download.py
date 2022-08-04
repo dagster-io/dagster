@@ -15,20 +15,18 @@ EXAMPLES_TO_IGNORE = ["docs_snippets"]
 # Hardcoded list of available examples. The list is tested against the examples folder in this mono
 # repo to make sure it's up-to-date.
 AVAILABLE_EXAMPLES = [
-    "airflow_ingest",
     "assets_dbt_python",
-    "bollinger",
+    "assets_modern_data_stack",
+    "assets_pandas_pyspark",
+    "assets_pandas_type_metadata",
     "deploy_docker",
     "deploy_ecs",
     "deploy_k8s",
+    "development_to_production",
     "feature_graph_backed_assets",
-    "ge_example",
-    "hacker_news_assets",
-    "memoized_development",
-    "modern_data_stack_assets",
-    "nyt-feed",
-    "run_attribution_example",
-    "software_defined_assets",
+    "project_fully_featured",
+    "with_airflow",
+    "with_great_expectations",
     "with_pyspark",
     "with_pyspark_emr",
 ]

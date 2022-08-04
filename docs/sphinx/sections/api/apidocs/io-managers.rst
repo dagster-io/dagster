@@ -42,9 +42,16 @@ Built-in IO Managers
 .. autodata:: fs_io_manager
   :annotation: IOManagerDefinition
 
-.. autodata:: custom_path_fs_io_manager
-  :annotation: IOManagerDefinition
 
+Input Managers (Experimental)
+----------------------------------
+
+Input managers load inputs from either upstream outputs or from provided default values.
+
+.. autodecorator:: input_manager
+
+.. autoclass:: InputManager
+    :members:
 
 Root Input Managers (Experimental)
 ----------------------------------

@@ -4,10 +4,9 @@ from dagster_pandas import DataFrame
 from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
 from google.cloud.bigquery.table import EncryptionConfiguration, TimePartitioning
 
-from dagster import List, Nothing
+from dagster import In, List, Nothing, Out
 from dagster import _check as check
 from dagster import op
-from dagster._legacy import InputDefinition, OutputDefinition, solid
 
 from .configs import (
     define_bigquery_create_dataset_config,
@@ -35,18 +34,24 @@ def _preprocess_config(cfg):
     return cfg
 
 
-def _bq_core_command(dagster_decorator, decorator_name, sql_queries):
+def bq_op_for_queries(sql_queries):
+    """
+    Executes BigQuery SQL queries.
+
+    Expects a BQ client to be provisioned in resources as context.resources.bigquery.
+    """
+
     sql_queries = check.list_param(sql_queries, "sql queries", of_type=str)
     m = hashlib.sha1()
     for query in sql_queries:
         m.update(query.encode("utf-8"))
     hash_str = m.hexdigest()[:10]
-    name = f"bq_{decorator_name}_{hash_str}"
+    name = f"bq_op_{hash_str}"
 
-    @dagster_decorator(
+    @op(
         name=name,
-        input_defs=[InputDefinition(_START, Nothing)],
-        output_defs=[OutputDefinition(List[DataFrame])],
+        ins={_START: In(Nothing)},
+        out=Out(List[DataFrame]),
         config_schema=define_bigquery_query_config(),
         required_resource_keys={"bigquery"},
         tags={"kind": "sql", "sql": "\n".join(sql_queries)},
@@ -73,32 +78,12 @@ def _bq_core_command(dagster_decorator, decorator_name, sql_queries):
     return _bq_fn
 
 
-def bq_solid_for_queries(sql_queries):
-    """
-    Executes BigQuery SQL queries.
-
-    Expects a BQ client to be provisioned in resources as context.resources.bigquery.
-    """
-
-    return _bq_core_command(solid, "solid", sql_queries)
-
-
-def bq_op_for_queries(sql_queries):
-    """
-    Executes BigQuery SQL queries.
-
-    Expects a BQ client to be provisioned in resources as context.resources.bigquery.
-    """
-
-    return _bq_core_command(op, "op", sql_queries)
-
-
 BIGQUERY_LOAD_CONFIG = define_bigquery_load_config()
 
 
 @op(
-    input_defs=[InputDefinition("paths", List[str])],
-    output_defs=[OutputDefinition(Nothing)],
+    ins={"paths": In(List[str])},
+    out=Out(Nothing),
     config_schema=BIGQUERY_LOAD_CONFIG,
     required_resource_keys={"bigquery"},
 )
@@ -107,8 +92,8 @@ def import_gcs_paths_to_bq(context, paths):
 
 
 @op(
-    input_defs=[InputDefinition("df", DataFrame)],
-    output_defs=[OutputDefinition(Nothing)],
+    ins={"df": In(DataFrame)},
+    out=Out(Nothing),
     config_schema=BIGQUERY_LOAD_CONFIG,
     required_resource_keys={"bigquery"},
 )
@@ -117,8 +102,8 @@ def import_df_to_bq(context, df):
 
 
 @op(
-    input_defs=[InputDefinition("path", str)],
-    output_defs=[OutputDefinition(Nothing)],
+    ins={"path": In(str)},
+    out=Out(Nothing),
     config_schema=BIGQUERY_LOAD_CONFIG,
     required_resource_keys={"bigquery"},
 )
@@ -154,7 +139,7 @@ def _execute_load_in_source(context, source, source_name):
 
 
 @op(
-    input_defs=[InputDefinition(_START, Nothing)],
+    ins={_START: In(Nothing)},
     config_schema=define_bigquery_create_dataset_config(),
     required_resource_keys={"bigquery"},
 )
@@ -171,7 +156,7 @@ def bq_create_dataset(context):
 
 
 @op(
-    input_defs=[InputDefinition(_START, Nothing)],
+    ins={_START: In(Nothing)},
     config_schema=define_bigquery_delete_dataset_config(),
     required_resource_keys={"bigquery"},
 )

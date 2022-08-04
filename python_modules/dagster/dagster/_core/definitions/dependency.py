@@ -18,6 +18,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes.serdes import (
@@ -45,11 +46,11 @@ class NodeInvocation(
     NamedTuple(
         "Node",
         [
-            ("name", str),
-            ("alias", Optional[str]),
-            ("tags", Dict[str, Any]),
-            ("hook_defs", AbstractSet[HookDefinition]),
-            ("retry_policy", Optional[RetryPolicy]),
+            ("name", PublicAttr[str]),
+            ("alias", PublicAttr[Optional[str]]),
+            ("tags", PublicAttr[Dict[str, Any]]),
+            ("hook_defs", PublicAttr[AbstractSet[HookDefinition]]),
+            ("retry_policy", PublicAttr[Optional[RetryPolicy]]),
         ],
     )
 ):
@@ -672,7 +673,12 @@ class DependencyDefinition(
 class MultiDependencyDefinition(
     NamedTuple(
         "_MultiDependencyDefinition",
-        [("dependencies", List[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]])],
+        [
+            (
+                "dependencies",
+                PublicAttr[List[Union[DependencyDefinition, Type["MappedInputPlaceholder"]]]],
+            )
+        ],
     ),
     IDependencyDefinition,
 ):
@@ -743,12 +749,15 @@ class MultiDependencyDefinition(
     def get_solid_dependencies(self) -> List[DependencyDefinition]:
         return [dep for dep in self.dependencies if isinstance(dep, DependencyDefinition)]
 
+    @public
     def get_node_dependencies(self) -> List[DependencyDefinition]:
         return self.get_solid_dependencies()
 
+    @public
     def is_fan_in(self) -> bool:
         return True
 
+    @public
     def get_dependencies_and_mappings(self) -> List:
         return self.dependencies
 

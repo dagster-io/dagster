@@ -676,7 +676,7 @@ def define_memoization_pipeline():
         return "foo"
 
     class BasicVersionStrategy(VersionStrategy):
-        def get_solid_version(self, _):
+        def get_op_version(self, _):
             return "foo"
 
     @pipeline(

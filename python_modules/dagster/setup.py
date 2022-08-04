@@ -37,10 +37,10 @@ if __name__ == "__main__":
         long_description_content_type="text/markdown",
         url="https://github.com/dagster-io/dagster",
         classifiers=[
-            "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3.9",
+            "Programming Language :: Python :: 3.10",
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
@@ -50,7 +50,7 @@ if __name__ == "__main__":
                 "dagster/core/storage/event_log/sqlite/alembic/*",
                 "dagster/core/storage/runs/sqlite/alembic/*",
                 "dagster/core/storage/schedules/sqlite/alembic/*",
-                "dagster/generate/new_project/*",
+                "dagster/_generate/templates/*",
                 "dagster/grpc/protos/*",
             ]
         },

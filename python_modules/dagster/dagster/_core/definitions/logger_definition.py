@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast, overload
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidInvocationError
 
 from ..decorator_utils import get_function_params
@@ -84,14 +85,17 @@ class LoggerDefinition(AnonymousConfigurableDefinition):
 
             return logger_invocation_result(self, context)
 
+    @public  # type: ignore
     @property
     def logger_fn(self) -> "InitLoggerFunction":
         return self._logger_fn
 
+    @public  # type: ignore
     @property
     def config_schema(self) -> Any:
         return self._config_schema
 
+    @public  # type: ignore
     @property
     def description(self) -> Optional[str]:
         return self._description

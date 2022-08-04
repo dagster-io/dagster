@@ -5,7 +5,7 @@ description: The "software-defined asset" APIs sit atop of the graph/job/op APIs
 
 # Software-Defined Assets with Pandas and PySpark
 
-<CodeReferenceLink filePath="examples/software_defined_assets" />
+<CodeReferenceLink filePath="examples/assets_pandas_pyspark" />
 
 The software-defined asset APIs sit atop of the graph/job/op APIs and enable a novel approach to orchestration that puts assets at the forefront.
 
@@ -27,7 +27,7 @@ In this example, we'll define some tables with dependencies on each other. We ha
 
 Here are our asset definitions that define tables we want to materialize.
 
-```python file=../../software_defined_assets/software_defined_assets/assets.py startafter=start_marker endbefore=end_marker
+```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/assets/table_assets.py startafter=start_marker endbefore=end_marker
 import pandas as pd
 from pandas import DataFrame
 
@@ -67,14 +67,14 @@ Having defined some assets, we can combine them with resources and IO managers t
 
 It's common to use a utility like <PyObject object="load_assets_from_modules" /> or <PyObject object="load_assets_from_package_name" /> to pick up all the assets within a module or package, so you don't need to list them individually.
 
-```python file=../../software_defined_assets/software_defined_assets/weather_assets.py startafter=gather_assets_start endbefore=gather_assets_end
+```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/assets/weather_assets.py startafter=gather_assets_start endbefore=gather_assets_end
 # imports the module called "assets" from the package containing the current module
 # the "assets" module contains the asset definitions
-from . import assets
+from . import table_assets
 from dagster import load_assets_from_modules, with_resources
 
 weather_assets = with_resources(
-    load_assets_from_modules(modules=[assets]),
+    load_assets_from_modules(modules=[table_assets]),
     resource_defs={
         "io_manager": IOManagerDefinition.hardcoded_io_manager(LocalFileSystemIOManager())
     },
@@ -85,7 +85,7 @@ The order that we supply the assets doesn't matter, since the dependencies are d
 
 The functions we used to define our assets describe how to compute their contents, but not how to read and write them to persistent storage. For reading and writing, we define an <PyObject object="IOManager" />. In this case, our `LocalFileSystemIOManager` stores DataFrames as CSVs on the local filesystem:
 
-```python file=../../software_defined_assets/software_defined_assets/weather_assets.py startafter=io_manager_start endbefore=io_manager_end
+```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/assets/weather_assets.py startafter=io_manager_start endbefore=io_manager_end
 class LocalFileSystemIOManager(IOManager):
     """Translates between Pandas DataFrames and CSVs on the local filesystem."""
 
@@ -108,7 +108,7 @@ class LocalFileSystemIOManager(IOManager):
 
 Not all the assets in the same dependency graph need to have the same Python type. Here's an asset whose computation is defined using Spark DataFrames, that depends on the `daily_temperature_highs` asset we defined above using Pandas.
 
-```python file=../../software_defined_assets/software_defined_assets/spark_asset.py
+```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/assets/spark_asset.py
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql import Window
 from pyspark.sql import functions as f
@@ -131,12 +131,12 @@ def daily_temperature_high_diffs(daily_temperature_highs: SparkDF) -> SparkDF:
 
 Here's an extended version of `weather_assets` that contains the new asset:
 
-```python file=../../software_defined_assets/software_defined_assets/spark_weather_assets.py startafter=gather_assets_start endbefore=gather_assets_end
-from . import assets, spark_asset
+```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/assets/spark_weather_assets.py startafter=gather_assets_start endbefore=gather_assets_end
+from . import table_assets, spark_asset
 from dagster import load_assets_from_modules, with_resources
 
 spark_weather_assets = with_resources(
-    load_assets_from_modules(modules=[assets, spark_asset]),
+    load_assets_from_modules(modules=[table_assets, spark_asset]),
     resource_defs={
         "io_manager": IOManagerDefinition.hardcoded_io_manager(LocalFileSystemIOManager())
     },
@@ -147,7 +147,7 @@ spark_weather_assets = with_resources(
 
 Because the same assets will be written and read into different Python types in different situations, we need to define an <PyObject object="IOManager" /> that can handle both of those types. Here's an extended version of the <PyObject object="IOManager" /> we defined before:
 
-```python file=../../software_defined_assets/software_defined_assets/spark_weather_assets.py startafter=io_manager_start endbefore=io_manager_end
+```python file=../../assets_pandas_pyspark/assets_pandas_pyspark/assets/spark_weather_assets.py startafter=io_manager_start endbefore=io_manager_end
 class LocalFileSystemIOManager(IOManager):
     def _get_fs_path(self, asset_key: AssetKey) -> str:
         return os.path.abspath(os.path.join(*asset_key.path))
