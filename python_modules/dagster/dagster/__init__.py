@@ -447,6 +447,7 @@ from dagster._core.storage.file_manager import (
     local_file_manager as local_file_manager,
 )
 from dagster._core.storage.fs_io_manager import (
+    custom_path_fs_io_manager as custom_path_fs_io_manager,
     fs_io_manager as fs_io_manager,
 )
 from dagster._core.storage.input_manager import (
@@ -523,9 +524,7 @@ from dagster._utils.test import (
 
 # isort: on
 
-from dagster.version import (
-    __version__
-)
+from dagster.version import __version__
 
 # ########################
 # ##### DYNAMIC IMPORTS
