@@ -1,7 +1,201 @@
 ---
-title: "Branch deployments in Dagster Cloud  | Dagster Docs"
-
-noindex: True
+title: Branch Deployments in Dagster Cloud | Dagster Docs
+description: Develop and test in the cloud.
 ---
 
-# Branch deployments in Dagster Cloud
+# Branch Deployments in Dagster Cloud
+
+Branch Deployments automatically create staging environments of your Dagster code, right in Dagster Cloud. For every push to a branch in your git repository, Dagster Cloud will create a unique deployment, allowing you to preview the changes in the branch in real-time.
+
+---
+
+## Understanding Branch Deployments
+
+- [Overview](#overview)
+- [Requirements](#requirements)
+- [Supported platforms](#supported-platforms)
+- [Limitations](#limitations)
+- [Output handling](#output-handling)
+
+### Overview
+
+Think of a branch deployment as a branch of your data platform, one where you can preview changes without impacting production or overwriting a testing environment.
+
+<center>
+  <Image
+    src="/images/dagster-cloud/developing-testing/branch-deployments/branch-deployments.png"
+    width={532}
+    height={573}
+  />
+</center>
+
+Let's take a closer look:
+
+1. In your git repository, a new branch is created off of `master`. In the example above, this branch is named `feature-branch`.
+2. Dagster Cloud is notified of the push and begins creating a branch deployment, or staging environment.
+3. For every push to `feature-branch`, the branch deployment is rebuilt and redeployed.
+
+Now that you know how Branch Deployments work, **why should you use them**?
+
+- **Improved collaboration.** Branch Deployments make it easy for everyone on your team to stay in the loop on the latest Dagster changes.
+- **Reduced development cycle.** Quickly test and iterate on your changes without impacting production or overwriting a testing environment.
+
+### Requirements
+
+To use Branch Deployments, you'll need a [Dagster Cloud account](https://dagster.cloud/).
+
+### Supported platforms
+
+Branch Deployments can be used with any git or CI provider. However, setup is easiest with the [Dagster GitHub app](/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github) as parts of the process are automated. Refer to the [Setting up Branch Deployments section](#setting-up-branch-deployments) for more info.
+
+### Limitations
+
+The following aren't currently supported for Branch Deployments:
+
+- Use in Dagster Open Source
+- [Schedules](/concepts/partitions-schedules-sensors/schedules), [sensors](/concepts/partitions-schedules-sensors/sensors), and [backfills](/concepts/partitions-schedules-sensors/backfills)
+
+### Output handling
+
+Output created from a branch deployment - such a database, table, etc. - won't be automatically removed from storage once a branch is merged or closed. Refer to the [Best practices section](#best-practices) for info on how to handle this.
+
+---
+
+## Managing Branch Deployments
+
+- [Setting up Branch Deployments](#setting-up-branch-deployments)
+- [Accessing a branch deployment](#accessing-a-branch-deployment)
+
+### Setting up Branch Deployments
+
+There are currently two ways to set up Branch Deployoments for Dagster Cloud. In the table below:
+
+- **Platform** - The name of the git/CI platform, which is also a link to a setup guide
+- **How it works** - Summary of how Branch Deployments work with the platform
+- **May be a good fit if...** - A high-level summary of when the platform may be a good fit
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "25%",
+        }}
+      >
+        Platform
+      </th>
+      <th>How it works</th>
+      <th>May be a good fit if...</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <a href="/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github">
+          GitHub
+        </a>
+      </td>
+      <td>GitHub Actions</td>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            You use GitHub for version control
+          </li>
+          <li>You want Dagster to fully automate Branch Deployments</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments">
+          Other git/CI platform
+        </a>
+      </td>
+      <td>
+        <a href="/dagster-cloud/developing-testing/dagster-cloud-cli">
+          dagster-cloud CLI
+        </a>
+      </td>
+      <td>
+        <ul
+          style={{
+            marginTop: "0px",
+          }}
+        >
+          <li
+            style={{
+              marginTop: "0px",
+            }}
+          >
+            You don't use GitHub for version control
+          </li>
+          <li>You use an alternate CI platform</li>
+          <li>You want full control over Branch Deployment configuration</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+### Accessing a branch deployment
+
+Once configured, branch deployments can be accessed:
+
+- [From a GitHub pull request](#from-a-github-pull-request)
+- [Directly in Dagster Cloud](#directly-in-dagster-cloud)
+
+#### From a GitHub pull request
+
+Every pull request in the repository contains a **View in Cloud** link:
+
+<Image
+alt="View in Cloud preview link highlighted in a GitHub pull request"
+src="/images/dagster-cloud/developing-testing/branch-deployments/github-cloud-preview-link.png"
+width={922}
+height={521}
+/>
+
+Clicking the link will open a branch deployment - or a preview of the changes - in Dagster Cloud:
+
+<Image
+alt="Clicking the GitHub pull request View in Cloud link and opening the branch deployment in Dagster Cloud"
+src="/images/dagster-cloud/developing-testing/branch-deployments/github-preview-link-click.gif"
+width={640}
+height={480}
+/>
+
+#### Directly in Dagster Cloud
+
+You can also access branch deployments directly in Dagster Cloud from the **deployment switcher**:
+
+<Image
+alt="Highlighted branch deployment in the Dagster Cloud deployment switcher"
+src="/images/dagster-cloud/developing-testing/branch-deployments/dagit-deployment-switcher.png"
+width={563}
+height={311}
+/>
+
+---
+
+## Best practices
+
+To ensure the best experience when using Branch Deployments, we recommend:
+
+- **Configuring jobs based on environment**. Dagster automatically sets environment variables containing deployment metadata, allowing you to parameterize jobs based on the executing environment. Use these variables in your jobs to configure things like connection credentials, database, and so on. This practice will allow you to use Branch Deployments without impacting production data.
+
+- **Creating jobs to automate output cleanup.** As Branch Deployments don't automatically remove [the output they create](#output-handling), you may want to create an additional Dagster job to perform the cleanup.
+
+**Want some help with implementation?** Check out the [Testing against production with Dagster Cloud Branch Deployments guide](/guides/dagster/branch_deployments) for a step-by-step look at implementing these best practices in your own data pipelines.

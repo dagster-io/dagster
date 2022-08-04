@@ -17,6 +17,7 @@ import "react-medium-image-zoom/dist/styles.css";
 export const SearchIndexContext = React.createContext(null);
 import path from "path";
 import GenerateAgentToken from "./includes/dagster-cloud/GenerateAgentToken.mdx";
+import BDCreateConfigureAgent from "./includes/dagster-cloud/BDCreateConfigureAgent.mdx";
 import { Tab, Transition } from "@headlessui/react";
 
 const PyObject: React.FunctionComponent<{
@@ -619,6 +620,7 @@ export default {
   ReferenceTable,
   ReferenceTableItem,
   GenerateAgentToken,
+  BDCreateConfigureAgent,
   ArticleList,
   ArticleListItem,
   ExampleItemSmall,
