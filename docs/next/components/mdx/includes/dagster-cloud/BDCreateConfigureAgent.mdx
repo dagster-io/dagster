@@ -1,0 +1,91 @@
+While you can use your existing production agent, we recommend creating a dedicated branch deployment agent. This ensures that your production instance isn't negatively impacted by the workload associated with branch deployments.
+
+<details>
+  <summary><strong>AMAZON ECS AGENTS</strong></summary>
+
+1. **Create a new Amazon ECS agent**. [Click here to spin up the agent](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3.amazonaws.com/dagster.cloud/cloudformation/ecs-agent-branch-deployments.yaml) using our CloudFormation template.
+
+   **Note**: Creating the CloudFormation stack may take a few minutes; refreshing the [AWS console Stacks page](https://console.aws.amazon.com/cloudformation/home#/stacks) will show its status. For more information, see the [ECS agent setup guide](/dagster-cloud/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc).
+
+2. **Create a private [Amazon Elastic Registry (ECR) repository](https://console.aws.amazon.com/ecr/repositories).** Refer to the [AWS ECR documentation](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html) for instructions.
+
+   After the repository has been created, navigate back to the list of [ECR repositories](https://console.aws.amazon.com/ecr/repositories).
+
+   In the list, locate the repository and its **URI**:
+
+   <Image
+   alt="Highlighted repository URI in the AWS ECR console"
+   src="/images/dagster-cloud/developing-testing/branch-deployments/aws-ecr-uri.png"
+   width={1086}
+   height={159}
+   />
+
+3. [**Create an IAM user.**](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html) This user must:
+
+   - Have push access to the ECR repository, and
+   - Have programmatic access to AWS using an [access key](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html)
+
+   After the user is created, save the **Access key ID** and **Secret access key** values shown on the confirmation page:
+
+   <Image
+   alt="Highlighted repository URI in the AWS ECR console"
+   src="/images/dagster-cloud/developing-testing/branch-deployments/aws-iam-user-keys.png"
+   width={999}
+   height={420}
+   />
+
+</details>
+
+<details>
+  <summary><strong>DOCKER AGENTS</strong></summary>
+
+1. Set up a new Docker agent. Refer to the [Docker agent setup guide](/dagster-cloud/deployment/agents/docker) for instructions.
+2. After the agent is set up, modify the `dagster.yaml` file as follows:
+
+   - Set the `dagster_cloud_api.branch_deployments` field to `true`
+   - Remove any `deployment` field(s)
+
+   For example:
+
+   ```yaml
+   # dagster.yaml
+
+   instance_class:
+     module: dagster_cloud.instance
+     class: DagsterCloudAgentInstance
+
+   dagster_cloud_api:
+     agent_token: <YOUR_AGENT_TOKEN>
+     branch_deployments: true ## true enables branch deployments
+
+   user_code_launcher:
+     module: dagster_cloud.workspace.docker
+     class: DockerUserCodeLauncher
+     config:
+       networks:
+         - dagster_cloud_agent
+       server_ttl:
+         enabled: true
+         ttl_seconds: 7200 #2 hours
+   ```
+
+</details>
+
+<details>
+  <summary><strong>KUBERNETES AGENTS</strong></summary>
+
+1. Set up a new Kubernetes agent. Refer to the [Kubernetes agent setup guide](/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent) for instructions.
+
+2. After the agent is set up, modify your Helm values file to include the following:
+
+   ```yaml
+   dagsterCloud:
+     branchDeployments: true
+   ---
+   workspace:
+     serverTTL:
+       enabled: true
+       ttlSeconds: 7200
+   ```
+
+</details>
