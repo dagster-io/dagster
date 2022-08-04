@@ -33,8 +33,8 @@ if __name__ == "__main__":
         packages=find_packages(exclude=["dagster_databricks_tests*"]),
         include_package_data=True,
         install_requires=[
-            "dagster==1.0.0",
-            "dagster-pyspark==0.16.0",
+            "dagster==1.0.0-pre0",
+            "dagster-pyspark==0.16.0-pre0",
             "databricks_api",
         ],
         zip_safe=False,

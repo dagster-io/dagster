@@ -34,7 +34,7 @@ if __name__ == "__main__":
         include_package_data=True,
         install_requires=[
             "boto3",
-            "dagster==1.0.0",
+            "dagster==1.0.0-pre0",
             "packaging",
             "requests",
         ],

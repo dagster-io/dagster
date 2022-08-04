@@ -31,6 +31,6 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["dagster_papertrail_tests*"]),
-        install_requires=["dagster==1.0.0"],
+        install_requires=["dagster==1.0.0-pre0"],
         zip_safe=False,
     )

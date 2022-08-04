@@ -33,8 +33,8 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_gcp_tests*"]),
         install_requires=[
-            "dagster==1.0.0",
-            "dagster_pandas==0.16.0",
+            "dagster==1.0.0-pre0",
+            "dagster_pandas==0.16.0-pre0",
             "google-api-python-client<2.0.0",
             "google-cloud-bigquery>=1.19.*,<3",  # 3.0.0b1 gives ModuleNotFoundError: No module named 'db_dtypes'
             "google-cloud-storage",

@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["dagster_ssh_tests*"]),
-        install_requires=["dagster==1.0.0", "sshtunnel", "paramiko"],
+        install_requires=["dagster==1.0.0-pre0", "sshtunnel", "paramiko"],
         extras_require={"test": ["cryptography==2.6.1", "pytest-sftpserver==1.2.0"]},
         zip_safe=False,
     )
