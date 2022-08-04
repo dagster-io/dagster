@@ -24,8 +24,8 @@
 In 1.0.0, a large number of previously-deprecated APIs have been fully removed. A full list of breaking changes and deprecations, alongside instructions on how to migrate older code, can be found in [MIGRATION.md](https://github.com/dagster-io/dagster/blob/master/MIGRATION.md). At a high level:
 
 * The `solid` and `pipeline` APIs have been removed, along with references to them in extension libraries, arguments, and the CLI *(deprecated in `0.13.0)`*.
-* The `AssetGroup` and `build_asset_job` APIs, and a host of deprecated arguments to asset-related functions, have been removed *(deprecated in `0.15.0`)*
-* The `EventMetadata` and `EventMetadataEntryData` APIs have been removed *(deprecated in `0.15.0`)*
+* The `AssetGroup` and `build_asset_job` APIs, and a host of deprecated arguments to asset-related functions, have been removed *(deprecated in `0.15.0`)*.
+* The `EventMetadata` and `EventMetadataEntryData` APIs have been removed *(deprecated in `0.15.0`)*.
 
 ### Deprecations
 
@@ -58,8 +58,8 @@ In 1.0.0, a large number of previously-deprecated APIs have been fully removed. 
 
 ### Documentation
 
-* New [guide](https://docs.dagster.io/guides/dagster/transitioning-data-pipelines-from-development-to-production) that walks through seamlessly transitioning code from development to production environments 
-* New [guide](https://docs.dagster.io/guides/dagster/branch_deployments) that demonstrates using Branch Deployments to test Dagster code in your cloud environment without impacting your production data
+* New [guide](https://docs.dagster.io/guides/dagster/transitioning-data-pipelines-from-development-to-production) that walks through seamlessly transitioning code from development to production environments.
+* New [guide](https://docs.dagster.io/guides/dagster/branch_deployments) that demonstrates using Branch Deployments to test Dagster code in your cloud environment without impacting your production data.
 
 # 0.15.8
 
