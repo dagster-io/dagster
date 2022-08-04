@@ -12,7 +12,7 @@
     * Check out [Create a New Project](https://docs.dagster.io/getting-started/create-new-project) for more details.
 * A `default_executor_def` argument has been added to the `@repository` decorator. If specified, this will be used for any jobs (asset or op) which do not explicitly set an `executor_def`.
 * A `default_logger_defs` argument has been added to the `@repository` decorator, which works in the same way as `default_executor_def`.
-* A new `execute_job` function presents a new Python API for kicking off runs of your jobs.
+* A new `execute_job` function presents a Python API for kicking off runs of your jobs.
 * Run status sensors may now yield `RunRequests`, allowing you to kick off a job in response to the status of another job.
 * When loading an upstream asset or op output as an input, you can now set custom loading behavior using the `input_manager_key` argument to AssetIn and In.
 * In the UI, the global lineage graph has been brought back and reworked! The graph keeps assets in the same group visually clustered together, and the query bar allows you to visualize a custom slice of your asset graph.
