@@ -9,6 +9,12 @@ from .sensors import make_slack_on_failure_sensor
 
 all_assets = [*core_assets, *recommender_assets, *dbt_assets, *activity_analytics_assets]
 
+all_jobs = [
+    activity_analytics_assets_sensor,
+    core_assets_schedule,
+    recommender_assets_sensor,
+]
+
 resource_defs_by_deployment_name = {
     "prod": RESOURCES_PROD,
     "staging": RESOURCES_STAGING,
@@ -23,9 +29,7 @@ def hacker_news_repository():
 
     definitions = [
         with_resources(all_assets, resource_defs),
-        activity_analytics_assets_sensor,
-        recommender_assets_sensor,
-        core_assets_schedule,
+        *all_jobs,
     ]
     if deployment_name in ["prod", "staging"]:
         definitions.append(make_slack_on_failure_sensor(base_url="my_dagit_url"))
