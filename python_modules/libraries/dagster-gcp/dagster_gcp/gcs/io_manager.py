@@ -51,6 +51,9 @@ class PickledObjectGCSIOManager(IOManager):
         return "gs://" + self.bucket + "/" + "{key}".format(key=key)
 
     def load_input(self, context):
+        if context.dagster_type.typing_type == type(None):
+            return None
+
         key = self._get_path(context)
         context.log.debug(f"Loading GCS object from: {self._uri_for_key(key)}")
 
@@ -60,6 +63,14 @@ class PickledObjectGCSIOManager(IOManager):
         return obj
 
     def handle_output(self, context, obj):
+        if context.dagster_type.typing_type == type(None):
+            check.invariant(
+                obj is None,
+                "Output had Nothing type or 'None' annotation, but handle_output received value "
+                f"that was not None and was of type {type(obj)}.",
+            )
+            return None
+
         key = self._get_path(context)
         context.log.debug(f"Writing GCS object at: {self._uri_for_key(key)}")
 
