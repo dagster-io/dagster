@@ -279,7 +279,13 @@
           },
           {
             "title": "Concepts",
-            "path": "/deployment/concepts"
+            "path": "/deployment/concepts",
+            "children": [
+              {
+                "title": "Dagster instance",
+                "path": "/deployment/dagster-instance"
+              }
+            ]
           },
           {
             "title": "Guides",
