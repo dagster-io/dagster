@@ -1,4 +1,4 @@
-# Hacker News Demo
+# Fully Featured Project Example
 
 This is meant to be a full "realistic" demo of Dagster, that takes advantage of many of its features, including:
 
@@ -10,7 +10,7 @@ This is meant to be a full "realistic" demo of Dagster, that takes advantage of 
 - dbt, S3, and PySpark integrations
 - Lightweight invocation in unit tests
 
-Feel free to poke around!
+View this example in the Dagster docs at [Fully Featured Project](https://docs.dagster.io/guides/dagster/example_project).
 
 ## Getting started
 
