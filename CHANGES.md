@@ -30,7 +30,7 @@ In 1.0.0, a large number of previously-deprecated APIs have been fully removed. 
 ### Deprecations
 
 * `dagster_type_materializer` and `DagsterTypeMaterializer` have been marked experimental and will likely be removed within a 1.x release. Instead, use an `IOManager`.
-* `FileManager` and `FileHandle` have been marked experimental and will likely be removed within a 1.x release. 1.x release.  
+* `FileManager` and `FileHandle` have been marked experimental and will likely be removed within a 1.x release.
 
 ### Other Changes
 
@@ -40,7 +40,7 @@ In 1.0.0, a large number of previously-deprecated APIs have been fully removed. 
 * The `custom_path_fs_io_manager` has been removed, as its functionality is entirely subsumed by the `fs_io_manager`, where a custom path can be specified via config.
 * The default `typing_type` of a `DagsterType` is now `typing.Any` instead of `None`.
 
-### New since 0.15.8
+## New since 0.15.8
 
 * [dagster-databricks] When using the `databricks_pyspark_step_launcher` the events sent back to the host process are now compressed before sending, resulting in significantly better performance for steps which produce a large number of events.
 * [dagster-dbt] If an error occurs in `load_assets_from_dbt_project` while loading your repository, the error message in Dagit will now display additional context from the dbt logs, instead of just `DagsterDbtCliFatalRuntimeError`.
