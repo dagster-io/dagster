@@ -516,20 +516,11 @@ from dagster.version import (
 
 # isort: split
 import importlib
-from typing import (
-    TYPE_CHECKING,
-    Any as TypingAny,
-    Callable,
-    Mapping,
-    Tuple as TypingTuple,
-)
+from typing import TYPE_CHECKING, Any as TypingAny, Callable, Mapping, Tuple as TypingTuple
 
 from typing_extensions import Final
 
-from dagster._utils.backcompat import (
-    deprecation_warning,
-    rename_warning,
-)
+from dagster._utils.backcompat import deprecation_warning, rename_warning
 
 # NOTE: Unfortunately we have to declare deprecated aliases twice-- the
 # TYPE_CHECKING declaration satisfies linters and type checkers, but the entry
@@ -537,10 +528,7 @@ from dagster._utils.backcompat import (
 
 if TYPE_CHECKING:
     # pylint:disable=reimported
-    from dagster._core.types.config_schema import (
-        DagsterTypeMaterializer,
-        dagster_type_materializer,
-    )
+    from dagster._core.types.config_schema import DagsterTypeMaterializer, dagster_type_materializer
 
     # pylint:enable=reimported
 
@@ -577,3 +565,7 @@ def __getattr__(name: str) -> TypingAny:
         return value
     else:
         raise AttributeError("module '{}' has no attribute '{}'".format(__name__, name))
+
+
+def __dir__(_self):
+    return [*globals(), *_DEPRECATED.keys(), *_DEPRECATED_RENAMED.keys()]
