@@ -1,6 +1,6 @@
-from dagster import op, job, resource
-from dagster import op, job, repository, resource, graph
 import os
+
+from dagster import graph, job, op, repository, resource
 
 
 @resource
@@ -13,9 +13,9 @@ def get_env():
 
 
 # start_database_example
-@op(required_resource_keys={'database'})
+@op(required_resource_keys={"database"})
 def get_one(context):
-    context.resources.database.execute_query('SELECT 1')
+    context.resources.database.execute_query("SELECT 1")
 
 
 @graph
@@ -29,22 +29,22 @@ def my_repo():
         "local": {
             "database": database_client.configured(
                 {
-                    'username': {'env': 'DEV_USER'},
-                    'password': {'env': 'DEV_PASSWORD'},
-                    'hostname': 'localhost',
-                    'db_name': 'DEVELOPMENT',
-                    'port': '5432',
+                    "username": {"env": "DEV_USER"},
+                    "password": {"env": "DEV_PASSWORD"},
+                    "hostname": "localhost",
+                    "db_name": "DEVELOPMENT",
+                    "port": "5432",
                 }
             )
         },
         "production": {
             "database": database_client.configured(
                 {
-                    'username': {'env': 'SYSTEM_USER'},
-                    'password': {'env': 'SYSTEM_PASSWORD'},
-                    'hostname': 'abccompany',
-                    'db_name': 'PRODUCTION',
-                    'port': '5432',
+                    "username": {"env": "SYSTEM_USER"},
+                    "password": {"env": "SYSTEM_PASSWORD"},
+                    "hostname": "abccompany",
+                    "db_name": "PRODUCTION",
+                    "port": "5432",
                 }
             )
         },

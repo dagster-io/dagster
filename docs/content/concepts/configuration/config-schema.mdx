@@ -23,7 +23,7 @@ A common use of configuration is for a [schedule](/concepts/partitions-schedules
 
 ## Defining and accessing configuration for an op, asset, or resource
 
-Configurable parameters accepted by an op, asset, or resource are specified by providing a `config_schema` to the corresponding decorator. The structure of a `config_schema` is flexible and [fully documented in the API Reference](/\_apidocs/config). However, most of the time you will want to provide a Python dictionary, with keys the names of parameters and values the types of those parameters.
+Configurable parameters accepted by an op, asset, or resource are specified by providing a `config_schema` to the corresponding decorator. The structure of a `config_schema` is flexible and [fully documented in the API Reference](/_apidocs/config). However, most of the time you will want to provide a Python dictionary, with keys the names of parameters and values the types of those parameters.
 
 During execution, the specified parameters are accessible within the body of the op/asset/resource under `context.op_config` (for ops/assets) or `context.resource_config` (for resources). It might seem confusing that asset config is accessed under `context.op_config` instead of `context.asset_config`. However, assets are wrappers for ops, so when we access asset config we are literally just accessing config for the underlying op.
 
@@ -88,15 +88,15 @@ asset_result = materialize(
 From Dagit's [Launchpad](/concepts/dagit/dagit#launchpad), we supply config as YAML using the config editor. The editor has typeahead, schema validation, and schema documentation. You can also click the "Scaffold Missing Config" button to generate dummy values based on the config schema. Note that a modal containing the launchpad editor will pop up if we attempt to materialize an asset with a defined `config_schema`:
 
 <Image
-alt="Config in Dagit"
-src="/images/concepts/config-dagit.png"
-width={3808}
-height={2414}
+  alt="Config in Dagit"
+  src="/images/concepts/config-dagit.png"
+  width={3808}
+  height={2414}
 />
 
 ### Command Line
 
-When executing a job from Dagster's CLI with [dagster job execute](/\_apidocs/cli#dagster-job-execute), we can put config in a YAML file and pass the file path with the `--config` option:
+When executing a job from Dagster's CLI with [dagster job execute](/_apidocs/cli#dagster-job-execute), we can put config in a YAML file and pass the file path with the `--config` option:
 
 ```YAML file=/concepts/configuration/good.yaml
 ops:
@@ -204,14 +204,17 @@ def total_num_files(context):
 def file_dir_job():
     add_file()
     total_num_files()
+```
 
+You can then specify your config under the `file_dir` resource:
 
+```python file=/concepts/configuration/make_values_resource_run_config.py startafter=start_run_config_1 endbefore=end_run_config_1
 result = file_dir_job.execute_in_process(
     run_config={"resources": {"file_dir": {"config": "/my_files/"}}}
 )
 ```
 
-You can also specify the schema of the values like:
+Alternatively, if you want to provide different config values for each op within a job, you can also specify the schema of the values like:
 
 ```python file=/concepts/configuration/make_values_resource_config_schema.py startafter=start_file_example endbefore=end_file_example
 from dagster import job, make_values_resource, op
@@ -232,12 +235,15 @@ def total_num_files(context):
 
 
 @job(resource_defs={"file_dirs": make_values_resource(write_file_dir=str, count_file_dir=str)})
-def file_dir_job():
+def file_dirs_job():
     write_file()
     total_num_files()
+```
 
+You can specify run config like so:
 
-result = file_dir_job.execute_in_process(
+```python file=/concepts/configuration/make_values_resource_run_config.py startafter=start_run_config_2 endbefore=end_run_config_2
+result = file_dirs_job.execute_in_process(
     run_config={
         "resources": {
             "file_dirs": {
@@ -251,7 +257,7 @@ result = file_dir_job.execute_in_process(
 )
 ```
 
-And pass the values via a run config like so:
+Or pass these values via a YAML file:
 
 ```YAML file=/concepts/configuration/make_values_resource_values.yaml
 resources:

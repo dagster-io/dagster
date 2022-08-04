@@ -1,10 +1,10 @@
-from dagster import job, op
 import os
+
+from dagster import job, make_values_resource, op
 
 # start_file_example
 
 
-from dagster import job, make_values_resource, op
 
 
 @op(required_resource_keys={"file_dir"})
@@ -26,9 +26,5 @@ def file_dir_job():
     add_file()
     total_num_files()
 
-
-result = file_dir_job.execute_in_process(
-    run_config={"resources": {"file_dir": {"config": "/my_files/"}}}
-)
 
 # end_file_example
