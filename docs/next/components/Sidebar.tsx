@@ -37,7 +37,7 @@ const MenuItem = React.forwardRef<
   const rightIcon = item.isExternalLink
     ? Icons["ExternalLink"]
     : item.children &&
-      (expanded ? Icons["ChevronDown"] : Icons["ChevronRight"]);
+      (expanded || match ? Icons["ChevronDown"] : Icons["ChevronRight"]);
 
   const itemClassName = cx(
     "w-full transition group flex justify-between items-center rounded-md text-gray-700 dark:text-gray-200",
@@ -178,7 +178,7 @@ const RecursiveNavigation = ({
         onClick={() => onClick(navKey)}
         expanded={expanded}
       />
-      {expanded &&
+      {(expanded || match) &&
         itemOrSection.children.map((item, idx) => {
           return (
             <div className="border-l ml-6" key={idx}>
