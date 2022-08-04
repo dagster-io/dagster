@@ -1131,10 +1131,12 @@ class RepositoryDefinition:
         self._description = check.opt_str_param(description, "description")
         self._repository_data = check.inst_param(repository_data, "repository_data", RepositoryData)
 
+    @public  # type: ignore
     @property
     def name(self) -> str:
         return self._name
 
+    @public  # type: ignore
     @property
     def description(self) -> Optional[str]:
         return self._description
@@ -1148,6 +1150,7 @@ class RepositoryDefinition:
         """List[str]: Names of all pipelines/jobs in the repository"""
         return self._repository_data.get_pipeline_names()
 
+    @public  # type: ignore
     @property
     def job_names(self) -> List[str]:
         """List[str]: Names of all jobs in the repository"""
@@ -1190,6 +1193,7 @@ class RepositoryDefinition:
         """
         return self._repository_data.get_all_pipelines()
 
+    @public  # type: ignore
     def has_job(self, name: str) -> bool:
         """Check if a job with a given name is present in the repository.
 
@@ -1201,6 +1205,7 @@ class RepositoryDefinition:
         """
         return self._repository_data.has_job(name)
 
+    @public  # type: ignore
     def get_job(self, name: str) -> JobDefinition:
         """Get a job by name.
 
@@ -1217,6 +1222,7 @@ class RepositoryDefinition:
         """
         return self._repository_data.get_job(name)
 
+    @public  # type: ignore
     def get_all_jobs(self) -> List[JobDefinition]:
         """Return all jobs in the repository as a list.
 
@@ -1235,23 +1241,29 @@ class RepositoryDefinition:
     def get_partition_set_def(self, name: str) -> PartitionSetDefinition:
         return self._repository_data.get_partition_set(name)
 
+    @public  # type: ignore
     @property
     def schedule_defs(self) -> List[ScheduleDefinition]:
         return self._repository_data.get_all_schedules()
 
+    @public  # type: ignore
     def get_schedule_def(self, name: str) -> ScheduleDefinition:
         return self._repository_data.get_schedule(name)
 
+    @public  # type: ignore
     def has_schedule_def(self, name: str) -> bool:
         return self._repository_data.has_schedule(name)
 
+    @public  # type: ignore
     @property
     def sensor_defs(self) -> List[SensorDefinition]:
         return self._repository_data.get_all_sensors()
 
+    @public  # type: ignore
     def get_sensor_def(self, name: str) -> SensorDefinition:
         return self._repository_data.get_sensor(name)
 
+    @public  # type: ignore
     def has_sensor_def(self, name: str) -> bool:
         return self._repository_data.has_sensor(name)
 

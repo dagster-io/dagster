@@ -15,6 +15,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._annotations import experimental
 from dagster._core.definitions import IPipeline, JobDefinition, PipelineDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import PipelineSubsetDefinition
@@ -420,6 +421,7 @@ class ReexecutionOptions(NamedTuple):
         return ReexecutionOptions(parent_run_id=run_id, step_selection=step_keys_to_execute)
 
 
+@experimental
 def execute_job(
     job: ReconstructableJob,
     instance: "DagsterInstance",

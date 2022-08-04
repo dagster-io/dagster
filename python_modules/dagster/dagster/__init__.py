@@ -248,7 +248,7 @@ from dagster._core.storage.event_log import (
     RunShardedEventsCursor,
 )
 from dagster._core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
-from dagster._core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
+from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.storage.input_manager import InputManager, input_manager
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
 from dagster._core.storage.mem_io_manager import mem_io_manager
