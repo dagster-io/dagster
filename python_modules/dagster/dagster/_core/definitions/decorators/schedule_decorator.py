@@ -48,8 +48,8 @@ if TYPE_CHECKING:
 
 
 def schedule(
-    *,
     cron_schedule: str,
+    *,
     job_name: Optional[str] = None,
     name: Optional[str] = None,
     tags: Optional[Dict[str, str]] = None,
@@ -186,8 +186,8 @@ def schedule(
 
 
 def monthly_schedule(
-    *,
     pipeline_name: Optional[str],
+    *,
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_day_of_month: int = 1,
@@ -348,8 +348,8 @@ def my_schedule_definition(_):
 
 
 def weekly_schedule(
-    *,
     pipeline_name: Optional[str],
+    *,
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_day_of_week: int = 0,
@@ -505,8 +505,8 @@ def my_schedule_definition(_):
 
 
 def daily_schedule(
-    *,
     pipeline_name: Optional[str],
+    *,
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_time: datetime.time = datetime.time(0, 0),
@@ -649,8 +649,8 @@ def my_schedule_definition(_):
 
 
 def hourly_schedule(
-    *,
     pipeline_name: Optional[str],
+    *,
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_time: datetime.time = datetime.time(0, 0),

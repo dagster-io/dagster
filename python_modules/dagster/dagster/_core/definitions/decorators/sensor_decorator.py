@@ -23,12 +23,8 @@ if TYPE_CHECKING:
 
 
 def sensor(
-<<<<<<< HEAD
-    job_name: Optional[str] = None,
-=======
     *,
-    pipeline_name: Optional[str] = None,
->>>>>>> 35daf5ae9a (keyword-only args for decs and defs)
+    job_name: Optional[str] = None,
     name: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
@@ -85,8 +81,8 @@ def sensor(
 
 
 def asset_sensor(
-    *,
     asset_key: AssetKey,
+    *,
     job_name: Optional[str] = None,
     name: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,

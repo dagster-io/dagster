@@ -1123,8 +1123,8 @@ class RepositoryDefinition:
 
     def __init__(
         self,
-        *,
         name,
+        *,
         repository_data,
         description=None,
     ):
