@@ -23,7 +23,7 @@ A common use of configuration is for a [schedule](/concepts/partitions-schedules
 
 ## Defining and accessing configuration for an op, asset, or resource
 
-Configurable parameters accepted by an op, asset, or resource are specified by providing a `config_schema` to the corresponding decorator. The structure of a `config_schema` is flexible and [fully documented in the API Reference](/_apidocs/config). However, most of the time you will want to provide a Python dictionary, with keys the names of parameters and values the types of those parameters.
+Configurable parameters accepted by an op, asset, or resource are specified by providing a `config_schema` to the corresponding decorator. The structure of a `config_schema` is flexible and [fully documented in the API Reference](/\_apidocs/config). However, most of the time you will want to provide a Python dictionary, with keys the names of parameters and values the types of those parameters.
 
 During execution, the specified parameters are accessible within the body of the op/asset/resource under `context.op_config` (for ops/assets) or `context.resource_config` (for resources). It might seem confusing that asset config is accessed under `context.op_config` instead of `context.asset_config`. However, assets are wrappers for ops, so when we access asset config we are literally just accessing config for the underlying op.
 
@@ -88,15 +88,15 @@ asset_result = materialize(
 From Dagit's [Launchpad](/concepts/dagit/dagit#launchpad), we supply config as YAML using the config editor. The editor has typeahead, schema validation, and schema documentation. You can also click the "Scaffold Missing Config" button to generate dummy values based on the config schema. Note that a modal containing the launchpad editor will pop up if we attempt to materialize an asset with a defined `config_schema`:
 
 <Image
-  alt="Config in Dagit"
-  src="/images/concepts/config-dagit.png"
-  width={3808}
-  height={2414}
+alt="Config in Dagit"
+src="/images/concepts/config-dagit.png"
+width={3808}
+height={2414}
 />
 
 ### Command Line
 
-When executing a job from Dagster's CLI with [dagster job execute](/_apidocs/cli#dagster-job-execute), we can put config in a YAML file and pass the file path with the `--config` option:
+When executing a job from Dagster's CLI with [dagster job execute](/\_apidocs/cli#dagster-job-execute), we can put config in a YAML file and pass the file path with the `--config` option:
 
 ```YAML file=/concepts/configuration/good.yaml
 ops:
@@ -136,33 +136,29 @@ asset_result = materialize(
 
 ### Passing Secrets as Configuration
 
-A common use case for configuration is passing secrets to connect to external services. Resources, which can be used to model connections to external services, accept secrets as configuration values. These secrets can be read from your environment variables given the name of the variable. For example, Dagster's out-of-the-box [Snowflake resource](/_apidocs/libraries/dagster-snowflake#dagster_snowflake.snowflake_resource) can be configured using environment variables:
+A common use case for configuration is passing secrets to connect to external services. Resources, which can be used to model connections to external services, accept secrets as configuration values. These secrets can be read from your environment variables:
 
-```python file=/concepts/configuration/snowflake_resource_config.py
-from dagster import op, job
-from dagster_snowflake import snowflake_resource
-
-
-@op(required_resource_keys={'snowflake'})
+```python file=/concepts/configuration/env_vars_config.py startafter=start_database_example endbefore=end_database_example
+@op(required_resource_keys={'database'})
 def get_one(context):
-    context.resources.snowflake.execute_query('SELECT 1')
+    context.resources.database.execute_query('SELECT 1')
 
 
-@job(resource_defs={'snowflake': snowflake_resource})
-def my_snowflake_job():
+@job(resource_defs={'database': database_client})
+def get_one_from_db():
     get_one()
 
 
-my_snowflake_job.execute_in_process(
+get_one_from_db.execute_in_process(
     run_config={
         'resources': {
-            'snowflake': {
+            'database': {
                 'config': {
-                    'account': "abc1234.us-east-1",
-                    'user': {'env': 'SYSTEM_SNOWFLAKE_USER'},
-                    'password': {'env': 'SYSTEM_SNOWFLAKE_PASSWORD'},
-                    'database': "PRODUCTION",
-                    'schema': "ANALYTICS",
+                    'username': {'env': 'SYSTEM_USER'},
+                    'password': {'env': 'SYSTEM_PASSWORD'},
+                    'hostname': 'abccompany',
+                    'db_name': 'PRODUCTION',
+                    'port': '5432',
                 }
             }
         }
@@ -172,9 +168,13 @@ my_snowflake_job.execute_in_process(
 
 By providing secrets through environment variables, your secrets won't be visible in your code or Dagit's launchpad.
 
-### Providing Per-Environment Configuration
-
-blah blah blah
+<Note>
+  The{" "}
+  <a href="/concepts/configuration/configured#specifying-per-environment-configuration">
+    Configured API
+  </a>{" "}
+  page features an example of providing per-environment configuration.
+</Note>
 
 ### Passing Configuration to Multiple Ops in a Job
 
@@ -182,55 +182,72 @@ If you want multiple ops to share values, You can use <PyObject module="dagster"
 
 It defaults to <PyObject module="dagster" object="Any" /> type, meaning Dagster will accept any config value provided for the resource:
 
-```python file=/concepts/configuration/make_values_resource_any.py
+```python file=/concepts/configuration/make_values_resource_any.py startafter=start_file_example endbefore=end_file_example
 from dagster import job, make_values_resource, op
 
 
-@op(required_resource_keys={"value"})
-def needs_value(context):
-    context.log.info(f"value: {context.resources.value}")
+@op(required_resource_keys={"file_dir"})
+def add_file(context):
+    filename = f"{context.resources.file_dir}/new_file.txt"
+    open(filename, "x").close()
+
+    context.log.info(f"Created file: {filename}")
 
 
-@op(required_resource_keys={"value"})
-def also_needs_value(context):
-    context.log.info(f"value: {context.resources.value}")
+@op(required_resource_keys={"file_dir"})
+def total_num_files(context):
+    files_in_dir = os.listdir(context.resources.file_dir)
+    context.log.info(f"Total number of files: {len(files_in_dir)}")
 
 
-@job(resource_defs={"value": make_values_resource()})
-def basic_job():
-    needs_value()
-    also_needs_value()
+@job(resource_defs={"file_dir": make_values_resource()})
+def file_dir_job():
+    add_file()
+    total_num_files()
 
 
-basic_result = basic_job.execute_in_process(
-    run_config={"resources": {"value": {"config": "some_value"}}}
+result = file_dir_job.execute_in_process(
+    run_config={"resources": {"file_dir": {"config": "/my_files/"}}}
 )
 ```
 
 You can also specify the schema of the values like:
 
-```python file=/concepts/configuration/make_values_resource_config_schema.py
+```python file=/concepts/configuration/make_values_resource_config_schema.py startafter=start_file_example endbefore=end_file_example
 from dagster import job, make_values_resource, op
 
 
-@op(required_resource_keys={"values"})
-def needs_value(context):
-    context.log.info(f"my str: {context.resources.values['my_str']}")
+@op(required_resource_keys={"file_dirs"})
+def write_file(context):
+    filename = f"{context.resources.file_dirs['write_file_dir']}/new_file.txt"
+    open(filename, "x").close()
+
+    context.log.info(f"Created file: {filename}")
 
 
-@op(required_resource_keys={"values"})
-def needs_different_value(context):
-    context.log.info(f"my int: {context.resources.values['my_int']}")
+@op(required_resource_keys={"file_dirs"})
+def total_num_files(context):
+    files_in_dir = os.listdir(context.resources.file_dirs['count_file_dir'])
+    context.log.info(f"Total number of files: {len(files_in_dir)}")
 
 
-@job(resource_defs={"values": make_values_resource(my_str=str, my_int=int)})
-def different_values_job():
-    needs_value()
-    needs_different_value()
+@job(resource_defs={"file_dirs": make_values_resource(write_file_dir=str, count_file_dir=str)})
+def file_dir_job():
+    write_file()
+    total_num_files()
 
 
-result = different_values_job.execute_in_process(
-    run_config={"resources": {"values": {"config": {"my_str": "foo", "my_int": 1}}}}
+result = file_dir_job.execute_in_process(
+    run_config={
+        "resources": {
+            "file_dirs": {
+                "config": {
+                    "write_file_dir": "/write_files/",
+                    "count_file_dir": "/count_files/",
+                }
+            }
+        }
+    }
 )
 ```
 
@@ -238,10 +255,10 @@ And pass the values via a run config like so:
 
 ```YAML file=/concepts/configuration/make_values_resource_values.yaml
 resources:
-  values:
+  file_dirs:
     config:
-      my_str: foo
-      my_int: 1
+      write_file_dir: /write_files/
+      count_file_dir: /count_files/
 ```
 
 ## See it in action
