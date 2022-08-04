@@ -21,6 +21,10 @@ function Hit({hit, children}) {
   return <a onClick={onClick}>{children}</a>;
 }
 
+const footerClick = (query) => {
+  window.location.href = `/search?queryID=${encodeURIComponent(query)}`;
+};
+
 export function Search() {
   const [isOpen, setIsOpen] = useState(false);
   const searchButtonRef = useRef();
@@ -158,10 +162,7 @@ export function Search() {
               });
             }}
             resultsFooterComponent={({ state }) => {
-              console.log(state.query);
-              console.log(state);
-              // return (<a onClick={() => window.location.href=`/search?queryID=${}`}>{state.context.nbHits} hits found</a>);
-              return <h1>yay</h1>;
+              return <a onClick={footerClick}>Full search results</a>;
             }}
           />,
           document.body,

@@ -18,17 +18,7 @@ import { useRouter } from "next/router";
 import visit from "unist-util-visit";
 import { Shimmer } from "components/Shimmer";
 import algoliasearch from "algoliasearch";
-
-const components: MdxRemote.Components = MDXComponents;
-
-enum PageType {
-  MDX = "MDX",
-}
-
-type Props = {
-  type: PageType.MDX;
-  data: MDXData;
-};
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const client = algoliasearch(
   process.env.NEXT_PUBLIC_ALGOLIA_APP_ID,
@@ -37,42 +27,18 @@ const client = algoliasearch(
 
 const index = client.initIndex(process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME);
 
-// createURL({ qsModule, routeState, location }) {
-//   const urlParts = location.href.match(/^(.*?)\/search/);
-//   const baseUrl = `${urlParts ? urlParts[1] : ''}/`;
+export default function SearchPage(props) {
+  const [query, setQuery] = useState(null);
+  useEffect(() => {
+    const path = window.location.href;
 
-//   const categoryPath = routeState.category
-//     ? `${getCategorySlug(routeState.category)}/`
-//     : '';
-//   const queryParameters = {};
-
-//   if (routeState.query) {
-//     queryParameters.query = encodeURIComponent(routeState.query);
-//   }
-//   if (routeState.page !== 1) {
-//     queryParameters.page = routeState.page;
-//   }
-//   if (routeState.brands) {
-//     queryParameters.brands = routeState.brands.map(encodeURIComponent);
-//   }
-
-//   const queryString = qsModule.stringify(queryParameters, {
-//     addQueryPrefix: true,
-//     arrayFormat: 'repeat'
-//   });
-
-//   return `${baseUrl}search/${categoryPath}${queryString}`;
-// },
-
-export const SearchPage = (query) => {
-  index.search(query).then(({ hits }) => {
-    console.log(hits);
+    if (path.includes("?")) {
+      setQuery(decodeURIComponent(path.substring(path.indexOf("?") + 1)));
+    }
   });
-  return <div>foo</div>;
-};
-
-export default function MdxPage(props: Props) {
   const router = useRouter();
+
+  console.log(query);
 
   // If the page is not yet generated, this shimmer/skeleton will be displayed
   // initially until getStaticProps() finishes running
@@ -80,5 +46,8 @@ export default function MdxPage(props: Props) {
     return <Shimmer />;
   }
 
-  return <>yay</>;
+  index.search(query).then(({ hits }) => {
+    console.log(hits);
+  });
+  return <div>foo</div>;
 }
