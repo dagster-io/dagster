@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import Any, Callable, List, Mapping, Optional, Sequence, Union, overload
+from typing import Any, Callable, List, Mapping, Optional, Union, overload
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params

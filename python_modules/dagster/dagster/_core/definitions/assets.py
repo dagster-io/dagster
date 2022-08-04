@@ -241,15 +241,15 @@ class AssetsDefinition(ResourceAddable):
         if resource_defs is not None:
             experimental_arg_warning("resource_defs", "AssetsDefinition.from_graph")
         return AssetsDefinition._from_node(
-            graph_def,
-            keys_by_input_name,
-            keys_by_output_name,
-            internal_asset_deps,
-            partitions_def,
-            group_name,
-            resource_defs,
-            partition_mappings,
-            metadata_by_output_name,
+            node_def=graph_def,
+            keys_by_input_name=keys_by_input_name,
+            keys_by_output_name=keys_by_output_name,
+            internal_asset_deps=internal_asset_deps,
+            partitions_def=partitions_def,
+            group_name=group_name,
+            resource_defs=resource_defs,
+            partition_mappings=partition_mappings,
+            metadata_by_output_name=metadata_by_output_name,
             key_prefix=key_prefix,
         )
 
@@ -303,12 +303,12 @@ class AssetsDefinition(ResourceAddable):
                 asset.
         """
         return AssetsDefinition._from_node(
-            op_def,
-            keys_by_input_name,
-            keys_by_output_name,
-            internal_asset_deps,
-            partitions_def,
-            group_name,
+            node_def=op_def,
+            keys_by_input_name=keys_by_input_name,
+            keys_by_output_name=keys_by_output_name,
+            internal_asset_deps=internal_asset_deps,
+            partitions_def=partitions_def,
+            group_name=group_name,
             partition_mappings=partition_mappings,
             metadata_by_output_name=metadata_by_output_name,
             key_prefix=key_prefix,
