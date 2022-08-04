@@ -72,8 +72,8 @@ def test_execute_on_celery_k8s_subchart_disabled(  # pylint: disable=redefined-o
         stdout=True,
         tty=False,
     )
-    print("Response: ")
-    print(resp)
+    print("Response: ") # disable=print-call
+    print(resp) # disable=print-call
 
     runmaster_job_name = None
     timeout = datetime.timedelta(0, 90)
