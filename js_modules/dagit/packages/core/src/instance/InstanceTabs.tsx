@@ -5,6 +5,7 @@ import * as React from 'react';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {TabLink} from '../ui/TabLink';
 
+import {InstancePageContext} from './InstancePageContext';
 import {useCanSeeConfig} from './useCanSeeConfig';
 
 interface Props<TData> {
@@ -13,10 +14,11 @@ interface Props<TData> {
   tab: string;
 }
 
+// todo dish: Delete this once Cloud is switched to use `InstancePageContext`.
 export const InstanceTabContext = React.createContext({healthTitle: 'Daemons'});
 
 export const InstanceTabs = <TData extends Record<string, any>>(props: Props<TData>) => {
-  const {healthTitle} = React.useContext(InstanceTabContext);
+  const {healthTitle} = React.useContext(InstancePageContext);
   const {refreshState, tab} = props;
   const canSeeConfig = useCanSeeConfig();
 

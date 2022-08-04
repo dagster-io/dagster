@@ -41,6 +41,7 @@ import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
+import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {JobMenu} from './JobMenu';
 import {LastRunSummary} from './LastRunSummary';
@@ -89,6 +90,8 @@ export const InstanceOverviewPage = () => {
   useTrackPageView();
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
+
+  const {pageTitle} = React.useContext(InstancePageContext);
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
   const {searchValue} = state;
 
@@ -264,7 +267,7 @@ export const InstanceOverviewPage = () => {
     return (
       <>
         <PageHeader
-          title={<Heading>Instance status</Heading>}
+          title={<Heading>{pageTitle}</Heading>}
           tabs={<InstanceTabs tab="overview" refreshState={refreshState} />}
         />
         <Box padding={64}>
@@ -279,7 +282,7 @@ export const InstanceOverviewPage = () => {
   return (
     <>
       <PageHeader
-        title={<Heading>Instance status</Heading>}
+        title={<Heading>{pageTitle}</Heading>}
         tabs={<InstanceTabs tab="overview" refreshState={refreshState} />}
       />
       <Box
