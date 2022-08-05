@@ -31,7 +31,7 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_slack_tests*"]),
         install_requires=[
-            "dagster==1.0.0",
+            "dagster==1.0.1",
             "slack_sdk",
         ],
         zip_safe=False,

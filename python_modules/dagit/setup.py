@@ -45,8 +45,8 @@ if __name__ == "__main__":
             "PyYAML",
             # cli
             "click>=7.0,<9.0",
-            "dagster==1.0.0",
-            "dagster-graphql==1.0.0",
+            "dagster==1.0.1",
+            "dagster-graphql==1.0.1",
             "requests",
             # watchdog
             "watchdog>=0.8.3",

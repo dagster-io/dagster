@@ -33,8 +33,8 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_snowflake_pandas_tests*"]),
         install_requires=[
-            "dagster==1.0.0",
-            "dagster-snowflake==0.16.0",
+            "dagster==1.0.1",
+            "dagster-snowflake==0.16.1",
             "pandas",
             "requests",
             "snowflake-connector-python[pandas]",
