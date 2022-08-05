@@ -1,0 +1,75 @@
+---
+title: Dagster Deployment Guides | Dagster Docs
+---
+
+# Dagster Deployment Guides
+
+<Note>
+  These guides are applicable to Dagster Open Source. If you're looking for
+  Dagster Cloud, <a href="/dagster-cloud">click here</a>.
+</Note>
+
+Learn how to deploy and execute Dagster with these hands-on guides.
+
+---
+
+## Deploying Dagster
+
+Check out these guides to learn the basics of Dagster deployment, including setting up Dagster and running the Dagit server.
+
+<ArticleList>
+  <ArticleListItem
+    title="Running Dagster as a service"
+    href="/deployment/guides/service"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Deploying to a single node using Docker"
+    href="/deployment/guides/docker"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Deploying to Amazon Web Services EC2 or ECS"
+    href="/deployment/guides/aws"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Deploying to Google Cloud Platform"
+    href="/deployment/guides/gcp"
+  ></ArticleListItem>
+</ArticleList>
+
+**Using Helm?** Check out the following guides to walk you through Dagster deployment:
+
+<ArticleList>
+  <ArticleListItem
+    title="Deploying with Helm"
+    href="/deployment/guides/kubernetes/deploying-with-helm"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Deploying with Celery using Helm"
+    href="/deployment/guides/kubernetes/deploying-with-helm-advanced"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Customizing Kubernetes deployments"
+    href="/deployment/guides/kubernetes/customizing-your-deployment"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Migrating Dagster instances while upgrading"
+    href="/deployment/guides/kubernetes/how-to-migrate-your-instance"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Executing Dagster
+
+For more advanced job execution, you can submit to different compute substrates. These can be mixed and matched. For example, you can deploy the Dagit server on Amazon Web Services (AWS) EC2 and execute jobs on a Dask cluster.
+
+<ArticleList>
+  <ArticleListItem
+    title="Celery"
+    href="/deployment/guides/celery"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dask"
+    href="/deployment/guides/dask"
+  ></ArticleListItem>
+</ArticleList>
