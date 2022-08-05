@@ -1,5 +1,5 @@
 resources:
-  values:
+  file_dirs:
     config:
-      my_str: foo
-      my_int: 1
+      write_file_dir: /write_files/
+      count_file_dir: /count_files/
