@@ -8,6 +8,7 @@ from ..utils import (
     BuildkiteStep,
     GroupStep,
     connect_sibling_docker_container,
+    library_version_from_core_version,
     network_buildkite_container,
 )
 from .test_project import test_project_depends_fn
@@ -80,12 +81,14 @@ def backcompat_extra_cmds(_, factor: str) -> List[str]:
 
     release_mapping = tox_factor_map[factor]
     dagit_version = release_mapping["dagit"]
+    dagit_library_version = _get_library_version(dagit_version)
     user_code_version = release_mapping["user_code"]
+    user_code_library_version = _get_library_version(user_code_version)
 
     return [
         f"export EARLIEST_TESTED_RELEASE={EARLIEST_TESTED_RELEASE}",
         "pushd integration_tests/test_suites/backcompat-test-suite/dagit_service",
-        f"./build.sh {dagit_version} {user_code_version} {_extract_major_version(user_code_version)}",
+        f"./build.sh {dagit_version} {dagit_library_version} {user_code_version} {user_code_library_version} {_extract_major_version(user_code_version)}",
         "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
         *network_buildkite_container("dagit_service_network"),
         *connect_sibling_docker_container(
@@ -102,6 +105,13 @@ def _extract_major_version(release):
     if release == "current_branch":
         return release
     return release.split(".")[0]
+
+
+def _get_library_version(version: str) -> str:
+    if version == DAGSTER_CURRENT_BRANCH:
+        return DAGSTER_CURRENT_BRANCH
+    else:
+        return library_version_from_core_version(version)
 
 
 # ########################

@@ -55,9 +55,7 @@ DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
 # Use this to get the "library version" (pre-1.0 version) from the "core version" (post 1.0
 # version). 16 is from the 0.16.0 that library versions stayed on when core went to 1.0.0.
 def library_version_from_core_version(core_version: str) -> str:
-    parsed = packaging.version.parse(core_version)
-    assert isinstance(parsed, packaging.version.Version)
-    release = parsed.release
+    release = parse_package_version(core_version).release
     if release[0] >= 1:
         return ".".join(["0", str(16 + release[1]), str(release[2])])
     else:
