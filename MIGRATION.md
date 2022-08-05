@@ -41,6 +41,7 @@ to make sure the correct library version is installed.
 - `custom_path_fs_io_manager` has been removed, as its functionality is entirely subsumed by the `fs_io_manager`, where a custom path can be specified via config.
 
 ### Removed API List
+This serves as an exhaustive list of the removed APIs.
 
 From the main Dagster module:
 - `AssetGroup`
