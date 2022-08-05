@@ -15,8 +15,8 @@
 ## Major Changes
 
 * A docs site overhaul! Along with tons of additional content, the existing pages have been significantly edited and reorganized to improve readability.
-* All Dagster [examples](https://github.com/dagster-io/dagster/tree/master/examples)[](https://github.com/dagster-io/dagster/tree/master/examples)are revamped with a consistent project layout, descriptive names, and more helpful README files.
-* A new `dagster project `CLI contains commands for bootstrapping new Dagster projects and repositories
+* All Dagster [examples](https://github.com/dagster-io/dagster/tree/master/examples)[](https://github.com/dagster-io/dagster/tree/master/examples) are revamped with a consistent project layout, descriptive names, and more helpful README files.
+* A new `dagster project `CLI contains commands for bootstrapping new Dagster projects and repositories:
     * `dagster project scaffold` creates a folder structure with a single Dagster repository and other files such as workspace.yaml. This CLI enables you to quickly start building a new Dagster project with everything set up.
     * `dagster project from-example` downloads one of the Dagster examples. This CLI helps you to quickly bootstrap your project with an officially maintained example. You can find the available examples via `dagster project list-examples`.
     * Check out [Create a New Project](https://docs.dagster.io/getting-started/create-new-project) for more details.
