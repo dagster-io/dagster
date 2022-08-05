@@ -5,3 +5,27 @@ noindex: True
 ---
 
 # Dagster Cloud deployment types
+
+Dagster Cloud currently offers two deployment options to meet your needs: Serverless and Hybrid.
+
+---
+
+## Serverless deployments
+
+A Serverless deployment allows you to run Dagster jobs without spinning up any infrastructure. This fully-managed version of Dagster Cloud is the easiest way to get started with Dagster.
+
+**Note**: Serverless is currently in early access.
+
+[Learn more about Serverless deployments](/dagster-cloud/deployment/serverless).
+
+---
+
+## Hybrid deployments
+
+A Hybrid deployment utilizes a combination of your infrastructure and Dagster-hosted backend services.
+
+The Dagster backend services - including the web frontend, GraphQL API, metadata database, and daemons (responsible for executing schedules and sensors) - are hosted in Dagster Cloud.
+
+An [agent](/dagster-cloud/deployment/agents) you run in your infrastructure is responsible for executing your Dagster code.
+
+[Learn more about Hybrid deployments](/dagster-cloud/deployment/hybrid).
