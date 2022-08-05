@@ -52,7 +52,7 @@ In this step, you'll add the required GitHub workflow files to your GitHub repos
 
 Copy the following files to your repository:
 
-- [`cloud_workspace.yaml`](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart/blob/main/cloud_workspace.yaml)
+- [`dagster_cloud.yaml`](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart/blob/main/dagster_cloud.yaml)
 - [`.github/workflows/branch_deployments.yml`](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart/blob/main/.github/workflows/branch_deployments.yml)
 - [`.github/workflows/deploy.yml`](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart/blob/main/.github/workflows/deploy.yml)
 
@@ -64,24 +64,24 @@ In the next step, you'll modify these files to work with your Dagster Cloud setu
 
 In this section, you'll:
 
-1. [Add the agent registry to `cloud_workspace.yaml`](#step-41-add-the-agent-registry-to-cloud_workspaceyaml)
+1. [Add the agent registry to `dagster_cloud.yaml`](#step-41-add-the-agent-registry-to-dagster_cloudyaml)
 2. [Configure GitHub Action secrets](#step-42-configure-github-action-secrets)
 3. [Update GitHub Workflow files](#step-43-update-github-workflow-files)
 4. [Verify Action runs](#step-44-verify-action-runs)
 
-### Step 4.1: Add the agent registry to cloud_workspace.yaml
+### Step 4.1: Add the agent registry to dagster_cloud.yaml
 
 <Note>
   If you're using Serverless deployment, this step isn't required.{" "}
   <a href="#step-42-configure-github-action-secrets">Skip to the next step</a>.
 </Note>
 
-In the `cloud_workspace.yaml` file, replace `build.registry` with the registry used by the [agent you created in Step 2](#step-2-create-and-configure-an-agent).
+In the `dagster_cloud.yaml` file, replace `build.registry` with the registry used by the [agent you created in Step 2](#step-2-create-and-configure-an-agent).
 
 For example:
 
 ```yaml
-# cloud_workspace.yaml
+# dagster_cloud.yaml
 
 locations:
   - location_name: example_location
