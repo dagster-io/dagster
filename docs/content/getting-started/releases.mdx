@@ -33,7 +33,9 @@ Like non-deprecated public stable APIs, deprecated public stable APIs will not b
 
 ## Dagster integration libraries
 
-Dagster's integration libraries are in the 0.y.z of [Semantic Versioning](https://semver.org/). While technically this is "anything goes", we are conservative about making changes and provide guidance about when to expect breaking changes:
+Dagster’s integration libraries haven’t yet achieved the same API maturity as Dagster core. For this reason, integration libraries remain on a pre-1.0 versioning track (in general 0.y.z of [Semantic Versioning](https://semver.org/); and 0.16+ as of Dagster 1.0.0) for the time being. However, 0.16+ library releases remain fully compatible with Dagster 1.x. We will graduate integration libraries one-by-one to the 1.x versioning track as they achieve API maturity.
+
+While technically the 0.y.z phase of Semantic Versioning is "anything goes", we are conservative about making changes and will provide guidance about when to expect breaking changes:
 
 - Upgrading to a new dot version within a minor release, e.g. 0.8.1 → 0.8.2, should never result in broken code.
 - An exception to this guarantee is [experimental APIs](#experimental-apis).
