@@ -2,14 +2,11 @@ import os
 import runpy
 
 import pytest
-from click.testing import CliRunner
 from dagit.app import create_app_from_workspace_process_context
 from starlette.testclient import TestClient
 
-from dagster._cli.pipeline import pipeline_execute_command
 from dagster._cli.workspace import get_workspace_process_context_from_kwargs
 from dagster._core.instance import DagsterInstance
-from dagster._core.test_utils import instance_for_test
 from dagster._utils import check_script, pushd, script_relative_path
 
 PIPELINES_OR_ERROR_QUERY = """
@@ -127,15 +124,6 @@ def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):
     return res
 
 
-def dagster_pipeline_execute(args, return_code):
-    with instance_for_test():
-        runner = CliRunner()
-        res = runner.invoke(pipeline_execute_command, args)
-    assert res.exit_code == return_code, res.exception
-
-    return res
-
-
 @pytest.mark.parametrize(
     "dirname,filename,fn_name,_env_yaml,_mode,_preset,_return_code,_exception", cli_args
 )
@@ -146,27 +134,6 @@ def test_load_pipeline(
     with pushd(path_to_tutorial_file(dirname)):
         filepath = path_to_tutorial_file(os.path.join(dirname, filename))
         load_dagit_for_workspace_cli_args(python_file=filepath, fn_name=fn_name)
-
-
-@pytest.mark.parametrize(
-    "dirname,filename,fn_name,env_yaml,mode,preset,return_code,_exception", cli_args
-)
-# dagster pipeline execute -f filename -n fn_name -e env_yaml --preset preset
-def test_dagster_pipeline_execute(
-    dirname, filename, fn_name, env_yaml, mode, preset, return_code, _exception
-):
-    with pushd(path_to_tutorial_file(dirname)):
-        filepath = path_to_tutorial_file(os.path.join(dirname, filename))
-        yamlpath = (
-            path_to_tutorial_file(os.path.join(dirname, env_yaml)) if env_yaml else None
-        )
-        dagster_pipeline_execute(
-            ["-f", filepath, "-a", fn_name]
-            + (["-c", yamlpath] if yamlpath else [])
-            + (["--mode", mode] if mode else [])
-            + (["--preset", preset] if preset else []),
-            return_code,
-        )
 
 
 @pytest.mark.parametrize(

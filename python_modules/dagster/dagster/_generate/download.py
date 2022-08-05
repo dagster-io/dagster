@@ -39,7 +39,7 @@ def download_example_from_github(path: str, example: str):
                 f'Example "{example}" not available from the `dagster project` CLI. ', fg="red"
             )
             + "\nPlease specify the name of an official Dagster example. "
-            + "You can find the available examples via `dagster project list-example`."
+            + "You can find the available examples via `dagster project list-examples`."
         )
         sys.exit(1)
 

@@ -461,7 +461,7 @@ def define_schedules():
         return {}
 
     @schedule(
-        pipeline_name="demo_pipeline_celery",
+        job_name="demo_pipeline_celery",
         cron_schedule="* * * * *",
     )
     def frequent_celery():
@@ -696,7 +696,6 @@ def define_demo_execution_repo():
             "pipelines": {
                 "always_fail_pipeline": always_fail_pipeline,
                 "demo_pipeline_celery": define_demo_pipeline_celery,
-                "demo_job_celery": define_demo_job_celery,
                 "demo_pipeline_docker": define_demo_pipeline_docker,
                 "demo_pipeline_docker_slow": define_demo_pipeline_docker_slow,
                 "large_pipeline_celery": define_large_pipeline_celery,
@@ -724,6 +723,7 @@ def define_demo_execution_repo():
             "jobs": {
                 "demo_error_job": demo_error_job,
                 "demo_airflow_execution_date_job": demo_airflow_execution_date_job,
+                "demo_job_celery": define_demo_job_celery,
             },
             "schedules": define_schedules(),
         }

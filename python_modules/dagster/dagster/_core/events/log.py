@@ -47,7 +47,7 @@ class EventLogEntry(
             ("run_id", PublicAttr[str]),
             ("timestamp", PublicAttr[float]),
             ("step_key", PublicAttr[Optional[str]]),
-            ("pipeline_name", PublicAttr[Optional[str]]),
+            ("pipeline_name", Optional[str]),
             ("dagster_event", PublicAttr[Optional[DagsterEvent]]),
         ],
     )

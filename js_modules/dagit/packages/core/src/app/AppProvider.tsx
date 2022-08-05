@@ -25,6 +25,7 @@ import {BrowserRouter} from 'react-router-dom';
 import {createGlobalStyle} from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
+import {InstancePageContext} from '../instance/InstancePageContext';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
 import {AppContext} from './AppContext';
@@ -159,6 +160,13 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
   );
 
   const analytics = React.useMemo(() => dummyAnalytics(), []);
+  const instancePageValue = React.useMemo(
+    () => ({
+      pageTitle: 'Instance status',
+      healthTitle: 'Health',
+    }),
+    [],
+  );
 
   return (
     <AppContext.Provider value={appContextValue}>
@@ -178,7 +186,9 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
                 <WorkspaceProvider>
                   <CustomConfirmationProvider>
                     <AnalyticsContext.Provider value={analytics}>
-                      <LayoutProvider>{props.children}</LayoutProvider>
+                      <InstancePageContext.Provider value={instancePageValue}>
+                        <LayoutProvider>{props.children}</LayoutProvider>
+                      </InstancePageContext.Provider>
                     </AnalyticsContext.Provider>
                   </CustomConfirmationProvider>
                   <CustomTooltipProvider />

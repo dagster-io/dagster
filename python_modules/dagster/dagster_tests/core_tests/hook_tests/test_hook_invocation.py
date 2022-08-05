@@ -3,14 +3,13 @@ import re
 import mock
 import pytest
 
-from dagster import HookContext, build_hook_context, failure_hook, resource, success_hook
+from dagster import HookContext, build_hook_context, failure_hook, op, resource, success_hook
 from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster._legacy import solid
 
 
 def test_event_list_hook_invocation():
@@ -204,19 +203,19 @@ def test_success_hook_cm_resource(hook_decorator, is_event_list_hook):
 def test_hook_invocation_with_solid():
     @success_hook
     def basic_hook(context):
-        assert context.solid.name == "foo"
-        assert len(context.solid.graph_definition.solids) == 1
+        assert context.op.name == "foo"
+        assert len(context.op.graph_definition.solids) == 1
 
-    @solid
+    @op
     def foo():
         pass
 
-    @solid
+    @op
     def not_foo():
         pass
 
-    basic_hook(build_hook_context(solid=foo))
-    basic_hook(build_hook_context(solid=not_foo.alias("foo")))
+    basic_hook(build_hook_context(op=foo))
+    basic_hook(build_hook_context(op=not_foo.alias("foo")))
 
 
 def test_properties_on_hook_context():

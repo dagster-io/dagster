@@ -78,6 +78,7 @@ class AssetsDefinition(ResourceAddable):
 
     def __init__(
         self,
+        *,
         keys_by_input_name: Mapping[str, AssetKey],
         keys_by_output_name: Mapping[str, AssetKey],
         node_def: NodeDefinition,
@@ -187,6 +188,7 @@ class AssetsDefinition(ResourceAddable):
     @staticmethod
     def from_graph(
         graph_def: "GraphDefinition",
+        *,
         keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
@@ -239,15 +241,15 @@ class AssetsDefinition(ResourceAddable):
         if resource_defs is not None:
             experimental_arg_warning("resource_defs", "AssetsDefinition.from_graph")
         return AssetsDefinition._from_node(
-            graph_def,
-            keys_by_input_name,
-            keys_by_output_name,
-            internal_asset_deps,
-            partitions_def,
-            group_name,
-            resource_defs,
-            partition_mappings,
-            metadata_by_output_name,
+            node_def=graph_def,
+            keys_by_input_name=keys_by_input_name,
+            keys_by_output_name=keys_by_output_name,
+            internal_asset_deps=internal_asset_deps,
+            partitions_def=partitions_def,
+            group_name=group_name,
+            resource_defs=resource_defs,
+            partition_mappings=partition_mappings,
+            metadata_by_output_name=metadata_by_output_name,
             key_prefix=key_prefix,
         )
 
@@ -255,6 +257,7 @@ class AssetsDefinition(ResourceAddable):
     @staticmethod
     def from_op(
         op_def: OpDefinition,
+        *,
         keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
@@ -300,12 +303,12 @@ class AssetsDefinition(ResourceAddable):
                 asset.
         """
         return AssetsDefinition._from_node(
-            op_def,
-            keys_by_input_name,
-            keys_by_output_name,
-            internal_asset_deps,
-            partitions_def,
-            group_name,
+            node_def=op_def,
+            keys_by_input_name=keys_by_input_name,
+            keys_by_output_name=keys_by_output_name,
+            internal_asset_deps=internal_asset_deps,
+            partitions_def=partitions_def,
+            group_name=group_name,
             partition_mappings=partition_mappings,
             metadata_by_output_name=metadata_by_output_name,
             key_prefix=key_prefix,
@@ -314,6 +317,7 @@ class AssetsDefinition(ResourceAddable):
     @staticmethod
     def _from_node(
         node_def: Union[OpDefinition, "GraphDefinition"],
+        *,
         keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
         internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,

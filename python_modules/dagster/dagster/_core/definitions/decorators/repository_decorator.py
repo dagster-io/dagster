@@ -130,12 +130,13 @@ class _Repository:
 
 
 @overload
-def repository(name: Callable[..., Any]) -> RepositoryDefinition:
+def repository(definitions_fn: Callable[..., Any]) -> RepositoryDefinition:
     ...
 
 
 @overload
 def repository(
+    *,
     name: Optional[str] = ...,
     description: Optional[str] = ...,
     default_executor_def: Optional[ExecutorDefinition] = ...,
@@ -145,7 +146,9 @@ def repository(
 
 
 def repository(
-    name: Optional[Union[str, Callable[..., Any]]] = None,
+    definitions_fn: Optional[Callable[..., Any]] = None,
+    *,
+    name: Optional[str] = None,
     description: Optional[str] = None,
     default_executor_def: Optional[ExecutorDefinition] = None,
     default_logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
@@ -274,11 +277,11 @@ def repository(
             return ComplexRepositoryData('some_directory')
 
     """
-    if callable(name):
+    if definitions_fn is not None:
         check.invariant(description is None)
-        check.invariant(len(get_function_params(name)) == 0)
+        check.invariant(len(get_function_params(definitions_fn)) == 0)
 
-        return _Repository()(name)
+        return _Repository()(definitions_fn)
 
     return _Repository(
         name=name,

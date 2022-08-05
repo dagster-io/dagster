@@ -218,7 +218,7 @@ def test_bad_schedule():
 
 def test_bad_sensor():
     @sensor(
-        pipeline_name="foo",
+        job_name="foo",
     )
     def foo_sensor(_):
         return {}

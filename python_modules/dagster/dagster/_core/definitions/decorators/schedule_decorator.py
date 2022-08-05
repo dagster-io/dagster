@@ -49,12 +49,11 @@ if TYPE_CHECKING:
 
 def schedule(
     cron_schedule: str,
-    pipeline_name: Optional[str] = None,
+    *,
+    job_name: Optional[str] = None,
     name: Optional[str] = None,
     tags: Optional[Dict[str, str]] = None,
     tags_fn: Optional[Callable[[ScheduleEvaluationContext], Optional[Dict[str, str]]]] = None,
-    solid_selection: Optional[List[str]] = None,
-    mode: Optional[str] = "default",
     should_execute: Optional[Callable[[ScheduleEvaluationContext], bool]] = None,
     environment_vars: Optional[Dict[str, str]] = None,
     execution_timezone: Optional[str] = None,
@@ -170,9 +169,7 @@ def schedule(
         schedule_def = ScheduleDefinition(
             name=schedule_name,
             cron_schedule=cron_schedule,
-            pipeline_name=pipeline_name,
-            solid_selection=solid_selection,
-            mode=mode,
+            job_name=job_name,
             environment_vars=environment_vars,
             execution_timezone=execution_timezone,
             description=description,
@@ -190,6 +187,7 @@ def schedule(
 
 def monthly_schedule(
     pipeline_name: Optional[str],
+    *,
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_day_of_month: int = 1,
@@ -351,6 +349,7 @@ def my_schedule_definition(_):
 
 def weekly_schedule(
     pipeline_name: Optional[str],
+    *,
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_day_of_week: int = 0,
@@ -507,6 +506,7 @@ def my_schedule_definition(_):
 
 def daily_schedule(
     pipeline_name: Optional[str],
+    *,
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_time: datetime.time = datetime.time(0, 0),
@@ -650,6 +650,7 @@ def my_schedule_definition(_):
 
 def hourly_schedule(
     pipeline_name: Optional[str],
+    *,
     start_date: datetime.datetime,
     name: Optional[str] = None,
     execution_time: datetime.time = datetime.time(0, 0),

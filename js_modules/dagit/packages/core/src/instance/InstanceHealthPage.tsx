@@ -7,12 +7,14 @@ import {useTrackPageView} from '../app/analytics';
 
 import {DaemonList} from './DaemonList';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
+import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceHealthQuery} from './types/InstanceHealthQuery';
 
 export const InstanceHealthPage = () => {
   useTrackPageView();
 
+  const {pageTitle} = React.useContext(InstancePageContext);
   const queryData = useQuery<InstanceHealthQuery>(INSTANCE_HEALTH_QUERY, {
     fetchPolicy: 'cache-and-network',
     notifyOnNetworkStatusChange: true,
@@ -36,7 +38,7 @@ export const InstanceHealthPage = () => {
   return (
     <>
       <PageHeader
-        title={<Heading>Instance status</Heading>}
+        title={<Heading>{pageTitle}</Heading>}
         tabs={<InstanceTabs tab="health" refreshState={refreshState} />}
       />
       <Box padding={{vertical: 16, horizontal: 24}}>

@@ -33,7 +33,7 @@ def define_bar_schedules():
         "foo_schedule": ScheduleDefinition(
             "foo_schedule",
             cron_schedule="* * * * *",
-            pipeline_name="foo",
+            job_name="foo",
             run_config={},
         )
     }

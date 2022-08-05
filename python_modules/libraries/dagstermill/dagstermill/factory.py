@@ -293,7 +293,9 @@ def _dm_compute(
                     output_context = step_execution_context.get_output_context(step_output_handle)
                     io_manager = step_execution_context.get_io_manager(step_output_handle)
                     value = io_manager.load_input(
-                        build_input_context(upstream_output=output_context)
+                        build_input_context(
+                            upstream_output=output_context, dagster_type=output_context.dagster_type
+                        )
                     )
 
                     yield Output(value, output_name)

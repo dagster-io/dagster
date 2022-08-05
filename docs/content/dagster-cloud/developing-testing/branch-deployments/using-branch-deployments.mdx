@@ -1,0 +1,133 @@
+---
+title: Using Branch Deployments with the dagster-cloud CLI | Dagster Cloud
+description: Develop and test in the cloud.
+---
+
+# Using Branch Deployments with the dagster-cloud CLI
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+In this guide, we'll walk you through setting up [Branch Deployments](/dagster-cloud/developing-testing/branch-deployments) with a general continuous integration (CI) or git platform, using the [`dagster-cloud` CLI](/dagster-cloud/developing-testing/dagster-cloud-cli).
+
+Using this approach to branch deployments may be a good fit if:
+
+- You don't use GitHub for version control
+- You use an alternate CI platform
+- You want full control over Branch Deployment configuration
+
+**If you use GitHub for version control or want Dagster to automate branch deployments**, check out the dedicated [Branch deployments with GitHub guide](/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github).
+
+---
+
+## Prerequisites
+
+Utilizing Branch Deployments requires setting up two components: the Branch Deployment agent and CI platform. You'll need:
+
+- **Editor** or **Admin** permissions in Dagster Cloud
+- To install the [`dagster-cloud` CLI](/dagster-cloud/developing-testing/dagster-cloud-cli)
+- The ability to run a new agent in your infrastructure
+- The ability to configure your CI platform
+
+---
+
+## Step 1: Generate a Dagster Cloud agent token
+
+<GenerateAgentToken />
+
+---
+
+## Step 2: Create and configure an agent
+
+<BDCreateConfigureAgent />
+
+---
+
+## Step 3: Create a branch deployment using the dagster-cloud CLI
+
+Next, you'll create a branch deployment using the `dagster-cloud` CLI. When the state of a branch or merge request is updated, Dagster Cloud first expects these steps to occur:
+
+1. A new image containing your code and requirements is built on the branch. Refer to the [Dagster code requirements guide](/dagster-cloud/developing-testing/code-locations).
+
+2. The new image is pushed to a Docker registry accessible to your agent. **Note**: The following examples assume the registry URL and image tag are stored in the `LOCATION_REGISTRY_URL` and `IMAGE_TAG` environment variables, respectively.
+
+After the above has occurred:
+
+1. Use the `dagster-cloud` CLI to create a branch deployment associated with the branch, as follows:
+
+   ```shell
+   BRANCH_DEPLOYMENT_NAME=$(
+       dagster-cloud branch-deployment create-or-update \
+           --organization $ORGANIZATION_NAME \
+           --api-token $DAGSTER_CLOUD_API_TOKEN \ # Agent token from Step 1
+           --git-repo-name $REPOSITORY_NAME \ # Git repository name
+           --branch-name $BRANCH_NAME \ # Git branch name
+           --commit-hash $COMMIT_SHA \ # Latest commit SHA on the branch
+           --timestamp $TIMESTAMP # UTC unixtime timestamp of the latest commit
+   )
+   ```
+
+   One or more additional parameters can optionally be supplied to the `create-or-update` command to enhance the Branch Deployments UI in Dagster Cloud:
+
+   ```shell
+   BRANCH_DEPLOYMENT_NAME=$(
+       dagster-cloud branch-deployment create-or-update \
+           --organization $ORGANIZATION_NAME \
+           --api-token $DAGSTER_CLOUD_API_TOKEN \
+           --git-repo-name $REPOSITORY_NAME \
+           --branch-name $BRANCH_NAME \
+           --commit-hash $COMMIT_SHA \
+           --timestamp $TIMESTAMP
+           --code-review-url $PR_URL \ # URL to review the given changes, e.g.
+                # Pull Request or Merge Request
+           --code-review-id $INPUT_PR \ # Alphanumeric ID for the given set of changes
+           --pull-request-status $PR_STATUS \ # A status, one of `OPEN`, `CLOSED`,
+                # or `MERGED`, that describes the set of changes
+           --commit-message $MESSAGE \ # The message associated with the latest commit
+           --author-name $NAME \ # A display name for the latest commit's author
+           --author-email $EMAIL \ # An email for the latest commit's author
+           --author-avatar-url $AVATAR_URL # An avatar URL for the latest commit's author
+   )
+   ```
+
+   If the command is being executed from the context of the git repository, you can alternatively pull this metadata from the repository itself:
+
+   ```shell
+   BRANCH_DEPLOYMENT_NAME=$(
+       dagster-cloud branch-deployment create-or-update \
+           --organization $ORGANIZATION_NAME \
+           --api-token $DAGSTER_CLOUD_API_TOKEN \
+           --git-repo-name $REPOSITORY_NAME \
+           --branch-name $BRANCH_NAME \
+           --read-git-state # Equivalent to passing --commit-hash, --timestamp
+                            # --commit-message, --author-name, --author-email
+   )
+   ```
+
+2. Deploy the code to the branch deployment:
+
+   ```shell
+   dagster-cloud workspace add-location \
+       --organization $ORGANIZATION_NAME \
+       --deployment $BRANCH_DEPLOYMENT_NAME \
+       --api-token $DAGSTER_CLOUD_API_TOKEN \
+       --location-file $LOCATION_FILE \
+       --location-name $LOCATION_NAME \
+       --image "${LOCATION_REGISTRY_URL}:${IMAGE_TAG}"
+   ```
+
+   Refer to the [Code location guide](/dagster-cloud/developing-testing/code-locations) for more info on how a location's details are specified.
+
+---
+
+## Step 4: Access the branch deployment
+
+Now that Branch Deployments are configured, you can check out the preview in Dagster Cloud.
+
+Click the **deployment switcher** to view your workspace's branch deployments:
+
+<Image
+alt="Highlighted branch deployments in the Dagster Cloud's deployment switcher"
+src="/images/dagster-cloud/developing-testing/branch-deployments/dagit-deployment-switcher.png"
+width={563}
+height={311}
+/>

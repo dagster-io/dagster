@@ -55,7 +55,7 @@ def load_daily_addition_schedule():
 
 
 def load_addition_sensor():
-    @sensor(pipeline_name="addition_pipeline")
+    @sensor(job_name="addition_pipeline")
     def addition_sensor(context):
         should_run = True
         if should_run:

@@ -30,14 +30,14 @@ def test_sensor_context_backcompat():
 def test_sensor_invocation_args():
 
     # Test no arg invocation
-    @sensor(pipeline_name="foo_pipeline")
+    @sensor(job_name="foo_pipeline")
     def basic_sensor_no_arg():
         return RunRequest(run_key=None, run_config={}, tags={})
 
     assert basic_sensor_no_arg().run_config == {}
 
     # Test underscore name
-    @sensor(pipeline_name="foo_pipeline")
+    @sensor(job_name="foo_pipeline")
     def basic_sensor(_):
         return RunRequest(run_key=None, run_config={}, tags={})
 
@@ -45,7 +45,7 @@ def test_sensor_invocation_args():
     assert basic_sensor(None).run_config == {}
 
     # Test sensor arbitrary arg name
-    @sensor(pipeline_name="foo_pipeline")
+    @sensor(job_name="foo_pipeline")
     def basic_sensor_with_context(_arbitrary_context):
         return RunRequest(run_key=None, run_config={}, tags={})
 

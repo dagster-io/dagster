@@ -71,7 +71,6 @@ if __name__ == "__main__":
             "grpcio-health-checking>=1.32.0,<1.44.0",
             "packaging>=20.9",
             "pendulum",
-            "pep562",
             "protobuf>=3.13.0,<4",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)
             "python-dateutil",
             "pytz",

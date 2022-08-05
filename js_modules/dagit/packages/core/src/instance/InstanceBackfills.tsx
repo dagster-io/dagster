@@ -18,6 +18,7 @@ import {Loading} from '../ui/Loading';
 
 import {BACKFILL_TABLE_FRAGMENT, BackfillTable} from './BackfillTable';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
+import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {
   InstanceBackfillsQuery,
@@ -30,6 +31,7 @@ const PAGE_SIZE = 10;
 export const InstanceBackfills = () => {
   useTrackPageView();
 
+  const {pageTitle} = React.useContext(InstancePageContext);
   const queryData = useQuery<InstanceHealthForBackfillsQuery>(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
@@ -54,7 +56,7 @@ export const InstanceBackfills = () => {
   return (
     <>
       <PageHeader
-        title={<Heading>Instance status</Heading>}
+        title={<Heading>{pageTitle}</Heading>}
         tabs={<InstanceTabs tab="backfills" refreshState={refreshState} />}
       />
       <Loading queryResult={queryResult} allowStaleData={true}>

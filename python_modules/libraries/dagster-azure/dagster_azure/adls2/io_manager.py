@@ -79,6 +79,9 @@ class PickledObjectADLS2IOManager(IOManager):
                 lease_client.release()
 
     def load_input(self, context):
+        if context.dagster_type.typing_type == type(None):
+            return None
+
         key = self._get_path(context)
         context.log.debug(f"Loading ADLS2 object from: {self._uri_for_key(key)}")
         file = self.file_system_client.get_file_client(key)
@@ -88,6 +91,14 @@ class PickledObjectADLS2IOManager(IOManager):
         return obj
 
     def handle_output(self, context, obj):
+        if context.dagster_type.typing_type == type(None):
+            check.invariant(
+                obj is None,
+                "Output had Nothing type or 'None' annotation, but handle_output received value "
+                f"that was not None and was of type {type(obj)}.",
+            )
+            return None
+
         key = self._get_path(context)
         context.log.debug(f"Writing ADLS2 object at: {self._uri_for_key(key)}")
 

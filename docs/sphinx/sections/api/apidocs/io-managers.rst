@@ -42,9 +42,6 @@ Built-in IO Managers
 .. autodata:: fs_io_manager
   :annotation: IOManagerDefinition
 
-.. autodata:: custom_path_fs_io_manager
-  :annotation: IOManagerDefinition
-
 
 Input Managers (Experimental)
 ----------------------------------

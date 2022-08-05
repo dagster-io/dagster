@@ -1,5 +1,89 @@
 # Changelog
 
+# 1.0.1
+
+### Bugfixes
+
+* Fixed an issue where Dagster libraries would sometimes log warnings about mismatched versions despite having the correct version loaded.
+
+### Documentation
+
+* The [Dagster Cloud docs](https://docs.dagster.io/dagster-cloud) now live alongside all the other Dagster docs! Check them out by nagivating to Deployment > Cloud.
+
+# 1.0.0
+
+## Major Changes
+
+* A docs site overhaul! Along with tons of additional content, the existing pages have been significantly edited and reorganized to improve readability.
+* All Dagster [examples](https://github.com/dagster-io/dagster/tree/master/examples)[](https://github.com/dagster-io/dagster/tree/master/examples) are revamped with a consistent project layout, descriptive names, and more helpful README files.
+* A new `dagster project `CLI contains commands for bootstrapping new Dagster projects and repositories:
+    * `dagster project scaffold` creates a folder structure with a single Dagster repository and other files such as workspace.yaml. This CLI enables you to quickly start building a new Dagster project with everything set up.
+    * `dagster project from-example` downloads one of the Dagster examples. This CLI helps you to quickly bootstrap your project with an officially maintained example. You can find the available examples via `dagster project list-examples`.
+    * Check out [Create a New Project](https://docs.dagster.io/getting-started/create-new-project) for more details.
+* A `default_executor_def` argument has been added to the `@repository` decorator. If specified, this will be used for any jobs (asset or op) which do not explicitly set an `executor_def`.
+* A `default_logger_defs` argument has been added to the `@repository` decorator, which works in the same way as `default_executor_def`.
+* A new `execute_job` function presents a Python API for kicking off runs of your jobs.
+* Run status sensors may now yield `RunRequests`, allowing you to kick off a job in response to the status of another job.
+* When loading an upstream asset or op output as an input, you can now set custom loading behavior using the `input_manager_key` argument to AssetIn and In.
+* In the UI, the global lineage graph has been brought back and reworked! The graph keeps assets in the same group visually clustered together, and the query bar allows you to visualize a custom slice of your asset graph.
+
+## Breaking Changes and Deprecations
+
+### Legacy API Removals
+
+In 1.0.0, a large number of previously-deprecated APIs have been fully removed. A full list of breaking changes and deprecations, alongside instructions on how to migrate older code, can be found in [MIGRATION.md](https://github.com/dagster-io/dagster/blob/master/MIGRATION.md). At a high level:
+
+* The `solid` and `pipeline` APIs have been removed, along with references to them in extension libraries, arguments, and the CLI *(deprecated in `0.13.0)`*.
+* The `AssetGroup` and `build_asset_job` APIs, and a host of deprecated arguments to asset-related functions, have been removed *(deprecated in `0.15.0`)*.
+* The `EventMetadata` and `EventMetadataEntryData` APIs have been removed *(deprecated in `0.15.0`)*.
+
+### Deprecations
+
+* `dagster_type_materializer` and `DagsterTypeMaterializer` have been marked experimental and will likely be removed within a 1.x release. Instead, use an `IOManager`.
+* `FileManager` and `FileHandle` have been marked experimental and will likely be removed within a 1.x release.
+
+### Other Changes
+
+* As of 1.0.0, Dagster no longer guarantees support for python 3.6. This is in line with [PEP 494](https://peps.python.org/pep-0494/), which outlines that 3.6 has reached end of life.
+* **[planned]** In an upcoming 1.x release, we plan to make a change that renders values supplied to `configured` in Dagit. Up through this point, values provided to `configured` have not been sent anywhere outside the process where they were used. This change will mean that, like other places you can supply configuration, `configured` is not a good place to put secrets: **You should not include any values in configuration that you don't want to be stored in the Dagster database and displayed inside Dagit.**
+* `fs_io_manager`, `s3_pickle_io_manager`, and `gcs_pickle_io_manager`, and `adls_pickle_io_manager` no longer write out a file or object when handling an output with the `None` or `Nothing` type.
+* The `custom_path_fs_io_manager` has been removed, as its functionality is entirely subsumed by the `fs_io_manager`, where a custom path can be specified via config.
+* The default `typing_type` of a `DagsterType` is now `typing.Any` instead of `None`.
+* Dagster’s  integration libraries haven’t yet achieved the same API maturity as Dagster core. For this reason, all integration libraries will remain on a pre-1.0 (0.16.x) versioning track for the time being. However, 0.16.x library releases remain fully compatible with Dagster 1.x. In the coming months, we will graduate integration libraries one-by-one to the 1.x versioning track as they achieve API maturity. If you have installs of the form:
+
+```
+pip install dagster=={DAGSTER_VERSION} dagster-somelibrary=={DAGSTER_VERSION}
+```
+
+this should be converted to:
+
+```
+pip install dagster=={DAGSTER_VERSION} dagster-somelibrary
+```
+
+to make sure the correct library version is installed. 
+
+## New since 0.15.8
+
+* [dagster-databricks] When using the `databricks_pyspark_step_launcher` the events sent back to the host process are now compressed before sending, resulting in significantly better performance for steps which produce a large number of events.
+* [dagster-dbt] If an error occurs in `load_assets_from_dbt_project` while loading your repository, the error message in Dagit will now display additional context from the dbt logs, instead of just `DagsterDbtCliFatalRuntimeError`.
+
+### Bugfixes
+
+* Fixed a bug that causes Dagster to ignore the `group_name` argument to `AssetsDefinition.from_graph` when a `key_prefix` argument is also present.
+* Fixed a bug which could cause GraphQL errors in Dagit when loading repositories that contained multiple assets created from the same graph.
+* Ops and software-defined assets with the `None` return type annotation are now given the `Nothing` type instead of the `Any` type.
+* Fixed a bug that caused `AssetsDefinition.from_graph` and `from_op` to fail when invoked on a `configured` op.
+* The `materialize` function, which is not experimental, no longer emits an experimental warning.
+* Fixed a bug where runs from different repositories would be intermingled when viewing the runs for a specific repository-scoped job/schedule/sensor.
+* [dagster-dbt] A regression was introduced in 0.15.8 that would cause dbt logs to show up in json format in the UI. This has been fixed.
+* [dagster-databricks] Previously, if you were using the `databricks_pyspark_step_launcher`, and the external step failed to start, a `RESOURCE_DOES_NOT_EXIST` error would be surfaced, without helpful context. Now, in most cases, the root error causing the step to fail will be surfaced instead.
+
+### Documentation
+
+* New [guide](https://docs.dagster.io/guides/dagster/transitioning-data-pipelines-from-development-to-production) that walks through seamlessly transitioning code from development to production environments.
+* New [guide](https://docs.dagster.io/guides/dagster/branch_deployments) that demonstrates using Branch Deployments to test Dagster code in your cloud environment without impacting your production data.
+
 # 0.15.8
 
 ### New

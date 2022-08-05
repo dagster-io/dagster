@@ -1,5 +1,109 @@
 ---
 title: Configuring and running a local agent | Dagster Docs
+noindex: True
+
+platform_type: "cloud"
 ---
 
 # Configuring and running a local agent
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+In this guide, you'll configure and run a local agent. Local agents are used to launch user code in operating system subprocesses.
+
+**Considering running the agent in production?** Running the local agent in production can be a good choice if:
+
+- Load is relatively light (guaranteed to fit on a single node)
+- Jobs aren’t computationally intensive and don’t use much memory, and
+- A Kubernetes cluster is prohibitively difficult to set up
+- You can restart the agent when you update your code
+
+Keep in mind that the local agent’s ability to run jobs is limited by the capacity of the single node on which it’s running.
+
+If you’re running the local agent in production, make sure you’ve set up a supervisor to automatically restart the agent process if it crashes. You’ll also want a system in place to alert you if the VM or container dies, or to automatically restart it.
+
+---
+
+## Prerequisites
+
+To complete the steps in this guide, you'll need:
+
+- **Permissions in Dagster Cloud that allow you to manage agent tokens**. Refer to the [User permissions documentation](/dagster-cloud/account/managing-users) for more info.
+- **To have Python installed**.
+
+---
+
+## Step 1: Generate a Dagster Cloud agent token
+
+<GenerateAgentToken />
+
+---
+
+## Step 2: Configure the agent
+
+1. Install the `dagster-cloud` Python package into the environment where the local agent will run:
+
+   ```shell
+   pip install dagster-cloud
+   ```
+
+   **Note**: Your Dagster application code and its Python and system requirements must also be installed in this environment. We recommend using Python [virtual environments](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment) to accomplish this.
+
+2. Create a directory on disk to act as your Dagster home. We'll use `~/dagster_home` in our examples, but this directory can be located wherever you want.
+
+3. In the directory you created, create a `dagster.yaml` file like the following:
+
+   ```yaml
+   # ~/dagster_home/dagster.yaml
+
+   instance_class:
+     module: dagster_cloud.instance
+     class: DagsterCloudAgentInstance
+
+   dagster_cloud_api:
+     agent_token: <YOUR_AGENT_TOKEN>
+     deployment: prod
+
+   user_code_launcher:
+     module: dagster_cloud.workspace.user_code_launcher
+     class: ProcessUserCodeLauncher
+   ```
+
+4. In the file, fill in the following:
+
+   - `agent_token` - Add the agent token you created in [Step 1](#step-1-generate-a-dagster-cloud-agent-token). This specifies that the agent will launch work in local processes, reading the API URL and authentication token from environment variables.
+
+   - `deployment` - Enter the deployment associated with this instance of the agent.
+
+     In the above example, we specified `prod` as the deployment. This is present when Dagster Cloud organizations are first created.
+
+5. Save the file.
+
+---
+
+## Step 3: Run the agent
+
+Next, run the process agent by pointing at the home directory you created:
+
+```shell
+dagster-cloud agent run ~/dagster_home/
+```
+
+To view the agent in Dagster Cloud, navigate to the **Status** page and click the **Agents** tab. You should see the agent running in the **Agent statuses** section:
+
+<Image
+alt="Instance Status"
+src="/images/dagster-cloud/agents/dagster-cloud-instance-status.png"
+width={1152}
+height={320}
+/>
+
+---
+
+## Next steps
+
+Now that you've got your agent running, what's next?
+
+- **If you're getting Dagster Cloud set up**, the next step is to [add a code location](/dagster-cloud/developing-testing/code-locations) using the agent.
+
+- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster Cloud](/dagster-cloud/developing-testing/code-locations) guide for more info.

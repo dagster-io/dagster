@@ -1,6 +1,6 @@
 import inspect
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Callable, List, Optional, Sequence
+from typing import TYPE_CHECKING, Callable, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError
@@ -23,10 +23,9 @@ if TYPE_CHECKING:
 
 
 def sensor(
-    pipeline_name: Optional[str] = None,
+    job_name: Optional[str] = None,
+    *,
     name: Optional[str] = None,
-    solid_selection: Optional[List[str]] = None,
-    mode: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     job: Optional[ExecutableDefinition] = None,
@@ -65,10 +64,8 @@ def sensor(
 
         sensor_def = SensorDefinition(
             name=name,
-            pipeline_name=pipeline_name,
+            job_name=job_name,
             evaluation_fn=fn,
-            solid_selection=solid_selection,
-            mode=mode,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job=job,
@@ -85,10 +82,9 @@ def sensor(
 
 def asset_sensor(
     asset_key: AssetKey,
-    pipeline_name: Optional[str] = None,
+    *,
+    job_name: Optional[str] = None,
     name: Optional[str] = None,
-    solid_selection: Optional[List[str]] = None,
-    mode: Optional[str] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     job: Optional[ExecutableDefinition] = None,
@@ -150,10 +146,8 @@ def asset_sensor(
         return AssetSensorDefinition(
             name=sensor_name,
             asset_key=asset_key,
-            pipeline_name=pipeline_name,
+            job_name=job_name,
             asset_materialization_fn=_wrapped_fn,
-            solid_selection=solid_selection,
-            mode=mode,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job=job,

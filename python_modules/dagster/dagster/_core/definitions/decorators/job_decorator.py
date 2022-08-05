@@ -116,12 +116,13 @@ class _Job:
 
 
 @overload
-def job(name: Callable[..., Any]) -> JobDefinition:
+def job(compose_fn: Callable[..., Any]) -> JobDefinition:
     ...
 
 
 @overload
 def job(
+    *,
     name: Optional[str] = ...,
     description: Optional[str] = ...,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = ...,
@@ -140,7 +141,9 @@ def job(
 
 
 def job(
-    name: Optional[Union[Callable[..., Any], str]] = None,
+    compose_fn: Optional[Callable[..., Any]] = None,
+    *,
+    name: Optional[str] = None,
     description: Optional[str] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
@@ -209,9 +212,9 @@ def job(
             A dictionary that maps python objects to the top-level inputs of a job.
 
     """
-    if callable(name):
+    if compose_fn is not None:
         check.invariant(description is None)
-        return _Job()(name)
+        return _Job()(compose_fn)
 
     return _Job(
         name=name,

@@ -242,14 +242,13 @@ class ScheduleDefinition:
     def __init__(
         self,
         name: Optional[str] = None,
+        *,
         cron_schedule: Optional[str] = None,
-        pipeline_name: Optional[str] = None,
+        job_name: Optional[str] = None,
         run_config: Optional[Any] = None,
         run_config_fn: Optional[ScheduleRunConfigFunction] = None,
         tags: Optional[Mapping[str, str]] = None,
         tags_fn: Optional[ScheduleTagsFunction] = None,
-        solid_selection: Optional[Sequence[Any]] = None,
-        mode: Optional[str] = None,
         should_execute: Optional[ScheduleShouldExecuteFunction] = None,
         environment_vars: Optional[Mapping[str, str]] = None,
         execution_timezone: Optional[str] = None,
@@ -271,17 +270,15 @@ class ScheduleDefinition:
             self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
         else:
             self._target = RepoRelativeTarget(
-                pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
-                mode=check.opt_str_param(mode, "mode") or DEFAULT_MODE_NAME,
-                solid_selection=check.opt_nullable_sequence_param(
-                    solid_selection, "solid_selection", of_type=str
-                ),
+                pipeline_name=check.str_param(job_name, "job_name"),
+                mode=DEFAULT_MODE_NAME,
+                solid_selection=None,
             )
 
         if name:
             self._name = check_valid_name(name)
-        elif pipeline_name:
-            self._name = pipeline_name + "_schedule"
+        elif job_name:
+            self._name = job_name + "_schedule"
         elif job:
             self._name = job.name + "_schedule"
 
@@ -451,19 +448,7 @@ class ScheduleDefinition:
     @public  # type: ignore
     @property
     def job_name(self) -> str:
-        return self.pipeline_name
-
-    @property
-    def pipeline_name(self) -> str:
         return self._target.pipeline_name
-
-    @property
-    def solid_selection(self) -> Optional[Sequence[str]]:
-        return self._target.solid_selection
-
-    @property
-    def mode(self) -> str:
-        return self._target.mode
 
     @public  # type: ignore
     @property

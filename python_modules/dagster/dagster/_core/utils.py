@@ -2,7 +2,6 @@ import os
 import random
 import string
 import uuid
-import warnings
 from collections import OrderedDict
 from typing import Tuple, Union, cast
 
@@ -75,12 +74,9 @@ def str_format_set(items):
     return "[{items}]".format(items=", ".join(["'{item}'".format(item=item) for item in items]))
 
 
-def check_dagster_package_version(library_name, library_version):
-    if __version__ != library_version:
-        message = "Found version mismatch between `dagster` ({}) and `{}` ({})".format(
-            __version__, library_name, library_version
-        )
-        warnings.warn(message)
+def check_dagster_package_version(_library_name, _library_version):
+    # https://github.com/dagster-io/dagster/issues/9231
+    pass
 
 
 def parse_env_var(env_var_str: str) -> Tuple[str, str]:
