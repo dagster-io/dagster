@@ -40,7 +40,9 @@ def build_docs_steps() -> List[BuildkiteStep]:
             "cd docs",
             "make apidoc-build",
             "python scripts/pack_json.py",
-            "git diff --exit-code --stat",
+            "echo '--- Checking git diff (ignoring whitespace) after docs build...'",
+            "git diff --ignore-all-space --stat",
+            "git diff --exit-code --ignore-all-space --no-patch",
         )
         .on_test_image(AvailablePythonVersion.V3_9)
         .build(),
