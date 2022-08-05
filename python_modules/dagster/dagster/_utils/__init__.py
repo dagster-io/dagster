@@ -22,6 +22,7 @@ from typing import Mapping as TypingMapping
 from typing import Optional, Type, TypeVar, Union, cast, overload
 from warnings import warn
 
+import packaging.version
 import yaml
 from typing_extensions import Literal
 
@@ -50,6 +51,25 @@ PICKLE_PROTOCOL = 4
 
 
 DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
+
+# Use this to get the "library version" (pre-1.0 version) from the "core version" (post 1.0
+# version). 16 is from the 0.16.0 that library versions stayed on when core went to 1.0.0.
+def library_version_from_core_version(core_version: str) -> str:
+    parsed = packaging.version.parse(core_version)
+    assert isinstance(parsed, packaging.version.Version)
+    release = parsed.release
+    if release[0] >= 1:
+        return ".".join(["0", str(16 + release[1]), str(release[2])])
+    else:
+        return core_version
+
+
+def parse_package_version(version_str: str) -> packaging.version.Version:
+    parsed_version = packaging.version.parse(version_str)
+    assert isinstance(
+        parsed_version, packaging.version.Version
+    ), f"Found LegacyVersion: {version_str}"
+    return parsed_version
 
 
 def convert_dagster_submodule_name(name: str, mode: Literal["private", "public"]) -> str:

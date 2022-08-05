@@ -7,13 +7,16 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import docker
-import packaging
 import pytest
 import requests
 from dagster_graphql import DagsterGraphQLClient
 
-from dagster import file_relative_path
 from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._utils import (
+    file_relative_path,
+    library_version_from_core_version,
+    parse_package_version,
+)
 
 DAGSTER_CURRENT_BRANCH = "current_branch"
 MAX_TIMEOUT_SECONDS = 20
@@ -31,6 +34,13 @@ RELEASE_TEST_MAP = {
     "dagit-latest-release": [MOST_RECENT_RELEASE_PLACEHOLDER, DAGSTER_CURRENT_BRANCH],
     "user-code-latest-release": [DAGSTER_CURRENT_BRANCH, MOST_RECENT_RELEASE_PLACEHOLDER],
 }
+
+
+def get_library_version(version: str) -> str:
+    if version == DAGSTER_CURRENT_BRANCH:
+        return DAGSTER_CURRENT_BRANCH
+    else:
+        return library_version_from_core_version(version)
 
 
 def assert_run_success(client, run_id):
@@ -52,12 +62,14 @@ def dagster_most_recent_release():
     res = requests.get("https://pypi.org/pypi/dagster/json")
     module_json = res.json()
     releases = module_json["releases"]
-    release_versions = [packaging.version.parse(release) for release in releases.keys()]
+    release_versions = [parse_package_version(release) for release in releases.keys()]
     for release_version in reversed(sorted(release_versions)):
         if not release_version.is_prerelease:
             return str(release_version)
 
 
+# This yields a dictionary where the values are either (1) a string version (e.g. "1.0.5"); (2) the
+# string "current_branch".
 @pytest.fixture(
     params=[
         pytest.param(value, marks=getattr(pytest.mark, key), id=key)
@@ -166,39 +178,43 @@ def graphql_client(release_test_map, retrying_requests):
     dagit_host = os.environ.get("BACKCOMPAT_TESTS_DAGIT_HOST", "localhost")
 
     dagit_version = release_test_map["dagit"]
+    dagit_library_version = get_library_version(dagit_version)
     user_code_version = release_test_map["user_code"]
+    user_code_library_version = get_library_version(user_code_version)
 
     with docker_service_up(
         os.path.join(os.getcwd(), "dagit_service", "docker-compose.yml"),
-        build_args=[dagit_version, user_code_version, extract_major_version(user_code_version)],
+        build_args=[
+            dagit_version,
+            dagit_library_version,
+            user_code_version,
+            user_code_library_version,
+            extract_major_version(user_code_version),
+        ],
     ):
         result = retrying_requests.get(f"http://{dagit_host}:3000/dagit_info")
         assert result.json().get("dagit_version")
         yield DagsterGraphQLClient(dagit_host, port_number=3000)
 
 
-# @pytest.mark.skip
-# def test_backcompat_deployed_pipeline(graphql_client, release_test_map):
-#     # Only run this test on backcompat versions
-#     if is_0_release(release_test_map["user_code"]):
-#         assert_runs_and_exists(graphql_client, "the_pipeline")
-# 
-# 
-# @pytest.mark.skip
-# def test_backcompat_deployed_pipeline_subset(graphql_client, release_test_map):
-#     # Only run this test on backcompat versions
-#     if is_0_release(release_test_map["user_code"]):
-#         assert_runs_and_exists(graphql_client, "the_pipeline", subset_selection=["my_solid"])
-# 
-# 
-# @pytest.mark.skip
-# def test_backcompat_deployed_job(graphql_client):
-#     assert_runs_and_exists(graphql_client, "the_job")
-# 
-# 
-# @pytest.mark.skip
-# def test_backcompat_deployed_job_subset(graphql_client):
-#     assert_runs_and_exists(graphql_client, "the_job", subset_selection=["my_op"])
+def test_backcompat_deployed_pipeline(graphql_client, release_test_map):
+    # Only run this test on backcompat versions
+    if is_0_release(release_test_map["user_code"]):
+        assert_runs_and_exists(graphql_client, "the_pipeline")
+
+
+def test_backcompat_deployed_pipeline_subset(graphql_client, release_test_map):
+    # Only run this test on backcompat versions
+    if is_0_release(release_test_map["user_code"]):
+        assert_runs_and_exists(graphql_client, "the_pipeline", subset_selection=["my_solid"])
+
+
+def test_backcompat_deployed_job(graphql_client):
+    assert_runs_and_exists(graphql_client, "the_job")
+
+
+def test_backcompat_deployed_job_subset(graphql_client):
+    assert_runs_and_exists(graphql_client, "the_job", subset_selection=["my_op"])
 
 
 def assert_runs_and_exists(client: DagsterGraphQLClient, name, subset_selection=None):
