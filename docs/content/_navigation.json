@@ -477,50 +477,7 @@
   {
     "title": "Guides",
     "icon": "Search",
-    "path": "/guides",
-    "children": [
-      {
-        "title": "Upgrading to Software-Defined Assets",
-        "path": "/guides/dagster/enriching-with-software-defined-assets"
-      },
-      {
-        "title": "Transitioning Data Pipelines from Development to Production",
-        "path":"/guides/dagster/transitioning-data-pipelines-from-development-to-production"
-      },
-      {
-        "title": "Testing Against Production with Dagster Cloud Branch Deployments",
-        "path": "/guides/dagster/branch_deployments"
-      },
-      {
-        "title": "Versioning and Memoization (Experimental)",
-        "path": "/guides/dagster/memoization"
-      },
-      {
-        "title": "Software-Defined Assets with Pandas and PySpark",
-        "path": "/guides/dagster/software-defined-assets"
-      },
-      {
-        "title": "Run Attribution (Experimental)",
-        "path": "/guides/dagster/run-attribution"
-      },
-      {
-        "title": "Migrating to Graphs, Jobs, and Ops",
-        "path": "https://docs.dagster.io/0.15.7/guides/dagster/graph_job_op",
-        "isExternalLink": true
-      },
-      {
-        "title": "Re-execution",
-        "path": "/guides/dagster/re-execution"
-      },
-      {
-        "title": "Fully-Featured Example Project",
-        "path": "/guides/dagster/example_project"
-      },
-      {
-        "title": "Validating Data with Dagster Type Factories",
-        "path": "/guides/dagster/dagster_type_factories"
-      }
-    ]
+    "path": "/guides"
   },
   {
     "title": "API Reference",
