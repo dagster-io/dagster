@@ -7,12 +7,13 @@ description:
 
 ## Relevant APIs
 
-| Name                                                                 | Description                                                                 |
-| -------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| <PyObject module="dagster" object="dagster_type_loader" decorator /> | The decorator used to define a Dagster Type Loader.                         |
-| <PyObject module="dagster" object="DagsterTypeLoader" />             | The base class used to specify how to load inputs that depends on the type. |
-| <PyObject module="dagster" object="input_manager" decorator />       | The decorator used to define an input manager.                              |
-| <PyObject module="dagster" object="InputManager" />                  | The base class used to specify how to load inputs.                          |
+| Name                                                                 | Description                                                                      |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| <PyObject module="dagster" object="dagster_type_loader" decorator /> | The decorator used to define a Dagster Type Loader.                              |
+| <PyObject module="dagster" object="DagsterTypeLoader" />             | The base class used to specify how to load inputs that depends on the type.      |
+| <PyObject module="dagster" object="DagsterTypeLoaderContext" />      | The context object provided to the function decorated by `@dagster_type_loader`. |
+| <PyObject module="dagster" object="input_manager" decorator />       | The decorator used to define an input manager.                                   |
+| <PyObject module="dagster" object="InputManager" />                  | The base class used to specify how to load inputs.                               |
 
 ## Overview
 
@@ -54,10 +55,24 @@ my_job.execute_in_process(
 When you have an op at the beginning of your job that operates on a dagster type that you've defined, you can write your own <PyObject module="dagster" object="DagsterTypeLoader" /> to define how to load that input via run config.
 
 ```python file=/concepts/io_management/load_custom_type_from_config.py startafter=def_start_marker endbefore=def_end_marker
+from typing import Dict, Union
+
+from dagster import (
+    DagsterTypeLoaderContext,
+    In,
+    dagster_type_loader,
+    job,
+    op,
+    usable_as_dagster_type,
+)
+
+
 @dagster_type_loader(
     config_schema={"diameter": float, "juiciness": float, "cultivar": str}
 )
-def apple_loader(_context, config):
+def apple_loader(
+    _context: DagsterTypeLoaderContext, config: Dict[str, Union[float, str]]
+):
     return Apple(
         diameter=config["diameter"],
         juiciness=config["juiciness"],

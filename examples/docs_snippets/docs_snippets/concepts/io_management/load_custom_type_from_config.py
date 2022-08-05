@@ -1,11 +1,23 @@
-from dagster import In, dagster_type_loader, job, op, usable_as_dagster_type
-
-
+# isort: split
 # def_start_marker
+from typing import Dict, Union
+
+from dagster import (
+    DagsterTypeLoaderContext,
+    In,
+    dagster_type_loader,
+    job,
+    op,
+    usable_as_dagster_type,
+)
+
+
 @dagster_type_loader(
     config_schema={"diameter": float, "juiciness": float, "cultivar": str}
 )
-def apple_loader(_context, config):
+def apple_loader(
+    _context: DagsterTypeLoaderContext, config: Dict[str, Union[float, str]]
+):
     return Apple(
         diameter=config["diameter"],
         juiciness=config["juiciness"],
@@ -32,6 +44,7 @@ def my_job():
 
 
 # def_end_marker
+# isort: split
 
 
 def execute_with_config():

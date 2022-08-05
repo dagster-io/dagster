@@ -680,7 +680,7 @@ def _create_type_materializations(
                             "Unexpected attempt to materialize with no materializer available on dagster_type"
                         )
                     materializations = materializer.materialize_runtime_values(
-                        step_context, output_spec, value
+                        step_context.get_type_materializer_context(), output_spec, value
                     )
 
                 for materialization in materializations:
