@@ -697,10 +697,6 @@
         "path": "/integrations/pandas"
       },
       {
-        "title": "Pandera",
-        "path": "/integrations/pandera"
-      },
-      {
         "title": "PySpark",
         "path": "/integrations/spark"
       },
@@ -1106,6 +1102,10 @@
           {
             "title": "Pandas (dagster-pandas)",
             "path": "/_apidocs/libraries/dagster-pandas"
+          },
+          {
+            "title": "Pandera (dagster-pandera)",
+            "path": "/_apidocs/libraries/dagster-pandera"
           },
           {
             "title": "Papertrail (dagster-papertrail)",
