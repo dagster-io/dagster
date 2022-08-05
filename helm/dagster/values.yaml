@@ -520,6 +520,10 @@ runLauncher:
         tag: ~
         pullPolicy: Always
 
+      # The K8s namespace where new jobs will be launched.
+      # By default, the release namespace is used.
+      jobNamespace: ~
+
       # Support overriding the name prefix of Celery worker pods
       nameOverride: "celery-workers"
 
