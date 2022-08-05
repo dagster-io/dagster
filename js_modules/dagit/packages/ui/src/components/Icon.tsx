@@ -22,6 +22,7 @@ import op from '../icon-svgs/bp-git-commit.svg';
 import op_selector from '../icon-svgs/bp-send-to-graph.svg';
 import cached from '../icon-svgs/cached.svg';
 import cancel from '../icon-svgs/cancel.svg';
+import chat_support from '../icon-svgs/chat-support.svg';
 import check_circle from '../icon-svgs/check_circle.svg';
 import checklist from '../icon-svgs/checklist.svg';
 import chevron_left from '../icon-svgs/chevron_left.svg';
@@ -152,6 +153,7 @@ export const Icons = {
   panel_show_both,
   copy_to_clipboard: assignment,
   copy_to_clipboard_done: assignment_turned_in,
+  chat_support,
   open_in_new,
   folder,
   tag,
