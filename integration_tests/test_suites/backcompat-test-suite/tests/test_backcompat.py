@@ -168,31 +168,35 @@ def graphql_client(release_test_map, retrying_requests):
     dagit_version = release_test_map["dagit"]
     user_code_version = release_test_map["user_code"]
 
-    with docker_service_up(
-        os.path.join(os.getcwd(), "dagit_service", "docker-compose.yml"),
-        build_args=[dagit_version, user_code_version, extract_major_version(user_code_version)],
-    ):
-        result = retrying_requests.get(f"http://{dagit_host}:3000/dagit_info")
-        assert result.json().get("dagit_version")
-        yield DagsterGraphQLClient(dagit_host, port_number=3000)
+    # with docker_service_up(
+    #     os.path.join(os.getcwd(), "dagit_service", "docker-compose.yml"),
+    #     build_args=[dagit_version, user_code_version, extract_major_version(user_code_version)],
+    # ):
+    #     result = retrying_requests.get(f"http://{dagit_host}:3000/dagit_info")
+    #     assert result.json().get("dagit_version")
+    #     yield DagsterGraphQLClient(dagit_host, port_number=3000)
 
 
+@pytest.mark.skip
 def test_backcompat_deployed_pipeline(graphql_client, release_test_map):
     # Only run this test on backcompat versions
     if is_0_release(release_test_map["user_code"]):
         assert_runs_and_exists(graphql_client, "the_pipeline")
 
 
+@pytest.mark.skip
 def test_backcompat_deployed_pipeline_subset(graphql_client, release_test_map):
     # Only run this test on backcompat versions
     if is_0_release(release_test_map["user_code"]):
         assert_runs_and_exists(graphql_client, "the_pipeline", subset_selection=["my_solid"])
 
 
+@pytest.mark.skip
 def test_backcompat_deployed_job(graphql_client):
     assert_runs_and_exists(graphql_client, "the_job")
 
 
+@pytest.mark.skip
 def test_backcompat_deployed_job_subset(graphql_client):
     assert_runs_and_exists(graphql_client, "the_job", subset_selection=["my_op"])
 
