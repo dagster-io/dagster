@@ -7,13 +7,16 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import docker
-import packaging
 import pytest
 import requests
 from dagster_graphql import DagsterGraphQLClient
 
-from dagster import file_relative_path
 from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._utils import (
+    file_relative_path,
+    library_version_from_core_version,
+    parse_package_version,
+)
 
 DAGSTER_CURRENT_BRANCH = "current_branch"
 MAX_TIMEOUT_SECONDS = 20
@@ -24,13 +27,21 @@ MOST_RECENT_RELEASE_PLACEHOLDER = "most_recent"
 pytest_plugins = ["dagster_test.fixtures"]
 
 
-# pylint: disable=redefined-outer-name
-RELEASE_TEST_MAP = {
-    "dagit-earliest-release": [EARLIEST_TESTED_RELEASE, DAGSTER_CURRENT_BRANCH],
-    "user-code-earliest-release": [DAGSTER_CURRENT_BRANCH, EARLIEST_TESTED_RELEASE],
-    "dagit-latest-release": [MOST_RECENT_RELEASE_PLACEHOLDER, DAGSTER_CURRENT_BRANCH],
-    "user-code-latest-release": [DAGSTER_CURRENT_BRANCH, MOST_RECENT_RELEASE_PLACEHOLDER],
+# Maps pytest marks to (dagit-version, user-code-version) 2-tuples. These versions are CORE
+# versions-- library versions are derived from these later with `get_library_version`.
+MARK_TO_VERSIONS_MAP = {
+    "dagit-earliest-release": (EARLIEST_TESTED_RELEASE, DAGSTER_CURRENT_BRANCH),
+    "user-code-earliest-release": (DAGSTER_CURRENT_BRANCH, EARLIEST_TESTED_RELEASE),
+    "dagit-latest-release": (MOST_RECENT_RELEASE_PLACEHOLDER, DAGSTER_CURRENT_BRANCH),
+    "user-code-latest-release": (DAGSTER_CURRENT_BRANCH, MOST_RECENT_RELEASE_PLACEHOLDER),
 }
+
+
+def get_library_version(version: str) -> str:
+    if version == DAGSTER_CURRENT_BRANCH:
+        return DAGSTER_CURRENT_BRANCH
+    else:
+        return library_version_from_core_version(version)
 
 
 def assert_run_success(client, run_id):
@@ -52,16 +63,18 @@ def dagster_most_recent_release():
     res = requests.get("https://pypi.org/pypi/dagster/json")
     module_json = res.json()
     releases = module_json["releases"]
-    release_versions = [packaging.version.parse(release) for release in releases.keys()]
+    release_versions = [parse_package_version(release) for release in releases.keys()]
     for release_version in reversed(sorted(release_versions)):
         if not release_version.is_prerelease:
             return str(release_version)
 
 
+# This yields a dictionary where the keys are "dagit"/"user_code" and the values are either (1) a
+# string version (e.g. "1.0.5"); (2) the string "current_branch".
 @pytest.fixture(
     params=[
         pytest.param(value, marks=getattr(pytest.mark, key), id=key)
-        for key, value in RELEASE_TEST_MAP.items()
+        for key, value in MARK_TO_VERSIONS_MAP.items()
     ],
 )
 def release_test_map(request, dagster_most_recent_release):
@@ -166,11 +179,19 @@ def graphql_client(release_test_map, retrying_requests):
     dagit_host = os.environ.get("BACKCOMPAT_TESTS_DAGIT_HOST", "localhost")
 
     dagit_version = release_test_map["dagit"]
+    dagit_library_version = get_library_version(dagit_version)
     user_code_version = release_test_map["user_code"]
+    user_code_library_version = get_library_version(user_code_version)
 
     with docker_service_up(
         os.path.join(os.getcwd(), "dagit_service", "docker-compose.yml"),
-        build_args=[dagit_version, user_code_version, extract_major_version(user_code_version)],
+        build_args=[
+            dagit_version,
+            dagit_library_version,
+            user_code_version,
+            user_code_library_version,
+            extract_major_version(user_code_version),
+        ],
     ):
         result = retrying_requests.get(f"http://{dagit_host}:3000/dagit_info")
         assert result.json().get("dagit_version")
@@ -178,13 +199,13 @@ def graphql_client(release_test_map, retrying_requests):
 
 
 def test_backcompat_deployed_pipeline(graphql_client, release_test_map):
-    # Only run this test on backcompat versions
+    # Only run this test on legacy versions
     if is_0_release(release_test_map["user_code"]):
         assert_runs_and_exists(graphql_client, "the_pipeline")
 
 
 def test_backcompat_deployed_pipeline_subset(graphql_client, release_test_map):
-    # Only run this test on backcompat versions
+    # Only run this test on legacy versions
     if is_0_release(release_test_map["user_code"]):
         assert_runs_and_exists(graphql_client, "the_pipeline", subset_selection=["my_solid"])
 
