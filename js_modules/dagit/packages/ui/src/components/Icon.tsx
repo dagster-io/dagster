@@ -114,6 +114,7 @@ import warning from '../icon-svgs/warning.svg';
 import waterfall_chart from '../icon-svgs/waterfall_chart.svg';
 import workspaces from '../icon-svgs/workspaces.svg';
 import wysiwyg from '../icon-svgs/wysiwyg.svg';
+import youtube from '../icon-svgs/youtube.svg';
 import zoom_in from '../icon-svgs/zoom_in.svg';
 import zoom_out from '../icon-svgs/zoom_out.svg';
 
@@ -164,6 +165,7 @@ export const Icons = {
   github_pr_open,
   github_pr_closed,
   github_pr_merged,
+  youtube,
 
   graph_downstream,
   graph_upstream,
