@@ -40,7 +40,7 @@ def build_docs_steps() -> List[BuildkiteStep]:
             "cd docs",
             "make apidoc-build",
             "python scripts/pack_json.py",
-            "git diff --exit-code",
+            "git diff --exit-code --stat",
         )
         .on_test_image(AvailablePythonVersion.V3_9)
         .build(),
