@@ -3,7 +3,7 @@ apidoc-build:
 
 apidoc-watch-build:
 	watchmedo shell-command \
-		--patterns='*.rst;conf.py' \
+		--patterns='*.rst;conf.py;_ext/*.py' \
 		--command='make apidoc-build' \
 		--recursive \
 		sphinx
