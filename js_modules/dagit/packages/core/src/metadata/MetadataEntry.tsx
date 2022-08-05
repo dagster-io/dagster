@@ -245,6 +245,7 @@ export const METADATA_ENTRY_FRAGMENT = graphql(`
     ... on TableSchemaMetadataEntry {
       ...TableSchemaForMetadataEntry
     }
+    ... on NullMetadataEntry {}
   }
 
   fragment TableSchemaForMetadataEntry on TableSchemaMetadataEntry {
