@@ -4,11 +4,13 @@ import string
 import uuid
 from collections import OrderedDict
 from typing import Tuple, Union, cast
+import warnings
 
+import packaging.version
 import toposort as toposort_
 
 import dagster._check as check
-from dagster._utils import frozendict
+from dagster._utils import frozendict, library_version_from_core_version
 from dagster.version import __version__
 
 BACKFILL_TAG_LENGTH = 8
@@ -74,9 +76,22 @@ def str_format_set(items):
     return "[{items}]".format(items=", ".join(["'{item}'".format(item=item) for item in items]))
 
 
-def check_dagster_package_version(_library_name, _library_version):
-    # https://github.com/dagster-io/dagster/issues/9231
-    pass
+def check_dagster_package_version(library_name: str, library_version: str):
+    parsed_lib_version = packaging.version.parse(library_version)
+    assert isinstance(parsed_lib_version, packaging.version.Version)
+    if parsed_lib_version.release[0] >= 1:
+        if library_version != __version__:
+            message = "Found version mismatch between `dagster` ({}) and `{}` ({})".format(
+                __version__, library_name, library_version
+            )
+            warnings.warn(message)
+    else:
+        target_version = library_version_from_core_version(__version__)
+        if library_version != target_version:
+            message = "Found version mismatch between `dagster` ({}) and `{}` ({}). Library version should be {}.".format(
+                __version__, library_name, library_version, target_version
+            )
+            warnings.warn(message)
 
 
 def parse_env_var(env_var_str: str) -> Tuple[str, str]:
