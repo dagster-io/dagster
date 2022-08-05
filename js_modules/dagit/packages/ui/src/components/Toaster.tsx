@@ -14,7 +14,7 @@ export const GlobalToasterStyle = createGlobalStyle`
       font-size: 14px;
       line-height: 22px;
       color: ${Colors.White};
-      background-color: ${Colors.Gray900};
+      background-color: ${Colors.Blue500};
     }
 
     .bp3-button-group {
@@ -29,7 +29,7 @@ export const GlobalToasterStyle = createGlobalStyle`
     }
 
     .bp3-toast.bp3-intent-success {
-      background-color: ${Colors.Blue500};
+      background-color: ${Colors.Green500};
     }
 
     .bp3-toast.bp3-intent-warning,

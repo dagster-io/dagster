@@ -5,7 +5,7 @@ import styled from 'styled-components/macro';
 
 import {InstanceWarningIcon} from '../nav/InstanceWarningIcon';
 import {VersionNumber} from '../nav/VersionNumber';
-import {WorkspaceWarningIcon} from '../nav/WorkspaceWarningIcon';
+import {WorkspaceStatus} from '../nav/WorkspaceStatus';
 import {SearchDialog} from '../search/SearchDialog';
 
 import {LayoutContext} from './LayoutProvider';
@@ -73,7 +73,7 @@ export const AppTopNav: React.FC<Props> = ({
             <TopNavLink to="/workspace" data-cy="AppTopNav_WorkspaceLink">
               <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
                 Workspace
-                <WorkspaceWarningIcon />
+                <WorkspaceStatus />
               </Box>
             </TopNavLink>
           </ShortcutHandler>

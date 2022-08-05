@@ -167,9 +167,9 @@ export const useRepositoryLocationReload = ({
 
         // On success, show the successful toast, hide the dialog (if open), and reset Apollo.
         SharedToaster.show({
-          message: `${scope === 'location' ? 'Repository Location' : 'Workspace'} reloaded!`,
+          message: `${scope === 'location' ? 'Repository location' : 'Workspace'} reloaded!`,
           timeout: 3000,
-          icon: 'done',
+          icon: 'check_circle',
           intent: Intent.SUCCESS,
         });
         dispatch({type: 'success'});
