@@ -28,6 +28,7 @@ import checklist from '../icon-svgs/checklist.svg';
 import chevron_left from '../icon-svgs/chevron_left.svg';
 import chevron_right from '../icon-svgs/chevron_right.svg';
 import close from '../icon-svgs/close.svg';
+import concept_book from '../icon-svgs/concept-book.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
 import deleteSVG from '../icon-svgs/delete.svg';
 import done from '../icon-svgs/done.svg';
@@ -154,6 +155,7 @@ export const Icons = {
   copy_to_clipboard: assignment,
   copy_to_clipboard_done: assignment_turned_in,
   chat_support,
+  concept_book,
   open_in_new,
   folder,
   tag,
