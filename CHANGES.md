@@ -49,6 +49,19 @@ In 1.0.0, a large number of previously-deprecated APIs have been fully removed. 
 * `fs_io_manager`, `s3_pickle_io_manager`, and `gcs_pickle_io_manager`, and `adls_pickle_io_manager` no longer write out a file or object when handling an output with the `None` or `Nothing` type.
 * The `custom_path_fs_io_manager` has been removed, as its functionality is entirely subsumed by the `fs_io_manager`, where a custom path can be specified via config.
 * The default `typing_type` of a `DagsterType` is now `typing.Any` instead of `None`.
+* Dagster’s  integration libraries haven’t yet achieved the same API maturity as Dagster core. For this reason, all integration libraries will remain on a pre-1.0 (0.16.x) versioning track for the time being. However, 0.16.x library releases remain fully compatible with Dagster 1.x. In the coming months, we will graduate integration libraries one-by-one to the 1.x versioning track as they achieve API maturity. If you have installs of the form:
+
+```
+pip install dagster=={DAGSTER_VERSION} dagster-somelibrary=={DAGSTER_VERSION}
+```
+
+this should be converted to:
+
+```
+pip install dagster=={DAGSTER_VERSION} dagster-somelibrary
+```
+
+to make sure the correct library version is installed. 
 
 ## New since 0.15.8
 
