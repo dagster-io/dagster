@@ -18,6 +18,7 @@ from dagster._check import CheckError
 from dagster._core.definitions.metadata import (
     DagsterInvalidMetadata,
     MetadataEntry,
+    NullMetadataValue,
     normalize_metadata,
 )
 from dagster._core.definitions.metadata.table import (
@@ -151,6 +152,13 @@ def test_unknown_metadata_value():
         "Its type was <class 'dagster._core.instance.DagsterInstance'>. "
         "Consider wrapping the value with the appropriate MetadataValue type."
     )
+
+def test_parse_null_metadata():
+
+    metadata = { "foo": None }
+    entries = normalize_metadata(metadata, [])
+    assert entries[0].label == "foo"
+    assert entries[0].value == NullMetadataValue()
 
 
 def test_parse_invalid_metadata():
