@@ -38,7 +38,6 @@ def test_empty_celery_config():
         "volume_mounts": [],
         "volumes": [],
         "load_incluster_config": True,
-        "job_namespace": "default",
         "repo_location_name": "<<in_process>>",
         "job_wait_timeout": DEFAULT_WAIT_TIMEOUT,
     }
@@ -54,7 +53,6 @@ def test_get_validated_celery_k8s_executor_config():
         "retries": {"enabled": {}},
         "job_image": "foo",
         "load_incluster_config": True,
-        "job_namespace": "default",
         "repo_location_name": "<<in_process>>",
         "job_wait_timeout": DEFAULT_WAIT_TIMEOUT,
         "volume_mounts": [],
@@ -71,7 +69,7 @@ def test_get_validated_celery_k8s_executor_config():
 
     with environ(
         {
-            "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE": "default",
+            "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE": "my-namespace",
             "DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP": "config-pipeline-env",
         }
     ):
@@ -82,7 +80,7 @@ def test_get_validated_celery_k8s_executor_config():
             "retries": {"enabled": {}},
             "env_config_maps": ["config-pipeline-env"],
             "load_incluster_config": True,
-            "job_namespace": "default",
+            "job_namespace": "my-namespace",
             "repo_location_name": "<<in_process>>",
             "job_wait_timeout": DEFAULT_WAIT_TIMEOUT,
             "volume_mounts": [],
@@ -92,7 +90,7 @@ def test_get_validated_celery_k8s_executor_config():
     # Test setting all possible config fields
     with environ(
         {
-            "TEST_PIPELINE_RUN_NAMESPACE": "default",
+            "TEST_PIPELINE_RUN_NAMESPACE": "my-namespace",
             "TEST_CELERY_BROKER": "redis://some-redis-host:6379/0",
             "TEST_CELERY_BACKEND": "redis://some-redis-host:6379/0",
             "TEST_PIPELINE_RUN_IMAGE": "foo",
@@ -138,9 +136,9 @@ def test_get_validated_celery_k8s_executor_config():
             "repo_location_name": "<<in_process>>",
             "load_incluster_config": False,
             "kubeconfig_file": "/some/kubeconfig/file",
-            "job_namespace": "default",
             "backend": "redis://some-redis-host:6379/0",
             "broker": "redis://some-redis-host:6379/0",
+            "job_namespace": "my-namespace",
             "include": ["dagster", "dagit"],
             "config_source": {"task_annotations": """{'*': {'on_failure': my_on_failure}}"""},
             "retries": {"disabled": {}},
@@ -164,7 +162,6 @@ def test_get_validated_celery_k8s_executor_config_for_job():
         "retries": {"enabled": {}},
         "job_image": "foo",
         "load_incluster_config": True,
-        "job_namespace": "default",
         "repo_location_name": "<<in_process>>",
         "job_wait_timeout": DEFAULT_WAIT_TIMEOUT,
         "volume_mounts": [],
@@ -179,7 +176,7 @@ def test_get_validated_celery_k8s_executor_config_for_job():
 
     with environ(
         {
-            "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE": "default",
+            "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE": "my-namespace",
             "DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP": "config-pipeline-env",
         }
     ):
@@ -190,7 +187,7 @@ def test_get_validated_celery_k8s_executor_config_for_job():
             "retries": {"enabled": {}},
             "env_config_maps": ["config-pipeline-env"],
             "load_incluster_config": True,
-            "job_namespace": "default",
+            "job_namespace": "my-namespace",
             "repo_location_name": "<<in_process>>",
             "job_wait_timeout": DEFAULT_WAIT_TIMEOUT,
             "volume_mounts": [],
@@ -200,7 +197,7 @@ def test_get_validated_celery_k8s_executor_config_for_job():
     # Test setting all possible config fields
     with environ(
         {
-            "TEST_PIPELINE_RUN_NAMESPACE": "default",
+            "TEST_PIPELINE_RUN_NAMESPACE": "my-namespace",
             "TEST_CELERY_BROKER": "redis://some-redis-host:6379/0",
             "TEST_CELERY_BACKEND": "redis://some-redis-host:6379/0",
             "TEST_PIPELINE_RUN_IMAGE": "foo",
@@ -249,7 +246,7 @@ def test_get_validated_celery_k8s_executor_config_for_job():
             "repo_location_name": "<<in_process>>",
             "load_incluster_config": False,
             "kubeconfig_file": "/some/kubeconfig/file",
-            "job_namespace": "default",
+            "job_namespace": "my-namespace",
             "backend": "redis://some-redis-host:6379/0",
             "broker": "redis://some-redis-host:6379/0",
             "include": ["dagster", "dagit"],
