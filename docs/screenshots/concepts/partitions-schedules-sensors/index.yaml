@@ -1,6 +1,8 @@
 - id: partitions-page.png
   base_url: https://demo.elementl.show
   route: /workspace/hacker_news_prod@hacker-news/jobs/hacker_news_api_download/partitions
+  steps:
+    - login
   vetted: false
 
 - id: backfills-launch-modal.png
