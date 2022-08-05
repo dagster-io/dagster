@@ -21,7 +21,7 @@ this should be converted to:
 pip install dagster=={DAGSTER_VERSION} dagster-somelibrary
 ```
 
-to make sure the correct library version is installed. 
+to make sure the correct library version is installed.
 
 ### Legacy API Removals
 - Dagster's legacy APIs, which were marked "legacy" in 0.13.0, have been removed. This includes `@solid`, `SolidDefinition`, `@pipeline`, `PipelineDefinition`, `@composite_solid`, `CompositeSolidDefinition`, `ModeDefinition`, `PresetDefinition`, `PartitionSetDefinition`, `InputDefinition`, `OutputDefinition`, `DynamicOutputDefinition`, `pipeline_failure_sensor`, `@hourly_schedule`, `@daily_schedule`, `@weekly_schedule`, and `@monthly_schedule`. [Here is a guide](https://docs.dagster.io/0.15.6/guides/dagster/graph_job_op) to migrating from the legacy APIs to the stable APIs.
@@ -39,6 +39,88 @@ to make sure the correct library version is installed.
 - `EventMetadata` and `EventMetadataEntryData` APIs have been removed. Instead, metadata should be specified using the [MetadataValue](https://docs.dagster.io/_apidocs/ops#dagster.MetadataValue) APIs.
 - APIs referencing pipelines/solids in extension libraries have been removed. This includes `define_dagstermill_solid`, `make_dagster_pipeline_from_airflow_dag`, `create_databricks_job_solid`, the various `dbt_cli_*` and `dbt_rpc_*` solids, `bq_solid_for_queries`, `ge_validation_solid_factory`, `end_mlflow_run_on_pipeline_finished`, the various `shell_command_solid` APIs, `make_slack_on_pipeline_failure_sensor`, `snowflake_solid_for_query`, `end_mlflow_run_on_pipeline_finished`, and `create_spark_solid`.
 - `custom_path_fs_io_manager` has been removed, as its functionality is entirely subsumed by the `fs_io_manager`, where a custom path can be specified via config.
+
+### Removed API List
+This serves as an exhaustive list of the removed APIs.
+
+From the main Dagster module:
+- `AssetGroup`
+- `DagsterPipelineRunMetadataValue`
+- `CompositeSolidDefinition`
+- `InputDefinition`
+- `Materialization`
+- `ModeDefinition`
+- `OutputDefinition`
+- `PipelineDefinition`
+- `PresetDefinition`
+- `SolidDefinition`
+- `SolidInvocation`
+- `DynamicOutputDefinition`
+- `composite_solid`
+- `lambda_solid`
+- `pipeline`
+- `solid`
+- `pipeline_failure_sensor`
+- `CompositeSolidExecutionResult`
+- `PipelineExecutionResult`
+- `SolidExecutionResult`
+- `SolidExecutionContext`
+- `build_solid_context`
+- `PipelineRun`
+- `PipelineRunStatus`
+- `default_executors`
+- `execute_pipeline_iterator`
+- `execute_pipeline`
+- `execute_solid_within_pipeline`
+- `reexecute_pipeline_iterator`
+- `reexecute_pipeline`
+- `execute_solid`
+- `execute_solids_within_pipeline`
+- `build_assets_job`
+- `schedule_from_partitions`
+- `PartitionSetDefinition`
+- `ScheduleExecutionContext`
+- `SensorExecutionContext`
+- `PipelineFailureSensorContext`
+- `daily_schedule`
+- `hourly_schedule`
+- `monthly_schedule`
+- `weekly_schedule`
+- `create_offset_partition_selector`
+- `date_partition_range`
+- `identity_partition_selector`
+- `custom_path_fs_io_manager`
+
+From libaries (APIs removed in 0.16.0 onwards):
+- `dagster_airflow.make_dagster_pipeline_from_airflow_dag`
+- `dagster_databricks.create_databricks_job_solid`
+- `dagster_dbt.dbt_cli_compile`
+- `dagster_dbt.dbt_cli_run`
+- `dagster_dbt.dbt_cli_run_operation`
+- `dagster_dbt.dbt_cli_snapshot`
+- `dagster_dbt.dbt_cli_snapshot_freshness`
+- `dagster_dbt.dbt_cli_test`
+- `dagster_dbt.create_dbt_rpc_run_sql_solid`
+- `dagster_dbt.dbt_rpc_run`
+- `dagster_dbt.dbt_rpc_run_and_wait`
+- `dagster_dbt.dbt_rpc_run_operation`
+- `dagster_dbt.dbt_rpc_run_operation_and_wait`
+- `dagster_dbt.dbt_rpc_snapshot`
+- `dagster_dbt.dbt_rpc_snapshot_and_wait`
+- `dagster_dbt.dbt_rpc_snapshot_freshness`
+- `dagster_dbt.dbt_rpc_snapshot_freshness_and_wait`
+- `dagster_dbt.dbt_rpc_test`
+- `dagster_dbt.dbt_rpc_test_and_wait`
+- `dagster_gcp.bq_solid_for_queries`
+- `dagster_ge.ge_validation_solid_factory`
+- `dagster_mlflow.end_mlflow_run_on_pipeline_finishes`
+- `dagster_shell.create_shell_command_solid`
+- `dagster_shell.create_shell_script_solid`
+- `dagster_shell.shell_solid`
+- `dagster_slack.make_slack_on_pipeline_failure_sensor`
+- `dagster_msteams.make_teams_on_pipeline_failure_sensor`
+- `dagster_snowflake.snowflake_solid_for_query`
+- `dagster_spark.create_spark_solid`
 
 ## Migrating to 0.15.0
 
