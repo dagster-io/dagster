@@ -326,24 +326,110 @@
             "path": "/dagster-cloud/getting-started"
           },
           {
-            "title": "Understanding deployment types",
-            "path": "/dagster-cloud/deployment"
+            "title": "Deployment types",
+            "path": "/dagster-cloud/deployment",
+            "children": [
+              {
+                "title": "Serverless",
+                "path": "/dagster-cloud/deployment/serverless"
+              },
+              {
+                "title": "Hybrid",
+                "path": "/dagster-cloud/deployment/hybrid"
+              }
+            ]
           },
           {
-            "title": "Managing your account",
-            "path": "/dagster-cloud/account"
+            "title": "Account",
+            "path": "/dagster-cloud/account",
+            "children": [
+              {
+                "title": "Users",
+                "path": "/dagster-cloud/account/managing-users"
+              },
+              {
+                "title": "Tokens",
+                "path": "/dagster-cloud/account/managing-user-agent-tokens"
+              },
+              {
+                "title": "Alerts",
+                "path": "/dagster-cloud/account/setting-up-alerts"
+              }
+            ]
           },
           {
-            "title": "Configuring authentication",
-            "path": "/dagster-cloud/account/authentication"
+            "title": "Authentication",
+            "path": "/dagster-cloud/account/authentication",
+            "children":[
+              {
+                "title": "Azure Active Directory",
+                "path": "/dagster-cloud/account/authentication/setting-up-azure-ad-saml-sso"
+              },
+              {
+                "title": "Google Workspace",
+                "path": "/dagster-cloud/account/authentication/setting-up-google-workspace-saml-sso"
+              },
+              {
+                "title": "Okta",
+                "path": "/dagster-cloud/account/authentication/setting-up-okta-saml-sso"
+              },
+              {
+                "title": "OneLogin",
+                "path": "/dagster-cloud/account/authentication/setting-up-onelogin-saml-sso"
+              },
+              {
+                "title": "PingOne",
+                "path": "dagster-cloud/account/authentication/setting-up-pingone-saml-sso"
+              }
+            ]
           },
           {
-            "title": "Managing Hybrid agents",
-            "path": "/dagster-cloud/deployment/agents"
+            "title": "Hybrid agents",
+            "path": "/dagster-cloud/deployment/agents",
+            "children": [
+              {
+                "title": "Amazon ECS",
+                "path": "/dagster-cloud/deployment/agents/amazon-ecs"
+              },
+              {
+                "title": "Docker",
+                "path": "/dagster-cloud/deployment/agents/docker"
+              },
+              {
+                "title": "Kubernetes",
+                "path": "/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent"
+              },
+              {
+                "title": "Local",
+                "path": "/dagster-cloud/deployment/agents/local"
+              },
+              {
+                "title": "Custom configuration",
+                "path": "/dagster-cloud/deployment/agents/customizing-configuration"
+              },
+              {
+                "title": "Multiple agents",
+                "path": "/dagster-cloud/deployment/agents/running-multiple-agents"
+              }
+            ]
           },
           {
             "title": "Developing and testing",
-            "path": "/dagster-cloud/developing-testing"
+            "path": "/dagster-cloud/developing-testing",
+            "children": [
+              {
+                "title": "dagster-cloud CLI",
+                "path": "/dagster-cloud/developing-testing"
+              },
+              {
+                "title": "Code locations",
+                "path": "/dagster-cloud/developing-testing"
+              },
+              {
+                "title": "Branch deployments",
+                "path": "/dagster-cloud/developing-testing"
+              }
+            ]
           }
         ]
       }
