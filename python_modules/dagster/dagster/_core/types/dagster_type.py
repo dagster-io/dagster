@@ -34,7 +34,7 @@ if t.TYPE_CHECKING:
         NodeDefinition,
     )
     from dagster._core.execution.context.system import (  # pylint: disable=unused-import
-        StepExecutionContext,
+        DagsterTypeLoaderContext,
         TypeCheckContext,
     )
 
@@ -597,7 +597,7 @@ class NoneableInputSchema(DagsterTypeLoader):
         return self._schema_type
 
     def construct_from_config_value(
-        self, context: "StepExecutionContext", config_value: object
+        self, context: "DagsterTypeLoaderContext", config_value: object
     ) -> object:
         if config_value is None:
             return None
