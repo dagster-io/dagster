@@ -426,7 +426,7 @@ def daily_partitioned_config(
     fmt: Optional[str] = None,
     end_offset: int = 0,
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
-) -> Callable[[Callable[[datetime, datetime], Dict[str, Any]]], PartitionedConfig]:
+) -> Callable[[Callable[[datetime, datetime], Mapping[str, Any]]], PartitionedConfig]:
     """Defines run config over a set of daily partitions.
 
     The decorated function should accept a start datetime and end datetime, which represent the bounds
@@ -544,7 +544,7 @@ def hourly_partitioned_config(
     fmt: Optional[str] = None,
     end_offset: int = 0,
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
-) -> Callable[[Callable[[datetime, datetime], Dict[str, Any]]], PartitionedConfig]:
+) -> Callable[[Callable[[datetime, datetime], Mapping[str, Any]]], PartitionedConfig]:
     """Defines run config over a set of hourly partitions.
 
     The decorated function should accept a start datetime and end datetime, which represent the date
@@ -669,8 +669,8 @@ def monthly_partitioned_config(
     timezone: Optional[str] = None,
     fmt: Optional[str] = None,
     end_offset: int = 0,
-    tags_for_partition_fn: Optional[Callable[[datetime, datetime], Dict[str, str]]] = None,
-) -> Callable[[Callable[[datetime, datetime], Dict[str, Any]]], PartitionedConfig]:
+    tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
+) -> Callable[[Callable[[datetime, datetime], Mapping[str, Any]]], PartitionedConfig]:
     """Defines run config over a set of monthly partitions.
 
     The decorated function should accept a start datetime and end datetime, which represent the date
@@ -711,7 +711,7 @@ def monthly_partitioned_config(
         # creates partitions (2022-04-05-03:15, 2022-05-05-03:15), (2022-05-05-03:15, 2022-06-05-03:15), ...
     """
 
-    def inner(fn: Callable[[datetime, datetime], Dict[str, Any]]) -> PartitionedConfig:
+    def inner(fn: Callable[[datetime, datetime], Mapping[str, Any]]) -> PartitionedConfig:
         check.callable_param(fn, "fn")
 
         return PartitionedConfig(
@@ -803,7 +803,7 @@ def weekly_partitioned_config(
     fmt: Optional[str] = None,
     end_offset: int = 0,
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Dict[str, str]]] = None,
-) -> Callable[[Callable[[datetime, datetime], Dict[str, Any]]], PartitionedConfig]:
+) -> Callable[[Callable[[datetime, datetime], Mapping[str, Any]]], PartitionedConfig]:
     """Defines run config over a set of weekly partitions.
 
     The decorated function should accept a start datetime and end datetime, which represent the date
@@ -845,7 +845,7 @@ def weekly_partitioned_config(
         # creates partitions (2022-03-12-03:15, 2022-03-19-03:15), (2022-03-19-03:15, 2022-03-26-03:15), ...
     """
 
-    def inner(fn: Callable[[datetime, datetime], Dict[str, Any]]) -> PartitionedConfig:
+    def inner(fn: Callable[[datetime, datetime], Mapping[str, Any]]) -> PartitionedConfig:
         check.callable_param(fn, "fn")
 
         return PartitionedConfig(

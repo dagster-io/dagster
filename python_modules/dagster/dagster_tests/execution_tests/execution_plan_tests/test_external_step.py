@@ -3,7 +3,7 @@ import tempfile
 import time
 import uuid
 from threading import Thread
-from typing import Sequence
+from typing import List
 
 import pytest
 
@@ -151,7 +151,7 @@ def _define_dynamic_job(launch_initial, launch_final):
         return i + 1
 
     @op(required_resource_keys={"final_launcher"})
-    def total(ins: Sequence[int]):
+    def total(ins: List[int]):
         return sum(ins)
 
     @job(

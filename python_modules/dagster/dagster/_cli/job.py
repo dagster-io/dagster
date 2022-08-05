@@ -262,7 +262,7 @@ def execute_list_versions_command(instance: DagsterInstance, kwargs: Mapping[str
     add_step_to_table(memoized_plan)
 
 
-def get_run_config_from_file_list(file_list: Optional[List[str]]):
+def get_run_config_from_file_list(file_list: Optional[Sequence[str]]):
     check.opt_list_param(file_list, "file_list", of_type=str)
     return load_yaml_from_glob_list(file_list) if file_list else {}
 
@@ -308,7 +308,7 @@ def job_execute_command(**kwargs):
 @telemetry_wrapper
 def execute_execute_command(
     instance: DagsterInstance,
-    kwargs: Dict[str, object],
+    kwargs: Mapping[str, object],
 ):
     check.inst_param(instance, "instance", DagsterInstance)
 
@@ -346,7 +346,7 @@ def get_tags_from_args(kwargs):
         ) from e
 
 
-def get_config_from_args(kwargs: Dict[str, str]) -> Dict[str, object]:
+def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
 
     config = kwargs.get("config")  # files
     config_json = kwargs.get("config_json")
@@ -390,10 +390,10 @@ def get_solid_selection_from_args(kwargs):
 def do_execute_command(
     pipeline: IPipeline,
     instance: DagsterInstance,
-    config: Optional[List[str]],
+    config: Optional[Sequence[str]],
     mode: Optional[str] = None,
-    tags: Optional[Dict[str, object]] = None,
-    solid_selection: Optional[List[str]] = None,
+    tags: Optional[Mapping[str, object]] = None,
+    solid_selection: Optional[Sequence[str]] = None,
     preset: Optional[str] = None,
 ):
     check.inst_param(pipeline, "pipeline", IPipeline)
@@ -435,7 +435,7 @@ def job_launch_command(**kwargs):
 @telemetry_wrapper
 def execute_launch_command(
     instance: DagsterInstance,
-    kwargs: Dict[str, str],
+    kwargs: Mapping[str, str],
 ):
     preset = cast(Optional[str], kwargs.get("preset"))
     mode = cast(Optional[str], kwargs.get("mode"))
@@ -491,7 +491,7 @@ def _create_external_pipeline_run(
     mode: Optional[str],
     preset: Optional[str],
     tags: Optional[Mapping[str, object]],
-    solid_selection: Optional[List[str]],
+    solid_selection: Optional[Sequence[str]],
     run_id: Optional[str],
 ):
     check.inst_param(instance, "instance", DagsterInstance)
@@ -918,3 +918,4 @@ def validate_partition_slice(partition_names, name, value):
         raise click.UsageError("invalid value {} for {}".format(value, name))
     index = partition_names.index(value)
     return index if is_start else index + 1
+

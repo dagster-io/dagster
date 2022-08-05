@@ -570,9 +570,9 @@ from dagster.version import __version__
 
 # isort: split
 import importlib
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING
 from typing import Any as TypingAny
-from typing import Callable, Mapping
+from typing import Callable, Mapping, Sequence
 from typing import Tuple as TypingTuple
 
 from typing_extensions import Final

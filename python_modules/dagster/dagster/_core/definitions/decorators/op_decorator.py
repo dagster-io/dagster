@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Sequence, Set, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Set, Union, overload
 
 import dagster._check as check
 from dagster._config import UserConfigSchema

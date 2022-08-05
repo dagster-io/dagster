@@ -728,7 +728,7 @@ class GraphDefinition(NodeDefinition):
         return super(GraphDefinition, self).alias(name)
 
     @public
-    def tag(self, tags: Optional[Dict[str, str]]) -> "PendingNodeInvocation":
+    def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
         return super(GraphDefinition, self).tag(tags)
 
     @public

@@ -86,7 +86,7 @@ def make_email_on_run_failure_sensor(
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
     monitored_jobs: Optional[
-        List[
+        Sequence[
             Union[
                 "PipelineDefinition",
                 "GraphDefinition",

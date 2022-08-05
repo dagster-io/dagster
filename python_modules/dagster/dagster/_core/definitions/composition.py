@@ -564,7 +564,7 @@ class PendingNodeInvocation:
         )
 
     @public
-    def tag(self, tags: Optional[Dict[str, str]]) -> "PendingNodeInvocation":
+    def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
         tags = validate_tags(tags)
         return PendingNodeInvocation(
             node_def=self.node_def,
