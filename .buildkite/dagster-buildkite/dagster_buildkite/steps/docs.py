@@ -34,11 +34,12 @@ def build_docs_steps() -> List[BuildkiteStep]:
         .on_test_image(AvailablePythonVersion.V3_7)
         .build(),
         # Make sure docs sphinx build runs.
-        CommandStepBuilder("docs sphinx build")
+        CommandStepBuilder("docs apidoc build")
         .run(
             "pip install -U virtualenv",
             "cd docs",
-            "tox -vv -e sphinx",
+            "make apidoc-build",
+            "python scripts/pack_json.py",
             "git diff --exit-code",
         )
         .on_test_image(AvailablePythonVersion.V3_9)
