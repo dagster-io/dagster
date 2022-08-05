@@ -2,16 +2,14 @@ import os
 import random
 import string
 import uuid
+import warnings
 from collections import OrderedDict
 from typing import Tuple, Union, cast
-import warnings
 
-import packaging.version
 import toposort as toposort_
 
 import dagster._check as check
-from dagster._utils import frozendict, library_version_from_core_version
-from dagster.version import __version__
+from dagster._utils import frozendict, library_version_from_core_version, parse_package_version
 
 BACKFILL_TAG_LENGTH = 8
 
@@ -76,20 +74,25 @@ def str_format_set(items):
     return "[{items}]".format(items=", ".join(["'{item}'".format(item=item) for item in items]))
 
 
-def check_dagster_package_version(library_name: str, library_version: str):
-    parsed_lib_version = packaging.version.parse(library_version)
-    assert isinstance(parsed_lib_version, packaging.version.Version)
+def check_dagster_package_version(library_name: str, library_version: str) -> None:
+    # This import must be internal in order for this function to be testable
+    from dagster.version import __version__
+
+    parsed_lib_version = parse_package_version(library_version)
     if parsed_lib_version.release[0] >= 1:
         if library_version != __version__:
-            message = "Found version mismatch between `dagster` ({}) and `{}` ({})".format(
-                __version__, library_name, library_version
+            message = (
+                f"Found version mismatch between `dagster` ({__version__})"
+                f"and `{library_name}` ({library_version})"
             )
             warnings.warn(message)
     else:
         target_version = library_version_from_core_version(__version__)
         if library_version != target_version:
-            message = "Found version mismatch between `dagster` ({}) and `{}` ({}). Library version should be {}.".format(
-                __version__, library_name, library_version, target_version
+            message = (
+                f"Found version mismatch between `dagster` ({__version__}) "
+                f"expected library version ({target_version} "
+                f"and `{library_name}` ({library_version})."
             )
             warnings.warn(message)
 
