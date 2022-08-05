@@ -9,6 +9,21 @@ When new releases include breaking changes or deprecations, this document descri
 - **All submodules of dagster have been marked private.** We currently provide aliasing to avoid incurring linting errors, but in a future 1.x release, this will be removed, and imports from submodules of dagster may incur errors.
 - The `dagster.experimental` submodule has been deleted, which previously contained dynamic output APIs, which are available from the top level of the `dagster` module.
 - As of 1.0, **Dagster no longer guarantees support for python 3.6.** This is in line with [PEP 494](https://peps.python.org/pep-0494/), which outlines that 3.6 has reached end of life.
+- Previously, Dagster extension libraries would be pinned to the same version as the core `dagster` package. While the core library is now stable, and we're committed to making no breaking changes until the next major release, this is not yet the case for the extension libraries. If you have installs of the form:
+
+```
+pip install dagster=={DAGSTER_VERSION}
+pip install dagster-somelibrary=={DAGSTER_VERSION}
+```
+
+this should be converted to:
+
+```
+pip install dagster=={DAGSTER_VERSION}
+pip install dagster-somelibrary
+```
+
+to make sure the correct library version is installed. As libraries are considered stable, their versions will move back into lockstep with `dagster`.
 
 ### Legacy API Removals
 - Dagster's legacy APIs, which were marked "legacy" in 0.13.0, have been removed. This includes `@solid`, `SolidDefinition`, `@pipeline`, `PipelineDefinition`, `@composite_solid`, `CompositeSolidDefinition`, `ModeDefinition`, `PresetDefinition`, `PartitionSetDefinition`, `InputDefinition`, `OutputDefinition`, `DynamicOutputDefinition`, `pipeline_failure_sensor`, `@hourly_schedule`, `@daily_schedule`, `@weekly_schedule`, and `@monthly_schedule`. [Here is a guide](https://docs.dagster.io/0.15.6/guides/dagster/graph_job_op) to migrating from the legacy APIs to the stable APIs.
