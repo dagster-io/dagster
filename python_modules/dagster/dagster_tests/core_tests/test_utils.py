@@ -45,8 +45,14 @@ def test_check_dagster_package_version(monkeypatch):
         warnings.simplefilter("error")
         check_dagster_package_version("foo", "0.17.0")
 
-    with pytest.warns():
-        check_dagster_package_version("foo", "1.0.0")
+    with pytest.warns(Warning):  # minor version
+        check_dagster_package_version("foo", "1.2.0")
 
-    with pytest.warns():
-        check_dagster_package_version("foo", "0.16.5")
+    with pytest.warns(Warning):  # patch version
+        check_dagster_package_version("foo", "1.1.1")
+
+    with pytest.warns(Warning):  # minor version
+        check_dagster_package_version("foo", "0.18.0")
+
+    with pytest.warns(Warning):  # patch version
+        check_dagster_package_version("foo", "0.17.1")
