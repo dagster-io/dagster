@@ -8,12 +8,10 @@
 # - Targets for `autodoc` (referenced via e.g. `automodule` in our doc source rst files).
 #   `autodoc` runs in python and actually imports its targets, so they must be available on
 #   `sys.path`.
-# - Custom sphinx extensions (autodoc_configurable).
+# - Custom sphinx extensions (autodoc_dagster).
 
 import os
 import sys
-
-# https://github.com/click-contrib/sphinx-click/issues/86
 
 paths = [
     ### dagster packages
@@ -57,7 +55,7 @@ paths = [
     "../../python_modules/libraries/dagster-pyspark",
     "../../python_modules/libraries/dagster-databricks",
 
-    ### autodoc_configurable extension
+    ### autodoc_dagster extension
     "./_ext",
 
 ]
@@ -95,7 +93,7 @@ extensions = [
     # Adds links to source code for autodoc objects
     "sphinx.ext.viewcode",
 
-    # Directives for automatically documenting CLIS built with the `click` package.
+    # Directives for automatically documenting CLIs built with the `click` package.
     "sphinx_click.ext",
 
     # Elementl-authored extension with custom directives and sphinx processing.
@@ -148,7 +146,6 @@ autodoc_mock_imports = [
     "twilio",
 ]
 
-# ????
 autodoc_typehints = "none"
 
 # From https://www.sphinx-doc.org/en/master/usage/extensions/autosectionlabel.html#confval-autosectionlabel_prefix_document
