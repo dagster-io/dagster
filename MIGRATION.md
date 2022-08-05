@@ -12,8 +12,7 @@ When new releases include breaking changes or deprecations, this document descri
 - Dagster’s  integration libraries haven’t yet achieved the same API maturity as Dagster core. For this reason, all integration libraries will remain on a pre-1.0 (0.16.x) versioning track for the time being. However, 0.16.x library releases remain fully compatible with Dagster 1.x. In the coming months, we will graduate integration libraries one-by-one to the 1.x versioning track as they achieve API maturity. If you have installs of the form:
 
 ```
-pip install dagster=={DAGSTER_VERSION}
-pip install dagster-somelibrary=={DAGSTER_VERSION}
+pip install dagster=={DAGSTER_VERSION} dagster-somelibrary=={DAGSTER_VERSION}
 ```
 
 this should be converted to:
