@@ -7,6 +7,8 @@ import {DefaultSeo} from 'next-seo';
 import {AppProps} from 'next/app';
 import {useRouter} from 'next/router';
 import * as React from 'react';
+import {useEffect} from 'react';
+import {PersistentTabProvider} from 'components/PersistentTabContext';
 
 import Layout from '../layouts/MainLayout';
 import * as gtag from '../util/gtag';
@@ -57,9 +59,11 @@ const MyApp = ({Component, pageProps}: AppProps) => {
   return (
     <>
       <DefaultSeo canonical={canonicalUrl} {...DEFAULT_SEO} />
-      <Layout>
-        <Component {...pageProps} />
-      </Layout>
+      <PersistentTabProvider>
+        <Layout>
+          <Component {...pageProps} />
+        </Layout>
+      </PersistentTabProvider>
     </>
   );
 };
