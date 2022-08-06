@@ -25,7 +25,7 @@ const Header = () => {
 
       if (targetTop !== currentTop) {
         headerRef.current.style.top = `${Math.min(
-          COLLAPSING_PX,
+          0,
           Math.max(COLLAPSING_PX, currentTop - dy)
         )}px`;
       }
