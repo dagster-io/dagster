@@ -26,7 +26,7 @@ const Layout = ({ children }) => {
           backgroundColor: "#FAF9F7",
         }}
       >
-        <Header openMobileDocsMenu={openMobileDocsMenu} />
+        <Header />
         <div
           className="w-screen mx-auto px-4 sm:px-6 lg:px-8"
           style={{ paddingTop: "64px" }}
