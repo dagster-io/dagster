@@ -24,7 +24,7 @@ from .container_context import SHARED_ECS_SCHEMA, EcsContainerContext
 from .tasks import default_ecs_task_definition, default_ecs_task_metadata
 from .utils import sanitize_family
 
-Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
+EcsInfo = namedtuple("EcsInfo", ["arn", "cluster", "cpu", "memory"])
 
 RUNNING_STATUSES = [
     "PROVISIONING",
@@ -164,20 +164,21 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         except ClientError:
             pass
 
-    def _set_run_tags(self, run_id, task_arn):
+    def set_run_tags(self, run_id, task_arn):
+        # Extracted method to allow for subclasses to customize the ECS tag storage implementation
         cluster = self._task_metadata().cluster
         tags = {"ecs/task_arn": task_arn, "ecs/cluster": cluster}
         self._instance.add_run_tags(run_id, tags)
 
-    def _get_run_tags(self, run_id):
+    def get_ecs_info(self, run_id) -> EcsInfo:
+        # Extracted method to allow for subclasses to customize the ECS tag storage implementation
         run = self._instance.get_run_by_id(run_id)
         tags = run.tags if run else {}
         arn = tags.get("ecs/task_arn")
         cluster = tags.get("ecs/cluster")
         cpu = tags.get("ecs/cpu")
         memory = tags.get("ecs/memory")
-
-        return Tags(arn, cluster, cpu, memory)
+        return EcsInfo(arn, cluster, cpu, memory)
 
     def launch_run(self, context: LaunchRunContext) -> None:
 
@@ -271,7 +272,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             raise Exception(exceptions)
 
         arn = tasks[0]["taskArn"]
-        self._set_run_tags(run.run_id, task_arn=arn)
+        self.set_run_tags(run.run_id, task_arn=arn)
         self._set_ecs_tags(run.run_id, task_arn=arn)
         self.report_launch_events(run, arn, metadata.cluster)
 
@@ -307,12 +308,12 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         return overrides
 
     def terminate(self, run_id):
-        tags = self._get_run_tags(run_id)
+        ecs_info = self.get_ecs_info(run_id)
 
-        if not (tags.arn and tags.cluster):
+        if not (ecs_info.arn and ecs_info.cluster):
             return False
 
-        tasks = self.ecs.describe_tasks(tasks=[tags.arn], cluster=tags.cluster).get("tasks")
+        tasks = self.ecs.describe_tasks(tasks=[ecs_info.arn], cluster=ecs_info.cluster).get("tasks")
         if not tasks:
             return False
 
@@ -320,7 +321,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         if status == "STOPPED":
             return False
 
-        self.ecs.stop_task(task=tags.arn, cluster=tags.cluster)
+        self.ecs.stop_task(task=ecs_info.arn, cluster=ecs_info.cluster)
         return True
 
     def _task_definition(self, family, metadata, image, container_context):
@@ -399,12 +400,12 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
     def check_run_worker_health(self, run: PipelineRun):
 
-        tags = self._get_run_tags(run.run_id)
+        ecs_info = self.get_ecs_info(run.run_id)
 
-        if not (tags.arn and tags.cluster):
+        if not (ecs_info.arn and ecs_info.cluster):
             return CheckRunHealthResult(WorkerStatus.UNKNOWN, "")
 
-        tasks = self.ecs.describe_tasks(tasks=[tags.arn], cluster=tags.cluster).get("tasks")
+        tasks = self.ecs.describe_tasks(tasks=[ecs_info.arn], cluster=ecs_info.cluster).get("tasks")
         if not tasks:
             return CheckRunHealthResult(WorkerStatus.UNKNOWN, "")
 
