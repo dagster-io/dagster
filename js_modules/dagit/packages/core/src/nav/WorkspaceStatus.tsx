@@ -2,6 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {Colors, Icon, Tooltip, Spinner, Box, ButtonLink} from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
 import {SharedToaster} from '../app/DomUtils';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -51,11 +52,11 @@ export const WorkspaceStatus = React.memo(() => {
       SharedToaster.show({
         intent: 'warning',
         message: (
-          <Box flex={{direction: 'row', justifyContent: 'space-between', grow: 1}}>
+          <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
             <div>Workspace loaded with errors</div>
-            <ButtonLink onClick={() => history.push('/workspace')} color={Colors.White}>
+            <ViewButton onClick={() => history.push('/workspace')} color={Colors.White}>
               View
-            </ButtonLink>
+            </ViewButton>
           </Box>
         ),
         icon: 'check_circle',
@@ -64,11 +65,11 @@ export const WorkspaceStatus = React.memo(() => {
       SharedToaster.show({
         intent: 'success',
         message: (
-          <Box flex={{direction: 'row', justifyContent: 'space-between', grow: 1}}>
+          <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
             <div>Workspace ready</div>
-            <ButtonLink onClick={() => history.push('/workspace')} color={Colors.White}>
+            <ViewButton onClick={() => history.push('/workspace')} color={Colors.White}>
               View
-            </ButtonLink>
+            </ViewButton>
           </Box>
         ),
         icon: 'check_circle',
@@ -79,17 +80,14 @@ export const WorkspaceStatus = React.memo(() => {
   // Given the previous and current code locations, determine whether to show a) a loading spinner
   // and/or b) a toast indicating that a code location is being reloaded.
   React.useEffect(() => {
-    // Skip this on initial load.
-    if (!previousData?.workspaceOrError || !data?.workspaceOrError) {
-      return;
-    }
-
     const previousEntries =
-      previousData.workspaceOrError.__typename === 'Workspace'
-        ? previousData.workspaceOrError.locationEntries
+      previousData?.workspaceOrError.__typename === 'Workspace'
+        ? previousData?.workspaceOrError.locationEntries
         : [];
     const currentEntries =
-      data.workspaceOrError.__typename === 'Workspace' ? data.workspaceOrError.locationEntries : [];
+      data?.workspaceOrError.__typename === 'Workspace'
+        ? data?.workspaceOrError.locationEntries
+        : [];
 
     // At least one code location has been removed. Reload, but don't make a big deal about it
     // since this was probably done manually.
@@ -102,6 +100,14 @@ export const WorkspaceStatus = React.memo(() => {
       ({loadStatus}) => loadStatus === RepositoryLocationLoadStatus.LOADING,
     );
     const anyCurrentlyLoading = currentlyLoading.length > 0;
+
+    // If this is a fresh pageload and any locations are loading, show the spinner but not the toaster.
+    if (!previousData) {
+      if (anyCurrentlyLoading) {
+        setShowSpinner(true);
+      }
+      return;
+    }
 
     // We have a new entry, and it has already finished loading. Wow! It's surprisingly fast for it
     // to have finished loading so quickly, but go ahead and indicate that the location has
@@ -123,7 +129,7 @@ export const WorkspaceStatus = React.memo(() => {
       SharedToaster.show({
         intent: 'primary',
         message: (
-          <Box flex={{direction: 'row', justifyContent: 'space-between', grow: 1}}>
+          <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
             {addedEntries.length === 1 ? (
               <span>
                 Code location <strong>{addedEntries[0]}</strong> added
@@ -131,9 +137,9 @@ export const WorkspaceStatus = React.memo(() => {
             ) : (
               <span>{addedEntries.length} code locations added</span>
             )}
-            <ButtonLink onClick={() => history.push('/workspace')} color={Colors.White}>
+            <ViewButton onClick={() => history.push('/workspace')} color={Colors.White}>
               View
-            </ButtonLink>
+            </ViewButton>
           </Box>
         ),
         icon: 'add_circle',
@@ -155,7 +161,7 @@ export const WorkspaceStatus = React.memo(() => {
       SharedToaster.show({
         intent: 'primary',
         message: (
-          <Box flex={{direction: 'row', justifyContent: 'space-between', grow: 1}}>
+          <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
             {currentlyLoading.length === 1 ? (
               <span>
                 Updating <strong>{currentlyLoading[0].id}</strong>
@@ -163,9 +169,9 @@ export const WorkspaceStatus = React.memo(() => {
             ) : (
               <span>Updating {currentlyLoading.length} code locations</span>
             )}
-            <ButtonLink onClick={() => history.push('/workspace')} color={Colors.White}>
+            <ViewButton onClick={() => history.push('/workspace')} color={Colors.White}>
               View
-            </ButtonLink>
+            </ViewButton>
           </Box>
         ),
         icon: 'refresh',
@@ -186,7 +192,7 @@ export const WorkspaceStatus = React.memo(() => {
 
   if (showSpinner) {
     return (
-      <Tooltip content="Reloading workspace…" placement="bottom">
+      <Tooltip content="Loading workspace…" placement="bottom">
         <Spinner purpose="body-text" fillColor={Colors.Gray300} />
       </Tooltip>
     );
@@ -216,6 +222,10 @@ export const WorkspaceStatus = React.memo(() => {
 
   return <div style={{width: '16px'}} />;
 });
+
+const ViewButton = styled(ButtonLink)`
+  white-space: nowrap;
+`;
 
 const WORKSPACE_UPDATE_CHECK_QUERY = gql`
   query WorkspaceUpdateCheckQuery {
