@@ -38,13 +38,52 @@ Enterprise customers may request a quota increase by [contacting Sales](mailto:s
 
 ## Getting started with Serverless
 
-When you create a new Dagster Cloud organization, you'll need to activate a deployment type: Hybrid or Serverless. Once activated, you'll be prompted to fork the starter GitHub repo and install the GitHub app. Pushing to the main branch will deploy to your prod Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-cloud/developing-testing/branch-deployments) using the Serverless agent.
+- [With GitHub](#with-github)
+- [Without GitHub (GitLab, BitBucket, or local development](#without-github-gitlab-bitbucket-or-local-development)
+- [Adding secrets](#adding-secrets)
 
-If you’re using another git hosting provider, CI service, or simply want to do local development without using a CI service, you can use Serverless via the [dagster-cloud CLI](/dagster-cloud/developing-testing/dagster-cloud-cli). Run the following to learn more:
+### With GitHub
+
+If you are a GitHub user, our GitHub integration is the fastest way to get started. It uses a GitHub app and GitHub Actions to set up a repo containing skeleton code and configuration consistent with Dagster Cloud's best practices with a single click.
+
+When you create a new Dagster Cloud organization, you'll be prompted to choose Serverless or Hybrid deployment. Once activated, our GitHub integration will scaffold a new git repo for you with Serverless and Branch Deployments already configured. Pushing to the `main` branch will deploy to your `prod` Serverless deployment. Pull requests will spin up ephemeral [branch deployments](/dagster-cloud/developing-testing/branch-deployments) using the Serverless agent.
+
+### Without GitHub (GitLab, BitBucket, or local development)
+
+If you don't want to use our GitHub integration, we offer a powerful CLI that you can use in another CI environment or on your local laptop.
+
+First, [create a new project](https://docs.dagster.io/getting-started/create-new-project#create-a-new-project) with the Dagster open-source CLI.
 
 ```shell
-dagster-cloud serverless --help
+pip install dagster
+dagster project scaffold \
+  --name my-dagster-project \
+  --example assets_modern_data_stack
 ```
+
+Once scaffolded, add `dagster-cloud` as a dependency in your `setup.py` file.
+
+Next, install the [dagster-cloud CLI](/dagster-cloud/developing-testing/dagster-cloud-cli) and log in to your org. **Note**: The CLI requires a recent version of Python 3 and Docker.
+
+```shell
+pip install dagster-cloud
+dagster-cloud configure
+```
+
+Finally, deploy your project with Dagster Cloud Serverless:
+
+```shell
+dagster-cloud serverless deploy \
+  --location-name example \
+  --package-name my-dagster-project
+```
+
+### Adding secrets
+
+Often you'll need to securely access secrets from your jobs. With Dagster Cloud Serverless, secrets are added as environment variables that can be read using APIs like [StringSource](/guides/dagster/transitioning-data-pipelines-from-development-to-production#part-two-deployment).
+
+- If you're using our GitHub integration, all [GitHub Actions Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets) are available as environment variables.
+- If you're using the CLI directly, you can pass `KEY=VALUE` pairs using the `--env` flag. Run `dagster-cloud serverless deploy --help` to learn more.
 
 ---
 
