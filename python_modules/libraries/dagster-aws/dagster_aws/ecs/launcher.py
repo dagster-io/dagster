@@ -1,3 +1,4 @@
+import json
 import warnings
 from collections import namedtuple
 from contextlib import suppress
@@ -309,14 +310,10 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             overrides["memory"] = memory
         return overrides
 
-    def _get_task_overrides(self, run: PipelineRun) -> Dict[str, Dict[str, int]]:
-        disk = run.tags.get("ecs/disk")
-        if disk:
-            return {
-                "ephemeralStorage": {
-                    "sizeInGB": int(disk),
-                }
-            }
+    def _get_task_overrides(self, run: PipelineRun) -> Dict[str, any]:
+        overrides = run.tags.get("ecs/task_overrides")
+        if overrides:
+            return json.loads(overrides)
         return {}
 
     def terminate(self, run_id):
