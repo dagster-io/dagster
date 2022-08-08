@@ -1,4 +1,4 @@
-from dagster import reconstructable
+from dagster import op, reconstructable
 from dagster._core.events import MARKER_EVENTS
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import execute_pipeline, pipeline

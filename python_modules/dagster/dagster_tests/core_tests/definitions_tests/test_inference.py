@@ -1,3 +1,6 @@
+from dagster import op
+
+
 def test_single_input():
     @op
     def add_one(_context, num):

@@ -2,7 +2,7 @@ import dagster
 import dagster._legacy as legacy  # pylint: disable=protected-access
 
 
-@legacy.solid
+@dagster.op
 def solid(_):
     pass
 

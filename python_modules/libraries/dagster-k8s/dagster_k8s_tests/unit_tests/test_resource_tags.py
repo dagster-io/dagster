@@ -6,7 +6,7 @@ from dagster_k8s.job import (
     get_user_defined_k8s_config,
 )
 
-from dagster import DynamicOutput, op
+from dagster import DynamicOut, DynamicOutput, op
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState

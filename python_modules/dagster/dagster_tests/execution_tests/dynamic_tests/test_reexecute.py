@@ -2,9 +2,8 @@ from typing import List
 
 import pytest
 
-from dagster import DynamicOutput, Out, fs_io_manager, job, op, reconstructable
+from dagster import DynamicOut, DynamicOutput, Out, fs_io_manager, job, op, reconstructable
 from dagster._core.definitions.events import Output
-from dagster._core.definitions.output import DynamicOut, Out
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import execute_pipeline, pipeline, reexecute_pipeline

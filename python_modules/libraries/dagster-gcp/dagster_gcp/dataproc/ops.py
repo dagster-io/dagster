@@ -55,8 +55,3 @@ def _dataproc_compute(context):
 @op(required_resource_keys={"dataproc"}, config_schema=DATAPROC_CONFIG_SCHEMA)
 def dataproc_op(context):
     return _dataproc_compute(context)
-
-
-@op(required_resource_keys={"dataproc"}, config_schema=DATAPROC_CONFIG_SCHEMA)
-def dataproc_op(context):
-    return _dataproc_compute(context)

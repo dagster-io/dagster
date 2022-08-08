@@ -243,7 +243,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         )
 
     def launch_run(self, context: LaunchRunContext) -> None:
-        run = context.run
+        run = context.pipeline_run
         job_name = get_job_name_from_run_id(run.run_id)
         pipeline_origin = check.not_none(run.pipeline_code_origin)
 
@@ -261,7 +261,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def resume_run(self, context: ResumeRunContext) -> None:
-        run = context.run
+        run = context.pipeline_run
         job_name = get_job_name_from_run_id(
             run.run_id, resume_attempt_number=context.resume_attempt_number
         )

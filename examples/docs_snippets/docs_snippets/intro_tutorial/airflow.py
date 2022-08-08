@@ -2,6 +2,7 @@ import csv
 
 import requests
 
+from dagster import op
 from dagster._legacy import pipeline
 
 

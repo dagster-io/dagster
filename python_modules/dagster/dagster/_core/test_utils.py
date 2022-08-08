@@ -14,7 +14,7 @@ import yaml
 
 from dagster import Shape
 from dagster import _check as check
-from dagster import fs_io_manager
+from dagster import fs_io_manager, op
 from dagster._config import Array, Field
 from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,

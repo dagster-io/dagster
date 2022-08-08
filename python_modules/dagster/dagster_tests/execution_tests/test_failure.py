@@ -1,4 +1,4 @@
-from dagster import Failure, MetadataEntry
+from dagster import Failure, MetadataEntry, op
 from dagster._legacy import execute_pipeline, pipeline
 
 

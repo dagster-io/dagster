@@ -3,8 +3,8 @@
 import pytest
 from dagster_ge.factory import (
     ge_data_context,
-    ge_validation_solid_factory,
-    ge_validation_solid_factory_v3,
+    ge_validation_op_factory,
+    ge_validation_op_factory_v3,
 )
 from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
 from dagster_pyspark import pyspark_resource
@@ -40,9 +40,7 @@ def reyielder(_context, res):
 )
 def hello_world_pandas_pipeline_v2():
     return reyielder(
-        ge_validation_solid_factory("ge_validation_solid", "getest", "basic.warning")(
-            pandas_yielder()
-        )
+        ge_validation_op_factory("ge_validation_op", "getest", "basic.warning")(pandas_yielder())
     )
 
 
@@ -51,8 +49,8 @@ def hello_world_pandas_pipeline_v2():
 )
 def hello_world_pandas_pipeline_v3():
     return reyielder(
-        ge_validation_solid_factory_v3(
-            name="ge_validation_solid",
+        ge_validation_op_factory_v3(
+            name="ge_validation_op",
             datasource_name="getest",
             data_connector_name="my_runtime_data_connector",
             data_asset_name="test_asset",
@@ -74,8 +72,8 @@ def hello_world_pandas_pipeline_v3():
     ],
 )
 def hello_world_pyspark_pipeline():
-    validate = ge_validation_solid_factory(
-        "ge_validation_solid",
+    validate = ge_validation_op_factory(
+        "ge_validation_op",
         "getestspark",
         "basic.warning",
         input_dagster_type=DagsterPySparkDataFrame,
@@ -103,10 +101,8 @@ def test_yielded_results_config_pandas(snapshot, pipe, ge_dir):
             mode="basic",
             instance=instance,
         )
-        assert result.result_for_solid("reyielder").output_value()[0]["success_percent"] == 100
-        expectations = result.result_for_solid(
-            "ge_validation_solid"
-        ).expectation_results_during_compute
+        assert result.result_for_op("reyielder").output_value()[0]["success_percent"] == 100
+        expectations = result.result_for_op("ge_validation_op").expectation_results_during_compute
         assert len(expectations) == 1
         mainexpect = expectations[0]
         assert mainexpect.success
@@ -130,10 +126,8 @@ def test_yielded_results_config_pyspark_v2(snapshot):  # pylint:disable=unused-a
             mode="basic",
             instance=instance,
         )
-        assert result.result_for_solid("reyielder").output_value()[0]["success_percent"] == 100
-        expectations = result.result_for_solid(
-            "ge_validation_solid"
-        ).expectation_results_during_compute
+        assert result.result_for_op("reyielder").output_value()[0]["success_percent"] == 100
+        expectations = result.result_for_op("ge_validation_op").expectation_results_during_compute
         assert len(expectations) == 1
         mainexpect = expectations[0]
         assert mainexpect.success

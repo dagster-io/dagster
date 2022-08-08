@@ -333,7 +333,7 @@ def test_crashy_run(get_workspace, run_config):  # pylint: disable=redefined-out
 
             if _is_multiprocess(run_config):
                 message = (
-                    "Multiprocess executor: child process for " "step crashy_op unexpectedly exited"
+                    "Multiprocess executor: child process for step crashy_op unexpectedly exited"
                 )
             else:
                 message = "Run execution process for {run_id} unexpectedly exited".format(

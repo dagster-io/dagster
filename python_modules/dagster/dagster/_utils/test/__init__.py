@@ -16,6 +16,7 @@ from dagster import (
     TypeCheck,
 )
 from dagster import _check as check
+from dagster import op
 from dagster._core.definitions import ModeDefinition, PipelineDefinition, lambda_solid
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline

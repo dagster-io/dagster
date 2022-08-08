@@ -27,6 +27,7 @@ from dagster import (
     DagsterInstance,
     DefaultScheduleStatus,
     DefaultSensorStatus,
+    DynamicOut,
     DynamicOutput,
     Enum,
     EnumValue,
