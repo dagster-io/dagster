@@ -7,13 +7,12 @@ if __name__ == "__main__":
         package_data={"assets_dbt_python": ["dbt_project/*"]},
         install_requires=[
             "dagster",
-            "dagit",
             "dagster-dbt",
             "pandas",
             "numpy",
             "scipy",
             "dbt-core",
             "dbt-duckdb",
-            "pytest",
         ],
+        extras_require={"dev": ["dagit", "pytest"]},
     )

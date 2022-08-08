@@ -15,6 +15,14 @@ export const priorityTagSet = new Set([
   DagsterTag.Backfill as string,
 ]);
 
+const renamedTags = {
+  [DagsterTag.SolidSelection]: DagsterTag.OpSelection,
+};
+
+export const canAddTagToFilter = (key: string) => {
+  return key !== DagsterTag.SolidSelection && key !== DagsterTag.OpSelection;
+};
+
 export const RunTags: React.FC<{
   tags: TagType[];
   mode: string | null;
@@ -22,39 +30,54 @@ export const RunTags: React.FC<{
 }> = React.memo(({tags, onAddTag, mode}) => {
   const copy = useCopyToClipboard();
 
-  const actions = React.useMemo(() => {
-    const list = [
-      {
-        label: 'Copy tag',
-        onClick: (tag: TagType) => {
-          copy(`${tag.key}:${tag.value}`);
-          SharedToaster.show({intent: 'success', message: 'Copied tag!'});
-        },
+  const copyAction = React.useMemo(
+    () => ({
+      label: 'Copy tag',
+      onClick: (tag: TagType) => {
+        copy(`${tag.key}:${tag.value}`);
+        SharedToaster.show({intent: 'success', message: 'Copied tag!'});
       },
-    ];
+    }),
+    [copy],
+  );
 
-    if (onAddTag) {
-      list.push({
-        label: 'Add tag to filter',
-        onClick: (tag: TagType) => {
-          onAddTag({token: 'tag', value: `${tag.key}=${tag.value}`});
-        },
-      });
+  const addToFilterAction = React.useMemo(
+    () =>
+      onAddTag
+        ? {
+            label: 'Add tag to filter',
+            onClick: (tag: TagType) => {
+              onAddTag({token: 'tag', value: `${tag.key}=${tag.value}`});
+            },
+          }
+        : null,
+    [onAddTag],
+  );
+
+  const actionsForTag = (tag: TagType) => {
+    const list = [copyAction];
+    if (addToFilterAction && canAddTagToFilter(tag.key)) {
+      list.push(addToFilterAction);
     }
-
-    return list;
-  }, [copy, onAddTag]);
+    return list.filter((item) => !!item);
+  };
 
   const displayedTags = React.useMemo(() => {
     const priority = [];
     const others = [];
-    for (const tag of tags) {
+    const copiedTags = tags.map(({key, value}) => ({key, value}));
+    for (const tag of copiedTags) {
+      const {key} = tag;
+      if (renamedTags.hasOwnProperty(key)) {
+        tag.key = renamedTags[key];
+      }
+
       if (
         tag.value.startsWith(__ASSET_JOB_PREFIX) &&
-        (tag.key === DagsterTag.PartitionSet || tag.key === DagsterTag.StepSelection)
+        (key === DagsterTag.PartitionSet || key === DagsterTag.StepSelection)
       ) {
         continue;
-      } else if (priorityTagSet.has(tag.key)) {
+      } else if (priorityTagSet.has(key)) {
         priority.push(tag);
       } else {
         others.push(tag);
@@ -71,7 +94,7 @@ export const RunTags: React.FC<{
     <Box flex={{direction: 'row', wrap: 'wrap', gap: 4}}>
       {mode ? <RunTag tag={{key: 'mode', value: mode}} /> : null}
       {displayedTags.map((tag, idx) => (
-        <RunTag tag={tag} key={idx} actions={actions} />
+        <RunTag tag={tag} key={idx} actions={actionsForTag(tag)} />
       ))}
     </Box>
   );

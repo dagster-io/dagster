@@ -1,22 +1,28 @@
+import os
+
 from dagster import job, make_values_resource, op
 
-
-@op(required_resource_keys={"value"})
-def needs_value(context):
-    context.log.info(f"value: {context.resources.value}")
+# start_file_example
 
 
-@op(required_resource_keys={"value"})
-def also_needs_value(context):
-    context.log.info(f"value: {context.resources.value}")
+@op(required_resource_keys={"file_dir"})
+def add_file(context):
+    filename = f"{context.resources.file_dir}/new_file.txt"
+    open(filename, "x", encoding="utf8").close()
+
+    context.log.info(f"Created file: {filename}")
 
 
-@job(resource_defs={"value": make_values_resource()})
-def basic_job():
-    needs_value()
-    also_needs_value()
+@op(required_resource_keys={"file_dir"})
+def total_num_files(context):
+    files_in_dir = os.listdir(context.resources.file_dir)
+    context.log.info(f"Total number of files: {len(files_in_dir)}")
 
 
-basic_result = basic_job.execute_in_process(
-    run_config={"resources": {"value": {"config": "some_value"}}}
-)
+@job(resource_defs={"file_dir": make_values_resource()})
+def file_dir_job():
+    add_file()
+    total_num_files()
+
+
+# end_file_example

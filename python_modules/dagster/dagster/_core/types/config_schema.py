@@ -17,7 +17,12 @@ from ..definitions.resource_requirement import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.execution.context.system import StepExecutionContext
+    from dagster._core.definitions import JobDefinition, OpDefinition
+    from dagster._core.execution.context.init import Resources
+    from dagster._core.execution.context.system import (
+        DagsterTypeLoaderContext,
+        DagsterTypeMaterializerContext,
+    )
 
 
 class DagsterTypeLoader(ABC):
@@ -42,7 +47,7 @@ class DagsterTypeLoader(ABC):
         return None
 
     def construct_from_config_value(
-        self, _context: "StepExecutionContext", config_value: object
+        self, _context: "DagsterTypeLoaderContext", config_value: object
     ) -> object:
         """
         How to create a runtime value from config data.
@@ -78,7 +83,10 @@ class DagsterTypeMaterializer(ABC):
 
     @abstractmethod
     def materialize_runtime_values(
-        self, _context: "StepExecutionContext", _config_value: object, _runtime_value: object
+        self,
+        _context: "DagsterTypeMaterializerContext",
+        _config_value: object,
+        _runtime_value: object,
     ) -> Iterator[Union[AssetMaterialization, Materialization]]:
         """
         How to materialize a runtime value given configuration.
@@ -152,7 +160,9 @@ class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
         else:
             return hashlib.sha1(version.encode("utf-8")).hexdigest()
 
-    def construct_from_config_value(self, context: "StepExecutionContext", config_value: object):
+    def construct_from_config_value(
+        self, context: "DagsterTypeLoaderContext", config_value: object
+    ):
         return self._func(context, config_value)
 
     def required_resource_keys(self):
@@ -238,7 +248,7 @@ class DagsterTypeMaterializerForDecorator(DagsterTypeMaterializer):
         return self._config_type
 
     def materialize_runtime_values(
-        self, context: "StepExecutionContext", config_value: object, runtime_value: object
+        self, context: "DagsterTypeMaterializerContext", config_value: object, runtime_value: object
     ) -> Iterator[Union[Materialization, AssetMaterialization]]:
         return ensure_gen(self._func(context, config_value, runtime_value))
 
@@ -248,7 +258,7 @@ class DagsterTypeMaterializerForDecorator(DagsterTypeMaterializer):
 
 def _create_output_materializer_for_decorator(
     config_type: ConfigType,
-    func: Callable[["StepExecutionContext", object, object], AssetMaterialization],
+    func: Callable[["DagsterTypeMaterializerContext", object, object], AssetMaterialization],
     required_resource_keys: Optional[AbstractSet[str]],
 ) -> DagsterTypeMaterializerForDecorator:
     return DagsterTypeMaterializerForDecorator(config_type, func, required_resource_keys)
@@ -257,13 +267,13 @@ def _create_output_materializer_for_decorator(
 def dagster_type_materializer(
     config_schema: object, required_resource_keys: Optional[AbstractSet[str]] = None
 ) -> Callable[
-    [Callable[["StepExecutionContext", object, object], AssetMaterialization]],
+    [Callable[["DagsterTypeMaterializerContext", object, object], AssetMaterialization]],
     DagsterTypeMaterializerForDecorator,
 ]:
     """Create an output materialization hydration config that configurably materializes a runtime
     value.
 
-    The decorated function should take the execution context, the parsed config value, and the
+    The decorated function should take a :py:class:'dagster.DagsterTypeMaterializerContext`, the parsed config value, and the
     runtime value. It should materialize the runtime value, and should
     return an appropriate :py:class:`AssetMaterialization`.
 

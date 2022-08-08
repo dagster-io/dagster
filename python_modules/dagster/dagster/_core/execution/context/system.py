@@ -25,7 +25,6 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.events import AssetKey, AssetLineageInfo
 from dagster._core.definitions.hook_definition import HookDefinition
-from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -59,6 +58,7 @@ from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
     from dagster._core.definitions.dependency import Node, NodeHandle
+    from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.state import KnownExecutionState
@@ -338,6 +338,8 @@ class PlanExecutionContext(IPlanContext):
 
     @property
     def partition_time_window(self) -> str:
+        from dagster._core.definitions.job_definition import JobDefinition
+
         pipeline_def = self._execution_data.pipeline_def
         if not isinstance(pipeline_def, JobDefinition):
             check.failed(
@@ -454,8 +456,24 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self.solid.definition.ensure_solid_def()
 
     @property
+    def op_def(self) -> OpDefinition:
+        check.invariant(
+            isinstance(self.solid_def, OpDefinition),
+            "Attempted to call op_def property for solid definition.",
+        )
+        return cast(OpDefinition, self.solid_def)
+
+    @property
     def pipeline_def(self) -> PipelineDefinition:
         return self._execution_data.pipeline_def
+
+    @property
+    def job_def(self) -> "JobDefinition":
+        check.invariant(
+            self._execution_data.pipeline_def.is_job,
+            "Attempted to call job_def property for a pipeline definition.",
+        )
+        return cast("JobDefinition", self._execution_data.pipeline_def)
 
     @property
     def mode_def(self) -> ModeDefinition:
@@ -835,6 +853,26 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         return self._input_lineage
 
+    def get_type_materializer_context(self) -> "DagsterTypeMaterializerContext":
+        return DagsterTypeMaterializerContext(
+            plan_data=self.plan_data,
+            execution_data=self._execution_data,
+            log_manager=self._log_manager,
+            step=self.step,
+            output_capture=self._output_capture,
+            known_state=self._known_state,
+        )
+
+    def get_type_loader_context(self) -> "DagsterTypeLoaderContext":
+        return DagsterTypeLoaderContext(
+            plan_data=self.plan_data,
+            execution_data=self._execution_data,
+            log_manager=self._log_manager,
+            step=self.step,
+            output_capture=self._output_capture,
+            known_state=self._known_state,
+        )
+
 
 def _dedup_asset_lineage(asset_lineage: List[AssetLineageInfo]) -> List[AssetLineageInfo]:
     """Method to remove duplicate specifications of the same Asset/Partition pair from the lineage
@@ -889,3 +927,53 @@ class TypeCheckContext:
     @property
     def log(self) -> DagsterLogManager:
         return self._log
+
+
+class DagsterTypeMaterializerContext(StepExecutionContext):
+    """The context object provided to a :py:class:`@dagster_type_materializer <dagster_type_materializer>`-decorated function during execution.
+
+    Users should not construct this object directly.
+    """
+
+    @public  # type: ignore
+    @property
+    def resources(self) -> "Resources":
+        """The resources available to the type materializer, specified by the `required_resource_keys` argument of the decorator."""
+        return super(DagsterTypeMaterializerContext, self).resources
+
+    @public  # type: ignore
+    @property
+    def job_def(self) -> "JobDefinition":
+        """The underlying job definition being executed."""
+        return super(DagsterTypeMaterializerContext, self).job_def
+
+    @public  # type: ignore
+    @property
+    def op_def(self) -> "OpDefinition":
+        """The op for which type materialization is occurring."""
+        return super(DagsterTypeMaterializerContext, self).op_def
+
+
+class DagsterTypeLoaderContext(StepExecutionContext):
+    """The context object provided to a :py:class:`@dagster_type_loader <dagster_type_loader>`-decorated function during execution.
+
+    Users should not construct this object directly.
+    """
+
+    @public  # type: ignore
+    @property
+    def resources(self) -> "Resources":
+        """The resources available to the type loader, specified by the `required_resource_keys` argument of the decorator."""
+        return super(DagsterTypeLoaderContext, self).resources
+
+    @public  # type: ignore
+    @property
+    def job_def(self) -> "JobDefinition":
+        """The underlying job definition being executed."""
+        return super(DagsterTypeLoaderContext, self).job_def
+
+    @public  # type: ignore
+    @property
+    def op_def(self) -> "OpDefinition":
+        """The op for which type loading is occurring."""
+        return super(DagsterTypeLoaderContext, self).op_def

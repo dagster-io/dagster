@@ -6,6 +6,7 @@ export enum DagsterTag {
   Namespace = 'dagster/',
   Backfill = 'dagster/backfill',
   SolidSelection = 'dagster/solid_selection',
+  OpSelection = 'dagster/op_selection',
   StepSelection = 'dagster/step_selection',
   PartitionSet = 'dagster/partition_set',
   Partition = 'dagster/partition',

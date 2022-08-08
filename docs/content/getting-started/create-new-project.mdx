@@ -65,13 +65,13 @@ For more info about the examples, visit the [Dagster GitHub repository](https://
 The newly generated `my-dagster-project` directory is a fully functioning [Python package](https://docs.python.org/3/tutorial/modules.html#packages) and can be installed with `pip`. To install it as a package and its Python dependencies, run:
 
 ```bash
-pip install -e .
+pip install -e ".[dev]"
 ```
 
 <Note>
   By using the <code>--editable</code> flag, <code>pip</code> will install your
   repository in{" "}
-  <a href="https://pip.pypa.io/en/latest/reference/pip_install/?highlight=editable#editable-installsl">
+  <a href="https://pip.pypa.io/en/latest/topics/local-project-installs/#editable-installs">
     "editable mode"
   </a>{" "}
   so that as you develop, local code changes will automatically apply.

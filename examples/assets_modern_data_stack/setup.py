@@ -7,7 +7,6 @@ if __name__ == "__main__":
         package_data={"assets_modern_data_stack": ["dbt_project/*"]},
         install_requires=[
             "dagster",
-            "dagit",
             "dagster-airbyte",
             "dagster-dbt",
             "dagster-postgres",
@@ -17,4 +16,5 @@ if __name__ == "__main__":
             "dbt-core",
             "dbt-postgres",
         ],
+        extras_require={"dev": ["dagit", "pytest"]},
     )

@@ -28,6 +28,7 @@ import checklist from '../icon-svgs/checklist.svg';
 import chevron_left from '../icon-svgs/chevron_left.svg';
 import chevron_right from '../icon-svgs/chevron_right.svg';
 import close from '../icon-svgs/close.svg';
+import concept_book from '../icon-svgs/concept-book.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
 import deleteSVG from '../icon-svgs/delete.svg';
 import done from '../icon-svgs/done.svg';
@@ -113,6 +114,7 @@ import warning from '../icon-svgs/warning.svg';
 import waterfall_chart from '../icon-svgs/waterfall_chart.svg';
 import workspaces from '../icon-svgs/workspaces.svg';
 import wysiwyg from '../icon-svgs/wysiwyg.svg';
+import youtube from '../icon-svgs/youtube.svg';
 import zoom_in from '../icon-svgs/zoom_in.svg';
 import zoom_out from '../icon-svgs/zoom_out.svg';
 
@@ -154,6 +156,7 @@ export const Icons = {
   copy_to_clipboard: assignment,
   copy_to_clipboard_done: assignment_turned_in,
   chat_support,
+  concept_book,
   open_in_new,
   folder,
   tag,
@@ -162,6 +165,7 @@ export const Icons = {
   github_pr_open,
   github_pr_closed,
   github_pr_merged,
+  youtube,
 
   graph_downstream,
   graph_upstream,

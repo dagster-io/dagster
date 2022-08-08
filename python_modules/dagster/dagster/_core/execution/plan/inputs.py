@@ -632,7 +632,9 @@ class FromConfig(
             dagster_type = self.get_associated_input_def(step_context.pipeline_def).dagster_type
             config_data = self.get_associated_config(step_context.resolved_run_config)
             loader = check.not_none(dagster_type.loader)
-            return loader.construct_from_config_value(step_context, config_data)
+            return loader.construct_from_config_value(
+                step_context.get_type_loader_context(), config_data
+            )
 
     def required_resource_keys(self, pipeline_def: PipelineDefinition) -> AbstractSet[str]:
         dagster_type = self.get_associated_input_def(pipeline_def).dagster_type

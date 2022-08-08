@@ -1,3 +1,4 @@
+import json
 import warnings
 from collections import namedtuple
 from contextlib import suppress
@@ -227,6 +228,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
         cpu_and_memory_overrides = self.get_cpu_and_memory_overrides(run)
 
+        task_overrides = self._get_task_overrides(run)
+
         container_overrides = [
             {
                 "name": self.container_name,
@@ -240,6 +243,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             "containerOverrides": container_overrides,
             # taskOverrides expects cpu/memory as strings
             **cpu_and_memory_overrides,
+            **task_overrides,
         }
 
         # Run a task using the same network configuration as this processes's
@@ -305,6 +309,12 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         if memory:
             overrides["memory"] = memory
         return overrides
+
+    def _get_task_overrides(self, run: PipelineRun) -> Dict[str, Any]:
+        overrides = run.tags.get("ecs/task_overrides")
+        if overrides:
+            return json.loads(overrides)
+        return {}
 
     def terminate(self, run_id):
         tags = self._get_run_tags(run_id)

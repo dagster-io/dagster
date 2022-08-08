@@ -6,11 +6,12 @@ if __name__ == "__main__":
         packages=find_packages(exclude=["assets_pandas_pyspark_tests"]),
         install_requires=[
             "dagster",
-            "dagit",
-            "pytest",
             "pandas",
             "pyspark",
             # "pyarrow",
         ],
-        extras_require={"test": ["pandas", "pyarrow; python_version < '3.9'", "pyspark"]},
+        extras_require={
+            "dev": ["dagit", "pytest"],
+            "test": ["pandas", "pyarrow; python_version < '3.9'", "pyspark"],
+        },
     )

@@ -1,22 +1,32 @@
+import os
+
 from dagster import job, make_values_resource, op
 
-
-@op(required_resource_keys={"values"})
-def needs_value(context):
-    context.log.info(f"my str: {context.resources.values['my_str']}")
+# start_file_example
 
 
-@op(required_resource_keys={"values"})
-def needs_different_value(context):
-    context.log.info(f"my int: {context.resources.values['my_int']}")
+@op(required_resource_keys={"file_dirs"})
+def write_file(context):
+    filename = f"{context.resources.file_dirs['write_file_dir']}/new_file.txt"
+    open(filename, "x", encoding="utf8").close()
+
+    context.log.info(f"Created file: {filename}")
 
 
-@job(resource_defs={"values": make_values_resource(my_str=str, my_int=int)})
-def different_values_job():
-    needs_value()
-    needs_different_value()
+@op(required_resource_keys={"file_dirs"})
+def total_num_files(context):
+    files_in_dir = os.listdir(context.resources.file_dirs["count_file_dir"])
+    context.log.info(f"Total number of files: {len(files_in_dir)}")
 
 
-result = different_values_job.execute_in_process(
-    run_config={"resources": {"values": {"config": {"my_str": "foo", "my_int": 1}}}}
+@job(
+    resource_defs={
+        "file_dirs": make_values_resource(write_file_dir=str, count_file_dir=str)
+    }
 )
+def file_dirs_job():
+    write_file()
+    total_num_files()
+
+
+# end_file_example

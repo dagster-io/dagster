@@ -506,6 +506,9 @@ from dagster._loggers import (
     default_system_loggers as default_system_loggers,
     json_console_logger as json_console_logger,
 )
+from dagster._core.execution.context.system import (
+    DagsterTypeLoaderContext as DagsterTypeLoaderContext,
+)
 from dagster._serdes.serdes import (
     deserialize_value as deserialize_value,
     serialize_value as serialize_value,
@@ -551,6 +554,7 @@ from dagster._utils.backcompat import deprecation_warning, rename_warning
 
 if TYPE_CHECKING:
     # pylint:disable=reimported
+    from dagster._core.execution.context.system import DagsterTypeMaterializerContext
     from dagster._core.types.config_schema import DagsterTypeMaterializer, dagster_type_materializer
 
     # pylint:enable=reimported
@@ -563,6 +567,11 @@ _DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
     ),
     "DagsterTypeMaterializer": (
         "dagster._core.types.config_schema",
+        "1.1.0",
+        "Instead, use an IOManager.",
+    ),
+    "DagsterTypeMaterializerContext": (
+        "dagster._core.execution.context.system",
         "1.1.0",
         "Instead, use an IOManager.",
     ),

@@ -14,7 +14,7 @@ export const GlobalToasterStyle = createGlobalStyle`
       font-size: 14px;
       line-height: 22px;
       color: ${Colors.White};
-      background-color: ${Colors.Gray900};
+      background-color: ${Colors.Gray700};
     }
 
     .bp3-button-group {

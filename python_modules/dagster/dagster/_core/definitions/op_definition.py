@@ -205,9 +205,11 @@ def _resolve_output_defs_from_outs(
             cast(DecoratedSolidFunction, compute_fn).decorated_fn
         )
         annotation = inferred_output_props.annotation
+        description = inferred_output_props.description
     else:
         inferred_output_props = None
         annotation = inspect.Parameter.empty
+        description = None
 
     if outs is None:
         return [OutputDefinition.create_from_inferred(inferred_output_props)]
@@ -217,7 +219,7 @@ def _resolve_output_defs_from_outs(
     if len(outs) == 1:
         name = list(outs.keys())[0]
         only_out = outs[name]
-        return [only_out.to_definition(annotation, name)]
+        return [only_out.to_definition(annotation, name, description)]
 
     output_defs = []
 
@@ -239,6 +241,8 @@ def _resolve_output_defs_from_outs(
             if annotation != inspect.Parameter.empty
             else inspect.Parameter.empty
         )
-        output_defs.append(cur_out.to_definition(annotation_type, name=name))
+        # Don't provide description when using multiple outputs. Introspection
+        # is challenging when faced with multiple inputs.
+        output_defs.append(cur_out.to_definition(annotation_type, name=name, description=None))
 
     return output_defs

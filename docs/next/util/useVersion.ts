@@ -5,7 +5,7 @@ import { useRouter } from "next/router";
 
 export const latestVersion = ALL_VERSIONS[ALL_VERSIONS.length - 1];
 
-let defaultVersion = latestVersion;
+export let defaultVersion = latestVersion;
 if (process.env.NEXT_PUBLIC_VERCEL_ENV !== "production") {
   // We use NEXT_PUBLIC_VERCEL_ENV to default Vercel previews to master because
   // * NEXT_PUBLIC_VERCEL_ENV is exposed to the browser
