@@ -6,7 +6,6 @@ if __name__ == "__main__":
         packages=find_packages(exclude=["{{ repo_name }}_tests"]),
         install_requires=[
             "dagster",
-            "dagit",
-            "pytest",
         ],
+        extras_require={"dev": ["dagit", "pytest"]},
     )
