@@ -32,6 +32,6 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["dagster_twilio_tests*"]),
-        install_requires=[f"dagster{pin}", "twilio"],
+        install_requires=["dagster==1.0.2", "twilio"],
         zip_safe=False,
     )
