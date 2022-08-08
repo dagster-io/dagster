@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from tempfile import TemporaryDirectory
 
 import dagster._check as check
-from dagster import op, file_relative_path
+from dagster import file_relative_path
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import merge_dicts
 
@@ -89,9 +89,7 @@ class TestMySQLInstance:
             TestMySQLInstance.dagster_mysql_installed(),
             "dagster_mysql must be installed to test with mysql",
         )
-        from dagster_mysql.run_storage import (
-            MySQLRunStorage,
-        )  # pylint: disable=import-error
+        from dagster_mysql.run_storage import MySQLRunStorage  # pylint: disable=import-error
 
         storage = MySQLRunStorage.create_clean_storage(conn_string)
         assert storage
@@ -103,9 +101,7 @@ class TestMySQLInstance:
             TestMySQLInstance.dagster_mysql_installed(),
             "dagster_mysql must be installed to test with mysql",
         )
-        from dagster_mysql.event_log import (
-            MySQLEventLogStorage,
-        )  # pylint: disable=import-error
+        from dagster_mysql.event_log import MySQLEventLogStorage  # pylint: disable=import-error
 
         storage = MySQLEventLogStorage.create_clean_storage(conn_string)
         assert storage
@@ -140,9 +136,7 @@ class TestMySQLInstance:
         )
         conn_args = check.opt_dict_param(conn_args, "conn_args") if conn_args else {}
 
-        from dagster_mysql.utils import (
-            wait_for_connection,
-        )  # pylint: disable=import-error
+        from dagster_mysql.utils import wait_for_connection  # pylint: disable=import-error
 
         if BUILDKITE:
             yield TestMySQLInstance.conn_string(
@@ -168,9 +162,7 @@ class TestMySQLInstance:
         except subprocess.CalledProcessError as ex:
             err_text = ex.output.decode()
             raise MySQLDockerError(
-                "Failed to launch docker container(s) via docker-compose: {}".format(
-                    err_text
-                ),
+                "Failed to launch docker container(s) via docker-compose: {}".format(err_text),
                 ex,
             ) from ex
 

@@ -1,11 +1,9 @@
 import pytest
 
-from dagster import In, Out, op, DagsterInstance, resource
+from dagster import DagsterInstance, op, resource
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.context_creation_pipeline import (
-    PlanExecutionContextManager,
-)
+from dagster._core.execution.context_creation_pipeline import PlanExecutionContextManager
 from dagster._core.execution.resources_init import (
     resource_initialization_event_generator,
     resource_initialization_manager,
@@ -14,7 +12,7 @@ from dagster._core.execution.resources_init import (
 from dagster._core.execution.retries import RetryMode
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._legacy import ModeDefinition, PipelineDefinition, solid
+from dagster._legacy import ModeDefinition, PipelineDefinition
 
 
 def test_generator_exit():
@@ -81,9 +79,7 @@ def test_clean_event_generator_exit():
     resolved_run_config = ResolvedRunConfig.build(pipeline_def)
     execution_plan = create_execution_plan(pipeline_def)
 
-    resource_name, resource_def = next(
-        iter(pipeline_def.get_default_mode().resource_defs.items())
-    )
+    resource_name, resource_def = next(iter(pipeline_def.get_default_mode().resource_defs.items()))
     resource_context = InitResourceContext(
         resource_def=resource_def,
         resources=ScopedResourcesBuilder().build(None),
@@ -91,9 +87,7 @@ def test_clean_event_generator_exit():
         dagster_run=pipeline_run,
         instance=instance,
     )
-    generator = single_resource_event_generator(
-        resource_context, resource_name, resource_def
-    )
+    generator = single_resource_event_generator(resource_context, resource_name, resource_def)
     next(generator)
     generator.close()
 

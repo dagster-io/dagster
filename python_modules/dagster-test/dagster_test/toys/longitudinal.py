@@ -3,14 +3,8 @@ import time
 from datetime import datetime
 from random import random
 
-from dagster import Out, op, AssetMaterialization, Nothing, fs_io_manager
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    pipeline,
-    solid,
-)
+from dagster import AssetMaterialization, Nothing, Out, fs_io_manager, op
+from dagster._legacy import InputDefinition, ModeDefinition, pipeline
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 
 TRAFFIC_CONSTANTS = {
@@ -41,11 +35,7 @@ def growth_rate(partition_date):
 
 
 def users_data_size(partition_date):
-    return (
-        TRAFFIC_CONSTANTS[partition_date.weekday()]
-        * 10000
-        * growth_rate(partition_date)
-    )
+    return TRAFFIC_CONSTANTS[partition_date.weekday()] * 10000 * growth_rate(partition_date)
 
 
 def video_views_data_size(partition_date):
@@ -71,15 +61,11 @@ def make_solid(
     @op(
         name=name,
         config_schema={"partition": str},
-        input_defs=[InputDefinition("the_input", dagster_type=Nothing)]
-        if has_input
-        else [],
+        input_defs=[InputDefinition("the_input", dagster_type=Nothing)] if has_input else [],
         out=Out(Nothing),
     )
     def made_op(context):
-        partition_date = datetime.strptime(
-            context.op_config["partition"], DEFAULT_DATE_FORMAT
-        )
+        partition_date = datetime.strptime(context.op_config["partition"], DEFAULT_DATE_FORMAT)
         if data_size_fn:
             data_size = data_size_fn(partition_date)
             sleep_time = sleep_factor * data_size

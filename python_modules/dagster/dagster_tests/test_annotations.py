@@ -15,7 +15,6 @@ from dagster._annotations import (
     is_public,
     public,
 )
-from dagster import op
 
 
 @pytest.mark.parametrize(

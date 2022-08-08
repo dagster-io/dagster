@@ -1,16 +1,16 @@
 import pytest
 
 from dagster import (
-    In,
-    Out,
-    op,
     Any,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
+    In,
     Int,
     List,
     MultiDependencyDefinition,
     Nothing,
+    Out,
+    op,
 )
 from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.solid_definition import CompositeSolidDefinition
@@ -20,9 +20,7 @@ from dagster._legacy import (
     PipelineDefinition,
     composite_solid,
     execute_pipeline,
-    lambda_solid,
     pipeline,
-    solid,
 )
 
 
@@ -188,9 +186,7 @@ def test_fan_in_manual():
             },
         )
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="is not a MultiDependencyDefinition"
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError, match="is not a MultiDependencyDefinition"):
         _bad_target = CompositeSolidDefinition(
             name="manual_composite",
             solid_defs=[emit_num, collect],

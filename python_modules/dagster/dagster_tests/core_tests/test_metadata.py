@@ -1,5 +1,5 @@
-from dagster import op, NodeInvocation
-from dagster._legacy import PipelineDefinition, execute_pipeline, solid
+from dagster import NodeInvocation, op
+from dagster._legacy import PipelineDefinition, execute_pipeline
 
 
 def test_solid_instance_tags():

@@ -1,5 +1,4 @@
 from dagster import Bool, Field, Int, op
-from dagster._legacy import solid
 from dagster._seven import json
 
 from .configs import define_dataproc_submit_job_config

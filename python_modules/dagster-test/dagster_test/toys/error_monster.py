@@ -1,25 +1,17 @@
 from dagster import (
-    In,
-    Out,
-    op,
     Failure,
     Field,
     IOManager,
+    In,
     Int,
+    Out,
     ResourceDefinition,
     RetryRequested,
     String,
     io_manager,
+    op,
 )
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    PresetDefinition,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
+from dagster._legacy import ModeDefinition, PresetDefinition, execute_pipeline, pipeline
 from dagster._utils import segfault
 
 
@@ -75,9 +67,7 @@ def define_errorable_resource():
     return ResourceDefinition(
         resource_fn=resource_init,
         config_schema={
-            "throw_on_resource_init": Field(
-                bool, is_required=False, default_value=False
-            )
+            "throw_on_resource_init": Field(bool, is_required=False, default_value=False)
         },
     )
 
@@ -188,18 +178,10 @@ if __name__ == "__main__":
         error_monster,
         {
             "solids": {
-                "start": {
-                    "config": {"throw_in_solid": False, "return_wrong_type": False}
-                },
-                "middle": {
-                    "config": {"throw_in_solid": False, "return_wrong_type": True}
-                },
-                "end": {
-                    "config": {"throw_in_solid": False, "return_wrong_type": False}
-                },
+                "start": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
+                "middle": {"config": {"throw_in_solid": False, "return_wrong_type": True}},
+                "end": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
             },
-            "resources": {
-                "errorable_resource": {"config": {"throw_on_resource_init": False}}
-            },
+            "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
         },
     )

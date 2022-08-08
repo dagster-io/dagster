@@ -4,7 +4,7 @@ from dagster_test.toys.error_monster import error_monster
 from dagster_test.toys.unreliable import unreliable_pipeline
 from slack_sdk.web.client import WebClient
 
-from dagster import op, AssetKey, RunFailureSensorContext, RunRequest, SkipReason
+from dagster import AssetKey, RunFailureSensorContext, RunRequest, SkipReason
 from dagster import _check as check
 from dagster import asset_sensor, run_failure_sensor, sensor
 
@@ -49,9 +49,7 @@ def get_toys_sensors():
 
         directory_files = get_directory_files(directory_name, context.cursor)
         if not directory_files:
-            yield SkipReason(
-                f"No new files found in {directory_name} (after {context.cursor})"
-            )
+            yield SkipReason(f"No new files found in {directory_name} (after {context.cursor})")
             return
 
         for filename, mtime in directory_files:
@@ -89,9 +87,7 @@ def get_toys_sensors():
             yield RunRequest(
                 run_key=s3_key,
                 run_config={
-                    "solids": {
-                        "read_s3_key": {"config": {"bucket": bucket, "s3_key": s3_key}}
-                    }
+                    "solids": {"read_s3_key": {"config": {"bucket": bucket, "s3_key": s3_key}}}
                 },
             )
 

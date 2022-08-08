@@ -15,8 +15,8 @@ import pandas as pd
 import pytest
 from dagster_mlflow.resources import MlFlow, mlflow_tracking
 
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
-from dagster import In, op
+from dagster import op
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 
 @pytest.fixture
@@ -154,9 +154,7 @@ def test_mlflow_meta_not_overloading():
     over_list = ["log_params"]
     for methods in over_list:
         # then: the function signature is not the same as the mlflow one
-        assert getattr(
-            MlFlow, methods
-        ) != getattr(  # pylint: disable=comparison-with-callable
+        assert getattr(MlFlow, methods) != getattr(  # pylint: disable=comparison-with-callable
             mlflow, methods
         )  # pylint: disable=comparison-with-callable
 
@@ -166,9 +164,7 @@ def test_mlflow_meta_overloading():
     # And: a list of inherited mlflow methods
     # TODO: find a way to get this list
     inherited_list = [
-        method
-        for method in dir(mlflow)
-        if method not in ["log_params", "__name__", "__doc__"]
+        method for method in dir(mlflow) if method not in ["log_params", "__name__", "__doc__"]
     ]
 
     for methods in inherited_list:
@@ -193,9 +189,7 @@ def test_start_run(mock_start_run, context):
 
 
 @patch("mlflow.end_run")
-@pytest.mark.parametrize(
-    "any_error", [KeyboardInterrupt(), OSError(), RuntimeError(), None]
-)
+@pytest.mark.parametrize("any_error", [KeyboardInterrupt(), OSError(), RuntimeError(), None])
 def test_cleanup_on_error(
     mock_mlflow_end_run,
     any_error,
@@ -235,8 +229,7 @@ def test_set_all_tags(mock_mlflow_set_tags, context):
 
     # Given: the tags that should be set in mlflow
     tags = {
-        tag: context.resource_config["env"][tag]
-        for tag in context.resource_config["env_to_tag"]
+        tag: context.resource_config["env"][tag] for tag in context.resource_config["env_to_tag"]
     }
     tags["dagster_run_id"] = mlf.dagster_run_id
     if mlf.extra_tags:
@@ -245,9 +238,7 @@ def test_set_all_tags(mock_mlflow_set_tags, context):
     mock_mlflow_set_tags.assert_called_once_with(tags)
 
 
-@pytest.mark.parametrize(
-    "run_df", [pd.DataFrame(), pd.DataFrame(data={"run_id": ["100"]})]
-)
+@pytest.mark.parametrize("run_df", [pd.DataFrame(), pd.DataFrame(data={"run_id": ["100"]})])
 @pytest.mark.parametrize(
     "experiment", [None, MagicMock(experiment_id="1"), MagicMock(experiment_id="lol")]
 )
@@ -257,9 +248,7 @@ def test_get_current_run_id(context, experiment, run_df):
 
     with patch("mlflow.search_runs", return_value=run_df):
         # when: _get_current_run_id is called
-        run_id = mlf._get_current_run_id(
-            experiment=experiment
-        )  # pylint: disable=protected-access
+        run_id = mlf._get_current_run_id(experiment=experiment)  # pylint: disable=protected-access
     # Then: the run_id id provided is the same as what was provided
     if not run_df.empty:
         assert run_id == run_df.run_id.values[0]
@@ -311,17 +300,13 @@ def test_set_active_run(context, run_id):
         # - the parent run is started if required
         mock_start_run.assert_any_call(run_id=mlf.parent_run_id, run_name=mlf.run_name)
         # - mlflow.start_run is called with nested=True
-        mock_start_run.assert_any_call(
-            run_id=run_id, run_name=mlf.run_name, nested=True
-        )
+        mock_start_run.assert_any_call(run_id=run_id, run_name=mlf.run_name, nested=True)
         # - _start_run is called twice
         assert mock_start_run.call_count == 2
     # And: the run is not nested
     else:
         # Then:
-        mock_start_run.assert_called_once_with(
-            run_id=run_id, run_name=mlf.run_name, nested=False
-        )
+        mock_start_run.assert_called_once_with(run_id=run_id, run_name=mlf.run_name, nested=False)
 
 
 def test_set_active_run_parent_zero(child_context):
@@ -332,9 +317,7 @@ def test_set_active_run_parent_zero(child_context):
 
     with patch.object(MlFlow, "_start_run") as mock_start_run:
         # And _set_active_run is called with run_id
-        mlf._set_active_run(
-            run_id="what-is-an-edge-case"
-        )  # pylint: disable=protected-access
+        mlf._set_active_run(run_id="what-is-an-edge-case")  # pylint: disable=protected-access
         # Then: _start_run_by_id is called with the parent_id
         mock_start_run.assert_any_call(run_id=mlf.parent_run_id, run_name=mlf.run_name)
         # And: mlflow.start_run is called with the run_name and nested=True
@@ -355,9 +338,7 @@ def test_log_params(mock_log_params, context, num_of_params, string_maker):
     # When: log_params is called
     mlf.log_params(param)
     # Then mock_log_params is called the correct number of times
-    assert mock_log_params.call_count == num_of_params // 100 + (
-        1 if num_of_params % 100 else 0
-    )
+    assert mock_log_params.call_count == num_of_params // 100 + (1 if num_of_params % 100 else 0)
 
 
 @pytest.mark.parametrize("chunk", (10, 100))
@@ -372,9 +353,7 @@ def test_chunks(context, num_of_params, string_maker, chunk):
 
     # Then
     # - the number of chunks is what is expected
-    assert len(param_chunks_list) == num_of_params // chunk + (
-        1 if num_of_params % chunk else 0
-    )
+    assert len(param_chunks_list) == num_of_params // chunk + (1 if num_of_params % chunk else 0)
     # - the unwrapped dictionary is the same as was set
     assert {k: v for d in param_chunks_list for k, v in d.items()} == D
 

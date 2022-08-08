@@ -34,15 +34,11 @@ from dagster._core.errors import (
     DagsterTypeCheckDidNotPass,
 )
 from dagster._legacy import (
-    DynamicOutputDefinition,
-    InputDefinition,
     Materialization,
-    OutputDefinition,
     build_solid_context,
     composite_solid,
     execute_solid,
     pipeline,
-    solid,
 )
 
 
@@ -256,9 +252,7 @@ def test_solid_invocation_with_config():
         op_requires_config.configured({"foo": "bar"}, name="configured_solid")()
 
     # Ensure that if you configure the solid, you can provide a none-context.
-    result = op_requires_config.configured({"foo": "bar"}, name="configured_solid")(
-        None
-    )
+    result = op_requires_config.configured({"foo": "bar"}, name="configured_solid")(None)
     assert result == 5
 
     result = op_requires_config(build_solid_context(solid_config={"foo": "bar"}))
@@ -291,10 +285,7 @@ def test_solid_invocation_default_config():
         assert context.op_config["baz"] == "bar"
         return context.op_config["foo"] + context.op_config["baz"]
 
-    assert (
-        op_requires_config_partial(build_solid_context(solid_config={"baz": "bar"}))
-        == "barbar"
-    )
+    assert op_requires_config_partial(build_solid_context(solid_config={"baz": "bar"})) == "barbar"
 
 
 def test_solid_invocation_dict_config():
@@ -303,9 +294,7 @@ def test_solid_invocation_dict_config():
         assert context.op_config == {"foo": "bar"}
         return context.op_config
 
-    assert op_requires_dict(build_solid_context(solid_config={"foo": "bar"})) == {
-        "foo": "bar"
-    }
+    assert op_requires_dict(build_solid_context(solid_config={"foo": "bar"})) == {"foo": "bar"}
 
     @op(config_schema=Noneable(dict))
     def op_noneable_dict(context):
@@ -344,10 +333,7 @@ def test_solid_invocation_kitchen_sink_config():
         "optional_list_of_optional_string": ["foo", None],
     }
 
-    assert (
-        kitchen_sink(build_solid_context(solid_config=solid_config_one))
-        == solid_config_one
-    )
+    assert kitchen_sink(build_solid_context(solid_config=solid_config_one)) == solid_config_one
 
 
 def test_solid_with_inputs():
@@ -699,9 +685,7 @@ def test_invalid_properties_on_context(property_or_method_name, val_to_pass):
         result = getattr(context, property_or_method_name)
         # for the case where property_or_method_name is a method, getting an attribute won't cause
         # an error, but invoking the method should.
-        result(
-            val_to_pass
-        ) if val_to_pass else result()  # pylint: disable=expression-not-assigned
+        result(val_to_pass) if val_to_pass else result()  # pylint: disable=expression-not-assigned
 
     with pytest.raises(DagsterInvalidPropertyError):
         op_fails_getting_property(None)
@@ -1051,21 +1035,13 @@ def test_add_output_metadata_after_output():
 def test_log_metadata_multiple_dynamic_outputs():
     @op(out={"out1": DynamicOut(), "out2": DynamicOut()})
     def the_op(context):
-        context.add_output_metadata(
-            {"one": "one"}, output_name="out1", mapping_key="one"
-        )
+        context.add_output_metadata({"one": "one"}, output_name="out1", mapping_key="one")
         yield DynamicOutput(value=1, output_name="out1", mapping_key="one")
-        context.add_output_metadata(
-            {"two": "two"}, output_name="out1", mapping_key="two"
-        )
-        context.add_output_metadata(
-            {"three": "three"}, output_name="out2", mapping_key="three"
-        )
+        context.add_output_metadata({"two": "two"}, output_name="out1", mapping_key="two")
+        context.add_output_metadata({"three": "three"}, output_name="out2", mapping_key="three")
         yield DynamicOutput(value=2, output_name="out1", mapping_key="two")
         yield DynamicOutput(value=3, output_name="out2", mapping_key="three")
-        context.add_output_metadata(
-            {"four": "four"}, output_name="out2", mapping_key="four"
-        )
+        context.add_output_metadata({"four": "four"}, output_name="out2", mapping_key="four")
         yield DynamicOutput(value=4, output_name="out2", mapping_key="four")
 
     context = build_op_context()
@@ -1074,9 +1050,7 @@ def test_log_metadata_multiple_dynamic_outputs():
     assert len(events) == 4
     assert context.get_output_metadata("out1", mapping_key="one") == {"one": "one"}
     assert context.get_output_metadata("out1", mapping_key="two") == {"two": "two"}
-    assert context.get_output_metadata("out2", mapping_key="three") == {
-        "three": "three"
-    }
+    assert context.get_output_metadata("out2", mapping_key="three") == {"three": "three"}
     assert context.get_output_metadata("out2", mapping_key="four") == {"four": "four"}
 
 
@@ -1138,15 +1112,11 @@ def test_kwargs_via_partial_functools():
 def test_get_mapping_key():
     context = build_op_context(mapping_key="the_key")
 
-    assert (
-        context.get_mapping_key() == "the_key"
-    )  # Ensure unbound context has mapping key
+    assert context.get_mapping_key() == "the_key"  # Ensure unbound context has mapping key
 
     @op
     def basic_op(context):
-        assert (
-            context.get_mapping_key() == "the_key"
-        )  # Ensure bound context has mapping key
+        assert context.get_mapping_key() == "the_key"  # Ensure bound context has mapping key
 
     basic_op(context)
 

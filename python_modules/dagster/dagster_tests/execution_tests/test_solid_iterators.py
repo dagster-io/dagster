@@ -1,6 +1,6 @@
-from dagster import Out, op, AssetMaterialization, Output
+from dagster import AssetMaterialization, Output, op
 from dagster._annotations import experimental
-from dagster._legacy import execute_solid, solid
+from dagster._legacy import execute_solid
 
 
 def test_generator_return_solid():

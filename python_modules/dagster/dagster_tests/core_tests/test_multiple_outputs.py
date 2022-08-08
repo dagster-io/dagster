@@ -3,24 +3,17 @@ import re
 import pytest
 
 from dagster import (
-    In,
-    Out,
-    op,
     Any,
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
+    In,
+    Out,
     Output,
+    op,
     reconstructable,
 )
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    execute_pipeline,
-    execute_solid,
-    pipeline,
-    solid,
-)
+from dagster._legacy import execute_pipeline, execute_solid, pipeline
 
 
 def test_multiple_outputs():
@@ -132,9 +125,7 @@ def test_multiple_outputs_only_emit_one():
     ):
         solid_result.output_value("not_defined")
 
-    with pytest.raises(
-        DagsterInvariantViolationError, match="Did not find result output_two"
-    ):
+    with pytest.raises(DagsterInvariantViolationError, match="Did not find result output_two"):
         solid_result.output_value("output_two")
 
     with pytest.raises(
@@ -169,9 +160,7 @@ def test_multiple_outputs_only_emit_one_multiproc():
         ):
             solid_result.output_value("not_defined")
 
-        with pytest.raises(
-            DagsterInvariantViolationError, match="Did not find result output_two"
-        ):
+        with pytest.raises(DagsterInvariantViolationError, match="Did not find result output_two"):
             solid_result.output_value("output_two")
 
         with pytest.raises(
@@ -216,8 +205,6 @@ def test_warning_for_conditional_output(capsys):
         if context.op_config["return"]:
             return 3
 
-    result = execute_solid(
-        maybe, run_config={"solids": {"maybe": {"config": {"return": False}}}}
-    )
+    result = execute_solid(maybe, run_config={"solids": {"maybe": {"config": {"return": False}}}})
     assert result.success
     assert "This value will be passed to downstream solids" in capsys.readouterr().err

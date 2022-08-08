@@ -1,27 +1,16 @@
 import pytest
 
-from dagster import (
-    Out,
-    DynamicOut,
-    DynamicOutput,
-    Field,
-    Output,
-    job,
-    op,
-    reconstructable,
-)
+from dagster import DynamicOut, DynamicOutput, Field, Out, Output, job, op, reconstructable
 from dagster._core.errors import DagsterExecutionStepNotFoundError
 from dagster._core.execution.api import create_execution_plan, reexecute_pipeline
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import (
-    DynamicOutputDefinition,
     InputDefinition,
     OutputDefinition,
     composite_solid,
     execute_pipeline,
     pipeline,
-    solid,
 )
 from dagster._utils import merge_dicts
 
@@ -144,9 +133,7 @@ def test_map_empty(run_config):
         result = execute_pipeline(
             reconstructable(dynamic_pipeline),
             instance=instance,
-            run_config=merge_dicts(
-                {"solids": {"num_range": {"config": {"range": 0}}}}, run_config
-            ),
+            run_config=merge_dicts({"solids": {"num_range": {"config": {"range": 0}}}}, run_config),
         )
         assert result.success
         assert result.result_for_solid("double_total").output_value() == 0
@@ -161,9 +148,7 @@ def test_map_selection(run_config):
         result = execute_pipeline(
             reconstructable(dynamic_pipeline),
             instance=instance,
-            run_config=merge_dicts(
-                {"solids": {"emit": {"inputs": {"num": 2}}}}, run_config
-            ),
+            run_config=merge_dicts({"solids": {"emit": {"inputs": {"num": 2}}}}, run_config),
             solid_selection=["emit*", "emit_ten"],
         )
         assert result.success
@@ -173,9 +158,7 @@ def test_map_selection(run_config):
 def test_composite_wrapping():
     # regression test from user report
 
-    @composite_solid(
-        input_defs=[InputDefinition("z", int)], output_defs=[OutputDefinition(int)]
-    )
+    @composite_solid(input_defs=[InputDefinition("z", int)], output_defs=[OutputDefinition(int)])
     def do_multiple_steps(z):
         output = echo(z)
         return echo(output)
@@ -192,21 +175,15 @@ def test_composite_wrapping():
         "2": 2,
     }
 
-    @composite_solid(
-        input_defs=[InputDefinition("x", int)], output_defs=[OutputDefinition(int)]
-    )
+    @composite_solid(input_defs=[InputDefinition("x", int)], output_defs=[OutputDefinition(int)])
     def inner(x):
         return echo(x)
 
-    @composite_solid(
-        input_defs=[InputDefinition("y", int)], output_defs=[OutputDefinition(int)]
-    )
+    @composite_solid(input_defs=[InputDefinition("y", int)], output_defs=[OutputDefinition(int)])
     def middle(y):
         return inner(y)
 
-    @composite_solid(
-        input_defs=[InputDefinition("z", int)], output_defs=[OutputDefinition(int)]
-    )
+    @composite_solid(input_defs=[InputDefinition("z", int)], output_defs=[OutputDefinition(int)])
     def outer(z):
         return middle(z)
 
@@ -234,9 +211,7 @@ def test_tags():
         assert plan.get_step_by_key(f"{multiply_inputs.name}[{mapping_key}]").tags == {
             "second": "2"
         }
-        assert plan.get_step_by_key(f"{multiply_by_two.name}[{mapping_key}]").tags == {
-            "third": "3"
-        }
+        assert plan.get_step_by_key(f"{multiply_by_two.name}[{mapping_key}]").tags == {"third": "3"}
 
 
 def test_full_reexecute():
@@ -452,9 +427,7 @@ def test_map_fail(run_config):
         result = execute_pipeline(
             reconstructable(dynamic_pipeline),
             instance=instance,
-            run_config=merge_dicts(
-                {"solids": {"emit": {"config": {"fail": True}}}}, run_config
-            ),
+            run_config=merge_dicts({"solids": {"emit": {"config": {"fail": True}}}}, run_config),
             raise_on_error=False,
         )
         assert not result.success

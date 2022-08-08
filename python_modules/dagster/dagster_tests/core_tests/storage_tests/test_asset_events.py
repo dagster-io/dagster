@@ -26,7 +26,6 @@ from dagster._legacy import (
     build_assets_job,
     execute_pipeline,
     pipeline,
-    solid,
 )
 
 
@@ -34,14 +33,10 @@ def n_asset_keys(path, n):
     return AssetLineageInfo(AssetKey(path), set([str(i) for i in range(n)]))
 
 
-def check_materialization(
-    materialization, asset_key, parent_assets=None, metadata_entries=None
-):
+def check_materialization(materialization, asset_key, parent_assets=None, metadata_entries=None):
     event_data = materialization.event_specific_data
     assert event_data.materialization.asset_key == asset_key
-    assert sorted(event_data.materialization.metadata_entries) == sorted(
-        metadata_entries or []
-    )
+    assert sorted(event_data.materialization.metadata_entries) == sorted(metadata_entries or [])
     assert event_data.asset_lineage == (parent_assets or [])
 
 
@@ -74,9 +69,7 @@ def test_output_definition_single_partition_materialization():
     ]
     assert len(materializations) == 2
 
-    check_materialization(
-        materializations[0], AssetKey(["table1"]), metadata_entries=[entry1]
-    )
+    check_materialization(materializations[0], AssetKey(["table1"]), metadata_entries=[entry1])
     check_materialization(
         materializations[1],
         AssetKey(["table2"]),
@@ -90,9 +83,7 @@ def test_output_definition_multiple_partition_materialization():
     entry1 = MetadataEntry("nrows", value=123)
     entry2 = MetadataEntry("some value", value=3.21)
 
-    partition_entries = [
-        MetadataEntry("partition count", value=123 * i * i) for i in range(3)
-    ]
+    partition_entries = [MetadataEntry("partition count", value=123 * i * i) for i in range(3)]
 
     @op(
         out={
@@ -192,9 +183,7 @@ def test_io_manager_add_input_metadata():
 
     result = my_job.execute_in_process()
     observations = [
-        event
-        for event in result.all_node_events
-        if event.event_type_value == "ASSET_OBSERVATION"
+        event for event in result.all_node_events if event.event_type_value == "ASSET_OBSERVATION"
     ]
 
     # first observation
@@ -213,9 +202,7 @@ def test_io_manager_add_input_metadata():
         event for event in result.all_events if event.event_type_value == "LOADED_INPUT"
     ][0]
     assert loaded_input_event
-    loaded_input_event_metadata = (
-        loaded_input_event.event_specific_data.metadata_entries
-    )
+    loaded_input_event_metadata = loaded_input_event.event_specific_data.metadata_entries
     assert len(loaded_input_event_metadata) == 2
     assert loaded_input_event_metadata[0].label == "foo"
     assert loaded_input_event_metadata[1].label == "baz"
@@ -262,9 +249,7 @@ def test_io_manager_single_partition_add_input_metadata():
             pass
 
         def load_input(self, context):
-            context.add_input_metadata(
-                metadata={"foo": "bar"}, description="hello world"
-            )
+            context.add_input_metadata(metadata={"foo": "bar"}, description="hello world")
             return 1
 
     @io_manager
@@ -279,9 +264,7 @@ def test_io_manager_single_partition_add_input_metadata():
     get_observation = lambda event: event.event_specific_data.asset_observation
 
     observations = [
-        event
-        for event in result.all_node_events
-        if event.event_type_value == "ASSET_OBSERVATION"
+        event for event in result.all_node_events if event.event_type_value == "ASSET_OBSERVATION"
     ]
 
     assert observations[0].step_key == "asset_2"
@@ -345,9 +328,7 @@ def test_io_manager_single_partition_materialization():
     ]
     assert len(materializations) == 2
 
-    check_materialization(
-        materializations[0], AssetKey(["op1"]), metadata_entries=[entry1]
-    )
+    check_materialization(materializations[0], AssetKey(["op1"]), metadata_entries=[entry1])
     check_materialization(
         materializations[1],
         AssetKey(["op2"]),

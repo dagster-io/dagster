@@ -10,9 +10,7 @@ from dagster._utils.backcompat import deprecation_warning
 if TYPE_CHECKING:
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.pipeline_definition import PipelineDefinition
-    from dagster._core.definitions.run_status_sensor_definition import (
-        RunFailureSensorContext,
-    )
+    from dagster._core.definitions.run_status_sensor_definition import RunFailureSensorContext
     from dagster._core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,
     )
@@ -79,30 +77,18 @@ def make_email_on_run_failure_sensor(
     email_from: str,
     email_password: str,
     email_to: List[str],
-    email_body_fn: Callable[
-        ["RunFailureSensorContext"], str
-    ] = _default_failure_email_body,
-    email_subject_fn: Callable[
-        ["RunFailureSensorContext"], str
-    ] = _default_failure_email_subject,
+    email_body_fn: Callable[["RunFailureSensorContext"], str] = _default_failure_email_body,
+    email_subject_fn: Callable[["RunFailureSensorContext"], str] = _default_failure_email_subject,
     smtp_host: str = "smtp.gmail.com",
     smtp_type: str = "SSL",
     smtp_port: Optional[int] = None,
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
     monitored_jobs: Optional[
-        List[
-            Union[
-                "PipelineDefinition", "GraphDefinition", "UnresolvedAssetJobDefinition"
-            ]
-        ]
+        List[Union["PipelineDefinition", "GraphDefinition", "UnresolvedAssetJobDefinition"]]
     ] = None,
     job_selection: Optional[
-        List[
-            Union[
-                "PipelineDefinition", "GraphDefinition", "UnresolvedAssetJobDefinition"
-            ]
-        ]
+        List[Union["PipelineDefinition", "GraphDefinition", "UnresolvedAssetJobDefinition"]]
     ] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ):
@@ -210,8 +196,6 @@ def make_email_on_run_failure_sensor(
                 smtp_port=smtp_port or 587,
             )
         else:
-            raise DagsterInvalidDefinitionError(
-                f'smtp_type "{smtp_type}" is not supported.'
-            )
+            raise DagsterInvalidDefinitionError(f'smtp_type "{smtp_type}" is not supported.')
 
     return email_on_run_failure

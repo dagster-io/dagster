@@ -5,26 +5,10 @@ import string
 
 import pandas as pd
 
-from dagster import (
-    Out,
-    op,
-    Array,
-    AssetKey,
-    Field,
-    MetadataEntry,
-    MetadataValue,
-    Output,
-    Partition,
-)
+from dagster import Array, AssetKey, Field, MetadataEntry, MetadataValue, Out, Output, Partition, op
 from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 from dagster._core.storage.io_manager import io_manager
-from dagster._legacy import (
-    ModeDefinition,
-    OutputDefinition,
-    PartitionSetDefinition,
-    pipeline,
-    solid,
-)
+from dagster._legacy import ModeDefinition, PartitionSetDefinition, pipeline
 
 
 def get_date_partitions():
@@ -120,8 +104,7 @@ def download_data(_):
     data = {
         "user_id": [user_id() for i in range(n_entries)],
         "action_type": [
-            random.choices(["story", "comment"], [0.15, 0.85])[0]
-            for i in range(n_entries)
+            random.choices(["story", "comment"], [0.15, 0.85])[0] for i in range(n_entries)
         ],
         "score": [random.randint(0, 10000) for i in range(n_entries)],
     }
@@ -188,9 +171,7 @@ def daily_top_action(_, df1, df2):
     return Output(df, metadata={"data": MetadataValue.md(df.to_markdown())})
 
 
-@pipeline(
-    mode_defs=[ModeDefinition(resource_defs={"my_db_io_manager": my_db_io_manager})]
-)
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"my_db_io_manager": my_db_io_manager})])
 def asset_lineage_pipeline():
     reviews, comments = split_action_types(download_data())
     daily_top_action(top_10_reviews(reviews), top_10_comments(comments))

@@ -1,12 +1,6 @@
-from dagster import In, Out, Field, String, job, op, repository
+from dagster import Field, In, Out, String, job, op, repository
 from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    pipeline,
-    solid,
-)
+from dagster._legacy import ModeDefinition, pipeline
 
 
 @op(
@@ -30,9 +24,7 @@ def take_string_1_asset(context, _string_input):
 
 @pipeline(
     mode_defs=[
-        ModeDefinition(
-            "only_mode", resource_defs={"io_manager": versioned_filesystem_io_manager}
-        )
+        ModeDefinition("only_mode", resource_defs={"io_manager": versioned_filesystem_io_manager})
     ],
 )
 def asset_pipeline():

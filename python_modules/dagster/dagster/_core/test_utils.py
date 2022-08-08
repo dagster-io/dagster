@@ -23,16 +23,12 @@ from dagster._core.host_representation.origin import (
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import RunLauncher
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
-from dagster._core.storage.pipeline_run import (
-    PipelineRun,
-    PipelineRunStatus,
-    RunsFilter,
-)
+from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._daemon.controller import create_daemon_grpc_server_registry
 from dagster._daemon.workspace import DaemonWorkspace
-from dagster._legacy import ModeDefinition, composite_solid, pipeline, solid
+from dagster._legacy import ModeDefinition, composite_solid, pipeline
 from dagster._serdes import ConfigurableClass
 from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
 from dagster._utils import Counter, merge_dicts, traced, traced_counter
@@ -269,9 +265,7 @@ def poll_for_finished_run(instance, run_id=None, timeout=20, run_tags=None):
 
 
 def poll_for_step_start(instance, run_id, timeout=30):
-    poll_for_event(
-        instance, run_id, event_type="STEP_START", message=None, timeout=timeout
-    )
+    poll_for_event(instance, run_id, event_type="STEP_START", message=None, timeout=timeout)
 
 
 def poll_for_event(instance, run_id, event_type, message, timeout=30):
@@ -509,9 +503,7 @@ def get_logger_output_from_capfd(capfd, logger_name):
     return "\n".join(
         [
             line
-            for line in strip_ansi(capfd.readouterr().out.replace("\r\n", "\n")).split(
-                "\n"
-            )
+            for line in strip_ansi(capfd.readouterr().out.replace("\r\n", "\n")).split("\n")
             if logger_name in line
         ]
     )

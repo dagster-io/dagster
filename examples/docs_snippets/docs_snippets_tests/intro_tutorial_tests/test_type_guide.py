@@ -4,27 +4,20 @@ import pytest
 import yaml
 
 from dagster import (
-    In,
-    Out,
-    op,
     AssetMaterialization,
     DagsterType,
     DagsterTypeCheckDidNotPass,
+    In,
     Nothing,
+    Out,
     PythonObjectDagsterType,
     dagster_type_loader,
     dagster_type_materializer,
     make_python_type_usable_as_dagster_type,
+    op,
     usable_as_dagster_type,
 )
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    execute_pipeline,
-    execute_solid,
-    pipeline,
-    solid,
-)
+from dagster._legacy import execute_pipeline, execute_solid, pipeline
 from dagster._utils import safe_tempfile_path
 
 

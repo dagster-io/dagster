@@ -1,5 +1,4 @@
 import pytest
-from dagster import In, Out, op
 
 
 def test_no_warnings_on_import():

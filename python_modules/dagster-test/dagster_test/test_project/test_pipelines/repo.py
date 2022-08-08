@@ -12,7 +12,6 @@ from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
 
 from dagster import (
-    Out,
     AssetMaterialization,
     Bool,
     Field,
@@ -20,6 +19,7 @@ from dagster import (
     Int,
     IntSource,
     List,
+    Out,
     Output,
     RetryRequested,
     String,
@@ -33,15 +33,7 @@ from dagster import (
 )
 from dagster._core.definitions.decorators import daily_schedule, schedule
 from dagster._core.test_utils import nesting_composite_pipeline
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    default_executors,
-    lambda_solid,
-    pipeline,
-    solid,
-)
+from dagster._legacy import ModeDefinition, default_executors, pipeline
 from dagster._utils import merge_dicts, segfault
 from dagster._utils.yaml_utils import merge_yamls
 
@@ -71,8 +63,7 @@ def celery_mode_defs(resources=None, name="default"):
             resource_defs=resources
             if resources
             else {"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-            executor_defs=default_executors
-            + [celery_executor, celery_k8s_job_executor],
+            executor_defs=default_executors + [celery_executor, celery_k8s_job_executor],
         )
     ]
 
@@ -250,9 +241,7 @@ def define_demo_job_celery():
         executor_def=celery_k8s_job_executor,
     )
     def demo_job_celery():
-        count_letters_op.alias("count_letters")(
-            multiply_the_word_op.alias("multiply_the_word")()
-        )
+        count_letters_op.alias("count_letters")(multiply_the_word_op.alias("multiply_the_word")())
 
     return demo_job_celery
 
@@ -385,8 +374,7 @@ def define_long_running_pipeline_celery():
         iterations = 20 * 30  # 20 minutes
         for i in range(iterations):
             context.log.info(
-                "task in progress [%d/100]%% complete"
-                % math.floor(100.0 * float(i) / iterations)
+                "task in progress [%d/100]%% complete" % math.floor(100.0 * float(i) / iterations)
             )
             time.sleep(2)
         return random.randint(0, iterations)
@@ -472,19 +460,13 @@ def define_schedules():
     def frequent_celery():
         from dagster_celery_k8s.config import get_celery_engine_config
 
-        additional_env_config_maps = (
-            ["test-aws-env-configmap"] if not IS_BUILDKITE else []
-        )
+        additional_env_config_maps = ["test-aws-env-configmap"] if not IS_BUILDKITE else []
 
         return merge_dicts(
             merge_yamls(
                 [
-                    file_relative_path(
-                        __file__, os.path.join("..", "environments", "env.yaml")
-                    ),
-                    file_relative_path(
-                        __file__, os.path.join("..", "environments", "env_s3.yaml")
-                    ),
+                    file_relative_path(__file__, os.path.join("..", "environments", "env.yaml")),
+                    file_relative_path(__file__, os.path.join("..", "environments", "env_s3.yaml")),
                 ]
             ),
             get_celery_engine_config(
@@ -580,9 +562,7 @@ def define_fan_in_fan_out_pipeline():
     def construct_fan_in_level(source, level, fanout):
         fan_outs = []
         for i in range(0, fanout):
-            fan_outs.append(
-                add_one_fan.alias("add_one_fan_{}_{}".format(level, i))(source)
-            )
+            fan_outs.append(add_one_fan.alias("add_one_fan_{}_{}".format(level, i))(source))
 
         return sum_fan_in.alias("sum_{}".format(level))(fan_outs)
 

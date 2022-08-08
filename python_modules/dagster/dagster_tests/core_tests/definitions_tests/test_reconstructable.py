@@ -4,7 +4,7 @@ import types
 
 import pytest
 
-from dagster import In, Out, op, DagsterInvariantViolationError
+from dagster import DagsterInvariantViolationError, op
 from dagster._core.code_pointer import FileCodePointer
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.origin import (
@@ -13,7 +13,7 @@ from dagster._core.origin import (
     RepositoryPythonOrigin,
 )
 from dagster._core.snap import PipelineSnapshot, create_pipeline_snapshot_id
-from dagster._legacy import PipelineDefinition, lambda_solid, pipeline
+from dagster._legacy import PipelineDefinition, pipeline
 from dagster._utils import file_relative_path
 from dagster._utils.hosted_user_process import recon_pipeline_from_origin
 
@@ -132,9 +132,7 @@ def test_solid_selection():
     sub_pipe_full = recon_pipe.subset_for_execution(["the_op"], asset_selection=None)
     assert sub_pipe_full.solids_to_execute == {"the_op"}
 
-    sub_pipe_unresolved = recon_pipe.subset_for_execution(
-        ["the_op+"], asset_selection=None
-    )
+    sub_pipe_unresolved = recon_pipe.subset_for_execution(["the_op+"], asset_selection=None)
     assert sub_pipe_unresolved.solids_to_execute == {"the_op"}
 
 
@@ -170,15 +168,6 @@ def test_reconstruct_from_origin():
 
     assert recon_pipeline.pipeline_name == origin.pipeline_name
     assert recon_pipeline.repository.pointer == origin.repository_origin.code_pointer
-    assert (
-        recon_pipeline.repository.container_image
-        == origin.repository_origin.container_image
-    )
-    assert (
-        recon_pipeline.repository.executable_path
-        == origin.repository_origin.executable_path
-    )
-    assert (
-        recon_pipeline.repository.container_context
-        == origin.repository_origin.container_context
-    )
+    assert recon_pipeline.repository.container_image == origin.repository_origin.container_image
+    assert recon_pipeline.repository.executable_path == origin.repository_origin.executable_path
+    assert recon_pipeline.repository.container_context == origin.repository_origin.container_context

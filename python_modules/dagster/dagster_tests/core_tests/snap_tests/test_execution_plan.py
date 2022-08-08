@@ -1,14 +1,8 @@
+from dagster import In, Out, op
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.snap import create_pipeline_snapshot_id, snapshot_from_execution_plan
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    composite_solid,
-    pipeline,
-    solid,
-)
+from dagster._legacy import OutputDefinition, composite_solid, pipeline
 from dagster._serdes import serialize_pp
-from dagster import In, Out, op
 
 
 def test_create_noop_execution_plan(snapshot):
@@ -69,15 +63,11 @@ def test_create_with_composite(snapshot):
     def add_one(_, num):
         return num + 1
 
-    @composite_solid(
-        output_defs=[OutputDefinition(name="named_output", dagster_type=int)]
-    )
+    @composite_solid(output_defs=[OutputDefinition(name="named_output", dagster_type=int)])
     def comp_1():
         return add_one(return_one())
 
-    @composite_solid(
-        output_defs=[OutputDefinition(name="named_output", dagster_type=int)]
-    )
+    @composite_solid(output_defs=[OutputDefinition(name="named_output", dagster_type=int)])
     def comp_2():
         return add_one(return_one())
 

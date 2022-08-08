@@ -1,5 +1,5 @@
-from dagster import In, Out, op, Int, repository
-from dagster._legacy import InputDefinition, OutputDefinition, lambda_solid, pipeline
+from dagster import In, Int, Out, op, repository
+from dagster._legacy import pipeline
 
 
 @op(ins={"num": In(Int)}, out=Out(Int))

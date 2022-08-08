@@ -1,5 +1,5 @@
-from dagster._legacy import pipeline, solid
-from dagster import In, Out, op
+from dagster import op
+from dagster._legacy import pipeline
 
 
 def test_solid_tags():

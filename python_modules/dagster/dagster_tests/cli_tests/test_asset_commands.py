@@ -4,7 +4,7 @@ from click.testing import CliRunner
 from dagster import AssetKey, AssetMaterialization, Output
 from dagster._cli.asset import asset_wipe_command
 from dagster._core.instance import DagsterInstance
-from dagster._legacy import execute_pipeline, pipeline, solid
+from dagster._legacy import execute_pipeline, pipeline
 from dagster._seven import json
 
 
@@ -59,9 +59,7 @@ def test_asset_wipe_errors(asset_instance):  # pylint: disable=unused-argument
         in result.output
     )
 
-    result = runner.invoke(
-        asset_wipe_command, ["--all", json.dumps(["path", "to", "asset_key"])]
-    )
+    result = runner.invoke(asset_wipe_command, ["--all", json.dumps(["path", "to", "asset_key"])])
     assert result.exit_code == 2
     assert "Error, cannot use more than one of: asset key, `--all`." in result.output
 

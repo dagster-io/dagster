@@ -1,7 +1,6 @@
 import sys
 
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster import op
 
 
 def test_syntax_error_serialized_message():

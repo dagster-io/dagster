@@ -2,16 +2,10 @@ import warnings
 
 import pytest
 
-from dagster import In, Out, op, DependencyDefinition, Int, Nothing, Output
-from dagster._core.definitions.decorators.hook_decorator import (
-    event_list_hook,
-    success_hook,
-)
+from dagster import DependencyDefinition, In, Int, Nothing, Out, Output, op
+from dagster._core.definitions.decorators.hook_decorator import event_list_hook, success_hook
 from dagster._core.definitions.events import DynamicOutput, HookExecutionResult
-from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
-)
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
 from dagster._legacy import (
     InputDefinition,
@@ -20,9 +14,7 @@ from dagster._legacy import (
     SolidDefinition,
     composite_solid,
     execute_pipeline,
-    lambda_solid,
     pipeline,
-    solid,
 )
 
 
@@ -328,9 +320,7 @@ def test_mapping_args_kwargs():
 
 
 def test_output_map_mult():
-    @composite_solid(
-        output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")]
-    )
+    @composite_solid(output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")])
     def wrap_mult():
         return return_mult()
 
@@ -346,9 +336,7 @@ def test_output_map_mult():
 
 
 def test_output_map_mult_swizzle():
-    @composite_solid(
-        output_defs=[OutputDefinition(Int, "x"), OutputDefinition(Int, "y")]
-    )
+    @composite_solid(output_defs=[OutputDefinition(Int, "x"), OutputDefinition(Int, "y")])
     def wrap_mult():
         one, two = return_mult()
         return {"x": one, "y": two}
@@ -367,17 +355,13 @@ def test_output_map_mult_swizzle():
 def test_output_map_fail():
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @composite_solid(
-            output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")]
-        )
+        @composite_solid(output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")])
         def _bad(_context):
             return return_one()
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @composite_solid(
-            output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")]
-        )
+        @composite_solid(output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")])
         def _bad(_context):
             return {"one": 1}
 
@@ -579,9 +563,7 @@ def test_alias_not_invoked():
             single_input_op.alias("foo")
             single_input_op.alias("bar")
 
-    assert (
-        len(record) == 2
-    )  # This pipeline should raise a warning for each aliasing of the solid.
+    assert len(record) == 2  # This pipeline should raise a warning for each aliasing of the solid.
 
 
 def test_tag_invoked():
@@ -614,9 +596,7 @@ def test_tag_not_invoked():
 
         execute_pipeline(_my_pipeline)
 
-    user_warnings = [
-        warning for warning in record if isinstance(warning.message, UserWarning)
-    ]
+    user_warnings = [warning for warning in record if isinstance(warning.message, UserWarning)]
     assert (
         len(user_warnings) == 1
     )  # We should only raise one warning because solids have same name.
@@ -670,9 +650,7 @@ def test_with_hooks_not_invoked():
         execute_pipeline(_my_pipeline)
 
     # Note not returning out of the pipe causes warning count to go up to 2
-    user_warnings = [
-        warning for warning in record if isinstance(warning.message, UserWarning)
-    ]
+    user_warnings = [warning for warning in record if isinstance(warning.message, UserWarning)]
     assert (
         len(user_warnings) == 1
     )  # We should only raise one warning because solids have same name.
@@ -734,9 +712,7 @@ def test_compose_nothing():
 
 
 def test_multimap():
-    @composite_solid(
-        output_defs=[OutputDefinition(int, "x"), OutputDefinition(int, "y")]
-    )
+    @composite_solid(output_defs=[OutputDefinition(int, "x"), OutputDefinition(int, "y")])
     def multimap(foo):
         x = echo.alias("echo_1")(foo)
         y = echo.alias("echo_2")(foo)
@@ -753,9 +729,7 @@ def test_multimap():
 
 
 def test_reuse_inputs():
-    @composite_solid(
-        input_defs=[InputDefinition("one", Int), InputDefinition("two", Int)]
-    )
+    @composite_solid(input_defs=[InputDefinition("one", Int), InputDefinition("two", Int)])
     def calculate(one, two):
         adder(one, two)
         adder.alias("adder_2")(one, two)
@@ -825,35 +799,25 @@ def test_composite_solid_composition_metadata():
     res = execute_pipeline(metadata_test_pipeline)
 
     assert (
-        res.result_for_solid("metadata_composite")
-        .result_for_solid("aliased_one")
-        .output_value()
+        res.result_for_solid("metadata_composite").result_for_solid("aliased_one").output_value()
         == "foo"
     )
     assert (
-        res.result_for_solid("metadata_composite")
-        .result_for_solid("aliased_two")
-        .output_value()
+        res.result_for_solid("metadata_composite").result_for_solid("aliased_two").output_value()
         == "bar"
     )
     assert (
-        res.result_for_solid("metadata_composite")
-        .result_for_solid("aliased_three")
-        .output_value()
+        res.result_for_solid("metadata_composite").result_for_solid("aliased_three").output_value()
         == "baz"
     )
     assert (
-        res.result_for_solid("metadata_composite")
-        .result_for_solid("metadata_op")
-        .output_value()
+        res.result_for_solid("metadata_composite").result_for_solid("metadata_op").output_value()
         == "quux"
     )
 
 
 def test_uninvoked_solid_fails():
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match=r".*Did you forget parentheses?"
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError, match=r".*Did you forget parentheses?"):
 
         @pipeline
         def uninvoked_solid_pipeline():
@@ -863,9 +827,7 @@ def test_uninvoked_solid_fails():
 
 
 def test_uninvoked_aliased_solid_fails():
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match=r".*Did you forget parentheses?"
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError, match=r".*Did you forget parentheses?"):
 
         @pipeline
         def uninvoked_aliased_solid_pipeline():

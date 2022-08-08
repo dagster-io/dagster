@@ -4,24 +4,13 @@ from typing import cast
 import dagster._seven as seven
 from dagster import Bool, Field
 from dagster import _check as check
-from dagster._core.errors import (
-    DagsterInvariantViolationError,
-    DagsterLaunchFailedError,
-)
-from dagster._core.host_representation.grpc_server_registry import (
-    ProcessGrpcServerRegistry,
-)
-from dagster._core.host_representation.repository_location import (
-    GrpcServerRepositoryLocation,
-)
+from dagster._core.errors import DagsterInvariantViolationError, DagsterLaunchFailedError
+from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster._core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._grpc.client import DagsterGrpcClient
-from dagster._grpc.types import (
-    CancelExecutionRequest,
-    ExecuteExternalPipelineArgs,
-    StartRunResult,
-)
+from dagster._grpc.types import CancelExecutionRequest, ExecuteExternalPipelineArgs, StartRunResult
 from dagster._serdes import (
     ConfigurableClass,
     deserialize_as,
@@ -42,9 +31,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         # before disposing of this launcher. Primarily useful for test cleanup where
         # we want to make sure that resources used by the test are cleaned up before
         # the test ends.
-        self._wait_for_processes = check.bool_param(
-            wait_for_processes, "wait_for_processes"
-        )
+        self._wait_for_processes = check.bool_param(wait_for_processes, "wait_for_processes")
 
         self._run_ids = set()
 

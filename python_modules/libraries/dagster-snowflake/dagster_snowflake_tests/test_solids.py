@@ -6,7 +6,6 @@ from dagster_snowflake.solids import snowflake_solid_for_query
 from dagster._legacy import ModeDefinition, execute_solid
 
 from .utils import create_mock_connector
-from dagster import op
 
 
 @mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)

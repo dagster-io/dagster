@@ -1,11 +1,5 @@
-from dagster import In, Out, op, Float, Int, List
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    composite_solid,
-    pipeline,
-    solid,
-)
+from dagster import Float, In, Int, List, Out, op
+from dagster._legacy import InputDefinition, OutputDefinition, composite_solid, pipeline
 
 
 @op(out=Out(Int))
@@ -31,16 +25,12 @@ def emit_two():
     return add([emit_one(), emit_one()])
 
 
-@composite_solid(
-    input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)]
-)
+@composite_solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
 def add_four(num):
     return add([emit_two(), emit_two(), num])
 
 
-@composite_solid(
-    input_defs=[InputDefinition("num", Float)], output_defs=[OutputDefinition(Float)]
-)
+@composite_solid(input_defs=[InputDefinition("num", Float)], output_defs=[OutputDefinition(Float)])
 def div_four(num):
     return div_two(num=div_two(num))
 

@@ -83,23 +83,17 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self.include_sidecars = include_sidecars
 
         if self.task_definition:
-            task_definition = self.ecs.describe_task_definition(
-                taskDefinition=task_definition
-            )
+            task_definition = self.ecs.describe_task_definition(taskDefinition=task_definition)
             container_names = [
                 container.get("name")
-                for container in task_definition["taskDefinition"][
-                    "containerDefinitions"
-                ]
+                for container in task_definition["taskDefinition"]["containerDefinitions"]
             ]
             check.invariant(
                 container_name in container_names,
                 f"Cannot override container '{container_name}' in task definition "
                 f"'{self.task_definition}' because the container is not defined.",
             )
-            self.task_definition = task_definition["taskDefinition"][
-                "taskDefinitionArn"
-            ]
+            self.task_definition = task_definition["taskDefinition"]["taskDefinitionArn"]
 
     @property
     def inst_data(self):
@@ -208,9 +202,9 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         metadata = self._task_metadata()
         pipeline_origin = check.not_none(context.pipeline_code_origin)
         image = pipeline_origin.repository_origin.container_image
-        task_definition = self._task_definition(
-            family, metadata, image, container_context
-        )["family"]
+        task_definition = self._task_definition(family, metadata, image, container_context)[
+            "family"
+        ]
 
         # ECS limits overrides to 8192 characters including json formatting
         # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html
@@ -280,9 +274,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 arn = failure.get("arn")
                 reason = failure.get("reason")
                 detail = failure.get("detail")
-                exceptions.append(
-                    Exception(f"Task {arn} failed because {reason}: {detail}")
-                )
+                exceptions.append(Exception(f"Task {arn} failed because {reason}: {detail}"))
             raise Exception(exceptions)
 
         arn = tasks[0]["taskArn"]
@@ -333,9 +325,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         if not (tags.arn and tags.cluster):
             return False
 
-        tasks = self.ecs.describe_tasks(tasks=[tags.arn], cluster=tags.cluster).get(
-            "tasks"
-        )
+        tasks = self.ecs.describe_tasks(tasks=[tags.arn], cluster=tags.cluster).get("tasks")
         if not tasks:
             return False
 
@@ -356,9 +346,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         but it overrides the image with the pipeline origin's image.
         """
         if self.task_definition:
-            task_definition = self.ecs.describe_task_definition(
-                taskDefinition=self.task_definition
-            )
+            task_definition = self.ecs.describe_task_definition(taskDefinition=self.task_definition)
             return task_definition["taskDefinition"]
 
         environment = [
@@ -368,11 +356,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         secrets = container_context.get_secrets_dict(self.secrets_manager)
         secrets_definition = (
-            {
-                "secrets": [
-                    {"name": key, "valueFrom": value} for key, value in secrets.items()
-                ]
-            }
+            {"secrets": [{"name": key, "valueFrom": value} for key, value in secrets.items()]}
             if secrets
             else {}
         )
@@ -383,9 +367,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 "taskDefinition"
             ]
         secrets = secrets_definition.get("secrets", [])
-        if self._reuse_task_definition(
-            task_definition, metadata, image, secrets, environment
-        ):
+        if self._reuse_task_definition(task_definition, metadata, image, secrets, environment):
             return task_definition
 
         return default_ecs_task_definition(
@@ -399,9 +381,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             include_sidecars=self.include_sidecars,
         )
 
-    def _reuse_task_definition(
-        self, task_definition, metadata, image, secrets, environment
-    ):
+    def _reuse_task_definition(self, task_definition, metadata, image, secrets, environment):
         container_definitions_match = False
         task_definitions_match = False
 
@@ -412,18 +392,13 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 container_definition.get("image") == image
                 and container_definition.get("name") == self.container_name
                 and container_definition.get("secrets") == secrets
-                and (
-                    (not environment)
-                    or container_definition.get("environment") == environment
-                )
+                and ((not environment) or container_definition.get("environment") == environment)
             ):
                 container_definitions_match = True
 
         if task_definition.get("executionRoleArn") == metadata.task_definition.get(
             "executionRoleArn"
-        ) and task_definition.get("taskRoleArn") == metadata.task_definition.get(
-            "taskRoleArn"
-        ):
+        ) and task_definition.get("taskRoleArn") == metadata.task_definition.get("taskRoleArn"):
             task_definitions_match = True
 
         return container_definitions_match & task_definitions_match
@@ -442,9 +417,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         if not (tags.arn and tags.cluster):
             return CheckRunHealthResult(WorkerStatus.UNKNOWN, "")
 
-        tasks = self.ecs.describe_tasks(tasks=[tags.arn], cluster=tags.cluster).get(
-            "tasks"
-        )
+        tasks = self.ecs.describe_tasks(tasks=[tags.arn], cluster=tags.cluster).get("tasks")
         if not tasks:
             return CheckRunHealthResult(WorkerStatus.UNKNOWN, "")
 
@@ -472,6 +445,4 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
             return CheckRunHealthResult(WorkerStatus.SUCCESS)
 
-        return CheckRunHealthResult(
-            WorkerStatus.UNKNOWN, "ECS task health status is unknown."
-        )
+        return CheckRunHealthResult(WorkerStatus.UNKNOWN, "ECS task health status is unknown.")

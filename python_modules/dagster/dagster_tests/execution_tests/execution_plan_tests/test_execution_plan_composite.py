@@ -1,8 +1,8 @@
-from dagster import Out, op, Field, Int, String
+from dagster import Field, Int, String, op
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance import DagsterInstance
-from dagster._legacy import composite_solid, pipeline, solid
+from dagster._legacy import composite_solid, pipeline
 
 
 @op(config_schema={"foo": Field(String)})

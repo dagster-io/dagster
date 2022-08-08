@@ -6,10 +6,9 @@ import dagstermill
 from dagstermill.io_managers import local_output_notebook_io_manager
 
 from dagster import (
-    In,
-    op,
     Field,
     FileHandle,
+    In,
     Int,
     List,
     Out,
@@ -17,6 +16,7 @@ from dagster import (
     String,
     fs_io_manager,
     job,
+    op,
     repository,
     resource,
 )
@@ -28,7 +28,6 @@ from dagster._legacy import (
     OutputDefinition,
     composite_solid,
     pipeline,
-    solid,
 )
 from dagster._utils import PICKLE_PROTOCOL, file_relative_path
 
@@ -40,14 +39,14 @@ except ImportError:
     DAGSTER_PANDAS_PRESENT = False
 
 try:
-    import sklearn as _
+    pass
 
     SKLEARN_PRESENT = True
 except ImportError:
     SKLEARN_PRESENT = False
 
 try:
-    import matplotlib as _
+    pass
 
     MATPLOTLIB_PRESENT = True
 except ImportError:
@@ -127,14 +126,12 @@ def build_hello_world_job():
     return hello_world_job
 
 
-hello_world_with_custom_tags_and_description = (
-    dagstermill.factory.define_dagstermill_solid(
-        name="hello_world_custom",
-        notebook_path=nb_test_path("hello_world"),
-        output_notebook_name="notebook",
-        tags={"foo": "bar"},
-        description="custom description",
-    )
+hello_world_with_custom_tags_and_description = dagstermill.factory.define_dagstermill_solid(
+    name="hello_world_custom",
+    notebook_path=nb_test_path("hello_world"),
+    output_notebook_name="notebook",
+    tags={"foo": "bar"},
+    description="custom description",
 )
 
 
@@ -153,9 +150,7 @@ goodbye_config = dagstermill.factory.define_dagstermill_solid(
     name="goodbye_config",
     notebook_path=nb_test_path("print_dagstermill_context_solid_config"),
     output_notebook_name="notebook",
-    config_schema={
-        "farewell": Field(String, is_required=False, default_value="goodbye")
-    },
+    config_schema={"farewell": Field(String, is_required=False, default_value="goodbye")},
 )
 
 
@@ -182,11 +177,9 @@ def hello_world_with_output_notebook_pipeline():
     load_notebook(notebook)
 
 
-hello_world_no_output_notebook_no_file_manager = (
-    dagstermill.factory.define_dagstermill_solid(
-        name="hello_world_no_output_notebook_no_file_manager",
-        notebook_path=nb_test_path("hello_world"),
-    )
+hello_world_no_output_notebook_no_file_manager = dagstermill.factory.define_dagstermill_solid(
+    name="hello_world_no_output_notebook_no_file_manager",
+    notebook_path=nb_test_path("hello_world"),
 )
 
 
@@ -206,9 +199,7 @@ def hello_world_no_output_notebook_pipeline():
     hello_world_no_output_notebook()
 
 
-hello_world_output = test_nb_solid(
-    "hello_world_output", output_defs=[OutputDefinition(str)]
-)
+hello_world_output = test_nb_solid("hello_world_output", output_defs=[OutputDefinition(str)])
 
 
 @pipeline(mode_defs=default_mode_defs)

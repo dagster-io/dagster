@@ -3,7 +3,6 @@ from dagster._core.execution.plan.handle import (
     StepHandle,
     UnresolvedStepHandle,
 )
-from dagster import Out, op
 
 
 def test_step_handles():

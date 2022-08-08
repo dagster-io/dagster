@@ -1,13 +1,7 @@
 from collections import defaultdict
 
-from dagster import In, Out, op, DependencyDefinition, Int, NodeInvocation
-from dagster._legacy import (
-    InputDefinition,
-    PipelineDefinition,
-    execute_pipeline,
-    lambda_solid,
-    solid,
-)
+from dagster import DependencyDefinition, In, Int, NodeInvocation, op
+from dagster._legacy import PipelineDefinition, execute_pipeline
 
 
 def test_aliased_solids():
@@ -27,9 +21,7 @@ def test_aliased_solids():
             NodeInvocation("not_first", alias="second"): {
                 "prev": DependencyDefinition("not_first")
             },
-            NodeInvocation("not_first", alias="third"): {
-                "prev": DependencyDefinition("second")
-            },
+            NodeInvocation("not_first", alias="third"): {"prev": DependencyDefinition("second")},
         },
     )
 

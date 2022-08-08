@@ -1,15 +1,9 @@
 import random
 import time
 
-from dagster import In, Out, op, Field, Output, fs_io_manager
+from dagster import Field, In, Out, Output, fs_io_manager, op
 from dagster._core.definitions.executor_definition import default_executors
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    pipeline,
-    solid,
-)
+from dagster._legacy import ModeDefinition, pipeline
 
 
 def get_executor_defs():

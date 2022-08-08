@@ -9,14 +9,7 @@ from dagster_azure.adls2 import (
 )
 
 from dagster import In, Out, ResourceDefinition, build_op_context, configured, op
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 # For deps
 
@@ -110,9 +103,7 @@ def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
         required_resource_keys={"file_manager"},
     )
     def accept_file(context, file_handle):
-        local_path = context.resources.file_manager.copy_handle_to_local_temp(
-            file_handle
-        )
+        local_path = context.resources.file_manager.copy_handle_to_local_temp(file_handle)
         assert isinstance(local_path, str)
         assert open(local_path, "rb").read() == bar_bytes
 
@@ -128,9 +119,7 @@ def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
             ModeDefinition(
                 resource_defs={
                     "adls2": ResourceDefinition.hardcoded_resource(adls2_fake_resource),
-                    "file_manager": ResourceDefinition.hardcoded_resource(
-                        adls2_fake_file_manager
-                    ),
+                    "file_manager": ResourceDefinition.hardcoded_resource(adls2_fake_file_manager),
                 },
             )
         ]
@@ -140,18 +129,12 @@ def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
 
     result = execute_pipeline(
         adls2_file_manager_test,
-        run_config={
-            "resources": {
-                "file_manager": {"config": {"adls2_file_system": file_system}}
-            }
-        },
+        run_config={"resources": {"file_manager": {"config": {"adls2_file_system": file_system}}}},
     )
 
     assert result.success
 
-    keys_in_bucket = set(
-        adls2_fake_resource.adls2_client.file_systems[file_system].keys()
-    )
+    keys_in_bucket = set(adls2_fake_resource.adls2_client.file_systems[file_system].keys())
 
     assert len(keys_in_bucket) == 1
 

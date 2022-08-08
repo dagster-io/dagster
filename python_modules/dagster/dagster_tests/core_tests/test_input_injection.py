@@ -1,22 +1,16 @@
 import pytest
 
 from dagster import (
-    In,
-    Out,
-    op,
     DagsterInvalidConfigError,
     DependencyDefinition,
+    In,
     List,
     NodeInvocation,
+    Out,
     String,
+    op,
 )
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    execute_pipeline,
-    solid,
-)
+from dagster._legacy import PipelineDefinition, execute_pipeline
 
 
 def test_string_from_inputs():
@@ -76,9 +70,7 @@ def test_string_missing_inputs():
 
     assert len(exc_info.value.errors) == 1
 
-    expected_suggested_config = {
-        "solids": {"str_as_input": {"inputs": {"string_input": "..."}}}
-    }
+    expected_suggested_config = {"solids": {"str_as_input": {"inputs": {"string_input": "..."}}}}
     assert exc_info.value.errors[0].message.startswith(
         'Missing required config entry "solids" at the root.'
     )
@@ -101,9 +93,7 @@ def test_string_missing_input_collision():
     pipeline = PipelineDefinition(
         name="overlapping",
         solid_defs=[str_as_input, str_as_output],
-        dependencies={
-            "str_as_input": {"string_input": DependencyDefinition("str_as_output")}
-        },
+        dependencies={"str_as_input": {"string_input": DependencyDefinition("str_as_output")}},
     )
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(
@@ -132,11 +122,7 @@ def test_composite_input_type():
 
     result = execute_pipeline(
         pipeline,
-        {
-            "solids": {
-                "str_as_input": {"inputs": {"list_string_input": [{"value": "foo"}]}}
-            }
-        },
+        {"solids": {"str_as_input": {"inputs": {"list_string_input": [{"value": "foo"}]}}}},
     )
 
     assert result.success

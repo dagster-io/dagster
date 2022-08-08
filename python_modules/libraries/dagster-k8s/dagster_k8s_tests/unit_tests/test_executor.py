@@ -7,22 +7,20 @@ from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.executor import K8sStepHandler, k8s_job_executor
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
 
+from dagster import op
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanData, PlanOrchestrationContext
-from dagster._core.execution.context_creation_pipeline import (
-    create_context_free_log_manager,
-)
+from dagster._core.execution.context_creation_pipeline import create_context_free_log_manager
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating.step_handler.base import StepHandlerContext
 from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
 from dagster._grpc.types import ExecuteStepArgs
-from dagster._legacy import PipelineDefinition, execute_pipeline, solid
-from dagster import op
+from dagster._legacy import PipelineDefinition, execute_pipeline
 
 
 def _get_pipeline(name, solid_tags=None):
@@ -59,9 +57,7 @@ def bar_with_resources():
     )
     user_defined_k8s_config_json = json.dumps(user_defined_k8s_config.to_dict())
 
-    return _get_pipeline(
-        "bar_with_resources", {"dagster-k8s/config": user_defined_k8s_config_json}
-    )
+    return _get_pipeline("bar_with_resources", {"dagster-k8s/config": user_defined_k8s_config_json})
 
 
 def bar_with_images():
@@ -70,9 +66,7 @@ def bar_with_images():
         container_config={"image": "new-image"},
     )
     user_defined_k8s_config_json = json.dumps(user_defined_k8s_config.to_dict())
-    return _get_pipeline(
-        "bar_with_images", {"dagster-k8s/config": user_defined_k8s_config_json}
-    )
+    return _get_pipeline("bar_with_images", {"dagster-k8s/config": user_defined_k8s_config_json})
 
 
 @pytest.fixture
@@ -229,9 +223,7 @@ def test_executor_init_container_context(
     assert sorted(
         executor._step_handler._get_container_context(step_handler_context).resources
     ) == sorted(
-        python_origin_with_container_context.repository_origin.container_context["k8s"][
-            "resources"
-        ]
+        python_origin_with_container_context.repository_origin.container_context["k8s"]["resources"]
     )
 
 
@@ -319,9 +311,7 @@ def test_step_handler_user_defined_config(kubeconfig_file, k8s_instance):
         run = create_run_for_test(
             k8s_instance,
             pipeline_name="bar",
-            pipeline_code_origin=reconstructable(
-                bar_with_resources
-            ).get_python_origin(),
+            pipeline_code_origin=reconstructable(bar_with_resources).get_python_origin(),
         )
         list(
             handler.launch_step(
@@ -347,8 +337,7 @@ def test_step_handler_user_defined_config(kubeconfig_file, k8s_instance):
         assert job_resources.to_dict() == RESOURCE_TAGS
 
         env_vars = {
-            env.name: env.value
-            for env in kwargs["body"].spec.template.spec.containers[0].env
+            env.name: env.value for env in kwargs["body"].spec.template.spec.containers[0].env
         }
         assert env_vars["FOO_TEST"] == "bar"
 
@@ -434,10 +423,7 @@ def test_step_handler_with_container_context(
         assert method_name == "create_namespaced_job"
         assert kwargs["body"].spec.template.spec.containers[0].image == "bizbuz"
 
-        envs = {
-            env.name: env.value
-            for env in kwargs["body"].spec.template.spec.containers[0].env
-        }
+        envs = {env.name: env.value for env in kwargs["body"].spec.template.spec.containers[0].env}
 
         assert envs["FOO_TEST"] == "bar"
         assert envs["BAZ_TEST"] == "blergh"

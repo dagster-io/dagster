@@ -151,9 +151,7 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
                 ImportError,
                 pickle.PicklingError,
             ) as e:
-                executor = context.step_context.pipeline_def.mode_definitions[
-                    0
-                ].executor_defs[0]
+                executor = context.step_context.pipeline_def.mode_definitions[0].executor_defs[0]
 
                 if isinstance(e, RecursionError):
                     # if obj can't be pickled because of RecursionError then __str__() will also
@@ -173,9 +171,7 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
                     "https://docs.dagster.io/deployment/executors#overview"
                 ) from e
 
-        context.add_output_metadata(
-            {"path": MetadataValue.path(os.path.abspath(filepath))}
-        )
+        context.add_output_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
 
     def load_input(self, context):
         """Unpickle the file and Load it to a data object."""
@@ -185,9 +181,7 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
             return None
 
         filepath = self._get_path(context)
-        context.add_input_metadata(
-            {"path": MetadataValue.path(os.path.abspath(filepath))}
-        )
+        context.add_input_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
 
         with open(filepath, self.read_mode) as read_obj:
             return pickle.load(read_obj)
@@ -232,9 +226,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
         return AssetMaterialization(
             asset_key=AssetKey([context.job_name, context.step_key, context.name]),
             metadata_entries=[
-                MetadataEntry(
-                    "path", value=MetadataValue.path(os.path.abspath(filepath))
-                )
+                MetadataEntry("path", value=MetadataValue.path(os.path.abspath(filepath)))
             ],
         )
 

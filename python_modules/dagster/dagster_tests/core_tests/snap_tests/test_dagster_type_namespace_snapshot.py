@@ -1,7 +1,7 @@
-from dagster import In, Out, op, Dict, List, Set, Tuple
+from dagster import Dict, In, List, Out, Set, Tuple, op
 from dagster._core.snap import build_dagster_type_namespace_snapshot
 from dagster._core.types.dagster_type import ALL_RUNTIME_BUILTINS, create_string_type
-from dagster._legacy import InputDefinition, OutputDefinition, pipeline, solid
+from dagster._legacy import pipeline
 
 
 def test_simple_pipeline_input_dagster_type_namespace():

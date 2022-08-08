@@ -1,8 +1,8 @@
 import dask.dataframe as dd
 from dagster_dask import DataFrame
 
-from dagster import In, Out, op, file_relative_path
-from dagster._legacy import InputDefinition, execute_solid, solid
+from dagster import In, file_relative_path, op
+from dagster._legacy import execute_solid
 
 
 @op(
@@ -114,25 +114,19 @@ def test_normalize_column_names():
     path = file_relative_path(__file__, "canada.csv")
 
     input_df = dd.read_csv(path)
-    assert all(
-        col in input_df.columns for col in ("ID", "provinceOrTerritory", "country")
-    )
+    assert all(col in input_df.columns for col in ("ID", "provinceOrTerritory", "country"))
 
     # Set normalize_column_names=False to not modify the column names
     run_config = generate_config(path, normalize_column_names=False)
     result = execute_solid(passthrough, run_config=run_config)
     output_df = result.output_value()
-    assert all(
-        col in output_df.columns for col in ("ID", "provinceOrTerritory", "country")
-    )
+    assert all(col in output_df.columns for col in ("ID", "provinceOrTerritory", "country"))
 
     # Set normalize_column_names=True to modify the column names
     run_config = generate_config(path, normalize_column_names=True)
     result = execute_solid(passthrough, run_config=run_config)
     output_df = result.output_value()
-    assert all(
-        col in output_df.columns for col in ("id", "province_or_territory", "country")
-    )
+    assert all(col in output_df.columns for col in ("id", "province_or_territory", "country"))
 
 
 def test_utilities_combo():
@@ -172,7 +166,5 @@ def test_utilities_combo():
 
     # normalize_column_names(true)
     # No id due to it being set to the index and dropped.
-    assert all(
-        col in input_df.columns for col in ("ID", "provinceOrTerritory", "country")
-    )
+    assert all(col in input_df.columns for col in ("ID", "provinceOrTerritory", "country"))
     assert all(col in output_df.columns for col in ("province_or_territory", "country"))

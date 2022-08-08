@@ -2,26 +2,9 @@ import time
 
 from dagster_celery import celery_executor
 
-from dagster import (
-    In,
-    Out,
-    op,
-    Int,
-    Output,
-    RetryRequested,
-    VersionStrategy,
-    fs_io_manager,
-)
+from dagster import In, Int, Out, Output, RetryRequested, VersionStrategy, fs_io_manager, op
 from dagster._core.test_utils import nesting_composite_pipeline
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    default_executors,
-    lambda_solid,
-    pipeline,
-    solid,
-)
+from dagster._legacy import ModeDefinition, default_executors, pipeline
 
 celery_mode_defs = [
     ModeDefinition(
@@ -68,9 +51,7 @@ def subtract(num_one, num_two):
 @pipeline(mode_defs=celery_mode_defs)
 def test_diamond_pipeline():
     value_one, value_two = emit_values()
-    return subtract(
-        num_one=add_one(num=value_one), num_two=add_one.alias("renamed")(num=value_two)
-    )
+    return subtract(num_one=add_one(num=value_one), num_two=add_one.alias("renamed")(num=value_two))
 
 
 @pipeline(mode_defs=celery_mode_defs)

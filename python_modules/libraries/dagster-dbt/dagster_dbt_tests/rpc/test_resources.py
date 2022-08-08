@@ -9,8 +9,8 @@ from dagster_dbt import (
     local_dbt_rpc_resource,
 )
 
-from dagster._legacy import ModeDefinition, execute_solid, solid
 from dagster import op
+from dagster._legacy import ModeDefinition, execute_solid
 
 
 def test_url(client):
@@ -118,9 +118,7 @@ def test_local_dbt_rpc_resource():
         assert context.resources.dbt_rpc.port == 8580
         it["ran"] = True
 
-    execute_solid(
-        a_op, ModeDefinition(resource_defs={"dbt_rpc": local_dbt_rpc_resource})
-    )
+    execute_solid(a_op, ModeDefinition(resource_defs={"dbt_rpc": local_dbt_rpc_resource}))
     assert it["ran"]
 
 
@@ -139,11 +137,7 @@ def test_dbt_rpc_sync_resource():
         ModeDefinition(resource_defs={"dbt_rpc": dbt_rpc_sync_resource}),
         None,
         None,
-        {
-            "resources": {
-                "dbt_rpc": {"config": {"host": "<default host>", "poll_interval": 5}}
-            }
-        },
+        {"resources": {"dbt_rpc": {"config": {"host": "<default host>", "poll_interval": 5}}}},
     )
     assert it["ran"]
 
@@ -163,9 +157,7 @@ def test_dbt_rpc_resource_status(
 
     result = execute_solid(
         compile_op,
-        ModeDefinition(
-            resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}
-        ),
+        ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
     )
 
     assert result.success
@@ -184,9 +176,7 @@ def test_dbt_rpc_resource_is_not_waiting(
     result = execute_solid(
         cli_op,
         ModeDefinition(
-            resource_defs={
-                "dbt_rpc": dbt_rpc_resource.configured({"host": "localhost"})
-            }
+            resource_defs={"dbt_rpc": dbt_rpc_resource.configured({"host": "localhost"})}
         ),
     )
 
@@ -211,9 +201,7 @@ def test_dbt_rpc_sync_resource_is_waiting(
     result = execute_solid(
         cli_op,
         ModeDefinition(
-            resource_defs={
-                "dbt_rpc": dbt_rpc_sync_resource.configured({"host": "localhost"})
-            }
+            resource_defs={"dbt_rpc": dbt_rpc_sync_resource.configured({"host": "localhost"})}
         ),
     )
 
@@ -241,9 +229,7 @@ def test_dbt_rpc_resource_cli(
 
     result = execute_solid(
         cli_op,
-        ModeDefinition(
-            resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}
-        ),
+        ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
     )
 
     assert result.success
@@ -265,9 +251,7 @@ def test_dbt_rpc_resource_run(
 
     result = execute_solid(
         cli_op,
-        ModeDefinition(
-            resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}
-        ),
+        ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
     )
 
     assert result.success
@@ -289,9 +273,7 @@ def test_dbt_rpc_resource_generate_docs(
 
     result = execute_solid(
         compile_op,
-        ModeDefinition(
-            resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}
-        ),
+        ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
     )
 
     assert result.success
@@ -308,16 +290,12 @@ def test_dbt_rpc_resource_run_operation(
     @op(required_resource_keys={"dbt_rpc"})
     def compile_op(context):
         assert isinstance(context.resources.dbt_rpc, client_class)
-        out = context.resources.dbt_rpc.run_operation(
-            "log_macro", {"msg": "hello world"}
-        )
+        out = context.resources.dbt_rpc.run_operation("log_macro", {"msg": "hello world"})
         return out
 
     result = execute_solid(
         compile_op,
-        ModeDefinition(
-            resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}
-        ),
+        ModeDefinition(resource_defs={"dbt_rpc": resource.configured({"host": "localhost"})}),
     )
 
     assert result.success

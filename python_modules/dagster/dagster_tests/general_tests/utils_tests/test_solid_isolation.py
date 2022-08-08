@@ -3,13 +3,13 @@ import re
 import pytest
 
 from dagster import (
-    In,
-    Out,
-    op,
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
     Field,
+    In,
     Int,
+    Out,
+    op,
     resource,
 )
 from dagster._core.test_utils import nesting_composite_pipeline
@@ -19,14 +19,7 @@ from dagster._core.utility_solids import (
     define_stub_solid,
     input_set,
 )
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    composite_solid,
-    lambda_solid,
-    solid,
-)
+from dagster._legacy import ModeDefinition, composite_solid
 from dagster._utils.test import execute_solid
 
 

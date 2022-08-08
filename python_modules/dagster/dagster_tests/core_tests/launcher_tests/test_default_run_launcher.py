@@ -32,7 +32,7 @@ from dagster._core.workspace.load_target import GrpcServerTarget, PythonFileTarg
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import GrpcServerProcess
 from dagster._grpc.types import CancelExecutionRequest
-from dagster._legacy import ModeDefinition, pipeline, solid
+from dagster._legacy import ModeDefinition, pipeline
 
 default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 
@@ -173,18 +173,12 @@ def run_configs():
 
 
 def _is_multiprocess(run_config):
-    return (
-        run_config
-        and "execution" in run_config
-        and "multiprocess" in run_config["execution"]
-    )
+    return run_config and "execution" in run_config and "multiprocess" in run_config["execution"]
 
 
 def _check_event_log_contains(event_log, expected_type_and_message):
     types_and_messages = [
-        (e.dagster_event.event_type_value, e.message)
-        for e in event_log
-        if e.is_dagster_event
+        (e.dagster_event.event_type_value, e.message) for e in event_log if e.is_dagster_event
     ]
     for expected_event_type, expected_message_fragment in expected_type_and_message:
         assert any(
@@ -207,9 +201,7 @@ def _check_event_log_contains(event_log, expected_type_and_message):
     "run_config",
     run_configs(),
 )
-def test_successful_run(
-    get_workspace, run_config
-):  # pylint: disable=redefined-outer-name
+def test_successful_run(get_workspace, run_config):  # pylint: disable=redefined-outer-name
     with instance_for_test() as instance:
         with get_workspace(instance) as workspace:
 
@@ -227,9 +219,7 @@ def test_successful_run(
             )
             run_id = pipeline_run.run_id
 
-            assert (
-                instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
-            )
+            assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
             instance.launch_run(run_id=pipeline_run.run_id, workspace=workspace)
 
@@ -286,9 +276,7 @@ def test_invalid_instance_run(get_workspace):
                                 )
                             ),
                         ):
-                            instance.launch_run(
-                                run_id=pipeline_run.run_id, workspace=workspace
-                            )
+                            instance.launch_run(run_id=pipeline_run.run_id, workspace=workspace)
 
                         failed_run = instance.get_run_by_id(pipeline_run.run_id)
                         assert failed_run.status == PipelineRunStatus.FAILURE
@@ -328,9 +316,7 @@ def test_crashy_run(get_workspace, run_config):  # pylint: disable=redefined-out
 
             run_id = pipeline_run.run_id
 
-            assert (
-                instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
-            )
+            assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
             instance.launch_run(pipeline_run.run_id, workspace)
 
@@ -346,14 +332,11 @@ def test_crashy_run(get_workspace, run_config):  # pylint: disable=redefined-out
 
             if _is_multiprocess(run_config):
                 message = (
-                    "Multiprocess executor: child process for "
-                    "step crashy_op unexpectedly exited"
+                    "Multiprocess executor: child process for " "step crashy_op unexpectedly exited"
                 )
             else:
-                message = (
-                    "Run execution process for {run_id} unexpectedly exited".format(
-                        run_id=run_id
-                    )
+                message = "Run execution process for {run_id} unexpectedly exited".format(
+                    run_id=run_id
                 )
 
             assert _message_exists(event_records, message)
@@ -383,9 +366,7 @@ def test_exity_run(run_config):  # pylint: disable=redefined-outer-name
 
             run_id = pipeline_run.run_id
 
-            assert (
-                instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
-            )
+            assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
             instance.launch_run(pipeline_run.run_id, workspace)
 
@@ -399,9 +380,7 @@ def test_exity_run(run_config):  # pylint: disable=redefined-outer-name
 
             event_records = instance.all_logs(run_id)
 
-            assert _message_exists(
-                event_records, 'Execution of step "exity_op" failed.'
-            )
+            assert _message_exists(event_records, 'Execution of step "exity_op" failed.')
             assert _message_exists(
                 event_records,
                 "Execution of run for \"exity_pipeline\" failed. Steps failed: ['exity_op']",
@@ -419,9 +398,7 @@ def test_exity_run(run_config):  # pylint: disable=redefined-outer-name
     "run_config",
     run_configs(),
 )
-def test_terminated_run(
-    get_workspace, run_config
-):  # pylint: disable=redefined-outer-name
+def test_terminated_run(get_workspace, run_config):  # pylint: disable=redefined-outer-name
     with instance_for_test() as instance:
         with get_workspace(instance) as workspace:
             external_pipeline = (
@@ -438,9 +415,7 @@ def test_terminated_run(
 
             run_id = pipeline_run.run_id
 
-            assert (
-                instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
-            )
+            assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
             instance.launch_run(pipeline_run.run_id, workspace)
 
@@ -449,9 +424,7 @@ def test_terminated_run(
             launcher = instance.run_launcher
             assert launcher.terminate(run_id)
 
-            terminated_pipeline_run = poll_for_finished_run(
-                instance, run_id, timeout=30
-            )
+            terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
             terminated_pipeline_run = instance.get_run_by_id(run_id)
             assert terminated_pipeline_run.status == PipelineRunStatus.CANCELED
 
@@ -502,9 +475,7 @@ def test_terminated_run(
 
 @pytest.mark.parametrize("run_config", run_configs())
 def test_cleanup_after_force_terminate(run_config):
-    with instance_for_test() as instance, get_managed_grpc_server_workspace(
-        instance
-    ) as workspace:
+    with instance_for_test() as instance, get_managed_grpc_server_workspace(instance) as workspace:
         external_pipeline = (
             workspace.get_repository_location("test")
             .get_repository("nope")
@@ -626,9 +597,7 @@ def test_single_solid_selection_execution(
             )
             run_id = pipeline_run.run_id
 
-            assert (
-                instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
-            )
+            assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
             instance.launch_run(pipeline_run.run_id, workspace)
             finished_pipeline_run = poll_for_finished_run(instance, run_id)
@@ -674,9 +643,7 @@ def test_multi_solid_selection_execution(
             )
             run_id = pipeline_run.run_id
 
-            assert (
-                instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
-            )
+            assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
             instance.launch_run(pipeline_run.run_id, workspace)
             finished_pipeline_run = poll_for_finished_run(instance, run_id)
@@ -704,9 +671,7 @@ def test_multi_solid_selection_execution(
     "run_config",
     run_configs(),
 )
-def test_engine_events(
-    get_workspace, run_config
-):  # pylint: disable=redefined-outer-name
+def test_engine_events(get_workspace, run_config):  # pylint: disable=redefined-outer-name
     with instance_for_test() as instance:
         with get_workspace(instance) as workspace:
             external_pipeline = (
@@ -722,9 +687,7 @@ def test_engine_events(
             )
             run_id = pipeline_run.run_id
 
-            assert (
-                instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
-            )
+            assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
             instance.launch_run(pipeline_run.run_id, workspace)
             finished_pipeline_run = poll_for_finished_run(instance, run_id)

@@ -5,30 +5,22 @@ import time
 import pytest
 
 from dagster import (
-    In,
-    Out,
-    op,
     Failure,
     Field,
+    In,
     MetadataEntry,
     Nothing,
+    Out,
     Output,
     String,
+    op,
     reconstructable,
 )
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PresetDefinition,
-    execute_pipeline,
-    lambda_solid,
-    pipeline,
-    solid,
-)
+from dagster._legacy import PresetDefinition, execute_pipeline, pipeline
 from dagster._utils import safe_tempfile_path, segfault
 
 
@@ -63,9 +55,7 @@ def test_explicit_spawn():
         result = execute_pipeline(
             pipe,
             run_config={
-                "execution": {
-                    "multiprocess": {"config": {"start_method": {"spawn": {}}}}
-                },
+                "execution": {"multiprocess": {"config": {"start_method": {"spawn": {}}}}},
             },
             instance=instance,
         )
@@ -81,9 +71,7 @@ def test_forkserver_execution():
         result = execute_pipeline(
             pipe,
             run_config={
-                "execution": {
-                    "multiprocess": {"config": {"start_method": {"forkserver": {}}}}
-                },
+                "execution": {"multiprocess": {"config": {"start_method": {"forkserver": {}}}}},
             },
             instance=instance,
         )
@@ -101,9 +89,7 @@ def test_forkserver_preload():
             run_config={
                 "execution": {
                     "multiprocess": {
-                        "config": {
-                            "start_method": {"forkserver": {"preload_modules": []}}
-                        }
+                        "config": {"start_method": {"forkserver": {"preload_modules": []}}}
                     }
                 },
             },
@@ -137,11 +123,7 @@ def define_diamond_pipeline():
                 "just_adder",
                 {
                     "execution": {"multiprocess": {}},
-                    "solids": {
-                        "adder": {
-                            "inputs": {"left": {"value": 1}, "right": {"value": 1}}
-                        }
-                    },
+                    "solids": {"adder": {"inputs": {"left": {"value": 1}, "right": {"value": 1}}}},
                 },
                 solid_selection=["adder"],
             )
@@ -233,10 +215,7 @@ def test_invalid_instance():
         result.event_list[0].pipeline_failure_data.error.cls_name
         == "DagsterUnmetExecutorRequirementsError"
     )
-    assert (
-        "non-ephemeral instance"
-        in result.event_list[0].pipeline_failure_data.error.message
-    )
+    assert "non-ephemeral instance" in result.event_list[0].pipeline_failure_data.error.message
 
 
 def test_no_handle():
@@ -253,10 +232,7 @@ def test_no_handle():
         result.event_list[0].pipeline_failure_data.error.cls_name
         == "DagsterUnmetExecutorRequirementsError"
     )
-    assert (
-        "is not reconstructable"
-        in result.event_list[0].pipeline_failure_data.error.message
-    )
+    assert "is not reconstructable" in result.event_list[0].pipeline_failure_data.error.message
 
 
 def test_solid_selection():
@@ -327,9 +303,7 @@ def test_separate_sub_dags():
 
         # this test is to ensure that the chain of noop -> noop -> noop -> writer is not blocked by waiter
         order = [
-            str(event.solid_handle)
-            for event in result.step_event_list
-            if event.is_step_success
+            str(event.solid_handle) for event in result.step_event_list if event.is_step_success
         ]
 
         # the writer and waiter my finish in different orders so just ensure the proceeding chain
@@ -381,19 +355,8 @@ def test_optional_outputs():
     with instance_for_test() as instance:
         single_result = execute_pipeline(optional_stuff)
         assert single_result.success
-        assert not [
-            event for event in single_result.step_event_list if event.is_step_failure
-        ]
-        assert (
-            len(
-                [
-                    event
-                    for event in single_result.step_event_list
-                    if event.is_step_skipped
-                ]
-            )
-            == 2
-        )
+        assert not [event for event in single_result.step_event_list if event.is_step_failure]
+        assert len([event for event in single_result.step_event_list if event.is_step_skipped]) == 2
 
         multi_result = execute_pipeline(
             reconstructable(optional_stuff),
@@ -403,19 +366,8 @@ def test_optional_outputs():
             instance=instance,
         )
         assert multi_result.success
-        assert not [
-            event for event in multi_result.step_event_list if event.is_step_failure
-        ]
-        assert (
-            len(
-                [
-                    event
-                    for event in multi_result.step_event_list
-                    if event.is_step_skipped
-                ]
-            )
-            == 2
-        )
+        assert not [event for event in multi_result.step_event_list if event.is_step_failure]
+        assert len([event for event in multi_result.step_event_list if event.is_step_skipped]) == 2
 
 
 @op
@@ -451,9 +403,7 @@ def test_failure_multiprocessing():
         # from Failure
         assert failure_data.user_failure_data.description == "it Failure"
         assert failure_data.user_failure_data.metadata_entries[0].label == "label"
-        assert (
-            failure_data.user_failure_data.metadata_entries[0].entry_data.text == "text"
-        )
+        assert failure_data.user_failure_data.metadata_entries[0].entry_data.text == "text"
 
 
 @op
@@ -469,9 +419,7 @@ def sys_exit_pipeline():
     sys_exit()
 
 
-@pytest.mark.skipif(
-    os.name == "nt", reason="Different crash output on Windows: See issue #2791"
-)
+@pytest.mark.skipif(os.name == "nt", reason="Different crash output on Windows: See issue #2791")
 def test_crash_multiprocessing():
     with instance_for_test() as instance:
         result = execute_pipeline(
@@ -521,9 +469,7 @@ def segfault_pipeline():
     segfault_op()
 
 
-@pytest.mark.skipif(
-    os.name == "nt", reason="Different exception on Windows: See issue #2791"
-)
+@pytest.mark.skipif(os.name == "nt", reason="Different exception on Windows: See issue #2791")
 def test_crash_hard_multiprocessing():
     with instance_for_test() as instance:
         result = execute_pipeline(

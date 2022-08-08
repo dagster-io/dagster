@@ -1,5 +1,5 @@
 # pylint: skip-file
-from dagster import graph, op, pipeline, repository, solid
+from dagster import graph, op, pipeline, repository
 
 
 @op

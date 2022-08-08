@@ -4,13 +4,9 @@ import pytest
 from dagster_databricks import create_databricks_job_op, databricks_client
 from dagster_databricks.databricks import DatabricksRunState
 from dagster_databricks.solids import create_ui_url
-from dagster_databricks.types import (
-    DatabricksRunLifeCycleState,
-    DatabricksRunResultState,
-)
+from dagster_databricks.types import DatabricksRunLifeCycleState, DatabricksRunResultState
 
 from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
-from dagster import In, Out, op
 
 
 @pytest.mark.parametrize("job_creator", [create_databricks_job_op])

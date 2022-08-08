@@ -35,9 +35,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         dequeue_interval_seconds=None,
         inst_data=None,
     ):
-        self._inst_data = check.opt_inst_param(
-            inst_data, "inst_data", ConfigurableClassData
-        )
+        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self._max_concurrent_runs = check.opt_int_param(
             max_concurrent_runs, "max_concurrent_runs", 10
         )
@@ -88,9 +86,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
                                 "value": Field(
                                     ScalarUnion(
                                         scalar_type=String,
-                                        non_scalar_schema=Shape(
-                                            {"applyLimitPerUniqueValue": Bool}
-                                        ),
+                                        non_scalar_schema=Shape({"applyLimitPerUniqueValue": Bool}),
                                     ),
                                     is_required=False,
                                 ),

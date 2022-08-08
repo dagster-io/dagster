@@ -4,15 +4,8 @@ from collections import Counter
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_celery_k8s import celery_k8s_job_executor
 
-from dagster import In, op, file_relative_path, repository
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    PresetDefinition,
-    default_executors,
-    pipeline,
-    solid,
-)
+from dagster import In, file_relative_path, op, repository
+from dagster._legacy import ModeDefinition, PresetDefinition, default_executors, pipeline
 
 
 @op(ins={"word": In(str)}, config_schema={"factor": int})
@@ -41,21 +34,15 @@ def count_letters(_context, word):
         PresetDefinition.from_files(
             "celery_k8s",
             config_files=[
-                file_relative_path(
-                    __file__, os.path.join("..", "run_config", "celery_k8s.yaml")
-                ),
-                file_relative_path(
-                    __file__, os.path.join("..", "run_config", "pipeline.yaml")
-                ),
+                file_relative_path(__file__, os.path.join("..", "run_config", "celery_k8s.yaml")),
+                file_relative_path(__file__, os.path.join("..", "run_config", "pipeline.yaml")),
             ],
             mode="default",
         ),
         PresetDefinition.from_files(
             "default",
             config_files=[
-                file_relative_path(
-                    __file__, os.path.join("..", "run_config", "pipeline.yaml")
-                ),
+                file_relative_path(__file__, os.path.join("..", "run_config", "pipeline.yaml")),
             ],
             mode="default",
         ),

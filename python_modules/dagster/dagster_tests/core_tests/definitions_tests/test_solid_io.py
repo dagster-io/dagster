@@ -3,14 +3,9 @@ from typing import Generator, Iterable, Iterator
 
 import pytest
 
-from dagster import In, Out, op, AssetKey, DynamicOutput, Output
+from dagster import AssetKey, DynamicOut, DynamicOutput, In, Out, Output, op
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._legacy import (
-    DynamicOutputDefinition,
-    InputDefinition,
-    OutputDefinition,
-    solid,
-)
+from dagster._legacy import InputDefinition, OutputDefinition
 
 
 def test_flex_inputs():
@@ -29,8 +24,7 @@ def test_merge_type():
         return arg_b
 
     assert (
-        merged.input_defs[0].dagster_type
-        == InputDefinition("test", dagster_type=int).dagster_type
+        merged.input_defs[0].dagster_type == InputDefinition("test", dagster_type=int).dagster_type
     )
     assert merged.input_defs[0].metadata["explicit"]
 
@@ -59,8 +53,7 @@ def test_merge_default_val():
     assert merged.input_defs[0].name == "arg_b"
     assert merged.input_defs[0].default_value == 3
     assert (
-        merged.input_defs[0].dagster_type
-        == InputDefinition("test", dagster_type=int).dagster_type
+        merged.input_defs[0].dagster_type == InputDefinition("test", dagster_type=int).dagster_type
     )
 
 

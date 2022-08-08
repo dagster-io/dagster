@@ -1,22 +1,7 @@
 import string
 
-from dagster import (
-    In,
-    Out,
-    op,
-    Int,
-    ScheduleDefinition,
-    repository,
-    usable_as_dagster_type,
-)
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PartitionSetDefinition,
-    lambda_solid,
-    pipeline,
-    solid,
-)
+from dagster import In, Int, Out, ScheduleDefinition, op, repository, usable_as_dagster_type
+from dagster._legacy import PartitionSetDefinition, pipeline
 
 
 @op

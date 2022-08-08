@@ -6,13 +6,9 @@ from typing import NamedTuple, Set
 
 import pytest
 
-from dagster import op, _seven
+from dagster import _seven
 from dagster._check import ParameterCheckError, inst_param, set_param
-from dagster._serdes.errors import (
-    DeserializationError,
-    SerdesUsageError,
-    SerializationError,
-)
+from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster._serdes.serdes import (
     DefaultEnumSerializer,
     DefaultNamedTupleSerializer,
@@ -58,9 +54,7 @@ def test_descent_path():
     class Foo(NamedTuple):
         bar: int
 
-    with pytest.raises(
-        SerializationError, match=re.escape("Descent path: <root:dict>.a.b[2].c")
-    ):
+    with pytest.raises(SerializationError, match=re.escape("Descent path: <root:dict>.a.b[2].c")):
         serialize_value({"a": {"b": [{}, {}, {"c": Foo(1)}]}})
 
     test_map = WhitelistMap.create()
@@ -74,9 +68,7 @@ def test_descent_path():
         {"a": {"b": [{}, {}, {"c": Fizz(1)}]}}, whitelist_map=test_map
     )
 
-    with pytest.raises(
-        DeserializationError, match=re.escape("Descent path: <root:dict>.a.b[2].c")
-    ):
+    with pytest.raises(DeserializationError, match=re.escape("Descent path: <root:dict>.a.b[2].c")):
         _deserialize_json(ser, whitelist_map=blank_map)
 
 
@@ -86,9 +78,7 @@ def test_forward_compat_serdes_new_field_with_default():
     @_whitelist_for_serdes(whitelist_map=test_map)
     class Quux(namedtuple("_Quux", "foo bar")):
         def __new__(cls, foo, bar):
-            return super(Quux, cls).__new__(
-                cls, foo, bar
-            )  # pylint: disable=bad-super-call
+            return super(Quux, cls).__new__(cls, foo, bar)  # pylint: disable=bad-super-call
 
     assert test_map.has_tuple_entry("Quux")
     klass, _, _ = test_map.get_tuple_entry("Quux")
@@ -188,9 +178,7 @@ def test_backward_compat_serdes():
     @_whitelist_for_serdes(whitelist_map=test_map)
     class Quux(namedtuple("_Quux", "foo bar baz")):
         def __new__(cls, foo, bar, baz):
-            return super(Quux, cls).__new__(
-                cls, foo, bar, baz
-            )  # pylint: disable=bad-super-call
+            return super(Quux, cls).__new__(cls, foo, bar, baz)  # pylint: disable=bad-super-call
 
     quux = Quux("zip", "zow", "whoopie")
 
@@ -283,9 +271,7 @@ def test_missing_one_parameter():
     with pytest.raises(SerdesUsageError) as exc_info:
 
         @serdes_test_class
-        class MissingFieldInNew(
-            namedtuple("MissingFieldInNew", "field_one field_two field_three")
-        ):
+        class MissingFieldInNew(namedtuple("MissingFieldInNew", "field_one field_two field_three")):
             def __new__(cls, field_one, field_two):
                 return super(MissingFieldInNew, cls).__new__(field_one, field_two, None)
 
@@ -303,14 +289,10 @@ def test_missing_many_parameters():
 
         @serdes_test_class
         class MissingFieldsInNew(
-            namedtuple(
-                "MissingFieldsInNew", "field_one field_two field_three, field_four"
-            )
+            namedtuple("MissingFieldsInNew", "field_one field_two field_three, field_four")
         ):
             def __new__(cls, field_one, field_two):
-                return super(MissingFieldsInNew, cls).__new__(
-                    field_one, field_two, None, None
-                )
+                return super(MissingFieldsInNew, cls).__new__(field_one, field_two, None, None)
 
     assert str(exc_info.value) == (
         "For namedtuple MissingFieldsInNew: "
@@ -337,9 +319,7 @@ def test_extra_parameters_must_have_defaults():
                 field_one,
                 field_two,
             ):
-                return super(OldFieldsWithoutDefaults, cls).__new__(
-                    field_three, field_four
-                )
+                return super(OldFieldsWithoutDefaults, cls).__new__(field_three, field_four)
 
     assert str(exc_info.value) == (
         "For namedtuple OldFieldsWithoutDefaults: "
@@ -356,9 +336,7 @@ def test_extra_parameters_must_have_defaults():
 
 def test_extra_parameters_have_working_defaults():
     @serdes_test_class
-    class OldFieldsWithDefaults(
-        namedtuple("OldFieldsWithDefaults", "field_three field_four")
-    ):
+    class OldFieldsWithDefaults(namedtuple("OldFieldsWithDefaults", "field_three field_four")):
         # pylint:disable=unused-argument
         def __new__(
             cls,
@@ -428,9 +406,7 @@ def test_from_storage_dict():
     class MyThing(NamedTuple):
         orig_name: str
 
-    serialized_old = _serialize_dagster_namedtuple(
-        MyThing("old"), whitelist_map=old_map
-    )
+    serialized_old = _serialize_dagster_namedtuple(MyThing("old"), whitelist_map=old_map)
 
     class CompatSerializer(DefaultNamedTupleSerializer):
         @classmethod
@@ -450,9 +426,7 @@ def test_from_storage_dict():
 
     assert deser_old_val.new_name == "old"
 
-    serialized_new = _serialize_dagster_namedtuple(
-        MyThing("new"), whitelist_map=new_map
-    )
+    serialized_new = _serialize_dagster_namedtuple(MyThing("new"), whitelist_map=new_map)
     deser_new_val = _deserialize_json(serialized_new, whitelist_map=new_map)
     assert deser_new_val.new_name == "new"
 
@@ -493,9 +467,7 @@ def test_skip_when_empty():
     @_whitelist_for_serdes(whitelist_map=test_map)
     class SameSnapshotTuple(namedtuple("_Tuple", "foo")):
         def __new__(cls, foo):
-            return super(SameSnapshotTuple, cls).__new__(
-                cls, foo
-            )  # pylint: disable=bad-super-call
+            return super(SameSnapshotTuple, cls).__new__(cls, foo)  # pylint: disable=bad-super-call
 
     old_tuple = SameSnapshotTuple(foo="A")
     old_serialized = _serialize_dagster_namedtuple(old_tuple, whitelist_map=test_map)
@@ -506,17 +478,13 @@ def test_skip_when_empty():
     @_whitelist_for_serdes(whitelist_map=test_map)
     class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):
         def __new__(cls, foo, bar=None):
-            return super(
-                SameSnapshotTuple, cls
-            ).__new__(  # pylint: disable=bad-super-call
+            return super(SameSnapshotTuple, cls).__new__(  # pylint: disable=bad-super-call
                 cls, foo, bar
             )
 
     new_tuple_without_serializer = SameSnapshotTuple(foo="A")
     new_snapshot_without_serializer = hash_str(
-        _serialize_dagster_namedtuple(
-            new_tuple_without_serializer, whitelist_map=test_map
-        )
+        _serialize_dagster_namedtuple(new_tuple_without_serializer, whitelist_map=test_map)
     )
 
     assert new_snapshot_without_serializer != old_snapshot
@@ -532,17 +500,13 @@ def test_skip_when_empty():
     @_whitelist_for_serdes(whitelist_map=test_map, serializer=SkipWhenEmptySerializer)
     class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):
         def __new__(cls, foo, bar=None):
-            return super(
-                SameSnapshotTuple, cls
-            ).__new__(  # pylint: disable=bad-super-call
+            return super(SameSnapshotTuple, cls).__new__(  # pylint: disable=bad-super-call
                 cls, foo, bar
             )
 
     for bar_val in [None, [], {}, set()]:
         new_tuple = SameSnapshotTuple(foo="A", bar=bar_val)
-        new_snapshot = hash_str(
-            _serialize_dagster_namedtuple(new_tuple, whitelist_map=test_map)
-        )
+        new_snapshot = hash_str(_serialize_dagster_namedtuple(new_tuple, whitelist_map=test_map))
 
         assert old_snapshot == new_snapshot
 
@@ -612,7 +576,9 @@ def test_enum_backcompat():
         def value_to_storage_str(cls, value, whitelist_map, descent_path):
             val_as_str = str(value)
             actual_enum_val = val_as_str.split(".")[1:]
-            backcompat_name = "OldEnum"  # Simulate changing the storage name to some legacy backcompat name
+            backcompat_name = (
+                "OldEnum"  # Simulate changing the storage name to some legacy backcompat name
+            )
             return ".".join([backcompat_name, *actual_enum_val])
 
     @_whitelist_for_serdes(test_env, serializer=MyEnumSerializer)
@@ -671,11 +637,7 @@ def test_namedtuple_backcompat():
             # typical pattern is to use the same serialization format from an old field and passing
             # it in as a new field
             return klass(
-                **{
-                    key: value
-                    for key, value in raw_dict.items()
-                    if key in args_for_class
-                },
+                **{key: value for key, value in raw_dict.items() if key in args_for_class},
                 new_name=raw_dict.get("old_name"),
             )
 

@@ -6,7 +6,7 @@ from dagster_dbt import DbtRpcOutput, DbtRpcResource, local_dbt_rpc_resource
 from dagster_dbt.rpc.solids import dbt_rpc_run, dbt_rpc_run_and_wait, dbt_rpc_test
 from mock import MagicMock
 
-from dagster import op, AssetKey, DagsterInstance, configured, resource
+from dagster import AssetKey, DagsterInstance, configured, resource
 from dagster._legacy import (
     ModeDefinition,
     PipelineDefinition,
@@ -20,9 +20,7 @@ from dagster._legacy import (
 def output_for_solid_executed_with_rpc_resource(
     a_solid: SolidDefinition, rpc_resource=local_dbt_rpc_resource
 ) -> Tuple[SolidExecutionResult, DbtRpcOutput]:
-    mode_def = ModeDefinition(
-        resource_defs={"dbt_rpc": rpc_resource}
-    )  # use config defaults
+    mode_def = ModeDefinition(resource_defs={"dbt_rpc": rpc_resource})  # use config defaults
     solid_result = execute_solid(a_solid, mode_def)
 
     assert solid_result.success
@@ -45,9 +43,7 @@ class TestDBTRunAndWaitSolid:
             {"interval": 2}
         )
 
-        dagster_result, dbt_output = output_for_solid_executed_with_rpc_resource(
-            run_all_fast_poll
-        )
+        dagster_result, dbt_output = output_for_solid_executed_with_rpc_resource(run_all_fast_poll)
 
         executed_model_from_result = set(
             res["node"]["unique_id"] for res in dbt_output.result["results"]
@@ -55,8 +51,7 @@ class TestDBTRunAndWaitSolid:
         assert executed_model_from_result == TestDBTRunAndWaitSolid.ALL_MODELS_KEY_SET
 
         materialization_asset_keys = set(
-            mat.asset_key.to_string()
-            for mat in dagster_result.materializations_during_compute
+            mat.asset_key.to_string() for mat in dagster_result.materializations_during_compute
         )
         assert materialization_asset_keys == {
             AssetKey(key.split(".")).to_string()
@@ -66,9 +61,9 @@ class TestDBTRunAndWaitSolid:
     SINGLE_MODEL_KEY_SET = {"model.dagster_dbt_test_project.least_caloric"}
 
     def test_run_single(self, dbt_rpc_server):  # pylint: disable=unused-argument
-        run_single_fast_poll = configured(
-            dbt_rpc_run_and_wait, name="run_least_caloric"
-        )({"interval": 2, "models": ["least_caloric"]})
+        run_single_fast_poll = configured(dbt_rpc_run_and_wait, name="run_least_caloric")(
+            {"interval": 2, "models": ["least_caloric"]}
+        )
 
         dagster_result, dbt_output = output_for_solid_executed_with_rpc_resource(
             run_single_fast_poll
@@ -80,8 +75,7 @@ class TestDBTRunAndWaitSolid:
         assert executed_model_from_result == TestDBTRunAndWaitSolid.SINGLE_MODEL_KEY_SET
 
         materialization_asset_keys = set(
-            mat.asset_key.to_string()
-            for mat in dagster_result.materializations_during_compute
+            mat.asset_key.to_string() for mat in dagster_result.materializations_during_compute
         )
 
         assert materialization_asset_keys == {
@@ -133,9 +127,7 @@ class TestDBTSingleOperationSolids:
             PipelineDefinition(
                 [configured_solid],
                 name="test",
-                mode_defs=[
-                    ModeDefinition(resource_defs={"dbt_rpc": mock_dbt_rpc_resource})
-                ],
+                mode_defs=[ModeDefinition(resource_defs={"dbt_rpc": mock_dbt_rpc_resource})],
             ),
             instance=instance,
         )
@@ -146,6 +138,5 @@ class TestDBTSingleOperationSolids:
             == request_token_sentinel_value
         )
         assert any(
-            response_sentinel_value in event.message
-            for event in instance.all_logs(result.run_id)
+            response_sentinel_value in event.message for event in instance.all_logs(result.run_id)
         )

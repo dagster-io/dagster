@@ -18,8 +18,6 @@ from dagster_graphql.test.utils import (
 )
 
 from dagster import (
-    In,
-    Out,
     Any,
     AssetKey,
     AssetMaterialization,
@@ -37,11 +35,13 @@ from dagster import (
     HourlyPartitionsDefinition,
     IOManager,
     IOManagerDefinition,
+    In,
     Int,
     Map,
     MetadataEntry,
     Noneable,
     Nothing,
+    Out,
     Output,
     Partition,
     PythonObjectDagsterType,
@@ -84,7 +84,6 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._legacy import (
     AssetGroup,
-    DynamicOutputDefinition,
     InputDefinition,
     Materialization,
     ModeDefinition,
@@ -96,10 +95,8 @@ from dagster._legacy import (
     composite_solid,
     daily_schedule,
     hourly_schedule,
-    lambda_solid,
     monthly_schedule,
     pipeline,
-    solid,
     weekly_schedule,
 )
 from dagster._seven import get_system_temp_directory
@@ -111,10 +108,7 @@ LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 @dagster_type_loader(String)
 def df_input_schema(_context, path):
     with open(path, "r", encoding="utf8") as fd:
-        return [
-            OrderedDict(sorted(x.items(), key=lambda x: x[0]))
-            for x in csv.DictReader(fd)
-        ]
+        return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
 @dagster_type_materializer(String)
@@ -201,11 +195,7 @@ def df_expectations_op(_context, sum_df):
 
 def csv_hello_world_solids_config():
     return {
-        "solids": {
-            "sum_op": {
-                "inputs": {"num": file_relative_path(__file__, "../data/num.csv")}
-            }
-        }
+        "solids": {"sum_op": {"inputs": {"num": file_relative_path(__file__, "../data/num.csv")}}}
     }
 
 
@@ -328,9 +318,7 @@ def pipeline_with_expectations():
 
     @op(out={})
     def emit_successful_expectation_no_metadata(_context):
-        yield ExpectationResult(
-            success=True, label="no_metadata", description="Successful"
-        )
+        yield ExpectationResult(success=True, label="no_metadata", description="Successful")
 
     emit_successful_expectation()
     emit_failed_expectation()
@@ -387,9 +375,7 @@ def more_complicated_nested_config():
             "nested_field": {
                 "field_four_str": String,
                 "field_five_int": Int,
-                "field_six_nullable_int_list": Field(
-                    [Noneable(int)], is_required=False
-                ),
+                "field_six_nullable_int_list": Field([Noneable(int)], is_required=False),
             },
         },
     )
@@ -405,28 +391,20 @@ def more_complicated_nested_config():
         PresetDefinition.from_files(
             name="prod",
             config_files=[
-                file_relative_path(
-                    __file__, "../environments/csv_hello_world_prod.yaml"
-                )
+                file_relative_path(__file__, "../environments/csv_hello_world_prod.yaml")
             ],
         ),
         PresetDefinition.from_files(
             name="test",
             config_files=[
-                file_relative_path(
-                    __file__, "../environments/csv_hello_world_test.yaml"
-                )
+                file_relative_path(__file__, "../environments/csv_hello_world_test.yaml")
             ],
         ),
         PresetDefinition(
             name="test_inline",
             run_config={
                 "solids": {
-                    "sum_op": {
-                        "inputs": {
-                            "num": file_relative_path(__file__, "../data/num.csv")
-                        }
-                    }
+                    "sum_op": {"inputs": {"num": file_relative_path(__file__, "../data/num.csv")}}
                 }
             },
         ),
@@ -539,9 +517,7 @@ def pipeline_with_enum_config():
             [
                 EnumValue(config_value="ENUM_VALUE_ONE", description="An enum value."),
                 EnumValue(config_value="ENUM_VALUE_TWO", description="An enum value."),
-                EnumValue(
-                    config_value="ENUM_VALUE_THREE", description="An enum value."
-                ),
+                EnumValue(config_value="ENUM_VALUE_THREE", description="An enum value."),
             ],
         )
     )
@@ -710,15 +686,11 @@ def composites_pipeline():
     def div_two(num):
         return num / 2
 
-    @composite_solid(
-        input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)]
-    )
+    @composite_solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
     def add_two(num):
         return add_one.alias("adder_2")(add_one.alias("adder_1")(num))
 
-    @composite_solid(
-        input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)]
-    )
+    @composite_solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
     def add_four(num):
         return add_two.alias("adder_2")(add_two.alias("adder_1")(num))
 
@@ -741,9 +713,7 @@ def materialization_pipeline():
                 MetadataEntry("url", value=MetadataValue.url("https://bigty.pe/neato")),
                 MetadataEntry("path", value=MetadataValue.path("/tmp/awesome")),
                 MetadataEntry("json", value={"is_dope": True}),
-                MetadataEntry(
-                    "python class", value=MetadataValue.python_artifact(MetadataEntry)
-                ),
+                MetadataEntry("python class", value=MetadataValue.python_artifact(MetadataEntry)),
                 MetadataEntry(
                     "python function",
                     value=MetadataValue.python_artifact(file_relative_path),
@@ -752,9 +722,7 @@ def materialization_pipeline():
                 MetadataEntry("int", value=1),
                 MetadataEntry("float NaN", value=float("nan")),
                 MetadataEntry("long int", value=LONG_INT),
-                MetadataEntry(
-                    "pipeline run", value=MetadataValue.dagster_run("fake_run_id")
-                ),
+                MetadataEntry("pipeline run", value=MetadataValue.dagster_run("fake_run_id")),
                 MetadataEntry("my asset", value=AssetKey("my_asset")),
                 MetadataEntry(
                     "table",
@@ -971,9 +939,7 @@ def disable_gc(_context):
 
 @pipeline(
     mode_defs=[
-        ModeDefinition(
-            resource_defs={"io_manager": fs_io_manager, "disable_gc": disable_gc}
-        )
+        ModeDefinition(resource_defs={"io_manager": fs_io_manager, "disable_gc": disable_gc})
     ]
 )
 def retry_multi_input_early_terminate_pipeline():
@@ -1385,9 +1351,7 @@ def backcompat_materialization_pipeline():
                 MetadataEntry("url", value=MetadataValue.url("https://bigty.pe/neato")),
                 MetadataEntry("path", value=MetadataValue.path("/tmp/awesome")),
                 MetadataEntry("json", value={"is_dope": True}),
-                MetadataEntry(
-                    "python class", value=MetadataValue.python_artifact(MetadataEntry)
-                ),
+                MetadataEntry("python class", value=MetadataValue.python_artifact(MetadataEntry)),
                 MetadataEntry(
                     "python function",
                     value=MetadataValue.python_artifact(file_relative_path),
@@ -1396,9 +1360,7 @@ def backcompat_materialization_pipeline():
                 MetadataEntry("int", value=1),
                 MetadataEntry("float NaN", value=float("nan")),
                 MetadataEntry("long int", value=LONG_INT),
-                MetadataEntry(
-                    "pipeline run", value=MetadataValue.pipeline_run("fake_run_id")
-                ),
+                MetadataEntry("pipeline run", value=MetadataValue.pipeline_run("fake_run_id")),
                 MetadataEntry("my asset", value=AssetKey("my_asset")),
             ],
         )
@@ -1451,9 +1413,7 @@ def first_asset(
 
 
 @asset(required_resource_keys={"hanging_asset_resource"})
-def hanging_asset(
-    context, first_asset
-):  # pylint: disable=redefined-outer-name,unused-argument
+def hanging_asset(context, first_asset):  # pylint: disable=redefined-outer-name,unused-argument
     """
     Asset that hangs forever, used to test in-progress ops.
     """
@@ -1585,9 +1545,7 @@ time_partitioned_assets_job = build_assets_job(
 
 @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
 def yield_partition_materialization():
-    yield AssetMaterialization(
-        asset_key=AssetKey("yield_partition_materialization"), partition="c"
-    )
+    yield AssetMaterialization(asset_key=AssetKey("yield_partition_materialization"), partition="c")
     yield Output(5)
 
 
@@ -1600,9 +1558,7 @@ partition_materialization_job = build_assets_job(
 
 @asset
 def asset_yields_observation():
-    yield AssetObservation(
-        asset_key=AssetKey("asset_yields_observation"), metadata={"text": "FOO"}
-    )
+    yield AssetObservation(asset_key=AssetKey("asset_yields_observation"), metadata={"text": "FOO"})
     yield AssetMaterialization(asset_key=AssetKey("asset_yields_observation"))
     yield Output(5)
 
@@ -1809,9 +1765,7 @@ def define_pipelines():
 
 @repository
 def test_repo():
-    return (
-        define_pipelines() + define_schedules() + define_sensors() + define_partitions()
-    )
+    return define_pipelines() + define_schedules() + define_sensors() + define_partitions()
 
 
 @repository

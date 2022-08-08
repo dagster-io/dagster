@@ -68,7 +68,9 @@ def _not_invoked_warning(
     context_source: str,
     context_name: str,
 ) -> None:
-    warning_message = "While in {context} context '{name}', received an uninvoked {node_type} '{solid_name}'.\n"
+    warning_message = (
+        "While in {context} context '{name}', received an uninvoked {node_type} '{solid_name}'.\n"
+    )
     if solid.given_alias:
         warning_message += "'{solid_name}' was aliased as '{given_alias}'.\n"
     if solid.tags:
@@ -212,9 +214,7 @@ class CompleteCompositionContext(NamedTuple):
         pending_invocations: Mapping[str, "PendingNodeInvocation"],
     ):
 
-        dep_dict: Dict[
-            Union[str, NodeInvocation], Dict[str, IDependencyDefinition]
-        ] = {}
+        dep_dict: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
         node_def_dict: Dict[str, NodeDefinition] = {}
         input_mappings = []
 
@@ -223,10 +223,7 @@ class CompleteCompositionContext(NamedTuple):
 
         for invocation in invocations.values():
             def_name = invocation.node_def.name
-            if (
-                def_name in node_def_dict
-                and node_def_dict[def_name] is not invocation.node_def
-            ):
+            if def_name in node_def_dict and node_def_dict[def_name] is not invocation.node_def:
                 raise DagsterInvalidDefinitionError(
                     'Detected conflicting node definitions with the same name "{name}"'.format(
                         name=def_name
@@ -237,17 +234,13 @@ class CompleteCompositionContext(NamedTuple):
             deps: Dict[str, IDependencyDefinition] = {}
             for input_name, node in invocation.input_bindings.items():
                 if isinstance(node, InvokedSolidOutputHandle):
-                    deps[input_name] = DependencyDefinition(
-                        node.solid_name, node.output_name
-                    )
+                    deps[input_name] = DependencyDefinition(node.solid_name, node.output_name)
                 elif isinstance(node, InputMappingNode):
                     input_mappings.append(
                         node.input_def.mapping_to(invocation.node_name, input_name)
                     )
                 elif isinstance(node, list):
-                    entries: List[
-                        Union[DependencyDefinition, Type[MappedInputPlaceholder]]
-                    ] = []
+                    entries: List[Union[DependencyDefinition, Type[MappedInputPlaceholder]]] = []
                     for idx, fanned_in_node in enumerate(node):
                         if isinstance(fanned_in_node, InvokedSolidOutputHandle):
                             entries.append(
@@ -334,9 +327,7 @@ class PendingNodeInvocation:
         self.given_alias = check.opt_str_param(given_alias, "given_alias")
         self.tags = check.opt_inst_param(tags, "tags", frozentags)
         self.hook_defs = check.opt_set_param(hook_defs, "hook_defs", HookDefinition)
-        self.retry_policy = check.opt_inst_param(
-            retry_policy, "retry_policy", RetryPolicy
-        )
+        self.retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
 
         if self.given_alias is not None:
             check_valid_name(self.given_alias)
@@ -369,9 +360,7 @@ class PendingNodeInvocation:
                         f"Compute function of {node_label} '{self.given_alias}' has context argument, but no context "
                         "was provided when invoking."
                     )
-                elif args[0] is not None and not isinstance(
-                    args[0], UnboundSolidExecutionContext
-                ):
+                elif args[0] is not None and not isinstance(args[0], UnboundSolidExecutionContext):
                     raise DagsterInvalidInvocationError(
                         f"Compute function of {node_label} '{self.given_alias}' has context argument, but no context "
                         "was provided when invoking."
@@ -413,9 +402,7 @@ class PendingNodeInvocation:
                         source=current_context().source,
                         name=current_context().name,
                         node_name=node_name,
-                        inputs=list(
-                            map(lambda inp: inp.name, self.node_def.input_defs)
-                        ),
+                        inputs=list(map(lambda inp: inp.name, self.node_def.input_defs)),
                     )
                 )
 
@@ -466,9 +453,7 @@ class PendingNodeInvocation:
         invoked_output_handles = {}
         for output_def in outputs:
             if output_def.is_dynamic:
-                invoked_output_handles[
-                    output_def.name
-                ] = InvokedSolidDynamicOutputWrapper(
+                invoked_output_handles[output_def.name] = InvokedSolidDynamicOutputWrapper(
                     resolved_node_name, output_def.name, self.node_def.node_type_str
                 )
             else:
@@ -485,21 +470,15 @@ class PendingNodeInvocation:
         node_name = self.given_alias if self.given_alias else self.node_def.name
         return f"{self.node_def.node_type_str} '{node_name}'"
 
-    def _process_argument_node(
-        self, node_name, output_node, input_name, input_bindings, arg_desc
-    ):
+    def _process_argument_node(self, node_name, output_node, input_name, input_bindings, arg_desc):
 
-        if isinstance(
-            output_node, (InvokedSolidOutputHandle, InputMappingNode, DynamicFanIn)
-        ):
+        if isinstance(output_node, (InvokedSolidOutputHandle, InputMappingNode, DynamicFanIn)):
             input_bindings[input_name] = output_node
 
         elif isinstance(output_node, list):
             input_bindings[input_name] = []
             for idx, fanned_in_node in enumerate(output_node):
-                if isinstance(
-                    fanned_in_node, (InvokedSolidOutputHandle, InputMappingNode)
-                ):
+                if isinstance(fanned_in_node, (InvokedSolidOutputHandle, InputMappingNode)):
                     input_bindings[input_name].append(fanned_in_node)
                 else:
                     raise DagsterInvalidDefinitionError(
@@ -591,17 +570,13 @@ class PendingNodeInvocation:
         return PendingNodeInvocation(
             node_def=self.node_def,
             given_alias=self.given_alias,
-            tags=frozentags(tags)
-            if self.tags is None
-            else self.tags.updated_with(tags),
+            tags=frozentags(tags) if self.tags is None else self.tags.updated_with(tags),
             hook_defs=self.hook_defs,
             retry_policy=self.retry_policy,
         )
 
     @public
-    def with_hooks(
-        self, hook_defs: AbstractSet[HookDefinition]
-    ) -> "PendingNodeInvocation":
+    def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PendingNodeInvocation":
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
         return PendingNodeInvocation(
             node_def=self.node_def,
@@ -627,9 +602,7 @@ class PendingNodeInvocation:
         name: Optional[str] = None,
         description: Optional[str] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
-        config: Optional[
-            Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]
-        ] = None,
+        config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
         tags: Optional[Dict[str, Any]] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
@@ -648,9 +621,7 @@ class PendingNodeInvocation:
         tags = check.opt_dict_param(tags, "tags", key_type=str)
         hooks = check.opt_set_param(hooks, "hooks", HookDefinition)
         input_values = check.opt_mapping_param(input_values, "input_values")
-        op_retry_policy = check.opt_inst_param(
-            op_retry_policy, "op_retry_policy", RetryPolicy
-        )
+        op_retry_policy = check.opt_inst_param(op_retry_policy, "op_retry_policy", RetryPolicy)
         job_hooks: Set[HookDefinition] = set()
         job_hooks.update(check.opt_set_param(hooks, "hooks", HookDefinition))
         job_hooks.update(self.hook_defs)
@@ -814,9 +785,7 @@ class InvokedSolidDynamicOutputWrapper:
 
     def map(self, fn):
         check.is_callable(fn)
-        result = fn(
-            InvokedSolidOutputHandle(self.solid_name, self.output_name, self.node_type)
-        )
+        result = fn(InvokedSolidOutputHandle(self.solid_name, self.output_name, self.node_type))
 
         if isinstance(result, InvokedSolidOutputHandle):
             return InvokedSolidDynamicOutputWrapper(
@@ -847,9 +816,7 @@ class InvokedSolidDynamicOutputWrapper:
         return DynamicFanIn(self.solid_name, self.output_name)
 
     def unwrap_for_composite_mapping(self) -> InvokedSolidOutputHandle:
-        return InvokedSolidOutputHandle(
-            self.solid_name, self.output_name, self.node_type
-        )
+        return InvokedSolidOutputHandle(self.solid_name, self.output_name, self.node_type)
 
     def __iter__(self):
         raise DagsterInvariantViolationError(
@@ -961,9 +928,9 @@ def composite_mapping_from_output(
             for i, output_name in enumerate(output_def_dict.keys()):
                 handle = output[i]
                 # map output defined on graph to the actual output defined on the op
-                output_mapping_dict[output_name] = output_def_dict[
-                    output_name
-                ].mapping_from(handle.solid_name, handle.output_name)
+                output_mapping_dict[output_name] = output_def_dict[output_name].mapping_from(
+                    handle.solid_name, handle.output_name
+                )
 
         return output_mapping_dict
 
@@ -1070,14 +1037,10 @@ def do_composition(
     actual_output_defs: Sequence[OutputDefinition]
     if provided_output_defs is None:
         outputs_are_explicit = False
-        actual_output_defs = [
-            OutputDefinition.create_from_inferred(infer_output_props(fn))
-        ]
+        actual_output_defs = [OutputDefinition.create_from_inferred(infer_output_props(fn))]
     elif len(provided_output_defs) == 1:
         outputs_are_explicit = True
-        actual_output_defs = [
-            provided_output_defs[0].combine_with_inferred(infer_output_props(fn))
-        ]
+        actual_output_defs = [provided_output_defs[0].combine_with_inferred(infer_output_props(fn))]
     else:
         outputs_are_explicit = True
         actual_output_defs = provided_output_defs
@@ -1092,9 +1055,7 @@ def do_composition(
         exclude_nothing=False,
     )
 
-    kwargs = {
-        input_def.name: InputMappingNode(input_def) for input_def in actual_input_defs
-    }
+    kwargs = {input_def.name: InputMappingNode(input_def) for input_def in actual_input_defs}
 
     output = None
     returned_mapping = None
@@ -1123,18 +1084,14 @@ def do_composition(
     check.invariant(
         context.name == graph_name,
         "Composition context stack desync: received context for "
-        '"{context.name}" expected "{graph_name}"'.format(
-            context=context, graph_name=graph_name
-        ),
+        '"{context.name}" expected "{graph_name}"'.format(context=context, graph_name=graph_name),
     )
 
     # line up mappings in definition order
     input_mappings = []
     for defn in actual_input_defs:
         mappings = [
-            mapping
-            for mapping in context.input_mappings
-            if mapping.definition.name == defn.name
+            mapping for mapping in context.input_mappings if mapping.definition.name == defn.name
         ]
 
         if len(mappings) == 0:

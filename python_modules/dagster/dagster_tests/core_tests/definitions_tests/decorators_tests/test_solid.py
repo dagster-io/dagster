@@ -3,28 +3,24 @@ import re
 import pytest
 
 from dagster import (
-    In,
-    Out,
     Any,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DependencyDefinition,
     Field,
+    In,
+    Out,
     Output,
     graph,
     op,
 )
 from dagster._core.utility_solids import define_stub_solid
 from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
     PipelineDefinition,
     composite_solid,
     execute_pipeline,
     execute_solid,
-    lambda_solid,
     pipeline,
-    solid,
 )
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
@@ -161,9 +157,7 @@ def test_solid_with_input():
     the_pipeline = PipelineDefinition(
         solid_defs=[define_stub_solid("test_value", {"foo": "bar"}), hello_world],
         name="test",
-        dependencies={
-            "hello_world": {"foo_to_foo": DependencyDefinition("test_value")}
-        },
+        dependencies={"hello_world": {"foo_to_foo": DependencyDefinition("test_value")}},
     )
 
     pipeline_result = execute_pipeline(the_pipeline)
@@ -378,9 +372,7 @@ def test_solid_yields_single_bare_value():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape(
-            'Compute function for solid "return_iterator" yielded a value of type <'
-        )
+        match=re.escape('Compute function for solid "return_iterator" yielded a value of type <')
         + r"(class|type)"
         + re.escape(
             " 'int'> rather than an instance of Output, AssetMaterialization, or ExpectationResult. "
@@ -406,9 +398,7 @@ def test_solid_yields_multiple_bare_values():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape(
-            'Compute function for solid "return_iterator" yielded a value of type <'
-        )
+        match=re.escape('Compute function for solid "return_iterator" yielded a value of type <')
         + r"(class|type)"
         + re.escape(
             " 'int'> rather than an instance of Output, AssetMaterialization, or ExpectationResult. "
@@ -437,9 +427,7 @@ def test_solid_returns_iterator():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape(
-            'Compute function for solid "return_iterator" yielded a value of type <'
-        )
+        match=re.escape('Compute function for solid "return_iterator" yielded a value of type <')
         + r"(class|type)"
         + re.escape(
             " 'int'> rather than an instance of Output, AssetMaterialization, or ExpectationResult. "

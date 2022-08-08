@@ -1,8 +1,5 @@
 import pendulum
-from dagster_test.toys.asset_lineage import (
-    asset_lineage_partition_set,
-    asset_lineage_pipeline,
-)
+from dagster_test.toys.asset_lineage import asset_lineage_partition_set, asset_lineage_pipeline
 from dagster_test.toys.branches import branch_pipeline
 from dagster_test.toys.composition import composition
 from dagster_test.toys.dynamic import dynamic_pipeline
@@ -19,8 +16,8 @@ from dagster_test.toys.retries import retry_pipeline
 from dagster_test.toys.sleepy import sleepy_pipeline
 from dagster_test.toys.unreliable import unreliable_pipeline
 
-from dagster import In, op, AssetMaterialization, Output, repository
-from dagster._legacy import pipeline, solid
+from dagster import AssetMaterialization, Output, op, repository
+from dagster._legacy import pipeline
 
 from .schedules import get_toys_schedules
 from .sensors import get_toys_sensors

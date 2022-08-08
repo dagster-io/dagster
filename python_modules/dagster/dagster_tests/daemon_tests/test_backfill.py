@@ -8,15 +8,7 @@ from contextlib import contextmanager
 import pendulum
 import pytest
 
-from dagster import (
-    op,
-    Any,
-    Field,
-    daily_partitioned_config,
-    fs_io_manager,
-    graph,
-    repository,
-)
+from dagster import Any, Field, daily_partitioned_config, fs_io_manager, graph, op, repository
 from dagster._core.definitions import Partition, PartitionSetDefinition
 from dagster._core.execution.api import execute_pipeline
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -25,11 +17,7 @@ from dagster._core.host_representation import (
     InProcessRepositoryLocationOrigin,
 )
 from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
-from dagster._core.storage.tags import (
-    BACKFILL_ID_TAG,
-    PARTITION_NAME_TAG,
-    PARTITION_SET_TAG,
-)
+from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._core.test_utils import (
     create_test_daemon_workspace,
     instance_for_test,
@@ -41,7 +29,7 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
-from dagster._legacy import ModeDefinition, pipeline, solid
+from dagster._legacy import ModeDefinition, pipeline
 from dagster._seven import IS_WINDOWS, get_system_temp_directory
 from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo
@@ -162,8 +150,7 @@ def _large_partition_config(_):
             "config_op": {
                 "config": {
                     "foo": {
-                        _random_string(10): _random_string(20)
-                        for i in range(REQUEST_CONFIG_COUNT)
+                        _random_string(10): _random_string(20) for i in range(REQUEST_CONFIG_COUNT)
                     }
                 }
             }
@@ -250,9 +237,7 @@ def wait_for_all_runs_to_start(instance, timeout=10):
             PipelineRunStatus.STARTING,
             PipelineRunStatus.STARTED,
         ]
-        pending_runs = [
-            run for run in instance.get_runs() if run.status in pending_states
-        ]
+        pending_runs = [run for run in instance.get_runs() if run.status in pending_states]
 
         if len(pending_runs) == 0:
             break
@@ -284,9 +269,7 @@ def test_simple_backfill():
         workspace,
         external_repo,
     ):
-        external_partition_set = external_repo.get_external_partition_set(
-            "simple_partition_set"
-        )
+        external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
         instance.add_backfill(
             PartitionBackfill(
                 backfill_id="simple",
@@ -324,9 +307,7 @@ def test_canceled_backfill():
         workspace,
         external_repo,
     ):
-        external_partition_set = external_repo.get_external_partition_set(
-            "simple_partition_set"
-        )
+        external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
         instance.add_backfill(
             PartitionBackfill(
                 backfill_id="simple",
@@ -471,9 +452,7 @@ def test_partial_backfill():
         workspace,
         external_repo,
     ):
-        external_partition_set = external_repo.get_external_partition_set(
-            "partial_partition_set"
-        )
+        external_partition_set = external_repo.get_external_partition_set("partial_partition_set")
 
         # create full runs, where every step is executed
         instance.add_backfill(
@@ -574,9 +553,7 @@ def test_large_backfill():
         workspace,
         external_repo,
     ):
-        external_partition_set = external_repo.get_external_partition_set(
-            "large_partition_set"
-        )
+        external_partition_set = external_repo.get_external_partition_set("large_partition_set")
         instance.add_backfill(
             PartitionBackfill(
                 backfill_id="simple",

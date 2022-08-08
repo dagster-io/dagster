@@ -1,5 +1,5 @@
 from dagster import op, resource
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 
 def test_configured_solids_and_resources():
@@ -13,9 +13,7 @@ def test_configured_solids_and_resources():
         {"greeting": "salutation"}, "emit_greet_salutation"
     )
 
-    emit_greet_howdy = emit_greet_creature.configured(
-        {"greeting": "howdy"}, "emit_greet_howdy"
-    )
+    emit_greet_howdy = emit_greet_creature.configured({"greeting": "howdy"}, "emit_greet_howdy")
 
     @resource(config_schema={"creature": str})
     def emit_creature(context):

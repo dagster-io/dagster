@@ -1,13 +1,6 @@
 import pytest
 
-from dagster import (
-    In,
-    Out,
-    op,
-    DagsterInvalidDefinitionError,
-    DagsterType,
-    root_input_manager,
-)
+from dagster import DagsterInvalidDefinitionError, DagsterType, In, Out, op, root_input_manager
 from dagster._core.storage.io_manager import IOManager, io_manager
 from dagster._legacy import (
     InputDefinition,
@@ -16,7 +9,6 @@ from dagster._legacy import (
     composite_solid,
     execute_pipeline,
     pipeline,
-    solid,
 )
 
 
@@ -75,9 +67,7 @@ def test_composite_solid_output():
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                resource_defs={
-                    "inner_manager": named_io_manager(storage_dict, "inner")
-                },
+                resource_defs={"inner_manager": named_io_manager(storage_dict, "inner")},
             )
         ]
     )
@@ -88,9 +78,7 @@ def test_composite_solid_output():
     assert result.success
     # Ensure that the IO manager used to store and load my_composite.my_solid_takes_input is the
     # manager of my_solid_takes_input, not my_composite.
-    assert storage_dict[(result.run_id, "my_composite.my_op_takes_input", "result")][
-        "value"
-    ] == {
+    assert storage_dict[(result.run_id, "my_composite.my_op_takes_input", "result")]["value"] == {
         "value": 5,
         "output_manager_name": "inner",
         "input_manager_name": "inner",
@@ -120,9 +108,7 @@ def test_composite_solid_upstream_output():
 
     @pipeline(
         mode_defs=[
-            ModeDefinition(
-                resource_defs={"inner_manager": named_io_manager(storage_dict, "inner")}
-            )
+            ModeDefinition(resource_defs={"inner_manager": named_io_manager(storage_dict, "inner")})
         ]
     )
     def my_pipeline():
@@ -140,8 +126,7 @@ def test_io_manager_config_inside_composite():
         class MyHardcodedIOManager(IOManager):
             def handle_output(self, context, obj):
                 keys = tuple(
-                    context.get_run_scoped_output_identifier()
-                    + [context.config["output_suffix"]]
+                    context.get_run_scoped_output_identifier() + [context.config["output_suffix"]]
                 )
                 stored_dict[keys] = obj
 
@@ -168,11 +153,7 @@ def test_io_manager_config_inside_composite():
         return my_op_takes_input(my_op())
 
     @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                name="default", resource_defs={"inner_manager": inner_manager}
-            )
-        ]
+        mode_defs=[ModeDefinition(name="default", resource_defs={"inner_manager": inner_manager})]
     )
     def my_pipeline():
         my_composite_solid()
@@ -182,9 +163,7 @@ def test_io_manager_config_inside_composite():
         run_config={
             "solids": {
                 "my_composite_solid": {
-                    "solids": {
-                        "my_op": {"outputs": {"result": {"output_suffix": "my_suffix"}}}
-                    },
+                    "solids": {"my_op": {"outputs": {"result": {"output_suffix": "my_suffix"}}}},
                 }
             }
         },
@@ -192,9 +171,7 @@ def test_io_manager_config_inside_composite():
     assert result.success
     assert result.output_for_solid("my_composite_solid.my_op") == "hello"
     assert (
-        stored_dict.get(
-            (result.run_id, "my_composite_solid.my_op", "result", "my_suffix")
-        )
+        stored_dict.get((result.run_id, "my_composite_solid.my_op", "result", "my_suffix"))
         == "hello"
     )
 
@@ -287,8 +264,6 @@ def test_inner_inputs_connected_to_nested_outer_dependency():
     result = execute_pipeline(my_pipeline)
     assert result.success
     assert (
-        result.output_for_solid(
-            "outer_composite.middle_composite.inner_composite.inner_op"
-        )
+        result.output_for_solid("outer_composite.middle_composite.inner_composite.inner_op")
         == "from top_level_op"
     )

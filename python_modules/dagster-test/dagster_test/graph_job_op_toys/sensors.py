@@ -52,9 +52,7 @@ def get_toys_sensors():
 
         directory_files = get_directory_files(directory_name, context.cursor)
         if not directory_files:
-            yield SkipReason(
-                f"No new files found in {directory_name} (after {context.cursor})"
-            )
+            yield SkipReason(f"No new files found in {directory_name} (after {context.cursor})")
             return
 
         for filename, mtime in directory_files:
@@ -92,9 +90,7 @@ def get_toys_sensors():
             yield RunRequest(
                 run_key=s3_key,
                 run_config={
-                    "solids": {
-                        "read_s3_key": {"config": {"bucket": bucket, "s3_key": s3_key}}
-                    }
+                    "solids": {"read_s3_key": {"config": {"bucket": bucket, "s3_key": s3_key}}}
                 },
             )
 

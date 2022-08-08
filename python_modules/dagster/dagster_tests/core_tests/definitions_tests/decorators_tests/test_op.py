@@ -29,7 +29,7 @@ from dagster import (
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.dagster_type import Int, String
-from dagster._legacy import Materialization, SolidDefinition, solid
+from dagster._legacy import Materialization, SolidDefinition
 
 
 def some_fn(a):
@@ -667,9 +667,7 @@ def test_yield_event_ordering():
         assert first.dagster_event.event_specific_data.materialization.label == "first"
 
         second = relevant_event_logs[1]
-        assert (
-            second.dagster_event.event_specific_data.materialization.label == "second"
-        )
+        assert second.dagster_event.event_specific_data.materialization.label == "second"
 
         third = relevant_event_logs[2]
         assert third.dagster_event.event_specific_data.materialization.label == "third"
@@ -755,21 +753,13 @@ def test_log_metadata_after_output():
 def test_log_metadata_multiple_dynamic_outputs():
     @op(out={"out1": DynamicOut(), "out2": DynamicOut()})
     def the_op(context):
-        context.add_output_metadata(
-            {"one": "one"}, output_name="out1", mapping_key="one"
-        )
+        context.add_output_metadata({"one": "one"}, output_name="out1", mapping_key="one")
         yield DynamicOutput(value=1, output_name="out1", mapping_key="one")
-        context.add_output_metadata(
-            {"two": "two"}, output_name="out1", mapping_key="two"
-        )
-        context.add_output_metadata(
-            {"three": "three"}, output_name="out2", mapping_key="three"
-        )
+        context.add_output_metadata({"two": "two"}, output_name="out1", mapping_key="two")
+        context.add_output_metadata({"three": "three"}, output_name="out2", mapping_key="three")
         yield DynamicOutput(value=2, output_name="out1", mapping_key="two")
         yield DynamicOutput(value=3, output_name="out2", mapping_key="three")
-        context.add_output_metadata(
-            {"four": "four"}, output_name="out2", mapping_key="four"
-        )
+        context.add_output_metadata({"four": "four"}, output_name="out2", mapping_key="four")
         yield DynamicOutput(value=4, output_name="out2", mapping_key="four")
 
     result = execute_op_in_graph(the_op)
@@ -1382,9 +1372,7 @@ def test_output_mismatch_tuple_lengths():
 
 
 def test_none_annotated_input():
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="is annotated with Nothing"
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError, match="is annotated with Nothing"):
 
         # pylint: disable=unused-argument
         @op

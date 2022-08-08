@@ -8,26 +8,12 @@ import time
 
 import pytest
 
-from dagster import (
-    In,
-    Out,
-    op,
-    DagsterEventType,
-    fs_io_manager,
-    reconstructable,
-    resource,
-)
+from dagster import DagsterEventType, In, fs_io_manager, op, reconstructable, resource
 from dagster._core.execution.compute_logs import should_disable_io_stream_redirect
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.test_utils import create_run_for_test, instance_for_test
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 from dagster._utils import ensure_dir, touch_file
 
 HELLO_SOLID = "HELLO SOLID"
@@ -54,9 +40,7 @@ def spew(_, num):
 
 def define_pipeline():
     @pipeline(
-        mode_defs=[
-            ModeDefinition(resource_defs={"a": resource_a, "io_manager": fs_io_manager})
-        ]
+        mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "io_manager": fs_io_manager})]
     )
     def spew_pipeline():
         spew(spew(spawn()))
@@ -87,9 +71,7 @@ def test_compute_log_to_disk():
         for step_key in compute_steps:
             if step_key.startswith("spawn"):
                 continue
-            compute_io_path = manager.get_local_path(
-                result.run_id, step_key, ComputeIOType.STDOUT
-            )
+            compute_io_path = manager.get_local_path(result.run_id, step_key, ComputeIOType.STDOUT)
             assert os.path.exists(compute_io_path)
             with open(compute_io_path, "r", encoding="utf8") as stdout_file:
                 assert normalize_file_content(stdout_file.read()) == HELLO_SOLID
@@ -117,9 +99,7 @@ def test_compute_log_to_disk_multiprocess():
         for step_key in compute_steps:
             if step_key.startswith("spawn"):
                 continue
-            compute_io_path = manager.get_local_path(
-                result.run_id, step_key, ComputeIOType.STDOUT
-            )
+            compute_io_path = manager.get_local_path(result.run_id, step_key, ComputeIOType.STDOUT)
             assert os.path.exists(compute_io_path)
             with open(compute_io_path, "r", encoding="utf8") as stdout_file:
                 assert normalize_file_content(stdout_file.read()) == HELLO_SOLID
@@ -150,9 +130,7 @@ def test_compute_log_manager():
         cleaned_logs = stderr.data.replace("\x1b[34m", "").replace("\x1b[0m", "")
         assert "dagster - DEBUG - spew_pipeline - " in cleaned_logs
 
-        bad_logs = manager.read_logs_file(
-            "not_a_run_id", step_key, ComputeIOType.STDOUT
-        )
+        bad_logs = manager.read_logs_file("not_a_run_id", step_key, ComputeIOType.STDOUT)
         assert bad_logs.data is None
         assert not manager.is_watch_completed("not_a_run_id", step_key)
 
@@ -193,9 +171,7 @@ def test_compute_log_manager_subscription_updates():
         compute_log_manager = LocalComputeLogManager(temp_dir, polling_timeout=0.5)
         run_id = "fake_run_id"
         step_key = "spew"
-        stdout_path = compute_log_manager.get_local_path(
-            run_id, step_key, ComputeIOType.STDOUT
-        )
+        stdout_path = compute_log_manager.get_local_path(run_id, step_key, ComputeIOType.STDOUT)
 
         # make sure the parent directory to be watched exists, file exists
         ensure_dir(os.path.dirname(stdout_path))
@@ -203,9 +179,7 @@ def test_compute_log_manager_subscription_updates():
 
         # set up the subscription
         messages = []
-        observable = compute_log_manager.observable(
-            run_id, step_key, ComputeIOType.STDOUT
-        )
+        observable = compute_log_manager.observable(run_id, step_key, ComputeIOType.STDOUT)
         observable.subscribe(messages.append)
 
         # returns a single update, with 0 data
@@ -279,10 +253,7 @@ def inner_step(instance, pipeline_run, step_key):
 
 def expected_inner_output(step_key):
     return "\n".join(
-        [
-            "{step_key} inner {num}".format(step_key=step_key, num=i + 1)
-            for i in range(3)
-        ]
+        ["{step_key} inner {num}".format(step_key=step_key, num=i + 1) for i in range(3)]
     )
 
 
@@ -312,9 +283,7 @@ def test_single():
             stdout = instance.compute_log_manager.read_logs_file(
                 pipeline_run.run_id, step_key, ComputeIOType.STDOUT
             )
-            assert normalize_file_content(stdout.data) == expected_inner_output(
-                step_key
-            )
+            assert normalize_file_content(stdout.data) == expected_inner_output(step_key)
 
         full_out = instance.compute_log_manager.read_logs_file(
             pipeline_run.run_id, pipeline_name, ComputeIOType.STDOUT
@@ -355,17 +324,13 @@ def test_compute_log_base_with_spaces():
                 stdout = instance.compute_log_manager.read_logs_file(
                     pipeline_run.run_id, step_key, ComputeIOType.STDOUT
                 )
-                assert normalize_file_content(stdout.data) == expected_inner_output(
-                    step_key
-                )
+                assert normalize_file_content(stdout.data) == expected_inner_output(step_key)
 
             full_out = instance.compute_log_manager.read_logs_file(
                 pipeline_run.run_id, pipeline_name, ComputeIOType.STDOUT
             )
 
-            assert normalize_file_content(full_out.data).startswith(
-                expected_outer_prefix()
-            )
+            assert normalize_file_content(full_out.data).startswith(expected_outer_prefix())
 
 
 @pytest.mark.skipif(
@@ -397,9 +362,7 @@ def test_multi():
             stdout = instance.compute_log_manager.read_logs_file(
                 pipeline_run.run_id, step_key, ComputeIOType.STDOUT
             )
-            assert normalize_file_content(stdout.data) == expected_inner_output(
-                step_key
-            )
+            assert normalize_file_content(stdout.data) == expected_inner_output(step_key)
 
         full_out = instance.compute_log_manager.read_logs_file(
             pipeline_run.run_id, pipeline_name, ComputeIOType.STDOUT

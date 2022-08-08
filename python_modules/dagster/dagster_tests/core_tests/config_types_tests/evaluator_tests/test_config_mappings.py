@@ -3,25 +3,18 @@ import re
 import pytest
 
 from dagster import (
-    In,
-    op,
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     Field,
+    In,
     Int,
     Output,
     String,
     graph,
+    op,
 )
-from dagster._legacy import (
-    InputDefinition,
-    composite_solid,
-    execute_pipeline,
-    lambda_solid,
-    pipeline,
-    solid,
-)
+from dagster._legacy import InputDefinition, composite_solid, execute_pipeline, pipeline
 
 
 # have to use "pipe" solid since "result_for_solid" doesnt work with composite mappings
@@ -47,9 +40,7 @@ def wrap():
 def test_multiple_overrides_pipeline():
     @composite_solid(
         config_schema={"nesting_override": Field(String)},
-        config_fn=lambda cfg: {
-            "wrap": {"config": {"override_str": cfg["nesting_override"]}}
-        },
+        config_fn=lambda cfg: {"wrap": {"config": {"override_str": cfg["nesting_override"]}}},
     )
     def nesting_wrap():
         return wrap()
@@ -67,10 +58,7 @@ def test_multiple_overrides_pipeline():
     )
 
     assert result.success
-    assert (
-        result.result_for_handle("outer_wrap.wrap.scalar_config_op").output_value()
-        == "blah"
-    )
+    assert result.result_for_handle("outer_wrap.wrap.scalar_config_op").output_value() == "blah"
 
 
 def test_good_override():
@@ -94,9 +82,7 @@ def test_missing_config():
     def wrap_pipeline():
         wrap.alias("do_stuff")()
 
-    expected_suggested_config = {
-        "solids": {"do_stuff": {"config": {"override_str": "..."}}}
-    }
+    expected_suggested_config = {"solids": {"do_stuff": {"config": {"override_str": "..."}}}}
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(wrap_pipeline)
 
@@ -171,10 +157,7 @@ def test_bad_override():
 
     message = str(exc_info.value)
 
-    assert (
-        'Solid "do_stuff" with definition "bad_wrap" has a configuration error.'
-        in message
-    )
+    assert 'Solid "do_stuff" with definition "bad_wrap" has a configuration error.' in message
     assert "Error 1: Invalid scalar at path root:scalar_config_op:config" in message
 
 
@@ -185,9 +168,7 @@ def test_config_mapper_throws():
     def _config_fn_throws(_cfg):
         raise SomeUserException()
 
-    @composite_solid(
-        config_schema={"does_not_matter": Field(String)}, config_fn=_config_fn_throws
-    )
+    @composite_solid(config_schema={"does_not_matter": Field(String)}, config_fn=_config_fn_throws)
     def bad_wrap():
         return scalar_config_op()
 
@@ -230,9 +211,7 @@ def test_config_mapper_throws_nested():
     def _config_fn_throws(_cfg):
         raise SomeUserException()
 
-    @composite_solid(
-        config_schema={"does_not_matter": Field(String)}, config_fn=_config_fn_throws
-    )
+    @composite_solid(config_schema={"does_not_matter": Field(String)}, config_fn=_config_fn_throws)
     def bad_wrap():
         return scalar_config_op()
 
@@ -247,13 +226,7 @@ def test_config_mapper_throws_nested():
     with pytest.raises(DagsterConfigMappingFunctionError) as exc_info:
         execute_pipeline(
             wrap_pipeline,
-            {
-                "solids": {
-                    "layer0": {
-                        "solids": {"layer1": {"config": {"does_not_matter": "blah"}}}
-                    }
-                }
-            },
+            {"solids": {"layer0": {"solids": {"layer1": {"config": {"does_not_matter": "blah"}}}}}},
         )
 
     assert (
@@ -279,9 +252,7 @@ def test_composite_config_field():
     def test_pipeline():
         test()
 
-    res = execute_pipeline(
-        test_pipeline, {"solids": {"test": {"config": {"override": 5}}}}
-    )
+    res = execute_pipeline(test_pipeline, {"solids": {"test": {"config": {"override": 5}}}})
     assert res.result_for_handle("test.inner_op").output_value() == "5"
     assert res.result_for_solid("test").output_value() == "5"
 
@@ -309,9 +280,7 @@ def test_nested_composite_config_field():
     def test_pipeline():
         test()
 
-    res = execute_pipeline(
-        test_pipeline, {"solids": {"test": {"config": {"override": 5}}}}
-    )
+    res = execute_pipeline(test_pipeline, {"solids": {"test": {"config": {"override": 5}}}})
     assert res.success
     assert res.result_for_handle("test.outer.inner_op").output_value() == "5"
     assert res.result_for_handle("test.outer").output_value() == "5"
@@ -344,9 +313,7 @@ def test_nested_with_inputs():
             }
         }
 
-    @composite_solid(
-        config_fn=outer_wrap_fn, config_schema={"outer_first": Field(String)}
-    )
+    @composite_solid(config_fn=outer_wrap_fn, config_schema={"outer_first": Field(String)})
     def outer_wrap():
         return inner_wrap()
 

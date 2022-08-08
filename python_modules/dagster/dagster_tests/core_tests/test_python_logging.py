@@ -5,9 +5,9 @@ import logging
 import mock
 import pytest
 
-from dagster import op, get_dagster_logger, reconstructable, resource
+from dagster import get_dagster_logger, op, reconstructable, resource
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 
 def _reset_logging():
@@ -25,9 +25,7 @@ def reset_logging():
         _reset_logging()
 
 
-def get_log_records(
-    pipe, managed_loggers=None, python_logging_level=None, run_config=None
-):
+def get_log_records(pipe, managed_loggers=None, python_logging_level=None, run_config=None):
     python_logs_overrides = {}
     if managed_loggers is not None:
         python_logs_overrides["managed_python_loggers"] = managed_loggers
@@ -55,9 +53,7 @@ def get_log_records(
         (["root", "python_logger"], True),
     ],
 )
-def test_logging_capture_logger_defined_outside(
-    managed_logs, expect_output, reset_logging
-):
+def test_logging_capture_logger_defined_outside(managed_logs, expect_output, reset_logging):
     logger = logging.getLogger("python_logger")
     logger.setLevel(logging.INFO)
 
@@ -70,9 +66,7 @@ def test_logging_capture_logger_defined_outside(
         my_op()
 
     log_event_records = [
-        lr
-        for lr in get_log_records(my_pipeline, managed_logs)
-        if lr.user_message == "some info"
+        lr for lr in get_log_records(my_pipeline, managed_logs) if lr.user_message == "some info"
     ]
 
     if expect_output:
@@ -94,9 +88,7 @@ def test_logging_capture_logger_defined_outside(
         (["root", "python_logger"], True),
     ],
 )
-def test_logging_capture_logger_defined_inside(
-    managed_logs, expect_output, reset_logging
-):
+def test_logging_capture_logger_defined_inside(managed_logs, expect_output, reset_logging):
     @op
     def my_op():
         logger = logging.getLogger("python_logger")
@@ -108,9 +100,7 @@ def test_logging_capture_logger_defined_inside(
         my_op()
 
     log_event_records = [
-        lr
-        for lr in get_log_records(my_pipeline, managed_logs)
-        if lr.user_message == "some info"
+        lr for lr in get_log_records(my_pipeline, managed_logs) if lr.user_message == "some info"
     ]
 
     if expect_output:
@@ -155,11 +145,7 @@ def test_logging_capture_resource(managed_logs, expect_output, reset_logging):
         context.resources.foo()
         context.resources.bar()
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(resource_defs={"foo": foo_resource, "bar": bar_resource})
-        ]
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"foo": foo_resource, "bar": bar_resource})])
     def my_pipeline():
         process()
 
@@ -180,18 +166,12 @@ def test_logging_capture_resource(managed_logs, expect_output, reset_logging):
 def define_multilevel_logging_pipeline(inside, python):
 
     if not inside:
-        outside_logger = (
-            logging.getLogger("my_logger_outside") if python else get_dagster_logger()
-        )
+        outside_logger = logging.getLogger("my_logger_outside") if python else get_dagster_logger()
 
     @op
     def my_op1():
         if inside:
-            logger = (
-                logging.getLogger("my_logger_inside")
-                if python
-                else get_dagster_logger()
-            )
+            logger = logging.getLogger("my_logger_inside") if python else get_dagster_logger()
         else:
             logger = outside_logger
         for level in [
@@ -203,11 +183,7 @@ def define_multilevel_logging_pipeline(inside, python):
     @op
     def my_op2(_in):
         if inside:
-            logger = (
-                logging.getLogger("my_logger_inside")
-                if python
-                else get_dagster_logger()
-            )
+            logger = logging.getLogger("my_logger_inside") if python else get_dagster_logger()
         else:
             logger = outside_logger
         for level in [
@@ -434,13 +410,7 @@ def test_failure_logging(managed_loggers, reset_logging):
             event_records = instance.event_log_storage.get_logs_for_run(result.run_id)
 
             assert (
-                len(
-                    [
-                        log_record
-                        for log_record in event_records
-                        if not log_record.dagster_event
-                    ]
-                )
+                len([log_record for log_record in event_records if not log_record.dagster_event])
                 == 0
             )
 
@@ -450,8 +420,7 @@ def test_failure_logging(managed_loggers, reset_logging):
                     [
                         log_record
                         for log_record in event_records
-                        if "Exception while writing logger call to event log"
-                        in log_record.message
+                        if "Exception while writing logger call to event log" in log_record.message
                     ]
                 )
                 == num_user_events

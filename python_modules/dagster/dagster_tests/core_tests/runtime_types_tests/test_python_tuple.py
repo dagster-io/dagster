@@ -2,14 +2,9 @@ from typing import Tuple
 
 import pytest
 
-from dagster import In, Out, op, DagsterTypeCheckDidNotPass
+from dagster import DagsterTypeCheckDidNotPass, In, Out, op
 from dagster._core.types.python_tuple import create_typed_tuple
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    execute_solid,
-    lambda_solid,
-)
+from dagster._legacy import execute_solid
 
 
 def test_vanilla_tuple_output():

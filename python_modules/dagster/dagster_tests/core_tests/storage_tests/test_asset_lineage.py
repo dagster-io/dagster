@@ -1,33 +1,21 @@
 import pytest
 
-from dagster import In, Out, op, AssetKey, DynamicOutput, Output, io_manager
+from dagster import AssetKey, DynamicOutput, In, Out, Output, io_manager, op
 from dagster._core.definitions.events import AssetLineageInfo
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.io_manager import IOManager
-from dagster._legacy import (
-    DynamicOutputDefinition,
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 
 def n_asset_keys(path, n):
     return AssetLineageInfo(AssetKey(path), set([str(i) for i in range(n)]))
 
 
-def check_materialization(
-    materialization, asset_key, parent_assets=None, metadata_entries=None
-):
+def check_materialization(materialization, asset_key, parent_assets=None, metadata_entries=None):
     event_data = materialization.event_specific_data
     assert event_data.materialization.asset_key == asset_key
-    assert sorted(event_data.materialization.metadata_entries) == sorted(
-        metadata_entries or []
-    )
+    assert sorted(event_data.materialization.metadata_entries) == sorted(metadata_entries or [])
     assert event_data.asset_lineage == (parent_assets or [])
 
 
@@ -65,9 +53,7 @@ def test_io_manager_diamond_lineage():
     def op_combine(_, _inputA, _inputB):
         return Output(None, "outputC")
 
-    @pipeline(
-        mode_defs=[ModeDefinition(resource_defs={"asset_io_manager": my_io_manager})]
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"asset_io_manager": my_io_manager})])
     def my_pipeline():
         a, b = op_produce()
         at = op_transform.alias("a_transform")(a)
@@ -121,9 +107,7 @@ def test_multiple_definition_fails():
     def fail_op(_):
         return 1
 
-    @pipeline(
-        mode_defs=[ModeDefinition(resource_defs={"asset_io_manager": my_io_manager})]
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"asset_io_manager": my_io_manager})])
     def my_pipeline():
         fail_op()
 
@@ -137,9 +121,7 @@ def test_input_definition_multiple_partition_lineage():
     entry1 = MetadataEntry("nrows", value=123)
     entry2 = MetadataEntry("some value", value=3.21)
 
-    partition_entries = [
-        MetadataEntry("partition count", value=123 * i * i) for i in range(3)
-    ]
+    partition_entries = [MetadataEntry("partition count", value=123 * i * i) for i in range(3)]
 
     @op(
         out={
@@ -243,9 +225,7 @@ def test_mixed_asset_definition_lineage():
         yield Output(None, "a")
         yield Output(None, "b")
 
-    @pipeline(
-        mode_defs=[ModeDefinition(resource_defs={"asset_io_manager": my_io_manager})]
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"asset_io_manager": my_io_manager})])
     def my_pipeline():
         a = io_manager_op()
         b = output_def_op()
@@ -258,12 +238,8 @@ def test_mixed_asset_definition_lineage():
     ]
     assert len(materializations) == 4
 
-    check_materialization(
-        materializations[0], AssetKey(["io_manager_table", "io_manager_op"])
-    )
-    check_materialization(
-        materializations[1], AssetKey(["output_def_table", "output_def_op"])
-    )
+    check_materialization(materializations[0], AssetKey(["io_manager_table", "io_manager_op"]))
+    check_materialization(materializations[1], AssetKey(["output_def_table", "output_def_op"]))
     check_materialization(
         materializations[2],
         AssetKey(["output_def_table", "combine_op"]),
@@ -292,13 +268,7 @@ def test_dynamic_output_definition_single_partition_materialization():
     def op1(_):
         return Output(None, "output1", metadata_entries=[entry1])
 
-    @op(
-        out={
-            "output2": DynamicOut(
-                asset_key=lambda context: AssetKey(context.mapping_key)
-            )
-        }
-    )
+    @op(out={"output2": DynamicOut(asset_key=lambda context: AssetKey(context.mapping_key))})
     def op2(_, _input1):
         for i in range(4):
             yield DynamicOutput(
@@ -323,9 +293,7 @@ def test_dynamic_output_definition_single_partition_materialization():
     ]
     assert len(materializations) == 5
 
-    check_materialization(
-        materializations[0], AssetKey(["table1"]), metadata_entries=[entry1]
-    )
+    check_materialization(materializations[0], AssetKey(["table1"]), metadata_entries=[entry1])
     seen_paths = set()
     for i in range(1, 5):
         path = materializations[i].asset_key.path

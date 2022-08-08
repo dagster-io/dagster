@@ -2,7 +2,6 @@ from dagster._core.utils import check_dagster_package_version
 
 from .resources import datadog_resource
 from .version import __version__
-from dagster import In, Out, op
 
 check_dagster_package_version("dagster-datadog", __version__)
 

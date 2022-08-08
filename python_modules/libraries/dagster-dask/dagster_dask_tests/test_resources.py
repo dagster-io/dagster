@@ -1,15 +1,9 @@
 from dagster_dask import dask_resource
 from dask.distributed import Client
 
-from dagster import Out, op, Dict, Output
+from dagster import Dict, Out, Output, op
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import (
-    ModeDefinition,
-    OutputDefinition,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 
 @op(
@@ -43,9 +37,7 @@ def test_single_local_cluster():
         "dashboard_address": None,
     }
     with instance_for_test() as instance:
-        run_config = {
-            "resources": {"dask": {"config": {"cluster": {"local": cluster_config}}}}
-        }
+        run_config = {"resources": {"dask": {"config": {"cluster": {"local": cluster_config}}}}}
         result = execute_pipeline(
             scheduler_info_pipeline,
             run_config=run_config,
@@ -70,11 +62,7 @@ def test_multiple_local_cluster():
 
     with instance_for_test() as instance:
         for cluster_config in cluster_configs:
-            run_config = {
-                "resources": {
-                    "dask": {"config": {"cluster": {"local": cluster_config}}}
-                }
-            }
+            run_config = {"resources": {"dask": {"config": {"cluster": {"local": cluster_config}}}}}
             result = execute_pipeline(
                 scheduler_info_pipeline,
                 run_config=run_config,

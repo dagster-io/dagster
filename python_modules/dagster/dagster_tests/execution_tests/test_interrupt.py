@@ -7,7 +7,6 @@ from threading import Thread
 import pytest
 
 from dagster import (
-    In,
     DagsterEventType,
     Failure,
     Field,
@@ -19,18 +18,9 @@ from dagster import (
     reconstructable,
     resource,
 )
-from dagster._core.errors import (
-    DagsterExecutionInterruptedError,
-    raise_execution_interrupts,
-)
+from dagster._core.errors import DagsterExecutionInterruptedError, raise_execution_interrupts
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import (
-    ModeDefinition,
-    execute_pipeline,
-    execute_pipeline_iterator,
-    pipeline,
-    solid,
-)
+from dagster._legacy import ModeDefinition, execute_pipeline, execute_pipeline_iterator, pipeline
 from dagster._utils import safe_tempfile_path, send_interrupt
 from dagster._utils.interrupts import capture_interrupts, check_captured_interrupt
 
@@ -86,9 +76,7 @@ def test_single_proc_interrupt():
         # interrupt
         for result in execute_pipeline_iterator(
             write_a_file_pipeline,
-            run_config={
-                "solids": {"write_a_file": {"config": {"tempfile": success_tempfile}}}
-            },
+            run_config={"solids": {"write_a_file": {"config": {"tempfile": success_tempfile}}}},
         ):
             result_types.append(result.event_type)
             result_messages.append(result.message)
@@ -99,16 +87,13 @@ def test_single_proc_interrupt():
         assert any(
             [
                 "Execution was interrupted unexpectedly. "
-                "No user initiated termination request was found, treating as failure."
-                in message
+                "No user initiated termination request was found, treating as failure." in message
                 for message in result_messages
             ]
         )
 
 
-@pytest.mark.skipif(
-    _seven.IS_WINDOWS, reason="Interrupts handled differently on windows"
-)
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_interrupt_multiproc():
     with tempfile.TemporaryDirectory() as tempdir:
         with instance_for_test(temp_dir=tempdir) as instance:
@@ -119,9 +104,7 @@ def test_interrupt_multiproc():
             file_4 = os.path.join(tempdir, "file_4")
 
             # launch a thread that waits until the file is written to launch an interrupt
-            Thread(
-                target=_send_kbd_int, args=([file_1, file_2, file_3, file_4],)
-            ).start()
+            Thread(target=_send_kbd_int, args=([file_1, file_2, file_3, file_4],)).start()
 
             results = []
 
@@ -146,9 +129,7 @@ def test_interrupt_multiproc():
             assert [result.event_type for result in results].count(
                 DagsterEventType.STEP_FAILURE
             ) == 4
-            assert DagsterEventType.PIPELINE_FAILURE in [
-                result.event_type for result in results
-            ]
+            assert DagsterEventType.PIPELINE_FAILURE in [result.event_type for result in results]
 
 
 def test_interrupt_resource_teardown():
@@ -186,11 +167,7 @@ def test_interrupt_resource_teardown():
         for result in execute_pipeline_iterator(
             write_a_file_pipeline,
             run_config={
-                "solids": {
-                    "write_a_file_resource_op": {
-                        "config": {"tempfile": success_tempfile}
-                    }
-                }
+                "solids": {"write_a_file_resource_op": {"config": {"tempfile": success_tempfile}}}
             },
         ):
             results.append(result.event_type)
@@ -209,9 +186,7 @@ def _send_interrupt_to_self():
             raise Exception("Timed out waiting for interrupt to be received")
 
 
-@pytest.mark.skipif(
-    _seven.IS_WINDOWS, reason="Interrupts handled differently on windows"
-)
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_capture_interrupt():
     outer_interrupt = False
     inner_interrupt = False
@@ -250,9 +225,7 @@ def test_capture_interrupt():
     assert not inner_interrupt
 
 
-@pytest.mark.skipif(
-    _seven.IS_WINDOWS, reason="Interrupts handled differently on windows"
-)
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_raise_execution_interrupts():
     standard_interrupt = False
     with raise_execution_interrupts():
@@ -264,9 +237,7 @@ def test_raise_execution_interrupts():
     assert standard_interrupt
 
 
-@pytest.mark.skipif(
-    _seven.IS_WINDOWS, reason="Interrupts handled differently on windows"
-)
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_interrupt_inside_nested_delay_and_raise():
     interrupt_inside_nested_raise = False
     interrupt_after_delay = False
@@ -286,9 +257,7 @@ def test_interrupt_inside_nested_delay_and_raise():
     assert not interrupt_after_delay
 
 
-@pytest.mark.skipif(
-    _seven.IS_WINDOWS, reason="Interrupts handled differently on windows"
-)
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_no_interrupt_after_nested_delay_and_raise():
     interrupt_inside_nested_raise = False
     interrupt_after_delay = False
@@ -309,9 +278,7 @@ def test_no_interrupt_after_nested_delay_and_raise():
     assert not interrupt_after_delay
 
 
-@pytest.mark.skipif(
-    _seven.IS_WINDOWS, reason="Interrupts handled differently on windows"
-)
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_calling_raise_execution_interrupts_also_raises_any_captured_interrupts():
     interrupt_from_raise_execution_interrupts = False
     interrupt_after_delay = False
@@ -353,9 +320,7 @@ def policy_job():
     write_and_spin_if_missing()
 
 
-@pytest.mark.skipif(
-    _seven.IS_WINDOWS, reason="Interrupts handled differently on windows"
-)
+@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_retry_policy():
     """
     Start a thread which will interrupt the subprocess after it writes the file.
@@ -382,9 +347,7 @@ def test_retry_policy():
         with instance_for_test(temp_dir=tempdir) as instance:
             result = execute_pipeline(
                 reconstructable(policy_job),
-                run_config={
-                    "ops": {"write_and_spin_if_missing": {"config": {"path": path}}}
-                },
+                run_config={"ops": {"write_and_spin_if_missing": {"config": {"path": path}}}},
                 instance=instance,
             )
             assert result.success

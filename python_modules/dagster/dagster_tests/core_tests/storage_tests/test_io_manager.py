@@ -38,14 +38,11 @@ from dagster._core.storage.mem_io_manager import InMemoryIOManager, mem_io_manag
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import (
-    InputDefinition,
     ModeDefinition,
-    OutputDefinition,
     composite_solid,
     execute_pipeline,
     pipeline,
     reexecute_pipeline,
-    solid,
 )
 
 
@@ -66,17 +63,11 @@ def test_io_manager_with_config():
     def configurable_io_manager(_):
         return MyIOManager()
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(resource_defs={"io_manager": configurable_io_manager})
-        ]
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": configurable_io_manager})])
     def my_pipeline():
         my_op()
 
-    run_config = {
-        "solids": {"my_op": {"outputs": {"result": {"some_config": "some_value"}}}}
-    }
+    run_config = {"solids": {"my_op": {"outputs": {"result": {"some_config": "some_value"}}}}}
     result = execute_pipeline(my_pipeline, run_config=run_config)
     assert result.success
 
@@ -97,11 +88,7 @@ def test_io_manager_with_optional_config():
     def configurable_io_manager(_):
         return MyIOManager()
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(resource_defs={"io_manager": configurable_io_manager})
-        ]
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": configurable_io_manager})])
     def my_pipeline():
         my_op()
 
@@ -159,9 +146,7 @@ def define_pipeline(manager, metadata_dict):
     def op_b(_context, _df):
         return 1
 
-    @pipeline(
-        mode_defs=[ModeDefinition("local", resource_defs={"io_manager": manager})]
-    )
+    @pipeline(mode_defs=[ModeDefinition("local", resource_defs={"io_manager": manager})])
     def my_pipeline():
         op_b(op_a())
 
@@ -198,9 +183,7 @@ def test_fs_io_manager_reexecution():
         )
 
         # re-execution should yield asset_store_operation events instead of intermediate events
-        loaded_input_events = list(
-            filter(lambda evt: evt.is_loaded_input, re_result.event_list)
-        )
+        loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, re_result.event_list))
         assert len(loaded_input_events) == 1
         assert loaded_input_events[0].event_specific_data.upstream_step_key == "op_a"
 
@@ -232,11 +215,7 @@ def test_reexecute_subset_of_subset():
             def plus_three(_, i):
                 return i + 3
 
-            @pipeline(
-                mode_defs=[
-                    ModeDefinition(resource_defs={"io_manager": my_fs_io_manager})
-                ]
-            )
+            @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": my_fs_io_manager})])
             def my_pipeline():
                 plus_three(plus_two(one()))
 
@@ -292,9 +271,7 @@ def test_reexecute_subset_of_subset_with_composite():
 
         my_fs_io_manager = fs_io_manager.configured({"base_dir": tmpdir_path})
 
-        @pipeline(
-            mode_defs=[ModeDefinition(resource_defs={"io_manager": my_fs_io_manager})]
-        )
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": my_fs_io_manager})])
         def my_pipeline():
             plus_three(one_plus_two())
 
@@ -329,9 +306,7 @@ def execute_pipeline_with_steps(
     parent_run_id=None,
     root_run_id=None,
 ):
-    plan = create_execution_plan(
-        pipeline_def, step_keys_to_execute=step_keys_to_execute
-    )
+    plan = create_execution_plan(pipeline_def, step_keys_to_execute=step_keys_to_execute)
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
         run_id=run_id,
@@ -344,9 +319,7 @@ def execute_pipeline_with_steps(
 
 def test_step_subset_with_custom_paths():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        default_io_manager = custom_path_fs_io_manager.configured(
-            {"base_dir": tmpdir_path}
-        )
+        default_io_manager = custom_path_fs_io_manager.configured({"base_dir": tmpdir_path})
         # pass hardcoded file path via metadata
         test_metadata_dict = {
             "op_a": {"path": "a"},
@@ -427,9 +400,7 @@ def test_multi_materialization():
     def op_b(_context, a):
         assert a == 1
 
-    @pipeline(
-        mode_defs=[ModeDefinition(resource_defs={"my_io_manager": dummy_io_manager})]
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_io_manager": dummy_io_manager})])
     def my_pipeline():
         op_b(op_a())
 
@@ -453,9 +424,7 @@ def test_different_io_managers():
     def op_b(_context, a):
         assert a == 1
 
-    @pipeline(
-        mode_defs=[ModeDefinition(resource_defs={"my_io_manager": mem_io_manager})]
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_io_manager": mem_io_manager})])
     def my_pipeline():
         op_b(op_a())
 
@@ -483,9 +452,7 @@ def test_fan_in():
         def op1(_, input1):
             assert input1 == [1, 2]
 
-        @pipeline(
-            mode_defs=[ModeDefinition(resource_defs={"io_manager": default_io_manager})]
-        )
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": default_io_manager})])
         def my_pipeline():
             op1(input1=[input_op1(), input_op2()])
 
@@ -509,9 +476,7 @@ def test_fan_in_skip():
         def receiver(_, input1):
             assert input1 == [1]
 
-        @pipeline(
-            mode_defs=[ModeDefinition(resource_defs={"io_manager": default_io_manager})]
-        )
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": default_io_manager})])
         def my_pipeline():
             receiver(input1=[one(), skip()])
 
@@ -534,16 +499,9 @@ def test_configured():
 
     assert isinstance(configured_io_manager, IOManagerDefinition)
     assert configured_io_manager.description == an_io_manager.description
-    assert (
-        configured_io_manager.output_config_schema == an_io_manager.output_config_schema
-    )
-    assert (
-        configured_io_manager.input_config_schema == an_io_manager.input_config_schema
-    )
-    assert (
-        configured_io_manager.required_resource_keys
-        == an_io_manager.required_resource_keys
-    )
+    assert configured_io_manager.output_config_schema == an_io_manager.output_config_schema
+    assert configured_io_manager.input_config_schema == an_io_manager.input_config_schema
+    assert configured_io_manager.required_resource_keys == an_io_manager.required_resource_keys
     assert configured_io_manager.version is None
 
 
@@ -642,9 +600,7 @@ def test_hardcoded_io_manager():
         mode_defs=[
             ModeDefinition(
                 resource_defs={
-                    "io_manager": IOManagerDefinition.hardcoded_io_manager(
-                        InMemoryIOManager()
-                    )
+                    "io_manager": IOManagerDefinition.hardcoded_io_manager(InMemoryIOManager())
                 }
             )
         ]
@@ -702,9 +658,7 @@ def test_error_boundary_with_gen():
     def basic_op():
         return 5
 
-    @pipeline(
-        mode_defs=[ModeDefinition(resource_defs={"io_manager": error_io_manager})]
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": error_io_manager})])
     def single_solid_pipeline():
         basic_op()
 
@@ -712,10 +666,7 @@ def test_error_boundary_with_gen():
     step_failure = [
         event for event in result.event_list if event.event_type_value == "STEP_FAILURE"
     ][0]
-    assert (
-        step_failure.event_specific_data.error.cls_name
-        == "DagsterExecutionHandleOutputError"
-    )
+    assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"
 
 
 def test_handle_output_exception_raised():
@@ -740,20 +691,13 @@ def test_handle_output_exception_raised():
 
     result = single_op_job.execute_in_process(raise_on_error=False)
     step_failure = [
-        event
-        for event in result.all_node_events
-        if event.event_type_value == "STEP_FAILURE"
+        event for event in result.all_node_events if event.event_type_value == "STEP_FAILURE"
     ][0]
-    assert (
-        step_failure.event_specific_data.error.cls_name
-        == "DagsterExecutionHandleOutputError"
-    )
+    assert step_failure.event_specific_data.error.cls_name == "DagsterExecutionHandleOutputError"
 
 
 def test_output_identifier_dynamic_memoization():
-    context = build_output_context(
-        version="foo", mapping_key="bar", step_key="baz", name="buzz"
-    )
+    context = build_output_context(version="foo", mapping_key="bar", step_key="baz", name="buzz")
 
     with pytest.raises(
         CheckError,
@@ -789,9 +733,7 @@ def test_asset_key():
         after(before())
 
     result = my_graph.to_job(
-        resource_defs={
-            "io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())
-        }
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())}
     ).execute_in_process()
     assert result.success
 
@@ -816,9 +758,7 @@ def test_partition_key():
 
     @job(
         partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
-        resource_defs={
-            "io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())
-        },
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     def my_job():
         my_op2(my_op())
@@ -879,9 +819,7 @@ def test_context_logging_user_events():
         assert first.dagster_event.event_specific_data.materialization.label == "first"
 
         second = relevant_event_logs[1]
-        assert (
-            second.dagster_event.event_specific_data.materialization.label == "second"
-        )
+        assert second.dagster_event.event_specific_data.materialization.label == "second"
 
         assert second.timestamp - first.timestamp >= 1
         assert log.timestamp - first.timestamp >= 1
@@ -920,16 +858,12 @@ def test_context_logging_metadata():
     assert result.success
 
     output_event = result.all_node_events[4]
-    entry_labels = [
-        entry.label for entry in output_event.event_specific_data.metadata_entries
-    ]
+    entry_labels = [entry.label for entry in output_event.event_specific_data.metadata_entries]
     # Ensure that ordering is preserved among yields and calls to log
     assert entry_labels == ["foo", "baz", "bar"]
 
     materialization_event = result.all_node_events[2]
-    metadata_entries = (
-        materialization_event.event_specific_data.materialization.metadata_entries
-    )
+    metadata_entries = materialization_event.event_specific_data.materialization.metadata_entries
 
     assert len(metadata_entries) == 3
     entry_labels = [entry.label for entry in metadata_entries]
@@ -947,9 +881,7 @@ def test_context_logging_metadata():
         DagsterInvariantViolationError,
         match="When handling output 'result' of op 'the_op', received a materialization with metadata, while context.add_output_metadata was used within the same call to handle_output. Due to potential conflicts, this is not allowed. Please specify metadata in one place within the `handle_output` function.",
     ):
-        build_for_materialization(
-            AssetMaterialization("has_metadata", metadata={"bar": "baz"})
-        )
+        build_for_materialization(AssetMaterialization("has_metadata", metadata={"bar": "baz"}))
 
 
 def test_metadata_dynamic_outputs():
@@ -981,10 +913,7 @@ def test_metadata_dynamic_outputs():
     assert len(materializations) == 2
     for materialization in materializations:
         assert materialization.metadata_entries[1].label == "handle_output"
-        assert (
-            materialization.metadata_entries[1].entry_data.text
-            == "I come from handle_output"
-        )
+        assert materialization.metadata_entries[1].entry_data.text == "I come from handle_output"
 
     assert materializations[0].metadata_entries[0].label == "one"
     assert materializations[1].metadata_entries[0].label == "two"
@@ -1011,11 +940,7 @@ def test_nothing_output_nothing_input():
     def op2():
         ...
 
-    @job(
-        resource_defs={
-            "io_manager": IOManagerDefinition.hardcoded_io_manager(my_io_manager)
-        }
-    )
+    @job(resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(my_io_manager)})
     def job1():
         op2(op1())
 
@@ -1046,11 +971,7 @@ def test_nothing_output_something_input():
     def op2(_input1):
         ...
 
-    @job(
-        resource_defs={
-            "io_manager": IOManagerDefinition.hardcoded_io_manager(my_io_manager)
-        }
-    )
+    @job(resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(my_io_manager)})
     def job1():
         op2(op1())
 

@@ -8,7 +8,6 @@ from docs_snippets.legacy.dagster_pandas_guide.shape_constrained_trip import (
     shape_constrained_trip,
 )
 from docs_snippets.legacy.dagster_pandas_guide.summary_stats import summary_stats_trip
-from dagster import In, Out, op
 
 
 @pytest.mark.parametrize(

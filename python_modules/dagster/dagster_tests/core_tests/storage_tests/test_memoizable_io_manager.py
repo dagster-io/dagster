@@ -2,14 +2,12 @@ import os
 from tempfile import TemporaryDirectory
 
 from dagster import (
-    In,
-    Out,
-    op,
     ResourceDefinition,
     build_init_resource_context,
     build_input_context,
     build_output_context,
     io_manager,
+    op,
 )
 from dagster._core.storage.memoizable_io_manager import (
     MemoizableIOManager,
@@ -18,7 +16,7 @@ from dagster._core.storage.memoizable_io_manager import (
 )
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 
 def test_versioned_pickled_object_filesystem_io_manager():
@@ -28,9 +26,7 @@ def test_versioned_pickled_object_filesystem_io_manager():
         store.handle_output(context, "cat")
         assert store.has_output(context)
         assert store.load_input(build_input_context(upstream_output=context)) == "cat"
-        context_diff_version = build_output_context(
-            step_key="foo", name="bar", version="version2"
-        )
+        context_diff_version = build_output_context(step_key="foo", name="bar", version="version2")
         assert not store.has_output(context_diff_version)
 
 

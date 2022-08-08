@@ -1,6 +1,3 @@
-from dagster._legacy import lambda_solid, solid
-
-
 def test_single_input():
     @op
     def add_one(_context, num):

@@ -14,28 +14,18 @@ from airflow.settings import LOG_FORMAT
 from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
 
 from dagster import (
-    In,
-    Out,
-    op,
     DagsterInvariantViolationError,
     DependencyDefinition,
+    In,
     MultiDependencyDefinition,
     Nothing,
+    Out,
 )
 from dagster import _check as check
-from dagster import repository
+from dagster import op, repository
 from dagster._core.definitions.utils import VALID_NAME_REGEX, validate_tags
-from dagster._core.instance import (
-    AIRFLOW_EXECUTION_DATE_STR,
-    IS_AIRFLOW_INGEST_PIPELINE_STR,
-)
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    SolidDefinition,
-    solid,
-)
+from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
+from dagster._legacy import PipelineDefinition, SolidDefinition
 
 
 class DagsterAirflowError(Exception):
@@ -50,11 +40,7 @@ def contains_duplicate_task_names(dag_bag, refresh_from_airflow_db):
     # To enforce predictable iteration order
     sorted_dag_ids = sorted(dag_bag.dag_ids)
     for dag_id in sorted_dag_ids:
-        dag = (
-            dag_bag.dags.get(dag_id)
-            if not refresh_from_airflow_db
-            else dag_bag.get_dag(dag_id)
-        )
+        dag = dag_bag.dags.get(dag_id) if not refresh_from_airflow_db else dag_bag.get_dag(dag_id)
         for task in dag.tasks:
             if task.task_id in seen_task_names:
                 return True
@@ -108,11 +94,7 @@ def make_dagster_repo_from_airflow_dag_bag(
     sorted_dag_ids = sorted(dag_bag.dag_ids)
     for dag_id in sorted_dag_ids:
         # Only call Airflow DB via dag_bag.get_dag(dag_id) if refresh_from_airflow_db is True
-        dag = (
-            dag_bag.dags.get(dag_id)
-            if not refresh_from_airflow_db
-            else dag_bag.get_dag(dag_id)
-        )
+        dag = dag_bag.dags.get(dag_id) if not refresh_from_airflow_db else dag_bag.get_dag(dag_id)
         if not use_unique_id:
             pipeline_defs.append(
                 make_dagster_pipeline_from_airflow_dag(
@@ -236,13 +218,9 @@ def make_dagster_repo_from_airflow_dags_path(
             store_serialized_dags=store_serialized_dags,
         )
     except Exception:
-        raise DagsterAirflowError(
-            "Error initializing airflow.models.dagbag object with arguments"
-        )
+        raise DagsterAirflowError("Error initializing airflow.models.dagbag object with arguments")
 
-    return make_dagster_repo_from_airflow_dag_bag(
-        dag_bag, repo_name, use_airflow_template_context
-    )
+    return make_dagster_repo_from_airflow_dag_bag(dag_bag, repo_name, use_airflow_template_context)
 
 
 def make_dagster_pipeline_from_airflow_dag(
@@ -327,9 +305,7 @@ def make_dagster_pipeline_from_airflow_dag(
 # dashes, dots and underscores) than Dagster's naming conventions (alphanumeric characters,
 # underscores), so Dagster will strip invalid characters and replace with '_'
 def normalized_name(name, unique_id):
-    base_name = "airflow_" + "".join(
-        c if VALID_NAME_REGEX.match(c) else "_" for c in name
-    )
+    base_name = "airflow_" + "".join(c if VALID_NAME_REGEX.match(c) else "_" for c in name)
     if not unique_id:
         return base_name
     else:
@@ -426,9 +402,7 @@ def replace_airflow_logger_handlers():
 
 # If unique_id is not None, this id will be postpended to generated solid names, generally used
 # to enforce unique solid names within a repo.
-def make_dagster_solid_from_airflow_task(
-    task, use_airflow_template_context, unique_id=None
-):
+def make_dagster_solid_from_airflow_task(task, use_airflow_template_context, unique_id=None):
     check.inst_param(task, "task", BaseOperator)
     check.bool_param(use_airflow_template_context, "use_airflow_template_context")
     unique_id = check.opt_int_param(unique_id, "unique_id")
@@ -447,9 +421,7 @@ def make_dagster_solid_from_airflow_task(
             raise DagsterInvariantViolationError(
                 'Could not find "{AIRFLOW_EXECUTION_DATE_STR}" in {target} tags "{tags}". Please '
                 'add "{AIRFLOW_EXECUTION_DATE_STR}" to {target} tags before executing'.format(
-                    target="job"
-                    if context.pipeline_def.is_graph_job_op_target
-                    else "pipeline",
+                    target="job" if context.pipeline_def.is_graph_job_op_target else "pipeline",
                     AIRFLOW_EXECUTION_DATE_STR=AIRFLOW_EXECUTION_DATE_STR,
                     tags=context.run.tags,
                 )

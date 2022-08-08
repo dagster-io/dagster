@@ -3,13 +3,13 @@ import tempfile
 import pytest
 
 from dagster import (
-    Out,
     DagsterInstance,
     DagsterInvalidDefinitionError,
     IOManager,
     In,
     InputManager,
     MetadataEntry,
+    Out,
     PythonObjectDagsterType,
     RootInputManagerDefinition,
     input_manager,
@@ -25,12 +25,10 @@ from dagster._core.instance import InstanceRef
 from dagster._legacy import (
     InputDefinition,
     ModeDefinition,
-    OutputDefinition,
     composite_solid,
     execute_pipeline,
     execute_solid,
     pipeline,
-    solid,
 )
 
 ### input manager tests
@@ -257,9 +255,7 @@ def test_input_config():
     with pytest.raises(DagsterInvalidConfigError):
         check_input_managers.execute_in_process(
             run_config={
-                "ops": {
-                    "second_op": {"inputs": {"an_input": {"config_value": "a_string"}}}
-                }
+                "ops": {"second_op": {"inputs": {"an_input": {"config_value": "a_string"}}}}
             }
         )
 
@@ -426,9 +422,7 @@ def test_root_input_manager():
     def op1(_, input1):
         assert input1 == 5
 
-    @pipeline(
-        mode_defs=[ModeDefinition(resource_defs={"my_loader": my_hardcoded_csv_loader})]
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_loader": my_hardcoded_csv_loader})])
     def my_pipeline():
         op1()
 
@@ -436,9 +430,7 @@ def test_root_input_manager():
 
 
 def test_configurable_root_input_manager():
-    @root_input_manager(
-        config_schema={"base_dir": str}, input_config_schema={"value": int}
-    )
+    @root_input_manager(config_schema={"base_dir": str}, input_config_schema={"value": int})
     def my_configurable_csv_loader(context):
         assert context.resource_config["base_dir"] == "abc"
         return context.config["value"]
@@ -447,11 +439,7 @@ def test_configurable_root_input_manager():
     def op1(_, input1):
         assert input1 == 5
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(resource_defs={"my_loader": my_configurable_csv_loader})
-        ]
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_loader": my_configurable_csv_loader})])
     def my_configurable_pipeline():
         op1()
 
@@ -528,8 +516,7 @@ def test_configured():
     assert isinstance(configured_input_manager, RootInputManagerDefinition)
     assert configured_input_manager.description == my_input_manager.description
     assert (
-        configured_input_manager.required_resource_keys
-        == my_input_manager.required_resource_keys
+        configured_input_manager.required_resource_keys == my_input_manager.required_resource_keys
     )
     assert configured_input_manager.version is None
 
@@ -564,9 +551,7 @@ def test_input_manager_with_failure():
 
         assert failure_data.user_failure_data.description == "Foolure"
         assert failure_data.user_failure_data.metadata_entries[0].label == "label"
-        assert (
-            failure_data.user_failure_data.metadata_entries[0].entry_data.text == "text"
-        )
+        assert failure_data.user_failure_data.metadata_entries[0].entry_data.text == "text"
 
 
 def test_input_manager_with_retries():
@@ -617,25 +602,19 @@ def test_input_manager_with_retries():
         step_stats = instance.get_run_step_stats(result.run_id)
         assert len(step_stats) == 2
 
-        step_stats_1 = instance.get_run_step_stats(
-            result.run_id, step_keys=["take_input_1"]
-        )
+        step_stats_1 = instance.get_run_step_stats(result.run_id, step_keys=["take_input_1"])
         assert len(step_stats_1) == 1
         step_stat_1 = step_stats_1[0]
         assert step_stat_1.status.value == "SUCCESS"
         assert step_stat_1.attempts == 3
 
-        step_stats_2 = instance.get_run_step_stats(
-            result.run_id, step_keys=["take_input_2"]
-        )
+        step_stats_2 = instance.get_run_step_stats(result.run_id, step_keys=["take_input_2"])
         assert len(step_stats_2) == 1
         step_stat_2 = step_stats_2[0]
         assert step_stat_2.status.value == "FAILURE"
         assert step_stat_2.attempts == 4
 
-        step_stats_3 = instance.get_run_step_stats(
-            result.run_id, step_keys=["take_input_3"]
-        )
+        step_stats_3 = instance.get_run_step_stats(result.run_id, step_keys=["take_input_3"])
         assert len(step_stats_3) == 0
 
 
@@ -669,9 +648,7 @@ def test_input_manager_required_resource_keys():
     def root_input_manager_reqs_resources(context):
         assert context.resources.foo_resource == "foo"
 
-    @op(
-        ins={"_manager_input": In(root_manager_key="root_input_manager_reqs_resources")}
-    )
+    @op(ins={"_manager_input": In(root_manager_key="root_input_manager_reqs_resources")})
     def big_op(_, _manager_input):
         return "manager_input"
 
@@ -707,11 +684,7 @@ def test_resource_not_input_manager():
         match="input manager with key 'not_manager' required by input '_input' of solid 'op_requires_manager', but received <class 'dagster._core.definitions.resource_definition.ResourceDefinition'>",
     ):
 
-        @pipeline(
-            mode_defs=[
-                ModeDefinition(resource_defs={"not_manager": resource_not_manager})
-            ]
-        )
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"not_manager": resource_not_manager})])
         def basic():
             op_requires_manager()
 
@@ -748,9 +721,7 @@ def test_no_root_manager_composite():
     ):
 
         @composite_solid(
-            input_defs=[
-                InputDefinition("data", dagster_type=str, root_manager_key="my_root")
-            ]
+            input_defs=[InputDefinition("data", dagster_type=str, root_manager_key="my_root")]
         )
         def _(data):
             _ = inner_op(data=data)
@@ -769,9 +740,7 @@ def test_root_manager_inside_composite():
     def my_composite_solid():
         return inner_op()
 
-    @pipeline(
-        mode_defs=[ModeDefinition(name="default", resource_defs={"my_root": my_root})]
-    )
+    @pipeline(mode_defs=[ModeDefinition(name="default", resource_defs={"my_root": my_root})])
     def my_pipeline():
         my_composite_solid()
 

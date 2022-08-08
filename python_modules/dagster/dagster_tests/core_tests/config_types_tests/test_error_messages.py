@@ -2,17 +2,14 @@ import re
 
 import pytest
 
-from dagster import op, DagsterInvalidDefinitionError, Dict, List, Noneable, Optional
+from dagster import DagsterInvalidDefinitionError, Dict, List, Noneable, Optional, op
 from dagster._core.errors import DagsterInvalidConfigDefinitionError
-from dagster._legacy import solid
 
 
 def test_invalid_optional_in_config():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=re.escape(
-            "You have passed an instance of DagsterType Int? to the config system"
-        ),
+        match=re.escape("You have passed an instance of DagsterType Int? to the config system"),
     ):
 
         @op(config_schema=Optional[int])
@@ -22,9 +19,7 @@ def test_invalid_optional_in_config():
 
 def test_invalid_dict_call():
     # prior to 0.7.0 dicts in config contexts were callable
-    with pytest.raises(
-        TypeError, match=re.escape("'DagsterDictApi' object is not callable")
-    ):
+    with pytest.raises(TypeError, match=re.escape("'DagsterDictApi' object is not callable")):
 
         @op(config_schema=Dict({"foo": int}))  # pylint: disable=not-callable
         def _op(_):

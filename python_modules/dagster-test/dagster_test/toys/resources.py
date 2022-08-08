@@ -1,5 +1,5 @@
-from dagster import In, op, Field, Int, fs_io_manager, reconstructable, resource
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster import Field, Int, fs_io_manager, op, reconstructable, resource
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 from dagster._utils import merge_dicts
 
 

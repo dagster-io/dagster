@@ -1,12 +1,7 @@
 from dagster._core.utils import check_dagster_package_version
 
-from .context import DagstermillExecutionContext
-from .errors import DagstermillError
-from .factory import define_dagstermill_op
-from .io_managers import local_output_notebook_io_manager
 from .manager import MANAGER_FOR_NOTEBOOK_INSTANCE as _MANAGER_FOR_NOTEBOOK_INSTANCE
 from .version import __version__
-from dagster import op
 
 check_dagster_package_version("dagstermill", __version__)
 
@@ -16,9 +11,7 @@ yield_result = _MANAGER_FOR_NOTEBOOK_INSTANCE.yield_result
 
 yield_event = _MANAGER_FOR_NOTEBOOK_INSTANCE.yield_event
 
-_reconstitute_pipeline_context = (
-    _MANAGER_FOR_NOTEBOOK_INSTANCE.reconstitute_pipeline_context
-)
+_reconstitute_pipeline_context = _MANAGER_FOR_NOTEBOOK_INSTANCE.reconstitute_pipeline_context
 
 _teardown = _MANAGER_FOR_NOTEBOOK_INSTANCE.teardown_resources
 

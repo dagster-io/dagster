@@ -17,7 +17,6 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.output import GraphOut
-from dagster._legacy import solid
 
 
 def get_solids():
@@ -355,9 +354,7 @@ def test_execute_in_process_input_values():
     def requires_input_graph(x):
         return requires_input_op(x)
 
-    result = requires_input_graph.alias("named_graph").execute_in_process(
-        input_values={"x": 5}
-    )
+    result = requires_input_graph.alias("named_graph").execute_in_process(input_values={"x": 5})
     assert result.success
     assert result.output_value() == 6
     result = requires_input_graph.to_job().execute_in_process(input_values={"x": 5})

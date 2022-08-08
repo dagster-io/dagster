@@ -1,12 +1,6 @@
-from dagster import In, Out, op, Int, repository
+from dagster import In, Int, Out, op, repository
 from dagster._core.test_utils import today_at_midnight
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    daily_schedule,
-    lambda_solid,
-    pipeline,
-)
+from dagster._legacy import daily_schedule, pipeline
 
 
 @op(ins={"num": In(Int)}, out=Out(Int))

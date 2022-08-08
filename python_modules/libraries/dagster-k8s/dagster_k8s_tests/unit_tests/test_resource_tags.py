@@ -6,11 +6,11 @@ from dagster_k8s.job import (
     get_user_defined_k8s_config,
 )
 
-from dagster import Out, op, DynamicOutput
+from dagster import DynamicOutput, op
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._legacy import DynamicOutputDefinition, pipeline, solid
+from dagster._legacy import pipeline
 
 
 # CPU units are millicpu
@@ -180,9 +180,7 @@ def test_tags_to_dynamic_plan():
     assert resources["limits"]["memory"] == "2560Mi"
 
     for mapping_key in range(3):
-        multiply_inputs_step = plan.get_step_by_key(
-            f"{multiply_inputs.name}[{mapping_key}]"
-        )
+        multiply_inputs_step = plan.get_step_by_key(f"{multiply_inputs.name}[{mapping_key}]")
         dynamic_step_user_defined_k8s_config = get_user_defined_k8s_config(
             multiply_inputs_step.tags
         )

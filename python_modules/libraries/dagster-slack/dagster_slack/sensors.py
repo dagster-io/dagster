@@ -9,9 +9,7 @@ from dagster._core.definitions.run_status_sensor_definition import (
     RunStatusSensorContext,
     run_failure_sensor,
 )
-from dagster._core.definitions.unresolved_asset_job_definition import (
-    UnresolvedAssetJobDefinition,
-)
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._utils.backcompat import deprecation_warning
 
 T = TypeVar("T", bound=RunStatusSensorContext)
@@ -67,9 +65,7 @@ def _default_failure_message_text_fn(context: RunFailureSensorContext) -> str:
 def make_slack_on_run_failure_sensor(
     channel: str,
     slack_token: str,
-    text_fn: Callable[
-        [RunFailureSensorContext], str
-    ] = _default_failure_message_text_fn,
+    text_fn: Callable[[RunFailureSensorContext], str] = _default_failure_message_text_fn,
     blocks_fn: Optional[Callable[[RunFailureSensorContext], List[Dict]]] = None,
     name: Optional[str] = None,
     dagit_base_url: Optional[str] = None,
@@ -157,8 +153,6 @@ def make_slack_on_run_failure_sensor(
             dagit_base_url=dagit_base_url,
         )
 
-        slack_client.chat_postMessage(
-            channel=channel, blocks=blocks, text=main_body_text
-        )
+        slack_client.chat_postMessage(channel=channel, blocks=blocks, text=main_body_text)
 
     return slack_on_run_failure

@@ -4,8 +4,6 @@ from unittest import mock
 import pytest
 
 from dagster import (
-    In,
-    Out,
     DagsterEventType,
     DagsterInvariantViolationError,
     DagsterResourceFunctionError,
@@ -27,10 +25,7 @@ from dagster import (
 from dagster._core.definitions import pipeline
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.resource_definition import make_values_resource
-from dagster._core.errors import (
-    DagsterConfigMappingFunctionError,
-    DagsterInvalidDefinitionError,
-)
+from dagster._core.errors import DagsterConfigMappingFunctionError, DagsterInvalidDefinitionError
 from dagster._core.events.log import EventLogEntry, construct_event_logger
 from dagster._core.execution.api import create_execution_plan, execute_plan, execute_run
 from dagster._core.instance import DagsterInstance
@@ -41,7 +36,6 @@ from dagster._legacy import (
     PipelineDefinition,
     execute_pipeline,
     execute_pipeline_iterator,
-    solid,
 )
 
 
@@ -64,9 +58,7 @@ def test_resource_decorator_no_context():
         pass
 
 
-def assert_pipeline_runs_with_resource(
-    resource_def, resource_config, expected_resource
-):
+def assert_pipeline_runs_with_resource(resource_def, resource_config, expected_resource):
     called = {}
 
     @op(required_resource_keys={"some_name"})
@@ -81,9 +73,7 @@ def assert_pipeline_runs_with_resource(
     )
 
     run_config = (
-        {"resources": {"some_name": {"config": resource_config}}}
-        if resource_config
-        else {}
+        {"resources": {"some_name": {"config": resource_config}}} if resource_config else {}
     )
 
     result = execute_pipeline(pipeline_def, run_config)
@@ -103,14 +93,10 @@ def test_basic_resource():
     pipeline_def = PipelineDefinition(
         name="with_a_resource",
         solid_defs=[a_op],
-        mode_defs=[
-            ModeDefinition(resource_defs={"a_string": define_string_resource()})
-        ],
+        mode_defs=[ModeDefinition(resource_defs={"a_string": define_string_resource()})],
     )
 
-    result = execute_pipeline(
-        pipeline_def, {"resources": {"a_string": {"config": "foo"}}}
-    )
+    result = execute_pipeline(pipeline_def, {"resources": {"a_string": {"config": "foo"}}})
 
     assert result.success
     assert called["yup"]
@@ -202,9 +188,7 @@ def test_yield_resource():
     def _do_resource(init_context):
         yield init_context.resource_config
 
-    yield_string_resource = ResourceDefinition(
-        config_schema=String, resource_fn=_do_resource
-    )
+    yield_string_resource = ResourceDefinition(config_schema=String, resource_fn=_do_resource)
 
     pipeline_def = PipelineDefinition(
         name="with_a_yield_resource",
@@ -212,9 +196,7 @@ def test_yield_resource():
         mode_defs=[ModeDefinition(resource_defs={"a_string": yield_string_resource})],
     )
 
-    result = execute_pipeline(
-        pipeline_def, {"resources": {"a_string": {"config": "foo"}}}
-    )
+    result = execute_pipeline(pipeline_def, {"resources": {"a_string": {"config": "foo"}}})
 
     assert result.success
     assert called["yup"]
@@ -236,9 +218,7 @@ def test_yield_multiple_resources():
         yield init_context.resource_config
         saw.append("after yield " + init_context.resource_config)
 
-    yield_string_resource = ResourceDefinition(
-        config_schema=String, resource_fn=_do_resource
-    )
+    yield_string_resource = ResourceDefinition(config_schema=String, resource_fn=_do_resource)
 
     pipeline_def = PipelineDefinition(
         name="with_yield_resources",
@@ -340,9 +320,7 @@ def test_mixed_multiple_resources():
         yield init_context.resource_config
         saw.append("after yield " + init_context.resource_config)
 
-    yield_string_resource = ResourceDefinition(
-        config_schema=String, resource_fn=_do_yield_resource
-    )
+    yield_string_resource = ResourceDefinition(config_schema=String, resource_fn=_do_yield_resource)
 
     def _do_return_resource(init_context):
         saw.append("before return " + init_context.resource_config)
@@ -394,11 +372,7 @@ def test_none_resource():
     the_pipeline = PipelineDefinition(
         name="test_none_resource",
         solid_defs=[op_test_null],
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"test_null": ResourceDefinition.none_resource()}
-            )
-        ],
+        mode_defs=[ModeDefinition(resource_defs={"test_null": ResourceDefinition.none_resource()})],
     )
 
     result = execute_pipeline(the_pipeline)
@@ -419,15 +393,11 @@ def test_string_resource():
         name="test_string_resource",
         solid_defs=[op_test_string],
         mode_defs=[
-            ModeDefinition(
-                resource_defs={"test_string": ResourceDefinition.string_resource()}
-            )
+            ModeDefinition(resource_defs={"test_string": ResourceDefinition.string_resource()})
         ],
     )
 
-    result = execute_pipeline(
-        the_pipeline, {"resources": {"test_string": {"config": "foo"}}}
-    )
+    result = execute_pipeline(the_pipeline, {"resources": {"test_string": {"config": "foo"}}})
 
     assert result.success
     assert called["yup"]
@@ -487,9 +457,7 @@ def test_hardcoded_resource():
         solid_defs=[op_hardcoded],
         mode_defs=[
             ModeDefinition(
-                resource_defs={
-                    "hardcoded": ResourceDefinition.hardcoded_resource(mock_obj)
-                }
+                resource_defs={"hardcoded": ResourceDefinition.hardcoded_resource(mock_obj)}
             )
         ],
     )
@@ -512,11 +480,7 @@ def test_mock_resource():
     the_pipeline = PipelineDefinition(
         name="test_mock_resource",
         solid_defs=[op_test_mock],
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"test_mock": ResourceDefinition.mock_resource()}
-            )
-        ],
+        mode_defs=[ModeDefinition(resource_defs={"test_mock": ResourceDefinition.mock_resource()})],
     )
 
     result = execute_pipeline(the_pipeline)
@@ -617,9 +581,7 @@ def test_no_config_resource_definition():
         solid_defs=[check_thing],
         mode_defs=[
             ModeDefinition(
-                resource_defs={
-                    "return_thing": ResourceDefinition(_return_thing_resource_fn)
-                }
+                resource_defs={"return_thing": ResourceDefinition(_return_thing_resource_fn)}
             )
         ],
     )
@@ -648,9 +610,7 @@ def test_resource_cleanup():
         solid_defs=[check_resource_created],
         mode_defs=[
             ModeDefinition(
-                resource_defs={
-                    "resource_with_cleanup": ResourceDefinition(_cleanup_resource_fn)
-                }
+                resource_defs={"resource_with_cleanup": ResourceDefinition(_cleanup_resource_fn)}
             )
         ],
     )
@@ -687,12 +647,8 @@ def test_stacked_resource_cleanup():
         mode_defs=[
             ModeDefinition(
                 resource_defs={
-                    "resource_with_cleanup_1": ResourceDefinition(
-                        _cleanup_resource_fn_1
-                    ),
-                    "resource_with_cleanup_2": ResourceDefinition(
-                        _cleanup_resource_fn_2
-                    ),
+                    "resource_with_cleanup_1": ResourceDefinition(_cleanup_resource_fn_1),
+                    "resource_with_cleanup_2": ResourceDefinition(_cleanup_resource_fn_2),
                 }
             )
         ],
@@ -738,9 +694,7 @@ def test_resource_init_failure():
     the_pipeline = PipelineDefinition(
         name="test_resource_init_failure",
         solid_defs=[failing_resource_op],
-        mode_defs=[
-            ModeDefinition(resource_defs={"failing_resource": failing_resource})
-        ],
+        mode_defs=[ModeDefinition(resource_defs={"failing_resource": failing_resource})],
     )
 
     res = execute_pipeline(the_pipeline, raise_on_error=False)
@@ -750,9 +704,7 @@ def test_resource_init_failure():
 
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(the_pipeline)
-    pipeline_run = instance.create_run_for_pipeline(
-        the_pipeline, execution_plan=execution_plan
-    )
+    pipeline_run = instance.create_run_for_pipeline(the_pipeline, execution_plan=execution_plan)
 
     with pytest.raises(
         DagsterResourceFunctionError,
@@ -974,8 +926,7 @@ def test_resource_teardown_failure():
     error_events = [
         event
         for event in result.event_list
-        if event.event_type == DagsterEventType.ENGINE_EVENT
-        and event.event_specific_data.error
+        if event.event_type == DagsterEventType.ENGINE_EVENT and event.event_specific_data.error
     ]
     assert len(error_events) == 1
     assert called == ["A", "B"]
@@ -1043,8 +994,7 @@ def test_multiprocessing_resource_teardown_failure():
         error_events = [
             event
             for event in result.event_list
-            if event.event_type == DagsterEventType.ENGINE_EVENT
-            and event.event_specific_data.error
+            if event.event_type == DagsterEventType.ENGINE_EVENT and event.event_specific_data.error
         ]
         assert len(error_events) == 1
 
@@ -1094,8 +1044,7 @@ def test_single_step_resource_event_logs():
         log_messages = [
             event
             for event in events
-            if isinstance(event, EventLogEntry)
-            and event.level == coerce_valid_log_level("INFO")
+            if isinstance(event, EventLogEntry) and event.level == coerce_valid_log_level("INFO")
         ]
         assert len(log_messages) == 2
 
@@ -1197,11 +1146,7 @@ def test_resource_with_enum_in_schema_configured():
 
     @configured(enum_resource, {"enum": DagsterEnumType})
     def passthrough_to_enum_resource(config):
-        return {
-            "enum": "VALUE_ONE"
-            if config["enum"] == TestPythonEnum.VALUE_ONE
-            else "OTHER"
-        }
+        return {"enum": "VALUE_ONE" if config["enum"] == TestPythonEnum.VALUE_ONE else "OTHER"}
 
     assert_pipeline_runs_with_resource(
         passthrough_to_enum_resource, {"enum": "VALUE_ONE"}, TestPythonEnum.VALUE_ONE
@@ -1282,21 +1227,21 @@ def test_resource_op_subset():
         "io_manager",
     }
 
-    assert nested.get_job_def_for_subset_selection(
-        ["foo_op"]
-    ).get_required_resource_defs_for_mode("default").keys() == {
+    assert nested.get_job_def_for_subset_selection(["foo_op"]).get_required_resource_defs_for_mode(
+        "default"
+    ).keys() == {
         "foo",
         "bar",
         "io_manager",
     }
 
-    assert nested.get_job_def_for_subset_selection(
-        ["bar_op"]
-    ).get_required_resource_defs_for_mode("default").keys() == {"bar", "io_manager"}
+    assert nested.get_job_def_for_subset_selection(["bar_op"]).get_required_resource_defs_for_mode(
+        "default"
+    ).keys() == {"bar", "io_manager"}
 
-    assert nested.get_job_def_for_subset_selection(
-        ["baz_op"]
-    ).get_required_resource_defs_for_mode("default").keys() == {"baz", "io_manager"}
+    assert nested.get_job_def_for_subset_selection(["baz_op"]).get_required_resource_defs_for_mode(
+        "default"
+    ).keys() == {"baz", "io_manager"}
 
 
 def test_config_with_no_schema():
@@ -1334,9 +1279,7 @@ def test_configured_resource_unused():
 
     @pipeline(
         mode_defs=[
-            ModeDefinition(
-                resource_defs={"foo": configured_resource, "bar": basic_resource}
-            )
+            ModeDefinition(resource_defs={"foo": configured_resource, "bar": basic_resource})
         ]
     )
     def basic_pipeline():

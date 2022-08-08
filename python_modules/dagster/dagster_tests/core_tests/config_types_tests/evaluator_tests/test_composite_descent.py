@@ -1,27 +1,20 @@
 import pytest
 
 from dagster import (
-    In,
-    op,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     Enum,
     EnumValue,
     Field,
+    In,
     Output,
     String,
     configured,
     mem_io_manager,
+    op,
 )
 from dagster._core.system_config.composite_descent import composite_descent
-from dagster._legacy import (
-    InputDefinition,
-    composite_solid,
-    execute_pipeline,
-    lambda_solid,
-    pipeline,
-    solid,
-)
+from dagster._legacy import InputDefinition, composite_solid, execute_pipeline, pipeline
 
 
 def test_single_level_pipeline():
@@ -33,9 +26,7 @@ def test_single_level_pipeline():
     def return_int_pipeline():
         return_int()
 
-    result = execute_pipeline(
-        return_int_pipeline, {"solids": {"return_int": {"config": 2}}}
-    )
+    result = execute_pipeline(return_int_pipeline, {"solids": {"return_int": {"config": 2}}})
 
     assert result.success
     assert result.result_for_solid("return_int").output_value() == 2
@@ -58,9 +49,7 @@ def test_single_solid_pipeline_composite_descent():
 
     assert solid_config_dict["return_int"].config == 3
 
-    result = execute_pipeline(
-        return_int_pipeline, {"solids": {"return_int": {"config": 3}}}
-    )
+    result = execute_pipeline(return_int_pipeline, {"solids": {"return_int": {"config": 3}}})
 
     assert result.success
     assert result.result_for_solid("return_int").output_value() == 3
@@ -91,9 +80,7 @@ def test_single_layer_pipeline_composite_descent():
     result = execute_pipeline(
         return_int_pipeline_passthrough,
         {
-            "solids": {
-                "return_int_passthrough": {"solids": {"return_int": {"config": 34}}}
-            },
+            "solids": {"return_int_passthrough": {"solids": {"return_int": {"config": 34}}}},
         },
     )
 
@@ -106,9 +93,7 @@ def test_single_layer_pipeline_hardcoded_config_mapping():
     def return_int(context):
         return context.op_config
 
-    @composite_solid(
-        config_schema={}, config_fn=lambda _cfg: {"return_int": {"config": 35}}
-    )
+    @composite_solid(config_schema={}, config_fn=lambda _cfg: {"return_int": {"config": 35}})
     def return_int_hardcode_wrap():
         return_int()
 
@@ -193,12 +178,8 @@ def test_mix_layer_computed_mapping():
         {
             "layer_one": {
                 "solids": {
-                    "layer_two_passthrough": {
-                        "solids": {"return_int": {"config": 234}}
-                    },
-                    "layer_two_double_wrap": {
-                        "config": {"number": 5, "inject_error": False}
-                    },
+                    "layer_two_passthrough": {"solids": {"return_int": {"config": 234}}},
+                    "layer_two_double_wrap": {"config": {"number": 5, "inject_error": False}},
                 }
             }
         },
@@ -208,10 +189,7 @@ def test_mix_layer_computed_mapping():
     assert solid_config_dict["layer_one.layer_two_passthrough.return_int"].config == 234
     # this passed through both config fns which each added one
     assert (
-        solid_config_dict[
-            "layer_one.layer_two_double_wrap.layer_three_wrap.return_int"
-        ].config
-        == 7
+        solid_config_dict["layer_one.layer_two_double_wrap.layer_three_wrap.return_int"].config == 7
     )
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
@@ -220,21 +198,16 @@ def test_mix_layer_computed_mapping():
             {
                 "layer_one": {
                     "solids": {
-                        "layer_two_passthrough": {
-                            "solids": {"return_int": {"config": 234}}
-                        },
-                        "layer_two_double_wrap": {
-                            "config": {"number": 234, "inject_error": True}
-                        },
+                        "layer_two_passthrough": {"solids": {"return_int": {"config": 234}}},
+                        "layer_two_double_wrap": {"config": {"number": 234, "inject_error": True}},
                     }
                 }
             },
             resource_defs={"io_manager": mem_io_manager},
         )
 
-    assert (
-        'Solid "layer_two_double_wrap" with definition "layer_two_double_wrap"'
-        in str(exc_info.value)
+    assert 'Solid "layer_two_double_wrap" with definition "layer_two_double_wrap"' in str(
+        exc_info.value
     )
     assert (
         'Error 1: Invalid scalar at path root:layer_three_wrap:config:number. Value "a_string"'
@@ -246,12 +219,8 @@ def test_mix_layer_computed_mapping():
             "solids": {
                 "layer_one": {
                     "solids": {
-                        "layer_two_passthrough": {
-                            "solids": {"return_int": {"config": 55}}
-                        },
-                        "layer_two_double_wrap": {
-                            "config": {"number": 7, "inject_error": False}
-                        },
+                        "layer_two_passthrough": {"solids": {"return_int": {"config": 55}}},
+                        "layer_two_double_wrap": {"config": {"number": 7, "inject_error": False}},
                     }
                 }
             },
@@ -259,10 +228,7 @@ def test_mix_layer_computed_mapping():
     )
 
     assert (
-        result.result_for_handle(
-            "layer_one.layer_two_passthrough.return_int"
-        ).output_value()
-        == 55
+        result.result_for_handle("layer_one.layer_two_passthrough.return_int").output_value() == 55
     )
     assert (
         result.result_for_handle(
@@ -324,9 +290,7 @@ def test_double_nested_input_via_config_mapping():
         {"double_wrap": {"inputs": {"num": {"value": 2}}}},
         resource_defs={"io_manager": mem_io_manager},
     )
-    assert solid_handle_dict["double_wrap.wrap_solid.number"].inputs == {
-        "num": {"value": 4}
-    }
+    assert solid_handle_dict["double_wrap.wrap_solid.number"].inputs == {"num": {"value": 4}}
     assert solid_handle_dict["double_wrap"].inputs == {"num": {"value": 2}}
 
     result = execute_pipeline(
@@ -415,9 +379,7 @@ def wrap():
 
 @composite_solid(
     config_schema={"nesting_override": Field(String)},
-    config_fn=lambda cfg: {
-        "layer1": {"config": {"override_str": cfg["nesting_override"]}}
-    },
+    config_fn=lambda cfg: {"layer1": {"config": {"override_str": cfg["nesting_override"]}}},
 )
 def nesting_wrap():
     return wrap.alias("layer1")()
@@ -445,9 +407,7 @@ def no_wrap_pipeline():
 
 def get_fully_unwrapped_config():
     return {
-        "solids": {
-            "layer0": {"solids": {"layer1": {"solids": {"layer2": {"config": "blah"}}}}}
-        }
+        "solids": {"layer0": {"solids": {"layer1": {"solids": {"layer2": {"config": "blah"}}}}}}
     }
 
 
@@ -461,9 +421,7 @@ def test_direct_composite_descent_with_error():
 
     @composite_solid(
         config_schema={"nesting_override": Field(int)},
-        config_fn=lambda cfg: {
-            "layer1": {"config": {"override_str": cfg["nesting_override"]}}
-        },
+        config_fn=lambda cfg: {"layer1": {"config": {"override_str": cfg["nesting_override"]}}},
     )
     def nesting_wrap_wrong_type_at_leaf():
         return wrap_coerce_to_wrong_type.alias("layer1")()
@@ -479,17 +437,13 @@ def test_direct_composite_descent_with_error():
             resource_defs={"io_manager": mem_io_manager},
         )
 
-    assert "In pipeline wrap_pipeline_with_error at stack layer0:layer1:" in str(
-        exc_info.value
-    )
+    assert "In pipeline wrap_pipeline_with_error at stack layer0:layer1:" in str(exc_info.value)
 
     assert (
         'Solid "layer1" with definition "wrap_coerce_to_wrong_type" has a configuration error.'
         in str(exc_info.value)
     )
-    assert 'Error 1: Invalid scalar at path root:layer2:config. Value "214"' in str(
-        exc_info.value
-    )
+    assert 'Error 1: Invalid scalar at path root:layer2:config. Value "214"' in str(exc_info.value)
 
 
 def test_new_nested_solids_no_mapping():
@@ -535,9 +489,7 @@ def test_config_mapped_enum():
     @composite_solid(
         config_schema={"num": int},
         config_fn=lambda cfg: {
-            "return_enum": {
-                "config": {"enum": "VALUE_ONE" if cfg["num"] == 1 else "OTHER"}
-            }
+            "return_enum": {"config": {"enum": "VALUE_ONE" if cfg["num"] == 1 else "OTHER"}}
         },
     )
     def wrapping_return_enum():
@@ -570,9 +522,7 @@ def test_config_mapped_enum():
     @composite_solid(
         config_schema={"enum": DagsterEnumType},
         config_fn=lambda cfg: {
-            "return_int": {
-                "config": {"num": 1 if cfg["enum"] == TestPythonEnum.VALUE_ONE else 2}
-            }
+            "return_int": {"config": {"num": 1 if cfg["enum"] == TestPythonEnum.VALUE_ONE else 2}}
         },
     )
     def wrap_return_int():
@@ -622,9 +572,7 @@ def test_configured_solid_with_inputs():
         assert context.op_config == "config sentinel"
         return x
 
-    return_int_configured = configured(return_int, name="return_int_configured")(
-        "config sentinel"
-    )
+    return_int_configured = configured(return_int, name="return_int_configured")("config sentinel")
 
     @pipeline
     def return_int_pipeline():
@@ -651,9 +599,7 @@ def test_single_level_pipeline_with_complex_configured_solid_within_composite():
 
     @composite_solid(
         config_schema={"num_as_str": str},
-        config_fn=lambda cfg: {
-            "introduce_aj": {"config": {"age": int(cfg["num_as_str"])}}
-        },
+        config_fn=lambda cfg: {"introduce_aj": {"config": {"age": int(cfg["num_as_str"])}}},
     )
     def introduce_wrapper():
         return introduce_aj()
@@ -668,10 +614,7 @@ def test_single_level_pipeline_with_complex_configured_solid_within_composite():
     )
 
     assert result.success
-    assert (
-        result.result_for_solid("introduce_wrapper").output_value()
-        == "AJ is 20 years old"
-    )
+    assert result.result_for_solid("introduce_wrapper").output_value() == "AJ is 20 years old"
 
 
 def test_single_level_pipeline_with_complex_configured_solid():
@@ -688,9 +631,7 @@ def test_single_level_pipeline_with_complex_configured_solid():
     result = execute_pipeline(introduce_pipeline)
 
     assert result.success
-    assert (
-        result.result_for_solid("introduce_aj").output_value() == "AJ is 20 years old"
-    )
+    assert result.result_for_solid("introduce_aj").output_value() == "AJ is 20 years old"
 
 
 def test_single_level_pipeline_with_complex_configured_solid_nested():
@@ -711,10 +652,7 @@ def test_single_level_pipeline_with_complex_configured_solid_nested():
     result = execute_pipeline(introduce_pipeline)
 
     assert result.success
-    assert (
-        result.result_for_solid("introduce_aj_20").output_value()
-        == "AJ is 20 years old"
-    )
+    assert result.result_for_solid("introduce_aj_20").output_value() == "AJ is 20 years old"
 
 
 def test_single_level_pipeline_with_configured_composite_solid():
@@ -736,9 +674,9 @@ def test_single_level_pipeline_with_configured_composite_solid():
     def multiply_by_four():
         return add(multiply_by_two(), multiply_by_two.alias("multiply_by_two_again")())
 
-    multiply_three_by_four = configured(
-        multiply_by_four, name="multiply_three_by_four"
-    )({"outer": 3})
+    multiply_three_by_four = configured(multiply_by_four, name="multiply_three_by_four")(
+        {"outer": 3}
+    )
 
     @pipeline
     def test_pipeline():
@@ -808,9 +746,9 @@ def test_configured_composite_solid_with_inputs():
     def return_int_composite(x, y):
         return add(return_int_x(x), return_int_x.alias("return_int_again")(y))
 
-    return_int_composite_x = configured(
-        return_int_composite, name="return_int_composite"
-    )({"outer": "outer config sentinel"})
+    return_int_composite_x = configured(return_int_composite, name="return_int_composite")(
+        {"outer": "outer config sentinel"}
+    )
 
     @pipeline
     def test_pipeline():

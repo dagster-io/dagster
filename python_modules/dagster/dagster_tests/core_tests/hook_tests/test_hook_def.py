@@ -13,27 +13,13 @@ from dagster import (
     reconstructable,
     resource,
 )
-from dagster._core.definitions import (
-    NodeHandle,
-    PresetDefinition,
-    failure_hook,
-    success_hook,
-)
+from dagster._core.definitions import NodeHandle, PresetDefinition, failure_hook, success_hook
 from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 from dagster._core.definitions.events import HookExecutionResult
 from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.errors import (
-    DagsterExecutionInterruptedError,
-    DagsterInvalidDefinitionError,
-)
+from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidDefinitionError
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import (
-    ModeDefinition,
-    PipelineDefinition,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
+from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline
 
 
 class SomeUserException(Exception):
@@ -66,9 +52,7 @@ def test_hook():
     a_pipeline = PipelineDefinition(
         solid_defs=[a_op],
         name="test",
-        dependencies={
-            NodeInvocation("a_op", "a_op_with_hook", hook_defs={a_hook, named_hook}): {}
-        },
+        dependencies={NodeInvocation("a_op", "a_op_with_hook", hook_defs={a_hook, named_hook}): {}},
     )
 
     result = execute_pipeline(a_pipeline)
@@ -93,9 +77,7 @@ def test_hook_user_error():
     a_pipeline = PipelineDefinition(
         solid_defs=[a_op],
         name="test",
-        dependencies={
-            NodeInvocation("a_op", "a_op_with_hook", hook_defs={error_hook}): {}
-        },
+        dependencies={NodeInvocation("a_op", "a_op_with_hook", hook_defs={error_hook}): {}},
     )
 
     result = execute_pipeline(a_pipeline)
@@ -112,25 +94,19 @@ def test_hook_user_error():
 
 
 def test_hook_decorator_arg_error():
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="does not have required positional"
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError, match="does not have required positional"):
 
         @success_hook
         def _():
             pass
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="does not have required positional"
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError, match="does not have required positional"):
 
         @failure_hook
         def _():
             pass
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="does not have required positional"
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError, match="does not have required positional"):
 
         @event_list_hook()
         def _(_):
@@ -178,9 +154,7 @@ def test_hook_resource_error():
         PipelineDefinition(
             solid_defs=[a_op],
             name="test",
-            dependencies={
-                NodeInvocation("a_op", "a_op_with_hook", hook_defs={a_hook}): {}
-            },
+            dependencies={NodeInvocation("a_op", "a_op_with_hook", hook_defs={a_hook}): {}},
             mode_defs=[ModeDefinition(resource_defs={"resource_a": resource_a})],
         )
 
@@ -314,9 +288,7 @@ def test_failure_hook_framework_exception():
     with mock.patch(
         "dagster._core.execution.plan.execute_plan.core_dagster_event_sequence_for_step"
     ) as mocked_event_sequence:
-        mocked_event_sequence.side_effect = Exception(
-            "Framework exception during execution"
-        )
+        mocked_event_sequence.side_effect = Exception("Framework exception during execution")
 
         result = my_job.execute_in_process(raise_on_error=False)
         assert not result.success
@@ -457,9 +429,7 @@ def test_hook_decorator():
     assert a_pipeline.description == "i am a pipeline"
     assert a_pipeline.has_mode_definition("my_mode")
     assert a_pipeline.has_preset("my_empty_preset")
-    retry_policy = a_pipeline.get_retry_policy_for_handle(
-        NodeHandle("a_op", parent=None)
-    )
+    retry_policy = a_pipeline.get_retry_policy_for_handle(NodeHandle("a_op", parent=None))
     assert isinstance(retry_policy, RetryPolicy)
     assert retry_policy.max_retries == 3
 
@@ -481,9 +451,7 @@ def test_hook_with_resource_to_resource_dep():
     def basic_op():
         pass
 
-    mode_def = ModeDefinition(
-        resource_defs={"resource_a": resource_a, "resource_b": resource_b}
-    )
+    mode_def = ModeDefinition(resource_defs={"resource_a": resource_a, "resource_b": resource_b})
 
     # Check that resource-to-resource dependency is caught when providing hook to solid
     @pipeline(mode_defs=[mode_def])
@@ -572,9 +540,7 @@ def test_multiproc_hook_resource_deps():
     assert res_hook_job.execute_in_process().success
 
     with instance_for_test() as instance:
-        assert execute_pipeline(
-            reconstructable(res_hook_job), instance=instance
-        ).success
+        assert execute_pipeline(reconstructable(res_hook_job), instance=instance).success
 
 
 def test_hook_decorator_graph_job_op():
@@ -607,8 +573,4 @@ def test_job_hook_context_job_name():
     def a_graph():
         pass
 
-    assert (
-        a_graph.to_job(name=my_job_name, hooks={a_success_hook})
-        .execute_in_process()
-        .success
-    )
+    assert a_graph.to_job(name=my_job_name, hooks={a_success_hook}).execute_in_process().success

@@ -4,10 +4,7 @@ import pytest
 
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
-from dagster._core.errors import (
-    DagsterExecutionStepNotFoundError,
-    DagsterInvalidSubsetError,
-)
+from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster._core.execution.api import create_execution_plan, execute_run
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test, step_output_event_filter
@@ -19,7 +16,6 @@ from dagster._legacy import (
 )
 
 from .test_subset_selector import asset_selection_job, foo_pipeline
-from dagster import In, Out, op
 
 
 def test_subset_for_execution():
@@ -41,9 +37,7 @@ def test_asset_subset_for_execution():
 
     result = execute_pipeline(sub_pipeline)
     assert result.success
-    materializations = [
-        event for event in result.step_event_list if event.is_step_materialization
-    ]
+    materializations = [event for event in result.step_event_list if event.is_step_materialization]
     assert len(materializations) == 1
     assert materializations[0].asset_key == AssetKey("my_asset")
 
@@ -70,9 +64,7 @@ def test_reexecute_asset_subset():
             instance=instance, asset_selection=[AssetKey("my_asset")]
         )
         assert result.success
-        materializations = [
-            event for event in result.all_events if event.is_step_materialization
-        ]
+        materializations = [event for event in result.all_events if event.is_step_materialization]
         assert len(materializations) == 1
         assert materializations[0].asset_key == AssetKey("my_asset")
 
@@ -86,9 +78,7 @@ def test_reexecute_asset_subset():
         )
         assert reexecution_result.success
         materializations = [
-            event
-            for event in reexecution_result.step_event_list
-            if event.is_step_materialization
+            event for event in reexecution_result.step_event_list if event.is_step_materialization
         ]
         assert len(materializations) == 1
         assert materializations[0].asset_key == AssetKey("my_asset")
@@ -110,9 +100,7 @@ def test_execute_pipeline_with_solid_selection_single_clause():
     pipeline_result_down = execute_pipeline(
         foo_pipeline,
         run_config={
-            "solids": {
-                "add_nums": {"inputs": {"num1": {"value": 1}, "num2": {"value": 2}}}
-            }
+            "solids": {"add_nums": {"inputs": {"num1": {"value": 1}, "num2": {"value": 2}}}}
         },
         solid_selection=["add_nums++"],
     )
@@ -159,9 +147,7 @@ def test_execute_pipeline_with_solid_selection_invalid():
 
 def test_execute_pipeline_iterator_with_solid_selection_query():
 
-    output_event_iterator = step_output_event_filter(
-        execute_pipeline_iterator(foo_pipeline)
-    )
+    output_event_iterator = step_output_event_filter(execute_pipeline_iterator(foo_pipeline))
     events = list(output_event_iterator)
     assert len(events) == 5
 
@@ -175,9 +161,7 @@ def test_execute_pipeline_iterator_with_solid_selection_query():
         execute_pipeline_iterator(
             foo_pipeline,
             run_config={
-                "solids": {
-                    "add_nums": {"inputs": {"num1": {"value": 1}, "num2": {"value": 2}}}
-                }
+                "solids": {"add_nums": {"inputs": {"num1": {"value": 1}, "num2": {"value": 2}}}}
             },
             solid_selection=["add_nums++"],
         )

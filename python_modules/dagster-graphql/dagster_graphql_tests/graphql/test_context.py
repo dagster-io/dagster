@@ -4,17 +4,12 @@ from contextlib import ExitStack
 from unittest import mock
 
 import pytest
-from dagster_graphql.test.utils import (
-    define_out_of_process_workspace,
-    main_repo_location_name,
-)
+from dagster_graphql.test.utils import define_out_of_process_workspace, main_repo_location_name
 
 from dagster import repository
-from dagster._core.host_representation.repository_location import (
-    GrpcServerRepositoryLocation,
-)
+from dagster._core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import lambda_solid, pipeline
+from dagster._legacy import pipeline
 
 
 def get_repo():
@@ -49,21 +44,15 @@ def test_can_reload_on_external_repository_error():
                 # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
                 "dagster._core.host_representation.repository_location.sync_get_streaming_external_repositories_data_grpc"
             ) as external_repository_mock:
-                external_repository_mock.side_effect = Exception(
-                    "get_external_repo_failure"
-                )
+                external_repository_mock.side_effect = Exception("get_external_repo_failure")
 
-                with pytest.warns(
-                    UserWarning, match=re.escape("get_external_repo_failure")
-                ):
+                with pytest.warns(UserWarning, match=re.escape("get_external_repo_failure")):
                     workspace = exit_stack.enter_context(
                         define_out_of_process_workspace(__file__, "get_repo", instance)
                     )
 
                 assert not workspace.has_repository_location(main_repo_location_name())
-                assert workspace.has_repository_location_error(
-                    main_repo_location_name()
-                )
+                assert workspace.has_repository_location_error(main_repo_location_name())
 
             workspace.reload_repository_location(main_repo_location_name())
             assert workspace.has_repository_location(main_repo_location_name())
@@ -71,9 +60,7 @@ def test_can_reload_on_external_repository_error():
 
 def test_reload_on_process_context():
     with instance_for_test() as instance:
-        with define_out_of_process_workspace(
-            __file__, "get_repo", instance
-        ) as process_context:
+        with define_out_of_process_workspace(__file__, "get_repo", instance) as process_context:
             request_context = process_context.create_request_context()
 
             # Save the repository name
@@ -96,9 +83,7 @@ def test_reload_on_process_context():
 
 def test_reload_on_request_context():
     with instance_for_test() as instance:
-        with define_out_of_process_workspace(
-            __file__, "get_repo", instance
-        ) as process_context:
+        with define_out_of_process_workspace(__file__, "get_repo", instance) as process_context:
             assert process_context.repository_locations_count == 1
 
             # Create a request context from the process context
@@ -132,9 +117,7 @@ def test_reload_on_request_context_2():
     # but calls reload from the request_context instead of on the process_context
 
     with instance_for_test() as instance:
-        with define_out_of_process_workspace(
-            __file__, "get_repo", instance
-        ) as process_context:
+        with define_out_of_process_workspace(__file__, "get_repo", instance) as process_context:
             assert process_context.repository_locations_count == 1
 
             request_context = process_context.create_request_context()
@@ -180,9 +163,7 @@ def test_handle_cleaup_by_gc_without_request_context():
         called["yup"] = True
 
     with instance_for_test() as instance:
-        with define_out_of_process_workspace(
-            __file__, "get_repo", instance
-        ) as process_context:
+        with define_out_of_process_workspace(__file__, "get_repo", instance) as process_context:
             assert process_context.repository_locations_count == 1
 
             request_context = process_context.create_request_context()

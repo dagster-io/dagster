@@ -2,7 +2,7 @@ from dagster_msteams.hooks import teams_on_failure, teams_on_success
 from dagster_msteams.resources import msteams_resource
 from mock import patch
 
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 
 class SomeUserException(Exception):
@@ -31,18 +31,12 @@ def test_failure_hook_on_solid_instance(mock_teams_post_message):
         pass_op.alias("fail_op_with_hook").with_hooks(hook_defs={teams_on_failure()})()
         fail_op.alias("fail_op_without_hook")()
         fail_op.with_hooks(
-            hook_defs={
-                teams_on_failure(
-                    message_fn=my_message_fn, dagit_base_url="localhost:3000"
-                )
-            }
+            hook_defs={teams_on_failure(message_fn=my_message_fn, dagit_base_url="localhost:3000")}
         )()
 
     result = execute_pipeline(
         a_pipeline,
-        run_config={
-            "resources": {"msteams": {"config": {"hook_url": "https://some_url_here/"}}}
-        },
+        run_config={"resources": {"msteams": {"config": {"hook_url": "https://some_url_here/"}}}},
         raise_on_error=False,
     )
     assert not result.success
@@ -54,23 +48,15 @@ def test_success_hook_on_solid_instance(mock_teams_post_message):
     @pipeline(mode_defs=[ModeDefinition(resource_defs={"msteams": msteams_resource})])
     def a_pipeline():
         pass_op.with_hooks(hook_defs={teams_on_success()})()
-        pass_op.alias("success_solid_with_hook").with_hooks(
-            hook_defs={teams_on_success()}
-        )()
+        pass_op.alias("success_solid_with_hook").with_hooks(hook_defs={teams_on_success()})()
         fail_op.alias("success_solid_without_hook")()
         fail_op.with_hooks(
-            hook_defs={
-                teams_on_success(
-                    message_fn=my_message_fn, dagit_base_url="localhost:3000"
-                )
-            }
+            hook_defs={teams_on_success(message_fn=my_message_fn, dagit_base_url="localhost:3000")}
         )()
 
     result = execute_pipeline(
         a_pipeline,
-        run_config={
-            "resources": {"msteams": {"config": {"hook_url": "https://some_url_here/"}}}
-        },
+        run_config={"resources": {"msteams": {"config": {"hook_url": "https://some_url_here/"}}}},
         raise_on_error=False,
     )
     assert not result.success
@@ -88,9 +74,7 @@ def test_failure_hook_decorator(mock_teams_post_message):
 
     result = execute_pipeline(
         a_pipeline,
-        run_config={
-            "resources": {"msteams": {"config": {"hook_url": "https://some_url_here/"}}}
-        },
+        run_config={"resources": {"msteams": {"config": {"hook_url": "https://some_url_here/"}}}},
         raise_on_error=False,
     )
     assert not result.success
@@ -108,9 +92,7 @@ def test_success_hook_decorator(mock_teams_post_message):
 
     result = execute_pipeline(
         a_pipeline,
-        run_config={
-            "resources": {"msteams": {"config": {"hook_url": "https://some_url_here/"}}}
-        },
+        run_config={"resources": {"msteams": {"config": {"hook_url": "https://some_url_here/"}}}},
         raise_on_error=False,
     )
     assert not result.success

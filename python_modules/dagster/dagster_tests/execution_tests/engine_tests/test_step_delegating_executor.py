@@ -1,11 +1,9 @@
 import subprocess
 import time
 
-from dagster import In, Out, executor, job, op, reconstructable
+from dagster import executor, job, op, reconstructable
 from dagster._config import Permissive
-from dagster._core.definitions.executor_definition import (
-    multiple_process_executor_requirements,
-)
+from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_pipeline
 from dagster._core.execution.retries import RetryMode
@@ -176,9 +174,7 @@ def test_execute_intervals():
         result = execute_pipeline(
             reconstructable(foo_job),
             instance=instance,
-            run_config={
-                "execution": {"config": {"check_step_health_interval_seconds": 60}}
-            },
+            run_config={"execution": {"config": {"check_step_health_interval_seconds": 60}}},
         )
         TestStepHandler.wait_for_processes()
 
@@ -193,9 +189,7 @@ def test_execute_intervals():
         result = execute_pipeline(
             reconstructable(foo_job),
             instance=instance,
-            run_config={
-                "execution": {"config": {"check_step_health_interval_seconds": 0}}
-            },
+            run_config={"execution": {"config": {"check_step_health_interval_seconds": 0}}},
         )
         TestStepHandler.wait_for_processes()
 
@@ -232,9 +226,7 @@ def test_max_concurrent():
     active_step = None
     for event in result.event_list:
         if event.event_type_value == DagsterEventType.STEP_START.value:
-            assert (
-                active_step is None
-            ), "A second step started before the first finished!"
+            assert active_step is None, "A second step started before the first finished!"
             active_step = event.step_key
         elif event.event_type_value == DagsterEventType.STEP_SUCCESS.value:
             assert (

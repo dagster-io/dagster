@@ -1,13 +1,7 @@
 import time
 
-from dagster import op, Output, fs_io_manager
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    pipeline,
-    solid,
-)
+from dagster import Output, fs_io_manager, op
+from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, pipeline
 
 
 def nonce_solid(name, n_inputs, n_outputs):
@@ -17,32 +11,22 @@ def nonce_solid(name, n_inputs, n_outputs):
 
     @op(
         name=name,
-        input_defs=[
-            InputDefinition(name="input_{}".format(i)) for i in range(n_inputs)
-        ],
-        output_defs=[
-            OutputDefinition(name="output_{}".format(i)) for i in range(n_outputs)
-        ],
+        input_defs=[InputDefinition(name="input_{}".format(i)) for i in range(n_inputs)],
+        output_defs=[OutputDefinition(name="output_{}".format(i)) for i in range(n_outputs)],
     )
     def op_fn(context, **_kwargs):
         for i in range(200):
             time.sleep(0.02)
             if i % 1000 == 420:
-                context.log.error(
-                    "Error message seq={i} from solid {name}".format(i=i, name=name)
-                )
+                context.log.error("Error message seq={i} from solid {name}".format(i=i, name=name))
             elif i % 100 == 0:
                 context.log.warning(
                     "Warning message seq={i} from solid {name}".format(i=i, name=name)
                 )
             elif i % 10 == 0:
-                context.log.info(
-                    "Info message seq={i} from solid {name}".format(i=i, name=name)
-                )
+                context.log.info("Info message seq={i} from solid {name}".format(i=i, name=name))
             else:
-                context.log.debug(
-                    "Debug message seq={i} from solid {name}".format(i=i, name=name)
-                )
+                context.log.debug("Debug message seq={i} from solid {name}".format(i=i, name=name))
         for i in range(n_outputs):
             yield Output(value="foo", output_name="output_{}".format(i))
 

@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from googleapiclient.discovery import build
 from oauth2client.client import GoogleCredentials
 
-from dagster import op, resource
+from dagster import resource
 
 from .configs import define_dataproc_create_cluster_config
 from .types import DataprocError
@@ -24,15 +24,12 @@ class DataprocResource:
 
         # See https://github.com/googleapis/google-api-python-client/issues/299 for the
         # cache_discovery=False configuration below
-        self.dataproc = build(
-            "dataproc", "v1", credentials=credentials, cache_discovery=False
-        )
+        self.dataproc = build("dataproc", "v1", credentials=credentials, cache_discovery=False)
 
         self.config = config
 
         (self.project_id, self.region, self.cluster_name, self.cluster_config) = (
-            self.config.get(k)
-            for k in ("projectId", "region", "clusterName", "cluster_config")
+            self.config.get(k) for k in ("projectId", "region", "clusterName", "cluster_config")
         )
 
     @property
@@ -117,9 +114,7 @@ class DataprocResource:
 
             return False
 
-        done = DataprocResource._iter_and_sleep_until_ready(
-            iter_fn, max_wait_time_sec=wait_timeout
-        )
+        done = DataprocResource._iter_and_sleep_until_ready(iter_fn, max_wait_time_sec=wait_timeout)
         if not done:
             job = self.get_job(job_id)
             raise DataprocError("Job run timed out: %s" % str(job["status"]))

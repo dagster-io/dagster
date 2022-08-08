@@ -1,18 +1,6 @@
-from dagster import (
-    In,
-    Out,
-    op,
-    Array,
-    Bool,
-    Noneable,
-    Nothing,
-    Output,
-    Permissive,
-    StringSource,
-)
+from dagster import Array, Bool, In, Noneable, Nothing, Out, Output, Permissive, StringSource, op
 from dagster._annotations import experimental
 from dagster._config.field import Field
-from dagster._legacy import InputDefinition, OutputDefinition, solid
 
 from ..utils import generate_materializations
 from .constants import (
@@ -244,9 +232,7 @@ def dbt_cli_snapshot(context):
     cli_output = execute_cli(
         context.op_config["dbt_executable"],
         command="snapshot",
-        flags_dict=passthrough_flags_only(
-            context.op_config, ("threads", "select", "exclude")
-        ),
+        flags_dict=passthrough_flags_only(context.op_config, ("threads", "select", "exclude")),
         log=context.log,
         warn_error=context.op_config["warn-error"],
         ignore_handled_error=context.op_config["ignore_handled_error"],
@@ -335,9 +321,7 @@ def dbt_cli_snapshot_freshness(context):
     cli_output = execute_cli(
         context.op_config["dbt_executable"],
         command="source snapshot-freshness",
-        flags_dict=passthrough_flags_only(
-            context.op_config, ("select", "output", "threads")
-        ),
+        flags_dict=passthrough_flags_only(context.op_config, ("select", "output", "threads")),
         log=context.log,
         warn_error=context.op_config["warn-error"],
         ignore_handled_error=context.op_config["ignore_handled_error"],

@@ -1,17 +1,17 @@
 import re
 
 from dagster import (
-    In,
-    Out,
-    op,
     Any,
     DependencyDefinition,
     Field,
+    In,
     Int,
     NodeInvocation,
+    Out,
     ResourceDefinition,
     Shape,
     String,
+    op,
 )
 from dagster._config import ConfigTypeKind, process_config
 from dagster._core.definitions import create_run_config_schema
@@ -19,21 +19,14 @@ from dagster._core.definitions.run_config import (
     RunConfigSchemaCreationData,
     define_solid_dictionary_cls,
 )
-from dagster._core.system_config.objects import (
-    ResolvedRunConfig,
-    ResourceConfig,
-    SolidConfig,
-)
+from dagster._core.system_config.objects import ResolvedRunConfig, ResourceConfig, SolidConfig
 from dagster._legacy import (
-    InputDefinition,
     ModeDefinition,
     OutputDefinition,
     PipelineDefinition,
     SolidDefinition,
     execute_pipeline,
-    lambda_solid,
     pipeline,
-    solid,
 )
 from dagster._loggers import default_loggers
 
@@ -71,9 +64,7 @@ def test_all_types_provided():
                     "some_resource": ResourceDefinition(
                         lambda _: None,
                         config_schema={
-                            "with_default_int": Field(
-                                Int, is_required=False, default_value=23434
-                            )
+                            "with_default_int": Field(Int, is_required=False, default_value=23434)
                         },
                     )
                 },
@@ -88,8 +79,7 @@ def test_all_types_provided():
     matching_types = [
         tt
         for tt in all_types
-        if tt.kind == ConfigTypeKind.STRICT_SHAPE
-        and "with_default_int" in tt.fields.keys()
+        if tt.kind == ConfigTypeKind.STRICT_SHAPE and "with_default_int" in tt.fields.keys()
     ]
     assert len(matching_types) == 1
 
@@ -112,9 +102,7 @@ def test_provided_default_on_resources_config():
                     "some_resource": ResourceDefinition(
                         resource_fn=lambda _: None,
                         config_schema={
-                            "with_default_int": Field(
-                                Int, is_required=False, default_value=23434
-                            )
+                            "with_default_int": Field(Int, is_required=False, default_value=23434)
                         },
                     )
                 },
@@ -125,9 +113,7 @@ def test_provided_default_on_resources_config():
         some_op()
 
     env_type = create_run_config_schema_type(pipeline_def)
-    some_resource_field = env_type.fields["resources"].config_type.fields[
-        "some_resource"
-    ]
+    some_resource_field = env_type.fields["resources"].config_type.fields["some_resource"]
     assert some_resource_field.is_required is False
 
     some_resource_config_field = some_resource_field.config_type.fields["config"]
@@ -249,9 +235,7 @@ def test_solid_dictionary_some_no_config():
         int_config_op()
         no_config_op()
 
-    env = ResolvedRunConfig.build(
-        pipeline_def, {"solids": {"int_config_op": {"config": 1}}}
-    )
+    env = ResolvedRunConfig.build(pipeline_def, {"solids": {"int_config_op": {"config": 1}}})
 
     assert {"int_config_op", "no_config_op"} == set(env.solids.keys())
     assert env.solids == {
@@ -326,9 +310,7 @@ def test_solid_config_error():
 
     res = process_config(int_solid_config_type, {"notconfig": 1})
     assert not res.success
-    assert re.match(
-        'Received unexpected config entry "notconfig"', res.errors[0].message
-    )
+    assert re.match('Received unexpected config entry "notconfig"', res.errors[0].message)
 
     res = process_config(int_solid_config_type, 1)
     assert not res.success
@@ -357,9 +339,7 @@ def test_optional_solid_with_no_config():
         ],
     )
 
-    assert execute_pipeline(
-        pipeline_def, {"solids": {"int_config_op": {"config": 234}}}
-    ).success
+    assert execute_pipeline(pipeline_def, {"solids": {"int_config_op": {"config": 234}}}).success
 
 
 def test_optional_solid_with_optional_scalar_config():
@@ -541,9 +521,7 @@ def test_all_optional_field_on_single_resource():
                 resource_defs={
                     "with_optional": ResourceDefinition(
                         resource_fn=lambda _: None,
-                        config_schema={
-                            "optional_field": Field(String, is_required=False)
-                        },
+                        config_schema={"optional_field": Field(String, is_required=False)},
                     )
                 }
             )
@@ -555,14 +533,9 @@ def test_all_optional_field_on_single_resource():
     assert env_type.fields["execution"].is_required is False
     assert env_type.fields["resources"].is_required is False
     assert nested_field(env_type, "resources", "with_optional").is_required is False
+    assert nested_field(env_type, "resources", "with_optional", "config").is_required is False
     assert (
-        nested_field(env_type, "resources", "with_optional", "config").is_required
-        is False
-    )
-    assert (
-        nested_field(
-            env_type, "resources", "with_optional", "config", "optional_field"
-        ).is_required
+        nested_field(env_type, "resources", "with_optional", "config", "optional_field").is_required
         is False
     )
 
@@ -581,9 +554,7 @@ def test_optional_and_required_context():
                 resource_defs={
                     "optional_resource": ResourceDefinition(
                         lambda _: None,
-                        config_schema={
-                            "optional_field": Field(String, is_required=False)
-                        },
+                        config_schema={"optional_field": Field(String, is_required=False)},
                     ),
                     "required_resource": ResourceDefinition(
                         lambda _: None,
@@ -601,10 +572,7 @@ def test_optional_and_required_context():
 
     assert nested_field(env_type, "resources").is_required
     assert nested_field(env_type, "resources", "optional_resource").is_required is False
-    assert (
-        nested_field(env_type, "resources", "optional_resource", "config").is_required
-        is False
-    )
+    assert nested_field(env_type, "resources", "optional_resource", "config").is_required is False
     assert (
         nested_field(
             env_type, "resources", "optional_resource", "config", "optional_field"
@@ -613,9 +581,7 @@ def test_optional_and_required_context():
     )
 
     assert nested_field(env_type, "resources", "required_resource").is_required
-    assert nested_field(
-        env_type, "resources", "required_resource", "config"
-    ).is_required
+    assert nested_field(env_type, "resources", "required_resource", "config").is_required
     assert nested_field(
         env_type, "resources", "required_resource", "config", "required_field"
     ).is_required
@@ -641,9 +607,7 @@ def test_required_inputs():
         solid_defs=[add_one],
         dependencies={
             NodeInvocation("add_one", "first_add"): {},
-            NodeInvocation("add_one", "second_add"): {
-                "num": DependencyDefinition("first_add")
-            },
+            NodeInvocation("add_one", "second_add"): {"num": DependencyDefinition("first_add")},
         },
     )
 

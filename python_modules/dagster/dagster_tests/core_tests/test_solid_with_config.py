@@ -1,22 +1,7 @@
 import pytest
 
-from dagster import (
-    In,
-    Out,
-    op,
-    DagsterInvalidConfigError,
-    Field,
-    String,
-    root_input_manager,
-)
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    composite_solid,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
+from dagster import DagsterInvalidConfigError, Field, In, String, op, root_input_manager
+from dagster._legacy import ModeDefinition, composite_solid, execute_pipeline, pipeline
 
 
 def test_basic_solid_with_config():
@@ -78,9 +63,7 @@ def test_solid_not_found():
         find_me_op()
 
     with pytest.raises(DagsterInvalidConfigError):
-        execute_pipeline(
-            pipeline_def, {"solids": {"not_found": {"config": {"some_config": 1}}}}
-        )
+        execute_pipeline(pipeline_def, {"solids": {"not_found": {"config": {"some_config": 1}}}})
 
 
 def test_extra_config_ignored_default_input():
@@ -100,9 +83,7 @@ def test_extra_config_ignored_default_input():
     assert execute_pipeline(my_pipeline, run_config=run_config).success
 
     # same run config is valid even though solid1 not in subset
-    assert execute_pipeline(
-        my_pipeline, run_config=run_config, solid_selection=["op2"]
-    ).success
+    assert execute_pipeline(my_pipeline, run_config=run_config, solid_selection=["op2"]).success
 
     with pytest.raises(DagsterInvalidConfigError):
         # typos still raise, solid_1 instead of solid1
@@ -138,9 +119,7 @@ def test_extra_config_ignored_no_default_input():
         )
 
     # works if input added, don't need to remove other stuff
-    run_config["solids"]["op2"] = {
-        "inputs": {"input_table": {"value": "public.table_1"}}
-    }
+    run_config["solids"]["op2"] = {"inputs": {"input_table": {"value": "public.table_1"}}}
     assert execute_pipeline(
         my_pipeline,
         run_config=run_config,
@@ -162,9 +141,7 @@ def test_extra_config_ignored_composites():
 
     @composite_solid(
         config_schema={"wrapped_config": str},
-        config_fn=lambda cfg: {
-            "op1": {"config": {"some_config": cfg["wrapped_config"]}}
-        },
+        config_fn=lambda cfg: {"op1": {"config": {"some_config": cfg["wrapped_config"]}}},
     )
     def composite1():
         return op1()

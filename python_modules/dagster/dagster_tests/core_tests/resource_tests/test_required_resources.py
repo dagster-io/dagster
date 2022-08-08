@@ -1,37 +1,32 @@
 import pytest
 
 from dagster import (
-    In,
-    Out,
-    op,
     AssetMaterialization,
     DagsterInstance,
     DagsterType,
     DagsterUnknownResourceError,
+    In,
+    Out,
     ResourceDefinition,
     String,
     dagster_type_loader,
     dagster_type_materializer,
+    op,
     resource,
     usable_as_dagster_type,
 )
 from dagster._core.definitions.configurable import configured
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
-from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
-    DagsterInvalidSubsetError,
-)
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster._core.execution.api import create_execution_plan, execute_run
 from dagster._core.types.dagster_type import create_any_type
 from dagster._legacy import (
     CompositeSolidDefinition,
-    InputDefinition,
     ModeDefinition,
     OutputDefinition,
     composite_solid,
     execute_pipeline,
     pipeline,
-    solid,
 )
 
 
@@ -130,9 +125,7 @@ def test_selective_init_resources_only_a():
     def consumes_resource_a(context):
         assert context.resources.a == "A"
 
-    @pipeline(
-        mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b})]
-    )
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b})])
     def selective_init_test_pipeline():
         consumes_resource_a()
 
@@ -212,9 +205,7 @@ def test_solid_selection_with_aliases_strict_resources():
         consumes_resource_a.alias("alias_for_a")()
         consumes_resource_b()
 
-    result = execute_pipeline(
-        selective_init_test_pipeline.get_pipeline_subset_def({"alias_for_a"})
-    )
+    result = execute_pipeline(selective_init_test_pipeline.get_pipeline_subset_def({"alias_for_a"}))
     assert result.success
 
     assert set(resources_initted.keys()) == {"a"}
@@ -278,9 +269,7 @@ def test_solid_selection_strict_resources_within_composite():
     resources_initted = {}
 
     result = execute_pipeline(
-        create_composite_solid_pipeline(resources_initted).get_pipeline_subset_def(
-            {"wraps_b"}
-        )
+        create_composite_solid_pipeline(resources_initted).get_pipeline_subset_def({"wraps_b"})
     )
     assert result.success
 
@@ -405,18 +394,14 @@ def test_custom_type_with_resource_dependent_hydration():
 
         return input_hydration_pipeline
 
-    under_required_pipeline = define_input_hydration_pipeline(
-        should_require_resources=False
-    )
+    under_required_pipeline = define_input_hydration_pipeline(should_require_resources=False)
     with pytest.raises(DagsterUnknownResourceError):
         execute_pipeline(
             under_required_pipeline,
             {"solids": {"input_hydration_op": {"inputs": {"custom_type": "hello"}}}},
         )
 
-    sufficiently_required_pipeline = define_input_hydration_pipeline(
-        should_require_resources=True
-    )
+    sufficiently_required_pipeline = define_input_hydration_pipeline(should_require_resources=True)
     assert execute_pipeline(
         sufficiently_required_pipeline,
         {"solids": {"input_hydration_op": {"inputs": {"custom_type": "hello"}}}},
@@ -454,15 +439,11 @@ def test_resource_dependent_hydration_with_selective_init():
         return selective_pipeline
 
     resources_initted = {}
-    assert execute_pipeline(
-        get_resource_init_input_hydration_pipeline(resources_initted)
-    ).success
+    assert execute_pipeline(get_resource_init_input_hydration_pipeline(resources_initted)).success
     assert set(resources_initted.keys()) == set()
 
 
-def define_materialization_pipeline(
-    should_require_resources=True, resources_initted=None
-):
+def define_materialization_pipeline(should_require_resources=True, resources_initted=None):
     if resources_initted is None:
         resources_initted = {}
 
@@ -492,9 +473,7 @@ def define_materialization_pipeline(
 
 
 def test_custom_type_with_resource_dependent_materialization():
-    under_required_pipeline = define_materialization_pipeline(
-        should_require_resources=False
-    )
+    under_required_pipeline = define_materialization_pipeline(should_require_resources=False)
     with pytest.raises(DagsterUnknownResourceError):
         execute_pipeline(
             under_required_pipeline,
@@ -587,13 +566,7 @@ def test_custom_type_with_resource_dependent_composite_materialization():
     resources_initted = {}
     assert execute_pipeline(
         define_composite_materialization_pipeline(resources_initted=resources_initted),
-        {
-            "solids": {
-                "wrap_solid": {
-                    "solids": {"output_op": {"outputs": [{"result": "hello"}]}}
-                }
-            }
-        },
+        {"solids": {"wrap_solid": {"solids": {"output_op": {"outputs": [{"result": "hello"}]}}}}},
     ).success
     assert set(resources_initted.keys()) == set("a")
 
@@ -640,9 +613,7 @@ def test_custom_type_with_resource_dependent_type_check():
     with pytest.raises(DagsterUnknownResourceError):
         execute_pipeline(under_required_pipeline)
 
-    sufficiently_required_pipeline = define_type_check_pipeline(
-        should_require_resources=True
-    )
+    sufficiently_required_pipeline = define_type_check_pipeline(should_require_resources=True)
     assert execute_pipeline(sufficiently_required_pipeline).success
 
 
@@ -682,9 +653,7 @@ def test_type_missing_resource_fails():
     def custom_type_op(_):
         return "A"
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="required by type 'NeedsA'"
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError, match="required by type 'NeedsA'"):
 
         @pipeline
         def _type_check_pipeline():

@@ -1,7 +1,7 @@
 import pytest
 
-from dagster import In, Out, op, _check as check
-from dagster import resource
+from dagster import _check as check
+from dagster import op, resource
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events.log import EventLogEntry, construct_event_logger
@@ -14,7 +14,7 @@ from dagster._core.execution.api import (
 )
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, PipelineDefinition, solid
+from dagster._legacy import ModeDefinition, PipelineDefinition
 
 
 @resource
@@ -67,17 +67,10 @@ def test_execute_pipeline_iterator():
 
         iterator.close()
         events = [record.dagster_event for record in records if record.is_dagster_event]
-        messages = [
-            record.user_message for record in records if not record.is_dagster_event
-        ]
-        pipeline_failure_events = [
-            event for event in events if event.is_pipeline_failure
-        ]
+        messages = [record.user_message for record in records if not record.is_dagster_event]
+        pipeline_failure_events = [event for event in events if event.is_pipeline_failure]
         assert len(pipeline_failure_events) == 1
-        assert (
-            "GeneratorExit"
-            in pipeline_failure_events[0].pipeline_failure_data.error.message
-        )
+        assert "GeneratorExit" in pipeline_failure_events[0].pipeline_failure_data.error.message
         assert len([message for message in messages if message == "CLEANING A"]) > 0
         assert len([message for message in messages if message == "CLEANING B"]) > 0
 
@@ -117,17 +110,10 @@ def test_execute_run_iterator():
 
         iterator.close()
         events = [record.dagster_event for record in records if record.is_dagster_event]
-        messages = [
-            record.user_message for record in records if not record.is_dagster_event
-        ]
-        pipeline_failure_events = [
-            event for event in events if event.is_pipeline_failure
-        ]
+        messages = [record.user_message for record in records if not record.is_dagster_event]
+        pipeline_failure_events = [event for event in events if event.is_pipeline_failure]
         assert len(pipeline_failure_events) == 1
-        assert (
-            "GeneratorExit"
-            in pipeline_failure_events[0].pipeline_failure_data.error.message
-        )
+        assert "GeneratorExit" in pipeline_failure_events[0].pipeline_failure_data.error.message
         assert len([message for message in messages if message == "CLEANING A"]) > 0
         assert len([message for message in messages if message == "CLEANING B"]) > 0
 
@@ -138,15 +124,12 @@ def test_execute_run_iterator():
         ).with_status(PipelineRunStatus.SUCCESS)
 
         events = list(
-            execute_run_iterator(
-                InMemoryPipeline(pipeline_def), pipeline_run, instance=instance
-            )
+            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
         )
 
         assert any(
             [
-                "Ignoring a run worker that started after the run had already finished."
-                in event
+                "Ignoring a run worker that started after the run had already finished." in event
                 for event in events
             ]
         )
@@ -191,9 +174,7 @@ def test_execute_run_iterator():
         ).with_status(PipelineRunStatus.CANCELED)
 
         events = list(
-            execute_run_iterator(
-                InMemoryPipeline(pipeline_def), pipeline_run, instance=instance
-            )
+            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
         )
 
         assert len(events) == 1
@@ -225,9 +206,7 @@ def test_restart_running_run_worker():
         ).with_status(PipelineRunStatus.STARTED)
 
         events = list(
-            execute_run_iterator(
-                InMemoryPipeline(pipeline_def), pipeline_run, instance=instance
-            )
+            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
         )
 
         assert any(
@@ -238,10 +217,7 @@ def test_restart_running_run_worker():
             ]
         )
 
-        assert (
-            instance.get_run_by_id(pipeline_run.run_id).status
-            == PipelineRunStatus.FAILURE
-        )
+        assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.FAILURE
 
 
 def test_start_run_worker_after_run_failure():
@@ -266,9 +242,7 @@ def test_start_run_worker_after_run_failure():
         ).with_status(PipelineRunStatus.FAILURE)
 
         event = next(
-            execute_run_iterator(
-                InMemoryPipeline(pipeline_def), pipeline_run, instance=instance
-            )
+            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
         )
         assert (
             "Ignoring a run worker that started after the run had already finished."
@@ -319,9 +293,7 @@ def test_execute_canceled_state():
         ).with_status(PipelineRunStatus.CANCELED)
 
         iter_events = list(
-            execute_run_iterator(
-                InMemoryPipeline(pipeline_def), iter_run, instance=instance
-            )
+            execute_run_iterator(InMemoryPipeline(pipeline_def), iter_run, instance=instance)
         )
 
         assert len(iter_events) == 1
@@ -406,8 +378,6 @@ def test_execute_plan_iterator():
             event_type = event.event_type_value
 
         iterator.close()
-        messages = [
-            record.user_message for record in records if not record.is_dagster_event
-        ]
+        messages = [record.user_message for record in records if not record.is_dagster_event]
         assert len([message for message in messages if message == "CLEANING A"]) > 0
         assert len([message for message in messages if message == "CLEANING B"]) > 0

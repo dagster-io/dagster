@@ -1,13 +1,7 @@
 from time import sleep
 
-from dagster import Out, op, Field, Int, Output, fs_io_manager
-from dagster._legacy import (
-    ModeDefinition,
-    OutputDefinition,
-    PresetDefinition,
-    pipeline,
-    solid,
-)
+from dagster import Field, Int, Out, Output, fs_io_manager, op
+from dagster._legacy import ModeDefinition, PresetDefinition, pipeline
 
 
 @op(
@@ -46,9 +40,7 @@ def branch(name, arg, solid_num):
 
 
 @pipeline(
-    description=(
-        "Demo fork-shaped pipeline that has two-path parallel structure of solids."
-    ),
+    description=("Demo fork-shaped pipeline that has two-path parallel structure of solids."),
     preset_defs=[
         PresetDefinition(
             "sleep_failed",

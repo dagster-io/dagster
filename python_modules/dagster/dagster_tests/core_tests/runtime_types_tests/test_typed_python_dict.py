@@ -1,12 +1,7 @@
 import pytest
 
-from dagster import In, Out, op, DagsterTypeCheckDidNotPass, Dict
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    execute_solid,
-    lambda_solid,
-)
+from dagster import DagsterTypeCheckDidNotPass, Dict, In, Out, op
+from dagster._legacy import execute_solid
 
 
 def test_typed_python_dict():
@@ -44,9 +39,7 @@ def test_basic_solid_dict_int_int_input_pass():
     def emit_dict_int_int(ddict):
         return ddict
 
-    assert execute_solid(
-        emit_dict_int_int, input_values={"ddict": {1: 2}}
-    ).output_value() == {1: 2}
+    assert execute_solid(emit_dict_int_int, input_values={"ddict": {1: 2}}).output_value() == {1: 2}
 
 
 def test_basic_solid_dict_int_int_input_fails():

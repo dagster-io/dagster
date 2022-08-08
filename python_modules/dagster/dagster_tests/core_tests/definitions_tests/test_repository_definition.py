@@ -5,8 +5,6 @@ from typing import Sequence
 import pytest
 
 from dagster import (
-    In,
-    Out,
     AssetKey,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
@@ -38,19 +36,14 @@ from dagster._core.definitions.executor_definition import (
     default_executors,
     multi_or_in_process_executor,
 )
-from dagster._core.definitions.partition import (
-    PartitionedConfig,
-    StaticPartitionsDefinition,
-)
+from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._legacy import (
     AssetGroup,
     PipelineDefinition,
     SolidDefinition,
     daily_schedule,
-    lambda_solid,
     pipeline,
-    solid,
 )
 from dagster._loggers import default_loggers
 
@@ -154,9 +147,7 @@ def test_non_lazy_pipeline_dict():
 
 def test_conflict():
     called = defaultdict(int)
-    with pytest.raises(
-        Exception, match="Duplicate pipeline definition found for pipeline 'foo'"
-    ):
+    with pytest.raises(Exception, match="Duplicate pipeline definition found for pipeline 'foo'"):
 
         @repository
         def _some_repo():
@@ -171,18 +162,14 @@ def test_key_mismatch():
 
     @repository
     def some_repo():
-        return {
-            "pipelines": {"foo": lambda: create_single_node_pipeline("bar", called)}
-        }
+        return {"pipelines": {"foo": lambda: create_single_node_pipeline("bar", called)}}
 
     with pytest.raises(Exception, match="name in PipelineDefinition does not match"):
         some_repo.get_pipeline("foo")
 
 
 def test_non_pipeline_in_pipelines():
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="all elements of list must be of type"
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError, match="all elements of list must be of type"):
 
         @repository
         def _some_repo():
@@ -200,9 +187,7 @@ def test_schedule_partitions():
     @repository
     def some_repo():
         return {
-            "pipelines": {
-                "foo": lambda: create_single_node_pipeline("foo", defaultdict(int))
-            },
+            "pipelines": {"foo": lambda: create_single_node_pipeline("foo", defaultdict(int))},
             "schedules": {"daily_foo": lambda: daily_foo},
         }
 
@@ -414,9 +399,7 @@ def test_bare_graph_with_resources():
     def bare():
         needy()
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="Failed attempting to coerce Graph"
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError, match="Failed attempting to coerce Graph"):
 
         @repository
         def _test():
@@ -711,9 +694,7 @@ def test_job_cannot_select_pipeline():
 
     assert my_repo.get_pipeline("my_pipeline")
 
-    with pytest.raises(
-        DagsterInvariantViolationError, match="Could not find job 'my_pipeline'."
-    ):
+    with pytest.raises(DagsterInvariantViolationError, match="Could not find job 'my_pipeline'."):
         my_repo.get_job("my_pipeline")
 
 
@@ -778,9 +759,7 @@ def test_bad_coerce():
     def bar():
         foo()
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="Failed attempting to coerce Graph"
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError, match="Failed attempting to coerce Graph"):
 
         @repository
         def _fails():
@@ -791,9 +770,7 @@ def test_bad_coerce():
 
 def test_bad_resolve():
 
-    with pytest.raises(
-        DagsterInvalidSubsetError, match=r"AssetKey\(s\) {'foo'} were selected"
-    ):
+    with pytest.raises(DagsterInvalidSubsetError, match=r"AssetKey\(s\) {'foo'} were selected"):
 
         @repository
         def _fails():
@@ -823,12 +800,8 @@ def test_multiple_asset_groups_one_repo():
     def asset2():
         ...
 
-    group1 = AssetGroup(
-        assets=[asset1], source_assets=[SourceAsset(key=AssetKey("foo"))]
-    )
-    group2 = AssetGroup(
-        assets=[asset2], source_assets=[SourceAsset(key=AssetKey("bar"))]
-    )
+    group1 = AssetGroup(assets=[asset1], source_assets=[SourceAsset(key=AssetKey("foo"))])
+    group2 = AssetGroup(assets=[asset2], source_assets=[SourceAsset(key=AssetKey("bar"))])
 
     @repository
     def my_repo():
@@ -848,9 +821,7 @@ def test_direct_assets():
         pass
 
     foo_resource = ResourceDefinition.hardcoded_resource("foo")
-    foo = SourceAsset(
-        "foo", io_manager_def=the_manager, resource_defs={"foo": foo_resource}
-    )
+    foo = SourceAsset("foo", io_manager_def=the_manager, resource_defs={"foo": foo_resource})
 
     @asset(resource_defs={"foo": foo_resource})
     def asset1():
@@ -1055,9 +1026,7 @@ def test_assets_different_io_manager_defs():
 
     the_source = SourceAsset(key=AssetKey("the_source"), io_manager_def=the_manager)
 
-    other_source = SourceAsset(
-        key=AssetKey("other_source"), io_manager_def=other_manager
-    )
+    other_source = SourceAsset(key=AssetKey("other_source"), io_manager_def=other_manager)
 
     @repository
     def the_repo():
@@ -1372,8 +1341,7 @@ def test_default_executor_jobs_and_pipelines():
         ]
 
     assert (
-        the_repo.get_pipeline("the_pipeline").mode_definitions[0].executor_defs
-        == default_executors
+        the_repo.get_pipeline("the_pipeline").mode_definitions[0].executor_defs == default_executors
     )
 
     assert the_repo.get_job("asset_job").executor_def == other_custom_executor
@@ -1473,9 +1441,7 @@ def test_multi_nested_list():
     layer_1: Sequence[AssetsDefinition, SourceAsset] = [asset2, source]
     layer_2 = [layer_1, asset1]
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="Bad return value from repository"
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError, match="Bad return value from repository"):
 
         @repository
         def assets_repo():
@@ -1594,10 +1560,7 @@ def test_default_loggers_jobs_and_pipelines():
             job_explicitly_specifies_default_loggers,
         ]
 
-    assert (
-        the_repo.get_pipeline("the_pipeline").mode_definitions[0].loggers
-        == default_loggers()
-    )
+    assert the_repo.get_pipeline("the_pipeline").mode_definitions[0].loggers == default_loggers()
 
     assert the_repo.get_job("asset_job").loggers == {"foo": other_custom_logger}
 
@@ -1605,10 +1568,7 @@ def test_default_loggers_jobs_and_pipelines():
 
     assert the_repo.get_job("op_job_no_loggers").loggers == {"foo": other_custom_logger}
 
-    assert (
-        the_repo.get_job("job_explicitly_specifies_default_loggers").loggers
-        == default_loggers()
-    )
+    assert the_repo.get_job("job_explicitly_specifies_default_loggers").loggers == default_loggers()
 
 
 def test_default_loggers_keys_conflict():

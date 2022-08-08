@@ -11,7 +11,7 @@ from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.snap import snapshot_from_execution_plan
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import pipeline, solid
+from dagster._legacy import pipeline
 from dagster._utils import file_relative_path
 
 
@@ -80,9 +80,7 @@ def test_modified_docker_operator_bad_docker_conn(dagster_docker_image):
         )
         operator = DagsterDockerOperator(dagster_operator_parameters)
 
-        with pytest.raises(
-            AirflowException, match="The conn_id `foo_conn` isn't defined"
-        ):
+        with pytest.raises(AirflowException, match="The conn_id `foo_conn` isn't defined"):
             operator.execute({})
 
 

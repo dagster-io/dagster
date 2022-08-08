@@ -1,22 +1,16 @@
 from dagster import (
-    In,
-    Out,
-    op,
     AssetMaterialization,
     ExpectationResult,
+    In,
     MetadataValue,
     Nothing,
+    Out,
     Output,
     file_relative_path,
     fs_io_manager,
+    op,
 )
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    pipeline,
-    solid,
-)
+from dagster._legacy import ModeDefinition, pipeline
 
 MARKDOWN_EXAMPLE = "markdown_example.md"
 
@@ -83,9 +77,7 @@ def input_name_for_raw_file(raw_file):
     description="Load a bunch of raw tables from corresponding files",
 )
 def many_table_materializations(_context):
-    with open(
-        file_relative_path(__file__, MARKDOWN_EXAMPLE), "r", encoding="utf8"
-    ) as f:
+    with open(file_relative_path(__file__, MARKDOWN_EXAMPLE), "r", encoding="utf8") as f:
         md_str = f.read()
         for table in raw_tables:
             yield AssetMaterialization(

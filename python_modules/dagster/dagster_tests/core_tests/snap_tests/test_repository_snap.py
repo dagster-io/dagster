@@ -1,10 +1,10 @@
-from dagster import In, Out, op, repository
+from dagster import op, repository
 from dagster._core.host_representation import (
     ExternalPipelineData,
     external_repository_data_from_def,
 )
 from dagster._core.snap import PipelineSnapshot
-from dagster._legacy import pipeline, solid
+from dagster._legacy import pipeline
 
 
 def test_repository_snap_all_props():
@@ -24,9 +24,7 @@ def test_repository_snap_all_props():
 
     assert external_repo_data.name == "noop_repo"
     assert len(external_repo_data.external_pipeline_datas) == 1
-    assert isinstance(
-        external_repo_data.external_pipeline_datas[0], ExternalPipelineData
-    )
+    assert isinstance(external_repo_data.external_pipeline_datas[0], ExternalPipelineData)
 
     pipeline_snapshot = external_repo_data.external_pipeline_datas[0].pipeline_snapshot
     assert isinstance(pipeline_snapshot, PipelineSnapshot)

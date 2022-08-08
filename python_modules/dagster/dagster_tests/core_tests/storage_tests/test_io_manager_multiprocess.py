@@ -2,7 +2,7 @@ import tempfile
 
 from dagster import fs_io_manager, reconstructable
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 
 @op
@@ -15,9 +15,7 @@ def op_b(_context, _df):
     return 1
 
 
-@pipeline(
-    mode_defs=[ModeDefinition("local", resource_defs={"io_manager": fs_io_manager})]
-)
+@pipeline(mode_defs=[ModeDefinition("local", resource_defs={"io_manager": fs_io_manager})])
 def my_pipeline():
     op_b(op_a())
 

@@ -8,24 +8,18 @@ from dagster_tests.general_tests.test_legacy_repository import (
 )
 
 from dagster import (
-    op,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     Field,
     String,
     logger,
+    op,
     resource,
 )
 from dagster._check import CheckError
 from dagster._core.utils import coerce_valid_log_level
-from dagster._legacy import (
-    ModeDefinition,
-    PipelineDefinition,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
+from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline
 from dagster._utils.test import execute_solids_within_pipeline
 
 
@@ -66,21 +60,14 @@ def test_mode_from_resources():
     def pipeline_def():
         ret_three()
 
-    assert (
-        execute_pipeline(pipeline_def).result_for_solid("ret_three").output_value() == 3
-    )
+    assert execute_pipeline(pipeline_def).result_for_solid("ret_three").output_value() == 3
 
 
 def test_execute_single_mode():
     single_mode_pipeline = define_single_mode_pipeline()
     assert single_mode_pipeline.is_single_mode is True
 
-    assert (
-        execute_pipeline(single_mode_pipeline)
-        .result_for_solid("return_two")
-        .output_value()
-        == 2
-    )
+    assert execute_pipeline(single_mode_pipeline).result_for_solid("return_two").output_value() == 2
 
     assert (
         execute_pipeline(single_mode_pipeline, mode="the_mode")
@@ -271,34 +258,18 @@ def define_multi_mode_with_loggers_pipeline():
     foo_logger_captured_results = []
     bar_logger_captured_results = []
 
-    @logger(
-        config_schema={
-            "log_level": Field(String, is_required=False, default_value="INFO")
-        }
-    )
+    @logger(config_schema={"log_level": Field(String, is_required=False, default_value="INFO")})
     def foo_logger(init_context):
         logger_ = logging.Logger("foo")
-        logger_.log = lambda level, msg, **kwargs: foo_logger_captured_results.append(
-            (level, msg)
-        )
-        logger_.setLevel(
-            coerce_valid_log_level(init_context.logger_config["log_level"])
-        )
+        logger_.log = lambda level, msg, **kwargs: foo_logger_captured_results.append((level, msg))
+        logger_.setLevel(coerce_valid_log_level(init_context.logger_config["log_level"]))
         return logger_
 
-    @logger(
-        config_schema={
-            "log_level": Field(String, is_required=False, default_value="INFO")
-        }
-    )
+    @logger(config_schema={"log_level": Field(String, is_required=False, default_value="INFO")})
     def bar_logger(init_context):
         logger_ = logging.Logger("bar")
-        logger_.log = lambda level, msg, **kwargs: bar_logger_captured_results.append(
-            (level, msg)
-        )
-        logger_.setLevel(
-            coerce_valid_log_level(init_context.logger_config["log_level"])
-        )
+        logger_.log = lambda level, msg, **kwargs: bar_logger_captured_results.append((level, msg))
+        logger_.setLevel(coerce_valid_log_level(init_context.logger_config["log_level"]))
         return logger_
 
     @op

@@ -9,12 +9,7 @@ from typing import Tuple, Union, cast
 import toposort as toposort_
 
 import dagster._check as check
-from dagster._utils import (
-    frozendict,
-    library_version_from_core_version,
-    parse_package_version,
-)
-from dagster import op
+from dagster._utils import frozendict, library_version_from_core_version, parse_package_version
 
 BACKFILL_TAG_LENGTH = 8
 
@@ -22,16 +17,13 @@ PYTHON_LOGGING_LEVELS_MAPPING = frozendict(
     OrderedDict({"CRITICAL": 50, "ERROR": 40, "WARNING": 30, "INFO": 20, "DEBUG": 10})
 )
 
-PYTHON_LOGGING_LEVELS_ALIASES = frozendict(
-    OrderedDict({"FATAL": "CRITICAL", "WARN": "WARNING"})
-)
+PYTHON_LOGGING_LEVELS_ALIASES = frozendict(OrderedDict({"FATAL": "CRITICAL", "WARN": "WARNING"}))
 
 PYTHON_LOGGING_LEVELS_NAMES = frozenset(
     [
         level_name.lower()
         for level_name in sorted(
-            list(PYTHON_LOGGING_LEVELS_MAPPING.keys())
-            + list(PYTHON_LOGGING_LEVELS_ALIASES.keys())
+            list(PYTHON_LOGGING_LEVELS_MAPPING.keys()) + list(PYTHON_LOGGING_LEVELS_ALIASES.keys())
         )
     ]
 )
@@ -48,10 +40,7 @@ def coerce_valid_log_level(log_level: Union[str, int]) -> int:
         "Bad value for log level {level}: permissible values are {levels}.".format(
             level=log_level,
             levels=", ".join(
-                [
-                    "'{}'".format(level_name.upper())
-                    for level_name in PYTHON_LOGGING_LEVELS_NAMES
-                ]
+                ["'{}'".format(level_name.upper()) for level_name in PYTHON_LOGGING_LEVELS_NAMES]
             ),
         ),
     )
@@ -74,21 +63,15 @@ def make_new_run_id() -> str:
 
 
 def make_new_backfill_id():
-    return "".join(
-        random.choice(string.ascii_lowercase) for x in range(BACKFILL_TAG_LENGTH)
-    )
+    return "".join(random.choice(string.ascii_lowercase) for x in range(BACKFILL_TAG_LENGTH))
 
 
 def str_format_list(items):
-    return "[{items}]".format(
-        items=", ".join(["'{item}'".format(item=item) for item in items])
-    )
+    return "[{items}]".format(items=", ".join(["'{item}'".format(item=item) for item in items]))
 
 
 def str_format_set(items):
-    return "[{items}]".format(
-        items=", ".join(["'{item}'".format(item=item) for item in items])
-    )
+    return "[{items}]".format(items=", ".join(["'{item}'".format(item=item) for item in items]))
 
 
 def check_dagster_package_version(library_name: str, library_version: str) -> None:
@@ -121,7 +104,5 @@ def parse_env_var(env_var_str: str) -> Tuple[str, str]:
     else:
         env_var_value = os.getenv(env_var_str)
         if env_var_value == None:
-            raise Exception(
-                f"Tried to load environment variable {env_var_str}, but it was not set"
-            )
+            raise Exception(f"Tried to load environment variable {env_var_str}, but it was not set")
         return (env_var_str, cast(str, env_var_value))

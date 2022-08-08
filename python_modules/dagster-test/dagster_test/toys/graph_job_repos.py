@@ -1,17 +1,7 @@
 from typing import Any, Optional, Set
 
-from dagster import (
-    In,
-    Out,
-    op,
-    ResourceDefinition,
-    SkipReason,
-    graph,
-    repository,
-    schedule,
-    sensor,
-)
-from dagster._legacy import InputDefinition, SolidDefinition, solid
+from dagster import ResourceDefinition, SkipReason, graph, op, repository, schedule, sensor
+from dagster._legacy import InputDefinition, SolidDefinition
 
 
 def make_solid(
@@ -49,39 +39,29 @@ def event_tables_schedule(_):
 
 @graph
 def event_reports():
-    make_event_reports = make_solid(
-        "make_event_reports", required_resource_keys={"mode"}
-    )
+    make_event_reports = make_solid("make_event_reports", required_resource_keys={"mode"})
     make_event_reports()
 
 
-@sensor(
-    job=event_reports.to_job(resource_defs={"mode": ResourceDefinition.none_resource()})
-)
+@sensor(job=event_reports.to_job(resource_defs={"mode": ResourceDefinition.none_resource()}))
 def event_reports_sensor():
     return SkipReason("dummy sensor")
 
 
-event_reports_dev = event_reports.to_job(
-    resource_defs={"mode": ResourceDefinition.none_resource()}
-)
+event_reports_dev = event_reports.to_job(resource_defs={"mode": ResourceDefinition.none_resource()})
 
 
 @graph
 def crm_ingest():
     """A graph with multiple production jobs"""
     ingest_users = make_solid("ingest_users", required_resource_keys={"crm"})
-    ingest_interactions = make_solid(
-        "ingest_interactions", required_resource_keys={"crm"}
-    )
+    ingest_interactions = make_solid("ingest_interactions", required_resource_keys={"crm"})
 
     ingest_users()
     ingest_interactions()
 
 
-crm_ingest_dev = crm_ingest.to_job(
-    resource_defs={"crm": ResourceDefinition.none_resource()}
-)
+crm_ingest_dev = crm_ingest.to_job(resource_defs={"crm": ResourceDefinition.none_resource()})
 
 
 @schedule(
@@ -111,14 +91,10 @@ def content_recommender_training():
     """A graph with a production job, but no schedule"""
     build_user_features = make_solid("build_user_features")
     build_item_features = make_solid("build_item_features")
-    train_model = make_solid(
-        "train_model", required_resource_keys={"mlflow"}, num_inputs=2
-    )
+    train_model = make_solid("train_model", required_resource_keys={"mlflow"}, num_inputs=2)
     evaluate_model = make_solid("evaluate_model", num_inputs=1)
 
-    evaluate_model(
-        train_model(input0=build_user_features(), input1=build_item_features())
-    )
+    evaluate_model(train_model(input0=build_user_features(), input1=build_item_features()))
 
 
 content_recommender_training_dev = content_recommender_training.to_job(
@@ -134,16 +110,12 @@ content_recommender_training_prod = content_recommender_training.to_job(
 def process_customer_data_dump():
     """Customer success managers run this pipeline for a particular customers when those customers
     have data to upload."""
-    process_customer = make_solid(
-        "process_customer", config_schema={"customer_id": str}
-    )
+    process_customer = make_solid("process_customer", config_schema={"customer_id": str})
     process_customer()
 
 
 process_customer_data_dump_dev = process_customer_data_dump.to_job(
-    config={
-        "solids": {"process_customer": {"config": {"customer_id": "test_customer"}}}
-    }
+    config={"solids": {"process_customer": {"config": {"customer_id": "test_customer"}}}}
 )
 
 

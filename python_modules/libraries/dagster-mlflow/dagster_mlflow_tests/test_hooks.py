@@ -2,14 +2,8 @@ from unittest.mock import Mock
 
 from dagster_mlflow.hooks import _cleanup_on_success, end_mlflow_on_run_finished
 
-from dagster import In, op, Nothing, ResourceDefinition
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
+from dagster import In, Nothing, ResourceDefinition, op
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 
 def test_cleanup_on_success():
@@ -58,9 +52,7 @@ def test_end_mlflow_on_run_finished():
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                resource_defs={
-                    "mlflow": ResourceDefinition.hardcoded_resource(mock_mlflow)
-                }
+                resource_defs={"mlflow": ResourceDefinition.hardcoded_resource(mock_mlflow)}
             )
         ]
     )

@@ -23,7 +23,7 @@ from dagster._core.snap import (
     snapshot_from_execution_plan,
 )
 from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
-from dagster._legacy import PipelineDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import PipelineDefinition, execute_pipeline, pipeline
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 
@@ -32,9 +32,7 @@ def test_get_run_by_id():
     instance = DagsterInstance.ephemeral()
 
     assert instance.get_runs() == []
-    pipeline_run = create_run_for_test(
-        instance, pipeline_name="foo_pipeline", run_id="new_run"
-    )
+    pipeline_run = create_run_for_test(instance, pipeline_name="foo_pipeline", run_id="new_run")
 
     assert instance.get_runs() == [pipeline_run]
 
@@ -134,9 +132,7 @@ def test_create_execution_plan_snapshot():
         run = instance.get_run_by_id(result.run_id)
 
         assert run.execution_plan_snapshot_id == ep_snapshot_id
-        assert run.execution_plan_snapshot_id == create_execution_plan_snapshot_id(
-            ep_snapshot
-        )
+        assert run.execution_plan_snapshot_id == create_execution_plan_snapshot_id(ep_snapshot)
 
 
 def test_submit_run():
@@ -241,9 +237,7 @@ def test_grpc_default_settings():
 
 
 def test_grpc_override_settings():
-    with instance_for_test(
-        overrides={"code_servers": {"local_startup_timeout": 60}}
-    ) as instance:
+    with instance_for_test(overrides={"code_servers": {"local_startup_timeout": 60}}) as instance:
         assert instance.code_server_process_startup_timeout == 60
 
 
@@ -327,9 +321,7 @@ def test_invalid_configurable_class():
         ),
     ):
         with instance_for_test(
-            overrides={
-                "run_launcher": {"module": "dagster", "class": "MadeUpRunLauncher"}
-            }
+            overrides={"run_launcher": {"module": "dagster", "class": "MadeUpRunLauncher"}}
         ):
             pass
 
@@ -358,9 +350,7 @@ def test_dagster_home_not_abspath(dirname):
     with environ({"DAGSTER_HOME": dirname}):
         with pytest.raises(
             DagsterInvariantViolationError,
-            match=re.escape(
-                '$DAGSTER_HOME "{}" must be an absolute path.'.format(dirname)
-            ),
+            match=re.escape('$DAGSTER_HOME "{}" must be an absolute path.'.format(dirname)),
         ):
             DagsterInstance.get()
 
@@ -372,9 +362,7 @@ def test_dagster_home_not_dir():
         with pytest.raises(
             DagsterInvariantViolationError,
             match=re.escape(
-                '$DAGSTER_HOME "{}" is not a directory or does not exist.'.format(
-                    dirname
-                )
+                '$DAGSTER_HOME "{}" is not a directory or does not exist.'.format(dirname)
             ),
         ):
             DagsterInstance.get()

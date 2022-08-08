@@ -3,24 +3,16 @@ import re
 import pytest
 
 from dagster import (
-    In,
-    Out,
-    op,
     DagsterInvalidConfigDefinitionError,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
     Field,
     ResourceDefinition,
+    op,
 )
 from dagster._check import ParameterCheckError
 from dagster._core.utility_solids import define_stub_solid
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    SolidDefinition,
-    solid,
-)
+from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, SolidDefinition
 
 
 def solid_a_b_list():
@@ -105,9 +97,7 @@ def test_to_solid_output_not_there():
         PipelineDefinition(
             solid_defs=solid_a_b_list(),
             name="test",
-            dependencies={
-                "B": {"b_input": DependencyDefinition("A", output="NOTTHERE")}
-            },
+            dependencies={"B": {"b_input": DependencyDefinition("A", output="NOTTHERE")}},
         )
 
 
@@ -222,9 +212,7 @@ def test_bad_output_definition():
     # Test the case where the object throws in __nonzero__, e.g. pandas.DataFrame
     class Exotic:
         def __nonzero__(self):
-            raise ValueError(
-                "Love too break the core Python APIs in widely-used libraries"
-            )
+            raise ValueError("Love too break the core Python APIs in widely-used libraries")
 
     with pytest.raises(
         DagsterInvalidDefinitionError,

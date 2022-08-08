@@ -8,16 +8,14 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from dagster_ssh.resources import SSHResource, key_from_str
 from dagster_ssh.resources import ssh_resource as sshresource
 
-from dagster import op, Field
-from dagster._legacy import ModeDefinition, execute_solid, solid
+from dagster import Field, op
+from dagster._legacy import ModeDefinition, execute_solid
 from dagster._seven import get_system_temp_directory
 
 
 def generate_ssh_key():
     # generate private/public key pair
-    key = rsa.generate_private_key(
-        backend=default_backend(), public_exponent=65537, key_size=2048
-    )
+    key = rsa.generate_private_key(backend=default_backend(), public_exponent=65537, key_size=2048)
 
     # get private key in PEM container format
     return key.private_bytes(
@@ -216,12 +214,8 @@ def test_ssh_sftp(sftpserver):
 
     @op(
         config_schema={
-            "local_filepath": Field(
-                str, is_required=True, description="local file path to get"
-            ),
-            "remote_filepath": Field(
-                str, is_required=True, description="remote file path to get"
-            ),
+            "local_filepath": Field(str, is_required=True, description="local file path to get"),
+            "remote_filepath": Field(str, is_required=True, description="remote file path to get"),
         },
         required_resource_keys={"ssh_resource"},
     )

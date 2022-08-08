@@ -74,9 +74,7 @@ def in_pipeline_manager(
 
 def test_get_out_of_pipeline_context():
     context = dagstermill.get_context(
-        mode_def=ModeDefinition(
-            resource_defs={"list": ResourceDefinition(lambda _: [])}
-        )
+        mode_def=ModeDefinition(resource_defs={"list": ResourceDefinition(lambda _: [])})
     )
 
     assert context.job_name == "ephemeral_dagstermill_pipeline"
@@ -146,9 +144,7 @@ def test_in_pipeline_manager_bad_yield_result():
 
 def test_out_of_pipeline_yield_event():
     manager = Manager()
-    assert manager.yield_event(AssetMaterialization("foo")) == AssetMaterialization(
-        "foo"
-    )
+    assert manager.yield_event(AssetMaterialization("foo")) == AssetMaterialization("foo")
 
 
 def test_in_pipeline_manager_resources():

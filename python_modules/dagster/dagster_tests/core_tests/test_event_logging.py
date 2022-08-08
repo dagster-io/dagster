@@ -1,16 +1,10 @@
 import logging
 from collections import defaultdict
 
-from dagster import op, DagsterEvent
+from dagster import DagsterEvent, op
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry, construct_event_logger
-from dagster._legacy import (
-    ModeDefinition,
-    PipelineDefinition,
-    execute_pipeline,
-    lambda_solid,
-    pipeline,
-)
+from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline
 from dagster._loggers import colored_console_logger
 from dagster._serdes import deserialize_as
 
@@ -50,9 +44,7 @@ def test_empty_pipeline():
         name="empty_pipeline", solid_defs=[], mode_defs=[mode_def(_event_callback)]
     )
 
-    result = execute_pipeline(
-        pipeline_def, {"loggers": {"callback": {}, "console": {}}}
-    )
+    result = execute_pipeline(pipeline_def, {"loggers": {"callback": {}, "console": {}}})
     assert result.success
     assert events
 
@@ -120,9 +112,7 @@ def test_single_solid_pipeline_failure():
         mode_defs=[mode_def(_event_callback)],
     )
 
-    result = execute_pipeline(
-        pipeline_def, {"loggers": {"callback": {}}}, raise_on_error=False
-    )
+    result = execute_pipeline(pipeline_def, {"loggers": {"callback": {}}}, raise_on_error=False)
     assert not result.success
 
     start_event = single_dagster_event(events, DagsterEventType.STEP_START)
@@ -159,9 +149,7 @@ SERIALIZED_EVENT_FROM_THE_FUTURE_WITHOUT_EVENT_SPECIFIC_DATA = '{"__class__": "D
 
 
 def test_event_forward_compat_with_event_specific_data():
-    result = deserialize_as(
-        SERIALIZED_EVENT_FROM_THE_FUTURE_WITH_EVENT_SPECIFIC_DATA, DagsterEvent
-    )
+    result = deserialize_as(SERIALIZED_EVENT_FROM_THE_FUTURE_WITH_EVENT_SPECIFIC_DATA, DagsterEvent)
 
     assert (
         result.message

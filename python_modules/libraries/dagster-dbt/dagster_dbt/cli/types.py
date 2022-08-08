@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Optional
 import dagster._check as check
 
 from ..types import DbtOutput
-from dagster import In, Out, op
 
 
 class DbtCliOutput(DbtOutput):

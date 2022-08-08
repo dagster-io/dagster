@@ -1,9 +1,9 @@
 import pytest
 
-from dagster import op, Field
+from dagster import Field, op
 from dagster._check import CheckError
 from dagster._config import ConfigAnyInstance
-from dagster._legacy import composite_solid, solid
+from dagster._legacy import composite_solid
 
 
 def test_solid_field_backcompat():

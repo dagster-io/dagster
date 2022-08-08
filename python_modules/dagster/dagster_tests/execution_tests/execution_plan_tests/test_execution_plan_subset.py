@@ -1,14 +1,8 @@
-from dagster import In, Out, op, DependencyDefinition, Int, Output
+from dagster import DependencyDefinition, In, Int, Out, Output, op
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance import DagsterInstance
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    lambda_solid,
-    solid,
-)
+from dagster._legacy import PipelineDefinition
 
 
 def define_two_int_pipeline():
@@ -80,9 +74,7 @@ def test_execution_plan_two_outputs():
         yield Output(1, "num_one")
         yield Output(2, "num_two")
 
-    pipeline_def = PipelineDefinition(
-        name="return_one_two_pipeline", solid_defs=[return_one_two]
-    )
+    pipeline_def = PipelineDefinition(name="return_one_two_pipeline", solid_defs=[return_one_two])
 
     execution_plan = create_execution_plan(pipeline_def)
 
@@ -129,8 +121,6 @@ def test_reentrant_execute_plan():
     assert called["yup"]
 
     assert (
-        find_events(step_events, event_type="STEP_OUTPUT")[0].logging_tags[
-            "pipeline_tags"
-        ]
+        find_events(step_events, event_type="STEP_OUTPUT")[0].logging_tags["pipeline_tags"]
         == "{'foo': 'bar'}"
     )

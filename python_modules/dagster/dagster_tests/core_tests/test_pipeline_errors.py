@@ -3,26 +3,22 @@ import re
 import pytest
 
 from dagster import (
-    In,
-    Out,
-    op,
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
     DependencyDefinition,
+    In,
     MetadataEntry,
     Output,
 )
 from dagster import _check as check
+from dagster import op
 from dagster._legacy import (
-    InputDefinition,
     OutputDefinition,
     PipelineDefinition,
     SolidDefinition,
     execute_pipeline,
     execute_solid,
-    lambda_solid,
     pipeline,
-    solid,
 )
 
 
@@ -95,8 +91,7 @@ def test_failure_midstream():
         == "DagsterExecutionStepExecutionError"
     )
     assert (
-        pipeline_result.result_for_solid("op_c").failure_data.error.cause.cls_name
-        == "CheckError"
+        pipeline_result.result_for_solid("op_c").failure_data.error.cause.cls_name == "CheckError"
     )
     assert not pipeline_result.result_for_solid("op_d").success
     assert pipeline_result.result_for_solid("op_d").skipped
@@ -145,8 +140,7 @@ def test_failure_propagation():
     assert pipeline_result.result_for_solid("op_c").success
     assert not pipeline_result.result_for_solid("op_d").success
     assert (
-        pipeline_result.result_for_solid("op_d").failure_data.error.cause.cls_name
-        == "CheckError"
+        pipeline_result.result_for_solid("op_d").failure_data.error.cause.cls_name == "CheckError"
     )
     assert not pipeline_result.result_for_solid("op_e").success
     assert pipeline_result.result_for_solid("op_e").skipped
@@ -176,9 +170,7 @@ def test_yield_non_result():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape(
-            'Compute function for solid "yield_wrong_thing" yielded a value of type <'
-        )
+        match=re.escape('Compute function for solid "yield_wrong_thing" yielded a value of type <')
         + r"(class|type)"
         + re.escape(
             " 'str'> rather than an instance of Output, AssetMaterialization, or ExpectationResult."
@@ -245,6 +237,4 @@ def test_explicit_failure():
         execute_pipeline(pipe)
 
     assert exc_info.value.description == "Always fails."
-    assert exc_info.value.metadata_entries == [
-        MetadataEntry("always_fails", value="why")
-    ]
+    assert exc_info.value.metadata_entries == [MetadataEntry("always_fails", value="why")]

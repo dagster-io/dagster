@@ -1,7 +1,4 @@
-from dagster_graphql.client.query import (
-    LAUNCH_PIPELINE_EXECUTION_MUTATION,
-    SUBSCRIPTION_QUERY,
-)
+from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION, SUBSCRIPTION_QUERY
 from dagster_graphql.schema import create_schema
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 from graphql import graphql
@@ -10,7 +7,6 @@ from graphql.execution.executors.sync import SyncExecutor
 from dagster._cli.workspace import get_workspace_process_context_from_kwargs
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
-from dagster import In, op
 
 
 def test_execute_hammer_through_dagit():
@@ -51,9 +47,7 @@ def test_execute_hammer_through_dagit():
             if start_pipeline_result.errors:
                 raise Exception("{}".format(start_pipeline_result.errors))
 
-            run_id = start_pipeline_result.data["launchPipelineExecution"]["run"][
-                "runId"
-            ]
+            run_id = start_pipeline_result.data["launchPipelineExecution"]["run"]["runId"]
 
             context.instance.run_launcher.join(timeout=60)
 
@@ -65,8 +59,7 @@ def test_execute_hammer_through_dagit():
             subscription.subscribe(subscribe_results.append)
 
             messages = [
-                x["__typename"]
-                for x in subscribe_results[0].data["pipelineRunLogs"]["messages"]
+                x["__typename"] for x in subscribe_results[0].data["pipelineRunLogs"]["messages"]
             ]
 
             assert "RunStartEvent" in messages

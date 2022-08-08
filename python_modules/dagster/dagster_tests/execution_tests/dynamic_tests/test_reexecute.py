@@ -2,21 +2,12 @@ from typing import List
 
 import pytest
 
-from dagster import Out, DynamicOutput, fs_io_manager, job, op, reconstructable
+from dagster import DynamicOutput, Out, fs_io_manager, job, op, reconstructable
 from dagster._core.definitions.events import Output
 from dagster._core.definitions.output import DynamicOut, Out
-from dagster._core.errors import (
-    DagsterExecutionStepNotFoundError,
-    DagsterInvariantViolationError,
-)
+from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import (
-    DynamicOutputDefinition,
-    execute_pipeline,
-    pipeline,
-    reexecute_pipeline,
-    solid,
-)
+from dagster._legacy import execute_pipeline, pipeline, reexecute_pipeline
 
 
 @op
@@ -190,9 +181,7 @@ def dynamic_with_optional_output_job():
 
 def test_reexec_dynamic_with_optional_output_job_1():
     with instance_for_test() as instance:
-        result = dynamic_with_optional_output_job().execute_in_process(
-            instance=instance
-        )
+        result = dynamic_with_optional_output_job().execute_in_process(instance=instance)
 
         # re-execute all
         re_result = reexecute_pipeline(
@@ -201,16 +190,12 @@ def test_reexec_dynamic_with_optional_output_job_1():
             instance=instance,
         )
         assert re_result.success
-        assert re_result.output_for_solid("adder") == sum(
-            [i for i in range(10) if i % 2 == 0]
-        )
+        assert re_result.output_for_solid("adder") == sum([i for i in range(10) if i % 2 == 0])
 
 
 def test_reexec_dynamic_with_optional_output_job_2():
     with instance_for_test() as instance:
-        result = dynamic_with_optional_output_job().execute_in_process(
-            instance=instance
-        )
+        result = dynamic_with_optional_output_job().execute_in_process(instance=instance)
 
         # re-execute the step where the source yielded an output
         re_result = reexecute_pipeline(
@@ -227,9 +212,7 @@ def test_reexec_dynamic_with_optional_output_job_2():
 
 def test_reexec_dynamic_with_optional_output_job_3():
     with instance_for_test() as instance:
-        result = dynamic_with_optional_output_job().execute_in_process(
-            instance=instance
-        )
+        result = dynamic_with_optional_output_job().execute_in_process(instance=instance)
 
         # re-execute the step where the source did not yield
         # -> error because the dynamic step wont exist in execution plan
@@ -258,9 +241,7 @@ def dynamic_with_transitive_optional_output_job():
 
     @job(resource_defs={"io_manager": fs_io_manager})
     def _dynamic_with_transitive_optional_output_job():
-        dynamic_results = dynamic_op().map(
-            lambda n: echo(add_one_with_optional_output(n))
-        )
+        dynamic_results = dynamic_op().map(lambda n: echo(add_one_with_optional_output(n)))
         adder(dynamic_results.collect())
 
     return _dynamic_with_transitive_optional_output_job
@@ -268,13 +249,9 @@ def dynamic_with_transitive_optional_output_job():
 
 def test_reexec_dynamic_with_transitive_optional_output_job_1():
     with instance_for_test() as instance:
-        result = dynamic_with_transitive_optional_output_job().execute_in_process(
-            instance=instance
-        )
+        result = dynamic_with_transitive_optional_output_job().execute_in_process(instance=instance)
         assert result.success
-        assert result.output_for_node("adder") == sum(
-            [i + 1 for i in range(10) if i % 2 == 1]
-        )
+        assert result.output_for_node("adder") == sum([i + 1 for i in range(10) if i % 2 == 1])
 
         # re-execute all
         re_result = reexecute_pipeline(
@@ -283,16 +260,12 @@ def test_reexec_dynamic_with_transitive_optional_output_job_1():
             instance=instance,
         )
         assert re_result.success
-        assert re_result.output_for_solid("adder") == sum(
-            [i + 1 for i in range(10) if i % 2 == 0]
-        )
+        assert re_result.output_for_solid("adder") == sum([i + 1 for i in range(10) if i % 2 == 0])
 
 
 def test_reexec_dynamic_with_transitive_optional_output_job_2():
     with instance_for_test() as instance:
-        result = dynamic_with_transitive_optional_output_job().execute_in_process(
-            instance=instance
-        )
+        result = dynamic_with_transitive_optional_output_job().execute_in_process(instance=instance)
 
         # re-execute the step where the source yielded an output
         re_result = reexecute_pipeline(
@@ -307,9 +280,7 @@ def test_reexec_dynamic_with_transitive_optional_output_job_2():
 
 def test_reexec_dynamic_with_transitive_optional_output_job_3():
     with instance_for_test() as instance:
-        result = dynamic_with_transitive_optional_output_job().execute_in_process(
-            instance=instance
-        )
+        result = dynamic_with_transitive_optional_output_job().execute_in_process(instance=instance)
 
         # re-execute the step where the source did not yield
         re_result = reexecute_pipeline(

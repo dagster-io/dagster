@@ -1,19 +1,5 @@
-from dagster import (
-    In,
-    Out,
-    op,
-    Any,
-    Bool,
-    Dict,
-    Float,
-    Int,
-    List,
-    Optional,
-    Set,
-    String,
-    Tuple,
-)
-from dagster._legacy import InputDefinition, OutputDefinition, execute_solid, solid
+from dagster import Any, Bool, Dict, Float, In, Int, List, Optional, Out, Set, String, Tuple, op
+from dagster._legacy import execute_solid
 
 
 @op(

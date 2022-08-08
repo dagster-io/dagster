@@ -1,25 +1,16 @@
 import pytest
 
 from dagster import (
-    In,
-    Out,
-    op,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
+    In,
     Int,
+    Out,
     Output,
+    op,
     usable_as_dagster_type,
 )
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    composite_solid,
-    execute_pipeline,
-    lambda_solid,
-    pipeline,
-    solid,
-)
+from dagster._legacy import PipelineDefinition, composite_solid, execute_pipeline, pipeline
 
 
 def builder(graph):
@@ -53,9 +44,7 @@ def test_basic_use_case():
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
     )
 
-    assert (
-        execute_pipeline(pipeline_def).result_for_solid("add_one").output_value() == 2
-    )
+    assert execute_pipeline(pipeline_def).result_for_solid("add_one").output_value() == 2
 
 
 def test_basic_use_case_with_dsl():
@@ -82,9 +71,7 @@ def test_two_inputs_without_dsl():
         },
     )
 
-    assert (
-        execute_pipeline(pipeline_def).result_for_solid("subtract").output_value() == -1
-    )
+    assert execute_pipeline(pipeline_def).result_for_solid("subtract").output_value() == -1
 
 
 def test_two_inputs_with_dsl():

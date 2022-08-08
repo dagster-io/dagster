@@ -3,20 +3,15 @@ import typing
 import pytest
 
 from dagster import (
-    In,
-    Out,
-    op,
     DagsterInvalidDefinitionError,
     DagsterTypeCheckDidNotPass,
     Dict,
+    In,
+    Out,
+    op,
     usable_as_dagster_type,
 )
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    execute_solid,
-    lambda_solid,
-)
+from dagster._legacy import execute_solid
 
 
 def test_basic_python_dictionary_output():
@@ -33,10 +28,7 @@ def test_basic_python_dictionary_input():
         return data["key"]
 
     assert (
-        execute_solid(
-            input_dict, input_values={"data": {"key": "value"}}
-        ).output_value()
-        == "value"
+        execute_solid(input_dict, input_values={"data": {"key": "value"}}).output_value() == "value"
     )
 
 
@@ -66,9 +58,7 @@ def test_execute_dict_from_config():
     assert (
         execute_solid(
             input_dict,
-            run_config={
-                "solids": {"input_dict": {"inputs": {"data": {"key": "in_config"}}}}
-            },
+            run_config={"solids": {"input_dict": {"inputs": {"data": {"key": "in_config"}}}}},
         ).output_value()
         == "in_config"
     )
@@ -88,10 +78,7 @@ def test_basic_dagster_dictionary_input():
         return data["key"]
 
     assert (
-        execute_solid(
-            input_dict, input_values={"data": {"key": "value"}}
-        ).output_value()
-        == "value"
+        execute_solid(input_dict, input_values={"data": {"key": "value"}}).output_value() == "value"
     )
 
 
@@ -112,10 +99,7 @@ def test_basic_typing_dictionary_input():
         return data["key"]
 
     assert (
-        execute_solid(
-            input_dict, input_values={"data": {"key": "value"}}
-        ).output_value()
-        == "value"
+        execute_solid(input_dict, input_values={"data": {"key": "value"}}).output_value() == "value"
     )
 
 
@@ -148,10 +132,7 @@ def test_basic_closed_typing_dictionary_input():
         return data["key"]
 
     assert (
-        execute_solid(
-            input_dict, input_values={"data": {"key": "value"}}
-        ).output_value()
-        == "value"
+        execute_solid(input_dict, input_values={"data": {"key": "value"}}).output_value() == "value"
     )
 
 
@@ -222,9 +203,7 @@ def test_dict_type_loader_typing_fail():
     ):
         execute_solid(
             emit_dict,
-            run_config={
-                "solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}
-            },
+            run_config={"solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
         )
 
 
@@ -241,7 +220,5 @@ def test_dict_type_loader_inner_type_mismatch():
     with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(
             emit_dict,
-            run_config={
-                "solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}
-            },
+            run_config={"solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
         )

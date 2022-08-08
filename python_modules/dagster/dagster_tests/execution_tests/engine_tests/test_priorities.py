@@ -1,6 +1,6 @@
-from dagster import In, Out, op, reconstructable
+from dagster import op, reconstructable
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import execute_pipeline, pipeline, solid
+from dagster._legacy import execute_pipeline, pipeline
 
 
 @op(tags={"dagster/priority": "-1"})
@@ -35,9 +35,7 @@ def test_priorities():
     )
     assert result.success
     assert [
-        str(event.solid_handle)
-        for event in result.step_event_list
-        if event.is_step_success
+        str(event.solid_handle) for event in result.step_event_list if event.is_step_success
     ] == ["high", "high_2", "none", "none_2", "low", "low_2"]
 
 
@@ -53,7 +51,5 @@ def test_priorities_mp():
         )
         assert result.success
         assert [
-            str(event.solid_handle)
-            for event in result.step_event_list
-            if event.is_step_success
+            str(event.solid_handle) for event in result.step_event_list if event.is_step_success
         ] == ["high", "high_2", "none", "none_2", "low", "low_2"]

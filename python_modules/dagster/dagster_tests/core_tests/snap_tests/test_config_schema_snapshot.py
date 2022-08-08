@@ -1,5 +1,4 @@
 from dagster import (
-    op,
     Array,
     Enum,
     EnumValue,
@@ -8,6 +7,7 @@ from dagster import (
     ScalarUnion,
     Selector,
     Shape,
+    op,
     resource,
 )
 from dagster._config import ConfigTypeKind, Map, resolve_to_config_type
@@ -16,7 +16,7 @@ from dagster._core.snap import (
     build_config_schema_snapshot,
     snap_from_config_type,
 )
-from dagster._legacy import ModeDefinition, pipeline, solid
+from dagster._legacy import ModeDefinition, pipeline
 from dagster._serdes import (
     deserialize_json_to_dagster_namedtuple,
     deserialize_value,
@@ -44,8 +44,7 @@ def test_enum_snap():
     assert enum_snap.key == "CowboyType"
     assert enum_snap.kind == ConfigTypeKind.ENUM
     assert enum_snap.enum_values == [
-        ConfigEnumValueSnap(value, description=None)
-        for value in ["good", "bad", "ugly"]
+        ConfigEnumValueSnap(value, description=None) for value in ["good", "bad", "ugly"]
     ]
     assert enum_snap.fields is None
 
@@ -96,10 +95,7 @@ def test_field_things():
     assert field_snap_dict["opt"].default_value_as_json_str is None
     assert field_snap_dict["opt_with_default"].is_required is False
     assert field_snap_dict["opt_with_default"].default_provided is True
-    assert (
-        deserialize_value(field_snap_dict["opt_with_default"].default_value_as_json_str)
-        == 2
-    )
+    assert deserialize_value(field_snap_dict["opt_with_default"].default_value_as_json_str) == 2
 
     assert field_snap_dict["req_with_desc"].is_required is True
     assert field_snap_dict["req_with_desc"].description == "A desc"
@@ -240,9 +236,7 @@ def test_simple_pipeline_smoke_test():
     assert config_schema_snapshot.all_config_snaps_by_key
 
     serialized = serialize_dagster_namedtuple(config_schema_snapshot)
-    rehydrated_config_schema_snapshot = deserialize_json_to_dagster_namedtuple(
-        serialized
-    )
+    rehydrated_config_schema_snapshot = deserialize_json_to_dagster_namedtuple(serialized)
     assert config_schema_snapshot == rehydrated_config_schema_snapshot
 
 
@@ -257,9 +251,7 @@ def test_check_solid_config_correct():
 
     solid_config_key = op_with_config.config_schema.config_type.key
 
-    config_snaps = build_config_schema_snapshot(
-        single_solid_pipeline
-    ).all_config_snaps_by_key
+    config_snaps = build_config_schema_snapshot(single_solid_pipeline).all_config_snaps_by_key
 
     assert solid_config_key in config_snaps
 
@@ -285,9 +277,7 @@ def test_check_solid_list_list_config_correct():
 
     solid_config_key = op_with_config.config_schema.config_type.key
 
-    config_snaps = build_config_schema_snapshot(
-        single_solid_pipeline
-    ).all_config_snaps_by_key
+    config_snaps = build_config_schema_snapshot(single_solid_pipeline).all_config_snaps_by_key
     assert solid_config_key in config_snaps
     solid_config_snap = config_snaps[solid_config_key]
 
@@ -332,9 +322,7 @@ def test_kitchen_sink_break_out():
     def single_solid_pipeline():
         op_with_kitchen_sink_config()
 
-    config_snaps = build_config_schema_snapshot(
-        single_solid_pipeline
-    ).all_config_snaps_by_key
+    config_snaps = build_config_schema_snapshot(single_solid_pipeline).all_config_snaps_by_key
 
     solid_config_key = op_with_kitchen_sink_config.config_schema.config_type.key
     assert solid_config_key in config_snaps
@@ -354,9 +342,7 @@ def test_kitchen_sink_break_out():
     nested_dict = config_snaps[dict_within_list.get_field("nested_dict").type_key]
     assert len(nested_dict.fields) == 2
     nested_selector = config_snaps[nested_dict.get_field("nested_selector").type_key]
-    noneable_list_bool = config_snaps[
-        nested_selector.get_field("noneable_list").type_key
-    ]
+    noneable_list_bool = config_snaps[nested_selector.get_field("noneable_list").type_key]
     assert noneable_list_bool.kind == ConfigTypeKind.NONEABLE
     list_bool = config_snaps[noneable_list_bool.inner_type_key]
     assert list_bool.kind == ConfigTypeKind.ARRAY
@@ -401,17 +387,13 @@ def test_multiple_modes():
 
 
 def get_config_snap(pipeline_def, key):
-    return pipeline_def.get_pipeline_snapshot().config_schema_snapshot.get_config_snap(
-        key
-    )
+    return pipeline_def.get_pipeline_snapshot().config_schema_snapshot.get_config_snap(key)
 
 
 def test_scalar_union():
     # Requiring resolve calls is bad: https://github.com/dagster-io/dagster/issues/2266
     @op(
-        config_schema=ScalarUnion(
-            resolve_to_config_type(str), resolve_to_config_type({"bar": str})
-        )
+        config_schema=ScalarUnion(resolve_to_config_type(str), resolve_to_config_type({"bar": str}))
     )
     def op_with_config(_):
         pass
@@ -420,9 +402,7 @@ def test_scalar_union():
     def single_solid_pipeline():
         op_with_config()
 
-    config_snaps = build_config_schema_snapshot(
-        single_solid_pipeline
-    ).all_config_snaps_by_key
+    config_snaps = build_config_schema_snapshot(single_solid_pipeline).all_config_snaps_by_key
 
     scalar_union_key = op_with_config.config_schema.config_type.key
 

@@ -10,14 +10,13 @@ import time
 import pytest
 
 from dagster import (
-    In,
-    op,
     Any,
     Bool,
     DagsterInvalidConfigError,
     Dict,
     Field,
     Float,
+    In,
     Int,
     List,
     Nothing,
@@ -29,13 +28,8 @@ from dagster import (
     Tuple,
 )
 from dagster import _check as check
-from dagster._legacy import (
-    InputDefinition,
-    execute_pipeline,
-    execute_solid,
-    pipeline,
-    solid,
-)
+from dagster import op
+from dagster._legacy import execute_pipeline, execute_solid, pipeline
 
 
 @op
@@ -259,9 +253,7 @@ def test_set_solid_configable_input_bad():
     ) as exc_info:
         execute_solid(
             set_op,
-            run_config={
-                "solids": {"set_op": {"inputs": {"set_input": {"foo", "bar", "baz"}}}}
-            },
+            run_config={"solids": {"set_op": {"inputs": {"set_input": {"foo", "bar", "baz"}}}}},
         )
 
     expected = "Value at path root:solids:set_op:inputs:set_input must be list."
@@ -280,9 +272,7 @@ def test_tuple_solid_configable_input():
         run_config={
             "solids": {
                 "tuple_op": {
-                    "inputs": {
-                        "tuple_input": [{"value": "foo"}, {"value": 1}, {"value": 3.1}]
-                    }
+                    "inputs": {"tuple_input": [{"value": "foo"}, {"value": 1}, {"value": 3.1}]}
                 }
             }
         },
@@ -362,9 +352,7 @@ def hello_world(context) -> str:
     config_schema=Field(
         Selector(
             {
-                "haw": {
-                    "whom": Field(String, default_value="honua", is_required=False)
-                },
+                "haw": {"whom": Field(String, default_value="honua", is_required=False)},
                 "cn": {"whom": Field(String, default_value="世界", is_required=False)},
                 "en": {"whom": Field(String, default_value="world", is_required=False)},
             }
@@ -388,9 +376,7 @@ def partially_specified_config(context) -> List:
 
 
 def test_any_config():
-    res = execute_solid(
-        any_config, run_config={"solids": {"any_config": {"config": "foo"}}}
-    )
+    res = execute_solid(any_config, run_config={"solids": {"any_config": {"config": "foo"}}})
     assert res.output_value() == "foo"
 
     res = execute_solid(
@@ -400,14 +386,10 @@ def test_any_config():
 
 
 def test_bool_config():
-    res = execute_solid(
-        bool_config, run_config={"solids": {"bool_config": {"config": True}}}
-    )
+    res = execute_solid(bool_config, run_config={"solids": {"bool_config": {"config": True}}})
     assert res.output_value() == "true"
 
-    res = execute_solid(
-        bool_config, run_config={"solids": {"bool_config": {"config": False}}}
-    )
+    res = execute_solid(bool_config, run_config={"solids": {"bool_config": {"config": False}}})
     assert res.output_value() == "false"
 
 
@@ -446,9 +428,7 @@ def test_unpickle():
         filename = os.path.join(tmpdir, "foo.pickle")
         with open(filename, "wb") as f:
             pickle.dump("foo", f)
-        res = execute_solid(
-            unpickle, run_config={"solids": {"unpickle": {"config": filename}}}
-        )
+        res = execute_solid(unpickle, run_config={"solids": {"unpickle": {"config": filename}}})
         assert res.output_value() == "foo"
 
 
@@ -463,9 +443,7 @@ def test_concat_config():
 def test_concat_typeless_config():
     res = execute_solid(
         concat_typeless_list_config,
-        run_config={
-            "solids": {"concat_typeless_list_config": {"config": ["foo", "bar", "baz"]}}
-        },
+        run_config={"solids": {"concat_typeless_list_config": {"config": ["foo", "bar", "baz"]}}},
     )
     assert res.output_value() == "foobarbaz"
 
@@ -473,9 +451,7 @@ def test_concat_typeless_config():
 def test_repeat_config():
     res = execute_solid(
         repeat_config,
-        run_config={
-            "solids": {"repeat_config": {"config": {"word": "foo", "times": 3}}}
-        },
+        run_config={"solids": {"repeat_config": {"config": {"word": "foo", "times": 3}}}},
     )
     assert res.output_value() == "foofoofoo"
 
@@ -507,9 +483,7 @@ def test_selector_config_default():
 
     res = execute_solid(
         hello_world_default,
-        run_config={
-            "solids": {"hello_world_default": {"config": {"haw": {"whom": "Max"}}}}
-        },
+        run_config={"solids": {"hello_world_default": {"config": {"haw": {"whom": "Max"}}}}},
     )
     assert res.output_value() == "Aloha Max!"
 
@@ -519,9 +493,7 @@ def test_permissive_config():
         partially_specified_config,
         run_config={
             "solids": {
-                "partially_specified_config": {
-                    "config": {"required": "yes", "also": "this"}
-                }
+                "partially_specified_config": {"config": {"required": "yes", "also": "this"}}
             }
         },
     )

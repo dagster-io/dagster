@@ -4,9 +4,9 @@ Repository of test pipelines
 
 import pytest
 
-from dagster import op, Int, fs_io_manager, repository, resource
+from dagster import Int, fs_io_manager, op, repository, resource
 from dagster._check import CheckError
-from dagster._legacy import ModeDefinition, PipelineDefinition, PresetDefinition, solid
+from dagster._legacy import ModeDefinition, PipelineDefinition, PresetDefinition
 from dagster._utils import file_relative_path
 
 

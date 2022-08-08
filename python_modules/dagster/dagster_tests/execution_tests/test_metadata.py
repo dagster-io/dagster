@@ -3,7 +3,6 @@ from pathlib import Path
 import pytest
 
 from dagster import (
-    op,
     AssetMaterialization,
     AssetObservation,
     BoolMetadataValue,
@@ -15,6 +14,7 @@ from dagster import (
     PythonArtifactMetadataValue,
     TextMetadataValue,
     UrlMetadataValue,
+    op,
 )
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import (
@@ -29,7 +29,7 @@ from dagster._core.definitions.metadata.table import (
     TableRecord,
     TableSchema,
 )
-from dagster._legacy import execute_pipeline, pipeline, solid
+from dagster._legacy import execute_pipeline, pipeline
 from dagster._utils import frozendict
 
 
@@ -81,8 +81,7 @@ def test_metadata_asset_materialization():
     materialization = materialization_events[0].event_specific_data.materialization
     assert len(materialization.metadata_entries) == 6
     entry_map = {
-        entry.label: entry.entry_data.__class__
-        for entry in materialization.metadata_entries
+        entry.label: entry.entry_data.__class__ for entry in materialization.metadata_entries
     }
     assert entry_map["text"] == TextMetadataValue
     assert entry_map["int"] == IntMetadataValue
@@ -115,16 +114,11 @@ def test_metadata_asset_observation():
     assert result
     assert result.success
 
-    observation_events = solid_events_for_type(
-        result, "the_op", DagsterEventType.ASSET_OBSERVATION
-    )
+    observation_events = solid_events_for_type(result, "the_op", DagsterEventType.ASSET_OBSERVATION)
     assert len(observation_events) == 1
     observation = observation_events[0].event_specific_data.asset_observation
     assert len(observation.metadata_entries) == 5
-    entry_map = {
-        entry.label: entry.entry_data.__class__
-        for entry in observation.metadata_entries
-    }
+    entry_map = {entry.label: entry.entry_data.__class__ for entry in observation.metadata_entries}
     assert entry_map["text"] == TextMetadataValue
     assert entry_map["int"] == IntMetadataValue
     assert entry_map["url"] == UrlMetadataValue
@@ -274,9 +268,7 @@ def test_table_column_constraints_keys():
 
 
 # minimum and maximum aren't checked because they depend on the type of the column
-@pytest.mark.parametrize(
-    "key,value", list(bad_values["table_column_constraints"].items())
-)
+@pytest.mark.parametrize("key,value", list(bad_values["table_column_constraints"].items()))
 def test_table_column_constraints_values(key, value):
     kwargs = {
         "nullable": True,
@@ -362,8 +354,7 @@ def test_bool_metadata_value():
     assert len(materialization_events) == 1
     materialization = materialization_events[0].event_specific_data.materialization
     entry_map = {
-        entry.label: entry.entry_data.__class__
-        for entry in materialization.metadata_entries
+        entry.label: entry.entry_data.__class__ for entry in materialization.metadata_entries
     }
     assert entry_map["first_bool"] == BoolMetadataValue
     assert entry_map["second_bool"] == BoolMetadataValue

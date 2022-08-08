@@ -8,7 +8,7 @@ from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.solid_definition import SolidDefinition
 from dagster._core.execution.context.compute import SolidExecutionContext
 from dagster._core.storage.pipeline_run import DagsterRun, PipelineRun
-from dagster._legacy import execute_pipeline, pipeline, solid
+from dagster._legacy import execute_pipeline, pipeline
 
 
 def test_op_execution_context():

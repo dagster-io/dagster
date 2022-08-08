@@ -1,22 +1,15 @@
 from dagster import (
     In,
     Out,
-    op,
     String,
     dagster_type_loader,
     dagster_type_materializer,
+    op,
     resource,
     usable_as_dagster_type,
 )
 from dagster._core.types.dagster_type import create_any_type
-from dagster._legacy import (
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
+from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
 
 class UserError(Exception):

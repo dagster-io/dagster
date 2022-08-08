@@ -1,10 +1,6 @@
-from dagster._core.snap.solid import build_core_solid_def_snap
-from dagster._legacy import InputDefinition, OutputDefinition, solid
-from dagster._serdes import (
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
-)
 from dagster import In, Out, op
+from dagster._core.snap.solid import build_core_solid_def_snap
+from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
 
 def test_basic_solid_definition():
@@ -51,9 +47,7 @@ def test_solid_definition_kitchen_sink():
         "arg_one",
         "arg_two",
     ]
-    assert [
-        inp.dagster_type_key for inp in kitchen_sink_solid_snap.input_def_snaps
-    ] == [
+    assert [inp.dagster_type_key for inp in kitchen_sink_solid_snap.input_def_snaps] == [
         "String",
         "Int",
     ]
@@ -65,9 +59,7 @@ def test_solid_definition_kitchen_sink():
         "output_two",
     ]
 
-    assert [
-        out.dagster_type_key for out in kitchen_sink_solid_snap.output_def_snaps
-    ] == [
+    assert [out.dagster_type_key for out in kitchen_sink_solid_snap.output_def_snaps] == [
         "String",
         "Int",
     ]

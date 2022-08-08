@@ -2,15 +2,10 @@ import typing
 
 import pytest
 
-from dagster import In, Out, op, DagsterTypeCheckDidNotPass, Optional
+from dagster import DagsterTypeCheckDidNotPass, In, Optional, Out, op
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.types.python_set import create_typed_runtime_set
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    execute_solid,
-    lambda_solid,
-)
+from dagster._legacy import execute_solid
 
 
 def test_vanilla_set_output():
@@ -140,9 +135,7 @@ def test_typed_set_type_loader():
     assert (
         execute_solid(
             take_set,
-            run_config={
-                "solids": {"take_set": {"inputs": {"tt": list(expected_output)}}}
-            },
+            run_config={"solids": {"take_set": {"inputs": {"tt": list(expected_output)}}}},
         ).output_value()
         == expected_output
     )

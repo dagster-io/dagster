@@ -4,29 +4,25 @@ import warnings
 import pytest
 
 from dagster import (
-    In,
-    Out,
-    op,
     DependencyDefinition,
     Field,
+    In,
     Int,
     List,
     MultiDependencyDefinition,
     Nothing,
     Optional,
+    Out,
     Output,
     ResourceDefinition,
     String,
 )
 from dagster import _check as check
-from dagster import reconstructable
+from dagster import op, reconstructable
 from dagster._core.definitions import Node
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.graph_definition import _create_adjacency_lists
-from dagster._core.errors import (
-    DagsterExecutionStepNotFoundError,
-    DagsterInvariantViolationError,
-)
+from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster._core.execution.results import SolidExecutionResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import (
@@ -42,15 +38,12 @@ from dagster._core.utility_solids import (
 )
 from dagster._core.workspace.load import location_origin_from_python_file
 from dagster._legacy import (
-    InputDefinition,
     ModeDefinition,
-    OutputDefinition,
     PipelineDefinition,
     execute_pipeline,
     execute_pipeline_iterator,
     pipeline,
     reexecute_pipeline,
-    solid,
 )
 from dagster._utils.test import execute_solid_within_pipeline
 
@@ -87,12 +80,9 @@ def make_compute_fn():
 
 
 def _do_construct(solids, dependencies):
-    pipeline_def = PipelineDefinition(
-        name="test", solid_defs=solids, dependencies=dependencies
-    )
+    pipeline_def = PipelineDefinition(name="test", solid_defs=solids, dependencies=dependencies)
     solids = {
-        s.name: Node(name=s.name, definition=s, graph_definition=pipeline_def.graph)
-        for s in solids
+        s.name: Node(name=s.name, definition=s, graph_definition=pipeline_def.graph) for s in solids
     }
     dependency_structure = DependencyStructure.from_definitions(solids, dependencies)
     return _create_adjacency_lists(list(solids.values()), dependency_structure)
@@ -119,9 +109,7 @@ def test_single_dep_adjacency_lists():
 
 
 def test_diamond_deps_adjaceny_lists():
-    forward_edges, backwards_edges = _do_construct(
-        create_diamond_solids(), diamond_deps()
-    )
+    forward_edges, backwards_edges = _do_construct(create_diamond_solids(), diamond_deps())
 
     assert forward_edges == {
         "A_source": {"A"},
@@ -364,9 +352,7 @@ def test_pipeline_name_threaded_through_context():
     def assert_name_op(context):
         assert context.job_name == name
 
-    result = execute_pipeline(
-        PipelineDefinition(name="foobar", solid_defs=[assert_name_op])
-    )
+    result = execute_pipeline(PipelineDefinition(name="foobar", solid_defs=[assert_name_op]))
 
     assert result.success
 
@@ -450,9 +436,7 @@ def test_pipeline_subset_of_subset():
     assert len(pipeline_result.solid_result_list) == 4
     assert pipeline_result.result_for_solid("add_one_a").output_value() == 2
 
-    subset_pipeline = pipeline_def.get_pipeline_subset_def(
-        {"add_one_a", "return_one_a"}
-    )
+    subset_pipeline = pipeline_def.get_pipeline_subset_def({"add_one_a", "return_one_a"})
     subset_result = execute_pipeline(subset_pipeline)
     assert subset_result.success
     assert len(subset_result.solid_result_list) == 2
@@ -578,15 +562,11 @@ def define_three_part_pipeline():
     def add_three(num):
         return num + 3
 
-    return PipelineDefinition(
-        name="three_part_pipeline", solid_defs=[add_one, add_two, add_three]
-    )
+    return PipelineDefinition(name="three_part_pipeline", solid_defs=[add_one, add_two, add_three])
 
 
 def define_created_disjoint_three_part_pipeline():
-    return define_three_part_pipeline().get_pipeline_subset_def(
-        {"add_one", "add_three"}
-    )
+    return define_three_part_pipeline().get_pipeline_subset_def({"add_one", "add_three"})
 
 
 def test_pipeline_disjoint_subset():
@@ -647,19 +627,13 @@ def test_pipeline_wrapping_types():
 
     assert execute_pipeline(
         wrapping_test,
-        run_config={
-            "solids": {
-                "double_string_for_all": {"inputs": {"value": [{"value": "foo"}]}}
-            }
-        },
+        run_config={"solids": {"double_string_for_all": {"inputs": {"value": [{"value": "foo"}]}}}},
     ).success
 
     assert execute_pipeline(
         wrapping_test,
         run_config={
-            "solids": {
-                "double_string_for_all": {"inputs": {"value": [{"value": "bar"}, None]}}
-            }
+            "solids": {"double_string_for_all": {"inputs": {"value": [{"value": "bar"}, None]}}}
         },
     ).success
 
@@ -745,9 +719,7 @@ def test_pipeline_init_failure():
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                resource_defs={
-                    "failing": ResourceDefinition(resource_fn=failing_resource_fn)
-                }
+                resource_defs={"failing": ResourceDefinition(resource_fn=failing_resource_fn)}
             )
         ]
     )
@@ -929,12 +901,7 @@ def test_reexecution_fs_storage_with_solid_selection():
     assert reexecution_result_no_solid_selection.success
     assert len(reexecution_result_no_solid_selection.solid_result_list) == 2
     assert reexecution_result_no_solid_selection.result_for_solid("add_one").skipped
-    assert (
-        reexecution_result_no_solid_selection.result_for_solid(
-            "return_one"
-        ).output_value()
-        == 1
-    )
+    assert reexecution_result_no_solid_selection.result_for_solid("return_one").output_value() == 1
 
     # Case 2: re-execute a pipeline when the original pipeline has solid selection
     pipeline_result_solid_selection = execute_pipeline(
@@ -946,10 +913,7 @@ def test_reexecution_fs_storage_with_solid_selection():
     assert len(pipeline_result_solid_selection.solid_result_list) == 1
     with pytest.raises(DagsterInvariantViolationError):
         pipeline_result_solid_selection.result_for_solid("add_one")
-    assert (
-        pipeline_result_solid_selection.result_for_solid("return_one").output_value()
-        == 1
-    )
+    assert pipeline_result_solid_selection.result_for_solid("return_one").output_value() == 1
 
     reexecution_result_solid_selection = reexecute_pipeline(
         pipeline_def,
@@ -961,10 +925,7 @@ def test_reexecution_fs_storage_with_solid_selection():
     assert len(reexecution_result_solid_selection.solid_result_list) == 1
     with pytest.raises(DagsterInvariantViolationError):
         pipeline_result_solid_selection.result_for_solid("add_one")
-    assert (
-        reexecution_result_solid_selection.result_for_solid("return_one").output_value()
-        == 1
-    )
+    assert reexecution_result_solid_selection.result_for_solid("return_one").output_value() == 1
 
     # Case 3: re-execute a pipeline partially when the original pipeline has solid selection and
     #   re-exeucte a step which hasn't been included in the original pipeline

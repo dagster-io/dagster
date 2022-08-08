@@ -3,29 +3,22 @@ import json
 import pytest
 
 from dagster import (
-    In,
-    Out,
-    op,
     AssetMaterialization,
     DagsterEventType,
     DagsterInvalidConfigError,
+    In,
     Int,
+    Out,
     Output,
     String,
     dagster_type_materializer,
+    op,
 )
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.plan.step import StepKind
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import create_any_type
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    execute_pipeline,
-    lambda_solid,
-    solid,
-)
+from dagster._legacy import PipelineDefinition, execute_pipeline
 from dagster._utils.test import get_temp_file_name, get_temp_file_names
 
 
@@ -34,9 +27,7 @@ def single_int_output_pipeline():
     def return_one():
         return 1
 
-    return PipelineDefinition(
-        name="single_int_output_pipeline", solid_defs=[return_one]
-    )
+    return PipelineDefinition(name="single_int_output_pipeline", solid_defs=[return_one])
 
 
 def single_string_output_pipeline():
@@ -44,9 +35,7 @@ def single_string_output_pipeline():
     def return_foo():
         return "foo"
 
-    return PipelineDefinition(
-        name="single_string_output_pipeline", solid_defs=[return_foo]
-    )
+    return PipelineDefinition(name="single_string_output_pipeline", solid_defs=[return_foo])
 
 
 def multiple_output_pipeline():
@@ -64,9 +53,7 @@ def multiple_output_pipeline():
         yield Output(1, "number")
         yield Output("foo", "string")
 
-    return PipelineDefinition(
-        name="multiple_output_pipeline", solid_defs=[return_one_and_foo]
-    )
+    return PipelineDefinition(name="multiple_output_pipeline", solid_defs=[return_one_and_foo])
 
 
 def single_int_named_output_pipeline():
@@ -108,11 +95,7 @@ def one_input_no_output_pipeline():
 def test_basic_json_default_output_config_schema():
     env = ResolvedRunConfig.build(
         single_int_output_pipeline(),
-        {
-            "solids": {
-                "return_one": {"outputs": [{"result": {"json": {"path": "foo"}}}]}
-            }
-        },
+        {"solids": {"return_one": {"outputs": [{"result": {"json": {"path": "foo"}}}]}}},
     )
 
     assert env.solids["return_one"]
@@ -124,11 +107,7 @@ def test_basic_json_default_output_config_schema():
 def test_basic_json_named_output_config_schema():
     env = ResolvedRunConfig.build(
         single_int_named_output_pipeline(),
-        {
-            "solids": {
-                "return_named_one": {"outputs": [{"named": {"json": {"path": "foo"}}}]}
-            }
-        },
+        {"solids": {"return_named_one": {"outputs": [{"named": {"json": {"path": "foo"}}}]}}},
     )
 
     assert env.solids["return_named_one"]
@@ -143,30 +122,21 @@ def test_basic_json_misnamed_output_config_schema():
             single_int_named_output_pipeline(),
             {
                 "solids": {
-                    "return_named_one": {
-                        "outputs": [{"wrong_name": {"json": {"path": "foo"}}}]
-                    }
+                    "return_named_one": {"outputs": [{"wrong_name": {"json": {"path": "foo"}}}]}
                 }
             },
         )
 
     assert len(exc_context.value.errors) == 1
-    assert (
-        'Error 1: Received unexpected config entry "wrong_name"'
-        in exc_context.value.message
-    )
-    assert (
-        "at path root:solids:return_named_one:outputs[0]" in exc_context.value.message
-    )
+    assert 'Error 1: Received unexpected config entry "wrong_name"' in exc_context.value.message
+    assert "at path root:solids:return_named_one:outputs[0]" in exc_context.value.message
 
 
 def test_no_outputs_no_inputs_config_schema():
     assert ResolvedRunConfig.build(no_input_no_output_pipeline())
 
     with pytest.raises(DagsterInvalidConfigError) as exc_context:
-        ResolvedRunConfig.build(
-            no_input_no_output_pipeline(), {"solids": {"return_one": {}}}
-        )
+        ResolvedRunConfig.build(no_input_no_output_pipeline(), {"solids": {"return_one": {}}})
 
     assert len(exc_context.value.errors) == 1
     assert (
@@ -178,11 +148,7 @@ def test_no_outputs_no_inputs_config_schema():
 def test_no_outputs_one_input_config_schema():
     assert ResolvedRunConfig.build(
         one_input_no_output_pipeline(),
-        {
-            "solids": {
-                "take_input_return_nothing": {"inputs": {"dummy": {"value": "value"}}}
-            }
-        },
+        {"solids": {"take_input_return_nothing": {"inputs": {"dummy": {"value": "value"}}}}},
     )
 
     with pytest.raises(DagsterInvalidConfigError) as exc_context:
@@ -207,13 +173,7 @@ def test_basic_int_json_materialization():
     with get_temp_file_name() as filename:
         result = execute_pipeline(
             single_int_output_pipeline(),
-            {
-                "solids": {
-                    "return_one": {
-                        "outputs": [{"result": {"json": {"path": filename}}}]
-                    }
-                }
-            },
+            {"solids": {"return_one": {"outputs": [{"result": {"json": {"path": filename}}}]}}},
         )
 
         assert result.success
@@ -227,13 +187,7 @@ def test_basic_materialization_event():
     with get_temp_file_name() as filename:
         result = execute_pipeline(
             single_int_output_pipeline(),
-            {
-                "solids": {
-                    "return_one": {
-                        "outputs": [{"result": {"json": {"path": filename}}}]
-                    }
-                }
-            },
+            {"solids": {"return_one": {"outputs": [{"result": {"json": {"path": filename}}}]}}},
         )
 
         assert result.success
@@ -263,13 +217,7 @@ def test_basic_string_json_materialization():
     with get_temp_file_name() as filename:
         result = execute_pipeline(
             pipeline,
-            {
-                "solids": {
-                    "return_foo": {
-                        "outputs": [{"result": {"json": {"path": filename}}}]
-                    }
-                }
-            },
+            {"solids": {"return_foo": {"outputs": [{"result": {"json": {"path": filename}}}]}}},
         )
 
         assert result.success
@@ -404,17 +352,13 @@ def yield_two_materializations(*_args, **_kwargs):
 
 
 def test_basic_yield_multiple_materializations():
-    SomeDagsterType = create_any_type(
-        name="SomeType", materializer=yield_two_materializations
-    )
+    SomeDagsterType = create_any_type(name="SomeType", materializer=yield_two_materializations)
 
     @op(out=Out(SomeDagsterType))
     def return_one():
         return 1
 
-    pipeline_def = PipelineDefinition(
-        name="single_int_output_pipeline", solid_defs=[return_one]
-    )
+    pipeline_def = PipelineDefinition(name="single_int_output_pipeline", solid_defs=[return_one])
     result = execute_pipeline(
         pipeline_def,
         run_config={"solids": {"return_one": {"outputs": [{"result": 2}]}}},
@@ -445,9 +389,7 @@ def test_basic_bad_output_materialization():
     def return_one():
         return 1
 
-    pipeline_def = PipelineDefinition(
-        name="single_int_output_pipeline", solid_defs=[return_one]
-    )
+    pipeline_def = PipelineDefinition(name="single_int_output_pipeline", solid_defs=[return_one])
 
     with pytest.raises(
         DagsterInvariantViolationError, match="You must return an AssetMaterialization"

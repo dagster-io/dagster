@@ -1,6 +1,6 @@
 import os
 
-from dagster import In, Out, op, DynamicOutput, List, Output, fs_io_manager
+from dagster import DynamicOutput, In, List, Out, Output, fs_io_manager, op
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.execution.api import create_execution_plan, execute_run
 from dagster._core.execution.plan.inputs import (
@@ -19,14 +19,7 @@ from dagster._core.instance.ref import InstanceRef
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.storage.root_input_manager import root_input_manager
-from dagster._legacy import (
-    DynamicOutputDefinition,
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    pipeline,
-    solid,
-)
+from dagster._legacy import ModeDefinition, pipeline
 from dagster._utils import file_relative_path
 from dagster._utils.test import copy_directory
 
@@ -145,34 +138,24 @@ def _validate_execution_plan(plan):
     echo_default_input_source = echo_default_step.step_input_named("y").source
     assert isinstance(echo_default_input_source, FromDefaultValue)
 
-    sum_numbers_input_source = (
-        plan.get_step_by_key("sum_numbers").step_input_named("nums").source
-    )
+    sum_numbers_input_source = plan.get_step_by_key("sum_numbers").step_input_named("nums").source
     assert isinstance(sum_numbers_input_source, FromDynamicCollect)
 
-    emit_input_source = (
-        plan.get_step_by_key("emit").step_input_named("range_input").source
-    )
+    emit_input_source = plan.get_step_by_key("emit").step_input_named("range_input").source
     assert isinstance(emit_input_source, FromConfig)
 
     input_from_root_manager_source = (
-        plan.get_step_by_key("input_from_root_manager")
-        .step_input_named("from_manager")
-        .source
+        plan.get_step_by_key("input_from_root_manager").step_input_named("from_manager").source
     )
     assert isinstance(input_from_root_manager_source, FromRootInputManager)
 
     fan_in_source = plan.get_step_by_key("sum_fan_in").step_input_named("nums").source
     assert isinstance(fan_in_source, FromMultipleSources)
 
-    dynamic_source = (
-        plan.get_step_by_key("multiply_inputs[?]").step_input_named("y").source
-    )
+    dynamic_source = plan.get_step_by_key("multiply_inputs[?]").step_input_named("y").source
     assert isinstance(dynamic_source, FromPendingDynamicStepOutput)
 
-    unresolved_source = (
-        plan.get_step_by_key("multiply_by_two[?]").step_input_named("y").source
-    )
+    unresolved_source = plan.get_step_by_key("multiply_by_two[?]").step_input_named("y").source
     assert isinstance(unresolved_source, FromUnresolvedStepOutput)
 
     dynamic_output = plan.get_step_by_key("emit").step_outputs[0]
@@ -193,13 +176,9 @@ def _validate_execution_plan(plan):
 def test_execution_plan_snapshot_backcompat():
 
     src_dir = file_relative_path(__file__, "test_execution_plan_snapshots/")
-    snapshot_dirs = [
-        f for f in os.listdir(src_dir) if not os.path.isfile(os.path.join(src_dir, f))
-    ]
+    snapshot_dirs = [f for f in os.listdir(src_dir) if not os.path.isfile(os.path.join(src_dir, f))]
     for snapshot_dir_path in snapshot_dirs:
-        print(
-            f"Executing a saved run from {snapshot_dir_path}"
-        )  # pylint: disable=print-call
+        print(f"Executing a saved run from {snapshot_dir_path}")  # pylint: disable=print-call
 
         with copy_directory(os.path.join(src_dir, snapshot_dir_path)) as test_dir:
             with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
@@ -212,15 +191,11 @@ def test_execution_plan_snapshot_backcompat():
                 the_pipeline = InMemoryPipeline(dynamic_pipeline)
 
                 # First create a brand new plan from the pipeline and validate it
-                new_plan = create_execution_plan(
-                    the_pipeline, run_config=run.run_config
-                )
+                new_plan = create_execution_plan(the_pipeline, run_config=run.run_config)
                 _validate_execution_plan(new_plan)
 
                 # Create a snapshot and rebuild it, validate the rebuilt plan
-                new_plan_snapshot = snapshot_from_execution_plan(
-                    new_plan, run.pipeline_snapshot_id
-                )
+                new_plan_snapshot = snapshot_from_execution_plan(new_plan, run.pipeline_snapshot_id)
                 rebuilt_plan = ExecutionPlan.rebuild_from_snapshot(
                     "dynamic_pipeline", new_plan_snapshot
                 )

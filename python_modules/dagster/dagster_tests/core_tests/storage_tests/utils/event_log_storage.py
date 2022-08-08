@@ -11,13 +11,13 @@ import pendulum
 import pytest
 
 from dagster import (
-    In,
-    Out,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
     DagsterInstance,
     Field,
+    In,
+    Out,
     Output,
     RetryRequested,
 )
@@ -50,20 +50,10 @@ from dagster._core.storage.event_log.migration import (
     EVENT_LOG_DATA_MIGRATIONS,
     migrate_asset_key_data,
 )
-from dagster._core.storage.event_log.sqlite.sqlite_event_log import (
-    SqliteEventLogStorage,
-)
+from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._core.utils import make_new_run_id
-from dagster._legacy import (
-    AssetGroup,
-    InputDefinition,
-    ModeDefinition,
-    OutputDefinition,
-    build_assets_job,
-    pipeline,
-    solid,
-)
+from dagster._legacy import AssetGroup, ModeDefinition, build_assets_job, pipeline
 from dagster._loggers import colored_console_logger
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
 from dagster._utils import datetime_as_float
@@ -207,9 +197,7 @@ def _mode_def(event_callback):
 
 
 # This exists to create synthetic events to test the store
-def _synthesize_events(
-    solids_fn, run_id=None, check_success=True, instance=None, run_config=None
-):
+def _synthesize_events(solids_fn, run_id=None, check_success=True, instance=None, run_config=None):
     events = []
 
     def _append_event(event):
@@ -300,9 +288,7 @@ def cursor_datetime_args():
 
 
 def _execute_job_and_store_events(instance, storage, job, run_id):
-    result = job.execute_in_process(
-        instance=instance, raise_on_error=False, run_id=run_id
-    )
+    result = job.execute_in_process(instance=instance, raise_on_error=False, run_id=run_id)
     events = instance.all_logs(run_id=result.run_id)
     for event in events:
         storage.store_event(event)
@@ -338,9 +324,7 @@ class TestEventLogStorage:
                 s.dispose()
 
     @pytest.fixture(name="instance")
-    def instance(
-        self, request
-    ) -> Optional[DagsterInstance]:  # pylint: disable=unused-argument
+    def instance(self, request) -> Optional[DagsterInstance]:  # pylint: disable=unused-argument
         return None
 
     @pytest.fixture(scope="function", name="test_run_id")
@@ -454,9 +438,7 @@ class TestEventLogStorage:
         assert len(storage.get_logs_for_run(test_run_id)) == 4
 
         storage.end_watch(test_run_id, watcher)
-        time.sleep(
-            0.3
-        )  # this value scientifically selected from a range of attractive values
+        time.sleep(0.3)  # this value scientifically selected from a range of attractive values
         storage.store_event(create_test_event_log_record(str(5), test_run_id))
 
         assert len(storage.get_logs_for_run(test_run_id)) == 5
@@ -473,17 +455,11 @@ class TestEventLogStorage:
         with create_and_delete_test_runs(instance, ["other_run"]):
             # two runs events to ensure pagination is not affected by other runs
             storage.store_event(create_test_event_log_record("A", run_id=test_run_id))
-            storage.store_event(
-                create_test_event_log_record(str(0), run_id="other_run")
-            )
+            storage.store_event(create_test_event_log_record(str(0), run_id="other_run"))
             storage.store_event(create_test_event_log_record("B", run_id=test_run_id))
-            storage.store_event(
-                create_test_event_log_record(str(1), run_id="other_run")
-            )
+            storage.store_event(create_test_event_log_record(str(1), run_id="other_run"))
             storage.store_event(create_test_event_log_record("C", run_id=test_run_id))
-            storage.store_event(
-                create_test_event_log_record(str(2), run_id="other_run")
-            )
+            storage.store_event(create_test_event_log_record(str(2), run_id="other_run"))
             storage.store_event(create_test_event_log_record("D", run_id=test_run_id))
 
             assert len(storage.get_logs_for_run(test_run_id)) == 4
@@ -552,15 +528,9 @@ class TestEventLogStorage:
                 ),
             )
         )
-        assert math.isclose(
-            storage.get_stats_for_run(test_run_id).enqueued_time, enqueued_time
-        )
-        assert math.isclose(
-            storage.get_stats_for_run(test_run_id).launch_time, launched_time
-        )
-        assert math.isclose(
-            storage.get_stats_for_run(test_run_id).start_time, start_time
-        )
+        assert math.isclose(storage.get_stats_for_run(test_run_id).enqueued_time, enqueued_time)
+        assert math.isclose(storage.get_stats_for_run(test_run_id).launch_time, launched_time)
+        assert math.isclose(storage.get_stats_for_run(test_run_id).start_time, start_time)
 
     def test_event_log_step_stats(self, test_run_id, storage):
         # When an event log doesn't have a PIPELINE_START or PIPELINE_SUCCESS | PIPELINE_FAILURE event,
@@ -627,9 +597,7 @@ class TestEventLogStorage:
 
         rows = _fetch_all_events(storage, run_id=test_run_id)
 
-        out_events = list(
-            map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows)
-        )
+        out_events = list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
 
         # messages can come out of order
         event_type_counts = Counter(_event_types(out_events))
@@ -660,9 +628,7 @@ class TestEventLogStorage:
         while fuse < 50:
             fuse += 1
             # fetch in batches w/ limit & cursor
-            chunk = storage.get_logs_for_run(
-                result.run_id, cursor=cursor, limit=chunk_size
-            )
+            chunk = storage.get_logs_for_run(result.run_id, cursor=cursor, limit=chunk_size)
             if not chunk:
                 break
             assert len(chunk) <= chunk_size
@@ -710,15 +676,11 @@ class TestEventLogStorage:
             storage.store_event(event)
 
         assert _event_types(
-            storage.get_logs_for_run(
-                result.run_id, of_type=DagsterEventType.PIPELINE_SUCCESS
-            )
+            storage.get_logs_for_run(result.run_id, of_type=DagsterEventType.PIPELINE_SUCCESS)
         ) == [DagsterEventType.PIPELINE_SUCCESS]
 
         assert _event_types(
-            storage.get_logs_for_run(
-                result.run_id, of_type=DagsterEventType.STEP_SUCCESS
-            )
+            storage.get_logs_for_run(result.run_id, of_type=DagsterEventType.STEP_SUCCESS)
         ) == [DagsterEventType.STEP_SUCCESS]
 
         assert _event_types(
@@ -738,18 +700,16 @@ class TestEventLogStorage:
         for event in events:
             storage.store_event(event)
 
-        assert _event_types(
-            storage.get_logs_for_run(result.run_id, cursor=-1)
-        ) == _event_types(events)
+        assert _event_types(storage.get_logs_for_run(result.run_id, cursor=-1)) == _event_types(
+            events
+        )
 
     def test_basic_get_logs_for_run_multiple_runs(self, instance, storage):
 
         events_one, result_one = _synthesize_events(return_one_solid_func)
         events_two, result_two = _synthesize_events(return_one_solid_func)
 
-        with create_and_delete_test_runs(
-            instance, [result_one.run_id, result_two.run_id]
-        ):
+        with create_and_delete_test_runs(instance, [result_one.run_id, result_two.run_id]):
             for event in events_one:
                 storage.store_event(event)
 
@@ -781,9 +741,7 @@ class TestEventLogStorage:
         events_one, result_one = _synthesize_events(return_one_solid_func)
         events_two, result_two = _synthesize_events(return_one_solid_func)
 
-        with create_and_delete_test_runs(
-            instance, [result_one.run_id, result_two.run_id]
-        ):
+        with create_and_delete_test_runs(instance, [result_one.run_id, result_two.run_id]):
             for event in events_one:
                 storage.store_event(event)
 
@@ -834,22 +792,16 @@ class TestEventLogStorage:
             event_list = []
             storage.watch(run_id_two, None, lambda x, _y: event_list.append(x))
 
-            events_one, _result_one = _synthesize_events(
-                return_one_solid_func, run_id=run_id_one
-            )
+            events_one, _result_one = _synthesize_events(return_one_solid_func, run_id=run_id_one)
             for event in events_one:
                 storage.store_event(event)
 
-            events_two, _result_two = _synthesize_events(
-                return_one_solid_func, run_id=run_id_two
-            )
+            events_two, _result_two = _synthesize_events(return_one_solid_func, run_id=run_id_two)
             for event in events_two:
                 storage.store_event(event)
 
             start = time.time()
-            while (
-                len(event_list) < len(events_two) and time.time() - start < TEST_TIMEOUT
-            ):
+            while len(event_list) < len(events_two) and time.time() - start < TEST_TIMEOUT:
                 time.sleep(0.01)
 
             assert len(event_list) == len(events_two)
@@ -870,22 +822,17 @@ class TestEventLogStorage:
             storage.watch(run_id_one, None, lambda x, _y: event_list_one.append(x))
             storage.watch(run_id_two, None, lambda x, _y: event_list_two.append(x))
 
-            events_one, _result_one = _synthesize_events(
-                return_one_solid_func, run_id=run_id_one
-            )
+            events_one, _result_one = _synthesize_events(return_one_solid_func, run_id=run_id_one)
             for event in events_one:
                 storage.store_event(event)
 
-            events_two, _result_two = _synthesize_events(
-                return_one_solid_func, run_id=run_id_two
-            )
+            events_two, _result_two = _synthesize_events(return_one_solid_func, run_id=run_id_two)
             for event in events_two:
                 storage.store_event(event)
 
             start = time.time()
             while (
-                len(event_list_one) < len(events_one)
-                or len(event_list_two) < len(events_two)
+                len(event_list_one) < len(events_one) or len(event_list_two) < len(events_two)
             ) and time.time() - start < TEST_TIMEOUT:
                 pass
 
@@ -1021,9 +968,7 @@ class TestEventLogStorage:
                     )
                 )
                 assert len(_logs) == 1
-                assert re.match(
-                    "Could not resolve event record as EventLogEntry", _logs[0]
-                )
+                assert re.match("Could not resolve event record as EventLogEntry", _logs[0])
 
             with ExitStack() as stack:
                 _logs = []  # reset logs
@@ -1113,15 +1058,11 @@ class TestEventLogStorage:
         def _one():
             should_fail(should_succeed())
 
-        events, result = _synthesize_events(
-            _one, check_success=False, run_id=test_run_id
-        )
+        events, result = _synthesize_events(_one, check_success=False, run_id=test_run_id)
         for event in events:
             storage.store_event(event)
 
-        step_stats = sorted(
-            storage.get_step_stats_for_run(result.run_id), key=lambda x: x.end_time
-        )
+        step_stats = sorted(storage.get_step_stats_for_run(result.run_id), key=lambda x: x.end_time)
         assert len(step_stats) == 2
         assert step_stats[0].step_key == "should_succeed"
         assert step_stats[0].status == StepEventStatus.SUCCESS
@@ -1145,15 +1086,11 @@ class TestEventLogStorage:
         def _one():
             should_retry(should_succeed())
 
-        events, result = _synthesize_events(
-            _one, check_success=False, run_id=test_run_id
-        )
+        events, result = _synthesize_events(_one, check_success=False, run_id=test_run_id)
         for event in events:
             storage.store_event(event)
 
-        step_stats = storage.get_step_stats_for_run(
-            result.run_id, step_keys=["should_retry"]
-        )
+        step_stats = storage.get_step_stats_for_run(result.run_id, step_keys=["should_retry"])
         assert len(step_stats) == 1
         assert step_stats[0].step_key == "should_retry"
         assert step_stats[0].status == StepEventStatus.FAILURE
@@ -1172,13 +1109,9 @@ class TestEventLogStorage:
                 _event_record(run_id, "C", now - 175, DagsterEventType.STEP_START),
                 _event_record(run_id, "C", now - 150, DagsterEventType.STEP_SKIPPED),
                 _event_record(run_id, "D", now - 150, DagsterEventType.STEP_START),
-                _event_record(
-                    run_id, "D", now - 150, DagsterEventType.STEP_UP_FOR_RETRY
-                ),
+                _event_record(run_id, "D", now - 150, DagsterEventType.STEP_UP_FOR_RETRY),
                 _event_record(run_id, "E", now - 150, DagsterEventType.STEP_START),
-                _event_record(
-                    run_id, "E", now - 150, DagsterEventType.STEP_UP_FOR_RETRY
-                ),
+                _event_record(run_id, "E", now - 150, DagsterEventType.STEP_UP_FOR_RETRY),
                 _event_record(run_id, "E", now - 125, DagsterEventType.STEP_RESTARTED),
             ]
 
@@ -1221,9 +1154,7 @@ class TestEventLogStorage:
         def _pipeline():
             foo_op()
 
-        events, result = _synthesize_events(
-            _pipeline, check_success=False, run_id=test_run_id
-        )
+        events, result = _synthesize_events(_pipeline, check_success=False, run_id=test_run_id)
         for event in events:
             storage.store_event(event)
 
@@ -1233,10 +1164,7 @@ class TestEventLogStorage:
         assert step_stats[0].status == StepEventStatus.SUCCESS
         assert step_stats[0].end_time > step_stats[0].start_time
         assert len(step_stats[0].markers) == 1
-        assert (
-            step_stats[0].markers[0].end_time
-            >= step_stats[0].markers[0].start_time + 0.1
-        )
+        assert step_stats[0].markers[0].end_time >= step_stats[0].markers[0].start_time + 0.1
 
     @pytest.mark.parametrize(
         "cursor_dt", cursor_datetime_args()
@@ -1292,9 +1220,7 @@ class TestEventLogStorage:
             def _build_cursor(record_id_cursor, run_cursor_dt):
                 if not run_cursor_dt:
                     return record_id_cursor
-                return RunShardedEventsCursor(
-                    id=record_id_cursor, run_updated_after=run_cursor_dt
-                )
+                return RunShardedEventsCursor(id=record_id_cursor, run_updated_after=run_cursor_dt)
 
             assert not list(
                 filter(
@@ -1302,9 +1228,7 @@ class TestEventLogStorage:
                     storage.get_event_records(
                         EventRecordsFilter(
                             event_type=DagsterEventType.RUN_SUCCESS,
-                            after_cursor=_build_cursor(
-                                min_success_record_id, cursor_dt
-                            ),
+                            after_cursor=_build_cursor(min_success_record_id, cursor_dt),
                         )
                     ),
                 )
@@ -1321,9 +1245,9 @@ class TestEventLogStorage:
                 )
             ] == [record.storage_id for record in all_success_events[:2][::-1]]
 
-            assert set(
-                _event_types([r.event_log_entry for r in all_success_events])
-            ) == {DagsterEventType.RUN_SUCCESS}
+            assert set(_event_types([r.event_log_entry for r in all_success_events])) == {
+                DagsterEventType.RUN_SUCCESS
+            }
 
     def test_get_event_records_sqlite(self, storage):
         if not isinstance(storage, SqliteEventLogStorage):
@@ -1407,9 +1331,7 @@ class TestEventLogStorage:
                 storage.store_event(event)
 
             update_timestamp = run_records[-1].update_timestamp
-            tzaware_dt = pendulum.from_timestamp(
-                datetime_as_float(update_timestamp), tz="UTC"
-            )
+            tzaware_dt = pendulum.from_timestamp(datetime_as_float(update_timestamp), tz="UTC")
 
             # use tz-aware cursor
             filtered_records = storage.get_event_records(
@@ -1583,9 +1505,7 @@ class TestEventLogStorage:
 
         def _event_partition(event):
             assert event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
-            return (
-                event.dagster_event.step_materialization_data.materialization.partition
-            )
+            return event.dagster_event.step_materialization_data.materialization.partition
 
         def _fetch_events(storage):
             return storage.get_latest_materialization_events(
@@ -1643,9 +1563,7 @@ class TestEventLogStorage:
                 lambda: two_asset_solids(), instance=created_instance
             )
 
-            with create_and_delete_test_runs(
-                instance, [result1.run_id, result2.run_id]
-            ):
+            with create_and_delete_test_runs(instance, [result1.run_id, result2.run_id]):
 
                 for event in events_one + events_two:
                     storage.store_event(event)
@@ -1668,17 +1586,13 @@ class TestEventLogStorage:
                 lambda: two_asset_solids(), instance=created_instance
             )
 
-            with create_and_delete_test_runs(
-                instance, [result_1.run_id, result_2.run_id]
-            ):
+            with create_and_delete_test_runs(instance, [result_1.run_id, result_2.run_id]):
 
                 for event in events_one + events_two:
                     storage.store_event(event)
 
                 assert storage.has_asset_key(AssetKey(["path", "to", "asset_3"]))
-                assert not storage.has_asset_key(
-                    AssetKey(["path", "to", "bogus", "asset"])
-                )
+                assert not storage.has_asset_key(AssetKey(["path", "to", "bogus", "asset"]))
 
     def test_asset_run_ids(self, storage, instance):
         with instance_for_test() as created_instance:
@@ -1806,9 +1720,7 @@ class TestEventLogStorage:
                     instance=created_instance,
                 )
 
-                with create_and_delete_test_runs(
-                    instance, [two_first_run_id, two_second_run_id]
-                ):
+                with create_and_delete_test_runs(instance, [two_first_run_id, two_second_run_id]):
                     for event in events_two + events_two_two:
                         storage.store_event(event)
 
@@ -1843,9 +1755,7 @@ class TestEventLogStorage:
             partitions = ["a", "a", "b", "c"]
             run_ids = [make_new_run_id() for _ in partitions]
             with create_and_delete_test_runs(instance, run_ids):
-                for partition, run_id in zip(
-                    [f"partition_{x}" for x in partitions], run_ids
-                ):
+                for partition, run_id in zip([f"partition_{x}" for x in partitions], run_ids):
                     run_events, _ = _synthesize_events(
                         lambda: op_partitioned(),
                         instance=created_instance,
@@ -1957,8 +1867,8 @@ class TestEventLogStorage:
                 for event in events_one:
                     storage.store_event(event)
 
-                materialization_count_by_key = (
-                    storage.get_materialization_count_by_partition([a, b, c])
+                materialization_count_by_key = storage.get_materialization_count_by_partition(
+                    [a, b, c]
                 )
 
                 assert materialization_count_by_key.get(a) == {}
@@ -1974,8 +1884,8 @@ class TestEventLogStorage:
                 for event in events_two:
                     storage.store_event(event)
 
-                materialization_count_by_key = (
-                    storage.get_materialization_count_by_partition([a, b, c])
+                materialization_count_by_key = storage.get_materialization_count_by_partition(
+                    [a, b, c]
                 )
                 assert materialization_count_by_key.get(c)["a"] == 2
                 assert materialization_count_by_key.get(c)["b"] == 1
@@ -2077,9 +1987,7 @@ class TestEventLogStorage:
                 storage.register_instance(created_instance)
 
             my_asset_key = AssetKey("my_asset")
-            second_asset_key = AssetKey(
-                "second_asset"
-            )  # pylint: disable=unused-variable
+            second_asset_key = AssetKey("second_asset")  # pylint: disable=unused-variable
             # storage.get_asset_records([my_asset_key, second_asset_key])
 
             assert len(storage.get_asset_records()) == 0
@@ -2101,13 +2009,9 @@ class TestEventLogStorage:
                 asset_entry = records[0].asset_entry
                 assert asset_entry.asset_key == my_asset_key
                 materialize_event = [
-                    event
-                    for event in result.all_events
-                    if event.is_step_materialization
+                    event for event in result.all_events if event.is_step_materialization
                 ][0]
-                assert (
-                    asset_entry.last_materialization.dagster_event == materialize_event
-                )
+                assert asset_entry.last_materialization.dagster_event == materialize_event
                 assert asset_entry.last_run_id == result.run_id
                 assert asset_entry.asset_details == None
 
@@ -2136,14 +2040,9 @@ class TestEventLogStorage:
                     asset_entry = records[0].asset_entry
                     assert asset_entry.asset_key == my_asset_key
                     materialize_event = [
-                        event
-                        for event in result.all_events
-                        if event.is_step_materialization
+                        event for event in result.all_events if event.is_step_materialization
                     ][0]
-                    assert (
-                        asset_entry.last_materialization.dagster_event
-                        == materialize_event
-                    )
+                    assert asset_entry.last_materialization.dagster_event == materialize_event
                     assert asset_entry.last_run_id == result.run_id
                     assert isinstance(asset_entry.asset_details, AssetDetails)
 

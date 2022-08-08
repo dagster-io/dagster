@@ -5,8 +5,9 @@ import types
 import pytest
 import yaml
 
-from dagster import In, Out, op, DagsterEventType, DagsterInvalidConfigError, Output
+from dagster import DagsterEventType, DagsterInvalidConfigError, In, Out, Output
 from dagster import _check as check
+from dagster import op
 from dagster._core.definitions.events import RetryRequested
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
@@ -18,14 +19,7 @@ from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import environ
-from dagster._legacy import (
-    InputDefinition,
-    OutputDefinition,
-    PipelineRun,
-    execute_pipeline,
-    pipeline,
-    solid,
-)
+from dagster._legacy import PipelineRun, execute_pipeline, pipeline
 
 
 def test_fs_stores():
@@ -58,10 +52,7 @@ def test_fs_stores():
             result = execute_pipeline(simple, instance=instance)
 
             assert run_store.has_run(result.run_id)
-            assert (
-                run_store.get_run_by_id(result.run_id).status
-                == PipelineRunStatus.SUCCESS
-            )
+            assert run_store.get_run_by_id(result.run_id).status == PipelineRunStatus.SUCCESS
             assert DagsterEventType.PIPELINE_SUCCESS in [
                 event.dagster_event.event_type
                 for event in event_store.get_logs_for_run(result.run_id)
@@ -74,12 +65,8 @@ def test_fs_stores():
 
 def test_init_compute_log_with_bad_config():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        with open(
-            os.path.join(tmpdir_path, "dagster.yaml"), "w", encoding="utf8"
-        ) as fd:
-            yaml.dump(
-                {"compute_logs": {"garbage": "flargh"}}, fd, default_flow_style=False
-            )
+        with open(os.path.join(tmpdir_path, "dagster.yaml"), "w", encoding="utf8") as fd:
+            yaml.dump({"compute_logs": {"garbage": "flargh"}}, fd, default_flow_style=False)
         with pytest.raises(
             DagsterInvalidConfigError,
             match='Received unexpected config entry "garbage"',
@@ -94,17 +81,13 @@ def test_init_compute_log_with_bad_config_override():
             match='Received unexpected config entry "garbage"',
         ):
             DagsterInstance.from_ref(
-                InstanceRef.from_dir(
-                    tmpdir_path, overrides={"compute_logs": {"garbage": "flargh"}}
-                )
+                InstanceRef.from_dir(tmpdir_path, overrides={"compute_logs": {"garbage": "flargh"}})
             )
 
 
 def test_init_compute_log_with_bad_config_module():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        with open(
-            os.path.join(tmpdir_path, "dagster.yaml"), "w", encoding="utf8"
-        ) as fd:
+        with open(os.path.join(tmpdir_path, "dagster.yaml"), "w", encoding="utf8") as fd:
             yaml.dump(
                 {"compute_logs": {"module": "flargh", "class": "Woble", "config": {}}},
                 fd,
@@ -141,9 +124,7 @@ def test_get_run_by_id():
             global MOCK_HAS_RUN_CALLED  # pylint: disable=global-variable-not-assigned
             # pylint: disable=protected-access
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
-                self._run_storage.add_run(
-                    PipelineRun(pipeline_name="foo_pipeline", run_id=run_id)
-                )
+                self._run_storage.add_run(PipelineRun(pipeline_name="foo_pipeline", run_id=run_id))
                 return False
             else:
                 return self._run_storage.has_run(run_id)
@@ -163,9 +144,7 @@ def test_get_run_by_id():
             global MOCK_HAS_RUN_CALLED  # pylint: disable=global-statement
             # pylint: disable=protected-access
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
-                self._run_storage.add_run(
-                    PipelineRun(pipeline_name="foo_pipeline", run_id=run_id)
-                )
+                self._run_storage.add_run(PipelineRun(pipeline_name="foo_pipeline", run_id=run_id))
                 MOCK_HAS_RUN_CALLED = True
                 return False
             elif self._run_storage.has_run(run_id) and MOCK_HAS_RUN_CALLED:
@@ -206,9 +185,7 @@ def test_run_step_stats():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
         result = execute_pipeline(simple, instance=instance, raise_on_error=False)
-        step_stats = sorted(
-            instance.get_run_step_stats(result.run_id), key=lambda x: x.end_time
-        )
+        step_stats = sorted(instance.get_run_step_stats(result.run_id), key=lambda x: x.end_time)
         assert len(step_stats) == 2
         assert step_stats[0].step_key == "should_succeed"
         assert step_stats[0].status == StepEventStatus.SUCCESS
@@ -254,9 +231,7 @@ def test_run_step_stats_with_retries():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
         result = execute_pipeline(simple, instance=instance, raise_on_error=False)
-        step_stats = instance.get_run_step_stats(
-            result.run_id, step_keys=["should_retry"]
-        )
+        step_stats = instance.get_run_step_stats(result.run_id, step_keys=["should_retry"])
         assert len(step_stats) == 1
         assert step_stats[0].step_key == "should_retry"
         assert step_stats[0].status == StepEventStatus.FAILURE

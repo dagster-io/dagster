@@ -3,17 +3,17 @@ from enum import Enum as PythonEnum
 import pytest
 
 from dagster import (
-    op,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     Enum,
     EnumValue,
     Field,
     Int,
+    op,
 )
 from dagster._config import Enum as ConfigEnum
 from dagster._config.validate import validate_config
-from dagster._legacy import PipelineDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import PipelineDefinition, execute_pipeline, pipeline
 
 
 def define_test_enum_type():
@@ -54,11 +54,7 @@ def test_enum_in_pipeline_execution():
 
     result = execute_pipeline(
         pipeline_def,
-        {
-            "solids": {
-                "config_me": {"config": {"int_field": 2, "enum_field": "ENUM_VALUE"}}
-            }
-        },
+        {"solids": {"config_me": {"config": {"int_field": 2, "enum_field": "ENUM_VALUE"}}}},
     )
 
     assert result.success
@@ -67,11 +63,7 @@ def test_enum_in_pipeline_execution():
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(
             pipeline_def,
-            {
-                "solids": {
-                    "config_me": {"config": {"int_field": 2, "enum_field": "NOPE"}}
-                }
-            },
+            {"solids": {"config_me": {"config": {"int_field": 2, "enum_field": "NOPE"}}}},
         )
 
     assert (
@@ -105,9 +97,7 @@ def test_native_enum_dagster_enum():
         name="native_enum_dagster_pipeline", solid_defs=[dagster_enum_me]
     )
 
-    result = execute_pipeline(
-        pipeline_def, {"solids": {"dagster_enum_me": {"config": "BAR"}}}
-    )
+    result = execute_pipeline(pipeline_def, {"solids": {"dagster_enum_me": {"config": "BAR"}}})
     assert result.success
     assert called["yup"]
 
@@ -125,9 +115,7 @@ def test_native_enum_dagster_enum_from_classmethod():
         name="native_enum_dagster_pipeline", solid_defs=[dagster_enum_me]
     )
 
-    result = execute_pipeline(
-        pipeline_def, {"solids": {"dagster_enum_me": {"config": "BAR"}}}
-    )
+    result = execute_pipeline(pipeline_def, {"solids": {"dagster_enum_me": {"config": "BAR"}}})
     assert result.success
     assert called["yup"]
 
@@ -137,11 +125,7 @@ def test_native_enum_not_allowed_as_default_value():
 
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
 
-        @op(
-            config_schema=Field(
-                dagster_enum, is_required=False, default_value=NativeEnum.BAR
-            )
-        )
+        @op(config_schema=Field(dagster_enum, is_required=False, default_value=NativeEnum.BAR))
         def _enum_direct(_):
             pass
 
@@ -177,11 +161,7 @@ def test_dict_enum_with_default():
 
     called = {}
 
-    @op(
-        config_schema={
-            "enum": Field(dagster_enum, is_required=False, default_value="BAR")
-        }
-    )
+    @op(config_schema={"enum": Field(dagster_enum, is_required=False, default_value="BAR")})
     def enum_dict(context):
         assert context.op_config["enum"] == NativeEnum.BAR
         called["yup"] = True
@@ -201,20 +181,15 @@ def test_list_enum_with_bad_default_value():
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
 
-        @op(
-            config_schema=Field(
-                [dagster_enum], is_required=False, default_value=[NativeEnum.BAR]
-            )
-        )
+        @op(config_schema=Field([dagster_enum], is_required=False, default_value=[NativeEnum.BAR]))
         def _bad_enum_list(_):
             pass
 
     # This error message is bad
     # https://github.com/dagster-io/dagster/issues/2339
     assert "Invalid default_value for Field." in str(exc_info.value)
-    assert (
-        "Error 1: Value at path root[0] for enum type NativeEnum must be a string"
-        in str(exc_info.value)
+    assert "Error 1: Value at path root[0] for enum type NativeEnum must be a string" in str(
+        exc_info.value
     )
 
 
@@ -225,9 +200,7 @@ def test_dict_enum_with_bad_default():
 
         @op(
             config_schema={
-                "enum": Field(
-                    dagster_enum, is_required=False, default_value=NativeEnum.BAR
-                )
+                "enum": Field(dagster_enum, is_required=False, default_value=NativeEnum.BAR)
             }
         )
         def _enum_bad_dict(_):

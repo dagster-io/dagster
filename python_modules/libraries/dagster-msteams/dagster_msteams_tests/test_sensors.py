@@ -2,7 +2,7 @@ import os
 
 from dagster_msteams.sensors import make_teams_on_run_failure_sensor
 
-from dagster import op, repository
+from dagster import repository
 from dagster._core.test_utils import environ
 
 

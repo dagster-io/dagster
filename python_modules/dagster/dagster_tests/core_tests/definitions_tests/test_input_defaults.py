@@ -2,13 +2,12 @@ from typing import Optional
 
 import pytest
 
-from dagster import In, DagsterInvalidDefinitionError, Nothing, job, op
+from dagster import DagsterInvalidDefinitionError, In, Nothing, job, op
 from dagster._legacy import (
     InputDefinition,
     composite_solid,
     execute_pipeline,
     execute_solid,
-    lambda_solid,
     pipeline,
 )
 
@@ -79,10 +78,7 @@ def bad_default(x):
 def test_mismatch():
     result = execute_solid(bad_default, raise_on_error=False)
     assert result.success == False
-    assert (
-        result.input_events_during_compute[0].step_input_data.type_check_data.success
-        == False
-    )
+    assert result.input_events_during_compute[0].step_input_data.type_check_data.success == False
 
 
 def test_env_precedence():

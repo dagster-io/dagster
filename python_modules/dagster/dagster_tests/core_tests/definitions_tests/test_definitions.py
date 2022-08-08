@@ -2,32 +2,11 @@ import json
 
 import pytest
 
-from dagster import (
-    In,
-    Out,
-    op,
-    Any,
-    AssetKey,
-    DependencyDefinition,
-    Int,
-    NodeInvocation,
-    String,
-)
-from dagster._core.definitions import (
-    AssetMaterialization,
-    Node,
-    create_run_config_schema,
-)
+from dagster import Any, AssetKey, DependencyDefinition, In, Int, NodeInvocation, Out, String, op
+from dagster._core.definitions import AssetMaterialization, Node, create_run_config_schema
 from dagster._core.definitions.dependency import NodeHandle, SolidOutputHandle
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._legacy import (
-    CompositeSolidDefinition,
-    InputDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    lambda_solid,
-    solid,
-)
+from dagster._legacy import CompositeSolidDefinition, InputDefinition, PipelineDefinition
 
 
 def test_deps_equal():
@@ -90,14 +69,7 @@ def test_solid_def():
         solid_one_solid, solid_one_solid.output_dict["result"]
     )
 
-    assert (
-        len(
-            pipeline_def.dependency_structure.input_to_upstream_outputs_for_solid(
-                "op_one"
-            )
-        )
-        == 1
-    )
+    assert len(pipeline_def.dependency_structure.input_to_upstream_outputs_for_solid("op_one")) == 1
 
     assert (
         len(
@@ -112,9 +84,7 @@ def test_solid_def():
 
 
 def test_solid_def_bad_input_name():
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match='"context" is not a valid name'
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError, match='"context" is not a valid name'):
         # pylint: disable=unused-variable
         @op(ins={"context": In(String)})
         def op_one(_, _context):
@@ -182,9 +152,7 @@ def test_mapper_errors():
             solid_defs=[op_a],
             name="test",
             dependencies={
-                NodeInvocation("solid_b", alias="solid_c"): {
-                    "arg_a": DependencyDefinition("op_a")
-                }
+                NodeInvocation("solid_b", alias="solid_c"): {"arg_a": DependencyDefinition("op_a")}
             },
         )
     assert (
@@ -249,9 +217,7 @@ def test_cycle_detect():
     def add(a, b):
         return a + b
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="Circular dependencies exist"
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError, match="Circular dependencies exist"):
         PipelineDefinition(
             solid_defs=[return_one, add],
             name="test",
@@ -267,9 +233,7 @@ def test_cycle_detect():
             },
         )
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="Circular dependencies exist"
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError, match="Circular dependencies exist"):
         CompositeSolidDefinition(
             name="circletron",
             solid_defs=[return_one, add],
@@ -295,9 +259,7 @@ def test_composite_mapping_collision():
     def add(a, b):
         return a + b
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="already satisfied by output"
-    ):
+    with pytest.raises(DagsterInvalidDefinitionError, match="already satisfied by output"):
         CompositeSolidDefinition(
             name="add_one",
             solid_defs=[return_one, add],
