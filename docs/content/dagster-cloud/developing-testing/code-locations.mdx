@@ -82,31 +82,33 @@ Additionally, note that:
 4. In the editor, define the code location's configuration:
 
    <ReferenceTable>
-    <ReferenceTableItem
-    propertyName="code_source">
-    Set this key to either <code>python_file:</code> or <code>package_name:</code>to specify where to find your code.
-    </ReferenceTableItem>
-    <ReferenceTableItem
-    propertyName="executable_path">
-    <strong>Optional.</strong> Define a specific Python executable if your code should run in a certain Python environment. If left undefined, the code will run using the default dagster command-line entry-point.
-    </ReferenceTableItem>
-    <ReferenceTableItem
-    propertyName="image">
-    <strong>Required if not using a local agent.</strong> Specifies a Docker image for use with containerized agents.
-    </ReferenceTableItem>
-    <ReferenceTableItem
-    propertyName="working_directory">
-    Specifies the directory to use to resolve relative Python imports while loading your code.
-    </ReferenceTableItem>
-    <ReferenceTableItem
-    propertyName="attribute">
-    Specifies only a specific Dagster repository should be loaded.
-    </ReferenceTableItem>
-    <ReferenceTableItem
-    propertyName="container_context">
-    <strong>Optional. For agent versions 0.14.9 and later.</strong> Customizes the code location for a specific execution environment. Refer to the <a href="/dagster-cloud/deployment/agents">Agent documentation</a> for info on available configuration options for each agent type.
-    </ReferenceTableItem>
-    </ReferenceTable>
+     <ReferenceTableItem propertyName="code_source">
+       Set this key to either <code>python_file:</code> or{" "}
+       <code>package_name:</code>to specify where to find your code.
+     </ReferenceTableItem>
+     <ReferenceTableItem propertyName="executable_path">
+       <strong>Optional.</strong> Define a specific Python executable if your
+       code should run in a certain Python environment. If left undefined, the
+       code will run using the default dagster command-line entry-point.
+     </ReferenceTableItem>
+     <ReferenceTableItem propertyName="image">
+       <strong>Required if not using a local agent.</strong> Specifies a Docker
+       image for use with containerized agents.
+     </ReferenceTableItem>
+     <ReferenceTableItem propertyName="working_directory">
+       Specifies the directory to use to resolve relative Python imports while
+       loading your code.
+     </ReferenceTableItem>
+     <ReferenceTableItem propertyName="attribute">
+       Specifies only a specific Dagster repository should be loaded.
+     </ReferenceTableItem>
+     <ReferenceTableItem propertyName="container_context">
+       <strong>Optional. For agent versions 0.14.9 and later.</strong>{" "}
+       Customizes the code location for a specific execution environment. Refer
+       to the <a href="/dagster-cloud/deployment/agents">Agent documentation</a>{" "}
+       for info on available configuration options for each agent type.
+     </ReferenceTableItem>
+   </ReferenceTable>
 
    For example, the following config specifies that a code location should include a secret named `my_secret` and run in a k8s namespace (`my_namespace`) whenever the Kubernetes agent creates a pod for the location:
 
