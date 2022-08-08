@@ -428,6 +428,10 @@
               {
                 "title": "Branch deployments",
                 "path": "/dagster-cloud/developing-testing"
+              },
+              {
+                "title": "Environment variables",
+                "path": "/dagster-cloud/developing-testing/environment-variables"
               }
             ]
           }
