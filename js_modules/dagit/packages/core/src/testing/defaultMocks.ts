@@ -1,5 +1,7 @@
 import faker from 'faker';
 
+import {RepositoryLocationLoadStatus} from '../types/globalTypes';
+
 export const hyphenatedName = (wordCount = 2) =>
   faker.random.words(wordCount).replace(/ /g, '-').toLowerCase();
 const randomId = () => faker.datatype.uuid();
@@ -56,6 +58,7 @@ export const defaultMocks = {
   }),
   WorkspaceLocationEntry: () => ({
     id: randomId,
+    loadStatus: () => RepositoryLocationLoadStatus.LOADED,
   }),
   Schedule: () => ({
     id: hyphenatedName,
