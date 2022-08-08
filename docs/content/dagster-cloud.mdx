@@ -12,20 +12,19 @@ Dagster Cloud provides robust, managed infrastructure, elegant CI/CD capability,
 
 Learn how to set up your Dagster Cloud account and select a deployment type.
 
-<ArticleList>
-  <ArticleListItem
-    title="Getting started with Dagster Cloud"
-    href="/dagster-cloud/getting-started"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Serverless deployments in Dagster Cloud"
-    href="/dagster-cloud/deployment/serverless"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Hybrid deployments in Dagster Cloud"
-    href="/dagster-cloud/deployment/hybrid"
-  ></ArticleListItem>
-</ArticleList>
+### Serverless Deployment
+
+**Serverless Deployment** is a fully-managed version of Dagster Cloud that allows you to run your Dagster jobs without spinning up any infrastructure. While Serverless is the easiest way to get started with Dagster, this deployment type works best with jobs that aren't computationally expensive.
+
+- Learn more about [Serverless Deployment](/dagster-cloud/deployment/serverless)
+- [Get started with Serverless Deployment](/dagster-cloud/getting-started/getting-started-with-serverless-deployment)
+
+### Hybrid Deployment
+
+With **Hybrid Deployment**, your Dagster code is executed in your infrastructure and requires setting up an agent for use with Dagster Cloud. The agent runs in your infrastructure, executes your code, and streams metadata about code execution over HTTPS back to Dagster Cloud.
+
+- Learn more about [Hybrid Deployment](/dagster-cloud/deployment/hybrid)
+- [Get started with Hybrid Deployment](/dagster-cloud/getting-started/getting-started-with-hybrid-deployment)
 
 ---
 
@@ -79,9 +78,9 @@ Secure your account using our out-of-the-box support for Google and GitHub SSO, 
 
 ---
 
-## Managing a hybrid deployment agent
+## Managing a Hybrid Deployment agent
 
-Dagster Cloud uses an agent that is responsible for executing your code. If you're using a [hybrid deployment](/dagster-cloud/deployment/hybrid), you'll need to spin up and maintain an agent in your infrastructure.
+Dagster Cloud uses an agent that is responsible for executing your code. If you're using [Hybrid Deployment](/dagster-cloud/deployment/hybrid), you'll need to spin up and maintain an agent in your infrastructure.
 
 <ArticleList>
   <ArticleListItem
@@ -93,7 +92,7 @@ Dagster Cloud uses an agent that is responsible for executing your code. If you'
     title="Docker agents"
   ></ArticleListItem>
   <ArticleListItem
-    href="/dagster-cloud/deployment/agents/kubernetes"
+    href="/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent"
     title="Kubernetes agents"
   ></ArticleListItem>
   <ArticleListItem
@@ -122,15 +121,23 @@ Learn how to deploy your code to Dagster Cloud, use command line tools, and set 
     href="/dagster-cloud/developing-testing/dagster-cloud-cli"
   ></ArticleListItem>
   <ArticleListItem
-    title="Adding and managing Dagster Code"
+    title="Adding and managing Dagster code"
     href="/dagster-cloud/developing-testing/code-locations"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Using Dagster Cloud environment variables"
+    href="/dagster-cloud/developing-testing/environment-variables"
   ></ArticleListItem>
   <ArticleListItem
     title="Using Branch Deployments for Continous Integration (CI)"
     href="/dagster-cloud/developing-testing/branch-deployments"
   ></ArticleListItem>
   <ArticleListItem
-    title="Using Dagster Cloud environment variables"
-    href="/dagster-cloud/developing-testing/environment-variables"
+    title="Setting up Branch Deployments with GitHub Actions"
+    href="/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments-with-github"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Setting up Branch Deployments with the dagster-cloud CLI"
+    href="/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments"
   ></ArticleListItem>
 </ArticleList>

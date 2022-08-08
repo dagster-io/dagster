@@ -20,8 +20,6 @@ In this guide, we'll cover the requirements for Dagster code, how to add code in
   , which is set up to run in Dagster Cloud.
 </Note>
 
-For an example of a Github repo set up to run in Dagster Cloud, see our
-
 A code location specifies a single Python package or file that defines your Dagster code. When you add a code location in Dagster Code, you're instructing the agent where to find your code.
 
 When you add or update a code location, the agent uses the location configuration to load your code and upload metadata about your jobs to Dagster Cloud. Each full deployment - for example, `prod` - can include code from one or more code locations.
@@ -36,9 +34,9 @@ To work with Dagster Cloud, your Dagster code:
 
 - **Must be loaded from a single entry point, either a Python file or package.** This entry point can load repositories from other files or packages.
 
-- **Must run in an environment where the `dagster` and `dagster-cloud` 0.13.2 or later Python packages are installed.**
+- **Must run in an environment where the `dagster` and [`dagster-cloud`](/dagster-cloud/developing-testing/dagster-cloud-cli) 0.13.2 or later Python packages are installed.**
 
-- **If using a [Hybrid deployment](/dagster-cloud/deployment/hybrid)**:
+- **If using [Hybrid Deployment](/dagster-cloud/deployment/hybrid)**:
 
   - **And you're using an Amazon Elastic Container Service (ECS), Kubernetes, or Docker agent**, your code must be packaged into a Docker image and pushed to a registry your agent can access. Dagster Cloud doesn't need access to your image - your agent only needs to be able to pull it.
 
@@ -83,19 +81,34 @@ Additionally, note that:
 
 4. In the editor, define the code location's configuration:
 
-   - `code_source` - Set this key to either `python_file:` or `package_name:` to specify where to find your code
-
-   - `executable_path` **Optional**. Define a specific Python executable if your code should run in a certain Python environment.
-
-     If not set, the code will run using the default `dagster` command-line entry-point.
-
-   - `image` - **Required if not using a local agent.** Specifies a Docker image for use with containerized agents.
-
-   - `working_directory` - Specifies the directory to use to resolve relative Python imports while loading your code.
-
-   - `attribute` - Specifies only a specific Dagster repository should be loaded
-
-   - `container_context` - **Optional. For agent versions 0.14.9 and later.** Customizes the code location for a specific execution environment. Refer to the [Agent documentation](/dagster-cloud/deployment/agents) for info on available configuration options for each agent type.
+   <ReferenceTable>
+     <ReferenceTableItem propertyName="code_source">
+       Set this key to either <code>python_file:</code> or{" "}
+       <code>package_name:</code>to specify where to find your code.
+     </ReferenceTableItem>
+     <ReferenceTableItem propertyName="executable_path">
+       <strong>Optional.</strong> Define a specific Python executable if your
+       code should run in a certain Python environment. If left undefined, the
+       code will run using the default dagster command-line entry-point.
+     </ReferenceTableItem>
+     <ReferenceTableItem propertyName="image">
+       <strong>Required if not using a local agent.</strong> Specifies a Docker
+       image for use with containerized agents.
+     </ReferenceTableItem>
+     <ReferenceTableItem propertyName="working_directory">
+       Specifies the directory to use to resolve relative Python imports while
+       loading your code.
+     </ReferenceTableItem>
+     <ReferenceTableItem propertyName="attribute">
+       Specifies only a specific Dagster repository should be loaded.
+     </ReferenceTableItem>
+     <ReferenceTableItem propertyName="container_context">
+       <strong>Optional. For agent versions 0.14.9 and later.</strong>{" "}
+       Customizes the code location for a specific execution environment. Refer
+       to the <a href="/dagster-cloud/deployment/agents">Agent documentation</a>{" "}
+       for info on available configuration options for each agent type.
+     </ReferenceTableItem>
+   </ReferenceTable>
 
    For example, the following config specifies that a code location should include a secret named `my_secret` and run in a k8s namespace (`my_namespace`) whenever the Kubernetes agent creates a pod for the location:
 
@@ -108,13 +121,6 @@ Additionally, note that:
      k8s:
        namespace: my_namespace - my_secret
    ```
-
-<!-- ```yaml
-location_name: cloud-examples
-image: dagster/dagster-cloud-examples:latest
-code_source:
-  package_name: dagster_cloud_examples
-``` -->
 
 5. When finished, click **Add code location**.
 
@@ -199,11 +205,17 @@ dagster-cloud workspace add-location test_location \
 
 You may also selectively overwrite parts of your YAML input using inline options:
 
-    dagster-cloud workspace add-location \
-        --from example_location.yaml \
-        --image dagster/dagster-cloud-examples:1d9c5d
+```shell
+dagster-cloud workspace add-location \
+    --from example_location.yaml \
+    --image dagster/dagster-cloud-examples:1d9c5d
+```
 
-The arguments to the `add-location` and `update-location` commands are similar to the [keys in the YAML config editor in the **Workspace** tab](#adding-code-locations). Run `dagster-cloud workspace add-location --help` to see all available options.
+The arguments to the `add-location` and `update-location` commands are similar to the [keys in the YAML config editor in the **Workspace** tab](#adding-code-locations). To see all available options, run:
+
+```shell
+dagster-cloud workspace add-location --help
+```
 
 **Note**: If updating an existing code location, the full set of information about the location must be specified even if only one piece of configuration is modified.
 
@@ -212,7 +224,7 @@ The arguments to the `add-location` and `update-location` commands are similar t
 Delete an existing code location from Dagster Cloud using the `delete-location` command:
 
 ```shell
-dagster-cloud workspace delete-location test_location
+dagster-cloud workspace delete-location <LOCATION_NAME>
 ```
 
 ### Syncing the workspace
