@@ -60,12 +60,12 @@ const Header = () => {
             alt="Dagster logo"
           />
         </a>
-        <div className="hidden sm:ml-6 lg:flex my-1 text-lg text-gable-green gap-0 w-10/12 md:w-6/12 justify-center">
+        <div className="hidden lg:flex my-1 text-lg text-gable-green gap-0 w-10/12 md:w-6/12 justify-center">
           <a
-            href="https://dagster.io/overview"
+            href="https://dagster.io/platform"
             className={`whitespace-nowrap py-2 my-2 rounded-xl px-4 bg-lavender hover:text-gable-green-darker bg-opacity-0 hover:border-2 hover:bg-opacity-50 focus:outline-none focus:text-gable-green-darker transition duration-150 ease-in-out bg-transparent`}
           >
-            Overview
+            Platform
           </a>
           <a
             href="https://dagster.io/cloud"
@@ -178,10 +178,10 @@ const Header = () => {
         >
           <div className="pt-2 pb-3">
             <a
-              href="https://dagster.io/overview"
+              href="https://dagster.io/platform"
               className="block px-4 py-2 rounded-lg text-lg bg-white focus:outline-none hover:bg-lavender transition duration-150 ease-in-out"
             >
-              Overview
+              Platform
             </a>
             <a
               href="https://dagster.io/cloud"
