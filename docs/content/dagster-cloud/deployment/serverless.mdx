@@ -10,12 +10,13 @@ Dagster Cloud Serverless is a fully managed version of Dagster Cloud, and is the
 
 ## When to choose Serverless
 
-Serverless works best with lightweight jobs that do not require significant computational resources within the orchestrator itself. Most orchestration workloads fit into this category, especially those that orchestrate third-party SaaS products like cloud data warehouses and ETL tools.
+Serverless works best with workloads that primarily orchestrate other services or perform light computation inside the orchestrator. Most workloads fit into this category, especially those that orchestrate third-party SaaS products like cloud data warehouses and ETL tools.
 
-Serverless is not the right fit for all workloads. If any of the following are applicable, you should select [Hybrid deployment](/dagster-cloud/deployment/hybrid):
+If any of the following are applicable, you should select [Hybrid deployment](/dagster-cloud/deployment/hybrid):
 
 - You require substantial computational resources. For example, training a large machine learning (ML) model in-process.
-- You need access to private services or data within your own cloud or on-prem environment
+- Your dataset is too large to fit in memory. For example, training a large machine learning (ML) model in-process on a terabyte of data.
+- You need to distribute computation across many nodes for a single run. Dagster Cloud runs currently execute on a single node with 4 CPUs
 - You don't want to add Elementl as a data processor
 
 ---
@@ -26,9 +27,9 @@ Serverless is currently in early access and is subject to the following limitati
 
 - Maximum of 100 GB of bandwidth per day
 - Maximum of 4500 step-minutes per day
-- Runs receive 4 vCPU cores, 16 GB of RAM and 20 GB of ephemeral disk
+- Runs receive 4 vCPU cores, 16 GB of RAM and 128 GB of ephemeral disk
 - Sensors receive 0.25 vCPU cores and 512 MB of RAM
-- The Serverless base image is `debian:bullseye-slim`. Custom Dockerfiles are not supported.
+- The Serverless base image is `debian:bullseye-slim`. Custom Dockerfiles are not currently supported.
 - All Serverless jobs run in the United States
 
 Enterprise customers may request a quota increase by [contacting Sales](mailto:sales@elementl.com).
