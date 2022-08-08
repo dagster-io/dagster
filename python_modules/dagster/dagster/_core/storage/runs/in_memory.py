@@ -1,5 +1,5 @@
 from collections import OrderedDict, defaultdict
-from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union, cast
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Union, cast
 
 import dagster._check as check
 from dagster._core.errors import (
@@ -15,7 +15,7 @@ from dagster._core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
 )
-from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._core.storage.tags import OP_SELECTION_TAG, PARTITION_NAME_TAG, SOLID_SELECTION_TAG
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._utils import EPOCH, frozendict, merge_dicts
 
@@ -47,10 +47,7 @@ def build_run_filter(filters: Optional[RunsFilter]) -> Callable[[PipelineRun], b
         if filters.mode and filters.mode != run.mode:
             return False
 
-        if filters.tags and not all(
-            (run.tags.get(key) == value if isinstance(value, str) else run.tags.get(key) in value)
-            for key, value in filters.tags.items()
-        ):
+        if filters.tags and not tags_match_filter_backcompat(filters.tags, run.tags):
             return False
 
         if filters.snapshot_id and filters.snapshot_id != run.pipeline_snapshot_id:
@@ -408,3 +405,23 @@ class InMemoryRunStorage(RunStorage):
 
     def kvs_set(self, pairs: Dict[str, str]) -> None:
         raise NotImplementedError()
+
+
+def tags_match_filter_backcompat(filter_tags: Dict[str, Any], run_tags: Dict[str, Any]) -> bool:
+    # Handle backcompat between solid selection and op selection tags
+    if OP_SELECTION_TAG in filter_tags:
+        if OP_SELECTION_TAG not in run_tags and SOLID_SELECTION_TAG not in run_tags:
+            return False
+        op_selection_value = run_tags.get(OP_SELECTION_TAG) or run_tags.get(SOLID_SELECTION_TAG)
+        if op_selection_value != filter_tags[OP_SELECTION_TAG]:
+            return False
+        filter_tags = {key: value for key, value in filter_tags.items() if key != OP_SELECTION_TAG}
+        run_tags = {
+            key: value
+            for key, value in run_tags.items()
+            if key != OP_SELECTION_TAG and key != SOLID_SELECTION_TAG
+        }
+    return all(
+        (run_tags.get(key) == value if isinstance(value, str) else run_tags.get(key) in value)
+        for key, value in filter_tags.items()
+    )

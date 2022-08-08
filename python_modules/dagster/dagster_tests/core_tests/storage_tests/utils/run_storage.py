@@ -35,11 +35,13 @@ from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
 from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster._core.storage.tags import (
+    OP_SELECTION_TAG,
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
     ROOT_RUN_ID_TAG,
+    SOLID_SELECTION_TAG,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
@@ -1505,3 +1507,20 @@ class TestRunStorage:
 
         storage.kvs_set({"foo": "1", "bar": "2", "key": "3"})
         assert storage.kvs_get({"foo", "bar", "key"}) == {"foo": "1", "bar": "2", "key": "3"}
+
+    def test_solid_selection_backcompat(self, storage):
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id="first", pipeline_name="blah", tags={SOLID_SELECTION_TAG: "foo"}
+            )
+        )
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id="second", pipeline_name="blah", tags={OP_SELECTION_TAG: "foo"}
+            )
+        )
+
+        result = storage.get_run_records(filters=RunsFilter(tags={OP_SELECTION_TAG: "foo"}))
+        assert len(result) == 2
+        assert result[0].pipeline_run.tags == {OP_SELECTION_TAG: "foo"}
+        assert result[1].pipeline_run.tags == {SOLID_SELECTION_TAG: "foo"}

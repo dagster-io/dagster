@@ -26,7 +26,13 @@ from dagster._core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
 )
-from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, ROOT_RUN_ID_TAG
+from dagster._core.storage.tags import (
+    OP_SELECTION_TAG,
+    PARTITION_NAME_TAG,
+    PARTITION_SET_TAG,
+    ROOT_RUN_ID_TAG,
+    SOLID_SELECTION_TAG,
+)
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import (
     deserialize_as,
@@ -233,9 +239,24 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             )
 
         if filters.tags:
-            query = query.where(
-                db.or_(
-                    *(
+            filter_tags = []
+            for key, value in filters.tags.items():
+                if key == OP_SELECTION_TAG:
+                    filter_tags.append(
+                        db.and_(
+                            db.or_(
+                                RunTagsTable.c.key == SOLID_SELECTION_TAG,
+                                RunTagsTable.c.key == OP_SELECTION_TAG,
+                            ),
+                            (
+                                RunTagsTable.c.value == value
+                                if isinstance(value, str)
+                                else RunTagsTable.c.value.in_(value)
+                            ),
+                        )
+                    )
+                else:
+                    filter_tags.append(
                         db.and_(
                             RunTagsTable.c.key == key,
                             (
@@ -244,10 +265,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                                 else RunTagsTable.c.value.in_(value)
                             ),
                         )
-                        for key, value in filters.tags.items()
                     )
-                )
-            ).group_by(RunsTable.c.run_body, RunsTable.c.id)
+            query = query.where(db.or_(*filter_tags)).group_by(RunsTable.c.run_body, RunsTable.c.id)
 
             if len(filters.tags) > 0:
                 query = query.having(db.func.count(RunsTable.c.run_id) == len(filters.tags))
