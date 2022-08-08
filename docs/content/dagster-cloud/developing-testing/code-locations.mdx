@@ -24,7 +24,7 @@ For an example of a Github repo set up to run in Dagster Cloud, see our
 
 A code location specifies a single Python package or file that defines your Dagster code. When you add a code location in Dagster Code, you're instructing the agent where to find your code.
 
-When you add or update a code location, the agent uses the location configuration to load your code and upload metadata about your jobs to Dagster Cloud. Each Dagster Cloud instance deployment can include code from one or more code locations.
+When you add or update a code location, the agent uses the location configuration to load your code and upload metadata about your jobs to Dagster Cloud. Each full deployment - for example, `prod` - can include code from one or more code locations.
 
 Note that, unlike Dagster Open Source, Dagster Cloud doesn't require a `workspace.yaml` file. Instead, you use the Dagster Cloud API to configure your workspace. You can still create a `workspace.yaml` file if you want to load your code in an open-source Dagit instance, but doing so won't affect how your code is loaded in Dagster Cloud.
 
