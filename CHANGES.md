@@ -1,5 +1,27 @@
 # Changelog
 
+# 1.0.2
+
+### New
+
+* When the workpace is updated, a notification will appear in Dagit, and the Workspace tab will automatically refresh.
+
+### Bugfixes
+
+* Restored the correct version mismatch warnings between dagster core and dagster integration libraries
+* `Field.__init__` has been typed, which resolves an error that pylance would raise about `default_value`
+* Previously, `dagster_type_materializer` and `dagster_type_loader` expected functions to take a context argument from an internal dagster import. We’ve added `DagsterTypeMaterializerContext` and `DagsterTypeLoaderContext` so that functions annotated with these decorators can annotate their arguments properly.
+* Previously, a single-output op with a return description would not pick up the description of the return. This has been rectified.
+
+### Community Contributions
+
+* Fixed the `dagster_slack` documentation examples. Thanks @ssingh13-rms!
+
+### Documentation
+
+* New documentation for [Dagster Cloud environment variables](https://docs.dagster.io/dagster-cloud/developing-testing/environment-variables).
+* The full list of APIs removed in 1.0 has been added to the [migration guide](https://github.com/dagster-io/dagster/blob/master/MIGRATION.md).
+
 # 1.0.1
 
 ### Bugfixes
@@ -61,7 +83,7 @@ this should be converted to:
 pip install dagster=={DAGSTER_VERSION} dagster-somelibrary
 ```
 
-to make sure the correct library version is installed. 
+to make sure the correct library version is installed.
 
 ## New since 0.15.8
 
