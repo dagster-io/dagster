@@ -1,0 +1,156 @@
+---
+title: Getting started with Dagster Cloud using a Serverless Deployment | Dagster Cloud
+description: "Get up and running with Dagster Cloud using a Serverless Deployment."
+
+platform_type: "cloud"
+---
+
+# Getting Started with Dagster Cloud using a Serverless Deployment
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+In this guide, we'll give you everything you need to get up and running with Dagster Cloud using a [Serverless Deployment](/dagster-cloud/deployment/serverless). Serverless Deployment is a fully-managed version of Dagster Cloud that allows you to run your Dagster jobs without spinning up any infrastructure.
+
+We'll walk you through setting up your Dagster Cloud account, activating Serverless, loading your code, launching your first run, and configuring continuous integration.
+
+**Before you get started, note that**:
+
+- Serverless Deployments are still in **early access**
+- This deployment type works best with jobs that aren't computationally expensive. Refer to the [Serverless guide](/dagster-cloud/deployment/serverless) for more info.
+- If you find that Serverless isn't right for you, you can switch to a [Hybrid deployment](/dagster-cloud/deployment/hybrid) at any time.
+
+To use a Hybrid deployment instead, refer to the [Getting started with a Hybrid deployment guide](/dagster-cloud/getting-started/getting-started-with-hybrid-deployment).
+
+---
+
+## Prerequisites
+
+To complete the steps in this guide, you'll need access to some Dagster code.
+
+You can either use your own code or our [sample code (`dagster-cloud-examples`)](https://github.com/dagster-io/dagster-cloud/tree/main/dagster-cloud-examples). This guide uses the `dagster-cloud-examples` Python package.
+
+---
+
+## Step 1: Create a Dagster Cloud account and organization
+
+If you don't already have a Dagster Cloud account, [sign up for one](https://dagster.cloud/) before continuing.
+
+You'll also be asked to create a Dagster Cloud organization. When your organization is created, a single deployment, named `prod`, will also be created. Deployments are standalone environments, allowing you to operate independent instances of Dagster with separately managed permissions.
+
+---
+
+## Step 2: Select Serverless as your deployment type
+
+Serverless Deployment is a fully-managed version of Dagster Cloud that allows you to run your Dagster jobs without spinning up any infrastructure. While Serverless is the easiest way to get started with Dagster, this deployment type works best with jobs that aren't computationally expensive. Refer to the [Serverless guide](/dagster-cloud/deployment/serverless) for more info.
+
+If you find that Serverless isn't right for you, you can switch to a Hybrid deployment at any time.
+
+**To use this deployment type**, click **Select** under **Serverless deployment** and confirm when prompted.
+
+---
+
+## Step 3: Deploy your code
+
+Now that you've set up your deployment, you'll need to tell it the location of your Dagster code.
+
+A code location specifies a single Python package or file that defines your Dagster code. Each Dagster Cloud deployment can include code from one or more code locations. Refer to the [Adding a code location guide](/dagster-cloud/developing-testing/code-locations) for more info.
+
+There are two ways you can deploy your code to Dagster Cloud:
+
+- [**Using GitHub**](#using-github) - If you're a GitHub user, this is the easiest way to deploy your code.
+
+- [**Using the dagster-cloud CLI**](#using-the-dagster-cloud-cli) - If you use a non-GitHub git provider or are developing locally, you can use our CLI to get started.
+
+### Using GitHub
+
+1. Click **Choose account or organization** and sign into your GitHub account.
+2. Select the account or organization where Dagster should be installed.
+3. After the installation and authorization is complete, you'll be redirected back to Dagster Cloud.
+4. After Dagster Cloud is connected, you'll be prompted to either:
+
+   - **Clone the Dagster Cloud starter project** - This option clones the [dagster-cloud-template](https://github.com/dagster-io/dagster-cloud-template) repo, which already has Serverless Deployment and [Branch Deployments](/dagster-cloud/developing-testing/branch-deployments) configured.
+
+     1. Enter a **Repository name**.
+     2. Select a **Repository visibility**.
+     3. Click **Clone and deploy.**
+
+   - **Use an existing repo** - This option uses an existing repository in your GitHub account.
+     1. Select a **repository**.
+     2. Click **Deploy**.
+
+When finished, [continue to the next step](#step-4-launch-a-run).
+
+### Using the dagster-cloud CLI
+
+<Note>
+  Using the <code>dagster-cloud</code> CLI requires a recent version of Python 3
+  and Docker.
+</Note>
+
+To complete this step using the CLI, you can use your own Dagster code or the [`dagster-cloud-examples` code](https://github.com/dagster-io/dagster-cloud/tree/main/dagster-cloud-examples). Our examples use the `dagster-cloud-examples` package.
+
+1. To install the `dagster-cloud` CLI and the `dagster-cloud-examples` package, run:
+
+   ```shell
+   pip install dagster-cloud dagster-cloud-examples
+   ```
+
+2. Complete the setup:
+
+   1. Complete the authentication step, including [creating a user token](/dagster-cloud/account/managing-user-agent-tokens#managing-user-tokens).
+
+   2. **If using your own Dagster code**, add `dagster-cloud` as a dependency in `setup.py`. [Click here for an example](https://github.com/dagster-io/dagster-cloud/blob/main/dagster-cloud-examples/setup.py).
+
+3. Run the following to deploy your code to Dagster Cloud:
+
+   ```shell
+   dagster-cloud serverless deploy \
+         --location-name "<LOCATION_NAME>" \
+         --package-name <PACKAGE_NAME> \
+   ```
+
+When finished, [continue to the next step](#step-4-launch-a-run).
+
+---
+
+## Step 4: Launch a run
+
+In this step, you'll run your first job in Dagster Cloud. Our example uses the `compute_cereal_properties` job from the [`dagster-cloud-examples` package](https://github.com/dagster-io/dagster-cloud/tree/main/dagster-cloud-examples).
+
+1. Click the icon in the top-left corner of the page to expand the navigation.
+2. In the nav, open a repository and click a job.
+3. On the job's page, click the **Launchpad** tab.
+4. Click **Launch Run** in the bottom right corner to launch the run:
+
+   <Image
+   alt="Dagit Launchpad for compute_cereal_properties Job"
+   src="/images/dagster-cloud/getting-started/run_cereal_job.png"
+   width={1451}
+   height={702}
+   />
+
+---
+
+## Step 5: Set up Continuous Integration
+
+<Note>
+  If you used the GitHub integration to deploy your code <strong>and</strong>{" "}
+  you cloned the Dagster Cloud starter project, this step has already been
+  completed for you! Branch Deployments come pre-configured in the Dagster Cloud
+  starter project.
+</Note>
+
+Branch Deployments allow you to quickly and collaboratively develop your Dagster jobs. When a branch is created or updated in your Dagster repository, Branch Deployments will create a testing environment in your Dagster Cloud instance.
+
+Check out the [Branch deployment docs](/dagster-cloud/developing-testing/branch-deployments) for more info. If you skip this step now, you can always set it up later.
+
+---
+
+## Next steps
+
+Congrats - your Dagster Cloud deployment is all set up! From here, you can:
+
+- [Invite your team](/dagster-cloud/account/managing-users)
+- [Configure authentication for your account](/dagster-cloud/account/authentication)
+- [Set up monitoring and alerting](/dagster-cloud/account/setting-up-alerts)
+- [Learn more about Branch Deployments](/dagster-cloud/developing-testing/branch-deployments)

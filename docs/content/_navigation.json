@@ -323,7 +323,17 @@
         "children": [
           {
             "title": "Getting started",
-            "path": "/dagster-cloud/getting-started"
+            "path": "/dagster-cloud/getting-started",
+            "children": [
+              {
+                "title": "Serverless Deployment",
+                "path": "/dagster-cloud/getting-started/getting-started-with-serverless-deployment"
+              },
+              {
+                "title": "Hybrid Deployment",
+                "path": "/dagster-cloud/getting-started/getting-started-with-hybrid-deployment"
+              }
+            ]
           },
           {
             "title": "Deployment types",
