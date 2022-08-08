@@ -1,7 +1,7 @@
 import warnings
 from collections import namedtuple
 from contextlib import suppress
-from typing import Any, Dict, Optional
+from typing import Any, Dict, NamedTuple, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -37,6 +37,11 @@ RUNNING_STATUSES = [
 ]
 STOPPED_STATUSES = ["STOPPED"]
 
+class EcsEphemeralStorage(NamedTuple):
+    sizeInGiB: int
+
+class EcsTaskOverrides(NamedTuple):
+    ephemeralStorage: Optional[EcsEphemeralStorage]
 
 class EcsRunLauncher(RunLauncher, ConfigurableClass):
     """RunLauncher that starts a task in ECS for each Dagster job run."""
@@ -227,6 +232,8 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
         cpu_and_memory_overrides = self.get_cpu_and_memory_overrides(run)
 
+        task_overrides = self._get_task_overrides(run)
+
         container_overrides = [
             {
                 "name": self.container_name,
@@ -240,6 +247,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             "containerOverrides": container_overrides,
             # taskOverrides expects cpu/memory as strings
             **cpu_and_memory_overrides,
+            **task_overrides
         }
 
         # Run a task using the same network configuration as this processes's
@@ -294,7 +302,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             cls=self.__class__,
         )
 
-    def get_cpu_and_memory_overrides(self, run: PipelineRun) -> Dict[str, str]:
+    def get_cpu_and_memory_overrides(self, run: PipelineRun) -> EcsContainerOverrides:
         overrides = {}
 
         cpu = run.tags.get("ecs/cpu")
@@ -304,6 +312,15 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             overrides["cpu"] = cpu
         if memory:
             overrides["memory"] = memory
+        return overrides
+
+
+    def _get_container_overrides(self, run: PipelineRun) -> Dict[str, str]:
+        overrides = {}
+        return overrides
+
+    def _get_task_overrides(self, run: PipelineRun) -> EcsTaskOverrides:
+        overrides = {}
         return overrides
 
     def terminate(self, run_id):
