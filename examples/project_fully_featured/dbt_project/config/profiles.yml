@@ -4,7 +4,6 @@ hacker_news_dbt:
     local:
       type: duckdb
       path: hackernews.duckdb
-      schema: activity_analytics
 
     staging:
       type: snowflake
@@ -16,7 +15,6 @@ hacker_news_dbt:
 
       database: DEMO_DB_STAGING
       warehouse: TINY_WAREHOUSE
-      schema: activity_analytics
       client_session_keep_alive: False
 
     prod:
@@ -29,5 +27,4 @@ hacker_news_dbt:
 
       database: DEMO_DB
       warehouse: TINY_WAREHOUSE
-      schema: activity_analytics
       client_session_keep_alive: False
