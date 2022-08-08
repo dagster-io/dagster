@@ -2,7 +2,7 @@ from collections import defaultdict
 
 import pytest
 
-from dagster import DynamicOutput, Int, Out, Output, graph, job, op, resource, DynamicOut
+from dagster import DynamicOut, DynamicOutput, Int, Out, Output, graph, job, op, resource
 from dagster._core.definitions import failure_hook, success_hook
 from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 from dagster._core.definitions.events import Failure, HookExecutionResult

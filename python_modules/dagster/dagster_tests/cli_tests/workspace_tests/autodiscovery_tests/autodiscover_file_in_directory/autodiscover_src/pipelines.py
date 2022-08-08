@@ -1,5 +1,5 @@
-from dagster._legacy import pipeline
 from dagster import op
+from dagster._legacy import pipeline
 
 
 @op

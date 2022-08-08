@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import AssetKey, DynamicOutput, In, Out, Output, io_manager, op, DynamicOut
+from dagster import AssetKey, DynamicOut, DynamicOutput, In, Out, Output, io_manager, op
 from dagster._core.definitions.events import AssetLineageInfo
 from dagster._core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster._core.errors import DagsterInvariantViolationError

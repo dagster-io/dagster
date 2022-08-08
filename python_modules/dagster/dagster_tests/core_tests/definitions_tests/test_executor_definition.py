@@ -4,7 +4,7 @@ import pytest
 
 from dagster import ExecutorRequirement
 from dagster import _check as check
-from dagster import fs_io_manager, in_process_executor, multiprocess_executor, reconstructable, op
+from dagster import fs_io_manager, in_process_executor, multiprocess_executor, op, reconstructable
 from dagster._core.definitions.executor_definition import executor
 from dagster._core.errors import (
     DagsterInvalidConfigError,

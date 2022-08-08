@@ -2,10 +2,10 @@ import sys
 import zlib
 from unittest import mock
 
+from dagster import op
 from dagster._core.storage.runs.sql_run_storage import defensively_unpack_pipeline_snapshot_query
 from dagster._legacy import pipeline
 from dagster._serdes import serialize_dagster_namedtuple
-from dagster import op
 
 
 def test_defensive_pipeline_not_a_string():

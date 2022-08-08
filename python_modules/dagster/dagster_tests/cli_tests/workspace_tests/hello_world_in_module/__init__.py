@@ -1,5 +1,5 @@
-from dagster._core.definitions import pipeline, repository
 from dagster import op
+from dagster._core.definitions import pipeline, repository
 
 
 @op
