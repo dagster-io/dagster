@@ -2,6 +2,8 @@
 title: "Serverless deployment in Dagster Cloud | Dagster Docs"
 ---
 
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
 # Serverless deployment in Dagster Cloud
 
 Dagster Cloud Serverless is a fully managed version of Dagster Cloud, and is the easiest way to get started with Dagster. With Serverless, you can run your Dagster jobs without spinning up any infrastructure.
@@ -10,14 +12,14 @@ Dagster Cloud Serverless is a fully managed version of Dagster Cloud, and is the
 
 ## When to choose Serverless
 
-Serverless works best with workloads that primarily orchestrate other services or perform light computation inside the orchestrator. Most workloads fit into this category, especially those that orchestrate third-party SaaS products like cloud data warehouses and ETL tools.
+Serverless works best with workloads that primarily orchestrate other services or perform light computation. Most workloads fit into this category, especially those that orchestrate third-party SaaS products like cloud data warehouses and ETL tools.
 
 If any of the following are applicable, you should select [Hybrid deployment](/dagster-cloud/deployment/hybrid):
 
 - You require substantial computational resources. For example, training a large machine learning (ML) model in-process.
 - Your dataset is too large to fit in memory. For example, training a large machine learning (ML) model in-process on a terabyte of data.
-- You need to distribute computation across many nodes for a single run. Dagster Cloud runs currently execute on a single node with 4 CPUs
-- You don't want to add Elementl as a data processor
+- You need to distribute computation across many nodes for a single run. Dagster Cloud runs currently execute on a single node with 4 CPUs.
+- You don't want to add Elementl as a data processor.
 
 ---
 
