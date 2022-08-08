@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from dagster._core.events import EngineEventData, MetadataEntry
 from dagster._core.storage.pipeline_run import PipelineRun
@@ -41,6 +41,9 @@ class CustomECSRunLauncher(EcsRunLauncher):
 
     def get_cpu_and_memory_overrides(self, run: PipelineRun) -> Dict[str, str]:
         return {"cpu": "4096", "memory": "16384"}
+
+    def _get_task_overrides(self, run: PipelineRun) -> Dict[str, Any]:
+        return {"ephemeralStorage": {"sizeInGiB": 128}}
 
     def report_launch_events(
         self, run: PipelineRun, arn: Optional[str] = None, cluster: Optional[str] = None
