@@ -5,7 +5,7 @@ from dagster._legacy import execute_pipeline, lambda_solid, pipeline
 
 
 def define_pipeline():
-    @lambda_solid
+    @op
     def ping():
         return "ping"
 

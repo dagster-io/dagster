@@ -8,14 +8,16 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from dagster_ssh.resources import SSHResource, key_from_str
 from dagster_ssh.resources import ssh_resource as sshresource
 
-from dagster import Field
+from dagster import op, Field
 from dagster._legacy import ModeDefinition, execute_solid, solid
 from dagster._seven import get_system_temp_directory
 
 
 def generate_ssh_key():
     # generate private/public key pair
-    key = rsa.generate_private_key(backend=default_backend(), public_exponent=65537, key_size=2048)
+    key = rsa.generate_private_key(
+        backend=default_backend(), public_exponent=65537, key_size=2048
+    )
 
     # get private key in PEM container format
     return key.private_bytes(
@@ -212,25 +214,29 @@ def test_ssh_sftp(sftpserver):
     tmp_path = get_system_temp_directory()
     readme_file = os.path.join(tmp_path, "readme.txt")
 
-    @solid(
+    @op(
         config_schema={
-            "local_filepath": Field(str, is_required=True, description="local file path to get"),
-            "remote_filepath": Field(str, is_required=True, description="remote file path to get"),
+            "local_filepath": Field(
+                str, is_required=True, description="local file path to get"
+            ),
+            "remote_filepath": Field(
+                str, is_required=True, description="remote file path to get"
+            ),
         },
         required_resource_keys={"ssh_resource"},
     )
-    def sftp_solid_get(context):
-        local_filepath = context.solid_config.get("local_filepath")
-        remote_filepath = context.solid_config.get("remote_filepath")
+    def sftp_op_get(context):
+        local_filepath = context.op_config.get("local_filepath")
+        remote_filepath = context.op_config.get("remote_filepath")
         return context.resources.ssh_resource.sftp_get(remote_filepath, local_filepath)
 
     with sftpserver.serve_content({"a_dir": {"readme.txt": "hello, world"}}):
         result = execute_solid(
-            sftp_solid_get,
+            sftp_op_get,
             ModeDefinition(resource_defs={"ssh_resource": sshresource}),
             run_config={
                 "solids": {
-                    "sftp_solid_get": {
+                    "sftp_op_get": {
                         "config": {
                             "local_filepath": readme_file,
                             "remote_filepath": "a_dir/readme.txt",

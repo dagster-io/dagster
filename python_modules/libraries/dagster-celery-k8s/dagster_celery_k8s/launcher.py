@@ -81,7 +81,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         labels=None,
         fail_pod_on_run_failure=None,
     ):
-        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
+        self._inst_data = check.opt_inst_param(
+            inst_data, "inst_data", ConfigurableClassData
+        )
 
         if load_incluster_config:
             check.invariant(
@@ -95,7 +97,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         self._fixed_batch_api = k8s_client_batch_api
 
-        self.instance_config_map = check.str_param(instance_config_map, "instance_config_map")
+        self.instance_config_map = check.str_param(
+            instance_config_map, "instance_config_map"
+        )
         self.dagster_home = check.str_param(dagster_home, "dagster_home")
         self.postgres_password_secret = check.str_param(
             postgres_password_secret, "postgres_password_secret"
@@ -111,7 +115,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         self._env_config_maps = check.opt_list_param(
             env_config_maps, "env_config_maps", of_type=str
         )
-        self._env_secrets = check.opt_list_param(env_secrets, "env_secrets", of_type=str)
+        self._env_secrets = check.opt_list_param(
+            env_secrets, "env_secrets", of_type=str
+        )
 
         self._volume_mounts = check.opt_list_param(volume_mounts, "volume_mounts")
         self._volumes = check.opt_list_param(volumes, "volumes")
@@ -125,7 +131,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         self._image_pull_secrets = check.opt_list_param(
             image_pull_secrets, "image_pull_secrets", of_type=dict
         )
-        self._labels = check.opt_dict_param(labels, "labels", key_type=str, value_type=str)
+        self._labels = check.opt_dict_param(
+            labels, "labels", key_type=str, value_type=str
+        )
         self._fail_pod_on_run_failure = check.opt_bool_param(
             fail_pod_on_run_failure, "fail_pod_on_run_failure"
         )
@@ -134,13 +142,19 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
     @property
     def _batch_api(self):
-        return self._fixed_batch_api if self._fixed_batch_api else kubernetes.client.BatchV1Api()
+        return (
+            self._fixed_batch_api
+            if self._fixed_batch_api
+            else kubernetes.client.BatchV1Api()
+        )
 
     @classmethod
     def config_type(cls):
         from dagster_celery.executor import CELERY_CONFIG
 
-        return merge_dicts(DagsterK8sJobConfig.config_type_run_launcher(), CELERY_CONFIG)
+        return merge_dicts(
+            DagsterK8sJobConfig.config_type_run_launcher(), CELERY_CONFIG
+        )
 
     @classmethod
     def from_config_value(cls, inst_data, config_value):
@@ -151,7 +165,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         return self._inst_data
 
     def launch_run(self, context: LaunchRunContext) -> None:
-        run = context.pipeline_run
+        run = context.run
 
         job_name = get_job_name_from_run_id(run.run_id)
         pod_name = job_name
@@ -254,10 +268,16 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             instance_config_map=self.instance_config_map,
             postgres_password_secret=self.postgres_password_secret,
             job_image=check.opt_str_param(job_image, "job_image"),
-            image_pull_policy=exc_config.get("image_pull_policy", self._image_pull_policy),
-            image_pull_secrets=exc_config.get("image_pull_secrets", []) + self._image_pull_secrets,
-            service_account_name=exc_config.get("service_account_name", self._service_account_name),
-            env_config_maps=exc_config.get("env_config_maps", []) + self._env_config_maps,
+            image_pull_policy=exc_config.get(
+                "image_pull_policy", self._image_pull_policy
+            ),
+            image_pull_secrets=exc_config.get("image_pull_secrets", [])
+            + self._image_pull_secrets,
+            service_account_name=exc_config.get(
+                "service_account_name", self._service_account_name
+            ),
+            env_config_maps=exc_config.get("env_config_maps", [])
+            + self._env_config_maps,
             env_secrets=exc_config.get("env_secrets", []) + self._env_secrets,
             volume_mounts=exc_config.get("volume_mounts", []) + self._volume_mounts,
             volumes=exc_config.get("volumes", []) + self._volumes,
@@ -346,10 +366,13 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         )
         job_name = get_job_name_from_run_id(run.run_id)
         try:
-            job = self._batch_api.read_namespaced_job(namespace=job_namespace, name=job_name)
+            job = self._batch_api.read_namespaced_job(
+                namespace=job_namespace, name=job_name
+            )
         except Exception:
             return CheckRunHealthResult(
-                WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
+                WorkerStatus.UNKNOWN,
+                str(serializable_error_info_from_exc_info(sys.exc_info())),
             )
         if job.status.failed:
             return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
@@ -367,9 +390,9 @@ def _get_validated_celery_k8s_executor_config(run_config):
 
         execution_run_config = executor_config.get("config", {})
     else:
-        execution_run_config = (run_config["execution"][CELERY_K8S_CONFIG_KEY] or {}).get(
-            "config", {}
-        )
+        execution_run_config = (
+            run_config["execution"][CELERY_K8S_CONFIG_KEY] or {}
+        ).get("config", {})
 
     res = process_config(execution_config_schema, execution_run_config)
 

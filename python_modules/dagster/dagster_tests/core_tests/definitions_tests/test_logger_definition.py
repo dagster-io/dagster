@@ -1,6 +1,6 @@
 import logging
 
-from dagster import Enum, EnumValue, Field, Int, configured, logger
+from dagster import In, op, Enum, EnumValue, Field, Int, configured, logger
 from dagster._core.utils import coerce_valid_log_level
 from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 
@@ -76,7 +76,11 @@ def test_logger_with_enum_in_schema_using_configured():
     @configured(test_logger, {"enum": DagsterEnumType})
     def pick_different_enum_value(config):
         it["ran pick_different_enum_value"] = True
-        return {"enum": "OTHER" if config["enum"] == TestPythonEnum.VALUE_ONE else "VALUE_ONE"}
+        return {
+            "enum": "OTHER"
+            if config["enum"] == TestPythonEnum.VALUE_ONE
+            else "VALUE_ONE"
+        }
 
     assert_pipeline_runs_with_logger(pick_different_enum_value, {"enum": "VALUE_ONE"})
 

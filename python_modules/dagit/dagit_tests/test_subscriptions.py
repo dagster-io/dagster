@@ -69,14 +69,14 @@ def end_subscription(ws):
     ws.close()
 
 
-@solid
-def example_solid():
+@op
+def example_op():
     return 1
 
 
 @pipeline
 def example_pipeline():
-    example_solid()
+    example_op()
 
 
 def test_event_log_subscription():
@@ -132,7 +132,7 @@ def test_compute_log_subscription(mock_watch_completed):
                     COMPUTE_LOG_SUBSCRIPTION,
                     {
                         "runId": run.run_id,
-                        "stepKey": "example_solid",
+                        "stepKey": "example_op",
                         "ioType": "STDERR",
                     },
                 )

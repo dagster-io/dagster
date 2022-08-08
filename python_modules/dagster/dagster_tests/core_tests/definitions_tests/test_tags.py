@@ -1,18 +1,19 @@
 from dagster._legacy import pipeline, solid
+from dagster import In, Out, op
 
 
 def test_solid_tags():
-    @solid(tags={"foo": "bar"})
-    def tags_solid(_):
+    @op(tags={"foo": "bar"})
+    def tags_op(_):
         pass
 
-    assert tags_solid.tags == {"foo": "bar"}
+    assert tags_op.tags == {"foo": "bar"}
 
-    @solid()
-    def no_tags_solid(_):
+    @op()
+    def no_tags_op(_):
         pass
 
-    assert no_tags_solid.tags == {}
+    assert no_tags_op.tags == {}
 
 
 def test_pipeline_tags():
@@ -30,18 +31,18 @@ def test_pipeline_tags():
 
 
 def test_solid_subset_tags():
-    @solid
-    def noop_solid(_):
+    @op
+    def noop_op(_):
         pass
 
     @pipeline(tags={"foo": "bar"})
     def tags_pipeline():
-        noop_solid()
+        noop_op()
 
-    assert tags_pipeline.get_pipeline_subset_def({"noop_solid"}).tags == {"foo": "bar"}
+    assert tags_pipeline.get_pipeline_subset_def({"noop_op"}).tags == {"foo": "bar"}
 
     @pipeline()
     def no_tags_pipeline():
-        noop_solid()
+        noop_op()
 
-    assert no_tags_pipeline.get_pipeline_subset_def({"noop_solid"}).tags == {}
+    assert no_tags_pipeline.get_pipeline_subset_def({"noop_op"}).tags == {}

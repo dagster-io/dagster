@@ -1,4 +1,5 @@
 from dagster_aws.emr.utils import subset_run_config
+from dagster import In, Out, op
 
 
 def test_subset_run_config():

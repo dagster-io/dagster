@@ -1,8 +1,11 @@
 import pytest
 
-from dagster import asset
+from dagster import In, op, asset
 from dagster._core.definitions.executor_definition import execute_in_process_executor
-from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
+from dagster._core.errors import (
+    DagsterExecutionStepNotFoundError,
+    DagsterInvalidSubsetError,
+)
 from dagster._core.selector.subset_selector import (
     MAX_NUM,
     Traverser,
@@ -16,27 +19,27 @@ from dagster._core.test_utils import default_mode_def_for_test
 from dagster._legacy import AssetGroup, InputDefinition, lambda_solid, pipeline
 
 
-@lambda_solid
+@op
 def return_one():
     return 1
 
 
-@lambda_solid
+@op
 def return_two():
     return 2
 
 
-@lambda_solid(input_defs=[InputDefinition("num1"), InputDefinition("num2")])
+@op(ins={"num1": In(), "num2": In()})
 def add_nums(num1, num2):
     return num1 + num2
 
 
-@lambda_solid(input_defs=[InputDefinition("num")])
+@op(ins={"num": In()})
 def multiply_two(num):
     return num * 2
 
 
-@lambda_solid(input_defs=[InputDefinition("num")])
+@op(ins={"num": In()})
 def add_one(num):
     return num + 1
 
@@ -229,7 +232,9 @@ def test_parse_step_selection_single():
 
 
 def test_parse_step_selection_multi():
-    step_selection_multi_disjoint = parse_step_selection(step_deps, ["return_one", "add_nums+"])
+    step_selection_multi_disjoint = parse_step_selection(
+        step_deps, ["return_one", "add_nums+"]
+    )
     assert len(step_selection_multi_disjoint) == 3
     assert set(step_selection_multi_disjoint) == {
         "return_one",
@@ -237,7 +242,9 @@ def test_parse_step_selection_multi():
         "multiply_two",
     }
 
-    step_selection_multi_overlap = parse_step_selection(step_deps, ["*add_nums", "return_one+"])
+    step_selection_multi_overlap = parse_step_selection(
+        step_deps, ["*add_nums", "return_one+"]
+    )
     assert len(step_selection_multi_overlap) == 3
     assert set(step_selection_multi_overlap) == {
         "return_one",

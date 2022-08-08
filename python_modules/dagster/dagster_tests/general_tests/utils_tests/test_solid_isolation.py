@@ -2,7 +2,16 @@ import re
 
 import pytest
 
-from dagster import DagsterInvariantViolationError, DagsterTypeCheckDidNotPass, Field, Int, resource
+from dagster import (
+    In,
+    Out,
+    op,
+    DagsterInvariantViolationError,
+    DagsterTypeCheckDidNotPass,
+    Field,
+    Int,
+    resource,
+)
 from dagster._core.test_utils import nesting_composite_pipeline
 from dagster._core.utility_solids import (
     create_root_solid,
@@ -22,33 +31,33 @@ from dagster._utils.test import execute_solid
 
 
 def test_single_solid_in_isolation():
-    @lambda_solid
-    def solid_one():
+    @op
+    def op_one():
         return 1
 
-    result = execute_solid(solid_one)
+    result = execute_solid(op_one)
     assert result.success
     assert result.output_value() == 1
 
 
 def test_single_solid_with_single():
-    @lambda_solid(input_defs=[InputDefinition(name="num")])
-    def add_one_solid(num):
+    @op(ins={"num": In()})
+    def add_one_op(num):
         return num + 1
 
-    result = execute_solid(add_one_solid, input_values={"num": 2})
+    result = execute_solid(add_one_op, input_values={"num": 2})
 
     assert result.success
     assert result.output_value() == 3
 
 
 def test_single_solid_with_multiple_inputs():
-    @lambda_solid(input_defs=[InputDefinition(name="num_one"), InputDefinition("num_two")])
-    def add_solid(num_one, num_two):
+    @op(ins={"num_one": In(), "num_two": In()})
+    def add_op(num_one, num_two):
         return num_one + num_two
 
     result = execute_solid(
-        add_solid,
+        add_op,
         input_values={"num_one": 2, "num_two": 3},
         run_config={"loggers": {"console": {"config": {"log_level": "DEBUG"}}}},
     )
@@ -60,9 +69,9 @@ def test_single_solid_with_multiple_inputs():
 def test_single_solid_with_config():
     ran = {}
 
-    @solid(config_schema=Int)
+    @op(config_schema=Int)
     def check_config_for_two(context):
-        assert context.solid_config == 2
+        assert context.op_config == 2
         ran["check_config_for_two"] = True
 
     result = execute_solid(
@@ -81,7 +90,7 @@ def test_single_solid_with_context_config():
 
     ran = {"count": 0}
 
-    @solid(required_resource_keys={"num"})
+    @op(required_resource_keys={"num"})
     def check_context_config_for_two(context):
         assert context.resources.num == 2
         ran["count"] += 1
@@ -108,7 +117,7 @@ def test_single_solid_error():
     class SomeError(Exception):
         pass
 
-    @lambda_solid
+    @op
     def throw_error():
         raise SomeError()
 
@@ -119,7 +128,7 @@ def test_single_solid_error():
 
 
 def test_single_solid_type_checking_output_error():
-    @lambda_solid(output_def=OutputDefinition(Int))
+    @op(out=Out(Int))
     def return_string():
         return "ksjdfkjd"
 
@@ -131,7 +140,7 @@ def test_failing_solid_in_isolation():
     class ThisException(Exception):
         pass
 
-    @lambda_solid
+    @op
     def throw_an_error():
         raise ThisException("nope")
 
@@ -142,7 +151,7 @@ def test_failing_solid_in_isolation():
 
 
 def test_composites():
-    @lambda_solid
+    @op
     def hello():
         return "hello"
 
@@ -234,12 +243,12 @@ def test_execute_nested_composite_solids():
 
 
 def test_single_solid_with_bad_inputs():
-    @lambda_solid(input_defs=[InputDefinition("num_one", int), InputDefinition("num_two", int)])
-    def add_solid(num_one, num_two):
+    @op(ins={"num_one": In(int), "num_two": In(int)})
+    def add_op(num_one, num_two):
         return num_one + num_two
 
     result = execute_solid(
-        add_solid,
+        add_op,
         input_values={"num_one": 2, "num_two": "three"},
         run_config={"loggers": {"console": {"config": {"log_level": "DEBUG"}}}},
         raise_on_error=False,

@@ -29,7 +29,8 @@ def test_logger_invocation_arguments():
 
     # Check that proper error is thrown when logger def is invoked with wrong context arg name
     with pytest.raises(
-        DagsterInvalidInvocationError, match="Logger initialization expected argument '_my_context'"
+        DagsterInvalidInvocationError,
+        match="Logger initialization expected argument '_my_context'",
     ):
         foo_logger(  # pylint: disable=unexpected-keyword-arg, no-value-for-parameter
             context=build_init_logger_context()
@@ -37,9 +38,12 @@ def test_logger_invocation_arguments():
 
     # Check that proper error is thrown when logger def is invoked with too many args
     with pytest.raises(
-        DagsterInvalidInvocationError, match="Initialization of logger received multiple arguments."
+        DagsterInvalidInvocationError,
+        match="Initialization of logger received multiple arguments.",
     ):
-        foo_logger(build_init_logger_context(), 5)  # pylint: disable=too-many-function-args
+        foo_logger(
+            build_init_logger_context(), 5
+        )  # pylint: disable=too-many-function-args
 
     ret_logger = foo_logger(build_init_logger_context())
 
@@ -60,7 +64,9 @@ def test_logger_with_config():
     with pytest.raises(DagsterInvalidConfigError, match="Error in config for logger"):
         int_logger(build_init_logger_context())
 
-    with pytest.raises(DagsterInvalidConfigError, match="Error in config mapping for logger"):
+    with pytest.raises(
+        DagsterInvalidConfigError, match="Error in config mapping for logger"
+    ):
         conf_logger = int_logger.configured("foo")
         conf_logger(build_init_logger_context())
 
@@ -89,7 +95,12 @@ def test_logger_with_config_defaults():
 
 
 def test_logger_mixed_config_defaults():
-    @logger({"foo_field": Field(str, default_value="foo", is_required=False), "bar_field": str})
+    @logger(
+        {
+            "foo_field": Field(str, default_value="foo", is_required=False),
+            "bar_field": str,
+        }
+    )
     def str_logger(init_context):
         if init_context.logger_config["bar_field"] == "using_default":
             assert init_context.logger_config["foo_field"] == "foo"
@@ -110,14 +121,14 @@ def test_logger_mixed_config_defaults():
     )
 
 
-@solid
-def sample_solid():
+@op
+def sample_op():
     return 1
 
 
 @pipeline
 def sample_pipeline():
-    sample_solid()
+    sample_op()
 
 
 @op
@@ -146,8 +157,12 @@ def test_logger_job_def():
     def job_logger(init_context):
         assert init_context.job_def.name == "sample_job"
 
-    job_logger(build_init_logger_context(job_def=sample_graph.to_job(name="sample_job")))
-    job_logger(build_init_logger_context(pipeline_def=sample_graph.to_job(name="sample_job")))
+    job_logger(
+        build_init_logger_context(job_def=sample_graph.to_job(name="sample_job"))
+    )
+    job_logger(
+        build_init_logger_context(pipeline_def=sample_graph.to_job(name="sample_job"))
+    )
 
     with pytest.raises(AssertionError):
         job_logger(build_init_logger_context(job_def=sample_graph.to_job(name="foo")))
@@ -155,7 +170,9 @@ def test_logger_job_def():
 
 def test_logger_both_def():
     with pytest.raises(CheckError, match="pipeline_def and job_def"):
-        build_init_logger_context(pipeline_def=sample_pipeline, job_def=sample_graph.to_job())
+        build_init_logger_context(
+            pipeline_def=sample_pipeline, job_def=sample_graph.to_job()
+        )
 
 
 def test_logger_context_get_job_from_pipeline_fails():
@@ -163,5 +180,7 @@ def test_logger_context_get_job_from_pipeline_fails():
     def job_logger(init_context):
         assert init_context.job_def.name == "sample_pipeline"
 
-    with pytest.raises(DagsterInvariantViolationError, match="Please use .pipeline_def instead."):
+    with pytest.raises(
+        DagsterInvariantViolationError, match="Please use .pipeline_def instead."
+    ):
         job_logger(build_init_logger_context(pipeline_def=sample_pipeline))

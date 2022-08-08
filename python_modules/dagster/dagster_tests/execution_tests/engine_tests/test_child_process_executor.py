@@ -14,6 +14,7 @@ from dagster._core.executor.child_process_executor import (
     execute_child_process_command,
 )
 from dagster._utils import segfault
+from dagster import Out, op
 
 
 class DoubleAStringChildProcessCommand(ChildProcessCommand):
@@ -55,7 +56,9 @@ def test_basic_child_process_command():
     events = list(
         filter(
             lambda x: x and not isinstance(x, ChildProcessEvent),
-            execute_child_process_command(multiprocessing, DoubleAStringChildProcessCommand("aa")),
+            execute_child_process_command(
+                multiprocessing, DoubleAStringChildProcessCommand("aa")
+            ),
         )
     )
     assert events == ["aaaa"]
@@ -65,7 +68,9 @@ def test_basic_child_process_command_with_process_events():
     events = list(
         filter(
             lambda x: x,
-            execute_child_process_command(multiprocessing, DoubleAStringChildProcessCommand("aa")),
+            execute_child_process_command(
+                multiprocessing, DoubleAStringChildProcessCommand("aa")
+            ),
         )
     )
     assert len(events) == 3
@@ -96,7 +101,9 @@ def test_child_process_crashy_process():
     assert exc.value.exit_code == 1
 
 
-@pytest.mark.skipif(os.name == "nt", reason="Segfault not being caught on Windows: See issue #2791")
+@pytest.mark.skipif(
+    os.name == "nt", reason="Segfault not being caught on Windows: See issue #2791"
+)
 def test_child_process_segfault():
     with pytest.raises(ChildProcessCrashException) as exc:
         list(execute_child_process_command(multiprocessing, SegfaultCommand()))

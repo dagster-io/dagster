@@ -3,6 +3,8 @@ import re
 import pytest
 
 from dagster import (
+    In,
+    Out,
     Any,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
@@ -32,7 +34,7 @@ from dagster._legacy import (
 def test_no_parens_solid():
     called = {}
 
-    @lambda_solid
+    @op
     def hello_world():
         called["yup"] = True
 
@@ -44,7 +46,7 @@ def test_no_parens_solid():
 def test_empty_solid():
     called = {}
 
-    @lambda_solid()
+    @op()
     def hello_world():
         called["yup"] = True
 
@@ -54,7 +56,7 @@ def test_empty_solid():
 
 
 def test_solid():
-    @solid(output_defs=[OutputDefinition()])
+    @op(out=Out())
     def hello_world(_context):
         return {"foo": "bar"}
 
@@ -65,7 +67,7 @@ def test_solid():
 
 
 def test_solid_one_output():
-    @lambda_solid
+    @op
     def hello_world():
         return {"foo": "bar"}
 
@@ -76,7 +78,7 @@ def test_solid_one_output():
 
 
 def test_solid_yield():
-    @solid(output_defs=[OutputDefinition()])
+    @op(out=Out())
     def hello_world(_context):
         yield Output(value={"foo": "bar"})
 
@@ -87,7 +89,7 @@ def test_solid_yield():
 
 
 def test_solid_result_return():
-    @solid(output_defs=[OutputDefinition()])
+    @op(out=Out())
     def hello_world(_context):
         return Output(value={"foo": "bar"})
 
@@ -98,7 +100,7 @@ def test_solid_result_return():
 
 
 def test_solid_with_explicit_empty_outputs():
-    @solid(output_defs=[])
+    @op(out={})
     def hello_world(_context):
         return "foo"
 
@@ -107,7 +109,7 @@ def test_solid_with_explicit_empty_outputs():
 
 
 def test_solid_with_implicit_single_output():
-    @solid()
+    @op()
     def hello_world(_context):
         return "foo"
 
@@ -118,7 +120,7 @@ def test_solid_with_implicit_single_output():
 
 
 def test_solid_return_list_instead_of_multiple_results():
-    @solid(output_defs=[OutputDefinition(name="foo"), OutputDefinition(name="bar")])
+    @op(out={"foo": Out(), "bar": Out()})
     def hello_world(_context):
         return ["foo", "bar"]
 
@@ -130,7 +132,7 @@ def test_solid_return_list_instead_of_multiple_results():
 
 
 def test_lambda_solid_with_name():
-    @lambda_solid(name="foobar")
+    @op(name="foobar")
     def hello_world():
         return {"foo": "bar"}
 
@@ -141,7 +143,7 @@ def test_lambda_solid_with_name():
 
 
 def test_solid_with_name():
-    @solid(name="foobar", output_defs=[OutputDefinition()])
+    @op(name="foobar", out=Out())
     def hello_world(_context):
         return {"foo": "bar"}
 
@@ -152,14 +154,16 @@ def test_solid_with_name():
 
 
 def test_solid_with_input():
-    @lambda_solid(input_defs=[InputDefinition(name="foo_to_foo")])
+    @op(ins={"foo_to_foo": In()})
     def hello_world(foo_to_foo):
         return foo_to_foo
 
     the_pipeline = PipelineDefinition(
         solid_defs=[define_stub_solid("test_value", {"foo": "bar"}), hello_world],
         name="test",
-        dependencies={"hello_world": {"foo_to_foo": DependencyDefinition("test_value")}},
+        dependencies={
+            "hello_world": {"foo_to_foo": DependencyDefinition("test_value")}
+        },
     )
 
     pipeline_result = execute_pipeline(the_pipeline)
@@ -173,11 +177,11 @@ def test_solid_with_input():
 def test_lambda_solid_with_underscore_input():
     # Document that it is possible for lambda_solid to take an arg that the decorator machinery
     # would otherwise think is a context.
-    @lambda_solid()
+    @op()
     def emit_input(_):
         return _
 
-    @lambda_solid
+    @op
     def emit_five():
         return 5
 
@@ -199,7 +203,7 @@ def test_lambda_solid_definition_errors():
         match=re.escape("positional vararg parameter '*args'"),
     ):
 
-        @lambda_solid(input_defs=[InputDefinition(name="foo")])
+        @op(ins={"foo": In()})
         def vargs(foo, *args):
             pass
 
@@ -210,40 +214,40 @@ def test_solid_definition_errors():
         match=re.escape("positional vararg parameter '*args'"),
     ):
 
-        @solid(input_defs=[InputDefinition(name="foo")], output_defs=[OutputDefinition()])
+        @op(ins={"foo": In()}, out=Out())
         def vargs(context, foo, *args):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @solid(input_defs=[InputDefinition(name="foo")], output_defs=[OutputDefinition()])
+        @op(ins={"foo": In()}, out=Out())
         def wrong_name(context, bar):
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @solid(
-            input_defs=[InputDefinition(name="foo"), InputDefinition(name="bar")],
-            output_defs=[OutputDefinition()],
+        @op(
+            ins={"foo": In(), "bar": In()},
+            out=Out(),
         )
         def wrong_name_2(context, foo):
             pass
 
-    @solid(
-        input_defs=[InputDefinition(name="foo"), InputDefinition(name="bar")],
-        output_defs=[OutputDefinition()],
+    @op(
+        ins={"foo": In(), "bar": In()},
+        out=Out(),
     )
     def valid_kwargs(context, **kwargs):
         pass
 
-    @solid(
-        input_defs=[InputDefinition(name="foo"), InputDefinition(name="bar")],
-        output_defs=[OutputDefinition()],
+    @op(
+        ins={"foo": In(), "bar": In()},
+        out=Out(),
     )
     def valid(context, foo, bar):
         pass
 
-    @solid
+    @op
     def valid_because_inference(context, foo, bar):
         pass
 
@@ -266,20 +270,20 @@ def test_wrong_argument_to_pipeline():
 
 
 def test_descriptions():
-    @solid(description="foo")
-    def solid_desc(_context):
+    @op(description="foo")
+    def op_desc(_context):
         pass
 
-    assert solid_desc.description == "foo"
+    assert op_desc.description == "foo"
 
 
 def test_any_config_field():
     called = {}
     conf_value = 234
 
-    @solid(config_schema=Field(Any))
+    @op(config_schema=Field(Any))
     def hello_world(context):
-        assert context.solid_config == conf_value
+        assert context.op_config == conf_value
         called["yup"] = True
 
     result = execute_solid(
@@ -290,47 +294,47 @@ def test_any_config_field():
 
 
 def test_solid_required_resources_no_arg():
-    @solid(required_resource_keys={"foo"})
+    @op(required_resource_keys={"foo"})
     def _noop():
         return
 
 
 def test_solid_config_no_arg():
-    @solid(config_schema={"foo": str})
+    @op(config_schema={"foo": str})
     def _noop2():
         return
 
 
 def test_solid_docstring():
-    @solid
-    def foo_solid(_):
+    @op
+    def foo_op(_):
         """FOO_DOCSTRING"""
         return
 
-    @lambda_solid
-    def bar_solid():
+    @op
+    def bar_op():
         """BAR_DOCSTRING"""
         return
 
-    @solid(name="baz")
-    def baz_solid(_):
+    @op(name="baz")
+    def baz_op(_):
         """BAZ_DOCSTRING"""
         return
 
-    @lambda_solid(name="quux")
-    def quux_solid():
+    @op(name="quux")
+    def quux_op():
         """QUUX_DOCSTRING"""
         return
 
     @composite_solid
     def comp_solid():
         """COMP_DOCSTRING"""
-        foo_solid()
+        foo_op()
 
     @pipeline
     def the_pipeline():
         """THE_DOCSTRING"""
-        quux_solid()
+        quux_op()
 
     @op
     def the_op():
@@ -341,18 +345,18 @@ def test_solid_docstring():
         """GRAPH_DOCSTRING"""
         the_op()
 
-    assert foo_solid.__doc__ == "FOO_DOCSTRING"
-    assert foo_solid.description == "FOO_DOCSTRING"
-    assert foo_solid.__name__ == "foo_solid"
-    assert bar_solid.__doc__ == "BAR_DOCSTRING"
-    assert bar_solid.description == "BAR_DOCSTRING"
-    assert bar_solid.__name__ == "bar_solid"
-    assert baz_solid.__doc__ == "BAZ_DOCSTRING"
-    assert baz_solid.description == "BAZ_DOCSTRING"
-    assert baz_solid.__name__ == "baz_solid"
-    assert quux_solid.__doc__ == "QUUX_DOCSTRING"
-    assert quux_solid.description == "QUUX_DOCSTRING"
-    assert quux_solid.__name__ == "quux_solid"
+    assert foo_op.__doc__ == "FOO_DOCSTRING"
+    assert foo_op.description == "FOO_DOCSTRING"
+    assert foo_op.__name__ == "foo_op"
+    assert bar_op.__doc__ == "BAR_DOCSTRING"
+    assert bar_op.description == "BAR_DOCSTRING"
+    assert bar_op.__name__ == "bar_op"
+    assert baz_op.__doc__ == "BAZ_DOCSTRING"
+    assert baz_op.description == "BAZ_DOCSTRING"
+    assert baz_op.__name__ == "baz_op"
+    assert quux_op.__doc__ == "QUUX_DOCSTRING"
+    assert quux_op.description == "QUUX_DOCSTRING"
+    assert quux_op.__name__ == "quux_op"
     assert comp_solid.__doc__ == "COMP_DOCSTRING"
     assert comp_solid.description == "COMP_DOCSTRING"
     assert comp_solid.__name__ == "comp_solid"
@@ -368,13 +372,15 @@ def test_solid_docstring():
 
 
 def test_solid_yields_single_bare_value():
-    @solid
+    @op
     def return_iterator(_):
         yield 1
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape('Compute function for solid "return_iterator" yielded a value of type <')
+        match=re.escape(
+            'Compute function for solid "return_iterator" yielded a value of type <'
+        )
         + r"(class|type)"
         + re.escape(
             " 'int'> rather than an instance of Output, AssetMaterialization, or ExpectationResult. "
@@ -393,14 +399,16 @@ def test_solid_yields_single_bare_value():
 
 
 def test_solid_yields_multiple_bare_values():
-    @solid
+    @op
     def return_iterator(_):
         yield 1
         yield 2
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape('Compute function for solid "return_iterator" yielded a value of type <')
+        match=re.escape(
+            'Compute function for solid "return_iterator" yielded a value of type <'
+        )
         + r"(class|type)"
         + re.escape(
             " 'int'> rather than an instance of Output, AssetMaterialization, or ExpectationResult. "
@@ -423,13 +431,15 @@ def test_solid_returns_iterator():
         for i in range(3):
             yield i
 
-    @solid
+    @op
     def return_iterator(_):
         return iterator()
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape('Compute function for solid "return_iterator" yielded a value of type <')
+        match=re.escape(
+            'Compute function for solid "return_iterator" yielded a value of type <'
+        )
         + r"(class|type)"
         + re.escape(
             " 'int'> rather than an instance of Output, AssetMaterialization, or ExpectationResult. "
@@ -448,7 +458,7 @@ def test_solid_returns_iterator():
 
 
 def test_input_default():
-    @lambda_solid
+    @op
     def foo(bar="ok"):
         return bar
 

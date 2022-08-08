@@ -6,22 +6,26 @@ from dagster_shell.utils import execute
 
 from dagster import repository
 from dagster._core.storage.pipeline_run import PipelineRunStatus
-from dagster._core.test_utils import instance_for_test, poll_for_finished_run, poll_for_step_start
+from dagster._core.test_utils import (
+    instance_for_test,
+    poll_for_finished_run,
+    poll_for_step_start,
+)
 from dagster._core.workspace import WorkspaceProcessContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._legacy import pipeline, solid
 from dagster._utils import file_relative_path
 
 
-@solid
-def sleepy_solid(context):
+@op
+def sleepy_op(context):
     # execute a sleep in the background
     execute("sleep 60", "NONE", context.log)
 
 
 @pipeline
 def sleepy_pipeline():
-    sleepy_solid()
+    sleepy_op()
 
 
 @repository
@@ -51,7 +55,12 @@ def poll_for_pid(instance, run_id, timeout=20):
         logs = instance.all_logs(run_id)
 
         pid_log = next(
-            (log.user_message for log in logs if log.user_message.startswith("Command pid:")), None
+            (
+                log.user_message
+                for log in logs
+                if log.user_message.startswith("Command pid:")
+            ),
+            None,
         )
         if pid_log is not None:
             return int(pid_log.split(" ")[-1])
@@ -78,7 +87,9 @@ def test_terminate_kills_subproc():
 
             run_id = pipeline_run.run_id
 
-            assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+            assert (
+                instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
+            )
 
             instance.launch_run(pipeline_run.run_id, workspace)
 
@@ -94,7 +105,9 @@ def test_terminate_kills_subproc():
             launcher = instance.run_launcher
             assert launcher.terminate(run_id)
 
-            terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
+            terminated_pipeline_run = poll_for_finished_run(
+                instance, run_id, timeout=30
+            )
             terminated_pipeline_run = instance.get_run_by_id(run_id)
             assert terminated_pipeline_run.status == PipelineRunStatus.CANCELED
 

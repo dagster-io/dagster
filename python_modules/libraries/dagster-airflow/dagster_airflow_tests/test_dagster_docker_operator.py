@@ -15,14 +15,14 @@ from dagster._legacy import pipeline, solid
 from dagster._utils import file_relative_path
 
 
-@solid
-def nonce_solid(_):
+@op
+def nonce_op(_):
     return
 
 
 @pipeline(mode_defs=[default_mode_def_for_test])
 def nonce_pipeline():
-    return nonce_solid()
+    return nonce_op()
 
 
 @repository
@@ -80,7 +80,9 @@ def test_modified_docker_operator_bad_docker_conn(dagster_docker_image):
         )
         operator = DagsterDockerOperator(dagster_operator_parameters)
 
-        with pytest.raises(AirflowException, match="The conn_id `foo_conn` isn't defined"):
+        with pytest.raises(
+            AirflowException, match="The conn_id `foo_conn` isn't defined"
+        ):
             operator.execute({})
 
 

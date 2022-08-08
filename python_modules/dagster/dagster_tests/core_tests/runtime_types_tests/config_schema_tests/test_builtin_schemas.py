@@ -1,6 +1,18 @@
 import pytest
 
-from dagster import Any, Bool, DagsterInvalidConfigError, Float, Int, List, Optional, String
+from dagster import (
+    In,
+    Out,
+    op,
+    Any,
+    Bool,
+    DagsterInvalidConfigError,
+    Float,
+    Int,
+    List,
+    Optional,
+    String,
+)
 from dagster._legacy import (
     InputDefinition,
     OutputDefinition,
@@ -18,51 +30,51 @@ def _execute_pipeline_with_subset(pipeline, run_config, solid_selection):
 
 
 def define_test_all_scalars_pipeline():
-    @lambda_solid(input_defs=[InputDefinition("num", Int)])
+    @op(ins={"num": In(Int)})
     def take_int(num):
         return num
 
-    @lambda_solid(output_def=OutputDefinition(Int))
+    @op(out=Out(Int))
     def produce_int():
         return 2
 
-    @lambda_solid(input_defs=[InputDefinition("string", String)])
+    @op(ins={"string": In(String)})
     def take_string(string):
         return string
 
-    @lambda_solid(output_def=OutputDefinition(String))
+    @op(out=Out(String))
     def produce_string():
         return "foo"
 
-    @lambda_solid(input_defs=[InputDefinition("float_number", Float)])
+    @op(ins={"float_number": In(Float)})
     def take_float(float_number):
         return float_number
 
-    @lambda_solid(output_def=OutputDefinition(Float))
+    @op(out=Out(Float))
     def produce_float():
         return 3.14
 
-    @lambda_solid(input_defs=[InputDefinition("bool_value", Bool)])
+    @op(ins={"bool_value": In(Bool)})
     def take_bool(bool_value):
         return bool_value
 
-    @lambda_solid(output_def=OutputDefinition(Bool))
+    @op(out=Out(Bool))
     def produce_bool():
         return True
 
-    @lambda_solid(input_defs=[InputDefinition("any_value", Any)])
+    @op(ins={"any_value": In(Any)})
     def take_any(any_value):
         return any_value
 
-    @lambda_solid(output_def=OutputDefinition(Any))
+    @op(out=Out(Any))
     def produce_any():
         return True
 
-    @lambda_solid(input_defs=[InputDefinition("string_list", List[String])])
+    @op(ins={"string_list": In(List[String])})
     def take_string_list(string_list):
         return string_list
 
-    @lambda_solid(input_defs=[InputDefinition("nullable_string", Optional[String])])
+    @op(ins={"nullable_string": In(Optional[String])})
     def take_nullable_string(nullable_string):
         return nullable_string
 
@@ -118,8 +130,9 @@ def test_int_input_schema_failure_wrong_value_type():
             run_config=single_input_env("take_int", "num", {"value": "dkjdfkdj"}),
             solid_selection={"take_int"},
         )
-    assert "Error 1: Invalid scalar at path root:solids:take_int:inputs:num:value" in str(
-        exc_info.value
+    assert (
+        "Error 1: Invalid scalar at path root:solids:take_int:inputs:num:value"
+        in str(exc_info.value)
     )
 
 
@@ -143,7 +156,9 @@ def test_int_input_schema_failure_raw_string():
             run_config=single_input_env("take_int", "num", "dkjdfkdj"),
             solid_selection={"take_int"},
         )
-    assert "Error 1: Invalid scalar at path root:solids:take_int:inputs:num" in str(exc_info.value)
+    assert "Error 1: Invalid scalar at path root:solids:take_int:inputs:num" in str(
+        exc_info.value
+    )
 
 
 def single_output_env(solid_name, output_spec):
@@ -162,7 +177,9 @@ def test_int_json_schema_roundtrip():
 
         source_result = _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
-            run_config=single_input_env("take_int", "num", {"json": {"path": tmp_file}}),
+            run_config=single_input_env(
+                "take_int", "num", {"json": {"path": tmp_file}}
+            ),
             solid_selection={"take_int"},
         )
 
@@ -181,7 +198,9 @@ def test_int_pickle_schema_roundtrip():
 
         source_result = _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
-            run_config=single_input_env("take_int", "num", {"pickle": {"path": tmp_file}}),
+            run_config=single_input_env(
+                "take_int", "num", {"pickle": {"path": tmp_file}}
+            ),
             solid_selection={"take_int"},
         )
 
@@ -227,12 +246,15 @@ def test_float_input_schema_failure():
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
-            run_config=single_input_env("take_float", "float_number", {"value": "3343"}),
+            run_config=single_input_env(
+                "take_float", "float_number", {"value": "3343"}
+            ),
             solid_selection={"take_float"},
         )
 
-    assert "Invalid scalar at path root:solids:take_float:inputs:float_number:value" in str(
-        exc_info.value
+    assert (
+        "Invalid scalar at path root:solids:take_float:inputs:float_number:value"
+        in str(exc_info.value)
     )
 
 
@@ -255,8 +277,9 @@ def test_bool_input_schema_failure():
             solid_selection={"take_bool"},
         )
 
-    assert "Invalid scalar at path root:solids:take_bool:inputs:bool_value:value" in str(
-        exc_info.value
+    assert (
+        "Invalid scalar at path root:solids:take_bool:inputs:bool_value:value"
+        in str(exc_info.value)
     )
 
 
@@ -292,7 +315,10 @@ def test_none_string_input_schema_failure():
 
     error = exc_info.value.errors[0]
 
-    assert "Value at path root:solids:take_string:inputs:string must not be None." in error.message
+    assert (
+        "Value at path root:solids:take_string:inputs:string must not be None."
+        in error.message
+    )
 
 
 def test_value_none_string_input_schema_failure():
@@ -303,8 +329,9 @@ def test_value_none_string_input_schema_failure():
             solid_selection={"take_string"},
         )
 
-    assert "Value at path root:solids:take_string:inputs:string:value must not be None" in str(
-        exc_info.value
+    assert (
+        "Value at path root:solids:take_string:inputs:string:value must not be None"
+        in str(exc_info.value)
     )
 
 
@@ -312,7 +339,9 @@ def test_string_json_schema_roundtrip():
     with get_temp_file_name() as tmp_file:
         mat_result = _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
-            run_config=single_output_env("produce_string", {"json": {"path": tmp_file}}),
+            run_config=single_output_env(
+                "produce_string", {"json": {"path": tmp_file}}
+            ),
             solid_selection={"produce_string"},
         )
 
@@ -320,7 +349,9 @@ def test_string_json_schema_roundtrip():
 
         source_result = _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
-            run_config=single_input_env("take_string", "string", {"json": {"path": tmp_file}}),
+            run_config=single_input_env(
+                "take_string", "string", {"json": {"path": tmp_file}}
+            ),
             solid_selection={"take_string"},
         )
 
@@ -331,7 +362,9 @@ def test_string_pickle_schema_roundtrip():
     with get_temp_file_name() as tmp_file:
         mat_result = _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
-            run_config=single_output_env("produce_string", {"pickle": {"path": tmp_file}}),
+            run_config=single_output_env(
+                "produce_string", {"pickle": {"path": tmp_file}}
+            ),
             solid_selection={"produce_string"},
         )
 
@@ -339,7 +372,9 @@ def test_string_pickle_schema_roundtrip():
 
         source_result = _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
-            run_config=single_input_env("take_string", "string", {"pickle": {"path": tmp_file}}),
+            run_config=single_input_env(
+                "take_string", "string", {"pickle": {"path": tmp_file}}
+            ),
             solid_selection={"take_string"},
         )
 
@@ -349,7 +384,9 @@ def test_string_pickle_schema_roundtrip():
 def test_string_list_input():
     result = _execute_pipeline_with_subset(
         define_test_all_scalars_pipeline(),
-        run_config=single_input_env("take_string_list", "string_list", [{"value": "foobar"}]),
+        run_config=single_input_env(
+            "take_string_list", "string_list", [{"value": "foobar"}]
+        ),
         solid_selection={"take_string_list"},
     )
 
@@ -361,7 +398,9 @@ def test_string_list_input():
 def test_nullable_string_input_with_value():
     result = _execute_pipeline_with_subset(
         define_test_all_scalars_pipeline(),
-        run_config=single_input_env("take_nullable_string", "nullable_string", {"value": "foobar"}),
+        run_config=single_input_env(
+            "take_nullable_string", "nullable_string", {"value": "foobar"}
+        ),
         solid_selection={"take_nullable_string"},
     )
 
@@ -376,7 +415,9 @@ def test_nullable_string_input_with_none_value():
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
-            run_config=single_input_env("take_nullable_string", "nullable_string", {"value": None}),
+            run_config=single_input_env(
+                "take_nullable_string", "nullable_string", {"value": None}
+            ),
             solid_selection={"take_nullable_string"},
         )
 

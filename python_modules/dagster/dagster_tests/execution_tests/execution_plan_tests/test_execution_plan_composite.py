@@ -1,18 +1,18 @@
-from dagster import Field, Int, String
+from dagster import Out, op, Field, Int, String
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance import DagsterInstance
 from dagster._legacy import composite_solid, pipeline, solid
 
 
-@solid(config_schema={"foo": Field(String)})
+@op(config_schema={"foo": Field(String)})
 def node_a(context):
-    return context.solid_config["foo"]
+    return context.op_config["foo"]
 
 
-@solid(config_schema={"bar": Int})
+@op(config_schema={"bar": Int})
 def node_b(context, input_):
-    return input_ * context.solid_config["bar"]
+    return input_ * context.op_config["bar"]
 
 
 @composite_solid

@@ -3,6 +3,7 @@ import hashlib
 import pytest
 
 from dagster import (
+    Out,
     Bool,
     DagsterInvariantViolationError,
     Float,
@@ -27,7 +28,10 @@ from dagster._core.definitions import InputDefinition
 from dagster._core.definitions.version_strategy import VersionStrategy
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.outputs import StepOutputHandle
-from dagster._core.execution.resolve_versions import join_and_hash, resolve_config_version
+from dagster._core.execution.resolve_versions import (
+    join_and_hash,
+    resolve_config_version,
+)
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.system_config.objects import ResolvedRunConfig
@@ -90,13 +94,13 @@ def test_resolve_config_version():
     )
 
 
-@solid(version="42")
-def versioned_solid_no_input(_):
+@op(version="42")
+def versioned_op_no_input(_):
     return 4
 
 
-@solid(version="5")
-def versioned_solid_takes_input(_, intput):
+@op(version="5")
+def versioned_op_takes_input(_, intput):
     return 2 * intput
 
 
@@ -105,19 +109,21 @@ def versioned_pipeline_factory(manager=VersionedInMemoryIOManager()):
         mode_defs=[
             ModeDefinition(
                 name="main",
-                resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(manager)},
+                resource_defs={
+                    "io_manager": IOManagerDefinition.hardcoded_io_manager(manager)
+                },
             )
         ],
         tags={MEMOIZED_RUN_TAG: "true"},
     )
     def versioned_pipeline():
-        versioned_solid_takes_input(versioned_solid_no_input())
+        versioned_op_takes_input(versioned_op_no_input())
 
     return versioned_pipeline
 
 
-@solid
-def solid_takes_input(_, intput):
+@op
+def op_takes_input(_, intput):
     return 2 * intput
 
 
@@ -126,40 +132,44 @@ def partially_versioned_pipeline_factory(manager=VersionedInMemoryIOManager()):
         mode_defs=[
             ModeDefinition(
                 name="main",
-                resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(manager)},
+                resource_defs={
+                    "io_manager": IOManagerDefinition.hardcoded_io_manager(manager)
+                },
             )
         ],
         tags={MEMOIZED_RUN_TAG: "true"},
     )
     def partially_versioned_pipeline():
-        solid_takes_input(versioned_solid_no_input())
+        op_takes_input(versioned_op_no_input())
 
     return partially_versioned_pipeline
 
 
-@solid
-def basic_solid(_):
+@op
+def basic_op(_):
     return 5
 
 
-@solid
-def basic_takes_input_solid(_, intpt):
+@op
+def basic_takes_input_op(_, intpt):
     return intpt * 4
 
 
 @pipeline
 def no_version_pipeline():
-    basic_takes_input_solid(basic_solid())
+    basic_takes_input_op(basic_op())
 
 
 def test_memoized_plan_no_memoized_results():
     with instance_for_test() as instance:
         versioned_pipeline = versioned_pipeline_factory()
-        memoized_plan = create_execution_plan(versioned_pipeline, instance_ref=instance.get_ref())
+        memoized_plan = create_execution_plan(
+            versioned_pipeline, instance_ref=instance.get_ref()
+        )
 
         assert set(memoized_plan.step_keys_to_execute) == {
-            "versioned_solid_no_input",
-            "versioned_solid_takes_input",
+            "versioned_op_no_input",
+            "versioned_op_takes_input",
         }
 
 
@@ -168,12 +178,16 @@ def test_memoized_plan_memoized_results():
         manager = VersionedInMemoryIOManager()
 
         versioned_pipeline = versioned_pipeline_factory(manager)
-        plan = create_execution_plan(versioned_pipeline, instance_ref=instance.get_ref())
+        plan = create_execution_plan(
+            versioned_pipeline, instance_ref=instance.get_ref()
+        )
         resolved_run_config = ResolvedRunConfig.build(versioned_pipeline)
 
         # Affix a memoized value to the output
-        step_output_handle = StepOutputHandle("versioned_solid_no_input", "result")
-        step_output_version = plan.get_version_for_step_output_handle(step_output_handle)
+        step_output_handle = StepOutputHandle("versioned_op_no_input", "result")
+        step_output_version = plan.get_version_for_step_output_handle(
+            step_output_handle
+        )
         manager.values[
             (
                 step_output_handle.step_key,
@@ -189,7 +203,7 @@ def test_memoized_plan_memoized_results():
             selected_step_keys=None,
         )
 
-        assert memoized_plan.step_keys_to_execute == ["versioned_solid_takes_input"]
+        assert memoized_plan.step_keys_to_execute == ["versioned_op_takes_input"]
 
 
 def test_memoization_no_code_version_for_solid():
@@ -198,11 +212,13 @@ def test_memoization_no_code_version_for_solid():
 
         with pytest.raises(
             DagsterInvariantViolationError,
-            match="While using memoization, version for solid 'solid_takes_input' was None. Please "
+            match="While using memoization, version for solid 'op_takes_input' was None. Please "
             "either provide a versioning strategy for your job, or provide a version using the "
             "solid decorator.",
         ):
-            create_execution_plan(partially_versioned_pipeline, instance_ref=instance.get_ref())
+            create_execution_plan(
+                partially_versioned_pipeline, instance_ref=instance.get_ref()
+            )
 
 
 def _get_ext_version(config_value):
@@ -235,8 +251,8 @@ def run_test_with_builtin_type(type_to_test, type_values):
     first_type_val, second_type_val = type_values
     manager = VersionedInMemoryIOManager()
 
-    @solid(version="42", input_defs=[InputDefinition("_builtin_type", type_to_test)])
-    def solid_ext_input(_builtin_type):
+    @op(version="42", ins={"_builtin_type": In(type_to_test)})
+    def op_ext_input(_builtin_type):
         pass
 
     @pipeline(
@@ -250,10 +266,10 @@ def run_test_with_builtin_type(type_to_test, type_values):
         tags={MEMOIZED_RUN_TAG: "true"},
     )
     def my_pipeline():
-        versioned_solid_takes_input(solid_ext_input())
+        versioned_op_takes_input(op_ext_input())
 
     input_config = {"_builtin_type": first_type_val}
-    run_config = {"solids": {"solid_ext_input": {"inputs": input_config}}}
+    run_config = {"solids": {"op_ext_input": {"inputs": input_config}}}
 
     with instance_for_test() as instance:
         unmemoized_plan = create_execution_plan(
@@ -264,17 +280,19 @@ def run_test_with_builtin_type(type_to_test, type_values):
 
         assert len(unmemoized_plan.step_keys_to_execute) == 2
 
-        step_output_handle = StepOutputHandle("solid_ext_input", "result")
+        step_output_handle = StepOutputHandle("op_ext_input", "result")
         version = unmemoized_plan.get_version_for_step_output_handle(step_output_handle)
 
-        manager.values[step_output_handle.step_key, step_output_handle.output_name, version] = 5
+        manager.values[
+            step_output_handle.step_key, step_output_handle.output_name, version
+        ] = 5
 
         memoized_plan = create_execution_plan(
             my_pipeline,
             run_config=run_config,
             instance_ref=instance.get_ref(),
         )
-        assert memoized_plan.step_keys_to_execute == ["versioned_solid_takes_input"]
+        assert memoized_plan.step_keys_to_execute == ["versioned_op_takes_input"]
 
         input_config["_builtin_type"] = second_type_val
 
@@ -288,11 +306,11 @@ def run_test_with_builtin_type(type_to_test, type_values):
 
 
 def test_memoized_plan_default_input_val():
-    @solid(
+    @op(
         version="42",
-        input_defs=[InputDefinition("_my_input", String, default_value="DEFAULTVAL")],
+        ins={"_my_input": In(String, default_value="DEFAULTVAL")},
     )
-    def solid_default_input(_my_input):
+    def op_default_input(_my_input):
         pass
 
     @pipeline(
@@ -308,19 +326,19 @@ def test_memoized_plan_default_input_val():
         tags={MEMOIZED_RUN_TAG: "true"},
     )
     def pipeline_default_value():
-        solid_default_input()
+        op_default_input()
 
     # Ensure that we can build a valid plan with a default input value.
     with instance_for_test() as instance:
         unmemoized_plan = create_execution_plan(
             pipeline_default_value, instance_ref=instance.get_ref()
         )
-        assert unmemoized_plan.step_keys_to_execute == ["solid_default_input"]
+        assert unmemoized_plan.step_keys_to_execute == ["op_default_input"]
 
 
 def test_memoized_plan_affected_by_resource_config():
-    @solid(required_resource_keys={"my_resource"}, version="39")
-    def solid_reqs_resource():
+    @op(required_resource_keys={"my_resource"}, version="39")
+    def op_reqs_resource():
         pass
 
     @resource(version="42", config_schema={"foo": str})
@@ -341,7 +359,7 @@ def test_memoized_plan_affected_by_resource_config():
         tags={MEMOIZED_RUN_TAG: "true"},
     )
     def my_pipeline():
-        solid_reqs_resource()
+        op_reqs_resource()
 
     with instance_for_test() as instance:
         my_resource_config = {"foo": "bar"}
@@ -351,12 +369,14 @@ def test_memoized_plan_affected_by_resource_config():
             my_pipeline, run_config=run_config, instance_ref=instance.get_ref()
         )
 
-        assert unmemoized_plan.step_keys_to_execute == ["solid_reqs_resource"]
+        assert unmemoized_plan.step_keys_to_execute == ["op_reqs_resource"]
 
-        step_output_handle = StepOutputHandle("solid_reqs_resource", "result")
+        step_output_handle = StepOutputHandle("op_reqs_resource", "result")
         version = unmemoized_plan.get_version_for_step_output_handle(step_output_handle)
 
-        manager.values[step_output_handle.step_key, step_output_handle.output_name, version] = 5
+        manager.values[
+            step_output_handle.step_key, step_output_handle.output_name, version
+        ] = 5
 
         memoized_plan = create_execution_plan(
             my_pipeline, run_config=run_config, instance_ref=instance.get_ref()
@@ -370,15 +390,15 @@ def test_memoized_plan_affected_by_resource_config():
             my_pipeline, run_config=run_config, instance_ref=instance.get_ref()
         )
 
-        assert changed_config_plan.step_keys_to_execute == ["solid_reqs_resource"]
+        assert changed_config_plan.step_keys_to_execute == ["op_reqs_resource"]
 
 
 def test_memoized_plan_custom_io_manager_key():
     manager = VersionedInMemoryIOManager()
     mgr_def = IOManagerDefinition.hardcoded_io_manager(manager)
 
-    @solid(version="39", output_defs=[OutputDefinition(io_manager_key="my_key")])
-    def solid_requires_io_manager():
+    @op(version="39", out=Out(io_manager_key="my_key"))
+    def op_requires_io_manager():
         return Output(5)
 
     @pipeline(
@@ -392,39 +412,47 @@ def test_memoized_plan_custom_io_manager_key():
         tags={MEMOIZED_RUN_TAG: "true"},
     )
     def io_mgr_pipeline():
-        solid_requires_io_manager()
+        op_requires_io_manager()
 
     with instance_for_test() as instance:
 
-        unmemoized_plan = create_execution_plan(io_mgr_pipeline, instance_ref=instance.get_ref())
+        unmemoized_plan = create_execution_plan(
+            io_mgr_pipeline, instance_ref=instance.get_ref()
+        )
 
-        assert unmemoized_plan.step_keys_to_execute == ["solid_requires_io_manager"]
+        assert unmemoized_plan.step_keys_to_execute == ["op_requires_io_manager"]
 
-        step_output_handle = StepOutputHandle("solid_requires_io_manager", "result")
+        step_output_handle = StepOutputHandle("op_requires_io_manager", "result")
         version = unmemoized_plan.get_version_for_step_output_handle(step_output_handle)
 
-        manager.values[(step_output_handle.step_key, step_output_handle.output_name, version)] = 5
+        manager.values[
+            (step_output_handle.step_key, step_output_handle.output_name, version)
+        ] = 5
 
-        memoized_plan = create_execution_plan(io_mgr_pipeline, instance_ref=instance.get_ref())
+        memoized_plan = create_execution_plan(
+            io_mgr_pipeline, instance_ref=instance.get_ref()
+        )
 
         assert len(memoized_plan.step_keys_to_execute) == 0
 
 
 def test_unmemoized_inner_solid():
-    @solid
-    def solid_no_version():
+    @op
+    def op_no_version():
         pass
 
     @composite_solid
     def wrap():
-        return solid_no_version()
+        return op_no_version()
 
     @pipeline(
         mode_defs=[
             ModeDefinition(
                 name="fakemode",
                 resource_defs={
-                    "fake": IOManagerDefinition.hardcoded_io_manager(VersionedInMemoryIOManager()),
+                    "fake": IOManagerDefinition.hardcoded_io_manager(
+                        VersionedInMemoryIOManager()
+                    ),
                 },
             ),
         ],
@@ -436,7 +464,7 @@ def test_unmemoized_inner_solid():
     with instance_for_test() as instance:
         with pytest.raises(
             DagsterInvariantViolationError,
-            match="While using memoization, version for solid 'solid_no_version' was None. Please "
+            match="While using memoization, version for solid 'op_no_version' was None. Please "
             "either provide a versioning strategy for your job, or provide a version using the "
             "solid decorator.",
         ):
@@ -444,13 +472,13 @@ def test_unmemoized_inner_solid():
 
 
 def test_memoized_inner_solid():
-    @solid(version="versioned")
-    def solid_versioned():
+    @op(version="versioned")
+    def op_versioned():
         pass
 
     @composite_solid
     def wrap():
-        return solid_versioned()
+        return op_versioned()
 
     mgr = VersionedInMemoryIOManager()
 
@@ -469,12 +497,16 @@ def test_memoized_inner_solid():
         wrap()
 
     with instance_for_test() as instance:
-        unmemoized_plan = create_execution_plan(wrap_pipeline, instance_ref=instance.get_ref())
-        step_output_handle = StepOutputHandle("wrap.solid_versioned", "result")
+        unmemoized_plan = create_execution_plan(
+            wrap_pipeline, instance_ref=instance.get_ref()
+        )
+        step_output_handle = StepOutputHandle("wrap.op_versioned", "result")
         assert unmemoized_plan.step_keys_to_execute == [step_output_handle.step_key]
 
         # Affix value to expected version for step output.
-        step_output_version = unmemoized_plan.get_version_for_step_output_handle(step_output_handle)
+        step_output_version = unmemoized_plan.get_version_for_step_output_handle(
+            step_output_handle
+        )
         mgr.values[
             (
                 step_output_handle.step_key,
@@ -492,11 +524,13 @@ def test_memoized_inner_solid():
 
 
 def test_configured_versions():
-    @solid(version="5")
-    def solid_to_configure():
+    @op(version="5")
+    def op_to_configure():
         pass
 
-    assert solid_to_configure.configured({}, name="solid_has_been_configured").version == "5"
+    assert (
+        op_to_configure.configured({}, name="solid_has_been_configured").version == "5"
+    )
 
     @resource(version="5")
     def resource_to_configure(_):
@@ -506,12 +540,12 @@ def test_configured_versions():
 
 
 def test_memoized_plan_inits_resources_once():
-    @solid(output_defs=[OutputDefinition(io_manager_key="foo")], version="foo")
-    def foo_solid():
+    @op(out=Out(io_manager_key="foo"), version="foo")
+    def foo_op():
         pass
 
-    @solid(output_defs=[OutputDefinition(io_manager_key="bar")], version="bar")
-    def bar_solid():
+    @op(out=Out(io_manager_key="bar"), version="bar")
+    def bar_op():
         pass
 
     foo_capture = []
@@ -554,10 +588,10 @@ def test_memoized_plan_inits_resources_once():
         tags={MEMOIZED_RUN_TAG: "true"},
     )
     def wrap_pipeline():
-        foo_solid()
-        foo_solid.alias("another_foo")()
-        bar_solid()
-        bar_solid.alias("another_bar")()
+        foo_op()
+        foo_op.alias("another_foo")()
+        bar_op()
+        bar_op.alias("another_bar")()
 
     with instance_for_test() as instance:
         create_execution_plan(wrap_pipeline, instance_ref=instance.get_ref())
@@ -569,8 +603,8 @@ def test_memoized_plan_inits_resources_once():
 
 
 def test_memoized_plan_disable_memoization():
-    @solid(version="hello")
-    def my_solid():
+    @op(version="hello")
+    def my_op():
         return 5
 
     mgr = VersionedInMemoryIOManager()
@@ -586,15 +620,21 @@ def test_memoized_plan_disable_memoization():
         tags={MEMOIZED_RUN_TAG: "true"},
     )
     def my_pipeline():
-        my_solid()
+        my_op()
 
     with instance_for_test() as instance:
-        unmemoized_plan = create_execution_plan(my_pipeline, instance_ref=instance.get_ref())
+        unmemoized_plan = create_execution_plan(
+            my_pipeline, instance_ref=instance.get_ref()
+        )
         assert len(unmemoized_plan.step_keys_to_execute) == 1
-        step_output_handle = StepOutputHandle("my_solid", "result")
+        step_output_handle = StepOutputHandle("my_op", "result")
         version = unmemoized_plan.get_version_for_step_output_handle(step_output_handle)
-        mgr.values[(step_output_handle.step_key, step_output_handle.output_name, version)] = 5
-        memoized_plan = create_execution_plan(my_pipeline, instance_ref=instance.get_ref())
+        mgr.values[
+            (step_output_handle.step_key, step_output_handle.output_name, version)
+        ] = 5
+        memoized_plan = create_execution_plan(
+            my_pipeline, instance_ref=instance.get_ref()
+        )
         assert len(memoized_plan.step_keys_to_execute) == 0
 
         unmemoized_again = create_execution_plan(
@@ -610,11 +650,11 @@ def test_memoized_plan_root_input_manager():
     def my_input_manager():
         return 5
 
-    @solid(
-        input_defs=[InputDefinition("x", root_manager_key="my_input_manager")],
+    @op(
+        ins={"x": In(root_manager_key="my_input_manager")},
         version="foo",
     )
-    def my_solid_takes_input(x):
+    def my_op_takes_input(x):
         return x
 
     @pipeline(
@@ -631,13 +671,13 @@ def test_memoized_plan_root_input_manager():
         tags={MEMOIZED_RUN_TAG: "true"},
     )
     def my_pipeline():
-        my_solid_takes_input()
+        my_op_takes_input()
 
     with instance_for_test() as instance:
         plan = create_execution_plan(my_pipeline, instance_ref=instance.get_ref())
         assert (
             plan.get_version_for_step_output_handle(
-                StepOutputHandle("my_solid_takes_input", "result")
+                StepOutputHandle("my_op_takes_input", "result")
             )
             is not None
         )
@@ -648,11 +688,11 @@ def test_memoized_plan_root_input_manager_input_config():
     def my_input_manager():
         return 5
 
-    @solid(
-        input_defs=[InputDefinition("x", root_manager_key="my_input_manager")],
+    @op(
+        ins={"x": In(root_manager_key="my_input_manager")},
         version="foo",
     )
-    def my_solid_takes_input(x):
+    def my_op_takes_input(x):
         return x
 
     @pipeline(
@@ -669,10 +709,10 @@ def test_memoized_plan_root_input_manager_input_config():
         tags={MEMOIZED_RUN_TAG: "true"},
     )
     def my_pipeline():
-        my_solid_takes_input()
+        my_op_takes_input()
 
     input_config = {"my_str": "foo"}
-    run_config = {"solids": {"my_solid_takes_input": {"inputs": {"x": input_config}}}}
+    run_config = {"solids": {"my_op_takes_input": {"inputs": {"x": input_config}}}}
     with instance_for_test() as instance:
         plan = create_execution_plan(
             my_pipeline,
@@ -680,7 +720,7 @@ def test_memoized_plan_root_input_manager_input_config():
             run_config=run_config,
         )
         output_version = plan.get_version_for_step_output_handle(
-            StepOutputHandle("my_solid_takes_input", "result")
+            StepOutputHandle("my_op_takes_input", "result")
         )
 
         assert output_version is not None
@@ -694,7 +734,7 @@ def test_memoized_plan_root_input_manager_input_config():
         )
 
         new_output_version = plan.get_version_for_step_output_handle(
-            StepOutputHandle("my_solid_takes_input", "result")
+            StepOutputHandle("my_op_takes_input", "result")
         )
 
         # Ensure that after changing input config, the version changes.
@@ -706,11 +746,11 @@ def test_memoized_plan_root_input_manager_resource_config():
     def my_input_manager():
         return 5
 
-    @solid(
-        input_defs=[InputDefinition("x", root_manager_key="my_input_manager")],
+    @op(
+        ins={"x": In(root_manager_key="my_input_manager")},
         version="foo",
     )
-    def my_solid_takes_input(x):
+    def my_op_takes_input(x):
         return x
 
     @pipeline(
@@ -727,7 +767,7 @@ def test_memoized_plan_root_input_manager_resource_config():
         tags={MEMOIZED_RUN_TAG: "true"},
     )
     def my_pipeline():
-        my_solid_takes_input()
+        my_op_takes_input()
 
     resource_config = {"my_str": "foo"}
     run_config = {"resources": {"my_input_manager": {"config": resource_config}}}
@@ -738,7 +778,7 @@ def test_memoized_plan_root_input_manager_resource_config():
             run_config=run_config,
         )
         output_version = plan.get_version_for_step_output_handle(
-            StepOutputHandle("my_solid_takes_input", "result")
+            StepOutputHandle("my_op_takes_input", "result")
         )
 
         assert output_version is not None
@@ -752,7 +792,7 @@ def test_memoized_plan_root_input_manager_resource_config():
         )
 
         new_output_version = plan.get_version_for_step_output_handle(
-            StepOutputHandle("my_solid_takes_input", "result")
+            StepOutputHandle("my_op_takes_input", "result")
         )
 
         # Ensure that after changing resource config, the version changes.
@@ -851,8 +891,8 @@ def test_bad_version_str(graph_for_test, strategy):
 
 
 def get_version_strategy_pipeline():
-    @solid
-    def my_solid():
+    @op
+    def my_op():
         return 5
 
     class MyVersionStrategy(VersionStrategy):
@@ -864,7 +904,7 @@ def get_version_strategy_pipeline():
         mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})],
     )
     def ten_pipeline():
-        my_solid()
+        my_op()
 
     return ten_pipeline
 
@@ -877,13 +917,15 @@ def test_version_strategy_on_pipeline():
         result = execute_pipeline(ten_pipeline, instance=instance)
         assert result.success
 
-        memoized_plan = create_execution_plan(ten_pipeline, instance_ref=instance.get_ref())
+        memoized_plan = create_execution_plan(
+            ten_pipeline, instance_ref=instance.get_ref()
+        )
         assert len(memoized_plan.step_keys_to_execute) == 0
 
 
 def test_version_strategy_no_resource_version():
-    @solid(required_resource_keys={"foo"})
-    def my_solid(context):
+    @op(required_resource_keys={"foo"})
+    def my_op(context):
         return context.resources.foo
 
     @resource
@@ -908,12 +950,14 @@ def test_version_strategy_no_resource_version():
         ],
     )
     def my_pipeline():
-        my_solid()
+        my_op()
 
     with instance_for_test() as instance:
         execute_pipeline(my_pipeline, instance=instance)
 
-        memoized_plan = create_execution_plan(my_pipeline, instance_ref=instance.get_ref())
+        memoized_plan = create_execution_plan(
+            my_pipeline, instance_ref=instance.get_ref()
+        )
         assert len(memoized_plan.step_keys_to_execute) == 0
 
 
@@ -929,7 +973,9 @@ def test_code_versioning_strategy():
     with instance_for_test() as instance:
         result = call_the_op.execute_in_process(instance=instance)
         assert result.success
-        memoized_plan = create_execution_plan(call_the_op, instance_ref=instance.get_ref())
+        memoized_plan = create_execution_plan(
+            call_the_op, instance_ref=instance.get_ref()
+        )
         assert len(memoized_plan.step_keys_to_execute) == 0
 
 
@@ -970,5 +1016,7 @@ def test_source_hash_with_root_input_manager():
         result = call_the_op.execute_in_process(instance=instance)
         assert result.success
 
-        memoized_plan = create_execution_plan(call_the_op, instance_ref=instance.get_ref())
+        memoized_plan = create_execution_plan(
+            call_the_op, instance_ref=instance.get_ref()
+        )
         assert len(memoized_plan.step_keys_to_execute) == 0

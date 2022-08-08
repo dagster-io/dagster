@@ -1,4 +1,4 @@
-from dagster import Int, repository
+from dagster import In, Out, op, Int, repository
 from dagster._core.test_utils import today_at_midnight
 from dagster._legacy import (
     InputDefinition,
@@ -9,12 +9,12 @@ from dagster._legacy import (
 )
 
 
-@lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+@op(ins={"num": In(Int)}, out=Out(Int))
 def add_one(num):
     return num + 1
 
 
-@lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+@op(ins={"num": In(Int)}, out=Out(Int))
 def mult_two(num):
     return num * 2
 

@@ -1,4 +1,7 @@
 from dagster import (
+    In,
+    Out,
+    op,
     Failure,
     Field,
     IOManager,
@@ -72,7 +75,9 @@ def define_errorable_resource():
     return ResourceDefinition(
         resource_fn=resource_init,
         config_schema={
-            "throw_on_resource_init": Field(bool, is_required=False, default_value=False)
+            "throw_on_resource_init": Field(
+                bool, is_required=False, default_value=False
+            )
         },
     )
 
@@ -105,45 +110,45 @@ def _act_on_config(solid_config):
         raise RetryRequested()
 
 
-@solid(
-    output_defs=[OutputDefinition(Int)],
+@op(
+    out=Out(Int),
     config_schema=solid_throw_config,
     required_resource_keys={"errorable_resource"},
 )
 def emit_num(context):
-    _act_on_config(context.solid_config)
+    _act_on_config(context.op_config)
 
-    if context.solid_config["return_wrong_type"]:
+    if context.op_config["return_wrong_type"]:
         return "wow"
 
     return 13
 
 
-@solid(
-    input_defs=[InputDefinition("num", Int)],
-    output_defs=[OutputDefinition(String)],
+@op(
+    ins={"num": In(Int)},
+    out=Out(String),
     config_schema=solid_throw_config,
     required_resource_keys={"errorable_resource"},
 )
 def num_to_str(context, num):
-    _act_on_config(context.solid_config)
+    _act_on_config(context.op_config)
 
-    if context.solid_config["return_wrong_type"]:
+    if context.op_config["return_wrong_type"]:
         return num + num
 
     return str(num)
 
 
-@solid(
-    input_defs=[InputDefinition("string", String)],
-    output_defs=[OutputDefinition(Int)],
+@op(
+    ins={"string": In(String)},
+    out=Out(Int),
     config_schema=solid_throw_config,
     required_resource_keys={"errorable_resource"},
 )
 def str_to_num(context, string):
-    _act_on_config(context.solid_config)
+    _act_on_config(context.op_config)
 
-    if context.solid_config["return_wrong_type"]:
+    if context.op_config["return_wrong_type"]:
         return string + string
 
     return int(string)
@@ -183,10 +188,18 @@ if __name__ == "__main__":
         error_monster,
         {
             "solids": {
-                "start": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
-                "middle": {"config": {"throw_in_solid": False, "return_wrong_type": True}},
-                "end": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
+                "start": {
+                    "config": {"throw_in_solid": False, "return_wrong_type": False}
+                },
+                "middle": {
+                    "config": {"throw_in_solid": False, "return_wrong_type": True}
+                },
+                "end": {
+                    "config": {"throw_in_solid": False, "return_wrong_type": False}
+                },
             },
-            "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
+            "resources": {
+                "errorable_resource": {"config": {"throw_on_resource_init": False}}
+            },
         },
     )

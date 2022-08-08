@@ -1,12 +1,12 @@
 from dagster._legacy import composite_solid, execute_pipeline, pipeline, solid
 
 
-@solid
+@op
 def hello(_context):
     return "hello"
 
 
-@solid
+@op
 def echo(_context, x):
     return x
 

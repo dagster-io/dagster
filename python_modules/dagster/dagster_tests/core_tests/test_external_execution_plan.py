@@ -5,6 +5,9 @@ import re
 import pytest
 
 from dagster import (
+    In,
+    Out,
+    op,
     DagsterEventType,
     DagsterExecutionStepNotFoundError,
     DependencyDefinition,
@@ -17,19 +20,24 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.instance import DagsterInstance
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
-from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, lambda_solid
+from dagster._legacy import (
+    InputDefinition,
+    OutputDefinition,
+    PipelineDefinition,
+    lambda_solid,
+)
 
 
 def define_inty_pipeline(using_file_system=False):
-    @lambda_solid
+    @op
     def return_one():
         return 1
 
-    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+    @op(ins={"num": In(Int)}, out=Out(Int))
     def add_one(num):
         return num + 1
 
-    @lambda_solid
+    @op
     def user_throw_exception():
         raise Exception("whoops")
 
@@ -63,7 +71,9 @@ def test_using_file_system_for_subplan():
     instance = DagsterInstance.ephemeral()
 
     resolved_run_config = ResolvedRunConfig.build(pipeline)
-    execution_plan = ExecutionPlan.build(InMemoryPipeline(pipeline), resolved_run_config)
+    execution_plan = ExecutionPlan.build(
+        InMemoryPipeline(pipeline), resolved_run_config
+    )
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
@@ -71,7 +81,9 @@ def test_using_file_system_for_subplan():
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["return_one"], pipeline, resolved_run_config),
+            execution_plan.build_subset_plan(
+                ["return_one"], pipeline, resolved_run_config
+            ),
             InMemoryPipeline(pipeline),
             instance,
             pipeline_run=pipeline_run,
@@ -80,14 +92,18 @@ def test_using_file_system_for_subplan():
 
     assert get_step_output(return_one_step_events, "return_one")
     with open(
-        os.path.join(instance.storage_directory(), pipeline_run.run_id, "return_one", "result"),
+        os.path.join(
+            instance.storage_directory(), pipeline_run.run_id, "return_one", "result"
+        ),
         "rb",
     ) as read_obj:
         assert pickle.load(read_obj) == 1
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["add_one"], pipeline, resolved_run_config),
+            execution_plan.build_subset_plan(
+                ["add_one"], pipeline, resolved_run_config
+            ),
             InMemoryPipeline(pipeline),
             instance,
             pipeline_run=pipeline_run,
@@ -96,7 +112,9 @@ def test_using_file_system_for_subplan():
 
     assert get_step_output(add_one_step_events, "add_one")
     with open(
-        os.path.join(instance.storage_directory(), pipeline_run.run_id, "add_one", "result"),
+        os.path.join(
+            instance.storage_directory(), pipeline_run.run_id, "add_one", "result"
+        ),
         "rb",
     ) as read_obj:
         assert pickle.load(read_obj) == 2
@@ -157,7 +175,9 @@ def test_using_file_system_for_subplan_multiprocessing():
 
         assert get_step_output(add_one_step_events, "add_one")
         with open(
-            os.path.join(instance.storage_directory(), pipeline_run.run_id, "add_one", "result"),
+            os.path.join(
+                instance.storage_directory(), pipeline_run.run_id, "add_one", "result"
+            ),
             "rb",
         ) as read_obj:
             assert pickle.load(read_obj) == 2
@@ -180,7 +200,9 @@ def test_execute_step_wrong_step_key():
 
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
         execute_plan(
-            execution_plan.build_subset_plan(["nope.compute"], pipeline, resolved_run_config),
+            execution_plan.build_subset_plan(
+                ["nope.compute"], pipeline, resolved_run_config
+            ),
             InMemoryPipeline(pipeline),
             instance,
             pipeline_run=pipeline_run,
@@ -188,7 +210,10 @@ def test_execute_step_wrong_step_key():
 
     assert exc_info.value.step_keys == ["nope.compute"]
 
-    assert str(exc_info.value) == "Can not build subset plan from unknown step: nope.compute"
+    assert (
+        str(exc_info.value)
+        == "Can not build subset plan from unknown step: nope.compute"
+    )
 
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
         execute_plan(
@@ -229,7 +254,10 @@ def test_using_file_system_for_subplan_missing_input():
     failures = [event for event in events if event.event_type_value == "STEP_FAILURE"]
     assert len(failures) == 1
     assert failures[0].step_key == "add_one"
-    assert "DagsterExecutionLoadInputError" in failures[0].event_specific_data.error.message
+    assert (
+        "DagsterExecutionLoadInputError"
+        in failures[0].event_specific_data.error.message
+    )
 
 
 def test_using_file_system_for_subplan_invalid_step():
@@ -251,7 +279,9 @@ def test_using_file_system_for_subplan_invalid_step():
 
     with pytest.raises(DagsterExecutionStepNotFoundError):
         execute_plan(
-            execution_plan.build_subset_plan(["nope.compute"], pipeline, resolved_run_config),
+            execution_plan.build_subset_plan(
+                ["nope.compute"], pipeline, resolved_run_config
+            ),
             InMemoryPipeline(pipeline),
             instance,
             pipeline_run=pipeline_run,

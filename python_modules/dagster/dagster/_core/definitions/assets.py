@@ -118,7 +118,8 @@ class AssetsDefinition(ResourceAddable):
         # if not specified assume all output assets depend on all input assets
         all_asset_keys = set(keys_by_output_name.values())
         self._asset_deps = asset_deps or {
-            out_asset_key: set(keys_by_input_name.values()) for out_asset_key in all_asset_keys
+            out_asset_key: set(keys_by_input_name.values())
+            for out_asset_key in all_asset_keys
         }
         check.invariant(
             set(self._asset_deps.keys()) == all_asset_keys,
@@ -156,7 +157,9 @@ class AssetsDefinition(ResourceAddable):
             )
 
     def __call__(self, *args, **kwargs):
-        from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
+        from dagster._core.definitions.decorators.solid_decorator import (
+            DecoratedSolidFunction,
+        )
         from dagster._core.execution.context.compute import OpExecutionContext
 
         from .graph_definition import GraphDefinition
@@ -166,14 +169,18 @@ class AssetsDefinition(ResourceAddable):
         solid_def = self.op
         provided_context: Optional[OpExecutionContext] = None
         if len(args) > 0 and isinstance(args[0], OpExecutionContext):
-            provided_context = _build_invocation_context_with_included_resources(self, args[0])
+            provided_context = _build_invocation_context_with_included_resources(
+                self, args[0]
+            )
             new_args = [provided_context, *args[1:]]
             return solid_def(*new_args, **kwargs)
         elif (
             isinstance(solid_def.compute_fn.decorated_fn, DecoratedSolidFunction)
             and solid_def.compute_fn.has_context_arg()
         ):
-            context_param_name = get_function_params(solid_def.compute_fn.decorated_fn)[0].name
+            context_param_name = get_function_params(solid_def.compute_fn.decorated_fn)[
+                0
+            ].name
             if context_param_name in kwargs:
                 provided_context = _build_invocation_context_with_included_resources(
                     self, kwargs[context_param_name]
@@ -332,7 +339,10 @@ class AssetsDefinition(ResourceAddable):
         keys_by_input_name = _infer_keys_by_input_names(
             node_def,
             check.opt_dict_param(
-                keys_by_input_name, "keys_by_input_name", key_type=str, value_type=AssetKey
+                keys_by_input_name,
+                "keys_by_input_name",
+                key_type=str,
+                value_type=AssetKey,
             ),
         )
         keys_by_output_name = check.opt_dict_param(
@@ -355,9 +365,13 @@ class AssetsDefinition(ResourceAddable):
                     output_name in keys_by_output_name,
                     f"output_name {output_name} specified in internal_asset_deps does not exist in the decorated function",
                 )
-                transformed_internal_asset_deps[keys_by_output_name[output_name]] = asset_keys
+                transformed_internal_asset_deps[
+                    keys_by_output_name[output_name]
+                ] = asset_keys
 
-        keys_by_output_name = _infer_keys_by_output_names(node_def, keys_by_output_name or {})
+        keys_by_output_name = _infer_keys_by_output_names(
+            node_def, keys_by_output_name or {}
+        )
 
         keys_by_output_name_with_prefix: Dict[str, AssetKey] = {}
         key_prefix_list = [key_prefix] if isinstance(key_prefix, str) else key_prefix
@@ -371,7 +385,10 @@ class AssetsDefinition(ResourceAddable):
         # For graph backed assets, we assign all assets to the same group_name, if specified.
         # To assign to different groups, use .with_prefix_or_groups.
         group_names_by_key = (
-            {asset_key: group_name for asset_key in keys_by_output_name_with_prefix.values()}
+            {
+                asset_key: group_name
+                for asset_key in keys_by_output_name_with_prefix.values()
+            }
             if group_name
             else None
         )
@@ -441,7 +458,9 @@ class AssetsDefinition(ResourceAddable):
         check.invariant(
             len(self.keys) == 1,
             "Tried to retrieve asset key from an assets definition with multiple asset keys: "
-            + ", ".join([str(ak.to_string()) for ak in self._keys_by_output_name.values()]),
+            + ", ".join(
+                [str(ak.to_string()) for ak in self._keys_by_output_name.values()]
+            ),
         )
 
         return next(iter(self.keys))
@@ -491,14 +510,18 @@ class AssetsDefinition(ResourceAddable):
     @property
     def keys_by_output_name(self) -> Mapping[str, AssetKey]:
         return {
-            name: key for name, key in self.node_keys_by_output_name.items() if key in self.keys
+            name: key
+            for name, key in self.node_keys_by_output_name.items()
+            if key in self.keys
         }
 
     @property
     def keys_by_input_name(self) -> Mapping[str, AssetKey]:
         upstream_keys = set().union(*(self.asset_deps[key] for key in self.keys))
         return {
-            name: key for name, key in self.node_keys_by_input_name.items() if key in upstream_keys
+            name: key
+            for name, key in self.node_keys_by_input_name.items()
+            if key in upstream_keys
         }
 
     @public  # type: ignore
@@ -587,7 +610,8 @@ class AssetsDefinition(ResourceAddable):
             },
             can_subset=self.can_subset,
             selected_asset_keys={
-                output_asset_key_replacements.get(key, key) for key in self._selected_asset_keys
+                output_asset_key_replacements.get(key, key)
+                for key in self._selected_asset_keys
             },
             resource_defs=self.resource_defs,
             group_names_by_key={
@@ -596,7 +620,9 @@ class AssetsDefinition(ResourceAddable):
             },
         )
 
-    def subset_for(self, selected_asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":
+    def subset_for(
+        self, selected_asset_keys: AbstractSet[AssetKey]
+    ) -> "AssetsDefinition":
         """
         Create a subset of this AssetsDefinition that will only materialize the assets in the
         selected set.
@@ -663,8 +689,12 @@ class AssetsDefinition(ResourceAddable):
             )
             return f"AssetsDefinition with keys {asset_keys}"
 
-    def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
-        from dagster._core.execution.resources_init import get_transitive_required_resource_keys
+    def with_resources(
+        self, resource_defs: Mapping[str, ResourceDefinition]
+    ) -> "AssetsDefinition":
+        from dagster._core.execution.resources_init import (
+            get_transitive_required_resource_keys,
+        )
 
         overlapping_keys = get_resource_key_conflicts(self.resource_defs, resource_defs)
         if overlapping_keys:
@@ -681,7 +711,9 @@ class AssetsDefinition(ResourceAddable):
 
         # Ensure top-level resource requirements are met - except for
         # io_manager, since that is a default it can be resolved later.
-        ensure_requirements_satisfied(merged_resource_defs, list(self.get_resource_requirements()))
+        ensure_requirements_satisfied(
+            merged_resource_defs, list(self.get_resource_requirements())
+        )
 
         # Get all transitive resource dependencies from other resources.
         relevant_keys = get_transitive_required_resource_keys(
@@ -708,7 +740,8 @@ class AssetsDefinition(ResourceAddable):
 
 
 def _infer_keys_by_input_names(
-    node_def: Union["GraphDefinition", OpDefinition], keys_by_input_name: Mapping[str, AssetKey]
+    node_def: Union["GraphDefinition", OpDefinition],
+    keys_by_input_name: Mapping[str, AssetKey],
 ) -> Mapping[str, AssetKey]:
     all_input_names = [input_def.name for input_def in node_def.input_defs]
 
@@ -732,7 +765,8 @@ def _infer_keys_by_input_names(
 
 
 def _infer_keys_by_output_names(
-    node_def: Union["GraphDefinition", OpDefinition], keys_by_output_name: Mapping[str, AssetKey]
+    node_def: Union["GraphDefinition", OpDefinition],
+    keys_by_output_name: Mapping[str, AssetKey],
 ) -> Mapping[str, AssetKey]:
     output_names = [output_def.name for output_def in node_def.output_defs]
     if keys_by_output_name:
@@ -788,7 +822,7 @@ def _build_invocation_context_with_included_resources(
         # pylint: disable=protected-access
         return build_op_context(
             resources=all_resources,
-            config=context.solid_config,
+            config=context.op_config,
             resources_config=context._resources_config,
             instance=context._instance,
             partition_key=context._partition_key,
@@ -800,9 +834,14 @@ def _build_invocation_context_with_included_resources(
         return context
 
 
-def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[str]] = None):
+def _validate_graph_def(
+    graph_def: "GraphDefinition", prefix: Optional[Sequence[str]] = None
+):
     """Ensure that all leaf nodes are mapped to graph outputs."""
-    from dagster._core.definitions.graph_definition import GraphDefinition, _create_adjacency_lists
+    from dagster._core.definitions.graph_definition import (
+        GraphDefinition,
+        _create_adjacency_lists,
+    )
 
     prefix = check.opt_list_param(prefix, "prefix")
 
@@ -812,18 +851,25 @@ def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[
             _validate_graph_def(inner_node_def, prefix=prefix + [graph_def.name])
 
     # leaf nodes have no downstream nodes
-    forward_edges, _ = _create_adjacency_lists(graph_def.solids, graph_def.dependency_structure)
+    forward_edges, _ = _create_adjacency_lists(
+        graph_def.solids, graph_def.dependency_structure
+    )
     leaf_nodes = {
-        node_name for node_name, downstream_nodes in forward_edges.items() if not downstream_nodes
+        node_name
+        for node_name, downstream_nodes in forward_edges.items()
+        if not downstream_nodes
     }
 
     # set of nodes that have outputs mapped to a graph output
     mapped_output_nodes = {
-        output_mapping.maps_from.solid_name for output_mapping in graph_def.output_mappings
+        output_mapping.maps_from.solid_name
+        for output_mapping in graph_def.output_mappings
     }
 
     # leaf nodes which do not have an associated mapped output
-    unmapped_leaf_nodes = {".".join(prefix + [node]) for node in leaf_nodes - mapped_output_nodes}
+    unmapped_leaf_nodes = {
+        ".".join(prefix + [node]) for node in leaf_nodes - mapped_output_nodes
+    }
 
     check.invariant(
         not unmapped_leaf_nodes,

@@ -1,18 +1,18 @@
-from dagster import Field
+from dagster import Out, op, Field
 from dagster._core.definitions.events import DynamicOutput
 from dagster._core.definitions.output import DynamicOutputDefinition
 from dagster._legacy import pipeline, solid
 
 
-@solid
+@op
 def multiply_by_two(context, y):
     context.log.info("echo_again is returning " + str(y * 2))
     return y * 2
 
 
-@solid(config_schema={"fail_on_first_try": Field(bool, default_value=False)})
+@op(config_schema={"fail_on_first_try": Field(bool, default_value=False)})
 def multiply_inputs(context, y, ten):
-    if context.solid_config["fail_on_first_try"]:
+    if context.op_config["fail_on_first_try"]:
         current_run = context.instance.get_run_by_id(context.run_id)
         if y == 2 and current_run.parent_run_id is None:
             raise Exception()
@@ -20,17 +20,17 @@ def multiply_inputs(context, y, ten):
     return y * ten
 
 
-@solid
+@op
 def emit_ten(_):
     return 10
 
 
-@solid
+@op
 def sum_numbers(_, base, nums):
     return base + sum(nums)
 
 
-@solid(output_defs=[DynamicOutputDefinition()])
+@op(out=DynamicOut())
 def emit(_):
     for i in range(3):
         yield DynamicOutput(value=i, mapping_key=str(i))

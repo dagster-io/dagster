@@ -4,10 +4,20 @@ import tempfile
 import uuid
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, Generator, Optional, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    Generator,
+    Optional,
+    Union,
+    overload,
+)
 
 # top-level include is dangerous in terms of incurring circular deps
 from dagster import (
+    op,
     DagsterInvariantViolationError,
     DependencyDefinition,
     Failure,
@@ -40,7 +50,10 @@ from dagster._core.execution.context_creation_pipeline import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler import Scheduler
-from dagster._core.scheduler.scheduler import DagsterScheduleDoesNotExist, DagsterSchedulerError
+from dagster._core.scheduler.scheduler import (
+    DagsterScheduleDoesNotExist,
+    DagsterSchedulerError,
+)
 from dagster._core.snap import snapshot_from_execution_plan
 from dagster._core.storage.file_manager import LocalFileManager
 from dagster._core.storage.pipeline_run import PipelineRun
@@ -61,7 +74,10 @@ from ..temp_file import (
 from ..typing_api import is_typing_type
 
 if TYPE_CHECKING:
-    from dagster._core.execution.results import CompositeSolidExecutionResult, SolidExecutionResult
+    from dagster._core.execution.results import (
+        CompositeSolidExecutionResult,
+        SolidExecutionResult,
+    )
 
 
 def create_test_pipeline_execution_context(
@@ -75,7 +91,9 @@ def create_test_pipeline_execution_context(
         name="test_legacy_context", solid_defs=[], mode_defs=[mode_def]
     )
     run_config: Dict[str, Dict[str, Dict]] = {"loggers": {key: {} for key in loggers}}
-    pipeline_run = PipelineRun(pipeline_name="test_legacy_context", run_config=run_config)
+    pipeline_run = PipelineRun(
+        pipeline_name="test_legacy_context", run_config=run_config
+    )
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline=pipeline_def, run_config=run_config)
     creation_data = create_context_creation_data(
@@ -275,7 +293,9 @@ def yield_empty_pipeline_context(
         ),
         parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
     )
-    with scoped_pipeline_context(execution_plan, pipeline, {}, pipeline_run, instance) as context:
+    with scoped_pipeline_context(
+        execution_plan, pipeline, {}, pipeline_run, instance
+    ) as context:
         yield context
 
 
@@ -340,11 +360,11 @@ def execute_solid(
     solid_defs = [solid_def]
 
     def create_value_solid(input_name, input_value):
-        @lambda_solid(name=input_name)
-        def input_solid():
+        @op(name=input_name)
+        def input_op():
             return input_value
 
-        return input_solid
+        return input_op
 
     dependencies: Dict[str, Dict] = defaultdict(dict)
 
@@ -443,14 +463,18 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
 
     @staticmethod
     def from_config_value(inst_data: object, config_value):
-        return FilesystemTestScheduler(artifacts_dir=config_value["base_dir"], inst_data=inst_data)
+        return FilesystemTestScheduler(
+            artifacts_dir=config_value["base_dir"], inst_data=inst_data
+        )
 
     def debug_info(self) -> str:
         return ""
 
     def get_logs_path(self, _instance: DagsterInstance, schedule_origin_id: str) -> str:
         check.str_param(schedule_origin_id, "schedule_origin_id")
-        return os.path.join(self._artifacts_dir, "logs", schedule_origin_id, "scheduler.log")
+        return os.path.join(
+            self._artifacts_dir, "logs", schedule_origin_id, "scheduler.log"
+        )
 
     def wipe(self, instance: DagsterInstance) -> None:
         pass

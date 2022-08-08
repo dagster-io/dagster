@@ -4,6 +4,9 @@ import pytest
 import yaml
 
 from dagster import (
+    In,
+    Out,
+    op,
     AssetMaterialization,
     DagsterType,
     DagsterTypeCheckDidNotPass,
@@ -34,7 +37,7 @@ def test_basic_even_type():
     # end_test_basic_even_type
 
     # start_test_basic_even_type_with_annotations
-    @solid
+    @op
     def double_even(num: EvenDagsterType) -> EvenDagsterType:
         # These type annotations are a shorthand for constructing InputDefinitions
         # and OutputDefinitions, and are not mypy compliant
@@ -59,9 +62,9 @@ def test_basic_even_type_no_annotations():
     )
 
     # start_test_basic_even_type_no_annotations
-    @solid(
-        input_defs=[InputDefinition("num", EvenDagsterType)],
-        output_defs=[OutputDefinition(EvenDagsterType)],
+    @op(
+        ins={"num": In(EvenDagsterType)},
+        out=Out(EvenDagsterType),
     )
     def double_even(num):
         return num
@@ -89,7 +92,7 @@ def test_python_object_dagster_type():
     # end_object_type
 
     # start_use_object_type
-    @solid
+    @op
     def double_even(even_num: EvenDagsterType) -> EvenDagsterType:
         # These type annotations are a shorthand for constructing InputDefinitions
         # and OutputDefinitions, and are not mypy compliant
@@ -116,7 +119,7 @@ def test_even_type_loader():
     EvenDagsterType = PythonObjectDagsterType(EvenType, loader=load_even_type)
     # end_type_loader
 
-    @solid
+    @op
     def double_even(even_num: EvenDagsterType) -> EvenDagsterType:
         return EvenType(even_num.num * 2)
 
@@ -162,7 +165,7 @@ def test_even_type_materialization_config():
         EvenType, materializer=save_to_file_materialization
     )
 
-    @solid
+    @op
     def double_even(even_num: EvenDagsterType) -> EvenDagsterType:
         return EvenType(even_num.num * 2)
 
@@ -194,7 +197,7 @@ def test_mypy_compliance():
     else:
         EvenDagsterType = PythonObjectDagsterType(EvenType)
 
-    @solid
+    @op
     def double_even(even_num: EvenDagsterType) -> EvenDagsterType:
         return EvenType(even_num.num * 2)
 
@@ -203,11 +206,17 @@ def test_mypy_compliance():
 
 
 def test_nothing_type():
-    @solid(output_defs=[OutputDefinition(Nothing, "cleanup_done")])
+    @op(
+        out={
+            "cleanup_done": Out(
+                Nothing,
+            )
+        }
+    )
     def do_cleanup():
         pass
 
-    @solid(input_defs=[InputDefinition("on_cleanup_done", Nothing)])
+    @op(ins={"on_cleanup_done": In(Nothing)})
     def after_cleanup():  # Argument not required for Nothing types
         return "worked"
 
@@ -223,23 +232,23 @@ def test_nothing_type():
 def test_nothing_fanin_actually_test():
     ordering = {"counter": 0}
 
-    @solid(output_defs=[OutputDefinition(Nothing)])
+    @op(out=Out(Nothing))
     def start_first_pipeline_section(context):
         ordering["counter"] += 1
-        ordering[context.solid.name] = ordering["counter"]
+        ordering[context.op.name] = ordering["counter"]
 
-    @solid(
-        input_defs=[InputDefinition("first_section_done", Nothing)],
-        output_defs=[OutputDefinition(dagster_type=Nothing)],
+    @op(
+        ins={"first_section_done": In(Nothing)},
+        out=Out(dagster_type=Nothing),
     )
     def perform_clean_up(context):
         ordering["counter"] += 1
-        ordering[context.solid.name] = ordering["counter"]
+        ordering[context.op.name] = ordering["counter"]
 
-    @solid(input_defs=[InputDefinition("on_cleanup_tasks_done", Nothing)])
+    @op(ins={"on_cleanup_tasks_done": In(Nothing)})
     def start_next_pipeline_section(context):
         ordering["counter"] += 1
-        ordering[context.solid.name] = ordering["counter"]
+        ordering[context.op.name] = ordering["counter"]
         return "worked"
 
     @pipeline
@@ -260,18 +269,18 @@ def test_nothing_fanin_actually_test():
 
 
 def test_nothing_fanin_empty_body_for_guide():
-    @solid(output_defs=[OutputDefinition(Nothing)])
+    @op(out=Out(Nothing))
     def start_first_pipeline_section():
         pass
 
-    @solid(
-        input_defs=[InputDefinition("first_section_done", Nothing)],
-        output_defs=[OutputDefinition(dagster_type=Nothing)],
+    @op(
+        ins={"first_section_done": In(Nothing)},
+        out=Out(dagster_type=Nothing),
     )
     def perform_clean_up():
         pass
 
-    @solid(input_defs=[InputDefinition("on_cleanup_tasks_done", Nothing)])
+    @op(ins={"on_cleanup_tasks_done": In(Nothing)})
     def start_next_pipeline_section():
         pass
 
@@ -298,7 +307,7 @@ def test_usable_as_dagster_type():
             self.num = num
 
     # end_usable_as
-    @solid
+    @op
     def double_even(even_num: EvenType) -> EvenType:
         return EvenType(even_num.num * 2)
 
@@ -319,7 +328,7 @@ def test_make_usable_as_dagster_type():
 
     make_python_type_usable_as_dagster_type(EvenType, EvenDagsterType)
 
-    @solid
+    @op
     def double_even(even_num: EvenType) -> EvenType:
         return EvenType(even_num.num * 2)
 

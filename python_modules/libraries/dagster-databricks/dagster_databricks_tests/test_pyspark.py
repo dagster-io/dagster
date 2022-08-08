@@ -15,7 +15,7 @@ from dagster_pyspark import DataFrame, pyspark_resource
 from pyspark.sql import Row
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
-from dagster import fs_io_manager, reconstructable
+from dagster import In, Out, op, fs_io_manager, reconstructable
 from dagster._core.definitions.no_step_launcher import no_step_launcher
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import (
@@ -72,12 +72,14 @@ BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG: Dict[str, object] = {
 }
 
 
-@solid(
-    output_defs=[OutputDefinition(DataFrame)],
+@op(
+    out=Out(DataFrame),
     required_resource_keys={"pyspark_step_launcher", "pyspark"},
 )
-def make_df_solid(context):
-    schema = StructType([StructField("name", StringType()), StructField("age", IntegerType())])
+def make_df_op(context):
+    schema = StructType(
+        [StructField("name", StringType()), StructField("age", IntegerType())]
+    )
     rows = [
         Row(name="John", age=19),
         Row(name="Jennifer", age=29),
@@ -86,15 +88,15 @@ def make_df_solid(context):
     return context.resources.pyspark.spark_session.createDataFrame(rows, schema)
 
 
-@solid(
+@op(
     name="blah",
     description="this is a test",
     config_schema={"foo": str, "bar": int},
-    input_defs=[InputDefinition("people", DataFrame)],
-    output_defs=[OutputDefinition(DataFrame)],
+    ins={"people": In(DataFrame)},
+    out=Out(DataFrame),
     required_resource_keys={"pyspark_step_launcher"},
 )
-def filter_df_solid(_, people):
+def filter_df_op(_, people):
     return people.filter(people["age"] < 30)
 
 
@@ -137,23 +139,23 @@ MODE_DEFS = [
 
 @pipeline(mode_defs=MODE_DEFS)
 def pyspark_pipe():
-    filter_df_solid(make_df_solid())
+    filter_df_op(make_df_op())
 
 
 def define_pyspark_pipe():
     return pyspark_pipe
 
 
-@solid(
+@op(
     required_resource_keys={"pyspark_step_launcher", "pyspark"},
 )
-def do_nothing_solid(_):
+def do_nothing_op(_):
     pass
 
 
 @pipeline(mode_defs=MODE_DEFS)
 def do_nothing_pipe():
-    do_nothing_solid()
+    do_nothing_op()
 
 
 def define_do_nothing_pipe():
@@ -203,7 +205,7 @@ def test_pyspark_databricks(
         mock_get_step_events.return_value = [
             event
             for event in instance.all_logs(result.run_id)
-            if event.step_key == "do_nothing_solid"
+            if event.step_key == "do_nothing_op"
         ]
 
     # Test 1 - successful execution
@@ -284,7 +286,9 @@ def test_do_it_live_databricks_s3():
         run_config={
             "solids": {"blah": {"config": {"foo": "a string", "bar": 123}}},
             "resources": {
-                "pyspark_step_launcher": {"config": BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG},
+                "pyspark_step_launcher": {
+                    "config": BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG
+                },
                 "io_manager": {
                     "config": {
                         "s3_bucket": "elementl-databricks",
@@ -321,7 +325,9 @@ def test_do_it_live_databricks_adls2():
                 "adls2": {
                     "config": {
                         "storage_account": ADLS2_STORAGE_ACCOUNT,
-                        "credential": {"key": os.environ.get("AZURE_STORAGE_ACCOUNT_KEY")},
+                        "credential": {
+                            "key": os.environ.get("AZURE_STORAGE_ACCOUNT_KEY")
+                        },
                     }
                 },
                 "io_manager": {

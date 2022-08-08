@@ -2,7 +2,7 @@ from unittest import mock
 
 from dagster_aws.emr.pyspark_step_launcher import EmrPySparkStepLauncher
 
-from dagster import DagsterEvent, EventLogEntry
+from dagster import In, Out, op, DagsterEvent, EventLogEntry
 from dagster._core.execution.plan.objects import StepSuccessData
 
 EVENTS = [
@@ -38,7 +38,8 @@ EVENTS = [
 
 
 @mock.patch(
-    "dagster_aws.emr.emr.EmrJobRunner.is_emr_step_complete", side_effect=[False, False, True]
+    "dagster_aws.emr.emr.EmrJobRunner.is_emr_step_complete",
+    side_effect=[False, False, True],
 )
 @mock.patch(
     "dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher.read_events",
@@ -57,6 +58,10 @@ def test_wait_for_completion(_mock_is_emr_step_complete, _mock_read_events):
         deploy_local_job_package=False,
     )
     yielded_events = list(
-        launcher.wait_for_completion(mock.MagicMock(), None, None, None, None, check_interval=0)
+        launcher.wait_for_completion(
+            mock.MagicMock(), None, None, None, None, check_interval=0
+        )
     )
-    assert yielded_events == [event.dagster_event for event in EVENTS if event.is_dagster_event]
+    assert yielded_events == [
+        event.dagster_event for event in EVENTS if event.is_dagster_event
+    ]

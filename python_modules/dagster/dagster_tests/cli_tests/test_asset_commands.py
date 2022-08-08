@@ -19,35 +19,35 @@ def mock_asset_instance(mocker):
     yield instance
 
 
-@solid
-def solid_one(_):
+@op
+def op_one(_):
     yield AssetMaterialization(asset_key=AssetKey("asset_1"))
     yield Output(1)
 
 
-@solid
-def solid_two(_):
+@op
+def op_two(_):
     yield AssetMaterialization(asset_key=AssetKey("asset_2"))
     yield AssetMaterialization(asset_key=AssetKey(["path", "to", "asset_3"]))
     yield AssetMaterialization(asset_key=AssetKey(("path", "to", "asset_4")))
     yield Output(1)
 
 
-@solid
-def solid_normalization(_):
+@op
+def op_normalization(_):
     yield AssetMaterialization(asset_key="path/to-asset_5")
     yield Output(1)
 
 
 @pipeline
 def pipeline_one():
-    solid_one()
+    op_one()
 
 
 @pipeline
 def pipeline_two():
-    solid_one()
-    solid_two()
+    op_one()
+    op_two()
 
 
 def test_asset_wipe_errors(asset_instance):  # pylint: disable=unused-argument
@@ -59,7 +59,9 @@ def test_asset_wipe_errors(asset_instance):  # pylint: disable=unused-argument
         in result.output
     )
 
-    result = runner.invoke(asset_wipe_command, ["--all", json.dumps(["path", "to", "asset_key"])])
+    result = runner.invoke(
+        asset_wipe_command, ["--all", json.dumps(["path", "to", "asset_key"])]
+    )
     assert result.exit_code == 2
     assert "Error, cannot use more than one of: asset key, `--all`." in result.output
 

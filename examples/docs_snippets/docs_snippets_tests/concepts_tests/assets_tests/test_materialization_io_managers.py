@@ -18,15 +18,15 @@ def _generate_pipeline_for_io_manager(manager, config_schema=None):
     def custom_io_manager(_):
         return manager
 
-    @solid
-    def dummy_solid():
+    @op
+    def dummy_op():
         return DummyClass.from_dict({"some_column": [2]})
 
     @pipeline(
         mode_defs=[ModeDefinition(resource_defs={"io_manager": custom_io_manager})]
     )
     def dummy_pipeline():
-        dummy_solid()
+        dummy_op()
 
     return dummy_pipeline
 

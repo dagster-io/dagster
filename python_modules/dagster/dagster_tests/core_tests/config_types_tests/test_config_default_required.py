@@ -1,22 +1,24 @@
-from dagster import Field, Noneable
+from dagster import op, Field, Noneable
 from dagster._legacy import execute_solid, solid
 
 
 def test_default_implies_not_required_field_correct():
-    @solid(config_schema={"default_to_one": Field(int, default_value=1)})
+    @op(config_schema={"default_to_one": Field(int, default_value=1)})
     def return_default_to_one(context):
-        return context.solid_config["default_to_one"]
+        return context.op_config["default_to_one"]
 
-    default_to_one_field = return_default_to_one.config_schema.as_field().config_type.fields[
-        "default_to_one"
-    ]
+    default_to_one_field = (
+        return_default_to_one.config_schema.as_field().config_type.fields[
+            "default_to_one"
+        ]
+    )
     assert default_to_one_field.is_required is False
 
 
 def test_default_implies_not_required_execute_solid():
-    @solid(config_schema={"default_to_one": Field(int, default_value=1)})
+    @op(config_schema={"default_to_one": Field(int, default_value=1)})
     def return_default_to_one(context):
-        return context.solid_config["default_to_one"]
+        return context.op_config["default_to_one"]
 
     execute_solid(return_default_to_one)
 
@@ -37,9 +39,9 @@ def test_noneable_shaped_field_defaults():
 def test_noneable_string_in_solid():
     executed = {}
 
-    @solid(config_schema=Noneable(int))
+    @op(config_schema=Noneable(int))
     def default_noneable_int(context):
-        assert context.solid_config is None
+        assert context.op_config is None
         executed["yes"] = True
 
     execute_solid(default_noneable_int)

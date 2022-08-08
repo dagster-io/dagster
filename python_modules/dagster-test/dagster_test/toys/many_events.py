@@ -1,4 +1,7 @@
 from dagster import (
+    In,
+    Out,
+    op,
     AssetMaterialization,
     ExpectationResult,
     MetadataValue,
@@ -7,7 +10,13 @@ from dagster import (
     file_relative_path,
     fs_io_manager,
 )
-from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, pipeline, solid
+from dagster._legacy import (
+    InputDefinition,
+    ModeDefinition,
+    OutputDefinition,
+    pipeline,
+    solid,
+)
 
 MARKDOWN_EXAMPLE = "markdown_example.md"
 
@@ -31,13 +40,13 @@ def create_raw_file_solid(name):
             description="Checked {name} exists".format(name=name),
         )
 
-    @solid(
+    @op(
         name=name,
         description="Inject raw file for input to table {} and do expectation on output".format(
             name
         ),
     )
-    def raw_file_solid(_context):
+    def raw_file_op(_context):
         yield AssetMaterialization(
             asset_key="table_info",
             metadata={"table_path": MetadataValue.path("/path/to/{}.raw".format(name))},
@@ -45,7 +54,7 @@ def create_raw_file_solid(name):
         yield do_expectation(_context, name)
         yield Output(name)
 
-    return raw_file_solid
+    return raw_file_op
 
 
 raw_tables = [
@@ -68,13 +77,15 @@ def input_name_for_raw_file(raw_file):
     return raw_file + "_ready"
 
 
-@solid(
-    input_defs=[InputDefinition("start", Nothing)],
-    output_defs=[OutputDefinition(Nothing)],
+@op(
+    ins={"start": In(Nothing)},
+    out=Out(Nothing),
     description="Load a bunch of raw tables from corresponding files",
 )
 def many_table_materializations(_context):
-    with open(file_relative_path(__file__, MARKDOWN_EXAMPLE), "r", encoding="utf8") as f:
+    with open(
+        file_relative_path(__file__, MARKDOWN_EXAMPLE), "r", encoding="utf8"
+    ) as f:
         md_str = f.read()
         for table in raw_tables:
             yield AssetMaterialization(
@@ -91,9 +102,9 @@ def many_table_materializations(_context):
             )
 
 
-@solid(
-    input_defs=[InputDefinition("start", Nothing)],
-    output_defs=[OutputDefinition(Nothing)],
+@op(
+    ins={"start": In(Nothing)},
+    out=Out(Nothing),
     description="This simulates a solid that would wrap something like dbt, "
     "where it emits a bunch of tables and then say an expectation on each table, "
     "all in one solid",
@@ -124,9 +135,9 @@ def many_materializations_and_passing_expectations(_context):
         )
 
 
-@solid(
-    input_defs=[InputDefinition("start", Nothing)],
-    output_defs=[],
+@op(
+    ins={"start": In(Nothing)},
+    out={},
     description="A solid that just does a couple inline expectations, one of which fails",
 )
 def check_users_and_groups_one_fails_one_succeeds(_context):
@@ -179,9 +190,9 @@ def check_users_and_groups_one_fails_one_succeeds(_context):
     )
 
 
-@solid(
-    input_defs=[InputDefinition("start", Nothing)],
-    output_defs=[],
+@op(
+    ins={"start": In(Nothing)},
+    out={},
     description="A solid that just does a couple inline expectations",
 )
 def check_admins_both_succeed(_context):
@@ -197,7 +208,7 @@ def check_admins_both_succeed(_context):
     mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})],
 )
 def many_events():
-    raw_files_solids = [raw_file_solid() for raw_file_solid in create_raw_file_solids()]
+    raw_files_solids = [raw_file_op() for raw_file_op in create_raw_file_solids()]
 
     mtm = many_table_materializations(raw_files_solids)
     mmape = many_materializations_and_passing_expectations(mtm)

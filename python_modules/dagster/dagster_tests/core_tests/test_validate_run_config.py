@@ -1,12 +1,12 @@
 import pytest
 
-from dagster import validate_run_config
+from dagster import In, Out, op, validate_run_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._legacy import pipeline, solid
 
 
 def test_validate_run_config():
-    @solid
+    @op
     def basic():
         pass
 
@@ -16,7 +16,7 @@ def test_validate_run_config():
 
     validate_run_config(basic_pipeline)
 
-    @solid(config_schema={"foo": str})
+    @op(config_schema={"foo": str})
     def requires_config(_):
         pass
 
@@ -25,11 +25,14 @@ def test_validate_run_config():
         requires_config()
 
     result = validate_run_config(
-        pipeline_requires_config, {"solids": {"requires_config": {"config": {"foo": "bar"}}}}
+        pipeline_requires_config,
+        {"solids": {"requires_config": {"config": {"foo": "bar"}}}},
     )
 
     assert result == {
-        "solids": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
+        "solids": {
+            "requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}
+        },
         "execution": {"in_process": {"retries": {"enabled": {}}}},
         "resources": {"io_manager": {"config": None}},
         "loggers": {},
@@ -41,7 +44,9 @@ def test_validate_run_config():
     )
 
     assert result_with_storage == {
-        "solids": {"requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}},
+        "solids": {
+            "requires_config": {"config": {"foo": "bar"}, "inputs": {}, "outputs": None}
+        },
         "execution": {"in_process": {"retries": {"enabled": {}}}},
         "resources": {"io_manager": {"config": None}},
         "loggers": {},

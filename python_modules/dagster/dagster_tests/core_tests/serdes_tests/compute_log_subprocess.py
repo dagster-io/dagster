@@ -6,6 +6,7 @@ import time
 
 from dagster._core.execution.compute_logs import mirror_stream_to_file
 from dagster._utils.interrupts import setup_interrupt_handlers
+from dagster import In, op
 
 if __name__ == "__main__":
     stdout_filepath, stderr_filepath, opened_sentinel, interrupt_sentinel = (

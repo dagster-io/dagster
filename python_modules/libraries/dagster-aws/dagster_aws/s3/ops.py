@@ -30,7 +30,9 @@ def dict_with_fields(name: str, fields: Dict[str, object]):
 
     class _DictWithSchema(PythonObjectDagsterType):
         def __init__(self):
-            super(_DictWithSchema, self).__init__(python_type=dict, name=name, loader=_input_schema)
+            super(_DictWithSchema, self).__init__(
+                python_type=dict, name=name, loader=_input_schema
+            )
 
     return _DictWithSchema()
 
@@ -54,10 +56,14 @@ def last_key(key: str) -> str:
 @op(
     config_schema={
         "Bucket": Field(
-            StringSource, description="The name of the bucket to upload to.", is_required=True
+            StringSource,
+            description="The name of the bucket to upload to.",
+            is_required=True,
         ),
         "Key": Field(
-            StringSource, description="The name of the key to upload to.", is_required=True
+            StringSource,
+            description="The name of the key to upload to.",
+            is_required=True,
         ),
     },
     ins={"file_handle": In(FileHandle, description="The file to upload.")},
@@ -66,8 +72,8 @@ def last_key(key: str) -> str:
     required_resource_keys={"s3", "file_manager"},
 )
 def file_handle_to_s3(context, file_handle):
-    bucket = context.solid_config["Bucket"]
-    key = context.solid_config["Key"]
+    bucket = context.op_config["Bucket"]
+    key = context.op_config["Key"]
 
     with context.resources.file_manager.read(file_handle, "rb") as fileobj:
         context.resources.s3.upload_fileobj(fileobj, bucket, key)

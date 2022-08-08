@@ -6,7 +6,7 @@ from contextlib import contextmanager
 
 import pytest
 
-from dagster import DagsterInvalidConfigError
+from dagster import op, DagsterInvalidConfigError
 from dagster import _check as check
 from dagster import resource
 from dagster._core.definitions import NodeHandle
@@ -244,7 +244,9 @@ def test_capture_handler_log_records():
 
     captured_critical_record = capture_handler.captured[1]
     assert captured_critical_record.name == "dagster"
-    assert captured_critical_record.msg == "pipeline - 123456 - some_step - critical error"
+    assert (
+        captured_critical_record.msg == "pipeline - 123456 - some_step - critical error"
+    )
     assert captured_critical_record.levelno == logging.CRITICAL
     assert captured_critical_record.foo == "bar"
 
@@ -252,13 +254,15 @@ def test_capture_handler_log_records():
 def test_default_context_logging():
     called = {}
 
-    @solid(input_defs=[], output_defs=[])
-    def default_context_solid(context):
+    @op(ins={}, out={})
+    def default_context_op(context):
         called["yes"] = True
-        for logger in context.log._dagster_handler._loggers:  # pylint: disable=protected-access
+        for (
+            logger
+        ) in context.log._dagster_handler._loggers:  # pylint: disable=protected-access
             assert logger.level == logging.DEBUG
 
-    execute_solid(default_context_solid)
+    execute_solid(default_context_op)
 
     assert called["yes"]
 
@@ -278,7 +282,7 @@ def test_colored_console_logger_with_integer_log_level():
 
 
 def test_json_console_logger(capsys):
-    @solid
+    @op
     def hello_world(context):
         context.log.info("Hello, world!")
 
@@ -301,12 +305,12 @@ def test_json_console_logger(capsys):
 
 
 def test_pipeline_logging(capsys):
-    @solid
+    @op
     def foo(context):
         context.log.info("bar")
         return 0
 
-    @solid
+    @op
     def foo2(context, _in1):
         context.log.info("baz")
 
@@ -342,14 +346,16 @@ def test_resource_logging(capsys):
 
         return fn
 
-    @solid(required_resource_keys={"foo", "bar"})
+    @op(required_resource_keys={"foo", "bar"})
     def process(context):
         context.resources.foo()
         context.resources.bar()
 
     execute_solid(
         process,
-        mode_def=ModeDefinition(resource_defs={"foo": foo_resource, "bar": bar_resource}),
+        mode_def=ModeDefinition(
+            resource_defs={"foo": foo_resource, "bar": bar_resource}
+        ),
     )
 
     captured = capsys.readouterr()
@@ -365,33 +371,37 @@ def test_resource_logging(capsys):
 
 
 def test_io_context_logging(capsys):
-    @solid
-    def logged_solid(context):
+    @op
+    def logged_op(context):
         context.get_step_execution_context().get_output_context(
-            StepOutputHandle("logged_solid", "result")
-        ).log.debug("test OUTPUT debug logging from logged_solid.")
+            StepOutputHandle("logged_op", "result")
+        ).log.debug("test OUTPUT debug logging from logged_op.")
         context.get_step_execution_context().for_input_manager(
-            "logged_solid", {}, {}, None, source_handle=None
-        ).log.debug("test INPUT debug logging from logged_solid.")
+            "logged_op", {}, {}, None, source_handle=None
+        ).log.debug("test INPUT debug logging from logged_op.")
 
-    result = execute_solid(logged_solid)
+    result = execute_solid(logged_op)
     assert result.success
 
     captured = capsys.readouterr()
 
-    assert re.search("test OUTPUT debug logging from logged_solid.", captured.err, re.MULTILINE)
-    assert re.search("test INPUT debug logging from logged_solid.", captured.err, re.MULTILINE)
+    assert re.search(
+        "test OUTPUT debug logging from logged_op.", captured.err, re.MULTILINE
+    )
+    assert re.search(
+        "test INPUT debug logging from logged_op.", captured.err, re.MULTILINE
+    )
 
 
-@solid
-def log_solid(context):
+@op
+def log_op(context):
     context.log.info("Hello world")
     context.log.error("My test error")
 
 
 @pipeline
 def log_pipeline():
-    log_solid()
+    log_op()
 
 
 def test_conf_file_logging(capsys):
@@ -466,19 +476,21 @@ def test_error_when_logger_defined_yaml():
 
 
 def test_python_log_level_context_logging():
-    @solid
-    def logged_solid(context):
+    @op
+    def logged_op(context):
         context.log.error("some error")
 
     @pipeline
     def pipe():
-        logged_solid()
+        logged_op()
 
     with instance_for_test() as instance:
         result = execute_pipeline(pipe, instance=instance)
         logs_default = instance.event_log_storage.get_logs_for_run(result.run_id)
 
-    with instance_for_test(overrides={"python_logs": {"python_log_level": "CRITICAL"}}) as instance:
+    with instance_for_test(
+        overrides={"python_logs": {"python_log_level": "CRITICAL"}}
+    ) as instance:
         result = execute_pipeline(pipe, instance=instance)
         logs_critical = instance.event_log_storage.get_logs_for_run(result.run_id)
 

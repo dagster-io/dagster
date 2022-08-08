@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import Any, DagsterInvalidDefinitionError, DynamicOutput
+from dagster import Out, op, Any, DagsterInvalidDefinitionError, DynamicOutput
 from dagster._legacy import (
     DynamicOutputDefinition,
     OutputDefinition,
@@ -11,23 +11,23 @@ from dagster._legacy import (
 )
 
 
-@solid(output_defs=[DynamicOutputDefinition()])
+@op(out=DynamicOut())
 def dynamic_numbers(_):
     yield DynamicOutput(1, mapping_key="1")
     yield DynamicOutput(2, mapping_key="2")
 
 
-@solid
+@op
 def emit_one(_):
     return 1
 
 
-@solid
+@op
 def echo(_, x):
     return x
 
 
-@solid
+@op
 def add_one(_, x):
     return x + 1
 

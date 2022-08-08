@@ -2,19 +2,19 @@
 from dagster import graph, op, pipeline, repository, solid
 
 
-@solid
-def my_solid():
+@op
+def my_op():
     return 5
 
 
-@solid
-def ingest_solid(x):
+@op
+def ingest_op(x):
     return x + 5
 
 
 @pipeline
 def the_pipeline():
-    ingest_solid(my_solid())
+    ingest_op(my_op())
 
 
 @op

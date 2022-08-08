@@ -1,9 +1,11 @@
 import pytest
 
-from dagster import DagsterInstance, resource
+from dagster import In, Out, op, DagsterInstance, resource
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.context_creation_pipeline import PlanExecutionContextManager
+from dagster._core.execution.context_creation_pipeline import (
+    PlanExecutionContextManager,
+)
 from dagster._core.execution.resources_init import (
     resource_initialization_event_generator,
     resource_initialization_manager,
@@ -51,13 +53,13 @@ def gen_basic_resource_pipeline(called=None, cleaned=None):
         finally:
             cleaned.append("B")
 
-    @solid(required_resource_keys={"a", "b"})
-    def resource_solid(_):
+    @op(required_resource_keys={"a", "b"})
+    def resource_op(_):
         pass
 
     return PipelineDefinition(
         name="basic_resource_pipeline",
-        solid_defs=[resource_solid],
+        solid_defs=[resource_op],
         mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b})],
     )
 
@@ -79,7 +81,9 @@ def test_clean_event_generator_exit():
     resolved_run_config = ResolvedRunConfig.build(pipeline_def)
     execution_plan = create_execution_plan(pipeline_def)
 
-    resource_name, resource_def = next(iter(pipeline_def.get_default_mode().resource_defs.items()))
+    resource_name, resource_def = next(
+        iter(pipeline_def.get_default_mode().resource_defs.items())
+    )
     resource_context = InitResourceContext(
         resource_def=resource_def,
         resources=ScopedResourcesBuilder().build(None),
@@ -87,7 +91,9 @@ def test_clean_event_generator_exit():
         dagster_run=pipeline_run,
         instance=instance,
     )
-    generator = single_resource_event_generator(resource_context, resource_name, resource_def)
+    generator = single_resource_event_generator(
+        resource_context, resource_name, resource_def
+    )
     next(generator)
     generator.close()
 
@@ -119,6 +125,6 @@ def test_clean_event_generator_exit():
     generator.close()
 
 
-@solid
-def fake_solid(_):
+@op
+def fake_op(_):
     pass

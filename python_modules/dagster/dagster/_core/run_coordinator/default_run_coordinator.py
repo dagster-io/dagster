@@ -9,7 +9,9 @@ class DefaultRunCoordinator(RunCoordinator, ConfigurableClass):
     """Immediately send runs to the run launcher."""
 
     def __init__(self, inst_data=None):
-        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
+        self._inst_data = check.opt_inst_param(
+            inst_data, "inst_data", ConfigurableClassData
+        )
 
         super().__init__()
 
@@ -26,7 +28,7 @@ class DefaultRunCoordinator(RunCoordinator, ConfigurableClass):
         return cls(inst_data=inst_data, **config_value)
 
     def submit_run(self, context: SubmitRunContext) -> PipelineRun:
-        pipeline_run = context.pipeline_run
+        pipeline_run = context.run
         check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
         self._instance.launch_run(pipeline_run.run_id, context.workspace)

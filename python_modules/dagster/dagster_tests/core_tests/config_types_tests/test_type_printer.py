@@ -1,4 +1,4 @@
-from dagster import Field, Int, Map, Noneable, ScalarUnion, String
+from dagster import op, Field, Int, Map, Noneable, ScalarUnion, String
 from dagster._config import (
     config_schema_snapshot_from_config_type,
     get_recursive_type_keys,
@@ -102,7 +102,10 @@ def test_double_map_type_print():
 
 def test_list_map_nullable_combos():
     # Don't care about newlines here for brevity's sake, those are tested elsewhere
-    assert print_config_type_to_string({str: [int]}, with_lines=False) == "{ [String]: [Int] }"
+    assert (
+        print_config_type_to_string({str: [int]}, with_lines=False)
+        == "{ [String]: [Int] }"
+    )
     assert (
         print_config_type_to_string(Noneable({str: [int]}), with_lines=False)
         == "{ [String]: [Int] }?"
@@ -120,7 +123,9 @@ def test_list_map_nullable_combos():
         == "{ [String]: [Int?] }?"
     )
     assert (
-        print_config_type_to_string(Noneable({str: Noneable([Noneable(int)])}), with_lines=False)
+        print_config_type_to_string(
+            Noneable({str: Noneable([Noneable(int)])}), with_lines=False
+        )
         == "{ [String]: [Int?]? }?"
     )
 
@@ -196,7 +201,9 @@ def test_single_level_dict_lists_maps_and_nullable():
 
 
 def test_nested_dicts_and_maps():
-    output = print_config_type_to_string({"field_one": {str: {"field_two": {str: int}}}})
+    output = print_config_type_to_string(
+        {"field_one": {str: {"field_two": {str: int}}}}
+    )
     expected = """{
   field_one: {
     [String]: {
@@ -239,11 +246,11 @@ def test_test_type_pipeline_construction():
 
 
 def define_solid_for_test_type(name, config):
-    @solid(name=name, config_schema=config, input_defs=[], output_defs=[])
-    def a_solid(_):
+    @op(name=name, config_schema=config, ins={}, out={})
+    def a_op(_):
         return None
 
-    return a_solid
+    return a_op
 
 
 # launch in dagit with this command:
@@ -259,7 +266,9 @@ def define_test_type_pipeline():
             define_solid_for_test_type(
                 "nullable_list_of_nullable_int_config", Noneable([Noneable(int)])
             ),
-            define_solid_for_test_type("simple_dict", {"int_field": int, "string_field": str}),
+            define_solid_for_test_type(
+                "simple_dict", {"int_field": int, "string_field": str}
+            ),
             define_solid_for_test_type(
                 "dict_with_optional_field",
                 {

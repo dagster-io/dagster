@@ -2,10 +2,13 @@ from typing import List
 
 import pytest
 
-from dagster import DynamicOutput, fs_io_manager, job, op, reconstructable
+from dagster import Out, DynamicOutput, fs_io_manager, job, op, reconstructable
 from dagster._core.definitions.events import Output
 from dagster._core.definitions.output import DynamicOut, Out
-from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
+from dagster._core.errors import (
+    DagsterExecutionStepNotFoundError,
+    DagsterInvariantViolationError,
+)
 from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster._legacy import (
     DynamicOutputDefinition,
@@ -16,13 +19,13 @@ from dagster._legacy import (
 )
 
 
-@solid
+@op
 def multiply_by_two(context, y):
     context.log.info("multiply_by_two is returning " + str(y * 2))
     return y * 2
 
 
-@solid
+@op
 def multiply_inputs(context, y, ten):
     # current_run = context.instance.get_run_by_id(context.run_id)
     # if y == 2 and current_run.parent_run_id is None:
@@ -31,12 +34,12 @@ def multiply_inputs(context, y, ten):
     return y * ten
 
 
-@solid
+@op
 def emit_ten(_):
     return 10
 
 
-@solid(output_defs=[DynamicOutputDefinition()])
+@op(out=DynamicOut())
 def emit(_):
     for i in range(3):
         yield DynamicOutput(value=i, mapping_key=str(i))
@@ -168,11 +171,11 @@ def dynamic_with_optional_output_job():
         for i in range(10):
             if (
                 # re-execution run skipped odd numbers
-                context.pipeline_run.parent_run_id
+                context.run.parent_run_id
                 and i % 2 == 0
             ) or (
                 # root run skipped even numbers
-                not context.pipeline_run.parent_run_id
+                not context.run.parent_run_id
                 and i % 2 == 1
             ):
                 yield DynamicOutput(value=i, mapping_key=str(i))
@@ -187,7 +190,9 @@ def dynamic_with_optional_output_job():
 
 def test_reexec_dynamic_with_optional_output_job_1():
     with instance_for_test() as instance:
-        result = dynamic_with_optional_output_job().execute_in_process(instance=instance)
+        result = dynamic_with_optional_output_job().execute_in_process(
+            instance=instance
+        )
 
         # re-execute all
         re_result = reexecute_pipeline(
@@ -196,12 +201,16 @@ def test_reexec_dynamic_with_optional_output_job_1():
             instance=instance,
         )
         assert re_result.success
-        assert re_result.output_for_solid("adder") == sum([i for i in range(10) if i % 2 == 0])
+        assert re_result.output_for_solid("adder") == sum(
+            [i for i in range(10) if i % 2 == 0]
+        )
 
 
 def test_reexec_dynamic_with_optional_output_job_2():
     with instance_for_test() as instance:
-        result = dynamic_with_optional_output_job().execute_in_process(instance=instance)
+        result = dynamic_with_optional_output_job().execute_in_process(
+            instance=instance
+        )
 
         # re-execute the step where the source yielded an output
         re_result = reexecute_pipeline(
@@ -218,7 +227,9 @@ def test_reexec_dynamic_with_optional_output_job_2():
 
 def test_reexec_dynamic_with_optional_output_job_3():
     with instance_for_test() as instance:
-        result = dynamic_with_optional_output_job().execute_in_process(instance=instance)
+        result = dynamic_with_optional_output_job().execute_in_process(
+            instance=instance
+        )
 
         # re-execute the step where the source did not yield
         # -> error because the dynamic step wont exist in execution plan
@@ -238,16 +249,18 @@ def dynamic_with_transitive_optional_output_job():
     @op(out=Out(is_required=False))
     def add_one_with_optional_output(context, i: int):
         if (
-            context.pipeline_run.parent_run_id
+            context.run.parent_run_id
             and i % 2 == 0  # re-execution run skipped odd numbers
-            or not context.pipeline_run.parent_run_id
+            or not context.run.parent_run_id
             and i % 2 == 1  # root run skipped even numbers
         ):
             yield Output(i + 1)
 
     @job(resource_defs={"io_manager": fs_io_manager})
     def _dynamic_with_transitive_optional_output_job():
-        dynamic_results = dynamic_op().map(lambda n: echo(add_one_with_optional_output(n)))
+        dynamic_results = dynamic_op().map(
+            lambda n: echo(add_one_with_optional_output(n))
+        )
         adder(dynamic_results.collect())
 
     return _dynamic_with_transitive_optional_output_job
@@ -255,9 +268,13 @@ def dynamic_with_transitive_optional_output_job():
 
 def test_reexec_dynamic_with_transitive_optional_output_job_1():
     with instance_for_test() as instance:
-        result = dynamic_with_transitive_optional_output_job().execute_in_process(instance=instance)
+        result = dynamic_with_transitive_optional_output_job().execute_in_process(
+            instance=instance
+        )
         assert result.success
-        assert result.output_for_node("adder") == sum([i + 1 for i in range(10) if i % 2 == 1])
+        assert result.output_for_node("adder") == sum(
+            [i + 1 for i in range(10) if i % 2 == 1]
+        )
 
         # re-execute all
         re_result = reexecute_pipeline(
@@ -266,12 +283,16 @@ def test_reexec_dynamic_with_transitive_optional_output_job_1():
             instance=instance,
         )
         assert re_result.success
-        assert re_result.output_for_solid("adder") == sum([i + 1 for i in range(10) if i % 2 == 0])
+        assert re_result.output_for_solid("adder") == sum(
+            [i + 1 for i in range(10) if i % 2 == 0]
+        )
 
 
 def test_reexec_dynamic_with_transitive_optional_output_job_2():
     with instance_for_test() as instance:
-        result = dynamic_with_transitive_optional_output_job().execute_in_process(instance=instance)
+        result = dynamic_with_transitive_optional_output_job().execute_in_process(
+            instance=instance
+        )
 
         # re-execute the step where the source yielded an output
         re_result = reexecute_pipeline(
@@ -286,7 +307,9 @@ def test_reexec_dynamic_with_transitive_optional_output_job_2():
 
 def test_reexec_dynamic_with_transitive_optional_output_job_3():
     with instance_for_test() as instance:
-        result = dynamic_with_transitive_optional_output_job().execute_in_process(instance=instance)
+        result = dynamic_with_transitive_optional_output_job().execute_in_process(
+            instance=instance
+        )
 
         # re-execute the step where the source did not yield
         re_result = reexecute_pipeline(

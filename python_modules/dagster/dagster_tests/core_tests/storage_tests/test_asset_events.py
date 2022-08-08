@@ -34,10 +34,14 @@ def n_asset_keys(path, n):
     return AssetLineageInfo(AssetKey(path), set([str(i) for i in range(n)]))
 
 
-def check_materialization(materialization, asset_key, parent_assets=None, metadata_entries=None):
+def check_materialization(
+    materialization, asset_key, parent_assets=None, metadata_entries=None
+):
     event_data = materialization.event_specific_data
     assert event_data.materialization.asset_key == asset_key
-    assert sorted(event_data.materialization.metadata_entries) == sorted(metadata_entries or [])
+    assert sorted(event_data.materialization.metadata_entries) == sorted(
+        metadata_entries or []
+    )
     assert event_data.asset_lineage == (parent_assets or [])
 
 
@@ -47,12 +51,12 @@ def test_output_definition_single_partition_materialization():
     entry1 = MetadataEntry("nrows", value=123)
     entry2 = MetadataEntry("some value", value=3.21)
 
-    @solid(output_defs=[OutputDefinition(name="output1", asset_key=AssetKey("table1"))])
-    def solid1(_):
+    @op(out={"output1": Out(asset_key=AssetKey("table1"))})
+    def op1(_):
         return Output(None, "output1", metadata_entries=[entry1])
 
-    @solid(output_defs=[OutputDefinition(name="output2", asset_key=lambda _: AssetKey("table2"))])
-    def solid2(_, _input1):
+    @op(out={"output2": Out(asset_key=lambda _: AssetKey("table2"))})
+    def op2(_, _input1):
         yield Output(
             7,
             "output2",
@@ -61,7 +65,7 @@ def test_output_definition_single_partition_materialization():
 
     @pipeline
     def my_pipeline():
-        solid2(solid1())
+        op2(op1())
 
     result = execute_pipeline(my_pipeline)
     events = result.step_event_list
@@ -70,7 +74,9 @@ def test_output_definition_single_partition_materialization():
     ]
     assert len(materializations) == 2
 
-    check_materialization(materializations[0], AssetKey(["table1"]), metadata_entries=[entry1])
+    check_materialization(
+        materializations[0], AssetKey(["table1"]), metadata_entries=[entry1]
+    )
     check_materialization(
         materializations[1],
         AssetKey(["table2"]),
@@ -84,18 +90,19 @@ def test_output_definition_multiple_partition_materialization():
     entry1 = MetadataEntry("nrows", value=123)
     entry2 = MetadataEntry("some value", value=3.21)
 
-    partition_entries = [MetadataEntry("partition count", value=123 * i * i) for i in range(3)]
+    partition_entries = [
+        MetadataEntry("partition count", value=123 * i * i) for i in range(3)
+    ]
 
-    @solid(
-        output_defs=[
-            OutputDefinition(
-                name="output1",
+    @op(
+        out={
+            "output1": Out(
                 asset_key=AssetKey("table1"),
                 asset_partitions=set(["0", "1", "2"]),
             )
-        ]
+        }
     )
-    def solid1(_):
+    def op1(_):
         return Output(
             None,
             "output1",
@@ -108,8 +115,8 @@ def test_output_definition_multiple_partition_materialization():
             ],
         )
 
-    @solid(output_defs=[OutputDefinition(name="output2", asset_key=AssetKey("table2"))])
-    def solid2(_, _input1):
+    @op(out={"output2": Out(asset_key=AssetKey("table2"))})
+    def op2(_, _input1):
         yield Output(
             7,
             "output2",
@@ -118,7 +125,7 @@ def test_output_definition_multiple_partition_materialization():
 
     @pipeline
     def my_pipeline():
-        solid2(solid1())
+        op2(op1())
 
     result = execute_pipeline(my_pipeline)
     events = result.step_event_list
@@ -185,7 +192,9 @@ def test_io_manager_add_input_metadata():
 
     result = my_job.execute_in_process()
     observations = [
-        event for event in result.all_node_events if event.event_type_value == "ASSET_OBSERVATION"
+        event
+        for event in result.all_node_events
+        if event.event_type_value == "ASSET_OBSERVATION"
     ]
 
     # first observation
@@ -204,7 +213,9 @@ def test_io_manager_add_input_metadata():
         event for event in result.all_events if event.event_type_value == "LOADED_INPUT"
     ][0]
     assert loaded_input_event
-    loaded_input_event_metadata = loaded_input_event.event_specific_data.metadata_entries
+    loaded_input_event_metadata = (
+        loaded_input_event.event_specific_data.metadata_entries
+    )
     assert len(loaded_input_event_metadata) == 2
     assert loaded_input_event_metadata[0].label == "foo"
     assert loaded_input_event_metadata[1].label == "baz"
@@ -251,7 +262,9 @@ def test_io_manager_single_partition_add_input_metadata():
             pass
 
         def load_input(self, context):
-            context.add_input_metadata(metadata={"foo": "bar"}, description="hello world")
+            context.add_input_metadata(
+                metadata={"foo": "bar"}, description="hello world"
+            )
             return 1
 
     @io_manager
@@ -266,7 +279,9 @@ def test_io_manager_single_partition_add_input_metadata():
     get_observation = lambda event: event.event_specific_data.asset_observation
 
     observations = [
-        event for event in result.all_node_events if event.event_type_value == "ASSET_OBSERVATION"
+        event
+        for event in result.all_node_events
+        if event.event_type_value == "ASSET_OBSERVATION"
     ]
 
     assert observations[0].step_key == "asset_2"
@@ -307,12 +322,12 @@ def test_io_manager_single_partition_materialization():
     def my_io_manager(_):
         return MyIOManager()
 
-    @solid(output_defs=[OutputDefinition(name="output1")])
-    def solid1(_):
+    @op(out={"output1": Out()})
+    def op1(_):
         return Output(None, "output1")
 
-    @solid(output_defs=[OutputDefinition(name="output2")])
-    def solid2(_, _input1):
+    @op(out={"output2": Out()})
+    def op2(_, _input1):
         yield Output(
             7,
             "output2",
@@ -321,7 +336,7 @@ def test_io_manager_single_partition_materialization():
 
     @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": my_io_manager})])
     def my_pipeline():
-        solid2(solid1())
+        op2(op1())
 
     result = execute_pipeline(my_pipeline)
     events = result.step_event_list
@@ -330,20 +345,26 @@ def test_io_manager_single_partition_materialization():
     ]
     assert len(materializations) == 2
 
-    check_materialization(materializations[0], AssetKey(["solid1"]), metadata_entries=[entry1])
+    check_materialization(
+        materializations[0], AssetKey(["op1"]), metadata_entries=[entry1]
+    )
     check_materialization(
         materializations[1],
-        AssetKey(["solid2"]),
+        AssetKey(["op2"]),
         metadata_entries=[entry1, entry2],
-        parent_assets=[AssetLineageInfo(AssetKey(["solid1"]))],
+        parent_assets=[AssetLineageInfo(AssetKey(["op1"]))],
     )
 
 
 def test_partition_specific_fails_on_na_partitions():
-    @solid(
-        output_defs=[OutputDefinition(asset_key=AssetKey("key"), asset_partitions=set(["1", "2"]))]
+    @op(
+        out={
+            set(["1", "2"]): Out(
+                asset_key=AssetKey("key"),
+            )
+        }
     )
-    def fail_solid(_):
+    def fail_op(_):
         yield Output(
             None,
             metadata_entries=[PartitionMetadataEntry("3", MetadataEntry("x", value=1))],
@@ -351,15 +372,15 @@ def test_partition_specific_fails_on_na_partitions():
 
     @pipeline
     def my_pipeline():
-        fail_solid()
+        fail_op()
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_pipeline(my_pipeline)
 
 
 def test_partition_specific_fails_on_zero_partitions():
-    @solid(output_defs=[OutputDefinition(asset_key=AssetKey("key"))])
-    def fail_solid(_):
+    @op(out=Out(asset_key=AssetKey("key")))
+    def fail_op(_):
         yield Output(
             None,
             metadata_entries=[PartitionMetadataEntry("3", MetadataEntry("x", value=1))],
@@ -367,15 +388,15 @@ def test_partition_specific_fails_on_zero_partitions():
 
     @pipeline
     def my_pipeline():
-        fail_solid()
+        fail_op()
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_pipeline(my_pipeline)
 
 
 def test_fail_fast_with_nonesense_metadata():
-    @solid(output_defs=[OutputDefinition(asset_key=AssetKey("key"))])
-    def fail_solid(_):
+    @op(out=Out(asset_key=AssetKey("key")))
+    def fail_op(_):
         yield Output(
             None,
             metadata_entries=["some_string_I_think_is_metadata"],
@@ -383,7 +404,7 @@ def test_fail_fast_with_nonesense_metadata():
 
     @pipeline
     def my_pipeline():
-        fail_solid()
+        fail_op()
 
     with pytest.raises(CheckError):
         execute_pipeline(my_pipeline)

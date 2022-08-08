@@ -2,7 +2,7 @@ from dagster import job, repository
 from dagster._legacy import lambda_solid, pipeline
 
 
-@lambda_solid
+@op
 def do_something():
     return 1
 

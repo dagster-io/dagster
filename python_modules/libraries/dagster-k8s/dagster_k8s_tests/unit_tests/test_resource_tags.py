@@ -6,7 +6,7 @@ from dagster_k8s.job import (
     get_user_defined_k8s_config,
 )
 
-from dagster import DynamicOutput
+from dagster import Out, op, DynamicOutput
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
@@ -16,7 +16,7 @@ from dagster._legacy import DynamicOutputDefinition, pipeline, solid
 # CPU units are millicpu
 # Memory units are MiB
 def test_backcompat_resource_tags():
-    @solid(
+    @op(
         tags={
             K8S_RESOURCE_REQUIREMENTS_KEY: {
                 "requests": {"cpu": "250m", "memory": "64Mi"},
@@ -24,10 +24,10 @@ def test_backcompat_resource_tags():
             }
         }
     )
-    def resource_tags_solid(_):
+    def resource_tags_op(_):
         pass
 
-    user_defined_k8s_config = get_user_defined_k8s_config(resource_tags_solid.tags)
+    user_defined_k8s_config = get_user_defined_k8s_config(resource_tags_op.tags)
 
     assert user_defined_k8s_config.container_config
     assert user_defined_k8s_config.container_config["resources"]
@@ -54,7 +54,7 @@ def test_bad_deprecated_resource_tags():
 
 
 def test_user_defined_k8s_config_tags():
-    @solid(
+    @op(
         tags={
             USER_DEFINED_K8S_CONFIG_KEY: {
                 "container_config": {
@@ -66,10 +66,10 @@ def test_user_defined_k8s_config_tags():
             }
         }
     )
-    def my_solid(_):
+    def my_op(_):
         pass
 
-    user_defined_k8s_config = get_user_defined_k8s_config(my_solid.tags)
+    user_defined_k8s_config = get_user_defined_k8s_config(my_op.tags)
 
     assert user_defined_k8s_config.container_config
     assert user_defined_k8s_config.container_config["resources"]
@@ -79,16 +79,16 @@ def test_user_defined_k8s_config_tags():
     assert resources["limits"]["cpu"] == "500m"
     assert resources["limits"]["memory"] == "2560Mi"
 
-    @solid
-    def no_resource_tags_solid(_):
+    @op
+    def no_resource_tags_op(_):
         pass
 
-    user_defined_k8s_config = get_user_defined_k8s_config(no_resource_tags_solid.tags)
+    user_defined_k8s_config = get_user_defined_k8s_config(no_resource_tags_op.tags)
     assert user_defined_k8s_config == UserDefinedDagsterK8sConfig()
 
 
 def test_tags_to_plan():
-    @solid
+    @op
     def blank(_):
         pass
 
@@ -122,7 +122,7 @@ def test_tags_to_plan():
 
 
 def test_tags_to_dynamic_plan():
-    @solid(
+    @op(
         tags={
             USER_DEFINED_K8S_CONFIG_KEY: {
                 "container_config": {
@@ -137,7 +137,7 @@ def test_tags_to_dynamic_plan():
     def multiply_inputs(_, x):
         return 2 * x
 
-    @solid(
+    @op(
         tags={
             USER_DEFINED_K8S_CONFIG_KEY: {
                 "container_config": {
@@ -148,7 +148,7 @@ def test_tags_to_dynamic_plan():
                 }
             }
         },
-        output_defs=[DynamicOutputDefinition()],
+        out=DynamicOut(),
     )
     def emit(_):
         for i in range(3):
@@ -180,7 +180,9 @@ def test_tags_to_dynamic_plan():
     assert resources["limits"]["memory"] == "2560Mi"
 
     for mapping_key in range(3):
-        multiply_inputs_step = plan.get_step_by_key(f"{multiply_inputs.name}[{mapping_key}]")
+        multiply_inputs_step = plan.get_step_by_key(
+            f"{multiply_inputs.name}[{mapping_key}]"
+        )
         dynamic_step_user_defined_k8s_config = get_user_defined_k8s_config(
             multiply_inputs_step.tags
         )

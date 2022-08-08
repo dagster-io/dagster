@@ -21,11 +21,11 @@ from dagster._legacy import solid
 
 
 def get_solids():
-    @solid
+    @op
     def emit_one():
         return 1
 
-    @solid
+    @op
     def add(x, y):
         return x + y
 
@@ -105,7 +105,7 @@ def test_execute_graph():
 
 
 def test_graph_with_required_resources():
-    @solid(required_resource_keys={"a"})
+    @op(required_resource_keys={"a"})
     def basic_reqs(context):
         return context.resources.a
 
@@ -126,13 +126,13 @@ def test_graph_with_required_resources():
 
 def test_executor_config_ignored_by_execute_in_process():
     # Ensure that execute_in_process is able to properly ignore provided executor config.
-    @solid
-    def my_solid():
+    @op
+    def my_op():
         return 0
 
     @graph
     def my_graph():
-        my_solid()
+        my_op()
 
     my_job = my_graph.to_job(
         config={"execution": {"config": {"multiprocess": {"max_concurrent": 5}}}}
@@ -182,7 +182,8 @@ def test_output_for_node_not_found():
         result.output_for_node("op_exists", "name_doesnt_exist")
 
     with pytest.raises(
-        DagsterInvariantViolationError, match="Could not find top-level output 'name_doesnt_exist'"
+        DagsterInvariantViolationError,
+        match="Could not find top-level output 'name_doesnt_exist'",
     ):
         result.output_value("name_doesnt_exist")
 
@@ -333,8 +334,16 @@ def test_dynamic_output_for_node():
     result = myjob.execute_in_process()
 
     # assertions
-    assert result.output_for_node("return_as_tuple", "output1") == {"0": 0, "1": 1, "2": 2}
-    assert result.output_for_node("return_as_tuple", "output2") == {"0": 5, "1": 5, "2": 5}
+    assert result.output_for_node("return_as_tuple", "output1") == {
+        "0": 0,
+        "1": 1,
+        "2": 2,
+    }
+    assert result.output_for_node("return_as_tuple", "output2") == {
+        "0": 5,
+        "1": 5,
+        "2": 5,
+    }
 
 
 def test_execute_in_process_input_values():
@@ -346,7 +355,9 @@ def test_execute_in_process_input_values():
     def requires_input_graph(x):
         return requires_input_op(x)
 
-    result = requires_input_graph.alias("named_graph").execute_in_process(input_values={"x": 5})
+    result = requires_input_graph.alias("named_graph").execute_in_process(
+        input_values={"x": 5}
+    )
     assert result.success
     assert result.output_value() == 6
     result = requires_input_graph.to_job().execute_in_process(input_values={"x": 5})

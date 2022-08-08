@@ -1,21 +1,34 @@
 from time import sleep
 
-from dagster import Field, Int, Output, fs_io_manager
-from dagster._legacy import ModeDefinition, OutputDefinition, PresetDefinition, pipeline, solid
+from dagster import Out, op, Field, Int, Output, fs_io_manager
+from dagster._legacy import (
+    ModeDefinition,
+    OutputDefinition,
+    PresetDefinition,
+    pipeline,
+    solid,
+)
 
 
-@solid(
+@op(
     config_schema={"sleep_secs": Field([int], is_required=False, default_value=[0, 0])},
-    output_defs=[OutputDefinition(Int, "out_1"), OutputDefinition(Int, "out_2")],
+    out={
+        "out_1": Out(
+            Int,
+        ),
+        "out_2": Out(
+            Int,
+        ),
+    },
 )
 def root(context):
-    sleep_secs = context.solid_config["sleep_secs"]
+    sleep_secs = context.op_config["sleep_secs"]
     yield Output(sleep_secs[0], "out_1")
     yield Output(sleep_secs[1], "out_2")
 
 
-@solid
-def branch_solid(context, sec):
+@op
+def branch_op(context, sec):
     if sec < 0:
         sleep(-sec)
         raise Exception("fail")
@@ -27,13 +40,15 @@ def branch_solid(context, sec):
 def branch(name, arg, solid_num):
     out = arg
     for i in range(solid_num):
-        out = branch_solid.alias(f"{name}_{i}")(out)
+        out = branch_op.alias(f"{name}_{i}")(out)
 
     return out
 
 
 @pipeline(
-    description=("Demo fork-shaped pipeline that has two-path parallel structure of solids."),
+    description=(
+        "Demo fork-shaped pipeline that has two-path parallel structure of solids."
+    ),
     preset_defs=[
         PresetDefinition(
             "sleep_failed",

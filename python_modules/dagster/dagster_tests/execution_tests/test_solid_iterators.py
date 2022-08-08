@@ -1,4 +1,4 @@
-from dagster import AssetMaterialization, Output
+from dagster import Out, op, AssetMaterialization, Output
 from dagster._annotations import experimental
 from dagster._legacy import execute_solid, solid
 
@@ -7,11 +7,11 @@ def test_generator_return_solid():
     def _gen():
         yield Output("done")
 
-    @solid
-    def gen_ret_solid(_):
+    @op
+    def gen_ret_op(_):
         return _gen()
 
-    result = execute_solid(gen_ret_solid)
+    result = execute_solid(gen_ret_op)
     assert result.output_value() == "done"
 
 
@@ -19,12 +19,12 @@ def test_generator_yield_solid():
     def _gen():
         yield Output("done")
 
-    @solid
-    def gen_yield_solid(_):
+    @op
+    def gen_yield_op(_):
         for event in _gen():
             yield event
 
-    result = execute_solid(gen_yield_solid)
+    result = execute_solid(gen_yield_op)
     assert result.output_value() == "done"
 
 
@@ -32,11 +32,11 @@ def test_generator_yield_from_solid():
     def _gen():
         yield Output("done")
 
-    @solid
-    def gen_yield_solid(_):
+    @op
+    def gen_yield_op(_):
         yield from _gen()
 
-    result = execute_solid(gen_yield_solid)
+    result = execute_solid(gen_yield_op)
     assert result.output_value() == "done"
 
 
@@ -51,19 +51,19 @@ def test_nested_generator_solid():
         yield from _gen1()
         yield from _gen2()
 
-    @solid
-    def gen_return_solid(_):
+    @op
+    def gen_return_op(_):
         return _gen()
 
-    result = execute_solid(gen_return_solid)
+    result = execute_solid(gen_return_op)
     assert result.output_value() == "done"
 
 
 def test_experimental_generator_solid():
-    @solid
+    @op
     @experimental
-    def gen_solid():
+    def gen_op():
         yield Output("done")
 
-    result = execute_solid(gen_solid)
+    result = execute_solid(gen_op)
     assert result.output_value() == "done"

@@ -1,18 +1,27 @@
 import os
 
-from dagster import AssetKey, AssetMaterialization, Field, MetadataValue, Output
+from dagster import (
+    In,
+    Out,
+    op,
+    AssetKey,
+    AssetMaterialization,
+    Field,
+    MetadataValue,
+    Output,
+)
 from dagster._legacy import pipeline, solid
 
 
-@solid(
+@op(
     config_schema={
         "filename": Field(str, is_required=True),
         "directory": Field(str, is_required=True),
     }
 )
 def read_file(context):
-    relative_filename = context.solid_config["filename"]
-    directory = context.solid_config["directory"]
+    relative_filename = context.op_config["filename"]
+    directory = context.op_config["directory"]
     filename = os.path.join(directory, relative_filename)
     try:
         fstats = os.stat(filename)

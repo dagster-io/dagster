@@ -3,7 +3,7 @@ from dagster._legacy import execute_pipeline, lambda_solid, pipeline
 
 
 def test_failure():
-    @lambda_solid
+    @op
     def throw():
         raise Failure(
             description="it Failure",

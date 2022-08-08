@@ -2,11 +2,11 @@
 from time import sleep
 from typing import Iterator, List
 
-from dagster import Field, Output, graph
+from dagster import Out, op, Field, Output, graph
 from dagster._legacy import OutputDefinition, solid
 
 
-@solid
+@op
 def sleeper(context, units: List[int]) -> int:
     tot = 0
     for sec in units:
@@ -17,17 +17,25 @@ def sleeper(context, units: List[int]) -> int:
     return tot
 
 
-@solid(
+@op(
     config_schema=[int],
-    output_defs=[
-        OutputDefinition(List[int], "out_1"),
-        OutputDefinition(List[int], "out_2"),
-        OutputDefinition(List[int], "out_3"),
-        OutputDefinition(List[int], "out_4"),
-    ],
+    out={
+        "out_1": Out(
+            List[int],
+        ),
+        "out_2": Out(
+            List[int],
+        ),
+        "out_3": Out(
+            List[int],
+        ),
+        "out_4": Out(
+            List[int],
+        ),
+    },
 )
 def giver(context) -> Iterator[Output]:
-    units = context.solid_config
+    units = context.op_config
     queues: List[List[int]] = [[], [], [], []]
     for i, sec in enumerate(units):
         queues[i % 4].append(sec)
@@ -38,19 +46,23 @@ def giver(context) -> Iterator[Output]:
     yield Output(queues[3], "out_4")
 
 
-@solid(
+@op(
     config_schema={"fail": Field(bool, is_required=False, default_value=False)},
-    output_defs=[OutputDefinition(int, is_required=False)],
+    out={
+        False: Out(
+            int,
+        )
+    },
 )
 def total(context, in_1, in_2, in_3, in_4):
     result = in_1 + in_2 + in_3 + in_4
-    if context.solid_config["fail"]:
+    if context.op_config["fail"]:
         yield Output(result, "result")
     # skip the failing solid
     context.log.info(str(result))
 
 
-@solid
+@op
 def will_fail(_, i):
     raise Exception(i)
 

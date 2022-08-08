@@ -3,6 +3,7 @@ from typing import Any, Dict
 import requests
 
 from ..types import DbtOutput
+from dagster import In, Out, op
 
 
 class DbtRpcOutput(DbtOutput):

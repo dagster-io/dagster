@@ -5,6 +5,7 @@ import pytest
 import dagster.version
 from dagster._core.test_utils import environ
 from dagster._core.utils import check_dagster_package_version, parse_env_var
+from dagster import In, Out, op
 
 
 def test_parse_env_var_no_equals():
@@ -12,7 +13,8 @@ def test_parse_env_var_no_equals():
     env_var = "FOO_ENV_VAR"
 
     with pytest.raises(
-        Exception, match="Tried to load environment variable FOO_ENV_VAR, but it was not set"
+        Exception,
+        match="Tried to load environment variable FOO_ENV_VAR, but it was not set",
     ):
         parse_env_var(env_var)
 
@@ -28,7 +30,10 @@ def test_parse_env_var_equals():
 def test_parse_env_var_containing_equals():
     env_var = "FOO_ENV_VAR=HERE_COMES_THE_EQUALS=THERE_IT_WENT"
 
-    assert parse_env_var(env_var) == ("FOO_ENV_VAR", "HERE_COMES_THE_EQUALS=THERE_IT_WENT")
+    assert parse_env_var(env_var) == (
+        "FOO_ENV_VAR",
+        "HERE_COMES_THE_EQUALS=THERE_IT_WENT",
+    )
 
 
 def test_check_dagster_package_version(monkeypatch):

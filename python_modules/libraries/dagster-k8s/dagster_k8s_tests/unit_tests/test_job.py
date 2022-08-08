@@ -11,7 +11,7 @@ from dagster_k8s.job import (
 )
 from dagster_k8s.utils import sanitize_k8s_label
 
-from dagster import __version__ as dagster_version
+from dagster import op, __version__ as dagster_version
 from dagster import graph
 from dagster._core.test_utils import environ, remove_none_recursively
 
@@ -65,7 +65,9 @@ def test_construct_dagster_k8s_job():
     job = construct_dagster_k8s_job(cfg, ["foo", "bar"], "job123").to_dict()
     assert job["kind"] == "Job"
     assert job["metadata"]["name"] == "job123"
-    assert job["spec"]["template"]["spec"]["containers"][0]["image"] == "test/foo:latest"
+    assert (
+        job["spec"]["template"]["spec"]["containers"][0]["image"] == "test/foo:latest"
+    )
     assert DAGSTER_PG_PASSWORD_ENV_VAR in [
         env["name"] for env in job["spec"]["template"]["spec"]["containers"][0]["env"]
     ]
@@ -86,7 +88,9 @@ def test_construct_dagster_k8s_job_no_postgres():
     job = construct_dagster_k8s_job(cfg, ["foo", "bar"], "job123").to_dict()
     assert job["kind"] == "Job"
     assert job["metadata"]["name"] == "job123"
-    assert job["spec"]["template"]["spec"]["containers"][0]["image"] == "test/foo:latest"
+    assert (
+        job["spec"]["template"]["spec"]["containers"][0]["image"] == "test/foo:latest"
+    )
     assert DAGSTER_PG_PASSWORD_ENV_VAR not in [
         env["name"] for env in job["spec"]["template"]["spec"]["containers"][0]["env"]
     ]
@@ -112,7 +116,9 @@ def test_construct_dagster_k8s_job_with_mounts():
 
     assert len(job["spec"]["template"]["spec"]["volumes"]) == 1
     foo_volumes = [
-        volume for volume in job["spec"]["template"]["spec"]["volumes"] if volume["name"] == "foo"
+        volume
+        for volume in job["spec"]["template"]["spec"]["volumes"]
+        if volume["name"] == "foo"
     ]
     assert len(foo_volumes) == 1
     assert foo_volumes[0]["config_map"]["name"] == "settings-cm"
@@ -143,12 +149,16 @@ def test_construct_dagster_k8s_job_with_mounts():
     job = construct_dagster_k8s_job(cfg, ["foo", "bar"], "job123").to_dict()
     assert len(job["spec"]["template"]["spec"]["volumes"]) == 1
     foo_volumes = [
-        volume for volume in job["spec"]["template"]["spec"]["volumes"] if volume["name"] == "foo"
+        volume
+        for volume in job["spec"]["template"]["spec"]["volumes"]
+        if volume["name"] == "foo"
     ]
     assert len(foo_volumes) == 1
     assert foo_volumes[0]["secret"]["secret_name"] == "settings-secret"
 
-    with pytest.raises(Exception, match="Unexpected keys in model class V1Volume: {'invalidKey'}"):
+    with pytest.raises(
+        Exception, match="Unexpected keys in model class V1Volume: {'invalidKey'}"
+    ):
         DagsterK8sJobConfig(
             job_image="test/foo:latest",
             dagster_home="/opt/dagster/dagster_home",
@@ -159,7 +169,9 @@ def test_construct_dagster_k8s_job_with_mounts():
             postgres_password_secret=None,
             env_config_maps=None,
             env_secrets=None,
-            volume_mounts=[{"name": "foo", "mountPath": "biz/buz", "subPath": "file.txt"}],
+            volume_mounts=[
+                {"name": "foo", "mountPath": "biz/buz", "subPath": "file.txt"}
+            ],
             volumes=[
                 {"name": "foo", "invalidKey": "settings-secret"},
             ],
@@ -185,7 +197,8 @@ def test_construct_dagster_k8s_job_with_env():
         assert env_mapping["ENV_VAR_2"]["value"] == "two"
 
     with pytest.raises(
-        Exception, match="Tried to load environment variable ENV_VAR_1, but it was not set"
+        Exception,
+        match="Tried to load environment variable ENV_VAR_1, but it was not set",
     ):
         construct_dagster_k8s_job(cfg, ["foo", "bar"], "job").to_dict()
 
@@ -205,7 +218,9 @@ def test_construct_dagster_k8s_job_with_user_defined_env_camelcase():
                             {"name": "ENV_VAR_2", "value": "two"},
                             {
                                 "name": "DD_AGENT_HOST",
-                                "valueFrom": {"fieldRef": {"fieldPath": "status.hostIP"}},
+                                "valueFrom": {
+                                    "fieldRef": {"fieldPath": "status.hostIP"}
+                                },
                             },
                         ]
                     }
@@ -285,7 +300,12 @@ def test_construct_dagster_k8s_job_with_user_defined_env_snake_case():
                                     "optional": "True",
                                 }
                             },
-                            {"secret_ref": {"name": "user_secret_ref_one", "optional": "True"}},
+                            {
+                                "secret_ref": {
+                                    "name": "user_secret_ref_one",
+                                    "optional": "True",
+                                }
+                            },
                             {
                                 "secret_ref": {
                                     "name": "user_secret_ref_two",
@@ -314,7 +334,9 @@ def test_construct_dagster_k8s_job_with_user_defined_env_snake_case():
 
     env_from = job["spec"]["template"]["spec"]["containers"][0]["env_from"]
     env_from_mapping = {
-        (env_var.get("config_map_ref") or env_var.get("secret_ref")).get("name"): env_var
+        (env_var.get("config_map_ref") or env_var.get("secret_ref")).get(
+            "name"
+        ): env_var
         for env_var in env_from
     }
 
@@ -344,7 +366,12 @@ def test_construct_dagster_k8s_job_with_user_defined_env_from():
                                     "optional": "True",
                                 }
                             },
-                            {"secretRef": {"name": "user_secret_ref_one", "optional": "True"}},
+                            {
+                                "secretRef": {
+                                    "name": "user_secret_ref_one",
+                                    "optional": "True",
+                                }
+                            },
                             {
                                 "secretRef": {
                                     "name": "user_secret_ref_two",
@@ -373,7 +400,9 @@ def test_construct_dagster_k8s_job_with_user_defined_env_from():
 
     env_from = job["spec"]["template"]["spec"]["containers"][0]["env_from"]
     env_from_mapping = {
-        (env_var.get("config_map_ref") or env_var.get("secret_ref")).get("name"): env_var
+        (env_var.get("config_map_ref") or env_var.get("secret_ref")).get(
+            "name"
+        ): env_var
         for env_var in env_from
     }
 
@@ -429,7 +458,9 @@ def test_construct_dagster_k8s_job_with_user_defined_volume_mounts_snake_case():
     ).to_dict()
 
     volume_mounts = job["spec"]["template"]["spec"]["containers"][0]["volume_mounts"]
-    volume_mounts_mapping = {volume_mount["name"]: volume_mount for volume_mount in volume_mounts}
+    volume_mounts_mapping = {
+        volume_mount["name"]: volume_mount for volume_mount in volume_mounts
+    }
 
     assert len(volume_mounts_mapping) == 2
     assert volume_mounts_mapping["a_volume_mount_one"]
@@ -479,7 +510,9 @@ def test_construct_dagster_k8s_job_with_user_defined_volume_mounts_camel_case():
     ).to_dict()
 
     volume_mounts = job["spec"]["template"]["spec"]["containers"][0]["volume_mounts"]
-    volume_mounts_mapping = {volume_mount["name"]: volume_mount for volume_mount in volume_mounts}
+    volume_mounts_mapping = {
+        volume_mount["name"]: volume_mount for volume_mount in volume_mounts
+    }
 
     assert len(volume_mounts_mapping) == 2
     assert volume_mounts_mapping["a_volume_mount_one"]
@@ -559,7 +592,10 @@ def test_construct_dagster_k8s_job_with_ttl_snake_case():
     )
     job = construct_dagster_k8s_job(cfg, [], "job123").to_dict()
 
-    assert job["spec"]["ttl_seconds_after_finished"] == DEFAULT_K8S_JOB_TTL_SECONDS_AFTER_FINISHED
+    assert (
+        job["spec"]["ttl_seconds_after_finished"]
+        == DEFAULT_K8S_JOB_TTL_SECONDS_AFTER_FINISHED
+    )
 
     # Setting ttl_seconds_after_finished still works
     user_defined_cfg = UserDefinedDagsterK8sConfig(
@@ -579,7 +615,10 @@ def test_construct_dagster_k8s_job_with_ttl():
     )
     job = construct_dagster_k8s_job(cfg, [], "job123").to_dict()
 
-    assert job["spec"]["ttl_seconds_after_finished"] == DEFAULT_K8S_JOB_TTL_SECONDS_AFTER_FINISHED
+    assert (
+        job["spec"]["ttl_seconds_after_finished"]
+        == DEFAULT_K8S_JOB_TTL_SECONDS_AFTER_FINISHED
+    )
 
     user_defined_cfg = UserDefinedDagsterK8sConfig(
         job_spec_config={"ttlSecondsAfterFinished": 0},
@@ -598,11 +637,16 @@ def test_construct_dagster_k8s_job_with_sidecar_container():
     )
     job = construct_dagster_k8s_job(cfg, [], "job123").to_dict()
 
-    assert job["spec"]["ttl_seconds_after_finished"] == DEFAULT_K8S_JOB_TTL_SECONDS_AFTER_FINISHED
+    assert (
+        job["spec"]["ttl_seconds_after_finished"]
+        == DEFAULT_K8S_JOB_TTL_SECONDS_AFTER_FINISHED
+    )
 
     user_defined_cfg = UserDefinedDagsterK8sConfig(
         pod_spec_config={
-            "containers": [{"command": ["echo", "HI"], "image": "sidecar:bar", "name": "sidecar"}]
+            "containers": [
+                {"command": ["echo", "HI"], "image": "sidecar:bar", "name": "sidecar"}
+            ]
         },
     )
     job = construct_dagster_k8s_job(

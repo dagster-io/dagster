@@ -1,6 +1,9 @@
 import re
 
 from dagster import (
+    In,
+    Out,
+    op,
     Any,
     DependencyDefinition,
     Field,
@@ -16,7 +19,11 @@ from dagster._core.definitions.run_config import (
     RunConfigSchemaCreationData,
     define_solid_dictionary_cls,
 )
-from dagster._core.system_config.objects import ResolvedRunConfig, ResourceConfig, SolidConfig
+from dagster._core.system_config.objects import (
+    ResolvedRunConfig,
+    ResourceConfig,
+    SolidConfig,
+)
 from dagster._legacy import (
     InputDefinition,
     ModeDefinition,
@@ -64,7 +71,9 @@ def test_all_types_provided():
                     "some_resource": ResourceDefinition(
                         lambda _: None,
                         config_schema={
-                            "with_default_int": Field(Int, is_required=False, default_value=23434)
+                            "with_default_int": Field(
+                                Int, is_required=False, default_value=23434
+                            )
                         },
                     )
                 },
@@ -79,19 +88,20 @@ def test_all_types_provided():
     matching_types = [
         tt
         for tt in all_types
-        if tt.kind == ConfigTypeKind.STRICT_SHAPE and "with_default_int" in tt.fields.keys()
+        if tt.kind == ConfigTypeKind.STRICT_SHAPE
+        and "with_default_int" in tt.fields.keys()
     ]
     assert len(matching_types) == 1
 
 
 def test_provided_default_on_resources_config():
-    @solid(
-        name="some_solid",
-        input_defs=[],
-        output_defs=[],
+    @op(
+        name="some_op",
+        ins={},
+        out={},
         required_resource_keys={"some_resource"},
     )
-    def some_solid(_):
+    def some_op(_):
         return None
 
     @pipeline(
@@ -102,7 +112,9 @@ def test_provided_default_on_resources_config():
                     "some_resource": ResourceDefinition(
                         resource_fn=lambda _: None,
                         config_schema={
-                            "with_default_int": Field(Int, is_required=False, default_value=23434)
+                            "with_default_int": Field(
+                                Int, is_required=False, default_value=23434
+                            )
                         },
                     )
                 },
@@ -110,10 +122,12 @@ def test_provided_default_on_resources_config():
         ]
     )
     def pipeline_def():
-        some_solid()
+        some_op()
 
     env_type = create_run_config_schema_type(pipeline_def)
-    some_resource_field = env_type.fields["resources"].config_type.fields["some_resource"]
+    some_resource_field = env_type.fields["resources"].config_type.fields[
+        "some_resource"
+    ]
     assert some_resource_field.is_required is False
 
     some_resource_config_field = some_resource_field.config_type.fields["config"]
@@ -129,13 +143,13 @@ def test_provided_default_on_resources_config():
 
 
 def test_default_environment():
-    @solid(name="some_solid", input_defs=[], output_defs=[])
-    def some_solid(_):
+    @op(name="some_op", ins={}, out={})
+    def some_op(_):
         return None
 
     @pipeline
     def pipeline_def():
-        some_solid()
+        some_op()
 
     assert ResolvedRunConfig.build(pipeline_def, {})
 
@@ -153,44 +167,44 @@ def test_solid_dictionary_type():
         pipeline_def,
         {
             "solids": {
-                "int_config_solid": {"config": 1},
-                "string_config_solid": {"config": "bar"},
+                "int_config_op": {"config": 1},
+                "string_config_op": {"config": "bar"},
             },
         },
     )
 
     value = env_obj.solids
 
-    assert set(["int_config_solid", "string_config_solid"]) == set(value.keys())
+    assert set(["int_config_op", "string_config_op"]) == set(value.keys())
     assert value == {
-        "int_config_solid": SolidConfig.from_dict({"config": 1}),
-        "string_config_solid": SolidConfig.from_dict({"config": "bar"}),
+        "int_config_op": SolidConfig.from_dict({"config": 1}),
+        "string_config_op": SolidConfig.from_dict({"config": "bar"}),
     }
 
 
 def define_test_solids_config_pipeline():
-    @solid(
-        name="int_config_solid",
+    @op(
+        name="int_config_op",
         config_schema=Field(Int, is_required=False),
-        input_defs=[],
-        output_defs=[],
+        ins={},
+        out={},
     )
-    def int_config_solid(_):
+    def int_config_op(_):
         return None
 
-    @solid(
-        name="string_config_solid",
+    @op(
+        name="string_config_op",
         config_schema=Field(String, is_required=False),
-        input_defs=[],
-        output_defs=[],
+        ins={},
+        out={},
     )
-    def string_config_solid(_):
+    def string_config_op(_):
         return None
 
     @pipeline
     def pipeline_def():
-        int_config_solid()
-        string_config_solid()
+        int_config_op()
+        string_config_op()
 
     return pipeline_def
 
@@ -204,9 +218,9 @@ def test_solid_configs_defaults():
 
     solids_field = env_type.fields["solids"]
 
-    assert_has_fields(solids_field.config_type, "int_config_solid", "string_config_solid")
+    assert_has_fields(solids_field.config_type, "int_config_op", "string_config_op")
 
-    int_solid_field = solids_field.config_type.fields["int_config_solid"]
+    int_solid_field = solids_field.config_type.fields["int_config_op"]
 
     assert int_solid_field.is_required is False
     # TODO: this is the test case the exposes the default dodginess
@@ -222,25 +236,27 @@ def test_solid_configs_defaults():
 
 
 def test_solid_dictionary_some_no_config():
-    @solid(name="int_config_solid", config_schema=Int, input_defs=[], output_defs=[])
-    def int_config_solid(_):
+    @op(name="int_config_op", config_schema=Int, ins={}, out={})
+    def int_config_op(_):
         return None
 
-    @solid(name="no_config_solid", input_defs=[], output_defs=[])
-    def no_config_solid(_):
+    @op(name="no_config_op", ins={}, out={})
+    def no_config_op(_):
         return None
 
     @pipeline
     def pipeline_def():
-        int_config_solid()
-        no_config_solid()
+        int_config_op()
+        no_config_op()
 
-    env = ResolvedRunConfig.build(pipeline_def, {"solids": {"int_config_solid": {"config": 1}}})
+    env = ResolvedRunConfig.build(
+        pipeline_def, {"solids": {"int_config_op": {"config": 1}}}
+    )
 
-    assert {"int_config_solid", "no_config_solid"} == set(env.solids.keys())
+    assert {"int_config_op", "no_config_op"} == set(env.solids.keys())
     assert env.solids == {
-        "int_config_solid": SolidConfig.from_dict({"config": 1}),
-        "no_config_solid": SolidConfig.from_dict({}),
+        "int_config_op": SolidConfig.from_dict({"config": 1}),
+        "no_config_op": SolidConfig.from_dict({}),
     }
 
 
@@ -259,7 +275,7 @@ def test_whole_environment():
         ],
         solid_defs=[
             SolidDefinition(
-                name="int_config_solid",
+                name="int_config_op",
                 config_schema=Int,
                 input_defs=[],
                 output_defs=[OutputDefinition()],
@@ -267,7 +283,7 @@ def test_whole_environment():
                 compute_fn=lambda *args: None,
             ),
             SolidDefinition(
-                name="no_config_solid",
+                name="no_config_op",
                 input_defs=[],
                 output_defs=[],
                 compute_fn=lambda *args: None,
@@ -279,14 +295,14 @@ def test_whole_environment():
         pipeline_def,
         {
             "resources": {"test_resource": {"config": 1}},
-            "solids": {"int_config_solid": {"config": 123}},
+            "solids": {"int_config_op": {"config": 123}},
         },
     )
 
     assert isinstance(env, ResolvedRunConfig)
     assert env.solids == {
-        "int_config_solid": SolidConfig.from_dict({"config": 123}),
-        "no_config_solid": SolidConfig.from_dict({}),
+        "int_config_op": SolidConfig.from_dict({"config": 123}),
+        "no_config_op": SolidConfig.from_dict({}),
     }
     assert env.resources == {
         "test_resource": ResourceConfig(1),
@@ -306,11 +322,13 @@ def test_solid_config_error():
         asset_layer=pipeline_def.asset_layer,
     )
 
-    int_solid_config_type = solid_dict_type.fields["int_config_solid"].config_type
+    int_solid_config_type = solid_dict_type.fields["int_config_op"].config_type
 
     res = process_config(int_solid_config_type, {"notconfig": 1})
     assert not res.success
-    assert re.match('Received unexpected config entry "notconfig"', res.errors[0].message)
+    assert re.match(
+        'Received unexpected config entry "notconfig"', res.errors[0].message
+    )
 
     res = process_config(int_solid_config_type, 1)
     assert not res.success
@@ -318,20 +336,20 @@ def test_solid_config_error():
 
 def test_optional_solid_with_no_config():
     def _assert_config_none(context, value):
-        assert context.solid_config is value
+        assert context.op_config is value
 
     pipeline_def = PipelineDefinition(
         name="some_pipeline",
         solid_defs=[
             SolidDefinition(
-                name="int_config_solid",
+                name="int_config_op",
                 config_schema=Int,
                 input_defs=[],
                 output_defs=[],
                 compute_fn=lambda context, _inputs: _assert_config_none(context, 234),
             ),
             SolidDefinition(
-                name="no_config_solid",
+                name="no_config_op",
                 input_defs=[],
                 output_defs=[],
                 compute_fn=lambda context, _inputs: _assert_config_none(context, None),
@@ -339,18 +357,20 @@ def test_optional_solid_with_no_config():
         ],
     )
 
-    assert execute_pipeline(pipeline_def, {"solids": {"int_config_solid": {"config": 234}}}).success
+    assert execute_pipeline(
+        pipeline_def, {"solids": {"int_config_op": {"config": 234}}}
+    ).success
 
 
 def test_optional_solid_with_optional_scalar_config():
     def _assert_config_none(context, value):
-        assert context.solid_config is value
+        assert context.op_config is value
 
     pipeline_def = PipelineDefinition(
         name="some_pipeline",
         solid_defs=[
             SolidDefinition(
-                name="int_config_solid",
+                name="int_config_op",
                 config_schema=Field(Int, is_required=False),
                 input_defs=[],
                 output_defs=[],
@@ -365,22 +385,22 @@ def test_optional_solid_with_optional_scalar_config():
 
     solids_type = env_type.fields["solids"].config_type
 
-    assert solids_type.fields["int_config_solid"].is_required is False
+    assert solids_type.fields["int_config_op"].is_required is False
 
     env_obj = ResolvedRunConfig.build(pipeline_def, {})
 
-    assert env_obj.solids["int_config_solid"].config is None
+    assert env_obj.solids["int_config_op"].config is None
 
 
 def test_optional_solid_with_required_scalar_config():
     def _assert_config_none(context, value):
-        assert context.solid_config is value
+        assert context.op_config is value
 
     pipeline_def = PipelineDefinition(
         name="some_pipeline",
         solid_defs=[
             SolidDefinition(
-                name="int_config_solid",
+                name="int_config_op",
                 config_schema=Int,
                 input_defs=[],
                 output_defs=[],
@@ -395,9 +415,9 @@ def test_optional_solid_with_required_scalar_config():
 
     solids_type = env_type.fields["solids"].config_type
 
-    assert solids_type.fields["int_config_solid"].is_required is True
+    assert solids_type.fields["int_config_op"].is_required is True
 
-    int_config_solid_type = solids_type.fields["int_config_solid"].config_type
+    int_config_solid_type = solids_type.fields["int_config_op"].config_type
 
     assert_has_fields(int_config_solid_type, "config")
 
@@ -405,7 +425,7 @@ def test_optional_solid_with_required_scalar_config():
 
     assert int_config_solid_config_field.is_required is True
 
-    execute_pipeline(pipeline_def, {"solids": {"int_config_solid": {"config": 234}}})
+    execute_pipeline(pipeline_def, {"solids": {"int_config_op": {"config": 234}}})
 
 
 def test_required_solid_with_required_subfield():
@@ -413,7 +433,7 @@ def test_required_solid_with_required_subfield():
         name="some_pipeline",
         solid_defs=[
             SolidDefinition(
-                name="int_config_solid",
+                name="int_config_op",
                 config_schema={"required_field": String},
                 input_defs=[],
                 output_defs=[],
@@ -428,18 +448,18 @@ def test_required_solid_with_required_subfield():
     assert env_type.fields["solids"].config_type
 
     solids_type = env_type.fields["solids"].config_type
-    assert solids_type.fields["int_config_solid"].is_required is True
-    int_config_solid_type = solids_type.fields["int_config_solid"].config_type
+    assert solids_type.fields["int_config_op"].is_required is True
+    int_config_solid_type = solids_type.fields["int_config_op"].config_type
     assert int_config_solid_type.fields["config"].is_required is True
 
     assert env_type.fields["execution"].is_required is False
 
     env_obj = ResolvedRunConfig.build(
         pipeline_def,
-        {"solids": {"int_config_solid": {"config": {"required_field": "foobar"}}}},
+        {"solids": {"int_config_op": {"config": {"required_field": "foobar"}}}},
     )
 
-    assert env_obj.solids["int_config_solid"].config["required_field"] == "foobar"
+    assert env_obj.solids["int_config_op"].config["required_field"] == "foobar"
 
     res = process_config(env_type, {"solids": {}})
     assert not res.success
@@ -453,7 +473,7 @@ def test_optional_solid_with_optional_subfield():
         name="some_pipeline",
         solid_defs=[
             SolidDefinition(
-                name="int_config_solid",
+                name="int_config_op",
                 config_schema=Field(
                     {"optional_field": Field(String, is_required=False)},
                     is_required=False,
@@ -482,7 +502,7 @@ def nested_field(config_type, *field_names):
 
 
 def test_required_resource_with_required_subfield():
-    @solid(required_resource_keys={"with_required"})
+    @op(required_resource_keys={"with_required"})
     def needs_resource(_):
         pass
 
@@ -521,7 +541,9 @@ def test_all_optional_field_on_single_resource():
                 resource_defs={
                     "with_optional": ResourceDefinition(
                         resource_fn=lambda _: None,
-                        config_schema={"optional_field": Field(String, is_required=False)},
+                        config_schema={
+                            "optional_field": Field(String, is_required=False)
+                        },
                     )
                 }
             )
@@ -533,15 +555,20 @@ def test_all_optional_field_on_single_resource():
     assert env_type.fields["execution"].is_required is False
     assert env_type.fields["resources"].is_required is False
     assert nested_field(env_type, "resources", "with_optional").is_required is False
-    assert nested_field(env_type, "resources", "with_optional", "config").is_required is False
     assert (
-        nested_field(env_type, "resources", "with_optional", "config", "optional_field").is_required
+        nested_field(env_type, "resources", "with_optional", "config").is_required
+        is False
+    )
+    assert (
+        nested_field(
+            env_type, "resources", "with_optional", "config", "optional_field"
+        ).is_required
         is False
     )
 
 
 def test_optional_and_required_context():
-    @solid(required_resource_keys={"required_resource"})
+    @op(required_resource_keys={"required_resource"})
     def needs_resource(_):
         pass
 
@@ -554,7 +581,9 @@ def test_optional_and_required_context():
                 resource_defs={
                     "optional_resource": ResourceDefinition(
                         lambda _: None,
-                        config_schema={"optional_field": Field(String, is_required=False)},
+                        config_schema={
+                            "optional_field": Field(String, is_required=False)
+                        },
                     ),
                     "required_resource": ResourceDefinition(
                         lambda _: None,
@@ -572,7 +601,10 @@ def test_optional_and_required_context():
 
     assert nested_field(env_type, "resources").is_required
     assert nested_field(env_type, "resources", "optional_resource").is_required is False
-    assert nested_field(env_type, "resources", "optional_resource", "config").is_required is False
+    assert (
+        nested_field(env_type, "resources", "optional_resource", "config").is_required
+        is False
+    )
     assert (
         nested_field(
             env_type, "resources", "optional_resource", "config", "optional_field"
@@ -581,7 +613,9 @@ def test_optional_and_required_context():
     )
 
     assert nested_field(env_type, "resources", "required_resource").is_required
-    assert nested_field(env_type, "resources", "required_resource", "config").is_required
+    assert nested_field(
+        env_type, "resources", "required_resource", "config"
+    ).is_required
     assert nested_field(
         env_type, "resources", "required_resource", "config", "required_field"
     ).is_required
@@ -598,7 +632,7 @@ def test_optional_and_required_context():
 
 
 def test_required_inputs():
-    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+    @op(ins={"num": In(Int)}, out=Out(Int))
     def add_one(num):
         return num + 1
 
@@ -607,7 +641,9 @@ def test_required_inputs():
         solid_defs=[add_one],
         dependencies={
             NodeInvocation("add_one", "first_add"): {},
-            NodeInvocation("add_one", "second_add"): {"num": DependencyDefinition("first_add")},
+            NodeInvocation("add_one", "second_add"): {
+                "num": DependencyDefinition("first_add")
+            },
         },
     )
 
@@ -630,14 +666,14 @@ def test_required_inputs():
 
 
 def test_mix_required_inputs():
-    @lambda_solid(
-        input_defs=[InputDefinition("left", Int), InputDefinition("right", Int)],
-        output_def=OutputDefinition(Int),
+    @op(
+        ins={"left": In(Int), "right": In(Int)},
+        out=Out(Int),
     )
     def add_numbers(left, right):
         return left + right
 
-    @lambda_solid
+    @op
     def return_three():
         return 3
 

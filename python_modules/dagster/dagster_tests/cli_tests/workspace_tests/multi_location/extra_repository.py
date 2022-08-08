@@ -2,14 +2,14 @@ from dagster import repository
 from dagster._legacy import pipeline, solid
 
 
-@solid
-def extra_solid(_):
+@op
+def extra_op(_):
     pass
 
 
 @pipeline
 def extra_pipeline():
-    extra_solid()
+    extra_op()
 
 
 @repository

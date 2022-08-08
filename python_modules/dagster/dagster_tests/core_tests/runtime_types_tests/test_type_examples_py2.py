@@ -1,98 +1,106 @@
-from dagster import Any, Bool, Dict, Float, Int, List, Optional, Set, String, Tuple
+from dagster import (
+    In,
+    Out,
+    op,
+    Any,
+    Bool,
+    Dict,
+    Float,
+    Int,
+    List,
+    Optional,
+    Set,
+    String,
+    Tuple,
+)
 from dagster._legacy import InputDefinition, OutputDefinition, execute_solid, solid
 
 
-@solid(
-    input_defs=[InputDefinition("x", dagster_type=Any)],
-    output_defs=[OutputDefinition(dagster_type=Any)],
+@op(
+    ins={"x": In(dagster_type=Any)},
+    out=Out(dagster_type=Any),
 )
 def identity_py2(_, x):
     return x
 
 
-@solid(
-    input_defs=[InputDefinition("x", dagster_type=Bool)],
-    output_defs=[OutputDefinition(dagster_type=String)],
+@op(
+    ins={"x": In(dagster_type=Bool)},
+    out=Out(dagster_type=String),
 )
 def boolean_py2(_, x):
     return "true" if x else "false"
 
 
-@solid(
-    input_defs=[InputDefinition("x", dagster_type=String)],
-    output_defs=[OutputDefinition(dagster_type=bool)],
+@op(
+    ins={"x": In(dagster_type=String)},
+    out=Out(dagster_type=bool),
 )
 def empty_string_py2(_, x):
     return len(x) == 0
 
 
-@solid(
-    input_defs=[InputDefinition("x", dagster_type=Int)],
-    output_defs=[OutputDefinition(dagster_type=int)],
+@op(
+    ins={"x": In(dagster_type=Int)},
+    out=Out(dagster_type=int),
 )
 def add_3_py2(_, x):
     return x + 3
 
 
-@solid(
-    input_defs=[InputDefinition("x", dagster_type=Float)],
-    output_defs=[OutputDefinition(dagster_type=float)],
+@op(
+    ins={"x": In(dagster_type=Float)},
+    out=Out(dagster_type=float),
 )
 def div_2_py_2(_, x):
     return x / 2
 
 
-@solid(
-    input_defs=[
-        InputDefinition("x", dagster_type=String),
-        InputDefinition("y", dagster_type=str),
-    ],
-    output_defs=[OutputDefinition(dagster_type=str)],
+@op(
+    ins={"x": In(dagster_type=String), "y": In(dagster_type=str)},
+    out=Out(dagster_type=str),
 )
 def concat_py_2(_, x, y):
     return x + y
 
 
-@solid(
-    input_defs=[
-        InputDefinition("x", dagster_type=String),
-        InputDefinition("y", dagster_type=Optional[String]),
-    ],
-    output_defs=[OutputDefinition(dagster_type=String)],
+@op(
+    ins={"x": In(dagster_type=String), "y": In(dagster_type=Optional[String])},
+    out=Out(dagster_type=String),
 )
 def nullable_concat_py2(_, x, y):
     return x + (y or "")
 
 
-@solid(
-    input_defs=[InputDefinition("xs", dagster_type=List[String])],
-    output_defs=[OutputDefinition(dagster_type=String)],
+@op(
+    ins={"xs": In(dagster_type=List[String])},
+    out=Out(dagster_type=String),
 )
 def concat_list_py2(_, xs):
     return "".join(xs)
 
 
-@solid(
-    input_defs=[InputDefinition("spec", dagster_type=Dict)],
-    output_defs=[OutputDefinition(String)],
+@op(
+    ins={"spec": In(dagster_type=Dict)},
+    out=Out(String),
 )
 def repeat_py2(_, spec):
     return spec["word"] * spec["times"]
 
 
-@solid(
-    input_defs=[InputDefinition("set_input", dagster_type=Set[String])],
-    output_defs=[OutputDefinition(List[String])],
+@op(
+    ins={"set_input": In(dagster_type=Set[String])},
+    out=Out(List[String]),
 )
-def set_solid_py2(_, set_input):
+def set_op_py2(_, set_input):
     return sorted([x for x in set_input])
 
 
-@solid(
-    input_defs=[InputDefinition("tuple_input", dagster_type=Tuple[String, Int, Float])],
-    output_defs=[OutputDefinition(List)],
+@op(
+    ins={"tuple_input": In(dagster_type=Tuple[String, Int, Float])},
+    out=Out(List),
 )
-def tuple_solid_py2(_, tuple_input):
+def tuple_op_py2(_, tuple_input):
     return [x for x in tuple_input]
 
 
@@ -148,10 +156,10 @@ def test_repeat_py2():
 
 
 def test_set_solid_py2():
-    res = execute_solid(set_solid_py2, input_values={"set_input": {"foo", "bar", "baz"}})
+    res = execute_solid(set_op_py2, input_values={"set_input": {"foo", "bar", "baz"}})
     assert res.output_value() == sorted(["foo", "bar", "baz"])
 
 
 def test_tuple_solid_py2():
-    res = execute_solid(tuple_solid_py2, input_values={"tuple_input": ("foo", 1, 3.1)})
+    res = execute_solid(tuple_op_py2, input_values={"tuple_input": ("foo", 1, 3.1)})
     assert res.output_value() == ["foo", 1, 3.1]

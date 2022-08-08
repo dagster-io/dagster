@@ -18,6 +18,8 @@ from dagster_graphql.test.utils import (
 )
 
 from dagster import (
+    In,
+    Out,
     Any,
     AssetKey,
     AssetMaterialization,
@@ -109,7 +111,10 @@ LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 @dagster_type_loader(String)
 def df_input_schema(_context, path):
     with open(path, "r", encoding="utf8") as fd:
-        return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
+        return [
+            OrderedDict(sorted(x.items(), key=lambda x: x[0]))
+            for x in csv.DictReader(fd)
+        ]
 
 
 @dagster_type_materializer(String)
@@ -162,33 +167,33 @@ def get_main_external_repo(instance):
         yield location.get_repository(main_repo_name())
 
 
-@lambda_solid(
-    input_defs=[InputDefinition("num", PoorMansDataFrame)],
-    output_def=OutputDefinition(PoorMansDataFrame),
+@op(
+    ins={"num": In(PoorMansDataFrame)},
+    out=Out(PoorMansDataFrame),
 )
-def sum_solid(num):
+def sum_op(num):
     sum_df = deepcopy(num)
     for x in sum_df:
         x["sum"] = int(x["num1"]) + int(x["num2"])
     return sum_df
 
 
-@lambda_solid(
-    input_defs=[InputDefinition("sum_df", PoorMansDataFrame)],
-    output_def=OutputDefinition(PoorMansDataFrame),
+@op(
+    ins={"sum_df": In(PoorMansDataFrame)},
+    out=Out(PoorMansDataFrame),
 )
-def sum_sq_solid(sum_df):
+def sum_sq_op(sum_df):
     sum_sq_df = deepcopy(sum_df)
     for x in sum_sq_df:
         x["sum_sq"] = int(x["sum"]) ** 2
     return sum_sq_df
 
 
-@solid(
-    input_defs=[InputDefinition("sum_df", PoorMansDataFrame)],
-    output_defs=[OutputDefinition(PoorMansDataFrame)],
+@op(
+    ins={"sum_df": In(PoorMansDataFrame)},
+    out=Out(PoorMansDataFrame),
 )
-def df_expectations_solid(_context, sum_df):
+def df_expectations_op(_context, sum_df):
     yield ExpectationResult(label="some_expectation", success=True)
     yield ExpectationResult(label="other_expectation", success=True)
     yield Output(sum_df)
@@ -197,14 +202,16 @@ def df_expectations_solid(_context, sum_df):
 def csv_hello_world_solids_config():
     return {
         "solids": {
-            "sum_solid": {"inputs": {"num": file_relative_path(__file__, "../data/num.csv")}}
+            "sum_op": {
+                "inputs": {"num": file_relative_path(__file__, "../data/num.csv")}
+            }
         }
     }
 
 
-@solid(config_schema={"file": Field(String)})
+@op(config_schema={"file": Field(String)})
 def loop(context):
-    with open(context.solid_config["file"], "w", encoding="utf8") as ff:
+    with open(context.op_config["file"], "w", encoding="utf8") as ff:
         ff.write("yup")
 
     while True:
@@ -216,88 +223,92 @@ def infinite_loop_pipeline():
     loop()
 
 
-@solid
-def noop_solid(_):
+@op
+def noop_op(_):
     pass
 
 
 @pipeline
 def noop_pipeline():
-    noop_solid()
+    noop_op()
 
 
-@solid
-def solid_asset_a(_):
+@op
+def op_asset_a(_):
     yield AssetMaterialization(asset_key="a")
     yield Output(1)
 
 
-@solid
-def solid_asset_b(_, num):
+@op
+def op_asset_b(_, num):
     yield AssetMaterialization(asset_key="b")
     time.sleep(0.1)
     yield AssetMaterialization(asset_key="c")
     yield Output(num)
 
 
-@solid
-def solid_partitioned_asset(_):
+@op
+def op_partitioned_asset(_):
     yield AssetMaterialization(asset_key="a", partition="partition_1")
     yield Output(1)
 
 
-@solid
-def tag_asset_solid(_):
+@op
+def tag_asset_op(_):
     yield AssetMaterialization(asset_key="a")
     yield Output(1)
 
 
 def lineage_solid_factory(solid_name_prefix, key, partitions=None):
-    @solid(
+    @op(
         name=f"{solid_name_prefix}_{key}",
-        output_defs=[OutputDefinition(asset_key=AssetKey(key), asset_partitions=partitions)],
+        out={
+            partitions: Out(
+                asset_key=AssetKey(key),
+            )
+        },
     )
-    def _solid(_, _in1):
+    def _op(_, _in1):
         yield Output(1)
 
-    return _solid
+    return _op
 
 
 @pipeline
 def single_asset_pipeline():
-    solid_asset_a()
+    op_asset_a()
 
 
 @pipeline
 def multi_asset_pipeline():
-    solid_asset_b(solid_asset_a())
+    op_asset_b(op_asset_a())
 
 
 @pipeline
 def partitioned_asset_pipeline():
-    solid_partitioned_asset()
+    op_partitioned_asset()
 
 
 @pipeline
 def asset_tag_pipeline():
-    tag_asset_solid()
+    tag_asset_op()
 
 
 @pipeline
 def asset_lineage_pipeline():
-    lineage_solid_factory("alp", "b")(lineage_solid_factory("alp", "a")(noop_solid()))
+    lineage_solid_factory("alp", "b")(lineage_solid_factory("alp", "a")(noop_op()))
 
 
 @pipeline
 def partitioned_asset_lineage_pipeline():
     lineage_solid_factory("palp", "b", set("1"))(
-        lineage_solid_factory("palp", "a", set("1"))(noop_solid())
+        lineage_solid_factory("palp", "a", set("1"))(noop_op())
     )
 
 
 @pipeline
 def pipeline_with_expectations():
-    @solid(output_defs=[])
+    @op(out={})
     def emit_successful_expectation(_context):
         yield ExpectationResult(
             success=True,
@@ -306,7 +317,7 @@ def pipeline_with_expectations():
             metadata={"data": {"reason": "Just because."}},
         )
 
-    @solid(output_defs=[])
+    @op(out={})
     def emit_failed_expectation(_context):
         yield ExpectationResult(
             success=False,
@@ -315,9 +326,11 @@ def pipeline_with_expectations():
             metadata={"data": {"reason": "Relentless pessimism."}},
         )
 
-    @solid(output_defs=[])
+    @op(out={})
     def emit_successful_expectation_no_metadata(_context):
-        yield ExpectationResult(success=True, label="no_metadata", description="Successful")
+        yield ExpectationResult(
+            success=True, label="no_metadata", description="Successful"
+        )
 
     emit_successful_expectation()
     emit_failed_expectation()
@@ -326,23 +339,23 @@ def pipeline_with_expectations():
 
 @pipeline
 def more_complicated_config():
-    @solid(
+    @op(
         config_schema={
             "field_one": Field(String),
             "field_two": Field(String, is_required=False),
             "field_three": Field(String, is_required=False, default_value="some_value"),
         }
     )
-    def a_solid_with_three_field_config(_context):
+    def a_op_with_three_field_config(_context):
         return None
 
-    noop_solid()
-    a_solid_with_three_field_config()
+    noop_op()
+    a_op_with_three_field_config()
 
 
 @pipeline
 def config_with_map():
-    @solid(
+    @op(
         config_schema={
             "field_one": Field(Map(str, int, key_label_name="username")),
             "field_two": Field({bool: int}, is_required=False),
@@ -353,19 +366,19 @@ def config_with_map():
             ),
         }
     )
-    def a_solid_with_map_config(_context):
+    def a_op_with_map_config(_context):
         return None
 
-    noop_solid()
-    a_solid_with_map_config()
+    noop_op()
+    a_op_with_map_config()
 
 
 @pipeline
 def more_complicated_nested_config():
-    @solid(
-        name="a_solid_with_multilayered_config",
-        input_defs=[],
-        output_defs=[],
+    @op(
+        name="a_op_with_multilayered_config",
+        ins={},
+        out={},
         config_schema={
             "field_any": Any,
             "field_one": String,
@@ -374,14 +387,16 @@ def more_complicated_nested_config():
             "nested_field": {
                 "field_four_str": String,
                 "field_five_int": Int,
-                "field_six_nullable_int_list": Field([Noneable(int)], is_required=False),
+                "field_six_nullable_int_list": Field(
+                    [Noneable(int)], is_required=False
+                ),
             },
         },
     )
-    def a_solid_with_multilayered_config(_):
+    def a_op_with_multilayered_config(_):
         return None
 
-    a_solid_with_multilayered_config()
+    a_op_with_multilayered_config()
 
 
 @pipeline(
@@ -390,21 +405,27 @@ def more_complicated_nested_config():
         PresetDefinition.from_files(
             name="prod",
             config_files=[
-                file_relative_path(__file__, "../environments/csv_hello_world_prod.yaml")
+                file_relative_path(
+                    __file__, "../environments/csv_hello_world_prod.yaml"
+                )
             ],
         ),
         PresetDefinition.from_files(
             name="test",
             config_files=[
-                file_relative_path(__file__, "../environments/csv_hello_world_test.yaml")
+                file_relative_path(
+                    __file__, "../environments/csv_hello_world_test.yaml"
+                )
             ],
         ),
         PresetDefinition(
             name="test_inline",
             run_config={
                 "solids": {
-                    "sum_solid": {
-                        "inputs": {"num": file_relative_path(__file__, "../data/num.csv")}
+                    "sum_op": {
+                        "inputs": {
+                            "num": file_relative_path(__file__, "../data/num.csv")
+                        }
                     }
                 }
             },
@@ -412,61 +433,61 @@ def more_complicated_nested_config():
     ],
 )
 def csv_hello_world():
-    sum_sq_solid(sum_df=sum_solid())
+    sum_sq_op(sum_df=sum_op())
 
 
 @pipeline(mode_defs=[default_mode_def_for_test])
 def csv_hello_world_with_expectations():
-    ss = sum_solid()
-    sum_sq_solid(sum_df=ss)
-    df_expectations_solid(sum_df=ss)
+    ss = sum_op()
+    sum_sq_op(sum_df=ss)
+    df_expectations_op(sum_df=ss)
 
 
 @pipeline(mode_defs=[default_mode_def_for_test])
 def csv_hello_world_two():
-    sum_solid()
+    sum_op()
 
 
-@solid
-def solid_that_gets_tags(context):
-    return context.pipeline_run.tags
+@op
+def op_that_gets_tags(context):
+    return context.run.tags
 
 
 @pipeline(mode_defs=[default_mode_def_for_test], tags={"tag_key": "tag_value"})
 def hello_world_with_tags():
-    solid_that_gets_tags()
+    op_that_gets_tags()
 
 
-@solid(name="solid_with_list", input_defs=[], output_defs=[], config_schema=[int])
-def solid_def(_):
+@op(name="solid_with_list", ins={}, out={}, config_schema=[int])
+def op_def(_):
     return None
 
 
 @pipeline
 def pipeline_with_input_output_metadata():
-    @solid(
-        input_defs=[InputDefinition("foo", Int, metadata={"a": "b"})],
-        output_defs=[OutputDefinition(Int, "bar", metadata={"c": "d"})],
+    @op(
+        ins={"foo": In(Int, metadata={"a": "b"})},
+        out={"bar": Out(Int, metadata={"c": "d"})},
     )
-    def solid_with_input_output_metadata(foo):
+    def op_with_input_output_metadata(foo):
         return foo + 1
 
-    solid_with_input_output_metadata()
+    op_with_input_output_metadata()
 
 
 @pipeline
 def pipeline_with_list():
-    solid_def()
+    op_def()
 
 
 @pipeline(mode_defs=[default_mode_def_for_test])
 def csv_hello_world_df_input():
-    sum_sq_solid(sum_solid())
+    sum_sq_op(sum_op())
 
 
 @pipeline(mode_defs=[default_mode_def_for_test])
 def no_config_pipeline():
-    @lambda_solid
+    @op
     def return_hello():
         return "Hello"
 
@@ -475,11 +496,11 @@ def no_config_pipeline():
 
 @pipeline
 def no_config_chain_pipeline():
-    @lambda_solid
+    @op
     def return_foo():
         return "foo"
 
-    @lambda_solid
+    @op
     def return_hello_world(_):
         return "Hello World"
 
@@ -488,19 +509,19 @@ def no_config_chain_pipeline():
 
 @pipeline
 def scalar_output_pipeline():
-    @lambda_solid(output_def=OutputDefinition(String))
+    @op(out=Out(String))
     def return_str():
         return "foo"
 
-    @lambda_solid(output_def=OutputDefinition(Int))
+    @op(out=Out(Int))
     def return_int():
         return 34234
 
-    @lambda_solid(output_def=OutputDefinition(Bool))
+    @op(out=Out(Bool))
     def return_bool():
         return True
 
-    @lambda_solid(output_def=OutputDefinition(Any))
+    @op(out=Out(Any))
     def return_any():
         return "dkjfkdjfe"
 
@@ -512,13 +533,15 @@ def scalar_output_pipeline():
 
 @pipeline
 def pipeline_with_enum_config():
-    @solid(
+    @op(
         config_schema=Enum(
             "TestEnum",
             [
                 EnumValue(config_value="ENUM_VALUE_ONE", description="An enum value."),
                 EnumValue(config_value="ENUM_VALUE_TWO", description="An enum value."),
-                EnumValue(config_value="ENUM_VALUE_THREE", description="An enum value."),
+                EnumValue(
+                    config_value="ENUM_VALUE_THREE", description="An enum value."
+                ),
             ],
         )
     )
@@ -530,7 +553,7 @@ def pipeline_with_enum_config():
 
 @pipeline
 def naughty_programmer_pipeline():
-    @lambda_solid
+    @op
     def throw_a_thing():
         try:
             try:
@@ -549,13 +572,13 @@ def pipeline_with_invalid_definition_error():
     class InputTypeWithoutHydration(int):
         pass
 
-    @solid(output_defs=[OutputDefinition(InputTypeWithoutHydration)])
+    @op(out=Out(InputTypeWithoutHydration))
     def one(_):
         return 1
 
-    @solid(
-        input_defs=[InputDefinition("some_input", InputTypeWithoutHydration)],
-        output_defs=[OutputDefinition(Int)],
+    @op(
+        ins={"some_input": In(InputTypeWithoutHydration)},
+        out=Out(Int),
     )
     def fail_subset(_, some_input):
         return some_input
@@ -603,7 +626,7 @@ def double_adder_resource(init_context):
     preset_defs=[PresetDefinition.from_files("add", mode="add_mode")],
 )
 def multi_mode_with_resources():
-    @solid(required_resource_keys={"op"})
+    @op(required_resource_keys={"op"})
     def apply_to_three(context):
         return context.resources.op(3)
 
@@ -617,11 +640,11 @@ def req_resource(_):
 
 @pipeline(mode_defs=[ModeDefinition(resource_defs={"R1": req_resource})])
 def required_resource_pipeline():
-    @solid(required_resource_keys={"R1"})
-    def solid_with_required_resource(_):
+    @op(required_resource_keys={"R1"})
+    def op_with_required_resource(_):
         return 1
 
-    solid_with_required_resource()
+    op_with_required_resource()
 
 
 @logger(config_schema=Field(str))
@@ -669,7 +692,7 @@ def bar_logger(init_context):
     ]
 )
 def multi_mode_with_loggers():
-    @solid
+    @op
     def return_six(context):
         context.log.critical("OMG!")
         return 6
@@ -679,19 +702,23 @@ def multi_mode_with_loggers():
 
 @pipeline
 def composites_pipeline():
-    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+    @op(ins={"num": In(Int)}, out=Out(Int))
     def add_one(num):
         return num + 1
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def div_two(num):
         return num / 2
 
-    @composite_solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+    @composite_solid(
+        input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)]
+    )
     def add_two(num):
         return add_one.alias("adder_2")(add_one.alias("adder_1")(num))
 
-    @composite_solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+    @composite_solid(
+        input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)]
+    )
     def add_four(num):
         return add_two.alias("adder_2")(add_two.alias("adder_1")(num))
 
@@ -704,7 +731,7 @@ def composites_pipeline():
 
 @pipeline
 def materialization_pipeline():
-    @solid
+    @op
     def materialize(_):
         yield AssetMaterialization(
             asset_key="all_types",
@@ -714,7 +741,9 @@ def materialization_pipeline():
                 MetadataEntry("url", value=MetadataValue.url("https://bigty.pe/neato")),
                 MetadataEntry("path", value=MetadataValue.path("/tmp/awesome")),
                 MetadataEntry("json", value={"is_dope": True}),
-                MetadataEntry("python class", value=MetadataValue.python_artifact(MetadataEntry)),
+                MetadataEntry(
+                    "python class", value=MetadataValue.python_artifact(MetadataEntry)
+                ),
                 MetadataEntry(
                     "python function",
                     value=MetadataValue.python_artifact(file_relative_path),
@@ -723,7 +752,9 @@ def materialization_pipeline():
                 MetadataEntry("int", value=1),
                 MetadataEntry("float NaN", value=float("nan")),
                 MetadataEntry("long int", value=LONG_INT),
-                MetadataEntry("pipeline run", value=MetadataValue.dagster_run("fake_run_id")),
+                MetadataEntry(
+                    "pipeline run", value=MetadataValue.dagster_run("fake_run_id")
+                ),
                 MetadataEntry("my asset", value=AssetKey("my_asset")),
                 MetadataEntry(
                     "table",
@@ -759,7 +790,7 @@ def materialization_pipeline():
 
 @pipeline
 def spew_pipeline():
-    @solid
+    @op
     def spew(_):
         print("HELLO WORLD")  # pylint: disable=print-call
 
@@ -788,11 +819,11 @@ def retry_config_resource(context):
     ]
 )
 def eventually_successful():
-    @solid
+    @op
     def spawn() -> int:
         return 0
 
-    @solid(
+    @op(
         required_resource_keys={"retry_count"},
     )
     def fail(context: SolidExecutionContext, depth: int) -> int:
@@ -801,11 +832,11 @@ def eventually_successful():
 
         return depth + 1
 
-    @solid
+    @op
     def reset(depth: int) -> int:
         return depth
 
-    @solid
+    @op
     def collect(fan_in: List[int]):
         if fan_in != [1, 2, 3]:
             raise Exception(f"Fan in failed, expected [1, 2, 3] got {fan_in}")
@@ -820,17 +851,17 @@ def eventually_successful():
 
 @pipeline
 def hard_failer():
-    @solid(
+    @op(
         config_schema={"fail": Field(Bool, is_required=False, default_value=False)},
-        output_defs=[OutputDefinition(Int)],
+        out=Out(Int),
     )
     def hard_fail_or_0(context):
-        if context.solid_config["fail"]:
+        if context.op_config["fail"]:
             segfault()
         return 0
 
-    @solid(
-        input_defs=[InputDefinition("n", Int)],
+    @op(
+        ins={"n": In(Int)},
     )
     def increment(_, n):
         return n + 1
@@ -848,13 +879,13 @@ def resource_b(_):
     return "B"
 
 
-@solid(required_resource_keys={"a"})
+@op(required_resource_keys={"a"})
 def start(context):
     assert context.resources.a == "A"
     return 1
 
 
-@solid(required_resource_keys={"b"})
+@op(required_resource_keys={"b"})
 def will_fail(context, num):  # pylint: disable=unused-argument
     assert context.resources.b == "B"
     raise Exception("fail")
@@ -875,37 +906,34 @@ def retry_resource_pipeline():
     will_fail(start())
 
 
-@solid(
+@op(
     config_schema={"fail": bool},
-    input_defs=[InputDefinition("inp", str)],
-    output_defs=[
-        OutputDefinition(str, "start_fail", is_required=False),
-        OutputDefinition(str, "start_skip", is_required=False),
-    ],
+    ins={"inp": In(str)},
+    out={
+        "start_fail": Out(str, is_required=False),
+        "start_skip": Out(str, is_required=False),
+    },
 )
 def can_fail(context, inp):  # pylint: disable=unused-argument
-    if context.solid_config["fail"]:
+    if context.op_config["fail"]:
         raise Exception("blah")
 
     yield Output("okay perfect", "start_fail")
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(str, "success", is_required=False),
-        OutputDefinition(str, "skip", is_required=False),
-    ],
+@op(
+    out={"success": Out(str, is_required=False), "skip": Out(str, is_required=False)},
 )
 def multi(_):
     yield Output("okay perfect", "success")
 
 
-@solid
+@op
 def passthrough(_, value):
     return value
 
 
-@solid(input_defs=[InputDefinition("start", Nothing)], output_defs=[])
+@op(ins={"start": In(Nothing)}, out={})
 def no_output(_):
     yield ExpectationResult(True)
 
@@ -921,11 +949,11 @@ def retry_multi_output_pipeline():
 
 @pipeline(tags={"foo": "bar"}, mode_defs=[default_mode_def_for_test])
 def tagged_pipeline():
-    @lambda_solid
-    def simple_solid():
+    @op
+    def simple_op():
         return "Hello"
 
-    simple_solid()
+    simple_op()
 
 
 @resource
@@ -943,44 +971,43 @@ def disable_gc(_context):
 
 @pipeline(
     mode_defs=[
-        ModeDefinition(resource_defs={"io_manager": fs_io_manager, "disable_gc": disable_gc})
+        ModeDefinition(
+            resource_defs={"io_manager": fs_io_manager, "disable_gc": disable_gc}
+        )
     ]
 )
 def retry_multi_input_early_terminate_pipeline():
-    @lambda_solid(output_def=OutputDefinition(Int))
+    @op(out=Out(Int))
     def return_one():
         return 1
 
-    @solid(
+    @op(
         config_schema={"wait_to_terminate": bool},
-        input_defs=[InputDefinition("one", Int)],
-        output_defs=[OutputDefinition(Int)],
+        ins={"one": In(Int)},
+        out=Out(Int),
         required_resource_keys={"disable_gc"},
     )
     def get_input_one(context, one):
-        if context.solid_config["wait_to_terminate"]:
+        if context.op_config["wait_to_terminate"]:
             while True:
                 time.sleep(0.1)
         return one
 
-    @solid(
+    @op(
         config_schema={"wait_to_terminate": bool},
-        input_defs=[InputDefinition("one", Int)],
-        output_defs=[OutputDefinition(Int)],
+        ins={"one": In(Int)},
+        out=Out(Int),
         required_resource_keys={"disable_gc"},
     )
     def get_input_two(context, one):
-        if context.solid_config["wait_to_terminate"]:
+        if context.op_config["wait_to_terminate"]:
             while True:
                 time.sleep(0.1)
         return one
 
-    @lambda_solid(
-        input_defs=[
-            InputDefinition("input_one", Int),
-            InputDefinition("input_two", Int),
-        ],
-        output_def=OutputDefinition(Int),
+    @op(
+        ins={"input_one": In(Int), "input_two": In(Int)},
+        out=Out(Int),
     )
     def sum_inputs(input_one, input_two):
         return input_one + input_two
@@ -991,12 +1018,12 @@ def retry_multi_input_early_terminate_pipeline():
 
 @pipeline(mode_defs=[default_mode_def_for_test])
 def dynamic_pipeline():
-    @solid
+    @op
     def multiply_by_two(context, y):
         context.log.info("multiply_by_two is returning " + str(y * 2))
         return y * 2
 
-    @solid
+    @op
     def multiply_inputs(context, y, ten, should_fail):
         current_run = context.instance.get_run_by_id(context.run_id)
         if should_fail:
@@ -1005,16 +1032,16 @@ def dynamic_pipeline():
         context.log.info("multiply_inputs is returning " + str(y * ten))
         return y * ten
 
-    @solid
+    @op
     def emit_ten(_):
         return 10
 
-    @solid(output_defs=[DynamicOutputDefinition()])
+    @op(out=DynamicOut())
     def emit(_):
         for i in range(3):
             yield DynamicOutput(value=i, mapping_key=str(i))
 
-    @solid
+    @op
     def sum_numbers(_, nums):
         return sum(nums)
 
@@ -1323,11 +1350,11 @@ def define_sensors():
 
 @pipeline(mode_defs=[default_mode_def_for_test])
 def chained_failure_pipeline():
-    @lambda_solid
+    @op
     def always_succeed():
         return "hello"
 
-    @lambda_solid
+    @op
     def conditionally_fail(_):
         if os.path.isfile(
             os.path.join(
@@ -1339,7 +1366,7 @@ def chained_failure_pipeline():
 
         return "hello"
 
-    @lambda_solid
+    @op
     def after_failure(_):
         return "world"
 
@@ -1348,7 +1375,7 @@ def chained_failure_pipeline():
 
 @pipeline
 def backcompat_materialization_pipeline():
-    @solid
+    @op
     def backcompat_materialize(_):
         yield Materialization(
             asset_key="all_types",
@@ -1358,7 +1385,9 @@ def backcompat_materialization_pipeline():
                 MetadataEntry("url", value=MetadataValue.url("https://bigty.pe/neato")),
                 MetadataEntry("path", value=MetadataValue.path("/tmp/awesome")),
                 MetadataEntry("json", value={"is_dope": True}),
-                MetadataEntry("python class", value=MetadataValue.python_artifact(MetadataEntry)),
+                MetadataEntry(
+                    "python class", value=MetadataValue.python_artifact(MetadataEntry)
+                ),
                 MetadataEntry(
                     "python function",
                     value=MetadataValue.python_artifact(file_relative_path),
@@ -1367,7 +1396,9 @@ def backcompat_materialization_pipeline():
                 MetadataEntry("int", value=1),
                 MetadataEntry("float NaN", value=float("nan")),
                 MetadataEntry("long int", value=LONG_INT),
-                MetadataEntry("pipeline run", value=MetadataValue.pipeline_run("fake_run_id")),
+                MetadataEntry(
+                    "pipeline run", value=MetadataValue.pipeline_run("fake_run_id")
+                ),
                 MetadataEntry("my asset", value=AssetKey("my_asset")),
             ],
         )
@@ -1378,7 +1409,7 @@ def backcompat_materialization_pipeline():
 
 @graph
 def simple_graph():
-    noop_solid()
+    noop_op()
 
 
 @graph
@@ -1386,7 +1417,7 @@ def composed_graph():
     simple_graph()
 
 
-@job(config={"ops": {"a_solid_with_config": {"config": {"one": "hullo"}}}})
+@job(config={"ops": {"a_op_with_config": {"config": {"one": "hullo"}}}})
 def job_with_default_config():
     @op(config_schema={"one": Field(String)})
     def a_solid_with_config(context):
@@ -1420,7 +1451,9 @@ def first_asset(
 
 
 @asset(required_resource_keys={"hanging_asset_resource"})
-def hanging_asset(context, first_asset):  # pylint: disable=redefined-outer-name,unused-argument
+def hanging_asset(
+    context, first_asset
+):  # pylint: disable=redefined-outer-name,unused-argument
     """
     Asset that hangs forever, used to test in-progress ops.
     """
@@ -1552,7 +1585,9 @@ time_partitioned_assets_job = build_assets_job(
 
 @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
 def yield_partition_materialization():
-    yield AssetMaterialization(asset_key=AssetKey("yield_partition_materialization"), partition="c")
+    yield AssetMaterialization(
+        asset_key=AssetKey("yield_partition_materialization"), partition="c"
+    )
     yield Output(5)
 
 
@@ -1565,7 +1600,9 @@ partition_materialization_job = build_assets_job(
 
 @asset
 def asset_yields_observation():
-    yield AssetObservation(asset_key=AssetKey("asset_yields_observation"), metadata={"text": "FOO"})
+    yield AssetObservation(
+        asset_key=AssetKey("asset_yields_observation"), metadata={"text": "FOO"}
+    )
     yield AssetMaterialization(asset_key=AssetKey("asset_yields_observation"))
     yield Output(5)
 
@@ -1772,7 +1809,9 @@ def define_pipelines():
 
 @repository
 def test_repo():
-    return define_pipelines() + define_schedules() + define_sensors() + define_partitions()
+    return (
+        define_pipelines() + define_schedules() + define_sensors() + define_partitions()
+    )
 
 
 @repository

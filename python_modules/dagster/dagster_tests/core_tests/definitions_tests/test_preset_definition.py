@@ -3,6 +3,9 @@ import re
 import pytest
 
 from dagster import (
+    In,
+    Out,
+    op,
     Bool,
     DagsterInstance,
     DagsterInvalidDefinitionError,
@@ -22,13 +25,13 @@ from dagster._utils import file_relative_path
 
 
 def test_presets():
-    @solid(config_schema={"error": Bool})
+    @op(config_schema={"error": Bool})
     def can_fail(context):
-        if context.solid_config["error"]:
+        if context.op_config["error"]:
             raise Exception("I did an error")
         return "cool"
 
-    @lambda_solid
+    @op
     def always_fail():
         raise Exception("I always do this")
 
@@ -45,7 +48,9 @@ def test_presets():
                 "passing_overide_to_fail",
                 config_files=[file_relative_path(__file__, "pass_env.yaml")],
                 solid_selection=["can_fail"],
-            ).with_additional_config({"solids": {"can_fail": {"config": {"error": True}}}}),
+            ).with_additional_config(
+                {"solids": {"can_fail": {"config": {"error": True}}}}
+            ),
             PresetDefinition(
                 "passing_direct_dict",
                 run_config={"solids": {"can_fail": {"config": {"error": False}}}},
@@ -75,21 +80,31 @@ def test_presets():
     with pytest.raises(DagsterInvariantViolationError):
         PresetDefinition.from_files(
             "invalid_2",
-            config_files=[file_relative_path(__file__, "test_repository_definition.py")],
+            config_files=[
+                file_relative_path(__file__, "test_repository_definition.py")
+            ],
         )
 
     assert execute_pipeline(pipe, preset="passing").success
 
     assert execute_pipeline(pipe, preset="passing_direct_dict").success
-    assert execute_pipeline(pipe, preset="failing_1", raise_on_error=False).success == False
+    assert (
+        execute_pipeline(pipe, preset="failing_1", raise_on_error=False).success
+        == False
+    )
 
-    assert execute_pipeline(pipe, preset="failing_2", raise_on_error=False).success == False
+    assert (
+        execute_pipeline(pipe, preset="failing_2", raise_on_error=False).success
+        == False
+    )
 
     with pytest.raises(DagsterInvariantViolationError, match="Could not find preset"):
         execute_pipeline(pipe, preset="not_failing", raise_on_error=False)
 
     assert (
-        execute_pipeline(pipe, preset="passing_overide_to_fail", raise_on_error=False).success
+        execute_pipeline(
+            pipe, preset="passing_overide_to_fail", raise_on_error=False
+        ).success
         == False
     )
 
@@ -120,22 +135,24 @@ def test_presets():
 
 
 def test_invalid_preset():
-    @lambda_solid
-    def lil_solid():
+    @op
+    def lil_op():
         return ";)"
 
-    with pytest.raises(DagsterInvalidDefinitionError, match='mode "mode_b" which is not defined'):
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match='mode "mode_b" which is not defined'
+    ):
         PipelineDefinition(
             name="preset_modes",
-            solid_defs=[lil_solid],
+            solid_defs=[lil_op],
             mode_defs=[ModeDefinition(name="mode_a")],
             preset_defs=[PresetDefinition(name="preset_b", mode="mode_b")],
         )
 
 
 def test_conflicting_preset():
-    @lambda_solid
-    def lil_solid():
+    @op
+    def lil_op():
         return ";)"
 
     with pytest.raises(
@@ -143,7 +160,7 @@ def test_conflicting_preset():
     ):
         PipelineDefinition(
             name="preset_modes",
-            solid_defs=[lil_solid],
+            solid_defs=[lil_op],
             mode_defs=[ModeDefinition(name="mode_a")],
             preset_defs=[
                 PresetDefinition(name="preset_a", mode="mode_a"),
@@ -205,8 +222,8 @@ def test_from_pkg_resources():
 
 
 def test_tags():
-    @lambda_solid
-    def a_solid():
+    @op
+    def a_op():
         return "solid"
 
     @pipeline(
@@ -219,7 +236,7 @@ def test_tags():
         ],
     )
     def a_pipeline():
-        a_solid()
+        a_op()
 
     instance = DagsterInstance.ephemeral()
     result = execute_pipeline(
@@ -259,5 +276,9 @@ def test_with_additional_config(initial_run_config):
     assert id(preset_def) != id(new_preset_def)
 
     # And: the preset has the expected new config
-    new_full_config = {"foo": "bar", "fizz": "buzz"} if initial_run_config else new_config
-    assert new_preset_def == PresetDefinition("example_with_config", run_config=new_full_config)
+    new_full_config = (
+        {"foo": "bar", "fizz": "buzz"} if initial_run_config else new_config
+    )
+    assert new_preset_def == PresetDefinition(
+        "example_with_config", run_config=new_full_config
+    )

@@ -5,19 +5,21 @@ from dagster._core.test_utils import instance_for_test
 from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
 
 
-@solid
-def solid_a(_context):
+@op
+def op_a(_context):
     return [1, 2, 3]
 
 
-@solid
-def solid_b(_context, _df):
+@op
+def op_b(_context, _df):
     return 1
 
 
-@pipeline(mode_defs=[ModeDefinition("local", resource_defs={"io_manager": fs_io_manager})])
+@pipeline(
+    mode_defs=[ModeDefinition("local", resource_defs={"io_manager": fs_io_manager})]
+)
 def my_pipeline():
-    solid_b(solid_a())
+    op_b(op_a())
 
 
 def test_io_manager_with_multi_process_executor():

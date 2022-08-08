@@ -3,6 +3,9 @@ import re
 import pytest
 
 from dagster import (
+    In,
+    Out,
+    op,
     DagsterInvalidConfigDefinitionError,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
@@ -102,16 +105,18 @@ def test_to_solid_output_not_there():
         PipelineDefinition(
             solid_defs=solid_a_b_list(),
             name="test",
-            dependencies={"B": {"b_input": DependencyDefinition("A", output="NOTTHERE")}},
+            dependencies={
+                "B": {"b_input": DependencyDefinition("A", output="NOTTHERE")}
+            },
         )
 
 
 def test_invalid_item_in_solid_list():
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="Invalid item in node list: 'not_a_solid'"
+        DagsterInvalidDefinitionError, match="Invalid item in node list: 'not_a_op'"
     ):
         PipelineDefinition(
-            solid_defs=["not_a_solid"],
+            solid_defs=["not_a_op"],
             name="test",
         )
 
@@ -152,8 +157,8 @@ def test_pass_unrelated_type_to_field_error_solid_definition():
 
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @solid(config_schema="nope")
-        def _a_solid(_context):
+        @op(config_schema="nope")
+        def _a_op(_context):
             pass
 
     assert str(exc_info.value).startswith(
@@ -217,7 +222,9 @@ def test_bad_output_definition():
     # Test the case where the object throws in __nonzero__, e.g. pandas.DataFrame
     class Exotic:
         def __nonzero__(self):
-            raise ValueError("Love too break the core Python APIs in widely-used libraries")
+            raise ValueError(
+                "Love too break the core Python APIs in widely-used libraries"
+            )
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -234,7 +241,7 @@ def test_bad_output_definition():
 
 
 def test_solid_tags():
-    @solid(tags={"good": {"ok": "fine"}})
+    @op(tags={"good": {"ok": "fine"}})
     def _fine_tags(_):
         pass
 
@@ -246,7 +253,7 @@ def test_solid_tags():
         match="Could not JSON encode value",
     ):
 
-        @solid(tags={"bad": X()})
+        @op(tags={"bad": X()})
         def _bad_tags(_):
             pass
 
@@ -255,6 +262,6 @@ def test_solid_tags():
         match=r'JSON encoding "\[1, 2\]" of value "\(1, 2\)" is not equivalent to original value',
     ):
 
-        @solid(tags={"set_comes_back_as_dict": (1, 2)})
+        @op(tags={"set_comes_back_as_dict": (1, 2)})
         def _also_bad_tags(_):
             pass

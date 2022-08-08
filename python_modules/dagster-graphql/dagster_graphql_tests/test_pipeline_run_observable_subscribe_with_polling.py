@@ -5,7 +5,9 @@ from contextlib import contextmanager
 from unittest.mock import Mock
 
 import pytest
-from dagster_graphql.implementation.pipeline_run_storage import PipelineRunObservableSubscribe
+from dagster_graphql.implementation.pipeline_run_storage import (
+    PipelineRunObservableSubscribe,
+)
 from dagster_tests.core_tests.storage_tests.test_polling_event_watcher import (
     SqlitePollingEventLogStorage,
 )
@@ -15,6 +17,7 @@ from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.event_log import SqlEventLogStorage
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.test_utils import instance_for_test
+from dagster import In, Out, op
 
 
 @contextmanager
@@ -30,7 +33,10 @@ def create_test_instance_and_storage():
                 }
             },
         ) as instance:
-            yield (instance, instance._event_storage)  # pylint: disable=protected-access
+            yield (
+                instance,
+                instance._event_storage,
+            )  # pylint: disable=protected-access
 
 
 RUN_ID = "foo"
@@ -62,7 +68,9 @@ class EventStorer:
         )
 
 
-NumEventsAndCursor = namedtuple("NumEventsAndCursor", ["num_events_before_watch", "cursor"])
+NumEventsAndCursor = namedtuple(
+    "NumEventsAndCursor", ["num_events_before_watch", "cursor"]
+)
 
 MAX_NUM_EVENTS_BEFORE_WATCH = 2
 MAX_NUM_EVENTS_AFTER_WATCH = 2
@@ -82,9 +90,15 @@ MAX_NUM_EVENTS_AFTER_WATCH = 2
         ]
     ],
 )
-@pytest.mark.parametrize("num_events_after_watch", list(range(1, MAX_NUM_EVENTS_AFTER_WATCH + 1)))
-def test_using_instance(before_watch_config: NumEventsAndCursor, num_events_after_watch: int):
-    total_num_events: int = before_watch_config.num_events_before_watch + num_events_after_watch
+@pytest.mark.parametrize(
+    "num_events_after_watch", list(range(1, MAX_NUM_EVENTS_AFTER_WATCH + 1))
+)
+def test_using_instance(
+    before_watch_config: NumEventsAndCursor, num_events_after_watch: int
+):
+    total_num_events: int = (
+        before_watch_config.num_events_before_watch + num_events_after_watch
+    )
     with create_test_instance_and_storage() as (instance, storage):
         # set up instance & write `before_watch_config.num_events_before_watch` to event_log
         assert isinstance(storage, SqlitePollingEventLogStorage)
@@ -115,7 +129,8 @@ def test_using_instance(before_watch_config: NumEventsAndCursor, num_events_afte
 
         # ensure all expected events captured, no duplicates, etc.
         events_list = [
-            [event_record.user_message for event_record in call[0][0][0]] for call in call_args
+            [event_record.user_message for event_record in call[0][0][0]]
+            for call in call_args
         ]
         flattened_events_list = [int(message) for lst in events_list for message in lst]
         beginning_id = (

@@ -1,6 +1,14 @@
 import string
 
-from dagster import Int, ScheduleDefinition, repository, usable_as_dagster_type
+from dagster import (
+    In,
+    Out,
+    op,
+    Int,
+    ScheduleDefinition,
+    repository,
+    usable_as_dagster_type,
+)
 from dagster._legacy import (
     InputDefinition,
     OutputDefinition,
@@ -11,12 +19,12 @@ from dagster._legacy import (
 )
 
 
-@lambda_solid
+@op
 def do_something():
     return 1
 
 
-@lambda_solid
+@op
 def do_input(x):
     return x
 
@@ -41,13 +49,13 @@ def bar_pipeline():
     class InputTypeWithoutHydration(int):
         pass
 
-    @solid(output_defs=[OutputDefinition(InputTypeWithoutHydration)])
+    @op(out=Out(InputTypeWithoutHydration))
     def one(_):
         return 1
 
-    @solid(
-        input_defs=[InputDefinition("some_input", InputTypeWithoutHydration)],
-        output_defs=[OutputDefinition(Int)],
+    @op(
+        ins={"some_input": In(InputTypeWithoutHydration)},
+        out=Out(Int),
     )
     def fail_subset(_, some_input):
         return some_input

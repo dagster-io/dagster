@@ -4,6 +4,9 @@ import warnings
 import pytest
 
 from dagster import (
+    In,
+    Out,
+    op,
     DependencyDefinition,
     Field,
     Int,
@@ -20,7 +23,10 @@ from dagster import reconstructable
 from dagster._core.definitions import Node
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.graph_definition import _create_adjacency_lists
-from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
+from dagster._core.errors import (
+    DagsterExecutionStepNotFoundError,
+    DagsterInvariantViolationError,
+)
 from dagster._core.execution.results import SolidExecutionResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import (
@@ -74,16 +80,19 @@ def make_compute_fn():
 
         result = []
         result.extend(passed_rows)
-        result.append({context.solid.name: "compute_called"})
+        result.append({context.op.name: "compute_called"})
         return result
 
     return compute
 
 
 def _do_construct(solids, dependencies):
-    pipeline_def = PipelineDefinition(name="test", solid_defs=solids, dependencies=dependencies)
+    pipeline_def = PipelineDefinition(
+        name="test", solid_defs=solids, dependencies=dependencies
+    )
     solids = {
-        s.name: Node(name=s.name, definition=s, graph_definition=pipeline_def.graph) for s in solids
+        s.name: Node(name=s.name, definition=s, graph_definition=pipeline_def.graph)
+        for s in solids
     }
     dependency_structure = DependencyStructure.from_definitions(solids, dependencies)
     return _create_adjacency_lists(list(solids.values()), dependency_structure)
@@ -110,7 +119,9 @@ def test_single_dep_adjacency_lists():
 
 
 def test_diamond_deps_adjaceny_lists():
-    forward_edges, backwards_edges = _do_construct(create_diamond_solids(), diamond_deps())
+    forward_edges, backwards_edges = _do_construct(
+        create_diamond_solids(), diamond_deps()
+    )
 
     assert forward_edges == {
         "A_source": {"A"},
@@ -267,7 +278,7 @@ def test_create_pipeline_with_empty_solids_list():
 
 
 def test_singleton_pipeline():
-    stub_solid = define_stub_solid("stub", [{"a key": "a value"}])
+    stub_op = define_stub_solid("stub", [{"a key": "a value"}])
 
     # will fail if any warning is emitted
     with warnings.catch_warnings():
@@ -275,7 +286,7 @@ def test_singleton_pipeline():
 
         @pipeline
         def single_solid_pipeline():
-            stub_solid()
+            stub_op()
 
         assert execute_pipeline(single_solid_pipeline).success
 
@@ -349,21 +360,23 @@ def test_empty_pipeline_execution():
 def test_pipeline_name_threaded_through_context():
     name = "foobar"
 
-    @solid()
-    def assert_name_solid(context):
-        assert context.pipeline_name == name
+    @op()
+    def assert_name_op(context):
+        assert context.job_name == name
 
-    result = execute_pipeline(PipelineDefinition(name="foobar", solid_defs=[assert_name_solid]))
+    result = execute_pipeline(
+        PipelineDefinition(name="foobar", solid_defs=[assert_name_op])
+    )
 
     assert result.success
 
 
 def test_pipeline_subset():
-    @solid
+    @op
     def return_one():
         return 1
 
-    @solid
+    @op
     def add_one(num):
         return num + 1
 
@@ -389,11 +402,11 @@ def test_pipeline_subset():
 
 
 def test_pipeline_explicit_subset():
-    @solid
+    @op
     def return_one():
         return 1
 
-    @solid
+    @op
     def add_one(num):
         return num + 1
 
@@ -419,11 +432,11 @@ def test_pipeline_explicit_subset():
 
 
 def test_pipeline_subset_of_subset():
-    @solid
+    @op
     def return_one():
         return 1
 
-    @solid
+    @op
     def add_one(num):
         return num + 1
 
@@ -437,7 +450,9 @@ def test_pipeline_subset_of_subset():
     assert len(pipeline_result.solid_result_list) == 4
     assert pipeline_result.result_for_solid("add_one_a").output_value() == 2
 
-    subset_pipeline = pipeline_def.get_pipeline_subset_def({"add_one_a", "return_one_a"})
+    subset_pipeline = pipeline_def.get_pipeline_subset_def(
+        {"add_one_a", "return_one_a"}
+    )
     subset_result = execute_pipeline(subset_pipeline)
     assert subset_result.success
     assert len(subset_result.solid_result_list) == 2
@@ -457,15 +472,15 @@ def test_pipeline_subset_of_subset():
 
 
 def test_pipeline_subset_with_multi_dependency():
-    @solid
+    @op
     def return_one():
         return 1
 
-    @solid
+    @op
     def return_two():
         return 2
 
-    @solid(input_defs=[InputDefinition("dep", Nothing)])
+    @op(ins={"dep": In(Nothing)})
     def noop():
         return 3
 
@@ -504,15 +519,15 @@ def test_pipeline_subset_with_multi_dependency():
 
 
 def test_pipeline_explicit_subset_with_multi_dependency():
-    @solid
+    @op
     def return_one():
         return 1
 
-    @solid
+    @op
     def return_two():
         return 2
 
-    @solid(input_defs=[InputDefinition("dep", Nothing)])
+    @op(ins={"dep": In(Nothing)})
     def noop():
         return 3
 
@@ -551,23 +566,27 @@ def test_pipeline_explicit_subset_with_multi_dependency():
 
 
 def define_three_part_pipeline():
-    @solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+    @op(ins={"num": In(Int)}, out=Out(Int))
     def add_one(num):
         return num + 1
 
-    @solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+    @op(ins={"num": In(Int)}, out=Out(Int))
     def add_two(num):
         return num + 2
 
-    @solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
+    @op(ins={"num": In(Int)}, out=Out(Int))
     def add_three(num):
         return num + 3
 
-    return PipelineDefinition(name="three_part_pipeline", solid_defs=[add_one, add_two, add_three])
+    return PipelineDefinition(
+        name="three_part_pipeline", solid_defs=[add_one, add_two, add_three]
+    )
 
 
 def define_created_disjoint_three_part_pipeline():
-    return define_three_part_pipeline().get_pipeline_subset_def({"add_one", "add_three"})
+    return define_three_part_pipeline().get_pipeline_subset_def(
+        {"add_one", "add_three"}
+    )
 
 
 def test_pipeline_disjoint_subset():
@@ -599,9 +618,9 @@ def test_pipeline_execution_explicit_disjoint_subset():
 
 
 def test_pipeline_wrapping_types():
-    @solid(
-        input_defs=[InputDefinition("value", Optional[List[Optional[String]]])],
-        output_defs=[OutputDefinition(Optional[List[Optional[String]]])],
+    @op(
+        ins={"value": In(Optional[List[Optional[String]]])},
+        out=Out(Optional[List[Optional[String]]]),
     )
     def double_string_for_all(value):
         if not value:
@@ -628,13 +647,19 @@ def test_pipeline_wrapping_types():
 
     assert execute_pipeline(
         wrapping_test,
-        run_config={"solids": {"double_string_for_all": {"inputs": {"value": [{"value": "foo"}]}}}},
+        run_config={
+            "solids": {
+                "double_string_for_all": {"inputs": {"value": [{"value": "foo"}]}}
+            }
+        },
     ).success
 
     assert execute_pipeline(
         wrapping_test,
         run_config={
-            "solids": {"double_string_for_all": {"inputs": {"value": [{"value": "bar"}, None]}}}
+            "solids": {
+                "double_string_for_all": {"inputs": {"value": [{"value": "bar"}, None]}}
+            }
         },
     ).success
 
@@ -642,12 +667,12 @@ def test_pipeline_wrapping_types():
 def test_pipeline_streaming_iterator():
     events = []
 
-    @solid
+    @op
     def push_one():
         events.append(1)
         return 1
 
-    @solid
+    @op
     def add_one(num):
         events.append(num + 1)
         return num + 1
@@ -672,7 +697,16 @@ def test_pipeline_streaming_iterator():
 def test_pipeline_streaming_multiple_outputs():
     events = []
 
-    @solid(output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")])
+    @op(
+        out={
+            "one": Out(
+                Int,
+            ),
+            "two": Out(
+                Int,
+            ),
+        }
+    )
     def push_one_two(_context):
         events.append(1)
         yield Output(1, "one")
@@ -699,8 +733,8 @@ def test_pipeline_streaming_multiple_outputs():
 
 
 def test_pipeline_init_failure():
-    @solid(required_resource_keys={"failing"})
-    def stub_solid(_):
+    @op(required_resource_keys={"failing"})
+    def stub_op(_):
         return None
 
     env_config = {}
@@ -711,12 +745,14 @@ def test_pipeline_init_failure():
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                resource_defs={"failing": ResourceDefinition(resource_fn=failing_resource_fn)}
+                resource_defs={
+                    "failing": ResourceDefinition(resource_fn=failing_resource_fn)
+                }
             )
         ]
     )
     def failing_init_pipeline():
-        stub_solid()
+        stub_op()
 
     mem_instance = DagsterInstance.ephemeral()
     result = execute_pipeline(
@@ -746,11 +782,11 @@ def test_pipeline_init_failure():
 
 
 def test_reexecution_fs_storage():
-    @solid
+    @op
     def return_one():
         return 1
 
-    @solid
+    @op
     def add_one(num):
         return num + 1
 
@@ -795,17 +831,17 @@ def test_reexecution_fs_storage():
 
 
 def retry_pipeline():
-    @solid(
+    @op(
         config_schema={
             "fail": Field(bool, is_required=False, default_value=False),
         },
     )
     def return_one(context):
-        if context.solid_config["fail"]:
+        if context.op_config["fail"]:
             raise Exception("FAILURE")
         return 1
 
-    @solid
+    @op
     def add_one(num):
         return num + 1
 
@@ -863,11 +899,11 @@ def test_multiproc_reexecution_fs_storage_after_fail():
 
 
 def test_reexecution_fs_storage_with_solid_selection():
-    @solid
+    @op
     def return_one():
         return 1
 
-    @solid
+    @op
     def add_one(num):
         return num + 1
 
@@ -893,7 +929,12 @@ def test_reexecution_fs_storage_with_solid_selection():
     assert reexecution_result_no_solid_selection.success
     assert len(reexecution_result_no_solid_selection.solid_result_list) == 2
     assert reexecution_result_no_solid_selection.result_for_solid("add_one").skipped
-    assert reexecution_result_no_solid_selection.result_for_solid("return_one").output_value() == 1
+    assert (
+        reexecution_result_no_solid_selection.result_for_solid(
+            "return_one"
+        ).output_value()
+        == 1
+    )
 
     # Case 2: re-execute a pipeline when the original pipeline has solid selection
     pipeline_result_solid_selection = execute_pipeline(
@@ -905,7 +946,10 @@ def test_reexecution_fs_storage_with_solid_selection():
     assert len(pipeline_result_solid_selection.solid_result_list) == 1
     with pytest.raises(DagsterInvariantViolationError):
         pipeline_result_solid_selection.result_for_solid("add_one")
-    assert pipeline_result_solid_selection.result_for_solid("return_one").output_value() == 1
+    assert (
+        pipeline_result_solid_selection.result_for_solid("return_one").output_value()
+        == 1
+    )
 
     reexecution_result_solid_selection = reexecute_pipeline(
         pipeline_def,
@@ -917,7 +961,10 @@ def test_reexecution_fs_storage_with_solid_selection():
     assert len(reexecution_result_solid_selection.solid_result_list) == 1
     with pytest.raises(DagsterInvariantViolationError):
         pipeline_result_solid_selection.result_for_solid("add_one")
-    assert reexecution_result_solid_selection.result_for_solid("return_one").output_value() == 1
+    assert (
+        reexecution_result_solid_selection.result_for_solid("return_one").output_value()
+        == 1
+    )
 
     # Case 3: re-execute a pipeline partially when the original pipeline has solid selection and
     #   re-exeucte a step which hasn't been included in the original pipeline
@@ -947,11 +994,11 @@ def test_reexecution_fs_storage_with_solid_selection():
 
 
 def test_single_step_reexecution():
-    @solid
+    @op
     def return_one():
         return 1
 
-    @solid
+    @op
     def add_one(num):
         return num + 1
 
@@ -980,11 +1027,11 @@ def test_single_step_reexecution():
 
 
 def test_two_step_reexecution():
-    @solid
+    @op
     def return_one():
         return 1
 
-    @solid
+    @op
     def add_one(num):
         return num + 1
 
@@ -1010,16 +1057,18 @@ def test_two_step_reexecution():
 
 
 def test_optional():
-    @solid(
-        output_defs=[
-            OutputDefinition(Int, "x"),
-            OutputDefinition(Int, "y", is_required=False),
-        ]
+    @op(
+        out={
+            "x": Out(
+                Int,
+            ),
+            "y": Out(Int, is_required=False),
+        }
     )
     def return_optional(_context):
         yield Output(1, "x")
 
-    @solid
+    @op
     def echo(x):
         return x
 
@@ -1043,11 +1092,11 @@ def test_optional():
 def test_selector_with_partial_dependency_dict():
     executed = {}
 
-    @solid
+    @op
     def def_one(_):
         executed["one"] = True
 
-    @solid
+    @op
     def def_two(_):
         executed["two"] = True
 
@@ -1062,11 +1111,11 @@ def test_selector_with_partial_dependency_dict():
 
 
 def test_selector_with_subset_for_execution():
-    @solid
+    @op
     def def_one(_):
         pass
 
-    @solid
+    @op
     def def_two(_):
         pass
 
@@ -1082,7 +1131,7 @@ def test_selector_with_subset_for_execution():
 def test_default_run_id():
     called = {}
 
-    @solid
+    @op
     def check_run_id(context):
         called["yes"] = True
         assert uuid.UUID(context.run_id)
@@ -1098,7 +1147,7 @@ def test_default_run_id():
 def test_pipeline_tags():
     called = {}
 
-    @solid
+    @op
     def check_tags(context):
         assert context.get_tag("foo") == "bar"
         called["yup"] = True
@@ -1120,24 +1169,24 @@ def test_pipeline_tags():
 
 
 def test_multi_dep_optional():
-    @solid
+    @op
     def ret_one():
         return 1
 
-    @solid
+    @op
     def echo(x):
         return x
 
-    @solid(output_defs=[OutputDefinition(name="skip", is_required=False)])
+    @op(out={"skip": Out(is_required=False)})
     def skip(_):
         return
         yield  # pylint: disable=unreachable
 
-    @solid
+    @op
     def collect(_, items):
         return items
 
-    @solid
+    @op
     def collect_and(_, items, other):
         return items + [other]
 

@@ -8,7 +8,15 @@ from contextlib import contextmanager
 import pendulum
 import pytest
 
-from dagster import Any, Field, daily_partitioned_config, fs_io_manager, graph, repository
+from dagster import (
+    op,
+    Any,
+    Field,
+    daily_partitioned_config,
+    fs_io_manager,
+    graph,
+    repository,
+)
 from dagster._core.definitions import Partition, PartitionSetDefinition
 from dagster._core.execution.api import execute_pipeline
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -17,7 +25,11 @@ from dagster._core.host_representation import (
     InProcessRepositoryLocationOrigin,
 )
 from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
-from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster._core.storage.tags import (
+    BACKFILL_ID_TAG,
+    PARTITION_NAME_TAG,
+    PARTITION_SET_TAG,
+)
 from dagster._core.test_utils import (
     create_test_daemon_workspace,
     instance_for_test,
@@ -41,7 +53,7 @@ def _failure_flag_file():
     return os.path.join(get_system_temp_directory(), "conditionally_fail")
 
 
-@solid
+@op
 def always_succeed(_):
     return 1
 
@@ -59,12 +71,12 @@ def my_config(_start, _end):
 always_succeed_job = comp_always_succeed.to_job(config=my_config)
 
 
-@solid
-def fail_solid(_):
+@op
+def fail_op(_):
     raise Exception("blah")
 
 
-@solid
+@op
 def conditionally_fail(_, _input):
     if os.path.isfile(_failure_flag_file()):
         raise Exception("blah")
@@ -72,7 +84,7 @@ def conditionally_fail(_, _input):
     return 1
 
 
-@solid
+@op
 def after_failure(_, _input):
     return 1
 
@@ -96,20 +108,20 @@ def partial_pipeline():
 
 @pipeline(mode_defs=[default_mode_def])
 def parallel_failure_pipeline():
-    fail_solid.alias("fail_one")()
-    fail_solid.alias("fail_two")()
-    fail_solid.alias("fail_three")()
+    fail_op.alias("fail_one")()
+    fail_op.alias("fail_two")()
+    fail_op.alias("fail_three")()
     always_succeed.alias("success_four")()
 
 
-@solid(config_schema=Field(Any))
-def config_solid(_):
+@op(config_schema=Field(Any))
+def config_op(_):
     return 1
 
 
 @pipeline(mode_defs=[default_mode_def])
 def config_pipeline():
-    config_solid()
+    config_op()
 
 
 # Type-ignores due to mypy bug with inference and lambdas
@@ -147,10 +159,11 @@ def _large_partition_config(_):
 
     return {
         "solids": {
-            "config_solid": {
+            "config_op": {
                 "config": {
                     "foo": {
-                        _random_string(10): _random_string(20) for i in range(REQUEST_CONFIG_COUNT)
+                        _random_string(10): _random_string(20)
+                        for i in range(REQUEST_CONFIG_COUNT)
                     }
                 }
             }
@@ -237,7 +250,9 @@ def wait_for_all_runs_to_start(instance, timeout=10):
             PipelineRunStatus.STARTING,
             PipelineRunStatus.STARTED,
         ]
-        pending_runs = [run for run in instance.get_runs() if run.status in pending_states]
+        pending_runs = [
+            run for run in instance.get_runs() if run.status in pending_states
+        ]
 
         if len(pending_runs) == 0:
             break
@@ -269,7 +284,9 @@ def test_simple_backfill():
         workspace,
         external_repo,
     ):
-        external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
+        external_partition_set = external_repo.get_external_partition_set(
+            "simple_partition_set"
+        )
         instance.add_backfill(
             PartitionBackfill(
                 backfill_id="simple",
@@ -307,7 +324,9 @@ def test_canceled_backfill():
         workspace,
         external_repo,
     ):
-        external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
+        external_partition_set = external_repo.get_external_partition_set(
+            "simple_partition_set"
+        )
         instance.add_backfill(
             PartitionBackfill(
                 backfill_id="simple",
@@ -452,7 +471,9 @@ def test_partial_backfill():
         workspace,
         external_repo,
     ):
-        external_partition_set = external_repo.get_external_partition_set("partial_partition_set")
+        external_partition_set = external_repo.get_external_partition_set(
+            "partial_partition_set"
+        )
 
         # create full runs, where every step is executed
         instance.add_backfill(
@@ -553,7 +574,9 @@ def test_large_backfill():
         workspace,
         external_repo,
     ):
-        external_partition_set = external_repo.get_external_partition_set("large_partition_set")
+        external_partition_set = external_repo.get_external_partition_set(
+            "large_partition_set"
+        )
         instance.add_backfill(
             PartitionBackfill(
                 backfill_id="simple",

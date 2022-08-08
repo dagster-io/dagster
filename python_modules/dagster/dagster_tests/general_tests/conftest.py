@@ -1,6 +1,7 @@
 import os
 
 import pytest
+from dagster import In, Out, op
 
 
 @pytest.fixture(scope="session", autouse=True)

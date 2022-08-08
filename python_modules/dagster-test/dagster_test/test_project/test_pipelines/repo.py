@@ -12,6 +12,7 @@ from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
 
 from dagster import (
+    Out,
     AssetMaterialization,
     Bool,
     Field,
@@ -70,7 +71,8 @@ def celery_mode_defs(resources=None, name="default"):
             resource_defs=resources
             if resources
             else {"s3": s3_resource, "io_manager": s3_pickle_io_manager},
-            executor_defs=default_executors + [celery_executor, celery_k8s_job_executor],
+            executor_defs=default_executors
+            + [celery_executor, celery_k8s_job_executor],
         )
     ]
 
@@ -103,29 +105,29 @@ def docker_mode_defs():
     ]
 
 
-@solid(
-    input_defs=[InputDefinition("word", String)],
+@op(
+    ins={"word": In(String)},
     config_schema={
         "factor": IntSource,
         "should_segfault": Field(bool, is_required=False, default_value=False),
     },
 )
 def multiply_the_word(context, word):
-    if context.solid_config.get("should_segfault"):
+    if context.op_config.get("should_segfault"):
         segfault()
-    return word * context.solid_config["factor"]
+    return word * context.op_config["factor"]
 
 
-@solid(
-    input_defs=[InputDefinition("word", String)],
+@op(
+    ins={"word": In(String)},
     config_schema={"factor": IntSource, "sleep_time": IntSource},
 )
 def multiply_the_word_slow(context, word):
-    time.sleep(context.solid_config["sleep_time"])
-    return word * context.solid_config["factor"]
+    time.sleep(context.op_config["sleep_time"])
+    return word * context.op_config["factor"]
 
 
-@lambda_solid(input_defs=[InputDefinition("word")])
+@op(ins={"word": In()})
 def count_letters(word):
     counts = defaultdict(int)
     for letter in word:
@@ -145,7 +147,7 @@ def always_fail(context, word):
     config_schema={"factor": IntSource},
 )
 def multiply_the_word_op(context, word):
-    return word * context.solid_config["factor"]
+    return word * context.op_config["factor"]
 
 
 @op(ins={"word": In()})
@@ -156,20 +158,20 @@ def count_letters_op(word):
     return dict(counts)
 
 
-@lambda_solid()
-def error_solid():
+@op()
+def error_op():
     raise Exception("Unusual error")
 
 
-@solid
-def hanging_solid(_):
+@op
+def hanging_op(_):
     while True:
         time.sleep(0.1)
 
 
-@solid(config_schema={"looking_for": str})
-def get_environment_solid(context):
-    return os.environ.get(context.solid_config["looking_for"])
+@op(config_schema={"looking_for": str})
+def get_environment_op(context):
+    return os.environ.get(context.op_config["looking_for"])
 
 
 @pipeline(
@@ -180,7 +182,7 @@ def get_environment_solid(context):
     ]
 )
 def hanging_pipeline():
-    hanging_solid()
+    hanging_op()
 
 
 @pipeline(
@@ -248,12 +250,14 @@ def define_demo_job_celery():
         executor_def=celery_k8s_job_executor,
     )
     def demo_job_celery():
-        count_letters_op.alias("count_letters")(multiply_the_word_op.alias("multiply_the_word")())
+        count_letters_op.alias("count_letters")(
+            multiply_the_word_op.alias("multiply_the_word")()
+        )
 
     return demo_job_celery
 
 
-@solid(required_resource_keys={"buggy_resource"})
+@op(required_resource_keys={"buggy_resource"})
 def hello(context):
     context.log.info("Hello, world from IMAGE 1")
 
@@ -266,8 +270,8 @@ def define_docker_celery_pipeline():
         print("writing to stdout")  # pylint: disable=print-call
         return 42
 
-    @solid(required_resource_keys={"resource_with_output"})
-    def use_resource_with_output_solid():
+    @op(required_resource_keys={"resource_with_output"})
+    def use_resource_with_output_op():
         pass
 
     @pipeline(
@@ -284,8 +288,8 @@ def define_docker_celery_pipeline():
     )
     def docker_celery_pipeline():
         count_letters(multiply_the_word())
-        get_environment_solid()
-        use_resource_with_output_solid()
+        get_environment_op()
+        use_resource_with_output_op()
 
     return docker_celery_pipeline
 
@@ -309,13 +313,13 @@ def demo_pipeline_gcs():
     ]
 )
 def demo_error_pipeline():
-    error_solid()
+    error_op()
 
 
 # TODO: migrate test_project to crag
 @op
 def emit_airflow_execution_date_op(context):
-    airflow_execution_date = context.pipeline_run.tags["airflow_execution_date"]
+    airflow_execution_date = context.run.tags["airflow_execution_date"]
     yield AssetMaterialization(
         asset_key="airflow_execution_date",
         metadata={
@@ -332,7 +336,7 @@ def error_op():
 
 @job
 def demo_error_job():
-    error_solid()
+    error_op()
 
 
 @job
@@ -348,21 +352,21 @@ def demo_airflow_execution_date_job():
     ]
 )
 def demo_error_pipeline_s3():
-    error_solid()
+    error_op()
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(Int, "out_1", is_required=False),
-        OutputDefinition(Int, "out_2", is_required=False),
-        OutputDefinition(Int, "out_3", is_required=False),
-    ]
+@op(
+    out={
+        "out_1": Out(Int, is_required=False),
+        "out_2": Out(Int, is_required=False),
+        "out_3": Out(Int, is_required=False),
+    }
 )
 def foo(_):
     yield Output(1, "out_1")
 
 
-@solid
+@op
 def bar(_, input_arg):
     return input_arg
 
@@ -376,17 +380,18 @@ def optional_outputs():
 
 
 def define_long_running_pipeline_celery():
-    @solid
+    @op
     def long_running_task(context):
         iterations = 20 * 30  # 20 minutes
         for i in range(iterations):
             context.log.info(
-                "task in progress [%d/100]%% complete" % math.floor(100.0 * float(i) / iterations)
+                "task in progress [%d/100]%% complete"
+                % math.floor(100.0 * float(i) / iterations)
             )
             time.sleep(2)
         return random.randint(0, iterations)
 
-    @solid
+    @op
     def post_process(context, input_count):
         context.log.info("received input %d" % input_count)
         iterations = 60 * 2  # 2 hours
@@ -415,7 +420,7 @@ def define_large_pipeline_celery():
     )
 
 
-@solid(
+@op(
     tags={
         "dagster-k8s/config": {
             "container_config": {
@@ -427,7 +432,7 @@ def define_large_pipeline_celery():
         }
     }
 )
-def resource_req_solid(context):
+def resource_req_op(context):
     context.log.info("running")
 
 
@@ -446,7 +451,7 @@ def define_resources_limit_pipeline():
         },
     )
     def resources_limit_pipeline():
-        resource_req_solid()
+        resource_req_op()
 
     return resources_limit_pipeline
 
@@ -467,13 +472,19 @@ def define_schedules():
     def frequent_celery():
         from dagster_celery_k8s.config import get_celery_engine_config
 
-        additional_env_config_maps = ["test-aws-env-configmap"] if not IS_BUILDKITE else []
+        additional_env_config_maps = (
+            ["test-aws-env-configmap"] if not IS_BUILDKITE else []
+        )
 
         return merge_dicts(
             merge_yamls(
                 [
-                    file_relative_path(__file__, os.path.join("..", "environments", "env.yaml")),
-                    file_relative_path(__file__, os.path.join("..", "environments", "env_s3.yaml")),
+                    file_relative_path(
+                        __file__, os.path.join("..", "environments", "env.yaml")
+                    ),
+                    file_relative_path(
+                        __file__, os.path.join("..", "environments", "env_s3.yaml")
+                    ),
                 ]
             ),
             get_celery_engine_config(
@@ -489,7 +500,7 @@ def define_schedules():
 
 
 def define_step_retry_pipeline():
-    @solid
+    @op
     def fail_first_time(context):
         event_records = context.instance.all_logs(context.run_id)
         for event_record in event_records:
@@ -507,13 +518,13 @@ def define_step_retry_pipeline():
 
 
 def define_slow_pipeline():
-    @solid
-    def slow_solid(_):
+    @op
+    def slow_op(_):
         time.sleep(100)
 
     @pipeline(mode_defs=celery_mode_defs() + k8s_mode_defs(name="k8s"))
     def slow_pipeline():
-        slow_solid()
+        slow_op()
 
     return slow_pipeline
 
@@ -534,8 +545,8 @@ def define_resource_pipeline():
             key = "resource_termination_test/{}".format(context.run_id)
             s3.put_object(Bucket=bucket, Key=key, Body=b"foo")
 
-    @solid(required_resource_keys={"s3_resource_with_context_manager"})
-    def super_slow_solid():
+    @op(required_resource_keys={"s3_resource_with_context_manager"})
+    def super_slow_op():
         time.sleep(1000)
 
     @pipeline(
@@ -548,28 +559,30 @@ def define_resource_pipeline():
         )
     )
     def resource_pipeline():
-        super_slow_solid()
+        super_slow_op()
 
     return resource_pipeline
 
 
 def define_fan_in_fan_out_pipeline():
-    @solid(output_defs=[OutputDefinition(int)])
+    @op(out=Out(int))
     def return_one(_):
         return 1
 
-    @solid(input_defs=[InputDefinition("num", int)])
+    @op(ins={"num": In(int)})
     def add_one_fan(_, num):
         return num + 1
 
-    @solid(input_defs=[InputDefinition("nums", List[int])])
+    @op(ins={"nums": In(List[int])})
     def sum_fan_in(_, nums):
         return sum(nums)
 
     def construct_fan_in_level(source, level, fanout):
         fan_outs = []
         for i in range(0, fanout):
-            fan_outs.append(add_one_fan.alias("add_one_fan_{}_{}".format(level, i))(source))
+            fan_outs.append(
+                add_one_fan.alias("add_one_fan_{}_{}".format(level, i))(source)
+            )
 
         return sum_fan_in.alias("sum_{}".format(level))(fan_outs)
 
@@ -583,9 +596,9 @@ def define_fan_in_fan_out_pipeline():
     return fan_in_fan_out_pipeline
 
 
-@solid
+@op
 def emit_airflow_execution_date(context):
-    airflow_execution_date = context.pipeline_run.tags["airflow_execution_date"]
+    airflow_execution_date = context.run.tags["airflow_execution_date"]
     yield AssetMaterialization(
         asset_key="airflow_execution_date",
         metadata={
@@ -620,17 +633,17 @@ def demo_airflow_execution_date_pipeline_s3():
 def define_hard_failer():
     @pipeline(mode_defs=celery_mode_defs())
     def hard_failer():
-        @solid(
+        @op(
             config_schema={"fail": Field(Bool, is_required=False, default_value=False)},
-            output_defs=[OutputDefinition(Int)],
+            out=Out(Int),
         )
         def hard_fail_or_0(context):
-            if context.solid_config["fail"]:
+            if context.op_config["fail"]:
                 segfault()
             return 0
 
-        @solid(
-            input_defs=[InputDefinition("n", Int)],
+        @op(
+            ins={"n": In(Int)},
         )
         def increment(_, n):
             return n + 1
@@ -650,7 +663,7 @@ def define_demo_k8s_executor_pipeline():
     return demo_k8s_executor_pipeline
 
 
-@solid
+@op
 def check_volume_mount(context):
     with open(
         "/opt/dagster/test_mount_path/volume_mounted_file.yaml", "r", encoding="utf8"
@@ -671,8 +684,8 @@ def define_volume_mount_pipeline():
 
 
 def define_memoization_pipeline():
-    @solid
-    def foo_solid():
+    @op
+    def foo_op():
         return "foo"
 
     class BasicVersionStrategy(VersionStrategy):
@@ -684,7 +697,7 @@ def define_memoization_pipeline():
         version_strategy=BasicVersionStrategy(),
     )
     def memoization_pipeline():
-        foo_solid()
+        foo_op()
 
     return memoization_pipeline
 

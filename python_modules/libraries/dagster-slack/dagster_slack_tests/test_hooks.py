@@ -11,27 +11,33 @@ class SomeUserException(Exception):
 
 @patch("slack_sdk.WebClient.api_call")
 def test_failure_hook_on_solid_instance(mock_api_call):
-    @solid
-    def pass_solid(_):
+    @op
+    def pass_op(_):
         pass
 
-    @solid
-    def fail_solid(_):
+    @op
+    def fail_op(_):
         raise SomeUserException()
 
     @pipeline(mode_defs=[ModeDefinition(resource_defs={"slack": slack_resource})])
     def a_pipeline():
-        pass_solid.with_hooks(hook_defs={slack_on_failure("#foo")})()
-        pass_solid.alias("solid_with_hook").with_hooks(hook_defs={slack_on_failure("#foo")})()
-        fail_solid.alias("fail_solid_without_hook")()
-        fail_solid.with_hooks(
-            hook_defs={slack_on_failure(channel="#foo", dagit_base_url="localhost:3000")}
+        pass_op.with_hooks(hook_defs={slack_on_failure("#foo")})()
+        pass_op.alias("solid_with_hook").with_hooks(
+            hook_defs={slack_on_failure("#foo")}
+        )()
+        fail_op.alias("fail_op_without_hook")()
+        fail_op.with_hooks(
+            hook_defs={
+                slack_on_failure(channel="#foo", dagit_base_url="localhost:3000")
+            }
         )()
 
     result = execute_pipeline(
         a_pipeline,
         run_config={
-            "resources": {"slack": {"config": {"token": "xoxp-1234123412341234-12341234-1234"}}}
+            "resources": {
+                "slack": {"config": {"token": "xoxp-1234123412341234-12341234-1234"}}
+            }
         },
         raise_on_error=False,
     )
@@ -41,25 +47,27 @@ def test_failure_hook_on_solid_instance(mock_api_call):
 
 @patch("slack_sdk.WebClient.api_call")
 def test_failure_hook_decorator(mock_api_call):
-    @solid
-    def pass_solid(_):
+    @op
+    def pass_op(_):
         pass
 
-    @solid
-    def fail_solid(_):
+    @op
+    def fail_op(_):
         raise SomeUserException()
 
     @slack_on_failure("#foo")
     @pipeline(mode_defs=[ModeDefinition(resource_defs={"slack": slack_resource})])
     def a_pipeline():
-        pass_solid()
-        fail_solid()
-        fail_solid.alias("another_fail_solid")()
+        pass_op()
+        fail_op()
+        fail_op.alias("another_fail_op")()
 
     result = execute_pipeline(
         a_pipeline,
         run_config={
-            "resources": {"slack": {"config": {"token": "xoxp-1234123412341234-12341234-1234"}}}
+            "resources": {
+                "slack": {"config": {"token": "xoxp-1234123412341234-12341234-1234"}}
+            }
         },
         raise_on_error=False,
     )
@@ -72,25 +80,31 @@ def test_success_hook_on_solid_instance(mock_api_call):
     def my_message_fn(_):
         return "Some custom text"
 
-    @solid
-    def pass_solid(_):
+    @op
+    def pass_op(_):
         pass
 
-    @solid
-    def fail_solid(_):
+    @op
+    def fail_op(_):
         raise SomeUserException()
 
     @pipeline(mode_defs=[ModeDefinition(resource_defs={"slack": slack_resource})])
     def a_pipeline():
-        pass_solid.with_hooks(hook_defs={slack_on_success("#foo")})()
-        pass_solid.alias("solid_with_hook").with_hooks(hook_defs={slack_on_success("#foo")})()
-        pass_solid.alias("solid_without_hook")()
-        fail_solid.with_hooks(hook_defs={slack_on_success("#foo", message_fn=my_message_fn)})()
+        pass_op.with_hooks(hook_defs={slack_on_success("#foo")})()
+        pass_op.alias("solid_with_hook").with_hooks(
+            hook_defs={slack_on_success("#foo")}
+        )()
+        pass_op.alias("solid_without_hook")()
+        fail_op.with_hooks(
+            hook_defs={slack_on_success("#foo", message_fn=my_message_fn)}
+        )()
 
     result = execute_pipeline(
         a_pipeline,
         run_config={
-            "resources": {"slack": {"config": {"token": "xoxp-1234123412341234-12341234-1234"}}}
+            "resources": {
+                "slack": {"config": {"token": "xoxp-1234123412341234-12341234-1234"}}
+            }
         },
         raise_on_error=False,
     )
@@ -100,25 +114,27 @@ def test_success_hook_on_solid_instance(mock_api_call):
 
 @patch("slack_sdk.WebClient.api_call")
 def test_success_hook_decorator(mock_api_call):
-    @solid
-    def pass_solid(_):
+    @op
+    def pass_op(_):
         pass
 
-    @solid
-    def fail_solid(_):
+    @op
+    def fail_op(_):
         raise SomeUserException()
 
     @slack_on_success("#foo")
     @pipeline(mode_defs=[ModeDefinition(resource_defs={"slack": slack_resource})])
     def a_pipeline():
-        pass_solid()
-        pass_solid.alias("another_pass_solid")()
-        fail_solid()
+        pass_op()
+        pass_op.alias("another_pass_op")()
+        fail_op()
 
     result = execute_pipeline(
         a_pipeline,
         run_config={
-            "resources": {"slack": {"config": {"token": "xoxp-1234123412341234-12341234-1234"}}}
+            "resources": {
+                "slack": {"config": {"token": "xoxp-1234123412341234-12341234-1234"}}
+            }
         },
         raise_on_error=False,
     )

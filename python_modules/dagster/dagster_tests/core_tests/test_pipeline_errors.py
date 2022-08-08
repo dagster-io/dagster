@@ -3,6 +3,9 @@ import re
 import pytest
 
 from dagster import (
+    In,
+    Out,
+    op,
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
     DependencyDefinition,
@@ -24,21 +27,21 @@ from dagster._legacy import (
 
 
 def create_root_success_solid(name):
-    @solid(name=name)
-    def root_solid(_context):
+    @op(name=name)
+    def root_op(_context):
         passed_rows = []
         passed_rows.append({name: "compute_called"})
         return passed_rows
 
-    return root_solid
+    return root_op
 
 
 def create_root_fn_failure_solid(name):
-    @solid(name=name)
-    def failed_solid(_):
+    @op(name=name)
+    def failed_op(_):
         raise Exception("Compute failed")
 
-    return failed_solid
+    return failed_op
 
 
 def test_compute_failure_pipeline():
@@ -67,36 +70,36 @@ def test_failure_midstream():
     """
 
     solid_a = create_root_success_solid("solid_a")
-    solid_b = create_root_success_solid("solid_b")
+    op_b = create_root_success_solid("op_b")
 
-    @solid
-    def solid_c(_, a, b):
+    @op
+    def op_c(_, a, b):
         check.failed("user error")
         return [a, b, {"C": "compute_called"}]
 
-    @solid
-    def solid_d(_, c):
+    @op
+    def op_d(_, c):
         return [c, {"D": "compute_called"}]
 
     @pipeline
     def pipeline_def():
-        solid_d(solid_c(solid_a(), solid_b()))
+        op_d(op_c(solid_a(), op_b()))
 
     pipeline_result = execute_pipeline(pipeline_def, raise_on_error=False)
 
     assert pipeline_result.result_for_solid("solid_a").success
-    assert pipeline_result.result_for_solid("solid_b").success
-    assert not pipeline_result.result_for_solid("solid_c").success
+    assert pipeline_result.result_for_solid("op_b").success
+    assert not pipeline_result.result_for_solid("op_c").success
     assert (
-        pipeline_result.result_for_solid("solid_c").failure_data.error.cls_name
+        pipeline_result.result_for_solid("op_c").failure_data.error.cls_name
         == "DagsterExecutionStepExecutionError"
     )
     assert (
-        pipeline_result.result_for_solid("solid_c").failure_data.error.cause.cls_name
+        pipeline_result.result_for_solid("op_c").failure_data.error.cause.cls_name
         == "CheckError"
     )
-    assert not pipeline_result.result_for_solid("solid_d").success
-    assert pipeline_result.result_for_solid("solid_d").skipped
+    assert not pipeline_result.result_for_solid("op_d").success
+    assert pipeline_result.result_for_solid("op_d").skipped
 
 
 def test_failure_propagation():
@@ -110,45 +113,45 @@ def test_failure_propagation():
 
     solid_a = create_root_success_solid("solid_a")
 
-    @solid
-    def solid_b(_, in_):
+    @op
+    def op_b(_, in_):
         return in_
 
-    @solid
-    def solid_c(_, in_):
+    @op
+    def op_c(_, in_):
         return in_
 
-    @solid
-    def solid_d(_, _in):
+    @op
+    def op_d(_, _in):
         check.failed("user error")
 
-    @solid
-    def solid_e(_, in_):
+    @op
+    def op_e(_, in_):
         return in_
 
-    @solid
-    def solid_f(_, in_, _in2):
+    @op
+    def op_f(_, in_, _in2):
         return in_
 
     @pipeline
     def pipeline_def():
         a_result = solid_a()
-        solid_f(solid_c(solid_b(a_result)), solid_e(solid_d(a_result)))
+        op_f(op_c(op_b(a_result)), op_e(op_d(a_result)))
 
     pipeline_result = execute_pipeline(pipeline_def, raise_on_error=False)
 
     assert pipeline_result.result_for_solid("solid_a").success
-    assert pipeline_result.result_for_solid("solid_b").success
-    assert pipeline_result.result_for_solid("solid_c").success
-    assert not pipeline_result.result_for_solid("solid_d").success
+    assert pipeline_result.result_for_solid("op_b").success
+    assert pipeline_result.result_for_solid("op_c").success
+    assert not pipeline_result.result_for_solid("op_d").success
     assert (
-        pipeline_result.result_for_solid("solid_d").failure_data.error.cause.cls_name
+        pipeline_result.result_for_solid("op_d").failure_data.error.cause.cls_name
         == "CheckError"
     )
-    assert not pipeline_result.result_for_solid("solid_e").success
-    assert pipeline_result.result_for_solid("solid_e").skipped
-    assert not pipeline_result.result_for_solid("solid_f").success
-    assert pipeline_result.result_for_solid("solid_f").skipped
+    assert not pipeline_result.result_for_solid("op_e").success
+    assert pipeline_result.result_for_solid("op_e").skipped
+    assert not pipeline_result.result_for_solid("op_f").success
+    assert pipeline_result.result_for_solid("op_f").skipped
 
 
 def test_do_not_yield_result():
@@ -167,13 +170,15 @@ def test_do_not_yield_result():
 
 
 def test_yield_non_result():
-    @solid
+    @op
     def yield_wrong_thing(_):
         yield "foo"
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape('Compute function for solid "yield_wrong_thing" yielded a value of type <')
+        match=re.escape(
+            'Compute function for solid "yield_wrong_thing" yielded a value of type <'
+        )
         + r"(class|type)"
         + re.escape(
             " 'str'> rather than an instance of Output, AssetMaterialization, or ExpectationResult."
@@ -200,15 +205,15 @@ def test_user_error_propogation():
     class UserError(Exception):
         pass
 
-    @lambda_solid
+    @op
     def throws_user_error():
         raise UserError(err_msg)
 
-    @lambda_solid
+    @op
     def return_one():
         return 1
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def add_one(num):
         return num + 1
 
@@ -225,7 +230,7 @@ def test_user_error_propogation():
 
 
 def test_explicit_failure():
-    @lambda_solid
+    @op
     def throws_failure():
         raise DagsterTypeCheckDidNotPass(
             description="Always fails.",
@@ -240,4 +245,6 @@ def test_explicit_failure():
         execute_pipeline(pipe)
 
     assert exc_info.value.description == "Always fails."
-    assert exc_info.value.metadata_entries == [MetadataEntry("always_fails", value="why")]
+    assert exc_info.value.metadata_entries == [
+        MetadataEntry("always_fails", value="why")
+    ]

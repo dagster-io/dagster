@@ -6,8 +6,12 @@ from dagster._core.definitions.utils import (
     config_from_pkg_resources,
     config_from_yaml_strings,
 )
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
+)
 from dagster._utils import file_relative_path
+from dagster import op
 
 
 def test_check_valid_name():
@@ -31,12 +35,16 @@ def test_config_from_files():
     assert run_config == {"solids": {"can_fail": {"config": {"error": False}}}}
 
     with pytest.raises(DagsterInvariantViolationError):
-        config_from_files(config_files=[file_relative_path(__file__, "not_a_file.yaml")])
+        config_from_files(
+            config_files=[file_relative_path(__file__, "not_a_file.yaml")]
+        )
 
     with pytest.raises(DagsterInvariantViolationError):
         config_from_files(
             config_files=[
-                file_relative_path(__file__, "./definitions_tests/test_repository_definition.py")
+                file_relative_path(
+                    __file__, "./definitions_tests/test_repository_definition.py"
+                )
             ]
         )
 
@@ -65,7 +73,8 @@ final: "result"
     }
 
     with pytest.raises(
-        DagsterInvariantViolationError, match="Encountered error attempting to parse yaml"
+        DagsterInvariantViolationError,
+        match="Encountered error attempting to parse yaml",
     ):
         config_from_yaml_strings(["--- `"])
 

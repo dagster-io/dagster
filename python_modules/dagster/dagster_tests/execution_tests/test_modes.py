@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import DagsterInvariantViolationError, resource
+from dagster import op, DagsterInvariantViolationError, resource
 from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
 
 
@@ -20,8 +20,8 @@ def add_two_resource(_):
     return add_two
 
 
-@solid(required_resource_keys={"adder"})
-def solid_that_uses_adder_resource(context, number):
+@op(required_resource_keys={"adder"})
+def op_that_uses_adder_resource(context, number):
     return context.resources.adder(number)
 
 
@@ -32,29 +32,39 @@ def solid_that_uses_adder_resource(context, number):
     ]
 )
 def pipeline_with_mode():
-    solid_that_uses_adder_resource()
+    op_that_uses_adder_resource()
 
 
 def test_execute_pipeline_with_mode():
     pipeline_result = execute_pipeline(
         pipeline_with_mode,
         run_config={
-            "solids": {"solid_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}}
+            "solids": {
+                "op_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}
+            }
         },
         mode="add_one",
     )
     assert pipeline_result.success
-    assert pipeline_result.result_for_solid("solid_that_uses_adder_resource").output_value() == 5
+    assert (
+        pipeline_result.result_for_solid("op_that_uses_adder_resource").output_value()
+        == 5
+    )
 
     pipeline_result = execute_pipeline(
         pipeline_with_mode,
         run_config={
-            "solids": {"solid_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}}
+            "solids": {
+                "op_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}
+            }
         },
         mode="add_two",
     )
     assert pipeline_result.success
-    assert pipeline_result.result_for_solid("solid_that_uses_adder_resource").output_value() == 6
+    assert (
+        pipeline_result.result_for_solid("op_that_uses_adder_resource").output_value()
+        == 6
+    )
 
 
 def test_execute_pipeline_with_non_existant_mode():
@@ -63,14 +73,16 @@ def test_execute_pipeline_with_non_existant_mode():
             pipeline_with_mode,
             mode="BAD",
             run_config={
-                "solids": {"solid_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}}
+                "solids": {
+                    "op_that_uses_adder_resource": {"inputs": {"number": {"value": 4}}}
+                }
             },
         )
 
 
-@solid
-def solid_that_gets_tags(context):
-    return context.pipeline_run.tags
+@op
+def op_that_gets_tags(context):
+    return context.run.tags
 
 
 @pipeline(
@@ -80,13 +92,13 @@ def solid_that_gets_tags(context):
     tags={"tag_key": "tag_value"},
 )
 def pipeline_with_one_mode_and_tags():
-    solid_that_gets_tags()
+    op_that_gets_tags()
 
 
 def test_execute_pipeline_with_mode_and_tags():
     pipeline_result = execute_pipeline(pipeline_with_one_mode_and_tags)
     assert pipeline_result.success
-    assert pipeline_result.result_for_solid("solid_that_gets_tags").output_value() == {
+    assert pipeline_result.result_for_solid("op_that_gets_tags").output_value() == {
         "tag_key": "tag_value"
     }
 
@@ -100,13 +112,13 @@ def test_execute_pipeline_with_mode_and_tags():
     tags={"pipeline_tag_key": "pipeline_tag_value"},
 )
 def pipeline_with_multi_mode_and_tags():
-    solid_that_gets_tags()
+    op_that_gets_tags()
 
 
 def test_execute_pipeline_with_multi_mode_and_pipeline_def_tags():
     pipeline_result = execute_pipeline(pipeline_with_multi_mode_and_tags, mode="tags_1")
     assert pipeline_result.success
-    assert pipeline_result.result_for_solid("solid_that_gets_tags").output_value() == {
+    assert pipeline_result.result_for_solid("op_that_gets_tags").output_value() == {
         "pipeline_tag_key": "pipeline_tag_value"
     }
 
@@ -118,7 +130,7 @@ def test_execute_pipeline_with_multi_mode_and_pipeline_def_tags_and_execute_tags
         tags={"run_tag_key": "run_tag_value"},
     )
     assert pipeline_result.success
-    assert pipeline_result.result_for_solid("solid_that_gets_tags").output_value() == {
+    assert pipeline_result.result_for_solid("op_that_gets_tags").output_value() == {
         "pipeline_tag_key": "pipeline_tag_value",
         "run_tag_key": "run_tag_value",
     }

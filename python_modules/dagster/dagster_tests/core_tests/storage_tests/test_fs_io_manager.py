@@ -21,7 +21,13 @@ from dagster import (
     op,
     with_resources,
 )
-from dagster._core.definitions import AssetGroup, AssetIn, asset, build_assets_job, multi_asset
+from dagster._core.definitions import (
+    AssetGroup,
+    AssetIn,
+    asset,
+    build_assets_job,
+    multi_asset,
+)
 from dagster._core.definitions.version_strategy import VersionStrategy
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
@@ -32,17 +38,19 @@ from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
 
 
 def define_pipeline(io_manager):
-    @solid
-    def solid_a(_context):
+    @op
+    def op_a(_context):
         return [1, 2, 3]
 
-    @solid
-    def solid_b(_context, _df):
+    @op
+    def op_b(_context, _df):
         return 1
 
-    @pipeline(mode_defs=[ModeDefinition("local", resource_defs={"io_manager": io_manager})])
+    @pipeline(
+        mode_defs=[ModeDefinition("local", resource_defs={"io_manager": io_manager})]
+    )
     def asset_pipeline():
-        solid_b(solid_a())
+        op_b(op_a())
 
     return asset_pipeline
 
@@ -55,26 +63,36 @@ def test_fs_io_manager():
         result = execute_pipeline(pipeline_def)
         assert result.success
 
-        handled_output_events = list(filter(lambda evt: evt.is_handled_output, result.event_list))
+        handled_output_events = list(
+            filter(lambda evt: evt.is_handled_output, result.event_list)
+        )
         assert len(handled_output_events) == 2
 
-        filepath_a = os.path.join(tmpdir_path, result.run_id, "solid_a", "result")
-        result_metadata_entry_a = handled_output_events[0].event_specific_data.metadata_entries[0]
+        filepath_a = os.path.join(tmpdir_path, result.run_id, "op_a", "result")
+        result_metadata_entry_a = handled_output_events[
+            0
+        ].event_specific_data.metadata_entries[0]
         assert result_metadata_entry_a.label == "path"
         assert result_metadata_entry_a.value == MetadataValue.path(filepath_a)
         assert os.path.isfile(filepath_a)
         with open(filepath_a, "rb") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3]
 
-        loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, result.event_list))
-        input_metadata_entry_a = loaded_input_events[0].event_specific_data.metadata_entries[0]
+        loaded_input_events = list(
+            filter(lambda evt: evt.is_loaded_input, result.event_list)
+        )
+        input_metadata_entry_a = loaded_input_events[
+            0
+        ].event_specific_data.metadata_entries[0]
         assert input_metadata_entry_a.label == "path"
         assert input_metadata_entry_a.value == MetadataValue.path(filepath_a)
         assert len(loaded_input_events) == 1
-        assert "solid_a" == loaded_input_events[0].event_specific_data.upstream_step_key
+        assert "op_a" == loaded_input_events[0].event_specific_data.upstream_step_key
 
-        filepath_b = os.path.join(tmpdir_path, result.run_id, "solid_b", "result")
-        result_metadata_entry_b = handled_output_events[1].event_specific_data.metadata_entries[0]
+        filepath_b = os.path.join(tmpdir_path, result.run_id, "op_b", "result")
+        result_metadata_entry_b = handled_output_events[
+            1
+        ].event_specific_data.metadata_entries[0]
         assert result_metadata_entry_b.label == "path"
         assert result_metadata_entry_b.value == MetadataValue.path(filepath_b)
         assert os.path.isfile(filepath_b)
@@ -90,10 +108,10 @@ def test_fs_io_manager_base_dir():
 
         result = execute_pipeline(pipeline_def, instance=instance)
         assert result.success
-        assert result.result_for_solid("solid_a").output_value() == [1, 2, 3]
+        assert result.result_for_solid("op_a").output_value() == [1, 2, 3]
 
         with open(
-            os.path.join(instance.storage_directory(), result.run_id, "solid_a", "result"),
+            os.path.join(instance.storage_directory(), result.run_id, "op_a", "result"),
             "rb",
         ) as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3]
@@ -118,14 +136,18 @@ def test_fs_io_manager_memoization():
         with instance_for_test(temp_dir=temp_dir) as instance:
             my_job = my_graph.to_job(version_strategy=MyVersionStrategy())
 
-            unmemoized_plan = create_execution_plan(my_job, instance_ref=instance.get_ref())
+            unmemoized_plan = create_execution_plan(
+                my_job, instance_ref=instance.get_ref()
+            )
             assert len(unmemoized_plan.step_keys_to_execute) == 1
 
             result = my_job.execute_in_process(instance=instance)
             assert result.success
             assert len(recorder) == 1
 
-            execution_plan = create_execution_plan(my_job, instance_ref=instance.get_ref())
+            execution_plan = create_execution_plan(
+                my_job, instance_ref=instance.get_ref()
+            )
             assert len(execution_plan.step_keys_to_execute) == 0
 
             result = my_job.execute_in_process(instance=instance)
@@ -178,7 +200,9 @@ def test_fs_io_manager_unpicklable():
         with instance_for_test(temp_dir=tmp_dir) as instance:
             io_manager = fs_io_manager.configured({"base_dir": tmp_dir})
 
-            local_func_job = local_func_graph.to_job(resource_defs={"io_manager": io_manager})
+            local_func_job = local_func_graph.to_job(
+                resource_defs={"io_manager": io_manager}
+            )
             with pytest.raises(
                 DagsterInvariantViolationError, match=r"Object .* is not picklable. .*"
             ):
@@ -190,7 +214,9 @@ def test_fs_io_manager_unpicklable():
             ):
                 lambda_job.execute_in_process(instance=instance)
 
-            recursion_job = recursion_limit_graph.to_job(resource_defs={"io_manager": io_manager})
+            recursion_job = recursion_limit_graph.to_job(
+                resource_defs={"io_manager": io_manager}
+            )
             with pytest.raises(
                 DagsterInvariantViolationError,
                 match=r"Object .* exceeds recursion limit and is not picklable. .*",
@@ -236,9 +262,13 @@ def test_fs_io_manager_handles_assets():
         with open(filepath_a, "rb") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3]
 
-        loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, result.all_node_events))
+        loaded_input_events = list(
+            filter(lambda evt: evt.is_loaded_input, result.all_node_events)
+        )
         assert len(loaded_input_events) == 1
-        assert loaded_input_events[0].event_specific_data.upstream_step_key.endswith("asset1")
+        assert loaded_input_events[0].event_specific_data.upstream_step_key.endswith(
+            "asset1"
+        )
 
         filepath_b = os.path.join(tmpdir_path, "four", "five", "asset2")
         assert os.path.isfile(filepath_b)
@@ -262,14 +292,20 @@ def test_fs_io_manager_partitioned():
         )
         assert len(handled_output_events) == 2
 
-        filepath_a = os.path.join(tmpdir_path, "one", "two", "three", "asset1", "2020-05-03")
+        filepath_a = os.path.join(
+            tmpdir_path, "one", "two", "three", "asset1", "2020-05-03"
+        )
         assert os.path.isfile(filepath_a)
         with open(filepath_a, "rb") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3]
 
-        loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, result.all_node_events))
+        loaded_input_events = list(
+            filter(lambda evt: evt.is_loaded_input, result.all_node_events)
+        )
         assert len(loaded_input_events) == 1
-        assert loaded_input_events[0].event_specific_data.upstream_step_key.endswith("asset1")
+        assert loaded_input_events[0].event_specific_data.upstream_step_key.endswith(
+            "asset1"
+        )
 
         filepath_b = os.path.join(tmpdir_path, "four", "five", "asset2", "2020-05-03")
         assert os.path.isfile(filepath_b)
@@ -358,9 +394,13 @@ def test_fs_io_manager_partitioned_graph_backed_asset():
         with open(filepath_a, "rb") as read_obj:
             assert pickle.load(read_obj) == 1
 
-        loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, result.all_node_events))
+        loaded_input_events = list(
+            filter(lambda evt: evt.is_loaded_input, result.all_node_events)
+        )
         assert len(loaded_input_events) == 3
-        assert loaded_input_events[0].event_specific_data.upstream_step_key.endswith("one")
+        assert loaded_input_events[0].event_specific_data.upstream_step_key.endswith(
+            "one"
+        )
 
         filepath_b = os.path.join(tmpdir_path, "four", "A")
         assert os.path.isfile(filepath_b)
@@ -381,7 +421,9 @@ def test_fs_io_manager_none():
             pass
 
         result = materialize(
-            with_resources([asset1, asset2], resource_defs={"io_manager": io_manager_def})
+            with_resources(
+                [asset1, asset2], resource_defs={"io_manager": io_manager_def}
+            )
         )
 
         assert not os.path.exists(os.path.join(tmpdir_path, "asset1"))

@@ -1,5 +1,9 @@
 import docker
-from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
+from dagster_docker.utils import (
+    DOCKER_CONFIG_SCHEMA,
+    validate_docker_config,
+    validate_docker_image,
+)
 
 import dagster._check as check
 from dagster._core.launcher.base import (
@@ -65,7 +69,9 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return DockerRunLauncher(inst_data=inst_data, **config_value)
 
-    def get_container_context(self, pipeline_run: PipelineRun) -> DockerContainerContext:
+    def get_container_context(
+        self, pipeline_run: PipelineRun
+    ) -> DockerContainerContext:
         return DockerContainerContext.create_for_run(pipeline_run, self)
 
     def _get_client(self, container_context: DockerContainerContext):
@@ -85,14 +91,18 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             docker_image = self.image
 
         if not docker_image:
-            raise Exception("No docker image specified by the instance config or repository")
+            raise Exception(
+                "No docker image specified by the instance config or repository"
+            )
 
         validate_docker_image(docker_image)
         return docker_image
 
     def _launch_container_with_command(self, run, docker_image, command):
         container_context = self.get_container_context(run)
-        docker_env = dict([parse_env_var(env_var) for env_var in container_context.env_vars])
+        docker_env = dict(
+            [parse_env_var(env_var) for env_var in container_context.env_vars]
+        )
 
         client = self._get_client(container_context)
 
@@ -102,7 +112,9 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 command=command,
                 detach=True,
                 environment=docker_env,
-                network=container_context.networks[0] if len(container_context.networks) else None,
+                network=container_context.networks[0]
+                if len(container_context.networks)
+                else None,
                 **container_context.container_kwargs,
             )
 
@@ -113,7 +125,9 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
                 command=command,
                 detach=True,
                 environment=docker_env,
-                network=container_context.networks[0] if len(container_context.networks) else None,
+                network=container_context.networks[0]
+                if len(container_context.networks)
+                else None,
                 **container_context.container_kwargs,
             )
 
@@ -139,7 +153,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         container.start()
 
     def launch_run(self, context: LaunchRunContext) -> None:
-        run = context.pipeline_run
+        run = context.run
         pipeline_code_origin = check.not_none(context.pipeline_code_origin)
         docker_image = self._get_docker_image(pipeline_code_origin)
 
@@ -156,7 +170,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def resume_run(self, context: ResumeRunContext) -> None:
-        run = context.pipeline_run
+        run = context.run
         pipeline_code_origin = check.not_none(context.pipeline_code_origin)
         docker_image = self._get_docker_image(pipeline_code_origin)
 

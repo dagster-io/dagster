@@ -1,6 +1,9 @@
 import time
 
-from dagster_graphql.test.utils import define_out_of_process_context, execute_dagster_graphql
+from dagster_graphql.test.utils import (
+    define_out_of_process_context,
+    execute_dagster_graphql,
+)
 
 from dagster import repository
 from dagster._core.storage.pipeline_run import PipelineRunStatus
@@ -181,11 +184,11 @@ mutation ExecutePipeline(
 
 
 def get_repo():
-    @solid
-    def my_solid():
+    @op
+    def my_op():
         pass
 
-    @solid
+    @op
     def loop():
         while True:
             time.sleep(0.1)
@@ -196,7 +199,7 @@ def get_repo():
 
     @pipeline(preset_defs=[PresetDefinition(name="my_preset", run_config={})])
     def foo_pipeline():
-        my_solid()
+        my_op()
 
     @repository
     def my_repo():
@@ -217,7 +220,9 @@ def test_runs_query():
         with define_out_of_process_context(__file__, "get_repo", instance) as context:
             result = execute_dagster_graphql(context, RUNS_QUERY)
             assert result.data
-            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            run_ids = [
+                run["runId"] for run in result.data["pipelineRunsOrError"]["results"]
+            ]
             assert len(run_ids) == 2
             assert run_ids[0] == run_id_2
             assert run_ids[1] == run_id_1
@@ -242,7 +247,9 @@ def test_paginated_runs_query():
                 variables={"cursor": run_id_3, "limit": 1},
             )
             assert result.data
-            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            run_ids = [
+                run["runId"] for run in result.data["pipelineRunsOrError"]["results"]
+            ]
             assert len(run_ids) == 1
             assert run_ids[0] == run_id_2
 
@@ -262,7 +269,9 @@ def test_filtered_runs_query():
         with define_out_of_process_context(__file__, "get_repo", instance) as context:
             result = execute_dagster_graphql(context, FILTERED_RUNS_QUERY)
             assert result.data
-            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            run_ids = [
+                run["runId"] for run in result.data["pipelineRunsOrError"]["results"]
+            ]
             assert len(run_ids) == 1
             assert run_ids[0] == run_id_2
 

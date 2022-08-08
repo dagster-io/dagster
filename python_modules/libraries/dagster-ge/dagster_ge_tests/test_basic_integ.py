@@ -10,18 +10,24 @@ from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
 from dagster_pyspark import pyspark_resource
 from pandas import read_csv
 
-from dagster import Output, reconstructable
+from dagster import In, op, Output, reconstructable
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import InputDefinition, ModeDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import (
+    InputDefinition,
+    ModeDefinition,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
 from dagster._utils import file_relative_path
 
 
-@solid
+@op
 def pandas_yielder(_):
     return read_csv(file_relative_path(__file__, "./basic.csv"))
 
 
-@solid(required_resource_keys={"pyspark"})
+@op(required_resource_keys={"pyspark"})
 def pyspark_yielder(context):
     return (
         context.resources.pyspark.spark_session.read.format("csv")
@@ -30,13 +36,15 @@ def pyspark_yielder(context):
     )
 
 
-@solid(input_defs=[InputDefinition(name="res")])
+@op(ins={"res": In()})
 def reyielder(_context, res):
     yield Output((res["statistics"], res["results"]))
 
 
 @pipeline(
-    mode_defs=[ModeDefinition("basic", resource_defs={"ge_data_context": ge_data_context})],
+    mode_defs=[
+        ModeDefinition("basic", resource_defs={"ge_data_context": ge_data_context})
+    ],
 )
 def hello_world_pandas_pipeline_v2():
     return reyielder(
@@ -47,7 +55,9 @@ def hello_world_pandas_pipeline_v2():
 
 
 @pipeline(
-    mode_defs=[ModeDefinition("basic", resource_defs={"ge_data_context": ge_data_context})],
+    mode_defs=[
+        ModeDefinition("basic", resource_defs={"ge_data_context": ge_data_context})
+    ],
 )
 def hello_world_pandas_pipeline_v3():
     return reyielder(
@@ -93,7 +103,9 @@ def hello_world_pyspark_pipeline():
 def test_yielded_results_config_pandas(snapshot, pipe, ge_dir):
     run_config = {
         "resources": {
-            "ge_data_context": {"config": {"ge_root_dir": file_relative_path(__file__, ge_dir)}}
+            "ge_data_context": {
+                "config": {"ge_root_dir": file_relative_path(__file__, ge_dir)}
+            }
         }
     }
     with instance_for_test() as instance:
@@ -103,7 +115,10 @@ def test_yielded_results_config_pandas(snapshot, pipe, ge_dir):
             mode="basic",
             instance=instance,
         )
-        assert result.result_for_solid("reyielder").output_value()[0]["success_percent"] == 100
+        assert (
+            result.result_for_solid("reyielder").output_value()[0]["success_percent"]
+            == 100
+        )
         expectations = result.result_for_solid(
             "ge_validation_solid"
         ).expectation_results_during_compute
@@ -119,7 +134,9 @@ def test_yielded_results_config_pyspark_v2(snapshot):  # pylint:disable=unused-a
     run_config = {
         "resources": {
             "ge_data_context": {
-                "config": {"ge_root_dir": file_relative_path(__file__, "./great_expectations")}
+                "config": {
+                    "ge_root_dir": file_relative_path(__file__, "./great_expectations")
+                }
             }
         }
     }
@@ -130,7 +147,10 @@ def test_yielded_results_config_pyspark_v2(snapshot):  # pylint:disable=unused-a
             mode="basic",
             instance=instance,
         )
-        assert result.result_for_solid("reyielder").output_value()[0]["success_percent"] == 100
+        assert (
+            result.result_for_solid("reyielder").output_value()[0]["success_percent"]
+            == 100
+        )
         expectations = result.result_for_solid(
             "ge_validation_solid"
         ).expectation_results_during_compute

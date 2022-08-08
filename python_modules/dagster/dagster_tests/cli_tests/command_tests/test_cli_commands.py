@@ -24,7 +24,10 @@ from dagster._cli import ENV_PREFIX, cli
 from dagster._cli.job import job_execute_command
 from dagster._cli.run import run_delete_command, run_list_command, run_wipe_command
 from dagster._core.definitions.decorators.sensor_decorator import sensor
-from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
+from dagster._core.definitions.partition import (
+    PartitionedConfig,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
@@ -44,12 +47,12 @@ from dagster._utils import file_relative_path, merge_dicts
 from dagster.version import __version__
 
 
-@lambda_solid
+@op
 def do_something():
     return 1
 
 
-@lambda_solid
+@op
 def do_input(x):
     return x
 
@@ -180,18 +183,20 @@ def define_bar_sensors():
     return {"foo_sensor": foo_sensor}
 
 
-@solid(version="foo")
-def my_solid():
+@op(version="foo")
+def my_op():
     return 5
 
 
 @pipeline(
     name="memoizable",
-    mode_defs=[ModeDefinition(resource_defs={"io_manager": versioned_filesystem_io_manager})],
+    mode_defs=[
+        ModeDefinition(resource_defs={"io_manager": versioned_filesystem_io_manager})
+    ],
     tags={MEMOIZED_RUN_TAG: "true"},
 )
 def memoizable_pipeline():
-    my_solid()
+    my_op()
 
 
 @op(version="foo")
@@ -199,7 +204,10 @@ def my_op():
     return 5
 
 
-@job(tags={MEMOIZED_RUN_TAG: "true"}, resource_defs={"io_manager": versioned_filesystem_io_manager})
+@job(
+    tags={MEMOIZED_RUN_TAG: "true"},
+    resource_defs={"io_manager": versioned_filesystem_io_manager},
+)
 def memoizable_job():
     my_op()
 
@@ -220,12 +228,12 @@ def bar():
     }
 
 
-@solid
+@op
 def spew(context):
     context.log.info("HELLO WORLD")
 
 
-@solid
+@op
 def fail(context):
     raise Exception("I AM SUPPOSED TO FAIL")
 
@@ -394,7 +402,9 @@ def launch_command_contexts():
 def pipeline_or_job_python_origin_contexts(using_job_op_graph_apis=False):
     return [
         args_with_default_cli_test_instance(target_args)
-        for target_args in valid_pipeline_or_job_python_origin_target_args(using_job_op_graph_apis)
+        for target_args in valid_pipeline_or_job_python_origin_target_args(
+            using_job_op_graph_apis
+        )
     ]
 
 
@@ -775,7 +785,9 @@ def test_run_wipe_incorrect_delete_message():
     with instance_for_test():
         runner = CliRunner()
         result = runner.invoke(run_wipe_command, input="WRONG\n")
-        assert "Exiting without deleting all run history and event logs" in result.output
+        assert (
+            "Exiting without deleting all run history and event logs" in result.output
+        )
         assert result.exit_code == 1
 
 
@@ -791,7 +803,9 @@ def test_run_delete_correct_delete_message():
     with instance_for_test() as instance:
         pipeline_result = execute_pipeline(foo_pipeline, instance=instance)
         runner = CliRunner()
-        result = runner.invoke(run_delete_command, args=[pipeline_result.run_id], input="DELETE\n")
+        result = runner.invoke(
+            run_delete_command, args=[pipeline_result.run_id], input="DELETE\n"
+        )
         assert "Deleted run" in result.output
         assert result.exit_code == 0
 
@@ -810,7 +824,9 @@ def test_run_delete_incorrect_delete_message():
     with instance_for_test() as instance:
         pipeline_result = execute_pipeline(foo_pipeline, instance=instance)
         runner = CliRunner()
-        result = runner.invoke(run_delete_command, args=[pipeline_result.run_id], input="Wrong\n")
+        result = runner.invoke(
+            run_delete_command, args=[pipeline_result.run_id], input="Wrong\n"
+        )
         assert "Exiting without deleting" in result.output
         assert result.exit_code == 1
 
@@ -827,7 +843,9 @@ def test_run_list_limit():
                 "-a",
                 "dagster_test_repository",
                 "--config",
-                file_relative_path(__file__, "../../environments/double_adder_job.yaml"),
+                file_relative_path(
+                    __file__, "../../environments/double_adder_job.yaml"
+                ),
                 "-j",
                 "double_adder_job",  # job name
             ],
@@ -841,7 +859,9 @@ def test_run_list_limit():
                 "-a",
                 "dagster_test_repository",
                 "--config",
-                file_relative_path(__file__, "../../environments/double_adder_job.yaml"),
+                file_relative_path(
+                    __file__, "../../environments/double_adder_job.yaml"
+                ),
                 "-j",
                 "double_adder_job",  # job name
             ],

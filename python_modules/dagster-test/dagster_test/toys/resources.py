@@ -1,4 +1,4 @@
-from dagster import Field, Int, fs_io_manager, reconstructable, resource
+from dagster import In, op, Field, Int, fs_io_manager, reconstructable, resource
 from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
 from dagster._utils import merge_dicts
 
@@ -16,22 +16,22 @@ lots_of_resources = merge_dicts(
 )
 
 
-@solid(required_resource_keys=set(lots_of_resources.keys()))
+@op(required_resource_keys=set(lots_of_resources.keys()))
 def all_resources(_):
     return 1
 
 
-@solid(required_resource_keys={"R1"})
+@op(required_resource_keys={"R1"})
 def one(context):
     return 1 + context.resources.R1
 
 
-@solid(required_resource_keys={"R2"})
+@op(required_resource_keys={"R2"})
 def two(_):
     return 1
 
 
-@solid(required_resource_keys={"R1", "R2", "R3"})
+@op(required_resource_keys={"R1", "R2", "R3"})
 def one_and_two_and_three(_):
     return 1
 

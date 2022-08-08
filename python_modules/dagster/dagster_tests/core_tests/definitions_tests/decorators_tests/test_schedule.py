@@ -83,7 +83,9 @@ def test_scheduler():
     execution_data = echo_time_schedule.evaluate_tick(context_with_time)
     assert execution_data.run_requests
     assert len(execution_data.run_requests) == 1
-    assert execution_data.run_requests[0].run_config == {"echo_time": execution_time.isoformat()}
+    assert execution_data.run_requests[0].run_config == {
+        "echo_time": execution_time.isoformat()
+    }
 
     execution_data = always_skip_schedule.evaluate_tick(context_with_time)
     assert execution_data.skip_message
@@ -94,7 +96,7 @@ def test_scheduler():
 
 
 def test_schedule_decorators_sanity():
-    @solid
+    @op
     def do_nothing(_):
         pass
 
@@ -196,7 +198,9 @@ def _check_partitions(
 
     for index, partition in enumerate(partitions):
         partition_value = partitions[0].value + (index * expected_relative_delta)
-        assert partition.value == partitions[0].value + (index * expected_relative_delta)
+        assert partition.value == partitions[0].value + (
+            index * expected_relative_delta
+        )
         assert partition.name == partition_value.strftime(expected_format)
 
 
@@ -241,14 +245,20 @@ def test_partitions_for_hourly_schedule_decorators_without_timezone(
             .isoformat()
         }
 
-        valid_time = create_pendulum_time(year=2019, month=1, day=27, hour=1, minute=25, tz="UTC")
-        context_with_valid_time = build_schedule_context(scheduled_execution_time=valid_time)
+        valid_time = create_pendulum_time(
+            year=2019, month=1, day=27, hour=1, minute=25, tz="UTC"
+        )
+        context_with_valid_time = build_schedule_context(
+            scheduled_execution_time=valid_time
+        )
 
         execution_data = hourly_foo_schedule.evaluate_tick(context_with_valid_time)
         assert execution_data.run_requests
         assert len(execution_data.run_requests) == 1
         assert execution_data.run_requests[0].run_config == {
-            "hourly_time": create_pendulum_time(year=2019, month=1, day=27, hour=1, tz="UTC")
+            "hourly_time": create_pendulum_time(
+                year=2019, month=1, day=27, hour=1, tz="UTC"
+            )
             .subtract(hours=partition_hours_offset)
             .isoformat()
         }
@@ -287,20 +297,26 @@ def test_partitions_for_hourly_schedule_decorators_with_timezone(
         valid_time = create_pendulum_time(
             year=2019, month=1, day=27, hour=1, minute=25, tz="US/Central"
         )
-        context_with_valid_time = build_schedule_context(scheduled_execution_time=valid_time)
+        context_with_valid_time = build_schedule_context(
+            scheduled_execution_time=valid_time
+        )
 
         execution_data = hourly_central_schedule.evaluate_tick(context_with_valid_time)
         assert execution_data.run_requests
         assert len(execution_data.run_requests) == 1
         assert execution_data.run_requests[0].run_config == {
-            "hourly_time": create_pendulum_time(year=2019, month=1, day=27, hour=1, tz="US/Central")
+            "hourly_time": create_pendulum_time(
+                year=2019, month=1, day=27, hour=1, tz="US/Central"
+            )
             .subtract(hours=partition_hours_offset)
             .isoformat()
         }
 
         # You can specify a start date in a different timezone and it will be transformed into the
         # execution timezone
-        start_date_with_different_timezone = create_pendulum_time(2019, 1, 1, 0, tz="US/Pacific")
+        start_date_with_different_timezone = create_pendulum_time(
+            2019, 1, 1, 0, tz="US/Pacific"
+        )
 
         @hourly_schedule(
             pipeline_name="foo_pipeline",
@@ -355,7 +371,9 @@ def test_partitions_for_daily_schedule_decorators_without_timezone(
         valid_daily_time = create_pendulum_time(
             year=2019, month=1, day=27, hour=9, minute=30, tz="UTC"
         )
-        context_with_valid_time = build_schedule_context(scheduled_execution_time=valid_daily_time)
+        context_with_valid_time = build_schedule_context(
+            scheduled_execution_time=valid_daily_time
+        )
 
         execution_data = daily_foo_schedule.evaluate_tick(context_with_valid_time)
         assert execution_data.run_requests
@@ -406,13 +424,17 @@ def test_partitions_for_daily_schedule_decorators_with_timezone(
         valid_daily_time = create_pendulum_time(
             year=2019, month=1, day=27, hour=9, minute=30, tz="US/Central"
         )
-        context_with_valid_time = build_schedule_context(scheduled_execution_time=valid_daily_time)
+        context_with_valid_time = build_schedule_context(
+            scheduled_execution_time=valid_daily_time
+        )
 
         execution_data = daily_central_schedule.evaluate_tick(context_with_valid_time)
         assert execution_data.run_requests
         assert len(execution_data.run_requests) == 1
         assert execution_data.run_requests[0].run_config == {
-            "daily_time": create_pendulum_time(year=2019, month=1, day=27, tz="US/Central")
+            "daily_time": create_pendulum_time(
+                year=2019, month=1, day=27, tz="US/Central"
+            )
             .subtract(days=partition_days_offset)
             .isoformat()
         }
@@ -442,7 +464,9 @@ def test_partitions_for_weekly_schedule_decorators_without_timezone(
         valid_weekly_time = create_pendulum_time(
             year=2019, month=1, day=30, hour=9, minute=30, tz="UTC"
         )
-        context_with_valid_time = build_schedule_context(scheduled_execution_time=valid_weekly_time)
+        context_with_valid_time = build_schedule_context(
+            scheduled_execution_time=valid_weekly_time
+        )
 
         execution_data = weekly_foo_schedule.evaluate_tick(context_with_valid_time)
         assert execution_data.run_requests
@@ -495,13 +519,17 @@ def test_partitions_for_weekly_schedule_decorators_with_timezone(
         valid_weekly_time = create_pendulum_time(
             year=2019, month=1, day=30, hour=9, minute=30, tz="US/Central"
         )
-        context_with_valid_time = build_schedule_context(scheduled_execution_time=valid_weekly_time)
+        context_with_valid_time = build_schedule_context(
+            scheduled_execution_time=valid_weekly_time
+        )
 
         execution_data = weekly_foo_schedule.evaluate_tick(context_with_valid_time)
         assert execution_data.run_requests
         assert len(execution_data.run_requests) == 1
         assert execution_data.run_requests[0].run_config == {
-            "weekly_time": create_pendulum_time(year=2019, month=1, day=29, tz="US/Central")
+            "weekly_time": create_pendulum_time(
+                year=2019, month=1, day=29, tz="US/Central"
+            )
             .subtract(weeks=partition_weeks_offset)
             .isoformat()
         }
@@ -601,7 +629,9 @@ def test_partitions_for_monthly_schedule_decorators_with_timezone(
         assert execution_data.run_requests
         assert len(execution_data.run_requests) == 1
         assert execution_data.run_requests[0].run_config == {
-            "monthly_time": create_pendulum_time(year=2019, month=3, day=1, tz="US/Central")
+            "monthly_time": create_pendulum_time(
+                year=2019, month=3, day=1, tz="US/Central"
+            )
             .subtract(months=partition_months_offset)
             .isoformat()
         }
@@ -651,7 +681,7 @@ def test_partitions_outside_schedule_range():
 
 
 def test_schedule_decorators_bad():
-    @solid
+    @op
     def do_nothing(_):
         pass
 
@@ -706,7 +736,9 @@ def test_schedule_decorators_bad():
 
     with pytest.warns(
         UserWarning,
-        match=re.escape("`start_date` must be at the beginning of a day for a weekly schedule."),
+        match=re.escape(
+            "`start_date` must be at the beginning of a day for a weekly schedule."
+        ),
     ):
 
         @weekly_schedule(
@@ -719,7 +751,9 @@ def test_schedule_decorators_bad():
 
     with pytest.warns(
         UserWarning,
-        match=re.escape("`start_date` must be at the beginning of a day for a daily schedule."),
+        match=re.escape(
+            "`start_date` must be at the beginning of a day for a daily schedule."
+        ),
     ):
 
         @daily_schedule(
@@ -791,7 +825,9 @@ def test_scheduled_jobs():
     def foo_job():
         foo_op()
 
-    my_schedule = ScheduleDefinition(name="my_schedule", cron_schedule="* * * * *", job=foo_job)
+    my_schedule = ScheduleDefinition(
+        name="my_schedule", cron_schedule="* * * * *", job=foo_job
+    )
 
     context_without_time = build_schedule_context()
     execution_time = datetime(year=2019, month=2, day=27)

@@ -4,8 +4,14 @@ from pyspark.sql import SparkSession, Window
 from pyspark.sql.functions import col, concat, lit
 from pyspark.sql.functions import max as pyspark_max
 
-from dagster import Field, String, resource
-from dagster._legacy import InputDefinition, ModeDefinition, execute_pipeline, pipeline, solid
+from dagster import In, op, Field, String, resource
+from dagster._legacy import (
+    InputDefinition,
+    ModeDefinition,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
 
 
 def create_spark_session():
@@ -31,7 +37,7 @@ def savedir(context):
     return context.resource_config["dir"]
 
 
-@solid(
+@op(
     config_schema={
         "temperature_file": Field(String),
         "version_salt": Field(String),
@@ -40,7 +46,7 @@ def savedir(context):
 )
 def get_max_temp_per_station(context):
     fpath = os.path.join(
-        context.resources.source_data_dir, context.solid_config["temperature_file"]
+        context.resources.source_data_dir, context.op_config["temperature_file"]
     )
     tmpf_df = df_from_csv(fpath)
     w = Window.partitionBy("station")
@@ -57,12 +63,14 @@ def get_max_temp_per_station(context):
     return outpath
 
 
-@solid(
+@op(
     config_schema={"station_file": Field(String), "version_salt": Field(String)},
     required_resource_keys={"source_data_dir", "savedir"},
 )
-def get_consolidated_location(context):
-    fpath = os.path.join(context.resources.source_data_dir, context.solid_config["station_file"])
+def get_conopated_location(context):
+    fpath = os.path.join(
+        context.resources.source_data_dir, context.op_config["station_file"]
+    )
     station_df = df_from_csv(fpath)
     consolidated_df = station_df.withColumn(
         "full_address",
@@ -81,30 +89,28 @@ def get_consolidated_location(context):
     return outpath
 
 
-@solid(
+@op(
     config_schema={"version_salt": Field(String)},
-    input_defs=[
-        InputDefinition(name="maxtemp_path", dagster_type=String),
-        InputDefinition(name="stationcons_path", dagster_type=String),
-    ],
+    ins={
+        "maxtemp_path": In(dagster_type=String),
+        "stationcons_path": In(dagster_type=String),
+    },
     required_resource_keys={"savedir"},
 )
 def combine_dfs(context, maxtemp_path, stationcons_path):
     maxtemps = df_from_csv(maxtemp_path)
     stationcons = df_from_csv(stationcons_path)
-    joined_temps = maxtemps.join(stationcons, col("airport_code") == col("station")).select(
-        col("full_address"), col("temperature_f")
-    )
+    joined_temps = maxtemps.join(
+        stationcons, col("airport_code") == col("station")
+    ).select(col("full_address"), col("temperature_f"))
     outpath = os.path.join(context.resources.savedir, "temp_for_place.csv")
     df_to_csv(joined_temps, outpath)
     return outpath
 
 
-@solid(
+@op(
     config_schema={"version_salt": Field(String)},
-    input_defs=[
-        InputDefinition(name="path", dagster_type=String),
-    ],
+    ins={"path": In(dagster_type=String)},
     required_resource_keys={"savedir"},
 )
 def pretty_output(context, path):
@@ -121,11 +127,13 @@ def pretty_output(context, path):
 
 @pipeline(
     mode_defs=[
-        ModeDefinition(resource_defs={"source_data_dir": source_data_dir, "savedir": savedir})
+        ModeDefinition(
+            resource_defs={"source_data_dir": source_data_dir, "savedir": savedir}
+        )
     ]
 )
 def pyspark_assets_pipeline():
-    pretty_output(combine_dfs(get_max_temp_per_station(), get_consolidated_location()))
+    pretty_output(combine_dfs(get_max_temp_per_station(), get_conopated_location()))
 
 
 if __name__ == "__main__":
@@ -137,7 +145,7 @@ if __name__ == "__main__":
                     "version_salt": "foo",
                 }
             },
-            "get_consolidated_location": {
+            "get_conopated_location": {
                 "config": {
                     "station_file": "stations.csv",
                     "version_salt": "foo",

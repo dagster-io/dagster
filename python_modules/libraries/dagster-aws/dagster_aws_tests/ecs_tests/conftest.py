@@ -4,6 +4,7 @@ import moto
 import pytest
 
 from .stubbed_ecs import StubbedEcs
+from dagster import op
 
 
 @pytest.fixture

@@ -5,8 +5,14 @@ from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
 from dagster_pyspark import pyspark_resource
 from pyspark.sql import Row, SparkSession
 
-from dagster import file_relative_path
-from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, execute_solid, solid
+from dagster import In, Out, op, file_relative_path
+from dagster._legacy import (
+    InputDefinition,
+    ModeDefinition,
+    OutputDefinition,
+    execute_solid,
+    solid,
+)
 from dagster._utils import dict_without_keys
 from dagster._utils.test import get_temp_dir
 
@@ -28,11 +34,19 @@ def create_pyspark_df():
     return spark.createDataFrame(data)
 
 
-@pytest.mark.parametrize(dataframe_parametrize_argnames, dataframe_parametrize_argvalues)
+@pytest.mark.parametrize(
+    dataframe_parametrize_argnames, dataframe_parametrize_argvalues
+)
 def test_dataframe_outputs(file_type, read, other):
     df = create_pyspark_df()
 
-    @solid(output_defs=[OutputDefinition(dagster_type=DagsterPySparkDataFrame, name="df")])
+    @op(
+        out={
+            "df": Out(
+                dagster_type=DagsterPySparkDataFrame,
+            )
+        }
+    )
     def return_df(_):
         return df
 
@@ -47,7 +61,9 @@ def test_dataframe_outputs(file_type, read, other):
         result = execute_solid(
             return_df,
             mode_def=ModeDefinition(resource_defs={"pyspark": pyspark_resource}),
-            run_config={"solids": {"return_df": {"outputs": [{"df": {file_type: options}}]}}},
+            run_config={
+                "solids": {"return_df": {"outputs": [{"df": {file_type: options}}]}}
+            },
         )
         assert result.success
         actual = read(options["path"], **dict_without_keys(options, "path"))
@@ -81,15 +97,25 @@ def test_dataframe_outputs(file_type, read, other):
         assert sorted(df.collect()) == sorted(actual.collect())
 
 
-@pytest.mark.parametrize(dataframe_parametrize_argnames, dataframe_parametrize_argvalues)
+@pytest.mark.parametrize(
+    dataframe_parametrize_argnames, dataframe_parametrize_argvalues
+)
 def test_dataframe_inputs(file_type, read, other):
-    @solid(
-        input_defs=[InputDefinition(dagster_type=DagsterPySparkDataFrame, name="input_df")],
+    @op(
+        ins={
+            "input_df": In(
+                dagster_type=DagsterPySparkDataFrame,
+            )
+        },
     )
     def return_df(_, input_df):
         return input_df
 
-    options = {"path": file_relative_path(__file__, "num.{file_type}".format(file_type=file_type))}
+    options = {
+        "path": file_relative_path(
+            __file__, "num.{file_type}".format(file_type=file_type)
+        )
+    }
     if other:
         options["format"] = file_type
         file_type = "other"
@@ -97,7 +123,9 @@ def test_dataframe_inputs(file_type, read, other):
     result = execute_solid(
         return_df,
         mode_def=ModeDefinition(resource_defs={"pyspark": pyspark_resource}),
-        run_config={"solids": {"return_df": {"inputs": {"input_df": {file_type: options}}}}},
+        run_config={
+            "solids": {"return_df": {"inputs": {"input_df": {file_type: options}}}}
+        },
     )
     assert result.success
     actual = read(options["path"], **dict_without_keys(options, "path"))

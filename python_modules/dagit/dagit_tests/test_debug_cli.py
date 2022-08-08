@@ -9,7 +9,7 @@ from dagster._core.test_utils import instance_for_test
 from dagster._legacy import execute_pipeline, lambda_solid, pipeline
 
 
-@lambda_solid
+@op
 def emit_one():
     return 1
 

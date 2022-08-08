@@ -1,23 +1,23 @@
 import time
 
-from dagster import RetryRequested
+from dagster import op, RetryRequested
 from dagster._legacy import PresetDefinition, lambda_solid, pipeline, solid
 
 
-@lambda_solid
+@op
 def echo(x):
     return x
 
 
-@solid(config_schema={"max_retries": int, "delay": float, "work_on_attempt": int})
-def retry_solid(context):
+@op(config_schema={"max_retries": int, "delay": float, "work_on_attempt": int})
+def retry_op(context):
     time.sleep(0.1)
-    if (context.retry_number + 1) >= context.solid_config["work_on_attempt"]:
+    if (context.retry_number + 1) >= context.op_config["work_on_attempt"]:
         return "success"
     else:
         raise RetryRequested(
-            max_retries=context.solid_config["max_retries"],
-            seconds_to_wait=context.solid_config["delay"],
+            max_retries=context.op_config["max_retries"],
+            seconds_to_wait=context.op_config["delay"],
         )
 
 
@@ -27,7 +27,7 @@ def retry_solid(context):
             name="pass_after_retry",
             run_config={
                 "solids": {
-                    "retry_solid": {
+                    "retry_op": {
                         "config": {
                             "delay": 0.2,
                             "work_on_attempt": 2,
@@ -40,4 +40,4 @@ def retry_solid(context):
     ]
 )
 def retry_pipeline():
-    echo(retry_solid())
+    echo(retry_op())

@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import _check as check
+from dagster import In, Out, op, _check as check
 from dagster import resource
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import DagsterInvariantViolationError
@@ -33,8 +33,8 @@ def resource_b(context):
     yield  # add the second yield here to test teardown generator exit handling
 
 
-@solid(required_resource_keys={"a", "b"})
-def resource_solid(_):
+@op(required_resource_keys={"a", "b"})
+def resource_op(_):
     return "A"
 
 
@@ -48,7 +48,7 @@ def test_execute_pipeline_iterator():
 
         pipeline = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            solid_defs=[resource_op],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -67,10 +67,17 @@ def test_execute_pipeline_iterator():
 
         iterator.close()
         events = [record.dagster_event for record in records if record.is_dagster_event]
-        messages = [record.user_message for record in records if not record.is_dagster_event]
-        pipeline_failure_events = [event for event in events if event.is_pipeline_failure]
+        messages = [
+            record.user_message for record in records if not record.is_dagster_event
+        ]
+        pipeline_failure_events = [
+            event for event in events if event.is_pipeline_failure
+        ]
         assert len(pipeline_failure_events) == 1
-        assert "GeneratorExit" in pipeline_failure_events[0].pipeline_failure_data.error.message
+        assert (
+            "GeneratorExit"
+            in pipeline_failure_events[0].pipeline_failure_data.error.message
+        )
         assert len([message for message in messages if message == "CLEANING A"]) > 0
         assert len([message for message in messages if message == "CLEANING B"]) > 0
 
@@ -85,7 +92,7 @@ def test_execute_run_iterator():
     with instance_for_test() as instance:
         pipeline_def = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            solid_defs=[resource_op],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -110,10 +117,17 @@ def test_execute_run_iterator():
 
         iterator.close()
         events = [record.dagster_event for record in records if record.is_dagster_event]
-        messages = [record.user_message for record in records if not record.is_dagster_event]
-        pipeline_failure_events = [event for event in events if event.is_pipeline_failure]
+        messages = [
+            record.user_message for record in records if not record.is_dagster_event
+        ]
+        pipeline_failure_events = [
+            event for event in events if event.is_pipeline_failure
+        ]
         assert len(pipeline_failure_events) == 1
-        assert "GeneratorExit" in pipeline_failure_events[0].pipeline_failure_data.error.message
+        assert (
+            "GeneratorExit"
+            in pipeline_failure_events[0].pipeline_failure_data.error.message
+        )
         assert len([message for message in messages if message == "CLEANING A"]) > 0
         assert len([message for message in messages if message == "CLEANING B"]) > 0
 
@@ -124,12 +138,15 @@ def test_execute_run_iterator():
         ).with_status(PipelineRunStatus.SUCCESS)
 
         events = list(
-            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+            execute_run_iterator(
+                InMemoryPipeline(pipeline_def), pipeline_run, instance=instance
+            )
         )
 
         assert any(
             [
-                "Ignoring a run worker that started after the run had already finished." in event
+                "Ignoring a run worker that started after the run had already finished."
+                in event
                 for event in events
             ]
         )
@@ -174,7 +191,9 @@ def test_execute_run_iterator():
         ).with_status(PipelineRunStatus.CANCELED)
 
         events = list(
-            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+            execute_run_iterator(
+                InMemoryPipeline(pipeline_def), pipeline_run, instance=instance
+            )
         )
 
         assert len(events) == 1
@@ -191,7 +210,7 @@ def test_restart_running_run_worker():
     with instance_for_test() as instance:
         pipeline_def = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            solid_defs=[resource_op],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -206,7 +225,9 @@ def test_restart_running_run_worker():
         ).with_status(PipelineRunStatus.STARTED)
 
         events = list(
-            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+            execute_run_iterator(
+                InMemoryPipeline(pipeline_def), pipeline_run, instance=instance
+            )
         )
 
         assert any(
@@ -217,7 +238,10 @@ def test_restart_running_run_worker():
             ]
         )
 
-        assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.FAILURE
+        assert (
+            instance.get_run_by_id(pipeline_run.run_id).status
+            == PipelineRunStatus.FAILURE
+        )
 
 
 def test_start_run_worker_after_run_failure():
@@ -227,7 +251,7 @@ def test_start_run_worker_after_run_failure():
     with instance_for_test() as instance:
         pipeline_def = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            solid_defs=[resource_op],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -242,7 +266,9 @@ def test_start_run_worker_after_run_failure():
         ).with_status(PipelineRunStatus.FAILURE)
 
         event = next(
-            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+            execute_run_iterator(
+                InMemoryPipeline(pipeline_def), pipeline_run, instance=instance
+            )
         )
         assert (
             "Ignoring a run worker that started after the run had already finished."
@@ -257,7 +283,7 @@ def test_execute_canceled_state():
     with instance_for_test() as instance:
         pipeline_def = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            solid_defs=[resource_op],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -293,7 +319,9 @@ def test_execute_canceled_state():
         ).with_status(PipelineRunStatus.CANCELED)
 
         iter_events = list(
-            execute_run_iterator(InMemoryPipeline(pipeline_def), iter_run, instance=instance)
+            execute_run_iterator(
+                InMemoryPipeline(pipeline_def), iter_run, instance=instance
+            )
         )
 
         assert len(iter_events) == 1
@@ -313,7 +341,7 @@ def test_execute_run_bad_state():
     with instance_for_test() as instance:
         pipeline_def = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            solid_defs=[resource_op],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -347,7 +375,7 @@ def test_execute_plan_iterator():
     with instance_for_test() as instance:
         pipeline = PipelineDefinition(
             name="basic_resource_pipeline",
-            solid_defs=[resource_solid],
+            solid_defs=[resource_op],
             mode_defs=[
                 ModeDefinition(
                     resource_defs={"a": resource_a, "b": resource_b},
@@ -378,6 +406,8 @@ def test_execute_plan_iterator():
             event_type = event.event_type_value
 
         iterator.close()
-        messages = [record.user_message for record in records if not record.is_dagster_event]
+        messages = [
+            record.user_message for record in records if not record.is_dagster_event
+        ]
         assert len([message for message in messages if message == "CLEANING A"]) > 0
         assert len([message for message in messages if message == "CLEANING B"]) > 0

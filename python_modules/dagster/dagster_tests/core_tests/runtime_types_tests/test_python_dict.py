@@ -3,16 +3,24 @@ import typing
 import pytest
 
 from dagster import (
+    In,
+    Out,
+    op,
     DagsterInvalidDefinitionError,
     DagsterTypeCheckDidNotPass,
     Dict,
     usable_as_dagster_type,
 )
-from dagster._legacy import InputDefinition, OutputDefinition, execute_solid, lambda_solid
+from dagster._legacy import (
+    InputDefinition,
+    OutputDefinition,
+    execute_solid,
+    lambda_solid,
+)
 
 
 def test_basic_python_dictionary_output():
-    @lambda_solid(output_def=OutputDefinition(dict))
+    @op(out=Out(dict))
     def emit_dict():
         return {"key": "value"}
 
@@ -20,17 +28,20 @@ def test_basic_python_dictionary_output():
 
 
 def test_basic_python_dictionary_input():
-    @lambda_solid(input_defs=[InputDefinition("data", dict)], output_def=OutputDefinition(str))
+    @op(ins={"data": In(dict)}, out=Out(str))
     def input_dict(data):
         return data["key"]
 
     assert (
-        execute_solid(input_dict, input_values={"data": {"key": "value"}}).output_value() == "value"
+        execute_solid(
+            input_dict, input_values={"data": {"key": "value"}}
+        ).output_value()
+        == "value"
     )
 
 
 def test_basic_python_dictionary_wrong():
-    @lambda_solid(output_def=OutputDefinition(dict))
+    @op(out=Out(dict))
     def emit_dict():
         return 1
 
@@ -39,7 +50,7 @@ def test_basic_python_dictionary_wrong():
 
 
 def test_basic_python_dictionary_input_wrong():
-    @lambda_solid(input_defs=[InputDefinition("data", dict)], output_def=OutputDefinition(str))
+    @op(ins={"data": In(dict)}, out=Out(str))
     def input_dict(data):
         return data["key"]
 
@@ -48,21 +59,23 @@ def test_basic_python_dictionary_input_wrong():
 
 
 def test_execute_dict_from_config():
-    @lambda_solid(input_defs=[InputDefinition("data", dict)], output_def=OutputDefinition(str))
+    @op(ins={"data": In(dict)}, out=Out(str))
     def input_dict(data):
         return data["key"]
 
     assert (
         execute_solid(
             input_dict,
-            run_config={"solids": {"input_dict": {"inputs": {"data": {"key": "in_config"}}}}},
+            run_config={
+                "solids": {"input_dict": {"inputs": {"data": {"key": "in_config"}}}}
+            },
         ).output_value()
         == "in_config"
     )
 
 
 def test_dagster_dictionary_output():
-    @lambda_solid(output_def=OutputDefinition(dict))
+    @op(out=Out(dict))
     def emit_dict():
         return {"key": "value"}
 
@@ -70,17 +83,20 @@ def test_dagster_dictionary_output():
 
 
 def test_basic_dagster_dictionary_input():
-    @lambda_solid(input_defs=[InputDefinition("data", Dict)], output_def=OutputDefinition(str))
+    @op(ins={"data": In(Dict)}, out=Out(str))
     def input_dict(data):
         return data["key"]
 
     assert (
-        execute_solid(input_dict, input_values={"data": {"key": "value"}}).output_value() == "value"
+        execute_solid(
+            input_dict, input_values={"data": {"key": "value"}}
+        ).output_value()
+        == "value"
     )
 
 
 def test_basic_typing_dictionary_output():
-    @lambda_solid(output_def=OutputDefinition(typing.Dict))
+    @op(out=Out(typing.Dict))
     def emit_dict():
         return {"key": "value"}
 
@@ -88,20 +104,23 @@ def test_basic_typing_dictionary_output():
 
 
 def test_basic_typing_dictionary_input():
-    @lambda_solid(
-        input_defs=[InputDefinition("data", typing.Dict)],
-        output_def=OutputDefinition(str),
+    @op(
+        ins={"data": In(typing.Dict)},
+        out=Out(str),
     )
     def input_dict(data):
         return data["key"]
 
     assert (
-        execute_solid(input_dict, input_values={"data": {"key": "value"}}).output_value() == "value"
+        execute_solid(
+            input_dict, input_values={"data": {"key": "value"}}
+        ).output_value()
+        == "value"
     )
 
 
 def test_basic_closed_typing_dictionary_wrong():
-    @lambda_solid(output_def=OutputDefinition(typing.Dict[int, int]))
+    @op(out=Out(typing.Dict[int, int]))
     def emit_dict():
         return 1
 
@@ -110,7 +129,7 @@ def test_basic_closed_typing_dictionary_wrong():
 
 
 def test_basic_closed_typing_dictionary_output():
-    @lambda_solid(output_def=OutputDefinition(typing.Dict[str, str]))
+    @op(out=Out(typing.Dict[str, str]))
     def emit_dict():
         return {"key": "value"}
 
@@ -121,20 +140,23 @@ def test_basic_closed_typing_dictionary_output():
 
 
 def test_basic_closed_typing_dictionary_input():
-    @lambda_solid(
-        input_defs=[InputDefinition("data", typing.Dict[str, str])],
-        output_def=OutputDefinition(str),
+    @op(
+        ins={"data": In(typing.Dict[str, str])},
+        out=Out(str),
     )
     def input_dict(data):
         return data["key"]
 
     assert (
-        execute_solid(input_dict, input_values={"data": {"key": "value"}}).output_value() == "value"
+        execute_solid(
+            input_dict, input_values={"data": {"key": "value"}}
+        ).output_value()
+        == "value"
     )
 
 
 def test_basic_closed_typing_dictionary_key_wrong():
-    @lambda_solid(output_def=OutputDefinition(typing.Dict[str, str]))
+    @op(out=Out(typing.Dict[str, str]))
     def emit_dict():
         return {1: "foo"}
 
@@ -143,7 +165,7 @@ def test_basic_closed_typing_dictionary_key_wrong():
 
 
 def test_basic_closed_typing_dictionary_value_wrong():
-    @lambda_solid(output_def=OutputDefinition(typing.Dict[str, str]))
+    @op(out=Out(typing.Dict[str, str]))
     def emit_dict():
         return {"foo": 1}
 
@@ -152,7 +174,7 @@ def test_basic_closed_typing_dictionary_value_wrong():
 
 
 def test_complicated_dictionary_typing_pass():
-    @lambda_solid(output_def=OutputDefinition(typing.Dict[str, typing.List[typing.Dict[int, int]]]))
+    @op(out=Out(typing.Dict[str, typing.List[typing.Dict[int, int]]]))
     def emit_dict():
         return {"foo": [{1: 1, 2: 2}]}
 
@@ -160,7 +182,7 @@ def test_complicated_dictionary_typing_pass():
 
 
 def test_complicated_dictionary_typing_fail():
-    @lambda_solid(output_def=OutputDefinition(typing.Dict[str, typing.List[typing.Dict[int, int]]]))
+    @op(out=Out(typing.Dict[str, typing.List[typing.Dict[int, int]]]))
     def emit_dict():
         return {"foo": [{1: 1, "2": 2}]}
 
@@ -171,7 +193,7 @@ def test_complicated_dictionary_typing_fail():
 def test_dict_type_loader():
     test_input = {"hello": 5, "goodbye": 42}
 
-    @lambda_solid(input_defs=[InputDefinition("dict_input", dagster_type=typing.Dict[str, int])])
+    @op(ins={"dict_input": In(dagster_type=typing.Dict[str, int])})
     def emit_dict(dict_input):
         return dict_input
 
@@ -190,9 +212,7 @@ def test_dict_type_loader_typing_fail():
 
     test_input = {"hello": "foo", "goodbye": "bar"}
 
-    @lambda_solid(
-        input_defs=[InputDefinition("dict_input", dagster_type=typing.Dict[str, CustomType])]
-    )
+    @op(ins={"dict_input": In(dagster_type=typing.Dict[str, CustomType])})
     def emit_dict(dict_input):
         return dict_input
 
@@ -202,7 +222,9 @@ def test_dict_type_loader_typing_fail():
     ):
         execute_solid(
             emit_dict,
-            run_config={"solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
+            run_config={
+                "solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}
+            },
         )
 
 
@@ -210,7 +232,7 @@ def test_dict_type_loader_inner_type_mismatch():
 
     test_input = {"hello": "foo", "goodbye": "bar"}
 
-    @lambda_solid(input_defs=[InputDefinition("dict_input", dagster_type=typing.Dict[str, int])])
+    @op(ins={"dict_input": In(dagster_type=typing.Dict[str, int])})
     def emit_dict(dict_input):
         return dict_input
 
@@ -219,5 +241,7 @@ def test_dict_type_loader_inner_type_mismatch():
     with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(
             emit_dict,
-            run_config={"solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
+            run_config={
+                "solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}
+            },
         )

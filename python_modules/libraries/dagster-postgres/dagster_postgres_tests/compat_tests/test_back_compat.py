@@ -27,11 +27,15 @@ from dagster._utils import file_relative_path
 
 
 def get_columns(instance, table_name: str):
-    return set(c["name"] for c in inspect(instance.run_storage._engine).get_columns(table_name))
+    return set(
+        c["name"] for c in inspect(instance.run_storage._engine).get_columns(table_name)
+    )
 
 
 def get_indexes(instance, table_name: str):
-    return set(c["name"] for c in inspect(instance.run_storage._engine).get_indexes(table_name))
+    return set(
+        c["name"] for c in inspect(instance.run_storage._engine).get_indexes(table_name)
+    )
 
 
 def get_tables(instance):
@@ -53,19 +57,21 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
         ) as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+            with open(
+                os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8"
+            ) as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
         instance = DagsterInstance.from_config(tempdir)
 
-        @solid
-        def noop_solid(_):
+        @op
+        def noop_op(_):
             pass
 
         @pipeline
         def noop_pipeline():
-            noop_solid()
+            noop_op()
 
         with pytest.raises(
             (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
@@ -103,21 +109,25 @@ def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):
     _reconstruct_from_file(
         hostname,
         conn_string,
-        file_relative_path(__file__, "snapshot_0_9_22_pre_asset_partition/postgres/pg_dump.txt"),
+        file_relative_path(
+            __file__, "snapshot_0_9_22_pre_asset_partition/postgres/pg_dump.txt"
+        ),
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
         ) as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+            with open(
+                os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8"
+            ) as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
         instance = DagsterInstance.from_config(tempdir)
 
-        @solid
-        def asset_solid(_):
+        @op
+        def asset_op(_):
             yield AssetMaterialization(
                 asset_key=AssetKey(["path", "to", "asset"]), partition="partition_1"
             )
@@ -125,7 +135,7 @@ def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):
 
         @pipeline
         def asset_pipeline():
-            asset_solid()
+            asset_op()
 
         with pytest.raises(
             (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
@@ -143,25 +153,29 @@ def test_0_9_22_postgres_pre_run_partition(hostname, conn_string):
     _reconstruct_from_file(
         hostname,
         conn_string,
-        file_relative_path(__file__, "snapshot_0_9_22_pre_run_partition/postgres/pg_dump.txt"),
+        file_relative_path(
+            __file__, "snapshot_0_9_22_pre_run_partition/postgres/pg_dump.txt"
+        ),
     )
     with tempfile.TemporaryDirectory() as tempdir:
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
         ) as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+            with open(
+                os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8"
+            ) as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
         instance = DagsterInstance.from_config(tempdir)
 
-        @solid
-        def simple_solid(_):
+        @op
+        def simple_op(_):
             return 1
 
         @pipeline
         def simple_pipeline():
-            simple_solid()
+            simple_op()
 
         tags = {
             PARTITION_NAME_TAG: "my_partition",
@@ -184,13 +198,17 @@ def test_0_10_0_schedule_wipe(hostname, conn_string):
     _reconstruct_from_file(
         hostname,
         conn_string,
-        file_relative_path(__file__, "snapshot_0_10_0_wipe_schedules/postgres/pg_dump.txt"),
+        file_relative_path(
+            __file__, "snapshot_0_10_0_wipe_schedules/postgres/pg_dump.txt"
+        ),
     )
     with tempfile.TemporaryDirectory() as tempdir:
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
         ) as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+            with open(
+                os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8"
+            ) as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -205,13 +223,17 @@ def test_0_10_6_add_bulk_actions_table(hostname, conn_string):
     _reconstruct_from_file(
         hostname,
         conn_string,
-        file_relative_path(__file__, "snapshot_0_10_6_add_bulk_actions_table/postgres/pg_dump.txt"),
+        file_relative_path(
+            __file__, "snapshot_0_10_6_add_bulk_actions_table/postgres/pg_dump.txt"
+        ),
     )
     with tempfile.TemporaryDirectory() as tempdir:
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
         ) as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+            with open(
+                os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8"
+            ) as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -232,14 +254,18 @@ def test_0_11_0_add_asset_details(hostname, conn_string):
     _reconstruct_from_file(
         hostname,
         conn_string,
-        file_relative_path(__file__, "snapshot_0_11_0_pre_asset_details/postgres/pg_dump.txt"),
+        file_relative_path(
+            __file__, "snapshot_0_11_0_pre_asset_details/postgres/pg_dump.txt"
+        ),
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
         ) as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+            with open(
+                os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8"
+            ) as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -261,14 +287,18 @@ def test_0_12_0_add_mode_column(hostname, conn_string):
     _reconstruct_from_file(
         hostname,
         conn_string,
-        file_relative_path(__file__, "snapshot_0_11_16_pre_add_mode_column/postgres/pg_dump.txt"),
+        file_relative_path(
+            __file__, "snapshot_0_11_16_pre_add_mode_column/postgres/pg_dump.txt"
+        ),
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
         ) as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+            with open(
+                os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8"
+            ) as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -278,7 +308,7 @@ def test_0_12_0_add_mode_column(hostname, conn_string):
         # migration-required column.
         assert len(instance.get_runs()) == 1
 
-        @solid
+        @op
         def basic():
             pass
 
@@ -310,23 +340,27 @@ def test_0_12_0_extract_asset_index_cols(hostname, conn_string):
     _reconstruct_from_file(
         hostname,
         conn_string,
-        file_relative_path(__file__, "snapshot_0_12_0_pre_asset_index_cols/postgres/pg_dump.txt"),
+        file_relative_path(
+            __file__, "snapshot_0_12_0_pre_asset_index_cols/postgres/pg_dump.txt"
+        ),
     )
 
-    @solid
-    def asset_solid(_):
+    @op
+    def asset_op(_):
         yield AssetMaterialization(asset_key=AssetKey(["a"]), partition="partition_1")
         yield Output(1)
 
     @pipeline
     def asset_pipeline():
-        asset_solid()
+        asset_op()
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
         ) as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+            with open(
+                os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8"
+            ) as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -362,7 +396,9 @@ def test_0_12_0_asset_observation_backcompat(hostname, conn_string):
     _reconstruct_from_file(
         hostname,
         conn_string,
-        file_relative_path(__file__, "snapshot_0_12_0_pre_asset_index_cols/postgres/pg_dump.txt"),
+        file_relative_path(
+            __file__, "snapshot_0_12_0_pre_asset_index_cols/postgres/pg_dump.txt"
+        ),
     )
 
     @op
@@ -378,7 +414,9 @@ def test_0_12_0_asset_observation_backcompat(hostname, conn_string):
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
         ) as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+            with open(
+                os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8"
+            ) as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -392,7 +430,9 @@ def test_0_12_0_asset_observation_backcompat(hostname, conn_string):
             assert storage.has_asset_key(AssetKey(["a"]))
 
 
-def _reconstruct_from_file(hostname, conn_string, path, username="test", password="test"):
+def _reconstruct_from_file(
+    hostname, conn_string, path, username="test", password="test"
+):
     engine = db.create_engine(conn_string)
     engine.execute("drop schema public cascade;")
     engine.execute("create schema public;")
@@ -411,10 +451,14 @@ def _migration_regex(current_revision, expected_revision=None):
 
     if expected_revision:
         revision = re.escape(
-            "Database is at revision {}, head is {}.".format(current_revision, expected_revision)
+            "Database is at revision {}, head is {}.".format(
+                current_revision, expected_revision
+            )
         )
     else:
-        revision = "Database is at revision {}, head is [a-z0-9]+.".format(current_revision)
+        revision = "Database is at revision {}, head is [a-z0-9]+.".format(
+            current_revision
+        )
     instruction = re.escape("To migrate, run `dagster instance migrate`.")
 
     return "{} {} {}".format(warning, revision, instruction)
@@ -441,7 +485,9 @@ def test_0_13_12_add_start_time_end_time(hostname, conn_string):
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
         ) as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+            with open(
+                os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8"
+            ) as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -484,7 +530,9 @@ def test_schedule_secondary_index_table_backcompat(hostname, conn_string):
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
         ) as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+            with open(
+                os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8"
+            ) as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -505,14 +553,18 @@ def test_instigators_table_backcompat(hostname, conn_string):
     _reconstruct_from_file(
         hostname,
         conn_string,
-        file_relative_path(__file__, "snapshot_0_14_6_instigators_table/postgres/pg_dump.txt"),
+        file_relative_path(
+            __file__, "snapshot_0_14_6_instigators_table/postgres/pg_dump.txt"
+        ),
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
         ) as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+            with open(
+                os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8"
+            ) as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -527,7 +579,11 @@ def test_instigators_table_backcompat(hostname, conn_string):
 
 def test_jobs_selector_id_migration(hostname, conn_string):
     from dagster._core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
-    from dagster._core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
+    from dagster._core.storage.schedules.schema import (
+        InstigatorsTable,
+        JobTable,
+        JobTickTable,
+    )
 
     _reconstruct_from_file(
         hostname,
@@ -542,7 +598,9 @@ def test_jobs_selector_id_migration(hostname, conn_string):
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
         ) as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+            with open(
+                os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8"
+            ) as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -608,7 +666,9 @@ def test_add_bulk_actions_columns(hostname, conn_string):
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
         ) as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+            with open(
+                os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8"
+            ) as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
@@ -638,7 +698,9 @@ def test_add_kvs_table(hostname, conn_string):
         with open(
             file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
         ) as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
+            with open(
+                os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8"
+            ) as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 

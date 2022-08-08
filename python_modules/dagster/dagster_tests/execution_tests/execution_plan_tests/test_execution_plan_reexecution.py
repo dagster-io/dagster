@@ -4,7 +4,7 @@ import pickle
 import pytest
 
 import dagster._check as check
-from dagster import DependencyDefinition, Int
+from dagster import In, Out, op, DependencyDefinition, Int
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import (
     DagsterExecutionStepNotFoundError,
@@ -29,15 +29,15 @@ from dagster._legacy import (
 
 
 def define_addy_pipeline(using_file_system=False):
-    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+    @op(ins={"num": In(Int)}, out=Out(Int))
     def add_one(num):
         return num + 1
 
-    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+    @op(ins={"num": In(Int)}, out=Out(Int))
     def add_two(num):
         return num + 2
 
-    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
+    @op(ins={"num": In(Int)}, out=Out(Int))
     def add_three(num):
         return num + 3
 

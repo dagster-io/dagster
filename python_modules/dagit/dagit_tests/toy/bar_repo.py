@@ -4,12 +4,12 @@ from dagster import ScheduleDefinition, repository
 from dagster._legacy import PartitionSetDefinition, lambda_solid, pipeline
 
 
-@lambda_solid
+@op
 def do_something():
     return 1
 
 
-@lambda_solid
+@op
 def do_input(x):
     return x
 

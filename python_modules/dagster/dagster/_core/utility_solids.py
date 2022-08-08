@@ -1,4 +1,4 @@
-from dagster import Output
+from dagster import op, Output
 from dagster import _check as check
 from dagster._core.definitions import (
     InputDefinition,
@@ -20,14 +20,14 @@ def _compute_fn(context, inputs):
 
     result = []
     result.extend(passed_rows)
-    result.append({context.solid.name: "compute_called"})
+    result.append({context.op.name: "compute_called"})
     yield Output(result)
 
 
 def define_stub_solid(name, value):
     check.str_param(name, "name")
 
-    @lambda_solid(name=name)
+    @op(name=name)
     def _stub():
         return value
 

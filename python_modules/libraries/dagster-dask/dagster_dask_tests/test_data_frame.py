@@ -5,7 +5,7 @@ from dagster_dask.data_frame import DataFrameReadTypes, DataFrameToTypes
 from dagster_dask.utils import DataFrameUtilities
 from dask.dataframe.utils import assert_eq
 
-from dagster import file_relative_path
+from dagster import In, op, file_relative_path
 from dagster._legacy import InputDefinition, execute_solid, solid
 
 
@@ -23,7 +23,13 @@ def create_dask_df():
     ],
 )
 def test_dataframe_inputs(file_type):
-    @solid(input_defs=[InputDefinition(dagster_type=DataFrame, name="input_df")])
+    @op(
+        ins={
+            "input_df": In(
+                dagster_type=DataFrame,
+            )
+        }
+    )
     def return_df(_, input_df):
         return input_df
 
@@ -33,7 +39,9 @@ def test_dataframe_inputs(file_type):
         return_df,
         run_config={
             "solids": {
-                "return_df": {"inputs": {"input_df": {"read": {file_type: {"path": file_name}}}}}
+                "return_df": {
+                    "inputs": {"input_df": {"read": {file_type: {"path": file_name}}}}
+                }
             }
         },
     )

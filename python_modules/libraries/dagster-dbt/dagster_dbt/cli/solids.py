@@ -1,4 +1,15 @@
-from dagster import Array, Bool, Noneable, Nothing, Output, Permissive, StringSource
+from dagster import (
+    In,
+    Out,
+    op,
+    Array,
+    Bool,
+    Noneable,
+    Nothing,
+    Output,
+    Permissive,
+    StringSource,
+)
 from dagster._annotations import experimental
 from dagster._config.field import Field
 from dagster._legacy import InputDefinition, OutputDefinition, solid
@@ -27,10 +38,10 @@ def passthrough_flags_only(solid_config, additional_flags):
     }
 
 
-@solid(
+@op(
     description="A solid to invoke dbt run via CLI.",
-    input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="dbt_cli_output", dagster_type=DbtCliOutput)],
+    ins={"start_after": In(dagster_type=Nothing)},
+    out={"dbt_cli_output": Out(dagster_type=DbtCliOutput)},
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "threads": Field(
@@ -97,32 +108,32 @@ def dbt_cli_run(context):
     """
 
     cli_output = execute_cli(
-        context.solid_config["dbt_executable"],
+        context.op_config["dbt_executable"],
         command="run",
         flags_dict=passthrough_flags_only(
-            context.solid_config,
+            context.op_config,
             ("threads", "models", "exclude", "full-refresh", "fail-fast"),
         ),
         log=context.log,
-        warn_error=context.solid_config["warn-error"],
-        ignore_handled_error=context.solid_config["ignore_handled_error"],
-        target_path=context.solid_config["target-path"],
+        warn_error=context.op_config["warn-error"],
+        ignore_handled_error=context.op_config["ignore_handled_error"],
+        target_path=context.op_config["target-path"],
     )
 
-    if context.solid_config["yield_materializations"]:
+    if context.op_config["yield_materializations"]:
         for materialization in generate_materializations(
             cli_output,
-            asset_key_prefix=context.solid_config["asset_key_prefix"],
+            asset_key_prefix=context.op_config["asset_key_prefix"],
         ):
             yield materialization
 
     yield Output(cli_output, "dbt_cli_output")
 
 
-@solid(
+@op(
     description="A solid to invoke dbt test via CLI.",
-    input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="dbt_cli_output", dagster_type=DbtCliOutput)],
+    ins={"start_after": In(dagster_type=Nothing)},
+    out={"dbt_cli_output": Out(dagster_type=DbtCliOutput)},
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "data": Field(
@@ -182,25 +193,25 @@ def dbt_cli_test(context):
     parameters.
     """
     cli_output = execute_cli(
-        context.solid_config["dbt_executable"],
+        context.op_config["dbt_executable"],
         command="test",
         flags_dict=passthrough_flags_only(
-            context.solid_config,
+            context.op_config,
             ("data", "schema", "fail-fast", "threads", "models", "exclude"),
         ),
         log=context.log,
-        warn_error=context.solid_config["warn-error"],
-        ignore_handled_error=context.solid_config["ignore_handled_error"],
-        target_path=context.solid_config["target-path"],
+        warn_error=context.op_config["warn-error"],
+        ignore_handled_error=context.op_config["ignore_handled_error"],
+        target_path=context.op_config["target-path"],
     )
 
     yield Output(cli_output, "dbt_cli_output")
 
 
-@solid(
+@op(
     description="A solid to invoke dbt snapshot via CLI.",
-    input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="dbt_cli_output", dagster_type=DbtCliOutput)],
+    ins={"start_after": In(dagster_type=Nothing)},
+    out={"dbt_cli_output": Out(dagster_type=DbtCliOutput)},
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "threads": Field(
@@ -231,22 +242,24 @@ def dbt_cli_test(context):
 def dbt_cli_snapshot(context):
     """This solid executes ``dbt snapshot`` via the dbt CLI."""
     cli_output = execute_cli(
-        context.solid_config["dbt_executable"],
+        context.op_config["dbt_executable"],
         command="snapshot",
-        flags_dict=passthrough_flags_only(context.solid_config, ("threads", "select", "exclude")),
+        flags_dict=passthrough_flags_only(
+            context.op_config, ("threads", "select", "exclude")
+        ),
         log=context.log,
-        warn_error=context.solid_config["warn-error"],
-        ignore_handled_error=context.solid_config["ignore_handled_error"],
-        target_path=context.solid_config["target-path"],
+        warn_error=context.op_config["warn-error"],
+        ignore_handled_error=context.op_config["ignore_handled_error"],
+        target_path=context.op_config["target-path"],
     )
 
     yield Output(cli_output, "dbt_cli_output")
 
 
-@solid(
+@op(
     description="A solid to invoke dbt run-operation via CLI.",
-    input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="dbt_cli_output", dagster_type=DbtCliOutput)],
+    ins={"start_after": In(dagster_type=Nothing)},
+    out={"dbt_cli_output": Out(dagster_type=DbtCliOutput)},
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "macro": Field(
@@ -272,22 +285,22 @@ def dbt_cli_snapshot(context):
 def dbt_cli_run_operation(context):
     """This solid executes ``dbt run-operation`` via the dbt CLI."""
     cli_output = execute_cli(
-        context.solid_config["dbt_executable"],
-        command=f"run-operation {context.solid_config['macro']}",
-        flags_dict=passthrough_flags_only(context.solid_config, ("args",)),
+        context.op_config["dbt_executable"],
+        command=f"run-operation {context.op_config['macro']}",
+        flags_dict=passthrough_flags_only(context.op_config, ("args",)),
         log=context.log,
-        warn_error=context.solid_config["warn-error"],
-        ignore_handled_error=context.solid_config["ignore_handled_error"],
-        target_path=context.solid_config["target-path"],
+        warn_error=context.op_config["warn-error"],
+        ignore_handled_error=context.op_config["ignore_handled_error"],
+        target_path=context.op_config["target-path"],
     )
 
     yield Output(cli_output, "dbt_cli_output")
 
 
-@solid(
+@op(
     description="A solid to invoke dbt source snapshot-freshness via CLI.",
-    input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="dbt_cli_output", dagster_type=DbtCliOutput)],
+    ins={"start_after": In(dagster_type=Nothing)},
+    out={"dbt_cli_output": Out(dagster_type=DbtCliOutput)},
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "select": Field(
@@ -320,22 +333,24 @@ def dbt_cli_run_operation(context):
 def dbt_cli_snapshot_freshness(context):
     """This solid executes ``dbt source snapshot-freshness`` via the dbt CLI."""
     cli_output = execute_cli(
-        context.solid_config["dbt_executable"],
+        context.op_config["dbt_executable"],
         command="source snapshot-freshness",
-        flags_dict=passthrough_flags_only(context.solid_config, ("select", "output", "threads")),
+        flags_dict=passthrough_flags_only(
+            context.op_config, ("select", "output", "threads")
+        ),
         log=context.log,
-        warn_error=context.solid_config["warn-error"],
-        ignore_handled_error=context.solid_config["ignore_handled_error"],
-        target_path=context.solid_config["target-path"],
+        warn_error=context.op_config["warn-error"],
+        ignore_handled_error=context.op_config["ignore_handled_error"],
+        target_path=context.op_config["target-path"],
     )
 
     yield Output(cli_output, "dbt_cli_output")
 
 
-@solid(
+@op(
     description="A solid to invoke dbt compile via CLI.",
-    input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="dbt_cli_output", dagster_type=DbtCliOutput)],
+    ins={"start_after": In(dagster_type=Nothing)},
+    out={"dbt_cli_output": Out(dagster_type=DbtCliOutput)},
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "parse-only": Field(
@@ -404,10 +419,10 @@ def dbt_cli_snapshot_freshness(context):
 def dbt_cli_compile(context):
     """This solid executes ``dbt compile`` via the dbt CLI."""
     cli_output = execute_cli(
-        context.solid_config["dbt_executable"],
+        context.op_config["dbt_executable"],
         command="compile",
         flags_dict=passthrough_flags_only(
-            context.solid_config,
+            context.op_config,
             (
                 "parse-only",
                 "threads",
@@ -420,18 +435,18 @@ def dbt_cli_compile(context):
             ),
         ),
         log=context.log,
-        warn_error=context.solid_config["warn-error"],
-        ignore_handled_error=context.solid_config["ignore_handled_error"],
-        target_path=context.solid_config["target-path"],
+        warn_error=context.op_config["warn-error"],
+        ignore_handled_error=context.op_config["ignore_handled_error"],
+        target_path=context.op_config["target-path"],
     )
 
     yield Output(cli_output, "dbt_cli_output")
 
 
-@solid(
+@op(
     description="A solid to invoke dbt docs generate via CLI.",
-    input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="dbt_cli_output", dagster_type=DbtCliOutput)],
+    ins={"start_after": In(dagster_type=Nothing)},
+    out={"dbt_cli_output": Out(dagster_type=DbtCliOutput)},
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "threads": Field(
@@ -486,10 +501,10 @@ def dbt_cli_compile(context):
 def dbt_cli_docs_generate(context):
     """This solid executes ``dbt docs generate`` via the dbt CLI."""
     cli_output = execute_cli(
-        context.solid_config["dbt_executable"],
+        context.op_config["dbt_executable"],
         command="docs generate",
         flags_dict=passthrough_flags_only(
-            context.solid_config,
+            context.op_config,
             (
                 "threads",
                 "no-version-check",
@@ -500,18 +515,18 @@ def dbt_cli_docs_generate(context):
             ),
         ),
         log=context.log,
-        warn_error=context.solid_config["warn-error"],
-        ignore_handled_error=context.solid_config["ignore_handled_error"],
-        target_path=context.solid_config["target-path"],
+        warn_error=context.op_config["warn-error"],
+        ignore_handled_error=context.op_config["ignore_handled_error"],
+        target_path=context.op_config["target-path"],
     )
 
     yield Output(cli_output, "dbt_cli_output")
 
 
-@solid(
+@op(
     description="A solid to invoke dbt seed via CLI.",
-    input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="dbt_cli_output", dagster_type=DbtCliOutput)],
+    ins={"start_after": In(dagster_type=Nothing)},
+    out={"dbt_cli_output": Out(dagster_type=DbtCliOutput)},
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "full-refresh": Field(
@@ -578,10 +593,10 @@ def dbt_cli_docs_generate(context):
 def dbt_cli_seed(context):
     """This solid executes ``dbt seed`` via the dbt CLI."""
     cli_output = execute_cli(
-        context.solid_config["dbt_executable"],
+        context.op_config["dbt_executable"],
         command="seed",
         flags_dict=passthrough_flags_only(
-            context.solid_config,
+            context.op_config,
             (
                 "full-refresh",
                 "show",
@@ -594,9 +609,9 @@ def dbt_cli_seed(context):
             ),
         ),
         log=context.log,
-        warn_error=context.solid_config["warn-error"],
-        ignore_handled_error=context.solid_config["ignore_handled_error"],
-        target_path=context.solid_config["target-path"],
+        warn_error=context.op_config["warn-error"],
+        ignore_handled_error=context.op_config["ignore_handled_error"],
+        target_path=context.op_config["target-path"],
     )
 
     yield Output(cli_output, "dbt_cli_output")

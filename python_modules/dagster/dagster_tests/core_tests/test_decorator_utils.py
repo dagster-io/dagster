@@ -3,6 +3,7 @@ from dagster._core.decorator_utils import (
     get_function_params,
     validate_expected_params,
 )
+from dagster import op
 
 
 def decorated_function_one_positional():

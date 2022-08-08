@@ -1,16 +1,25 @@
-from dagster import AssetKey, AssetMaterialization, Field, MetadataValue, Output
+from dagster import (
+    In,
+    Out,
+    op,
+    AssetKey,
+    AssetMaterialization,
+    Field,
+    MetadataValue,
+    Output,
+)
 from dagster._legacy import pipeline, solid
 
 
-@solid(
+@op(
     config_schema={
         "bucket": Field(str, is_required=True),
         "s3_key": Field(str, is_required=True),
     }
 )
 def read_s3_key(context):
-    s3_key = context.solid_config["s3_key"]
-    bucket = context.solid_config["bucket"]
+    s3_key = context.op_config["s3_key"]
+    bucket = context.op_config["bucket"]
     path = f"s3://{bucket}/{s3_key}"
     context.log.info(f"Found file {path}")
     yield AssetMaterialization(

@@ -74,11 +74,11 @@ def test_op():
 
 
 def test_solid_decorator_produces_solid():
-    @solid
-    def my_solid():
+    @op
+    def my_op():
         pass
 
-    assert isinstance(my_solid, SolidDefinition) and not isinstance(my_solid, OpDefinition)
+    assert isinstance(my_op, SolidDefinition) and not isinstance(my_op, OpDefinition)
 
 
 def test_ins():
@@ -505,20 +505,20 @@ def test_solid_and_op_config_error_messages():
     ):
         my_graph.execute_in_process()
 
-    @solid(config_schema={"foo": str})
-    def my_solid(context):
-        return context.solid_config["foo"]
+    @op(config_schema={"foo": str})
+    def my_op(context):
+        return context.op_config["foo"]
 
     @graph
     def my_graph_with_solid():
-        my_solid()
+        my_op()
 
     # Document that for now, using jobs at the top level will result in config errors being
     # in terms of ops.
     with pytest.raises(
         DagsterInvalidConfigError,
         match='Missing required config entry "ops" at the root. Sample config for missing '
-        "entry: {'ops': {'my_solid': {'config': {'foo': '...'"
+        "entry: {'ops': {'my_op': {'config': {'foo': '...'"
         "}}}}",
     ):
         my_graph_with_solid.to_job().execute_in_process()
@@ -532,21 +532,21 @@ def test_error_message_mixed_ops_and_solids():
     def my_op(context):
         return context.op_config["foo"]
 
-    @solid(config_schema={"foo": str})
-    def my_solid(context):
-        return context.solid_config["foo"]
+    @op(config_schema={"foo": str})
+    def my_op(context):
+        return context.op_config["foo"]
 
     @graph
     def my_graph_with_both():
         my_op()
-        my_solid()
+        my_op()
 
     my_job = my_graph_with_both.to_job()
 
     with pytest.raises(
         DagsterInvalidConfigError,
         match='Missing required config entry "ops" at the root. Sample config for missing '
-        "entry: {'ops': {'my_op': {'config': {'foo': '...'}}, 'my_solid': "
+        "entry: {'ops': {'my_op': {'config': {'foo': '...'}}, 'my_op': "
         "{'config': {'foo': '...'}}}",
     ):
         my_job.execute_in_process()
@@ -560,7 +560,7 @@ def test_error_message_mixed_ops_and_solids():
     with pytest.raises(
         DagsterInvalidConfigError,
         match='Missing required config entry "ops" at the root. Sample config for missing '
-        "entry: {'ops': {'my_graph_with_both': {'ops': {'my_op': {'config': {'foo': '...'}}, 'my_solid': "
+        "entry: {'ops': {'my_graph_with_both': {'ops': {'my_op': {'config': {'foo': '...'}}, 'my_op': "
         "{'config': {'foo': '...'}}}}}",
     ):
         nested_job.execute_in_process()
@@ -667,7 +667,9 @@ def test_yield_event_ordering():
         assert first.dagster_event.event_specific_data.materialization.label == "first"
 
         second = relevant_event_logs[1]
-        assert second.dagster_event.event_specific_data.materialization.label == "second"
+        assert (
+            second.dagster_event.event_specific_data.materialization.label == "second"
+        )
 
         third = relevant_event_logs[2]
         assert third.dagster_event.event_specific_data.materialization.label == "third"
@@ -753,13 +755,21 @@ def test_log_metadata_after_output():
 def test_log_metadata_multiple_dynamic_outputs():
     @op(out={"out1": DynamicOut(), "out2": DynamicOut()})
     def the_op(context):
-        context.add_output_metadata({"one": "one"}, output_name="out1", mapping_key="one")
+        context.add_output_metadata(
+            {"one": "one"}, output_name="out1", mapping_key="one"
+        )
         yield DynamicOutput(value=1, output_name="out1", mapping_key="one")
-        context.add_output_metadata({"two": "two"}, output_name="out1", mapping_key="two")
-        context.add_output_metadata({"three": "three"}, output_name="out2", mapping_key="three")
+        context.add_output_metadata(
+            {"two": "two"}, output_name="out1", mapping_key="two"
+        )
+        context.add_output_metadata(
+            {"three": "three"}, output_name="out2", mapping_key="three"
+        )
         yield DynamicOutput(value=2, output_name="out1", mapping_key="two")
         yield DynamicOutput(value=3, output_name="out2", mapping_key="three")
-        context.add_output_metadata({"four": "four"}, output_name="out2", mapping_key="four")
+        context.add_output_metadata(
+            {"four": "four"}, output_name="out2", mapping_key="four"
+        )
         yield DynamicOutput(value=4, output_name="out2", mapping_key="four")
 
     result = execute_op_in_graph(the_op)
@@ -1372,7 +1382,9 @@ def test_output_mismatch_tuple_lengths():
 
 
 def test_none_annotated_input():
-    with pytest.raises(DagsterInvalidDefinitionError, match="is annotated with Nothing"):
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="is annotated with Nothing"
+    ):
 
         # pylint: disable=unused-argument
         @op

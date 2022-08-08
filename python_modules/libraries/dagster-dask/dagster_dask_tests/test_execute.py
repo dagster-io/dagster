@@ -9,6 +9,7 @@ from dagster_dask import DataFrame, dask_executor
 from dask.distributed import Scheduler, Worker
 
 from dagster import (
+    In,
     DagsterUnmetExecutorRequirementsError,
     VersionStrategy,
     file_relative_path,
@@ -32,7 +33,7 @@ from dagster._legacy import (
 from dagster._utils import send_interrupt
 
 
-@solid
+@op
 def simple(_):
     return 1
 
@@ -61,7 +62,9 @@ def test_execute_on_dask_local():
                 reconstructable(dask_engine_pipeline),
                 run_config={
                     "resources": {"io_manager": {"config": {"base_dir": tempdir}}},
-                    "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+                    "execution": {
+                        "dask": {"config": {"cluster": {"local": {"timeout": 30}}}}
+                    },
                 },
                 instance=instance,
                 mode="filesystem",
@@ -87,15 +90,17 @@ def test_composite_execute():
         result = execute_pipeline(
             reconstructable(dask_composite_pipeline),
             run_config={
-                "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+                "execution": {
+                    "dask": {"config": {"cluster": {"local": {"timeout": 30}}}}
+                },
             },
             instance=instance,
         )
         assert result.success
 
 
-@solid(input_defs=[InputDefinition("df", dagster_pd.DataFrame)])
-def pandas_solid(_, df):  # pylint: disable=unused-argument
+@op(ins={"df": In(dagster_pd.DataFrame)})
+def pandas_op(_, df):  # pylint: disable=unused-argument
     pass
 
 
@@ -108,14 +113,16 @@ def pandas_solid(_, df):  # pylint: disable=unused-argument
     ]
 )
 def pandas_pipeline():
-    pandas_solid()
+    pandas_op()
 
 
 def test_pandas_dask():
     run_config = {
         "solids": {
-            "pandas_solid": {
-                "inputs": {"df": {"csv": {"path": file_relative_path(__file__, "ex.csv")}}}
+            "pandas_op": {
+                "inputs": {
+                    "df": {"csv": {"path": file_relative_path(__file__, "ex.csv")}}
+                }
             }
         }
     }
@@ -124,7 +131,9 @@ def test_pandas_dask():
         result = execute_pipeline(
             ReconstructablePipeline.for_file(__file__, pandas_pipeline.name),
             run_config={
-                "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+                "execution": {
+                    "dask": {"config": {"cluster": {"local": {"timeout": 30}}}}
+                },
                 **run_config,
             },
             instance=instance,
@@ -133,8 +142,8 @@ def test_pandas_dask():
         assert result.success
 
 
-@solid(input_defs=[InputDefinition("df", DataFrame)])
-def dask_solid(_, df):  # pylint: disable=unused-argument
+@op(ins={"df": In(DataFrame)})
+def dask_op(_, df):  # pylint: disable=unused-argument
     pass
 
 
@@ -147,15 +156,19 @@ def dask_solid(_, df):  # pylint: disable=unused-argument
     ]
 )
 def dask_pipeline():
-    dask_solid()
+    dask_op()
 
 
 def test_dask():
     run_config = {
         "solids": {
-            "dask_solid": {
+            "dask_op": {
                 "inputs": {
-                    "df": {"read": {"csv": {"path": file_relative_path(__file__, "ex*.csv")}}}
+                    "df": {
+                        "read": {
+                            "csv": {"path": file_relative_path(__file__, "ex*.csv")}
+                        }
+                    }
                 }
             }
         }
@@ -165,7 +178,9 @@ def test_dask():
         result = execute_pipeline(
             ReconstructablePipeline.for_file(__file__, dask_pipeline.name),
             run_config={
-                "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+                "execution": {
+                    "dask": {"config": {"cluster": {"local": {"timeout": 30}}}}
+                },
                 **run_config,
             },
             instance=instance,
@@ -180,7 +195,9 @@ def test_execute_on_dask_local_without_io_manager():
             result = execute_pipeline(
                 reconstructable(dask_engine_pipeline),
                 run_config={
-                    "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+                    "execution": {
+                        "dask": {"config": {"cluster": {"local": {"timeout": 30}}}}
+                    },
                 },
                 instance=instance,
                 mode="default",
@@ -188,8 +205,8 @@ def test_execute_on_dask_local_without_io_manager():
             assert result.result_for_solid("simple").output_value() == 1
 
 
-@solid(input_defs=[InputDefinition("df", DataFrame)])
-def sleepy_dask_solid(_, df):  # pylint: disable=unused-argument
+@op(ins={"df": In(DataFrame)})
+def sleepy_dask_op(_, df):  # pylint: disable=unused-argument
     start_time = time.time()
     while True:
         time.sleep(0.1)
@@ -206,15 +223,19 @@ def sleepy_dask_solid(_, df):  # pylint: disable=unused-argument
     ]
 )
 def sleepy_dask_pipeline():
-    sleepy_dask_solid()
+    sleepy_dask_op()
 
 
 def test_dask_terminate():
     run_config = {
         "solids": {
-            "sleepy_dask_solid": {
+            "sleepy_dask_op": {
                 "inputs": {
-                    "df": {"read": {"csv": {"path": file_relative_path(__file__, "ex*.csv")}}}
+                    "df": {
+                        "read": {
+                            "csv": {"path": file_relative_path(__file__, "ex*.csv")}
+                        }
+                    }
                 }
             }
         }
@@ -225,18 +246,24 @@ def test_dask_terminate():
 
     with instance_for_test() as instance:
         for result in execute_pipeline_iterator(
-            pipeline=ReconstructablePipeline.for_file(__file__, sleepy_dask_pipeline.name),
+            pipeline=ReconstructablePipeline.for_file(
+                __file__, sleepy_dask_pipeline.name
+            ),
             run_config=run_config,
             instance=instance,
         ):
             # Interrupt once the first step starts
-            if result.event_type == DagsterEventType.STEP_START and not interrupt_thread:
+            if (
+                result.event_type == DagsterEventType.STEP_START
+                and not interrupt_thread
+            ):
                 interrupt_thread = Thread(target=send_interrupt, args=())
                 interrupt_thread.start()
 
             if result.event_type == DagsterEventType.STEP_FAILURE:
                 assert (
-                    "DagsterExecutionInterruptedError" in result.event_specific_data.error.message
+                    "DagsterExecutionInterruptedError"
+                    in result.event_specific_data.error.message
                 )
 
             result_types.append(result.event_type)
@@ -256,7 +283,11 @@ def test_existing_scheduler():
             reconstructable(dask_engine_pipeline),
             run_config={
                 "execution": {
-                    "dask": {"config": {"cluster": {"existing": {"address": scheduler_address}}}}
+                    "dask": {
+                        "config": {
+                            "cluster": {"existing": {"address": scheduler_address}}
+                        }
+                    }
                 },
             },
             instance=instance,
@@ -276,8 +307,8 @@ def test_existing_scheduler():
     asyncio.get_event_loop().run_until_complete(_run_test())
 
 
-@solid
-def foo_solid():
+@op
+def foo_op():
     return "foo"
 
 
@@ -296,7 +327,7 @@ class BasicVersionStrategy(VersionStrategy):
     version_strategy=BasicVersionStrategy(),
 )
 def foo_pipeline():
-    foo_solid()
+    foo_op()
 
 
 def test_dask_executor_memoization():
@@ -304,15 +335,23 @@ def test_dask_executor_memoization():
         result = execute_pipeline(
             reconstructable(foo_pipeline),
             instance=instance,
-            run_config={"execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}}},
+            run_config={
+                "execution": {
+                    "dask": {"config": {"cluster": {"local": {"timeout": 30}}}}
+                }
+            },
         )
         assert result.success
-        assert result.output_for_solid("foo_solid") == "foo"
+        assert result.output_for_solid("foo_op") == "foo"
 
         result = execute_pipeline(
             reconstructable(foo_pipeline),
             instance=instance,
-            run_config={"execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}}},
+            run_config={
+                "execution": {
+                    "dask": {"config": {"cluster": {"local": {"timeout": 30}}}}
+                }
+            },
         )
         assert result.success
         assert len(result.step_event_list) == 0
@@ -333,7 +372,9 @@ def test_dask_executor_job():
         result = execute_pipeline(
             reconstructable(the_job),
             instance=instance,
-            run_config={"execution": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+            run_config={
+                "execution": {"config": {"cluster": {"local": {"timeout": 30}}}}
+            },
         )
         assert result.success
         assert result.output_for_solid("the_op") == 5

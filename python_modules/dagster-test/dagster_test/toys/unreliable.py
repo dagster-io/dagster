@@ -1,21 +1,23 @@
 from random import random
 
-from dagster import Field, fs_io_manager
+from dagster import op, Field, fs_io_manager
 from dagster._legacy import ModeDefinition, pipeline, solid
 
 DEFAULT_EXCEPTION_RATE = 0.3
 
 
-@solid
+@op
 def unreliable_start(_):
     return 1
 
 
-@solid(
-    config_schema={"rate": Field(float, is_required=False, default_value=DEFAULT_EXCEPTION_RATE)}
+@op(
+    config_schema={
+        "rate": Field(float, is_required=False, default_value=DEFAULT_EXCEPTION_RATE)
+    }
 )
 def unreliable(context, num):
-    if random() < context.solid_config["rate"]:
+    if random() < context.op_config["rate"]:
         raise Exception("blah")
 
     return num

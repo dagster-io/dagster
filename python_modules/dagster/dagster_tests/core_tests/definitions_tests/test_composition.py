@@ -2,10 +2,16 @@ import warnings
 
 import pytest
 
-from dagster import DependencyDefinition, Int, Nothing, Output
-from dagster._core.definitions.decorators.hook_decorator import event_list_hook, success_hook
+from dagster import In, Out, op, DependencyDefinition, Int, Nothing, Output
+from dagster._core.definitions.decorators.hook_decorator import (
+    event_list_hook,
+    success_hook,
+)
 from dagster._core.definitions.events import DynamicOutput, HookExecutionResult
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
+)
 from dagster._core.execution.api import create_execution_plan
 from dagster._legacy import (
     InputDefinition,
@@ -24,59 +30,68 @@ def builder(graph):
     return graph.add_one(graph.return_one())
 
 
-@lambda_solid(output_def=OutputDefinition(Int))
+@op(out=Out(Int))
 def echo(blah):
     return blah
 
 
-@lambda_solid
+@op
 def return_one():
     return 1
 
 
-@lambda_solid
+@op
 def return_two():
     return 2
 
 
-@lambda_solid
+@op
 def return_tuple():
     return (1, 2)
 
 
-@lambda_solid(input_defs=[InputDefinition("num")])
+@op(ins={"num": In()})
 def add_one(num):
     return num + 1
 
 
-@lambda_solid(input_defs=[InputDefinition("num")])
+@op(ins={"num": In()})
 def pipe(num):
     return num
 
 
-@solid(
-    input_defs=[InputDefinition("int_1", Int), InputDefinition("int_2", Int)],
-    output_defs=[OutputDefinition(Int)],
+@op(
+    ins={"int_1": In(Int), "int_2": In(Int)},
+    out=Out(Int),
 )
 def adder(_context, int_1, int_2):
     return int_1 + int_2
 
 
-@solid(output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")])
+@op(
+    out={
+        "one": Out(
+            Int,
+        ),
+        "two": Out(
+            Int,
+        ),
+    }
+)
 def return_mult(_context):
     yield Output(1, "one")
     yield Output(2, "two")
 
 
-@solid(config_schema=int)
+@op(config_schema=int)
 def return_config_int(context):
-    return context.solid_config
+    return context.op_config
 
 
 def get_duplicate_solids():
     return (
-        SolidDefinition("a_solid", [], lambda: None, []),
-        SolidDefinition("a_solid", [], lambda: None, []),
+        SolidDefinition("a_op", [], lambda: None, []),
+        SolidDefinition("a_op", [], lambda: None, []),
     )
 
 
@@ -200,11 +215,11 @@ def test_multiple():
 
 
 def test_two_inputs_with_dsl():
-    @lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
+    @op(ins={"num_one": In(), "num_two": In()})
     def subtract(num_one, num_two):
         return num_one - num_two
 
-    @lambda_solid
+    @op
     def return_three():
         return 3
 
@@ -234,17 +249,12 @@ def test_basic_aliasing_with_dsl():
 
 
 def test_diamond_graph():
-    @solid(
-        output_defs=[
-            OutputDefinition(name="value_one"),
-            OutputDefinition(name="value_two"),
-        ]
-    )
+    @op(out={"value_one": Out(), "value_two": Out()})
     def emit_values(_context):
         yield Output(1, "value_one")
         yield Output(2, "value_two")
 
-    @lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
+    @op(ins={"num_one": In(), "num_two": In()})
     def subtract(num_one, num_two):
         return num_one - num_two
 
@@ -262,9 +272,13 @@ def test_diamond_graph():
 
 
 def test_mapping():
-    @lambda_solid(
-        input_defs=[InputDefinition("num_in", Int)],
-        output_def=OutputDefinition(Int, "num_out"),
+    @op(
+        ins={"num_in": In(Int)},
+        out={
+            "num_out": Out(
+                Int,
+            )
+        },
     )
     def double(num_in):
         return num_in * 2
@@ -295,7 +309,7 @@ def test_mapping():
 
 
 def test_mapping_args_kwargs():
-    @lambda_solid
+    @op
     def take(a, b, c):
         return (a, b, c)
 
@@ -314,7 +328,9 @@ def test_mapping_args_kwargs():
 
 
 def test_output_map_mult():
-    @composite_solid(output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")])
+    @composite_solid(
+        output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")]
+    )
     def wrap_mult():
         return return_mult()
 
@@ -330,7 +346,9 @@ def test_output_map_mult():
 
 
 def test_output_map_mult_swizzle():
-    @composite_solid(output_defs=[OutputDefinition(Int, "x"), OutputDefinition(Int, "y")])
+    @composite_solid(
+        output_defs=[OutputDefinition(Int, "x"), OutputDefinition(Int, "y")]
+    )
     def wrap_mult():
         one, two = return_mult()
         return {"x": one, "y": two}
@@ -349,13 +367,17 @@ def test_output_map_mult_swizzle():
 def test_output_map_fail():
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @composite_solid(output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")])
+        @composite_solid(
+            output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")]
+        )
         def _bad(_context):
             return return_one()
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @composite_solid(output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")])
+        @composite_solid(
+            output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")]
+        )
         def _bad(_context):
             return {"one": 1}
 
@@ -369,27 +391,27 @@ def test_output_map_fail():
 
 
 def test_deep_graph():
-    @solid(config_schema=Int)
+    @op(config_schema=Int)
     def download_num(context):
-        return context.solid_config
+        return context.op_config
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def unzip_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def ingest_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def subsample_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def canonicalize_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")], output_def=OutputDefinition(Int))
+    @op(ins={"num": In()}, out=Out(Int))
     def load_num(num):
         return num + 3
 
@@ -468,7 +490,7 @@ def test_pipeline_has_solid_def():
 
 
 def test_mapping_args_ordering():
-    @lambda_solid
+    @op
     def take(a, b, c):
         assert a == "a"
         assert b == "b"
@@ -516,8 +538,8 @@ def test_unused_mapping():
             return_one()
 
 
-@lambda_solid
-def single_input_solid():
+@op
+def single_input_op():
     return
 
 
@@ -526,9 +548,9 @@ def test_collision_invocations():
 
         @pipeline
         def _():
-            single_input_solid()
-            single_input_solid()
-            single_input_solid()
+            single_input_op()
+            single_input_op()
+            single_input_op()
 
     assert len(record) == 0
 
@@ -536,8 +558,8 @@ def test_collision_invocations():
 def test_alias_invoked(recwarn):
     @pipeline
     def _():
-        single_input_solid.alias("foo")()
-        single_input_solid.alias("bar")()
+        single_input_op.alias("foo")()
+        single_input_op.alias("bar")()
 
     assert len(recwarn) == 0
 
@@ -548,16 +570,18 @@ def test_alias_not_invoked():
         UserWarning,
         match=(
             r"While in @pipeline context '_my_pipeline', received an uninvoked solid "
-            r"'single_input_solid'\.\n'single_input_solid' was aliased as '(foo|bar)'."
+            r"'single_input_op'\.\n'single_input_op' was aliased as '(foo|bar)'."
         ),
     ) as record:
 
         @pipeline
         def _my_pipeline():
-            single_input_solid.alias("foo")
-            single_input_solid.alias("bar")
+            single_input_op.alias("foo")
+            single_input_op.alias("bar")
 
-    assert len(record) == 2  # This pipeline should raise a warning for each aliasing of the solid.
+    assert (
+        len(record) == 2
+    )  # This pipeline should raise a warning for each aliasing of the solid.
 
 
 def test_tag_invoked():
@@ -568,7 +592,7 @@ def test_tag_invoked():
 
         @pipeline
         def _my_pipeline():
-            single_input_solid.tag({})()
+            single_input_op.tag({})()
 
         execute_pipeline(_my_pipeline)
 
@@ -579,18 +603,20 @@ def test_tag_not_invoked():
         UserWarning,
         match=(
             r"While in @pipeline context '_my_pipeline', received an uninvoked solid "
-            r"'single_input_solid'\."
+            r"'single_input_op'\."
         ),
     ) as record:
 
         @pipeline
         def _my_pipeline():
-            single_input_solid.tag({})
-            single_input_solid.tag({})
+            single_input_op.tag({})
+            single_input_op.tag({})
 
         execute_pipeline(_my_pipeline)
 
-    user_warnings = [warning for warning in record if isinstance(warning.message, UserWarning)]
+    user_warnings = [
+        warning for warning in record if isinstance(warning.message, UserWarning)
+    ]
     assert (
         len(user_warnings) == 1
     )  # We should only raise one warning because solids have same name.
@@ -599,13 +625,13 @@ def test_tag_not_invoked():
         UserWarning,
         match=(
             r"While in @pipeline context '_my_pipeline', received an uninvoked solid "
-            r"'single_input_solid'\.\nProvided tags: {'a': 'b'}\."
+            r"'single_input_op'\.\nProvided tags: {'a': 'b'}\."
         ),
     ):
 
         @pipeline
         def _my_pipeline():
-            single_input_solid.tag({"a": "b"})
+            single_input_op.tag({"a": "b"})
 
         execute_pipeline(_my_pipeline)
 
@@ -617,7 +643,7 @@ def test_with_hooks_invoked():
 
         @pipeline
         def _my_pipeline():
-            single_input_solid.with_hooks(set())()
+            single_input_op.with_hooks(set())()
 
         execute_pipeline(_my_pipeline)
 
@@ -632,19 +658,21 @@ def test_with_hooks_not_invoked():
         UserWarning,
         match=(
             r"While in @pipeline context '_my_pipeline', received an uninvoked solid "
-            r"'single_input_solid'\."
+            r"'single_input_op'\."
         ),
     ) as record:
 
         @pipeline
         def _my_pipeline():
-            single_input_solid.with_hooks(set())
-            single_input_solid.with_hooks(set())
+            single_input_op.with_hooks(set())
+            single_input_op.with_hooks(set())
 
         execute_pipeline(_my_pipeline)
 
     # Note not returning out of the pipe causes warning count to go up to 2
-    user_warnings = [warning for warning in record if isinstance(warning.message, UserWarning)]
+    user_warnings = [
+        warning for warning in record if isinstance(warning.message, UserWarning)
+    ]
     assert (
         len(user_warnings) == 1
     )  # We should only raise one warning because solids have same name.
@@ -653,13 +681,13 @@ def test_with_hooks_not_invoked():
         UserWarning,
         match=(
             r"While in @pipeline context '_my_pipeline', received an uninvoked solid "
-            r"'single_input_solid'\.\nProvided hook definitions: \['a_hook'\]\."
+            r"'single_input_op'\.\nProvided hook definitions: \['a_hook'\]\."
         ),
     ):
 
         @pipeline
         def _my_pipeline():
-            single_input_solid.with_hooks({a_hook})
+            single_input_op.with_hooks({a_hook})
 
         execute_pipeline(_my_pipeline)
 
@@ -667,7 +695,7 @@ def test_with_hooks_not_invoked():
 def test_with_hooks_not_empty():
     @pipeline
     def _():
-        single_input_solid.with_hooks({a_hook})
+        single_input_op.with_hooks({a_hook})
 
     assert 1 == 1
 
@@ -677,15 +705,15 @@ def test_multiple_pending_invocations():
         UserWarning,
         match=(
             r"While in @pipeline context '_my_pipeline', received an uninvoked solid "
-            r"'single_input_solid'\.\n'single_input_solid' was aliased as 'bar'\.\n"
+            r"'single_input_op'\.\n'single_input_op' was aliased as 'bar'\.\n"
             r"Provided hook definitions: \['a_hook'\]\."
         ),
     ) as record:
 
         @pipeline
         def _my_pipeline():
-            foo = single_input_solid.alias("foo")
-            bar = single_input_solid.alias("bar")
+            foo = single_input_op.alias("foo")
+            bar = single_input_op.alias("bar")
             foo_tag = foo.tag({})
             _bar_hook = bar.with_hooks({a_hook})
             foo_tag()
@@ -696,7 +724,7 @@ def test_multiple_pending_invocations():
 
 
 def test_compose_nothing():
-    @lambda_solid(input_defs=[InputDefinition("start", Nothing)])
+    @op(ins={"start": In(Nothing)})
     def go():
         pass
 
@@ -706,7 +734,9 @@ def test_compose_nothing():
 
 
 def test_multimap():
-    @composite_solid(output_defs=[OutputDefinition(int, "x"), OutputDefinition(int, "y")])
+    @composite_solid(
+        output_defs=[OutputDefinition(int, "x"), OutputDefinition(int, "y")]
+    )
     def multimap(foo):
         x = echo.alias("echo_1")(foo)
         y = echo.alias("echo_2")(foo)
@@ -723,7 +753,9 @@ def test_multimap():
 
 
 def test_reuse_inputs():
-    @composite_solid(input_defs=[InputDefinition("one", Int), InputDefinition("two", Int)])
+    @composite_solid(
+        input_defs=[InputDefinition("one", Int), InputDefinition("two", Int)]
+    )
     def calculate(one, two):
         adder(one, two)
         adder.alias("adder_2")(one, two)
@@ -755,36 +787,36 @@ def test_output_node_error():
 
 
 def test_pipeline_composition_metadata():
-    @solid
-    def metadata_solid(context):
-        return context.solid.tags["key"]
+    @op
+    def metadata_op(context):
+        return context.op.tags["key"]
 
     @pipeline
     def metadata_test_pipeline():
-        metadata_solid.tag({"key": "foo"}).alias("aliased_one")()
-        metadata_solid.alias("aliased_two").tag({"key": "foo"}).tag({"key": "bar"})()
-        metadata_solid.alias("aliased_three").tag({"key": "baz"})()
-        metadata_solid.tag({"key": "quux"})()
+        metadata_op.tag({"key": "foo"}).alias("aliased_one")()
+        metadata_op.alias("aliased_two").tag({"key": "foo"}).tag({"key": "bar"})()
+        metadata_op.alias("aliased_three").tag({"key": "baz"})()
+        metadata_op.tag({"key": "quux"})()
 
     res = execute_pipeline(metadata_test_pipeline)
 
     assert res.result_for_solid("aliased_one").output_value() == "foo"
     assert res.result_for_solid("aliased_two").output_value() == "bar"
     assert res.result_for_solid("aliased_three").output_value() == "baz"
-    assert res.result_for_solid("metadata_solid").output_value() == "quux"
+    assert res.result_for_solid("metadata_op").output_value() == "quux"
 
 
 def test_composite_solid_composition_metadata():
-    @solid
-    def metadata_solid(context):
-        return context.solid.tags["key"]
+    @op
+    def metadata_op(context):
+        return context.op.tags["key"]
 
     @composite_solid
     def metadata_composite():
-        metadata_solid.tag({"key": "foo"}).alias("aliased_one")()
-        metadata_solid.alias("aliased_two").tag({"key": "foo"}).tag({"key": "bar"})()
-        metadata_solid.alias("aliased_three").tag({"key": "baz"})()
-        metadata_solid.tag({"key": "quux"})()
+        metadata_op.tag({"key": "foo"}).alias("aliased_one")()
+        metadata_op.alias("aliased_two").tag({"key": "foo"}).tag({"key": "bar"})()
+        metadata_op.alias("aliased_three").tag({"key": "baz"})()
+        metadata_op.tag({"key": "quux"})()
 
     @pipeline
     def metadata_test_pipeline():
@@ -793,25 +825,35 @@ def test_composite_solid_composition_metadata():
     res = execute_pipeline(metadata_test_pipeline)
 
     assert (
-        res.result_for_solid("metadata_composite").result_for_solid("aliased_one").output_value()
+        res.result_for_solid("metadata_composite")
+        .result_for_solid("aliased_one")
+        .output_value()
         == "foo"
     )
     assert (
-        res.result_for_solid("metadata_composite").result_for_solid("aliased_two").output_value()
+        res.result_for_solid("metadata_composite")
+        .result_for_solid("aliased_two")
+        .output_value()
         == "bar"
     )
     assert (
-        res.result_for_solid("metadata_composite").result_for_solid("aliased_three").output_value()
+        res.result_for_solid("metadata_composite")
+        .result_for_solid("aliased_three")
+        .output_value()
         == "baz"
     )
     assert (
-        res.result_for_solid("metadata_composite").result_for_solid("metadata_solid").output_value()
+        res.result_for_solid("metadata_composite")
+        .result_for_solid("metadata_op")
+        .output_value()
         == "quux"
     )
 
 
 def test_uninvoked_solid_fails():
-    with pytest.raises(DagsterInvalidDefinitionError, match=r".*Did you forget parentheses?"):
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match=r".*Did you forget parentheses?"
+    ):
 
         @pipeline
         def uninvoked_solid_pipeline():
@@ -821,7 +863,9 @@ def test_uninvoked_solid_fails():
 
 
 def test_uninvoked_aliased_solid_fails():
-    with pytest.raises(DagsterInvalidDefinitionError, match=r".*Did you forget parentheses?"):
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match=r".*Did you forget parentheses?"
+    ):
 
         @pipeline
         def uninvoked_aliased_solid_pipeline():
@@ -844,7 +888,7 @@ def test_alias_on_invoked_solid_fails():
 
 
 def test_warn_on_pipeline_return():
-    @solid
+    @op
     def noop(_):
         pass
 
@@ -859,7 +903,7 @@ def test_warn_on_pipeline_return():
 
 
 def test_tags():
-    @solid(tags={"def": "1"})
+    @op(tags={"def": "1"})
     def emit(_):
         return 1
 
@@ -881,11 +925,11 @@ def test_bad_alias():
 
 
 def test_tag_subset():
-    @solid
+    @op
     def empty(_):
         pass
 
-    @solid(tags={"def": "1"})
+    @op(tags={"def": "1"})
     def emit(_):
         return 1
 
@@ -906,18 +950,18 @@ def test_composition_order():
     def test_hook(context):
         solid_to_tags[context.op.name] = context.op.tags
 
-    @solid
-    def a_solid(_):
+    @op
+    def a_op(_):
         pass
 
     @pipeline
     def a_pipeline():
-        a_solid.with_hooks(hook_defs={test_hook}).alias("hook_alias_tag").tag({"pos": 3})()
-        a_solid.with_hooks(hook_defs={test_hook}).tag({"pos": 2}).alias("hook_tag_alias")()
-        a_solid.alias("alias_tag_hook").tag({"pos": 2}).with_hooks(hook_defs={test_hook})()
-        a_solid.alias("alias_hook_tag").with_hooks(hook_defs={test_hook}).tag({"pos": 3})()
-        a_solid.tag({"pos": 1}).with_hooks(hook_defs={test_hook}).alias("tag_hook_alias")()
-        a_solid.tag({"pos": 1}).alias("tag_alias_hook").with_hooks(hook_defs={test_hook})()
+        a_op.with_hooks(hook_defs={test_hook}).alias("hook_alias_tag").tag({"pos": 3})()
+        a_op.with_hooks(hook_defs={test_hook}).tag({"pos": 2}).alias("hook_tag_alias")()
+        a_op.alias("alias_tag_hook").tag({"pos": 2}).with_hooks(hook_defs={test_hook})()
+        a_op.alias("alias_hook_tag").with_hooks(hook_defs={test_hook}).tag({"pos": 3})()
+        a_op.tag({"pos": 1}).with_hooks(hook_defs={test_hook}).alias("tag_hook_alias")()
+        a_op.tag({"pos": 1}).alias("tag_alias_hook").with_hooks(hook_defs={test_hook})()
 
     result = execute_pipeline(a_pipeline, raise_on_error=False)
     assert result.success
@@ -932,8 +976,8 @@ def test_composition_order():
 
 
 def test_fan_in_scalars_fails():
-    @solid
-    def fan_in_solid(_, xs):
+    @op
+    def fan_in_op(_, xs):
         return sum(xs)
 
     with pytest.raises(
@@ -943,12 +987,12 @@ def test_fan_in_scalars_fails():
 
         @pipeline
         def _scalar_fan_in_pipeline():
-            fan_in_solid([1, 2, 3])
+            fan_in_op([1, 2, 3])
 
 
 def test_with_hooks_on_invoked_solid_fails():
-    @solid
-    def yield_1_solid(_):
+    @op
+    def yield_1_op(_):
         return 1
 
     with pytest.raises(
@@ -958,16 +1002,16 @@ def test_with_hooks_on_invoked_solid_fails():
 
         @pipeline
         def _bad_hooks_pipeline():
-            yield_1_solid().with_hooks({a_hook})
+            yield_1_op().with_hooks({a_hook})
 
 
 def test_iterating_over_dynamic_outputs_fails():
-    @solid
-    def dynamic_output_solid(_):
+    @op
+    def dynamic_output_op(_):
         yield DynamicOutput(1, "1")
         yield DynamicOutput(2, "2")
 
-    @solid
+    @op
     def yield_input(_, x):
         return x
 
@@ -978,17 +1022,17 @@ def test_iterating_over_dynamic_outputs_fails():
 
         @pipeline
         def _iterating_over_dynamic_output_pipeline():
-            for x in dynamic_output_solid():
+            for x in dynamic_output_op():
                 yield_input(x)
 
 
 def test_indexing_into_dynamic_outputs_fails():
-    @solid
-    def dynamic_output_solid(_):
+    @op
+    def dynamic_output_op(_):
         yield DynamicOutput(1, "1")
         yield DynamicOutput(2, "2")
 
-    @solid
+    @op
     def yield_input(_, x):
         return x
 
@@ -999,12 +1043,12 @@ def test_indexing_into_dynamic_outputs_fails():
 
         @pipeline
         def _indexing_into_dynamic_output_pipeline():
-            yield_input(dynamic_output_solid()[0])
+            yield_input(dynamic_output_op()[0])
 
 
 def test_aliasing_invoked_dynamic_output_fails():
-    @solid
-    def dynamic_output_solid(_):
+    @op
+    def dynamic_output_op(_):
         yield DynamicOutput(1, "1")
         yield DynamicOutput(2, "2")
 
@@ -1015,4 +1059,4 @@ def test_aliasing_invoked_dynamic_output_fails():
 
         @pipeline
         def _alias_invoked_dynamic_output_pipeline():
-            dynamic_output_solid().alias("dynamic_output")
+            dynamic_output_op().alias("dynamic_output")

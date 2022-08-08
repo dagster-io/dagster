@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Dict
 
 from setuptools import find_packages, setup
+from dagster import op
 
 
 def get_description() -> str:

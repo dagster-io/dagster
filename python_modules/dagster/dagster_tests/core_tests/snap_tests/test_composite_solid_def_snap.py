@@ -4,33 +4,38 @@ from dagster._core.snap import (
     build_composite_solid_def_snap,
 )
 from dagster._legacy import composite_solid, solid
-from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster._serdes import (
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+)
 
 
 def test_noop_comp_solid_definition():
-    @solid
-    def noop_solid(_):
+    @op
+    def noop_op(_):
         pass
 
     @composite_solid
     def comp_solid():
-        noop_solid()
+        noop_op()
 
     comp_solid_meta = build_composite_solid_def_snap(comp_solid)
 
     assert isinstance(comp_solid_meta, CompositeSolidDefSnap)
     assert (
-        deserialize_json_to_dagster_namedtuple(serialize_dagster_namedtuple(comp_solid_meta))
+        deserialize_json_to_dagster_namedtuple(
+            serialize_dagster_namedtuple(comp_solid_meta)
+        )
         == comp_solid_meta
     )
 
 
 def test_basic_comp_solid_definition():
-    @solid
+    @op
     def return_one(_):
         return 1
 
-    @solid
+    @op
     def take_one(_, one):
         return one
 
@@ -42,7 +47,9 @@ def test_basic_comp_solid_definition():
 
     assert isinstance(comp_solid_meta, CompositeSolidDefSnap)
     assert (
-        deserialize_json_to_dagster_namedtuple(serialize_dagster_namedtuple(comp_solid_meta))
+        deserialize_json_to_dagster_namedtuple(
+            serialize_dagster_namedtuple(comp_solid_meta)
+        )
         == comp_solid_meta
     )
 
@@ -54,11 +61,11 @@ def test_basic_comp_solid_definition():
 
 
 def test_complex_comp_solid_definition():
-    @solid
+    @op
     def return_one(_):
         return 1
 
-    @solid
+    @op
     def take_many(_, items):
         return items
 
@@ -70,12 +77,19 @@ def test_complex_comp_solid_definition():
 
     assert isinstance(comp_solid_meta, CompositeSolidDefSnap)
     assert (
-        deserialize_json_to_dagster_namedtuple(serialize_dagster_namedtuple(comp_solid_meta))
+        deserialize_json_to_dagster_namedtuple(
+            serialize_dagster_namedtuple(comp_solid_meta)
+        )
         == comp_solid_meta
     )
 
     index = DependencyStructureIndex(comp_solid_meta.dep_structure_snapshot)
     assert index.get_invocation("return_one")
     assert index.get_invocation("take_many")
-    assert index.get_upstream_outputs("take_many", "items")[0].solid_name == "return_one"
-    assert index.get_upstream_outputs("take_many", "items")[1].solid_name == "return_one_also"
+    assert (
+        index.get_upstream_outputs("take_many", "items")[0].solid_name == "return_one"
+    )
+    assert (
+        index.get_upstream_outputs("take_many", "items")[1].solid_name
+        == "return_one_also"
+    )

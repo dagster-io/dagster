@@ -3,6 +3,9 @@ import re
 import pytest
 
 from dagster import (
+    In,
+    Out,
+    op,
     Any,
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
@@ -21,13 +24,10 @@ from dagster._legacy import (
 
 
 def test_multiple_outputs():
-    @solid(
+    @op(
         name="multiple_outputs",
-        input_defs=[],
-        output_defs=[
-            OutputDefinition(name="output_one"),
-            OutputDefinition(name="output_two"),
-        ],
+        ins={},
+        out={"output_one": Out(), "output_two": Out()},
     )
     def multiple_outputs(_):
         yield Output(output_name="output_one", value="foo")
@@ -52,10 +52,10 @@ def test_multiple_outputs():
 
 
 def test_wrong_multiple_output():
-    @solid(
+    @op(
         name="multiple_outputs",
-        input_defs=[],
-        output_defs=[OutputDefinition(name="output_one")],
+        ins={},
+        out={"output_one": Out()},
     )
     def multiple_outputs(_):
         yield Output(output_name="mismatch", value="foo")
@@ -71,10 +71,10 @@ def test_wrong_multiple_output():
 def test_multiple_outputs_of_same_name_disallowed():
     # make this illegal until it is supported
 
-    @solid(
+    @op(
         name="multiple_outputs",
-        input_defs=[],
-        output_defs=[OutputDefinition(name="output_one")],
+        ins={},
+        out={"output_one": Out()},
     )
     def multiple_outputs(_):
         yield Output(output_name="output_one", value="foo")
@@ -89,26 +89,23 @@ def test_multiple_outputs_of_same_name_disallowed():
 
 
 def define_multi_out():
-    @solid(
+    @op(
         name="multiple_outputs",
-        input_defs=[],
-        output_defs=[
-            OutputDefinition(name="output_one"),
-            OutputDefinition(name="output_two", is_required=False),
-        ],
+        ins={},
+        out={"output_one": Out(), "output_two": Out(is_required=False)},
     )
     def multiple_outputs(_):
         yield Output(output_name="output_one", value="foo")
 
-    @solid(
+    @op(
         name="downstream_one",
-        input_defs=[InputDefinition("some_input")],
-        output_defs=[],
+        ins={"some_input": In()},
+        out={},
     )
     def downstream_one(_, some_input):
         del some_input
 
-    @solid
+    @op
     def downstream_two(_, some_input):
         del some_input
         raise Exception("do not call me")
@@ -135,7 +132,9 @@ def test_multiple_outputs_only_emit_one():
     ):
         solid_result.output_value("not_defined")
 
-    with pytest.raises(DagsterInvariantViolationError, match="Did not find result output_two"):
+    with pytest.raises(
+        DagsterInvariantViolationError, match="Did not find result output_two"
+    ):
         solid_result.output_value("output_two")
 
     with pytest.raises(
@@ -170,7 +169,9 @@ def test_multiple_outputs_only_emit_one_multiproc():
         ):
             solid_result.output_value("not_defined")
 
-        with pytest.raises(DagsterInvariantViolationError, match="Did not find result output_two"):
+        with pytest.raises(
+            DagsterInvariantViolationError, match="Did not find result output_two"
+        ):
             solid_result.output_value("output_two")
 
         with pytest.raises(
@@ -186,13 +187,10 @@ def test_multiple_outputs_only_emit_one_multiproc():
 
 
 def test_missing_non_optional_output_fails():
-    @solid(
+    @op(
         name="multiple_outputs",
-        input_defs=[],
-        output_defs=[
-            OutputDefinition(name="output_one"),
-            OutputDefinition(name="output_two"),
-        ],
+        ins={},
+        out={"output_one": Out(), "output_two": Out()},
     )
     def multiple_outputs(_):
         yield Output(output_name="output_one", value="foo")
@@ -206,14 +204,20 @@ def test_missing_non_optional_output_fails():
 
 
 def test_warning_for_conditional_output(capsys):
-    @solid(
+    @op(
         config_schema={"return": bool},
-        output_defs=[OutputDefinition(Any, is_required=False)],
+        out={
+            False: Out(
+                Any,
+            )
+        },
     )
     def maybe(context):
-        if context.solid_config["return"]:
+        if context.op_config["return"]:
             return 3
 
-    result = execute_solid(maybe, run_config={"solids": {"maybe": {"config": {"return": False}}}})
+    result = execute_solid(
+        maybe, run_config={"solids": {"maybe": {"config": {"return": False}}}}
+    )
     assert result.success
     assert "This value will be passed to downstream solids" in capsys.readouterr().err

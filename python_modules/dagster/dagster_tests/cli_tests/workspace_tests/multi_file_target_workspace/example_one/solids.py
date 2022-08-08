@@ -1,6 +1,6 @@
 from dagster._legacy import solid
 
 
-@solid
-def example_one_solid(_):
+@op
+def example_one_op(_):
     pass

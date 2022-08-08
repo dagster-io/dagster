@@ -7,6 +7,7 @@ from typing import List
 import pytest
 
 from dagster import (
+    Out,
     Backoff,
     DagsterEventType,
     Failure,
@@ -48,28 +49,28 @@ executors = pytest.mark.parametrize(
 
 
 def define_run_retry_pipeline():
-    @solid(config_schema={"fail": bool})
+    @op(config_schema={"fail": bool})
     def can_fail(context, _start_fail):
-        if context.solid_config["fail"]:
+        if context.op_config["fail"]:
             raise Exception("blah")
 
         return "okay perfect"
 
-    @solid(
-        output_defs=[
-            OutputDefinition(bool, "start_fail", is_required=False),
-            OutputDefinition(bool, "start_skip", is_required=False),
-        ]
+    @op(
+        out={
+            "start_fail": Out(bool, is_required=False),
+            "start_skip": Out(bool, is_required=False),
+        }
     )
     def two_outputs(_):
         yield Output(True, "start_fail")
         # won't yield start_skip
 
-    @solid
+    @op
     def will_be_skipped(_, _start_skip):
         pass  # doesn't matter
 
-    @solid
+    @op
     def downstream_of_failed(_, input_str):
         return input_str
 
@@ -108,20 +109,24 @@ def test_retries(environment):
             instance=instance,
         )
         assert second_result.success
-        downstream_of_failed = second_result.result_for_solid("downstream_of_failed").output_value()
+        downstream_of_failed = second_result.result_for_solid(
+            "downstream_of_failed"
+        ).output_value()
         assert downstream_of_failed == "okay perfect"
 
         will_be_skipped = [
-            e for e in second_result.event_list if "will_be_skipped" in str(e.solid_handle)
+            e
+            for e in second_result.event_list
+            if "will_be_skipped" in str(e.solid_handle)
         ]
         assert str(will_be_skipped[0].event_type_value) == "STEP_SKIPPED"
         assert str(will_be_skipped[1].event_type_value) == "STEP_SKIPPED"
 
 
 def define_step_retry_pipeline():
-    @solid(config_schema=str)
+    @op(config_schema=str)
     def fail_first_time(context):
-        file = os.path.join(context.solid_config, "i_threw_up")
+        file = os.path.join(context.op_config, "i_threw_up")
         if os.path.exists(file):
             return "okay perfect"
         else:
@@ -158,11 +163,11 @@ def test_step_retry(environment):
 
 
 def define_retry_limit_pipeline():
-    @lambda_solid
+    @op
     def default_max():
         raise RetryRequested()
 
-    @lambda_solid
+    @op
     def three_max():
         raise RetryRequested(max_retries=3)
 
@@ -228,9 +233,9 @@ DELAY = 2
 
 
 def define_retry_wait_fixed_pipeline():
-    @solid(config_schema=str)
+    @op(config_schema=str)
     def fail_first_and_wait(context):
-        file = os.path.join(context.solid_config, "i_threw_up")
+        file = os.path.join(context.op_config, "i_threw_up")
         if os.path.exists(file):
             return "okay perfect"
         else:
@@ -275,7 +280,7 @@ def test_step_retry_fixed_wait(environment):
 
 
 def test_basic_retry_policy():
-    @solid(retry_policy=RetryPolicy())
+    @op(retry_policy=RetryPolicy())
     def throws(_):
         raise Exception("I fail")
 
@@ -289,15 +294,15 @@ def test_basic_retry_policy():
 
 
 def test_retry_policy_rules():
-    @solid(retry_policy=RetryPolicy(max_retries=2))
+    @op(retry_policy=RetryPolicy(max_retries=2))
     def throw_with_policy():
         raise Exception("I throw")
 
-    @solid
+    @op
     def throw_no_policy():
         raise Exception("I throw")
 
-    @solid
+    @op
     def fail_no_policy():
         raise Failure("I fail")
 
@@ -305,12 +310,18 @@ def test_retry_policy_rules():
     def policy_test():
         throw_with_policy()
         throw_no_policy()
-        throw_with_policy.with_retry_policy(RetryPolicy(max_retries=1)).alias("override_with")()
-        throw_no_policy.alias("override_no").with_retry_policy(RetryPolicy(max_retries=1))()
-        throw_no_policy.configured({"jonx": True}, name="config_override_no").with_retry_policy(
+        throw_with_policy.with_retry_policy(RetryPolicy(max_retries=1)).alias(
+            "override_with"
+        )()
+        throw_no_policy.alias("override_no").with_retry_policy(
             RetryPolicy(max_retries=1)
         )()
-        fail_no_policy.alias("override_fail").with_retry_policy(RetryPolicy(max_retries=1))()
+        throw_no_policy.configured(
+            {"jonx": True}, name="config_override_no"
+        ).with_retry_policy(RetryPolicy(max_retries=1))()
+        fail_no_policy.alias("override_fail").with_retry_policy(
+            RetryPolicy(max_retries=1)
+        )()
 
     result = execute_pipeline(policy_test, raise_on_error=False)
     assert not result.success
@@ -325,7 +336,7 @@ def test_retry_policy_rules():
 def test_delay():
     delay = 0.3
 
-    @solid(retry_policy=RetryPolicy(delay=delay))
+    @op(retry_policy=RetryPolicy(delay=delay))
     def throws(_):
         raise Exception("I fail")
 
@@ -365,9 +376,15 @@ def test_policy_delay_calc():
     # jitter
 
     one_linear_full = RetryPolicy(delay=1, backoff=Backoff.LINEAR, jitter=Jitter.FULL)
-    one_expo_full = RetryPolicy(delay=1, backoff=Backoff.EXPONENTIAL, jitter=Jitter.FULL)
-    one_linear_pm = RetryPolicy(delay=1, backoff=Backoff.LINEAR, jitter=Jitter.PLUS_MINUS)
-    one_expo_pm = RetryPolicy(delay=1, backoff=Backoff.EXPONENTIAL, jitter=Jitter.PLUS_MINUS)
+    one_expo_full = RetryPolicy(
+        delay=1, backoff=Backoff.EXPONENTIAL, jitter=Jitter.FULL
+    )
+    one_linear_pm = RetryPolicy(
+        delay=1, backoff=Backoff.LINEAR, jitter=Jitter.PLUS_MINUS
+    )
+    one_expo_pm = RetryPolicy(
+        delay=1, backoff=Backoff.EXPONENTIAL, jitter=Jitter.PLUS_MINUS
+    )
     one_full = RetryPolicy(delay=1, jitter=Jitter.FULL)
     one_pm = RetryPolicy(delay=1, jitter=Jitter.PLUS_MINUS)
 
@@ -398,14 +415,16 @@ def test_linear_backoff():
     delay = 0.1
     logged_times = []
 
-    @solid
+    @op
     def throws(_):
         logged_times.append(time.time())
         raise Exception("I fail")
 
     @pipeline
     def linear_backoff():
-        throws.with_retry_policy(RetryPolicy(max_retries=3, delay=delay, backoff=Backoff.LINEAR))()
+        throws.with_retry_policy(
+            RetryPolicy(max_retries=3, delay=delay, backoff=Backoff.LINEAR)
+        )()
 
     execute_pipeline(linear_backoff)
     assert len(logged_times) == 4
@@ -418,7 +437,7 @@ def test_expo_backoff():
     delay = 0.1
     logged_times = []
 
-    @solid
+    @op
     def throws(_):
         logged_times.append(time.time())
         raise Exception("I fail")
@@ -476,12 +495,18 @@ def test_retry_policy_rules_job():
     def policy_test():
         throw_with_policy()
         throw_no_policy()
-        throw_with_policy.with_retry_policy(RetryPolicy(max_retries=1)).alias("override_with")()
-        throw_no_policy.alias("override_no").with_retry_policy(RetryPolicy(max_retries=1))()
-        throw_no_policy.configured({"jonx": True}, name="config_override_no").with_retry_policy(
+        throw_with_policy.with_retry_policy(RetryPolicy(max_retries=1)).alias(
+            "override_with"
+        )()
+        throw_no_policy.alias("override_no").with_retry_policy(
             RetryPolicy(max_retries=1)
         )()
-        fail_no_policy.alias("override_fail").with_retry_policy(RetryPolicy(max_retries=1))()
+        throw_no_policy.configured(
+            {"jonx": True}, name="config_override_no"
+        ).with_retry_policy(RetryPolicy(max_retries=1))()
+        fail_no_policy.alias("override_fail").with_retry_policy(
+            RetryPolicy(max_retries=1)
+        )()
 
     result = policy_test.execute_in_process(raise_on_error=False)
     assert not result.success
@@ -507,7 +532,9 @@ def test_basic_op_retry_policy_subset():
         throws()
         do_nothing()
 
-    result = policy_test.execute_in_process(raise_on_error=False, op_selection=["throws"])
+    result = policy_test.execute_in_process(
+        raise_on_error=False, op_selection=["throws"]
+    )
     assert not result.success
     assert len(_get_retry_events(result.events_for_node("throws"))) == 1
 
@@ -529,12 +556,18 @@ def test_retry_policy_rules_on_graph_to_job():
     def policy_test():
         throw_with_policy()
         throw_no_policy()
-        throw_with_policy.with_retry_policy(RetryPolicy(max_retries=1)).alias("override_with")()
-        throw_no_policy.alias("override_no").with_retry_policy(RetryPolicy(max_retries=1))()
-        throw_no_policy.configured({"jonx": True}, name="config_override_no").with_retry_policy(
+        throw_with_policy.with_retry_policy(RetryPolicy(max_retries=1)).alias(
+            "override_with"
+        )()
+        throw_no_policy.alias("override_no").with_retry_policy(
             RetryPolicy(max_retries=1)
         )()
-        fail_no_policy.alias("override_fail").with_retry_policy(RetryPolicy(max_retries=1))()
+        throw_no_policy.configured(
+            {"jonx": True}, name="config_override_no"
+        ).with_retry_policy(RetryPolicy(max_retries=1))()
+        fail_no_policy.alias("override_fail").with_retry_policy(
+            RetryPolicy(max_retries=1)
+        )()
 
     my_job = policy_test.to_job(op_retry_policy=RetryPolicy(max_retries=3))
     result = my_job.execute_in_process(raise_on_error=False)
@@ -569,12 +602,18 @@ def test_retry_policy_rules_on_pending_node_invocation_to_job():
     def policy_test():
         throw_with_policy()
         throw_no_policy()
-        throw_with_policy.with_retry_policy(RetryPolicy(max_retries=1)).alias("override_with")()
-        throw_no_policy.alias("override_no").with_retry_policy(RetryPolicy(max_retries=1))()
-        throw_no_policy.configured({"jonx": True}, name="config_override_no").with_retry_policy(
+        throw_with_policy.with_retry_policy(RetryPolicy(max_retries=1)).alias(
+            "override_with"
+        )()
+        throw_no_policy.alias("override_no").with_retry_policy(
             RetryPolicy(max_retries=1)
         )()
-        fail_no_policy.alias("override_fail").with_retry_policy(RetryPolicy(max_retries=1))()
+        throw_no_policy.configured(
+            {"jonx": True}, name="config_override_no"
+        ).with_retry_policy(RetryPolicy(max_retries=1))()
+        fail_no_policy.alias("override_fail").with_retry_policy(
+            RetryPolicy(max_retries=1)
+        )()
 
     my_job = policy_test.to_job(op_retry_policy=RetryPolicy(max_retries=3))
     result = my_job.execute_in_process(raise_on_error=False)

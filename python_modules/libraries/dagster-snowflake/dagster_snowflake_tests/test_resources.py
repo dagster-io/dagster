@@ -6,18 +6,19 @@ from dagster._core.test_utils import environ
 from dagster._legacy import ModeDefinition, execute_solid, solid
 
 from .utils import create_mock_connector
+from dagster import op
 
 
 @mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
 def test_snowflake_resource(snowflake_connect):
-    @solid(required_resource_keys={"snowflake"})
-    def snowflake_solid(context):
+    @op(required_resource_keys={"snowflake"})
+    def snowflake_op(context):
         assert context.resources.snowflake
         with context.resources.snowflake.get_connection() as _:
             pass
 
     result = execute_solid(
-        snowflake_solid,
+        snowflake_op,
         run_config={
             "resources": {
                 "snowflake": {
@@ -47,8 +48,8 @@ def test_snowflake_resource(snowflake_connect):
 
 @mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
 def test_snowflake_resource_from_envvars(snowflake_connect):
-    @solid(required_resource_keys={"snowflake"})
-    def snowflake_solid(context):
+    @op(required_resource_keys={"snowflake"})
+    def snowflake_op(context):
         assert context.resources.snowflake
         with context.resources.snowflake.get_connection() as _:
             pass
@@ -63,7 +64,7 @@ def test_snowflake_resource_from_envvars(snowflake_connect):
     }
     with environ(env_vars):
         result = execute_solid(
-            snowflake_solid,
+            snowflake_op,
             run_config={
                 "resources": {
                     "snowflake": {

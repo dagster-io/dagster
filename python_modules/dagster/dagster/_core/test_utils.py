@@ -23,7 +23,11 @@ from dagster._core.host_representation.origin import (
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import RunLauncher
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
-from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import (
+    PipelineRun,
+    PipelineRunStatus,
+    RunsFilter,
+)
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._daemon.controller import create_daemon_grpc_server_registry
@@ -49,7 +53,7 @@ def nesting_composite_pipeline(depth, num_children, *args, **kwargs):
     Total number of solids will be num_children ^ depth
     """
 
-    @solid
+    @op
     def leaf_node(_):
         return 1
 
@@ -265,7 +269,9 @@ def poll_for_finished_run(instance, run_id=None, timeout=20, run_tags=None):
 
 
 def poll_for_step_start(instance, run_id, timeout=30):
-    poll_for_event(instance, run_id, event_type="STEP_START", message=None, timeout=timeout)
+    poll_for_event(
+        instance, run_id, event_type="STEP_START", message=None, timeout=timeout
+    )
 
 
 def poll_for_event(instance, run_id, event_type, message, timeout=30):
@@ -348,7 +354,7 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
         super().__init__()
 
     def launch_run(self, context):
-        run = context.pipeline_run
+        run = context.run
         check.inst_param(run, "run", PipelineRun)
         check.invariant(run.status == PipelineRunStatus.STARTING)
 
@@ -389,7 +395,7 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
         super().__init__()
 
     def submit_run(self, context: SubmitRunContext):
-        pipeline_run = context.pipeline_run
+        pipeline_run = context.run
         check.inst(pipeline_run.external_pipeline_origin, ExternalPipelineOrigin)
         self._queue.append(pipeline_run)
         return pipeline_run
@@ -503,7 +509,9 @@ def get_logger_output_from_capfd(capfd, logger_name):
     return "\n".join(
         [
             line
-            for line in strip_ansi(capfd.readouterr().out.replace("\r\n", "\n")).split("\n")
+            for line in strip_ansi(capfd.readouterr().out.replace("\r\n", "\n")).split(
+                "\n"
+            )
             if logger_name in line
         ]
     )

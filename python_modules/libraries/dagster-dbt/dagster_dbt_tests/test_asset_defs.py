@@ -5,8 +5,14 @@ from unittest.mock import MagicMock
 import psycopg2
 import pytest
 from dagster_dbt import dbt_cli_resource
-from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
-from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliHandledRuntimeError
+from dagster_dbt.asset_defs import (
+    load_assets_from_dbt_manifest,
+    load_assets_from_dbt_project,
+)
+from dagster_dbt.errors import (
+    DagsterDbtCliFatalRuntimeError,
+    DagsterDbtCliHandledRuntimeError,
+)
 from dagster_dbt.types import DbtOutput
 
 from dagster import (
@@ -41,7 +47,9 @@ def test_load_from_manifest_json(prefix):
     with open(run_results_path, "r", encoding="utf8") as f:
         run_results_json = json.load(f)
 
-    dbt_assets = load_assets_from_dbt_manifest(manifest_json=manifest_json, key_prefix=prefix)
+    dbt_assets = load_assets_from_dbt_manifest(
+        manifest_json=manifest_json, key_prefix=prefix
+    )
     assert_assets_match_project(dbt_assets, prefix)
 
     dbt = MagicMock()
@@ -67,7 +75,7 @@ def test_runtime_metadata_fn():
         run_results_json = json.load(f)
 
     def runtime_metadata_fn(context, node_info):
-        return {"op_name": context.solid_def.name, "dbt_model": node_info["name"]}
+        return {"op_name": context.op_def.name, "dbt_model": node_info["name"]}
 
     dbt_assets = load_assets_from_dbt_manifest(
         manifest_json=manifest_json, runtime_metadata_fn=runtime_metadata_fn
@@ -123,7 +131,9 @@ def assert_assets_match_project(dbt_assets, prefix=None):
         asset_key = AssetKey(prefix + asset_name.split("/"))
         output_name = asset_key.path[-1]
         assert dbt_assets[0].keys_by_output_name[output_name] == asset_key
-        assert dbt_assets[0].asset_deps[asset_key] == {AssetKey(prefix + ["sort_by_calories"])}
+        assert dbt_assets[0].asset_deps[asset_key] == {
+            AssetKey(prefix + ["sort_by_calories"])
+        }
 
     for asset_key, group_name in dbt_assets[0].group_names_by_key.items():
         if asset_key == AssetKey(prefix + ["subdir_schema", "least_caloric"]):
@@ -181,9 +191,17 @@ def test_fail_immediately(
     assert len(materializations) == 0
 
 
-@pytest.mark.parametrize("use_build, fail_test", [(True, False), (True, True), (False, False)])
+@pytest.mark.parametrize(
+    "use_build, fail_test", [(True, False), (True, True), (False, False)]
+)
 def test_basic(
-    capsys, dbt_seed, conn_string, test_project_dir, dbt_config_dir, use_build, fail_test
+    capsys,
+    dbt_seed,
+    conn_string,
+    test_project_dir,
+    dbt_config_dir,
+    use_build,
+    fail_test,
 ):  # pylint: disable=unused-argument
 
     # expected to emit json-formatted messages
@@ -381,15 +399,21 @@ def test_multiple_select_from_project(
     @repository
     def foo():
         return [
-            AssetGroup(dbt_assets_a, resource_defs={"dbt": dbt_cli_resource}).build_job("a"),
-            AssetGroup(dbt_assets_b, resource_defs={"dbt": dbt_cli_resource}).build_job("b"),
+            AssetGroup(dbt_assets_a, resource_defs={"dbt": dbt_cli_resource}).build_job(
+                "a"
+            ),
+            AssetGroup(dbt_assets_b, resource_defs={"dbt": dbt_cli_resource}).build_job(
+                "b"
+            ),
         ]
 
     assert len(foo.get_all_jobs()) == 2
 
 
 def test_dbt_ls_fail_fast():
-    with pytest.raises(DagsterDbtCliFatalRuntimeError, match="Invalid --project-dir flag."):
+    with pytest.raises(
+        DagsterDbtCliFatalRuntimeError, match="Invalid --project-dir flag."
+    ):
         load_assets_from_dbt_project("bad_project_dir", "bad_config_dir")
 
 
@@ -543,7 +567,9 @@ def test_subsetting(
         for event in result.all_events
         if event.event_type_value == "ASSET_MATERIALIZATION"
     }
-    expected_keys = {AssetKey(name.split("/")) for name in expected_asset_names.split(",")}
+    expected_keys = {
+        AssetKey(name.split("/")) for name in expected_asset_names.split(",")
+    }
     assert all_keys == expected_keys
 
 
@@ -669,7 +695,9 @@ def test_source_key_prefix(
         ),
     }
 
-    assert dbt_assets[0].keys_by_output_name["cleaned_users"] == AssetKey(["dbt", "cleaned_users"])
+    assert dbt_assets[0].keys_by_output_name["cleaned_users"] == AssetKey(
+        ["dbt", "cleaned_users"]
+    )
 
 
 def test_source_tag_selection(
@@ -712,7 +740,8 @@ def test_python_interleaving(
                         f'CREATE TABLE IF NOT EXISTS "test-python-schema"."{table}" (user_id integer, is_bot bool)'
                     )
                     cur.executemany(
-                        f'INSERT INTO "test-python-schema"."{table}"' + " VALUES(%s,%s)",
+                        f'INSERT INTO "test-python-schema"."{table}"'
+                        + " VALUES(%s,%s)",
                         obj,
                     )
                     conn.commit()

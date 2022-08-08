@@ -12,14 +12,14 @@ def my_job():
     my_op()
 
 
-@solid
-def my_solid():
+@op
+def my_op():
     pass
 
 
 @pipeline
 def my_pipeline():
-    my_solid()
+    my_op()
 
 
 @repository

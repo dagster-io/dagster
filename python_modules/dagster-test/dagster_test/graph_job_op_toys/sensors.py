@@ -52,7 +52,9 @@ def get_toys_sensors():
 
         directory_files = get_directory_files(directory_name, context.cursor)
         if not directory_files:
-            yield SkipReason(f"No new files found in {directory_name} (after {context.cursor})")
+            yield SkipReason(
+                f"No new files found in {directory_name} (after {context.cursor})"
+            )
             return
 
         for filename, mtime in directory_files:
@@ -60,7 +62,12 @@ def get_toys_sensors():
                 run_key="{}:{}".format(filename, str(mtime)),
                 run_config={
                     "solids": {
-                        "read_file": {"config": {"directory": directory_name, "filename": filename}}
+                        "read_file": {
+                            "config": {
+                                "directory": directory_name,
+                                "filename": filename,
+                            }
+                        }
                     }
                 },
             )
@@ -85,7 +92,9 @@ def get_toys_sensors():
             yield RunRequest(
                 run_key=s3_key,
                 run_config={
-                    "solids": {"read_s3_key": {"config": {"bucket": bucket, "s3_key": s3_key}}}
+                    "solids": {
+                        "read_s3_key": {"config": {"bucket": bucket, "s3_key": s3_key}}
+                    }
                 },
             )
 
@@ -96,13 +105,13 @@ def get_toys_sensors():
 
         slack_client = WebClient(token=os.environ.get("SLACK_DAGSTER_ETL_BOT_TOKEN"))
 
-        run_page_url = f"{base_url}/instance/runs/{context.pipeline_run.run_id}"
+        run_page_url = f"{base_url}/instance/runs/{context.run.run_id}"
         channel = "#toy-test"
         message = "\n".join(
             [
-                f'Pipeline "{context.pipeline_run.pipeline_name}" failed.',
+                f'Pipeline "{context.run.pipeline_name}" failed.',
                 f"error: {context.failure_event.message}",
-                f"mode: {context.pipeline_run.mode}",
+                f"mode: {context.run.mode}",
                 f"run_page_url: {run_page_url}",
             ]
         )
@@ -127,7 +136,10 @@ def get_toys_sensors():
             run_config={
                 "ops": {
                     "read_materialization": {
-                        "config": {"asset_key": ["model"], "ops": asset_event.pipeline_name}
+                        "config": {
+                            "asset_key": ["model"],
+                            "ops": asset_event.pipeline_name,
+                        }
                     }
                 }
             },

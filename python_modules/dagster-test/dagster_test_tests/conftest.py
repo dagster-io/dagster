@@ -3,6 +3,7 @@ import subprocess
 import warnings
 
 import pytest
+from dagster import op
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -24,4 +25,6 @@ def kernel():
             'Jupyter kernel "dagster" not found, installing. Don\'t worry, this is noninvasive '
             "and you can reverse it by running `jupyter kernelspec uninstall dagster`."
         )
-        subprocess.check_output(["ipython", "kernel", "install", "--name", "dagster", "--user"])
+        subprocess.check_output(
+            ["ipython", "kernel", "install", "--name", "dagster", "--user"]
+        )

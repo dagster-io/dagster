@@ -1,4 +1,4 @@
-from dagster import Field, Noneable, Permissive, ScalarUnion, Selector, Shape
+from dagster import In, op, Field, Noneable, Permissive, ScalarUnion, Selector, Shape
 from dagster._config import (
     DagsterEvaluationErrorReason,
     EvaluationStackListItemEntry,
@@ -75,7 +75,9 @@ DoubleLevelShape = Shape(
 
 
 def test_nested_success():
-    value = {"level_one": {"string_field": "skdsjfkdj", "int_field": 123, "bool_field": True}}
+    value = {
+        "level_one": {"string_field": "skdsjfkdj", "int_field": 123, "bool_field": True}
+    }
 
     assert validate_config(DoubleLevelShape, value).success
     assert not validate_config(DoubleLevelShape, None).success
@@ -178,7 +180,9 @@ def get_field_name_error(result, field_name):
     assert False
 
 
-FieldSubShape = Shape({"foo_field": dict, "bar_field": str}, field_aliases={"foo_field": "foo"})
+FieldSubShape = Shape(
+    {"foo_field": dict, "bar_field": str}, field_aliases={"foo_field": "foo"}
+)
 
 
 def test_shape_with_field_substitutions():
@@ -248,7 +252,12 @@ def test_deep_scalar():
     assert not result.errors_at_level("level_two_dict")
     assert not result.errors_at_level("level_two_dict", "level_three_dict")
     assert (
-        len(result.errors_at_level("level_two_dict", "level_three_dict", "level_three_string")) == 1
+        len(
+            result.errors_at_level(
+                "level_two_dict", "level_three_dict", "level_three_string"
+            )
+        )
+        == 1
     )
 
 
@@ -288,7 +297,9 @@ def test_deep_mixed_level_errors():
     assert len(final_level_errors) == 1
     final_level_error = final_level_errors[0]
 
-    assert final_level_error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+    assert (
+        final_level_error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+    )
 
 
 ExampleSelector = Selector({"option_one": Field(str), "option_two": Field(str)})
@@ -321,7 +332,9 @@ def test_example_selector_wrong_field():
 
 
 def test_example_selector_multiple_fields():
-    result = validate_config(ExampleSelector, {"option_one": "foo", "option_two": "boo"})
+    result = validate_config(
+        ExampleSelector, {"option_one": "foo", "option_two": "boo"}
+    )
 
     assert not result.success
     assert len(result.errors) == 1
@@ -329,7 +342,9 @@ def test_example_selector_multiple_fields():
 
 
 def test_selector_within_dict_no_subfields():
-    result = validate_config(Shape({"selector": Field(ExampleSelector)}), {"selector": {}})
+    result = validate_config(
+        Shape({"selector": Field(ExampleSelector)}), {"selector": {}}
+    )
     assert not result.success
     assert len(result.errors) == 1
     assert result.errors[0].message == (
@@ -576,7 +591,9 @@ def test_nullable_dict():
     assert validate_config(dict_with_nullable_int, {"int_field": None}).success
     assert validate_config(dict_with_nullable_int, {"int_field": 1}).success
 
-    nullable_dict_with_nullable_int = Noneable(Shape({"int_field": Field(Noneable(int))}))
+    nullable_dict_with_nullable_int = Noneable(
+        Shape({"int_field": Field(Noneable(int))})
+    )
 
     assert validate_config(nullable_dict_with_nullable_int, None).success
     assert validate_config(nullable_dict_with_nullable_int, {}).success
@@ -604,7 +621,9 @@ def test_permissive_dict_with_fields():
 
 def test_scalar_or_dict():
 
-    int_or_dict = ScalarUnion(scalar_type=int, non_scalar_schema=Shape({"a_string": str}))
+    int_or_dict = ScalarUnion(
+        scalar_type=int, non_scalar_schema=Shape({"a_string": str})
+    )
 
     assert validate_config(int_or_dict, 2).success
     assert not validate_config(int_or_dict, "2").success
@@ -614,7 +633,9 @@ def test_scalar_or_dict():
     assert not validate_config(int_or_dict, {}).success
     assert not validate_config(int_or_dict, {"wrong_key": "kjdfd"}).success
     assert not validate_config(int_or_dict, {"a_string": 2}).success
-    assert not validate_config(int_or_dict, {"a_string": "kjdfk", "extra_field": "kd"}).success
+    assert not validate_config(
+        int_or_dict, {"a_string": "kjdfk", "extra_field": "kd"}
+    ).success
 
 
 def test_scalar_or_selector():
@@ -630,14 +651,20 @@ def test_scalar_or_selector():
     assert validate_config(int_or_selector, {"a_string": "kjdfk"}).success
     assert validate_config(int_or_selector, {"an_int": 2}).success
     assert not validate_config(int_or_selector, {}).success
-    assert not validate_config(int_or_selector, {"a_string": "kjdfk", "an_int": 2}).success
+    assert not validate_config(
+        int_or_selector, {"a_string": "kjdfk", "an_int": 2}
+    ).success
     assert not validate_config(int_or_selector, {"wrong_key": "kjdfd"}).success
     assert not validate_config(int_or_selector, {"a_string": 2}).success
-    assert not validate_config(int_or_selector, {"a_string": "kjdfk", "extra_field": "kd"}).success
+    assert not validate_config(
+        int_or_selector, {"a_string": "kjdfk", "extra_field": "kd"}
+    ).success
 
 
 def test_scalar_or_list():
-    int_or_list = ScalarUnion(scalar_type=int, non_scalar_schema=resolve_to_config_type([str]))
+    int_or_list = ScalarUnion(
+        scalar_type=int, non_scalar_schema=resolve_to_config_type([str])
+    )
 
     assert validate_config(int_or_list, 2).success
     assert not validate_config(int_or_list, "2").success
@@ -661,4 +688,6 @@ def test_list_of_scalar_or_dict():
 
     assert not validate_config(int_or_dict_list, [2, {"wrong_key": "kjdfd"}]).success
     assert not validate_config(int_or_dict_list, [2, {"a_string": 2343}]).success
-    assert not validate_config(int_or_dict_list, ["kjdfkd", {"a_string": "kjdfd"}]).success
+    assert not validate_config(
+        int_or_dict_list, ["kjdfkd", {"a_string": "kjdfd"}]
+    ).success

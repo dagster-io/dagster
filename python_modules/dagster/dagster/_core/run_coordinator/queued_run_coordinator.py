@@ -13,7 +13,10 @@ from .base import RunCoordinator, SubmitRunContext
 class RunQueueConfig(
     NamedTuple(
         "_RunQueueConfig",
-        [("max_concurrent_runs", int), ("tag_concurrency_limits", Optional[List[Dict[str, Any]]])],
+        [
+            ("max_concurrent_runs", int),
+            ("tag_concurrency_limits", Optional[List[Dict[str, Any]]]),
+        ],
     )
 ):
     pass
@@ -32,7 +35,9 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         dequeue_interval_seconds=None,
         inst_data=None,
     ):
-        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
+        self._inst_data = check.opt_inst_param(
+            inst_data, "inst_data", ConfigurableClassData
+        )
         self._max_concurrent_runs = check.opt_int_param(
             max_concurrent_runs, "max_concurrent_runs", 10
         )
@@ -83,7 +88,9 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
                                 "value": Field(
                                     ScalarUnion(
                                         scalar_type=String,
-                                        non_scalar_schema=Shape({"applyLimitPerUniqueValue": Bool}),
+                                        non_scalar_schema=Shape(
+                                            {"applyLimitPerUniqueValue": Bool}
+                                        ),
                                     ),
                                     is_required=False,
                                 ),
@@ -117,7 +124,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         )
 
     def submit_run(self, context: SubmitRunContext) -> PipelineRun:
-        pipeline_run = context.pipeline_run
+        pipeline_run = context.run
         check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
         enqueued_event = DagsterEvent(

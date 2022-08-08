@@ -1,8 +1,11 @@
 from dagster._legacy import OutputDefinition
+from dagster import In, Out, op
 
 
 def test_output_definition():
-    output_definiton_onlyreq = OutputDefinition(dagster_type=int, name="result", is_required=True)
+    output_definiton_onlyreq = OutputDefinition(
+        dagster_type=int, name="result", is_required=True
+    )
     assert output_definiton_onlyreq.optional is False
 
     output_definiton_none = OutputDefinition(dagster_type=int, name="result")

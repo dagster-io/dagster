@@ -2,6 +2,9 @@ import os
 from tempfile import TemporaryDirectory
 
 from dagster import (
+    In,
+    Out,
+    op,
     ResourceDefinition,
     build_init_resource_context,
     build_input_context,
@@ -25,7 +28,9 @@ def test_versioned_pickled_object_filesystem_io_manager():
         store.handle_output(context, "cat")
         assert store.has_output(context)
         assert store.load_input(build_input_context(upstream_output=context)) == "cat"
-        context_diff_version = build_output_context(step_key="foo", name="bar", version="version2")
+        context_diff_version = build_output_context(
+            step_key="foo", name="bar", version="version2"
+        )
         assert not store.has_output(context_diff_version)
 
 
@@ -49,8 +54,8 @@ def test_versioned_io_manager_with_resources():
 
         return FakeIOManager()
 
-    @solid(version="baz")
-    def basic_solid():
+    @op(version="baz")
+    def basic_op():
         pass
 
     @pipeline(
@@ -65,7 +70,7 @@ def test_versioned_io_manager_with_resources():
         tags={MEMOIZED_RUN_TAG: "true"},
     )
     def basic_pipeline():
-        basic_solid()
+        basic_op()
 
     with instance_for_test() as instance:
         execute_pipeline(basic_pipeline, instance=instance)

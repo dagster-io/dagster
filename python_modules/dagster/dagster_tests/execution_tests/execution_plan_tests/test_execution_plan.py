@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import DagsterInstance, Int, Output
+from dagster import Out, op, DagsterInstance, Int, Output
 from dagster import _check as check
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.errors import (
@@ -25,19 +25,19 @@ from dagster._legacy import (
 
 
 def define_diamond_pipeline():
-    @lambda_solid
+    @op
     def return_two():
         return 2
 
-    @solid
+    @op
     def add_three(num):
         return num + 3
 
-    @solid
+    @op
     def mult_three(num):
         return num * 3
 
-    @solid
+    @op
     def adder(left, right):
         return left + right
 
@@ -83,7 +83,9 @@ def test_active_execution_plan():
         assert len(steps) == 0  # cant progress
 
         active_execution.mark_success(step_1.key)
-        active_execution.mark_step_produced_output(StepOutputHandle(step_1.key, "result"))
+        active_execution.mark_step_produced_output(
+            StepOutputHandle(step_1.key, "result")
+        )
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 2
@@ -96,13 +98,17 @@ def test_active_execution_plan():
         assert len(steps) == 0  # cant progress
 
         active_execution.mark_success(step_2.key)
-        active_execution.mark_step_produced_output(StepOutputHandle(step_2.key, "result"))
+        active_execution.mark_step_produced_output(
+            StepOutputHandle(step_2.key, "result")
+        )
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 0  # cant progress
 
         active_execution.mark_success(step_3.key)
-        active_execution.mark_step_produced_output(StepOutputHandle(step_3.key, "result"))
+        active_execution.mark_step_produced_output(
+            StepOutputHandle(step_3.key, "result")
+        )
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
@@ -135,7 +141,9 @@ def test_failing_execution_plan():
         assert len(steps) == 0  # cant progress
 
         active_execution.mark_success(step_1.key)
-        active_execution.mark_step_produced_output(StepOutputHandle(step_1.key, "result"))
+        active_execution.mark_step_produced_output(
+            StepOutputHandle(step_1.key, "result")
+        )
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 2
@@ -148,14 +156,18 @@ def test_failing_execution_plan():
         assert len(steps) == 0  # cant progress
 
         active_execution.mark_success(step_2.key)
-        active_execution.mark_step_produced_output(StepOutputHandle(step_2.key, "result"))
+        active_execution.mark_step_produced_output(
+            StepOutputHandle(step_2.key, "result")
+        )
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 0  # cant progress
 
         # uh oh failure
         active_execution.mark_failed(step_3.key)
-        active_execution.mark_step_produced_output(StepOutputHandle(step_3.key, "result"))
+        active_execution.mark_step_produced_output(
+            StepOutputHandle(step_3.key, "result")
+        )
 
         # cant progres to 4th step
         steps = active_execution.get_steps_to_execute()
@@ -200,7 +212,9 @@ def test_retries_active_execution():
         assert steps[0].key == "return_two"
 
         active_execution.mark_success(step_1.key)
-        active_execution.mark_step_produced_output(StepOutputHandle(step_1.key, "result"))
+        active_execution.mark_step_produced_output(
+            StepOutputHandle(step_1.key, "result")
+        )
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 2
@@ -213,7 +227,9 @@ def test_retries_active_execution():
         assert len(steps) == 0  # cant progress
 
         active_execution.mark_success(step_2.key)
-        active_execution.mark_step_produced_output(StepOutputHandle(step_2.key, "result"))
+        active_execution.mark_step_produced_output(
+            StepOutputHandle(step_2.key, "result")
+        )
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 0  # cant progress
@@ -293,27 +309,27 @@ def test_retries_deferred_active_execution():
 
 
 def test_priorities():
-    @solid(tags={"priority": 5})
+    @op(tags={"priority": 5})
     def pri_5(_):
         pass
 
-    @solid(tags={"priority": 4})
+    @op(tags={"priority": 4})
     def pri_4(_):
         pass
 
-    @solid(tags={"priority": 3})
+    @op(tags={"priority": 3})
     def pri_3(_):
         pass
 
-    @solid(tags={"priority": 2})
+    @op(tags={"priority": 2})
     def pri_2(_):
         pass
 
-    @solid(tags={"priority": -1})
+    @op(tags={"priority": -1})
     def pri_neg_1(_):
         pass
 
-    @solid
+    @op
     def pri_none(_):
         pass
 
@@ -391,24 +407,27 @@ def test_lost_steps():
             # failure assumed for start step - so rest should skip
             steps_to_abandon = active_execution.get_steps_to_abandon()
             while steps_to_abandon:
-                _ = [active_execution.mark_abandoned(step.key) for step in steps_to_abandon]
+                _ = [
+                    active_execution.mark_abandoned(step.key)
+                    for step in steps_to_abandon
+                ]
                 steps_to_abandon = active_execution.get_steps_to_abandon()
 
             assert active_execution.is_complete
 
 
 def test_fan_out_should_skip_step():
-    @solid(
-        output_defs=[
-            OutputDefinition(Int, "out_1", is_required=False),
-            OutputDefinition(Int, "out_2", is_required=False),
-            OutputDefinition(Int, "out_3", is_required=False),
-        ]
+    @op(
+        out={
+            "out_1": Out(Int, is_required=False),
+            "out_2": Out(Int, is_required=False),
+            "out_3": Out(Int, is_required=False),
+        }
     )
     def foo(_):
         yield Output(1, "out_1")
 
-    @solid
+    @op
     def bar(_, input_arg):
         return input_arg
 
@@ -421,7 +440,9 @@ def test_fan_out_should_skip_step():
         bar.alias("bar_3")(input_arg=foo_res.out_3)
 
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(pipeline_name="optional_outputs", run_id=make_new_run_id())
+    pipeline_run = PipelineRun(
+        pipeline_name="optional_outputs", run_id=make_new_run_id()
+    )
     execute_plan(
         create_execution_plan(optional_outputs, step_keys_to_execute=["foo"]),
         InMemoryPipeline(optional_outputs),
@@ -447,16 +468,16 @@ def test_fan_out_should_skip_step():
 
 
 def test_fan_in_should_skip_step():
-    @lambda_solid
+    @op
     def one():
         return 1
 
-    @solid(output_defs=[OutputDefinition(is_required=False)])
+    @op(out=Out(is_required=False))
     def skip(_):
         return
         yield  # pylint: disable=unreachable
 
-    @solid
+    @op
     def fan_in(_context, items):
         return items
 
@@ -474,7 +495,9 @@ def test_fan_in_should_skip_step():
         composite_one_upstream_skip()
 
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(pipeline_name="optional_outputs_composite", run_id=make_new_run_id())
+    pipeline_run = PipelineRun(
+        pipeline_name="optional_outputs_composite", run_id=make_new_run_id()
+    )
     execute_plan(
         create_execution_plan(
             optional_outputs_composite,
@@ -523,19 +546,21 @@ def test_fan_in_should_skip_step():
 def test_configured_input_should_skip_step():
     called = {}
 
-    @solid(output_defs=[OutputDefinition(is_required=False)])
+    @op(out=Out(is_required=False))
     def one(_):
         yield Output(1)
 
-    @solid
-    def solid_should_not_skip(_, input_one, input_two):  # pylint: disable=unused-argument
+    @op
+    def op_should_not_skip(_, input_one, input_two):  # pylint: disable=unused-argument
         called["yup"] = True
 
     @pipeline
     def my_pipeline():
-        solid_should_not_skip(one())
+        op_should_not_skip(one())
 
-    run_config = {"solids": {"solid_should_not_skip": {"inputs": {"input_two": {"value": "2"}}}}}
+    run_config = {
+        "solids": {"op_should_not_skip": {"inputs": {"input_two": {"value": "2"}}}}
+    }
     execute_pipeline(my_pipeline, run_config=run_config)
     assert called.get("yup")
 
@@ -556,7 +581,7 @@ def test_configured_input_should_skip_step():
     assert not should_skip_step(
         create_execution_plan(
             my_pipeline,
-            step_keys_to_execute=["solid_should_not_skip"],
+            step_keys_to_execute=["op_should_not_skip"],
             run_config=run_config,
         ),
         instance,

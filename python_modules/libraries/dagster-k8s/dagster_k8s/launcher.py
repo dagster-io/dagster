@@ -70,7 +70,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         fail_pod_on_run_failure=None,
         resources=None,
     ):
-        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
+        self._inst_data = check.opt_inst_param(
+            inst_data, "inst_data", ConfigurableClassData
+        )
         self.job_namespace = check.str_param(job_namespace, "job_namespace")
 
         self.load_incluster_config = load_incluster_config
@@ -96,19 +98,27 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._image_pull_secrets = check.opt_list_param(
             image_pull_secrets, "image_pull_secrets", of_type=dict
         )
-        self._service_account_name = check.str_param(service_account_name, "service_account_name")
-        self.instance_config_map = check.str_param(instance_config_map, "instance_config_map")
+        self._service_account_name = check.str_param(
+            service_account_name, "service_account_name"
+        )
+        self.instance_config_map = check.str_param(
+            instance_config_map, "instance_config_map"
+        )
         self.postgres_password_secret = check.opt_str_param(
             postgres_password_secret, "postgres_password_secret"
         )
         self._env_config_maps = check.opt_list_param(
             env_config_maps, "env_config_maps", of_type=str
         )
-        self._env_secrets = check.opt_list_param(env_secrets, "env_secrets", of_type=str)
+        self._env_secrets = check.opt_list_param(
+            env_secrets, "env_secrets", of_type=str
+        )
         self._env_vars = check.opt_list_param(env_vars, "env_vars", of_type=str)
         self._volume_mounts = check.opt_list_param(volume_mounts, "volume_mounts")
         self._volumes = check.opt_list_param(volumes, "volumes")
-        self._labels = check.opt_dict_param(labels, "labels", key_type=str, value_type=str)
+        self._labels = check.opt_dict_param(
+            labels, "labels", key_type=str, value_type=str
+        )
         self._fail_pod_on_run_failure = check.opt_bool_param(
             fail_pod_on_run_failure, "fail_pod_on_run_failure"
         )
@@ -166,7 +176,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
     @property
     def _batch_api(self):
-        return self._fixed_batch_api if self._fixed_batch_api else kubernetes.client.BatchV1Api()
+        return (
+            self._fixed_batch_api
+            if self._fixed_batch_api
+            else kubernetes.client.BatchV1Api()
+        )
 
     @classmethod
     def config_type(cls):
@@ -176,7 +190,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         job_cfg = DagsterK8sJobConfig.config_type_run_launcher()
 
         run_launcher_extra_cfg = {
-            "job_namespace": Field(StringSource, is_required=False, default_value="default"),
+            "job_namespace": Field(
+                StringSource, is_required=False, default_value="default"
+            ),
         }
         return merge_dicts(job_cfg, run_launcher_extra_cfg)
 
@@ -188,7 +204,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def get_container_context_for_run(self, pipeline_run: PipelineRun) -> K8sContainerContext:
+    def get_container_context_for_run(
+        self, pipeline_run: PipelineRun
+    ) -> K8sContainerContext:
         return K8sContainerContext.create_for_run(pipeline_run, self)
 
     def _launch_k8s_job_with_args(self, job_name, args, run):
@@ -228,14 +246,18 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             EngineEventData(
                 [
                     MetadataEntry("Kubernetes Job name", value=job_name),
-                    MetadataEntry("Kubernetes Namespace", value=container_context.namespace),
+                    MetadataEntry(
+                        "Kubernetes Namespace", value=container_context.namespace
+                    ),
                     MetadataEntry("Run ID", value=run.run_id),
                 ]
             ),
             cls=self.__class__,
         )
 
-        self._batch_api.create_namespaced_job(body=job, namespace=container_context.namespace)
+        self._batch_api.create_namespaced_job(
+            body=job, namespace=container_context.namespace
+        )
         self._instance.report_engine_event(
             "Kubernetes run worker job created",
             run,
@@ -243,7 +265,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         )
 
     def launch_run(self, context: LaunchRunContext) -> None:
-        run = context.pipeline_run
+        run = context.run
         job_name = get_job_name_from_run_id(run.run_id)
         pipeline_origin = check.not_none(run.pipeline_code_origin)
 
@@ -261,7 +283,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def resume_run(self, context: ResumeRunContext) -> None:
-        run = context.pipeline_run
+        run = context.run
         job_name = get_job_name_from_run_id(
             run.run_id, resume_attempt_number=context.resume_attempt_number
         )
@@ -299,7 +321,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         can_terminate = self.can_terminate(run_id)
         if not can_terminate:
             self._instance.report_engine_event(
-                message="Unable to terminate run; can_terminate returned {}".format(can_terminate),
+                message="Unable to terminate run; can_terminate returned {}".format(
+                    can_terminate
+                ),
                 pipeline_run=run,
                 cls=self.__class__,
             )
@@ -308,7 +332,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._instance.report_run_canceling(run)
 
         job_name = get_job_name_from_run_id(
-            run_id, resume_attempt_number=self._instance.count_resume_run_attempts(run.run_id)
+            run_id,
+            resume_attempt_number=self._instance.count_resume_run_attempts(run.run_id),
         )
 
         try:
@@ -348,7 +373,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         container_context = self.get_container_context_for_run(run)
 
         job_name = get_job_name_from_run_id(
-            run.run_id, resume_attempt_number=self._instance.count_resume_run_attempts(run.run_id)
+            run.run_id,
+            resume_attempt_number=self._instance.count_resume_run_attempts(run.run_id),
         )
         try:
             job = self._batch_api.read_namespaced_job(
@@ -356,7 +382,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             )
         except Exception:
             return CheckRunHealthResult(
-                WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
+                WorkerStatus.UNKNOWN,
+                str(serializable_error_info_from_exc_info(sys.exc_info())),
             )
         if job.status.failed:
             return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")

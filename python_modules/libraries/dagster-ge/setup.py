@@ -1,6 +1,7 @@
 from typing import Dict
 
 from setuptools import find_packages, setup
+from dagster import In, op
 
 
 def get_version() -> str:

@@ -5,7 +5,17 @@ import string
 
 import pandas as pd
 
-from dagster import Array, AssetKey, Field, MetadataEntry, MetadataValue, Output, Partition
+from dagster import (
+    Out,
+    op,
+    Array,
+    AssetKey,
+    Field,
+    MetadataEntry,
+    MetadataValue,
+    Output,
+    Partition,
+)
 from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 from dagster._core.storage.io_manager import io_manager
 from dagster._legacy import (
@@ -93,10 +103,12 @@ def my_db_io_manager(_):
     return MyDatabaseIOManager()
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(io_manager_key="my_db_io_manager", metadata={"table_name": "raw_actions"}),
-    ],
+@op(
+    out={
+        {"table_name": "raw_actions"}: Out(
+            io_manager_key="my_db_io_manager",
+        )
+    },
 )
 def download_data(_):
     n_entries = random.randint(100, 1000)
@@ -108,7 +120,8 @@ def download_data(_):
     data = {
         "user_id": [user_id() for i in range(n_entries)],
         "action_type": [
-            random.choices(["story", "comment"], [0.15, 0.85])[0] for i in range(n_entries)
+            random.choices(["story", "comment"], [0.15, 0.85])[0]
+            for i in range(n_entries)
         ],
         "score": [random.randint(0, 10000) for i in range(n_entries)],
     }
@@ -116,19 +129,17 @@ def download_data(_):
     yield Output(df, metadata=metadata_for_actions(df))
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(
-            name="reviews",
+@op(
+    out={
+        "reviews": Out(
             io_manager_key="my_db_io_manager",
             metadata={"table_name": "reviews"},
         ),
-        OutputDefinition(
-            name="comments",
+        "comments": Out(
             io_manager_key="my_db_io_manager",
             metadata={"table_name": "comments"},
         ),
-    ]
+    }
 )
 def split_action_types(_, df):
 
@@ -143,14 +154,13 @@ def split_action_types(_, df):
 
 
 def best_n_actions(n, action_type):
-    @solid(
+    @op(
         name=f"top_{n}_{action_type}",
-        output_defs=[
-            OutputDefinition(
+        out={
+            {"table_name": f"best_{action_type}"}: Out(
                 io_manager_key="my_db_io_manager",
-                metadata={"table_name": f"best_{action_type}"},
             )
-        ],
+        },
     )
     def _best_n_actions(_, df):
         df = df.nlargest(n, "score")
@@ -166,20 +176,21 @@ top_10_reviews = best_n_actions(10, "reviews")
 top_10_comments = best_n_actions(10, "comments")
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(
+@op(
+    out={
+        {"table_name": "daily_best_action"}: Out(
             io_manager_key="my_db_io_manager",
-            metadata={"table_name": "daily_best_action"},
         )
-    ]
+    }
 )
 def daily_top_action(_, df1, df2):
     df = pd.concat([df1, df2]).nlargest(1, "score")
     return Output(df, metadata={"data": MetadataValue.md(df.to_markdown())})
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"my_db_io_manager": my_db_io_manager})])
+@pipeline(
+    mode_defs=[ModeDefinition(resource_defs={"my_db_io_manager": my_db_io_manager})]
+)
 def asset_lineage_pipeline():
     reviews, comments = split_action_types(download_data())
     daily_top_action(top_10_reviews(reviews), top_10_comments(comments))

@@ -9,9 +9,12 @@ from dagster_github import github_resource
 from dagster_github.resources import GithubResource
 
 from dagster._legacy import ModeDefinition, execute_solid, solid
+from dagster import op
 
 FAKE_PRIVATE_RSA_KEY = (
-    rsa.generate_private_key(public_exponent=65537, key_size=1024, backend=default_backend())
+    rsa.generate_private_key(
+        public_exponent=65537, key_size=1024, backend=default_backend()
+    )
     .private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.TraditionalOpenSSL,
@@ -23,8 +26,8 @@ FAKE_PRIVATE_RSA_KEY = (
 
 @responses.activate
 def test_github_resource_get_installations():
-    @solid(required_resource_keys={"github"})
-    def github_solid(context):
+    @op(required_resource_keys={"github"})
+    def github_op(context):
         assert context.resources.github
         with responses.RequestsMock() as rsps:
             rsps.add(
@@ -36,7 +39,7 @@ def test_github_resource_get_installations():
             context.resources.github.get_installations()
 
     result = execute_solid(
-        github_solid,
+        github_op,
         run_config={
             "resources": {
                 "github": {
@@ -55,8 +58,8 @@ def test_github_resource_get_installations():
 
 @responses.activate
 def test_github_resource_get_installations_with_hostname():
-    @solid(required_resource_keys={"github"})
-    def github_solid(context):
+    @op(required_resource_keys={"github"})
+    def github_op(context):
         assert context.resources.github
         with responses.RequestsMock() as rsps:
             rsps.add(
@@ -68,7 +71,7 @@ def test_github_resource_get_installations_with_hostname():
             context.resources.github.get_installations()
 
     result = execute_solid(
-        github_solid,
+        github_op,
         run_config={
             "resources": {
                 "github": {
@@ -88,8 +91,8 @@ def test_github_resource_get_installations_with_hostname():
 
 @responses.activate
 def test_github_resource_create_issue():
-    @solid(required_resource_keys={"github"})
-    def github_solid(context):
+    @op(required_resource_keys={"github"})
+    def github_op(context):
         assert context.resources.github
         with responses.RequestsMock() as rsps:
             rsps.add(
@@ -123,7 +126,7 @@ def test_github_resource_create_issue():
             )
 
     result = execute_solid(
-        github_solid,
+        github_op,
         run_config={
             "resources": {
                 "github": {
@@ -142,8 +145,8 @@ def test_github_resource_create_issue():
 
 @responses.activate
 def test_github_resource_execute():
-    @solid(required_resource_keys={"github"})
-    def github_solid(context):
+    @op(required_resource_keys={"github"})
+    def github_op(context):
         assert context.resources.github
         with responses.RequestsMock() as rsps:
             rsps.add(
@@ -174,7 +177,7 @@ def test_github_resource_execute():
             )
 
     result = execute_solid(
-        github_solid,
+        github_op,
         run_config={
             "resources": {
                 "github": {
@@ -195,7 +198,9 @@ def test_github_resource_execute():
 @responses.activate
 def test_github_resource_token_expiration():
     class GithubResourceTesting(GithubResource):
-        def __init__(self, client, app_id, app_private_rsa_key, default_installation_id):
+        def __init__(
+            self, client, app_id, app_private_rsa_key, default_installation_id
+        ):
             GithubResource.__init__(
                 self,
                 client=client,

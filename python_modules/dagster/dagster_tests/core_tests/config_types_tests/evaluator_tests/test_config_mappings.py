@@ -3,6 +3,8 @@ import re
 import pytest
 
 from dagster import (
+    In,
+    op,
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -24,28 +26,30 @@ from dagster._legacy import (
 
 # have to use "pipe" solid since "result_for_solid" doesnt work with composite mappings
 # no longer true? refactor these tests?
-@lambda_solid(input_defs=[InputDefinition("input_str")])
+@op(ins={"input_str": In()})
 def pipe(input_str):
     return input_str
 
 
-@solid(config_schema=Field(String, is_required=False))
-def scalar_config_solid(context):
-    yield Output(context.solid_config)
+@op(config_schema=Field(String, is_required=False))
+def scalar_config_op(context):
+    yield Output(context.op_config)
 
 
 @composite_solid(
     config_schema={"override_str": Field(String)},
-    config_fn=lambda cfg: {"scalar_config_solid": {"config": cfg["override_str"]}},
+    config_fn=lambda cfg: {"scalar_config_op": {"config": cfg["override_str"]}},
 )
 def wrap():
-    return scalar_config_solid()
+    return scalar_config_op()
 
 
 def test_multiple_overrides_pipeline():
     @composite_solid(
         config_schema={"nesting_override": Field(String)},
-        config_fn=lambda cfg: {"wrap": {"config": {"override_str": cfg["nesting_override"]}}},
+        config_fn=lambda cfg: {
+            "wrap": {"config": {"override_str": cfg["nesting_override"]}}
+        },
     )
     def nesting_wrap():
         return wrap()
@@ -63,7 +67,10 @@ def test_multiple_overrides_pipeline():
     )
 
     assert result.success
-    assert result.result_for_handle("outer_wrap.wrap.scalar_config_solid").output_value() == "blah"
+    assert (
+        result.result_for_handle("outer_wrap.wrap.scalar_config_op").output_value()
+        == "blah"
+    )
 
 
 def test_good_override():
@@ -87,7 +94,9 @@ def test_missing_config():
     def wrap_pipeline():
         wrap.alias("do_stuff")()
 
-    expected_suggested_config = {"solids": {"do_stuff": {"config": {"override_str": "..."}}}}
+    expected_suggested_config = {
+        "solids": {"do_stuff": {"config": {"override_str": "..."}}}
+    }
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(wrap_pipeline)
 
@@ -140,10 +149,10 @@ def test_missing_config():
 def test_bad_override():
     @composite_solid(
         config_schema={"does_not_matter": Field(String)},
-        config_fn=lambda _cfg: {"scalar_config_solid": {"config": 1234}},
+        config_fn=lambda _cfg: {"scalar_config_op": {"config": 1234}},
     )
     def bad_wrap():
-        return scalar_config_solid()
+        return scalar_config_op()
 
     @pipeline
     def wrap_pipeline():
@@ -162,8 +171,11 @@ def test_bad_override():
 
     message = str(exc_info.value)
 
-    assert 'Solid "do_stuff" with definition "bad_wrap" has a configuration error.' in message
-    assert "Error 1: Invalid scalar at path root:scalar_config_solid:config" in message
+    assert (
+        'Solid "do_stuff" with definition "bad_wrap" has a configuration error.'
+        in message
+    )
+    assert "Error 1: Invalid scalar at path root:scalar_config_op:config" in message
 
 
 def test_config_mapper_throws():
@@ -173,9 +185,11 @@ def test_config_mapper_throws():
     def _config_fn_throws(_cfg):
         raise SomeUserException()
 
-    @composite_solid(config_schema={"does_not_matter": Field(String)}, config_fn=_config_fn_throws)
+    @composite_solid(
+        config_schema={"does_not_matter": Field(String)}, config_fn=_config_fn_throws
+    )
     def bad_wrap():
-        return scalar_config_solid()
+        return scalar_config_op()
 
     @pipeline
     def wrap_pipeline():
@@ -216,9 +230,11 @@ def test_config_mapper_throws_nested():
     def _config_fn_throws(_cfg):
         raise SomeUserException()
 
-    @composite_solid(config_schema={"does_not_matter": Field(String)}, config_fn=_config_fn_throws)
+    @composite_solid(
+        config_schema={"does_not_matter": Field(String)}, config_fn=_config_fn_throws
+    )
     def bad_wrap():
-        return scalar_config_solid()
+        return scalar_config_op()
 
     @composite_solid
     def container():
@@ -231,7 +247,13 @@ def test_config_mapper_throws_nested():
     with pytest.raises(DagsterConfigMappingFunctionError) as exc_info:
         execute_pipeline(
             wrap_pipeline,
-            {"solids": {"layer0": {"solids": {"layer1": {"config": {"does_not_matter": "blah"}}}}}},
+            {
+                "solids": {
+                    "layer0": {
+                        "solids": {"layer1": {"config": {"does_not_matter": "blah"}}}
+                    }
+                }
+            },
         )
 
     assert (
@@ -242,37 +264,39 @@ def test_config_mapper_throws_nested():
 
 
 def test_composite_config_field():
-    @solid(config_schema={"inner": Field(String)})
-    def inner_solid(context):
-        return context.solid_config["inner"]
+    @op(config_schema={"inner": Field(String)})
+    def inner_op(context):
+        return context.op_config["inner"]
 
     @composite_solid(
         config_schema={"override": Int},
-        config_fn=lambda cfg: {"inner_solid": {"config": {"inner": str(cfg["override"])}}},
+        config_fn=lambda cfg: {"inner_op": {"config": {"inner": str(cfg["override"])}}},
     )
     def test():
-        return inner_solid()
+        return inner_op()
 
     @pipeline
     def test_pipeline():
         test()
 
-    res = execute_pipeline(test_pipeline, {"solids": {"test": {"config": {"override": 5}}}})
-    assert res.result_for_handle("test.inner_solid").output_value() == "5"
+    res = execute_pipeline(
+        test_pipeline, {"solids": {"test": {"config": {"override": 5}}}}
+    )
+    assert res.result_for_handle("test.inner_op").output_value() == "5"
     assert res.result_for_solid("test").output_value() == "5"
 
 
 def test_nested_composite_config_field():
-    @solid(config_schema={"inner": Field(String)})
-    def inner_solid(context):
-        return context.solid_config["inner"]
+    @op(config_schema={"inner": Field(String)})
+    def inner_op(context):
+        return context.op_config["inner"]
 
     @composite_solid(
         config_schema={"override": Int},
-        config_fn=lambda cfg: {"inner_solid": {"config": {"inner": str(cfg["override"])}}},
+        config_fn=lambda cfg: {"inner_op": {"config": {"inner": str(cfg["override"])}}},
     )
     def outer():
-        return inner_solid()
+        return inner_op()
 
     @composite_solid(
         config_schema={"override": Int},
@@ -285,20 +309,22 @@ def test_nested_composite_config_field():
     def test_pipeline():
         test()
 
-    res = execute_pipeline(test_pipeline, {"solids": {"test": {"config": {"override": 5}}}})
+    res = execute_pipeline(
+        test_pipeline, {"solids": {"test": {"config": {"override": 5}}}}
+    )
     assert res.success
-    assert res.result_for_handle("test.outer.inner_solid").output_value() == "5"
+    assert res.result_for_handle("test.outer.inner_op").output_value() == "5"
     assert res.result_for_handle("test.outer").output_value() == "5"
     assert res.result_for_solid("test").output_value() == "5"
 
 
 def test_nested_with_inputs():
-    @solid(
-        input_defs=[InputDefinition("some_input", String)],
+    @op(
+        ins={"some_input": In(String)},
         config_schema={"basic_key": Field(String)},
     )
     def basic(context, some_input):
-        yield Output(context.solid_config["basic_key"] + " - " + some_input)
+        yield Output(context.op_config["basic_key"] + " - " + some_input)
 
     @composite_solid(
         input_defs=[InputDefinition("some_input", String)],
@@ -318,7 +344,9 @@ def test_nested_with_inputs():
             }
         }
 
-    @composite_solid(config_fn=outer_wrap_fn, config_schema={"outer_first": Field(String)})
+    @composite_solid(
+        config_fn=outer_wrap_fn, config_schema={"outer_first": Field(String)}
+    )
     def outer_wrap():
         return inner_wrap()
 
@@ -336,21 +364,18 @@ def test_nested_with_inputs():
 
 
 def test_wrap_none_config_and_inputs():
-    @solid(
+    @op(
         config_schema={
             "config_field_a": Field(String),
             "config_field_b": Field(String),
         },
-        input_defs=[
-            InputDefinition("input_a", String),
-            InputDefinition("input_b", String),
-        ],
+        ins={"input_a": In(String), "input_b": In(String)},
     )
     def basic(context, input_a, input_b):
         res = ".".join(
             [
-                context.solid_config["config_field_a"],
-                context.solid_config["config_field_b"],
+                context.op_config["config_field_a"],
+                context.op_config["config_field_b"],
                 input_a,
                 input_b,
             ]
@@ -453,21 +478,18 @@ def test_wrap_none_config_and_inputs():
 
 
 def test_wrap_all_config_no_inputs():
-    @solid(
+    @op(
         config_schema={
             "config_field_a": Field(String),
             "config_field_b": Field(String),
         },
-        input_defs=[
-            InputDefinition("input_a", String),
-            InputDefinition("input_b", String),
-        ],
+        ins={"input_a": In(String), "input_b": In(String)},
     )
     def basic(context, input_a, input_b):
         res = ".".join(
             [
-                context.solid_config["config_field_a"],
-                context.solid_config["config_field_b"],
+                context.op_config["config_field_a"],
+                context.op_config["config_field_b"],
                 input_a,
                 input_b,
             ]
@@ -572,21 +594,18 @@ def test_wrap_all_config_no_inputs():
 
 
 def test_wrap_all_config_one_input():
-    @solid(
+    @op(
         config_schema={
             "config_field_a": Field(String),
             "config_field_b": Field(String),
         },
-        input_defs=[
-            InputDefinition("input_a", String),
-            InputDefinition("input_b", String),
-        ],
+        ins={"input_a": In(String), "input_b": In(String)},
     )
     def basic(context, input_a, input_b):
         res = ".".join(
             [
-                context.solid_config["config_field_a"],
-                context.solid_config["config_field_b"],
+                context.op_config["config_field_a"],
+                context.op_config["config_field_b"],
                 input_a,
                 input_b,
             ]
@@ -680,21 +699,18 @@ def test_wrap_all_config_one_input():
 
 
 def test_wrap_all_config_and_inputs():
-    @solid(
+    @op(
         config_schema={
             "config_field_a": Field(String),
             "config_field_b": Field(String),
         },
-        input_defs=[
-            InputDefinition("input_a", String),
-            InputDefinition("input_b", String),
-        ],
+        ins={"input_a": In(String), "input_b": In(String)},
     )
     def basic(context, input_a, input_b):
         res = ".".join(
             [
-                context.solid_config["config_field_a"],
-                context.solid_config["config_field_b"],
+                context.op_config["config_field_a"],
+                context.op_config["config_field_b"],
                 input_a,
                 input_b,
             ]
@@ -778,11 +794,11 @@ def test_empty_config():
     # Testing that this definition does *not* raise
     # See: https://github.com/dagster-io/dagster/issues/1606
     @composite_solid(
-        config_fn=lambda _: {"scalar_config_solid": {"config": "an input"}},
+        config_fn=lambda _: {"scalar_config_op": {"config": "an input"}},
         config_schema={},
     )
     def wrap_solid():  # pylint: disable=unused-variable
-        return scalar_config_solid()
+        return scalar_config_op()
 
     @pipeline
     def wrap_pipeline():
@@ -797,11 +813,11 @@ def test_empty_config():
 
 def test_nested_empty_config():
     @composite_solid(
-        config_fn=lambda _: {"scalar_config_solid": {"config": "an input"}},
+        config_fn=lambda _: {"scalar_config_op": {"config": "an input"}},
         config_schema={},
     )
     def wrap_solid():  # pylint: disable=unused-variable
-        return scalar_config_solid()
+        return scalar_config_op()
 
     @composite_solid
     def double_wrap():
@@ -819,7 +835,7 @@ def test_nested_empty_config():
 
 
 def test_nested_empty_config_input():
-    @lambda_solid
+    @op
     def number(num):
         return num
 
@@ -858,13 +874,13 @@ def test_bad_solid_def():
 
         @composite_solid(config_schema={"test": Field(String)})
         def config_only():  # pylint: disable=unused-variable
-            scalar_config_solid()
+            scalar_config_op()
 
 
 def test_default_config_schema():
     @composite_solid(config_fn=lambda _cfg: {})
     def config_fn_only():
-        scalar_config_solid()
+        scalar_config_op()
 
     @pipeline
     def wrap_pipeline():

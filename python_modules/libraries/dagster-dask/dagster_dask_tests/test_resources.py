@@ -1,19 +1,29 @@
 from dagster_dask import dask_resource
 from dask.distributed import Client
 
-from dagster import Dict, Output
+from dagster import Out, op, Dict, Output
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, OutputDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import (
+    ModeDefinition,
+    OutputDefinition,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(dagster_type=Dict, name="scheduler_info"),
-        OutputDefinition(dagster_type=Dict, name="nthreads"),
-    ],
+@op(
+    out={
+        "scheduler_info": Out(
+            dagster_type=Dict,
+        ),
+        "nthreads": Out(
+            dagster_type=Dict,
+        ),
+    },
     required_resource_keys={"dask"},
 )
-def scheduler_info_solid(context):
+def scheduler_info_op(context):
     with context.resources.dask.client.as_current():
         client = Client.current()
 
@@ -23,7 +33,7 @@ def scheduler_info_solid(context):
 
 @pipeline(mode_defs=[ModeDefinition(resource_defs={"dask": dask_resource})])
 def scheduler_info_pipeline():
-    scheduler_info_solid()
+    scheduler_info_op()
 
 
 def test_single_local_cluster():
@@ -33,7 +43,9 @@ def test_single_local_cluster():
         "dashboard_address": None,
     }
     with instance_for_test() as instance:
-        run_config = {"resources": {"dask": {"config": {"cluster": {"local": cluster_config}}}}}
+        run_config = {
+            "resources": {"dask": {"config": {"cluster": {"local": cluster_config}}}}
+        }
         result = execute_pipeline(
             scheduler_info_pipeline,
             run_config=run_config,
@@ -58,7 +70,11 @@ def test_multiple_local_cluster():
 
     with instance_for_test() as instance:
         for cluster_config in cluster_configs:
-            run_config = {"resources": {"dask": {"config": {"cluster": {"local": cluster_config}}}}}
+            run_config = {
+                "resources": {
+                    "dask": {"config": {"cluster": {"local": cluster_config}}}
+                }
+            }
             result = execute_pipeline(
                 scheduler_info_pipeline,
                 run_config=run_config,
@@ -68,7 +84,7 @@ def test_multiple_local_cluster():
 
 
 def _assert_scheduler_info_result(result, config):
-    scheduler_info_solid_result = result.result_for_solid("scheduler_info_solid")
+    scheduler_info_solid_result = result.result_for_solid("scheduler_info_op")
 
     scheduler_info = scheduler_info_solid_result.output_value("scheduler_info")
     assert len(scheduler_info["workers"]) == config["n_workers"]

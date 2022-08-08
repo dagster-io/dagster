@@ -4,7 +4,7 @@ import types
 
 import pytest
 
-from dagster import DagsterInvariantViolationError
+from dagster import In, Out, op, DagsterInvariantViolationError
 from dagster._core.code_pointer import FileCodePointer
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.origin import (
@@ -18,14 +18,14 @@ from dagster._utils import file_relative_path
 from dagster._utils.hosted_user_process import recon_pipeline_from_origin
 
 
-@lambda_solid
-def the_solid():
+@op
+def the_op():
     return 1
 
 
 @pipeline
 def the_pipeline():
-    the_solid()
+    the_op()
 
 
 def get_the_pipeline():
@@ -77,7 +77,7 @@ def test_not_defined_in_module(mocker):
 
 
 def test_manual_instance():
-    defn = PipelineDefinition([the_solid], "test")
+    defn = PipelineDefinition([the_op], "test")
     with pytest.raises(
         DagsterInvariantViolationError,
         match="Reconstructable target should be a function or definition produced by a decorated function",
@@ -118,7 +118,7 @@ def test_inner_scope():
 def test_inner_decorator():
     @pipeline
     def pipe():
-        the_solid()
+        the_op()
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -129,11 +129,13 @@ def test_inner_decorator():
 
 def test_solid_selection():
     recon_pipe = reconstructable(get_the_pipeline)
-    sub_pipe_full = recon_pipe.subset_for_execution(["the_solid"], asset_selection=None)
-    assert sub_pipe_full.solids_to_execute == {"the_solid"}
+    sub_pipe_full = recon_pipe.subset_for_execution(["the_op"], asset_selection=None)
+    assert sub_pipe_full.solids_to_execute == {"the_op"}
 
-    sub_pipe_unresolved = recon_pipe.subset_for_execution(["the_solid+"], asset_selection=None)
-    assert sub_pipe_unresolved.solids_to_execute == {"the_solid"}
+    sub_pipe_unresolved = recon_pipe.subset_for_execution(
+        ["the_op+"], asset_selection=None
+    )
+    assert sub_pipe_unresolved.solids_to_execute == {"the_op"}
 
 
 def test_reconstructable_module():
@@ -168,6 +170,15 @@ def test_reconstruct_from_origin():
 
     assert recon_pipeline.pipeline_name == origin.pipeline_name
     assert recon_pipeline.repository.pointer == origin.repository_origin.code_pointer
-    assert recon_pipeline.repository.container_image == origin.repository_origin.container_image
-    assert recon_pipeline.repository.executable_path == origin.repository_origin.executable_path
-    assert recon_pipeline.repository.container_context == origin.repository_origin.container_context
+    assert (
+        recon_pipeline.repository.container_image
+        == origin.repository_origin.container_image
+    )
+    assert (
+        recon_pipeline.repository.executable_path
+        == origin.repository_origin.executable_path
+    )
+    assert (
+        recon_pipeline.repository.container_context
+        == origin.repository_origin.container_context
+    )

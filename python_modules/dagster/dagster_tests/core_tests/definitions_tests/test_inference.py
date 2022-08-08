@@ -2,7 +2,7 @@ from dagster._legacy import lambda_solid, solid
 
 
 def test_single_input():
-    @solid
+    @op
     def add_one(_context, num):
         return num + 1
 
@@ -13,7 +13,7 @@ def test_single_input():
 
 
 def test_double_input():
-    @solid
+    @op
     def subtract(_context, num_one, num_two):
         return num_one + num_two
 
@@ -27,7 +27,7 @@ def test_double_input():
 
 
 def test_noop_lambda_solid():
-    @lambda_solid
+    @op
     def noop():
         pass
 
@@ -37,7 +37,7 @@ def test_noop_lambda_solid():
 
 
 def test_one_arg_lambda_solid():
-    @lambda_solid
+    @op
     def one_arg(num):
         return num
 

@@ -5,14 +5,17 @@ from unittest import mock
 
 import pytest
 from dagster_aws.emr import EmrError, EmrJobRunner
-from dagster_aws.emr.pyspark_step_launcher import EmrPySparkStepLauncher, emr_pyspark_step_launcher
+from dagster_aws.emr.pyspark_step_launcher import (
+    EmrPySparkStepLauncher,
+    emr_pyspark_step_launcher,
+)
 from dagster_aws.s3 import s3_resource
 from dagster_pyspark import DataFrame, pyspark_resource
 from moto import mock_emr
 from pyspark.sql import Row
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
-from dagster import reconstructable
+from dagster import In, Out, op, reconstructable
 from dagster._core.definitions.no_step_launcher import no_step_launcher
 from dagster._core.errors import DagsterSubprocessError
 from dagster._core.test_utils import instance_for_test
@@ -39,12 +42,14 @@ BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG = {
 }
 
 
-@solid(
-    output_defs=[OutputDefinition(DataFrame)],
+@op(
+    out=Out(DataFrame),
     required_resource_keys={"pyspark_step_launcher", "pyspark"},
 )
-def make_df_solid(context):
-    schema = StructType([StructField("name", StringType()), StructField("age", IntegerType())])
+def make_df_op(context):
+    schema = StructType(
+        [StructField("name", StringType()), StructField("age", IntegerType())]
+    )
     rows = [
         Row(name="John", age=19),
         Row(name="Jennifer", age=29),
@@ -53,15 +58,15 @@ def make_df_solid(context):
     return context.resources.pyspark.spark_session.createDataFrame(rows, schema)
 
 
-@solid(
+@op(
     name="blah",
     description="this is a test",
     config_schema={"foo": str, "bar": int},
-    input_defs=[InputDefinition("people", DataFrame)],
-    output_defs=[OutputDefinition(DataFrame)],
+    ins={"people": In(DataFrame)},
+    out=Out(DataFrame),
     required_resource_keys={"pyspark_step_launcher"},
 )
-def filter_df_solid(_, people):
+def filter_df_op(_, people):
     return people.filter(people["age"] < 30)
 
 
@@ -86,23 +91,23 @@ MODE_DEFS = [
 
 @pipeline(mode_defs=MODE_DEFS)
 def pyspark_pipe():
-    filter_df_solid(make_df_solid())
+    filter_df_op(make_df_op())
 
 
 def define_pyspark_pipe():
     return pyspark_pipe
 
 
-@solid(
+@op(
     required_resource_keys={"pyspark_step_launcher", "pyspark"},
 )
-def do_nothing_solid(_):
+def do_nothing_op(_):
     pass
 
 
 @pipeline(mode_defs=MODE_DEFS)
 def do_nothing_pipe():
-    do_nothing_solid()
+    do_nothing_op()
 
 
 def define_do_nothing_pipe():
@@ -180,7 +185,9 @@ def sync_code():
         "--exclude='.git/'",
         "--exclude='docs/'",
         "-e",
-        '"ssh -i {aws_emr_pem_file}"'.format(aws_emr_pem_file=os.environ["AWS_EMR_PEM_FILE"]),
+        '"ssh -i {aws_emr_pem_file}"'.format(
+            aws_emr_pem_file=os.environ["AWS_EMR_PEM_FILE"]
+        ),
         os.environ["DAGSTER_DIR"],
         os.environ["AWS_EMR_NODE_ADDRESS"] + ":~/",
     ]
@@ -196,7 +203,13 @@ def sync_code():
         raise DagsterSubprocessError("Failed to sync code to EMR")
 
     # Install dagster packages on remote node
-    remote_install_dagster_packages_command = ["sudo", "python3", "-m", "pip", "install",] + [
+    remote_install_dagster_packages_command = [
+        "sudo",
+        "python3",
+        "-m",
+        "pip",
+        "install",
+    ] + [
         token
         for package_subpath in ["dagster", "libraries/dagster-pyspark"]
         for token in ["-e", "/home/hadoop/dagster/python_modules/" + package_subpath]
@@ -234,7 +247,9 @@ def test_do_it_live_emr():
         run_config={
             "solids": {"blah": {"config": {"foo": "a string", "bar": 123}}},
             "resources": {
-                "pyspark_step_launcher": {"config": BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG},
+                "pyspark_step_launcher": {
+                    "config": BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG
+                },
             },
         },
     )
@@ -242,8 +257,12 @@ def test_do_it_live_emr():
 
 
 @mock.patch("boto3.resource")
-@mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher.wait_for_completion")
-@mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher._log_logs_from_s3")
+@mock.patch(
+    "dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher.wait_for_completion"
+)
+@mock.patch(
+    "dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher._log_logs_from_s3"
+)
 @mock.patch("dagster._core.events.log_step_event")
 def test_fetch_logs_on_fail(
     _mock_log_step_event, mock_log_logs, mock_wait_for_completion, _mock_boto3_resource
@@ -266,7 +285,9 @@ def test_fetch_logs_on_fail(
     )
 
     with pytest.raises(EmrError):
-        for _ in step_launcher.wait_for_completion_and_log(None, None, None, mock_step_context):
+        for _ in step_launcher.wait_for_completion_and_log(
+            None, None, None, mock_step_context
+        ):
             pass
 
     assert mock_log_logs.call_count == 1

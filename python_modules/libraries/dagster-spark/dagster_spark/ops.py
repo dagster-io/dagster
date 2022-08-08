@@ -52,6 +52,6 @@ def core_create_spark(
         required_resource_keys=required_resource_keys,
     )
     def spark_solid(context):  # pylint: disable=unused-argument
-        context.resources.spark.run_spark_job(context.solid_config, main_class)
+        context.resources.spark.run_spark_job(context.op_config, main_class)
 
     return spark_solid

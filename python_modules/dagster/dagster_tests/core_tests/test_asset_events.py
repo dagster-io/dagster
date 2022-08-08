@@ -1,4 +1,5 @@
 from dagster import (
+    In,
     AssetKey,
     DagsterEventType,
     EventRecordsFilter,

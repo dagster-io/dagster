@@ -5,12 +5,18 @@ from dagster._core.host_representation import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
-from dagster._legacy import ModeDefinition, PresetDefinition, daily_schedule, pipeline, solid
+from dagster._legacy import (
+    ModeDefinition,
+    PresetDefinition,
+    daily_schedule,
+    pipeline,
+    solid,
+)
 from dagster._serdes import serialize_pp
 
 
-@solid
-def a_solid(_):
+@op
+def a_op(_):
     pass
 
 
@@ -21,13 +27,13 @@ def a_solid(_):
         PresetDefinition(
             name="kitchen_sink_preset",
             run_config={"foo": "bar"},
-            solid_selection=["a_solid"],
+            solid_selection=["a_op"],
             mode="mode_one",
         ),
     ],
 )
 def a_pipeline():
-    a_solid()
+    a_op()
 
 
 @daily_schedule(  # type: ignore

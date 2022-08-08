@@ -4,7 +4,9 @@ from contextlib import contextmanager
 import pytest
 
 from dagster import repository
-from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
+from dagster._api.snapshot_repository import (
+    sync_get_streaming_external_repositories_data_grpc,
+)
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation import (
     ExternalRepositoryData,
@@ -45,7 +47,7 @@ def test_streaming_external_repositories_error(instance):
             )
 
 
-@lambda_solid
+@op
 def do_something():
     return 1
 

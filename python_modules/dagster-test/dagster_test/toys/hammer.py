@@ -1,9 +1,15 @@
 import random
 import time
 
-from dagster import Field, Output, fs_io_manager
+from dagster import In, Out, op, Field, Output, fs_io_manager
 from dagster._core.definitions.executor_definition import default_executors
-from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, pipeline, solid
+from dagster._legacy import (
+    InputDefinition,
+    ModeDefinition,
+    OutputDefinition,
+    pipeline,
+    solid,
+)
 
 
 def get_executor_defs():
@@ -15,9 +21,13 @@ def get_executor_defs():
         return default_executors
 
 
-@solid(
-    input_defs=[InputDefinition("chase_duration", int)],
-    output_defs=[OutputDefinition(int, "total")],
+@op(
+    ins={"chase_duration": In(int)},
+    out={
+        "total": Out(
+            int,
+        )
+    },
     config_schema={
         "chase_size": Field(
             int,
@@ -29,7 +39,7 @@ def get_executor_defs():
 )
 def hammer(context, chase_duration):
     """what better way to do a lot of gnarly work than to pointer chase?"""
-    ptr_length = context.solid_config["chase_size"]
+    ptr_length = context.op_config["chase_size"]
 
     data = list(range(0, ptr_length))
     random.shuffle(data)
@@ -44,17 +54,25 @@ def hammer(context, chase_duration):
     return chase_duration
 
 
-@solid(
+@op(
     config_schema=Field(int, is_required=False, default_value=1),
-    output_defs=[
-        OutputDefinition(int, "out_1"),
-        OutputDefinition(int, "out_2"),
-        OutputDefinition(int, "out_3"),
-        OutputDefinition(int, "out_4"),
-    ],
+    out={
+        "out_1": Out(
+            int,
+        ),
+        "out_2": Out(
+            int,
+        ),
+        "out_3": Out(
+            int,
+        ),
+        "out_4": Out(
+            int,
+        ),
+    },
 )
 def chase_giver(context):
-    chase_duration = context.solid_config
+    chase_duration = context.op_config
 
     yield Output(chase_duration, "out_1")
     yield Output(chase_duration, "out_2")
@@ -62,14 +80,9 @@ def chase_giver(context):
     yield Output(chase_duration, "out_4")
 
 
-@solid(
-    input_defs=[
-        InputDefinition("in_1", int),
-        InputDefinition("in_2", int),
-        InputDefinition("in_3", int),
-        InputDefinition("in_4", int),
-    ],
-    output_defs=[OutputDefinition(int)],
+@op(
+    ins={"in_1": In(int), "in_2": In(int), "in_3": In(int), "in_4": In(int)},
+    out=Out(int),
 )
 def reducer(_, in_1, in_2, in_3, in_4):
     return in_1 + in_2 + in_3 + in_4

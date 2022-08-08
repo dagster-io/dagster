@@ -6,6 +6,8 @@ import dagstermill
 from dagstermill.io_managers import local_output_notebook_io_manager
 
 from dagster import (
+    In,
+    op,
     Field,
     FileHandle,
     Int,
@@ -125,12 +127,14 @@ def build_hello_world_job():
     return hello_world_job
 
 
-hello_world_with_custom_tags_and_description = dagstermill.factory.define_dagstermill_solid(
-    name="hello_world_custom",
-    notebook_path=nb_test_path("hello_world"),
-    output_notebook_name="notebook",
-    tags={"foo": "bar"},
-    description="custom description",
+hello_world_with_custom_tags_and_description = (
+    dagstermill.factory.define_dagstermill_solid(
+        name="hello_world_custom",
+        notebook_path=nb_test_path("hello_world"),
+        output_notebook_name="notebook",
+        tags={"foo": "bar"},
+        description="custom description",
+    )
 )
 
 
@@ -149,7 +153,9 @@ goodbye_config = dagstermill.factory.define_dagstermill_solid(
     name="goodbye_config",
     notebook_path=nb_test_path("print_dagstermill_context_solid_config"),
     output_notebook_name="notebook",
-    config_schema={"farewell": Field(String, is_required=False, default_value="goodbye")},
+    config_schema={
+        "farewell": Field(String, is_required=False, default_value="goodbye")
+    },
 )
 
 
@@ -165,7 +171,7 @@ def alias_config_pipeline():
     goodbye_config.alias("aliased_goodbye")()
 
 
-@solid(input_defs=[InputDefinition("notebook")])
+@op(ins={"notebook": In()})
 def load_notebook(notebook):
     return notebook
 
@@ -176,9 +182,11 @@ def hello_world_with_output_notebook_pipeline():
     load_notebook(notebook)
 
 
-hello_world_no_output_notebook_no_file_manager = dagstermill.factory.define_dagstermill_solid(
-    name="hello_world_no_output_notebook_no_file_manager",
-    notebook_path=nb_test_path("hello_world"),
+hello_world_no_output_notebook_no_file_manager = (
+    dagstermill.factory.define_dagstermill_solid(
+        name="hello_world_no_output_notebook_no_file_manager",
+        notebook_path=nb_test_path("hello_world"),
+    )
 )
 
 
@@ -198,7 +206,9 @@ def hello_world_no_output_notebook_pipeline():
     hello_world_no_output_notebook()
 
 
-hello_world_output = test_nb_solid("hello_world_output", output_defs=[OutputDefinition(str)])
+hello_world_output = test_nb_solid(
+    "hello_world_output", output_defs=[OutputDefinition(str)]
+)
 
 
 @pipeline(mode_defs=default_mode_defs)
@@ -244,22 +254,22 @@ mult_two_numbers = test_nb_solid(
 )
 
 
-@solid
+@op
 def return_one():
     return 1
 
 
-@solid
+@op
 def return_two():
     return 2
 
 
-@solid
+@op
 def return_three():
     return 3
 
 
-@solid
+@op
 def return_four():
     return 4
 
@@ -275,9 +285,9 @@ def double_add_pipeline():
     add_two_numbers.alias("add_two_numbers_2")(return_three(), return_four())
 
 
-@solid(input_defs=[], config_schema=Int)
+@op(ins={}, config_schema=Int)
 def load_constant(context):
-    return context.solid_config
+    return context.op_config
 
 
 @pipeline(mode_defs=default_mode_defs)
@@ -319,8 +329,8 @@ if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
         tutorial_RF(dfr)
 
 
-@solid("resource_solid", required_resource_keys={"list"})
-def resource_solid(context):
+@op("resource_op", required_resource_keys={"list"})
+def resource_op(context):
     context.resources.list.append("Hello, solid!")
     return True
 
@@ -403,7 +413,7 @@ def filepicklelist_resource(init_context):
     ]
 )
 def resource_pipeline():
-    hello_world_resource(resource_solid())
+    hello_world_resource(resource_op())
 
 
 @pipeline(
@@ -418,7 +428,7 @@ def resource_pipeline():
     ]
 )
 def resource_with_exception_pipeline():
-    hello_world_resource_with_exception(resource_solid())
+    hello_world_resource_with_exception(resource_op())
 
 
 bad_kernel = test_nb_solid("bad_kernel")
@@ -436,7 +446,7 @@ reimport = test_nb_solid(
 )
 
 
-@solid
+@op
 def lister():
     return [1, 2, 3]
 
@@ -481,7 +491,7 @@ yield_something = test_nb_solid(
 )
 
 
-@solid
+@op
 def fan_in(a, b):
     return f"{a} {b}"
 
@@ -547,7 +557,7 @@ hello_world_legacy = dagstermill.factory.define_dagstermill_solid(
 )
 
 
-@solid(input_defs=[InputDefinition("notebook", dagster_type=FileHandle)])
+@op(ins={"notebook": In(dagster_type=FileHandle)})
 def load_notebook_legacy(notebook):
     return os.path.exists(notebook.path_desc)
 

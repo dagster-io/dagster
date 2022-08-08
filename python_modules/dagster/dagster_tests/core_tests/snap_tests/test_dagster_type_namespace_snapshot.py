@@ -1,4 +1,4 @@
-from dagster import Dict, List, Set, Tuple
+from dagster import In, Out, op, Dict, List, Set, Tuple
 from dagster._core.snap import build_dagster_type_namespace_snapshot
 from dagster._core.types.dagster_type import ALL_RUNTIME_BUILTINS, create_string_type
 from dagster._legacy import InputDefinition, OutputDefinition, pipeline, solid
@@ -7,7 +7,7 @@ from dagster._legacy import InputDefinition, OutputDefinition, pipeline, solid
 def test_simple_pipeline_input_dagster_type_namespace():
     SomethingType = create_string_type("SomethingType", description="desc")
 
-    @solid(input_defs=[InputDefinition("something", SomethingType)])
+    @op(ins={"something": In(SomethingType)})
     def take_something(_, something):
         return something
 
@@ -31,7 +31,7 @@ def test_simple_pipeline_input_dagster_type_namespace():
 def test_simple_pipeline_output_dagster_type_namespace():
     SomethingType = create_string_type("SomethingType")
 
-    @solid(output_defs=[OutputDefinition(SomethingType)])
+    @op(out=Out(SomethingType))
     def take_something(_):
         return "something"
 
@@ -46,21 +46,21 @@ def test_simple_pipeline_output_dagster_type_namespace():
 def test_kitchen_sink_of_collection_types_snaps():
     SomethingType = create_string_type("SomethingType")
 
-    @solid(input_defs=[InputDefinition("somethings", List[SomethingType])])
+    @op(ins={"somethings": In(List[SomethingType])})
     def take_list(_, somethings):
         return somethings
 
-    @solid(input_defs=[InputDefinition("somethings", Set[SomethingType])])
+    @op(ins={"somethings": In(Set[SomethingType])})
     def take_set(_, somethings):
         return somethings
 
     # dict cannot be input without dep
     # see https://github.com/dagster-io/dagster/issues/2272
-    @solid(output_defs=[OutputDefinition(Dict[str, SomethingType])])
+    @op(out=Out(Dict[str, SomethingType]))
     def return_dict(_):
         return {}
 
-    @solid(input_defs=[InputDefinition("somethings", Tuple[str, SomethingType])])
+    @op(ins={"somethings": In(Tuple[str, SomethingType])})
     def take_tuple(_, somethings):
         return somethings
 
@@ -101,7 +101,7 @@ def test_kitchen_sink_of_collection_types_snaps():
 
 
 def test_kitchen_sink_of_builtins():
-    @solid
+    @op
     def noop(_):
         pass
 

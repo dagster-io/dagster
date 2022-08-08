@@ -4,6 +4,7 @@ from datetime import datetime
 import pytest
 
 from dagster import (
+    In,
     DagsterInvariantViolationError,
     Field,
     StringSource,
@@ -45,7 +46,9 @@ def test_job_execution_multiprocess_config():
         result = execute_pipeline(
             reconstructable(define_the_job),
             instance=instance,
-            run_config={"execution": {"config": {"multiprocess": {"max_concurrent": 4}}}},
+            run_config={
+                "execution": {"config": {"multiprocess": {"max_concurrent": 4}}}
+            },
         )
 
         assert result.success
@@ -118,7 +121,9 @@ def test_job_top_level_input():
 
         my_op(x)
 
-    result = my_job_with_input.execute_in_process(run_config={"inputs": {"x": {"value": 2}}})
+    result = my_job_with_input.execute_in_process(
+        run_config={"inputs": {"x": {"value": 2}}}
+    )
     assert result.success
     assert result.output_for_node("my_op") == 2
 
@@ -159,7 +164,9 @@ def test_job_run_request():
         my_op()
 
     for partition_key in ["a", "b", "c", "d"]:
-        run_request = my_job.run_request_for_partition(partition_key=partition_key, run_key=None)
+        run_request = my_job.run_request_for_partition(
+            partition_key=partition_key, run_key=None
+        )
         assert run_request.run_config == partition_fn(partition_key)
         assert run_request.tags
         assert run_request.tags.get(PARTITION_NAME_TAG) == partition_key

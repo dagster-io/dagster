@@ -2,7 +2,7 @@ from typing import Optional
 
 import pytest
 
-from dagster import DagsterInvalidDefinitionError, Nothing, job, op
+from dagster import In, DagsterInvalidDefinitionError, Nothing, job, op
 from dagster._legacy import (
     InputDefinition,
     composite_solid,
@@ -14,7 +14,7 @@ from dagster._legacy import (
 
 
 def test_none():
-    @lambda_solid(input_defs=[InputDefinition("x", Optional[int], default_value=None)])
+    @op(ins={"x": In(Optional[int], default_value=None)})
     def none_x(x):
         return x
 
@@ -23,7 +23,7 @@ def test_none():
 
 
 def test_none_infer():
-    @lambda_solid
+    @op
     def none_x(x=None):
         return x
 
@@ -32,7 +32,7 @@ def test_none_infer():
 
 
 def test_int():
-    @lambda_solid(input_defs=[InputDefinition("x", Optional[int], default_value=1337)])
+    @op(ins={"x": In(Optional[int], default_value=1337)})
     def int_x(x):
         return x
 
@@ -41,7 +41,7 @@ def test_int():
 
 
 def test_int_infer():
-    @lambda_solid
+    @op
     def int_x(x=1337):
         return x
 
@@ -55,7 +55,7 @@ def test_early_fail():
         match="Type check failed for the default_value of InputDefinition x of type Int",
     ):
 
-        @lambda_solid(input_defs=[InputDefinition("x", int, default_value="foo")])
+        @op(ins={"x": In(int, default_value="foo")})
         def _int_x(x):
             return x
 
@@ -64,14 +64,14 @@ def test_early_fail():
         match="Type check failed for the default_value of InputDefinition x of type String",
     ):
 
-        @lambda_solid(input_defs=[InputDefinition("x", str, default_value=1337)])
+        @op(ins={"x": In(str, default_value=1337)})
         def _int_x(x):
             return x
 
 
 # we can't catch bad default_values except for scalars until runtime since the type_check function depends on
 # a context that has access to resources etc.
-@lambda_solid(input_defs=[InputDefinition("x", Optional[int], default_value="number")])
+@op(ins={"x": In(Optional[int], default_value="number")})
 def bad_default(x):
     return x
 
@@ -79,7 +79,10 @@ def bad_default(x):
 def test_mismatch():
     result = execute_solid(bad_default, raise_on_error=False)
     assert result.success == False
-    assert result.input_events_during_compute[0].step_input_data.type_check_data.success == False
+    assert (
+        result.input_events_during_compute[0].step_input_data.type_check_data.success
+        == False
+    )
 
 
 def test_env_precedence():
@@ -93,7 +96,7 @@ def test_env_precedence():
 
 
 def test_input_precedence():
-    @lambda_solid
+    @op
     def emit_one():
         return 1
 
@@ -109,13 +112,13 @@ def test_input_precedence():
 def test_nothing():
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lambda_solid(input_defs=[InputDefinition("x", Nothing, default_value=None)])
+        @op(ins={"x": In(Nothing, default_value=None)})
         def _nothing():
             pass
 
 
 def test_composite_outer_default():
-    @lambda_solid(input_defs=[InputDefinition("x", Optional[int])])
+    @op(ins={"x": In(Optional[int])})
     def int_x(x):
         return x
 
@@ -129,7 +132,7 @@ def test_composite_outer_default():
 
 
 def test_composite_inner_default():
-    @lambda_solid(input_defs=[InputDefinition("x", Optional[int], default_value=1337)])
+    @op(ins={"x": In(Optional[int], default_value=1337)})
     def int_x(x):
         return x
 
@@ -143,7 +146,7 @@ def test_composite_inner_default():
 
 
 def test_composite_precedence_default():
-    @lambda_solid(input_defs=[InputDefinition("x", Optional[int], default_value=1337)])
+    @op(ins={"x": In(Optional[int], default_value=1337)})
     def int_x(x):
         return x
 
@@ -157,7 +160,7 @@ def test_composite_precedence_default():
 
 
 def test_composite_mid_default():
-    @lambda_solid(input_defs=[InputDefinition("x", Optional[int])])
+    @op(ins={"x": In(Optional[int])})
     def int_x(x):
         return x
 

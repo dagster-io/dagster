@@ -1,6 +1,6 @@
 import os
 
-from dagster import DynamicOutput, List, Output, fs_io_manager
+from dagster import In, Out, op, DynamicOutput, List, Output, fs_io_manager
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.execution.api import create_execution_plan, execute_run
 from dagster._core.execution.plan.inputs import (
@@ -31,12 +31,12 @@ from dagster._utils import file_relative_path
 from dagster._utils.test import copy_directory
 
 
-@solid(output_defs=[OutputDefinition(int)])
+@op(out=Out(int))
 def return_one(_):
     return 1
 
 
-@solid(input_defs=[InputDefinition("nums", List[int])], output_defs=[OutputDefinition(int)])
+@op(ins={"nums": In(List[int])}, out=Out(int))
 def sum_fan_in(_, nums):
     return sum(nums)
 
@@ -46,63 +46,63 @@ def fake_root_input_manager(_context):
     return 678
 
 
-@solid(input_defs=[InputDefinition("from_manager", root_manager_key="root_input_manager")])
+@op(ins={"from_manager": In(root_manager_key="root_input_manager")})
 def input_from_root_manager(_context, from_manager):
     return from_manager
 
 
-@solid
+@op
 def multiply_by_two(context, y):
     context.log.info("multiply_by_two is returning " + str(y * 2))
     return y * 2
 
 
-@solid
+@op
 def multiply_inputs(context, y, ten):
     context.log.info("multiply_inputs is returning " + str(y * ten))
     return y * ten
 
 
-@solid(
-    output_defs=[
-        OutputDefinition(int, "optional_output", is_required=False),
-        OutputDefinition(int, "required_output", is_required=True),
-    ]
+@op(
+    out={
+        "optional_output": Out(int, is_required=False),
+        "required_output": Out(int, is_required=True),
+    }
 )
 def optional_outputs(_):
     yield Output(1234, "required_output")
 
 
-@solid
+@op
 def emit_ten(_):
     return 10
 
 
-@solid
+@op
 def echo(_, x: int) -> int:
     return x
 
 
-@solid(input_defs=[InputDefinition("y", int, default_value=7)])
+@op(ins={"y": In(int, default_value=7)})
 def echo_default(_, y: int) -> int:
     return y
 
 
-@solid(
-    output_defs=[DynamicOutputDefinition()],
-    input_defs=[InputDefinition("range_input", int, default_value=3)],
+@op(
+    out=DynamicOut(),
+    ins={"range_input": In(int, default_value=3)},
 )
 def emit(_context, range_input):
     for i in range(range_input):
         yield DynamicOutput(value=i, mapping_key=str(i))
 
 
-@solid
+@op
 def sum_numbers(_, nums):
     return sum(nums)
 
 
-@solid(output_defs=[DynamicOutputDefinition()])
+@op(out=DynamicOut())
 def dynamic_echo(_, nums):
     for x in nums:
         yield DynamicOutput(value=x, mapping_key=str(x))
@@ -145,24 +145,34 @@ def _validate_execution_plan(plan):
     echo_default_input_source = echo_default_step.step_input_named("y").source
     assert isinstance(echo_default_input_source, FromDefaultValue)
 
-    sum_numbers_input_source = plan.get_step_by_key("sum_numbers").step_input_named("nums").source
+    sum_numbers_input_source = (
+        plan.get_step_by_key("sum_numbers").step_input_named("nums").source
+    )
     assert isinstance(sum_numbers_input_source, FromDynamicCollect)
 
-    emit_input_source = plan.get_step_by_key("emit").step_input_named("range_input").source
+    emit_input_source = (
+        plan.get_step_by_key("emit").step_input_named("range_input").source
+    )
     assert isinstance(emit_input_source, FromConfig)
 
     input_from_root_manager_source = (
-        plan.get_step_by_key("input_from_root_manager").step_input_named("from_manager").source
+        plan.get_step_by_key("input_from_root_manager")
+        .step_input_named("from_manager")
+        .source
     )
     assert isinstance(input_from_root_manager_source, FromRootInputManager)
 
     fan_in_source = plan.get_step_by_key("sum_fan_in").step_input_named("nums").source
     assert isinstance(fan_in_source, FromMultipleSources)
 
-    dynamic_source = plan.get_step_by_key("multiply_inputs[?]").step_input_named("y").source
+    dynamic_source = (
+        plan.get_step_by_key("multiply_inputs[?]").step_input_named("y").source
+    )
     assert isinstance(dynamic_source, FromPendingDynamicStepOutput)
 
-    unresolved_source = plan.get_step_by_key("multiply_by_two[?]").step_input_named("y").source
+    unresolved_source = (
+        plan.get_step_by_key("multiply_by_two[?]").step_input_named("y").source
+    )
     assert isinstance(unresolved_source, FromUnresolvedStepOutput)
 
     dynamic_output = plan.get_step_by_key("emit").step_outputs[0]
@@ -183,9 +193,13 @@ def _validate_execution_plan(plan):
 def test_execution_plan_snapshot_backcompat():
 
     src_dir = file_relative_path(__file__, "test_execution_plan_snapshots/")
-    snapshot_dirs = [f for f in os.listdir(src_dir) if not os.path.isfile(os.path.join(src_dir, f))]
+    snapshot_dirs = [
+        f for f in os.listdir(src_dir) if not os.path.isfile(os.path.join(src_dir, f))
+    ]
     for snapshot_dir_path in snapshot_dirs:
-        print(f"Executing a saved run from {snapshot_dir_path}")  # pylint: disable=print-call
+        print(
+            f"Executing a saved run from {snapshot_dir_path}"
+        )  # pylint: disable=print-call
 
         with copy_directory(os.path.join(src_dir, snapshot_dir_path)) as test_dir:
             with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
@@ -198,11 +212,15 @@ def test_execution_plan_snapshot_backcompat():
                 the_pipeline = InMemoryPipeline(dynamic_pipeline)
 
                 # First create a brand new plan from the pipeline and validate it
-                new_plan = create_execution_plan(the_pipeline, run_config=run.run_config)
+                new_plan = create_execution_plan(
+                    the_pipeline, run_config=run.run_config
+                )
                 _validate_execution_plan(new_plan)
 
                 # Create a snapshot and rebuild it, validate the rebuilt plan
-                new_plan_snapshot = snapshot_from_execution_plan(new_plan, run.pipeline_snapshot_id)
+                new_plan_snapshot = snapshot_from_execution_plan(
+                    new_plan, run.pipeline_snapshot_id
+                )
                 rebuilt_plan = ExecutionPlan.rebuild_from_snapshot(
                     "dynamic_pipeline", new_plan_snapshot
                 )

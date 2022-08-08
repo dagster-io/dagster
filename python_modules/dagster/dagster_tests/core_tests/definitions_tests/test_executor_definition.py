@@ -4,7 +4,12 @@ import pytest
 
 from dagster import ExecutorRequirement
 from dagster import _check as check
-from dagster import fs_io_manager, in_process_executor, multiprocess_executor, reconstructable
+from dagster import (
+    fs_io_manager,
+    in_process_executor,
+    multiprocess_executor,
+    reconstructable,
+)
 from dagster._core.definitions.executor_definition import executor
 from dagster._core.errors import (
     DagsterInvalidConfigError,
@@ -14,23 +19,31 @@ from dagster._core.errors import (
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.retries import RetryMode
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline, solid
+from dagster._legacy import (
+    ModeDefinition,
+    PipelineDefinition,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
 
 
 def assert_pipeline_runs_with_executor(executor_defs, execution_config, instance=None):
     it = {}
 
-    @solid
-    def a_solid(_):
+    @op
+    def a_op(_):
         it["ran"] = True
 
     pipeline_def = PipelineDefinition(
         name="testing_pipeline",
-        solid_defs=[a_solid],
+        solid_defs=[a_op],
         mode_defs=[ModeDefinition(executor_defs=executor_defs)],
     )
 
-    result = execute_pipeline(pipeline_def, {"execution": execution_config}, instance=instance)
+    result = execute_pipeline(
+        pipeline_def, {"execution": execution_config}, instance=instance
+    )
     assert result.success
     assert it["ran"]
 
@@ -130,7 +143,9 @@ def test_in_process_executor_dict_config_configured():
     test_executor_configured = test_executor.configured(
         {"value": "secret testing value!!"}, "configured_test_executor"
     )
-    assert test_executor_configured.get_requirements(None) == test_executor.get_requirements(None)
+    assert test_executor_configured.get_requirements(
+        None
+    ) == test_executor.get_requirements(None)
 
     with instance_for_test() as instance:
         assert_pipeline_runs_with_executor(
@@ -140,7 +155,7 @@ def test_in_process_executor_dict_config_configured():
         )
 
 
-@solid
+@op
 def emit_one(_):
     return 1
 
@@ -166,7 +181,9 @@ def test_multiproc():
             run_config={
                 "resources": {
                     "io_manager": {
-                        "config": {"base_dir": path.join(instance.root_directory, "storage")}
+                        "config": {
+                            "base_dir": path.join(instance.root_directory, "storage")
+                        }
                     }
                 },
             },
@@ -242,7 +259,9 @@ def test_defaulting_behavior():
     with pytest.raises(DagsterInvalidConfigError):
         execute_pipeline(executor_options)
 
-    result = execute_pipeline(executor_options, run_config={"execution": {"my_other_executor": {}}})
+    result = execute_pipeline(
+        executor_options, run_config={"execution": {"my_other_executor": {}}}
+    )
     assert result.success
 
     @executor(config_schema=str)

@@ -4,13 +4,16 @@ import sys
 import pytest
 
 from dagster import reconstructable
-from dagster._core.definitions import ReconstructablePipeline, build_reconstructable_pipeline
+from dagster._core.definitions import (
+    ReconstructablePipeline,
+    build_reconstructable_pipeline,
+)
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._legacy import pipeline, solid
 
 
-@solid
-def top_scope_solid(_context):
+@op
+def top_scope_op(_context):
     pass
 
 
@@ -19,15 +22,15 @@ class PipelineFactory:
         self.prefix = prefix
 
     def make_pipeline(self, has_nested_scope_solid, name=None):
-        @solid
-        def nested_scope_solid(_context):
+        @op
+        def nested_scope_op(_context):
             pass
 
         @pipeline(name=self.prefix + name)
         def _pipeline():
             if has_nested_scope_solid:
-                nested_scope_solid()
-            top_scope_solid()
+                nested_scope_op()
+            top_scope_op()
 
         return _pipeline
 
@@ -50,7 +53,7 @@ def test_build_reconstructable_pipeline():
             "test_custom_reconstructable",
             "reconstruct_pipeline",
             ("foo_",),
-            {"has_nested_scope_solid": True, "name": "bar"},
+            {"has_nested_scope_op": True, "name": "bar"},
             reconstructor_working_directory=os.path.dirname(os.path.realpath(__file__)),
         )
 
@@ -58,8 +61,8 @@ def test_build_reconstructable_pipeline():
 
         assert reconstructed_bar_pipeline_def.name == "foo_bar"
         assert len(reconstructed_bar_pipeline_def.solids) == 2
-        assert reconstructed_bar_pipeline_def.solid_named("top_scope_solid")
-        assert reconstructed_bar_pipeline_def.solid_named("nested_scope_solid")
+        assert reconstructed_bar_pipeline_def.solid_named("top_scope_op")
+        assert reconstructed_bar_pipeline_def.solid_named("nested_scope_op")
 
     finally:
         sys.path = sys_path
@@ -80,7 +83,7 @@ def test_build_reconstructable_pipeline_serdes():
             "test_custom_reconstructable",
             "reconstruct_pipeline",
             ("foo_",),
-            {"has_nested_scope_solid": True, "name": "bar"},
+            {"has_nested_scope_op": True, "name": "bar"},
         )
 
         reconstructable_bar_pipeline_dict = reconstructable_bar_pipeline.to_dict()
@@ -93,8 +96,8 @@ def test_build_reconstructable_pipeline_serdes():
 
         assert reconstructed_bar_pipeline_def.name == "foo_bar"
         assert len(reconstructed_bar_pipeline_def.solids) == 2
-        assert reconstructed_bar_pipeline_def.solid_named("top_scope_solid")
-        assert reconstructed_bar_pipeline_def.solid_named("nested_scope_solid")
+        assert reconstructed_bar_pipeline_def.solid_named("top_scope_op")
+        assert reconstructed_bar_pipeline_def.solid_named("nested_scope_op")
 
     finally:
         sys.path = sys_path

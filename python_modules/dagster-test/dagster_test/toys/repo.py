@@ -1,5 +1,8 @@
 import pendulum
-from dagster_test.toys.asset_lineage import asset_lineage_partition_set, asset_lineage_pipeline
+from dagster_test.toys.asset_lineage import (
+    asset_lineage_partition_set,
+    asset_lineage_pipeline,
+)
 from dagster_test.toys.branches import branch_pipeline
 from dagster_test.toys.composition import composition
 from dagster_test.toys.dynamic import dynamic_pipeline
@@ -16,15 +19,15 @@ from dagster_test.toys.retries import retry_pipeline
 from dagster_test.toys.sleepy import sleepy_pipeline
 from dagster_test.toys.unreliable import unreliable_pipeline
 
-from dagster import AssetMaterialization, Output, repository
+from dagster import In, op, AssetMaterialization, Output, repository
 from dagster._legacy import pipeline, solid
 
 from .schedules import get_toys_schedules
 from .sensors import get_toys_sensors
 
 
-@solid
-def materialization_solid(_):
+@op
+def materialization_op(_):
     timestamp = pendulum.now("UTC").timestamp()
     yield AssetMaterialization(asset_key="model", metadata={"timestamp": timestamp})
     yield Output(1)
@@ -32,7 +35,7 @@ def materialization_solid(_):
 
 @pipeline
 def model_pipeline():
-    materialization_solid()
+    materialization_op()
 
 
 @repository

@@ -7,6 +7,8 @@ from threading import Thread
 import pytest
 
 from dagster import (
+    In,
+    Out,
     DynamicOut,
     DynamicOutput,
     Failure,
@@ -25,7 +27,9 @@ from dagster import (
 from dagster._core.definitions.no_step_launcher import no_step_launcher
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.context_creation_pipeline import PlanExecutionContextManager
+from dagster._core.execution.context_creation_pipeline import (
+    PlanExecutionContextManager,
+)
 from dagster._core.execution.plan.external_step import (
     LocalExternalStepLauncher,
     local_external_step_launcher,
@@ -75,7 +79,9 @@ class RequestRetryLocalExternalStepLauncher(LocalExternalStepLauncher):
         if step_context.previous_attempt_count == 0:
             raise RetryRequested()
         else:
-            return super(RequestRetryLocalExternalStepLauncher, self).launch_step(step_context)
+            return super(RequestRetryLocalExternalStepLauncher, self).launch_step(
+                step_context
+            )
 
 
 @resource(config_schema=local_external_step_launcher.config_schema)
@@ -91,7 +97,9 @@ def _define_failing_job(has_policy: bool, is_explicit: bool = True):
     def retry_op(context):
         if context.retry_number < 3:
             if is_explicit:
-                raise Failure(description="some failure description", metadata={"foo": 1.23})
+                raise Failure(
+                    description="some failure description", metadata={"foo": 1.23}
+                )
             else:
                 _ = "x" + 1
         return context.retry_number
@@ -124,10 +132,14 @@ def _define_dynamic_job(launch_initial, launch_final):
     from typing import List
 
     initial_launcher = (
-        local_external_step_launcher if launch_initial else ResourceDefinition.mock_resource()
+        local_external_step_launcher
+        if launch_initial
+        else ResourceDefinition.mock_resource()
     )
     final_launcher = (
-        local_external_step_launcher if launch_final else ResourceDefinition.mock_resource()
+        local_external_step_launcher
+        if launch_final
+        else ResourceDefinition.mock_resource()
     )
 
     @op(required_resource_keys={"initial_launcher"}, out=DynamicOut(int))
@@ -159,10 +171,14 @@ def _define_dynamic_job(launch_initial, launch_final):
 
 def _define_basic_job(launch_initial, launch_final):
     initial_launcher = (
-        local_external_step_launcher if launch_initial else ResourceDefinition.mock_resource()
+        local_external_step_launcher
+        if launch_initial
+        else ResourceDefinition.mock_resource()
     )
     final_launcher = (
-        local_external_step_launcher if launch_final else ResourceDefinition.mock_resource()
+        local_external_step_launcher
+        if launch_final
+        else ResourceDefinition.mock_resource()
     )
 
     @op(required_resource_keys={"initial_launcher"})
@@ -215,14 +231,14 @@ def define_basic_job_last_launched():
 
 
 def define_basic_pipeline():
-    @solid(
+    @op(
         required_resource_keys=set(["first_step_launcher"]),
         config_schema={"a": Field(str)},
     )
     def return_two(_):
         return 2
 
-    @solid(required_resource_keys=set(["second_step_launcher"]))
+    @op(required_resource_keys=set(["second_step_launcher"]))
     def add_one(_, num):
         return num + 1
 
@@ -261,12 +277,12 @@ def define_basic_pipeline():
 
 
 def define_sleepy_pipeline():
-    @solid(
+    @op(
         config_schema={"tempfile": Field(String)},
         required_resource_keys=set(["first_step_launcher"]),
     )
-    def sleepy_solid(context):
-        with open(context.solid_config["tempfile"], "w", encoding="utf8") as ff:
+    def sleepy_op(context):
+        with open(context.op_config["tempfile"], "w", encoding="utf8") as ff:
             ff.write("yup")
         start_time = time.time()
         while True:
@@ -286,7 +302,7 @@ def define_sleepy_pipeline():
         ]
     )
     def sleepy_pipeline():
-        sleepy_solid()
+        sleepy_op()
 
     return sleepy_pipeline
 
@@ -301,7 +317,9 @@ def initialize_step_context(scratch_dir, instance):
 
     recon_pipeline = reconstructable(define_basic_pipeline)
 
-    plan = create_execution_plan(recon_pipeline, pipeline_run.run_config, mode="external")
+    plan = create_execution_plan(
+        recon_pipeline, pipeline_run.run_config, mode="external"
+    )
 
     initialization_manager = PlanExecutionContextManager(
         pipeline=recon_pipeline,
@@ -494,7 +512,9 @@ def test_arbitrary_error():
                 instance=instance,
                 raise_on_error=False,
             )
-            failure_events = [e for e in run.event_list if e.event_type_value == "STEP_FAILURE"]
+            failure_events = [
+                e for e in run.event_list if e.event_type_value == "STEP_FAILURE"
+            ]
             assert len(failure_events) == 1
             fd = run.result_for_solid("retry_op").failure_data
             assert fd.error.cause.cls_name == "TypeError"
@@ -535,10 +555,12 @@ def test_interrupt_step_launcher(mode):
                     },
                     "io_manager": {"config": {"base_dir": tmpdir}},
                 },
-                "solids": {"sleepy_solid": {"config": {"tempfile": success_tempfile}}},
+                "solids": {"sleepy_op": {"config": {"tempfile": success_tempfile}}},
             }
 
-            interrupt_thread = Thread(target=_send_interrupt_thread, args=(success_tempfile,))
+            interrupt_thread = Thread(
+                target=_send_interrupt_thread, args=(success_tempfile,)
+            )
 
             interrupt_thread.start()
 

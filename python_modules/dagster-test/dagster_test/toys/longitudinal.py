@@ -3,8 +3,14 @@ import time
 from datetime import datetime
 from random import random
 
-from dagster import AssetMaterialization, Nothing, fs_io_manager
-from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, pipeline, solid
+from dagster import Out, op, AssetMaterialization, Nothing, fs_io_manager
+from dagster._legacy import (
+    InputDefinition,
+    ModeDefinition,
+    OutputDefinition,
+    pipeline,
+    solid,
+)
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 
 TRAFFIC_CONSTANTS = {
@@ -35,7 +41,11 @@ def growth_rate(partition_date):
 
 
 def users_data_size(partition_date):
-    return TRAFFIC_CONSTANTS[partition_date.weekday()] * 10000 * growth_rate(partition_date)
+    return (
+        TRAFFIC_CONSTANTS[partition_date.weekday()]
+        * 10000
+        * growth_rate(partition_date)
+    )
 
 
 def video_views_data_size(partition_date):
@@ -58,14 +68,18 @@ def make_solid(
     sleep_factor=None,
     has_input=False,
 ):
-    @solid(
+    @op(
         name=name,
         config_schema={"partition": str},
-        input_defs=[InputDefinition("the_input", dagster_type=Nothing)] if has_input else [],
-        output_defs=[OutputDefinition(Nothing)],
+        input_defs=[InputDefinition("the_input", dagster_type=Nothing)]
+        if has_input
+        else [],
+        out=Out(Nothing),
     )
-    def made_solid(context):
-        partition_date = datetime.strptime(context.solid_config["partition"], DEFAULT_DATE_FORMAT)
+    def made_op(context):
+        partition_date = datetime.strptime(
+            context.op_config["partition"], DEFAULT_DATE_FORMAT
+        )
         if data_size_fn:
             data_size = data_size_fn(partition_date)
             sleep_time = sleep_factor * data_size
@@ -82,10 +96,10 @@ def make_solid(
             yield AssetMaterialization(
                 asset_key=asset_key,
                 metadata=metadata,
-                partition=context.solid_config.get("partition"),
+                partition=context.op_config.get("partition"),
             )
 
-    return made_solid
+    return made_op
 
 
 @pipeline(

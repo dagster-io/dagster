@@ -1,6 +1,9 @@
 import pytest
 
 from dagster import (
+    In,
+    Out,
+    op,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
     Int,
@@ -23,22 +26,22 @@ def builder(graph):
     return graph.add_one(graph.return_one())
 
 
-@lambda_solid
+@op
 def return_one():
     return 1
 
 
-@lambda_solid
+@op
 def return_two():
     return 2
 
 
-@lambda_solid
+@op
 def return_three():
     return 3
 
 
-@lambda_solid(input_defs=[InputDefinition("num")])
+@op(ins={"num": In()})
 def add_one(num):
     return num + 1
 
@@ -50,7 +53,9 @@ def test_basic_use_case():
         dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
     )
 
-    assert execute_pipeline(pipeline_def).result_for_solid("add_one").output_value() == 2
+    assert (
+        execute_pipeline(pipeline_def).result_for_solid("add_one").output_value() == 2
+    )
 
 
 def test_basic_use_case_with_dsl():
@@ -62,7 +67,7 @@ def test_basic_use_case_with_dsl():
 
 
 def test_two_inputs_without_dsl():
-    @lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
+    @op(ins={"num_one": In(), "num_two": In()})
     def subtract(num_one, num_two):
         return num_one - num_two
 
@@ -77,11 +82,13 @@ def test_two_inputs_without_dsl():
         },
     )
 
-    assert execute_pipeline(pipeline_def).result_for_solid("subtract").output_value() == -1
+    assert (
+        execute_pipeline(pipeline_def).result_for_solid("subtract").output_value() == -1
+    )
 
 
 def test_two_inputs_with_dsl():
-    @lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
+    @op(ins={"num_one": In(), "num_two": In()})
     def subtract(num_one, num_two):
         return num_one - num_two
 
@@ -101,17 +108,12 @@ def test_basic_aliasing_with_dsl():
 
 
 def test_diamond_graph():
-    @solid(
-        output_defs=[
-            OutputDefinition(name="value_one"),
-            OutputDefinition(name="value_two"),
-        ]
-    )
+    @op(out={"value_one": Out(), "value_two": Out()})
     def emit_values(_context):
         yield Output(1, "value_one")
         yield Output(2, "value_two")
 
-    @lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
+    @op(ins={"num_one": In(), "num_two": In()})
     def subtract(num_one, num_two):
         return num_one - num_two
 
@@ -141,27 +143,27 @@ def test_two_cliques():
 
 
 def test_deep_graph():
-    @solid(config_schema=Int)
+    @op(config_schema=Int)
     def download_num(context):
-        return context.solid_config
+        return context.op_config
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def unzip_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def ingest_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def subsample_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def canonicalize_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def load_num(num):
         return num + 3
 
@@ -183,7 +185,7 @@ def test_unconfigurable_inputs_pipeline():
     class NewType:
         pass
 
-    @lambda_solid(input_defs=[InputDefinition("_", NewType)])
+    @op(ins={"_": In(NewType)})
     def noop(_):
         pass
 
@@ -200,11 +202,11 @@ def test_unconfigurable_inputs_pipeline():
 
 
 def test_dupe_defs_fail():
-    @lambda_solid(name="same")
+    @op(name="same")
     def noop():
         pass
 
-    @lambda_solid(name="same")
+    @op(name="same")
     def noop2():
         pass
 
@@ -220,7 +222,7 @@ def test_dupe_defs_fail():
 
 
 def test_composite_dupe_defs_fail():
-    @lambda_solid
+    @op
     def noop():
         pass
 
@@ -255,11 +257,11 @@ def test_composite_dupe_defs_fail():
 
 
 def test_two_inputs_with_reversed_input_defs_and_dsl():
-    @solid(input_defs=[InputDefinition("num_two"), InputDefinition("num_one")])
+    @op(ins={"num_two": In(), "num_one": In()})
     def subtract_ctx(_context, num_one, num_two):
         return num_one - num_two
 
-    @lambda_solid(input_defs=[InputDefinition("num_two"), InputDefinition("num_one")])
+    @op(ins={"num_two": In(), "num_one": In()})
     def subtract(num_one, num_two):
         return num_one - num_two
 
@@ -275,7 +277,7 @@ def test_two_inputs_with_reversed_input_defs_and_dsl():
 
 
 def test_single_non_positional_input_use():
-    @lambda_solid(input_defs=[InputDefinition("num")])
+    @op(ins={"num": In()})
     def add_one_kw(**kwargs):
         return kwargs["num"] + 1
 
@@ -289,7 +291,7 @@ def test_single_non_positional_input_use():
 
 
 def test_single_positional_single_kwarg_input_use():
-    @lambda_solid(input_defs=[InputDefinition("num_two"), InputDefinition("num_one")])
+    @op(ins={"num_two": In(), "num_one": In()})
     def subtract_kw(num_one, **kwargs):
         return num_one - kwargs["num_two"]
 
@@ -304,13 +306,7 @@ def test_single_positional_single_kwarg_input_use():
 
 
 def test_bad_positional_input_use():
-    @lambda_solid(
-        input_defs=[
-            InputDefinition("num_two"),
-            InputDefinition("num_one"),
-            InputDefinition("num_three"),
-        ]
-    )
+    @op(ins={"num_two": In(), "num_one": In(), "num_three": In()})
     def add_kw(num_one, **kwargs):
         return num_one + kwargs["num_two"] + kwargs["num_three"]
 
