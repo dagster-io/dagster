@@ -26,7 +26,6 @@ setup(
         "dbt-core",
         "dbt-duckdb",
         "dbt-snowflake",
-        "dagit",
         "duckdb!=0.3.3",  # missing wheels
         "mock",
         # DataFrames were not written to Snowflake, causing errors
@@ -41,5 +40,5 @@ setup(
         "sklearn",
         "snowflake-sqlalchemy",
     ],
-    extras_require={"tests": ["mypy", "pylint", "pytest"]},
+    extras_require={"dev": ["dagit", "pytest"], "tests": ["mypy", "pylint", "pytest"]},
 )
