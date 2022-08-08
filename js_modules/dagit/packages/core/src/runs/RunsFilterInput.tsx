@@ -13,7 +13,6 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RunStatus, RunsFilter} from '../types/globalTypes';
 import {DagsterRepoOption, useRepositoryOptions} from '../workspace/WorkspaceContext';
 
-import {canAddTagToFilter} from './RunTags';
 import {
   RunsSearchSpaceQuery,
   RunsSearchSpaceQuery_pipelineRunTags,
@@ -158,7 +157,6 @@ function searchSuggestionsForRuns(
       values: () => {
         const all: string[] = [];
         [...(pipelineRunTags || [])]
-          .filter(({key}) => canAddTagToFilter(key))
           .sort((a, b) => a.key.localeCompare(b.key))
           .forEach((t) => t.values.forEach((v) => all.push(`${t.key}=${v}`)));
         return all;

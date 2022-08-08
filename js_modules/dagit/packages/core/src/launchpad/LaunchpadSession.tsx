@@ -294,7 +294,7 @@ const LaunchpadSession: React.FC<LaunchpadSessionProps> = (props) => {
               ...(currentSession.solidSelectionQuery
                 ? [
                     {
-                      key: DagsterTag.SolidSelection,
+                      key: DagsterTag.OpSelection,
                       value: currentSession.solidSelectionQuery,
                     },
                   ]
