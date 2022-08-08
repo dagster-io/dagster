@@ -481,7 +481,21 @@
   {
     "title": "Guides",
     "icon": "Search",
-    "path": "/guides"
+    "path": "/guides",
+    "children": [
+      {
+        "title": "General",
+        "path": "/guides/general"
+      },
+      {
+        "title": "Best practices",
+        "path": "/guides/best-practices"
+      },
+      {
+        "title": "Experimental features",
+        "path": "/guides/experimental-features"
+      }
+    ]
   },
   {
     "title": "API Reference",
