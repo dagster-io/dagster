@@ -1,25 +1,25 @@
 ---
-title: Getting started with Dagster Cloud using a Serverless Deployment | Dagster Cloud
+title: Getting started with Dagster Cloud using Serverless Deployment | Dagster Cloud
 description: "Get up and running with Dagster Cloud using a Serverless Deployment."
 
 platform_type: "cloud"
 ---
 
-# Getting Started with Dagster Cloud using a Serverless Deployment
+# Getting started with Dagster Cloud using Serverless Deployment
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-In this guide, we'll give you everything you need to get up and running with Dagster Cloud using a [Serverless Deployment](/dagster-cloud/deployment/serverless). Serverless Deployment is a fully-managed version of Dagster Cloud that allows you to run your Dagster jobs without spinning up any infrastructure.
+In this guide, we'll give you everything you need to get up and running with Dagster Cloud using [Serverless Deployment](/dagster-cloud/deployment/serverless). Serverless Deployment is a fully-managed version of Dagster Cloud that allows you to run your Dagster jobs without spinning up any infrastructure.
 
-We'll walk you through setting up your Dagster Cloud account, activating Serverless, loading your code, launching your first run, and configuring continuous integration.
+We'll walk you through setting up your Dagster Cloud account, activating Serverless, loading your code, launching your first run, and configuring Continuous Integration (CI).
 
 **Before you get started, note that**:
 
 - Serverless Deployments are still in **early access**
 - This deployment type works best with jobs that aren't computationally expensive. Refer to the [Serverless guide](/dagster-cloud/deployment/serverless) for more info.
-- If you find that Serverless isn't right for you, you can switch to a [Hybrid deployment](/dagster-cloud/deployment/hybrid) at any time.
+- If you find that Serverless isn't right for you, you can switch to a [Hybrid deployment](/dagster-cloud/deployment/hybrid) at any time
 
-To use a Hybrid deployment instead, refer to the [Getting started with a Hybrid deployment guide](/dagster-cloud/getting-started/getting-started-with-hybrid-deployment).
+To use Hybrid Deployment instead, refer to the [Getting started using Hybrid Deployment guide](/dagster-cloud/getting-started/getting-started-with-hybrid-deployment).
 
 ---
 
@@ -41,21 +41,19 @@ You'll also be asked to create a Dagster Cloud organization. When your organizat
 
 ## Step 2: Select Serverless as your deployment type
 
-Serverless Deployment is a fully-managed version of Dagster Cloud that allows you to run your Dagster jobs without spinning up any infrastructure. While Serverless is the easiest way to get started with Dagster, this deployment type works best with jobs that aren't computationally expensive. Refer to the [Serverless guide](/dagster-cloud/deployment/serverless) for more info.
+Next, you'll be prompted to select a deployment type. Click **Select** under **Serverless deployment** and confirm when prompted.
 
-If you find that Serverless isn't right for you, you can switch to a Hybrid deployment at any time.
-
-**To use this deployment type**, click **Select** under **Serverless deployment** and confirm when prompted.
+**Note**: If you find that Serverless isn't right for you, you can switch to Hybrid Deployment at any time.
 
 ---
 
 ## Step 3: Deploy your code
 
-Now that you've set up your deployment, you'll need to tell it the location of your Dagster code.
+Now that you've set up your deployment, you'll need to tell Dagster Cloud the location of your Dagster code.
 
 A code location specifies a single Python package or file that defines your Dagster code. Each Dagster Cloud deployment can include code from one or more code locations. Refer to the [Adding a code location guide](/dagster-cloud/developing-testing/code-locations) for more info.
 
-There are two ways you can deploy your code to Dagster Cloud:
+There are two ways to deploy your code to Dagster Cloud:
 
 - [**Using GitHub**](#using-github) - If you're a GitHub user, this is the easiest way to deploy your code.
 
