@@ -14,7 +14,7 @@ Using this approach to branch deployments may be a good fit if:
 - You use GitHub for version control
 - You want Dagster to fully automate Branch Deployments
 
-**If you don't use GitHub for version control or want full control over your setup**, check out the [Branch deployments with the `dagster-cloud CLI` guide](/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments).
+**If you don't use GitHub for version control or want full control over your setup**, check out the [Branch deployments with the `dagster-cloud` CLI guide](/dagster-cloud/developing-testing/branch-deployments/using-branch-deployments).
 
 ---
 
@@ -23,60 +23,111 @@ Using this approach to branch deployments may be a good fit if:
 To complete the steps in this guide, you'll need:
 
 - **Editor** or **Admin** permissions in Dagster Cloud
-- **The ability to run a new agent in your infrastructure**. This isn't required if you're using [Serverless deployment](/dagster-cloud/deployment/serverless).
-- **The ability to configure GitHub Actions for your repository**. This isn't required if you used the Dagster Cloud GitHub app to connect your repository as a [code location](/dagster-cloud/developing-testing/code-locations).
+
+- **The following, if using [Hybrid Deployment](/dagster-cloud/deployment/hybrid)**:
+
+  - The ability to run a new agent in your infrastructure
+  - The ability to configure GitHub Actions for your repository
+
+- **The following, if using [Serverless Deployment](/dagster-cloud/deployment/serverless)**:
+  - The ability to configure GitHub Actions for your repository, if adding a code location after completing [onboarding](/dagster-cloud/getting-started)
+  - Access to the Serverless agent's token in Dagster Cloud. Refer to the [Managing user and agent tokens guide](/dagster-cloud/account/managing-user-agent-tokens) for more info.
 
 ---
 
-## Step 1: Generate a Dagster Cloud agent token
+## Step 1: Configure a Dagster Cloud agent
+
+<Note>
+  If you're using Serverless deployment, this step isn't required.{" "}
+  <a href="#step-2-configure-the-github-repository">Skip to the next step</a>.
+</Note>
+
+In this section, you'll:
+
+1. [Generate an agent token](#step-11-generate-an-agent-token)
+2. [Create and configure the agent](#step-12-create-and-configure-the-agent)
+
+### Step 1.1: Generate an agent token
 
 <GenerateAgentToken />
 
----
-
-## Step 2: Create and configure an agent
+### Step 1.2: Create and configure the agent
 
 <BDCreateConfigureAgent />
 
 ---
 
-## Step 3: Add GitHub workflow files to your repository
+## Step 2: Configure the GitHub repository
+
+-
+-
 
 <Note>
-  If you used the GitHub app to add the repository as a code location, this step
-  isn't required.{" "}
-  <a href="#step-4-configure-the-github-repository">Skip to the next step</a>.
-</Note>
+  If any of the following apply, this step is required:
 
-In this step, you'll add the required GitHub workflow files to your GitHub repository. The files can be found in our [Branch Deployments quickstart repository](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart).
+{" "}
+
+<ul>
+  <li>You're using Hybrid Deployment</li>
+  <li>
+    You're using Serverless Deployment <strong>AND</strong> adding a new code
+    location after completing{" "}
+    <a href="/dagster-cloud/getting-started">onboarding</a>
+  </li>
+</ul>
+
+Otherwise, <a href="#step-3-access-the-branch-deployment">skip to the next step</a>. </Note>
+
+In this section, you'll:
+
+1. [Add the GitHub workflow files to your repository](#step-21-add-github-workflow-files-to-your-repository)
+2. [Add the agent registry to `dagster_cloud.yaml`](#step-22-add-the-agent-registry-to-dagster_cloudyaml)
+3. [Configure GitHub Action secrets](#step-23-configure-github-action-secrets)
+4. [Update GitHub Workflow files](#step-24-update-github-workflow-files)
+5. [Verify Action runs](#step-25-verify-action-runs)
+
+### Step 2.1: Add GitHub workflow files to your repository
+
+In this step, you'll add the required GitHub workflow files to your GitHub repository.
+
+The files vary slightly depending on the type of deployment you're using. Select your deployment type to display links to the files for your deployment type:
+
+<details>
+  <summary><strong>SERVERLESS DEPLOYMENT</strong></summary>
+
+The files can be found in our [Serverless quickstart repository](https://github.com/dagster-io/dagster-cloud-serverless-quickstart).
 
 Copy the following files to your repository:
 
-- [`dagster_cloud.yaml`](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart/blob/main/dagster_cloud.yaml)
+- [`dagster_cloud.yaml`](https://github.com/dagster-io/dagster-cloud-serverless-quickstart/blob/main/dagster_cloud.yaml)
+- [`.github/workflows/branch_deployments.yml`](https://github.com/dagster-io/dagster-cloud-serverless-quickstart/blob/main/.github/workflows/branch_deployments.yml)
+- [`.github/workflows/deploy.yml`](https://github.com/dagster-io/dagster-cloud-serverless-quickstart/blob/main/.github/workflows/deploy.yml)
+
+</details>
+
+<details>
+  <summary><strong>HYBRID DEPLOYMENT</strong></summary>
+
+The files can be found in our [Branch Deployments quickstart repository](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart).
+
+Copy the following files to your repository:
+
+- [`cloud_workspace.yaml`](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart/blob/main/cloud_workspace.yaml) - **Note**: Save this file as `dagster_cloud.yaml`
 - [`.github/workflows/branch_deployments.yml`](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart/blob/main/.github/workflows/branch_deployments.yml)
 - [`.github/workflows/deploy.yml`](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart/blob/main/.github/workflows/deploy.yml)
 
 In the next step, you'll modify these files to work with your Dagster Cloud setup.
 
----
+</details>
 
-## Step 4: Configure the GitHub repository
-
-In this section, you'll:
-
-1. [Add the agent registry to `dagster_cloud.yaml`](#step-41-add-the-agent-registry-to-dagster_cloudyaml)
-2. [Configure GitHub Action secrets](#step-42-configure-github-action-secrets)
-3. [Update GitHub Workflow files](#step-43-update-github-workflow-files)
-4. [Verify Action runs](#step-44-verify-action-runs)
-
-### Step 4.1: Add the agent registry to dagster_cloud.yaml
+### Step 2.2: Add the agent registry to dagster_cloud.yaml
 
 <Note>
   If you're using Serverless deployment, this step isn't required.{" "}
-  <a href="#step-42-configure-github-action-secrets">Skip to the next step</a>.
+  <a href="#step-23-configure-github-action-secrets">Skip to the next step</a>.
 </Note>
 
-In the `dagster_cloud.yaml` file, replace `build.registry` with the registry used by the [agent you created in Step 2](#step-2-create-and-configure-an-agent).
+In the `dagster_cloud.yaml` file, replace `build.registry` with the registry used by the [agent you created in Step 1](#step-1-configure-a-dagster-cloud-agent).
 
 For example:
 
@@ -92,7 +143,40 @@ locations:
       registry: 764506304434.dkr.ecr.us-east-1.amazonaws.com/branch-deployment-agent
 ```
 
-### Step 4.2: Configure GitHub Action secrets
+### Step 2.3: Configure GitHub Action secrets
+
+In this step, you'll configure the secrets used by the Branch Deployments GitHub Action. The steps and required secrets vary a bit depending on the type of deployment you're using.
+
+Select your deployment type below to view instructions.
+
+<details>
+  <summary><strong>SERVERLESS DEPLOYMENTS</strong></summary>
+
+1. In the repository, click the **Settings** tab.
+2. In the **Security** section of the sidebar, click **Secrets > Actions**.
+3. Click **New repository secret**.
+4. In the **Name** field, enter the name of the secret. For example, `DAGSTER_CLOUD_API_TOKEN`
+5. In the **Value** field, paste the value of the secret.
+6. Click **Add secret**.
+
+Repeat steps 3-6 for each of the following:
+
+- `DAGSTER_CLOUD_API_TOKEN` - The Serverless agent token. Refer to the [Managing user and agent tokens guide](/dagster-cloud/account/managing-user-agent-tokens) for more info.
+- `DAGSTER_CLOUD_URL` - The URL of your Dagster Cloud instance. For example, `https://hooli.dagster.cloud/prod`
+
+The **Actions secrets** page should look like the following:
+
+<Image
+alt="Configured GitHub Actions secrets for a Serverless Deployment"
+src="/images/dagster-cloud/developing-testing/branch-deployments/github-serverless-secrets.png"
+width={811}
+height={309}
+/>
+
+</details>
+
+<details>
+  <summary><strong>HYBRID DEPLOYMENTS</strong></summary>
 
 1. In the repository, click the **Settings** tab.
 2. In the **Security** section of the sidebar, click **Secrets > Actions**.
@@ -106,10 +190,10 @@ Repeat steps 3-6 for each of the secrets required for your registry type:
 <details>
   <summary><strong>AMAZON ECR</strong></summary>
 
-- `DAGSTER_CLOUD_API_TOKEN` - The Dagster Cloud agent token you created in [Step 1](#step-1-generate-a-dagster-cloud-agent-token)
+- `DAGSTER_CLOUD_API_TOKEN` - The Dagster Cloud agent token you created in [Step 1.1](#step-11-generate-an-agent-token)
 - `ORGANIZATION_ID` - Your Dagster Cloud organization ID
-- `AWS_ACCESS_KEY` - The **Access key ID** of the AWS IAM user you created in [Step 2](#step-2-create-and-configure-an-agent)
-- `AWS_SECRET_ACCESS_KEY` - The **Secret access key** of the AWS IAM user you created in [Step 2](#step-2-create-and-configure-an-agent)
+- `AWS_ACCESS_KEY` - The **Access key ID** of the AWS IAM user you created in [Step 1.2](#step-12-create-and-configure-the-agent)
+- `AWS_SECRET_ACCESS_KEY` - The **Secret access key** of the AWS IAM user you created in [Step 1.2](#step-12-create-and-configure-the-agent)
 
 The **Actions secrets** page should look like the following:
 
@@ -125,10 +209,10 @@ height={623}
 <details>
   <summary><strong>DOCKERHUB</strong></summary>
 
-- `DAGSTER_CLOUD_API_TOKEN` - The Dagster Cloud agent token you created in [Step 1](#step-1-generate-a-dagster-cloud-agent-token)
+- `DAGSTER_CLOUD_API_TOKEN` - The Dagster Cloud agent token you created in [Step 1.1](#step-11-generate-an-agent-token)
 - `ORGANIZATION_ID` - Your Dagster Cloud organization ID
 - `DOCKERHUB_USERNAME` - Your DockerHub username
-- `DOCKERHUB_TOKEN` - <!-- https://docs.docker.com/docker-hub/access-tokens/#create-an-access-token -->
+- `DOCKERHUB_TOKEN` - A DockerHub access token. Refer to the [DockerHub docs](https://docs.docker.com/docker-hub/access-tokens/#create-an-access-token) for more info.
 
 The **Actions secrets** page should look like the following:
 
@@ -140,8 +224,14 @@ height={318}
 />
 
 </details>
+</details>
 
-### Step 4.3: Update GitHub Workflow files
+### Step 2.4: Update GitHub Workflow files
+
+<Note>
+  If you're using Serverless deployment, this step isn't required.{" "}
+  <a href="#step-25-verify-action-runs">Skip to the next step</a>.
+</Note>
 
 In this step, you'll update the GitHub Workflow files in the repository to set up Docker registry access.
 
@@ -161,7 +251,7 @@ steps:
 
 Save and commit the files to the repository.
 
-### Step 4.4: Verify Action runs
+### Step 2.5: Verify Action runs
 
 The last step is to verify that the Action runs successfully.
 
@@ -179,7 +269,7 @@ If the run finished successfully, that's it!
 
 ---
 
-## Step 5: Access the branch deployment
+## Step 3: Access the branch deployment
 
 Now that Branch Deployments are configured, you can check out the preview in Dagster Cloud. There are two ways to do this:
 
