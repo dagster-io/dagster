@@ -19,9 +19,9 @@ In this guide, you'll configure Azure Active Directory (AD) to use single sign-o
 
 To complete the steps in this guide, you'll need:
 
-- An existing Azure AD account
-- To have installed the [`dagster-cloud-cli`](https://pypi.org/project/dagster-cloud-cli/) Python package and have access to the `dagster-cloud` CLI
-- The following in Dagster Cloud:
+- **An existing Azure AD account**
+- **To install the [`dagster-cloud` CLI](/dagster-cloud/developing-testing/dagster-cloud-cli)**
+- **The following in Dagster Cloud:**
   - [Access to a user token](/dagster-cloud/account/managing-user-agent-tokens#managing-user-tokens)
   - [Organization Admin permissions](/dagster-cloud/account/managing-users) in your organization
 
@@ -111,7 +111,7 @@ In this section, you'll create a test user in the Azure portal.
 1. From the left pane in the Azure portal, click **Azure Active Directory**.
 2. Click **Users > All users**.
 3. Click **New user** at the top of the screen.
-4. In the **User\_** properties, fill in the following fields:
+4. In **User** properties, fill in the following fields:
    - **Name**: Enter `B.Simon`.
    - **User name**: Enter `B.Simon@contoso.com`.
    - Select the **Show password** check box and write down the value displayed in the **Password** box.
