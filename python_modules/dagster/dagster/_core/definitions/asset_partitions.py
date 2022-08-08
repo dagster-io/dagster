@@ -1,3 +1,5 @@
+from typing import Optional
+
 import dagster._check as check
 from dagster._core.definitions import AssetsDefinition
 
@@ -10,7 +12,7 @@ def get_upstream_partitions_for_partition_range(
     downstream_assets_def: AssetsDefinition,
     upstream_partitions_def: PartitionsDefinition,
     upstream_asset_key: AssetKey,
-    downstream_partition_key_range: PartitionKeyRange,
+    downstream_partition_key_range: Optional[PartitionKeyRange],
 ) -> PartitionKeyRange:
     """Returns the range of partition keys in the upstream asset that include data necessary
     to compute the contents of the given partition key range in the downstream asset.
