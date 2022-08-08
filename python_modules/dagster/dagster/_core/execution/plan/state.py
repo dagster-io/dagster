@@ -2,6 +2,7 @@ from collections import defaultdict
 from typing import Dict, List, NamedTuple, Optional, Set, cast
 
 import dagster._check as check
+from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.retries import RetryState
@@ -158,8 +159,9 @@ class KnownExecutionState(
             if target_run.parent_run_id:
                 run = instance.get_run_by_id(target_run.parent_run_id)
                 if not run:
-                    check.failed(
-                        f"Could not load ancestor run {target_run.parent_run_id} for re-execution"
+                    raise DagsterRunNotFoundError(
+                        f"Could not load ancestor run {target_run.parent_run_id} for re-execution",
+                        invalid_run_id=target_run.parent_run_id,
                     )
                 parent_parent_run, _ = _create_parent_state(run)
 
