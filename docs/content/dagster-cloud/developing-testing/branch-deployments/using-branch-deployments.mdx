@@ -25,7 +25,7 @@ Utilizing Branch Deployments requires setting up two components: the Branch Depl
 
 - **Editor** or **Admin** permissions in Dagster Cloud
 - To install the [`dagster-cloud` CLI](/dagster-cloud/developing-testing/dagster-cloud-cli)
-- The ability to run a new agent in your infrastructure
+- The ability to run a new agent in your infrastructure, if using [Hybrid Deployment](/dagster-cloud/deployment/hybrid)
 - The ability to configure your CI platform
 
 ---
@@ -38,17 +38,26 @@ Utilizing Branch Deployments requires setting up two components: the Branch Depl
 
 ## Step 2: Create and configure an agent
 
+<Note>
+  If you're using Serverless deployment, this step isn't required.{" "}
+  <a href="#step-3-create-a-branch-deployment">Skip to the next step</a>.
+</Note>
+
 <BDCreateConfigureAgent />
 
 ---
 
-## Step 3: Create a branch deployment using the dagster-cloud CLI
+## Step 3: Create a branch deployment
 
-Next, you'll create a branch deployment using the `dagster-cloud` CLI. When the state of a branch or merge request is updated, Dagster Cloud first expects these steps to occur:
+Next, you'll create a branch deployment using the `dagster-cloud` CLI.
+
+When the state of a branch or merge request is updated, Dagster Cloud first expects these steps to occur:
 
 1. A new image containing your code and requirements is built on the branch. Refer to the [Dagster code requirements guide](/dagster-cloud/developing-testing/code-locations).
 
 2. The new image is pushed to a Docker registry accessible to your agent. **Note**: The following examples assume the registry URL and image tag are stored in the `LOCATION_REGISTRY_URL` and `IMAGE_TAG` environment variables, respectively.
+
+**Note**: If using [Serverless Deployments](/dagster-cloud/deployment/serverless), Dagster Cloud handles the above on your behalf.
 
 After the above has occurred:
 
