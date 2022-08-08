@@ -12,6 +12,7 @@ from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
 )
+from dagster import op
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT

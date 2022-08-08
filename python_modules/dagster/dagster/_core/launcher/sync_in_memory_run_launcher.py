@@ -32,7 +32,7 @@ class SyncInMemoryRunLauncher(RunLauncher, ConfigurableClass):
 
     def launch_run(self, context: LaunchRunContext) -> None:
         recon_pipeline = recon_pipeline_from_origin(context.pipeline_code_origin)  # type: ignore
-        execute_run(recon_pipeline, context.run, self._instance)
+        execute_run(recon_pipeline, context.pipeline_run, self._instance)
 
     def terminate(self, run_id):
         check.not_implemented("Termination not supported.")

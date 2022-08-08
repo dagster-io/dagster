@@ -91,7 +91,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             )
 
     def launch_run(self, context: LaunchRunContext) -> None:
-        run = context.run
+        run = context.pipeline_run
 
         check.inst_param(run, "run", PipelineRun)
 

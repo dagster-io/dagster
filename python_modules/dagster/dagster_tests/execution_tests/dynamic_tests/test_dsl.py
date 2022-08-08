@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import Any, DagsterInvalidDefinitionError, DynamicOutput, op
+from dagster import Any, DagsterInvalidDefinitionError, DynamicOutput, op, DynamicOut
 from dagster._legacy import (
     DynamicOutputDefinition,
     OutputDefinition,

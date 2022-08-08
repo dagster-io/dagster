@@ -1,6 +1,6 @@
 import tempfile
 
-from dagster import fs_io_manager, reconstructable
+from dagster import fs_io_manager, reconstructable, op
 from dagster._core.test_utils import instance_for_test
 from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
 

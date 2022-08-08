@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from dagster import repository
+from dagster import repository, op
 from dagster._core.host_representation import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,

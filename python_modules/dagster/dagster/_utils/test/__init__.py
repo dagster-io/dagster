@@ -1,6 +1,7 @@
 import os
 import shutil
 import tempfile
+import uuid
 from collections import defaultdict
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, AbstractSet, Any, Dict, Generator, Optional, Union, overload
@@ -11,11 +12,11 @@ from dagster import (
     DependencyDefinition,
     Failure,
     NodeInvocation,
+    RepositoryDefinition,
     TypeCheck,
 )
 from dagster import _check as check
-from dagster import op
-from dagster._core.definitions import ModeDefinition, PipelineDefinition
+from dagster._core.definitions import ModeDefinition, PipelineDefinition, lambda_solid
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
@@ -39,13 +40,24 @@ from dagster._core.execution.context_creation_pipeline import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler import Scheduler
+from dagster._core.scheduler.scheduler import DagsterScheduleDoesNotExist, DagsterSchedulerError
 from dagster._core.snap import snapshot_from_execution_plan
+from dagster._core.storage.file_manager import LocalFileManager
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utility_solids import define_stub_solid
+from dagster._core.utils import make_new_run_id
 from dagster._serdes import ConfigurableClass
 
 # pylint: disable=unused-import
+from ..temp_file import (
+    get_temp_dir,
+    get_temp_file_handle,
+    get_temp_file_handle_with_data,
+    get_temp_file_name,
+    get_temp_file_name_with_data,
+    get_temp_file_names,
+)
 from ..typing_api import is_typing_type
 
 if TYPE_CHECKING:

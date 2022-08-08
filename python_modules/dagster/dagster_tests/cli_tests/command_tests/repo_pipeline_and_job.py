@@ -12,11 +12,6 @@ def my_job():
     my_op()
 
 
-@op
-def my_op():
-    pass
-
-
 @pipeline
 def my_pipeline():
     my_op()

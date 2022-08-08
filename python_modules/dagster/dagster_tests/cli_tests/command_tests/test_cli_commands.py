@@ -192,11 +192,6 @@ def memoizable_pipeline():
     my_op()
 
 
-@op(version="foo")
-def my_op():
-    return 5
-
-
 @job(
     tags={MEMOIZED_RUN_TAG: "true"},
     resource_defs={"io_manager": versioned_filesystem_io_manager},

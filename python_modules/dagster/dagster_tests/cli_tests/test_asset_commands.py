@@ -1,7 +1,7 @@
 import pytest
 from click.testing import CliRunner
 
-from dagster import AssetKey, AssetMaterialization, Output
+from dagster import AssetKey, AssetMaterialization, Output, op
 from dagster._cli.asset import asset_wipe_command
 from dagster._core.instance import DagsterInstance
 from dagster._legacy import execute_pipeline, pipeline

@@ -167,7 +167,7 @@ def make_email_on_run_failure_sensor(
 
         email_body = email_body_fn(context)
         if dagit_base_url:
-            email_body += f'<p><a href="{dagit_base_url}/instance/runs/{context.run.run_id}">View in Dagit</a></p>'
+            email_body += f'<p><a href="{dagit_base_url}/instance/runs/{context.dagster_run.run_id}">View in Dagit</a></p>'
 
         message = EMAIL_MESSAGE.format(
             email_to=",".join(email_to),

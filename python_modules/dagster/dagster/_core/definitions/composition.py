@@ -1137,7 +1137,7 @@ def do_composition(
         input_mappings,
         output_mappings,
         context.dependencies,
-        context.op_defs,
+        context.solid_defs,
         config_mapping,
         compute_fn.positional_inputs(),
     )

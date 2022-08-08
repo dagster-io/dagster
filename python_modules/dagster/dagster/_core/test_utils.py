@@ -389,7 +389,7 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
         super().__init__()
 
     def submit_run(self, context: SubmitRunContext):
-        pipeline_run = context.run
+        pipeline_run = context.pipeline_run
         check.inst(pipeline_run.external_pipeline_origin, ExternalPipelineOrigin)
         self._queue.append(pipeline_run)
         return pipeline_run

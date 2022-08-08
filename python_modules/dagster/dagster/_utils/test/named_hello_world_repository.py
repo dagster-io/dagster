@@ -1,4 +1,4 @@
-from dagster._core.definitions import pipeline, repository
+from dagster._core.definitions import pipeline, repository, op
 
 
 @op
