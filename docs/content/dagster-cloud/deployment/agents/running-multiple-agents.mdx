@@ -7,7 +7,7 @@ platform_type: "cloud"
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-Each Dagster Cloud instance deployment needs to have at least one agent running. Since the agent is lightweight and can tolerate short downtimes (e.g. during an upgrade), a single agent is adequate for most use cases.
+Each Dagster Cloud full deployment (e.g., `prod`) needs to have at least one agent running. Since the agent is lightweight and can tolerate short downtimes such as during an upgrade, a single agent is adequate for most use cases.
 
 If you want to distribute runs across multiple Kubernetes clusters, ECS clusters, EC2 instances, or other environments, you can run multiple agents. For example, one in each cluster, instance, etc.
 

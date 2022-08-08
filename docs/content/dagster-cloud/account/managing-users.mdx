@@ -32,13 +32,13 @@ Before you start, note that:
 
 - **Users are managed on a per-deployment basis**. **Organization Admins** are the exception and have access to the entire organization.
 
-  For example, if you have two instance deployments (`prod` and `dev`), users who aren't **Organization Admins** must be added to each deployment to have access.
+  For example, if you have two full deployments (`prod` and `dev`), users who aren't **Organization Admins** must be added to each deployment to have access.
 
 - **If using Google for SSO**, users must be added in Dagster Cloud before they can log in.
 
 - **If using a SAML-based solution like Okta**, users must be assigned to the Dagster app in the SSO portal to log in. These users will be granted Viewer permissions by default.
 
-To add a new user to an instance deployment:
+To add a new user to a deployment:
 
 1. Sign in to your Dagster Cloud account.
 
@@ -47,7 +47,7 @@ To add a new user to an instance deployment:
 3. Fill in the following:
 
    - **Email** - Enter the user's email address
-   - **Role** - Select the [user role](#understanding-user-permissions) for the user. **Note**: With the exception of the **Organization Admin** role, this role will only apply to the instance deployment you're adding the user to.
+   - **Role** - Select the [user role](#understanding-user-permissions) for the user. **Note**: With the exception of the **Organization Admin** role, this role will only apply to the full deployment you're adding the user to.
 
    For example:
 
@@ -62,7 +62,7 @@ To add a new user to an instance deployment:
 
 ### Removing a user
 
-To remove a user from an instance deployment:
+To remove a user from a deployment:
 
 1. Sign in to your Dagster Cloud account.
 2. Click the **user menu (your icon) > Cloud Settings**.
@@ -70,7 +70,7 @@ To remove a user from an instance deployment:
 4. Click **Remove**.
 5. When prompted, confirm the removal.
 
-**Note**: This won't remove user from other instance deployments. For example, if a user has been added to both `prod` and `dev` but only removed in `prod`, they'll still be a user in `dev`.
+**Note**: This won't remove users from other deployments. For example, if a user has been added to both `prod` and `dev` but only removed in `prod`, they'll still be a user in `dev`.
 
 ---
 
