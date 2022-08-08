@@ -52,6 +52,7 @@ When you create a new Dagster Cloud organization, you'll be prompted to choose S
 If you don't want to use our GitHub integration, we offer a powerful CLI that you can use in another CI environment or on your local laptop.
 
 First, [create a new project](https://docs.dagster.io/getting-started/create-new-project#create-a-new-project) with the Dagster open-source CLI.
+
 ```shell
 pip install dagster
 dagster project scaffold \
@@ -62,25 +63,26 @@ dagster project scaffold \
 Once scaffolded, add `dagster-cloud` as a dependency in your `setup.py` file.
 
 Next, install the [dagster-cloud CLI](/dagster-cloud/developing-testing/dagster-cloud-cli) and log in to your org. **Note**: The CLI requires a recent version of Python 3 and Docker.
+
 ```shell
 pip install dagster-cloud
 dagster-cloud configure
 ```
 
 Finally, deploy your project with Dagster Cloud Serverless:
+
 ```shell
 dagster-cloud serverless deploy \
   --location-name example \
   --package-name my-dagster-project
 ```
 
-
 ### Adding secrets
 
 Often you'll need to securely access secrets from your jobs. With Dagster Cloud Serverless, secrets are added as environment variables that can be read using APIs like [StringSource](/guides/dagster/transitioning-data-pipelines-from-development-to-production#part-two-deployment).
 
-* If you're using our GitHub integration, all [GitHub Actions Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets) are available as environment variables.
-* If you're using the CLI directly, you can pass `KEY=VALUE` pairs using the `--env` flag. Run `dagster-cloud serverless deploy --help` to learn more.
+- If you're using our GitHub integration, all [GitHub Actions Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets) are available as environment variables.
+- If you're using the CLI directly, you can pass `KEY=VALUE` pairs using the `--env` flag. Run `dagster-cloud serverless deploy --help` to learn more.
 
 ---
 
