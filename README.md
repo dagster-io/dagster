@@ -19,6 +19,14 @@
 
 # [Dagster](https://dagster.io/) &middot; [![Github license](https://img.shields.io/badge/License-Apache_2.0-blue.svg?label=license&labelColor=4F43DD&color=163B36)](https://github.com/dagster-io/dagster/blob/master/LICENSE) [![PyPI version](https://img.shields.io/pypi/v/dagster?labelColor=4F43DD&color=163B36)](https://pypi.org/project/dagster/) [![Coveralls coverage](https://img.shields.io/coveralls/github/dagster-io/dagster/master?labelColor=4F43DD&color=163B36)](https://coveralls.io/github/dagster-io/dagster?branch=master) ![Supported Python versions](https://img.shields.io/pypi/pyversions/dagster?labelColor=4F43DD&color=163B36)
 
+Dagster is an orchestrator that's designed for developing and maintaining data assets, such as tables, data sets, machine learning models, and reports.
+
+You declare functions that you want to run and the data assets that those functions produce or update. Dagster then helps you run your functions at the right time and keep your assets up-to-date.
+
+Dagster is built to be used at every stage of the data development lifecycle - local development, unit tests, integration tests, staging environments, all the way up to production.
+
+New to Dagster? Check out the Concepts or learn with some hands-on Tutorials.
+
 Dagster is an orchestration platform for the development, production, and observation of data assets.
 
 - **Develop and test locally, then deploy anywhere:** With Dagster, the same computations can run
