@@ -1,0 +1,71 @@
+---
+title: "Dagster Cloud Environment Variables | Dagster Docs"
+---
+
+# Dagster Cloud environment variables
+
+<Note>This guide is applicable to Dagster Cloud.</Note>
+
+[Dagster Cloud](/dagster-cloud) provides a set of automatically populated environment variables, such as the name of a deployment or details about a branch deployment commit, that can be used to modify behavior based on environment.
+
+**Want to see an example?** Check out the [Testing against production with Dagster Cloud Branch Deployments guide](/guides/dagster/branch_deployments) for an in-depth look at using environment variables to test Dagster code without impacting production.
+
+---
+
+## All deployment variables
+
+The following variables are available in every deployment of your Dagster Cloud instance, including full (e.g., `prod`) and branch deployments.
+
+<ReferenceTable>
+  <ReferenceTableItem propertyName="DAGSTER_CLOUD_DEPLOYMENT_NAME">
+    The name of the Dagster Cloud deployment. For example, <code>prod</code>.
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT">
+    If <code>1</code>, the deployment is a{" "}
+    <a href="/dagster-cloud/developing-testing/branch-deployments">
+      branch deployment
+    </a>
+    . Refer to the <a href="#branch-deployment-variables">
+      Branch Deployment variables section
+    </a> for a list of variables available in branch deployments.
+  </ReferenceTableItem>
+</ReferenceTable>
+
+---
+
+## Branch Deployment variables
+
+The following environment variables are currently available only in a [branch deployment](/dagster-cloud/developing-testing/branch-deployments).
+
+For every commit made to a branch, the following metadata is available:
+
+<ReferenceTable>
+  <ReferenceTableItem propertyName="DAGSTER_CLOUD_GIT_SHA">
+    The SHA of the commit.
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="DAGSTER_CLOUD_GIT_TIMESTAMP">
+    The time the commit occurred.
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="DAGSTER_CLOUD_GIT_AUTHOR_EMAIL">
+    The email of the git user who authored the commit.
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="DAGSTER_CLOUD_GIT_AUTHOR_NAME">
+    The name of the git user who authored the commit.
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="DAGSTER_CLOUD_GIT_MESSAGE">
+    The message associated with the commit.
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="DAGSTER_CLOUD_GIT_BRANCH">
+    The name of the branch associated with the commit.
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="DAGSTER_CLOUD_GIT_REPO">
+    The name of the repository associated with the commit.
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="DAGSTER_CLOUD_PULL_REQUEST_ID">
+    The ID of the pull request associated with the commit.
+  </ReferenceTableItem>
+  <ReferenceTableItem propertyName="DAGSTER_CLOUD_PULL_REQUEST_STATUS">
+    The status of the pull request at the time of the commit. Possible values
+    are <code>OPEN</code>, <code>CLOSED</code>, and <code>MERGED</code>.
+  </ReferenceTableItem>
+</ReferenceTable>

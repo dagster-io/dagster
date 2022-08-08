@@ -419,15 +419,19 @@
             "children": [
               {
                 "title": "dagster-cloud CLI",
-                "path": "/dagster-cloud/developing-testing"
+                "path": "/dagster-cloud/developing-testing/dagster-cloud-cli"
               },
               {
                 "title": "Code locations",
-                "path": "/dagster-cloud/developing-testing"
+                "path": "/dagster-cloud/developing-testing/code-locations"
               },
               {
                 "title": "Branch deployments",
-                "path": "/dagster-cloud/developing-testing"
+                "path": "/dagster-cloud/developing-testing/branch-deployments"
+              },
+              {
+                "title": "Environment variables",
+                "path": "/dagster-cloud/developing-testing/environment-variables"
               }
             ]
           }
