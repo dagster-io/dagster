@@ -34,7 +34,8 @@ if TYPE_CHECKING:
     from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.execution.context.output import OutputContext
 
-TOut = TypeVar("TOut", bound="OutputDefinition")
+TOutputDefinition = TypeVar("TOutputDefinition", bound="OutputDefinition")
+TOut = TypeVar("TOut", bound="Out")
 
 
 class OutputDefinition:
@@ -250,7 +251,9 @@ class OutputDefinition:
                 description=inferred.description,
             )
 
-    def combine_with_inferred(self: TOut, inferred: InferredOutputProps) -> TOut:
+    def combine_with_inferred(
+        self: TOutputDefinition, inferred: InferredOutputProps
+    ) -> TOutputDefinition:
         dagster_type = self.dagster_type
         if self._type_not_set:
             dagster_type = _checked_inferred_type(inferred.annotation)
@@ -438,9 +441,10 @@ class Out(
             asset_partitions_def=asset_partitions_def,
         )
 
-    @staticmethod
-    def from_definition(output_def: "OutputDefinition"):
-        return Out(
+    @classmethod
+    def from_definition(cls, output_def: "OutputDefinition"):
+        klass = Out if not output_def.is_dynamic else DynamicOut
+        return klass(
             dagster_type=output_def.dagster_type,
             description=output_def.description,
             is_required=output_def.is_required,
@@ -451,17 +455,21 @@ class Out(
             asset_partitions_def=output_def.asset_partitions_def,  # pylint: disable=protected-access
         )
 
-    def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
+    def to_definition(
+        self, annotation_type: type, name: Optional[str], description: Optional[str]
+    ) -> "OutputDefinition":
         dagster_type = (
             self.dagster_type
             if self.dagster_type is not NoValueSentinel
             else _checked_inferred_type(annotation_type)
         )
 
-        return OutputDefinition(
+        klass = OutputDefinition if not self.is_dynamic else DynamicOutputDefinition
+
+        return klass(
             dagster_type=dagster_type,
             name=name,
-            description=self.description,
+            description=self.description or description,
             is_required=self.is_required,
             io_manager_key=self.io_manager_key,
             metadata=self.metadata,
@@ -469,6 +477,10 @@ class Out(
             asset_partitions=self.asset_partitions,
             asset_partitions_def=self.asset_partitions_def,
         )
+
+    @property
+    def is_dynamic(self) -> bool:
+        return False
 
 
 class DynamicOut(Out):
@@ -509,7 +521,9 @@ class DynamicOut(Out):
                 summarize_directory(file_results.collect())
     """
 
-    def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
+    def to_definition(
+        self, annotation_type: type, name: Optional[str], description: Optional[str]
+    ) -> "OutputDefinition":
         dagster_type = (
             self.dagster_type
             if self.dagster_type is not NoValueSentinel
@@ -519,13 +533,17 @@ class DynamicOut(Out):
         return DynamicOutputDefinition(
             dagster_type=dagster_type,
             name=name,
-            description=self.description,
+            description=self.description or description,
             is_required=self.is_required,
             io_manager_key=self.io_manager_key,
             metadata=self.metadata,
             asset_key=self.asset_key,
             asset_partitions=self.asset_partitions,
         )
+
+    @property
+    def is_dynamic(self) -> bool:
+        return True
 
 
 class GraphOut(NamedTuple("_GraphOut", [("description", PublicAttr[Optional[str]])])):
