@@ -11,3 +11,17 @@ This example creates an asset containing airline passenger info and parses the d
 ```bash
 dagster project from-example --name my-dagster-project --example feature_graph_backed_assets
 ```
+
+To install this example and its Python dependencies, run:
+
+```bash
+pip install -e ".[dev]"
+```
+
+Once you've done this, you can run:
+
+```
+dagit
+```
+
+to view this example in Dagster's UI, Dagit.

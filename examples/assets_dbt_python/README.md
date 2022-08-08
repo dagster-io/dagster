@@ -13,7 +13,7 @@ dagster project from-example --name my-dagster-project --example assets_dbt_pyth
 To install this example and its Python dependencies, run:
 
 ```bash
-pip install -e .
+pip install -e ".[dev]"
 ```
 
 Once you've done this, you can run:

@@ -13,7 +13,7 @@ To run this example locally
 ```
 dagster project from-example --name my-dagster-project --example development_to_production
 cd my-dagster-project
-pip install -e .
+pip install -e ".[dev]"
 
 # Load it in the web UI
 dagit -w workspace.yaml
