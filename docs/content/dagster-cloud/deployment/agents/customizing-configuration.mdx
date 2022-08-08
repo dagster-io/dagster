@@ -9,7 +9,7 @@ platform_type: "cloud"
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
-The Dagster Cloud Agent is a special variant of the Dagster instance used in [Dagster Open Source](/deployment/dagster-instance) and is configured through the same `dagster.yaml`. You can customize your agent with these settings.
+The Dagster Cloud Agent is a special variant of the Dagster instance used in [Dagster Open Source](/deployment/dagster-instance) and is configured through the same `dagster.yaml` file. You can customize your agent with these settings.
 
 **Note:** For [Kubernetes agents](/dagster-cloud/deployment/agents/kubernetes/configuring-running-kubernetes-agent) deployed with the Dagster Cloud Helm chart, you'll need to refer to the Helm chart's config map for customizing the agent.
 
@@ -43,7 +43,7 @@ user_code_launcher:
 
 ---
 
-## Disabling Compute Logs
+## Disabling compute logs
 
 You can disable forwarding compute logs to Dagster Cloud by configuring the `NoOpComputeLogManager` setting:
 
