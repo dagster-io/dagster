@@ -59,10 +59,7 @@ export const latestAllPaths = () => {
 };
 
 export const latestAllVersionedPaths = () => {
-  const navigationForLatestVersion =
-    defaultVersion === "master" // when it's not in prod, the latest version defaults to master
-      ? masterNavigation
-      : versionedNavigation[defaultVersion];
+  const navigationForLatestVersion = versionedNavigation[defaultVersion];
 
   return flatten(navigationForLatestVersion)
     .filter((n: NavEntry) => n.path && !n.isExternalLink && !n.isUnversioned)
