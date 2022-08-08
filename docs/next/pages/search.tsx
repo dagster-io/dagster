@@ -27,7 +27,7 @@ const client = algoliasearch(
 
 const index = client.initIndex(process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME);
 
-export default function SearchPage(props) {
+export default function SearchPage() {
   const [query, setQuery] = useState(null);
   useEffect(() => {
     const path = window.location.href;

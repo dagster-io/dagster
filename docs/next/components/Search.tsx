@@ -22,7 +22,7 @@ function Hit({hit, children}) {
 }
 
 const footerClick = (query) => {
-  window.location.href = `/search?queryID=${encodeURIComponent(query)}`;
+  window.location.href = `/search?query=${encodeURIComponent(query)}`;
 };
 
 export function Search() {
@@ -162,7 +162,11 @@ export function Search() {
               });
             }}
             resultsFooterComponent={({ state }) => {
-              return <a onClick={footerClick}>Full search results</a>;
+              return (
+                <a onClick={() => footerClick(state.query)}>
+                  Full search results
+                </a>
+              );
             }}
           />,
           document.body,
