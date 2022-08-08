@@ -194,7 +194,7 @@ height={311}
 
 To ensure the best experience when using Branch Deployments, we recommend:
 
-- **Configuring jobs based on environment**. Dagster automatically sets environment variables containing deployment metadata, allowing you to parameterize jobs based on the executing environment. Use these variables in your jobs to configure things like connection credentials, database, and so on. This practice will allow you to use Branch Deployments without impacting production data.
+- **Configuring jobs based on environment**. Dagster automatically sets [environment variables](/dagster-cloud/developing-testing/environment-variables) containing deployment metadata, allowing you to parameterize jobs based on the executing environment. Use these variables in your jobs to configure things like connection credentials, database, and so on. This practice will allow you to use Branch Deployments without impacting production data.
 
 - **Creating jobs to automate output cleanup.** As Branch Deployments don't automatically remove [the output they create](#output-handling), you may want to create an additional Dagster job to perform the cleanup.
 
