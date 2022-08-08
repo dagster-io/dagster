@@ -159,7 +159,6 @@ const RightSidebar = ({
   githubLink,
   toggleFeedback,
 }) => {
-  console.log(process.env.DAGSTER_REPO_URL);
   return (
     !editMode && (
       <aside className="hidden relative xl:block flex-none w-80 flex shrink-0 border-l border-gray-200">
