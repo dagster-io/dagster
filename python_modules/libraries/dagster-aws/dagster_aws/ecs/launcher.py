@@ -2,7 +2,7 @@ import json
 import warnings
 from collections import namedtuple
 from contextlib import suppress
-from typing import Any, Dict, NamedTuple, Optional
+from typing import Any, Dict, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -310,7 +310,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             overrides["memory"] = memory
         return overrides
 
-    def _get_task_overrides(self, run: PipelineRun) -> Dict[str, any]:
+    def _get_task_overrides(self, run: PipelineRun) -> Dict[str, Any]:
         overrides = run.tags.get("ecs/task_overrides")
         if overrides:
             return json.loads(overrides)
