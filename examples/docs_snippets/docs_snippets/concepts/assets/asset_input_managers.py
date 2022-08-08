@@ -60,14 +60,14 @@ class PandasAssetIOManager(IOManager):
         file_path = self._get_path(context)
         store_pandas_dataframe(name=file_path, table=obj)
 
-    def _get_path(self, output_context):
+    def _get_path(self, context):
         return os.path.join(
             "storage",
-            f"{output_context.name}.csv",
+            f"{context.asset_key.path[-1]}.csv",
         )
 
     def load_input(self, context):
-        file_path = self._get_path(context.upstream_output)
+        file_path = self._get_path(context)
         return load_pandas_dataframe(name=file_path)
 
 
@@ -78,7 +78,7 @@ def pandas_asset_io_manager():
 
 class NumpyAssetIOManager(PandasAssetIOManager):
     def load_input(self, context):
-        file_path = self._get_path(context.upstream_output)
+        file_path = self._get_path(context)
         return load_numpy_array(name=file_path)
 
 
@@ -92,9 +92,7 @@ def upstream_asset():
     return pd.DataFrame([1, 2, 3])
 
 
-@asset(
-    ins={"upstream": AssetIn(key_prefix="public", input_manager_key="numpy_manager")}
-)
+@asset(ins={"upstream": AssetIn(key_prefix="public", input_manager_key="numpy_manager")})
 def downstream_asset(upstream):
     return upstream.shape
 
