@@ -1,16 +1,17 @@
 ---
-title: Getting started with Dagster Cloud using a Hybrid deployment | Dagster Cloud
+title: Getting started with Dagster Cloud using a Hybrid Deployment | Dagster Cloud
+description: "Get up and running with Dagster Cloud using a Hybrid Deployment."
 
 platform_type: "cloud"
 ---
 
-# Getting Started with Dagster Cloud using a Hybrid deployment
+# Getting Started with Dagster Cloud using a Hybrid Deployment
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
 
 Welcome to Dagster Cloud!
 
-In this guide, we'll give you everything you need to get up and running with Dagster Cloud using a [Hybrid deployment](/dagster-cloud/deployment/hybrid). With a Hybrid deployment, your Dagster code is executed in your infrastructure. Refer to the [Getting started with Serverless deployment guide](/dagster-cloud/getting-started/getting-started-with-serverless-deployment) if you want to use Serverless.
+In this guide, we'll give you everything you need to get up and running with Dagster Cloud using a [Hybrid Deployment](/dagster-cloud/deployment/hybrid). With a Hybrid Deployment, your Dagster code is executed in your infrastructure. Refer to the [Getting started with Serverless Deployment guide](/dagster-cloud/getting-started/getting-started-with-serverless-deployment) if you want to use Serverless.
 
 We'll walk you through setting up your Dagster Cloud account, setting up an agent, loading your code, launching your first run, and configuring continuous integration.
 
@@ -20,9 +21,15 @@ We'll walk you through setting up your Dagster Cloud account, setting up an agen
 
 To complete the steps in this guide, you'll need:
 
-- **Access to some Dagster code.** You can either use your own code or our [sample code (`dagster-cloud-examples`)](https://github.com/dagster-io/dagster-cloud/tree/main/dagster-cloud-examples). This guide uses the `dagster-cloud-examples` Python package.
+- **Access to some Dagster code.** You can either use your own code or a [project scaffold](/getting-started/create-new-project). This guide uses a scaffold.
 
-- **The ability to create and configure an agent in your infrastructure.** Using a Hybrid deployment requires setting up an agent for use with Dagster Cloud. The agent runs in your infrastructure, executes your code, and streams metadata about code execution over HTTPS back to Dagster Cloud.
+- **To have `dagster` and `dagster-cloud` installed**. To install, run:
+
+  ```shell
+  pip install dagster dagster-cloud
+  ```
+
+- **The ability to create and configure an agent in your infrastructure.** Using a Hybrid Deployment requires setting up an agent for use with Dagster Cloud. The agent runs in your infrastructure, executes your code, and streams metadata about code execution over HTTPS back to Dagster Cloud.
 
   Dagster Cloud supports a handful of agents, each with its own prerequisites for setup. Refer to the [Agent documentation](/dagster-cloud/deployment/agents) for more info.
 
@@ -57,54 +64,13 @@ Now that you've set up your deployment, you'll need to tell it the location of y
 
 A code location specifies a single Python package or file that defines your Dagster code. Each Dagster Cloud deployment can include code from one or more code locations. Refer to the [Adding a code location guide](/dagster-cloud/developing-testing/code-locations) for more info.
 
-To complete this step, you can use your own Dagster code or the [`dagster-cloud-examples` code](https://github.com/dagster-io/dagster-cloud/tree/main/dagster-cloud-examples). Our examples use the `dagster-cloud-examples` package.
-
-To install the `dagster-cloud` CLI and the `dagster-cloud-examples` package, run:
+To complete this step, you can use your own Dagster code or a [project scaffold](/getting-started/create-new-project). Our examples use the scaffold. Scaffold a new project by running:
 
 ```shell
-pip install dagster-cloud dagster-cloud-examples
+dagster project scaffold \
+  --name <PROJECT_NAME> \
+  --example <EXAMPLE_PROJECT_NAME>
 ```
-
-Select your agent type below to add a new location:
-
-<details>
-	<summary><strong>LOCAL AGENTS</strong></summary>
-
-1. Install the `dagster-cloud-examples` package in your Python environment:
-
-   ```shell
-   pip install dagster-cloud-examples
-   ```
-
-2. In Dagster Cloud, click **Workspace**.
-
-3. Click the **Add sample code location** button:
-
-   <Image
-   alt="Dagit Workspace Screen"
-   src="/images/dagster-cloud/getting-started/adding_code_location.png"
-   width={1118}
-   height={451}
-   />
-
-4. A pre-filled YAML editor with the following config will display:
-
-   ```yaml
-   location_name: cloud-examples
-   code_source:
-     package_name: dagster_cloud_examples
-   ```
-
-   This config tells the agent to load jobs from the `dagster_cloud_examples` Python package.
-
-5. Click **Add code location** to save the config.
-
-The agent will attempt to load the sample code. After the code is loaded, the new code location will show a **Loaded** status and a sample Dagster job will display in Dagster Cloud.
-
-</details>
-
-<details>
-	<summary><strong>AMAZON ECS, KUBERNETES, OR DOCKER AGENTS</strong></summary>
 
 1. In Dagster Cloud, click **Workspace**.
 
@@ -117,40 +83,22 @@ The agent will attempt to load the sample code. After the code is loaded, the ne
    height={451}
    />
 
-3. A pre-filled YAML editor with the following config will display:
+3. A pre-filled YAML editor with configuration will display.
 
-   ```yaml
-   location_name: cloud-examples
-   image: dagster/dagster-cloud-examples
-   code_source:
-     package_name: dagster_cloud_examples
-   ```
+4. Verify that the configuration is correct, then click **Add code location** to save the config.
 
-   This config tells the agent to pull the `dagster/dagster-cloud-examples` Docker image and load jobs from the `dagster_cloud_examples` Python package in that image.
-
-4. Click **Add code location** to save the config.
-
-The agent will attempt to pull the image and load the sample code. After the code is loaded, the new code location will show a **Loaded** status and a sample Dagster job will display in Dagster Cloud.
-
-</details>
+The agent will attempt to load the your code. After the code is loaded, the new code location will show a **Loaded** status and a sample Dagster job will display in Dagster Cloud.
 
 ---
 
 ## Step 4: Launch a run
 
-In this step, you'll run your first job in Dagster Cloud. Our example uses the `compute_cereal_properties` job from the [`dagster-cloud-examples` package](https://github.com/dagster-io/dagster-cloud/tree/main/dagster-cloud-examples).
+In this step, you'll run your first job in Dagster Cloud.
 
 1. Click the icon in the top-left corner of the page to expand the navigation.
 2. In the nav, open a repository and click a job.
 3. On the job's page, click the **Launchpad** tab.
-4. Click **Launch Run** in the bottom right corner to launch the run:
-
-   <Image
-   alt="Dagit Launchpad for compute_cereal_properties Job"
-   src="/images/dagster-cloud/getting-started/run_cereal_job.png"
-   width={1451}
-   height={702}
-   />
+4. Click **Launch Run** in the bottom right corner to launch the run.
 
 ---
 
@@ -158,7 +106,7 @@ In this step, you'll run your first job in Dagster Cloud. Our example uses the `
 
 Branch Deployments allow you to quickly and collaboratively develop your Dagster jobs. When a branch is created or updated in your Dagster repository, Branch Deployments will create a testing environment in your Dagster Cloud instance.
 
-Check out the [Branch deployment docs](/dagster-cloud/developing-testing/branch-deployments) for more info. If you skip this step now, you can always set it up later.
+Check out the [Branch Deployment docs](/dagster-cloud/developing-testing/branch-deployments) for more info. If you skip this step now, you can always set it up later.
 
 ---
 
