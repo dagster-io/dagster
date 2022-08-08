@@ -284,10 +284,10 @@ class Field:
 
     def __init__(
         self,
-        config,
-        default_value=FIELD_NO_DEFAULT_PROVIDED,
-        is_required=None,
-        description=None,
+        config: Any,
+        default_value: Any = FIELD_NO_DEFAULT_PROVIDED,
+        is_required: Optional[bool] = None,
+        description: Optional[str] = None,
     ):
         from .post_process import resolve_defaults
         from .validate import validate_config
