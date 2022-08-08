@@ -10,7 +10,6 @@ import {UnloadableSensors} from '../instigation/Unloadable';
 import {SENSOR_FRAGMENT} from '../sensors/SensorFragment';
 import {SensorInfo} from '../sensors/SensorInfo';
 import {SensorsTable} from '../sensors/SensorsTable';
-import {InstigationType} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {buildRepoPath, buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -85,11 +84,8 @@ const AllSensors: React.FC<{data: InstanceSensorsQuery}> = ({data}) => {
     </>
   ) : null;
 
-  const unloadableSensors = unloadable.filter(
-    (state) => state.instigationType === InstigationType.SENSOR,
-  );
-  const unloadableSensorsSection = unloadableSensors.length ? (
-    <UnloadableSensors sensorStates={unloadableSensors} />
+  const unloadableSensorsSection = unloadable.length ? (
+    <UnloadableSensors sensorStates={unloadable} />
   ) : null;
 
   if (!sensorDefinitionsSection && !unloadableSensorsSection) {
@@ -144,7 +140,7 @@ const INSTANCE_SENSORS_QUERY = gql`
       }
       ...PythonErrorFragment
     }
-    unloadableInstigationStatesOrError {
+    unloadableInstigationStatesOrError(instigationType: SENSOR) {
       ... on InstigationStates {
         results {
           id
