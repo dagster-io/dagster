@@ -302,7 +302,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             cls=self.__class__,
         )
 
-    def get_cpu_and_memory_overrides(self, run: PipelineRun) -> EcsContainerOverrides:
+    def get_cpu_and_memory_overrides(self, run: PipelineRun) -> Dict[str, str]:
         overrides = {}
 
         cpu = run.tags.get("ecs/cpu")
