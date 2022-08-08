@@ -38,14 +38,6 @@ RUNNING_STATUSES = [
 STOPPED_STATUSES = ["STOPPED"]
 
 
-class EcsEphemeralStorage(NamedTuple):
-    sizeInGiB: int
-
-
-class EcsTaskOverrides(NamedTuple):
-    ephemeralStorage: Optional[EcsEphemeralStorage]
-
-
 class EcsRunLauncher(RunLauncher, ConfigurableClass):
     """RunLauncher that starts a task in ECS for each Dagster job run."""
 
@@ -317,11 +309,15 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             overrides["memory"] = memory
         return overrides
 
-    def _get_task_overrides(self, run: PipelineRun) -> EcsTaskOverrides:
-
+    def _get_task_overrides(self, run: PipelineRun) -> Dict[str, Dict[str, int]]:
         disk = run.tags.get("ecs/disk")
         if disk:
-            return EcsTaskOverrides(disk=disk)
+            return {
+                "ephemeralStorage": {
+                    "sizeInGB": int(disk),
+                }
+            }
+        return {}
 
     def terminate(self, run_id):
         tags = self._get_run_tags(run_id)
