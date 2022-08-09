@@ -23,12 +23,13 @@ def test_gcs_file_manager_write():
 
     assert gcs_mock.bucket().blob().upload_from_file.call_count == 1
 
-    file_handle = file_manager.write_data(foo_bytes, ext="foo")
+    file_handle = file_manager.write_data(foo_bytes, ext="foo", key="test")
 
     assert isinstance(file_handle, GCSFileHandle)
 
     assert file_handle.gcs_bucket == "some-bucket"
     assert file_handle.gcs_key.startswith("some-key/")
+    assert file_handle.gcs_key.find("test") != -1
     assert file_handle.gcs_key[-4:] == ".foo"
 
     assert gcs_mock.bucket().blob().upload_from_file.call_count == 2
