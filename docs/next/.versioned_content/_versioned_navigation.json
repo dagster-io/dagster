@@ -46770,6 +46770,16 @@
         {
           "children": [
             {
+              "children": [
+                {
+                  "path": "/dagster-cloud/getting-started/getting-started-with-serverless-deployment",
+                  "title": "Serverless Deployment"
+                },
+                {
+                  "path": "/dagster-cloud/getting-started/getting-started-with-hybrid-deployment",
+                  "title": "Hybrid Deployment"
+                }
+              ],
               "path": "/dagster-cloud/getting-started",
               "title": "Getting started"
             },
