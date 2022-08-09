@@ -12,6 +12,8 @@
   <a target="_blank" href="https://dagster.io/slack">
     <img src="https://dagster-slackin.herokuapp.com/badge.svg?bg=163B36">
   </a>
+  <a target="_blank" href="https://github.com/dagster-io/dagster">
+    <img src="https://img.shields.io/github/stars/dagster-io/dagster?labelColor=4F43DD&color=163B36&logo=github">
   <br /><br />
   <a target="_blank" href="https://github.com/dagster-io/dagster/blob/master/LICENSE">
     <img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg?label=license&labelColor=4F43DD&color=163B36">
