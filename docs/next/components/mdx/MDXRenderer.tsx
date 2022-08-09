@@ -215,7 +215,7 @@ const RightSidebar = ({
           </div>
           <div className="py-2 px-4 flex items-center group">
             <GitHubButton
-              href={process.env.DAGSTER_REPO_URL}
+              href={process.env.NEXT_PUBLIC_DAGSTER_REPO_URL}
               data-icon="octicon-star"
               data-show-count="true"
               aria-label="Star dagster-io/dagster on GitHub"
