@@ -231,9 +231,9 @@ dagster-cloud workspace delete-location <LOCATION_NAME>
 
 You can also keep the YAML configuration for your entire workspace in a file and use the `dagster-cloud sync` command to reconcile the workspace config in Dagster Cloud with that local file.
 
-For example, if you have the following `cloud_workspace.yaml` file:
+For example, if you have the following `dagster_cloud.yaml` file:
 
-```yaml caption=cloud_workspace.yaml
+```yaml caption=dagster_cloud.yaml
 locations:
   - location_name: machine-learning
     image: myregistry/dagster-machine-learning:mytag
@@ -251,5 +251,5 @@ locations:
 Reconcile the above file with Dagster Cloud's remote workspace by running:
 
 ```shell
-dagster-cloud workspace sync -w cloud_workspace.yaml
+dagster-cloud workspace sync -w dagster_cloud.yaml
 ```
