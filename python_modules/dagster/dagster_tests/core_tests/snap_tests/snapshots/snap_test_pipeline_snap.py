@@ -3074,6 +3074,32 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.141e902c9a169b052d210da0dc0be0a25615b797": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "noop_op",
+            "type_key": "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.141e902c9a169b052d210da0dc0be0a25615b797",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.41de0e2d7b75524510155d0bdab8723c6feced3b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -3256,30 +3282,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.95e096750f330490a26714025addb5f403b099e6": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": "Built-in IO manager that stores and retrieves values in memory.",
-            "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.95e096750f330490a26714025addb5f403b099e6",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.a81addb1fd452e2e53df684ce29ed145a6dfa77c": {
+      "Shape.879662da6aa7a34adb386fe9c73c0763353be777": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -3317,41 +3320,38 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
-            "default_value_as_json_str": "{\\"noop_solid\\": {}}",
+            "default_value_as_json_str": "{\\"noop_op\\": {}}",
             "description": "Configure runtime parameters for ops or assets.",
             "is_required": false,
             "name": "solids",
-            "type_key": "Shape.ba913521099bed4314e25592059869c8f3a3c96e"
+            "type_key": "Shape.141e902c9a169b052d210da0dc0be0a25615b797"
           }
         ],
         "given_name": null,
-        "key": "Shape.a81addb1fd452e2e53df684ce29ed145a6dfa77c",
+        "key": "Shape.879662da6aa7a34adb386fe9c73c0763353be777",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.ba913521099bed4314e25592059869c8f3a3c96e": {
+      "Shape.95e096750f330490a26714025addb5f403b099e6": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
             "default_value_as_json_str": "{}",
-            "description": null,
+            "description": "Built-in IO manager that stores and retrieves values in memory.",
             "is_required": false,
-            "name": "noop_solid",
-            "type_key": "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339"
+            "name": "io_manager",
+            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
           }
         ],
         "given_name": null,
-        "key": "Shape.ba913521099bed4314e25592059869c8f3a3c96e",
+        "key": "Shape.95e096750f330490a26714025addb5f403b099e6",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -3548,8 +3548,8 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
         "is_dynamic_mapped": false,
-        "solid_def_name": "noop_solid",
-        "solid_name": "noop_solid",
+        "solid_def_name": "noop_op",
+        "solid_name": "noop_op",
         "tags": {}
       }
     ]
@@ -3594,7 +3594,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.a81addb1fd452e2e53df684ce29ed145a6dfa77c"
+      "root_config_key": "Shape.879662da6aa7a34adb386fe9c73c0763353be777"
     }
   ],
   "name": "noop_pipeline",
@@ -3615,7 +3615,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
         },
         "description": null,
         "input_def_snaps": [],
-        "name": "noop_solid",
+        "name": "noop_op",
         "output_def_snaps": [
           {
             "__class__": "OutputDefSnap",
@@ -3634,7 +3634,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_empty_pipeline_snap_props 2'] = '8ed9ed25f01be4b6c27ffe6d5619edbf54f7e859'
+snapshots['test_empty_pipeline_snap_props 2'] = 'f776cd19a654cb95154c6fbce797569e0703a346'
 
 snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
   "__class__": "PipelineSnapshot",
@@ -4204,6 +4204,32 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.141e902c9a169b052d210da0dc0be0a25615b797": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "noop_op",
+            "type_key": "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.141e902c9a169b052d210da0dc0be0a25615b797",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.41de0e2d7b75524510155d0bdab8723c6feced3b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -4386,30 +4412,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.95e096750f330490a26714025addb5f403b099e6": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": "Built-in IO manager that stores and retrieves values in memory.",
-            "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.95e096750f330490a26714025addb5f403b099e6",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.a81addb1fd452e2e53df684ce29ed145a6dfa77c": {
+      "Shape.879662da6aa7a34adb386fe9c73c0763353be777": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -4447,41 +4450,38 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
-            "default_value_as_json_str": "{\\"noop_solid\\": {}}",
+            "default_value_as_json_str": "{\\"noop_op\\": {}}",
             "description": "Configure runtime parameters for ops or assets.",
             "is_required": false,
             "name": "solids",
-            "type_key": "Shape.ba913521099bed4314e25592059869c8f3a3c96e"
+            "type_key": "Shape.141e902c9a169b052d210da0dc0be0a25615b797"
           }
         ],
         "given_name": null,
-        "key": "Shape.a81addb1fd452e2e53df684ce29ed145a6dfa77c",
+        "key": "Shape.879662da6aa7a34adb386fe9c73c0763353be777",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.ba913521099bed4314e25592059869c8f3a3c96e": {
+      "Shape.95e096750f330490a26714025addb5f403b099e6": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
             "default_value_as_json_str": "{}",
-            "description": null,
+            "description": "Built-in IO manager that stores and retrieves values in memory.",
             "is_required": false,
-            "name": "noop_solid",
-            "type_key": "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339"
+            "name": "io_manager",
+            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
           }
         ],
         "given_name": null,
-        "key": "Shape.ba913521099bed4314e25592059869c8f3a3c96e",
+        "key": "Shape.95e096750f330490a26714025addb5f403b099e6",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -4678,8 +4678,8 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
         "is_dynamic_mapped": false,
-        "solid_def_name": "noop_solid",
-        "solid_name": "noop_solid",
+        "solid_def_name": "noop_op",
+        "solid_name": "noop_op",
         "tags": {}
       }
     ]
@@ -4724,7 +4724,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.a81addb1fd452e2e53df684ce29ed145a6dfa77c"
+      "root_config_key": "Shape.879662da6aa7a34adb386fe9c73c0763353be777"
     }
   ],
   "name": "noop_pipeline",
@@ -4745,7 +4745,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
         },
         "description": null,
         "input_def_snaps": [],
-        "name": "noop_solid",
+        "name": "noop_op",
         "output_def_snaps": [
           {
             "__class__": "OutputDefSnap",
@@ -5540,6 +5540,32 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
+      "Shape.141e902c9a169b052d210da0dc0be0a25615b797": {
+        "__class__": "ConfigTypeSnap",
+        "description": null,
+        "enum_values": null,
+        "field_aliases": {
+          "solids": "ops"
+        },
+        "fields": [
+          {
+            "__class__": "ConfigFieldSnap",
+            "default_provided": true,
+            "default_value_as_json_str": "{}",
+            "description": null,
+            "is_required": false,
+            "name": "noop_op",
+            "type_key": "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339"
+          }
+        ],
+        "given_name": null,
+        "key": "Shape.141e902c9a169b052d210da0dc0be0a25615b797",
+        "kind": {
+          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+        },
+        "scalar_kind": null,
+        "type_param_keys": null
+      },
       "Shape.41de0e2d7b75524510155d0bdab8723c6feced3b": {
         "__class__": "ConfigTypeSnap",
         "description": null,
@@ -5722,30 +5748,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.95e096750f330490a26714025addb5f403b099e6": {
-        "__class__": "ConfigTypeSnap",
-        "description": null,
-        "enum_values": null,
-        "fields": [
-          {
-            "__class__": "ConfigFieldSnap",
-            "default_provided": true,
-            "default_value_as_json_str": "{}",
-            "description": "Built-in IO manager that stores and retrieves values in memory.",
-            "is_required": false,
-            "name": "io_manager",
-            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
-          }
-        ],
-        "given_name": null,
-        "key": "Shape.95e096750f330490a26714025addb5f403b099e6",
-        "kind": {
-          "__enum__": "ConfigTypeKind.STRICT_SHAPE"
-        },
-        "scalar_kind": null,
-        "type_param_keys": null
-      },
-      "Shape.a81addb1fd452e2e53df684ce29ed145a6dfa77c": {
+      "Shape.879662da6aa7a34adb386fe9c73c0763353be777": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
@@ -5783,41 +5786,38 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
-            "default_value_as_json_str": "{\\"noop_solid\\": {}}",
+            "default_value_as_json_str": "{\\"noop_op\\": {}}",
             "description": "Configure runtime parameters for ops or assets.",
             "is_required": false,
             "name": "solids",
-            "type_key": "Shape.ba913521099bed4314e25592059869c8f3a3c96e"
+            "type_key": "Shape.141e902c9a169b052d210da0dc0be0a25615b797"
           }
         ],
         "given_name": null,
-        "key": "Shape.a81addb1fd452e2e53df684ce29ed145a6dfa77c",
+        "key": "Shape.879662da6aa7a34adb386fe9c73c0763353be777",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
         "scalar_kind": null,
         "type_param_keys": null
       },
-      "Shape.ba913521099bed4314e25592059869c8f3a3c96e": {
+      "Shape.95e096750f330490a26714025addb5f403b099e6": {
         "__class__": "ConfigTypeSnap",
         "description": null,
         "enum_values": null,
-        "field_aliases": {
-          "solids": "ops"
-        },
         "fields": [
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
             "default_value_as_json_str": "{}",
-            "description": null,
+            "description": "Built-in IO manager that stores and retrieves values in memory.",
             "is_required": false,
-            "name": "noop_solid",
-            "type_key": "Shape.69ff9be621991cc7961ea5e667d43edaac9d2339"
+            "name": "io_manager",
+            "type_key": "Shape.743e47901855cb245064dd633e217bfcb49a11a7"
           }
         ],
         "given_name": null,
-        "key": "Shape.ba913521099bed4314e25592059869c8f3a3c96e",
+        "key": "Shape.95e096750f330490a26714025addb5f403b099e6",
         "kind": {
           "__enum__": "ConfigTypeKind.STRICT_SHAPE"
         },
@@ -6014,8 +6014,8 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
         "is_dynamic_mapped": false,
-        "solid_def_name": "noop_solid",
-        "solid_name": "noop_solid",
+        "solid_def_name": "noop_op",
+        "solid_name": "noop_op",
         "tags": {}
       }
     ]
@@ -6060,7 +6060,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           "name": "io_manager"
         }
       ],
-      "root_config_key": "Shape.a81addb1fd452e2e53df684ce29ed145a6dfa77c"
+      "root_config_key": "Shape.879662da6aa7a34adb386fe9c73c0763353be777"
     }
   ],
   "name": "noop_pipeline",
@@ -6081,7 +6081,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
         },
         "description": null,
         "input_def_snaps": [],
-        "name": "noop_solid",
+        "name": "noop_op",
         "output_def_snaps": [
           {
             "__class__": "OutputDefSnap",
@@ -6102,7 +6102,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
   }
 }'''
 
-snapshots['test_pipeline_snap_all_props 2'] = 'c800a450c568d4e91cc7e05b26101756a73bfea2'
+snapshots['test_pipeline_snap_all_props 2'] = '3f72d837da2e43a308b1772eb75125a29bed7387'
 
 snapshots['test_two_invocations_deps_snap 1'] = '''{
   "__class__": "PipelineSnapshot",
@@ -7155,7 +7155,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
         "is_dynamic_mapped": false,
-        "solid_def_name": "noop_solid",
+        "solid_def_name": "noop_op",
         "solid_name": "one",
         "tags": {}
       },
@@ -7163,7 +7163,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
         "__class__": "SolidInvocationSnap",
         "input_dep_snaps": [],
         "is_dynamic_mapped": false,
-        "solid_def_name": "noop_solid",
+        "solid_def_name": "noop_op",
         "solid_name": "two",
         "tags": {}
       }
@@ -7230,7 +7230,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
         },
         "description": null,
         "input_def_snaps": [],
-        "name": "noop_solid",
+        "name": "noop_op",
         "output_def_snaps": [
           {
             "__class__": "OutputDefSnap",
@@ -7249,4 +7249,4 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_two_invocations_deps_snap 2'] = 'd44ec7b059c6ad8e476037c784256d028cf4c7c7'
+snapshots['test_two_invocations_deps_snap 2'] = '69a48ed5bf426cc9f69cf28091d70159c88a6819'

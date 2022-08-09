@@ -1,4 +1,4 @@
-from dagster import Field, op
+from dagster import DynamicOut, Field, op
 from dagster._core.definitions.events import DynamicOutput
 from dagster._legacy import pipeline
 

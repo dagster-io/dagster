@@ -16,7 +16,7 @@ from dagster._core.test_utils import nesting_composite_pipeline
 from dagster._core.utility_solids import (
     create_op_with_deps,
     create_root_op,
-    define_stub_solid,
+    define_stub_op,
     input_set,
 )
 from dagster._legacy import ModeDefinition, composite_solid
@@ -181,7 +181,7 @@ def test_composites():
 
 
 def test_composite_with_no_output_mappings():
-    a_source = define_stub_solid("A_source", [input_set("A_input")])
+    a_source = define_stub_op("A_source", [input_set("A_input")])
     node_a = create_root_op("A")
     node_b = create_op_with_deps("B", node_a)
     node_c = create_op_with_deps("C", node_a)

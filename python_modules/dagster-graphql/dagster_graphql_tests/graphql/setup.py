@@ -253,11 +253,7 @@ def tag_asset_op(_):
 def lineage_solid_factory(solid_name_prefix, key, partitions=None):
     @op(
         name=f"{solid_name_prefix}_{key}",
-        out={
-            partitions: Out(
-                asset_key=AssetKey(key),
-            )
-        },
+        out={"result": Out(asset_key=AssetKey(key), asset_partitions=partitions)},
     )
     def _op(_, _in1):
         yield Output(1)
@@ -480,7 +476,7 @@ def no_config_chain_pipeline():
         return "foo"
 
     @op
-    def return_hello_world(_):
+    def return_hello_world(_x):
         return "Hello World"
 
     return_hello_world(return_foo())
@@ -1322,7 +1318,7 @@ def chained_failure_pipeline():
         return "hello"
 
     @op
-    def conditionally_fail(_):
+    def conditionally_fail(_x):
         if os.path.isfile(
             os.path.join(
                 get_system_temp_directory(),
@@ -1334,7 +1330,7 @@ def chained_failure_pipeline():
         return "hello"
 
     @op
-    def after_failure(_):
+    def after_failure(_x):
         return "world"
 
     after_failure(conditionally_fail(always_succeed()))
@@ -1383,10 +1379,10 @@ def composed_graph():
 @job(config={"ops": {"a_op_with_config": {"config": {"one": "hullo"}}}})
 def job_with_default_config():
     @op(config_schema={"one": Field(String)})
-    def a_solid_with_config(context):
+    def a_op_with_config(context):
         return context.op_config["one"]
 
-    a_solid_with_config()
+    a_op_with_config()
 
 
 @resource(config_schema={"file": Field(String)})

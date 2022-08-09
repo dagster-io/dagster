@@ -41,8 +41,8 @@ def test_asset_no_decorator_args():
         return 1
 
     assert isinstance(my_asset, AssetsDefinition)
-    assert len(my_asset.op.output_defs) == 1
-    assert len(my_asset.op.input_defs) == 0
+    assert len(my_asset.op.outs) == 1
+    assert len(my_asset.op.ins) == 0
 
 
 def test_asset_with_inputs():
@@ -51,8 +51,8 @@ def test_asset_with_inputs():
         return arg1
 
     assert isinstance(my_asset, AssetsDefinition)
-    assert len(my_asset.op.output_defs) == 1
-    assert len(my_asset.op.input_defs) == 1
+    assert len(my_asset.op.outs) == 1
+    assert len(my_asset.op.ins) == 1
     assert AssetKey("arg1") in my_asset.keys_by_input_name.values()
 
 
@@ -254,7 +254,7 @@ def test_asset_with_dagster_type():
     def my_asset(arg1):
         return arg1
 
-    assert my_asset.op.output_defs[0].dagster_type.display_name == "String"
+    assert my_asset.op.outs["result"].dagster_type.display_name == "String"
 
 
 def test_asset_with_key_prefix():
@@ -263,8 +263,8 @@ def test_asset_with_key_prefix():
         pass
 
     assert isinstance(my_asset, AssetsDefinition)
-    assert len(my_asset.op.output_defs) == 1
-    assert len(my_asset.op.input_defs) == 0
+    assert len(my_asset.op.outs) == 1
+    assert len(my_asset.op.ins) == 0
     assert my_asset.op.name == "my_key_prefix__my_asset"
     assert my_asset.keys == {AssetKey(["my_key_prefix", "my_asset"])}
 
@@ -273,8 +273,8 @@ def test_asset_with_key_prefix():
         pass
 
     assert isinstance(multi_component_list_asset, AssetsDefinition)
-    assert len(multi_component_list_asset.op.output_defs) == 1
-    assert len(multi_component_list_asset.op.input_defs) == 0
+    assert len(multi_component_list_asset.op.outs) == 1
+    assert len(multi_component_list_asset.op.ins) == 0
     assert multi_component_list_asset.op.name == "one__two__three__multi_component_list_asset"
     assert multi_component_list_asset.keys == {
         AssetKey(["one", "two", "three", "multi_component_list_asset"])
@@ -285,8 +285,8 @@ def test_asset_with_key_prefix():
         pass
 
     assert isinstance(multi_component_str_asset, AssetsDefinition)
-    assert len(multi_component_str_asset.op.output_defs) == 1
-    assert len(multi_component_str_asset.op.input_defs) == 0
+    assert len(multi_component_str_asset.op.outs) == 1
+    assert len(multi_component_str_asset.op.ins) == 0
     assert multi_component_str_asset.op.name == "one__two__three__multi_component_str_asset"
     assert multi_component_str_asset.keys == {
         AssetKey(["one", "two", "three", "multi_component_str_asset"])
@@ -299,8 +299,8 @@ def test_asset_with_inputs_and_key_prefix():
         return arg1
 
     assert isinstance(my_asset, AssetsDefinition)
-    assert len(my_asset.op.output_defs) == 1
-    assert len(my_asset.op.input_defs) == 1
+    assert len(my_asset.op.outs) == 1
+    assert len(my_asset.op.ins) == 1
     # this functions differently than the key_prefix arg in this scenario
     assert AssetKey(["my_prefix", "arg1"]) not in my_asset.keys_by_input_name.values()
     assert AssetKey(["arg1"]) in my_asset.keys_by_input_name.values()
@@ -312,7 +312,7 @@ def test_asset_with_context_arg():
         context.log("hello")
 
     assert isinstance(my_asset, AssetsDefinition)
-    assert len(my_asset.op.input_defs) == 0
+    assert len(my_asset.op.ins) == 0
 
 
 def test_asset_with_context_arg_and_dep():
@@ -322,7 +322,7 @@ def test_asset_with_context_arg_and_dep():
         assert arg1
 
     assert isinstance(my_asset, AssetsDefinition)
-    assert len(my_asset.op.input_defs) == 1
+    assert len(my_asset.op.ins) == 1
     assert AssetKey("arg1") in my_asset.keys_by_input_name.values()
 
 
@@ -363,7 +363,7 @@ def test_input_metadata():
     def my_asset(arg1):
         assert arg1
 
-    assert my_asset.op.input_defs[0].metadata == {"abc": 123}
+    assert my_asset.op.ins[0].metadata == {"abc": 123}
 
 
 def test_unknown_in():
@@ -386,8 +386,8 @@ def test_all_fields():
 
     assert my_asset.op.required_resource_keys == {"abc", "123"}
     assert my_asset.op.description == "some description"
-    assert len(my_asset.op.output_defs) == 1
-    output_def = my_asset.op.output_defs[0]
+    assert len(my_asset.op.outs) == 1
+    output_def = my_asset.op.outs["result"]
     assert output_def.io_manager_key == "my_io_key"
     assert output_def.metadata["metakey"] == "metaval"
 
@@ -397,8 +397,8 @@ def test_infer_input_dagster_type():
     def my_asset(_input1: str):
         pass
 
-    assert my_asset.op.input_defs[0].dagster_type.display_name == "String"
-    assert my_asset.op.input_defs[0].dagster_type.typing_type == str
+    assert my_asset.op.ins[0].dagster_type.display_name == "String"
+    assert my_asset.op.ins[0].dagster_type.typing_type == str
 
 
 def test_infer_output_dagster_type():
@@ -510,8 +510,8 @@ def test_kwargs():
         del kwargs
 
     assert isinstance(my_asset, AssetsDefinition)
-    assert len(my_asset.op.output_defs) == 1
-    assert len(my_asset.op.input_defs) == 1
+    assert len(my_asset.op.outs) == 1
+    assert len(my_asset.op.ins) == 1
     assert AssetKey("upstream") in my_asset.keys_by_input_name.values()
 
 

@@ -79,10 +79,10 @@ def return_config_int(context):
     return context.op_config
 
 
-def get_duplicate_solids():
+def get_duplicate_ops():
     return (
-        OpDefinition("a_op", ins={}, compute_fn=lambda: None, outs={}),
-        OpDefinition("a_op", ins={}, compute_fn=lambda: None, outs={}),
+        OpDefinition(name="a_op", ins={}, compute_fn=lambda: None, outs={}),
+        OpDefinition(name="a_op", ins={}, compute_fn=lambda: None, outs={}),
     )
 
 
@@ -167,8 +167,8 @@ def test_aliased_with_name_name_fails():
             add_one.alias("add_one")(num=two)  # explicit alias disables autoalias
 
 
-def test_composite_with_duplicate_solids():
-    solid_1, solid_2 = get_duplicate_solids()
+def test_composite_with_duplicate_ops():
+    op_1, op_2 = get_duplicate_ops()
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="Detected conflicting node definitions with the same name",
@@ -176,12 +176,12 @@ def test_composite_with_duplicate_solids():
 
         @composite_solid
         def _name_conflict_composite():
-            solid_1()
-            solid_2()
+            op_1()
+            op_2()
 
 
-def test_pipeline_with_duplicate_solids():
-    solid_1, solid_2 = get_duplicate_solids()
+def test_pipeline_with_duplicate_ops():
+    op_1, op_2 = get_duplicate_ops()
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="Detected conflicting node definitions with the same name",
@@ -189,8 +189,8 @@ def test_pipeline_with_duplicate_solids():
 
         @pipeline
         def _name_conflict_pipeline():
-            solid_1()
-            solid_2()
+            op_1()
+            op_2()
 
 
 def test_multiple():
@@ -281,7 +281,7 @@ def test_mapping():
     def composed_inout(num_in):
         return double(num_in=num_in)
 
-    # have to use "pipe" solid since "result_for_solid" doesnt work with composite mappings
+    # have to use "pipe" op since "result_for_solid" doesnt work with composite mappings
     assert (
         execute_pipeline(
             PipelineDefinition(
@@ -408,7 +408,7 @@ def test_deep_graph():
 
     result = execute_pipeline(
         PipelineDefinition(solid_defs=[test], name="test"),
-        {"solids": {"test": {"solids": {"download_num": {"config": 123}}}}},
+        {"ops": {"test": {"ops": {"download_num": {"config": 123}}}}},
     )
     assert result.result_for_handle("test.canonicalize_num").output_value() == 123
     assert result.result_for_handle("test.load_num").output_value() == 126
@@ -500,7 +500,7 @@ def test_mapping_args_ordering():
     execute_pipeline(
         ordered,
         {
-            "solids": {
+            "ops": {
                 "swizzle_2": {
                     "inputs": {
                         "a": {"value": "a"},
@@ -552,7 +552,7 @@ def test_alias_not_invoked():
     with pytest.warns(
         UserWarning,
         match=(
-            r"While in @pipeline context '_my_pipeline', received an uninvoked solid "
+            r"While in @pipeline context '_my_pipeline', received an uninvoked op "
             r"'single_input_op'\.\n'single_input_op' was aliased as '(foo|bar)'."
         ),
     ) as record:
@@ -562,7 +562,7 @@ def test_alias_not_invoked():
             single_input_op.alias("foo")
             single_input_op.alias("bar")
 
-    assert len(record) == 2  # This pipeline should raise a warning for each aliasing of the solid.
+    assert len(record) == 2  # This pipeline should raise a warning for each aliasing of the op.
 
 
 def test_tag_invoked():
@@ -583,7 +583,7 @@ def test_tag_not_invoked():
     with pytest.warns(
         UserWarning,
         match=(
-            r"While in @pipeline context '_my_pipeline', received an uninvoked solid "
+            r"While in @pipeline context '_my_pipeline', received an uninvoked op "
             r"'single_input_op'\."
         ),
     ) as record:
@@ -596,14 +596,12 @@ def test_tag_not_invoked():
         execute_pipeline(_my_pipeline)
 
     user_warnings = [warning for warning in record if isinstance(warning.message, UserWarning)]
-    assert (
-        len(user_warnings) == 1
-    )  # We should only raise one warning because solids have same name.
+    assert len(user_warnings) == 1  # We should only raise one warning because ops have same name.
 
     with pytest.warns(
         UserWarning,
         match=(
-            r"While in @pipeline context '_my_pipeline', received an uninvoked solid "
+            r"While in @pipeline context '_my_pipeline', received an uninvoked op "
             r"'single_input_op'\.\nProvided tags: {'a': 'b'}\."
         ),
     ):
@@ -636,7 +634,7 @@ def test_with_hooks_not_invoked():
     with pytest.warns(
         UserWarning,
         match=(
-            r"While in @pipeline context '_my_pipeline', received an uninvoked solid "
+            r"While in @pipeline context '_my_pipeline', received an uninvoked op "
             r"'single_input_op'\."
         ),
     ) as record:
@@ -650,14 +648,12 @@ def test_with_hooks_not_invoked():
 
     # Note not returning out of the pipe causes warning count to go up to 2
     user_warnings = [warning for warning in record if isinstance(warning.message, UserWarning)]
-    assert (
-        len(user_warnings) == 1
-    )  # We should only raise one warning because solids have same name.
+    assert len(user_warnings) == 1  # We should only raise one warning because ops have same name.
 
     with pytest.warns(
         UserWarning,
         match=(
-            r"While in @pipeline context '_my_pipeline', received an uninvoked solid "
+            r"While in @pipeline context '_my_pipeline', received an uninvoked op "
             r"'single_input_op'\.\nProvided hook definitions: \['a_hook'\]\."
         ),
     ):
@@ -681,7 +677,7 @@ def test_multiple_pending_invocations():
     with pytest.warns(
         UserWarning,
         match=(
-            r"While in @pipeline context '_my_pipeline', received an uninvoked solid "
+            r"While in @pipeline context '_my_pipeline', received an uninvoked op "
             r"'single_input_op'\.\n'single_input_op' was aliased as 'bar'\.\n"
             r"Provided hook definitions: \['a_hook'\]\."
         ),
@@ -697,7 +693,7 @@ def test_multiple_pending_invocations():
 
     assert (
         len(record) == 1
-    )  # ensure that one warning is thrown per solid_name / alias instead of per every PendingNodeInvocation.
+    )  # ensure that one warning is thrown per op_name / alias instead of per every PendingNodeInvocation.
 
 
 def test_compose_nothing():
@@ -815,37 +811,37 @@ def test_composite_solid_composition_metadata():
     )
 
 
-def test_uninvoked_solid_fails():
+def test_uninvoked_op_fails():
     with pytest.raises(DagsterInvalidDefinitionError, match=r".*Did you forget parentheses?"):
 
         @pipeline
-        def uninvoked_solid_pipeline():
+        def uninvoked_op_pipeline():
             add_one(return_one)
 
-        execute_pipeline(uninvoked_solid_pipeline)
+        execute_pipeline(uninvoked_op_pipeline)
 
 
-def test_uninvoked_aliased_solid_fails():
+def test_uninvoked_aliased_op_fails():
     with pytest.raises(DagsterInvalidDefinitionError, match=r".*Did you forget parentheses?"):
 
         @pipeline
-        def uninvoked_aliased_solid_pipeline():
+        def uninvoked_aliased_op_pipeline():
             add_one(return_one.alias("something"))
 
-        execute_pipeline(uninvoked_aliased_solid_pipeline)
+        execute_pipeline(uninvoked_aliased_op_pipeline)
 
 
-def test_alias_on_invoked_solid_fails():
+def test_alias_on_invoked_op_fails():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=r".*Consider checking the location of parentheses.",
     ):
 
         @pipeline
-        def alias_on_invoked_solid_pipeline():
+        def alias_on_invoked_op_pipeline():
             return_one().alias("something")  # pylint: disable=no-member
 
-        execute_pipeline(alias_on_invoked_solid_pipeline)
+        execute_pipeline(alias_on_invoked_op_pipeline)
 
 
 def test_warn_on_pipeline_return():
@@ -905,11 +901,11 @@ def test_tag_subset():
 
 
 def test_composition_order():
-    solid_to_tags = {}
+    op_to_tags = {}
 
     @success_hook
     def test_hook(context):
-        solid_to_tags[context.op.name] = context.op.tags
+        op_to_tags[context.op.name] = context.op.tags
 
     @op
     def a_op(_):
@@ -926,7 +922,7 @@ def test_composition_order():
 
     result = execute_pipeline(a_pipeline, raise_on_error=False)
     assert result.success
-    assert solid_to_tags == {
+    assert op_to_tags == {
         "tag_hook_alias": {"pos": "1"},
         "tag_alias_hook": {"pos": "1"},
         "hook_tag_alias": {"pos": "2"},
@@ -943,7 +939,7 @@ def test_fan_in_scalars_fails():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Lists can only contain the output from previous solid invocations or input mappings",
+        match="Lists can only contain the output from previous op invocations or input mappings",
     ):
 
         @pipeline
@@ -951,7 +947,7 @@ def test_fan_in_scalars_fails():
             fan_in_op([1, 2, 3])
 
 
-def test_with_hooks_on_invoked_solid_fails():
+def test_with_hooks_on_invoked_op_fails():
     @op
     def yield_1_op(_):
         return 1

@@ -88,11 +88,7 @@ def my_db_io_manager(_):
 
 
 @op(
-    out={
-        {"table_name": "raw_actions"}: Out(
-            io_manager_key="my_db_io_manager",
-        )
-    },
+    out={"result": Out(io_manager_key="my_db_io_manager", metadata={"table_name": "raw_actions"})},
 )
 def download_data(_):
     n_entries = random.randint(100, 1000)
@@ -161,8 +157,8 @@ top_10_comments = best_n_actions(10, "comments")
 
 @op(
     out={
-        {"table_name": "daily_best_action"}: Out(
-            io_manager_key="my_db_io_manager",
+        "result": Out(
+            io_manager_key="my_db_io_manager", metadata={"table_name": "daily_best_action"}
         )
     }
 )

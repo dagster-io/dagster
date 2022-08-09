@@ -1,20 +1,20 @@
 # pylint: skip-file
-from dagster import graph, op, pipeline, repository
+from dagster import graph, op, pipeline, repository, solid
 
 
-@op
-def my_op():
+@solid
+def my_solid():
     return 5
 
 
-@op
-def ingest_op(x):
+@solid
+def ingest_solid(x):
     return x + 5
 
 
 @pipeline
 def the_pipeline():
-    ingest_op(my_op())
+    ingest_solid(my_solid())
 
 
 @op

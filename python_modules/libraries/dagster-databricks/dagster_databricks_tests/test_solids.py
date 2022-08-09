@@ -54,7 +54,7 @@ def test_create_databricks_job_args(job_creator):
     assert job_creator("my_name").name == "my_name"
     assert len(job_creator().input_defs) == 1
     assert len(job_creator(num_inputs=2).input_defs) == 2
-    assert len(job_creator().output_defs) == 1
+    assert len(job_creator().outs) == 1
 
 
 @pytest.mark.parametrize(

@@ -99,7 +99,7 @@ def fails():
 
 
 @op
-def should_never_execute(_):
+def should_never_execute(_x):
     assert False  # should never execute
 
 

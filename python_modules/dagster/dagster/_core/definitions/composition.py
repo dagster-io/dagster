@@ -485,7 +485,7 @@ class PendingNodeInvocation:
                         "In {source} {name}, received a list containing an invalid type "
                         'at index {idx} for input "{input_name}" {arg_desc} in '
                         "{node_type} invocation {node_name}. Lists can only contain the "
-                        "output from previous solid invocations or input mappings, "
+                        "output from previous op invocations or input mappings, "
                         "received {type}".format(
                             source=current_context().source,
                             name=current_context().name,

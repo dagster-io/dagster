@@ -318,11 +318,6 @@ def emit_airflow_execution_date_op(context):
     yield Output(airflow_execution_date)
 
 
-@op()
-def error_op():
-    raise Exception("Unusual error")
-
-
 @job
 def demo_error_job():
     error_op()

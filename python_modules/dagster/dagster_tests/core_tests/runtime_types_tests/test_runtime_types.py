@@ -115,7 +115,7 @@ def test_python_mapping():
     def add_one(num):
         return num + 1
 
-    assert add_one.input_defs[0].dagster_type.unique_name == "Int"
+    assert add_one.ins["num"].dagster_type.unique_name == "Int"
 
     runtime = resolve_dagster_type(float)
     runtime.type_check(None, 1.0)

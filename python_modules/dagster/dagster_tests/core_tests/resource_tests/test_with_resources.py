@@ -42,7 +42,7 @@ def test_assets_direct():
 
     # When an io manager is provided with the generic key, that generic key is
     # used in the resource def dictionary.
-    assert transformed_asset.node_def.output_defs[0].io_manager_key == "io_manager"
+    assert transformed_asset.node_def.outs["result"].io_manager_key == "io_manager"
 
     assert build_assets_job("the_job", [transformed_asset]).execute_in_process().success
     assert list(in_mem.values.values())[0] == 5

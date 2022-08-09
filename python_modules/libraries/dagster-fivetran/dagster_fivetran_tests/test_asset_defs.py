@@ -53,7 +53,7 @@ def test_fivetran_asset_run(tables, should_error, schema_prefix):
 
     # expect the multi asset to have one asset key and one output for each specified asset key
     assert fivetran_assets[0].keys == {AssetKey(table.split(".")) for table in tables}
-    assert len(fivetran_assets[0].op.output_defs) == len(tables)
+    assert len(fivetran_assets[0].op.outs) == len(tables)
 
     fivetran_assets_job = build_assets_job(
         name="fivetran_assets_job",

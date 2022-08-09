@@ -33,11 +33,9 @@ def generate_stub_input_values(op):
 
     default_values = {"String": "abc", "Int": 1, "Any": []}
 
-    input_defs = op.input_defs
-    for input_def in input_defs:
-        input_values[input_def.name] = default_values[
-            str(input_def.dagster_type.display_name)
-        ]
+    ins = op.ins
+    for name, in_ in ins.items():
+        input_values[name] = default_values[str(in_.dagster_type.display_name)]
 
     return input_values
 

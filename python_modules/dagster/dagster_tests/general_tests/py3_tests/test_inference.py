@@ -49,12 +49,12 @@ def test_single_typed_input():
     def add_one_ex(_context, num):
         return num + 1
 
-    assert len(add_one_infer.input_defs) == 1
+    assert len(add_one_infer.ins) == 1
 
-    assert add_one_ex.input_defs[0].name == add_one_infer.input_defs[0].name
+    assert list(add_one_ex.ins)[0] == list(add_one_infer.ins)[0]
     assert (
-        add_one_ex.input_defs[0].dagster_type.unique_name
-        == add_one_infer.input_defs[0].dagster_type.unique_name
+        add_one_ex.ins["num"].dagster_type.unique_name
+        == add_one_infer.ins["num"].dagster_type.unique_name
     )
 
 
@@ -63,7 +63,7 @@ def test_precedence():
     def add_one(_context, num: Any):
         return num + 1
 
-    assert add_one.input_defs[0].dagster_type.unique_name == "Int"
+    assert add_one.ins["num"].dagster_type.unique_name == "Int"
 
 
 def test_double_typed_input():
@@ -72,24 +72,12 @@ def test_double_typed_input():
         return num_one + num_two
 
     assert subtract
-    assert len(subtract.input_defs) == 2
-    assert subtract.input_defs[0].name == "num_one"
-    assert subtract.input_defs[0].dagster_type.unique_name == "Int"
+    assert len(subtract.ins) == 2
+    assert list(subtract.ins.keys())[0] == "num_one"
+    assert subtract.ins["num_one"].dagster_type.unique_name == "Int"
 
-    assert subtract.input_defs[1].name == "num_two"
-    assert subtract.input_defs[1].dagster_type.unique_name == "Int"
-
-
-def test_one_arg_typed_lambda_solid():
-    @op
-    def one_arg(num: int):
-        return num
-
-    assert one_arg
-    assert len(one_arg.input_defs) == 1
-    assert one_arg.input_defs[0].name == "num"
-    assert one_arg.input_defs[0].dagster_type.unique_name == "Int"
-    assert len(one_arg.output_defs) == 1
+    assert list(subtract.ins.keys())[1] == "num_two"
+    assert subtract.ins["num_two"].dagster_type.unique_name == "Int"
 
 
 def test_single_typed_input_and_output():
@@ -98,42 +86,12 @@ def test_single_typed_input_and_output():
         return num + 1
 
     assert add_one
-    assert len(add_one.input_defs) == 1
-    assert add_one.input_defs[0].name == "num"
-    assert add_one.input_defs[0].dagster_type.unique_name == "Int"
+    assert len(add_one.ins) == 1
+    assert list(add_one.ins.keys())[0] == "num"
+    assert add_one.input_defs["num"].dagster_type.unique_name == "Int"
 
-    assert len(add_one.output_defs) == 1
-    assert add_one.output_defs[0].dagster_type.unique_name == "Int"
-
-
-def test_single_typed_input_and_output_lambda():
-    @op
-    def add_one(num: int) -> int:
-        return num + 1
-
-    assert add_one
-    assert len(add_one.input_defs) == 1
-    assert add_one.input_defs[0].name == "num"
-    assert add_one.input_defs[0].dagster_type.unique_name == "Int"
-
-    assert len(add_one.output_defs) == 1
-    assert add_one.output_defs[0].dagster_type.unique_name == "Int"
-
-
-def test_wrapped_input_and_output_lambda():
-    @op
-    def add_one(nums: List[int]) -> Optional[List[int]]:
-        return [num + 1 for num in nums]
-
-    assert add_one
-    assert len(add_one.input_defs) == 1
-    assert add_one.input_defs[0].name == "nums"
-    assert add_one.input_defs[0].dagster_type.kind == DagsterTypeKind.LIST
-    assert add_one.input_defs[0].dagster_type.inner_type.unique_name == "Int"
-
-    assert len(add_one.output_defs) == 1
-    assert add_one.output_defs[0].dagster_type.kind == DagsterTypeKind.NULLABLE
-    assert add_one.output_defs[0].dagster_type.inner_type.kind == DagsterTypeKind.LIST
+    assert len(add_one.outs) == 1
+    assert add_one.outs["result"].dagster_type.unique_name == "Int"
 
 
 def test_kitchen_sink():
@@ -255,12 +213,12 @@ def test_nested_kitchen_sink():
         pass
 
     assert (
-        no_execute.output_defs[0].dagster_type.display_name
+        no_execute.outs["result"].dagster_type.display_name
         == "[Tuple[[Int],String,Dict[String,[String]?]]]?"
     )
 
     assert (
-        no_execute.output_defs[0].dagster_type.typing_type
+        no_execute.outs["result"].dagster_type.typing_type
         == Optional[List[Tuple[List[int], str, Dict[str, Optional[List[str]]]]]]
     )
 
@@ -429,8 +387,8 @@ def test_unregistered_type_annotation_output():
     def my_op(_) -> MyClass:
         return MyClass()
 
-    assert my_op.output_defs[0].dagster_type.display_name == "MyClass"
-    assert my_op.output_defs[0].dagster_type.typing_type == MyClass
+    assert my_op.outs["result"].dagster_type.display_name == "MyClass"
+    assert my_op.outs["result"].dagster_type.typing_type == MyClass
 
     @pipeline
     def my_pipeline():

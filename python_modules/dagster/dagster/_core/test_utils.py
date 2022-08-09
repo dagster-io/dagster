@@ -348,7 +348,7 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
         super().__init__()
 
     def launch_run(self, context):
-        run = context.run
+        run = context.pipeline_run
         check.inst_param(run, "run", PipelineRun)
         check.invariant(run.status == PipelineRunStatus.STARTING)
 

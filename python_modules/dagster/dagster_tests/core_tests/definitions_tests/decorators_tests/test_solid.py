@@ -14,7 +14,7 @@ from dagster import (
     graph,
     op,
 )
-from dagster._core.utility_solids import define_stub_solid
+from dagster._core.utility_solids import define_stub_op
 from dagster._legacy import (
     PipelineDefinition,
     composite_solid,
@@ -27,7 +27,7 @@ from dagster._legacy import (
 # pylint: disable=unused-variable, unused-argument, redefined-outer-name
 
 
-def test_no_parens_solid():
+def test_no_parens_op():
     called = {}
 
     @op
@@ -39,7 +39,7 @@ def test_no_parens_solid():
     assert called["yup"]
 
 
-def test_empty_solid():
+def test_empty_op():
     called = {}
 
     @op()
@@ -51,7 +51,7 @@ def test_empty_solid():
     assert called["yup"]
 
 
-def test_solid():
+def test_op():
     @op(out=Out())
     def hello_world(_context):
         return {"foo": "bar"}
@@ -62,7 +62,7 @@ def test_solid():
     assert result.output_value()["foo"] == "bar"
 
 
-def test_solid_one_output():
+def test_op_one_output():
     @op
     def hello_world():
         return {"foo": "bar"}
@@ -73,7 +73,7 @@ def test_solid_one_output():
     assert result.output_value()["foo"] == "bar"
 
 
-def test_solid_yield():
+def test_op_yield():
     @op(out=Out())
     def hello_world(_context):
         yield Output(value={"foo": "bar"})
@@ -84,7 +84,7 @@ def test_solid_yield():
     assert result.output_value()["foo"] == "bar"
 
 
-def test_solid_result_return():
+def test_op_result_return():
     @op(out=Out())
     def hello_world(_context):
         return Output(value={"foo": "bar"})
@@ -95,7 +95,7 @@ def test_solid_result_return():
     assert result.output_value()["foo"] == "bar"
 
 
-def test_solid_with_explicit_empty_outputs():
+def test_op_with_explicit_empty_outputs():
     @op(out={})
     def hello_world(_context):
         return "foo"
@@ -104,7 +104,7 @@ def test_solid_with_explicit_empty_outputs():
         execute_solid(hello_world)
 
 
-def test_solid_with_implicit_single_output():
+def test_op_with_implicit_single_output():
     @op()
     def hello_world(_context):
         return "foo"
@@ -115,7 +115,7 @@ def test_solid_with_implicit_single_output():
     assert result.output_value() == "foo"
 
 
-def test_solid_return_list_instead_of_multiple_results():
+def test_op_return_list_instead_of_multiple_results():
     @op(out={"foo": Out(), "bar": Out()})
     def hello_world(_context):
         return ["foo", "bar"]
@@ -127,18 +127,7 @@ def test_solid_return_list_instead_of_multiple_results():
         execute_solid(hello_world)
 
 
-def test_lambda_solid_with_name():
-    @op(name="foobar")
-    def hello_world():
-        return {"foo": "bar"}
-
-    result = execute_solid(hello_world)
-
-    assert result.success
-    assert result.output_value()["foo"] == "bar"
-
-
-def test_solid_with_name():
+def test_op_with_name():
     @op(name="foobar", out=Out())
     def hello_world(_context):
         return {"foo": "bar"}
@@ -149,13 +138,13 @@ def test_solid_with_name():
     assert result.output_value()["foo"] == "bar"
 
 
-def test_solid_with_input():
+def test_op_with_input():
     @op(ins={"foo_to_foo": In()})
     def hello_world(foo_to_foo):
         return foo_to_foo
 
     the_pipeline = PipelineDefinition(
-        solid_defs=[define_stub_solid("test_value", {"foo": "bar"}), hello_world],
+        solid_defs=[define_stub_op("test_value", {"foo": "bar"}), hello_world],
         name="test",
         dependencies={"hello_world": {"foo_to_foo": DependencyDefinition("test_value")}},
     )
@@ -168,41 +157,7 @@ def test_solid_with_input():
     assert result.output_value()["foo"] == "bar"
 
 
-def test_lambda_solid_with_underscore_input():
-    # Document that it is possible for lambda_solid to take an arg that the decorator machinery
-    # would otherwise think is a context.
-    @op()
-    def emit_input(_):
-        return _
-
-    @op
-    def emit_five():
-        return 5
-
-    @pipeline
-    def basic_lambda_pipeline():
-        emit_input(emit_five())
-
-    pipeline_result = execute_pipeline(basic_lambda_pipeline)
-
-    result = pipeline_result.result_for_solid("emit_input")
-
-    assert result.success
-    assert result.output_value() == 5
-
-
-def test_lambda_solid_definition_errors():
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=re.escape("positional vararg parameter '*args'"),
-    ):
-
-        @op(ins={"foo": In()})
-        def vargs(foo, *args):
-            pass
-
-
-def test_solid_definition_errors():
+def test_op_definition_errors():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=re.escape("positional vararg parameter '*args'"),
@@ -247,14 +202,14 @@ def test_solid_definition_errors():
 
 
 def test_wrong_argument_to_pipeline():
-    def non_solid_func():
+    def non_op_func():
         pass
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="You have passed a lambda or function non_solid_func",
+        match="You have passed a lambda or function non_op_func",
     ):
-        PipelineDefinition(solid_defs=[non_solid_func], name="test")
+        PipelineDefinition(solid_defs=[non_op_func], name="test")
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
@@ -280,26 +235,24 @@ def test_any_config_field():
         assert context.op_config == conf_value
         called["yup"] = True
 
-    result = execute_solid(
-        hello_world, run_config={"solids": {"hello_world": {"config": conf_value}}}
-    )
+    result = execute_solid(hello_world, run_config={"ops": {"hello_world": {"config": conf_value}}})
 
     assert called["yup"]
 
 
-def test_solid_required_resources_no_arg():
+def test_op_required_resources_no_arg():
     @op(required_resource_keys={"foo"})
     def _noop():
         return
 
 
-def test_solid_config_no_arg():
+def test_op_config_no_arg():
     @op(config_schema={"foo": str})
     def _noop2():
         return
 
 
-def test_solid_docstring():
+def test_op_docstring():
     @op
     def foo_op(_):
         """FOO_DOCSTRING"""
@@ -365,20 +318,20 @@ def test_solid_docstring():
     assert the_graph.__name__ == "the_graph"
 
 
-def test_solid_yields_single_bare_value():
+def test_op_yields_single_bare_value():
     @op
     def return_iterator(_):
         yield 1
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape('Compute function for solid "return_iterator" yielded a value of type <')
+        match=re.escape('Compute function for op "return_iterator" yielded a value of type <')
         + r"(class|type)"
         + re.escape(
             " 'int'> rather than an instance of Output, AssetMaterialization, or ExpectationResult. "
-            "Values yielded by solids must be wrapped in one of these types. If your solid has a "
+            "Values yielded by ops must be wrapped in one of these types. If your op has a "
             "single output and yields no other events, you may want to use `return` instead of "
-            "`yield` in the body of your solid compute function. If you are already using "
+            "`yield` in the body of your op compute function. If you are already using "
             "`return`, and you expected to return a value of type <"
         )
         + r"(class|type)"
@@ -390,7 +343,7 @@ def test_solid_yields_single_bare_value():
         result = execute_solid(return_iterator)
 
 
-def test_solid_yields_multiple_bare_values():
+def test_op_yields_multiple_bare_values():
     @op
     def return_iterator(_):
         yield 1
@@ -398,13 +351,13 @@ def test_solid_yields_multiple_bare_values():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape('Compute function for solid "return_iterator" yielded a value of type <')
+        match=re.escape('Compute function for op "return_iterator" yielded a value of type <')
         + r"(class|type)"
         + re.escape(
             " 'int'> rather than an instance of Output, AssetMaterialization, or ExpectationResult. "
-            "Values yielded by solids must be wrapped in one of these types. If your solid has a "
+            "Values yielded by ops must be wrapped in one of these types. If your op has a "
             "single output and yields no other events, you may want to use `return` instead of "
-            "`yield` in the body of your solid compute function. If you are already using "
+            "`yield` in the body of your op compute function. If you are already using "
             "`return`, and you expected to return a value of type <"
         )
         + r"(class|type)"
@@ -416,7 +369,7 @@ def test_solid_yields_multiple_bare_values():
         result = execute_solid(return_iterator)
 
 
-def test_solid_returns_iterator():
+def test_op_returns_iterator():
     def iterator():
         for i in range(3):
             yield i
@@ -427,13 +380,13 @@ def test_solid_returns_iterator():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=re.escape('Compute function for solid "return_iterator" yielded a value of type <')
+        match=re.escape('Compute function for op "return_iterator" yielded a value of type <')
         + r"(class|type)"
         + re.escape(
             " 'int'> rather than an instance of Output, AssetMaterialization, or ExpectationResult. "
-            "Values yielded by solids must be wrapped in one of these types. If your solid has a "
+            "Values yielded by ops must be wrapped in one of these types. If your op has a "
             "single output and yields no other events, you may want to use `return` instead of "
-            "`yield` in the body of your solid compute function. If you are already using "
+            "`yield` in the body of your op compute function. If you are already using "
             "`return`, and you expected to return a value of type <"
         )
         + r"(class|type)"

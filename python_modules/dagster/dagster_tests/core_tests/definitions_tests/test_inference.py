@@ -7,9 +7,9 @@ def test_single_input():
         return num + 1
 
     assert add_one
-    assert len(add_one.input_defs) == 1
-    assert add_one.input_defs[0].name == "num"
-    assert add_one.input_defs[0].dagster_type.unique_name == "Any"
+    assert len(add_one.ins) == 1
+    assert list(add_one.ins.keys())[0] == "num"
+    assert add_one.ins["num"].dagster_type.unique_name == "Any"
 
 
 def test_double_input():
@@ -18,31 +18,9 @@ def test_double_input():
         return num_one + num_two
 
     assert subtract
-    assert len(subtract.input_defs) == 2
-    assert subtract.input_defs[0].name == "num_one"
-    assert subtract.input_defs[0].dagster_type.unique_name == "Any"
+    assert len(subtract.ins) == 2
+    assert list(subtract.ins.keys())[0] == "num_one"
+    assert subtract.ins["num_one"].dagster_type.unique_name == "Any"
 
-    assert subtract.input_defs[1].name == "num_two"
-    assert subtract.input_defs[1].dagster_type.unique_name == "Any"
-
-
-def test_noop_lambda_solid():
-    @op
-    def noop():
-        pass
-
-    assert noop
-    assert len(noop.input_defs) == 0
-    assert len(noop.output_defs) == 1
-
-
-def test_one_arg_lambda_solid():
-    @op
-    def one_arg(num):
-        return num
-
-    assert one_arg
-    assert len(one_arg.input_defs) == 1
-    assert one_arg.input_defs[0].name == "num"
-    assert one_arg.input_defs[0].dagster_type.unique_name == "Any"
-    assert len(one_arg.output_defs) == 1
+    assert list(subtract.ins.keys())[1] == "num_two"
+    assert subtract.ins["num_two"].dagster_type.unique_name == "Any"

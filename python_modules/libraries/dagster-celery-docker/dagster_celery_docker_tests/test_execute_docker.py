@@ -76,7 +76,7 @@ def test_execute_celery_docker_image_on_executor_config(aws_creds):
             instance=instance,
         )
         assert result.success
-        assert result.result_for_solid("get_environment_solid").output_value("result") == "here!"
+        assert result.result_for_solid("get_environment_op").output_value("result") == "here!"
 
 
 def test_execute_celery_docker_image_on_pipeline_config(aws_creds):
@@ -126,4 +126,4 @@ def test_execute_celery_docker_image_on_pipeline_config(aws_creds):
             instance=instance,
         )
         assert result.success
-        assert result.result_for_solid("get_environment_solid").output_value("result") == "here!"
+        assert result.result_for_solid("get_environment_op").output_value("result") == "here!"

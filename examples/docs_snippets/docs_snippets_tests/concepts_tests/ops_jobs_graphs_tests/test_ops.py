@@ -14,16 +14,14 @@ from docs_snippets.concepts.ops_jobs_graphs.ops import (
 )
 
 
-def generate_stub_input_values(solid):
+def generate_stub_input_values(op):
     input_values = {}
 
     default_values = {"String": "abc", "Int": 1, "Any": 1}
 
-    input_defs = solid.input_defs
-    for input_def in input_defs:
-        input_values[input_def.name] = default_values.get(
-            str(input_def.dagster_type.display_name), 2
-        )
+    ins = op.ins
+    for name, in_ in ins.items():
+        input_values[name] = default_values.get(str(in_.dagster_type.display_name), 2)
 
     return input_values
 

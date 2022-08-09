@@ -32,7 +32,7 @@ def _build_slack_blocks_and_text(
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": f'*Job "{context.run.pipeline_name}" failed. `{context.run.run_id.split("-")[0]}`*',
+                        "text": f'*Job "{context.dagster_run.pipeline_name}" failed. `{context.dagster_run.run_id.split("-")[0]}`*',
                     },
                 },
                 {
@@ -50,7 +50,7 @@ def _build_slack_blocks_and_text(
                     {
                         "type": "button",
                         "text": {"type": "plain_text", "text": "View in Dagit"},
-                        "url": f"{dagit_base_url}/instance/runs/{context.run.run_id}",
+                        "url": f"{dagit_base_url}/instance/runs/{context.dagster_run.run_id}",
                     }
                 ],
             }

@@ -509,6 +509,31 @@ class In(
             input_manager_key=self.input_manager_key,
         )
 
+    def get_asset_key(self, context: "InputContext") -> Optional[AssetKey]:
+        """Get the AssetKey associated with this InputDefinition for the given
+        :py:class:`InputContext` (if any).
+
+        Args:
+            context (InputContext): The InputContext that this InputDefinition is being evaluated
+                in
+        """
+        if callable(self.asset_key):
+            return self.asset_key(context)
+        else:
+            return self.asset_key
+
+    def get_asset_partitions(self, context: "InputContext") -> Optional[Set[str]]:
+        """Get the set of partitions that this solid will read from this InputDefinition for the given
+        :py:class:`InputContext` (if any).
+
+        Args:
+            context (InputContext): The InputContext that this InputDefinition is being evaluated
+                in
+        """
+        if callable(self.asset_partitions):
+            return self.asset_partitions(context)
+        return self.asset_partitions
+
 
 class GraphIn(NamedTuple("_GraphIn", [("description", PublicAttr[Optional[str]])])):
     """

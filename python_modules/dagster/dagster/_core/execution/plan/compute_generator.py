@@ -163,7 +163,9 @@ def validate_and_coerce_solid_result_to_iterator(
         for position, output_def, element in _zip_and_iterate_solid_result(
             result, context, output_defs
         ):
-            annotation = _get_annotation_for_output_position(position, context.op_def, output_defs)
+            annotation = _get_annotation_for_output_position(
+                position, context.solid_def, output_defs
+            )
             if output_def.is_dynamic:
                 if not isinstance(element, list):
                     raise DagsterInvariantViolationError(

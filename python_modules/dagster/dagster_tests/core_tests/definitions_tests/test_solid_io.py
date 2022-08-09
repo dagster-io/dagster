@@ -13,9 +13,10 @@ def test_flex_inputs():
     def partial(_context, arg_a, arg_b):
         return arg_a + arg_b
 
-    assert partial.input_defs[0].name == "arg_b"
-    assert partial.input_defs[0].metadata["explicit"]
-    assert partial.input_defs[1].name == "arg_a"
+    assert list(partial.ins.keys())[0] == "arg_b"
+    assert list(partial.ins.keys())[1] == "arg_a"
+
+    assert partial.ins["arg_b"].metadata["explicit"]
 
 
 def test_merge_type():
@@ -23,10 +24,8 @@ def test_merge_type():
     def merged(_context, arg_b: int):
         return arg_b
 
-    assert (
-        merged.input_defs[0].dagster_type == InputDefinition("test", dagster_type=int).dagster_type
-    )
-    assert merged.input_defs[0].metadata["explicit"]
+    assert merged.ins["arg_b"].dagster_type == In(dagster_type=int).dagster_type
+    assert merged.ins["arg_b"].metadata["explicit"]
 
 
 def test_merge_desc():
@@ -40,9 +39,9 @@ def test_merge_desc():
         """
         return arg_a + arg_b + arg_c
 
-    assert merged.input_defs[0].name == "arg_b"
-    assert merged.input_defs[0].description == "described"
-    assert merged.input_defs[0].metadata["explicit"]
+    assert list(merged.ins.keys())[0] == "arg_b"
+    assert merged.ins["arg_b"].description == "described"
+    assert merged.ins["arg_b"].metadata["explicit"]
 
 
 def test_merge_default_val():
@@ -50,10 +49,10 @@ def test_merge_default_val():
     def merged(_context, arg_a: int, arg_b=3, arg_c=0):
         return arg_a + arg_b + arg_c
 
-    assert merged.input_defs[0].name == "arg_b"
-    assert merged.input_defs[0].default_value == 3
+    assert list(merged.ins.keys())[0] == "arg_b"
+    assert merged.ins["arg_b"].default_value == 3
     assert (
-        merged.input_defs[0].dagster_type == InputDefinition("test", dagster_type=int).dagster_type
+        merged.ins["arg_b"].dagster_type == InputDefinition("test", dagster_type=int).dagster_type
     )
 
 
@@ -80,17 +79,17 @@ def test_precedence():
         """
         return arg_a + arg_b + arg_c
 
-    assert precedence.input_defs[0].name == "arg_b"
+    assert list(precedence.ins.keys())[0] == "arg_b"
     assert (
-        precedence.input_defs[0].dagster_type
+        precedence.ins["arg_b"].dagster_type
         == InputDefinition("test", dagster_type=str).dagster_type
     )
-    assert precedence.input_defs[0].description == "legit"
-    assert precedence.input_defs[0].default_value == "hi"
-    assert precedence.input_defs[0].metadata["explicit"]
-    assert precedence.input_defs[0].root_manager_key == "rudy"
-    assert precedence.input_defs[0].get_asset_key(None) is not None
-    assert precedence.input_defs[0].get_asset_partitions(None) is not None
+    assert precedence.ins["arg_b"].description == "legit"
+    assert precedence.ins["arg_b"].default_value == "hi"
+    assert precedence.ins["arg_b"].metadata["explicit"]
+    assert precedence.ins["arg_b"].root_manager_key == "rudy"
+    assert precedence.ins["arg_b"].get_asset_key(None) is not None
+    assert precedence.ins["arg_b"].get_asset_partitions(None) is not None
 
 
 def test_output_merge():
@@ -98,8 +97,8 @@ def test_output_merge():
     def foo(_) -> int:
         return 4
 
-    assert foo.output_defs[0].name == "four"
-    assert foo.output_defs[0].dagster_type == OutputDefinition(int).dagster_type
+    assert list(foo.outs) == ["four"]
+    assert foo.outs["four"].dagster_type == OutputDefinition(int).dagster_type
 
 
 def test_iter_out():
@@ -130,8 +129,8 @@ def test_dynamic():
         """
         yield DynamicOutput(4, "4")
 
-    assert dyn_desc.output_defs[0].description == "numbers"
-    assert dyn_desc.output_defs[0].is_dynamic
+    assert dyn_desc.outs["result"].description == "numbers"
+    assert dyn_desc.outs["result"].is_dynamic
 
 
 @pytest.mark.skipif(

@@ -224,7 +224,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
             pickle.dump(obj, write_obj, PICKLE_PROTOCOL)
 
         return AssetMaterialization(
-            asset_key=AssetKey([context.job_name, context.step_key, context.name]),
+            asset_key=AssetKey([context.pipeline_name, context.step_key, context.name]),
             metadata_entries=[
                 MetadataEntry("path", value=MetadataValue.path(os.path.abspath(filepath)))
             ],

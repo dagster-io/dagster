@@ -33,7 +33,7 @@ from dagster._core.test_utils import (
 from dagster._core.utility_solids import (
     create_op_with_deps,
     create_root_op,
-    define_stub_solid,
+    define_stub_op,
     input_set,
 )
 from dagster._core.workspace.load import location_origin_from_python_file
@@ -154,7 +154,7 @@ def test_disconnected_graphs_adjaceny_lists():
 
 
 def create_diamond_solids():
-    a_source = define_stub_solid("A_source", [input_set("A_input")])
+    a_source = define_stub_op("A_source", [input_set("A_input")])
     node_a = create_root_op("A")
     node_b = create_op_with_deps("B", node_a)
     node_c = create_op_with_deps("C", node_a)
@@ -240,7 +240,7 @@ def test_execute_solid_in_diamond():
 
 
 def test_execute_aliased_solid_in_diamond():
-    a_source = define_stub_solid("A_source", [input_set("A_input")])
+    a_source = define_stub_op("A_source", [input_set("A_input")])
 
     @pipeline
     def aliased_pipeline():
@@ -266,7 +266,7 @@ def test_create_pipeline_with_empty_solids_list():
 
 
 def test_singleton_pipeline():
-    stub_op = define_stub_solid("stub", [{"a key": "a value"}])
+    stub_op = define_stub_op("stub", [{"a key": "a value"}])
 
     # will fail if any warning is emitted
     with warnings.catch_warnings():
@@ -280,8 +280,8 @@ def test_singleton_pipeline():
 
 
 def test_two_root_solid_pipeline_with_empty_dependency_definition():
-    stub_solid_a = define_stub_solid("stub_a", [{"a key": "a value"}])
-    stub_solid_b = define_stub_solid("stub_b", [{"a key": "a value"}])
+    stub_solid_a = define_stub_op("stub_a", [{"a key": "a value"}])
+    stub_solid_b = define_stub_op("stub_b", [{"a key": "a value"}])
 
     @pipeline
     def pipe():
@@ -292,8 +292,8 @@ def test_two_root_solid_pipeline_with_empty_dependency_definition():
 
 
 def test_two_root_solid_pipeline_with_partial_dependency_definition():
-    stub_solid_a = define_stub_solid("stub_a", [{"a key": "a value"}])
-    stub_solid_b = define_stub_solid("stub_b", [{"a key": "a value"}])
+    stub_solid_a = define_stub_op("stub_a", [{"a key": "a value"}])
+    stub_solid_b = define_stub_op("stub_b", [{"a key": "a value"}])
 
     single_dep_pipe = PipelineDefinition(
         solid_defs=[stub_solid_a, stub_solid_b],

@@ -30,7 +30,7 @@ def test_assets(schema_prefix):
     )
 
     assert ab_assets[0].keys == {AssetKey(["some", "prefix", t]) for t in destination_tables}
-    assert len(ab_assets[0].op.output_defs) == 2
+    assert len(ab_assets[0].op.outs) == 2
 
     responses.add(
         method=responses.POST,

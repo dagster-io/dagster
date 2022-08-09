@@ -14,7 +14,7 @@ from dagster import (
     op,
 )
 from dagster._check import ParameterCheckError
-from dagster._core.utility_solids import define_stub_solid
+from dagster._core.utility_solids import define_stub_op
 from dagster._legacy import OutputDefinition, PipelineDefinition
 
 
@@ -41,7 +41,7 @@ def test_create_pipeline_with_bad_solids_list():
         match=r'Param "node_defs" is not one of \[\'Sequence\'\]',
     ):
         PipelineDefinition(
-            name="a_pipeline", solid_defs=define_stub_solid("stub", [{"a key": "a value"}])  # type: ignore
+            name="a_pipeline", solid_defs=define_stub_op("stub", [{"a key": "a value"}])  # type: ignore
         )
 
 

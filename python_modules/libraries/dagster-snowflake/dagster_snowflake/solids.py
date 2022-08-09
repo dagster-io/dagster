@@ -1,7 +1,6 @@
-from dagster import Nothing
+from dagster import In, Nothing
 from dagster import _check as check
 from dagster import op
-from dagster._legacy import InputDefinition
 
 
 def snowflake_op_for_query(sql, parameters=None):
@@ -25,7 +24,7 @@ def snowflake_op_for_query(sql, parameters=None):
 
     @op(
         name="snowflake_op",
-        input_defs=[InputDefinition("start", Nothing)],
+        ins={"start": In(Nothing)},
         required_resource_keys={"snowflake"},
         tags={"kind": "sql", "sql": sql},
     )

@@ -17,7 +17,7 @@ from dagster import (
 )
 from dagster import _check as check
 from dagster import op
-from dagster._core.definitions import ModeDefinition, PipelineDefinition, lambda_solid
+from dagster._core.definitions import ModeDefinition, PipelineDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
@@ -46,7 +46,7 @@ from dagster._core.snap import snapshot_from_execution_plan
 from dagster._core.storage.file_manager import LocalFileManager
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._core.types.dagster_type import resolve_dagster_type
-from dagster._core.utility_solids import define_stub_solid
+from dagster._core.utility_solids import define_stub_op
 from dagster._core.utils import make_new_run_id
 from dagster._serdes import ConfigurableClass
 
@@ -129,7 +129,7 @@ def build_pipeline_with_input_stubs(
 
         solid = pipeline_def.solid_named(solid_name)
         for input_name, input_value in input_dict.items():
-            stub_solid_def = define_stub_solid(
+            stub_solid_def = define_stub_op(
                 "__stub_{solid_name}_{input_name}".format(
                     solid_name=solid_name, input_name=input_name
                 ),

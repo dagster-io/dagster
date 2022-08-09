@@ -101,8 +101,10 @@ def test_yielded_results_config_pandas(snapshot, pipe, ge_dir):
             mode="basic",
             instance=instance,
         )
-        assert result.result_for_op("reyielder").output_value()[0]["success_percent"] == 100
-        expectations = result.result_for_op("ge_validation_op").expectation_results_during_compute
+        assert result.result_for_solid("reyielder").output_value()[0]["success_percent"] == 100
+        expectations = result.result_for_solid(
+            "ge_validation_op"
+        ).expectation_results_during_compute
         assert len(expectations) == 1
         mainexpect = expectations[0]
         assert mainexpect.success
@@ -126,8 +128,10 @@ def test_yielded_results_config_pyspark_v2(snapshot):  # pylint:disable=unused-a
             mode="basic",
             instance=instance,
         )
-        assert result.result_for_op("reyielder").output_value()[0]["success_percent"] == 100
-        expectations = result.result_for_op("ge_validation_op").expectation_results_during_compute
+        assert result.result_for_solid("reyielder").output_value()[0]["success_percent"] == 100
+        expectations = result.result_for_solid(
+            "ge_validation_op"
+        ).expectation_results_during_compute
         assert len(expectations) == 1
         mainexpect = expectations[0]
         assert mainexpect.success

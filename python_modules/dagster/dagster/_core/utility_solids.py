@@ -19,7 +19,7 @@ def _compute_fn(context, inputs):
     yield Output(result)
 
 
-def define_stub_solid(name, value):
+def define_stub_op(name, value):
     check.str_param(name, "name")
 
     @op(name=name)

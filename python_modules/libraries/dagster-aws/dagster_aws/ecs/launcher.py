@@ -192,7 +192,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         only supported networkMode. These are the defaults that are set up by
         docker-compose when you use the Dagster ECS reference deployment.
         """
-        run = context.run
+        run = context.pipeline_run
         family = sanitize_family(
             run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name  # type: ignore
         )

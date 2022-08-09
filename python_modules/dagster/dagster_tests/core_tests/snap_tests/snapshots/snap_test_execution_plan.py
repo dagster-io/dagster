@@ -21,17 +21,17 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "4e770878de7d4f59d0c4841924046e1310918f5b",
+  "pipeline_snapshot_id": "7a7bbe0bf69b87a8ad6c490ebb7f3094a54a5a7a",
   "snapshot_version": 1,
   "step_keys_to_execute": [
-    "solid_one",
-    "solid_two"
+    "op_one",
+    "op_two"
   ],
   "steps": [
     {
       "__class__": "ExecutionStepSnap",
       "inputs": [],
-      "key": "solid_one",
+      "key": "op_one",
       "kind": {
         "__enum__": "StepKind.COMPUTE"
       },
@@ -51,18 +51,18 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
           },
           "solid_handle": {
             "__class__": "SolidHandle",
-            "name": "solid_one",
+            "name": "op_one",
             "parent": null
           }
         }
       ],
-      "solid_handle_id": "solid_one",
+      "solid_handle_id": "op_one",
       "step_handle": {
         "__class__": "StepHandle",
-        "key": "solid_one",
+        "key": "op_one",
         "solid_handle": {
           "__class__": "SolidHandle",
-          "name": "solid_one",
+          "name": "op_one",
           "parent": null
         }
       },
@@ -88,7 +88,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
               "__class__": "StepOutputHandle",
               "mapping_key": null,
               "output_name": "result",
-              "step_key": "solid_one"
+              "step_key": "op_one"
             }
           },
           "upstream_output_handles": [
@@ -96,12 +96,12 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
               "__class__": "StepOutputHandle",
               "mapping_key": null,
               "output_name": "result",
-              "step_key": "solid_one"
+              "step_key": "op_one"
             }
           ]
         }
       ],
-      "key": "solid_two",
+      "key": "op_two",
       "kind": {
         "__enum__": "StepKind.COMPUTE"
       },
@@ -121,18 +121,18 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
           },
           "solid_handle": {
             "__class__": "SolidHandle",
-            "name": "solid_two",
+            "name": "op_two",
             "parent": null
           }
         }
       ],
-      "solid_handle_id": "solid_two",
+      "solid_handle_id": "op_two",
       "step_handle": {
         "__class__": "StepHandle",
-        "key": "solid_two",
+        "key": "op_two",
         "solid_handle": {
           "__class__": "SolidHandle",
-          "name": "solid_two",
+          "name": "op_two",
           "parent": null
         }
       },
@@ -155,16 +155,16 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "8ed9ed25f01be4b6c27ffe6d5619edbf54f7e859",
+  "pipeline_snapshot_id": "f776cd19a654cb95154c6fbce797569e0703a346",
   "snapshot_version": 1,
   "step_keys_to_execute": [
-    "noop_solid"
+    "noop_op"
   ],
   "steps": [
     {
       "__class__": "ExecutionStepSnap",
       "inputs": [],
-      "key": "noop_solid",
+      "key": "noop_op",
       "kind": {
         "__enum__": "StepKind.COMPUTE"
       },
@@ -184,18 +184,18 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
           },
           "solid_handle": {
             "__class__": "SolidHandle",
-            "name": "noop_solid",
+            "name": "noop_op",
             "parent": null
           }
         }
       ],
-      "solid_handle_id": "noop_solid",
+      "solid_handle_id": "noop_op",
       "step_handle": {
         "__class__": "StepHandle",
-        "key": "noop_solid",
+        "key": "noop_op",
         "solid_handle": {
           "__class__": "SolidHandle",
-          "name": "noop_solid",
+          "name": "noop_op",
           "parent": null
         }
       },
@@ -218,16 +218,16 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
     },
     "step_output_versions": []
   },
-  "pipeline_snapshot_id": "9fe072eddd35c49d2899a4d605ae231e268086db",
+  "pipeline_snapshot_id": "651f037661140a94dc9c073e29bd21fe87f34ce8",
   "snapshot_version": 1,
   "step_keys_to_execute": [
-    "noop_solid"
+    "noop_op"
   ],
   "steps": [
     {
       "__class__": "ExecutionStepSnap",
       "inputs": [],
-      "key": "noop_solid",
+      "key": "noop_op",
       "kind": {
         "__enum__": "StepKind.COMPUTE"
       },
@@ -258,18 +258,18 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
           },
           "solid_handle": {
             "__class__": "SolidHandle",
-            "name": "noop_solid",
+            "name": "noop_op",
             "parent": null
           }
         }
       ],
-      "solid_handle_id": "noop_solid",
+      "solid_handle_id": "noop_op",
       "step_handle": {
         "__class__": "StepHandle",
-        "key": "noop_solid",
+        "key": "noop_op",
         "solid_handle": {
           "__class__": "SolidHandle",
-          "name": "noop_solid",
+          "name": "noop_op",
           "parent": null
         }
       },
