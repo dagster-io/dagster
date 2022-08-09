@@ -1,3 +1,6 @@
+import importlib
+import json
+import os
 from functools import update_wrapper
 from typing import (
     TYPE_CHECKING,
@@ -47,7 +50,7 @@ from dagster._core.selector.subset_selector import (
     OpSelectionData,
     parse_op_selection,
 )
-from dagster._core.storage.io_manager import io_manager
+from dagster._core.storage.io_manager import IOManagerDefinition, io_manager
 from dagster._core.utils import str_format_set
 from dagster._utils import merge_dicts
 
@@ -165,7 +168,7 @@ class JobDefinition(PipelineDefinition):
             resource_defs_with_defaults = resource_defs
         else:
             resource_defs_with_defaults = merge_dicts(
-                {DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs or {}
+                {DEFAULT_IO_MANAGER_KEY: get_default_job_io_manager()}, resource_defs or {}
             )
 
         presets = []
@@ -675,7 +678,7 @@ def _swap_default_io_man(resources: Mapping[str, ResourceDefinition], job: Pipel
 
     if (
         # pylint: disable=comparison-with-callable
-        resources.get(DEFAULT_IO_MANAGER_KEY) in [default_job_io_manager]
+        resources.get(DEFAULT_IO_MANAGER_KEY) in [get_default_job_io_manager()]
         and job.version_strategy is None
     ):
         updated_resources = dict(resources)
@@ -800,11 +803,45 @@ def get_direct_input_values_from_job(target: PipelineDefinition) -> Mapping[str,
 @io_manager(
     description="Built-in filesystem IO manager that stores and retrieves values using pickling."
 )
-def default_job_io_manager(init_context: "InitResourceContext"):
+def _default_job_io_manager(init_context: "InitResourceContext"):
     from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 
     instance = check.not_none(init_context.instance)
     return PickledObjectFilesystemIOManager(base_dir=instance.storage_directory())
+
+
+def get_default_job_io_manager():
+    io_manager_env_var = os.getenv("DEFAULT_IO_MANAGER_DEFINITION_ATTRIBUTE")
+    if not io_manager_env_var:
+        return _default_job_io_manager
+
+    configurable_attribute = json.loads(io_manager_env_var)
+
+    module_name = configurable_attribute["module"]
+    attr = configurable_attribute["attribute"]
+
+    try:
+        module = importlib.import_module(module_name)
+    except ModuleNotFoundError:
+        check.failed(
+            f"Couldn't import module {module_name} when attempting to load the "
+            f"default io manager {module_name}.{attr}"
+        )
+
+    try:
+        io_manager_definition = getattr(module, attr)
+    except AttributeError:
+        check.failed(
+            f"Couldn't find attribute {attr} in module when attempting to load the "
+            f"default IO manager {module_name}.{attr}"
+        )
+
+    if not isinstance(io_manager_definition, IOManagerDefinition):
+        check.failed(
+            f"attribute {attr} in module {module_name} is not an IOManagerDefinition",
+        )
+
+    return io_manager_definition
 
 
 def _config_mapping_with_default_value(

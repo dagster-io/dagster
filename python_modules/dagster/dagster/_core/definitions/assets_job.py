@@ -17,7 +17,7 @@ from .dependency import DependencyDefinition, IDependencyDefinition, NodeHandle,
 from .events import AssetKey
 from .executor_definition import ExecutorDefinition
 from .graph_definition import GraphDefinition
-from .job_definition import JobDefinition, default_job_io_manager
+from .job_definition import JobDefinition, get_default_job_io_manager
 from .partition import PartitionedConfig, PartitionsDefinition
 from .resolved_asset_deps import ResolvedAssetDependencies
 from .resource_definition import ResourceDefinition
@@ -85,7 +85,9 @@ def build_assets_job(
     partitions_def = partitions_def or build_job_partitions_from_assets(assets)
 
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
-    resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs)
+    resource_defs = merge_dicts(
+        {DEFAULT_IO_MANAGER_KEY: get_default_job_io_manager()}, resource_defs
+    )
 
     # turn any AssetsDefinitions into SourceAssets
     resolved_source_assets: List[SourceAsset] = []

@@ -1,3 +1,4 @@
+import json
 import os
 import tempfile
 import time
@@ -27,6 +28,7 @@ from dagster import (
     resource,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.job_definition import _default_job_io_manager
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.execution.api import create_execution_plan, execute_plan
@@ -36,7 +38,7 @@ from dagster._core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io
 from dagster._core.storage.io_manager import IOManager, io_manager
 from dagster._core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import environ, instance_for_test
 from dagster._legacy import (
     InputDefinition,
     ModeDefinition,
@@ -982,3 +984,33 @@ def test_nothing_output_something_input():
 
     assert my_io_manager.handle_output_calls == 2
     assert my_io_manager.handle_input_calls == 1
+
+
+def test_default_io_manager_overridden():
+    @job
+    def my_job():
+        pass
+
+    assert (
+        my_job.resource_defs["io_manager"]  # pylint: disable=comparison-with-callable
+        == _default_job_io_manager
+    )
+
+    with environ(
+        {
+            "DEFAULT_IO_MANAGER_DEFINITION_ATTRIBUTE": json.dumps(
+                {"module": "dagster._core.storage.mem_io_manager", "attribute": "mem_io_manager"}
+            )
+        }
+    ):
+
+        @job
+        def my_overridden_job():
+            pass
+
+        assert (
+            my_overridden_job.resource_defs[  # pylint: disable=comparison-with-callable
+                "io_manager"
+            ]
+            == mem_io_manager
+        )
