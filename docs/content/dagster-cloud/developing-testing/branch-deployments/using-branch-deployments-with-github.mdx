@@ -9,7 +9,7 @@ description: Develop and test in the cloud.
 
 In this guide, we'll walk you through setting up [Branch Deployments](/dagster-cloud/developing-testing/branch-deployments) with GitHub Actions.
 
-Using this approach to Branch Deployments may be a good fit if:
+Using this approach to branch deployments may be a good fit if:
 
 - You use GitHub for version control
 - You want Dagster to fully automate Branch Deployments
@@ -48,13 +48,13 @@ To complete the steps in this guide, you'll need:
   <a href="#step-4-configure-the-github-repository">Skip to the next step</a>.
 </Note>
 
-In this step, you'll add the required GitHub workflow files to your GitHub repository. The files can be found in our [Branch Deployments quickstart repository](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart).
+In this step, you'll add the required GitHub workflow files to your GitHub repository. The files can be found in our [Hybrid quickstart repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart) or [Serverless quickstart repository](https://github.com/dagster-io/dagster-cloud-serverless-quickstart), depending on the agent you are using.
 
-Copy the following files to your repository:
+Copy the following files to your repository (the linked files are shown in the Hybrid repo, there are equivalents in the Serverless repo).
 
-- [`cloud_workspace.yaml`](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart/blob/main/cloud_workspace.yaml) - **Note**: Save this file as `dagster_cloud.yaml`. This file has been re-named, but not yet reflected in this template repository.
-- [`.github/workflows/branch_deployments.yml`](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart/blob/main/.github/workflows/branch_deployments.yml)
-- [`.github/workflows/deploy.yml`](https://github.com/dagster-io/dagster-cloud-branch-deployments-quickstart/blob/main/.github/workflows/deploy.yml)
+- [`dagster_cloud.yaml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/dagster_cloud.yaml)
+- [`.github/workflows/branch_deployments.yml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/branch_deployments.yml)
+- [`.github/workflows/deploy.yml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/deploy.yml)
 
 In the next step, you'll modify these files to work with your Dagster Cloud setup.
 
@@ -110,6 +110,7 @@ Repeat steps 3-6 for each of the secrets required for your registry type:
 - `ORGANIZATION_ID` - Your Dagster Cloud organization ID
 - `AWS_ACCESS_KEY` - The **Access key ID** of the AWS IAM user you created in [Step 2](#step-2-create-and-configure-an-agent)
 - `AWS_SECRET_ACCESS_KEY` - The **Secret access key** of the AWS IAM user you created in [Step 2](#step-2-create-and-configure-an-agent)
+- `AWS_REGION` - The AWS region where your ECR registry is located
 
 The **Actions secrets** page should look like the following:
 
@@ -143,6 +144,11 @@ height={318}
 
 ### Step 4.3: Update GitHub Workflow files
 
+<Note>
+  If you're using Serverless deployment, this step isn't required.{" "}
+  <a href="#step-42-configure-github-action-secrets">Skip to the next step</a>.
+</Note>
+
 In this step, you'll update the GitHub Workflow files in the repository to set up Docker registry access.
 
 In the `.github/workflows/deploy.yml` and `.github/workflows/branch_deployments.yml` files, uncomment the `step` associated with your registry.
@@ -156,7 +162,7 @@ steps:
     with:
       aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
       aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      aws-region: YOUR_REGISTRY_REGION
+      aws-region: ${{ secrets.AWS_REGION }}
 ```
 
 Save and commit the files to the repository.
@@ -197,7 +203,14 @@ width={922}
 height={521}
 />
 
-Clicking the link will open a branch deployment - or a preview of the changes - in Dagster Cloud.
+Clicking the link will open a branch deployment - or a preview of the changes - in Dagster Cloud:
+
+<Image
+alt="Clicking the GitHub pull request View in Cloud link and opening the branch deployment in Dagster Cloud"
+src="/images/dagster-cloud/developing-testing/branch-deployments/github-preview-link-click.gif"
+width={640}
+height={480}
+/>
 
 ### Directly in Dagster Cloud
 
