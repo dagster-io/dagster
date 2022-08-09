@@ -71,7 +71,7 @@ The graph loaded into Dagster's web UI:
 
 ## Installation
 
-Dagster is available on PyPI and officially supports Python 3.6+.
+Dagster is available on PyPI and officially supports Python 3.7+.
 
 ```bash
 pip install dagster dagit
