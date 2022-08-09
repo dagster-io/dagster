@@ -35,7 +35,7 @@ If you're new to Dagster, we recommend reading about its [core concepts](https:/
 
 An asset graph defined in Python:
 
-```
+```python
 from dagster import asset
 from pandas import DataFrame, read_html, get_dummies
 from sklearn.linear_model import LinearRegression
