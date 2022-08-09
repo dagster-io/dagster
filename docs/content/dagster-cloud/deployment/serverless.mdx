@@ -2,8 +2,6 @@
 title: "Serverless deployment in Dagster Cloud | Dagster Docs"
 ---
 
-<Note>This guide is applicable to Dagster Cloud.</Note>
-
 # Serverless deployment in Dagster Cloud
 
 <Note>This guide is applicable to Dagster Cloud.</Note>
@@ -60,12 +58,15 @@ First, [create a new project](https://docs.dagster.io/getting-started/create-new
 
 ```shell
 pip install dagster
-dagster project scaffold \
+dagster project from-example \
   --name my-dagster-project \
   --example assets_modern_data_stack
 ```
 
-Once scaffolded, add `dagster-cloud` as a dependency in your `setup.py` file.
+<Note>
+  Once scaffolded, add <code>dagster-cloud</code> as a dependency in your{" "}
+  <code>setup.py</code> file.
+</Note>
 
 Next, install the [dagster-cloud CLI](/dagster-cloud/developing-testing/dagster-cloud-cli) and log in to your org. **Note**: The CLI requires a recent version of Python 3 and Docker.
 
@@ -79,7 +80,7 @@ Finally, deploy your project with Dagster Cloud Serverless:
 ```shell
 dagster-cloud serverless deploy \
   --location-name example \
-  --package-name my-dagster-project
+  --package-name assets_modern_data_stack
 ```
 
 ### Adding secrets
