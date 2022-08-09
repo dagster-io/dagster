@@ -550,7 +550,6 @@ class JobDefinition(PipelineDefinition):
         partition_key: str,
         run_key: Optional[str],
         tags: Optional[Mapping[str, str]] = None,
-        job_name: Optional[str] = None,        
     ) -> RunRequest:
         partition_set = self.get_partition_set_def()
         if not partition_set:
