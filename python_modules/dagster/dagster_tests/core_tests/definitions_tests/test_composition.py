@@ -2,7 +2,7 @@ import warnings
 
 import pytest
 
-from dagster import DependencyDefinition, In, Int, Nothing, Out, Output, op
+from dagster import DependencyDefinition, In, Int, Nothing, OpDefinition, Out, Output, op
 from dagster._core.definitions.decorators.hook_decorator import event_list_hook, success_hook
 from dagster._core.definitions.events import DynamicOutput, HookExecutionResult
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
@@ -11,7 +11,6 @@ from dagster._legacy import (
     InputDefinition,
     OutputDefinition,
     PipelineDefinition,
-    SolidDefinition,
     composite_solid,
     execute_pipeline,
     pipeline,
@@ -82,8 +81,8 @@ def return_config_int(context):
 
 def get_duplicate_solids():
     return (
-        SolidDefinition("a_op", [], lambda: None, []),
-        SolidDefinition("a_op", [], lambda: None, []),
+        OpDefinition("a_op", ins={}, compute_fn=lambda: None, outs={}),
+        OpDefinition("a_op", ins={}, compute_fn=lambda: None, outs={}),
     )
 
 

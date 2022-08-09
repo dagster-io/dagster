@@ -151,7 +151,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         return self._inst_data
 
     def launch_run(self, context: LaunchRunContext) -> None:
-        run = context.run
+        run = context.pipeline_run
 
         job_name = get_job_name_from_run_id(run.run_id)
         pod_name = job_name

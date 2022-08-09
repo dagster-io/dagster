@@ -1,12 +1,12 @@
 import random
 from collections import defaultdict
 
-from dagster import DependencyDefinition, Field, Output
+from dagster import DependencyDefinition, Field, In, OpDefinition, Out, Output
 from dagster import _check as check
-from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, SolidDefinition
+from dagster._legacy import PipelineDefinition
 
 
-def generate_solid(solid_id, num_inputs, num_outputs, num_cfg):
+def generate_op(solid_id, num_inputs, num_outputs, num_cfg):
     def compute_fn(_context, **_kwargs):
         for i in range(num_outputs):
             yield Output(i, "out_{}".format(i))
@@ -15,13 +15,10 @@ def generate_solid(solid_id, num_inputs, num_outputs, num_cfg):
     for i in range(num_cfg):
         config[f"field_{i}"] = Field(str, is_required=False)
 
-    return SolidDefinition(
+    return OpDefinition(
         name=solid_id,
-        input_defs=[
-            InputDefinition(name="in_{}".format(i), default_value="default")
-            for i in range(num_inputs)
-        ],
-        output_defs=[OutputDefinition(name="out_{}".format(i)) for i in range(num_outputs)],
+        ins={f"in_{i}": In(default_value="default") for i in range(num_inputs)},
+        outs={f"out_{i}": Out() for i in range(num_outputs)},
         compute_fn=compute_fn,
         config_schema=config,
     )
@@ -41,7 +38,7 @@ def generate_pipeline(name, size, connect_factor=1.0):
         num_outputs = random.randint(1, 3)
         num_cfg = random.randint(0, 5)
         solid_id = "{}_solid_{}".format(name, i)
-        solids[solid_id] = generate_solid(
+        solids[solid_id] = generate_op(
             solid_id=solid_id,
             num_inputs=num_inputs,
             num_outputs=num_outputs,

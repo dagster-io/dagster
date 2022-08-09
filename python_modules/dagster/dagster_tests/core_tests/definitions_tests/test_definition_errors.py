@@ -7,26 +7,29 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DependencyDefinition,
     Field,
+    In,
+    OpDefinition,
+    Out,
     ResourceDefinition,
     op,
 )
 from dagster._check import ParameterCheckError
 from dagster._core.utility_solids import define_stub_solid
-from dagster._legacy import InputDefinition, OutputDefinition, PipelineDefinition, SolidDefinition
+from dagster._legacy import OutputDefinition, PipelineDefinition
 
 
 def solid_a_b_list():
     return [
-        SolidDefinition(
+        OpDefinition(
             name="A",
-            input_defs=[],
-            output_defs=[OutputDefinition()],
+            ins={},
+            outs={"result": Out()},
             compute_fn=lambda _context, _inputs: None,
         ),
-        SolidDefinition(
+        OpDefinition(
             name="B",
-            input_defs=[InputDefinition("b_input")],
-            output_defs=[],
+            ins={"b_input": In()},
+            outs={},
             compute_fn=lambda _context, _inputs: None,
         ),
     ]

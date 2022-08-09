@@ -29,7 +29,7 @@ class CustomRunCoordinator(QueuedRunCoordinator):
 
     # start_submit_marker
     def submit_run(self, context: SubmitRunContext) -> PipelineRun:
-        pipeline_run = context.run
+        pipeline_run = context.pipeline_run
         jwt_claims_header = context.get_request_header("X-Amzn-Oidc-Data")
         email = self.get_email(jwt_claims_header)
         if email:

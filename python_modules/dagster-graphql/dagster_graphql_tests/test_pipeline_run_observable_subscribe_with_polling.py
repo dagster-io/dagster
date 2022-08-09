@@ -30,10 +30,7 @@ def create_test_instance_and_storage():
                 }
             },
         ) as instance:
-            yield (
-                instance,
-                instance._event_storage,
-            )  # pylint: disable=protected-access
+            yield (instance, instance._event_storage)  # pylint: disable=protected-access
 
 
 RUN_ID = "foo"

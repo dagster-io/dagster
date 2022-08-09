@@ -31,8 +31,8 @@ from dagster._core.test_utils import (
     step_output_event_filter,
 )
 from dagster._core.utility_solids import (
-    create_root_solid,
-    create_solid_with_deps,
+    create_op_with_deps,
+    create_root_op,
     define_stub_solid,
     input_set,
 )
@@ -89,7 +89,7 @@ def _do_construct(solids, dependencies):
 
 
 def test_empty_adjaceny_lists():
-    solids = [create_root_solid("a_node")]
+    solids = [create_root_op("a_node")]
     forward_edges, backwards_edges = _do_construct(solids, {})
     assert forward_edges == {"a_node": set()}
     assert backwards_edges == {"a_node": set()}
@@ -97,8 +97,8 @@ def test_empty_adjaceny_lists():
 
 def test_single_dep_adjacency_lists():
     # A <-- B
-    node_a = create_root_solid("A")
-    node_b = create_solid_with_deps("B", node_a)
+    node_a = create_root_op("A")
+    node_b = create_op_with_deps("B", node_a)
 
     forward_edges, backwards_edges = _do_construct(
         [node_a, node_b], {"B": {"A": DependencyDefinition("A")}}
@@ -139,11 +139,11 @@ def diamond_deps():
 def test_disconnected_graphs_adjaceny_lists():
     # A <-- B
     # C <-- D
-    node_a = create_root_solid("A")
-    node_b = create_solid_with_deps("B", node_a)
+    node_a = create_root_op("A")
+    node_b = create_op_with_deps("B", node_a)
 
-    node_c = create_root_solid("C")
-    node_d = create_solid_with_deps("D", node_c)
+    node_c = create_root_op("C")
+    node_d = create_op_with_deps("D", node_c)
 
     forward_edges, backwards_edges = _do_construct(
         [node_a, node_b, node_c, node_d],
@@ -155,10 +155,10 @@ def test_disconnected_graphs_adjaceny_lists():
 
 def create_diamond_solids():
     a_source = define_stub_solid("A_source", [input_set("A_input")])
-    node_a = create_root_solid("A")
-    node_b = create_solid_with_deps("B", node_a)
-    node_c = create_solid_with_deps("C", node_a)
-    node_d = create_solid_with_deps("D", node_b, node_c)
+    node_a = create_root_op("A")
+    node_b = create_op_with_deps("B", node_a)
+    node_c = create_op_with_deps("C", node_a)
+    node_d = create_op_with_deps("D", node_b, node_c)
     return [node_d, node_c, node_b, node_a, a_source]
 
 
@@ -244,7 +244,7 @@ def test_execute_aliased_solid_in_diamond():
 
     @pipeline
     def aliased_pipeline():
-        create_root_solid("A").alias("aliased")(a_source())
+        create_root_op("A").alias("aliased")(a_source())
 
     solid_result = execute_solid_within_pipeline(
         aliased_pipeline, "aliased", inputs={"A_input": [{"a key": "a value"}]}

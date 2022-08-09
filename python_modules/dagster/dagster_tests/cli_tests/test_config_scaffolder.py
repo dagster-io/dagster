@@ -1,9 +1,9 @@
-from dagster import Int, ResourceDefinition, String
+from dagster import Int, OpDefinition, ResourceDefinition, String
 from dagster import _check as check
 from dagster._cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
 from dagster._config import config_type
 from dagster._core.definitions import create_run_config_schema
-from dagster._legacy import ModeDefinition, PipelineDefinition, SolidDefinition
+from dagster._legacy import ModeDefinition, PipelineDefinition
 
 
 def fail_me():
@@ -21,10 +21,10 @@ def test_basic_solids_config(snapshot):
     pipeline_def = PipelineDefinition(
         name="BasicSolidsConfigPipeline",
         solid_defs=[
-            SolidDefinition(
+            OpDefinition(
                 name="required_field_solid",
-                input_defs=[],
-                output_defs=[],
+                ins={},
+                outs={},
                 config_schema={"required_int": Int},
                 compute_fn=lambda *_args: fail_me(),
             )

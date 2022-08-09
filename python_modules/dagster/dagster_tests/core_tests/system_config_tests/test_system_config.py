@@ -7,6 +7,7 @@ from dagster import (
     In,
     Int,
     NodeInvocation,
+    OpDefinition,
     Out,
     ResourceDefinition,
     Shape,
@@ -20,14 +21,7 @@ from dagster._core.definitions.run_config import (
     define_solid_dictionary_cls,
 )
 from dagster._core.system_config.objects import ResolvedRunConfig, ResourceConfig, SolidConfig
-from dagster._legacy import (
-    ModeDefinition,
-    OutputDefinition,
-    PipelineDefinition,
-    SolidDefinition,
-    execute_pipeline,
-    pipeline,
-)
+from dagster._legacy import ModeDefinition, PipelineDefinition, execute_pipeline, pipeline
 from dagster._loggers import default_loggers
 
 
@@ -258,18 +252,18 @@ def test_whole_environment():
             )
         ],
         solid_defs=[
-            SolidDefinition(
+            OpDefinition(
                 name="int_config_op",
                 config_schema=Int,
-                input_defs=[],
-                output_defs=[OutputDefinition()],
+                ins={},
+                outs={"result": Out()},
                 required_resource_keys={"test_resource"},
                 compute_fn=lambda *args: None,
             ),
-            SolidDefinition(
+            OpDefinition(
                 name="no_config_op",
-                input_defs=[],
-                output_defs=[],
+                ins={},
+                outs={},
                 compute_fn=lambda *args: None,
             ),
         ],
@@ -323,17 +317,17 @@ def test_optional_solid_with_no_config():
     pipeline_def = PipelineDefinition(
         name="some_pipeline",
         solid_defs=[
-            SolidDefinition(
+            OpDefinition(
                 name="int_config_op",
                 config_schema=Int,
-                input_defs=[],
-                output_defs=[],
+                ins={},
+                outs={},
                 compute_fn=lambda context, _inputs: _assert_config_none(context, 234),
             ),
-            SolidDefinition(
+            OpDefinition(
                 name="no_config_op",
-                input_defs=[],
-                output_defs=[],
+                ins={},
+                outs={},
                 compute_fn=lambda context, _inputs: _assert_config_none(context, None),
             ),
         ],
@@ -349,11 +343,11 @@ def test_optional_solid_with_optional_scalar_config():
     pipeline_def = PipelineDefinition(
         name="some_pipeline",
         solid_defs=[
-            SolidDefinition(
+            OpDefinition(
                 name="int_config_op",
                 config_schema=Field(Int, is_required=False),
-                input_defs=[],
-                output_defs=[],
+                ins={},
+                outs={},
                 compute_fn=lambda context, _inputs: _assert_config_none(context, 234),
             )
         ],
@@ -379,11 +373,11 @@ def test_optional_solid_with_required_scalar_config():
     pipeline_def = PipelineDefinition(
         name="some_pipeline",
         solid_defs=[
-            SolidDefinition(
+            OpDefinition(
                 name="int_config_op",
                 config_schema=Int,
-                input_defs=[],
-                output_defs=[],
+                ins={},
+                outs={},
                 compute_fn=lambda context, _inputs: _assert_config_none(context, 234),
             )
         ],
@@ -412,11 +406,11 @@ def test_required_solid_with_required_subfield():
     pipeline_def = PipelineDefinition(
         name="some_pipeline",
         solid_defs=[
-            SolidDefinition(
+            OpDefinition(
                 name="int_config_op",
                 config_schema={"required_field": String},
-                input_defs=[],
-                output_defs=[],
+                ins={},
+                outs={},
                 compute_fn=lambda *_args: None,
             )
         ],
@@ -452,14 +446,14 @@ def test_optional_solid_with_optional_subfield():
     pipeline_def = PipelineDefinition(
         name="some_pipeline",
         solid_defs=[
-            SolidDefinition(
+            OpDefinition(
                 name="int_config_op",
                 config_schema=Field(
                     {"optional_field": Field(String, is_required=False)},
                     is_required=False,
                 ),
-                input_defs=[],
-                output_defs=[],
+                ins={},
+                outs={},
                 compute_fn=lambda *_args: None,
             )
         ],

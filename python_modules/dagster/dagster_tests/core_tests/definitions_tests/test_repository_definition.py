@@ -12,6 +12,7 @@ from dagster import (
     DailyPartitionsDefinition,
     IOManager,
     JobDefinition,
+    OpDefinition,
     ResourceDefinition,
     SensorDefinition,
     SourceAsset,
@@ -38,13 +39,7 @@ from dagster._core.definitions.executor_definition import (
 )
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._legacy import (
-    AssetGroup,
-    PipelineDefinition,
-    SolidDefinition,
-    daily_schedule,
-    pipeline,
-)
+from dagster._legacy import AssetGroup, PipelineDefinition, daily_schedule, pipeline
 from dagster._loggers import default_loggers
 
 # pylint: disable=comparison-with-callable
@@ -55,10 +50,10 @@ def create_single_node_pipeline(name, called):
     return PipelineDefinition(
         name=name,
         solid_defs=[
-            SolidDefinition(
-                name=name + "_solid",
-                input_defs=[],
-                output_defs=[],
+            OpDefinition(
+                name=name + "_op",
+                ins={},
+                outs={},
                 compute_fn=lambda *_args, **_kwargs: None,
             )
         ],

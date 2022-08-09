@@ -72,7 +72,7 @@ def ge_validation_op_factory(
         ins={"dataset": In(input_dagster_type)},
         out=Out(
             dagster_type=dict,
-            description=f"""
+            description="""
         This op yields an expectationResult with a structured dict of metadata from
         the GE suite, as well as the full result in case a user wants to process it differently.
         The structured dict contains both summary stats from the suite as well as expectation by
@@ -186,7 +186,7 @@ def ge_validation_op_factory_v3(
         ins={"dataset": In(input_dagster_type)},
         out=Out(
             dagster_type=dict,
-            description=f"""
+            description="""
         This op yields an ExpectationResult with a structured dict of metadata from
         the GE suite, as well as the full result in case a user wants to process it differently.
         The structured dict contains both summary stats from the suite as well as expectation by

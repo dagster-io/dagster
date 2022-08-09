@@ -8,7 +8,7 @@ import nbformat
 import pytest
 from dagstermill import DagstermillError
 from dagstermill.compat import ExecutionError
-from dagstermill.factory import define_dagstermill_solid
+from dagstermill.factory import define_dagstermill_op
 from jupyter_client.kernelspec import NoSuchKernel
 from nbconvert.preprocessors import ExecutePreprocessor
 
@@ -298,8 +298,8 @@ def test_hello_world_reexecution():
             reexecution_notebook_file.write(
                 (
                     "from dagster._legacy import pipeline\n"
-                    "from dagstermill.factory import define_dagstermill_solid\n\n\n"
-                    "reexecution_solid = define_dagstermill_solid(\n"
+                    "from dagstermill.factory import define_dagstermill_op\n\n\n"
+                    "reexecution_solid = define_dagstermill_op(\n"
                     "    'hello_world_reexecution', '{output_notebook_path}'\n"
                     ")\n\n"
                     "@pipeline\n"
@@ -433,7 +433,7 @@ def test_hello_world_with_custom_tags_and_description_pipeline():
 
 
 def test_non_reconstructable_pipeline():
-    foo_solid = define_dagstermill_solid("foo", file_relative_path(__file__, "notebooks/foo.ipynb"))
+    foo_solid = define_dagstermill_op("foo", file_relative_path(__file__, "notebooks/foo.ipynb"))
 
     @pipeline
     def non_reconstructable():
@@ -450,7 +450,7 @@ BACKING_NB_PATH = file_relative_path(__file__, f"notebooks/{BACKING_NB_NAME}.ipy
 
 
 def test_default_tags():
-    test_solid_default_tags = define_dagstermill_solid(BACKING_NB_NAME, BACKING_NB_PATH)
+    test_solid_default_tags = define_dagstermill_op(BACKING_NB_NAME, BACKING_NB_PATH)
 
     assert test_solid_default_tags.tags == {
         "kind": "ipynb",
@@ -459,7 +459,7 @@ def test_default_tags():
 
 
 def test_custom_tags():
-    test_solid_custom_tags = define_dagstermill_solid(
+    test_solid_custom_tags = define_dagstermill_op(
         BACKING_NB_NAME, BACKING_NB_PATH, tags={"foo": "bar"}
     )
 
@@ -472,20 +472,20 @@ def test_custom_tags():
 
 def test_reserved_tags_not_overridden():
     with pytest.raises(CheckError, match="key is reserved for use by Dagster"):
-        define_dagstermill_solid(BACKING_NB_NAME, BACKING_NB_PATH, tags={"notebook_path": "~"})
+        define_dagstermill_op(BACKING_NB_NAME, BACKING_NB_PATH, tags={"notebook_path": "~"})
 
     with pytest.raises(CheckError, match="key is reserved for use by Dagster"):
-        define_dagstermill_solid(BACKING_NB_NAME, BACKING_NB_PATH, tags={"kind": "py"})
+        define_dagstermill_op(BACKING_NB_NAME, BACKING_NB_PATH, tags={"kind": "py"})
 
 
 def test_default_description():
-    test_solid = define_dagstermill_solid(BACKING_NB_NAME, BACKING_NB_PATH)
+    test_solid = define_dagstermill_op(BACKING_NB_NAME, BACKING_NB_PATH)
     assert test_solid.description.startswith("This solid is backed by the notebook at ")
 
 
 def test_custom_description():
     test_description = "custom description"
-    test_solid = define_dagstermill_solid(
+    test_solid = define_dagstermill_op(
         BACKING_NB_NAME, BACKING_NB_PATH, description=test_description
     )
     assert test_solid.description == test_description
