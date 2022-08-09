@@ -439,7 +439,7 @@ def test_non_reconstructable_pipeline():
     def non_reconstructable():
         foo_solid()
 
-    with pytest.raises(DagstermillError, match="pipeline that is not reconstructable."):
+    with pytest.raises(DagstermillError, match="job that is not reconstructable."):
         execute_pipeline(non_reconstructable)
 
 
@@ -480,7 +480,7 @@ def test_reserved_tags_not_overridden():
 
 def test_default_description():
     test_solid = define_dagstermill_op(BACKING_NB_NAME, BACKING_NB_PATH)
-    assert test_solid.description.startswith("This solid is backed by the notebook at ")
+    assert test_solid.description.startswith("This op is backed by the notebook at ")
 
 
 def test_custom_description():

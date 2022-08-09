@@ -185,15 +185,15 @@ def test_memoized_plan_memoized_results():
         assert memoized_plan.step_keys_to_execute == ["versioned_op_takes_input"]
 
 
-def test_memoization_no_code_version_for_solid():
+def test_memoization_no_code_version_for_op():
     with instance_for_test() as instance:
         partially_versioned_pipeline = partially_versioned_pipeline_factory()
 
         with pytest.raises(
             DagsterInvariantViolationError,
-            match="While using memoization, version for solid 'op_takes_input' was None. Please "
+            match="While using memoization, version for op 'op_takes_input' was None. Please "
             "either provide a versioning strategy for your job, or provide a version using the "
-            "solid decorator.",
+            "op decorator.",
         ):
             create_execution_plan(partially_versioned_pipeline, instance_ref=instance.get_ref())
 
@@ -246,7 +246,7 @@ def run_test_with_builtin_type(type_to_test, type_values):
         versioned_op_takes_input(op_ext_input())
 
     input_config = {"_builtin_type": first_type_val}
-    run_config = {"solids": {"op_ext_input": {"inputs": input_config}}}
+    run_config = {"ops": {"op_ext_input": {"inputs": input_config}}}
 
     with instance_for_test() as instance:
         unmemoized_plan = create_execution_plan(
@@ -403,7 +403,7 @@ def test_memoized_plan_custom_io_manager_key():
         assert len(memoized_plan.step_keys_to_execute) == 0
 
 
-def test_unmemoized_inner_solid():
+def test_unmemoized_inner_op():
     @op
     def op_no_version():
         pass
@@ -429,14 +429,14 @@ def test_unmemoized_inner_solid():
     with instance_for_test() as instance:
         with pytest.raises(
             DagsterInvariantViolationError,
-            match="While using memoization, version for solid 'op_no_version' was None. Please "
+            match="While using memoization, version for op 'op_no_version' was None. Please "
             "either provide a versioning strategy for your job, or provide a version using the "
-            "solid decorator.",
+            "op decorator.",
         ):
             create_execution_plan(wrap_pipeline, instance_ref=instance.get_ref())
 
 
-def test_memoized_inner_solid():
+def test_memoized_inner_op():
     @op(version="versioned")
     def op_versioned():
         pass
@@ -489,7 +489,7 @@ def test_configured_versions():
     def op_to_configure():
         pass
 
-    assert op_to_configure.configured({}, name="solid_has_been_configured").version == "5"
+    assert op_to_configure.configured({}, name="op_has_been_configured").version == "5"
 
     @resource(version="5")
     def resource_to_configure(_):
@@ -663,7 +663,7 @@ def test_memoized_plan_root_input_manager_input_config():
         my_op_takes_input()
 
     input_config = {"my_str": "foo"}
-    run_config = {"solids": {"my_op_takes_input": {"inputs": {"x": input_config}}}}
+    run_config = {"ops": {"my_op_takes_input": {"inputs": {"x": input_config}}}}
     with instance_for_test() as instance:
         plan = create_execution_plan(
             my_pipeline,

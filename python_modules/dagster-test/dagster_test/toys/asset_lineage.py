@@ -136,8 +136,8 @@ def best_n_actions(n, action_type):
     @op(
         name=f"top_{n}_{action_type}",
         out={
-            {"table_name": f"best_{action_type}"}: Out(
-                io_manager_key="my_db_io_manager",
+            "result": Out(
+                io_manager_key="my_db_io_manager", metadata={"table_name": f"best_{action_type}"}
             )
         },
     )

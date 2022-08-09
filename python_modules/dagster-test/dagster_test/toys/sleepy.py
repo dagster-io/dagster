@@ -48,8 +48,9 @@ def giver(context) -> Iterator[Output]:
 @op(
     config_schema={"fail": Field(bool, is_required=False, default_value=False)},
     out={
-        False: Out(
+        Out(
             int,
+            is_required=False,
         )
     },
 )

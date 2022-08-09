@@ -339,11 +339,10 @@ def test_io_manager_single_partition_materialization():
 
 def test_partition_specific_fails_on_na_partitions():
     @op(
-        out={
-            set(["1", "2"]): Out(
-                asset_key=AssetKey("key"),
-            )
-        }
+        out=Out(
+            asset_key=AssetKey("key"),
+            asset_partitions=set(["1", "2"]),
+        )
     )
     def fail_op(_):
         yield Output(

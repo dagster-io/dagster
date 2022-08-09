@@ -149,7 +149,7 @@ def test_hook_resource_error():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="resource with key 'resource_b' required by hook 'a_hook' attached to solid 'a_op_with_hook' was not provided",
+        match="resource with key 'resource_b' required by hook 'a_hook' attached to op 'a_op_with_hook' was not provided",
     ):
         PipelineDefinition(
             solid_defs=[a_op],

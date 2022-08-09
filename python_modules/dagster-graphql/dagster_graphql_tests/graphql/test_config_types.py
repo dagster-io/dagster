@@ -187,9 +187,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
             pipeline_name="csv_hello_world",
             run_config={
                 "solids": {
-                    "sum_solid": {
-                        "inputs": {"num": file_relative_path(__file__, "../data/num.csv")}
-                    }
+                    "sum_op": {"inputs": {"num": file_relative_path(__file__, "../data/num.csv")}}
                 },
                 "nope": {},
             },
@@ -211,7 +209,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name="csv_hello_world",
-            run_config={"solids": {"sum_solid": {"inputs": {"num": "foo.txt", "extra": "nope"}}}},
+            run_config={"solids": {"sum_op": {"inputs": {"num": "foo.txt", "extra": "nope"}}}},
             mode="default",
         )
 
@@ -221,7 +219,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert result.data["isPipelineConfigValid"]["pipelineName"] == "csv_hello_world"
         assert len(result.data["isPipelineConfigValid"]["errors"]) == 1
         error_data = result.data["isPipelineConfigValid"]["errors"][0]
-        assert ["solids", "sum_solid", "inputs"] == field_stack(error_data)
+        assert ["solids", "sum_op", "inputs"] == field_stack(error_data)
         assert error_data["reason"] == "FIELD_NOT_DEFINED"
         assert error_data["fieldName"] == "extra"
 
@@ -231,7 +229,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
             pipeline_name="csv_hello_world",
             run_config={
                 "solids": {
-                    "sum_solid": {
+                    "sum_op": {
                         "inputs": {"num": "foo.txt", "extra_one": "nope", "extra_two": "nope"}
                     }
                 }
@@ -245,7 +243,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert result.data["isPipelineConfigValid"]["pipelineName"] == "csv_hello_world"
         assert len(result.data["isPipelineConfigValid"]["errors"]) == 1
         error_data = result.data["isPipelineConfigValid"]["errors"][0]
-        assert ["solids", "sum_solid", "inputs"] == field_stack(error_data)
+        assert ["solids", "sum_op", "inputs"] == field_stack(error_data)
         assert error_data["reason"] == "FIELDS_NOT_DEFINED"
         assert error_data["fieldNames"] == ["extra_one", "extra_two"]
 
@@ -266,7 +264,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name="csv_hello_world",
-            run_config={"solids": {"sum_solid": {"inputs": {"num": 123}}}},
+            run_config={"solids": {"sum_op": {"inputs": {"num": 123}}}},
             mode="default",
         )
 
@@ -282,13 +280,13 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert error_data["reason"] == "RUNTIME_TYPE_MISMATCH"
         assert error_data["valueRep"] == "123"
 
-        assert ["solids", "sum_solid", "inputs", "num"] == field_stack(error_data)
+        assert ["solids", "sum_op", "inputs", "num"] == field_stack(error_data)
 
     def test_basic_invalid_config_missing_field(self, graphql_context):
         result = execute_config_graphql(
             graphql_context,
             pipeline_name="csv_hello_world",
-            run_config={"solids": {"sum_solid": {"inputs": {}}}},
+            run_config={"solids": {"sum_op": {"inputs": {}}}},
             mode="default",
         )
 
@@ -299,7 +297,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert len(result.data["isPipelineConfigValid"]["errors"]) == 1
         error_data = result.data["isPipelineConfigValid"]["errors"][0]
 
-        assert ["solids", "sum_solid", "inputs"] == field_stack(error_data)
+        assert ["solids", "sum_op", "inputs"] == field_stack(error_data)
         assert error_data["reason"] == "MISSING_REQUIRED_FIELD"
         assert error_data["field"]["name"] == "num"
 

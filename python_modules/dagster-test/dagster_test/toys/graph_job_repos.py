@@ -1,7 +1,16 @@
 from typing import Any, Optional, Set
 
-from dagster import ResourceDefinition, SkipReason, graph, op, repository, schedule, sensor
-from dagster._legacy import InputDefinition, SolidDefinition
+from dagster import (
+    In,
+    OpDefinition,
+    ResourceDefinition,
+    SkipReason,
+    graph,
+    op,
+    repository,
+    schedule,
+    sensor,
+)
 
 
 def make_solid(
@@ -9,10 +18,10 @@ def make_solid(
     required_resource_keys: Optional[Set[str]] = None,
     config_schema: Optional[Any] = None,
     num_inputs: int = 0,
-) -> SolidDefinition:
+) -> OpDefinition:
     @op(
         name=name,
-        input_defs=[InputDefinition(f"input{i}") for i in range(num_inputs)],
+        ins={f"input{i}": In() for i in range(num_inputs)},
         required_resource_keys=required_resource_keys,
         config_schema=config_schema,
     )

@@ -363,7 +363,7 @@ def test_input_metadata():
     def my_asset(arg1):
         assert arg1
 
-    assert my_asset.op.ins[0].metadata == {"abc": 123}
+    assert my_asset.op.ins["arg1"].metadata == {"abc": 123}
 
 
 def test_unknown_in():
@@ -397,8 +397,8 @@ def test_infer_input_dagster_type():
     def my_asset(_input1: str):
         pass
 
-    assert my_asset.op.ins[0].dagster_type.display_name == "String"
-    assert my_asset.op.ins[0].dagster_type.typing_type == str
+    assert my_asset.op.ins["_input1"].dagster_type.display_name == "String"
+    assert my_asset.op.ins["_input1"].dagster_type.typing_type == str
 
 
 def test_infer_output_dagster_type():

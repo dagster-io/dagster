@@ -464,7 +464,7 @@ def test_only_used_for_root():
             assert output.metadata == metadata
             assert output.name == "my_output"
             assert output.step_key == "op1"
-            assert context.job_name == "my_pipeline"
+            assert context.pipeline_name == "my_pipeline"
             assert context.op_def.name == op2.name
             return 5
 
@@ -681,7 +681,7 @@ def test_resource_not_input_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="input manager with key 'not_manager' required by input '_input' of solid 'op_requires_manager', but received <class 'dagster._core.definitions.resource_definition.ResourceDefinition'>",
+        match="input manager with key 'not_manager' required by input '_input' of op 'op_requires_manager', but received <class 'dagster._core.definitions.resource_definition.ResourceDefinition'>",
     ):
 
         @pipeline(mode_defs=[ModeDefinition(resource_defs={"not_manager": resource_not_manager})])

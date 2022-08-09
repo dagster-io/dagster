@@ -54,7 +54,7 @@ def test_hook_accumulation():
         return HookExecutionResult("pipeline_hook")
 
     @event_list_hook
-    def solid_1_hook(context, _):
+    def op_1_hook(context, _):
         called_hook_to_step_keys[context.hook_def.name].add(context.step_key)
         return HookExecutionResult("op_1_hook")
 
@@ -77,7 +77,7 @@ def test_hook_accumulation():
 
     @composite_solid
     def composite_1():
-        return op_2(op_1.with_hooks({solid_1_hook})())
+        return op_2(op_1.with_hooks({op_1_hook})())
 
     @composite_solid
     def composite_2():
@@ -570,7 +570,7 @@ def test_hook_resource_mismatch():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="resource with key 'b' required by hook 'a_hook' attached to solid 'a_op' was not provided",
+        match="resource with key 'b' required by hook 'a_hook' attached to op 'a_op' was not provided",
     ):
 
         @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])

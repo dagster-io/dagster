@@ -29,7 +29,7 @@ from dagster import (
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.dagster_type import Int, String
-from dagster._legacy import Materialization, SolidDefinition
+from dagster._legacy import Materialization
 
 
 def some_fn(a):
@@ -132,7 +132,6 @@ def test_out():
         )
     }
     assert my_op.outs["result"].metadata == {"x": 1}
-    assert my_op.outs["result"].name == "result"
     assert my_op() == 1
 
 
@@ -171,9 +170,9 @@ def test_multi_out():
         ),
     }
     assert my_op.outs["a"].metadata == {"x": 1}
-    assert my_op.outs["a"].name == "a"
+    assert list(my_op.outs.keys())[0] == "a"
     assert my_op.outs["b"].metadata == {"y": 2}
-    assert my_op.outs["b"].name == "b"
+    assert list(my_op.outs.keys())[1] == "b"
 
     assert my_op() == (1, "q")
 
@@ -197,9 +196,9 @@ def test_multi_out_yields():
         yield Output(output_name="b", value=2)
 
     assert my_op.outs["a"].metadata == {"x": 1}
-    assert my_op.outs["a"].name == "a"
+    assert list(my_op.outs.keys())[0] == "a"
     assert my_op.outs["b"].metadata == {"y": 2}
-    assert my_op.outs["b"].name == "b"
+    assert list(my_op.outs.keys())[1] == "b"
     result = execute_op_in_graph(my_op)
     assert result.output_for_node("my_op", "a") == 1
     assert result.output_for_node("my_op", "b") == 2
@@ -262,10 +261,9 @@ def test_multi_out_dict():
     assert len(my_op.outs) == 2
 
     assert my_op.outs["a"].metadata == {"x": 1}
-    assert my_op.outs["a"].name == "a"
+    assert list(my_op.outs.keys()) == ["a", "b"]
     assert my_op.outs["a"].dagster_type.typing_type == int
     assert my_op.outs["b"].metadata == {"y": 2}
-    assert my_op.outs["b"].name == "b"
     assert my_op.outs["b"].dagster_type.typing_type == str
 
     result = execute_op_in_graph(my_op)

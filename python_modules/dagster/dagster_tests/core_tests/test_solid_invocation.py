@@ -52,33 +52,27 @@ def test_solid_invocation_no_arg():
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Compute function of solid 'basic_op' has no context "
-        "argument, but context was provided when invoking.",
+        match="no context argument",
     ):
         basic_op(build_solid_context())
 
     # Ensure alias is accounted for in error message
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Compute function of solid 'aliased_basic_op' has no context "
-        "argument, but context was provided when invoking.",
+        match="no context argument",
     ):
         basic_op.alias("aliased_basic_op")(build_solid_context())
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Too many input arguments were provided for solid 'basic_op'. This may be "
-        "because an argument was provided for the context parameter, but no context parameter was "
-        "defined for the solid.",
+        match="Too many input arguments",
     ):
         basic_op(None)
 
     # Ensure alias is accounted for in error message
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Too many input arguments were provided for solid 'aliased_basic_op'. This may be "
-        "because an argument was provided for the context parameter, but no context parameter was "
-        "defined for the solid.",
+        match="Too many input arguments",
     ):
         basic_op.alias("aliased_basic_op")(None)
 
@@ -141,24 +135,21 @@ def test_solid_invocation_with_resources():
     # Ensure that a check invariant is raise when we attempt to invoke without context
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Compute function of solid 'op_requires_resources' has context argument, but no "
-        "context was provided when invoking.",
+        match="no context was provided",
     ):
         op_requires_resources()
 
     # Ensure that alias is accounted for in error message
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Compute function of solid 'aliased_op_requires_resources' has context argument, but no "
-        "context was provided when invoking.",
+        match="no context was provided",
     ):
         op_requires_resources.alias("aliased_op_requires_resources")()
 
     # Ensure that error is raised when we attempt to invoke with a None context
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match='solid "op_requires_resources" has required resources, but no context was '
-        "provided.",
+        match="no context was provided",
     ):
         op_requires_resources(None)
 
@@ -167,7 +158,7 @@ def test_solid_invocation_with_resources():
     context = build_solid_context()
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="resource with key 'foo' required by solid 'op_requires_resources' was not provided",
+        match="resource with key 'foo' required",
     ):
         op_requires_resources(context)
 
@@ -213,24 +204,21 @@ def test_solid_invocation_with_config():
     # Ensure that error is raised when attempting to execute and no context is provided
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Compute function of solid 'op_requires_config' has context argument, but no "
-        "context was provided when invoking.",
+        match="no context was provided",
     ):
         op_requires_config()
 
     # Ensure that alias is accounted for in error message
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Compute function of solid 'aliased_op_requires_config' has context argument, but no "
-        "context was provided when invoking.",
+        match="no context was provided",
     ):
         op_requires_config.alias("aliased_op_requires_config")()
 
     # Ensure that error is raised when we attempt to invoke with a None context
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match='solid "op_requires_config" has required config schema, but no context was '
-        "provided.",
+        match="no context was provided",
     ):
         op_requires_config(None)
 
@@ -238,7 +226,7 @@ def test_solid_invocation_with_config():
     context = build_solid_context()
     with pytest.raises(
         DagsterInvalidConfigError,
-        match="Error in config for solid",
+        match="Error in config",
     ):
         op_requires_config(context)
 
@@ -246,8 +234,7 @@ def test_solid_invocation_with_config():
     # configured
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Compute function of solid 'configured_solid' has context argument, but no "
-        "context was provided when invoking.",
+        match="no context was provided",
     ):
         op_requires_config.configured({"foo": "bar"}, name="configured_solid")()
 
@@ -356,13 +343,13 @@ def test_solid_with_inputs():
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Too many input arguments were provided for solid 'op_with_inputs'",
+        match="Too many input arguments were provided",
     ):
         op_with_inputs(5, 6, 7)
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match="Too many input arguments were provided for solid 'op_with_inputs'",
+        match="Too many input arguments were provided",
     ):
         op_with_inputs(5, 6, z=7)
 
@@ -564,15 +551,13 @@ def test_missing_required_output_generator():
 
     with pytest.raises(
         DagsterStepOutputNotFoundError,
-        match='Core compute for solid "op_multiple_outputs_not_sent" did not return an output '
-        'for non-optional output "1"',
+        match="did not return an output",
     ):
         execute_solid(op_multiple_outputs_not_sent)
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Invocation of solid 'op_multiple_outputs_not_sent' did not return an output "
-        "for non-optional output '1'",
+        match="did not return an output",
     ):
         list(op_multiple_outputs_not_sent())
 
@@ -594,8 +579,7 @@ def test_missing_required_output_generator_async():
 
     with pytest.raises(
         DagsterStepOutputNotFoundError,
-        match='Core compute for solid "op_multiple_outputs_not_sent" did not return an output '
-        'for non-optional output "1"',
+        match="did not return an output",
     ):
         execute_solid(op_multiple_outputs_not_sent)
 

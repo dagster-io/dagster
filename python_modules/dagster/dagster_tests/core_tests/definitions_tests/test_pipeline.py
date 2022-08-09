@@ -172,13 +172,13 @@ def test_unconfigurable_inputs_pipeline():
     class NewType:
         pass
 
-    @op(ins={"_": In(NewType)})
-    def noop(_):
+    @op(ins={"_x": In(NewType)})
+    def noop(_x):
         pass
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Input '_' of solid 'noop' has no way of being resolved. Must "
+        match="Input '_x' of op 'noop' has no way of being resolved. Must "
         "provide a resolution to this input via another op/graph, or via a "
         "direct input value mapped from the top-level graph.",
     ):

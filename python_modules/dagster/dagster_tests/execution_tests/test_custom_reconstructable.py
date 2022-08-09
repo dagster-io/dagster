@@ -18,23 +18,23 @@ class PipelineFactory:
     def __init__(self, prefix=None):
         self.prefix = prefix
 
-    def make_pipeline(self, has_nested_scope_solid, name=None):
+    def make_pipeline(self, has_nested_scope_op, name=None):
         @op
         def nested_scope_op(_context):
             pass
 
         @pipeline(name=self.prefix + name)
         def _pipeline():
-            if has_nested_scope_solid:
+            if has_nested_scope_op:
                 nested_scope_op()
             top_scope_op()
 
         return _pipeline
 
 
-def reconstruct_pipeline(factory_prefix, has_nested_scope_solid, name=None):
+def reconstruct_pipeline(factory_prefix, has_nested_scope_op, name=None):
     factory = PipelineFactory(factory_prefix)
-    return factory.make_pipeline(has_nested_scope_solid, name=name)
+    return factory.make_pipeline(has_nested_scope_op, name=name)
 
 
 def test_build_reconstructable_pipeline():

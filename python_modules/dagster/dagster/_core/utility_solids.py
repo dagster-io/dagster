@@ -34,7 +34,7 @@ def create_root_op(name):
     return OpDefinition(
         name=name,
         ins={f"{name}_input": In()},
-        outs=Out(),
+        outs={"result": Out()},
         compute_fn=_compute_fn,
     )
 
@@ -44,7 +44,7 @@ def create_op_with_deps(name, *solid_deps):
     return OpDefinition(
         name=name,
         ins={solid_dep.name: In() for solid_dep in solid_deps},
-        outs=Out(),
+        outs={"result": Out()},
         compute_fn=_compute_fn,
     )
 

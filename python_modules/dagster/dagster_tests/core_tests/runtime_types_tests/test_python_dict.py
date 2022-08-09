@@ -58,7 +58,7 @@ def test_execute_dict_from_config():
     assert (
         execute_solid(
             input_dict,
-            run_config={"solids": {"input_dict": {"inputs": {"data": {"key": "in_config"}}}}},
+            run_config={"ops": {"input_dict": {"inputs": {"data": {"key": "in_config"}}}}},
         ).output_value()
         == "in_config"
     )
@@ -180,7 +180,7 @@ def test_dict_type_loader():
 
     result = execute_solid(
         emit_dict,
-        run_config={"solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
+        run_config={"ops": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
     )
     assert result.success
     assert result.output_value() == test_input
@@ -199,11 +199,11 @@ def test_dict_type_loader_typing_fail():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Input 'dict_input' of solid 'emit_dict' has no way of being resolved.",
+        match="Input 'dict_input' of op 'emit_dict' has no way of being resolved.",
     ):
         execute_solid(
             emit_dict,
-            run_config={"solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
+            run_config={"ops": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
         )
 
 
@@ -220,5 +220,5 @@ def test_dict_type_loader_inner_type_mismatch():
     with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(
             emit_dict,
-            run_config={"solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
+            run_config={"ops": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
         )

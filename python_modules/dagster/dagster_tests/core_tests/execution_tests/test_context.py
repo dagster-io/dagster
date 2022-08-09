@@ -33,31 +33,3 @@ def test_op_execution_context():
         ctx_op()
 
     assert foo.execute_in_process().success
-
-
-def test_solid_execution_context():
-    @op
-    def ctx_op(context: SolidExecutionContext):
-        check.inst(context.run, DagsterRun)
-        assert context.job_name == "foo"
-
-        with pytest.raises(Exception):
-            context.job_def  # pylint: disable=pointless-statement
-
-        assert context.op_config is None
-
-        with pytest.raises(Exception):
-            context.op_def  # pylint: disable=pointless-statement
-
-        check.inst(context.run, PipelineRun)
-        assert context.job_name == "foo"
-        assert context.pipeline_def.name == "foo"
-        check.inst(context.pipeline_def, PipelineDefinition)
-        assert context.op_config is None
-        check.inst(context.op_def, SolidDefinition)
-
-    @pipeline
-    def foo():
-        ctx_op()
-
-    assert execute_pipeline(foo).success
