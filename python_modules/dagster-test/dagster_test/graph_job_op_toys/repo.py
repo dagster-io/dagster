@@ -13,6 +13,7 @@ from dagster_test.graph_job_op_toys.asset_lineage import (
 from dagster_test.graph_job_op_toys.big_honkin_asset_graph import big_honkin_asset_group
 from dagster_test.graph_job_op_toys.branches import branch_failed_job, branch_job
 from dagster_test.graph_job_op_toys.composition import composition_job
+from dagster_test.graph_job_op_toys.conditional_assets import get_conditional_assets_repo
 from dagster_test.graph_job_op_toys.cross_repo_assets import (
     downstream_asset_group1,
     downstream_asset_group2,
@@ -158,3 +159,8 @@ def downstream_assets_repository2():
 @repository
 def graph_backed_asset_repository():
     return [graph_backed_group]
+
+
+@repository
+def conditional_assets_repository():
+    return get_conditional_assets_repo()

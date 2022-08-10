@@ -195,6 +195,25 @@ def downstream_asset():
 
 In this example, Dagster doesn’t need to load data from `upstream_asset` to successfully compute the `downstream_asset`. While `downstream_asset` does depend on `upstream_asset`, the key difference with `non_argument_deps` is that data isn’t being passed between the functions. Specifically, the data from the `sugary_cereals` table isn't being passed as an argument to `downstream_asset`.
 
+#### Conditional materialization
+
+In some cases, an asset may not need to be updated in storage each time the decorated function is executed. In this case you can use the `always_materialize` parameter along with `yield` syntax to only materialize an asset to storage in some cases. If an asset is not materialized to storage, downstream assets will not be materialized, and asset sensors monitoring the asset will not trigger
+
+```python file=/concepts/assets/conditional_materialization.py startafter=start_conditional endbefore=end_conditional
+@asset(
+    always_materialize=False
+)
+def may_not_materialize():
+    # to simulate an asset that may not always materialize.
+    if random.randint(1, 4) < 3:
+        yield Output([1,2,3,4])
+
+@asset
+def downstream(may_not_materialize):
+    # will not run when may_not_materialize doesn't materialize the asset
+    return may_not_materialize + [5]
+```
+
 ### Graph-backed assets
 
 [Basic software-defined assets](#a-basic-software-defined-asset) are computed using a single op. If generating an asset involves multiple discrete computations, you can use graph-backed assets by separating each computation into an op and building a graph to combine your computations. This allows you to launch re-executions of runs at the op boundaries but doesn't require you to link each intermediate value to an asset in persistent storage.
