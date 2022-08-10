@@ -15,6 +15,7 @@ from dagster import (
     SourceAsset,
     StaticPartitionsDefinition,
     define_asset_job,
+    materialize,
 )
 from dagster._core.definitions import asset, build_assets_job, multi_asset
 from dagster._core.definitions.asset_partitions import (
@@ -145,6 +146,7 @@ def test_access_partition_keys_from_context_only_one_asset_partitioned():
                 assert not context.has_asset_partitions
             else:
                 assert context.has_asset_partitions
+                assert context.asset_partition_key_range == PartitionKeyRange("a", "c")
 
     @asset(partitions_def=upstream_partitions_def)
     def upstream_asset(context):
@@ -158,15 +160,19 @@ def test_access_partition_keys_from_context_only_one_asset_partitioned():
     def double_downstream_asset(downstream_asset):
         assert downstream_asset is None
 
-    my_job = build_assets_job(
-        "my_job",
+    result = materialize(
         assets=[upstream_asset, downstream_asset, double_downstream_asset],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="b",
     )
-    result = my_job.execute_in_process(partition_key="b")
     assert result.asset_materializations_for_node("upstream_asset") == [
         AssetMaterialization(asset_key=AssetKey(["upstream_asset"]), partition="b")
     ]
+
+    assert materialize(
+        assets=[upstream_asset.to_source_assets()[0], downstream_asset, double_downstream_asset],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+    ).success
 
 
 def test_output_context_asset_partitions_time_window():
@@ -213,12 +219,17 @@ def test_input_context_asset_partitions_time_window():
     def downstream_asset(upstream_asset):
         assert upstream_asset is None
 
-    my_job = build_assets_job(
-        "my_job",
-        assets=[downstream_asset, upstream_asset],
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
-    )
-    my_job.execute_in_process(partition_key="2021-06-06")
+    assert materialize(
+        assets=[upstream_asset, downstream_asset],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="2021-06-06",
+    ).success
+
+    assert materialize(
+        assets=[upstream_asset.to_source_assets()[0], downstream_asset],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
+        partition_key="2021-06-06",
+    ).success
 
 
 def test_cross_job_different_partitions():
