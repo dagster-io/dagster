@@ -239,37 +239,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             )
 
         if filters.tags:
-            filter_tags = []
-            for key, value in filters.tags.items():
-                if key == OP_SELECTION_TAG:
-                    filter_tags.append(
-                        db.and_(
-                            db.or_(
-                                RunTagsTable.c.key == SOLID_SELECTION_TAG,
-                                RunTagsTable.c.key == OP_SELECTION_TAG,
-                            ),
-                            (
-                                RunTagsTable.c.value == value
-                                if isinstance(value, str)
-                                else RunTagsTable.c.value.in_(value)
-                            ),
-                        )
-                    )
-                else:
-                    filter_tags.append(
-                        db.and_(
-                            RunTagsTable.c.key == key,
-                            (
-                                RunTagsTable.c.value == value
-                                if isinstance(value, str)
-                                else RunTagsTable.c.value.in_(value)
-                            ),
-                        )
-                    )
-            query = query.where(db.or_(*filter_tags)).group_by(RunsTable.c.run_body, RunsTable.c.id)
-
-            if len(filters.tags) > 0:
-                query = query.having(db.func.count(RunsTable.c.run_id) == len(filters.tags))
+            query = add_tags_filter_for_backcompat(query, filters)
 
         if filters.snapshot_id:
             query = query.where(RunsTable.c.snapshot_id == filters.snapshot_id)
@@ -1137,3 +1107,40 @@ def defensively_unpack_pipeline_snapshot_query(logger, row):
     except JSONDecodeError:
         _warn("Could not parse json in snapshot table.")
         return None
+
+
+def add_tags_filter_for_backcompat(query, filters):
+    filter_tags = []
+    for key, value in filters.tags.items():
+        # Pre-1.0, we recorded op selections under the
+        # SOLID_SELECTION_TAG on jobs. In order to get historical runs
+        # to show up when filtering, we check for both
+        # SOLID_SELECTION_TAG and OP_SELECTION_TAG.
+        if key == OP_SELECTION_TAG:
+            filter_tags.append(
+                db.and_(
+                    db.or_(
+                        RunTagsTable.c.key == SOLID_SELECTION_TAG,
+                        RunTagsTable.c.key == OP_SELECTION_TAG,
+                    ),
+                    (
+                        RunTagsTable.c.value == value
+                        if isinstance(value, str)
+                        else RunTagsTable.c.value.in_(value)
+                    ),
+                )
+            )
+        else:
+            filter_tags.append(
+                db.and_(
+                    RunTagsTable.c.key == key,
+                    (
+                        RunTagsTable.c.value == value
+                        if isinstance(value, str)
+                        else RunTagsTable.c.value.in_(value)
+                    ),
+                )
+            )
+    if len(filters.tags) > 0:
+        query = query.having(db.func.count(RunsTable.c.run_id) == len(filters.tags))
+    return query.where(db.or_(*filter_tags)).group_by(RunsTable.c.run_body, RunsTable.c.id)

@@ -408,7 +408,10 @@ class InMemoryRunStorage(RunStorage):
 
 
 def tags_match_filter_backcompat(filter_tags: Dict[str, Any], run_tags: Dict[str, Any]) -> bool:
-    # Handle backcompat between solid selection and op selection tags
+    # Pre-1.0, we recorded op selections under the
+    # SOLID_SELECTION_TAG on jobs. In order to get historical runs
+    # to show up when filtering, we check for both
+    # SOLID_SELECTION_TAG and OP_SELECTION_TAG.
     if OP_SELECTION_TAG in filter_tags:
         if OP_SELECTION_TAG not in run_tags and SOLID_SELECTION_TAG not in run_tags:
             return False
