@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface OpTypeSignatureFragment_outputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;
@@ -21,7 +21,7 @@ export interface OpTypeSignatureFragment_outputDefinitions {
 }
 
 export interface OpTypeSignatureFragment_inputDefinitions_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;
@@ -34,7 +34,7 @@ export interface OpTypeSignatureFragment_inputDefinitions {
 }
 
 export interface OpTypeSignatureFragment {
-  __typename: "SolidDefinition" | "CompositeSolidDefinition";
+  __typename: "CompositeSolidDefinition" | "SolidDefinition";
   outputDefinitions: OpTypeSignatureFragment_outputDefinitions[];
   inputDefinitions: OpTypeSignatureFragment_inputDefinitions[];
 }

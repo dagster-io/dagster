@@ -1,10 +1,8 @@
-from typing import Mapping, Optional, cast
+from typing import Mapping, Optional
 from urllib.parse import urljoin, urlparse
 
 import click
 import requests
-from graphql import graphql
-from graphql.execution import ExecutionResult
 
 import dagster._check as check
 import dagster._seven as seven
@@ -43,17 +41,13 @@ def execute_query(
 
     context = workspace_process_context.create_request_context()
 
-    result = cast(
-        ExecutionResult,
-        graphql(
-            request_string=query,
-            schema=create_schema(),
-            context_value=context,
-            variable_values=variables,
-        ),
+    result = create_schema().execute(
+        query,
+        context_value=context,
+        variable_values=variables,
     )
 
-    result_dict = result.to_dict()
+    result_dict = result.formatted
 
     # Here we detect if this is in fact an error response
     # If so, we iterate over the result_dict and the original result

@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from enum import Enum
-from typing import NamedTuple, Optional
-
-from rx import Observable
+from typing import Callable, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.instance import MayHaveInstanceWeakref
@@ -141,7 +139,9 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def read_logs_file(self, run_id, key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ):
+    def read_logs_file(
+        self, run_id, key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ
+    ) -> ComputeLogFileData:
         """Get compute log data for a given compute step.
 
         Args:
@@ -178,8 +178,8 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
     def on_unsubscribe(self, subscription):
         pass
 
-    def observable(self, run_id, key, io_type, cursor=None):
-        """Return an Observable which streams back log data from the execution logs for a given
+    def observable(self, run_id, key, io_type, cursor=None) -> "ComputeLogSubscription":
+        """Return a ComputeLogSubscription which streams back log data from the execution logs for a given
         compute step.
 
         Args:
@@ -203,7 +203,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref):
 
         subscription = ComputeLogSubscription(self, run_id, key, io_type, cursor)
         self.on_subscribe(subscription)
-        return Observable.create(subscription)  # pylint: disable=E1101
+        return subscription  # pylint: disable=E1101
 
     def dispose(self):
         pass
@@ -214,15 +214,23 @@ class ComputeLogSubscription:
     are written
     """
 
-    def __init__(self, manager, run_id, key, io_type, cursor):
+    def __init__(
+        self,
+        manager: ComputeLogManager,
+        run_id,
+        key,
+        io_type,
+        cursor,
+    ):
         self.manager = manager
         self.run_id = run_id
         self.key = key
         self.io_type = io_type
         self.cursor = cursor
-        self.observer = None
+        self.observer: Optional[Callable[[ComputeLogFileData], None]] = None
+        self.is_complete = False
 
-    def __call__(self, observer):
+    def __call__(self, observer: Callable[[ComputeLogFileData], None]):
         self.observer = observer
         self.fetch()
         if self.manager.is_watch_completed(self.run_id, self.key):
@@ -231,8 +239,6 @@ class ComputeLogSubscription:
 
     def dispose(self):
         # called when the connection gets closed, allowing the observer to get GC'ed
-        if self.observer and callable(getattr(self.observer, "dispose", None)):
-            self.observer.dispose()
         self.observer = None
         self.manager.on_unsubscribe(self)
 
@@ -250,11 +256,11 @@ class ComputeLogSubscription:
                 max_bytes=MAX_BYTES_CHUNK_READ,
             )
             if not self.cursor or update.cursor != self.cursor:
-                self.observer.on_next(update)
+                self.observer(update)
                 self.cursor = update.cursor
             should_fetch = update.data and len(update.data.encode("utf-8")) >= MAX_BYTES_CHUNK_READ
 
     def complete(self):
+        self.is_complete = True
         if not self.observer:
             return
-        self.observer.on_completed()

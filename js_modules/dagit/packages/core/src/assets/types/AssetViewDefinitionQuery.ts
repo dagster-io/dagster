@@ -3138,7 +3138,7 @@ export interface AssetViewDefinitionQuery_assetOrError_Asset_definition_type_inn
 export type AssetViewDefinitionQuery_assetOrError_Asset_definition_type_innerTypes_outputSchemaType = AssetViewDefinitionQuery_assetOrError_Asset_definition_type_innerTypes_outputSchemaType_ArrayConfigType | AssetViewDefinitionQuery_assetOrError_Asset_definition_type_innerTypes_outputSchemaType_EnumConfigType | AssetViewDefinitionQuery_assetOrError_Asset_definition_type_innerTypes_outputSchemaType_RegularConfigType | AssetViewDefinitionQuery_assetOrError_Asset_definition_type_innerTypes_outputSchemaType_CompositeConfigType | AssetViewDefinitionQuery_assetOrError_Asset_definition_type_innerTypes_outputSchemaType_ScalarUnionConfigType | AssetViewDefinitionQuery_assetOrError_Asset_definition_type_innerTypes_outputSchemaType_MapConfigType;
 
 export interface AssetViewDefinitionQuery_assetOrError_Asset_definition_type_innerTypes {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   key: string;
   name: string | null;
   displayName: string;
@@ -3153,7 +3153,7 @@ export interface AssetViewDefinitionQuery_assetOrError_Asset_definition_type_inn
 }
 
 export interface AssetViewDefinitionQuery_assetOrError_Asset_definition_type {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   key: string;
   name: string | null;
   displayName: string;

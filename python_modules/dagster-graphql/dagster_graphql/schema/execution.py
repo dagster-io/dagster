@@ -121,7 +121,7 @@ class GrapheneExecutionStep(graphene.ObjectType):
         return self._step_snap.solid_handle_id
 
     def resolve_kind(self, _graphene_info):
-        return self._step_snap.kind
+        return self._step_snap.kind.value
 
 
 class GrapheneExecutionPlan(graphene.ObjectType):

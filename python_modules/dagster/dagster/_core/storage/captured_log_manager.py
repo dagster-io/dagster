@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import IO, Generator, NamedTuple, Optional, Sequence
+from typing import IO, Callable, Generator, NamedTuple, Optional, Sequence
 
 from dagster._core.storage.compute_log_manager import ComputeIOType
 
@@ -87,13 +87,14 @@ class CapturedLogMetadata(
 
 
 class CapturedLogSubscription:
-    def __init__(self, manager, log_key, cursor):
+    def __init__(self, manager: "CapturedLogManager", log_key, cursor):
         self._manager = manager
         self._log_key = log_key
         self._cursor = cursor
-        self._observer = None
+        self._observer: Optional[Callable[[CapturedLogData], None]] = None
+        self.is_complete = False
 
-    def __call__(self, observer):
+    def __call__(self, observer: Optional[Callable[[CapturedLogData], None]]):
         self._observer = observer
         self.fetch()
         if self._manager.is_capture_complete(self._log_key):
@@ -105,11 +106,8 @@ class CapturedLogSubscription:
         return self._log_key
 
     def dispose(self):
-        # called when the connection gets closed, allowing the observer to get GC'ed
-        if self._observer and callable(getattr(self._observer, "dispose", None)):
-            self._observer.dispose()
         self._observer = None
-        self._manager.on_unsubscribe(self)
+        self._manager.unsubscribe(self)
 
     def fetch(self):
         if not self._observer:
@@ -123,14 +121,12 @@ class CapturedLogSubscription:
                 max_bytes=MAX_BYTES_CHUNK_READ,
             )
             if not self._cursor or log_data.cursor != self._cursor:
-                self._observer.on_next(log_data)
+                self._observer(log_data)
                 self._cursor = log_data.cursor
             should_fetch = _has_max_data(log_data.stdout) or _has_max_data(log_data.stderr)
 
     def complete(self):
-        if not self._observer:
-            return
-        self._observer.on_completed()
+        self.is_complete = True
 
 
 def _has_max_data(chunk):

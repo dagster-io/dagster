@@ -1,16 +1,13 @@
 from abc import ABC, abstractmethod
-from asyncio import Queue, Task, get_event_loop
+from asyncio import Task, get_event_loop
 from enum import Enum
-from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, AsyncGenerator, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 from dagit.templates.playground import TEMPLATE
 from dagster_graphql.implementation.utils import ErrorCapture
 from graphene import Schema
-from graphql.error import GraphQLError, GraphQLLocatedError
-from graphql.error import format_error as format_graphql_error
+from graphql import GraphQLError, GraphQLFormattedError
 from graphql.execution import ExecutionResult
-from rx import Observable
-from rx.concurrency import thread_pool_scheduler
 from starlette import status
 from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
@@ -68,8 +65,8 @@ class GraphQLServer(ABC):
     def make_request_context(self, conn: HTTPConnection):
         ...
 
-    def handle_graphql_errors(self, errors):
-        return [format_graphql_error(err) for err in errors]
+    def handle_graphql_errors(self, errors: Sequence[GraphQLError]):
+        return [err.formatted for err in errors]
 
     async def graphql_http_endpoint(self, request: Request):
         """
@@ -171,7 +168,7 @@ class GraphQLServer(ABC):
                 elif message_type == GraphQLWS.START:
                     data = message["payload"]
 
-                    task, error_payload = self.execute_graphql_subscription(
+                    task, error_payload = await self.execute_graphql_subscription(
                         websocket=websocket,
                         operation_id=operation_id,
                         query=data["query"],
@@ -216,25 +213,24 @@ class GraphQLServer(ABC):
             middleware=self._graphql_middleware,
         )
 
-    def execute_graphql_subscription(
+    async def execute_graphql_subscription(
         self,
         websocket: WebSocket,
         operation_id: str,
         query: str,
         variables: Optional[Dict[str, Any]],
         operation_name: Optional[str],
-    ) -> Tuple[Optional[Task], Optional[Dict[str, Any]]]:
+    ) -> Tuple[Optional[Task], Optional[GraphQLFormattedError]]:
         request_context = self.make_request_context(websocket)
         try:
-            async_result = self._graphql_schema.execute(
+            async_result = await self._graphql_schema.subscribe(
                 query,
                 variables=variables,
                 operation_name=operation_name,
                 context=request_context,
-                allow_subscriptions=True,
             )
         except GraphQLError as error:
-            error_payload = format_graphql_error(error)
+            error_payload = error.formatted
             return None, error_payload
 
         if isinstance(async_result, ExecutionResult):
@@ -245,11 +241,9 @@ class GraphQLServer(ABC):
             return None, handled_errors[0]
 
         # in the future we should get back async gen directly, back compat for now
-        disposable, async_gen = _disposable_and_async_gen_from_obs(async_result, get_event_loop())
         task = get_event_loop().create_task(
-            _handle_async_results(async_gen, operation_id, websocket)
+            _handle_async_results(async_result, operation_id, websocket)
         )
-        task.add_done_callback(lambda _: disposable.dispose())
 
         return task, None
 
@@ -265,7 +259,7 @@ class GraphQLServer(ABC):
 
     def _determine_status_code(
         self,
-        resolver_errors: Optional[List[Exception]],
+        resolver_errors: Optional[List[GraphQLError]],
         captured_errors: List[Exception],
     ) -> int:
         server_error = False
@@ -273,7 +267,8 @@ class GraphQLServer(ABC):
 
         if resolver_errors:
             for error in resolver_errors:
-                if isinstance(error, GraphQLLocatedError):
+                # if thrown from a field, has an original error
+                if error.original_error:
                     server_error = True
                 else:
                     # syntax error, invalid query, etc
@@ -297,7 +292,7 @@ async def _handle_async_results(results: AsyncGenerator, operation_id: str, webs
             payload = {"data": result.data}
 
             if result.errors:
-                payload["errors"] = [format_graphql_error(err) for err in result.errors]
+                payload["errors"] = [err.formatted for err in result.errors]
 
             await _send_message(websocket, GraphQLWS.DATA, payload, operation_id)
     except Exception as error:
@@ -307,7 +302,7 @@ async def _handle_async_results(results: AsyncGenerator, operation_id: str, webs
         await _send_message(
             websocket,
             GraphQLWS.DATA,
-            {"data": None, "errors": [format_graphql_error(error)]},
+            {"data": None, "errors": [error.formatted]},
             operation_id,
         )
 
@@ -335,25 +330,3 @@ async def _send_message(
         and websocket.application_state != WebSocketState.DISCONNECTED
     ):
         await websocket.send_json(data)
-
-
-def _disposable_and_async_gen_from_obs(obs: Observable, loop):
-    """
-    Compatability layer for legacy Observable to async generator
-
-    This should be removed and subscription resolvers changed to
-    return async generators after removal of flask & gevent based dagit.
-    """
-    queue: Queue = Queue()
-
-    # process observable in a thread, handle results in aio loop
-    disposable = obs.subscribe_on(thread_pool_scheduler).subscribe(
-        on_next=lambda i: loop.call_soon_threadsafe(queue.put_nowait, i)
-    )
-
-    async def async_gen():
-        while True:
-            i = await queue.get()
-            yield i
-
-    return disposable, async_gen()

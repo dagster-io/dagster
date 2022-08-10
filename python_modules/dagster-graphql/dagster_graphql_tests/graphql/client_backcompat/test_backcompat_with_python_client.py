@@ -10,7 +10,7 @@ from dagster._utils import file_relative_path
 
 @pytest.fixture(scope="session", name="validator_client")
 def get_validator_client() -> Client:
-    return Client(schema=create_schema())
+    return Client(schema=create_schema().graphql_schema)
 
 
 def generate_legacy_query_strings() -> Iterator[str]:

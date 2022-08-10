@@ -12,7 +12,7 @@ export interface LaunchpadSessionRunConfigSchemaFragment_PipelineNotFoundError {
 }
 
 export interface LaunchpadSessionRunConfigSchemaFragment_RunConfigSchema_rootConfigType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType" | "MapConfigType";
+  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType" | "ScalarUnionConfigType" | "MapConfigType";
   key: string;
 }
 

@@ -1193,7 +1193,7 @@ export interface _DagsterTypeFragment_outputSchemaType_MapConfigType {
 export type _DagsterTypeFragment_outputSchemaType = _DagsterTypeFragment_outputSchemaType_ArrayConfigType | _DagsterTypeFragment_outputSchemaType_EnumConfigType | _DagsterTypeFragment_outputSchemaType_RegularConfigType | _DagsterTypeFragment_outputSchemaType_CompositeConfigType | _DagsterTypeFragment_outputSchemaType_ScalarUnionConfigType | _DagsterTypeFragment_outputSchemaType_MapConfigType;
 
 export interface _DagsterTypeFragment {
-  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  __typename: "ListDagsterType" | "NullableDagsterType" | "RegularDagsterType";
   key: string;
   name: string | null;
   displayName: string;
