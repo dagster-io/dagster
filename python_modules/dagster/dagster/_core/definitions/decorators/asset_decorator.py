@@ -88,6 +88,7 @@ def asset(
     partitions_def: Optional[PartitionsDefinition] = None,
     op_tags: Optional[Dict[str, Any]] = None,
     group_name: Optional[str] = None,
+    always_materialize: bool = True,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -139,6 +140,9 @@ def asset(
             (Experimental) A mapping of resource keys to resource definitions. These resources
             will be initialized during execution, and can be accessed from the
             context within the body of the function.
+        always_materialize (bool): Whether the decorated function will always materialize an asset.
+            Defaults to True. If False, the function can return None, which will not be materialized to
+            storage and will halt execution of downstream assets.
 
     Examples:
 
@@ -178,6 +182,7 @@ def asset(
             partitions_def=partitions_def,
             op_tags=op_tags,
             group_name=group_name,
+            always_materialize=always_materialize,
         )(fn)
 
     return inner
@@ -201,6 +206,7 @@ class _Asset:
         partitions_def: Optional[PartitionsDefinition] = None,
         op_tags: Optional[Dict[str, Any]] = None,
         group_name: Optional[str] = None,
+        always_materialize: bool = True,
     ):
         self.name = name
 
@@ -222,6 +228,7 @@ class _Asset:
         self.op_tags = op_tags
         self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
         self.group_name = group_name
+        self.always_materialize = always_materialize
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -253,6 +260,7 @@ class _Asset:
                 io_manager_key=io_manager_key,
                 dagster_type=self.dagster_type if self.dagster_type else NoValueSentinel,
                 description=self.description,
+                is_required=self.always_materialize,
             )
 
             op = _Op(
