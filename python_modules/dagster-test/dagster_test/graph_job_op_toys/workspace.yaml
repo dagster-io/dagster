@@ -1,2 +1,0 @@
-load_from:
-  - python_module: dagster_test.graph_job_op_toys.repo

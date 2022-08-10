@@ -1,13 +1,15 @@
 from dagster import (
     AssetMaterialization,
     ExpectationResult,
+    In,
     MetadataValue,
     Nothing,
+    Out,
     Output,
     file_relative_path,
-    fs_io_manager,
+    graph,
+    op,
 )
-from dagster._legacy import InputDefinition, ModeDefinition, OutputDefinition, pipeline, solid
 
 MARKDOWN_EXAMPLE = "markdown_example.md"
 
@@ -23,7 +25,7 @@ raw_files = [
 ]
 
 
-def create_raw_file_solid(name):
+def create_raw_file_op(name):
     def do_expectation(_context, _value):
         return ExpectationResult(
             success=True,
@@ -31,13 +33,13 @@ def create_raw_file_solid(name):
             description="Checked {name} exists".format(name=name),
         )
 
-    @solid(
+    @op(
         name=name,
         description="Inject raw file for input to table {} and do expectation on output".format(
             name
         ),
     )
-    def raw_file_solid(_context):
+    def raw_file_op(_context):
         yield AssetMaterialization(
             asset_key="table_info",
             metadata={"table_path": MetadataValue.path("/path/to/{}.raw".format(name))},
@@ -45,7 +47,7 @@ def create_raw_file_solid(name):
         yield do_expectation(_context, name)
         yield Output(name)
 
-    return raw_file_solid
+    return raw_file_op
 
 
 raw_tables = [
@@ -60,17 +62,17 @@ raw_tables = [
 ]
 
 
-def create_raw_file_solids():
-    return list(map(create_raw_file_solid, raw_files))
+def create_raw_file_ops():
+    return list(map(create_raw_file_op, raw_files))
 
 
 def input_name_for_raw_file(raw_file):
     return raw_file + "_ready"
 
 
-@solid(
-    input_defs=[InputDefinition("start", Nothing)],
-    output_defs=[OutputDefinition(Nothing)],
+@op(
+    ins={"start": In(Nothing)},
+    out=Out(dagster_type=Nothing),
     description="Load a bunch of raw tables from corresponding files",
 )
 def many_table_materializations(_context):
@@ -91,12 +93,12 @@ def many_table_materializations(_context):
             )
 
 
-@solid(
-    input_defs=[InputDefinition("start", Nothing)],
-    output_defs=[OutputDefinition(Nothing)],
-    description="This simulates a solid that would wrap something like dbt, "
+@op(
+    ins={"start": In(Nothing)},
+    out=Out(Nothing),
+    description="This simulates a op that would wrap something like dbt, "
     "where it emits a bunch of tables and then say an expectation on each table, "
-    "all in one solid",
+    "all in one op",
 )
 def many_materializations_and_passing_expectations(_context):
     tables = [
@@ -124,10 +126,10 @@ def many_materializations_and_passing_expectations(_context):
         )
 
 
-@solid(
-    input_defs=[InputDefinition("start", Nothing)],
-    output_defs=[],
-    description="A solid that just does a couple inline expectations, one of which fails",
+@op(
+    ins={"start": In(Nothing)},
+    out=Out(dagster_type=Nothing),
+    description="A op that just does a couple inline expectations, one of which fails",
 )
 def check_users_and_groups_one_fails_one_succeeds(_context):
     yield ExpectationResult(
@@ -137,18 +139,8 @@ def check_users_and_groups_one_fails_one_succeeds(_context):
         metadata={
             "table_summary": {
                 "columns": {
-                    "name": {
-                        "nulls": 0,
-                        "empty": 0,
-                        "values": 123,
-                        "average_length": 3.394893,
-                    },
-                    "time_created": {
-                        "nulls": 1,
-                        "empty": 2,
-                        "values": 120,
-                        "average": 1231283,
-                    },
+                    "name": {"nulls": 0, "empty": 0, "values": 123, "average_length": 3.394893},
+                    "time_created": {"nulls": 1, "empty": 2, "values": 120, "average": 1231283},
                 }
             },
         },
@@ -161,45 +153,42 @@ def check_users_and_groups_one_fails_one_succeeds(_context):
         metadata={
             "table_summary": {
                 "columns": {
-                    "name": {
-                        "nulls": 1,
-                        "empty": 0,
-                        "values": 122,
-                        "average_length": 3.394893,
-                    },
-                    "time_created": {
-                        "nulls": 1,
-                        "empty": 2,
-                        "values": 120,
-                        "average": 1231283,
-                    },
+                    "name": {"nulls": 1, "empty": 0, "values": 122, "average_length": 3.394893},
+                    "time_created": {"nulls": 1, "empty": 2, "values": 120, "average": 1231283},
                 }
             }
         },
     )
 
 
-@solid(
-    input_defs=[InputDefinition("start", Nothing)],
-    output_defs=[],
-    description="A solid that just does a couple inline expectations",
+@op(
+    ins={"start": In(Nothing)},
+    out=Out(dagster_type=Nothing),
+    description="An op that just does a couple inline expectations",
 )
 def check_admins_both_succeed(_context):
     yield ExpectationResult(success=True, label="Group admins check out")
     yield ExpectationResult(success=True, label="Event admins check out")
 
 
-@pipeline(
-    description=(
-        "Demo pipeline that yields AssetMaterializations and ExpectationResults, along with the "
-        "various forms of metadata that can be attached to them."
-    ),
-    mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})],
-)
+@graph
 def many_events():
-    raw_files_solids = [raw_file_solid() for raw_file_solid in create_raw_file_solids()]
+    raw_files_ops = [raw_file_op() for raw_file_op in create_raw_file_ops()]
 
-    mtm = many_table_materializations(raw_files_solids)
+    mtm = many_table_materializations(raw_files_ops)
     mmape = many_materializations_and_passing_expectations(mtm)
     check_users_and_groups_one_fails_one_succeeds(mmape)
     check_admins_both_succeed(mmape)
+
+
+many_events_job = many_events.to_job(
+    description=(
+        "Demo job that yields AssetMaterializations and ExpectationResults, along with the "
+        "various forms of metadata that can be attached to them."
+    )
+)
+
+
+many_events_subset_job = many_events.to_job(
+    name="many_events_subset_job", op_selection=["many_materializations_and_passing_expectations*"]
+)

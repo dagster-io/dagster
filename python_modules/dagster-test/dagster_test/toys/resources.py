@@ -1,6 +1,14 @@
-from dagster import Field, Int, fs_io_manager, reconstructable, resource
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline, solid
-from dagster._utils import merge_dicts
+from dagster import (
+    Field,
+    Int,
+    asset,
+    graph,
+    op,
+    reconstructable,
+    repository,
+    resource,
+    with_resources,
+)
 
 
 def define_resource(num):
@@ -11,43 +19,55 @@ def define_resource(num):
     return a_resource
 
 
-lots_of_resources = merge_dicts(
-    {"R" + str(r): define_resource(r) for r in range(20)}, {"io_manager": fs_io_manager}
-)
+lots_of_resources = {"R" + str(r): define_resource(r) for r in range(20)}
 
 
-@solid(required_resource_keys=set(lots_of_resources.keys()))
-def all_resources(_):
+@op(required_resource_keys=set(lots_of_resources.keys()))
+def all_resources():
     return 1
 
 
-@solid(required_resource_keys={"R1"})
+@op(required_resource_keys={"R1"})
 def one(context):
     return 1 + context.resources.R1
 
 
-@solid(required_resource_keys={"R2"})
-def two(_):
+@op(required_resource_keys={"R2"})
+def two():
     return 1
 
 
-@solid(required_resource_keys={"R1", "R2", "R3"})
-def one_and_two_and_three(_):
+@op(required_resource_keys={"R1", "R2", "R3"})
+def one_and_two_and_three():
     return 1
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs=lots_of_resources)])
-def resource_pipeline():
+@graph
+def resource_ops():
     all_resources()
     one()
     two()
     one_and_two_and_three()
 
 
+resource_job = resource_ops.to_job(resource_defs=lots_of_resources)
+
+
+@asset(required_resource_keys={"R1"})
+def resource_asset(context):
+    return context.resources.R1
+
+
+@repository
+def resource_repo():
+    return [
+        resource_job,
+        *with_resources(
+            [resource_asset],
+            resource_defs=lots_of_resources,
+        ),
+    ]
+
+
 if __name__ == "__main__":
-    result = execute_pipeline(
-        reconstructable(resource_pipeline),
-        run_config={
-            "execution": {"multiprocessing": {}},
-        },
-    )
+    result = reconstructable(resource_job).execute_in_process()
