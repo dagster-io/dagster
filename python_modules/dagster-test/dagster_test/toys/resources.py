@@ -50,7 +50,7 @@ def resource_ops():
     one_and_two_and_three()
 
 
-resource_job = resource_ops.to_job(resource_defs=lots_of_resources)
+resource_job = resource_ops.to_job(resource_defs=lots_of_resources, name="resource_job")
 
 
 @asset(required_resource_keys={"R1"})

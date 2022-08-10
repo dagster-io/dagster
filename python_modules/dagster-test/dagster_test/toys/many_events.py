@@ -182,10 +182,11 @@ def many_events():
 
 
 many_events_job = many_events.to_job(
+    name="many_events_job",
     description=(
         "Demo job that yields AssetMaterializations and ExpectationResults, along with the "
         "various forms of metadata that can be attached to them."
-    )
+    ),
 )
 
 

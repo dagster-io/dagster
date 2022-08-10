@@ -6,10 +6,7 @@ from dagster import ExperimentalWarning
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
 import pendulum
-from dagster_test.toys.asset_lineage import (
-    asset_lineage_job,
-    asset_lineage_partition_set,
-)
+from dagster_test.toys.asset_lineage import asset_lineage_job, asset_lineage_partition_set
 from dagster_test.toys.big_honkin_asset_graph import big_honkin_asset_group
 from dagster_test.toys.branches import branch_failed_job, branch_job
 from dagster_test.toys.composition import composition_job
@@ -19,10 +16,7 @@ from dagster_test.toys.cross_repo_assets import (
     upstream_asset_group,
 )
 from dagster_test.toys.dynamic import dynamic_job
-from dagster_test.toys.error_monster import (
-    error_monster_failing_job,
-    error_monster_passing_job,
-)
+from dagster_test.toys.error_monster import error_monster_failing_job, error_monster_passing_job
 from dagster_test.toys.graph_backed_assets import graph_backed_group
 from dagster_test.toys.hammer import hammer_default_executor_job
 from dagster_test.toys.input_managers import df_stats_job

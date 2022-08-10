@@ -896,7 +896,7 @@ def test_repo_label_tag_migration():
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             job_repo_filter = RunsFilter(
                 job_name="hammer",
-                tags={REPOSITORY_LABEL_TAG: "toys_repository@dagster_test.graph_job_op_toys.repo"},
+                tags={REPOSITORY_LABEL_TAG: "toys_repository@dagster_test.toys.repo"},
             )
 
             count = instance.get_runs_count(job_repo_filter)
