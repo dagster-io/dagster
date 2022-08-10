@@ -18,7 +18,7 @@ def test_event_callback_logging():
 
     pipeline = ReconstructablePipeline.for_module(
         "dagstermill.examples.repository",
-        "hello_logging_pipeline",
+        "hello_logging_job",
     )
     pipeline_def = pipeline.get_definition()
     with instance_for_test() as instance:

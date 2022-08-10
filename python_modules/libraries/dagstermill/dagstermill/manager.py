@@ -19,7 +19,7 @@ from dagster._core.definitions.reconstruct import ReconstructablePipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.api import scoped_pipeline_context
+from dagster._core.execution.api import scoped_pipeline_context as scoped_plan_context
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.resources_init import (
@@ -99,14 +99,14 @@ class Manager:
         )
         return self.resource_manager
 
-    def reconstitute_pipeline_context(
+    def reconstitute_job_context(
         self,
         output_log_path=None,
         marshal_dir=None,
         run_config=None,
         executable_dict=None,
-        pipeline_run_dict=None,
-        solid_handle_kwargs=None,
+        run_dict=None,
+        node_handle_kwargs=None,
         instance_ref_dict=None,
         step_key=None,
     ):
@@ -118,15 +118,15 @@ class Manager:
 
         Use :func:`dagstermill.get_context` in the ``parameters`` cell of your notebook to define a
         context for interactive exploration and development. This call will be replaced by one to
-        :func:`dagstermill.reconstitute_pipeline_context` when the notebook is executed by
+        :func:`dagstermill.reconstitute_job_context` when the notebook is executed by
         dagstermill.
         """
         check.opt_str_param(output_log_path, "output_log_path")
         check.opt_str_param(marshal_dir, "marshal_dir")
         run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
-        check.dict_param(pipeline_run_dict, "pipeline_run_dict")
+        check.dict_param(run_dict, "run_dict")
         check.dict_param(executable_dict, "executable_dict")
-        check.dict_param(solid_handle_kwargs, "solid_handle_kwargs")
+        check.dict_param(node_handle_kwargs, "node_handle_kwargs")
         check.dict_param(instance_ref_dict, "instance_ref_dict")
         check.str_param(step_key, "step_key")
 
@@ -141,9 +141,9 @@ class Manager:
                 "Error when attempting to resolve DagsterInstance from serialized InstanceRef"
             ) from err
 
-        pipeline_run = unpack_value(pipeline_run_dict)
+        pipeline_run = unpack_value(run_dict)
 
-        solid_handle = NodeHandle.from_dict(solid_handle_kwargs)
+        solid_handle = NodeHandle.from_dict(node_handle_kwargs)
         solid = pipeline_def.get_solid(solid_handle)
         solid_def = solid.definition
 
@@ -162,7 +162,7 @@ class Manager:
             step_keys_to_execute=pipeline_run.step_keys_to_execute,
         )
 
-        with scoped_pipeline_context(
+        with scoped_plan_context(
             execution_plan,
             pipeline,
             run_config,
@@ -171,9 +171,9 @@ class Manager:
             scoped_resources_builder_cm=self._setup_resources,
             # Set this flag even though we're not in test for clearer error reporting
             raise_on_error=True,
-        ) as pipeline_context:
+        ) as plan_context:
             self.context = DagstermillRuntimeExecutionContext(
-                pipeline_context=pipeline_context,
+                plan_context=plan_context,
                 pipeline_def=pipeline_def,
                 solid_config=run_config.get("solids", {}).get(solid.name, {}).get("config"),
                 resource_keys_to_init=get_required_resource_keys_to_init(
@@ -183,7 +183,7 @@ class Manager:
                 ),
                 solid_name=solid.name,
                 solid_handle=solid_handle,
-                step_context=pipeline_context.for_step(execution_plan.get_step_by_key(step_key)),
+                step_context=plan_context.for_step(execution_plan.get_step_by_key(step_key)),
             )
 
         return self.context
@@ -274,7 +274,7 @@ class Manager:
 
         # construct stubbed PipelineRun for notebook exploration...
         # The actual pipeline run during pipeline execution will be serialized and reconstituted
-        # in the `reconstitute_pipeline_context` call
+        # in the `reconstitute_job_context` call
         pipeline_run = DagsterRun(
             pipeline_name=pipeline_def.name,
             run_id=run_id,
@@ -294,17 +294,17 @@ class Manager:
         pipeline = InMemoryPipeline(pipeline_def)
         execution_plan = ExecutionPlan.build(pipeline, resolved_run_config)
 
-        with scoped_pipeline_context(
+        with scoped_plan_context(
             execution_plan,
             pipeline,
             run_config,
             pipeline_run,
             DagsterInstance.ephemeral(),
             scoped_resources_builder_cm=self._setup_resources,
-        ) as pipeline_context:
+        ) as plan_context:
 
             self.context = DagstermillExecutionContext(
-                pipeline_context=pipeline_context,
+                plan_context=plan_context,
                 pipeline_def=pipeline_def,
                 solid_config=solid_config,
                 resource_keys_to_init=get_required_resource_keys_to_init(
@@ -335,7 +335,7 @@ class Manager:
 
         if not self.solid_def.has_output(output_name):
             raise DagstermillError(
-                f"Solid {self.solid_def.name} does not have output named {output_name}."
+                f"Op {self.solid_def.name} does not have output named {output_name}."
                 f"Expected one of {[str(output_def.name) for output_def in self.solid_def.output_defs]}"
             )
 

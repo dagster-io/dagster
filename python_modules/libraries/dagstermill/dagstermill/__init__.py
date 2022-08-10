@@ -15,7 +15,7 @@ yield_result = _MANAGER_FOR_NOTEBOOK_INSTANCE.yield_result
 
 yield_event = _MANAGER_FOR_NOTEBOOK_INSTANCE.yield_event
 
-_reconstitute_pipeline_context = _MANAGER_FOR_NOTEBOOK_INSTANCE.reconstitute_pipeline_context
+_reconstitute_job_context = _MANAGER_FOR_NOTEBOOK_INSTANCE.reconstitute_job_context
 
 _teardown = _MANAGER_FOR_NOTEBOOK_INSTANCE.teardown_resources
 

@@ -20,16 +20,14 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
 
     def __init__(
         self,
-        pipeline_context: PlanExecutionContext,
+        plan_context: PlanExecutionContext,
         pipeline_def: PipelineDefinition,
         resource_keys_to_init: AbstractSet[str],
         solid_name: str,
         solid_handle: NodeHandle,
         solid_config: Any = None,
     ):
-        self._pipeline_context = check.inst_param(
-            pipeline_context, "pipeline_context", PlanExecutionContext
-        )
+        self._plan_context = check.inst_param(plan_context, "plan_context", PlanExecutionContext)
         self._pipeline_def = check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
         self._resource_keys_to_init = check.set_param(
             resource_keys_to_init, "resource_keys_to_init", of_type=str
@@ -48,7 +46,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
             bool
         """
         check.str_param(key, "key")
-        return self._pipeline_context.has_tag(key)
+        return self._plan_context.has_tag(key)
 
     def get_tag(self, key: str) -> Optional[str]:
         """Get a logging tag defined on the context.
@@ -60,35 +58,35 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
             str
         """
         check.str_param(key, "key")
-        return self._pipeline_context.get_tag(key)
+        return self._plan_context.get_tag(key)
 
     @public  # type: ignore
     @property
     def run_id(self) -> str:
         """str: The run_id for the context."""
-        return self._pipeline_context.run_id
+        return self._plan_context.run_id
 
     @public  # type: ignore
     @property
     def run_config(self) -> Mapping[str, Any]:
         """dict: The run_config for the context."""
-        return self._pipeline_context.run_config
+        return self._plan_context.run_config
 
     @property
     def resolved_run_config(self) -> ResolvedRunConfig:
         """:class:`dagster.ResolvedRunConfig`: The resolved_run_config for the context"""
-        return self._pipeline_context.resolved_run_config
+        return self._plan_context.resolved_run_config
 
     @public  # type: ignore
     @property
     def logging_tags(self) -> Dict[str, str]:
         """dict: The logging tags for the context."""
-        return self._pipeline_context.logging_tags
+        return self._plan_context.logging_tags
 
     @public  # type: ignore
     @property
     def job_name(self) -> str:
-        return self._pipeline_context.job_name
+        return self._plan_context.job_name
 
     @property
     def pipeline_name(self) -> str:
@@ -132,7 +130,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     def resources(self) -> Any:
         """collections.namedtuple: A dynamically-created type whose properties allow access to
         resources."""
-        return self._pipeline_context.scoped_resources_builder.build(
+        return self._plan_context.scoped_resources_builder.build(
             required_resource_keys=self._resource_keys_to_init,
         )
 
@@ -140,7 +138,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     @property
     def run(self) -> DagsterRun:
         """:class:`dagster.DagsterRun`: The job run for the context."""
-        return cast(DagsterRun, self._pipeline_context.pipeline_run)
+        return cast(DagsterRun, self._plan_context.pipeline_run)
 
     @property
     def pipeline_run(self) -> PipelineRun:
@@ -157,7 +155,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
 
         Call, e.g., ``log.info()`` to log messages through the Dagster machinery.
         """
-        return self._pipeline_context.log
+        return self._plan_context.log
 
     @public  # type: ignore
     @property
@@ -223,7 +221,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
 class DagstermillRuntimeExecutionContext(DagstermillExecutionContext):
     def __init__(
         self,
-        pipeline_context: PlanExecutionContext,
+        plan_context: PlanExecutionContext,
         pipeline_def: PipelineDefinition,
         resource_keys_to_init: AbstractSet[str],
         solid_name: str,
@@ -233,7 +231,7 @@ class DagstermillRuntimeExecutionContext(DagstermillExecutionContext):
     ):
         self._step_context = check.inst_param(step_context, "step_context", StepExecutionContext)
         super().__init__(
-            pipeline_context,
+            plan_context,
             pipeline_def,
             resource_keys_to_init,
             solid_name,

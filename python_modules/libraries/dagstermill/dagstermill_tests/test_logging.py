@@ -7,9 +7,9 @@ from dagstermill.io_managers import local_output_notebook_io_manager
 
 from dagster import String
 from dagster import _seven as seven
-from dagster import logger, reconstructable
+from dagster import job, logger, reconstructable
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, execute_pipeline, pipeline
+from dagster._legacy import ModeDefinition, execute_pipeline
 from dagster._utils import safe_tempfile_path
 
 
@@ -39,20 +39,16 @@ def test_file_logger(init_context):
     return logger_
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(
-            logger_defs={
-                "test": test_file_logger,
-                "critical": test_file_logger,
-            },
-            resource_defs={
-                "output_notebook_io_manager": local_output_notebook_io_manager,
-            },
-        )
-    ]
+@job(
+    logger_defs={
+        "test": test_file_logger,
+        "critical": test_file_logger,
+    },
+    resource_defs={
+        "output_notebook_io_manager": local_output_notebook_io_manager,
+    },
 )
-def hello_logging_pipeline():
+def hello_logging_job():
     hello_logging()
 
 
@@ -61,7 +57,7 @@ def test_logging():
         with safe_tempfile_path() as critical_file_path:
             with instance_for_test() as instance:
                 execute_pipeline(
-                    reconstructable(hello_logging_pipeline),
+                    reconstructable(hello_logging_job),
                     {
                         "loggers": {
                             "test": {
