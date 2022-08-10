@@ -204,28 +204,6 @@ class StepDelegatingExecutor(Executor):
 
                     return
 
-                for dagster_event in self._pop_events(
-                    plan_context.instance,
-                    plan_context.run_id,
-                ):  # type: ignore
-
-                    yield dagster_event
-                    # STEP_SKIPPED events are only emitted by ActiveExecution, which already handles
-                    # and yields them.
-
-                    if dagster_event.is_step_skipped:
-                        assert isinstance(dagster_event.step_key, str)
-                        active_execution.verify_complete(plan_context, dagster_event.step_key)
-                    else:
-                        active_execution.handle_event(dagster_event)
-                        if dagster_event.is_step_success or dagster_event.is_step_failure:
-                            assert isinstance(dagster_event.step_key, str)
-                            del running_steps[dagster_event.step_key]
-                            active_execution.verify_complete(plan_context, dagster_event.step_key)
-
-                # process skips from failures or uncovered inputs
-                list(active_execution.plan_events_iterator(plan_context))
-
                 curr_time = pendulum.now("UTC")
                 if (
                     curr_time - last_check_step_health_time
@@ -263,6 +241,28 @@ class StepDelegatingExecutor(Executor):
                                     user_failure_data=None,
                                 ),
                             )
+
+                for dagster_event in self._pop_events(
+                    plan_context.instance,
+                    plan_context.run_id,
+                ):  # type: ignore
+
+                    yield dagster_event
+                    # STEP_SKIPPED events are only emitted by ActiveExecution, which already handles
+                    # and yields them.
+
+                    if dagster_event.is_step_skipped:
+                        assert isinstance(dagster_event.step_key, str)
+                        active_execution.verify_complete(plan_context, dagster_event.step_key)
+                    else:
+                        active_execution.handle_event(dagster_event)
+                        if dagster_event.is_step_success or dagster_event.is_step_failure:
+                            assert isinstance(dagster_event.step_key, str)
+                            del running_steps[dagster_event.step_key]
+                            active_execution.verify_complete(plan_context, dagster_event.step_key)
+
+                # process skips from failures or uncovered inputs
+                list(active_execution.plan_events_iterator(plan_context))
 
                 if self._max_concurrent is not None:
                     max_steps_to_run = self._max_concurrent - len(running_steps)
