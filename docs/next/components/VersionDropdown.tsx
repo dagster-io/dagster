@@ -1,24 +1,19 @@
-import React from "react";
+import {Menu, Transition} from '@headlessui/react';
+import React from 'react';
 
-import { useVersion } from "../util/useVersion";
-import Icons from "../components/Icons";
+import Icons from '../components/Icons';
+import {useVersion} from '../util/useVersion';
 
-import { Menu, Transition } from "@headlessui/react";
-import Link from "./Link";
+import Link from './Link';
 
 export default function VersionDropdown() {
-  const {
-    latestVersion,
-    version: currentVersion,
-    versions,
-    asPath,
-  } = useVersion();
+  const {latestVersion, version: currentVersion, versions, asPath} = useVersion();
 
   return (
     <div className="z-20 relative inline-flex text-left w-full">
       <div className="relative block text-left w-full">
         <Menu>
-          {({ open }) => (
+          {({open}) => (
             <>
               <div>
                 <Menu.Button className="group w-24 lg:w-32 rounded-full px-2 lg:px-4 lg:py-2 text-gray-400 border border-gray-300 hover:bg-white transition-colors duration-200">
@@ -26,8 +21,7 @@ export default function VersionDropdown() {
                     <span className="flex min-w-0 items-center justify-between space-x-3">
                       <span className="flex-1 min-w-0">
                         <span className="text-gray-900 dark:text-gray-300 text-xs lg:text-sm truncate">
-                          {currentVersion}{" "}
-                          {currentVersion === latestVersion && "(latest)"}
+                          {currentVersion} {currentVersion === latestVersion && '(latest)'}
                         </span>
                       </span>
                     </span>
@@ -40,7 +34,7 @@ export default function VersionDropdown() {
                       stroke="currentColor"
                       aria-hidden="true"
                     >
-                      {Icons["ChevronDown"]}
+                      {Icons['ChevronDown']}
                     </svg>
                   </span>
                 </Menu.Button>
@@ -61,7 +55,7 @@ export default function VersionDropdown() {
                 >
                   <div className="px-4 py-3">
                     <p className="text-sm leading-5">
-                      You are currently viewing the docs for Dagster{" "}
+                      You are currently viewing the docs for Dagster{' '}
                       <span className="text-sm font-medium leading-5 text-gray-900">
                         {currentVersion}
                       </span>
@@ -74,12 +68,10 @@ export default function VersionDropdown() {
                       return (
                         <Link key={version} href={asPath} version={version}>
                           <Menu.Item>
-                            {({ active }) => (
+                            {({active}) => (
                               <a
                                 className={`${
-                                  active
-                                    ? "bg-gray-100 text-gray-900"
-                                    : "text-gray-700"
+                                  active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
                                 } flex cursor-pointer justify-between w-full px-4 py-2 text-sm leading-5 text-left`}
                               >
                                 {version}
@@ -93,13 +85,11 @@ export default function VersionDropdown() {
 
                   <div className="py-1">
                     <Menu.Item>
-                      {({ active }) => (
+                      {({active}) => (
                         <a
                           href="https://legacy-docs.dagster.io"
                           className={`${
-                            active
-                              ? "bg-gray-100 text-gray-900"
-                              : "text-gray-700"
+                            active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
                           } flex justify-between w-full px-4 py-2 text-sm leading-5 text-left`}
                         >
                           Legacy Site (pre-0.11.0)

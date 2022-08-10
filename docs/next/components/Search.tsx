@@ -1,14 +1,13 @@
-import { DocSearchModal, useDocSearchKeyboardEvents } from "@docsearch/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {DocSearchModal, useDocSearchKeyboardEvents} from '@docsearch/react';
+import Head from 'next/head';
+import {useCallback, useEffect, useRef, useState} from 'react';
+import {createPortal} from 'react-dom';
 
-import Head from "next/head";
-import { createPortal } from "react-dom";
+const ACTION_KEY_DEFAULT = ['Ctrl ', 'Control'];
+const ACTION_KEY_APPLE = ['⌘', 'Command'];
 
-const ACTION_KEY_DEFAULT = ["Ctrl ", "Control"];
-const ACTION_KEY_APPLE = ["⌘", "Command"];
-
-function Hit({ hit, children }) {
-  if (hit.url.startsWith("https://github.com/dagster-io/dagster/discussions")) {
+function Hit({hit, children}) {
+  if (hit.url.startsWith('https://github.com/dagster-io/dagster/discussions')) {
     // don't need to use Link and open in a new tab, because this is an external link
     return (
       <a target="_blank" href={hit.url} rel="noopener noreferrer">
@@ -42,7 +41,7 @@ export function Search() {
       setIsOpen(true);
       setInitialQuery(e.key);
     },
-    [setIsOpen, setInitialQuery]
+    [setIsOpen, setInitialQuery],
   );
 
   useDocSearchKeyboardEvents({
@@ -54,7 +53,7 @@ export function Search() {
   });
 
   useEffect(() => {
-    if (typeof navigator !== "undefined") {
+    if (typeof navigator !== 'undefined') {
       if (/(Mac|iPhone|iPod|iPad)/i.test(navigator.platform)) {
         setActionKey(ACTION_KEY_APPLE);
       } else {
@@ -100,7 +99,7 @@ export function Search() {
         </div>
 
         <span
-          style={{ opacity: browserDetected ? "1" : "0" }}
+          style={{opacity: browserDetected ? '1' : '0'}}
           className="hidden sm:block text-sm leading-5 py-0.5 px-1.5 rounded-md"
         >
           <span className="sr-only">Press </span>
@@ -127,7 +126,7 @@ export function Search() {
             apiKey={process.env.NEXT_PUBLIC_ALGOLIA_SEARCH_API_KEY}
             appId={process.env.NEXT_PUBLIC_ALGOLIA_APP_ID}
             navigator={{
-              navigate({ itemUrl }) {
+              navigate({itemUrl}) {
                 setIsOpen(false);
                 window.location.href = itemUrl;
               },
@@ -137,18 +136,18 @@ export function Search() {
               return items.map((item) => {
                 // We transform the absolute URL into a relative URL to
                 // leverage Next's preloading.
-                const a = document.createElement("a");
+                const a = document.createElement('a');
                 a.href = item.url;
 
-                const hash = a.hash === "#content-wrapper" ? "" : a.hash;
+                const hash = a.hash === '#content-wrapper' ? '' : a.hash;
 
                 let url = `${a.pathname}${hash}`;
 
                 // Handle URLs for GitHub Discussions which are external links
-                if (a.pathname.startsWith("/dagster-io/dagster/discussions/")) {
+                if (a.pathname.startsWith('/dagster-io/dagster/discussions/')) {
                   url = a.pathname.replace(
-                    "/dagster-io/dagster/discussions",
-                    "https://github.com/dagster-io/dagster/discussions"
+                    '/dagster-io/dagster/discussions',
+                    'https://github.com/dagster-io/dagster/discussions',
                   );
                 }
 
@@ -159,7 +158,7 @@ export function Search() {
               });
             }}
           />,
-          document.body
+          document.body,
         )}
     </>
   );

@@ -1,27 +1,27 @@
-import React from "react";
+import {promises as fs} from 'fs';
+import path from 'path';
 
-import MDXComponents from "../components/mdx/MDXComponents";
-import FeedbackModal from "../components/FeedbackModal";
-import { MDXData, UnversionedMDXRenderer } from "../components/mdx/MDXRenderer";
+import {Shimmer} from 'components/Shimmer';
+import rehypePlugins from 'components/mdx/rehypePlugins';
+import matter from 'gray-matter';
+import generateToc from 'mdast-util-toc';
+import {GetStaticProps} from 'next';
+import renderToString from 'next-mdx-remote/render-to-string';
+import {MdxRemote} from 'next-mdx-remote/types';
+import {useRouter} from 'next/router';
+import React from 'react';
+import remark from 'remark';
+import mdx from 'remark-mdx';
+import visit from 'unist-util-visit';
 
-import { GetStaticProps } from "next";
-import { MdxRemote } from "next-mdx-remote/types";
-import { promises as fs } from "fs";
-import generateToc from "mdast-util-toc";
-import matter from "gray-matter";
-import mdx from "remark-mdx";
-import path from "path";
-import rehypePlugins from "components/mdx/rehypePlugins";
-import remark from "remark";
-import renderToString from "next-mdx-remote/render-to-string";
-import { useRouter } from "next/router";
-import visit from "unist-util-visit";
-import { Shimmer } from "components/Shimmer";
+import FeedbackModal from '../components/FeedbackModal';
+import MDXComponents from '../components/mdx/MDXComponents';
+import {MDXData, UnversionedMDXRenderer} from '../components/mdx/MDXRenderer';
 
 const components: MdxRemote.Components = MDXComponents;
 
 enum PageType {
-  MDX = "MDX",
+  MDX = 'MDX',
 }
 
 type Props = {
@@ -51,10 +51,7 @@ export default function MdxPage(props: Props) {
   return (
     <>
       <FeedbackModal isOpen={isFeedbackOpen} closeFeedback={closeFeedback} />
-      <UnversionedMDXRenderer
-        data={props.data}
-        toggleFeedback={toggleFeedback}
-      />
+      <UnversionedMDXRenderer data={props.data} toggleFeedback={toggleFeedback} />
     </>
   );
 }
@@ -66,10 +63,10 @@ function getItems(node, current) {
   } else if (node.type === `paragraph`) {
     visit(node, (item) => {
       if (item.type === `link`) {
-        current.url = item["url"];
+        current.url = item['url'];
       }
       if (item.type === `text`) {
-        current.title = item["value"];
+        current.title = item['value'];
       }
     });
     return current;
@@ -90,26 +87,26 @@ function getItems(node, current) {
 
 export const getStaticProps: GetStaticProps = async () => {
   const githubLink = new URL(
-    path.join("dagster-io/dagster/blob/master/CHANGES.md"),
-    "https://github.com"
+    path.join('dagster-io/dagster/blob/master/CHANGES.md'),
+    'https://github.com',
   ).href;
-  const pathToMdxFile = path.resolve("../../CHANGES.md");
+  const pathToMdxFile = path.resolve('../../CHANGES.md');
 
   try {
     // 2. Read and parse versioned MDX content
     const source = await fs.readFile(pathToMdxFile);
-    const { content, data } = matter(source);
+    const {content, data} = matter(source);
 
     // 3. Extract table of contents from MDX
     const tree = remark().use(mdx).parse(content);
-    const node = generateToc(tree, { maxDepth: 4 });
+    const node = generateToc(tree, {maxDepth: 4});
     const tableOfContents = getItems(node.map, {});
 
     // 4. Render MDX
     const mdxSource = await renderToString(content, {
       components,
       mdxOptions: {
-        rehypePlugins: rehypePlugins,
+        rehypePlugins,
       },
       scope: data,
     });
@@ -118,7 +115,7 @@ export const getStaticProps: GetStaticProps = async () => {
       props: {
         type: PageType.MDX,
         data: {
-          mdxSource: mdxSource,
+          mdxSource,
           frontMatter: data,
           tableOfContents,
           githubLink,

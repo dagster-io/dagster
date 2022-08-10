@@ -1,4 +1,4 @@
-import * as React from "react";
+import * as React from 'react';
 
 // Shimmer (skeleton) used as content placeholder while loading
 export function Shimmer() {
