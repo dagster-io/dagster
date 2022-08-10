@@ -25,7 +25,7 @@ class DbIOManager(IOManager):
 
     def load_input(self, context) -> pd.DataFrame:
         """Load the contents of a table as a pandas DataFrame."""
-        model_name = context.upstream_output.asset_key.path[-1]
+        model_name = context.asset_key.path[-1]
         return pd.read_sql(f"SELECT * FROM {model_name}", con=self._con)
 
 
