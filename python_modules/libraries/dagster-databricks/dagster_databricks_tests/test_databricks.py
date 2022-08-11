@@ -24,9 +24,7 @@ def test_databricks_submit_job_existing_cluster(mock_submit_run, databricks_run_
         existing_cluster_id=databricks_run_config["cluster"]["existing"],
         spark_jar_task=task["spark_jar_task"],
         libraries=[
-            {"pypi": {"package": "dagster=={}".format(dagster.__version__)}},
-            {"pypi": {"package": "dagster-databricks=={}".format(dagster.__version__)}},
-            {"pypi": {"package": "dagster-pyspark=={}".format(dagster.__version__)}},
+            {"pypi": {"package": "python_package_test==1.0.0"}},
         ],
     )
 
@@ -57,9 +55,7 @@ def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_confi
         existing_cluster_id=None,
         spark_jar_task=task["spark_jar_task"],
         libraries=[
-            {"pypi": {"package": "dagster=={}".format(dagster.__version__)}},
-            {"pypi": {"package": "dagster-databricks=={}".format(dagster.__version__)}},
-            {"pypi": {"package": "dagster-pyspark=={}".format(dagster.__version__)}},
+            {"pypi": {"package": "python_package_test==1.0.0"}},
         ],
     )
 
