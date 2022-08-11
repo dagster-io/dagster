@@ -29,7 +29,7 @@ from dagster_test.toys.longitudinal import longitudinal_job
 from dagster_test.toys.many_events import many_events, many_events_subset_job
 from dagster_test.toys.metadata import with_metadata
 from dagster_test.toys.multi_inputs_outputs import multi_inputs_outputs_job
-from dagster_test.toys.notebooks import hello_world_notebook_pipeline
+from dagster_test.toys.notebooks import hello_world_notebook_job
 from dagster_test.toys.partitioned_assets import partitioned_asset_group
 from dagster_test.toys.retries import retry_job
 from dagster_test.toys.run_status_sensors import (
@@ -93,7 +93,7 @@ def toys_repository():
             asset_lineage_partition_set,
             model_job,
             multi_inputs_outputs_job,
-            hello_world_notebook_pipeline,
+            hello_world_notebook_job,
             software_defined_assets,
             with_metadata,
             succeeds_job,

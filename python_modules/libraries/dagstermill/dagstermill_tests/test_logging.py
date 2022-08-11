@@ -9,7 +9,7 @@ from dagster import String
 from dagster import _seven as seven
 from dagster import job, logger, reconstructable
 from dagster._core.test_utils import instance_for_test
-from dagster._legacy import ModeDefinition, execute_pipeline
+from dagster._legacy import execute_pipeline
 from dagster._utils import safe_tempfile_path
 
 
