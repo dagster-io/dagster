@@ -1,8 +1,9 @@
 import sys
 import warnings
 from contextlib import closing, contextmanager
-import pandas as pd
 from typing import Mapping
+
+import pandas as pd
 
 import dagster._check as check
 from dagster import resource
@@ -112,7 +113,9 @@ class SnowflakeConnection:
                 if use_pandas_result:
                     return cursor.fetch_pandas_all()
 
-    def execute_queries(self, sql_queries, parameters=None, fetch_results=False, use_pandas_result=False):
+    def execute_queries(
+        self, sql_queries, parameters=None, fetch_results=False, use_pandas_result=False
+    ):
         check.list_param(sql_queries, "sql_queries", of_type=str)
         check.opt_dict_param(parameters, "parameters")
         check.bool_param(fetch_results, "fetch_results")
