@@ -53,7 +53,7 @@ PublicAttr: TypeAlias = Annotated[T, PUBLIC]
 
 def deprecated(obj: T_Annotatable) -> T_Annotatable:
     """
-    Mark a class/method/function as deprecated. This appends some metadata to tee fucntion that
+    Mark a class/method/function as deprecated. This appends some metadata to the function that
     causes it to be rendered with a "deprecated" tag in the docs.
 
     Note that this decorator does not add any warnings-- they should be added separately.
