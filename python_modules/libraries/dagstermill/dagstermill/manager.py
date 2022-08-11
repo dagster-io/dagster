@@ -26,7 +26,6 @@ from dagster._core.execution.resources_init import (
     get_required_resource_keys_to_init,
     resource_initialization_event_generator,
 )
-from dagster._utils.backcompat import deprecation_warning
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import DagsterRun, PipelineRunStatus
 from dagster._core.system_config.objects import ResolvedRunConfig
@@ -35,6 +34,7 @@ from dagster._legacy import Materialization, ModeDefinition, PipelineDefinition,
 from dagster._loggers import colored_console_logger
 from dagster._serdes import unpack_value
 from dagster._utils import EventGenerationManager, ensure_gen
+from dagster._utils.backcompat import deprecation_warning
 
 from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
 from .errors import DagstermillError

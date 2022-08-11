@@ -1,4 +1,4 @@
-from typing import Any, Dict, Mapping, Optional, Set, cast
+from typing import AbstractSet, Any, Dict, Mapping, Optional, cast
 
 from dagster import DagsterRun, JobDefinition, OpDefinition
 from dagster import _check as check
@@ -22,7 +22,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         self,
         pipeline_context: PlanExecutionContext,
         pipeline_def: PipelineDefinition,
-        resource_keys_to_init: Set[str],
+        resource_keys_to_init: AbstractSet[str],
         solid_name: str,
         solid_handle: NodeHandle,
         solid_config: Any = None,
@@ -225,7 +225,7 @@ class DagstermillRuntimeExecutionContext(DagstermillExecutionContext):
         self,
         pipeline_context: PlanExecutionContext,
         pipeline_def: PipelineDefinition,
-        resource_keys_to_init: Set[str],
+        resource_keys_to_init: AbstractSet[str],
         solid_name: str,
         step_context: StepExecutionContext,
         solid_handle: NodeHandle,
