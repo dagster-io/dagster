@@ -144,7 +144,7 @@ When writing an `asset_status_sensor` you can specify which event to monitor and
 
 In the default case, the asset status sensor will run whenever _all_ of the listed assets have the specified status.
 
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_status_sensor_marker end_before=end_asset_status_sensor_marker
+```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_status_sensor_marker endbefore=end_asset_status_sensor_marker
 @asset_status_sensor(
     asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
     asset_status=DagsterEventType.ASSET_MATERIALIZATION,
@@ -154,91 +154,15 @@ def asset_a_and_b_sensor(context, asset_events):
     # this sensor will run when both asset_a and asset_b have been materialized
     # asset_events is a dictionary, mapping asset keys to event log entries
     logger_str = f"Assets {asset_events[AssetKey('asset_a')].dagster_event.asset_key.path} and {asset_events[AssetKey('asset_b')].dagster_event.asset_key.path} materialized"
-    return RunRequest(run_key=context.cursor, run_config={"ops": {"logger_op": {"config": {"logger_str": logger_str}}}})
-
-
-# end_asset_status_sensor_marker
-
-# start_asset_status_sensor_or_marker
-
-
-@asset_status_sensor(
-    asset_keys=[AssetKey("asset_c"), AssetKey("asset_d")],
-    asset_status=DagsterEventType.ASSET_MATERIALIZATION,
-    trigger_fn=lambda x: any(x.values()),
-    job=my_job,
-)
-def asset_c_or_d_sensor(context, _asset_events):
-    # this sensor will run when either asset_c or asset_d have been materialized
-    return RunRequest(run_key=context.cursor)
-
-
-# end_asset_status_sensor_or_marker
-
-
-# start_s3_sensors_marker
-from dagster_aws.s3.sensor import get_s3_keys
-
-
-@sensor(job=my_job)
-def my_s3_sensor(context):
-    since_key = context.cursor or None
-    new_s3_keys = get_s3_keys("my_s3_bucket", since_key=since_key)
-    if not new_s3_keys:
-        return SkipReason("No new s3 files found for bucket my_s3_bucket.")
-    last_key = new_s3_keys[-1]
-    run_requests = [RunRequest(run_key=s3_key, run_config={}) for s3_key in new_s3_keys]
-    context.update_cursor(last_key)
-    return run_requests
-
-
-# end_s3_sensors_marker
-
-
-@job
-def the_job():
-    ...
-
-
-def get_the_db_connection(_):
-    ...
-
-
-# pylint: disable=unused-variable,reimported
-# start_build_resources_example
-from dagster import resource, build_resources, sensor
-
-
-@resource
-def the_credentials():
-    ...
-
-
-@resource(required_resource_keys={"credentials"})
-def the_db_connection(init_context):
-    get_the_db_connection(init_context.resources.credentials)
-
-
-@sensor(job=the_job)
-def uses_db_connection():
-    with build_resources(
-        {"db_connection": the_db_connection, "credentials": the_credentials}
-    ) as resources:
-        conn = resources.db_connection
-        ...
-
-
-# end_build_resources_example
-
-
-@repository
-def my_repository():
-    return [my_job, log_file_job, my_directory_sensor, sensor_A, sensor_B]
+    return RunRequest(
+        run_key=context.cursor,
+        run_config={"ops": {"logger_op": {"config": {"logger_str": logger_str}}}},
+    )
 ```
 
 You can provide a custom function to run the sensor when a different condition is met:
 
-```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_status_sensor_or_marker end_before=end_asset_status_sensor__or_marker
+```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_status_sensor_or_marker endbefore=end_asset_status_sensor_or_marker
 @asset_status_sensor(
     asset_keys=[AssetKey("asset_c"), AssetKey("asset_d")],
     asset_status=DagsterEventType.ASSET_MATERIALIZATION,
@@ -248,69 +172,6 @@ You can provide a custom function to run the sensor when a different condition i
 def asset_c_or_d_sensor(context, _asset_events):
     # this sensor will run when either asset_c or asset_d have been materialized
     return RunRequest(run_key=context.cursor)
-
-
-# end_asset_status_sensor_or_marker
-
-
-# start_s3_sensors_marker
-from dagster_aws.s3.sensor import get_s3_keys
-
-
-@sensor(job=my_job)
-def my_s3_sensor(context):
-    since_key = context.cursor or None
-    new_s3_keys = get_s3_keys("my_s3_bucket", since_key=since_key)
-    if not new_s3_keys:
-        return SkipReason("No new s3 files found for bucket my_s3_bucket.")
-    last_key = new_s3_keys[-1]
-    run_requests = [RunRequest(run_key=s3_key, run_config={}) for s3_key in new_s3_keys]
-    context.update_cursor(last_key)
-    return run_requests
-
-
-# end_s3_sensors_marker
-
-
-@job
-def the_job():
-    ...
-
-
-def get_the_db_connection(_):
-    ...
-
-
-# pylint: disable=unused-variable,reimported
-# start_build_resources_example
-from dagster import resource, build_resources, sensor
-
-
-@resource
-def the_credentials():
-    ...
-
-
-@resource(required_resource_keys={"credentials"})
-def the_db_connection(init_context):
-    get_the_db_connection(init_context.resources.credentials)
-
-
-@sensor(job=the_job)
-def uses_db_connection():
-    with build_resources(
-        {"db_connection": the_db_connection, "credentials": the_credentials}
-    ) as resources:
-        conn = resources.db_connection
-        ...
-
-
-# end_build_resources_example
-
-
-@repository
-def my_repository():
-    return [my_job, log_file_job, my_directory_sensor, sensor_A, sensor_B]
 ```
 
 ## Idempotence and Cursors
