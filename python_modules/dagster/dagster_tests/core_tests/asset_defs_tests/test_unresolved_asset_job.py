@@ -562,7 +562,7 @@ def test_partitioned_schedule():
 
     schedule = schedule_from_partitions(job)
 
-    spd = schedule.get_partition_set()._partitions_def  # pylint: disable=protected-access
+    spd = schedule.job.partitions_def
     assert spd == partitions_def
 
 
