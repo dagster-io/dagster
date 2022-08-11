@@ -1,6 +1,7 @@
 # pylint: disable=no-value-for-parameter
 from dagster_shell import execute_shell_command
-from dagster import op, OpExecutionContext
+
+from dagster import OpExecutionContext, op
 
 
 @op
