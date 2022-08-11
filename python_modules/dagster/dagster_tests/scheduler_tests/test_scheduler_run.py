@@ -23,6 +23,7 @@ from dagster._core.host_representation import (
     GrpcServerRepositoryLocation,
     GrpcServerRepositoryLocationOrigin,
 )
+from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -310,15 +311,11 @@ def define_multi_run_schedule_with_missing_run_key():
     )
 
 
-@pipeline
-def the_other_pipeline():
-    the_solid()
-
-
 @repository
 def the_other_repo():
     return [
-        the_other_pipeline,
+        the_pipeline,
+        multi_run_list_schedule,
     ]
 
 
@@ -2195,4 +2192,102 @@ def test_change_default_status(instance):
             assert len(ticks) == 1
             assert len(ticks[0].run_ids) == 1
             assert ticks[0].timestamp == freeze_datetime.timestamp()
+            assert ticks[0].status == TickStatus.SUCCESS
+
+
+def test_repository_namespacing(instance: DagsterInstance):
+    # ensure dupe schedules in different repos do not conflict on idempotence
+
+    freeze_datetime = to_timezone(
+        create_pendulum_time(
+            year=2019,
+            month=2,
+            day=27,
+            hour=23,
+            minute=59,
+            second=59,
+            tz="UTC",
+        ),
+        "US/Central",
+    )
+    with create_test_daemon_workspace(
+        workspace_load_target=workspace_load_target(attribute=None),  # load all repos
+        instance=instance,
+    ) as full_workspace:
+
+        with pendulum.test(freeze_datetime):
+            full_location = next(
+                iter(full_workspace.get_workspace_snapshot().values())
+            ).repository_location
+            external_repo = full_location.get_repository("the_repo")
+            other_repo = full_location.get_repository("the_other_repo")
+
+            # stop always on schedule
+            status_in_code_repo = full_location.get_repository("the_status_in_code_repo")
+            running_sched = status_in_code_repo.get_external_schedule("always_running_schedule")
+            instance.stop_schedule(
+                running_sched.get_external_origin_id(), running_sched.selector_id, running_sched
+            )
+
+            external_schedule = external_repo.get_external_schedule("multi_run_list_schedule")
+            schedule_origin = external_schedule.get_external_origin()
+            instance.start_schedule(external_schedule)
+
+            other_schedule = other_repo.get_external_schedule("multi_run_list_schedule")
+            other_origin = external_schedule.get_external_origin()
+            instance.start_schedule(other_schedule)
+
+            assert instance.get_runs_count() == 0
+
+            ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+            assert len(ticks) == 0
+
+            ticks = instance.get_ticks(other_origin.get_id(), other_schedule.selector_id)
+            assert len(ticks) == 0
+
+            # launch_scheduled_runs does nothing before the first tick
+            list(launch_scheduled_runs(instance, full_workspace, logger(), pendulum.now("UTC")))
+            assert instance.get_runs_count() == 0
+
+            ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+            assert len(ticks) == 0
+
+            ticks = instance.get_ticks(other_origin.get_id(), other_schedule.selector_id)
+            assert len(ticks) == 0
+
+        freeze_datetime = freeze_datetime.add(seconds=2)
+        with pendulum.test(freeze_datetime):
+            list(launch_scheduled_runs(instance, full_workspace, logger(), pendulum.now("UTC")))
+
+            assert (
+                instance.get_runs_count() == 4
+            )  # 2 from each copy of multi_run_schedule in each repo
+            ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+            assert len(ticks) == 1
+            assert ticks[0].status == TickStatus.SUCCESS
+
+            ticks = instance.get_ticks(other_origin.get_id(), other_schedule.selector_id)
+            assert len(ticks) == 1
+            assert ticks[0].status == TickStatus.SUCCESS
+
+            # Verify run idempotence by dropping ticks
+            instance.purge_ticks(
+                schedule_origin.get_id(),
+                external_schedule.selector_id,
+                pendulum.now("UTC").timestamp(),
+            )
+            instance.purge_ticks(
+                other_origin.get_id(),
+                other_schedule.selector_id,
+                pendulum.now("UTC").timestamp(),
+            )
+
+            list(launch_scheduled_runs(instance, full_workspace, logger(), pendulum.now("UTC")))
+            assert instance.get_runs_count() == 4  # still 4
+            ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
+            assert len(ticks) == 1
+            assert ticks[0].status == TickStatus.SUCCESS
+
+            ticks = instance.get_ticks(other_origin.get_id(), other_schedule.selector_id)
+            assert len(ticks) == 1
             assert ticks[0].status == TickStatus.SUCCESS

@@ -8,6 +8,7 @@ from typing import cast
 import pendulum
 
 import dagster._check as check
+from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterUserCodeUnreachableError
@@ -519,7 +520,12 @@ def _schedule_runs_at_time(
     tick_context.update_state(TickStatus.SUCCESS)
 
 
-def _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request):
+def _get_existing_run_for_request(
+    instance: DagsterInstance,
+    external_schedule: ExternalSchedule,
+    schedule_time,
+    run_request: RunRequest,
+):
     tags = merge_dicts(
         PipelineRun.tags_for_schedule(external_schedule),
         {
@@ -530,9 +536,24 @@ def _get_existing_run_for_request(instance, external_schedule, schedule_time, ru
         tags[RUN_KEY_TAG] = run_request.run_key
     runs_filter = RunsFilter(tags=tags)
     existing_runs = instance.get_runs(runs_filter)
-    if not len(existing_runs):
+
+    # filter down to match schedule namespace (repository)
+    matching_runs = []
+    for run in existing_runs:
+        # if the run doesn't have an origin consider it a match
+        if run.external_pipeline_origin is None:
+            matching_runs.append(run)
+        # otherwise prevent the same named schedule (with the same execution time) across repos from effecting each other
+        elif (
+            external_schedule.get_external_origin().external_repository_origin.get_selector_id()
+            == run.external_pipeline_origin.external_repository_origin.get_selector_id()
+        ):
+            matching_runs.append(run)
+
+    if not len(matching_runs):
         return None
-    return existing_runs[0]
+
+    return matching_runs[0]
 
 
 def _create_scheduler_run(

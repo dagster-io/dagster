@@ -45,7 +45,7 @@ def test_filter_mapping_partitions_dep():
 
         def get_upstream_partitions_for_partition_range(
             self,
-            downstream_partition_key_range: PartitionKeyRange,
+            downstream_partition_key_range,
             downstream_partitions_def: Optional[
                 PartitionsDefinition
             ],  # pylint: disable=unused-argument
@@ -111,7 +111,7 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
 
         def get_upstream_partitions_for_partition_range(
             self,
-            downstream_partition_key_range: PartitionKeyRange,
+            downstream_partition_key_range,
             downstream_partitions_def: Optional[PartitionsDefinition],
             upstream_partitions_def: PartitionsDefinition,
         ) -> PartitionKeyRange:
@@ -177,7 +177,7 @@ def test_asset_partitions_time_window_non_identity_partition_mapping():
 
         def get_upstream_partitions_for_partition_range(
             self,
-            downstream_partition_key_range: PartitionKeyRange,
+            downstream_partition_key_range,
             downstream_partitions_def: Optional[PartitionsDefinition],
             upstream_partitions_def: PartitionsDefinition,
         ) -> PartitionKeyRange:
@@ -238,7 +238,7 @@ def test_multi_asset_non_identity_partition_mapping():
 
         def get_upstream_partitions_for_partition_range(
             self,
-            downstream_partition_key_range: PartitionKeyRange,
+            downstream_partition_key_range,
             downstream_partitions_def: Optional[PartitionsDefinition],
             upstream_partitions_def: PartitionsDefinition,
         ) -> PartitionKeyRange:
@@ -320,7 +320,7 @@ def test_from_graph():
 
         def get_upstream_partitions_for_partition_range(
             self,
-            downstream_partition_key_range: PartitionKeyRange,
+            downstream_partition_key_range,
             downstream_partitions_def: Optional[
                 PartitionsDefinition
             ],  # pylint: disable=unused-argument
