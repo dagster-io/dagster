@@ -34,7 +34,7 @@ if __name__ == "__main__":
         packages=find_packages(exclude=["dagster_dask_tests*"]),
         install_requires=[
             "bokeh",
-            f"dagster{pin}",
+            "dagster==1.0.3",
             "dask[dataframe]>=1.2.2",
             "distributed>=1.28.1",
         ],
