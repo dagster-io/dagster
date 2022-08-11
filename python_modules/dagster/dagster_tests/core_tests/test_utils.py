@@ -40,7 +40,7 @@ def test_check_dagster_package_version(monkeypatch):
         warnings.simplefilter("error")
         check_dagster_package_version("foo", "1.1.0")
 
-    # Lib version matching 1.1.0-- see dagster._utils.library_version_from_core_version
+    # Lib version matching 1.1.0-- see dagster._utils.pre_stable_version_from_stable_version
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         check_dagster_package_version("foo", "0.17.0")

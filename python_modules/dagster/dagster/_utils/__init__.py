@@ -52,14 +52,18 @@ PICKLE_PROTOCOL = 4
 
 DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
 
-# Use this to get the "library version" (pre-1.0 version) from the "core version" (post 1.0
-# version). 16 is from the 0.16.0 that library versions stayed on when core went to 1.0.0.
-def library_version_from_core_version(core_version: str) -> str:
-    release = parse_package_version(core_version).release
+def pre_stable_version_from_stable_version(stable_version: str) -> str:
+    """Get the "pre-stable version" (pre-1.0 version) from the "stable version". "Stable version"
+    here is defined as the version of dagster core. Prior to 1.0, versions of all packages were the
+    same, so there was no distinction between pre-and-post-stable versions. Therefore this function
+    is an identity function for pre-1.0 inputs. After 1.0, some "pre-stable" packages
+    remained on a pre-1.0 version track, with exactly one pre-stable version for every stable
+    version. This function returns that pre-stable version for post-1.0 inputs."""
+    release = parse_package_version(stable_version).release
     if release[0] >= 1:
         return ".".join(["0", str(16 + release[1]), str(release[2])])
     else:
-        return core_version
+        return stable_version
 
 
 def parse_package_version(version_str: str) -> packaging.version.Version:
