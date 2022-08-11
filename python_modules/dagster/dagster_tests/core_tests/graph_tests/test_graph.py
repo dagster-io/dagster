@@ -13,6 +13,7 @@ from dagster import (
     Enum,
     Field,
     GraphIn,
+    GraphOut,
     In,
     Nothing,
     Out,
@@ -1208,3 +1209,36 @@ def test_all_dagster_types():
     assert "Foo" in names
     assert "Bar" in names
     assert "Bar?" in names
+
+
+def test_mappings_from_class():
+    @op
+    def some_op(x):
+        return x + 1
+
+    the_graph = GraphDefinition(
+        name="the_graph",
+        node_defs=[some_op],
+        input_mappings=[
+            GraphIn(description="foo").mapping_to(
+                graph_input_name="y",
+                inner_node_name="some_op",
+                inner_node_input_name="x",
+            )
+        ],
+        output_mappings=[
+            GraphOut(description="bar").mapping_from(
+                graph_output_name="whatever",
+                inner_node_name="some_op",
+                inner_node_output_name="result",
+            )
+        ],
+    )
+
+    assert the_graph.input_defs[0].name == "y"
+    assert the_graph.input_defs[0].description == "foo"
+    assert the_graph.output_defs[0].name == "whatever"
+    assert the_graph.output_defs[0].description == "bar"
+    result = the_graph.execute_in_process(input_values={"y": 5})
+    assert result.success
+    assert result.output_value("whatever") == 6

@@ -15,7 +15,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
     MetadataEntry,
@@ -382,7 +382,9 @@ class InputMapping(
         [("definition", InputDefinition), ("maps_to", Union[InputPointer, FanInInputPointer])],
     )
 ):
-    """Defines an input mapping for a graph."""
+    """Defines an input mapping for a graph.
+
+    Users should not construct objects of this class directly. Instead, they should construct using :py:meth:`dagster.GraphIn.mapping_to`."""
 
     def __new__(cls, definition: InputDefinition, maps_to: Union[InputPointer, FanInInputPointer]):
         return super(InputMapping, cls).__new__(
@@ -523,3 +525,43 @@ class GraphIn(NamedTuple("_GraphIn", [("description", PublicAttr[Optional[str]])
 
     def to_definition(self, name: str) -> InputDefinition:
         return InputDefinition(name=name, description=self.description)
+
+    @public
+    def mapping_to(
+        self,
+        graph_input_name: str,
+        inner_node_name: str,
+        inner_node_input_name: str,
+        fan_in_index: Optional[int] = None,
+    ) -> "InputMapping":
+        """Create an input mapping to an input of a child node.
+
+        In a GraphDefinition, you can use this helper function to construct
+        an :py:class:`InputMapping` to the input of a child node.
+
+        Args:
+            graph_input_name (str): The name of the input from the outer graph on which to map.
+            inner_node_name (str): The name of the child node on which to map this input.
+            inner_node_input_name (str): The name of the child node's input where this will be routed.
+            fan_in_index (Optional[int]): The index in to a fanned in input, else None
+            description (Optional[str]): Description of the outer graph output.
+
+        Examples:
+
+            .. code-block:: python
+
+                input_mapping = GraphIn().mapping_to(
+                    'outer_graph_input', 'inner_op', 'int_input'
+                )
+        """
+        check.str_param(graph_input_name, "graph_input_name")
+        check.str_param(inner_node_name, "inner_node_name")
+        check.str_param(inner_node_input_name, "inner_node_input_name")
+        check.opt_int_param(fan_in_index, "fan_in_index")
+
+        maps_to: Union[FanInInputPointer, InputPointer]
+        if fan_in_index is not None:
+            maps_to = FanInInputPointer(inner_node_name, inner_node_input_name, fan_in_index)
+        else:
+            maps_to = InputPointer(inner_node_name, inner_node_input_name)
+        return InputMapping(self.to_definition(graph_input_name), maps_to)

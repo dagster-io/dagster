@@ -15,7 +15,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.events import AssetKey, DynamicAssetKey
 from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster._core.errors import DagsterError, DagsterInvalidDefinitionError
@@ -350,7 +350,9 @@ class OutputPointer(NamedTuple("_OutputPointer", [("solid_name", str), ("output_
 class OutputMapping(
     NamedTuple("_OutputMapping", [("definition", OutputDefinition), ("maps_from", OutputPointer)])
 ):
-    """Defines an output mapping for a graph."""
+    """Defines an output mapping for a graph.
+
+    Users should not construct objects of this class directly. Instead, they should construct using :py:meth:`dagster.GraphOut.mapping_from`."""
 
     def __new__(cls, definition: Union[OutputDefinition], maps_from: OutputPointer):
         return super(OutputMapping, cls).__new__(
@@ -559,3 +561,32 @@ class GraphOut(NamedTuple("_GraphOut", [("description", PublicAttr[Optional[str]
 
     def to_definition(self, name: Optional[str]) -> "OutputDefinition":
         return OutputDefinition(name=name, description=self.description)
+
+    @public
+    def mapping_from(
+        self,
+        graph_output_name: str,
+        inner_node_name: str,
+        inner_node_output_name: Optional[str] = None,
+    ) -> "OutputMapping":
+        """Create an output mapping from an output of a child node.
+
+        In a GraphDefinition, you can use this helper function to construct
+        an :py:class:`OutputMapping` from the output of a child node.
+
+        Args:
+            graph_output_name (str): The name of the outer graph output on which to map the provided output.
+            solid_name (str): The name of the child node from which to map this output.
+            output_name (str): The name of the child node's output from which to map this output.
+            description (Optional[str]): Description of the outer graph output.
+
+        Examples:
+
+            .. code-block:: python
+
+                output_mapping = GraphOut().mapping_from('outer_graph_output_name', 'child_op', 'some_input')
+        """
+        return OutputMapping(
+            self.to_definition(graph_output_name),
+            OutputPointer(inner_node_name, inner_node_output_name),
+        )
