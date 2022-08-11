@@ -15,8 +15,6 @@ Dagit fetches definitions - jobs, ops, schedules, sensors - from a set of reposi
 
 These are the main pages inside Dagit:
 
-<!-- Notes: all screenshots are from go/prod -->
-
 ## Job
 
 The Job page offers tools to explore a job definition and launch runs for that job.
@@ -25,20 +23,24 @@ The Job page offers tools to explore a job definition and launch runs for that j
 
 The Overview tab shows the graph of ops that make up a job. Selecting an op reveals detailed metadata about it in the pane to the right.
 
+<!-- ![Dagit Job Definition](/images/tutorial/complex-job.png) -->
+
 <Image
 alt="Dagit Job Definition"
-src="/images/tutorial/complex_pipeline_figure_one.png"
-width={1331}
-height={874}
+src="/images/tutorial/complex-job.png"
+width={2662}
+height={1618}
 />
 
 ### Op Definition
 
 On the Overview tab, clicking an op, you can find detailed information about the op definition.
 
+<!-- ![Dagit Op Definition](/images/concepts/dagit/op-definition.png) -->
+
 <Image
 alt="Dagit Op Definition"
-src="/images/concepts/dagit/solid-definition.png"
+src="/images/concepts/dagit/op-definition.png"
 width={2662}
 height={1618}
 />
@@ -47,9 +49,11 @@ height={1618}
 
 The Launchpad tab provides a configuration editor to let you experiment with configuration and launch runs.
 
+<!-- ![Dagit Launchpad](/images/tutorial/single-op-launchpad.png) -->
+
 <Image
 alt="Dagit Launchpad"
-src="/images/concepts/dagit/playground.png"
+src="/images/tutorial/single-op-launchpad.png"
 width={2662}
 height={1618}
 />
