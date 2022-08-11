@@ -45,14 +45,13 @@ def test_dynamic_job(executor_def):
 
 
 def test_longitudinal_job(executor_def):
-    partition_set = longitudinal_schedule().get_partition_set()
+    partitions_def = longitudinal_schedule().job.partitions_def
     try:
         result = longitudinal.to_job(
             resource_defs={"io_manager": fs_io_manager},
             executor_def=executor_def,
-        ).execute_in_process(
-            run_config=partition_set.run_config_for_partition(partition_set.get_partitions()[0]),
-        )
+            config=longitudinal_schedule().job.partitioned_config,
+        ).execute_in_process(partition_key=partitions_def.get_partition_keys()[0])
         assert result.success
     except IntentionalRandomFailure:
         pass
