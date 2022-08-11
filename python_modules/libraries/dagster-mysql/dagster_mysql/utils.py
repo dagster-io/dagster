@@ -100,6 +100,7 @@ def retry_mysql_connection_fn(fn, retry_limit=5, retry_wait=0.2):
             mysql.OperationalError,
             db.exc.DatabaseError,
             db.exc.OperationalError,
+            db.exc.ResourceClosedError,
             mysql.errors.InterfaceError,
         ) as exc:
             logging.warning("Retrying failed database connection")
