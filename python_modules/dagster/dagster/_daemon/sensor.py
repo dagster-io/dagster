@@ -5,17 +5,18 @@ import threading
 import time
 from collections import defaultdict
 from contextlib import ExitStack
-from typing import Dict, NamedTuple, Optional
+from typing import Dict, NamedTuple, Optional, Sequence
 
 import pendulum
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._core.definitions.run_request import InstigatorType
+from dagster._core.definitions.run_request import InstigatorType, RunRequest
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.errors import DagsterError
 from dagster._core.host_representation import PipelineSelector
+from dagster._core.host_representation.external import ExternalSensor
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -659,17 +660,36 @@ def _is_under_min_interval(state, external_sensor):
     return elapsed < external_sensor.min_interval_seconds
 
 
-def _fetch_existing_runs(instance, external_sensor, run_requests):
+def _fetch_existing_runs(
+    instance: DagsterInstance,
+    external_sensor: ExternalSensor,
+    run_requests: Sequence[RunRequest],
+):
     run_keys = [run_request.run_key for run_request in run_requests if run_request.run_key]
 
     if not run_keys:
         return {}
 
+    # fetch runs from the DB with only the run key tag
+    # note: while possible to filter more at DB level with tags - it is avoided here due to observed perf problems
     runs_with_run_keys = instance.get_runs(filters=RunsFilter(tags={RUN_KEY_TAG: run_keys}))
 
-    valid_runs = [
-        run for run in runs_with_run_keys if run.tags.get(SENSOR_NAME_TAG) == external_sensor.name
-    ]
+    # filter down to runs with run_key that match the sensor name and its namespace (repository)
+    valid_runs = []
+    for run in runs_with_run_keys:
+        # if the run doesn't have a set origin, just match on sensor name
+        if (
+            run.external_pipeline_origin is None
+            and run.tags.get(SENSOR_NAME_TAG) == external_sensor.name
+        ):
+            valid_runs.append(run)
+        # otherwise prevent the same named sensor across repos from effecting each other
+        elif (
+            run.external_pipeline_origin.external_repository_origin.get_selector_id()
+            == external_sensor.get_external_origin().external_repository_origin.get_selector_id()
+            and run.tags.get(SENSOR_NAME_TAG) == external_sensor.name
+        ):
+            valid_runs.append(run)
 
     existing_runs = {}
     for run in valid_runs:
