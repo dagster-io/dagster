@@ -1,11 +1,9 @@
 from dagstermill.factory import define_dagstermill_solid
 
 from dagster._legacy import pipeline
-from dagster._utils import file_relative_path
 
 hello_world_notebook_solid = define_dagstermill_solid(
-    "hello_world_notebook_solid",
-    file_relative_path(__file__, "hello_world.ipynb"),
+    "hello_world_notebook_solid", "hello_world.ipynb"
 )
 
 

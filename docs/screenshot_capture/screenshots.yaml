@@ -173,7 +173,7 @@
   vetted: false
 
 - path: concepts/ops-jobs-graphs/job-metadata.png
-  url: http://127.0.0.1:3000/workspace/toys_repository@dagster_test.graph_job_op_toys.repo/jobs/with_metadata
+  url: http://127.0.0.1:3000/workspace/toys_repository@dagster_test.toys.repo/jobs/with_metadata
   vetted: false
 
 ##################
