@@ -197,16 +197,16 @@ In this example, Dagster doesn’t need to load data from `upstream_asset` to su
 
 #### Conditional materialization
 
-In some cases, an asset may not need to be updated in storage each time the decorated function is executed. In this case you can use the `always_materialize` parameter along with `yield` syntax to only materialize an asset to storage in some cases. If an asset is not materialized to storage, downstream assets will not be materialized, and asset sensors monitoring the asset will not trigger
+In some cases, an asset may not need to be updated in storage each time the decorated function is executed. In this case you can use the `always_materialize` parameter along with `yield` syntax to invoke this behavior. If the `always_materialize` parameter is set to `False`, you may indicate to the Dagster framework that no data should be persisted to storage by not yielding an output from your computation function. If an output is not emitted during computation, no asset materialization event will be created, the I/O manager will not be invoked, downstream assets will not be materialized, and asset sensors monitoring the asset will not trigger.
 
 ```python file=/concepts/assets/conditional_materialization.py startafter=start_conditional endbefore=end_conditional
-@asset(
-    always_materialize=False
-)
+@asset(always_materialize=False)
 def may_not_materialize():
     # to simulate an asset that may not always materialize.
-    if random.randint(1, 4) < 3:
-        yield Output([1,2,3,4])
+    random.seed()
+    if random.randint(1, 10) < 5:
+        yield Output([1, 2, 3, 4])
+
 
 @asset
 def downstream(may_not_materialize):

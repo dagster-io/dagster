@@ -8,7 +8,8 @@ from dagster import Output, asset
 @asset(always_materialize=False)
 def may_not_materialize():
     # to simulate an asset that may not always materialize.
-    if random.randint(1, 4) < 3:
+    random.seed()
+    if random.randint(1, 10) < 5:
         yield Output([1, 2, 3, 4])
 
 
