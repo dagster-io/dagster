@@ -16,7 +16,10 @@ from dagster import (
     AssetObservation,
     Field,
     Output,
+    asset,
+    asset_status_sensor,
     graph,
+    materialize,
     repository,
     run_failure_sensor,
 )
@@ -189,6 +192,33 @@ def run_cursor_sensor(context):
     return RunRequest(run_key=None, run_config={}, tags={})
 
 
+@asset
+def asset_a():
+    return 1
+
+
+@asset
+def asset_b():
+    return 2
+
+
+@asset_status_sensor(
+    asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
+    asset_status=DagsterEventType.ASSET_MATERIALIZATION,
+)
+def asset_a_and_b_sensor(context, _events):
+    return RunRequest(run_key=context.cursor, run_config={})
+
+
+@asset_status_sensor(
+    asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
+    asset_status=DagsterEventType.ASSET_MATERIALIZATION,
+    trigger_fn=lambda x: any(x.values()),
+)
+def asset_a_or_b_sensor(context, _events):
+    return RunRequest(run_key=context.cursor, run_config={})
+
+
 def _random_string(length):
     return "".join(random.choice(string.ascii_lowercase) for x in range(length))
 
@@ -313,6 +343,10 @@ def the_repo():
         bad_request_mismatch,
         bad_request_unspecified,
         request_list_sensor,
+        asset_a,
+        asset_b,
+        asset_a_and_b_sensor,
+        asset_a_or_b_sensor,
     ]
 
 
@@ -1541,6 +1575,154 @@ def test_asset_sensor_not_triggered_on_observation(executor):
             assert run.run_config == {}
             assert run.tags
             assert run.tags.get("dagster/sensor_name") == "asset_foo_sensor"
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_asset_status_sensor(executor):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors() as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            a_and_b_sensor = external_repo.get_external_sensor("asset_a_and_b_sensor")
+            instance.start_sensor(a_and_b_sensor)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            ticks = instance.get_ticks(
+                a_and_b_sensor.get_external_origin_id(), a_and_b_sensor.selector_id
+            )
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                a_and_b_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+
+            # should generate asset_a
+            materialize(asset_a, instance=instance)
+
+            # sensor should not fire
+            ticks = instance.get_ticks(
+                a_and_b_sensor.get_external_origin_id(), a_and_b_sensor.selector_id
+            )
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                a_and_b_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+        with pendulum.test(freeze_datetime):
+
+            # should generate asset_b
+            materialize(asset_b, instance=instance)
+
+            # should fire the asset sensor
+            evaluate_sensors(instance, workspace, executor)
+            ticks = instance.get_ticks(
+                a_and_b_sensor.get_external_origin_id(), a_and_b_sensor.selector_id
+            )
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                a_and_b_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+            run = instance.get_runs()[0]
+            assert run.run_config == {}
+            assert run.tags
+            assert run.tags.get("dagster/sensor_name") == "asset_a_and_b_sensor"
+
+
+@pytest.mark.parametrize("executor", get_sensor_executors())
+def test_asset_status_sensor_w_custom_fn(executor):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors() as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            a_or_b_sensor = external_repo.get_external_sensor("asset_a_or_b_sensor")
+            instance.start_sensor(a_or_b_sensor)
+
+            evaluate_sensors(instance, workspace, executor)
+
+            ticks = instance.get_ticks(
+                a_or_b_sensor.get_external_origin_id(), a_or_b_sensor.selector_id
+            )
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                a_or_b_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+
+            # should generate asset_a
+            materialize(asset_a, instance=instance)
+
+            # sensor should not fire
+            # should fire the asset sensor
+            evaluate_sensors(instance, workspace, executor)
+            ticks = instance.get_ticks(
+                a_or_b_sensor.get_external_origin_id(), a_or_b_sensor.selector_id
+            )
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                a_or_b_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+            run = instance.get_runs()[0]
+            assert run.run_config == {}
+            assert run.tags
+            assert run.tags.get("dagster/sensor_name") == "asset_a_or_b_sensor"
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+        with pendulum.test(freeze_datetime):
+
+            # should generate asset_b
+            materialize(asset_b, instance=instance)
+
+            # should fire the asset sensor
+            evaluate_sensors(instance, workspace, executor)
+            ticks = instance.get_ticks(
+                a_or_b_sensor.get_external_origin_id(), a_or_b_sensor.selector_id
+            )
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                a_or_b_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+            run = instance.get_runs()[0]
+            assert run.run_config == {}
+            assert run.tags
+            assert run.tags.get("dagster/sensor_name") == "asset_a_or_b_sensor"
 
 
 @pytest.mark.parametrize("executor", get_sensor_executors())

@@ -1,7 +1,14 @@
 # isort: skip_file
 # pylint: disable=unnecessary-ellipsis
 
-from dagster import repository, DefaultSensorStatus, SkipReason, asset, define_asset_job
+from dagster import (
+    repository,
+    DefaultSensorStatus,
+    SkipReason,
+    asset,
+    define_asset_job,
+    asset_status_sensor,
+)
 
 
 # start_sensor_job_marker
@@ -196,11 +203,12 @@ from dagster import EventRecordsFilter, DagsterEventType
 
 
 @sensor(job=my_job)
-def multi_asset_sensor(context):
+def custom_multi_asset_sensor(context):
     cursor_dict = json.loads(context.cursor) if context.cursor else {}
     a_cursor = cursor_dict.get("a")
     b_cursor = cursor_dict.get("b")
 
+    # in this sensor we want to monitor for two different asset events
     a_event_records = context.instance.get_event_records(
         EventRecordsFilter(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -212,7 +220,7 @@ def multi_asset_sensor(context):
     )
     b_event_records = context.instance.get_event_records(
         EventRecordsFilter(
-            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+            event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
             asset_key=AssetKey("table_b"),
             after_cursor=b_cursor,
         ),
@@ -240,6 +248,42 @@ def multi_asset_sensor(context):
 
 
 # end_multi_asset_sensor_marker
+
+# start_asset_status_sensor_marker
+
+
+@asset_status_sensor(
+    asset_keys=[AssetKey("asset_a"), AssetKey("asset_b")],
+    asset_status=DagsterEventType.ASSET_MATERIALIZATION,
+    job=my_job,
+)
+def asset_a_and_b_sensor(context, asset_events):
+    # this sensor will run when both asset_a and asset_b have been materialized
+    # asset_events is a dictionary, mapping asset keys to event log entries
+    logger_str = f"Assets {asset_events[AssetKey('asset_a')].dagster_event.asset_key.path} and {asset_events[AssetKey('asset_b')].dagster_event.asset_key.path} materialized"
+    return RunRequest(
+        run_key=context.cursor,
+        run_config={"ops": {"logger_op": {"config": {"logger_str": logger_str}}}},
+    )
+
+
+# end_asset_status_sensor_marker
+
+# start_asset_status_sensor_or_marker
+
+
+@asset_status_sensor(
+    asset_keys=[AssetKey("asset_c"), AssetKey("asset_d")],
+    asset_status=DagsterEventType.ASSET_MATERIALIZATION,
+    trigger_fn=lambda x: any(x.values()),
+    job=my_job,
+)
+def asset_c_or_d_sensor(context, _asset_events):
+    # this sensor will run when either asset_c or asset_d have been materialized
+    return RunRequest(run_key=context.cursor)
+
+
+# end_asset_status_sensor_or_marker
 
 
 # start_s3_sensors_marker

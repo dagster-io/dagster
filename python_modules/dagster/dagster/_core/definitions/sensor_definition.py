@@ -1,9 +1,11 @@
 import inspect
+import json
 from contextlib import ExitStack
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Callable,
+    Dict,
     Iterator,
     List,
     NamedTuple,
@@ -661,3 +663,113 @@ class AssetSensorDefinition(SensorDefinition):
     @property
     def asset_key(self):
         return self._asset_key
+
+
+class AssetStatusSensorDefinition(SensorDefinition):
+    """Define an asset sensor that initiates a set of runs based on the materialization of a given
+    asset.
+
+    Args:
+        name (str): The name of the sensor to create.
+        asset_keys (List[AssetKey]): The asset_keys this sensor monitors.
+        asset_status (DagsterEventType): The event the sensor should monitor
+        trigger_fn (Callable[Dict[AssetKey, bool], bool]): Function that determines if the sensor should run. Must
+            take a dict of AssetKeys to booleans as input, where the dict maps each AssetKey to whether it has the
+            asset_status being monitored.
+        asset_materialization_fn (Callable[[SensorEvaluationContext, EventLogEntry], Union[Iterator[Union[RunRequest, SkipReason]], RunRequest, SkipReason]]): The core
+            evaluation function for the sensor, which is run at an interval to determine whether a
+            run should be launched or not. Takes a :py:class:`~dagster.SensorEvaluationContext` and
+            an EventLogEntry corresponding to an AssetMaterialization event.
+
+            This function must return a generator, which must yield either a single SkipReason
+            or one or more RunRequest objects.
+        minimum_interval_seconds (Optional[int]): The minimum number of seconds that will elapse
+            between sensor evaluations.
+        description (Optional[str]): A human-readable description of the sensor.
+        job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job
+            object to target with this sensor.
+        jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
+            (experimental) A list of jobs to be executed when the sensor fires.
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        asset_keys: List[AssetKey],
+        asset_status: "DagsterEventType",
+        trigger_fn: Callable[[Dict[AssetKey, bool]], bool],
+        job_name: Optional[str],
+        asset_materialization_fn: Callable[
+            ["SensorExecutionContext", "EventLogEntry"],
+            RawSensorEvaluationFunctionReturn,
+        ],
+        minimum_interval_seconds: Optional[int] = None,
+        description: Optional[str] = None,
+        job: Optional[ExecutableDefinition] = None,
+        jobs: Optional[Sequence[ExecutableDefinition]] = None,
+        default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    ):
+        self._asset_keys = check.list_param(asset_keys, "asset_keys", AssetKey)
+
+        from dagster._core.storage.event_log.base import EventRecordsFilter
+
+        def _wrap_asset_fn(materialization_fn):
+            def _fn(context):
+                cursor_dict = json.loads(context.cursor) if context.cursor else {}
+
+                asset_events_bools_dict = {}
+                asset_event_records = {}
+                cursor_update_dict = {}
+                for a in self._asset_keys:
+                    event_records = context.instance.get_event_records(
+                        EventRecordsFilter(
+                            event_type=asset_status,
+                            asset_key=a,
+                            after_cursor=cursor_dict.get(a.to_user_string()),
+                        ),
+                        ascending=False,
+                        limit=1,
+                    )
+
+                    if event_records:
+                        asset_events_bools_dict[a.to_user_string()] = True
+                        asset_event_records[a.to_user_string()] = event_records[0].event_log_entry
+                        cursor_update_dict[a.to_user_string()] = event_records[0].storage_id
+                    else:
+                        asset_events_bools_dict[a.to_user_string()] = False
+                        asset_event_records[a.to_user_string()] = None
+                        cursor_update_dict[a.to_user_string()] = cursor_dict.get(a.to_user_string())
+
+                should_execute = trigger_fn(asset_events_bools_dict)
+                if not should_execute:
+                    return
+
+                result = materialization_fn(context, asset_event_records)
+                if inspect.isgenerator(result) or isinstance(result, list):
+                    for item in result:
+                        yield item
+                elif isinstance(result, (SkipReason, RunRequest)):
+                    yield result
+                context.update_cursor(json.dumps(cursor_update_dict))
+
+            return _fn
+
+        super(AssetStatusSensorDefinition, self).__init__(
+            name=check_valid_name(name),
+            job_name=job_name,
+            evaluation_fn=_wrap_asset_fn(
+                check.callable_param(asset_materialization_fn, "asset_materialization_fn"),
+            ),
+            minimum_interval_seconds=minimum_interval_seconds,
+            description=description,
+            job=job,
+            jobs=jobs,
+            default_status=default_status,
+        )
+
+    @public  # type: ignore
+    @property
+    def asset_keys(self):
+        return self._asset_keys
