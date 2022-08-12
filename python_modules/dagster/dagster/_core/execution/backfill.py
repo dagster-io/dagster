@@ -181,7 +181,7 @@ def submit_backfill_runs(instance, workspace, repo_location, backfill_job, parti
             repository_name=repo_name,
             pipeline_name=external_partition_set.pipeline_name,
             solid_selection=None,
-            asset_selection=list(backfill_job.asset_selection),
+            asset_selection=backfill_job.asset_selection,
         )
         external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
     else:
