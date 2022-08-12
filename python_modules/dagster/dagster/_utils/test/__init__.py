@@ -4,7 +4,17 @@ import tempfile
 import uuid
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, Generator, Optional, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    Generator,
+    Mapping,
+    Optional,
+    Union,
+    overload,
+)
 
 # top-level include is dangerous in terms of incurring circular deps
 from dagster import (
@@ -16,7 +26,16 @@ from dagster import (
     TypeCheck,
 )
 from dagster import _check as check
-from dagster._core.definitions import ModeDefinition, PipelineDefinition, lambda_solid
+from dagster._core.definitions import (
+    GraphDefinition,
+    GraphIn,
+    GraphOut,
+    ModeDefinition,
+    OpDefinition,
+    PipelineDefinition,
+    ResourceDefinition,
+    lambda_solid,
+)
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
@@ -38,6 +57,7 @@ from dagster._core.execution.context_creation_pipeline import (
     create_log_manager,
     create_plan_data,
 )
+from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler import Scheduler
 from dagster._core.scheduler.scheduler import DagsterScheduleDoesNotExist, DagsterSchedulerError
@@ -365,6 +385,45 @@ def execute_solid(
         raise_on_error=raise_on_error,
     )
     return result.result_for_handle(solid_def.name)
+
+
+def execute_op_for_test(
+    op_def: OpDefinition,
+    resources: Optional[Mapping[str, Any]] = None,
+    input_values: Optional[Mapping[str, Any]] = None,
+    tags: Optional[Mapping[str, Any]] = None,
+    run_config: Optional[Mapping[str, object]] = None,
+    raise_on_error: bool = True,
+) -> ExecuteInProcessResult:
+    """Run a dagster op in an actual execution.
+
+    For internal use."""
+    input_values = check.opt_mapping_param(input_values, "input_values", key_type=str)
+    input_mappings = []
+    for input_name in input_values.keys():
+        if not input_name in op_def.ins:
+            raise DagsterInvariantViolationError(
+                f"Attempted to pass input value for input {input_name}, which was not provided."
+            )
+        # create an input mapping to the inner node with the same name.
+        input_mappings.append(GraphIn().mapping_to(input_name, op_def.name, input_name))
+
+    output_mappings = []
+    for output_name in op_def.outs.keys():
+        output_mappings.append(GraphOut().mapping_from(output_name, op_def.name, output_name))
+
+    return GraphDefinition(
+        name=f"wraps_{op_def.name}",
+        node_defs=[op_def],
+        input_mappings=input_mappings,
+        output_mappings=output_mappings,
+        tags=tags,
+    ).execute_in_process(
+        resources=resources,
+        input_values=input_values,
+        raise_on_error=raise_on_error,
+        run_config=run_config,
+    )
 
 
 def check_dagster_type(dagster_type, value):
