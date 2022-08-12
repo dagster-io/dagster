@@ -233,6 +233,7 @@ export interface LaunchBackfillParams {
   selector: PartitionSetSelector;
   partitionNames?: string[] | null;
   reexecutionSteps?: string[] | null;
+  assetSelection?: AssetKeyInput[] | null;
   fromFailure?: boolean | null;
   allPartitions?: boolean | null;
   tags?: ExecutionTag[] | null;

@@ -1,12 +1,14 @@
 from enum import Enum
-from typing import Dict, List, NamedTuple, Optional
+from typing import Dict, FrozenSet, List, NamedTuple, Optional
 
 import dagster._check as check
+from dagster._core.definitions import AssetKey
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation import (
     ExternalPartitionSet,
     ExternalPipeline,
+    PipelineSelector,
     RepositoryLocation,
 )
 from dagster._core.host_representation.external_data import (
@@ -57,6 +59,7 @@ class PartitionBackfill(
             ("backfill_timestamp", float),
             ("last_submitted_partition_name", Optional[str]),
             ("error", Optional[SerializableErrorInfo]),
+            ("asset_selection", Optional[List[AssetKey]]),
         ],
     ),
 ):
@@ -72,6 +75,7 @@ class PartitionBackfill(
         backfill_timestamp: float,
         last_submitted_partition_name: Optional[str] = None,
         error: Optional[SerializableErrorInfo] = None,
+        asset_selection: Optional[FrozenSet[AssetKey]] = None,
     ):
         return super(PartitionBackfill, cls).__new__(
             cls,
@@ -87,6 +91,7 @@ class PartitionBackfill(
             check.float_param(backfill_timestamp, "backfill_timestamp"),
             check.opt_str_param(last_submitted_partition_name, "last_submitted_partition_name"),
             check.opt_inst_param(error, "error", SerializableErrorInfo),
+            check.opt_list_param(asset_selection, "asset_selection", of_type=AssetKey),
         )
 
     @property
@@ -106,6 +111,7 @@ class PartitionBackfill(
             self.backfill_timestamp,
             self.last_submitted_partition_name,
             self.error,
+            self.asset_selection,
         )
 
     def with_partition_checkpoint(self, last_submitted_partition_name):
@@ -121,6 +127,7 @@ class PartitionBackfill(
             self.backfill_timestamp,
             last_submitted_partition_name,
             self.error,
+            self.asset_selection,
         )
 
     def with_error(self, error):
@@ -136,6 +143,7 @@ class PartitionBackfill(
             self.backfill_timestamp,
             self.last_submitted_partition_name,
             error,
+            self.asset_selection,
         )
 
 
@@ -165,9 +173,21 @@ def submit_backfill_runs(instance, workspace, repo_location, backfill_job, parti
     )
 
     assert isinstance(result, ExternalPartitionSetExecutionParamData)
-    external_pipeline = external_repo.get_full_external_pipeline(
-        external_partition_set.pipeline_name
-    )
+    if backfill_job.asset_selection:
+        # need to make another call to the user code location to properly subset
+        # for an asset selection
+        pipeline_selector = PipelineSelector(
+            location_name=repo_location.name,
+            repository_name=repo_name,
+            pipeline_name=external_partition_set.pipeline_name,
+            solid_selection=None,
+            asset_selection=list(backfill_job.asset_selection),
+        )
+        external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
+    else:
+        external_pipeline = external_repo.get_full_external_pipeline(
+            external_partition_set.pipeline_name
+        )
     for partition_data in result.partition_data:
         pipeline_run = create_backfill_run(
             instance,
